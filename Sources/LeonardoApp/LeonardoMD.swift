@@ -200,7 +200,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     @objc private func preview() { activeSession?.mode = .preview }
     @objc private func edit() { activeSession?.mode = .edit }
     @objc private func split() { activeSession?.mode = .split }
-    @objc private func extensions() { activeSession?.showInspector.toggle() }
+    @objc private func outline() { activeSession?.showInspector.toggle() }
     @objc private func preferences() { activeSession?.showPreferences = true }
     @objc private func bringWindowsToFront() {
         NSApp.activate(ignoringOtherApps: true)
@@ -238,7 +238,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         add("Edición", action: #selector(edit), key: "2", to: view)
         add("Dividida", action: #selector(split), key: "3", to: view)
         add("Modo foco", action: #selector(focus), key: "f", modifiers: [.command, .shift], to: view)
-        add("Extensiones", action: #selector(extensions), key: "i", modifiers: [.command, .option], to: view)
+        add("Índice del documento", action: #selector(outline), key: "i", modifiers: [.command, .option], to: view)
         let window = submenu("Ventana", in: menu)
         add("Minimizar", action: #selector(NSWindow.performMiniaturize(_:)), key: "m", to: window)
         add("Zoom", action: #selector(NSWindow.performZoom(_:)), to: window)
