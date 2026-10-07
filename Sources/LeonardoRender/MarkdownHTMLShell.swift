@@ -63,6 +63,7 @@ enum MarkdownHTMLShell {
         let payload = MarkdownRenderPayload(
             markdown: document.body,
             frontMatter: document.frontMatter,
+            tags: document.tags,
             showFrontMatter: configuration.frontMatter == .metadata,
             allowsMermaid: configuration.allowsMermaid,
             allowsMath: configuration.allowsMath,
@@ -99,6 +100,7 @@ enum MarkdownHTMLShell {
 private struct MarkdownRenderPayload: Encodable {
     let markdown: String
     let frontMatter: [String: String]
+    let tags: [String]
     let showFrontMatter: Bool
     let allowsMermaid: Bool
     let allowsMath: Bool

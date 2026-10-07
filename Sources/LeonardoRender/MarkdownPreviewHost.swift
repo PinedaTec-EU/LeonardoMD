@@ -7,6 +7,7 @@ import WebKit
 final class MarkdownPreviewHost: NSView, WKScriptMessageHandler, WKNavigationDelegate {
     var onReady: ((Bool) -> Void)?
     var onScrollProgress: ((Double) -> Void)?
+    private(set) var tagHandler: ((String) -> Void)?
     private(set) var linkHandler: ((URL) -> Void)?
 
     private var webView: WKWebView?
@@ -43,6 +44,7 @@ final class MarkdownPreviewHost: NSView, WKScriptMessageHandler, WKNavigationDel
         baseURL: URL?,
         configuration: MarkdownPreviewConfiguration,
         onLinkActivation: ((URL) -> Void)?,
+        onTagActivation: ((String) -> Void)? = nil,
         onScrollProgress: ((Double) -> Void)?
     ) {
         let previousConfiguration = self.configuration
@@ -60,6 +62,7 @@ final class MarkdownPreviewHost: NSView, WKScriptMessageHandler, WKNavigationDel
         self.documentURL = baseURL
         self.configuration = configuration
         self.linkHandler = onLinkActivation
+        self.tagHandler = onTagActivation
         self.onScrollProgress = onScrollProgress
         hasState = true
 
@@ -127,6 +130,7 @@ final class MarkdownPreviewHost: NSView, WKScriptMessageHandler, WKNavigationDel
         renderWorkItem = nil
         markFailed(with: MarkdownRenderError.webViewUnavailable)
         if let webView {
+            webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoTag")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoLink")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoReady")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoScroll")
@@ -159,6 +163,7 @@ final class MarkdownPreviewHost: NSView, WKScriptMessageHandler, WKNavigationDel
             webConfiguration.setURLSchemeHandler(documentHandler, forURLScheme: MarkdownHTMLShell.documentScheme)
         }
         let userContentController = webConfiguration.userContentController
+        userContentController.add(self, name: "leonardoTag")
         userContentController.add(self, name: "leonardoLink")
         userContentController.add(self, name: "leonardoReady")
         userContentController.add(self, name: "leonardoScroll")
@@ -364,6 +369,10 @@ final class MarkdownPreviewHost: NSView, WKScriptMessageHandler, WKNavigationDel
                 }
             }
             markReady()
+        case "leonardoTag":
+            if let tag = message.body as? String, MarkdownDocumentParser.parse(content).tags.contains(tag) {
+                tagHandler?(tag)
+            }
         case "leonardoLink":
             if let body = message.body as? [String: Any],
                let href = body["href"] as? String {
