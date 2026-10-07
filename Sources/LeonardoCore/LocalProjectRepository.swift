@@ -392,7 +392,8 @@ public actor LocalProjectRepository {
 
         let relative = relativePath(of: url, under: root)
         var matches: [SearchMatch] = []
-        if url.lastPathComponent.localizedCaseInsensitiveContains(needle) {
+        let tag = ProjectSearchQuery.tagValue(needle)
+        if tag == nil, url.lastPathComponent.localizedCaseInsensitiveContains(needle) {
             matches.append(SearchMatch(
                 url: url,
                 relativePath: relative,
@@ -407,6 +408,16 @@ public actor LocalProjectRepository {
         }
         guard let content = try? String(contentsOf: url, encoding: .utf8) else {
             return SearchEntryResult(matches: matches, skipDescendants: false)
+        }
+        if let tag {
+            let tags = MarkdownDocumentParser.parse(content).tags
+            guard !tag.isEmpty, let matched = tags.first(where: { $0.lowercased() == tag.lowercased() }) else {
+                return SearchEntryResult(matches: [], skipDescendants: false)
+            }
+            return SearchEntryResult(matches: [SearchMatch(
+                url: url, relativePath: relative, lineNumber: nil, column: nil,
+                snippet: "tag: " + matched, matchedInFileName: false
+            )], skipDescendants: false)
         }
         for (index, line) in content.components(separatedBy: .newlines).enumerated() {
             try Task.checkCancellation()

@@ -8,7 +8,7 @@ let package = Package(
     dependencies: [.package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.9.6")],
     targets: [
         .target(name: "LeonardoCore"),
-        .target(name: "LeonardoRender", resources: [.process("Resources")]),
+        .target(name: "LeonardoRender", dependencies: ["LeonardoCore"], resources: [.process("Resources")]),
         .executableTarget(name: "LeonardoApp", dependencies: ["LeonardoCore", "LeonardoRender", .product(name: "Sparkle", package: "Sparkle")], resources: [.process("Resources")], linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"]) ]),
         .testTarget(name: "LeonardoIntegrationTests", dependencies: ["LeonardoRender"]),
         .testTarget(name: "LeonardoAppTests", dependencies: ["LeonardoApp"]),

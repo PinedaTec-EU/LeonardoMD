@@ -40,6 +40,12 @@ PDF export uses the rendered document. Palettes and lightweight ruled/grid/parch
 
 Custom palette colors can be edited and imported/exported as JSON. The app validates reading contrast before applying them. Main-window and sheet controls share palette colors and tactile hover/pressed states.
 
+## Document tags
+
+Tags in YAML frontmatter appear as clickable pills above the preview, even when the metadata table is hidden. In a project, clicking a pill fills the sidebar search and reveals navigation if focus mode was active. Standalone documents show their tags without creating a project.
+
+Use `tag:swift` or `tag:"Design Systems"` in project search. Matching is exact and ignores case; body mentions and partial tags do not match. Ordinary queries still search filenames and content. Tags accept a single string, an inline list (`tags: [Swift, "Design Systems"]`), or a block list under `tags:`. Empty tags are omitted and duplicates are collapsed ignoring case. Quoted strings support commas, spaces, escaped double quotes and doubled YAML apostrophes. This uses the existing lightweight metadata parser's string/list subset; nested tag mappings, YAML anchors, folded scalars and multiline flow lists are outside that subset.
+
 ## Optional Git
 
 Enable Git tools in the project's preferences. The app can detect or initialize a repository, show changes and ahead/behind state, stage selected files, commit, view history and run manual fetch/pull/push. It uses `/usr/bin/git` and your existing system credentials. Pull uses fast-forward only, protects dirty worktrees and reports conflicts; it does not silently resolve them.

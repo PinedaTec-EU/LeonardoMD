@@ -22,6 +22,7 @@ public final class MarkdownPreviewController: ObservableObject {
             baseURL: baseURL,
             configuration: configuration,
             onLinkActivation: host?.linkHandler,
+            onTagActivation: host?.tagHandler,
             onScrollProgress: onScrollProgress
         )
     }
