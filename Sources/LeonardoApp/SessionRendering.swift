@@ -13,11 +13,18 @@ extension AppSession {
             onLinkActivation: { url in Task { await self.followLink(url) } },
             onScrollProgress: { fraction in
                 if self.mode == .split { self.editorScroll = fraction }
-            }
+            },
+            onTagActivation: { self.search(tag: $0) }
         )
         .onChange(of: editorScroll) { _, fraction in
             if self.mode == .split { self.renderer.scroll(toFraction: fraction) }
         }
+    }
+    func search(tag: String) {
+        guard !stopped, projectURL != nil else { return }
+        focus = false
+        searchQuery = ProjectSearchQuery.query(forTag: tag)
+        scheduleSearch()
     }
     var renderConfiguration: MarkdownPreviewConfiguration {
         let tokens = resolved.paperEffect == .white && darkPalette ? PaletteCatalog.paperWhite.tokens : palette.tokens

@@ -9,6 +9,7 @@ public struct MarkdownPreview: NSViewRepresentable {
     public let configuration: MarkdownPreviewConfiguration
     public let controller: MarkdownPreviewController?
     public let onLinkActivation: ((URL) -> Void)?
+    public let onTagActivation: ((String) -> Void)?
     public let onScrollProgress: ((Double) -> Void)?
 
     public init(
@@ -17,13 +18,15 @@ public struct MarkdownPreview: NSViewRepresentable {
         configuration: MarkdownPreviewConfiguration = .default,
         controller: MarkdownPreviewController? = nil,
         onLinkActivation: ((URL) -> Void)? = nil,
-        onScrollProgress: ((Double) -> Void)? = nil
+        onScrollProgress: ((Double) -> Void)? = nil,
+        onTagActivation: ((String) -> Void)? = nil
     ) {
         self.content = content
         self.baseURL = baseURL
         self.configuration = configuration
         self.controller = controller
         self.onLinkActivation = onLinkActivation
+        self.onTagActivation = onTagActivation
         self.onScrollProgress = onScrollProgress
     }
 
@@ -35,6 +38,7 @@ public struct MarkdownPreview: NSViewRepresentable {
             baseURL: baseURL,
             configuration: configuration,
             onLinkActivation: onLinkActivation,
+            onTagActivation: onTagActivation,
             onScrollProgress: onScrollProgress ?? controller?.onScrollProgress
         )
         return host
@@ -48,6 +52,7 @@ public struct MarkdownPreview: NSViewRepresentable {
             baseURL: baseURL,
             configuration: configuration,
             onLinkActivation: onLinkActivation,
+            onTagActivation: onTagActivation,
             onScrollProgress: onScrollProgress ?? controller?.onScrollProgress
         )
     }

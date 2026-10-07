@@ -8,7 +8,22 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Build and test
+        env:
+          LEONARDO_VISUAL_EVIDENCE: ${{ github.workspace }}/visual-evidence
         run: swift test
+      - name: Record preview capture provenance
+        env:
+          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          printf 'Head: %s\nSurface: native WKWebView Markdown preview\nViewport: 1000x800 points\nStates: light, dark; first tag focused\nFixture: synthetic tagged document\n' "$EVIDENCE_SHA" > visual-evidence/provenance.txt
+      - name: Upload preview evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-tags-${{ github.event.pull_request.head.sha || github.sha }}
+          path: visual-evidence/
+          if-no-files-found: error
       - name: Package app
         run: ./scripts/build-app.sh
