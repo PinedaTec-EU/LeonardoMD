@@ -43,9 +43,7 @@ ditto -c -k --sequesterRsrc --keepParent "$app" "$archive"
 # The private EdDSA key is read by Sparkle from the login Keychain.
 tools="$PWD/.build/artifacts/sparkle/Sparkle/bin"
 cp "$RELEASE_NOTES_FILE" "$assets/LeonardoMD-$LEONARDO_VERSION.md"
-channel_options=()
-if [ "$channel" = beta ]; then channel_options=(--channel beta); fi
-"$tools/generate_appcast" --account "${SPARKLE_KEY_ACCOUNT:-ed25519}" "${channel_options[@]}" --embed-release-notes --download-url-prefix "https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v$LEONARDO_VERSION/" "$assets"
+./scripts/generate-release-appcast.sh "$tools/generate_appcast" "$assets" "$channel" "$LEONARDO_VERSION" "${SPARKLE_KEY_ACCOUNT:-ed25519}"
 python3 scripts/verify-release-appcast.py "$assets/appcast.xml" "$channel"
 printf 'Prepared assets: %s\n' "$assets"
 # Verify the generated archive signature with Sparkle, not just its XML shape.

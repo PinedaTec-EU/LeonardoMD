@@ -89,6 +89,40 @@ class UpdateMetadataTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 verify(path, "stable")
 
+    def test_appcast_generation_on_system_bash_handles_both_channels(self):
+        with tempfile.TemporaryDirectory() as directory:
+            tool = Path(directory) / "generate_appcast"
+            tool.write_text('#!/bin/bash\nprintf "%s\\n" "$@"\n')
+            tool.chmod(0o755)
+            script = str(ROOT / "scripts/generate-release-appcast.sh")
+            for channel, version in (("stable", "1.2.3"), ("beta", "1.2.3-beta.1")):
+                result = subprocess.run(['/bin/bash', script, str(tool), directory, channel,
+                                         version, 'fixture-account'], check=True,
+                                        capture_output=True, text=True)
+                arguments = result.stdout.splitlines()
+                self.assertEqual(arguments[-1], directory)
+                self.assertIn('fixture-account', arguments)
+                self.assertIn('https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v' + version + '/', arguments)
+                self.assertEqual('--channel' in arguments, channel == 'beta')
+                if channel == 'beta':
+                    self.assertEqual(arguments[arguments.index('--channel') + 1], 'beta')
+            invalid = subprocess.run(['/bin/bash', script, str(tool), directory, 'nightly',
+                                      '1.2.3', 'fixture-account'], capture_output=True)
+            self.assertNotEqual(invalid.returncode, 0)
+            self.assertEqual(invalid.stdout, b'')
+
+    def test_stable_release_cannot_skip_notarization(self):
+        environment = {k: v for k, v in os.environ.items()
+                       if not k.startswith(("LEONARDO_", "SPARKLE_", "NOTARY_"))}
+        environment.update(LEONARDO_VERSION="1.2.3", LEONARDO_BUILD="4", LEONARDO_NOTARIZE="0",
+                           SPARKLE_PUBLIC_KEY=base64.b64encode(bytes(32)).decode(),
+                           DEVELOPER_ID_APPLICATION="fixture", RELEASE_NOTES_FILE=str(ROOT / "README.md"))
+        result = subprocess.run(['/bin/bash', str(ROOT / "scripts/prepare-release.sh")],
+                                env=environment, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('Only beta candidates can skip notarization', result.stderr)
+        self.assertNotIn('Build complete', result.stdout)
+
     def test_unsigned_or_foreign_appcast_is_rejected(self):
         verify = load("verify-release-appcast").verify
         signature = base64.b64encode(bytes(64)).decode()
