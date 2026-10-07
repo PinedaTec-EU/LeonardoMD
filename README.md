@@ -1,1 +1,59 @@
 # LeonardoMD
+
+Native macOS Markdown reading and editing, backed by real local files. Open a single document for a clean, fast viewer, or open a folder as a project with navigation, search and optional Git.
+
+## Run
+
+Requires macOS 14 or later and Swift 6 / Xcode command-line tools.
+
+```sh
+./launch.sh
+```
+
+The entrypoint builds an optimized, locally signed app at `output/LeonardoMD.app` and opens it. A document path can be supplied as an argument. You can also open Markdown files with LeonardoMD from Finder's **Open With** menu. No account, API key or network connection is needed to read documents.
+
+## Document and project modes
+
+- **Standalone viewer:** open a `.md`, `.markdown` or `.txt` without creating a project or showing its folder. Global preferences apply. Choose **Open folder as project** when you want navigation.
+- **Project:** open a folder, navigate its files, search names and content, and create, rename, move or delete items. Folders load children on expansion. Recent projects appear in the toolbar menu.
+- **Workspace:** select or create a root folder, discover its projects, and create, rename or delete project folders from the workspace manager.
+- **Focus:** hides project navigation and the inspector while preserving the document and project. Toggle it again to restore those panels.
+- **Reading / Editing / Split:** native source editing with undo, autosave and an approximately synchronized rendered preview. External file changes reload clean documents; conflicting edits stay protected until you reload or save a copy.
+
+| Shortcut | Action |
+| --- | --- |
+| ⌘O | Open document |
+| ⇧⌘O | Open project |
+| ⌘1 / ⌘2 / ⌘3 | Reading / Editing / Split |
+| ⇧⌘F | Focus |
+| ⌥⌘I | Extensions |
+| ⌘S | Save |
+| ⇧⌘E | Export PDF |
+
+## Rendering and extensions
+
+The preview supports CommonMark/GFM headings, lists, quotes, tables, tasks, highlighted code, relative images and links, and optional frontmatter metadata. Engines and fonts are bundled for offline use; library licenses are included alongside the renderer resources.
+
+**Mermaid and mathematics are disabled by default.** Enable them in Extensions globally for the standalone viewer or override them for a project. Disabled engines are excluded from the WebKit resource allowlist and are neither loaded nor executed. Changing the active engines tears down the old execution context. Mermaid also renders visible diagrams lazily. Disabling an engine leaves its source readable.
+
+PDF export uses the rendered document. Palettes and lightweight ruled/grid/parchment effects are configurable globally or per project. Project settings are portable JSON in `.leonardomd/project.json`; unknown schema versions are rejected. User preferences are stored separately in `~/Library/Application Support/LeonardoMD/preferences.json`.
+
+Custom palette colors can be edited and imported/exported as JSON. The app validates reading contrast before applying them. Main-window and sheet controls share palette colors and tactile hover/pressed states.
+
+## Optional Git
+
+Enable Git tools in the project's preferences. The app can detect or initialize a repository, show changes and ahead/behind state, stage selected files, commit, view history and run manual fetch/pull/push. It uses `/usr/bin/git` and your existing system credentials. Pull uses fast-forward only, protects dirty worktrees and reports conflicts; it does not silently resolve them.
+
+## Development
+
+```sh
+swift test
+```
+
+The package separates `LeonardoCore` (files/configuration/Git), `LeonardoRender` (WebKit and bundled engines) and `LeonardoApp` (macOS shell). The sample project in `Examples/Proyecto` exercises relative links, local images, diagrams, code, tables, metadata, tasks and mathematics.
+
+Product stories are in [doc/US](doc/US). The two presentation modes and opt-in engine policy are specified in [US.000016](doc/US/us.000016.md) and [ADR 0001](doc/adr/0001-native-macos-and-lazy-extensions.md). Delivery is tracked by [issue #1](https://github.com/PinedaTec-EU/LeonardoMD/issues/1).
+
+The generated app is signed locally for development. Public distribution, notarization and other platform UIs require their own release workflow.
+
+The application icon uses the approved Leonardo Classic folded-L artwork. Its original PNG and multi-resolution macOS ICNS are stored in `assets/AppIcon`; the packaging script includes the ICNS in the signed bundle for Finder and the Dock.

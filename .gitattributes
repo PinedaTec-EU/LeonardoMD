@@ -1,0 +1,4 @@
+# Preserve upstream vendored bytes and their recorded SHA-256 hashes.
+Sources/LeonardoRender/Resources/*.min.js linguist-vendored=true -whitespace
+Sources/LeonardoRender/Resources/marked.umd.js linguist-vendored=true -whitespace
+Sources/LeonardoRender/Resources/licenses/*.txt -whitespace

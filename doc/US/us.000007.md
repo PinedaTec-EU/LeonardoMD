@@ -35,7 +35,7 @@ Como usuario quiero configurar paletas de color globales o por proyecto para ada
 
 | Nombre | Intención | Colores clave |
 | --- | --- | --- |
-| Leonardo Classic | Pergamino, tinta negra, titulares rojo sangre, acento óxido | `#E7D6AD`, `#11100D`, `#7A1114`, `#A24F2A` |
+| Leonardo Classic | Pergamino, tinta negra, titulares rojo sangre, acento óxido | `#E7D6AD`, `#11100D`, `#7A1114`, `#8C3F22` |
 | Paper White | Hoja blanca limpia | `#F8F8F5`, `#171717`, `#2B5C8A` |
 | Graphite Glass | macOS moderno oscuro | `#1F2328`, `#F2F5F7`, `#6AA6B8` |
 
@@ -55,4 +55,3 @@ flowchart TD
 - Definir tokens semánticos, no colores directos: `surface`, `text`, `heading`, `accent`, `border`, `codeBackground`.
 - Las paletas deben funcionar tanto en UI como en exportaciones futuras.
 - Validar contraste para texto normal y encabezados.
-

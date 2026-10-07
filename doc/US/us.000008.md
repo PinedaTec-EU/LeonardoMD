@@ -29,7 +29,7 @@ Como usuario quiero una paleta antigua inspirada en Leonardo da Vinci y la lámi
 | `paper` | `#E7D6AD` | Fondo de hoja |
 | `ink` | `#11100D` | Texto principal |
 | `bloodRed` | `#7A1114` | H1, H2, alertas editoriales |
-| `oxide` | `#A24F2A` | Links, acentos y selección |
+| `oxide` | `#8C3F22` | Links, acentos y selección |
 | `agedLine` | `#9C8052` | Líneas, tablas y separadores |
 | `shadow` | `#3A2D1D` | Sombras suaves |
 

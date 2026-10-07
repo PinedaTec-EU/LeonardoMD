@@ -1,0 +1,17 @@
+{
+  "name": "leonardomd-offline-render-vendor",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "mermaid": "11.16.1",
+    "dompurify": "3.4.16",
+    "katex": "0.18.2"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  },
+  "overrides": {
+    "dompurify": "3.4.16",
+    "katex": "0.18.2"
+  }
+}

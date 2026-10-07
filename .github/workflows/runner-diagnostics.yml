@@ -1,0 +1,22 @@
+name: Runner availability
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/runner-diagnostics.yml
+permissions: {}
+jobs:
+  availability:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 2
+    steps:
+      - name: Confirm runner allocation
+        shell: bash
+        run: |
+          echo "Runner OS: $RUNNER_OS"
+          echo "Runner architecture: $RUNNER_ARCH"
+          uname -s
