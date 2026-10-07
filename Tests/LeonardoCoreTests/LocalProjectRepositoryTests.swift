@@ -3,6 +3,42 @@ import XCTest
 @testable import LeonardoCore
 
 final class LocalProjectRepositoryTests: XCTestCase {
+    func testProjectThroughTmpAliasEnumeratesAndMutatesCanonicalChildren() async throws {
+        let root = URL(fileURLWithPath: "/tmp").appendingPathComponent("leonardo-alias-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let repository = LocalProjectRepository()
+        let project = try await repository.project(at: root)
+        let folder = try await repository.createFolder(named: "docs", in: project)
+        let document = try await repository.createMarkdown(named: "note", in: project, at: "docs", contents: "alias token")
+        let panelRoot = try XCTUnwrap(URL(string: "file:///private" + root.path + "/"))
+        let children = try await repository.children(of: panelRoot, in: panelRoot)
+        XCTAssertEqual(children.map(\.relativePath), ["docs"])
+        let nested = try await repository.children(of: panelRoot.appendingPathComponent("docs"), in: root)
+        XCTAssertEqual(nested.map(\.relativePath), ["docs/note.md"])
+        let alias = root.appendingPathComponent("alias")
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: folder.url)
+        let traversals = [
+            "alias/../docs/",
+            "alias/../../" + root.lastPathComponent + "/docs/"
+        ]
+        for traversal in traversals {
+            let aliasTraversal = try XCTUnwrap(URL(string: panelRoot.absoluteString + traversal))
+            do {
+                _ = try await repository.children(of: aliasTraversal, in: panelRoot)
+                XCTFail("Normalization must not hide a symlink component")
+            } catch let error as FileSystemRepositoryError {
+                XCTAssertEqual(error, .pathEscapesProject)
+            }
+        }
+        let matches = try await repository.search(in: project, query: "token")
+        XCTAssertEqual(matches.map(\.relativePath), ["docs/note.md"])
+        let renamed = try await repository.rename(document.relativePath, in: project, to: "renamed.md")
+        XCTAssertEqual(renamed.relativePath, "docs/renamed.md")
+        try await repository.delete(renamed.relativePath, in: project)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: renamed.url.path))
+    }
+
     func testChildrenOmitSymlinkEntriesAndRejectSymlinkDirectories() async throws {
         let directory = try TemporaryDirectory()
         let repository = LocalProjectRepository()

@@ -493,14 +493,19 @@ public actor LocalProjectRepository {
 
     private func resolve(_ url: URL, under root: URL) throws -> URL {
         let root = root.standardizedFileURL
-        let candidate = url
-        let rootPath = root.path
-        guard candidate.path == rootPath || candidate.path.hasPrefix(rootPath + "/") else {
-            throw FileSystemRepositoryError.pathEscapesProject
+        // Match the root using Foundation's system-path normalization, while
+        // preserving child components for the symlink-aware relative resolver.
+        var ancestor = url
+        while ancestor.standardizedFileURL.path != root.path
+            || ancestor.pathComponents.contains("..") || ancestor.pathComponents.contains(".") {
+            guard ancestor.path != "/", !ancestor.path.isEmpty else {
+                throw FileSystemRepositoryError.pathEscapesProject
+            }
+            ancestor = URL(fileURLWithPath: (ancestor.path as NSString).deletingLastPathComponent)
         }
-        let relative = candidate.path == rootPath
+        let relative = url.path == ancestor.path
             ? ""
-            : String(candidate.path.dropFirst(rootPath.count + 1))
+            : String(url.path.dropFirst(ancestor.path.count + 1))
         return try resolve(relative, under: root)
     }
 
