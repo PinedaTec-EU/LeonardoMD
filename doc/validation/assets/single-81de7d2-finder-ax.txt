@@ -1,0 +1,48 @@
+Window: "finder.md", App: SingleFinalQA.
+0 standard window finder.md, URL: file:///private/tmp/leonardo-chain-qa/single-fixtures/finder.md, Secondary Actions: Raise
+	1 container
+		2 scroll area
+			3 button Description: Nueva pestaña, Help: Abre un documento o proyecto en esta pestaña
+			4 button Description: Cerrar pestaña Nueva pestaña, Help: Abre un documento o proyecto en esta pestaña, ID: xmark
+			5 button Description: two.md, Help: /tmp/leonardo-chain-qa/single-fixtures/two.md
+			6 button Description: Cerrar pestaña two.md, Help: /tmp/leonardo-chain-qa/single-fixtures/two.md, ID: xmark
+			7 button Description: three.md, Help: /tmp/leonardo-chain-qa/single-fixtures/three.md
+			8 button Description: Cerrar pestaña three.md, Help: /tmp/leonardo-chain-qa/single-fixtures/three.md, ID: xmark
+			9 button Description: one.md, Help: /tmp/leonardo-chain-qa/single-fixtures/one.md
+			10 button Description: Cerrar pestaña one.md, Help: /tmp/leonardo-chain-qa/single-fixtures/one.md, ID: xmark
+			11 button Description: four.md, Help: /tmp/leonardo-chain-qa/single-fixtures/four.md
+			12 button Description: Cerrar pestaña four.md, Help: /tmp/leonardo-chain-qa/single-fixtures/four.md, ID: xmark
+			13 button (selected) Description: finder.md, Help: /private/tmp/leonardo-chain-qa/single-fixtures/finder.md
+			14 button Description: Cerrar pestaña finder.md, Help: /private/tmp/leonardo-chain-qa/single-fixtures/finder.md, ID: xmark
+		15 button Description: Nueva pestaña, Help: Nueva pestaña (⌘T), ID: new-document-tab
+		16 menu button Move
+		17 text finder.md Visor de documento
+		18 container Description: Modo, ID: document-mode
+			19 button (selected) Lectura
+			20 button Edición
+			21 button Dividida
+		22 button Description: Enter Full Screen, Help: Modo foco, ID: focus-mode
+		23 button Description: Share, Help: Exportar PDF, ID: square.and.arrow.up
+		24 button Description: Extensiones, ID: extensions-button
+		25 scroll area
+			26 HTML content leonardo-document://local/single-fixtures/
+				27 container
+					28 heading finder, Value: 1
+						29 text finder
+					30 text Synthetic single-instance validation.
+		31 text Guardado · archivo local
+		32 image (selected) Description: Selected, ID: checkmark.circle
+		33 text Documento individual Markdown · UTF-8 5 palabras
+	34 close button
+	35 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	36 minimize button
+	37 image finder.md
+	38 text finder.md
+39 menu bar
+	40 SingleFinalQA
+	41 Archivo
+	42 Edición
+	43 Vista
+	44 Ventana
+
+The focused UI element is 0 standard window finder.md, URL: file:///private/tmp/leonardo-chain-qa/single-fixtures/finder.md, Secondary Actions: Raise
