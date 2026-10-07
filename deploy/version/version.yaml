@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "initial_version": "0.1.56",
+  "segments": [
+    "major",
+    "minor",
+    "patch"
+  ],
+  "current_version": "0.1.56",
+  "applied": []
+}

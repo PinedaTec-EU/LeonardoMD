@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "version": {
+    "initial_version": "0.1.56",
+    "segments": [
+      "major",
+      "minor",
+      "patch"
+    ],
+    "state_path": "deploy/version/version.yaml",
+    "entries_path": "deploy/version/entries",
+    "version_output_path": "version.nfo",
+    "manifest_outputs": [],
+    "entry_policy": {
+      "versioned_paths": [
+        "Sources/**",
+        "Tests/**",
+        "Package.swift",
+        "Package.resolved",
+        "assets/**",
+        "scripts/**",
+        "launch.sh",
+        ".github/workflows/**",
+        "deploy/version/release-ledger.json"
+      ],
+      "materialization_paths": [],
+      "bootstrap_paths": [
+        ".skills/index.md",
+        ".skills/release-version-ledger/SKILL.md",
+        ".skills/shared-skills-bootstrap/SKILL.md",
+        ".skills/release-cleanup/SKILL.md",
+        ".skills/deployment-target-validation/SKILL.md",
+        "doc/release-version-ledger.md",
+        ".wiki/current-state.md",
+        ".wiki/log.md",
+        ".wiki/open-questions.md",
+        "README.md",
+        ".skills/owner-pr-review/SKILL.md"
+      ],
+      "require_issue_title": true
+    }
+  },
+  "release_notes": {
+    "path": "deploy/release-notes.md",
+    "grouping_segments": 2,
+    "require_applied_version": true,
+    "evidence": {
+      "kind": "github_release",
+      "repository": "PinedaTec-EU/LeonardoMD",
+      "tag_pattern": "v{version}",
+      "allow_prerelease": false
+    }
+  }
+}
