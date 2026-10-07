@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -86,6 +87,22 @@ class ReleaseLedgerTests(unittest.TestCase):
         self.assertIn("changed=false", result.stdout)
         self.assertEqual((self.root / "version.nfo").read_text().strip(), "0.1.57")
         self.assertFalse((self.root / "deploy/release-notes.md").exists())
+
+    def test_recorded_entry_is_accepted_without_lock_artifacts(self):
+        binary = self.root / ".build/swift"
+        binary.parent.mkdir()
+        binary.write_text("#!/bin/sh\nexit 0\n")
+        binary.chmod(0o755)
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/compile-and-record.py"),
+             "--root", str(self.root), "--pr-number", "101", "--", str(binary), "build"],
+            text=True, capture_output=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        result = self.engine("validate")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(list((self.root / "deploy/version/entries").iterdir()),
+                         [self.root / "deploy/version/entries/101.yaml"])
 
     def test_legacy_patch_delta_is_rejected(self):
         result = self.validate_source(self.source_change(delta={"patch": 1}))
