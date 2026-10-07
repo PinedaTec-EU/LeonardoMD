@@ -26,14 +26,14 @@ struct ProjectSidebar: View {
                     .help("Abrir otro proyecto")
             }
             TextField("Buscar archivos y contenido", text: $session.searchQuery)
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(PremiumTextFieldStyle(compact: true))
                 .accessibilityIdentifier("project-search")
                 .onChange(of: session.searchQuery) { _, _ in session.scheduleSearch() }
             HStack {
                 Button { session.createItem(directory: false) } label: { Label("Nota", systemImage: "doc.badge.plus") }
                 Button { session.createItem(directory: true) } label: { Image(systemName: "folder.badge.plus") }
                 Spacer()
-                Toggle("Ocultos", isOn: $session.showHidden).toggleStyle(.checkbox).font(.caption)
+                Toggle("Ocultos", isOn: $session.showHidden).toggleStyle(PremiumSwitchStyle()).fixedSize().font(.caption)
             }
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 2) {

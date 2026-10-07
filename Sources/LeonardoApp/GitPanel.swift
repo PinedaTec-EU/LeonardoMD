@@ -29,6 +29,7 @@ struct GitPanel: View {
                 Text("Cambios").font(.headline)
                 List(session.gitStatus?.changes ?? []) { change in
                     HStack {
+                        // Batch selection for a later staging action, rather than a boolean setting.
                         Toggle(isOn: Binding(get: { selected.contains(change.path) }, set: { value in
                             if value { selected.insert(change.path) } else { selected.remove(change.path) }
                         })) { Text(change.path) }.toggleStyle(.checkbox)
@@ -53,6 +54,7 @@ struct GitPanel: View {
                 }
                 HStack {
                     TextField("Mensaje del commit", text: $message)
+                        .textFieldStyle(PremiumTextFieldStyle(compact: true))
                     Button("Commit") { session.performGit(.commit(message)); message = "" }.disabled(message.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
                 Divider()
