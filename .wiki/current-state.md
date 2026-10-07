@@ -13,3 +13,5 @@ Do not use the image-generated concept as validation evidence. Real application 
 Shared skill discovery uses `AGENTS.md` and the generated `.skills/index.md`, with nine thin adapters to the sibling `ai-skills-shared` canonical source. Projection validated and idempotent against clean integrated shared source `fa144ff6a87f8bc946e1e3832dd2783aea292e22`. Tracking: [#11](https://github.com/PinedaTec-EU/LeonardoMD/issues/11).
 
 Document mode and preferences scope use `PremiumSelection` with the shared button surface. `PremiumSwitchStyle` follows `leonardoAccent` for active states, including extensions and preferences. Tracking: [#4](https://github.com/PinedaTec-EU/LeonardoMD/issues/4).
+
+Workspace project rename/delete updates documents by descendant path even in standalone viewer mode; similarly named sibling paths are preserved. Regression tracking: [#14](https://github.com/PinedaTec-EU/LeonardoMD/issues/14).

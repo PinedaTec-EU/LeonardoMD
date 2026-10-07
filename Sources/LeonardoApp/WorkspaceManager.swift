@@ -78,22 +78,25 @@ extension AppSession {
         }
     }
     func renameProject(_ project: ProjectDescriptor) {
-        guard let workspace = workspaceURL, let name = prompt(title: "Renombrar proyecto", initial: project.name) else { return }
-        Task {
-            guard await prepareNavigation() else { return }
-            do {
-                let renamed = try await files.renameProject(project, to: name, in: workspace)
-                if projectURL == project.rootURL {
-                    projectURL = renamed.rootURL
-                    git = GitRepository(rootURL: renamed.rootURL)
-                    if documentURL != nil { await updateMovedDocument(from: project.rootURL, to: renamed.rootURL) }
-                    await refreshTree()
-                }
-                globalPreferences.recentProjectPaths = globalPreferences.recentProjectPaths.map { $0 == project.rootURL ? renamed.rootURL : $0 }
-                persistSettings()
-                await refreshWorkspace()
-            } catch { report(error) }
-        }
+        guard let name = prompt(title: "Renombrar proyecto", initial: project.name) else { return }
+        Task { await renameProject(project, to: name) }
+    }
+    func renameProject(_ project: ProjectDescriptor, to name: String) async {
+        guard let workspace = workspaceURL, await prepareNavigation() else { return }
+        do {
+            let renamed = try await files.renameProject(project, to: name, in: workspace)
+            if projectURL == project.rootURL {
+                projectURL = renamed.rootURL
+                git = GitRepository(rootURL: renamed.rootURL)
+                resetSearch()
+            }
+            await updateMovedDocument(from: project.rootURL, to: renamed.rootURL)
+            await refreshTree()
+            globalPreferences.recentProjectPaths = globalPreferences.recentProjectPaths.map { $0 == project.rootURL ? renamed.rootURL : $0 }
+            persistSettings()
+            updateTitle()
+            await refreshWorkspace()
+        } catch { report(error) }
     }
     func deleteProject(_ project: ProjectDescriptor) {
         let alert = NSAlert()
@@ -102,17 +105,35 @@ extension AppSession {
         alert.addButton(withTitle: "Cancelar")
         alert.addButton(withTitle: "Eliminar")
         guard alert.runModal() == .alertSecondButtonReturn else { return }
-        Task {
-            guard await prepareNavigation() else { return }
-            do {
-                try await files.deleteProject(project)
-                if projectURL == project.rootURL {
-                    projectURL = nil; documentURL = nil; snapshot = nil; content = ""; rootEntries = []; updateTitle()
-                }
-                globalPreferences.recentProjectPaths.removeAll { $0 == project.rootURL }
-                persistSettings()
-                await refreshWorkspace()
-            } catch { report(error) }
-        }
+        Task { await deleteConfirmedProject(project) }
+    }
+    func deleteConfirmedProject(_ project: ProjectDescriptor) async {
+        guard await prepareNavigation() else { return }
+        do {
+            try await files.deleteProject(project)
+            if projectURL == project.rootURL {
+                projectURL = nil
+                git = nil
+                projectConfiguration = .default
+                projectBaseline = .default
+                rootEntries = []
+                focus = false
+                resetSearch()
+            }
+            if let current = documentURL,
+               current == project.rootURL || current.path.hasPrefix(project.rootURL.path + "/") {
+                documentURL = nil
+                snapshot = nil
+                content = ""
+                requestedLine = nil
+                editorScroll = 0
+                externalConflict = false
+                saveStatus = "Archivo local"
+            }
+            updateTitle()
+            globalPreferences.recentProjectPaths.removeAll { $0 == project.rootURL }
+            persistSettings()
+            await refreshWorkspace()
+        } catch { report(error) }
     }
 }

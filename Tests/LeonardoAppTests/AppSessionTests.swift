@@ -137,4 +137,64 @@ final class AppSessionTests: XCTestCase {
         XCTAssertEqual(session.headings.map(\.title), ["Title", "Section"])
         XCTAssertEqual(session.headings.map(\.line), [1, 6])
     }
+    func testWorkspaceRenameRemapsStandaloneDocumentAndPreservesDraftAndMode() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let project = try await session.files.createProject(named: "Project", in: root)
+        let document = project.rootURL.appendingPathComponent("note.md")
+        try "original".write(to: document, atomically: true, encoding: .utf8)
+        await session.open(document)
+        session.workspaceURL = root
+        session.mode = .split
+        session.content = "saved draft"
+        session.contentChanged()
+        await session.renameProject(project, to: "Renamed")
+        let moved = root.appendingPathComponent("Renamed/note.md")
+        XCTAssertEqual(session.documentURL, moved)
+        XCTAssertEqual(session.snapshot?.url, moved)
+        XCTAssertNil(session.projectURL)
+        XCTAssertEqual(session.mode, .split)
+        XCTAssertEqual(session.content, "saved draft")
+        session.content = "after rename"
+        await session.save()
+        XCTAssertEqual(try String(contentsOf: moved, encoding: .utf8), "after rename")
+        XCTAssertNil(session.errorMessage)
+    }
+
+    func testWorkspaceDeleteClearsStandaloneDescendantDocument() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let project = try await session.files.createProject(named: "Project", in: root)
+        let document = project.rootURL.appendingPathComponent("note.md")
+        try "original".write(to: document, atomically: true, encoding: .utf8)
+        await session.open(document)
+        session.workspaceURL = root
+        await session.deleteConfirmedProject(project)
+        XCTAssertNil(session.documentURL)
+        XCTAssertNil(session.snapshot)
+        XCTAssertNil(session.projectURL)
+        XCTAssertTrue(session.content.isEmpty)
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: document.path))
+        await session.checkExternalChanges()
+        XCTAssertNil(session.errorMessage)
+    }
+
+    func testWorkspaceChangesPreserveStandaloneDocumentInSimilarlyNamedSibling() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let project = try await session.files.createProject(named: "Project", in: root)
+        let sibling = try await session.files.createProject(named: "ProjectSibling", in: root)
+        let document = sibling.rootURL.appendingPathComponent("note.md")
+        try "unrelated".write(to: document, atomically: true, encoding: .utf8)
+        await session.open(document)
+        session.workspaceURL = root
+        await session.renameProject(project, to: "Renamed")
+        await session.deleteConfirmedProject(ProjectDescriptor(name: "Renamed", rootURL: root.appendingPathComponent("Renamed")))
+        XCTAssertEqual(session.documentURL, document)
+        XCTAssertEqual(session.content, "unrelated")
+        XCTAssertNil(session.projectURL)
+        XCTAssertNil(session.errorMessage)
+    }
+
 }
