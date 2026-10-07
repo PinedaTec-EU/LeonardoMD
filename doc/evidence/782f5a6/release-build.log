@@ -1,0 +1,12 @@
+Building for production...
+[3 / 18]
+[5 / 20] LeonardoCore
+[8 / 22] LeonardoRender
+[11 / 18] LeonardoCore
+[14 / 15] LeonardoMD-product
+[15 / 16] LeonardoMD-product
+[18 / 20] LeonardoMD-product
+[19 / 20] LeonardoMD-product
+Build complete! (7,12 sec)
+/Volumes/MSM4Ext/XcodeData/Projects/PinedaTec.eu/LeonardoMD/.worktrees/macos-mvp/output/LeonardoMD.app: replacing existing signature
+/Volumes/MSM4Ext/XcodeData/Projects/PinedaTec.eu/LeonardoMD/.worktrees/macos-mvp/output/LeonardoMD.app

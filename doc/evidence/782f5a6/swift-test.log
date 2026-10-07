@@ -1,0 +1,157 @@
+Building for debugging...
+[Using on-disk description]
+[5 / 43] LeonardoCore
+[10 / 46] LeonardoCore
+[16 / 28] LeonardoMD-product
+[21 / 33] LeonardoApp
+[30 / 39] LeonardoMD-product
+[33 / 38] LeonardoAppTests-product
+[38 / 39] LeonardoAppTests-product
+Build complete! (2,25 sec)
+Test Suite 'All tests' started at 2026-10-07 13:29:30.359.
+Test Suite 'All tests' passed at 2026-10-07 13:29:30.364.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.005) seconds
+Test Suite 'All tests' started at 2026-10-07 13:29:30.444.
+Test Suite 'LeonardoIntegrationTests.xctest' started at 2026-10-07 13:29:30.449.
+Test Suite 'WebKitRuntimeTests' started at 2026-10-07 13:29:30.449.
+Test Case '-[LeonardoIntegrationTests.WebKitRuntimeTests testDisabledEnginesSanitizationAndIncrementalDocumentUpdate]' started.
+Test Case '-[LeonardoIntegrationTests.WebKitRuntimeTests testDisabledEnginesSanitizationAndIncrementalDocumentUpdate]' passed (0.532 seconds).
+Test Case '-[LeonardoIntegrationTests.WebKitRuntimeTests testMermaidLabelsMathAndEngineContextReplacement]' started.
+Test Case '-[LeonardoIntegrationTests.WebKitRuntimeTests testMermaidLabelsMathAndEngineContextReplacement]' passed (0.393 seconds).
+Test Case '-[LeonardoIntegrationTests.WebKitRuntimeTests testParentRelativeLocalImageLoadsAndNonImagesAreDenied]' started.
+Test Case '-[LeonardoIntegrationTests.WebKitRuntimeTests testParentRelativeLocalImageLoadsAndNonImagesAreDenied]' passed (0.197 seconds).
+Test Suite 'WebKitRuntimeTests' passed at 2026-10-07 13:29:31.572.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 1.122 (1.122) seconds
+Test Suite 'LeonardoIntegrationTests.xctest' passed at 2026-10-07 13:29:31.572.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 1.122 (1.122) seconds
+Test Suite 'All tests' passed at 2026-10-07 13:29:31.572.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 1.122 (1.127) seconds
+Test Suite 'All tests' started at 2026-10-07 13:29:31.652.
+Test Suite 'LeonardoCoreTests.xctest' started at 2026-10-07 13:29:31.657.
+Test Suite 'ConfigurationStoreTests' started at 2026-10-07 13:29:31.657.
+Test Case '-[LeonardoCoreTests.ConfigurationStoreTests testGlobalMergePreservesIndependentStaleWindowChanges]' started.
+Test Case '-[LeonardoCoreTests.ConfigurationStoreTests testGlobalMergePreservesIndependentStaleWindowChanges]' passed (0.006 seconds).
+Test Case '-[LeonardoCoreTests.ConfigurationStoreTests testProjectConfigurationRoundTripsAndIgnoresUnknownFields]' started.
+Test Case '-[LeonardoCoreTests.ConfigurationStoreTests testProjectConfigurationRoundTripsAndIgnoresUnknownFields]' passed (0.002 seconds).
+Test Case '-[LeonardoCoreTests.ConfigurationStoreTests testProjectMergePreservesIndependentGitAndMarkdownChanges]' started.
+Test Case '-[LeonardoCoreTests.ConfigurationStoreTests testProjectMergePreservesIndependentGitAndMarkdownChanges]' passed (0.002 seconds).
+Test Case '-[LeonardoCoreTests.ConfigurationStoreTests testStoryShapeDefaultsOptionalMarkdownFeatureFlags]' started.
+Test Case '-[LeonardoCoreTests.ConfigurationStoreTests testStoryShapeDefaultsOptionalMarkdownFeatureFlags]' passed (0.000 seconds).
+Test Case '-[LeonardoCoreTests.ConfigurationStoreTests testUnsupportedSchemaVersionIsRejected]' started.
+Test Case '-[LeonardoCoreTests.ConfigurationStoreTests testUnsupportedSchemaVersionIsRejected]' passed (0.001 seconds).
+Test Suite 'ConfigurationStoreTests' passed at 2026-10-07 13:29:31.668.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.011 (0.011) seconds
+Test Suite 'CoreTypesTests' started at 2026-10-07 13:29:31.669.
+Test Case '-[LeonardoCoreTests.CoreTypesTests testCustomTokenOverridesLayerOnInheritedPalette]' started.
+Test Case '-[LeonardoCoreTests.CoreTypesTests testCustomTokenOverridesLayerOnInheritedPalette]' passed (0.000 seconds).
+Test Case '-[LeonardoCoreTests.CoreTypesTests testPaletteCatalogMeetsWCAGMinimums]' started.
+Test Case '-[LeonardoCoreTests.CoreTypesTests testPaletteCatalogMeetsWCAGMinimums]' passed (0.000 seconds).
+Test Case '-[LeonardoCoreTests.CoreTypesTests testProjectSettingsInheritGlobalValues]' started.
+Test Case '-[LeonardoCoreTests.CoreTypesTests testProjectSettingsInheritGlobalValues]' passed (0.000 seconds).
+Test Case '-[LeonardoCoreTests.CoreTypesTests testProjectSettingsOverrideOnlySelectedGlobalValues]' started.
+Test Case '-[LeonardoCoreTests.CoreTypesTests testProjectSettingsOverrideOnlySelectedGlobalValues]' passed (0.000 seconds).
+Test Suite 'CoreTypesTests' passed at 2026-10-07 13:29:31.669.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
+Test Suite 'DocumentStoreTests' started at 2026-10-07 13:29:31.669.
+Test Case '-[LeonardoCoreTests.DocumentStoreTests testSaveDetectsExternalChanges]' started.
+Test Case '-[LeonardoCoreTests.DocumentStoreTests testSaveDetectsExternalChanges]' passed (0.002 seconds).
+Test Suite 'DocumentStoreTests' passed at 2026-10-07 13:29:31.671.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'GitRepositoryTests' started at 2026-10-07 13:29:31.671.
+Test Case '-[LeonardoCoreTests.GitRepositoryTests testGitRunnerDrainsLargeOutputWithoutDeadlock]' started.
+Test Case '-[LeonardoCoreTests.GitRepositoryTests testGitRunnerDrainsLargeOutputWithoutDeadlock]' passed (0.224 seconds).
+Test Case '-[LeonardoCoreTests.GitRepositoryTests testLocalBareRemoteTracksAheadBehindAcrossFetchPullAndPush]' started.
+Test Case '-[LeonardoCoreTests.GitRepositoryTests testLocalBareRemoteTracksAheadBehindAcrossFetchPullAndPush]' passed (0.520 seconds).
+Test Case '-[LeonardoCoreTests.GitRepositoryTests testPullRefusesDirtyWorktreeAndPathsAreValidated]' started.
+Test Case '-[LeonardoCoreTests.GitRepositoryTests testPullRefusesDirtyWorktreeAndPathsAreValidated]' passed (0.098 seconds).
+Test Case '-[LeonardoCoreTests.GitRepositoryTests testStatusPreservesDashUnicodeAndNewlinePaths]' started.
+Test Case '-[LeonardoCoreTests.GitRepositoryTests testStatusPreservesDashUnicodeAndNewlinePaths]' passed (0.111 seconds).
+Test Case '-[LeonardoCoreTests.GitRepositoryTests testStatusReportsConflictedFiles]' started.
+Test Case '-[LeonardoCoreTests.GitRepositoryTests testStatusReportsConflictedFiles]' passed (0.187 seconds).
+Test Case '-[LeonardoCoreTests.GitRepositoryTests testStatusStageCommitAndHistory]' started.
+Test Case '-[LeonardoCoreTests.GitRepositoryTests testStatusStageCommitAndHistory]' passed (0.148 seconds).
+Test Suite 'GitRepositoryTests' passed at 2026-10-07 13:29:32.961.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 1.289 (1.290) seconds
+Test Suite 'LocalProjectRepositoryTests' started at 2026-10-07 13:29:32.961.
+Test Case '-[LeonardoCoreTests.LocalProjectRepositoryTests testPathSafetyRejectsEscapeAndDescendantMoves]' started.
+Test Case '-[LeonardoCoreTests.LocalProjectRepositoryTests testPathSafetyRejectsEscapeAndDescendantMoves]' passed (0.002 seconds).
+Test Case '-[LeonardoCoreTests.LocalProjectRepositoryTests testProjectRenameMoveAndDeleteOperateOnWorkspaceFolders]' started.
+Test Case '-[LeonardoCoreTests.LocalProjectRepositoryTests testProjectRenameMoveAndDeleteOperateOnWorkspaceFolders]' passed (0.002 seconds).
+Test Case '-[LeonardoCoreTests.LocalProjectRepositoryTests testProjectTreeOperationsAndSearch]' started.
+Test Case '-[LeonardoCoreTests.LocalProjectRepositoryTests testProjectTreeOperationsAndSearch]' passed (0.004 seconds).
+Test Case '-[LeonardoCoreTests.LocalProjectRepositoryTests testSearchStreamCancellationStopsConsumerAndProducer]' started.
+Test Case '-[LeonardoCoreTests.LocalProjectRepositoryTests testSearchStreamCancellationStopsConsumerAndProducer]' passed (0.211 seconds).
+Test Case '-[LeonardoCoreTests.LocalProjectRepositoryTests testSearchStreamYieldsPartialBatchesAndIgnoresGit]' started.
+Test Case '-[LeonardoCoreTests.LocalProjectRepositoryTests testSearchStreamYieldsPartialBatchesAndIgnoresGit]' passed (0.003 seconds).
+Test Suite 'LocalProjectRepositoryTests' passed at 2026-10-07 13:29:33.184.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.222 (0.222) seconds
+Test Suite 'LeonardoCoreTests.xctest' passed at 2026-10-07 13:29:33.184.
+	 Executed 21 tests, with 0 failures (0 unexpected) in 1.525 (1.526) seconds
+Test Suite 'All tests' passed at 2026-10-07 13:29:33.184.
+	 Executed 21 tests, with 0 failures (0 unexpected) in 1.525 (1.531) seconds
+Test Suite 'All tests' started at 2026-10-07 13:29:33.314.
+Test Suite 'LeonardoAppTests.xctest' started at 2026-10-07 13:29:33.320.
+Test Suite 'AppSessionTests' started at 2026-10-07 13:29:33.320.
+Test Case '-[LeonardoAppTests.AppSessionTests testExternalConflictRetainsDraftAndBlocksNavigation]' started.
+Test Case '-[LeonardoAppTests.AppSessionTests testExternalConflictRetainsDraftAndBlocksNavigation]' passed (0.005 seconds).
+Test Case '-[LeonardoAppTests.AppSessionTests testGitOperationPreventsDocumentContextSwitch]' started.
+Test Case '-[LeonardoAppTests.AppSessionTests testGitOperationPreventsDocumentContextSwitch]' passed (0.002 seconds).
+Test Case '-[LeonardoAppTests.AppSessionTests testNavigationSavesDraftBeforeSwitchingDocument]' started.
+Test Case '-[LeonardoAppTests.AppSessionTests testNavigationSavesDraftBeforeSwitchingDocument]' passed (0.002 seconds).
+Test Case '-[LeonardoAppTests.AppSessionTests testOpeningStandaloneAfterProjectDetachesFolderAndUsesGlobalFeatures]' started.
+Test Case '-[LeonardoAppTests.AppSessionTests testOpeningStandaloneAfterProjectDetachesFolderAndUsesGlobalFeatures]' passed (0.002 seconds).
+Test Case '-[LeonardoAppTests.AppSessionTests testOutlineExcludesFencedSourceAndNonHeadings]' started.
+Test Case '-[LeonardoAppTests.AppSessionTests testOutlineExcludesFencedSourceAndNonHeadings]' passed (0.000 seconds).
+Test Case '-[LeonardoAppTests.AppSessionTests testProjectSwitchCancelsOldSearchAndClearsResults]' started.
+Test Case '-[LeonardoAppTests.AppSessionTests testProjectSwitchCancelsOldSearchAndClearsResults]' passed (0.002 seconds).
+Test Case '-[LeonardoAppTests.AppSessionTests testTwoWindowsCreatingFeatureOverridesPreserveIndependentToggles]' started.
+Test Case '-[LeonardoAppTests.AppSessionTests testTwoWindowsCreatingFeatureOverridesPreserveIndependentToggles]' passed (0.007 seconds).
+Test Case '-[LeonardoAppTests.AppSessionTests testTwoWindowsPreserveUnrelatedGlobalSettings]' started.
+Test Case '-[LeonardoAppTests.AppSessionTests testTwoWindowsPreserveUnrelatedGlobalSettings]' passed (0.001 seconds).
+Test Suite 'AppSessionTests' passed at 2026-10-07 13:29:33.342.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.021 (0.022) seconds
+Test Suite 'PresentationModeTests' started at 2026-10-07 13:29:33.342.
+Test Case '-[LeonardoAppTests.PresentationModeTests testFocusHidesPanelsAndRestoresRequestsWithoutLosingProject]' started.
+Test Case '-[LeonardoAppTests.PresentationModeTests testFocusHidesPanelsAndRestoresRequestsWithoutLosingProject]' passed (0.000 seconds).
+Test Case '-[LeonardoAppTests.PresentationModeTests testStandaloneViewerNeverShowsFolderEvenWhenInspectorRequested]' started.
+Test Case '-[LeonardoAppTests.PresentationModeTests testStandaloneViewerNeverShowsFolderEvenWhenInspectorRequested]' passed (0.000 seconds).
+Test Suite 'PresentationModeTests' passed at 2026-10-07 13:29:33.342.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'LeonardoAppTests.xctest' passed at 2026-10-07 13:29:33.342.
+	 Executed 10 tests, with 0 failures (0 unexpected) in 0.021 (0.022) seconds
+Test Suite 'All tests' passed at 2026-10-07 13:29:33.342.
+	 Executed 10 tests, with 0 failures (0 unexpected) in 0.021 (0.028) seconds
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite MarkdownRenderTests started.
+◇ Test enablingOneOptionalFeatureLoadsOnlyItsResources() started.
+◇ Test linksResolveRelativeFilesAndRejectExecutableSchemes() started.
+◇ Test bundledSourceMetadataIncludesPinnedHashesAndLicenseFiles() started.
+◇ Test optionalScriptsAreNotPartOfDisabledPreview() started.
+◇ Test filePreviewsUseTheConstrainedDocumentScheme() started.
+◇ Test payloadEscapesMarkupBeforeItEntersTheHTMLDocument() started.
+◇ Test frontMatterIsRemovedFromBodyAndRetainedAsMetadata() started.
+◇ Test unsafeAppearanceValuesAreRejectedBeforeCSSInjection() started.
+✔ Test linksResolveRelativeFilesAndRejectExecutableSchemes() passed after 0.001 seconds.
+✔ Test frontMatterIsRemovedFromBodyAndRetainedAsMetadata() passed after 0.001 seconds.
+✔ Test unsafeAppearanceValuesAreRejectedBeforeCSSInjection() passed after 0.001 seconds.
+✔ Test filePreviewsUseTheConstrainedDocumentScheme() passed after 0.001 seconds.
+✔ Test optionalScriptsAreNotPartOfDisabledPreview() passed after 0.001 seconds.
+✔ Test bundledSourceMetadataIncludesPinnedHashesAndLicenseFiles() passed after 0.002 seconds.
+✔ Test payloadEscapesMarkupBeforeItEntersTheHTMLDocument() passed after 0.005 seconds.
+✔ Test enablingOneOptionalFeatureLoadsOnlyItsResources() passed after 0.006 seconds.
+✔ Suite MarkdownRenderTests passed after 0.006 seconds.
+✔ Test run with 8 tests in 1 suite passed after 0.006 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
