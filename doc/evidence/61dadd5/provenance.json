@@ -1,0 +1,16 @@
+{
+  "sourceHead": "61dadd5290ffb69a7fdd47d1b17f51c5c3d17819",
+  "sourceTree": "c7f18043be6ab1f7b4d329743ecef3ac0d7f9dca",
+  "os": "27.0.1",
+  "architecture": "arm64",
+  "captures": {
+    "standalone.jpg": "097cb139bcfa50d4e3ce968fff6e41326d322b8014f19fe00f030edb59e33324",
+    "split.jpg": "c193b962ee2cb79b38777f1a0a5421decbb7f09d20f0e93ea91a4da440f5f8e9",
+    "mermaid.jpg": "ab1503a76f697610ef0c64ce4972d71bef7c0ccc0df3c1ebab2f35af8771e8aa",
+    "math-local-image.jpg": "528ebd1764e61ba07d8a16611fe4591e005df143fa5b50a3659d1a923a2e1aa8",
+    "focus.jpg": "02fc10c8875178315437cf412ad4a8e755afec3128aeca868190a34bf5e92fb7",
+    "engines-disabled.jpg": "d0602babb3a00f7719e9288020d54bfda89c34f17106bfc5b023d5cf73202757",
+    "preferences.jpg": "85c6746dc14f643464689620a7c8afd11619aab3c3d54f35da9779a108ab1adb"
+  },
+  "appBinarySHA256": "717b9145b6874b8f93ef5c15b75c77facdabde81cd5ce3af866e5d509f7dc748"
+}
