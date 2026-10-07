@@ -35,7 +35,9 @@ def compile_and_record(root: Path, pr: int, command: list[str]) -> int:
     if result.returncode:
         return result.returncode
     entry.parent.mkdir(parents=True, exist_ok=True)
-    with (entry.parent / ".compilation.lock").open("a") as lock:
+    lock_path = root / ".build/release-ledger-compilation.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         delta = read_delta(entry)
         delta["build"] = delta.get("build", 0) + 1
