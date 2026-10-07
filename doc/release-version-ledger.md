@@ -40,8 +40,12 @@ one build only after success, preserves existing release/feature deltas, and
 serializes atomic entry updates. Failed commands and metadata-only queries do
 not increment it. Setting `LEONARDO_SOURCE_PR=<PR>` when running
 `scripts/build-app.sh` records its one release build; its `--show-bin-path` query
-is excluded. Commit the updated entry before final validation. CI verifies the
-committed entry and does not write deltas or infer counts from jobs/retries.
+is excluded. Commit the updated entry before final validation. First adoption
+validates the committed delta externally against the pinned trusted engine;
+ordinary GitHub CI runs packaging/recorder tests and skips engine-backed tests
+without private engine access. After integration and engine access/check binding,
+the trusted policy job verifies each committed entry. CI does not write deltas
+or infer counts from jobs/retries.
 Main builds without a pending source PR do not allocate a source-PR delta.
 
 Use an English issue-linked title, e.g. `#38 Added: adopt release version ledger`.

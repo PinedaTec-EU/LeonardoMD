@@ -36,7 +36,9 @@
         ".wiki/open-questions.md",
         "README.md",
         ".skills/owner-pr-review/SKILL.md",
-        ".gitignore"
+        ".gitignore",
+        "doc/validation/about.md",
+        "doc/validation/document-tabs.md"
       ],
       "require_issue_title": true
     }
