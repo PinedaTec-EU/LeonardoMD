@@ -21,6 +21,8 @@ assets="$PWD/output/release-$LEONARDO_VERSION"
 export LEONARDO_DISTRIBUTION=1
 ./scripts/build-app.sh
 app="$PWD/output/LeonardoMD.app"
+tools="$PWD/.build/artifacts/sparkle/Sparkle/bin"
+python3 scripts/verify-update-signing-key.py "$app/Contents/Info.plist" "$tools/generate_keys" "${SPARKLE_KEY_ACCOUNT:-ed25519}"
 framework="$app/Contents/Frameworks/Sparkle.framework/Versions/B"
 # Re-sign nested executables with this app's Developer ID, preserving vendor entitlements.
 for component in "$framework/XPCServices/Downloader.xpc" "$framework/XPCServices/Installer.xpc" "$framework/Autoupdate" "$framework/Updater.app" "$app/Contents/Frameworks/Sparkle.framework" "$app"; do
@@ -41,7 +43,6 @@ mkdir -p "$assets"
 archive="$assets/LeonardoMD-$LEONARDO_VERSION.zip"
 ditto -c -k --sequesterRsrc --keepParent "$app" "$archive"
 # The private EdDSA key is read by Sparkle from the login Keychain.
-tools="$PWD/.build/artifacts/sparkle/Sparkle/bin"
 cp "$RELEASE_NOTES_FILE" "$assets/LeonardoMD-$LEONARDO_VERSION.md"
 ./scripts/generate-release-appcast.sh "$tools/generate_appcast" "$assets" "$channel" "$LEONARDO_VERSION" "${SPARKLE_KEY_ACCOUNT:-ed25519}"
 python3 scripts/verify-release-appcast.py "$assets/appcast.xml" "$channel"

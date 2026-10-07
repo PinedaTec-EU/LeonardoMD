@@ -5,7 +5,8 @@ import os
 import plistlib
 import re
 import sys
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
+import posixpath
 from pathlib import Path
 
 
@@ -23,10 +24,14 @@ def configure(path, environment):
         "https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/update-feeds/beta/appcast.xml" if channel == "beta"
         else "https://github.com/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml")
     parsed = urlparse(feed)
+    # Reject alternate URL spellings rather than relying on server/client normalization.
+    if (unquote(parsed.path) != parsed.path or posixpath.normpath(parsed.path) != parsed.path
+            or "\\" in feed or any(character.isspace() for character in feed)):
+        raise ValueError("Update feed must use a canonical, unescaped path")
     stable_feed = ("github.com", "/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml")
     beta_feed = ("raw.githubusercontent.com", "/PinedaTec-EU/LeonardoMD/update-feeds/beta/appcast.xml")
     forbidden_feed = stable_feed if channel == "beta" else beta_feed
-    if (parsed.hostname, parsed.path.rstrip("/")) == forbidden_feed:
+    if ((parsed.hostname or "").rstrip("."), parsed.path) == forbidden_feed:
         raise ValueError("Known release feed belongs to the opposite channel")
     if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.fragment:
         raise ValueError("Update feed must be an HTTPS URL without credentials or fragments")

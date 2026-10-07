@@ -27,3 +27,5 @@ Beta bundles use `https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/upda
 `LEONARDO_NOTARIZE=0` permits a **local beta candidate only** when a notarytool profile is unavailable. It remains Developer ID signed and Ed25519 signed; Gatekeeper/notarization acceptance is not claimed. Stable preparation always requires notarization. Preparation verifies archive bytes using Sparkle's `sign_update --verify` after generating the appcast. The scripts do not publish releases, feeds, or tags.
 
 PR #8 is integrated. The implementation is refreshed on current main in PR #17. Keep issue #15 open until the hosted update and relaunch acceptance above is complete.
+
+Release preparation compares the bundle public update key against the existing Keychain signing account before signing or generating release assets. Feed paths must use canonical unescaped URLs; encoded or dot-segment aliases are rejected before bundle metadata changes.

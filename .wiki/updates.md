@@ -7,3 +7,5 @@
 Appcast CLI arguments are constructed in `generate-release-appcast.sh` with a nonempty array for system Bash 3.2 compatibility; stable/beta and invalid-channel subprocess regressions cover [#44](https://github.com/PinedaTec-EU/LeonardoMD/issues/44).
 
 Stable appcasts must omit explicit channel tags; known stable/beta feed URLs cannot be assigned to the opposite bundle channel. Negative regressions track [#45](https://github.com/PinedaTec-EU/LeonardoMD/issues/45).
+
+Release preparation compares the bundle public update key against the existing Keychain signing account before signing or generating release assets. Feed paths must use canonical unescaped URLs; encoded or dot-segment aliases are rejected before bundle metadata changes.

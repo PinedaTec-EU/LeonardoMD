@@ -104,6 +104,42 @@ class UpdateMetadataTests(unittest.TestCase):
                                      "LEONARDO_FEED_URL": url})
                 self.assertEqual(path.read_bytes(), original)
 
+    def test_noncanonical_opposite_channel_urls_are_rejected(self):
+        configure = load("configure-update-bundle").configure
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "Info.plist"
+            original = (ROOT / "scripts/Info.plist").read_bytes()
+            for host, suffix in (("github.com", "releases/latest/download/appcast.xml"),
+                                 ("raw.githubusercontent.com", "update-feeds/beta/appcast.xml")):
+                channel = "beta" if host == "github.com" else "stable"
+                version = "1.2.3-beta.1" if channel == "beta" else "1.2.3"
+                for variant in (suffix.replace("appcast.xml", "appcast%2Exml"),
+                                suffix.replace("appcast.xml", "./appcast.xml"),
+                                suffix.replace("appcast.xml", "%252E/appcast.xml"),
+                                suffix):
+                    path.write_bytes(original)
+                    with self.assertRaises(ValueError):
+                        configure(path, {"LEONARDO_CHANNEL": channel, "LEONARDO_VERSION": version,
+                                         "LEONARDO_FEED_URL": f"https://{host}./PinedaTec-EU/LeonardoMD/{variant}"})
+                    self.assertEqual(path.read_bytes(), original)
+
+    def test_signing_account_must_match_embedded_key(self):
+        verify = load("verify-update-signing-key").verify
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "Info.plist"
+            tool = Path(directory) / "generate_keys"
+            key = base64.b64encode(bytes(32)).decode()
+            tool.write_text('#!/bin/bash\n[ "$1" = --account ] && [ "$2" = fixture ] && [ "$3" = -p ] || exit 2\nprintf "%s\\n" "' + key + '"\n')
+            tool.chmod(0o755)
+            path.write_bytes(plistlib.dumps({"SUPublicEDKey": key}))
+            verify(path, tool, "fixture")
+            for metadata in ({}, {"SUPublicEDKey": base64.b64encode(bytes([1]) * 32).decode()}):
+                path.write_bytes(plistlib.dumps(metadata))
+                with self.assertRaises(ValueError):
+                    verify(path, tool, "fixture")
+            with self.assertRaises(subprocess.CalledProcessError):
+                verify(path, tool, "missing-account")
+
     def test_explicit_stable_channel_is_rejected(self):
         verify = load("verify-release-appcast").verify
         signature = base64.b64encode(bytes(64)).decode()
