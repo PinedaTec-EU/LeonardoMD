@@ -8,7 +8,7 @@ let package = Package(
     targets: [
         .target(name: "LeonardoCore"),
         .target(name: "LeonardoRender", resources: [.process("Resources")]),
-        .executableTarget(name: "LeonardoApp", dependencies: ["LeonardoCore", "LeonardoRender"]),
+        .executableTarget(name: "LeonardoApp", dependencies: ["LeonardoCore", "LeonardoRender"], resources: [.process("Resources")]),
         .testTarget(name: "LeonardoIntegrationTests", dependencies: ["LeonardoRender"]),
         .testTarget(name: "LeonardoAppTests", dependencies: ["LeonardoApp"]),
         .testTarget(name: "LeonardoCoreTests", dependencies: ["LeonardoCore"]),

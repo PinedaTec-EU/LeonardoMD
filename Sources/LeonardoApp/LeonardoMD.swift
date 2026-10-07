@@ -30,6 +30,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private var windows: [DocumentWindow] = []
     private let diagnostics: StartupDiagnostics
     private var recordedFirstWindow = false
+    private lazy var aboutWindow = AboutWindow()
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "application")
     private let launchStarted = ContinuousClock.now
 
@@ -91,6 +92,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         if let url { Task { await controller.session.open(url) } }
     }
 
+    @objc private func showAbout() { aboutWindow.present() }
+
     @objc private func openDocument() { activeSession?.chooseDocument() }
     @objc private func openProject() { activeSession?.chooseProject() }
     @objc private func save() { Task { await activeSession?.save() } }
@@ -112,7 +115,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private func configureMenu() {
         let menu = NSMenu()
         let app = submenu("LeonardoMD", in: menu)
-        add("Acerca de LeonardoMD", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), to: app)
+        add("Acerca de LeonardoMD", action: #selector(showAbout), to: app)
         add("Preferencias…", action: #selector(preferences), key: ",", to: app)
         app.addItem(.separator())
         add("Salir de LeonardoMD", action: #selector(NSApplication.terminate(_:)), key: "q", to: app)
