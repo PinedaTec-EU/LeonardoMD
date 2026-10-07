@@ -3,18 +3,18 @@ import SwiftUI
 import LeonardoCore
 
 extension AppSession {
-    func setMermaid(_ value: Bool) {
-        var updated = features
+    func setMermaid(_ value: Bool, project: Bool? = nil) {
+        var updated = (project ?? (projectURL != nil)) ? features : globalPreferences.markdown
         updated.mermaidEnabled = value
-        setFeatures(updated)
+        setFeatures(updated, project: project)
     }
-    func setMath(_ value: Bool) {
-        var updated = features
+    func setMath(_ value: Bool, project: Bool? = nil) {
+        var updated = (project ?? (projectURL != nil)) ? features : globalPreferences.markdown
         updated.mathEnabled = value
-        setFeatures(updated)
+        setFeatures(updated, project: project)
     }
-    func setFeatures(_ features: MarkdownFeatures) {
-        if projectURL == nil { globalPreferences.markdown = features }
+    func setFeatures(_ features: MarkdownFeatures, project: Bool? = nil) {
+        if !(project ?? (projectURL != nil)) || projectURL == nil { globalPreferences.markdown = features }
         else {
             // A single toggle changes one inherited flag, rather than replacing
             // another window's newly created override with a stale full value.

@@ -26,7 +26,7 @@ The entrypoint builds an optimized, locally signed app at `output/LeonardoMD.app
 | ⇧⌘O | Open project |
 | ⌘1 / ⌘2 / ⌘3 | Reading / Editing / Split |
 | ⇧⌘F | Focus |
-| ⌥⌘I | Extensions |
+| ⌥⌘I | Document outline |
 | ⌘S | Save |
 | ⇧⌘E | Export PDF |
 
@@ -77,3 +77,5 @@ Product stories are in [doc/US](doc/US). The two presentation modes and opt-in e
 The generated app is signed locally for development. Public distribution, notarization and other platform UIs require their own release workflow.
 
 The application icon uses the approved Leonardo Classic folded-L artwork. Its original PNG and multi-resolution macOS ICNS are stored in `assets/AppIcon`; the packaging script includes the ICNS in the signed bundle for Finder and the Dock.
+
+Extension controls live in **Preferences → Extensions**. Select Global or This project before changing Mermaid or mathematics; project inheritance restores the global settings. The document inspector contains heading navigation.
