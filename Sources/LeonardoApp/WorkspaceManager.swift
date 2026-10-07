@@ -82,7 +82,7 @@ extension AppSession {
         Task { await renameProject(project, to: name) }
     }
     func renameProject(_ project: ProjectDescriptor, to name: String) async {
-        guard let workspace = workspaceURL, await prepareNavigation() else { return }
+        guard let workspace = workspaceURL, await prepareNavigation(), await prepareRelatedFileOperation?(project.rootURL) ?? true else { return }
         do {
             let renamed = try await files.renameProject(project, to: name, in: workspace)
             if projectURL == project.rootURL {
@@ -91,6 +91,7 @@ extension AppSession {
                 resetSearch()
             }
             await updateMovedDocument(from: project.rootURL, to: renamed.rootURL)
+            await relatedPathMoved?(project.rootURL, renamed.rootURL)
             await refreshTree()
             globalPreferences.recentProjectPaths = globalPreferences.recentProjectPaths.map { $0 == project.rootURL ? renamed.rootURL : $0 }
             persistSettings()
@@ -108,7 +109,7 @@ extension AppSession {
         Task { await deleteConfirmedProject(project) }
     }
     func deleteConfirmedProject(_ project: ProjectDescriptor) async {
-        guard await prepareNavigation() else { return }
+        guard await prepareNavigation(), await prepareRelatedFileOperation?(project.rootURL) ?? true else { return }
         do {
             try await files.deleteProject(project)
             if projectURL == project.rootURL {
@@ -130,6 +131,7 @@ extension AppSession {
                 externalConflict = false
                 saveStatus = "Archivo local"
             }
+            relatedPathDeleted?(project.rootURL)
             updateTitle()
             globalPreferences.recentProjectPaths.removeAll { $0 == project.rootURL }
             persistSettings()
