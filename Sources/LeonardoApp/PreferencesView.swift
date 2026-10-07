@@ -6,6 +6,7 @@ struct PreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var projectScope = false
     @State private var editingPalette = false
+    @State private var section = PreferencesSection.general
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
@@ -17,11 +18,17 @@ struct PreferencesView: View {
                 PremiumSelection(selection: $projectScope, options: [false, true], title: { $0 ? "Este proyecto" : "Global" })
                     .accessibilityLabel("Ámbito")
             }
-            TabView {
-                generalPreferences.tabItem { Label("General", systemImage: "gearshape") }
-                ExtensionPreferences(session: session, projectScope: projectScope)
-                    .tabItem { Label("Extensiones", systemImage: "puzzlepiece.extension") }
-            }
+            PremiumSelection(selection: $section, options: PreferencesSection.allCases, title: { $0.title })
+                .accessibilityLabel("Sección de preferencias")
+                .accessibilityIdentifier("preferences-section")
+            Group {
+                switch section {
+                case .general:
+                    generalPreferences
+                case .extensions:
+                    ExtensionPreferences(session: session, projectScope: projectScope)
+                }
+            }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             Text(projectScope ? "Se guarda en .leonardomd/project.json. No contiene credenciales." : "Las preferencias globales se aplican al visor individual y a proyectos que las heredan.")
                 .font(.caption).foregroundStyle(.secondary)
         }.buttonStyle(PremiumButtonStyle()).padding(24).frame(width: 580, height: 540)
@@ -59,6 +66,17 @@ extension PaperEffect {
         case .grid: "Cuadrícula"
         case .microgrid: "Microcuadrícula"
         case .parchment: "Pergamino"
+        }
+    }
+}
+
+private enum PreferencesSection: CaseIterable {
+    case general, extensions
+
+    var title: String {
+        switch self {
+        case .general: "General"
+        case .extensions: "Extensiones"
         }
     }
 }
