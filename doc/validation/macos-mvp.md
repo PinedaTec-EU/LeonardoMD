@@ -6,6 +6,16 @@ Coverage includes workspace/file operations, path and symlink boundaries, stream
 
 Real filesystem symlink fixtures verify that project operations reject reading or deleting outside the project and preserve the outside file. Image resolution rejects a symlink to an outside image while accepting an alias that remains inside the asset root. This scope corrects the previously unsupported coverage claim tracked in [#16](https://github.com/PinedaTec-EU/LeonardoMD/issues/16).
 
+## Bundled dependency validation
+
+`THIRD_PARTY_SOURCES.json` records pinned versions, npm tarball integrity and resource SHA-256 hashes; license texts accompany the offline assets. The 2026-10-07 GitHub advisory check returned no applicable published advisories for Mermaid 11.16.1, DOMPurify 3.4.16, KaTeX 0.18.2, marked 15.0.7 and highlight.js 11.12.0. This is a dated check, not a guarantee against undiscovered flaws. The update is tracked in [#18](https://github.com/PinedaTec-EU/LeonardoMD/issues/18).
+
+Mermaid is bundled from its modular `mermaid.core.mjs` entry, rather than its prebundled distribution, because that distribution carries older embedded sanitizer/math copies. The build resolves both direct and Mermaid-internal DOMPurify/KaTeX to the patched versions. Its build record in `THIRD_PARTY_SOURCES.json` includes the entry source, compiler, options, overrides and lock fingerprint. [Build package](mermaid-build-package.json) and [dependency lock](mermaid-build-lock.json) preserve the exact graph. `npm audit --omit=dev` returned zero findings for that graph on 2026-10-07.
+
+To reproduce, copy those two JSON files to a disposable directory as `package.json` and `package-lock.json`, run `npm ci --ignore-scripts`, and check installation succeeds. Create `entry.mjs` using the recorded entry source, then run the locked esbuild executable with the recorded options and an output path inside that disposable directory. Compare its output SHA-256 with the manifest before replacing repository assets. Tests compare the actual packaged resources with their recorded hashes and exercise Mermaid's internal math with the standalone math engine disabled.
+
+Patched-engine regression fixtures exercise Gantt with all weekdays excluded and radar with an untrusted large tick count in real WebKit. Never run these denial-of-service fixtures against an older vulnerable bundle. The same integration target validates sanitization, optional resource isolation, math, local images and PDF export.
+
 Native visual acceptance uses `Examples/Proyecto/docs/arquitectura.md`: standalone viewer, project navigation, focus with panel restoration, split editor, optional extensions and palette controls. Author-owned screenshots are attached to the implementation PR with their source commit, viewport and state. Development findings are tracked in [#2](https://github.com/PinedaTec-EU/LeonardoMD/issues/2), [#3](https://github.com/PinedaTec-EU/LeonardoMD/issues/3), [#4](https://github.com/PinedaTec-EU/LeonardoMD/issues/4), [#5](https://github.com/PinedaTec-EU/LeonardoMD/issues/5), [#6](https://github.com/PinedaTec-EU/LeonardoMD/issues/6) and [#7](https://github.com/PinedaTec-EU/LeonardoMD/issues/7).
 
 ## Performance evidence and limits

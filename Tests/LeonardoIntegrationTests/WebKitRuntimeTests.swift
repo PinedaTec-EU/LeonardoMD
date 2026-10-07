@@ -81,4 +81,105 @@ final class WebKitRuntimeTests: XCTestCase {
         do { let actual = try await evaluate("typeof window.mermaid", in: replacement); XCTAssertEqual(actual, "undefined") }
         do { let actual = try await evaluate("typeof window.katex", in: replacement); XCTAssertEqual(actual, "undefined") }
     }
+
+    func testPatchedMermaidGanttExcludingAllWeekdaysRendersWithoutHanging() async throws {
+        // Regression for GHSA-6m6c-36f7-fhxh. This fixture is intentionally
+        // exercised only with the patched Mermaid bundle; never run it with a
+        // vulnerable engine because the old behavior could loop indefinitely.
+        let source = """
+        ```mermaid
+        gantt
+          excludes monday,tuesday,wednesday,thursday,friday,saturday,sunday
+          DoS :2025-01-01, 1d
+        ```
+        """
+        let (host, window) = makeHost(
+            content: source,
+            config: MarkdownPreviewConfiguration(allowsMermaid: true)
+        )
+        defer { host.teardown(); window.close() }
+        guard let web = webView(of: host) else { return XCTFail("No WebKit preview") }
+        try await waitFor("Boolean(window.mermaid && window.LeonardoPreview)", in: web)
+        try await waitFor(
+            "['rendered', 'error'].includes(document.querySelector('.mermaid-placeholder')?.dataset.state) ? '1' : '0'",
+            in: web
+        )
+        let state = try await evaluate("document.querySelector('.mermaid-placeholder')?.dataset.state || 'missing'", in: web)
+        XCTAssertTrue(state == "rendered" || state == "error", "Unexpected Mermaid state: \(state)")
+        let renderAllAvailable = try await evaluate(
+            "typeof window.LeonardoPreview.renderAllDiagrams === 'function'",
+            in: web
+        )
+        XCTAssertEqual(renderAllAvailable, "1")
+    }
+
+    func testPatchedMermaidGanttValidChartExportsPDF() async throws {
+        let source = """
+        ```mermaid
+        gantt
+          title Safe schedule
+          dateFormat YYYY-MM-DD
+          section Work
+          Safe task :task, 2025-01-01, 1d
+        ```
+        """
+        let (host, window) = makeHost(
+            content: source,
+            config: MarkdownPreviewConfiguration(allowsMermaid: true)
+        )
+        defer { host.teardown(); window.close() }
+        guard let web = webView(of: host) else { return XCTFail("No WebKit preview") }
+        try await waitFor("Boolean(window.mermaid && window.LeonardoPreview)", in: web)
+        let pdf = try await host.exportPDF()
+        XCTAssertTrue(pdf.starts(with: Data("%PDF".utf8)))
+        let rendered = try await evaluate(
+            "document.querySelectorAll('.mermaid-placeholder svg').length > 0",
+            in: web
+        )
+        XCTAssertEqual(rendered, "1")
+    }
+
+    func testPatchedMermaidRadarBoundsUntrustedTickCount() async throws {
+        // Regression for GHSA-rhh3-jpg6-66xh. Keep the published large value
+        // out of any vulnerable runtime; Mermaid 11.16.1 must bound it.
+        let source = """
+        ```mermaid
+        radar-beta
+          axis a, b
+          curve c {1, 1}
+          ticks 1000000000
+        ```
+        """
+        let (host, window) = makeHost(
+            content: source,
+            config: MarkdownPreviewConfiguration(allowsMermaid: true)
+        )
+        defer { host.teardown(); window.close() }
+        guard let web = webView(of: host) else { return XCTFail("No WebKit preview") }
+        try await waitFor("Boolean(window.mermaid && window.LeonardoPreview)", in: web)
+        let pdf = try await host.exportPDF()
+        XCTAssertTrue(pdf.starts(with: Data("%PDF".utf8)))
+        let rendered = try await evaluate(
+            "document.querySelectorAll('.mermaid-placeholder svg').length > 0",
+            in: web
+        )
+        XCTAssertEqual(rendered, "1")
+    }
+
+    func testMermaidInternalMathDependencyWorksWithoutStandaloneMathEngine() async throws {
+        let source = "```mermaid\nflowchart LR\nA[\"$$x^2$$\"] --> B[Done]\n```"
+        let (host, window) = makeHost(
+            content: source,
+            config: MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: false)
+        )
+        defer { host.teardown(); window.close() }
+        guard let web = webView(of: host) else { return XCTFail("No WebKit preview") }
+        try await waitFor("document.querySelector('.mermaid-placeholder')?.dataset.state === 'rendered'", in: web)
+        let standaloneMath = try await evaluate("typeof window.katex", in: web)
+        let svg = try await evaluate("document.querySelectorAll('.mermaid-placeholder svg').length", in: web)
+        let errors = try await evaluate("document.querySelectorAll('.diagram-error').length", in: web)
+        XCTAssertEqual(standaloneMath, "undefined")
+        XCTAssertEqual(svg, "1")
+        XCTAssertEqual(errors, "0")
+    }
 }

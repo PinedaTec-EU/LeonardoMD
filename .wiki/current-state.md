@@ -17,3 +17,5 @@ Document mode and preferences scope use `PremiumSelection` with the shared butto
 Workspace project rename/delete updates documents by descendant path even in standalone viewer mode; similarly named sibling paths are preserved. Regression tracking: [#14](https://github.com/PinedaTec-EU/LeonardoMD/issues/14).
 
 Real symlink fixtures cover project read/delete escapes and allowed versus outside image aliases. Tracking: [#16](https://github.com/PinedaTec-EU/LeonardoMD/issues/16).
+
+Offline rendering dependencies are pinned with hashes, npm integrity and licenses. Mermaid 11.16.1, DOMPurify 3.4.16 and KaTeX 0.18.2 replace versions affected by published advisories; see dated checks and patched-engine regression scope in [validation](../doc/validation/macos-mvp.md). Tracking: [#18](https://github.com/PinedaTec-EU/LeonardoMD/issues/18).

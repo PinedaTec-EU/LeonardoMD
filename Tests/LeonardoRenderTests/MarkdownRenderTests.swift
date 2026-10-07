@@ -1,8 +1,32 @@
 import Foundation
+import CryptoKit
 import Testing
 @testable import LeonardoRender
 
 struct MarkdownRenderTests {
+    @Test
+    func packagedAssetsMatchRecordedHashesIncludingEmbeddedSanitizer() throws {
+        let metadata = try #require(MarkdownResourceCatalog.url(forFile: "THIRD_PARTY_SOURCES.json"))
+        let manifest = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: metadata)) as? [String: Any])
+        let packages = try #require(manifest["packages"] as? [[String: Any]])
+        for package in packages {
+            let files = try #require(package["files"] as? [String: String])
+            for (path, expectedHash) in files {
+                let fileName = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
+                let url = try #require(MarkdownResourceCatalog.url(forFile: path)
+                    ?? (path.hasPrefix("fonts/") ? MarkdownResourceCatalog.fontURL(named: fileName) : nil))
+                let actualHash = SHA256.hash(data: try Data(contentsOf: url))
+                    .map { String(format: "%02x", $0) }.joined()
+                #expect(actualHash == expectedHash, "Packaged resource differs from recorded source: \(path)")
+            }
+        }
+        let mermaidData = try #require(MarkdownResourceCatalog.data(for: .mermaid))
+        let mermaid = try #require(String(data: mermaidData, encoding: .utf8))
+        #expect(mermaid.contains("DOMPurify 3.4.16"))
+        #expect(!mermaid.contains("DOMPurify 3.4.0"))
+        #expect(!mermaid.contains("0.16.45"))
+    }
+
     @Test
     func imageSymlinksMustRemainInsideAllowedAssetRoot() throws {
         let temporary = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -166,10 +190,16 @@ struct MarkdownRenderTests {
         #expect(json.contains("marked"))
         #expect(json.contains("15.0.7"))
         #expect(json.contains("ae501969d4c7f1b433d80db12aea7e4228291e18fa8121e46337c73cb09c8683"))
+        #expect(json.contains("3.4.16"))
+        #expect(json.contains("2c90a9b46d6463f26038a29b686e82bc91de01fdac9d5229e7cfe3b360134ea2"))
+        #expect(json.contains("11.16.1"))
+        #expect(json.contains("8ffa273dc08103c033f013a6308a59eb93d452804f3c2656fda0f6619168482c"))
+        #expect(json.contains("0.18.2"))
+        #expect(json.contains("90354db602936d813daadda391a4376d071f5d1241d8cfddf091df4c2e38730d"))
         #expect(MarkdownResourceCatalog.url(forFile: "marked-15.0.7.txt") != nil)
-        #expect(MarkdownResourceCatalog.url(forFile: "dompurify-3.2.6.txt") != nil)
+        #expect(MarkdownResourceCatalog.url(forFile: "dompurify-3.4.16.txt") != nil)
         #expect(MarkdownResourceCatalog.url(forFile: "highlight.js-11.12.0.txt") != nil)
-        #expect(MarkdownResourceCatalog.url(forFile: "mermaid-11.6.0.txt") != nil)
-        #expect(MarkdownResourceCatalog.url(forFile: "katex-0.16.22.txt") != nil)
+        #expect(MarkdownResourceCatalog.url(forFile: "mermaid-11.16.1.txt") != nil)
+        #expect(MarkdownResourceCatalog.url(forFile: "katex-0.18.2.txt") != nil)
     }
 }
