@@ -22,6 +22,9 @@ public actor LocalProjectRepository {
         guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
             throw FileSystemRepositoryError.workspaceDoesNotExist(url)
         }
+        guard !isSymbolicLink(url.standardizedFileURL) else {
+            throw FileSystemRepositoryError.pathEscapesProject
+        }
         guard isDirectory.boolValue else {
             throw FileSystemRepositoryError.workspaceIsNotDirectory(url)
         }
@@ -36,7 +39,7 @@ public actor LocalProjectRepository {
             options: []
         )
         return urls.compactMap { url in
-            guard isDirectory(url), showHidden || !isHidden(url) else { return nil }
+            guard !isSymbolicLink(url), isDirectory(url), showHidden || !isHidden(url) else { return nil }
             return ProjectDescriptor(name: url.lastPathComponent, rootURL: url)
         }
         .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
@@ -57,6 +60,9 @@ public actor LocalProjectRepository {
         let source = try projectRoot(project, directChildOf: workspace)
         try validateName(newName)
         let destination = workspace.appendingPathComponent(newName, isDirectory: true)
+        guard !isSymbolicLink(destination) else {
+            throw FileSystemRepositoryError.pathEscapesProject
+        }
         guard !fileManager.fileExists(atPath: destination.path) else {
             throw FileSystemRepositoryError.itemAlreadyExists(destination)
         }
@@ -79,6 +85,9 @@ public actor LocalProjectRepository {
             throw FileSystemRepositoryError.cannotMoveIntoDescendant
         }
         guard source != destination else { return ProjectDescriptor(name: source.lastPathComponent, rootURL: source) }
+        guard !isSymbolicLink(destination) else {
+            throw FileSystemRepositoryError.pathEscapesProject
+        }
         guard !fileManager.fileExists(atPath: destination.path) else {
             throw FileSystemRepositoryError.itemAlreadyExists(destination)
         }
@@ -115,7 +124,7 @@ public actor LocalProjectRepository {
             options: []
         )
         return urls.compactMap { url in
-            guard showHidden || !isHidden(url) else { return nil }
+            guard !isSymbolicLink(url), showHidden || !isHidden(url) else { return nil }
             return makeNode(url: url, projectRoot: root)
         }
         .sorted { left, right in
@@ -135,6 +144,9 @@ public actor LocalProjectRepository {
         let workspace = try openWorkspace(at: workspaceURL)
         try validateName(name)
         let root = workspace.appendingPathComponent(name, isDirectory: true)
+        guard !isSymbolicLink(root) else {
+            throw FileSystemRepositoryError.pathEscapesProject
+        }
         guard !fileManager.fileExists(atPath: root.path) else {
             throw FileSystemRepositoryError.itemAlreadyExists(root)
         }
@@ -160,6 +172,9 @@ public actor LocalProjectRepository {
             throw FileSystemRepositoryError.projectIsNotDirectory(parent)
         }
         let destination = parent.appendingPathComponent(name, isDirectory: true)
+        guard !isSymbolicLink(destination) else {
+            throw FileSystemRepositoryError.pathEscapesProject
+        }
         guard !fileManager.fileExists(atPath: destination.path) else {
             throw FileSystemRepositoryError.itemAlreadyExists(destination)
         }
@@ -185,6 +200,9 @@ public actor LocalProjectRepository {
             throw FileSystemRepositoryError.projectIsNotDirectory(parent)
         }
         let destination = parent.appendingPathComponent(filename)
+        guard !isSymbolicLink(destination) else {
+            throw FileSystemRepositoryError.pathEscapesProject
+        }
         guard !fileManager.fileExists(atPath: destination.path) else {
             throw FileSystemRepositoryError.itemAlreadyExists(destination)
         }
@@ -209,6 +227,9 @@ public actor LocalProjectRepository {
         }
         try validateName(newName)
         let destination = source.deletingLastPathComponent().appendingPathComponent(newName)
+        guard !isSymbolicLink(destination) else {
+            throw FileSystemRepositoryError.pathEscapesProject
+        }
         guard !fileManager.fileExists(atPath: destination.path) else {
             throw FileSystemRepositoryError.itemAlreadyExists(destination)
         }
@@ -235,6 +256,9 @@ public actor LocalProjectRepository {
             throw FileSystemRepositoryError.cannotMoveIntoDescendant
         }
         let destination = parent.appendingPathComponent(source.lastPathComponent)
+        guard !isSymbolicLink(destination) else {
+            throw FileSystemRepositoryError.pathEscapesProject
+        }
         guard !fileManager.fileExists(atPath: destination.path) else {
             throw FileSystemRepositoryError.itemAlreadyExists(destination)
         }
@@ -354,6 +378,11 @@ public actor LocalProjectRepository {
         needle: String,
         showHidden: Bool
     ) throws -> SearchEntryResult {
+        // Symlink entries are never searchable. They are kept out of the
+        // result before String(contentsOf:) can follow an alias to its target.
+        if isSymbolicLink(url) || containsSymbolicLinkComponent(in: url, under: root) {
+            return SearchEntryResult(matches: [], skipDescendants: false)
+        }
         if Self.alwaysIgnoredDirectoryNames.contains(url.lastPathComponent) {
             return SearchEntryResult(matches: [], skipDescendants: isDirectory(url))
         }
@@ -411,6 +440,9 @@ public actor LocalProjectRepository {
         guard fileManager.fileExists(atPath: root.path) else {
             throw FileSystemRepositoryError.projectDoesNotExist(root)
         }
+        guard !isSymbolicLink(root) else {
+            throw FileSystemRepositoryError.pathEscapesProject
+        }
         guard isDirectory(root) else {
             throw FileSystemRepositoryError.projectIsNotDirectory(root)
         }
@@ -428,29 +460,48 @@ public actor LocalProjectRepository {
         return root
     }
 
+    // Symlink policy: browsing and search omit every symlink entry, while
+    // destructive operations reject symlink components in their source,
+    // destination, or parent paths. Keeping aliases out of these operations
+    // preserves both internal and external targets, including dangling links.
     private func resolve(_ relativePath: String, under root: URL) throws -> URL {
-        guard !relativePath.isEmpty else { return root.standardizedFileURL }
+        let root = root.standardizedFileURL
+        guard !relativePath.isEmpty else { return root }
         guard !relativePath.hasPrefix("/"), !relativePath.contains("\0") else {
             throw FileSystemRepositoryError.pathEscapesProject
         }
-        let rootPath = root.standardizedFileURL.resolvingSymlinksInPath().path
-        let candidate = root
-            .appendingPathComponent(relativePath)
-            .standardizedFileURL
-            .resolvingSymlinksInPath()
-        guard candidate.path == rootPath || candidate.path.hasPrefix(rootPath + "/") else {
-            throw FileSystemRepositoryError.pathEscapesProject
+
+        var current = root
+        for component in relativePath.split(separator: "/", omittingEmptySubsequences: true) {
+            let component = String(component)
+            if component == "." { continue }
+            if component == ".." {
+                guard current.path != root.path else {
+                    throw FileSystemRepositoryError.pathEscapesProject
+                }
+                current.deleteLastPathComponent()
+                continue
+            }
+            let next = current.appendingPathComponent(component)
+            guard !isSymbolicLink(next) else {
+                throw FileSystemRepositoryError.pathEscapesProject
+            }
+            current = next
         }
-        return candidate
+        return current.standardizedFileURL
     }
 
     private func resolve(_ url: URL, under root: URL) throws -> URL {
-        let rootPath = root.standardizedFileURL.resolvingSymlinksInPath().path
-        let candidate = url.standardizedFileURL.resolvingSymlinksInPath()
+        let root = root.standardizedFileURL
+        let candidate = url
+        let rootPath = root.path
         guard candidate.path == rootPath || candidate.path.hasPrefix(rootPath + "/") else {
             throw FileSystemRepositoryError.pathEscapesProject
         }
-        return try resolve(relativePath(of: candidate, under: root), under: root)
+        let relative = candidate.path == rootPath
+            ? ""
+            : String(candidate.path.dropFirst(rootPath.count + 1))
+        return try resolve(relative, under: root)
     }
 
     private func relativePath(of url: URL, under root: URL) -> String {
@@ -458,6 +509,25 @@ public actor LocalProjectRepository {
         let urlPath = url.standardizedFileURL.path
         guard urlPath != rootPath else { return "" }
         return String(urlPath.dropFirst(rootPath.count + 1))
+    }
+
+    private func containsSymbolicLinkComponent(in url: URL, under root: URL) -> Bool {
+        let root = root.standardizedFileURL
+        let candidate = url.standardizedFileURL
+        let rootPath = root.path
+        guard candidate.path == rootPath || candidate.path.hasPrefix(rootPath + "/") else {
+            return true
+        }
+
+        var current = root
+        let relative = String(candidate.path.dropFirst(rootPath.count))
+        for component in relative.split(separator: "/", omittingEmptySubsequences: true) {
+            current.appendPathComponent(String(component))
+            if isSymbolicLink(current) {
+                return true
+            }
+        }
+        return false
     }
 
     private func makeNode(url: URL, projectRoot: URL) -> FileNode {
@@ -489,6 +559,10 @@ public actor LocalProjectRepository {
 
     private func isDirectory(_ url: URL) -> Bool {
         (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+    }
+
+    private func isSymbolicLink(_ url: URL) -> Bool {
+        (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true
     }
 
     private func isHidden(_ url: URL) -> Bool {
