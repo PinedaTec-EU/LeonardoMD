@@ -67,6 +67,10 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     @objc private func split() { activeSession?.mode = .split }
     @objc private func extensions() { activeSession?.showInspector.toggle() }
     @objc private func preferences() { activeSession?.showPreferences = true }
+    @objc private func bringWindowsToFront() {
+        NSApp.activate(ignoringOtherApps: true)
+        for controller in windows { controller.window?.makeKeyAndOrderFront(nil) }
+    }
     private var activeSession: AppSession? {
         windows.first { $0.window === NSApp.mainWindow }?.session ?? windows.last?.session
     }
@@ -95,6 +99,11 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         add("Dividida", action: #selector(split), key: "3", to: view)
         add("Modo foco", action: #selector(focus), key: "f", modifiers: [.command, .shift], to: view)
         add("Extensiones", action: #selector(extensions), key: "i", modifiers: [.command, .option], to: view)
+        let window = submenu("Ventana", in: menu)
+        add("Minimizar", action: #selector(NSWindow.performMiniaturize(_:)), key: "m", to: window)
+        add("Zoom", action: #selector(NSWindow.performZoom(_:)), to: window)
+        add("Traer todo al frente", action: #selector(bringWindowsToFront), to: window)
+        NSApp.windowsMenu = window
         NSApp.mainMenu = menu
     }
 

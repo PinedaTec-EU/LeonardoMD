@@ -8,6 +8,7 @@ extension AppSession {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.plainText, UTType(filenameExtension: "md") ?? .plainText]
         panel.allowsMultipleSelection = false
+        panel.canChooseFiles = true
         panel.canChooseDirectories = false
         presentFilePanel(panel) { [weak self] url in Task { await self?.open(url) } }
     }
