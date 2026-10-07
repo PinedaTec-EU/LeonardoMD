@@ -23,6 +23,11 @@ def configure(path, environment):
         "https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/update-feeds/beta/appcast.xml" if channel == "beta"
         else "https://github.com/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml")
     parsed = urlparse(feed)
+    stable_feed = ("github.com", "/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml")
+    beta_feed = ("raw.githubusercontent.com", "/PinedaTec-EU/LeonardoMD/update-feeds/beta/appcast.xml")
+    forbidden_feed = stable_feed if channel == "beta" else beta_feed
+    if (parsed.hostname, parsed.path.rstrip("/")) == forbidden_feed:
+        raise ValueError("Known release feed belongs to the opposite channel")
     if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.fragment:
         raise ValueError("Update feed must be an HTTPS URL without credentials or fragments")
     if not re.fullmatch(r"[1-9][0-9]*", build):

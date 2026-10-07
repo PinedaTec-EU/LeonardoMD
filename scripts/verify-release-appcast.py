@@ -20,7 +20,7 @@ def verify(path, channel="stable"):
     for item in items:
         item_channel = item.find(SPARKLE + "channel")
         actual_channel = item_channel.text if item_channel is not None else "stable"
-        if actual_channel != channel:
+        if actual_channel != channel or (channel == "stable" and item_channel is not None):
             raise ValueError("Appcast channel does not match selected release channel")
         enclosure = item.find("enclosure")
         if enclosure is None:

@@ -89,6 +89,30 @@ class UpdateMetadataTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 verify(path, "stable")
 
+    def test_channel_mismatches_leave_bundle_untouched(self):
+        configure = load("configure-update-bundle").configure
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "Info.plist"
+            original = (ROOT / "scripts/Info.plist").read_bytes()
+            for channel, version, url in (
+                ("beta", "1.2.3-beta.1", "https://github.com/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml"),
+                ("stable", "1.2.3", "https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/update-feeds/beta/appcast.xml"),
+            ):
+                path.write_bytes(original)
+                with self.assertRaises(ValueError):
+                    configure(path, {"LEONARDO_CHANNEL": channel, "LEONARDO_VERSION": version,
+                                     "LEONARDO_FEED_URL": url})
+                self.assertEqual(path.read_bytes(), original)
+
+    def test_explicit_stable_channel_is_rejected(self):
+        verify = load("verify-release-appcast").verify
+        signature = base64.b64encode(bytes(64)).decode()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "appcast.xml"
+            path.write_text(f'<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item><sparkle:channel>stable</sparkle:channel><sparkle:version>2</sparkle:version><enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v1.2.3/update.zip" length="100" sparkle:edSignature="{signature}"/></item></channel></rss>')
+            with self.assertRaises(ValueError):
+                verify(path)
+
     def test_appcast_generation_on_system_bash_handles_both_channels(self):
         with tempfile.TemporaryDirectory() as directory:
             tool = Path(directory) / "generate_appcast"

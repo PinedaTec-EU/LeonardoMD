@@ -5,3 +5,5 @@
 `scripts/configure-update-bundle.py` validates version/channel, positive numeric build and HTTPS feed. `prepare-release.sh` embeds helpers, signs inside out, notarizes and generates signed assets; beta-only local candidates may explicitly skip notarization. `verify-update-archive.py` checks real archive bytes with Sparkle. Beta and stable share one increasing build sequence but use separate feeds and Keychain keys. See [release contract](../doc/releases.md). Publication and hosted end-to-end acceptance remain pending for [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15), PR #17.
 
 Appcast CLI arguments are constructed in `generate-release-appcast.sh` with a nonempty array for system Bash 3.2 compatibility; stable/beta and invalid-channel subprocess regressions cover [#44](https://github.com/PinedaTec-EU/LeonardoMD/issues/44).
+
+Stable appcasts must omit explicit channel tags; known stable/beta feed URLs cannot be assigned to the opposite bundle channel. Negative regressions track [#45](https://github.com/PinedaTec-EU/LeonardoMD/issues/45).
