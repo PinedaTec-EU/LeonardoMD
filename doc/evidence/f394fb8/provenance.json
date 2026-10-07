@@ -7,7 +7,10 @@
     "project.jpg": "5bc21bf7a003e4e070fc850ef5523e2c6dc07b5507415e02e7efaef130bf178d",
     "split.jpg": "f5fb0c7397e01e4f82dd3a5a791f3f3b16adb7a1ff602af2d789dcd83bcd04a5",
     "preferences.jpg": "2b972b946efa38328a5d9cb47105617a362068346862125fd1333ca2b7a5f574",
-    "focus.jpg": "be2f60b8a63d9acf3a14f20a88916a08f535e59e980a126ae22a8e9b21a55dc4"
+    "focus.jpg": "be2f60b8a63d9acf3a14f20a88916a08f535e59e980a126ae22a8e9b21a55dc4",
+    "standalone.jpg": "df4182c39d95345ad137a819f72e80b79ccca84adf5a26235d85e6dc4956683d",
+    "engines-disabled.jpg": "cb870806a84454530a7a189a5e02d38a47a91ac2e60e7f258f9d557a8a2967b0",
+    "math-local-image.jpg": "aed6afa6e484fdba81d6ecdbd05af2754f034f58fe5b5e0b675f35077a31c625"
   },
   "appBinarySHA256": "da22c1288382eb784456149c3d5a56870a70ef778b2b8a20e9cc83ee737866c4"
 }
