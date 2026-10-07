@@ -1,0 +1,17 @@
+{
+  "sourceHead": "4bf41728f73b7c71afac810adb846c54d2e76348",
+  "sourceTree": "094b8b95137538aa4af94fb0dd1df2391801be6a",
+  "os": "27.0.1",
+  "architecture": "arm64",
+  "captures": {
+    "engines-disabled.jpg": "667d16377f074f38239c5ce49fd11a0b1ec328e210e078092b2cd178572a3f48",
+    "focus.jpg": "1e4f55ca036b33df383ea585929fd8f07d88a0bc07e703f395613def3c003ca1",
+    "local-file-confirmation.jpg": "54ddc48f434437c5cf0f708a567c16285942e048989c6e9815a397bbb8acf02b",
+    "math-local-image.jpg": "25488323f14a7a8643b51695f44ceff8a956eef1bd29bb78f2776688cd6ca208",
+    "preferences.jpg": "7247c1670e10081dd6f9ab21aef66a5a6da335bb6a8eabaf0f89517d33d839b4",
+    "project.jpg": "117d683ba207188acbe5bbf00b636439c76a687235b7c6f0a00be21af3021a1f",
+    "split.jpg": "49172ea269568077709efd60f56f2a5909ee8b7c7df158b8f3a306ab225b2df6",
+    "standalone.jpg": "5bc17f316acb465c1a3ab54612843bfc0abb05ba51800af466d49dc8b66b9669"
+  },
+  "appBinarySHA256": "bdf7476460c49812f51a42525c4e8e28e798aae8e5a2af22c34d6fee11066c88"
+}
