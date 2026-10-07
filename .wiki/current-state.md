@@ -19,3 +19,5 @@ Workspace project rename/delete updates documents by descendant path even in sta
 Real symlink fixtures cover project read/delete escapes and allowed versus outside image aliases. Tracking: [#16](https://github.com/PinedaTec-EU/LeonardoMD/issues/16).
 
 Offline rendering dependencies are pinned with hashes, npm integrity and licenses. Mermaid 11.16.1, DOMPurify 3.4.16 and KaTeX 0.18.2 replace versions affected by published advisories; see dated checks and patched-engine regression scope in [validation](../doc/validation/macos-mvp.md). Tracking: [#18](https://github.com/PinedaTec-EU/LeonardoMD/issues/18).
+
+On 2026-10-07, the owner authorized enabling standard hosted runners in PinedaTec-EU. The organization setting `Disable for all repositories` had prevented macOS allocation; other repositories succeeded on self-hosted Linux runners. After the setting change, the Ubuntu/macOS probe and macOS application CI passed. Future allocation investigations should compare runner labels and organization policy before attributing a long queue to capacity. Evidence: [#12](https://github.com/PinedaTec-EU/LeonardoMD/issues/12).
