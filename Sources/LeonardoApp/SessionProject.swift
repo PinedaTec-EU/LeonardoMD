@@ -179,21 +179,13 @@ extension AppSession {
         }
     }
     func acceptDrop(_ providers: [NSItemProvider], into parent: URL) -> Bool {
-        guard !providers.isEmpty else { return false }
+        guard DocumentDropProviders.canLoad(providers) else { return false }
         Task {
-            var urls: [URL] = []
-            for provider in providers {
-                let url: URL? = await withCheckedContinuation { continuation in
-                    provider.loadObject(ofClass: NSURL.self) { object, _ in
-                        continuation.resume(returning: object as? URL)
-                    }
-                }
-                guard let url else { return }
-                urls.append(url)
-            }
+            guard let urls = await DocumentDropProviders.urls(providers) else { return }
             if DocumentTabs.acceptsDrop(urls), let openDroppedDocuments {
                 await openDroppedDocuments(urls)
-            } else if urls.count == 1, let url = urls.first {
+            } else if urls.count == 1, let url = urls.first, let root = projectURL,
+                      DocumentDropProviders.isProjectMove(url, in: root) {
                 move(url, into: parent)
             }
         }

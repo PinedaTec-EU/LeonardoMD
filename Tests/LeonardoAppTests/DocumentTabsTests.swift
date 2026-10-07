@@ -1,4 +1,5 @@
 import XCTest
+import AppKit
 @testable import LeonardoApp
 
 @MainActor
@@ -81,6 +82,38 @@ final class DocumentTabsTests: XCTestCase {
             XCTAssertFalse(DocumentTabs.acceptsDrop(urls))
             await tabs.openDroppedDocuments(urls)
             XCTAssertEqual(tabs.tabs.count, 3)
+        }
+    }
+
+    func testNativeItemProvidersOpenCompleteMarkdownBatchAndRejectInvalidBatch() async throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let first = try document("provider-one.md", in: root)
+        let second = try document("provider-two.markdown", in: root)
+        let providers = [first, second].map { NSItemProvider(object: $0 as NSURL) }
+        let opened = await tabs.openDroppedProviders(providers)
+        XCTAssertTrue(opened)
+        XCTAssertEqual(tabs.tabs.compactMap { $0.session.documentURL }, [first, second])
+        let unsupported = try document("unsupported.txt", in: root)
+        for urls in [[unsupported], [first, unsupported], [URL(string: "https://example.com/note.md")!]] {
+            let accepted = await tabs.openDroppedProviders(urls.map { NSItemProvider(object: $0 as NSURL) })
+            XCTAssertFalse(accepted)
+            XCTAssertEqual(tabs.tabs.count, 3)
+        }
+        let plainText = NSItemProvider(object: "not a file" as NSString)
+        XCTAssertFalse(tabs.acceptDrop([plainText]))
+        XCTAssertFalse(tabs.acceptDrop([]))
+        XCTAssertEqual(try String(contentsOf: unsupported, encoding: .utf8), "unsupported.txt")
+        tabs.stop()
+        let stopped = await tabs.openDroppedProviders(providers)
+        XCTAssertFalse(stopped)
+    }
+
+    func testSidebarMovesAreLimitedToExistingProjectPaths() throws {
+        let root = URL(fileURLWithPath: "/synthetic/project")
+        XCTAssertTrue(DocumentDropProviders.isProjectMove(root.appendingPathComponent("assets/image.png"), in: root))
+        for url in [root, URL(fileURLWithPath: "/synthetic/project-other/image.png"), URL(fileURLWithPath: "/outside/image.png"), URL(string: "https://example.com/image.png")!] {
+            XCTAssertFalse(DocumentDropProviders.isProjectMove(url, in: root))
         }
     }
 

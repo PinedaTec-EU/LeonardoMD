@@ -26,6 +26,7 @@ final class DocumentTabs {
 
     var activeSession: AppSession { tabs.first { $0.id == activeID }!.session }
     var hasPendingWork: Bool { tabs.contains { $0.session.isDirty || $0.session.saving || $0.session.settingsTask != nil || $0.session.gitBusy } }
+    var acceptsExternalDrops: Bool { !closing && !stopped }
 
     @discardableResult
     func addTab() -> UUID? {

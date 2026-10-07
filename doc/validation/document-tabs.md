@@ -1,12 +1,12 @@
 # Document tabs
 
-Tracking: [issue #19](https://github.com/PinedaTec-EU/LeonardoMD/issues/19). The implementation is stacked on [PR #8](https://github.com/PinedaTec-EU/LeonardoMD/pull/8); integrate #8 first, retarget to main, refresh the branch and rerun validation before merging this change. No version-bump workflow exists in this repository.
+Tracking: [issue #19](https://github.com/PinedaTec-EU/LeonardoMD/issues/19). PR #8 is integrated in main; PR #21 now targets main and includes the About and startup-diagnostics changes. No version-bump workflow exists in this repository.
 
 ## Behavior
 
 - `+` or Cmd-T creates an empty tab. Each tab provides the existing document/project controls.
 - Opening a file normally replaces the active document. Already open files activate their tab; standardized paths and symlink aliases are deduplicated.
-- Dropping local `.md` / `.markdown` files on the window or sidebar opens them in new tabs. Finder/Dock document-open events use this same flow. Files are neither copied nor moved. Sidebar Markdown drops now open tabs; use the existing Move menu to relocate Markdown files.
+- Dropping local `.md` / `.markdown` files on the window or sidebar opens them in new tabs. Finder/Dock document-open events use this same flow. Document drops reject unsupported/non-file URL batches atomically. Existing project-sidebar relocation is a separate action: one non-Markdown source already inside the current project may move within that project, with the existing file-operation and symlink guards. Unsupported external files do not enter that move path. Sidebar Markdown drops now open tabs; use the existing Move menu to relocate Markdown files.
 - Each tab owns an `AppSession` and retains its native editor/preview views, preserving selection, undo, scroll, mode, settings and project context. Inactive views cannot receive input. Sessions keep monitoring disk changes and retain existing autosave/conflict behavior.
 - Tab headers show full paths as tooltips. Their context menu offers Show in Finder, Copy Path and Close; location actions are disabled for empty tabs. Project-only tabs reveal their folder.
 - Cmd-W closes the active tab; Cmd-Shift-W closes the window. Closing the last tab leaves a fresh empty tab.
@@ -17,6 +17,10 @@ Tabs are window-local and are not restored across restarts. Reordering and split
 
 ## Automated validation
 
-Run `swift test`. `DocumentTabsTests` covers empty/replace/reuse navigation, multiple drops, alias deduplication, invalid-drop rejection, inactive drafts and conflicts, mode/scroll/project restoration, closing all sessions and cross-tab project rename/delete. The existing real WebKit suite remains part of full validation.
+Run `swift test`. `DocumentTabsTests` covers empty/replace/reuse navigation, multiple drops through actual `NSItemProvider` URL loading, mixed/unsupported/non-file provider rejection, alias deduplication, invalid-drop rejection, sidebar relocation boundaries, inactive drafts and conflicts, mode/scroll/project restoration, closing all sessions and cross-tab project rename/delete. The existing real WebKit suite remains part of full validation.
 
 Native captures and the exact reviewed SHA are recorded in the PR. CI and visual evidence do not replace the independent review required before merge.
+
+The window and sidebar share `DocumentDropProviders` for native URL-provider loading. Native pointer gestures may remain pending when Computer cannot deliver them; the deterministic provider regression exercises the same production boundary and document-opening path.
+
+Sidebar external-drop correction: [#34](https://github.com/PinedaTec-EU/LeonardoMD/issues/34).

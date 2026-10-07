@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct DocumentTabsView: View {
     @Bindable var documents: DocumentTabs
@@ -19,11 +20,7 @@ struct DocumentTabsView: View {
             }
         }
         .modifier(SessionAppearance(session: documents.activeSession))
-        .dropDestination(for: URL.self) { urls, _ in
-            guard !documents.closing, DocumentTabs.acceptsDrop(urls) else { return false }
-            Task { await documents.openDroppedDocuments(urls) }
-            return true
-        }
+        .onDrop(of: [UTType.fileURL.identifier], isTargeted: nil) { documents.acceptDrop($0) }
     }
 
     private var tabBar: some View {
