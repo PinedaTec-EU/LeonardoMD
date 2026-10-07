@@ -18,12 +18,18 @@ final class LocalProjectRepositoryTests: XCTestCase {
         XCTAssertEqual(nested.map(\.relativePath), ["docs/note.md"])
         let alias = root.appendingPathComponent("alias")
         try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: folder.url)
-        let aliasTraversal = try XCTUnwrap(URL(string: panelRoot.absoluteString + "alias/../docs/"))
-        do {
-            _ = try await repository.children(of: aliasTraversal, in: panelRoot)
-            XCTFail("Normalization must not hide a symlink component")
-        } catch let error as FileSystemRepositoryError {
-            XCTAssertEqual(error, .pathEscapesProject)
+        let traversals = [
+            "alias/../docs/",
+            "alias/../../" + root.lastPathComponent + "/docs/"
+        ]
+        for traversal in traversals {
+            let aliasTraversal = try XCTUnwrap(URL(string: panelRoot.absoluteString + traversal))
+            do {
+                _ = try await repository.children(of: aliasTraversal, in: panelRoot)
+                XCTFail("Normalization must not hide a symlink component")
+            } catch let error as FileSystemRepositoryError {
+                XCTAssertEqual(error, .pathEscapesProject)
+            }
         }
         let matches = try await repository.search(in: project, query: "token")
         XCTAssertEqual(matches.map(\.relativePath), ["docs/note.md"])

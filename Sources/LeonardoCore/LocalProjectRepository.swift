@@ -497,7 +497,7 @@ public actor LocalProjectRepository {
         // preserving child components for the symlink-aware relative resolver.
         var ancestor = url
         while ancestor.standardizedFileURL.path != root.path
-            || ancestor.lastPathComponent == ".." || ancestor.lastPathComponent == "." {
+            || ancestor.pathComponents.contains("..") || ancestor.pathComponents.contains(".") {
             guard ancestor.path != "/", !ancestor.path.isEmpty else {
                 throw FileSystemRepositoryError.pathEscapesProject
             }
