@@ -1,6 +1,6 @@
 # Native acceptance evidence
 
-Application source: `d3894c5d6ab4fb38cb4874d64b9cfa6c04e053d4`. Release app on macOS 27.0.1 / arm64, captured 2026-10-07. Seven unmodified JPEGs contain public example documents and controls. Publication authorized by the owner.
+Application source: `d3894c5d6ab4fb38cb4874d64b9cfa6c04e053d4`. Release app on macOS 27.0.1 / arm64, captured 2026-10-07. Eight unmodified JPEGs contain public example documents and controls. Publication authorized by the owner.
 
 Main window: 1260 × 850 points / 2520 × 1700 pixels. Preferences: 520 × 460 points / 1040 × 920 pixels. Native AppKit/SwiftUI/WKWebView; browser viewport is not applicable.
 
@@ -18,4 +18,6 @@ Reproduce from the application source SHA using `./launch.sh`. Open `Examples/Pr
 
 Current-head CI runs 37648961427 and 37648968657 pass all 63 tests and optimized packaging. These captures do not establish sustained 60 FPS or peak-memory budgets.
 
-The first-process file panel was inspected, but its original issue #9 scenario remains unproven: accessibility row selection and keyboard selection behaved differently. Seven captures above prove the reviewed document states, not resolution of that incident.
+The first-process file panel was inspected, but its original issue #9 scenario remains unproven: accessibility row selection and keyboard selection behaved differently. Seven document-state captures above prove the reviewed document states, not resolution of that incident.
+
+`local-file-confirmation.jpg` (588 × 344 pixels) shows the mandatory native dialog for a document-authored relative SVG link. Clicking Cancel returned to the same document; no system handler was invoked. The public synthetic fixture is included in `local-link-fixture/`; reproduce by opening its proof.md individually and clicking its link. The default web-confirmation setting remained enabled in this native check; the six automated authorization tests additionally prove the mandatory policy when web confirmation is disabled.
