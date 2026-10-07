@@ -11,16 +11,24 @@ struct LeonardoMD {
         diagnostics.record(.applicationInitializing)
         let application = NSApplication.shared
         diagnostics.record(.applicationInitialized)
-        let delegate = ApplicationDelegate(diagnostics: diagnostics)
+        let instance = SingleInstance()
+        let role: SingleInstance.Role
+        do { role = try instance.claim() }
+        catch {
+            NSLog("LeonardoMD could not establish single-instance ownership: %@", String(describing: error))
+            exit(EXIT_FAILURE)
+        }
+        let delegate = ApplicationDelegate(diagnostics: diagnostics, instance: instance, role: role)
         application.delegate = delegate
         diagnostics.record(.delegateInstalled)
-        let activationConfigured = application.setActivationPolicy(.regular)
+        let activationConfigured = application.setActivationPolicy(role == .primary ? .regular : .prohibited)
         diagnostics.record(.activationPolicyRequested, activationPolicy: .init(
             switchSucceeded: activationConfigured, actualPolicy: application.activationPolicy().rawValue
         ))
         diagnostics.record(.eventLoopStarting)
         application.run()
         diagnostics.record(.eventLoopReturned)
+        instance.stop()
         withExtendedLifetime(delegate) {}
     }
 }
@@ -33,10 +41,19 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private lazy var aboutWindow = AboutWindow()
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "application")
     private let launchStarted = ContinuousClock.now
+    private let instance: SingleInstance
+    private let role: SingleInstance.Role
+    private var pendingLaunches: [[URL]] = []
+    private var processingLaunches = false
+    private var launched = false
+    private static let closeCheckInterval: Duration = .milliseconds(50)
 
-    init(diagnostics: StartupDiagnostics) {
+    init(diagnostics: StartupDiagnostics, instance: SingleInstance, role: SingleInstance.Role) {
         self.diagnostics = diagnostics
+        self.instance = instance
+        self.role = role
         super.init()
+        instance.receive = { [weak self] urls in self?.enqueueLaunch(urls) }
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -45,10 +62,15 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         diagnostics.record(.applicationDidFinishLaunching)
+        launched = true
+        let arguments = CommandLine.arguments.dropFirst().filter { !$0.hasPrefix("-") }.map { URL(fileURLWithPath: $0) }
+        if !arguments.isEmpty { pendingLaunches.append(arguments) }
+        guard role == .primary else { forwardPendingLaunches(); return }
         diagnostics.record(.menuConfiguring)
         configureMenu()
         diagnostics.record(.menuConfigured)
         if windows.isEmpty { newEmptyWindow() }
+        processPendingLaunches()
         NSApp.activate(ignoringOtherApps: true)
         diagnostics.record(.applicationReady)
         let elapsed = launchStarted.duration(to: .now).components
@@ -61,11 +83,74 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     }
 
     func application(_ sender: NSApplication, open urls: [URL]) {
-        if DocumentTabs.acceptsDrop(urls) {
+        enqueueLaunch(urls)
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        enqueueLaunch([])
+        return false
+    }
+
+    private func enqueueLaunch(_ urls: [URL]) {
+        pendingLaunches.append(urls)
+        guard launched else { return }
+        if role == .primary { processPendingLaunches() }
+        else { forwardPendingLaunches() }
+    }
+
+    private func processPendingLaunches() {
+        guard !processingLaunches else { return }
+        processingLaunches = true
+        Task {
+            defer { processingLaunches = false }
+            while !pendingLaunches.isEmpty {
+                let urls = pendingLaunches.removeFirst()
+                if windows.isEmpty { newEmptyWindow() }
+                bringWindowsToFront()
+                for url in urls { await openExternalDocument(url) }
+            }
+        }
+    }
+
+    private func openExternalDocument(_ url: URL) async {
+        guard url.isFileURL else { return }
+        while true {
             if windows.isEmpty { newEmptyWindow() }
-            if let documents = activeDocuments { Task { await documents.openDroppedDocuments(urls) } }
-        } else {
-            for url in urls { newWindow(url: url) }
+            if let existing = windows.first(where: { $0.documents.activateDocument(url) }) {
+                existing.window?.deminiaturize(nil)
+                existing.window?.makeKeyAndOrderFront(nil)
+                return
+            }
+            guard let documents = activeDocuments else { return }
+            if documents.closing {
+                try? await Task.sleep(for: Self.closeCheckInterval)
+                continue
+            }
+            await documents.openExternalDocuments([url])
+            return
+        }
+    }
+
+    private func forwardPendingLaunches() {
+        guard !processingLaunches else { return }
+        processingLaunches = true
+        if pendingLaunches.isEmpty { pendingLaunches.append([]) }
+        Task {
+            do {
+                while !pendingLaunches.isEmpty {
+                    let urls = pendingLaunches.removeFirst()
+                    try await SingleInstance.forward(urls)
+                }
+                logger.info("launch_forwarded secondary_exiting")
+                exit(EXIT_SUCCESS)
+            } catch {
+                logger.error("launch_forward_failed error=\(String(describing: error), privacy: .public)")
+                let alert = NSAlert()
+                alert.messageText = "No se pudo abrir la instancia activa de LeonardoMD"
+                alert.informativeText = "La solicitud no se ha entregado. Vuelve a intentarlo cuando la aplicación responda."
+                alert.runModal()
+                exit(EXIT_FAILURE)
+            }
         }
     }
 
@@ -119,7 +204,9 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     @objc private func preferences() { activeSession?.showPreferences = true }
     @objc private func bringWindowsToFront() {
         NSApp.activate(ignoringOtherApps: true)
-        for controller in windows { controller.window?.makeKeyAndOrderFront(nil) }
+        let active = windows.first { $0.window === NSApp.mainWindow } ?? windows.last
+        active?.window?.deminiaturize(nil)
+        active?.window?.makeKeyAndOrderFront(nil)
     }
     private var activeDocuments: DocumentTabs? {
         windows.first { $0.window === NSApp.mainWindow }?.documents ?? windows.last?.documents

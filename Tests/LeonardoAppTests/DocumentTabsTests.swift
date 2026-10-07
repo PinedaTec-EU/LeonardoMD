@@ -16,6 +16,24 @@ final class DocumentTabsTests: XCTestCase {
         return url
     }
 
+    func testExternalOpenPreservesDirtyTabAndDeduplicatesRepeatedRequests() async throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let first = try document("first.md", in: root)
+        let second = try document("second.txt", in: root)
+        await tabs.activeSession.open(first)
+        let original = tabs.activeSession
+        original.content = "unsaved draft"
+        await tabs.openExternalDocuments([second, first, second])
+        XCTAssertEqual(tabs.tabs.count, 2)
+        XCTAssertEqual(tabs.activeSession.documentURL, second)
+        XCTAssertEqual(original.content, "unsaved draft")
+        XCTAssertTrue(original.isDirty)
+        XCTAssertEqual(try String(contentsOf: first, encoding: .utf8), "first.md")
+        await tabs.openExternalDocuments([])
+        XCTAssertEqual(tabs.tabs.count, 2)
+    }
+
     func testPlusAndNavigationReplaceOnlyActiveTabAndReuseExistingFile() async throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }

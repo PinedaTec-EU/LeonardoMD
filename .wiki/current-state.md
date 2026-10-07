@@ -31,3 +31,8 @@ The branded About window is isolated in `Sources/LeonardoApp/AboutWindow.swift`;
 Document tabs own complete `AppSession` instances and retain native views. `DocumentTabs` coordinates selection/deduplication, Markdown drops, close protection, Finder reveal and sibling file mutations. See [tab behavior and validation](../doc/validation/document-tabs.md). Tracking: [#19](https://github.com/PinedaTec-EU/LeonardoMD/issues/19); PR #21 targets current main after #8 and #28 integration. Native item-provider decoding is shared and regression-tested; unsupported external sidebar files cannot enter the internal relocation path.
 
 Sidebar external-drop correction: [#34](https://github.com/PinedaTec-EU/LeonardoMD/issues/34).
+
+Single-instance launching is coordinated by `SingleInstance` using a named CFMessagePort per bundle identifier/login session. `ApplicationDelegate` queues launch requests and opens external documents in tabs, selecting duplicates across windows. See [launch behavior and process validation](../doc/validation/single-instance.md). Tracking: [#22](https://github.com/PinedaTec-EU/LeonardoMD/issues/22), targeting main after PR #21 integration. Quit versions without the protocol before starting the updated app.
+
+CFMessagePort caches remote endpoints within a sender process. Keep reply-bearing sends serialized off the UI thread through the asynchronous `SingleInstance.forward` boundary; the concurrent regression prevents reply transport failures. Tracking: [#23](https://github.com/PinedaTec-EU/LeonardoMD/issues/23).
+
