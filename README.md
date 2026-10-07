@@ -26,7 +26,7 @@ The entrypoint builds an optimized, locally signed app at `output/LeonardoMD.app
 | ⇧⌘O | Open project |
 | ⌘1 / ⌘2 / ⌘3 | Reading / Editing / Split |
 | ⇧⌘F | Focus |
-| ⌥⌘I | Extensions |
+| ⌥⌘I | Document outline |
 | ⌘S | Save |
 | ⇧⌘E | Export PDF |
 
