@@ -12,7 +12,7 @@ Core, App, render contracts and real WebKit checks run through `swift test`; the
 
 Do not use the image-generated concept as validation evidence. Real application captures and exact-head checks belong in the PR.
 
-Shared skill discovery uses `AGENTS.md` and the generated `.skills/index.md`, with nine thin adapters to the sibling `ai-skills-shared` canonical source. Projection validated and idempotent against clean integrated shared source `fa144ff6a87f8bc946e1e3832dd2783aea292e22`. Tracking: [#11](https://github.com/PinedaTec-EU/LeonardoMD/issues/11).
+Shared skill discovery uses `AGENTS.md` and the generated `.skills/index.md`, which owns the current adapter selection and links to the sibling `ai-skills-shared` canonical source. The original projection was validated for [#11](https://github.com/PinedaTec-EU/LeonardoMD/issues/11); release-ledger and recurring release skills were added for [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38). Do not maintain a second adapter count in the wiki.
 
 Document mode and preferences scope use `PremiumSelection` with the shared button surface. `PremiumSwitchStyle` follows `leonardoAccent` for active states, including extensions and preferences. Tracking: [#4](https://github.com/PinedaTec-EU/LeonardoMD/issues/4).
 
