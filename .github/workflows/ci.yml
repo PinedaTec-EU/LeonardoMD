@@ -14,6 +14,8 @@ jobs:
         env:
           LEONARDO_VISUAL_EVIDENCE: ${{ github.workspace }}/visual-evidence
         run: swift test
+      - name: Validate update metadata
+        run: python3 -m unittest discover -s Tests/Packaging
       - name: Record preview capture provenance
         env:
           EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
