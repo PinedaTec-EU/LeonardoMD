@@ -1,0 +1,11 @@
+Bundled rendering assets
+
+marked 15.0.7 — MIT License
+DOMPurify 3.2.6 — Apache License 2.0 OR Mozilla Public License 2.0
+Highlight.js 11.12.0 — BSD 3-Clause License
+Mermaid 11.6.0 — MIT License
+KaTeX 0.16.22 — MIT License
+
+The assets are vendored for offline runtime use. Exact source URLs, versions, and
+SHA-256 hashes are recorded in THIRD_PARTY_SOURCES.json. The corresponding
+license texts are included as versioned files beside the bundle assets.

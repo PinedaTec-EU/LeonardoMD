@@ -57,7 +57,7 @@ flowchart TB
 | Renderer Markdown principal | Spike inicial |
 | Mermaid integrado o componente aislado | Spike inicial |
 | Formato de configuración | Antes del primer proyecto real |
-| Política de plugins | Post-MVP |
+| Extensiones empaquetadas opt-in | MVP: Mermaid y matemáticas; ver ADR 0001 |
 
 ## Reglas de Ingeniería
 

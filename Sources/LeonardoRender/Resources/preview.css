@@ -1,0 +1,234 @@
+:root {
+  --ld-background: #F8F8F5;
+  --ld-text: #171717;
+  --ld-heading: #2B5C8A;
+  --ld-accent: #2B5C8A;
+  --ld-code-background: #ECECE7;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background-color: var(--ld-background);
+  color: var(--ld-text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+body[data-paper-effect="ruled"] {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 30px,
+    color-mix(in srgb, var(--ld-accent) 16%, transparent) 31px
+  );
+}
+
+body[data-paper-effect="grid"],
+body[data-paper-effect="microgrid"] {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--ld-accent) 13%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--ld-accent) 13%, transparent) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+body[data-paper-effect="microgrid"] {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--ld-accent) 10%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--ld-accent) 10%, transparent) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+body[data-paper-effect="parchment"] {
+  background-image: radial-gradient(color-mix(in srgb, var(--ld-accent) 9%, transparent) 1px, transparent 1px);
+  background-size: 7px 7px;
+}
+
+.markdown-body {
+  width: min(100%, 920px);
+  margin: 0 auto;
+  padding: 42px clamp(22px, 6vw, 72px) 80px;
+  overflow-wrap: anywhere;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  color: var(--ld-heading);
+  line-height: 1.25;
+  margin: 1.6em 0 0.55em;
+}
+
+.markdown-body h1 {
+  border-bottom: 1px solid color-mix(in srgb, var(--ld-accent) 40%, transparent);
+  font-size: 2.2em;
+  padding-bottom: 0.3em;
+}
+
+.markdown-body h2 {
+  border-bottom: 1px solid color-mix(in srgb, var(--ld-accent) 24%, transparent);
+  font-size: 1.65em;
+  padding-bottom: 0.2em;
+}
+
+.markdown-body a {
+  color: var(--ld-accent);
+}
+
+.markdown-body img {
+  height: auto;
+  max-width: 100%;
+}
+
+.markdown-body blockquote {
+  border-left: 4px solid var(--ld-accent);
+  margin-left: 0;
+  padding: 0.1em 1.1em;
+  opacity: 0.9;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  width: max-content;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid color-mix(in srgb, var(--ld-text) 22%, transparent);
+  padding: 0.45em 0.75em;
+  text-align: left;
+}
+
+.markdown-body th {
+  background: color-mix(in srgb, var(--ld-accent) 11%, transparent);
+}
+
+.markdown-body pre {
+  background: var(--ld-code-background);
+  border: 1px solid color-mix(in srgb, var(--ld-text) 13%, transparent);
+  border-radius: 8px;
+  overflow-x: auto;
+  padding: 14px 16px;
+}
+
+.markdown-body code {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 0.9em;
+}
+
+.markdown-body :not(pre) > code {
+  background: color-mix(in srgb, var(--ld-code-background) 78%, transparent);
+  border-radius: 4px;
+  padding: 0.12em 0.3em;
+}
+
+.hljs {
+  background: transparent;
+  color: var(--ld-text);
+}
+
+.hljs-comment,
+.hljs-quote,
+.hljs-meta {
+  color: color-mix(in srgb, var(--ld-text) 55%, transparent);
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-name,
+.hljs-built_in {
+  color: var(--ld-heading);
+}
+
+.hljs-string,
+.hljs-title,
+.hljs-section,
+.hljs-attribute,
+.hljs-symbol,
+.hljs-bullet {
+  color: var(--ld-accent);
+}
+
+.hljs-number,
+.hljs-operator,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-type {
+  color: color-mix(in srgb, var(--ld-accent) 78%, var(--ld-text));
+}
+
+.markdown-body input[type="checkbox"] {
+  margin-right: 0.45em;
+}
+
+.front-matter {
+  width: min(100%, 920px);
+  margin: 22px auto -14px;
+  padding: 0 42px;
+  color: color-mix(in srgb, var(--ld-text) 76%, transparent);
+  font-size: 0.9em;
+}
+
+.front-matter h2 {
+  color: var(--ld-heading);
+  font-size: 1em;
+  margin-bottom: 0.35em;
+}
+
+.front-matter dl {
+  display: grid;
+  grid-template-columns: minmax(8em, max-content) 1fr;
+  gap: 0.15em 1em;
+  margin: 0;
+}
+
+.front-matter dt {
+  font-weight: 600;
+}
+
+.front-matter dd {
+  margin: 0;
+}
+
+.mermaid-placeholder {
+  align-items: center;
+  background: color-mix(in srgb, var(--ld-code-background) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ld-accent) 20%, transparent);
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  min-height: 64px;
+  overflow-x: auto;
+  padding: 16px;
+}
+
+.mermaid-placeholder svg {
+  max-width: 100%;
+}
+
+.diagram-error {
+  color: #8B1E1E;
+}
+
+.math-rendered {
+  overflow-x: auto;
+  overflow-y: hidden;
+}

@@ -16,8 +16,8 @@ Como usuario quiero alternar entre preview, edición y vista dividida para escri
 | --- | --- | --- |
 | Preview | Vista renderizada por defecto | Sí |
 | Edit | Editor Markdown fuente | Sí |
-| Split | Editor y preview sincronizados | Deseable MVP |
-| Focus | Vista sin paneles | Post-MVP |
+| Split | Editor y preview sincronizados | Sí |
+| Focus | Vista sin paneles, conservando el proyecto | Sí |
 
 ## Criterios de Aceptación
 
