@@ -1,0 +1,40 @@
+Window: "Plan.md", App: LeonardoMD.
+0 standard window Plan.md, URL: file:///private/tmp/leonardo-chain-qa/Plan.md, Secondary Actions: Raise
+	1 container
+		2 scroll area
+			3 button Description: Notas.md, Help: /private/tmp/leonardo-chain-qa/Notas.md
+			4 button Description: Cerrar pestaña Notas.md, Help: /private/tmp/leonardo-chain-qa/Notas.md, ID: xmark
+			5 button (selected) Description: Plan.md, Help: /private/tmp/leonardo-chain-qa/Plan.md
+			6 button Description: Cerrar pestaña Plan.md, Help: /private/tmp/leonardo-chain-qa/Plan.md, ID: xmark
+		7 button Description: Nueva pestaña, Help: Nueva pestaña (⌘T), ID: new-document-tab
+		8 menu button Move, ID: folder
+		9 text Plan.md Visor de documento
+		10 container Description: Modo, ID: document-mode
+			11 button (selected) Lectura
+			12 button Edición
+			13 button Dividida
+		14 button Description: Enter Full Screen, Help: Modo foco, ID: focus-mode
+		15 button Description: Share, Help: Exportar PDF, ID: square.and.arrow.up
+		16 button Description: Extensiones, ID: extensions-button
+		17 scroll area
+			18 HTML content leonardo-document://local/leonardo-chain-qa/
+				19 container
+					20 heading Plan, Value: 1
+						21 text Plan
+					22 text Synthetic tab validation.
+		23 text Guardado · archivo local
+		24 image (selected) Description: Selected, ID: checkmark.circle
+		25 text Documento individual Markdown · UTF-8 5 palabras
+	26 close button
+	27 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	28 minimize button
+	29 image Plan.md
+	30 text Plan.md
+31 menu bar
+	32 LeonardoMD
+	33 Archivo
+	34 Edición
+	35 Vista
+	36 Ventana
+
+The focused UI element is 0 standard window Plan.md, URL: file:///private/tmp/leonardo-chain-qa/Plan.md, Secondary Actions: Raise
