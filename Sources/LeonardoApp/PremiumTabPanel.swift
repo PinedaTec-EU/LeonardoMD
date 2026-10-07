@@ -15,6 +15,10 @@ struct PremiumTabPanel<Value: Hashable, Content: View>: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(.top, headerOverlap)
             .background { PremiumControlBackground() }
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10).strokeBorder(.primary.opacity(0.18), lineWidth: 1)
+            }
             .overlay(alignment: .top) {
                 HStack(spacing: 0) {
                     ForEach(options, id: \.self) { option in
