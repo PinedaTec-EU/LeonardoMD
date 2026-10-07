@@ -31,6 +31,63 @@ final class WebKitRuntimeTests: XCTestCase {
     }
     private func webView(of host: MarkdownPreviewHost) -> WKWebView? { host.subviews.compactMap { $0 as? WKWebView }.first }
 
+    func testTagPillsActivateSafelyAndDisappearAfterUpdate() async throws {
+        let source = "---\ntags: [Swift, 'Design Systems', swift, '<img src=x onerror=alert(1)>']\n---\n# Tagged document\n\nChoose a tag to find related project documents."
+        let (host, window) = makeHost(content: source)
+        defer { host.teardown(); window.close() }
+        var activated: String?
+        host.apply(content: source, baseURL: nil, configuration: .default,
+                   onLinkActivation: nil, onTagActivation: { activated = $0 }, onScrollProgress: nil)
+        guard let web = webView(of: host) else { return XCTFail("No WebKit preview") }
+        try await waitFor("document.querySelectorAll('.tag-pill').length === 3", in: web)
+        let panelCount = try await evaluate("document.querySelectorAll('.front-matter').length", in: web)
+        XCTAssertEqual(panelCount, "0", "Tag pills are independent of the metadata visibility setting")
+        let injectedImages = try await evaluate("document.querySelectorAll('.document-tags img').length", in: web)
+        XCTAssertEqual(injectedImages, "0")
+        _ = try await evaluate("document.querySelectorAll('.tag-pill')[1].click()", in: web)
+        for _ in 0..<20 {
+            if activated != nil { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertEqual(activated, "Design Systems")
+        _ = try await evaluate("document.querySelector('.tag-pill').focus()", in: web)
+        let focus = try await evaluate("document.activeElement.className", in: web)
+        XCTAssertEqual(focus, "tag-pill")
+        try await captureTagPreview(web, name: "tags-light")
+        // Hidden test windows do not advance CSS transition frames reliably.
+        _ = try await evaluate("document.body.style.transition = 'none'", in: web)
+        host.apply(content: source, baseURL: nil,
+                   configuration: MarkdownPreviewConfiguration(appearance: MarkdownAppearance(
+                    backgroundHex: "#171717", textHex: "#F1F1EB", headingHex: "#9BD1FA", accentHex: "#9BD1FA", codeBackgroundHex: "#262626")),
+                   onLinkActivation: nil, onTagActivation: { activated = $0 }, onScrollProgress: nil)
+        try await waitFor("getComputedStyle(document.body).backgroundColor === 'rgb(23, 23, 23)'", in: web)
+        try await captureTagPreview(web, name: "tags-dark")
+        host.apply(content: "# Untagged", baseURL: nil, configuration: .default,
+                   onLinkActivation: nil, onTagActivation: { activated = $0 }, onScrollProgress: nil)
+        try await waitFor("document.querySelector('h1')?.textContent === 'Untagged'", in: web)
+        let remaining = try await evaluate("document.querySelectorAll('.document-tags').length", in: web)
+        XCTAssertEqual(remaining, "0")
+    }
+
+    private func captureTagPreview(_ web: WKWebView, name: String) async throws {
+        guard let directory = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] else { return }
+        let image: NSImage = try await withCheckedThrowingContinuation { continuation in
+            web.takeSnapshot(with: nil) { image, error in
+                if let error { continuation.resume(throwing: error) }
+                else if let image { continuation.resume(returning: image) }
+                else { continuation.resume(throwing: CocoaError(.fileReadUnknown)) }
+            }
+        }
+        guard let tiff = image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiff),
+              let png = bitmap.representation(using: .png, properties: [:]) else {
+            return XCTFail("Cannot encode preview screenshot")
+        }
+        let root = URL(fileURLWithPath: directory, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try png.write(to: root.appendingPathComponent(name + ".png"))
+    }
+
     func testDisabledEnginesSanitizationAndIncrementalDocumentUpdate() async throws {
         let source = "# Initial\n<script>window.injected=true</script>\n<img src=x onerror='window.injected=true'>\n[bad](javascript:alert(1))"
         let (host, window) = makeHost(content: source)

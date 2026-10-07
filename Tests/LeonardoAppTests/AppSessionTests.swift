@@ -11,6 +11,22 @@ final class AppSessionTests: XCTestCase {
         return (root, session)
     }
 
+    func testTagActivationPopulatesProjectSearchAndRevealsSidebar() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        try "---\ntags: ['Design Systems']\n---\n# Note".write(to: root.appendingPathComponent("note.md"), atomically: true, encoding: .utf8)
+        await session.openProject(root)
+        session.focus = true
+        session.search(tag: "Design Systems")
+        XCTAssertEqual(session.searchQuery, "tag:\"Design Systems\"")
+        XCTAssertTrue(session.presentation.showsSidebar)
+        await session.searchTask?.value
+        XCTAssertEqual(session.searchResults.map { $0.url.lastPathComponent }, ["note.md"])
+        await session.detachProject()
+        session.search(tag: "Swift")
+        XCTAssertTrue(session.searchQuery.isEmpty)
+    }
+
     func testOpeningStandaloneAfterProjectDetachesFolderAndUsesGlobalFeatures() async throws {
         let (root, session) = try fixture()
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }

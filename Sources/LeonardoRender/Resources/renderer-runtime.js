@@ -60,6 +60,22 @@
     });
   }
 
+  function renderTags() {
+    if (!Array.isArray(payload.tags) || payload.tags.length === 0) return;
+    const panel = document.createElement("nav");
+    panel.className = "document-tags";
+    panel.setAttribute("aria-label", "Document tags");
+    payload.tags.forEach((tag) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "tag-pill";
+      button.textContent = tag;
+      button.addEventListener("click", () => postMessage("leonardoTag", tag));
+      panel.appendChild(button);
+    });
+    root.before(panel);
+  }
+
   function renderFrontMatter() {
     if (!payload.showFrontMatter || !payload.frontMatter || Object.keys(payload.frontMatter).length === 0) {
       return;
@@ -332,7 +348,7 @@
     if (diagramObserver) diagramObserver.disconnect();
     diagramTimers.forEach((timer) => window.clearTimeout(timer));
     diagramTimers.clear();
-    document.querySelectorAll(".front-matter").forEach((panel) => panel.remove());
+    document.querySelectorAll("body > .front-matter, body > .document-tags").forEach((panel) => panel.remove());
     try {
       const rendered = window.marked.parse(payload.markdown || "", { gfm: true, breaks: false });
       root.innerHTML = sanitizeHTML(rendered);
@@ -342,6 +358,7 @@
         image.decoding = "async";
       });
       renderFrontMatter();
+      renderTags();
       highlightCode();
       renderMath();
       prepareMermaid();
