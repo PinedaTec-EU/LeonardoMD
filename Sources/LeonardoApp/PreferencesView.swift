@@ -18,17 +18,14 @@ struct PreferencesView: View {
                 PremiumSelection(selection: $projectScope, options: [false, true], title: { $0 ? "Este proyecto" : "Global" })
                     .accessibilityLabel("Ámbito")
             }
-            PremiumSelection(selection: $section, options: PreferencesSection.allCases, title: { $0.title })
-                .accessibilityLabel("Sección de preferencias")
-                .accessibilityIdentifier("preferences-section")
-            Group {
+            PremiumTabPanel(selection: $section, options: PreferencesSection.allCases, title: { $0.title }) {
                 switch section {
                 case .general:
                     generalPreferences
                 case .extensions:
                     ExtensionPreferences(session: session, projectScope: projectScope)
                 }
-            }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            }
             Text(projectScope ? "Se guarda en .leonardomd/project.json. No contiene credenciales." : "Las preferencias globales se aplican al visor individual y a proyectos que las heredan.")
                 .font(.caption).foregroundStyle(.secondary)
         }.buttonStyle(PremiumButtonStyle()).padding(24).frame(width: 580, height: 540)
