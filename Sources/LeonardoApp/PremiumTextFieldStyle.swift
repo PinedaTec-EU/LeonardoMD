@@ -28,23 +28,22 @@ struct PremiumTextFieldStyle: TextFieldStyle {
 }
 
 /// NSAlert hosts the same field as SwiftUI screens while retaining modal return semantics.
+@Observable
+final class PremiumNameValue {
+    var text: String
+    init(_ text: String) { self.text = text }
+}
+
 struct PremiumNameInput: View {
-    @State private var text: String
-    let update: (String) -> Void
+    @Bindable var value: PremiumNameValue
     @FocusState private var focused: Bool
 
-    init(initial: String, update: @escaping (String) -> Void) {
-        _text = State(initialValue: initial)
-        self.update = update
-    }
-
     var body: some View {
-        TextField("Nombre", text: $text)
+        TextField("Nombre", text: $value.text)
             .textFieldStyle(PremiumTextFieldStyle())
             .focused($focused)
             .accessibilityIdentifier("name-input")
             .padding(6)
-            .onChange(of: text) { _, value in update(value) }
             .onAppear { focused = true }
     }
 }

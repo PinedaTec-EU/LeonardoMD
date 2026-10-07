@@ -202,13 +202,13 @@ extension AppSession {
     func prompt(title: String, initial: String) -> String? {
         let alert = NSAlert()
         alert.messageText = title
-        var value = initial
-        let input = NSHostingView(rootView: PremiumNameInput(initial: initial) { value = $0 }
+        let value = PremiumNameValue(initial)
+        let input = NSHostingView(rootView: PremiumNameInput(value: value)
             .modifier(SessionAppearance(session: self)))
         input.frame = NSRect(x: 0, y: 0, width: 312, height: 52)
         alert.accessoryView = input
         alert.addButton(withTitle: "Guardar")
         alert.addButton(withTitle: "Cancelar")
-        return alert.runModal() == .alertFirstButtonReturn ? value : nil
+        return alert.runModal() == .alertFirstButtonReturn ? value.text : nil
     }
 }
