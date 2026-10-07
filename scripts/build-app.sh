@@ -1,7 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-swift build -c release
+if [[ -n "${LEONARDO_SOURCE_PR:-}" ]]; then
+  python3 scripts/compile-and-record.py --pr-number "$LEONARDO_SOURCE_PR" -- swift build -c release
+else
+  swift build -c release
+fi
 bin_dir=$(swift build -c release --show-bin-path)
 app_dir="$PWD/output/LeonardoMD.app"
 rm -rf "$app_dir"

@@ -2,18 +2,18 @@
 
 LeonardoMD adopts the shared immutable ledger with owner-approved baseline
 **0.1.56**. This seed is not a published release or reconstructed history.
-`version.nfo` is the canonical `major.minor.patch` artifact; the checkpoint
+`version.nfo` is the canonical `release.feature.build` artifact; the checkpoint
 `deploy/version/version.yaml` starts with empty applied history.
 
 ## Packaged metadata
 
 `scripts/Info.plist` no longer maintains independent version fields.
 `scripts/package-version.py` derives `CFBundleShortVersionString` from the
-canonical version and `CFBundleVersion` from its patch component (initially
-`56`). This explicitly replaces `0.1.0` / build `1`. Patch is a monotonic build
-ordinal: every product change increments it; deliberate major/minor changes
-also retain a positive patch delta. The engine adds deltas without resetting
-lower components. The supported macOS build range is 1–9999; changing that
+canonical version and `CFBundleVersion` from its build component (initially
+`56`). This explicitly replaces `0.1.0` / build `1`. Build counts successful Swift compilation commands recorded for the source PR,
+not PRs, commits, arbitrary CI jobs or inferred retries. Release/feature advances
+are explicit delivery decisions and do not reset lower counters. The shared
+engine adds the recorded deltas without resetting components. The supported macOS build range is 1–9999; changing that
 representation requires a reviewed migration. About and startup diagnostics
 read the generated bundle; direct SwiftPM execution remains a development build.
 
@@ -21,18 +21,28 @@ read the generated bundle; direct SwiftPM execution remains a development build.
 
 Sources, resources, tests, package manifests, startup/packaging scripts and CI
 require one new `deploy/version/entries/<PR>.yaml`, after GitHub assigns the PR
-number. The ordinary delta is:
+number. A single successful recorded compilation produces:
 
 ```json
-{"patch": 1}
+{"build": 1}
 ```
 
-Major/minor increments require an explicit decision in the PR and also include
-`patch: 1`. Documentation, wiki and skill-reference-only changes are exempt.
+Release/feature increments require an explicit delivery decision. They preserve
+build unless the PR also records successful compilation commands. Documentation, wiki and skill-reference-only changes are exempt.
 Do not edit another PR's pending entry. Ordinary source PRs cannot change
 `version.nfo`, checkpoint or generated release notes. First adoption alone
-seeds the artifact/checkpoint and includes its own delta; its first materialized
-candidate is therefore **0.1.57**.
+seeds the artifact/checkpoint and includes its recorded compilation delta; its
+first candidate is `0.1.(56 + recorded build delta)` rather than a fixed +1.
+
+Use `scripts/compile-and-record.py --pr-number <PR> -- swift build|test|run`
+for source-PR compilation commands. The wrapper executes the command and adds
+one build only after success, preserves existing release/feature deltas, and
+serializes atomic entry updates. Failed commands and metadata-only queries do
+not increment it. Setting `LEONARDO_SOURCE_PR=<PR>` when running
+`scripts/build-app.sh` records its one release build; its `--show-bin-path` query
+is excluded. Commit the updated entry before final validation. CI verifies the
+committed entry and does not write deltas or infer counts from jobs/retries.
+Main builds without a pending source PR do not allocate a source-PR delta.
 
 Use an English issue-linked title, e.g. `#38 Added: adopt release version ledger`.
 The title is the release-note summary; the body contains implementation and
@@ -63,7 +73,7 @@ read-only `LEDGER_SOURCE_TOKEN` and external `LEDGER_OUTPUT_PATH`. Inspect the
 integration-order JSON before selecting `calculate` with
 `LEDGER_INTEGRATION_ORDER_PATH`. Inspect the chosen PR/version before invoking
 `materialize` in an isolated checkout from current main. Propose its output in
-a separate reviewed PR with exact title and squash subject
+a separate reviewed PR on `codex/ledger-version-<source-pr>` with exact title and squash subject
 `v.<version> (#<source-pr>)`. Only the version output, checkpoint and deletion
 of the consumed entry may change. Validate and integrate this PR before
 publishing the corresponding release. Never materialize unmerged entries or
@@ -86,7 +96,7 @@ release, tag SHA, version and PR provenance, and renders the verified PR title,
 PR link, merge SHA and delta. Retries must not duplicate accepted notes.
 
 The engine creates `deploy/release-notes.md` only after acceptance. Notes group
-by major/minor and preserve full versions. Open a reviewed notes-only PR with
+by release/feature and preserve full versions. Open a reviewed notes-only PR on `codex/ledger-notes-<source-pr>` with
 exact title/squash subject `Release notes for <version> (#<source-pr>)`; its
 body identifies the release and evidence URL. Validate it with `validate-pr`
 in `notes` mode and read-only evidence/source tokens. Do not invent historic
@@ -97,7 +107,10 @@ release summaries for the initial baseline.
 The integrated-base `pull_request_target` workflow runs read-only
 `release-ledger-scope`, checking out PR data and executing only the immutable
 central engine. It rejects the reserved engine path before/after candidate
-checkout, including symlinks, and classifies automated branches as Bot-only.
+checkout, including symlinks. Automatic branches are Bot-only; same-repository
+operator branches `codex/ledger-version-*` and `codex/ledger-notes-*` invoke the
+corresponding strict central mode, so manually proposed engine output remains
+subject to exact title/scope/arithmetic or accepted-evidence checks.
 No candidate script or local Action is executed in this privileged workflow.
 
 LeonardoMD is public and pinedatec-ci is private; native private Action sharing

@@ -82,4 +82,4 @@ Extension controls live in **Preferences → Extensions**. Select Global or This
 
 ## Release versioning
 
-The owner-approved baseline is **0.1.56**. Packaging requires Python 3 and derives bundle metadata from `version.nfo`. Product PRs add one `deploy/version/entries/<PR>.yaml` delta; release notes use the verified source PR title after publication. See [the ledger workflow](doc/release-version-ledger.md) for operator use, trusted CI access and pending central automation activation.
+The owner-approved baseline is **0.1.56**. Packaging requires Python 3 and derives bundle metadata from `version.nfo`. The `release.feature.build` model uses one `deploy/version/entries/<PR>.yaml` per source PR; successful Swift compilation commands accumulate its build delta; release notes use the verified source PR title after publication. See [the ledger workflow](doc/release-version-ledger.md) for operator use, trusted CI access and pending central automation activation.

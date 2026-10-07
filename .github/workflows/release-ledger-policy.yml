@@ -57,6 +57,7 @@ jobs:
           LEDGER_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           LEDGER_SOURCE_TOKEN: ${{ github.token }}
           LEDGER_EVIDENCE_TOKEN: ${{ github.token }}
+          # Candidate content is always validated by immutable central code.
           HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
           HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           AUTHOR_TYPE: ${{ github.event.pull_request.user.type }}
@@ -75,6 +76,14 @@ jobs:
               else
                 export LEDGER_PULL_REQUEST_KIND=notes
               fi
+              ;;
+            codex/ledger-version-*)
+              test "$HEAD_REPOSITORY" = "$GITHUB_REPOSITORY"
+              export LEDGER_PULL_REQUEST_KIND=materialization
+              ;;
+            codex/ledger-notes-*)
+              test "$HEAD_REPOSITORY" = "$GITHUB_REPOSITORY"
+              export LEDGER_PULL_REQUEST_KIND=notes
               ;;
           esac
           python3 "$TRUSTED_ENGINE_ROOT/.github/actions/release-version-ledger/ledger.py"

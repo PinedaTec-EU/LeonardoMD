@@ -46,7 +46,7 @@ class ReleaseLedgerTests(unittest.TestCase):
         if entry:
             directory = self.root / "deploy/version/entries"
             directory.mkdir()
-            (directory / "101.yaml").write_text(json.dumps(delta or {"patch": 1}))
+            (directory / "101.yaml").write_text(json.dumps(delta or {"build": 1}))
         return self.commit("#38 Added: source fixture")
 
     def validate_source(self, head):
@@ -86,6 +86,11 @@ class ReleaseLedgerTests(unittest.TestCase):
         self.assertIn("changed=false", result.stdout)
         self.assertEqual((self.root / "version.nfo").read_text().strip(), "0.1.57")
         self.assertFalse((self.root / "deploy/release-notes.md").exists())
+
+    def test_legacy_patch_delta_is_rejected(self):
+        result = self.validate_source(self.source_change(delta={"patch": 1}))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unknown", result.stderr.lower())
 
     def test_wrong_pr_entry_is_rejected(self):
         self.source_change()

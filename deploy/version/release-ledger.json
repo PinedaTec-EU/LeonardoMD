@@ -3,9 +3,9 @@
   "version": {
     "initial_version": "0.1.56",
     "segments": [
-      "major",
-      "minor",
-      "patch"
+      "release",
+      "feature",
+      "build"
     ],
     "state_path": "deploy/version/version.yaml",
     "entries_path": "deploy/version/entries",
