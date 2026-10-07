@@ -21,6 +21,7 @@ final class AppSession {
     var showHidden = false
     var showFrontmatter = UserDefaults.standard.bool(forKey: "showFrontmatter")
     var confirmExternalLinks = UserDefaults.standard.object(forKey: "confirmExternalLinks") as? Bool ?? true
+    var pendingExternalURL: URL?
     var errorMessage: String?
     var externalConflict = false
     var busy = false
@@ -57,9 +58,15 @@ final class AppSession {
     var initializationTask: Task<Void, Never>?
     var stopped = false
     let globalPreferencesURL: URL
+    @ObservationIgnored let openSystemURL: @MainActor (URL) -> Void
+    static let readableDocumentExtensions: Set<String> = ["md", "markdown", "txt"]
 
-    init(preferencesURL: URL = AppSession.preferencesURL) {
+    init(
+        preferencesURL: URL = AppSession.preferencesURL,
+        openSystemURL: @escaping @MainActor (URL) -> Void = { NSWorkspace.shared.open($0) }
+    ) {
         globalPreferencesURL = preferencesURL
+        self.openSystemURL = openSystemURL
     }
 
     let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "session")
@@ -141,8 +148,8 @@ final class AppSession {
 
     func openDocument(_ url: URL, line: Int? = nil) async {
         let started = ContinuousClock.now
-        guard ["md", "markdown", "txt"].contains(url.pathExtension.lowercased()) else {
-            NSWorkspace.shared.open(url)
+        guard Self.readableDocumentExtensions.contains(url.pathExtension.lowercased()) else {
+            openSystemURL(url)
             return
         }
         guard await prepareNavigation() else { return }
@@ -271,6 +278,7 @@ final class AppSession {
 
     func stop() {
         stopped = true
+        pendingExternalURL = nil
         saveTask?.cancel()
         searchTask?.cancel()
         monitorTask?.cancel()

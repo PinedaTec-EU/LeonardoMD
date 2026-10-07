@@ -29,6 +29,19 @@ struct WorkspaceView: View {
         .alert("LeonardoMD", isPresented: Binding(get: { session.errorMessage != nil }, set: { if !$0 { session.errorMessage = nil } })) {
             Button("Aceptar") { session.errorMessage = nil }
         } message: { Text(session.errorMessage ?? "") }
+        .confirmationDialog(
+            session.pendingExternalURL?.isFileURL == true ? "¿Abrir archivo en otra aplicación?" : "¿Abrir enlace externo?",
+            isPresented: Binding(
+                get: { session.pendingExternalURL != nil },
+                set: { if !$0 { session.cancelExternalOpening() } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Abrir con la aplicación predeterminada") { session.confirmExternalOpening() }
+            Button("Cancelar", role: .cancel) { session.cancelExternalOpening() }
+        } message: {
+            Text(session.pendingExternalURL?.absoluteString ?? "")
+        }
         .onChange(of: session.showFrontmatter) { _, value in UserDefaults.standard.set(value, forKey: "showFrontmatter") }
         .onChange(of: session.confirmExternalLinks) { _, value in UserDefaults.standard.set(value, forKey: "confirmExternalLinks") }
         .onChange(of: session.showHidden) { _, value in

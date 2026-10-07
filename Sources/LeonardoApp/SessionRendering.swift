@@ -10,7 +10,7 @@ extension AppSession {
             baseURL: documentURL?.deletingLastPathComponent(),
             configuration: renderConfiguration,
             controller: renderer,
-            onLinkActivation: { url in self.followLink(url) },
+            onLinkActivation: { url in Task { await self.followLink(url) } },
             onScrollProgress: { fraction in
                 if self.mode == .split { self.editorScroll = fraction }
             }
@@ -39,25 +39,29 @@ extension AppSession {
             localAssetRoot: projectURL
         )
     }
-    func followLink(_ url: URL) {
-        if let fragment = url.fragment, url.path == documentURL?.path || url.path == documentURL?.deletingLastPathComponent().path {
+    func followLink(_ url: URL) async {
+        guard !stopped else { return }
+        if url.isFileURL, let fragment = url.fragment, url.path == documentURL?.path || url.path == documentURL?.deletingLastPathComponent().path {
             renderer.scroll(to: fragment)
             return
         }
-        if url.isFileURL {
-            Task { await openDocument(url) }
+        if url.isFileURL, Self.readableDocumentExtensions.contains(url.pathExtension.lowercased()) {
+            await openDocument(url)
+        } else if url.isFileURL || confirmExternalLinks {
+            // Document-authored local links always require approval before a
+            // system handler can run, even when web confirmation is disabled.
+            guard pendingExternalURL == nil else { return }
+            pendingExternalURL = url
         } else {
-            if confirmExternalLinks {
-                let alert = NSAlert()
-                alert.messageText = "¿Abrir enlace externo?"
-                alert.informativeText = url.absoluteString
-                alert.addButton(withTitle: "Abrir en navegador")
-                alert.addButton(withTitle: "Cancelar")
-                guard alert.runModal() == .alertFirstButtonReturn else { return }
-            }
-            NSWorkspace.shared.open(url)
+            openSystemURL(url)
         }
     }
+    func confirmExternalOpening() {
+        guard !stopped, let url = pendingExternalURL else { return }
+        pendingExternalURL = nil
+        openSystemURL(url)
+    }
+    func cancelExternalOpening() { pendingExternalURL = nil }
     func exportPDF() {
         guard let documentURL else { return }
         let panel = NSSavePanel()

@@ -18,3 +18,5 @@ Mermaid and math are opt-in. Their code is distributed with the app but excluded
 The app works offline and does not depend on a CDN to open documents. Third-party executable plugins need a separate permission/signing design; the MVP extension catalog uses bundled engines with explicit settings. Cross-platform UI implementation remains future work; portable file formats and core contracts provide the reuse boundary.
 
 Git uses the installed system CLI and existing credentials. Operations stay asynchronous. Dirty-worktree pull and merge conflicts are surfaced rather than automatically repaired.
+
+Document-authored local links to Markdown/plain text stay inside LeonardoMD. Other local file links always require confirmation showing the target before a system application is invoked; this is independent of the configurable web-link confirmation. Explicit file selection retains its normal system-handler behavior. Confirmation uses the native asynchronous SwiftUI dialog rather than blocking the application actor.

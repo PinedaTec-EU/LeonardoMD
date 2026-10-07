@@ -6,6 +6,8 @@ Coverage includes workspace/file operations, path and symlink boundaries, stream
 
 Real filesystem symlink fixtures verify that project operations reject reading or deleting outside the project and preserve the outside file. Image resolution rejects a symlink to an outside image while accepting an alias that remains inside the asset root. This scope corrects the previously unsupported coverage claim tracked in [#16](https://github.com/PinedaTec-EU/LeonardoMD/issues/16).
 
+Local hyperlink authorization regressions cover mandatory confirmation for non-Markdown file links even with web confirmation disabled, cancellation without system activation, one-time activation of the displayed target, internal Markdown navigation, configurable web confirmation and discarding pending authorization when the session closes. System activation is injected at the application boundary, so tests never launch another application. The policy and correction are tracked in [#26](https://github.com/PinedaTec-EU/LeonardoMD/issues/26).
+
 ## Bundled dependency validation
 
 `THIRD_PARTY_SOURCES.json` records pinned versions, npm tarball integrity and resource SHA-256 hashes; license texts accompany the offline assets. The 2026-10-07 GitHub advisory check returned no applicable published advisories for Mermaid 11.16.1, DOMPurify 3.4.16, KaTeX 0.18.2, marked 15.0.7 and highlight.js 11.12.0. This is a dated check, not a guarantee against undiscovered flaws. The update is tracked in [#18](https://github.com/PinedaTec-EU/LeonardoMD/issues/18).
