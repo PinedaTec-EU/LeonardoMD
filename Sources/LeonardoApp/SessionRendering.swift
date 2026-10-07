@@ -62,7 +62,9 @@ extension AppSession {
         guard let documentURL else { return }
         let panel = NSSavePanel()
         panel.nameFieldStringValue = documentURL.deletingPathExtension().lastPathComponent + ".pdf"
-        guard panel.runModal() == .OK, let destination = panel.url else { return }
+        presentFilePanel(panel) { [weak self] destination in self?.exportPDF(to: destination, documentURL: documentURL) }
+    }
+    private func exportPDF(to destination: URL, documentURL: URL) {
         Task {
             let previousMode = mode
             defer { mode = previousMode }

@@ -9,8 +9,7 @@ extension AppSession {
         panel.allowedContentTypes = [.plainText, UTType(filenameExtension: "md") ?? .plainText]
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        Task { await open(url) }
+        presentFilePanel(panel) { [weak self] url in Task { await self?.open(url) } }
     }
     func chooseProject() {
         let panel = NSOpenPanel()
@@ -18,8 +17,7 @@ extension AppSession {
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
         panel.prompt = "Abrir proyecto"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        Task { await openProject(url) }
+        presentFilePanel(panel) { [weak self] url in Task { await self?.openProject(url) } }
     }
     func openProject(_ url: URL) async {
         await initialize()
@@ -134,8 +132,7 @@ extension AppSession {
         panel.canChooseDirectories = true
         panel.directoryURL = projectURL
         panel.prompt = "Mover aquí"
-        guard panel.runModal() == .OK, let destination = panel.url else { return }
-        move(url, into: destination)
+        presentFilePanel(panel) { [weak self] destination in self?.move(url, into: destination) }
     }
     func move(_ url: URL, into parent: URL) {
         guard let root = projectURL else { return }

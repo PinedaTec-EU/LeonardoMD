@@ -70,7 +70,9 @@ struct PaletteEditor: View {
     private func importPalette() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.json]
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        presentFilePanel(panel) { url in readPalette(url) }
+    }
+    private func readPalette(_ url: URL) {
         do {
             let custom = try JSONDecoder().decode(PaletteTokenOverrides.self, from: Data(contentsOf: url))
             let palette = PaletteDefinition(id: base.id, displayName: base.displayName, tokens: custom.applying(to: base.tokens))
@@ -83,7 +85,9 @@ struct PaletteEditor: View {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.json]
         panel.nameFieldStringValue = "leonardomd-palette.json"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        presentFilePanel(panel) { url in writePalette(url) }
+    }
+    private func writePalette(_ url: URL) {
         do {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

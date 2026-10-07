@@ -47,8 +47,7 @@ extension AppSession {
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
         panel.prompt = "Usar como espacio"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        Task { await openWorkspace(url) }
+        presentFilePanel(panel) { [weak self] url in Task { await self?.openWorkspace(url) } }
     }
     func openWorkspace(_ url: URL) async {
         await initialize()

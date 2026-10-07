@@ -70,7 +70,10 @@ extension AppSession {
         guard let url = documentURL else { return }
         let panel = NSSavePanel()
         panel.nameFieldStringValue = url.deletingPathExtension().lastPathComponent + "-copia.md"
-        guard panel.runModal() == .OK, let destination = panel.url else { return }
+        presentFilePanel(panel) { [weak self] destination in self?.saveCopy(to: destination, sourceURL: url) }
+    }
+    private func saveCopy(to destination: URL, sourceURL url: URL) {
+        guard documentURL == url else { return }
         guard destination.standardizedFileURL.resolvingSymlinksInPath() != url.standardizedFileURL.resolvingSymlinksInPath() else {
             errorMessage = "Elige otro archivo para conservar ambas versiones."
             return
