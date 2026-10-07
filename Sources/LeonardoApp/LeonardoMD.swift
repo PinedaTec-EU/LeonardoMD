@@ -31,13 +31,21 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     }
 
     func application(_ sender: NSApplication, open urls: [URL]) {
-        for url in urls { newWindow(url: url) }
+        if DocumentTabs.acceptsDrop(urls) {
+            if windows.isEmpty { newEmptyWindow() }
+            if let documents = activeDocuments { Task { await documents.openDroppedDocuments(urls) } }
+        } else {
+            for url in urls { newWindow(url: url) }
+        }
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         Task {
-            for window in windows { _ = await window.session.prepareNavigation() }
-            sender.reply(toApplicationShouldTerminate: windows.allSatisfy { !$0.session.isDirty && !$0.session.gitBusy })
+            var canTerminate = true
+            for window in windows {
+                if await !window.documents.prepareClose() { canTerminate = false }
+            }
+            sender.reply(toApplicationShouldTerminate: canTerminate)
         }
         return .terminateLater
     }
@@ -57,6 +65,11 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         if let url { Task { await controller.session.open(url) } }
     }
 
+    @objc private func newTab() { activeDocuments?.addTab() }
+    @objc private func closeTab() {
+        guard let documents = activeDocuments, let id = documents.activeID else { return }
+        Task { await documents.close(id) }
+    }
     @objc private func openDocument() { activeSession?.chooseDocument() }
     @objc private func openProject() { activeSession?.chooseProject() }
     @objc private func save() { Task { await activeSession?.save() } }
@@ -71,9 +84,10 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         for controller in windows { controller.window?.makeKeyAndOrderFront(nil) }
     }
-    private var activeSession: AppSession? {
-        windows.first { $0.window === NSApp.mainWindow }?.session ?? windows.last?.session
+    private var activeDocuments: DocumentTabs? {
+        windows.first { $0.window === NSApp.mainWindow }?.documents ?? windows.last?.documents
     }
+    private var activeSession: AppSession? { activeDocuments?.activeSession }
 
     private func configureMenu() {
         let menu = NSMenu()
@@ -84,11 +98,13 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         add("Salir de LeonardoMD", action: #selector(NSApplication.terminate(_:)), key: "q", to: app)
         let file = submenu("Archivo", in: menu)
         add("Nueva ventana", action: #selector(newEmptyWindow), key: "n", to: file)
+        add("Nueva pestaña", action: #selector(newTab), key: "t", to: file)
+        add("Cerrar pestaña", action: #selector(closeTab), key: "w", to: file)
         add("Abrir documento…", action: #selector(openDocument), key: "o", to: file)
         add("Abrir proyecto…", action: #selector(openProject), key: "o", modifiers: [.command, .shift], to: file)
         add("Guardar", action: #selector(save), key: "s", to: file)
         add("Exportar PDF…", action: #selector(exportPDF), key: "e", modifiers: [.command, .shift], to: file)
-        add("Cerrar ventana", action: #selector(NSWindow.performClose(_:)), key: "w", to: file)
+        add("Cerrar ventana", action: #selector(NSWindow.performClose(_:)), key: "w", modifiers: [.command, .shift], to: file)
         let editMenu = submenu("Edición", in: menu)
         for (title, selector, key) in [("Deshacer", "undo:", "z"), ("Rehacer", "redo:", "Z"), ("Cortar", "cut:", "x"), ("Copiar", "copy:", "c"), ("Pegar", "paste:", "v"), ("Seleccionar todo", "selectAll:", "a")] {
             add(title, action: NSSelectorFromString(selector), key: key, to: editMenu)
@@ -124,7 +140,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
 
 @MainActor
 final class DocumentWindow: NSWindowController, NSWindowDelegate {
-    let session = AppSession()
+    let documents = DocumentTabs()
+    var session: AppSession { documents.activeSession }
     var onClose: (() -> Void)?
     private var closeAfterSave = false
 
@@ -137,8 +154,8 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
         window.center()
         super.init(window: window)
         window.delegate = self
-        window.contentView = NSHostingView(rootView: WorkspaceView(session: session))
-        session.updateWindow = { [weak window] title, url, dirty in
+        window.contentView = NSHostingView(rootView: DocumentTabsView(documents: documents))
+        documents.updateWindow = { [weak window] title, url, dirty in
             window?.title = title
             window?.representedURL = url
             window?.isDocumentEdited = dirty
@@ -146,20 +163,16 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
     }
     required init?(coder: NSCoder) { nil }
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        if session.gitBusy {
-            session.errorMessage = "Espera a que termine la operación Git antes de cerrar esta ventana."
-            return false
-        }
-        if closeAfterSave || (!session.isDirty && session.settingsTask == nil) { return true }
+        if closeAfterSave || !documents.hasPendingWork { return true }
         Task {
-            guard await session.prepareNavigation() else { return }
+            guard await documents.prepareClose() else { return }
             closeAfterSave = true
             sender.performClose(nil)
         }
         return false
     }
     func windowWillClose(_ notification: Notification) {
-        session.stop()
+        documents.stop()
         onClose?()
     }
 }

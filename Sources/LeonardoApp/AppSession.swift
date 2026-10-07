@@ -36,6 +36,11 @@ final class AppSession {
     var globalPreferences = GlobalPreferences.default
     var projectConfiguration = ProjectConfiguration.default
     var gitSummary = "Git"
+    var prepareRelatedFileOperation: ((URL) async -> Bool)?
+    var relatedPathMoved: ((URL, URL) async -> Void)?
+    var relatedPathDeleted: ((URL) -> Void)?
+    var activateExistingDocument: ((URL, Int?) -> Bool)?
+    var openDroppedDocuments: (([URL]) async -> Void)?
     var updateWindow: ((String, URL?, Bool) -> Void)?
     let documents = DocumentStore()
     let files = LocalProjectRepository()
@@ -124,6 +129,7 @@ final class AppSession {
 
     func open(_ url: URL) async {
         await initialize()
+        if activateExistingDocument?(url, nil) == true { return }
         var directory: ObjCBool = false
         if FileManager.default.fileExists(atPath: url.path, isDirectory: &directory), directory.boolValue {
             await openProject(url)
@@ -140,6 +146,7 @@ final class AppSession {
     }
 
     func openDocument(_ url: URL, line: Int? = nil) async {
+        if activateExistingDocument?(url, line) == true { return }
         let started = ContinuousClock.now
         guard ["md", "markdown", "txt"].contains(url.pathExtension.lowercased()) else {
             NSWorkspace.shared.open(url)

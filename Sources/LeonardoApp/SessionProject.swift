@@ -119,10 +119,11 @@ extension AppSession {
     func rename(_ url: URL) {
         guard let root = projectURL, let name = prompt(title: "Renombrar", initial: url.lastPathComponent) else { return }
         Task {
-            guard await prepareNavigation() else { return }
+            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
             do {
                 let node = try await files.rename(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root), to: name)
                 await updateMovedDocument(from: url, to: node.url)
+                await relatedPathMoved?(url, node.url)
                 await refreshTree()
             } catch { report(error) }
         }
@@ -138,10 +139,11 @@ extension AppSession {
     func move(_ url: URL, into parent: URL) {
         guard let root = projectURL else { return }
         Task {
-            guard await prepareNavigation() else { return }
+            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
             do {
                 let node = try await files.move(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root), to: relative(parent))
                 await updateMovedDocument(from: url, to: node.url)
+                await relatedPathMoved?(url, node.url)
                 await refreshTree()
             } catch { report(error) }
         }
@@ -165,24 +167,39 @@ extension AppSession {
         alert.addButton(withTitle: "Eliminar")
         guard alert.runModal() == .alertSecondButtonReturn else { return }
         Task {
-            guard await prepareNavigation() else { return }
+            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
             do {
                 try await files.delete(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root))
                 if let current = documentURL, current == url || current.path.hasPrefix(url.path + "/") {
                     documentURL = nil; snapshot = nil; content = ""; updateTitle()
                 }
+                relatedPathDeleted?(url)
                 await refreshTree()
             } catch { report(error) }
         }
     }
     func acceptDrop(_ providers: [NSItemProvider], into parent: URL) -> Bool {
-        guard let provider = providers.first else { return false }
-        provider.loadObject(ofClass: NSURL.self) { [weak self] object, _ in
-            guard let url = object as? URL else { return }
-            Task { @MainActor in self?.move(url, into: parent) }
+        guard !providers.isEmpty else { return false }
+        Task {
+            var urls: [URL] = []
+            for provider in providers {
+                let url: URL? = await withCheckedContinuation { continuation in
+                    provider.loadObject(ofClass: NSURL.self) { object, _ in
+                        continuation.resume(returning: object as? URL)
+                    }
+                }
+                guard let url else { return }
+                urls.append(url)
+            }
+            if DocumentTabs.acceptsDrop(urls), let openDroppedDocuments {
+                await openDroppedDocuments(urls)
+            } else if urls.count == 1, let url = urls.first {
+                move(url, into: parent)
+            }
         }
         return true
     }
+
     func relative(_ url: URL) -> String {
         guard let root = projectURL else { return url.path }
         if url == root { return "" }
