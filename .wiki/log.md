@@ -1,3 +1,5 @@
 # Changes
 
 - 2026-10-07: Initial native macOS implementation under [issue #1](https://github.com/PinedaTec-EU/LeonardoMD/issues/1). Added standalone viewer and focus story, offline opt-in engines, and premium controls. Native QA registered [bug #2](https://github.com/PinedaTec-EU/LeonardoMD/issues/2) for missing Mermaid labels and [bug #3](https://github.com/PinedaTec-EU/LeonardoMD/issues/3) for relative images; corrections and final evidence remain part of the same PR.
+
+- 2026-10-07: [#25](https://github.com/PinedaTec-EU/LeonardoMD/issues/25) closes symlink search escapes and target mutations with explicit omission/rejection policy and actual link fixtures; [#26](https://github.com/PinedaTec-EU/LeonardoMD/issues/26) requires confirmation before document-authored local links activate system handlers. ADR/validation and this memory record the policies. [#9](https://github.com/PinedaTec-EU/LeonardoMD/issues/9) remains open for the mouse/accessibility discrepancy despite a passing fresh-process keyboard flow.
