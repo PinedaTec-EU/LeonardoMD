@@ -3,6 +3,10 @@ import XCTest
 
 @MainActor
 final class SingleInstanceTests: XCTestCase {
+    func testOwnershipUsesProductIdentityAcrossBundleCopies() {
+        XCTAssertEqual(SingleInstance.serviceName, "eu.pinedatec.LeonardoMD.launch")
+    }
+
     func testElectionForwardingAcknowledgementAndOwnershipRelease() async throws {
         let name = "eu.pinedatec.LeonardoMD.test.\(UUID().uuidString)"
         let owner = SingleInstance(name: name)

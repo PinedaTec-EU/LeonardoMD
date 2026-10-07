@@ -8,7 +8,8 @@ import OSLog
 final class SingleInstance {
     enum Role { case primary, secondary }
     enum LaunchError: Error { case unavailable, forwardingFailed(Int32), invalidRequest }
-    nonisolated private static let serviceName = (Bundle.main.bundleIdentifier ?? "eu.pinedatec.LeonardoMD") + ".launch"
+    // Product identity must not vary with a QA bundle identifier or app location.
+    nonisolated static let serviceName = "eu.pinedatec.LeonardoMD.launch"
     nonisolated private static let requestID: Int32 = 1
     nonisolated private static let timeout: TimeInterval = 10
     nonisolated private static let forwardingQueue = DispatchQueue(label: "eu.pinedatec.LeonardoMD.launch-forwarding")
