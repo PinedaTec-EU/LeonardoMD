@@ -15,7 +15,7 @@ struct WorkspaceView: View {
                 documentArea.frame(maxWidth: .infinity, maxHeight: .infinity).disabled(session.busy)
                 if session.presentation.showsInspector {
                     Divider()
-                    ExtensionInspector(session: session)
+                    DocumentInspector(session: session)
                 }
             }
             Divider()
@@ -85,8 +85,8 @@ struct WorkspaceView: View {
                     .accessibilityIdentifier("focus-mode")
                 Button { session.exportPDF() } label: { Image(systemName: "square.and.arrow.up") }.help("Exportar PDF")
             }
-            Button { session.showInspector.toggle() } label: { Label("Extensiones", systemImage: "puzzlepiece.extension") }
-                .accessibilityIdentifier("extensions-button")
+            Button { session.showInspector.toggle() } label: { Label("Índice", systemImage: "list.bullet") }
+                .accessibilityIdentifier("document-outline-button")
         }
         .buttonStyle(PremiumButtonStyle(compact: true))
         .padding(.horizontal, 20).padding(.vertical, 12)
