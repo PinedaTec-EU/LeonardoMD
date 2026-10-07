@@ -40,32 +40,33 @@ struct GitProcessRunner: Sendable {
         process.standardOutput = stdoutPipe
         process.standardError = stderrPipe
 
-        stdoutPipe.fileHandleForReading.readabilityHandler = { handle in
-            let data = handle.availableData
-            if !data.isEmpty { stdoutCollector.append(data) }
+        let readers = DispatchGroup()
+        // One reader owns each stream through EOF. Process exit alone does not
+        // mean an in-flight readability callback has appended its final bytes.
+        DispatchQueue.global(qos: .utility).async(group: readers) {
+            stdoutCollector.append(stdoutPipe.fileHandleForReading.readDataToEndOfFile())
         }
-        stderrPipe.fileHandleForReading.readabilityHandler = { handle in
-            let data = handle.availableData
-            if !data.isEmpty { stderrCollector.append(data) }
+        DispatchQueue.global(qos: .utility).async(group: readers) {
+            stderrCollector.append(stderrPipe.fileHandleForReading.readDataToEndOfFile())
         }
 
         return try await withCheckedThrowingContinuation { continuation in
             process.terminationHandler = { process in
-                stdoutPipe.fileHandleForReading.readabilityHandler = nil
-                stderrPipe.fileHandleForReading.readabilityHandler = nil
-                stdoutCollector.append(stdoutPipe.fileHandleForReading.readDataToEndOfFile())
-                stderrCollector.append(stderrPipe.fileHandleForReading.readDataToEndOfFile())
-                let result = GitCommandResult(
-                    arguments: arguments,
-                    exitCode: process.terminationStatus,
-                    stdout: String(data: stdoutCollector.data, encoding: .utf8) ?? "",
-                    stderr: String(data: stderrCollector.data, encoding: .utf8) ?? ""
-                )
-                continuation.resume(returning: result)
+                readers.notify(queue: .global(qos: .utility)) {
+                    let result = GitCommandResult(
+                        arguments: arguments,
+                        exitCode: process.terminationStatus,
+                        stdout: String(data: stdoutCollector.data, encoding: .utf8) ?? "",
+                        stderr: String(data: stderrCollector.data, encoding: .utf8) ?? ""
+                    )
+                    continuation.resume(returning: result)
+                }
             }
             do {
                 try process.run()
             } catch {
+                try? stdoutPipe.fileHandleForWriting.close()
+                try? stderrPipe.fileHandleForWriting.close()
                 continuation.resume(throwing: error)
             }
         }

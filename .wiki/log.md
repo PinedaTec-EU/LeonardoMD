@@ -7,3 +7,8 @@
 - 2026-10-07: Added per-session document tabs, local Markdown drops, header location actions and cross-tab close/file-operation protection for [#19](https://github.com/PinedaTec-EU/LeonardoMD/issues/19), initially stacked on #8, now targeting main. Independent native view ownership preserves editor undo and reading position without copying document state between tabs.
 
 - 2026-10-07: Refreshed #19 on main with #27/#31 integrated. Added actual native URL-provider regression coverage and constrained sidebar relocation to project-owned sources; document drops remain non-destructive.
+
+- 2026-10-07: Added single-instance ownership, acknowledged launch forwarding and external document tab routing for [#22](https://github.com/PinedaTec-EU/LeonardoMD/issues/22), now targeting main after #21 integration. Native QA covers repeated and simultaneous executable launches plus Launch Services reopen/open-document events.
+
+
+- 2026-10-07: Single-instance integration exposed a Git output completion race in hosted CI. [#35](https://github.com/PinedaTec-EU/LeonardoMD/issues/35) drains both subprocess streams through EOF before returning, with short/large-output and failed-launch regressions.
