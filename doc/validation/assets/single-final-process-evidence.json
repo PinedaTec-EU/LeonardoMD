@@ -1,0 +1,44 @@
+{
+  "sha": "81de7d240f4ff7a37802f245d4ffc1633028cfc3",
+  "cold": [
+    {
+      "pid": 1473,
+      "exit": 0,
+      "owner": false
+    },
+    {
+      "pid": 1477,
+      "exit": null,
+      "owner": true
+    },
+    {
+      "pid": 1480,
+      "exit": 0,
+      "owner": false
+    },
+    {
+      "pid": 1481,
+      "exit": 0,
+      "owner": false
+    }
+  ],
+  "warm": [
+    {
+      "args": [],
+      "exit": 0
+    },
+    {
+      "args": [
+        "/tmp/leonardo-chain-qa/single-fixtures/two.md"
+      ],
+      "exit": 0
+    }
+  ],
+  "after_native_reopen_and_finder_open": {
+    "owner_pid": 1477,
+    "live_editor_processes": 1,
+    "finder_document": "finder.md",
+    "duplicate_document": "two.md",
+    "evidence": "Native AX captures show five file tabs; same PID verified with ps."
+  }
+}
