@@ -78,5 +78,7 @@ Distribution builds include Sparkle 2.9.6. Use **LeonardoMD → Buscar actualiza
 
 The stable feed is `https://github.com/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml`. Public downloads require no GitHub token. Development builds without `SPARKLE_PUBLIC_KEY` display an explanatory dialog and cannot enable periodic checks.
 
+Beta candidates use a separate HTTPS feed and only opt into the beta Sparkle channel. Versions are displayed as `major.minor.patch-beta.N`; update ordering uses the monotonic numeric build shared with stable releases.
+
 See [signed release preparation](doc/releases.md). The channel becomes usable only after the first signed distribution release; an appcast alone is insufficient.
 Extension controls live in **Preferences → Extensions**. Select Global or This project before changing Mermaid or mathematics; project inheritance restores the global settings. The document inspector contains heading navigation.

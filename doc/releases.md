@@ -18,6 +18,12 @@ Before publishing, inspect the version/build, appcast URLs, release notes and ar
 
 Install an older signed app in a writable Applications folder and publish a newer signed candidate on a controlled test feed. Verify manual no-update/error/update dialogs, persisted periodic-check preference, release notes, download, install and relaunch. Edit a document before installation; cancel quit and confirm the draft survives, then save and retry. Confirm Git operations also prevent premature quit. Tamper with the ZIP and confirm signature rejection before extraction; test offline mode and an unsupported architecture. Repeat with the production feed before claiming end-to-end release acceptance.
 
-## PR dependency
+## Beta candidates
 
-The update implementation is intentionally stacked on PR #8 at owner request. Merge #8 first, then retarget the updater PR to `main` and refresh its validation/review. Do not merge the updater branch independently of the MVP application.
+Set `LEONARDO_CHANNEL=beta`, `LEONARDO_VERSION=0.1.1-beta.1` (increment beta.N for later candidates), and a `LEONARDO_BUILD` greater than every previous beta and stable build. Sparkle orders updates by this numeric build, independently of the displayed version. Both channels share one monotonic build sequence. Keep beta and stable keys in separate Keychain accounts; select the beta account with `SPARKLE_KEY_ACCOUNT`. Use the matching public key in `SPARKLE_PUBLIC_KEY`.
+
+Beta bundles use `https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/update-feeds/beta/appcast.xml`, or an explicit `LEONARDO_FEED_URL` HTTPS test endpoint. The feed branch is a publication target, not created by preparation. Beta appcasts mark every item with `sparkle:channel=beta`; stable bundles do not opt into that channel. The verifier rejects prerelease tags in stable feeds. Public beta publication requires a GitHub prerelease (never latest) containing the ZIP, followed by an atomic update of the beta feed branch. Never replace the stable appcast with a beta feed.
+
+`LEONARDO_NOTARIZE=0` permits a **local beta candidate only** when a notarytool profile is unavailable. It remains Developer ID signed and Ed25519 signed; Gatekeeper/notarization acceptance is not claimed. Stable preparation always requires notarization. Preparation verifies archive bytes using Sparkle's `sign_update --verify` after generating the appcast. The scripts do not publish releases, feeds, or tags.
+
+PR #8 is integrated. The implementation is refreshed on current main in PR #17. Keep issue #15 open until the hosted update and relaunch acceptance above is complete.

@@ -4,7 +4,7 @@ import OSLog
 
 /// Owns Sparkle for the lifetime of the application. Sparkle retains its own preferences.
 @MainActor
-final class ApplicationUpdates: NSObject, NSMenuItemValidation {
+final class ApplicationUpdates: NSObject, NSMenuItemValidation, SPUUpdaterDelegate {
     private var controller: SPUStandardUpdaterController?
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "updates")
 
@@ -14,10 +14,14 @@ final class ApplicationUpdates: NSObject, NSMenuItemValidation {
             logger.info("update_channel_unconfigured")
             return
         }
-        let controller = SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: nil, userDriverDelegate: nil)
+        let controller = SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: self, userDriverDelegate: nil)
         self.controller = controller
         controller.startUpdater()
         logger.info("update_controller_started")
+    }
+
+    func allowedChannels(for updater: SPUUpdater) -> Set<String> {
+        Bundle.main.object(forInfoDictionaryKey: "LeonardoUpdateChannel") as? String == "beta" ? ["beta"] : []
     }
 
     func addMenuItems(to menu: NSMenu) {
