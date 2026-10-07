@@ -1,0 +1,99 @@
+Window: "leonardo-chain-qa", App: Finder.
+0 standard window leonardo-chain-qa, ID: FinderWindow, Secondary Actions: Raise
+	1 split group
+		2 scroll area Secondary Actions: Scroll Up, Scroll Down
+			3 outline sidebar
+				4 row (selectable, expanded) Value: Favorites, Secondary Actions: Collapse
+				5 row (selectable) SynologyDrive - eHome21
+				6 row (selectable) SynologyDrive - Clavel
+				7 row (selectable) Documents
+				8 row (selectable) Desktop
+				9 row (selectable) Applications
+				10 row (selectable) Downloads
+				11 row (selectable) Pictures
+				12 row (selectable) PinedaTec.eu
+				13 row (selectable, expanded) Value: Locations, Secondary Actions: Collapse
+				14 row (selectable) iCloud Drive
+				15 row (selectable) SynologyDrive - Clavel
+				16 row (selectable) SynologyDrive - eHome21
+				17 row (selectable) jmr.pineda
+				18 row (selectable) Pineda’s Mac Studio
+				19 row (selectable) Eject, Description: eject, Value: MSM4Ext
+				20 row (selectable) AirDrop
+				21 row (selectable) Eject, Description: eject, Value: blacknas.pinedatec.eu.lan
+				22 row (selectable) Eject, Description: eject, Value: metheora.pinedatec.eu.lan
+				23 row (selectable) Eject, Description: eject, Value: sakura.pinedatec.eu.lan
+				24 row (selectable) Network
+				25 row (selectable) Trash
+				26 row (selectable, collapsed) Value: Tags, Secondary Actions: Expand
+			27 scroll bar (settable, float) 0
+				28 value indicator (settable, float) 0
+				29 increment arrow button
+				30 decrement arrow button
+				31 increment page button
+				32 decrement page button
+		33 splitter (disabled, settable, float) 255
+		34 scroll area Secondary Actions: Scroll Up, Scroll Down
+			35 collection Description: icon view, ID: IconView
+				36 section (disabled)
+					37 image drag-fixtures, 4 items, ID: drag-fixtures, Secondary Actions: open
+					38 image preferences-project, 2 items, ID: preferences-project, Secondary Actions: open
+					39 image about-build.log, Secondary Actions: open
+					40 image about-closure.md, Secondary Actions: open
+					41 image about-current.png, Secondary Actions: open
+					42 image about-evidence.md, Secondary Actions: open
+					43 image about-self-approval.md, Secondary Actions: open
+					44 image about-tests.log, Secondary Actions: open
+					45 image about-upload.json, Secondary Actions: open
+					46 image AboutQA.app, Secondary Actions: open
+					47 image drop-provider-tests.log, Secondary Actions: open
+					48 image evidence-upload.json, Secondary Actions: open
+					49 image judge28-pass.md, Secondary Actions: open
+					50 image (selected) Notas.md, Secondary Actions: open
+					51 image path-bug-evidence.md, Secondary Actions: open
+					52 image path-bug.md, Secondary Actions: open
+					53 image Plan.md, Secondary Actions: open
+					54 image pr-17-integration.md, Secondary Actions: open
+					55 image pr-21-integration.md, Secondary Actions: open
+					56 image pr21-body.md, Secondary Actions: open
+			57 scroll bar (settable, float) 0.0859465737514518
+				58 value indicator (settable, float) 0.0859465737514518
+				59 increment arrow button
+				60 decrement arrow button
+				61 increment page button
+				62 decrement page button
+		63 unknown Details: status bar, ID: statusBar
+			64 text Value: 1 of 61 selected, 227,88 GB available, ID: statusBarText
+			65 slider (settable, float) Description: resize icon, Value: 36
+				66 value indicator (settable, float) 36
+		67 list path
+			68 text URL: file:///, Value: Macintosh HD private tmp leonardo-chain-qa Notas.md, Secondary Actions: open
+	69 toolbar
+		70 container Back/Forward
+			71 button (disabled) back
+			72 button (disabled) forward
+		73 button Description: AirDrop, Help: Share the selected items using AirDrop, Secondary Actions: Move previous, Move next, Remove from toolbar
+		74 pop up button Description: icon view, Value: as Icons
+		75 menu button Description: Group, Help: Change the item grouping (hold down Option to change the sort), Secondary Actions: Move previous, Move next, Remove from toolbar
+		76 button Description: Share, Help: Share the selected items, Secondary Actions: Move previous, Move next, Remove from toolbar
+		77 button Description: Add Tags, Help: Edit Tags, Secondary Actions: Move previous, Move next, Remove from toolbar
+		78 menu button Description: Action, Help: Perform tasks with the selected items, Secondary Actions: Move previous, Move next, Remove from toolbar
+		79 button Search
+	80 tab group tab bar, Description: Tab bar, 1 tab.
+		81 tab leonardo-chain-qa, Value: on
+			82 button Close tab, Description: Close
+		83 button new tab
+	84 close button
+	85 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	86 minimize button
+	87 text leonardo-chain-qa
+88 menu bar
+	89 Finder
+	90 File
+	91 Edit
+	92 View
+	93 Go
+	94 Window
+	95 Help
+
+The focused UI element is 35 collection Description: icon view, ID: IconView
