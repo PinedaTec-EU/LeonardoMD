@@ -64,12 +64,9 @@ struct WorkspaceView: View {
             }
             Spacer(minLength: 8)
             if session.documentURL != nil {
-                Picker("Modo", selection: $session.mode) {
-                    ForEach(DocumentMode.allCases) { mode in Text(mode.title).tag(mode) }
-                }.pickerStyle(.segmented).labelsHidden().frame(width: 230)
-                    .padding(3).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 9))
-                    .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(.primary.opacity(0.08)))
-                    .shadow(color: .black.opacity(0.06), radius: 3, y: 2).accessibilityIdentifier("document-mode")
+                PremiumSelection(selection: $session.mode, options: DocumentMode.allCases, title: { $0.title })
+                    .accessibilityLabel("Modo")
+                    .accessibilityIdentifier("document-mode")
                 Button { session.focus.toggle() } label: { Image(systemName: session.focus ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right") }
                     .help(session.focus ? "Salir de foco" : "Modo foco")
                     .accessibilityIdentifier("focus-mode")

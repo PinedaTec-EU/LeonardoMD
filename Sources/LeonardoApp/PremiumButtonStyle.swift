@@ -23,14 +23,16 @@ struct SessionAppearance: ViewModifier {
 struct PremiumButtonStyle: ButtonStyle {
     var prominent = false
     var compact = false
+    var selected = false
     func makeBody(configuration: Configuration) -> some View {
-        Surface(configuration: configuration, prominent: prominent, compact: compact)
+        Surface(configuration: configuration, prominent: prominent, compact: compact, selected: selected)
     }
 
     private struct Surface: View {
         let configuration: Configuration
         let prominent: Bool
         let compact: Bool
+        let selected: Bool
         @Environment(\.isEnabled) private var enabled
         @Environment(\.colorScheme) private var colorScheme
         @State private var hovered = false
@@ -46,13 +48,13 @@ struct PremiumButtonStyle: ButtonStyle {
                     RoundedRectangle(cornerRadius: compact ? 8 : 10)
                         .fill(.regularMaterial)
                     RoundedRectangle(cornerRadius: compact ? 8 : 10)
-                        .fill(prominent ? accent.gradient : Color.clear.gradient)
+                        .fill(prominent ? accent.gradient : (selected ? accent.opacity(0.14) : Color.clear).gradient)
                     RoundedRectangle(cornerRadius: compact ? 8 : 10)
                         .fill(LinearGradient(colors: [.white.opacity(hovered ? 0.22 : 0.12), .clear, .black.opacity(configuration.isPressed ? 0.12 : 0.035)], startPoint: .top, endPoint: .bottom))
                 }
                 .overlay {
                     RoundedRectangle(cornerRadius: compact ? 8 : 10)
-                        .strokeBorder(prominent ? .white.opacity(0.22) : hovered ? accent.opacity(0.45) : edge, lineWidth: 1)
+                        .strokeBorder(prominent ? .white.opacity(0.22) : (hovered || selected) ? accent.opacity(0.45) : edge, lineWidth: 1)
                 }
                 .shadow(color: .black.opacity(configuration.isPressed ? 0.03 : colorScheme == .dark ? 0.24 : 0.10), radius: configuration.isPressed ? 1 : 4, x: 0, y: configuration.isPressed ? 1 : 2)
                 .scaleEffect(configuration.isPressed ? 0.98 : 1)

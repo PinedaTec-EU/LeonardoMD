@@ -29,9 +29,9 @@ struct ExtensionInspector: View {
     private func extensionCard(_ title: String, description: String, symbol: String, enabled: Binding<Bool>) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Toggle(isOn: enabled) { Label(title, systemImage: symbol).font(.headline) }
-                .toggleStyle(.switch).accessibilityIdentifier(title.lowercased() + "-toggle")
+                .toggleStyle(PremiumSwitchStyle()).accessibilityIdentifier(title.lowercased() + "-toggle")
             Text(description).font(.caption).foregroundStyle(.secondary)
-            Text(enabled.wrappedValue ? "Activo" : "Motor descargado").font(.caption).foregroundStyle(enabled.wrappedValue ? .green : .secondary)
+            Text(enabled.wrappedValue ? "Activo" : "Motor descargado").font(.caption).foregroundStyle(enabled.wrappedValue ? session.accentColor : Color.secondary)
         }.padding(14)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(enabled.wrappedValue ? session.accentColor.opacity(0.40) : .primary.opacity(0.08)))
@@ -52,10 +52,8 @@ struct PreferencesView: View {
                 Button("Listo") { dismiss() }.keyboardShortcut(.defaultAction)
             }
             if session.projectURL != nil {
-                Picker("Ámbito", selection: $projectScope) {
-                    Text("Global").tag(false)
-                    Text("Este proyecto").tag(true)
-                }.pickerStyle(.segmented)
+                PremiumSelection(selection: $projectScope, options: [false, true], title: { $0 ? "Este proyecto" : "Global" })
+                    .accessibilityLabel("Ámbito")
             }
             Form {
                 Picker("Paleta", selection: Binding(get: { projectScope ? session.projectConfiguration.palette?.rawValue ?? "inherit" : session.globalPreferences.palette.rawValue }, set: { session.setPalette($0, project: projectScope) })) {
@@ -74,7 +72,7 @@ struct PreferencesView: View {
                     Toggle("Heredar extensiones globales", isOn: Binding(get: { session.projectConfiguration.markdown == nil }, set: { session.inheritFeatures($0) }))
                     Toggle("Activar herramientas Git", isOn: Binding(get: { session.gitEnabled }, set: { session.setGitEnabled($0) }))
                 }
-            }.formStyle(.grouped)
+            }.formStyle(.grouped).toggleStyle(PremiumSwitchStyle())
             Text(projectScope ? "Se guarda en .leonardomd/project.json. No contiene credenciales." : "Las preferencias globales se aplican al visor individual y a proyectos que las heredan.")
                 .font(.caption).foregroundStyle(.secondary)
         }.buttonStyle(PremiumButtonStyle()).padding(24).frame(width: 520, height: 460)
