@@ -1,0 +1,45 @@
+Window: "two.md", App: SingleFinalQA.
+0 standard window two.md, URL: file:///tmp/leonardo-chain-qa/single-fixtures/two.md, Secondary Actions: Raise
+	1 container
+		2 scroll area
+			3 button Description: Nueva pestaña, Help: Abre un documento o proyecto en esta pestaña
+			4 button Description: Cerrar pestaña Nueva pestaña, Help: Abre un documento o proyecto en esta pestaña, ID: xmark
+			5 button (selected) Description: two.md, Help: /tmp/leonardo-chain-qa/single-fixtures/two.md
+			6 button Description: Cerrar pestaña two.md, Help: /tmp/leonardo-chain-qa/single-fixtures/two.md, ID: xmark
+			7 button Description: three.md, Help: /tmp/leonardo-chain-qa/single-fixtures/three.md
+			8 button Description: Cerrar pestaña three.md, Help: /tmp/leonardo-chain-qa/single-fixtures/three.md, ID: xmark
+			9 button Description: one.md, Help: /tmp/leonardo-chain-qa/single-fixtures/one.md
+			10 button Description: Cerrar pestaña one.md, Help: /tmp/leonardo-chain-qa/single-fixtures/one.md, ID: xmark
+			11 button Description: four.md, Help: /tmp/leonardo-chain-qa/single-fixtures/four.md
+			12 button Description: Cerrar pestaña four.md, Help: /tmp/leonardo-chain-qa/single-fixtures/four.md, ID: xmark
+		13 button Description: Nueva pestaña, Help: Nueva pestaña (⌘T), ID: new-document-tab
+		14 menu button Move
+		15 text two.md Visor de documento
+		16 container Description: Modo, ID: document-mode
+			17 button (selected) Lectura
+			18 button Edición
+			19 button Dividida
+		20 button Description: Enter Full Screen, Help: Modo foco, ID: focus-mode
+		21 button Description: Share, Help: Exportar PDF, ID: square.and.arrow.up
+		22 button Description: Extensiones, ID: extensions-button
+		23 scroll area
+			24 HTML content leonardo-document://local/single-fixtures/
+				25 container
+					26 heading two, Value: 1
+						27 text two
+					28 text Synthetic single-instance validation.
+		29 image (selected) Description: Selected, ID: checkmark.circle
+		30 text Guardado · archivo local Documento individual Markdown · UTF-8 5 palabras
+	31 close button
+	32 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	33 minimize button
+	34 image two.md
+	35 text two.md
+36 menu bar
+	37 SingleFinalQA
+	38 Archivo
+	39 Edición
+	40 Vista
+	41 Ventana
+
+The focused UI element is 0 standard window two.md, URL: file:///tmp/leonardo-chain-qa/single-fixtures/two.md, Secondary Actions: Raise
