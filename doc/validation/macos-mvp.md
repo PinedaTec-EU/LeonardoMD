@@ -10,6 +10,12 @@ Real filesystem symlink fixtures verify that project operations reject reading o
 
 Local hyperlink authorization regressions cover mandatory confirmation for non-Markdown file links even with web confirmation disabled, cancellation without system activation, one-time activation of the displayed target, internal Markdown navigation, configurable web confirmation and discarding pending authorization when the session closes. System activation is injected at the application boundary, so tests never launch another application. The policy and correction are tracked in [#26](https://github.com/PinedaTec-EU/LeonardoMD/issues/26).
 
+## Startup diagnosis
+
+[Issue #31](https://github.com/PinedaTec-EU/LeonardoMD/issues/31) covers a temporary QA binary aborting inside HIServices during `NSApplication.shared`. The original binary's UUID matches the supplied report. A controlled direct launch of that same binary aborted inside the agent execution sandbox, while a direct launch outside it registered successfully and emitted `application_window_ready`. The second user-supplied crash report corresponds to the controlled sandbox reproduction. System-log queries found no retained failure record identifying the specific denied operation; the result isolates the execution context, not the exact underlying macOS check.
+
+The startup tracer emits synchronous stderr JSON before AppKit and notice-level unified logs through first-window readiness. Tests verify JSON-line framing with embedded newlines/quotes, the context field allowlist, and continuation after a throwing stderr sink. A release-app smoke check outside the execution sandbox verifies 14 ordered startup phases, monotonic timing, consistent PID, main-thread execution and app-bundle metadata; both stderr and unified-log records are checked. The existing `application_window_ready` metric remains intact. This does not prove recovery from SIGABRT or a sandbox-compatible GUI launch.
+
 ## Bundled dependency validation
 
 `THIRD_PARTY_SOURCES.json` records pinned versions, npm tarball integrity and resource SHA-256 hashes; license texts accompany the offline assets. The 2026-10-07 GitHub advisory check returned no applicable published advisories for Mermaid 11.16.1, DOMPurify 3.4.16, KaTeX 0.18.2, marked 15.0.7 and highlight.js 11.12.0. This is a dated check, not a guarantee against undiscovered flaws. The update is tracked in [#18](https://github.com/PinedaTec-EU/LeonardoMD/issues/18).

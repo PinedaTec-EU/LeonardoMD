@@ -26,7 +26,7 @@ The entrypoint builds an optimized, locally signed app at `output/LeonardoMD.app
 | ⇧⌘O | Open project |
 | ⌘1 / ⌘2 / ⌘3 | Reading / Editing / Split |
 | ⇧⌘F | Focus |
-| ⌥⌘I | Extensions |
+| ⌥⌘I | Document outline |
 | ⌘S | Save |
 | ⇧⌘E | Export PDF |
 
@@ -45,6 +45,20 @@ Custom palette colors can be edited and imported/exported as JSON. The app valid
 Enable Git tools in the project's preferences. The app can detect or initialize a repository, show changes and ahead/behind state, stage selected files, commit, view history and run manual fetch/pull/push. It uses `/usr/bin/git` and your existing system credentials. Pull uses fast-forward only, protects dirty worktrees and reports conflicts; it does not silently resolve them.
 
 ## Development
+
+### Startup diagnostics
+
+Startup emits JSON lines synchronously to stderr and at notice level to the macOS unified log under subsystem `eu.pinedatec.LeonardoMD`, category `startup`. Records include the phase, elapsed milliseconds, PID/parent PID, launch timestamp, bundle identifier/version/build, app-bundle status, OS and architecture. The activation-policy milestone records both the switch result and the actual policy (0 = regular, 1 = accessory, 2 = prohibited). Documents, full paths, command arguments and environment values are excluded. Missing bundle versions appear as `unknown`.
+
+The `application_initializing` record is emitted before `NSApplication.shared`. If it is the last phase, inspect the crash stack and process-registration logs before blaming window or document code. Later milestones distinguish delegate setup, the event loop, menus, first-window construction and readiness. These breadcrumbs diagnose failures; they cannot recover from a framework abort. A stderr capture survives an abort even when the execution sandbox prevents unified-log delivery.
+
+To inspect retained startup records, use Console with the subsystem/category above, or run:
+
+```sh
+/usr/bin/log show --last 15m --style compact --predicate 'subsystem == "eu.pinedatec.LeonardoMD" AND category == "startup"'
+```
+
+For GUI QA, use the packaged app through `./launch.sh` from a normal GUI terminal. A directly spawned AppKit executable inside an agent execution sandbox can abort during HIServices registration before creating a window. Compare the same binary outside that sandbox before changing product behavior. PID and launch timestamp distinguish diagnostic attempts from user sessions.
 
 ```sh
 swift test
@@ -65,3 +79,4 @@ Distribution builds include Sparkle 2.9.6. Use **LeonardoMD → Buscar actualiza
 The stable feed is `https://github.com/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml`. Public downloads require no GitHub token. Development builds without `SPARKLE_PUBLIC_KEY` display an explanatory dialog and cannot enable periodic checks.
 
 See [signed release preparation](doc/releases.md). The channel becomes usable only after the first signed distribution release; an appcast alone is insufficient.
+Extension controls live in **Preferences → Extensions**. Select Global or This project before changing Mermaid or mathematics; project inheritance restores the global settings. The document inspector contains heading navigation.

@@ -11,6 +11,45 @@ final class AppSessionTests: XCTestCase {
         return (root, session)
     }
 
+    func testGlobalExtensionChangesWhileProjectOpenPreserveProjectOverrides() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        await session.openProject(root)
+        session.setMath(true, project: true)
+        await session.settingsTask?.value
+        let override = session.projectConfiguration.markdown
+        session.setMermaid(true, project: false)
+        await session.settingsTask?.value
+        XCTAssertEqual(session.projectConfiguration.markdown, override)
+        XCTAssertFalse(session.features.mermaidEnabled)
+        let saved = try await session.configurations.loadGlobalPreferences(at: session.globalPreferencesURL)
+        XCTAssertTrue(saved.markdown.mermaidEnabled)
+        XCTAssertFalse(saved.markdown.mathEnabled)
+        session.inheritFeatures(true)
+        await session.settingsTask?.value
+        XCTAssertNil(session.projectConfiguration.markdown)
+        XCTAssertTrue(session.features.mermaidEnabled)
+        XCTAssertFalse(session.features.mathEnabled)
+        let project = try await session.configurations.loadProjectConfiguration(for: root)
+        XCTAssertNil(project.markdown)
+    }
+
+    func testProjectExtensionOverridePreservesInheritedFlagsAndGlobalSettings() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        session.setMermaid(true, project: false)
+        await session.settingsTask?.value
+        await session.openProject(root)
+        session.setMath(true, project: true)
+        await session.settingsTask?.value
+        XCTAssertTrue(session.features.mermaidEnabled)
+        XCTAssertTrue(session.features.mathEnabled)
+        XCTAssertFalse(session.globalPreferences.markdown.mathEnabled)
+        let project = try await session.configurations.loadProjectConfiguration(for: root)
+        XCTAssertTrue(project.markdown?.mermaidEnabled == true)
+        XCTAssertTrue(project.markdown?.mathEnabled == true)
+    }
+
     func testOpeningStandaloneAfterProjectDetachesFolderAndUsesGlobalFeatures() async throws {
         let (root, session) = try fixture()
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }
