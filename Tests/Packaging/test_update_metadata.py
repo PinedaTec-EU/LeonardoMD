@@ -123,6 +123,26 @@ class UpdateMetadataTests(unittest.TestCase):
                                          "LEONARDO_FEED_URL": f"https://{host}./PinedaTec-EU/LeonardoMD/{variant}"})
                     self.assertEqual(path.read_bytes(), original)
 
+    def test_redirect_aliases_cannot_cross_channels(self):
+        configure = load("configure-update-bundle").configure
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "Info.plist"
+            original = (ROOT / "scripts/Info.plist").read_bytes()
+            for channel, version, host, suffix, alias in (
+                ("stable", "1.2.3", "raw.githubusercontent.com", "update-feeds/beta/appcast.xml", "raw.github.com"),
+                ("beta", "1.2.3-beta.1", "github.com", "releases/latest/download/appcast.xml", "www.github.com"),
+            ):
+                canonical = f"/PinedaTec-EU/LeonardoMD/{suffix}"
+                for url in (f"https://{host}/{canonical}",
+                            f"https://{alias}{canonical}",
+                            f"https://{host}{canonical.upper()}",
+                            f"https://{host.replace('.', '%2E')}{canonical}"):
+                    path.write_bytes(original)
+                    with self.assertRaises(ValueError):
+                        configure(path, {"LEONARDO_CHANNEL": channel, "LEONARDO_VERSION": version,
+                                         "LEONARDO_FEED_URL": url})
+                    self.assertEqual(path.read_bytes(), original)
+
     def test_signing_account_must_match_embedded_key(self):
         verify = load("verify-update-signing-key").verify
         with tempfile.TemporaryDirectory() as directory:
