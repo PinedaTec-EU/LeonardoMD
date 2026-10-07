@@ -4,6 +4,33 @@ import Testing
 
 struct MarkdownRenderTests {
     @Test
+    func imageSymlinksMustRemainInsideAllowedAssetRoot() throws {
+        let temporary = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        let root = temporary.appendingPathComponent("assets", isDirectory: true)
+        let outside = temporary.appendingPathComponent("outside", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+        let allowedImage = root.appendingPathComponent("allowed.png")
+        let privateImage = outside.appendingPathComponent("private.png")
+        try Data([1]).write(to: allowedImage)
+        try Data([2]).write(to: privateImage)
+        try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("alias.png"), withDestinationURL: allowedImage)
+        try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("escape.png"), withDestinationURL: privateImage)
+
+        let allowed = MarkdownDocumentSchemeHandler.resolvedFileURL(
+            baseDirectory: root, assetRoot: root,
+            requestURL: try #require(URL(string: "leonardo-document://local/alias.png"))
+        )
+        let rejected = MarkdownDocumentSchemeHandler.resolvedFileURL(
+            baseDirectory: root, assetRoot: root,
+            requestURL: try #require(URL(string: "leonardo-document://local/escape.png"))
+        )
+        #expect(allowed == allowedImage.resolvingSymlinksInPath())
+        #expect(rejected == nil)
+    }
+
+    @Test
     func optionalScriptsAreNotPartOfDisabledPreview() throws {
         let disabledResources = MarkdownResourceCatalog.resources(for: .default)
         let html = try MarkdownHTMLShell.make(

@@ -4,6 +4,8 @@ Run `swift test` for Core, App, static render and real WKWebView integration che
 
 Coverage includes workspace/file operations, path and symlink boundaries, streamed search/cancellation, schema and stale-window settings merges, external-change protection, navigation isolation, Git dirty/conflict handling, Unicode/newline paths, multi-megabyte process output, and fetch/pull/push against a local bare remote. Real WebKit checks verify sanitization, disabled engine globals, retained content-update context, Mermaid labels, KaTeX, parent-relative images, PDF data and engine context replacement.
 
+Real filesystem symlink fixtures verify that project operations reject reading or deleting outside the project and preserve the outside file. Image resolution rejects a symlink to an outside image while accepting an alias that remains inside the asset root. This scope corrects the previously unsupported coverage claim tracked in [#16](https://github.com/PinedaTec-EU/LeonardoMD/issues/16).
+
 Native visual acceptance uses `Examples/Proyecto/docs/arquitectura.md`: standalone viewer, project navigation, focus with panel restoration, split editor, optional extensions and palette controls. Author-owned screenshots are attached to the implementation PR with their source commit, viewport and state. Development findings are tracked in [#2](https://github.com/PinedaTec-EU/LeonardoMD/issues/2), [#3](https://github.com/PinedaTec-EU/LeonardoMD/issues/3), [#4](https://github.com/PinedaTec-EU/LeonardoMD/issues/4), [#5](https://github.com/PinedaTec-EU/LeonardoMD/issues/5), [#6](https://github.com/PinedaTec-EU/LeonardoMD/issues/6) and [#7](https://github.com/PinedaTec-EU/LeonardoMD/issues/7).
 
 ## Performance evidence and limits

@@ -3,6 +3,34 @@ import XCTest
 @testable import LeonardoCore
 
 final class LocalProjectRepositoryTests: XCTestCase {
+    func testSymlinksCannotReadOrDeleteOutsideProject() async throws {
+        let directory = try TemporaryDirectory()
+        let repository = LocalProjectRepository()
+        let workspace = try await repository.createWorkspace(at: directory.url.appendingPathComponent("Workspace"))
+        let project = try await repository.createProject(named: "Notes", in: workspace)
+        let outside = directory.url.appendingPathComponent("Outside", isDirectory: true)
+        try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+        let protectedFile = outside.appendingPathComponent("private.md")
+        try Data("private contents".utf8).write(to: protectedFile)
+        try FileManager.default.createSymbolicLink(
+            at: project.rootURL.appendingPathComponent("escape"), withDestinationURL: outside
+        )
+
+        do {
+            _ = try await repository.children(of: "escape", in: project)
+            XCTFail("Expected symlink escape to be rejected")
+        } catch let error as FileSystemRepositoryError {
+            XCTAssertEqual(error, .pathEscapesProject)
+        }
+        do {
+            try await repository.delete("escape/private.md", in: project)
+            XCTFail("Expected deletion through symlink escape to be rejected")
+        } catch let error as FileSystemRepositoryError {
+            XCTAssertEqual(error, .pathEscapesProject)
+        }
+        XCTAssertEqual(try String(contentsOf: protectedFile, encoding: .utf8), "private contents")
+    }
+
     func testProjectTreeOperationsAndSearch() async throws {
         let directory = try TemporaryDirectory()
         let repository = LocalProjectRepository()
