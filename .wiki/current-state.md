@@ -4,6 +4,8 @@ The initial macOS implementation is being delivered through [issue #1](https://g
 
 Run `./launch.sh`; validate with `swift test`. Generated app bundles are in ignored `output/`. There is no existing version-bump workflow.
 
+Startup diagnostics emit synchronous stderr JSON plus unified-log notice records (`eu.pinedatec.LeonardoMD`, category `startup`) before AppKit initialization through first-window readiness. Metadata excludes paths, document content, arguments and environment values. [Bug #31](https://github.com/PinedaTec-EU/LeonardoMD/issues/31) reproduced a HIServices registration abort with the original QA binary inside the agent execution sandbox; the identical binary started outside it. Retained system logs did not identify the specific denied operation. Use packaged GUI launches outside the execution sandbox for native QA; see README diagnostics.
+
 The app supports standalone documents, workspace/project management, search, native editing, Git, portable preferences and PDF. Focus is independent of project ownership. Mermaid/math are opt-in; real WebKit tests verify disabled engines, context replacement, labeled diagrams and local images. Premium action surfaces follow the active palette in windows and sheets.
 
 Core, App, render contracts and real WebKit checks run through `swift test`; the PR records test totals and results for its current head. See [validation](../doc/validation/macos-mvp.md) for coverage and performance limits. Settings writes merge changed fields through a shared actor; document identity scopes native undo and search state.
