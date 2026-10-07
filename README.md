@@ -55,3 +55,5 @@ The package separates `LeonardoCore` (files/configuration/Git), `LeonardoRender`
 Product stories are in [doc/US](doc/US). The two presentation modes and opt-in engine policy are specified in [US.000016](doc/US/us.000016.md) and [ADR 0001](doc/adr/0001-native-macos-and-lazy-extensions.md). Delivery is tracked by [issue #1](https://github.com/PinedaTec-EU/LeonardoMD/issues/1).
 
 The generated app is signed locally for development. Public distribution, notarization and other platform UIs require their own release workflow.
+
+The application icon uses the approved Leonardo Classic folded-L artwork. Its original PNG and multi-resolution macOS ICNS are stored in `assets/AppIcon`; the packaging script includes the ICNS in the signed bundle for Finder and the Dock.

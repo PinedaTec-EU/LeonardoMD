@@ -8,6 +8,7 @@ rm -rf "$app_dir"
 mkdir -p "$app_dir/Contents/MacOS" "$app_dir/Contents/Resources"
 cp "$bin_dir/LeonardoMD" "$app_dir/Contents/MacOS/"
 cp scripts/Info.plist "$app_dir/Contents/Info.plist"
+cp assets/AppIcon/LeonardoMD.icns "$app_dir/Contents/Resources/"
 for resource in "$bin_dir"/*.bundle; do
   [ -e "$resource" ] || continue
   cp -R "$resource" "$app_dir/Contents/Resources/"
