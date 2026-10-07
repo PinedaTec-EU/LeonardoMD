@@ -17,6 +17,7 @@ struct LeonardoMD {
 
 @MainActor
 final class ApplicationDelegate: NSObject, NSApplicationDelegate {
+    private let updates = ApplicationUpdates()
     private var windows: [DocumentWindow] = []
     private lazy var aboutWindow = AboutWindow()
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "application")
@@ -24,6 +25,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         configureMenu()
+        updates.start()
         if windows.isEmpty { newEmptyWindow() }
         NSApp.activate(ignoringOtherApps: true)
         let elapsed = launchStarted.duration(to: .now).components
@@ -83,6 +85,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         let app = submenu("LeonardoMD", in: menu)
         add("Acerca de LeonardoMD", action: #selector(showAbout), to: app)
         add("Preferencias…", action: #selector(preferences), key: ",", to: app)
+        updates.addMenuItems(to: app)
         app.addItem(.separator())
         add("Salir de LeonardoMD", action: #selector(NSApplication.terminate(_:)), key: "q", to: app)
         let file = submenu("Archivo", in: menu)

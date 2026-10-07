@@ -1,0 +1,3 @@
+# Updates
+
+`ApplicationUpdates` owns Sparkle and native menu actions; Sparkle owns update preferences. No signing key means development mode with explanatory manual-check dialog. `scripts/configure-update-bundle.py` embeds only public metadata. `scripts/prepare-release.sh` prepares signed/notarized assets without publishing; see `doc/releases.md` for credentials and manual acceptance. Stable feed is the latest GitHub release asset `appcast.xml`. Release acceptance is pending actual signed releases. Implementation is stacked on PR #8, tracked by https://github.com/PinedaTec-EU/LeonardoMD/issues/15 (#15).

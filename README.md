@@ -57,3 +57,11 @@ Product stories are in [doc/US](doc/US). The two presentation modes and opt-in e
 The generated app is signed locally for development. Public distribution, notarization and other platform UIs require their own release workflow.
 
 The application icon uses the approved Leonardo Classic folded-L artwork. Its original PNG and multi-resolution macOS ICNS are stored in `assets/AppIcon`; the packaging script includes the ICNS in the signed bundle for Finder and the Dock.
+
+## App updates
+
+Distribution builds include Sparkle 2.9.6. Use **LeonardoMD → Buscar actualizaciones…** to check and install an update. Enable **Comprobar actualizaciones automáticamente** for periodic checks (off initially; Sparkle stores the preference globally). Installation remains user initiated. Sparkle displays release notes, errors and the no-update result and verifies Ed25519 signatures before extraction. Its quit request goes through the application's existing unsaved-document and Git-operation termination guard.
+
+The stable feed is `https://github.com/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml`. Public downloads require no GitHub token. Development builds without `SPARKLE_PUBLIC_KEY` display an explanatory dialog and cannot enable periodic checks.
+
+See [signed release preparation](doc/releases.md). The channel becomes usable only after the first signed distribution release; an appcast alone is insufficient.
