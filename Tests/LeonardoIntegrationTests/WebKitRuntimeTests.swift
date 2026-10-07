@@ -71,17 +71,17 @@ final class WebKitRuntimeTests: XCTestCase {
 
     private func captureTagPreview(_ web: WKWebView, name: String) async throws {
         guard let directory = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] else { return }
-        let image: NSImage = try await withCheckedThrowingContinuation { continuation in
+        let png: Data = try await withCheckedThrowingContinuation { continuation in
             web.takeSnapshot(with: nil) { image, error in
-                if let error { continuation.resume(throwing: error) }
-                else if let image { continuation.resume(returning: image) }
-                else { continuation.resume(throwing: CocoaError(.fileReadUnknown)) }
+                if let error { continuation.resume(throwing: error); return }
+                guard let tiff = image?.tiffRepresentation,
+                      let bitmap = NSBitmapImageRep(data: tiff),
+                      let data = bitmap.representation(using: .png, properties: [:]) else {
+                    continuation.resume(throwing: CocoaError(.fileReadUnknown))
+                    return
+                }
+                continuation.resume(returning: data)
             }
-        }
-        guard let tiff = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiff),
-              let png = bitmap.representation(using: .png, properties: [:]) else {
-            return XCTFail("Cannot encode preview screenshot")
         }
         let root = URL(fileURLWithPath: directory, isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
