@@ -6,11 +6,21 @@ import OSLog
 @MainActor
 struct LeonardoMD {
     static func main() {
+        let diagnostics = StartupDiagnostics()
+        diagnostics.record(.processStarted)
+        diagnostics.record(.applicationInitializing)
         let application = NSApplication.shared
-        let delegate = ApplicationDelegate()
+        diagnostics.record(.applicationInitialized)
+        let delegate = ApplicationDelegate(diagnostics: diagnostics)
         application.delegate = delegate
-        application.setActivationPolicy(.regular)
+        diagnostics.record(.delegateInstalled)
+        let activationConfigured = application.setActivationPolicy(.regular)
+        diagnostics.record(.activationPolicyRequested, activationPolicy: .init(
+            switchSucceeded: activationConfigured, actualPolicy: application.activationPolicy().rawValue
+        ))
+        diagnostics.record(.eventLoopStarting)
         application.run()
+        diagnostics.record(.eventLoopReturned)
         withExtendedLifetime(delegate) {}
     }
 }
@@ -18,17 +28,36 @@ struct LeonardoMD {
 @MainActor
 final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private var windows: [DocumentWindow] = []
+    private let diagnostics: StartupDiagnostics
+    private var recordedFirstWindow = false
     private lazy var aboutWindow = AboutWindow()
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "application")
     private let launchStarted = ContinuousClock.now
 
+    init(diagnostics: StartupDiagnostics) {
+        self.diagnostics = diagnostics
+        super.init()
+    }
+
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        diagnostics.record(.applicationWillFinishLaunching)
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        diagnostics.record(.applicationDidFinishLaunching)
+        diagnostics.record(.menuConfiguring)
         configureMenu()
+        diagnostics.record(.menuConfigured)
         if windows.isEmpty { newEmptyWindow() }
         NSApp.activate(ignoringOtherApps: true)
+        diagnostics.record(.applicationReady)
         let elapsed = launchStarted.duration(to: .now).components
         let milliseconds = Double(elapsed.seconds) * 1000 + Double(elapsed.attoseconds) / 1e15
         logger.info("application_window_ready duration_ms=\(milliseconds, privacy: .public)")
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        diagnostics.record(.applicationWillTerminate)
     }
 
     func application(_ sender: NSApplication, open urls: [URL]) {
@@ -48,13 +77,18 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     @objc func newEmptyWindow() { newWindow(url: nil) }
 
     func newWindow(url: URL?) {
+        let isFirstWindow = !recordedFirstWindow
+        recordedFirstWindow = true
+        if isFirstWindow { diagnostics.record(.firstWindowCreating) }
         let controller = DocumentWindow()
+        if isFirstWindow { diagnostics.record(.firstWindowCreated) }
         windows.append(controller)
         controller.onClose = { [weak self, weak controller] in
             self?.windows.removeAll { $0 === controller }
         }
         controller.showWindow(nil)
         controller.window?.makeKeyAndOrderFront(nil)
+        if isFirstWindow { diagnostics.record(.firstWindowShown) }
         if let url { Task { await controller.session.open(url) } }
     }
 
