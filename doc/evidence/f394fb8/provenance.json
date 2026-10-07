@@ -1,0 +1,13 @@
+{
+  "sourceHead": "f394fb80d684dec3e22064578911390a729ad7b6",
+  "sourceTree": "e8b97607399f9fb7253c3c25b425139eebd074d4",
+  "os": "27.0.1",
+  "architecture": "arm64",
+  "captures": {
+    "project.jpg": "5bc21bf7a003e4e070fc850ef5523e2c6dc07b5507415e02e7efaef130bf178d",
+    "split.jpg": "f5fb0c7397e01e4f82dd3a5a791f3f3b16adb7a1ff602af2d789dcd83bcd04a5",
+    "preferences.jpg": "2b972b946efa38328a5d9cb47105617a362068346862125fd1333ca2b7a5f574",
+    "focus.jpg": "be2f60b8a63d9acf3a14f20a88916a08f535e59e980a126ae22a8e9b21a55dc4"
+  },
+  "appBinarySHA256": "da22c1288382eb784456149c3d5a56870a70ef778b2b8a20e9cc83ee737866c4"
+}
