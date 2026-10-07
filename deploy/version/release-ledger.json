@@ -35,7 +35,8 @@
         ".wiki/log.md",
         ".wiki/open-questions.md",
         "README.md",
-        ".skills/owner-pr-review/SKILL.md"
+        ".skills/owner-pr-review/SKILL.md",
+        ".gitignore"
       ],
       "require_issue_title": true
     }

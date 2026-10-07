@@ -2,3 +2,6 @@
 .DS_Store
 output/
 .env.local
+
+__pycache__/
+*.pyc
