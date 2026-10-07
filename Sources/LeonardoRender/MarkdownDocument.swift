@@ -94,7 +94,7 @@ enum MarkdownURLResolver {
         if baseURL.isFileURL {
             return baseURL.hasDirectoryPath || !baseURL.pathExtension.isEmpty
                 ? baseURL
-                : baseURL.appendingPathComponent("", isDirectory: true)
+                : URL(fileURLWithPath: baseURL.path, isDirectory: true)
         }
         guard !baseURL.absoluteString.hasSuffix("/") else { return baseURL }
         return URL(string: baseURL.absoluteString + "/") ?? baseURL

@@ -89,6 +89,10 @@ struct MarkdownRenderTests {
 
         #expect(image?.path == "/tmp/docs/images/diagram.png")
         #expect(directoryImage?.path == "/tmp/docs/images/diagram.png")
+        let explicitDirectory = URL(fileURLWithPath: "/tmp/docs/", isDirectory: true)
+        let spacedDirectory = URL(fileURLWithPath: "/tmp/my docs")
+        #expect(MarkdownURLResolver.resolve("images/diagram.png", relativeTo: explicitDirectory)?.path == "/tmp/docs/images/diagram.png")
+        #expect(MarkdownURLResolver.resolve("images/diagrama ñ.png", relativeTo: spacedDirectory)?.path == "/tmp/my docs/images/diagrama ñ.png")
         #expect(fragment?.path == "/tmp/docs")
         #expect(external?.scheme == "https")
         #expect(script == nil)
