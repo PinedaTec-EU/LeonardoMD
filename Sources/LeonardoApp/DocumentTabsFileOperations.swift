@@ -46,7 +46,7 @@ extension DocumentTabs {
                 session.requestedLine = nil
                 session.editorScroll = 0
                 session.externalConflict = false
-                session.saveStatus = "Archivo local"
+                session.saveStatus = "Local file"
             }
             session.updateTitle()
         }

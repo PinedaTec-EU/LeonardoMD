@@ -5,7 +5,7 @@ import Observation
 struct DocumentTab: Identifiable {
     let id = UUID()
     let session: AppSession
-    var title: String { session.documentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? "Nueva pestaña" }
+    var title: String { session.documentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? L10n.text("New tab") }
     var location: URL? { session.documentURL ?? session.projectURL }
 }
 

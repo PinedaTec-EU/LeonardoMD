@@ -75,7 +75,7 @@ extension AppSession {
     private func saveCopy(to destination: URL, sourceURL url: URL) {
         guard documentURL == url else { return }
         guard destination.standardizedFileURL.resolvingSymlinksInPath() != url.standardizedFileURL.resolvingSymlinksInPath() else {
-            errorMessage = "Elige otro archivo para conservar ambas versiones."
+            errorMessage = L10n.text("Choose another file to keep both versions.")
             return
         }
         let draft = content
@@ -83,7 +83,7 @@ extension AppSession {
             do {
                 _ = try await documents.save(draft, to: destination)
                 guard documentURL == url, content == draft else {
-                    errorMessage = "La copia se ha guardado. Los cambios posteriores siguen en el documento original."
+                    errorMessage = L10n.text("The copy was saved. Later changes remain in the original document.")
                     return
                 }
                 // The original remains protected; open the saved copy as a standalone document.

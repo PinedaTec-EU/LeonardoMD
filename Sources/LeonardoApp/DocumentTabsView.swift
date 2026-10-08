@@ -31,8 +31,8 @@ struct DocumentTabsView: View {
                 }.padding(.vertical, 6)
             }.scrollIndicators(.hidden)
             Button { documents.addTab() } label: { Image(systemName: "plus").padding(6) }
-                .help("Nueva pestaña (⌘T)")
-                .accessibilityLabel("Nueva pestaña")
+                .help(L10n.text("New tab (⌘T)"))
+                .accessibilityLabel(L10n.text("New tab"))
                 .accessibilityIdentifier("new-document-tab")
         }
         .buttonStyle(PremiumButtonStyle(compact: true))
@@ -53,20 +53,20 @@ struct DocumentTabsView: View {
             .accessibilityAddTraits(tab.id == documents.activeID ? .isSelected : [])
             Button { Task { await documents.close(tab.id) } } label: {
                 Image(systemName: "xmark").font(.caption)
-            }.accessibilityLabel("Cerrar pestaña \(tab.title)")
+            }.accessibilityLabel(L10n.format("Close tab %@", tab.title))
         }
         .padding(4)
         .background(tab.id == documents.activeID ? documents.activeSession.accentColor.opacity(0.16) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
-        .help(tab.location?.path ?? "Abre un documento o proyecto en esta pestaña")
+        .help(tab.location?.path ?? L10n.text("Open a document or project in this tab"))
         .contextMenu {
-            Button("Mostrar en Finder") { documents.reveal(tab.id) }.disabled(tab.location == nil)
-            Button("Copiar ruta") {
+            Button(L10n.text("Show in Finder")) { documents.reveal(tab.id) }.disabled(tab.location == nil)
+            Button(L10n.text("Copy path")) {
                 guard let url = tab.location else { return }
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(url.path, forType: .string)
             }.disabled(tab.location == nil)
             Divider()
-            Button("Cerrar pestaña") { Task { await documents.close(tab.id) } }
+            Button(L10n.text("Close tab")) { Task { await documents.close(tab.id) } }
         }
     }
 }

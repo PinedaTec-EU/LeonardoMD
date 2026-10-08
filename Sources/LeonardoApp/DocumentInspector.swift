@@ -4,7 +4,7 @@ struct DocumentInspector: View {
     @Bindable var session: AppSession
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("En este documento").font(.headline)
+            Text(L10n.text("In this document")).font(.headline)
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(session.headings, id: \.line) { heading in

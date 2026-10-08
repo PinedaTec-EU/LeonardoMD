@@ -14,10 +14,10 @@ struct ApplicationVersion {
         build = Self.nonEmpty(info["CFBundleVersion"])
     }
 
-    var displayText: String {
-        guard let version else { return "Versión no disponible · ejecución de desarrollo" }
-        if let build { return "Versión \(version) · compilación \(build)" }
-        return "Versión \(version)"
+    @MainActor var displayText: String {
+        guard let version else { return L10n.text("Version unavailable · development build") }
+        if let build { return L10n.format("Version %@ · build %@", version, build) }
+        return L10n.format("Version %@", version)
     }
 
     private static func nonEmpty(_ value: Any?) -> String? {
@@ -34,7 +34,7 @@ final class AboutWindow: NSWindowController {
             contentRect: NSRect(x: 0, y: 0, width: 720, height: 580),
             styleMask: [.titled, .closable], backing: .buffered, defer: false
         )
-        window.title = "Acerca de LeonardoMD"
+        window.title = L10n.text("About LeonardoMD")
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: AboutView(version: ApplicationVersion()))
         window.center()
@@ -44,6 +44,7 @@ final class AboutWindow: NSWindowController {
     required init?(coder: NSCoder) { nil }
 
     func present() {
+        window?.title = L10n.text("About LeonardoMD")
         showWindow(nil)
         window?.makeKeyAndOrderFront(nil)
     }
@@ -58,7 +59,7 @@ private struct AboutView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 720, height: 480)
-                .accessibilityLabel("Leonardo MarkDown, de PinedaTec.eu")
+                .accessibilityLabel(L10n.text("Leonardo MarkDown, by PinedaTec.eu"))
             Text(version.displayText)
                 .font(.headline)
                 .textSelection(.enabled)

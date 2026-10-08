@@ -9,24 +9,24 @@ struct GitPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Label("Control de versiones", systemImage: "arrow.triangle.branch").font(.title2.bold())
+                Label(L10n.text("Version control"), systemImage: "arrow.triangle.branch").font(.title2.bold())
                 Spacer()
                 if session.gitBusy { ProgressView().controlSize(.small) }
-                Button("Listo") { dismiss() }
+                Button(L10n.text("Done")) { dismiss() }
             }
             Text(session.gitSummary).foregroundStyle(.secondary)
             if session.gitStatus?.state == .noRepository {
-                Text("Este proyecto aún no tiene repositorio Git.")
-                Button("Inicializar Git") { session.performGit(.initialize) }.buttonStyle(PremiumButtonStyle(prominent: true))
+                Text(L10n.text("This project does not have a Git repository yet."))
+                Button(L10n.text("Initialize Git")) { session.performGit(.initialize) }.buttonStyle(PremiumButtonStyle(prominent: true))
             } else {
                 HStack {
                     Button("Fetch") { session.performGit(.fetch) }
                     Button("Pull") { session.performGit(.pull) }
                     Button("Push") { session.performGit(.push) }
                     Spacer()
-                    Button("Actualizar") { Task { await session.refreshGit() } }
+                    Button(L10n.text("Refresh")) { Task { await session.refreshGit() } }
                 }
-                Text("Cambios").font(.headline)
+                Text(L10n.text("Changes")).font(.headline)
                 List(session.gitStatus?.changes ?? []) { change in
                     HStack {
                         Toggle(isOn: Binding(get: { selected.contains(change.path) }, set: { value in
@@ -34,7 +34,7 @@ struct GitPanel: View {
                         })) { Text(change.path) }.toggleStyle(.checkbox)
                         if change.isStaged { Text("Staged").font(.caption).foregroundStyle(.secondary) }
                         if change.status == .conflicted {
-                            Button("Abrir conflicto") {
+                            Button(L10n.text("Open conflict")) {
                                 if let root = session.projectURL {
                                     Task {
                                         let url = root.appendingPathComponent(change.path)
@@ -48,15 +48,15 @@ struct GitPanel: View {
                     }
                 }.frame(minHeight: 120)
                 HStack {
-                    Button("Stage seleccionados") { session.performGit(.stage(Array(selected))) }.disabled(selected.isEmpty)
-                    Button("Stage todos") { session.performGit(.stageAll) }
+                    Button(L10n.text("Stage selected")) { session.performGit(.stage(Array(selected))) }.disabled(selected.isEmpty)
+                    Button(L10n.text("Stage all")) { session.performGit(.stageAll) }
                 }
                 HStack {
-                    TextField("Mensaje del commit", text: $message)
+                    TextField(L10n.text("Commit message"), text: $message)
                     Button("Commit") { session.performGit(.commit(message)); message = "" }.disabled(message.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
                 Divider()
-                Text("Historial reciente").font(.headline)
+                Text(L10n.text("Recent history")).font(.headline)
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 8) {
                         ForEach(session.gitHistory) { commit in
@@ -70,7 +70,7 @@ struct GitPanel: View {
                     }
                 }.frame(height: 130)
             }
-            Text("Se usan Git y las credenciales configuradas en tu Mac. Pull requiere el árbol limpio; los conflictos se resuelven manualmente.")
+            Text(L10n.text("Uses Git and credentials configured on your Mac. Pull requires a clean working tree; resolve conflicts manually."))
                 .font(.caption).foregroundStyle(.secondary)
         }.buttonStyle(PremiumButtonStyle(compact: true)).padding(24).frame(width: 720, height: 620)
             .disabled(session.gitBusy)
@@ -94,13 +94,13 @@ enum GitAction {
 
 extension AppSession {
     func refreshGit() async {
-        guard gitEnabled, let git else { gitSummary = "Git desactivado"; return }
+        guard gitEnabled, let git else { gitSummary = L10n.text("Git disabled"); return }
         do {
             let status = try await git.status()
             gitStatus = status
-            if status.state == .noRepository { gitSummary = "Inicializar Git"; gitHistory = []; return }
-            gitSummary = "\(status.branch ?? "HEAD") · \(status.changes.count) cambios · ↑\(status.ahead) ↓\(status.behind)"
-            if status.hasConflicts { gitSummary += " · Conflicto" }
+            if status.state == .noRepository { gitSummary = L10n.text("Initialize Git"); gitHistory = []; return }
+            gitSummary = L10n.format("%@ · %d changes · ↑%d ↓%d", status.branch ?? "HEAD", status.changes.count, status.ahead, status.behind)
+            if status.hasConflicts { gitSummary += L10n.text(" · Conflict") }
             gitHistory = (try? await git.history(limit: 20)) ?? []
         } catch { report(error) }
     }
@@ -126,9 +126,9 @@ extension AppSession {
                 await refreshTree()
                 await checkExternalChanges()
             } catch GitError.workingTreeDirty {
-                errorMessage = "Git tiene cambios locales. Haz commit o resuélvelos en Git antes de sincronizar."
+                errorMessage = L10n.text("Git has local changes. Commit or resolve them in Git before syncing.")
             } catch GitError.mergeConflict(let paths) {
-                errorMessage = "Conflictos en: " + paths.joined(separator: ", ")
+                errorMessage = L10n.text("Conflicts in: ") + paths.joined(separator: ", ")
                 await refreshGit()
             } catch { report(error) }
         }
