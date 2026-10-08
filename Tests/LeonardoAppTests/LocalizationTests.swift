@@ -78,6 +78,33 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    func testTabReorderCopyUsesSelectedLanguage() {
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            XCTAssertEqual(L10n.text("Drag to reorder tab"), language == .english ? "Drag to reorder tab" : "Arrastra para reordenar la pestaña")
+            XCTAssertEqual(L10n.format("Reorder tab %@", "notes.md"), language == .english ? "Reorder tab notes.md" : "Reordenar pestaña notes.md")
+        }
+    }
+
+    func testAppHelpAndAccessibilityAvoidUntranslatedSpanishLiterals() throws {
+        let appSources = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Sources/LeonardoApp")
+        let files = try XCTUnwrap(FileManager.default.enumerator(at: appSources,
+            includingPropertiesForKeys: nil))
+        let literal = try NSRegularExpression(pattern: #"\.(?:help|accessibilityLabel)\("([^"\n]*)""#)
+        let spanish = try NSRegularExpression(pattern: #"(?i)[áéíóúñ¿¡]|\b(?:arrastra|reordenar|pestaña|abrir|cerrar|mostrar|copiar|guardar|mover)\b"#)
+        for case let file as URL in files where file.pathExtension == "swift" {
+            let source = try String(contentsOf: file, encoding: .utf8)
+            for match in literal.matches(in: source, range: NSRange(source.startIndex..., in: source)) {
+                let text = String(source[try XCTUnwrap(Range(match.range(at: 1), in: source))])
+                XCTAssertNil(spanish.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)), file.lastPathComponent + ": " + text)
+            }
+        }
+    }
+
     private func isolatedDefaults() -> (UserDefaults, String) {
         let name = "LocalizationTests.\(UUID().uuidString)"
         return (UserDefaults(suiteName: name)!, name)

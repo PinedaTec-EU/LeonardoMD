@@ -76,8 +76,8 @@ struct DocumentTabsView: View {
                 DocumentTabGrip()
                     .padding(4)
                     .contentShape(Rectangle())
-                    .help("Arrastra para reordenar la pestaña")
-                    .accessibilityLabel("Reordenar pestaña \(tab.title)")
+                    .help(L10n.text("Drag to reorder tab"))
+                    .accessibilityLabel(L10n.format("Reorder tab %@", tab.title))
             }
             Button { documents.select(tab.id) } label: {
                 HStack(spacing: 6) {
