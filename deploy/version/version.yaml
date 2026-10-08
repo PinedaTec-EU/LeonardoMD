@@ -1,11 +1,21 @@
 {
-  "schema_version": 1,
+  "applied": [
+    {
+      "delta": {
+        "build": 4
+      },
+      "from_version": "0.1.56",
+      "merge_sha": "49665943fe9d154988987d4204fbc1e1802fc53d",
+      "pr": 42,
+      "to_version": "0.1.60"
+    }
+  ],
+  "current_version": "0.1.60",
   "initial_version": "0.1.56",
+  "schema_version": 1,
   "segments": [
     "release",
     "feature",
     "build"
-  ],
-  "current_version": "0.1.56",
-  "applied": []
+  ]
 }
