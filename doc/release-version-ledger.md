@@ -150,4 +150,3 @@ Refresh the immutable engine SHA after engine changes integrate into central mai
 Integrate the central catalog refresh before enabling policy validation of the consumer pin PR. An App verdict binds the head, base and engine identity; if a queued run already recorded the old pin on that head, refresh the consumer head and obtain new current-pin validation instead of overwriting the immutable verdict.
 
 Publish the final consumer pin PR head only after the central catalog refresh integrates: queue inventory can validate drafts too. If an older engine already issued a check, refresh the consumer head after catalog integration and verify the new binding.
-

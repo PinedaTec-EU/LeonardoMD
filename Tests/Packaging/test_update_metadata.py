@@ -81,10 +81,56 @@ class UpdateMetadataTests(unittest.TestCase):
         signature = base64.b64encode(bytes(64)).decode()
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "appcast.xml"
-            path.write_text(f'<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item><sparkle:channel>beta</sparkle:channel><sparkle:version>2</sparkle:version><enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.1/LeonardoMD.zip" length="100" sparkle:edSignature="{signature}"/></item></channel></rss>')
+            path.write_text(f'<rss xmlns:leonardo="https://pinedatec.eu/xml-namespaces/leonardo" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item leonardo:channel="beta"><sparkle:channel>beta</sparkle:channel><sparkle:version>2</sparkle:version><enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.1/LeonardoMD.zip" length="100" sparkle:edSignature="{signature}"/></item></channel></rss>')
             verify(path, "beta")
             with self.assertRaises(ValueError):
                 verify(path, "stable")
+            original = path.read_text()
+            for marker in ("<sparkle:channel>beta</sparkle:channel>",
+                           ' leonardo:channel="beta"'):
+                path.write_text(original.replace(marker, ""))
+                for channel in ("stable", "beta"):
+                    with self.assertRaises(ValueError):
+                        verify(path, channel)
+            for marker in ("<sparkle:channel>stable</sparkle:channel>",
+                           "<sparkle:channel/>",
+                           "<sparkle:channel>beta</sparkle:channel>" * 2):
+                path.write_text(original.replace("<sparkle:channel>beta</sparkle:channel>", marker))
+                with self.assertRaises(ValueError):
+                    verify(path, "beta")
+
+    def test_publication_binding_is_mandatory_and_cannot_be_relabelled(self):
+        module = load("verify-release-appcast")
+        signature = base64.b64encode(bytes(64)).decode()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "appcast.xml"
+            path.write_text(f'<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item><sparkle:version>64</sparkle:version><enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.64/update.zip" length="100" sparkle:edSignature="{signature}"/></item></channel></rss>')
+            with self.assertRaises(ValueError):
+                module.verify(path, "stable")
+            module.bind_channel(path, "stable")
+            module.verify(path, "stable")
+            original = path.read_bytes()
+            with self.assertRaises(ValueError):
+                module.bind_channel(path, "beta")
+            self.assertEqual(path.read_bytes(), original)
+            for value in ("beta", "nightly", "", " stable "):
+                path.write_bytes(original.replace(b'leonardo:channel="stable"',
+                                                f'leonardo:channel="{value}"'.encode()))
+                with self.assertRaises(ValueError):
+                    module.verify(path, "stable")
+
+    def test_generation_rejects_mixed_channels_without_writing(self):
+        bind = load("verify-release-appcast").bind_channel
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "appcast.xml"
+            for markers in ("<sparkle:channel>beta</sparkle:channel>",
+                            "<sparkle:channel>stable</sparkle:channel>",
+                            "<sparkle:channel/>"):
+                original = f'<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item/><item>{markers}</item></channel></rss>'.encode()
+                path.write_bytes(original)
+                with self.assertRaises(ValueError):
+                    bind(path, "stable")
+                self.assertEqual(path.read_bytes(), original)
 
     def test_channel_mismatches_leave_bundle_untouched(self):
         configure = load("configure-update-bundle").configure
@@ -162,14 +208,14 @@ class UpdateMetadataTests(unittest.TestCase):
         signature = base64.b64encode(bytes(64)).decode()
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "appcast.xml"
-            path.write_text(f'<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item><sparkle:channel>stable</sparkle:channel><sparkle:version>2</sparkle:version><enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v1.2.3/update.zip" length="100" sparkle:edSignature="{signature}"/></item></channel></rss>')
+            path.write_text(f'<rss xmlns:leonardo="https://pinedatec.eu/xml-namespaces/leonardo" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item leonardo:channel="stable"><sparkle:channel>stable</sparkle:channel><sparkle:version>2</sparkle:version><enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v1.2.3/update.zip" length="100" sparkle:edSignature="{signature}"/></item></channel></rss>')
             with self.assertRaises(ValueError):
                 verify(path)
 
     def test_appcast_generation_on_system_bash_handles_both_channels(self):
         with tempfile.TemporaryDirectory() as directory:
             tool = Path(directory) / "generate_appcast"
-            tool.write_text('#!/bin/bash\nprintf "%s\\n" "$@"\n')
+            tool.write_text('#!/bin/bash\nprintf "%s\\n" "$@"\nfor arg in "$@"; do directory="$arg"; done\nmarker=\'\'\nfor arg in "$@"; do [ "$arg" != beta ] || marker=\'<sparkle:channel>beta</sparkle:channel>\'; done\nprintf \'<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item>%s</item></channel></rss>\' "$marker" > "$directory/appcast.xml"\n')
             tool.chmod(0o755)
             script = str(ROOT / "scripts/generate-release-appcast.sh")
             for channel, version in (("stable", "1.2.3"), ("beta", "1.2.3")):
@@ -216,7 +262,7 @@ class UpdateMetadataTests(unittest.TestCase):
                                              "LEONARDO_CHANNEL": channel})
                     self.assertEqual(metadata.read_bytes(), original)
                     tag = '<sparkle:channel>beta</sparkle:channel>' if channel == 'beta' else ''
-                    feed.write_text(f'<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item>{tag}<sparkle:version>56</sparkle:version><enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.56{suffix}/update.zip" length="100" sparkle:edSignature="{signature}"/></item></channel></rss>')
+                    feed.write_text(f'<rss xmlns:leonardo="https://pinedatec.eu/xml-namespaces/leonardo" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item leonardo:channel="{channel}">{tag}<sparkle:version>56</sparkle:version><enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.56{suffix}/update.zip" length="100" sparkle:edSignature="{signature}"/></item></channel></rss>')
                     with self.assertRaises(ValueError):
                         verify(feed, channel)
 
@@ -227,7 +273,7 @@ class UpdateMetadataTests(unittest.TestCase):
             feed = Path(directory) / "appcast.xml"
             for channel in ("stable", "beta"):
                 tag = '<sparkle:channel>beta</sparkle:channel>' if channel == 'beta' else ''
-                template = f'<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item>{tag}<sparkle:version>56</sparkle:version><sparkle:shortVersionString>DISPLAY</sparkle:shortVersionString><enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.56/update.zip" length="100" sparkle:edSignature="{signature}"/></item></channel></rss>'
+                template = f'<rss xmlns:leonardo="https://pinedatec.eu/xml-namespaces/leonardo" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item leonardo:channel="{channel}">{tag}<sparkle:version>56</sparkle:version><sparkle:shortVersionString>DISPLAY</sparkle:shortVersionString><enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.56/update.zip" length="100" sparkle:edSignature="{signature}"/></item></channel></rss>'
                 feed.write_text(template.replace('DISPLAY', '0.1.56'))
                 verify(feed, channel)
                 for value in ('0.1.56-beta.1', '0.1.56-alpha.1', '0.1.57'):
@@ -241,7 +287,7 @@ class UpdateMetadataTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "appcast.xml"
             def feed(url, sig):
-                path.write_text(f'<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item><sparkle:version>42</sparkle:version><enclosure url="{url}" length="100" sparkle:edSignature="{sig}"/></item></channel></rss>')
+                path.write_text(f'<rss xmlns:leonardo="https://pinedatec.eu/xml-namespaces/leonardo" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item leonardo:channel="stable"><sparkle:version>42</sparkle:version><enclosure url="{url}" length="100" sparkle:edSignature="{sig}"/></item></channel></rss>')
             url = "https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v1.0.0/app.zip"
             feed(url, signature)
             verify(path)

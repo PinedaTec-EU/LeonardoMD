@@ -8,7 +8,34 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 SPARKLE = "{http://www.andymatuschak.org/xml-namespaces/sparkle}"
+LEONARDO = "{https://pinedatec.eu/xml-namespaces/leonardo}"
+ET.register_namespace("sparkle", SPARKLE[1:-1])
+ET.register_namespace("leonardo", LEONARDO[1:-1])
 PREFIX = "https://github.com/PinedaTec-EU/LeonardoMD/releases/download/"
+
+
+def validate_sparkle_channel(item, channel):
+    markers = item.findall(SPARKLE + "channel")
+    expected = [] if channel == "stable" else ["beta"]
+    if [marker.text for marker in markers] != expected:
+        raise ValueError("Appcast channel does not match selected release channel")
+
+
+def bind_channel(path, channel):
+    """Bind generated publication metadata without changing Sparkle semantics."""
+    if channel not in ("stable", "beta"):
+        raise ValueError("Unknown release channel")
+    tree = ET.parse(path)
+    items = tree.findall("./channel/item")
+    if not items:
+        raise ValueError("Appcast contains no releases")
+    for item in items:
+        validate_sparkle_channel(item, channel)
+        existing = item.get(LEONARDO + "channel")
+        if existing is not None and existing != channel:
+            raise ValueError("Cannot relabel an existing publication channel")
+        item.set(LEONARDO + "channel", channel)
+    tree.write(path, encoding="utf-8", xml_declaration=True)
 
 
 def verify(path, channel="stable"):
@@ -18,10 +45,9 @@ def verify(path, channel="stable"):
     if not items:
         raise ValueError("Appcast contains no releases")
     for item in items:
-        item_channel = item.find(SPARKLE + "channel")
-        actual_channel = item_channel.text if item_channel is not None else "stable"
-        if actual_channel != channel or (channel == "stable" and item_channel is not None):
-            raise ValueError("Appcast channel does not match selected release channel")
+        if item.get(LEONARDO + "channel") != channel:
+            raise ValueError("Missing or mismatched publication channel binding")
+        validate_sparkle_channel(item, channel)
         enclosure = item.find("enclosure")
         if enclosure is None:
             raise ValueError("Missing update enclosure")
@@ -46,4 +72,9 @@ def verify(path, channel="stable"):
 
 
 if __name__ == "__main__":
-    verify(Path(sys.argv[1]), sys.argv[2] if len(sys.argv) > 2 else "stable")
+    path = Path(sys.argv[1])
+    channel = sys.argv[2] if len(sys.argv) > 2 else "stable"
+    if len(sys.argv) == 4 and sys.argv[3] == "--bind":
+        bind_channel(path, channel)
+    else:
+        verify(path, channel)

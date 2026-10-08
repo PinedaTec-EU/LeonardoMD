@@ -11,3 +11,5 @@ Stable appcasts must omit explicit channel tags; known stable/beta feed URLs can
 Release preparation compares the bundle public update key against the existing Keychain signing account before signing or generating release assets. Feed paths must use canonical unescaped URLs; encoded or dot-segment aliases are rejected before bundle metadata changes.
 
 Owner convention (#53): visible and packaged versions are numeric `release.feature.build` for every channel. Channel identity stays in updater/feed metadata; beta/alpha suffixes are rejected.
+
+PR #54 also restores marker-stripping protection with mandatory internal publication-channel metadata; regression tracked by #72 (https://github.com/PinedaTec-EU/LeonardoMD/issues/72).
