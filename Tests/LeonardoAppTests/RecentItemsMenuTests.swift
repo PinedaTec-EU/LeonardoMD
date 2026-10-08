@@ -8,6 +8,7 @@ final class RecentItemsMenuTests: XCTestCase {
         guard ProcessInfo.processInfo.environment["LEONARDO_RECENTS_LIVE_QA"] == "1" else {
             throw XCTSkip("Opt-in native menu evidence")
         }
+        _ = NSApplication.shared
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("LeonardoRecentsQA")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let file = root.appendingPathComponent("notes.md")
@@ -43,6 +44,7 @@ final class RecentItemsMenuTests: XCTestCase {
     }
 
     func testCategoriesRefreshAvailabilityAndClearIndependently() async throws {
+        _ = NSApplication.shared
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
