@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.124
+
+- #75 Added: subtle Leonardo welcome watermark ([#76](https://github.com/PinedaTec-EU/LeonardoMD/pull/76))
+
+Source: `99903268d818758d319cdee450f6bfc411b5477c`. Delta: `{"build": 11}`.
+
 ## 0.1.113
 
 - #80 Fixed: build native QA copies from the real app bundle ([#82](https://github.com/PinedaTec-EU/LeonardoMD/pull/82))
