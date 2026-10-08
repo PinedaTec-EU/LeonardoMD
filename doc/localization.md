@@ -43,3 +43,11 @@ Spanish in a new window, and Spanish after relaunch. The final QA selection
 was restored to English. Real CUA captures are in
 [validation/localization](validation/localization/), at 580×620 points for
 Preferences and 1260×850 points for the empty document window.
+
+Captures use JPEG (`.jpg`) as returned by CUA: preferences 1160×1240
+pixels and workspace 2520×1700 pixels (2× the point dimensions above).
+Native application-menu accessibility captures are `menu-en.txt` and
+`menu-es.txt`; macOS standardizes the English Preferences item to Settings.
+Before capture, use the application’s Bring all to front action and verify
+image dimensions; a window-manager thumbnail is not validation evidence.
+Suggested new-note and copy filenames also come from the catalogs.
