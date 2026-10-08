@@ -141,7 +141,7 @@ Tracking: [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
 
 ## Signed update packaging
 
-Sparkle configuration preserves the generated canonical bundle version/build. Explicit release environment values must match them; beta labels may append `-beta.N` without changing the canonical build. Advance the ledger build before publishing another beta or stable package. Feed isolation, signature verification and notarization gates remain in the [signed release workflow](releases.md).
+Sparkle configuration preserves the generated canonical bundle version/build. Explicit release environment values must match them; every channel uses the same numeric version with no beta/alpha/maturity suffixes. Advance the ledger build before publishing another beta or stable package. Feed isolation, signature verification and notarization gates remain in the [signed release workflow](releases.md).
 
 ## Pin maintenance
 

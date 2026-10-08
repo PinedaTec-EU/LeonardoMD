@@ -13,3 +13,4 @@ case "$3" in
   *) echo 'Unknown release channel' >&2; exit 1 ;;
 esac
 "$1" "${arguments[@]}" "$2"
+python3 "$(dirname "$0")/verify-release-appcast.py" "$2/appcast.xml" "$3" --bind

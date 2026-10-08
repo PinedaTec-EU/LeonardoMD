@@ -62,8 +62,13 @@ class PackageVersionTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 module.configure(output, environment)
             self.assertEqual(output.read_bytes(), original)
-        module.configure(output, {"LEONARDO_CHANNEL": "beta", "LEONARDO_VERSION": "0.1.56-beta.1"})
-        self.assertEqual(plistlib.loads(output.read_bytes())["CFBundleVersion"], "56")
+        module.configure(output, {"LEONARDO_CHANNEL": "beta", "LEONARDO_VERSION": "0.1.56"})
+        metadata = plistlib.loads(output.read_bytes())
+        self.assertEqual(metadata["CFBundleVersion"], "56")
+        self.assertEqual(metadata["CFBundleShortVersionString"], "0.1.56")
+        self.assertEqual(metadata["LeonardoUpdateChannel"], "beta")
+        with self.assertRaises(ValueError):
+            module.configure(output, {"LEONARDO_CHANNEL": "beta", "LEONARDO_VERSION": "0.1.56-beta.1"})
 
     def test_template_cannot_hide_a_second_version_source(self):
         result, output = self.run_generator("0.1.56", {"CFBundleVersion": "1"})
