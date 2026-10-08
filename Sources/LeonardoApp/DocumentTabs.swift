@@ -75,7 +75,7 @@ final class DocumentTabs {
     }
 
     func neighbor(of id: UUID, offset: Int) -> UUID? {
-        guard !closing, !stopped, abs(offset) == 1,
+        guard !closing, !stopped, (offset == -1 || offset == 1),
               let index = tabs.firstIndex(where: { $0.id == id }),
               tabs.indices.contains(index + offset) else { return nil }
         return tabs[index + offset].id

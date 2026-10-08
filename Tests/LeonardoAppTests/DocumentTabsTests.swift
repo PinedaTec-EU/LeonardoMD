@@ -16,11 +16,12 @@ final class DocumentTabsTests: XCTestCase {
         return url
     }
 
-    func testReorderBothDirectionsRetainsActiveSessionAndDraft() throws {
+    func testReorderBothDirectionsRetainsActiveSessionAndDraft() async throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
         let first = try XCTUnwrap(tabs.activeID)
         let session = tabs.activeSession
+        await session.open(try document("draft.md", in: root))
         session.content = "unsaved draft"
         session.mode = .split
         session.editorScroll = 0.6
@@ -43,6 +44,29 @@ final class DocumentTabsTests: XCTestCase {
         XCTAssertNil(tabs.neighbor(of: middle, offset: 1))
         XCTAssertEqual(tabs.neighbor(of: first, offset: 1), last)
         XCTAssertEqual(tabs.neighbor(of: middle, offset: -1), last)
+    }
+
+    func testReorderingIsRejectedWhileWindowCloseWaitsForPendingWork() async throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let first = try XCTUnwrap(tabs.activeID)
+        let last = try XCTUnwrap(tabs.addTab())
+        let session = tabs.activeSession
+        var resume: CheckedContinuation<Void, Never>?
+        session.settingsTask = Task {
+            await withCheckedContinuation { resume = $0 }
+            session.settingsTask = nil
+        }
+        while resume == nil { await Task.yield() }
+        let close = Task { await tabs.prepareClose() }
+        while !tabs.closing { await Task.yield() }
+        XCTAssertFalse(tabs.move(first, to: last))
+        XCTAssertNil(tabs.neighbor(of: first, offset: 1))
+        XCTAssertFalse(tabs.acceptTabDrop([DocumentTabDrag(ownerID: tabs.dragOwnerID, tabID: first)], onto: last))
+        XCTAssertEqual(tabs.tabs.map(\.id), [first, last])
+        resume?.resume()
+        let canClose = await close.value
+        XCTAssertTrue(canClose)
     }
 
     func testTabDropsRejectForeignInvalidSelfAndStoppedMoves() throws {
