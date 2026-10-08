@@ -62,33 +62,37 @@ final class DocumentTabsTests: XCTestCase {
         while !tabs.closing { await Task.yield() }
         XCTAssertFalse(tabs.move(first, to: last))
         XCTAssertNil(tabs.neighbor(of: first, offset: 1))
-        XCTAssertFalse(tabs.acceptTabDrop([DocumentTabDrag(ownerID: tabs.dragOwnerID, tabID: first)], onto: last))
         XCTAssertEqual(tabs.tabs.map(\.id), [first, last])
         resume?.resume()
         let canClose = await close.value
         XCTAssertTrue(canClose)
     }
 
-    func testTabDropsRejectForeignInvalidSelfAndStoppedMoves() throws {
+    func testInvalidSelfAndStoppedMovesPreserveOrder() throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
         let first = try XCTUnwrap(tabs.activeID)
         let last = try XCTUnwrap(tabs.addTab())
-        let item = DocumentTabDrag(ownerID: tabs.dragOwnerID, tabID: first)
-        let foreign = DocumentTabDrag(ownerID: UUID(), tabID: first)
-        let missing = DocumentTabDrag(ownerID: tabs.dragOwnerID, tabID: UUID())
-        for items in [[], [item, item], [foreign], [missing]] {
-            XCTAssertFalse(tabs.acceptTabDrop(items, onto: last))
-        }
-        XCTAssertFalse(tabs.acceptTabDrop([item], onto: first))
-        XCTAssertFalse(tabs.acceptTabDrop([item], onto: UUID()))
+        XCTAssertFalse(tabs.move(first, to: first))
+        XCTAssertFalse(tabs.move(first, to: UUID()))
+        XCTAssertFalse(tabs.move(UUID(), to: last))
         XCTAssertEqual(tabs.tabs.map(\.id), [first, last])
-        XCTAssertTrue(tabs.acceptTabDrop([item], onto: last))
-        XCTAssertEqual(tabs.tabs.map(\.id), [last, first])
         tabs.stop()
         XCTAssertFalse(tabs.move(first, to: last))
-        XCTAssertNil(tabs.neighbor(of: first, offset: -1))
-        XCTAssertFalse(tabs.acceptTabDrop([item], onto: last))
+        XCTAssertNil(tabs.neighbor(of: first, offset: 1))
+        XCTAssertEqual(tabs.tabs.map(\.id), [first, last])
+    }
+
+    func testPointerDestinationRequiresAnotherHeaderInThisBar() {
+        let first = UUID(), second = UUID()
+        let frames = [first: CGRect(x: 0, y: 0, width: 100, height: 40),
+                      second: CGRect(x: 106, y: 0, width: 100, height: 40)]
+        XCTAssertEqual(TabReordering.destination(at: CGPoint(x: 150, y: 20), frames: frames, excluding: first), second)
+        XCTAssertEqual(TabReordering.destination(at: CGPoint(x: 50, y: 20), frames: frames, excluding: second), first)
+        for point in [CGPoint(x: 50, y: 20), CGPoint(x: 103, y: 20), CGPoint(x: 150, y: 80), CGPoint(x: -10, y: 20)] {
+            XCTAssertNil(TabReordering.destination(at: point, frames: frames, excluding: first))
+        }
+        XCTAssertNil(TabReordering.destination(at: CGPoint(x: 150, y: 20), frames: [:], excluding: first))
     }
 
     func testExternalOpenPreservesDirtyTabAndDeduplicatesRepeatedRequests() async throws {

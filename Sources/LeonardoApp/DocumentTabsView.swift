@@ -4,6 +4,8 @@ import UniformTypeIdentifiers
 
 struct DocumentTabsView: View {
     @Bindable var documents: DocumentTabs
+    @State private var tabFrames: [UUID: CGRect] = [:]
+    @GestureState private var dragTargetID: UUID?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,6 +37,8 @@ struct DocumentTabsView: View {
                 .accessibilityLabel("Nueva pestaña")
                 .accessibilityIdentifier("new-document-tab")
         }
+        .coordinateSpace(name: TabReordering.coordinateSpace)
+        .onPreferenceChange(TabFramesPreference.self) { tabFrames = $0 }
         .buttonStyle(PremiumButtonStyle(compact: true))
         .disabled(documents.closing)
         .padding(.horizontal, 12)
@@ -52,7 +56,6 @@ struct DocumentTabsView: View {
                 .font(.caption)
                 .padding(4)
                 .contentShape(Rectangle())
-                .draggable(DocumentTabDrag(ownerID: documents.dragOwnerID, tabID: tab.id))
                 .help("Arrastra para reordenar la pestaña")
                 .accessibilityLabel("Reordenar pestaña \(tab.title)")
             Button { documents.select(tab.id) } label: {
@@ -70,10 +73,27 @@ struct DocumentTabsView: View {
         .padding(4)
         .background(tab.id == documents.activeID ? documents.activeSession.accentColor.opacity(0.16) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
         .help(tab.location?.path ?? "Abre un documento o proyecto en esta pestaña")
-        .draggable(DocumentTabDrag(ownerID: documents.dragOwnerID, tabID: tab.id))
-        .dropDestination(for: DocumentTabDrag.self) { items, _ in
-            documents.acceptTabDrop(items, onto: tab.id)
+        .background {
+            GeometryReader { geometry in
+                Color.clear.preference(key: TabFramesPreference.self, value: [tab.id: geometry.frame(in: .named(TabReordering.coordinateSpace))])
+            }
         }
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(documents.activeSession.accentColor, lineWidth: dragTargetID == tab.id ? 2 : 0)
+                .allowsHitTesting(false)
+        }
+        .contentShape(Rectangle())
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 8, coordinateSpace: .named(TabReordering.coordinateSpace))
+                .updating($dragTargetID) { value, state, _ in
+                    state = TabReordering.destination(at: value.location, frames: tabFrames, excluding: tab.id)
+                }
+                .onEnded { value in
+                    guard let target = TabReordering.destination(at: value.location, frames: tabFrames, excluding: tab.id) else { return }
+                    documents.move(tab.id, to: target)
+                }
+        )
         .contextMenu {
             Button("Mover a la izquierda") { moveTab(tab.id, offset: -1) }
                 .disabled(documents.neighbor(of: tab.id, offset: -1) == nil)
