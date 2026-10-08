@@ -17,6 +17,7 @@ The entrypoint builds an optimized, locally signed app at `output/LeonardoMD.app
 - **Standalone viewer:** open a `.md`, `.markdown` or `.txt` without creating a project or showing its folder. Global preferences apply. Choose **Open folder as project** when you want navigation.
 - **Project:** open a folder, navigate its files, search names and content, and create, rename, move or delete items. Folders load children on expansion. Recent projects appear in the toolbar menu.
 - **Workspace:** select or create a root folder, discover its projects, and create, rename or delete project folders from the workspace manager.
+- **Recent items:** File provides separate document, project and workspace histories. Entries show their parent path; unavailable targets are disabled. Each submenu can clear its own history.
 - **Focus:** hides project navigation and the inspector while preserving the document and project. Toggle it again to restore those panels.
 - **Reading / Editing / Split:** native source editing with undo, autosave and an approximately synchronized rendered preview. External file changes reload clean documents; conflicting edits stay protected until you reload or save a copy.
 
