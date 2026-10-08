@@ -6,6 +6,7 @@ struct PreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var projectScope = false
     @State private var editingPalette = false
+    @State private var section = PreferencesSection.general
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
@@ -27,10 +28,13 @@ struct PreferencesView: View {
                 PremiumSelection(selection: $projectScope, options: [false, true], title: { $0 ? L10n.text("This project") : L10n.text("Global") })
                     .accessibilityLabel(L10n.text("Scope"))
             }
-            TabView {
-                generalPreferences.tabItem { Label(L10n.text("General"), systemImage: "gearshape") }
-                ExtensionPreferences(session: session, projectScope: projectScope)
-                    .tabItem { Label(L10n.text("Extensions"), systemImage: "puzzlepiece.extension") }
+            PremiumTabPanel(selection: $section, options: PreferencesSection.allCases, title: { $0.title }) {
+                switch section {
+                case .general:
+                    generalPreferences
+                case .extensions:
+                    ExtensionPreferences(session: session, projectScope: projectScope)
+                }
             }
             Text(projectScope ? L10n.text("Saved in .leonardomd/project.json. Contains no credentials.") : L10n.text("Global preferences apply to the standalone viewer and projects that inherit them."))
                 .font(.caption).foregroundStyle(.secondary)
@@ -69,6 +73,17 @@ extension PaperEffect {
         case .grid: L10n.text("Grid")
         case .microgrid: L10n.text("Microgrid")
         case .parchment: L10n.text("Parchment")
+        }
+    }
+}
+
+private enum PreferencesSection: CaseIterable {
+    case general, extensions
+
+    @MainActor var title: String {
+        switch self {
+        case .general: L10n.text("General")
+        case .extensions: L10n.text("Extensions")
         }
     }
 }
