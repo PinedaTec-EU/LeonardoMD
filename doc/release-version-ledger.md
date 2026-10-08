@@ -56,7 +56,7 @@ or inferred summary of the PR body.
 ## Shared engine operation
 
 The engine remains in `PinedaTec-EU/pinedatec-ci`, pinned to integrated commit
-`07144074ab282217b1fb12a0e94c021763090df6`; do not copy it or use a mutable pin.
+`c39d7c970b7c52c503302a77ca9ad8a08c9326d7`; do not copy it or use a mutable pin.
 `scripts/release-ledger.sh` is a thin operator entrypoint. Set
 `LEDGER_ENGINE_ROOT` to a clean checkout at that exact revision. It checks the
 revision and engine working tree, passes the workspace to the shared engine,
@@ -99,7 +99,7 @@ locally. Read-only `LEDGER_EVIDENCE_TOKEN` verifies release access and
 release, tag SHA, version and PR provenance, and renders the verified PR title,
 PR link, merge SHA and delta. Retries must not duplicate accepted notes.
 
-The engine creates `deploy/release-notes.md` only after acceptance. Notes group
+The engine creates `deploy/release-notes.md` only after acceptance. Materialized versions without a GitHub Release are intermediate checkpoints, not historical publications. The next accepted release accumulates their verified source changes since the previous accepted event. An earlier matching stable draft remains a pending publication and blocks later notes until it publishes. Do not backfill fictitious Releases; older publication after newer accepted notes remains rejected. Notes group
 by release/feature and preserve full versions. Open a reviewed notes-only PR on `codex/ledger-notes-<source-pr>` with
 exact title/squash subject `Release notes for <version> (#<source-pr>)`; its
 body identifies the release and evidence URL. Validate it with `validate-pr`
