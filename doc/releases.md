@@ -29,3 +29,7 @@ Beta bundles use `https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/upda
 PR #8 is integrated. The implementation is refreshed on current main in PR #17. Keep issue #15 open until the hosted update and relaunch acceptance above is complete.
 
 Release preparation compares the bundle public update key against the existing Keychain signing account before signing or generating release assets. Feed paths must use canonical unescaped URLs; encoded or dot-segment aliases are rejected before bundle metadata changes.
+
+## First stable publication
+
+Stable [0.1.64](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.64) was published on 2026-10-08 from `3aebf4459edfa45c9c45e6a4ea64ac1ac216180d`, canonical version 0.1.64 / build 64. The arm64 application passed Developer ID signature verification, Apple notarization, stapling and Gatekeeper assessment. The release contains the verified ZIP and signed appcast. This proves signed distribution; hosted update/install/relaunch acceptance remains separately tracked in [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15).

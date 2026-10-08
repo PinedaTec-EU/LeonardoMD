@@ -123,11 +123,11 @@ public consumer as data. The central catalog must allowlist LeonardoMD and its
 App installation must grant the existing scoped policy permissions for this
 repository. Public visibility does not grant fork code access to credentials.
 
-Activation depends on integration of the matching central public-target support,
-a successful exact-head App policy run and required-check binding. Until those
-are verified, dispatch delivery alone is not activation. Automatic version and
-notes writers remain subject to the central catalog, exact-head policy and
-publication evidence; do not claim a release from a merge or request.
+Central public-target support and catalog registration are integrated. Main protection requires Actions `test` (App `15368`) and `release-ledger-policy` (App `4862830`) with strict checks and administrator enforcement. The configured dispatch token was exercised on #56; #62 and #63 proved successive serial materialization.
+
+Keep GitHub automatic branch deletion enabled. After each generated PR merges, verify its remote ref is absent before requesting the next materialization; otherwise a stale branch can correctly fail the engine safety preflight. If a retired ref remains, check that no open PR uses it, delete only its verified SHA with a lease, and preserve any advanced ref. Recovery and automatic cleanup were verified in [#61](https://github.com/PinedaTec-EU/LeonardoMD/issues/61).
+
+Automatic merge additionally needs `statuses: read` granted to the App installation, not just configured in the App definition. This remains tracked in [pinedatec-ci#279](https://github.com/PinedaTec-EU/pinedatec-ci/issues/279). A failed merge-token step is not a policy verdict; the owner-authorized path still requires current-head checks, a strict fresh judge and normal branch protection. Version and notes writers retain their publication evidence gates; a merge or dispatch alone is not a release.
 
 ## Skill discovery
 
