@@ -5,7 +5,12 @@ import UniformTypeIdentifiers
 struct DocumentTabsView: View {
     @Bindable var documents: DocumentTabs
     @State private var tabFrames: [UUID: CGRect] = [:]
-    @GestureState private var dragTargetID: UUID?
+    @GestureState private var tabDrag: TabDragState?
+
+    private var dragTargetID: UUID? {
+        guard let drag = tabDrag else { return nil }
+        return TabReordering.destination(at: drag.location, frames: tabFrames, excluding: drag.sourceID)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,8 +35,12 @@ struct DocumentTabsView: View {
             ScrollView(.horizontal) {
                 HStack(spacing: 6) {
                     ForEach(documents.tabs) { tab in tabHeader(tab) }
-                }.padding(.vertical, 6)
-            }.scrollIndicators(.hidden)
+                }
+                .padding(.vertical, 6)
+                .animation(.easeInOut(duration: 0.16), value: documents.tabs.map(\.id))
+            }
+            .scrollIndicators(.hidden)
+            .scrollClipDisabled()
             Button { documents.addTab() } label: { Image(systemName: "plus").padding(6) }
                 .help("Nueva pestaña (⌘T)")
                 .accessibilityLabel("Nueva pestaña")
@@ -48,6 +57,17 @@ struct DocumentTabsView: View {
     private func moveTab(_ id: UUID, offset: Int) {
         guard let neighbor = documents.neighbor(of: id, offset: offset) else { return }
         documents.move(id, to: neighbor)
+    }
+
+    private func reorderGesture(for id: UUID) -> some Gesture {
+        DragGesture(minimumDistance: 8, coordinateSpace: .named(TabReordering.coordinateSpace))
+            .updating($tabDrag) { value, state, _ in
+                state = TabDragState(sourceID: id, translation: value.translation, location: value.location)
+            }
+            .onEnded { value in
+                guard let target = TabReordering.destination(at: value.location, frames: tabFrames, excluding: id) else { return }
+                documents.move(id, to: target)
+            }
     }
 
     private func tabHeader(_ tab: DocumentTab) -> some View {
@@ -85,16 +105,10 @@ struct DocumentTabsView: View {
                 .allowsHitTesting(false)
         }
         .contentShape(Rectangle())
-        .highPriorityGesture(
-            DragGesture(minimumDistance: 8, coordinateSpace: .named(TabReordering.coordinateSpace))
-                .updating($dragTargetID) { value, state, _ in
-                    state = TabReordering.destination(at: value.location, frames: tabFrames, excluding: tab.id)
-                }
-                .onEnded { value in
-                    guard let target = TabReordering.destination(at: value.location, frames: tabFrames, excluding: tab.id) else { return }
-                    documents.move(tab.id, to: target)
-                }
-        )
+        .offset(tabDrag.flatMap { $0.sourceID == tab.id ? $0.translation : nil } ?? .zero)
+        .zIndex(tabDrag?.sourceID == tab.id ? 1 : 0)
+        .shadow(radius: tabDrag?.sourceID == tab.id ? 6 : 0)
+        .highPriorityGesture(reorderGesture(for: tab.id))
         .contextMenu {
             Button("Mover a la izquierda") { moveTab(tab.id, offset: -1) }
                 .disabled(documents.neighbor(of: tab.id, offset: -1) == nil)
