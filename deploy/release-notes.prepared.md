@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.85
+
+- #38 Updated: activate checkpoint-aware ledger and document signed release ([#64](https://github.com/PinedaTec-EU/LeonardoMD/pull/64))
+
+Source: `e594acfa496ca560065d0c9113a40d7d1c9117ff`. Delta: `{"build": 1}`.
+
 ## 0.1.84
 
 - #51 Fixed: enable pointer reordering of document tabs ([#52](https://github.com/PinedaTec-EU/LeonardoMD/pull/52))
