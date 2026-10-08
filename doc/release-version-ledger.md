@@ -1,3 +1,6 @@
+> Automatic generated-update delivery now follows [the central writer contract](../docs/automatic-release-ledger.md).
+> Manual materialization/notes PR steps below are historical recovery guidance and are superseded for the enabled automatic path.
+
 # Release version ledger
 
 LeonardoMD adopts the shared immutable ledger with owner-approved baseline
