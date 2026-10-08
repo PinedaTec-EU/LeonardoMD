@@ -151,9 +151,14 @@ repository. Public visibility does not grant fork code access to credentials.
 
 Central public-target support and catalog registration are integrated. Main protection requires Actions `test` (App `15368`) and `release-ledger-policy` (App `4862830`) with strict checks and administrator enforcement. The configured dispatch token was exercised on #56; #62 and #63 proved successive serial materialization.
 
-Keep GitHub automatic branch deletion enabled. After each generated PR merges, verify its remote ref is absent before requesting the next materialization; otherwise a stale branch can correctly fail the engine safety preflight. If a retired ref remains, check that no open PR uses it, delete only its verified SHA with a lease, and preserve any advanced ref. Recovery and automatic cleanup were verified in [#61](https://github.com/PinedaTec-EU/LeonardoMD/issues/61).
+For legacy generated-PR recovery, keep GitHub automatic branch deletion enabled. After each generated PR merges, verify its remote ref is absent before requesting the next materialization; otherwise a stale branch can correctly fail the engine safety preflight. If a retired ref remains, check that no open PR uses it, delete only its verified SHA with a lease, and preserve any advanced ref. Recovery and automatic cleanup were verified in [#61](https://github.com/PinedaTec-EU/LeonardoMD/issues/61).
 
-Automatic merge additionally needs `statuses: read` granted to the App installation, not just configured in the App definition. This remains tracked in [pinedatec-ci#279](https://github.com/PinedaTec-EU/pinedatec-ci/issues/279). A failed merge-token step is not a policy verdict; the owner-authorized path still requires current-head checks, a strict fresh judge and normal branch protection. Version and notes writers retain their publication evidence gates; a merge or dispatch alone is not a release.
+The automatic App writer requires default-branch write capability in the central
+installation. Consumer dispatch alone does not prove that capability; rollout
+verification remains under [central #294](https://github.com/PinedaTec-EU/pinedatec-ci/issues/294).
+Legacy generated-PR automatic merge permissions were tracked separately under
+[pinedatec-ci#279](https://github.com/PinedaTec-EU/pinedatec-ci/issues/279).
+Version/prepared-note writes preserve the accepted-publication evidence gate.
 
 ## Skill discovery
 
