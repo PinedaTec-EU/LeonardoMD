@@ -94,3 +94,11 @@ Extension controls live in **Preferences → Extensions**. Select Global or This
 The owner-approved baseline is **0.1.56**. Packaging requires Python 3 and derives bundle metadata from `version.nfo`. The `release.feature.build` model uses one `deploy/version/entries/<PR>.yaml` per source PR; successful Swift compilation commands accumulate its build delta; release notes use the verified source PR title after publication. See [the ledger workflow](doc/release-version-ledger.md) for operator use, trusted CI access and pending central automation activation.
 
 Interface language defaults to English. Preferences → Language offers English and Español; see [localization](doc/localization.md) for resource maintenance.
+
+### Native QA launches
+
+Use `./launch.sh --qa` to build and launch a disposable copy of the real app. The helper preserves the executable, resources and frameworks, gives the copy a unique bundle identity and re-signs it. Packaging rejects an incorrect executable or a direct XCTest dependency before launch. Run XCTest checks with `swift test`; never package `xctest` as a GUI app.
+
+The command prints the temporary bundle path. Existing LeonardoMD instances keep product-wide single-instance ownership; a forwarded launch does not verify fresh startup. Confirm a new PID and `application_ready` startup records before claiming a fresh-process pass. Quit your existing app normally first when you want a separate startup check. Remove the printed temporary directory only after its QA process has finished.
+
+For preparation without launch, run `python3 scripts/qa-bundle.py output/LeonardoMD.app` after packaging. Tracking: [issue #80](https://github.com/PinedaTec-EU/LeonardoMD/issues/80).
