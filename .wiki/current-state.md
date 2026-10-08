@@ -43,4 +43,4 @@ Preferences groups General and Extensions tabs. Extension mutations accept expli
 
 Update PR #17 is refreshed on current main for [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15). Beta preparation supports separate feeds/keys, prerelease version validation and real Ed25519 archive verification; local beta candidates can skip notarization explicitly. See [updates](updates.md).
 
-Tab reordering moves existing session identities through `DocumentTabs.move`; typed `DocumentTabDrag` transfers reject foreign window owners. Headers accept drops and expose directional context actions. Tracking: [#51](https://github.com/PinedaTec-EU/LeonardoMD/issues/51).
+Tab reordering moves existing session identities through `DocumentTabs.move`; a local `DragGesture` resolves the pointer against measured header frames, avoiding the unsuccessful system Transferable route. Headers highlight the drag target and expose directional context actions. Bug: [#55](https://github.com/PinedaTec-EU/LeonardoMD/issues/55). Tracking: [#51](https://github.com/PinedaTec-EU/LeonardoMD/issues/51).
