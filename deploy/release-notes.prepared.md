@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.105
+
+- #47 Changed: remove redundant sidebar configuration button ([#48](https://github.com/PinedaTec-EU/LeonardoMD/pull/48))
+
+Source: `1d4789848ad283bd93fbd01eeb0e05c0c0ea9555`. Delta: `{"build": 2}`.
+
 ## 0.1.103
 
 - #57 Added: English and Spanish interface languages ([#58](https://github.com/PinedaTec-EU/LeonardoMD/pull/58))

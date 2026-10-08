@@ -62,9 +62,18 @@
       "merge_sha": "19462dd860a2892cc7a8f022270b4ca398e83d93",
       "pr": 58,
       "to_version": "0.1.103"
+    },
+    {
+      "delta": {
+        "build": 2
+      },
+      "from_version": "0.1.103",
+      "merge_sha": "1d4789848ad283bd93fbd01eeb0e05c0c0ea9555",
+      "pr": 48,
+      "to_version": "0.1.105"
     }
   ],
-  "current_version": "0.1.103",
+  "current_version": "0.1.105",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
