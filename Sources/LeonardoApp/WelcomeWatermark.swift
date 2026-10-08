@@ -12,14 +12,14 @@ struct WelcomeWatermark: View {
                 let width = geometry.size.width
                 let height = geometry.size.height
                 let figureSize = min(510, width * 0.32, height * 0.65)
-                sketch("WelcomeVitruvian", opacity: 0.24)
+                sketch("WelcomeVitruvian", opacity: 0.32)
                     .frame(width: figureSize)
                     .position(x: width - figureSize / 2 - 18, y: height * 0.48)
-                sketch("WelcomeWings", opacity: 0.22)
-                    .frame(width: min(510, width * 0.40))
+                sketch("WelcomeWings", opacity: 0.30)
+                    .frame(width: min(637.5, width * 0.50))
                     .rotationEffect(.degrees(-8))
-                    .position(x: width * 0.25, y: height * 0.19)
-                sketch("WelcomeWatermark", opacity: 0.30)
+                    .position(x: width * 0.27, y: height * 0.19)
+                sketch("WelcomeWatermark", opacity: 0.40)
                     .frame(width: min(640, width * 0.52))
                     .position(x: width * 0.31, y: height * 0.85)
             }
