@@ -63,7 +63,21 @@ final class LocalizationVisualTests: XCTestCase {
             instance: SingleInstance(name: "LocalizationLiveQA"), role: .primary)
         delegate.configureMenu()
         documents.activeSession.showPreferences = true
-        try await Task.sleep(for: .seconds(600))
+        holdNativeEventLoop()
+    }
+
+    private func holdNativeEventLoop() {
+        let timer = Timer.scheduledTimer(withTimeInterval: 600, repeats: false) { _ in
+            MainActor.assumeIsolated {
+            NSApp.stop(nil)
+            let event = NSEvent.otherEvent(with: .applicationDefined, location: .zero,
+                modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil,
+                subtype: 0, data1: 0, data2: 0)!
+            NSApp.postEvent(event, atStart: false)
+            }
+        }
+        NSApp.run()
+        timer.invalidate()
     }
 
     private func capture(_ view: NSView, size: NSSize, to url: URL) async throws {
