@@ -1,0 +1,23 @@
+# Welcome watermark
+
+Tracking: [#75](https://github.com/PinedaTec-EU/LeonardoMD/issues/75), [PR #76](https://github.com/PinedaTec-EU/LeonardoMD/pull/76).
+
+The welcome background uses three transparent notebook sketches, all tinted ochre (#A87832): Leonardo at lower left (40% opacity), a Vitruvian study close to the right edge (32%), and flying-machine wings at upper left (30%). The native view appears only with no document and at least 740 points of available height. Assets scale with width, decoration clips to the document area, and neither participates in accessibility or hit testing. A shared image-loading helper omits unavailable decorative assets instead of crashing.
+
+Built-in ImageGen generated the asset from `AboutBanner.png` as a style reference. Prompt: exact word “Leonardo”, softer fine Renaissance pencil calligraphy, sparse circle/construction geometry on either side, monochrome graphite, transparent margins; no paper, border, books, portrait, or other words. The generated original remains in the Codex image library; the project resource is the committed copy.
+
+Native SwiftUI `WorkspaceView` captures in English and Spanish use the existing `LocalizationVisualTests` empty-session harness, at 1260 × 850 points / 2520 × 1700 pixels, on 2026-10-08. They use synthetic empty sessions and do not launch or replace the owner's running app. Captures under `welcome-watermark/` demonstrate the actual native view, not a composited mockup. Runtime code in these captures matches the source committed with this document.
+
+Command: set `LEONARDO_LOCALIZATION_EVIDENCE` to an output directory, then run `scripts/compile-and-record.py --pr-number 76 -- swift test --filter LocalizationVisualTests`.
+
+Native visual review covers all three palettes at 1260 × 850, 760 × 600 and 760 × 850 points, plus an open synthetic document. Short windows show no sketches; narrow tall windows omit Vitruvius to preserve text clearance. Open documents show no welcome decoration. See the committed palette/size captures. Reproduce with `LEONARDO_LOCALIZATION_EVIDENCE=/tmp/welcome-evidence swift test --filter LocalizationVisualTests`. Browser: N/A, native AppKit-hosted SwiftUI.
+
+The Vitruvian study is now at the right edge, at 32% opacity, and only appears from 1100 points of available width. `WelcomeVitruvian.png` uses built-in ImageGen, transparent fine pencil line art in #A87832, recognizable circle/square and superimposed limbs. The classical anatomical request was rejected by the generator; the generated educational variant wears fitted shorts and omits intimate details. The original generation is retained in the Codex image library. Both decorations share the short-window hiding, input and accessibility exclusions.
+
+Latest owner refinement: stronger visibility, all motifs in ochre, left-aligned Leonardo with margin, right-edge Vitruvius, and an additional wing-invention sketch. Built-in ImageGen prompt for `WelcomeWings.png`: transparent Renaissance notebook sketch of an ornithopter, paired bat-like mechanical wings, ribs/cables/frame, fine irregular exploratory pencil strokes and construction ticks, monochrome ochre; no paper, backdrop, fills, border or readable text. Native captures were refreshed after final source edits; full Swift tests pass.
+
+Final refinement: wings enlarged by 25% in both width rules (510 → 637.5 point cap; 40% → 50% of available width), with a small rightward adjustment to retain a left margin. Opacities are now Leonardo 40%, Vitruvius 32%, wings 30%. Full tests and native English/Spanish captures passed after the change.
+
+Merge validation found and fixed [#77](https://github.com/PinedaTec-EU/LeonardoMD/issues/77): the Vitruvian study overlapped text in narrow tall windows. The optional capture harness initializes its isolated preferences before choosing each palette.
+
+QA scope: these captures run `WorkspaceView` through `swift test` and the supported XCTest runner. No test executable was packaged or launched as a GUI app. They validate native rendering, palette/layout and document-state behavior, not fresh-process application startup. For standalone application QA, use `./launch.sh --qa` and verify the real app executable/dependencies as required by `AGENTS.md`; a fresh first-window check has not been performed for this PR. The owner's installed/running application is preserved. Product-wide single-instance ownership can prevent a disposable QA copy from proving fresh startup; forwarding to an existing process must not be reported as startup acceptance. The PR changes neither executable startup nor single-instance ownership.

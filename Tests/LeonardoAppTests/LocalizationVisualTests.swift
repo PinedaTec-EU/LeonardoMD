@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import LeonardoCore
 import XCTest
 @testable import LeonardoApp
 
@@ -31,6 +32,39 @@ final class LocalizationVisualTests: XCTestCase {
             try await capture(workspace, size: NSSize(width: 1260, height: 850),
                               to: destination.appendingPathComponent("workspace-\(selected.rawValue).png"))
         }
+    }
+
+    func testCaptureWelcomeSketchesAcrossPalettesAndSizes() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_LOCALIZATION_EVIDENCE"] else {
+            throw XCTSkip("Set LEONARDO_LOCALIZATION_EVIDENCE to export native interface captures")
+        }
+        let destination = URL(fileURLWithPath: path, isDirectory: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let fixture = FileManager.default.temporaryDirectory.appendingPathComponent("WelcomeSketchQA-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: fixture, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: fixture) }
+        let session = AppSession(preferencesURL: fixture.appendingPathComponent("preferences.json"))
+        defer { session.stop() }
+        let language = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = language }
+        LanguageSettings.shared.language = .spanish
+        await session.initialize()
+        for palette in PaletteID.allCases {
+            session.globalPreferences.palette = palette
+            let workspace = NSHostingView(rootView: WorkspaceView(session: session))
+            try await capture(workspace, size: NSSize(width: 1260, height: 850),
+                              to: destination.appendingPathComponent("welcome-\(palette.rawValue)-wide.png"))
+            try await capture(workspace, size: NSSize(width: 760, height: 600),
+                              to: destination.appendingPathComponent("welcome-\(palette.rawValue)-short.png"))
+            try await capture(workspace, size: NSSize(width: 760, height: 850),
+                              to: destination.appendingPathComponent("welcome-\(palette.rawValue)-narrow.png"))
+        }
+        let document = fixture.appendingPathComponent("notes.md")
+        try "# Welcome QA\n\nSynthetic document.\n".write(to: document, atomically: true, encoding: .utf8)
+        await session.openDocument(document)
+        let workspace = NSHostingView(rootView: WorkspaceView(session: session))
+        try await capture(workspace, size: NSSize(width: 1260, height: 850),
+                          to: destination.appendingPathComponent("document-no-sketches.png"))
     }
 
     // Opt-in real windows for author-owned CUA screenshots, isolated from the

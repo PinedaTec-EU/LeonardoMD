@@ -107,6 +107,7 @@ struct WorkspaceView: View {
                 Button(L10n.text("Manage workspaces…")) { session.showWorkspace = true }.buttonStyle(PremiumButtonStyle())
                 Text(L10n.text("Local · No account · Optional extensions")).font(.caption).foregroundStyle(.secondary)
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background { WelcomeWatermark() }
         } else {
             VStack(spacing: 0) {
                 if session.externalConflict {
