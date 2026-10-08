@@ -48,6 +48,13 @@ struct DocumentTabsView: View {
 
     private func tabHeader(_ tab: DocumentTab) -> some View {
         HStack(spacing: 6) {
+            Image(systemName: "line.3.horizontal")
+                .font(.caption)
+                .padding(4)
+                .contentShape(Rectangle())
+                .draggable(DocumentTabDrag(ownerID: documents.dragOwnerID, tabID: tab.id))
+                .help("Arrastra para reordenar la pestaña")
+                .accessibilityLabel("Reordenar pestaña \(tab.title)")
             Button { documents.select(tab.id) } label: {
                 HStack(spacing: 6) {
                     Image(systemName: tab.session.isDirty ? "circle.fill" : "doc.text")
