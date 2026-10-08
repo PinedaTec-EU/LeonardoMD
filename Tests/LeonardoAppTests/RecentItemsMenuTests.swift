@@ -36,6 +36,7 @@ final class RecentItemsMenuTests: XCTestCase {
         window.isReleasedWhenClosed = false
         window.center()
         NSApp.setActivationPolicy(.regular)
+        NSApp.finishLaunching()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         defer { window.close(); session.stop() }
