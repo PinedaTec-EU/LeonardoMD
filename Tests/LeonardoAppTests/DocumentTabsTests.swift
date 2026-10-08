@@ -16,6 +16,57 @@ final class DocumentTabsTests: XCTestCase {
         return url
     }
 
+    func testReorderBothDirectionsRetainsActiveSessionAndDraft() throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let first = try XCTUnwrap(tabs.activeID)
+        let session = tabs.activeSession
+        session.content = "unsaved draft"
+        session.mode = .split
+        session.editorScroll = 0.6
+        let middle = try XCTUnwrap(tabs.addTab())
+        let last = try XCTUnwrap(tabs.addTab())
+        tabs.select(first)
+        XCTAssertTrue(tabs.move(first, to: last))
+        XCTAssertEqual(tabs.tabs.map(\.id), [middle, last, first])
+        XCTAssertTrue(tabs.move(first, to: middle))
+        XCTAssertEqual(tabs.tabs.map(\.id), [first, middle, last])
+        XCTAssertTrue(tabs.move(last, to: middle))
+        XCTAssertEqual(tabs.tabs.map(\.id), [first, last, middle])
+        XCTAssertEqual(tabs.activeID, first)
+        XCTAssertTrue(tabs.activeSession === session)
+        XCTAssertEqual(session.content, "unsaved draft")
+        XCTAssertTrue(session.isDirty)
+        XCTAssertEqual(session.mode, .split)
+        XCTAssertEqual(session.editorScroll, 0.6)
+        XCTAssertNil(tabs.neighbor(of: first, offset: -1))
+        XCTAssertNil(tabs.neighbor(of: middle, offset: 1))
+        XCTAssertEqual(tabs.neighbor(of: first, offset: 1), last)
+        XCTAssertEqual(tabs.neighbor(of: middle, offset: -1), last)
+    }
+
+    func testTabDropsRejectForeignInvalidSelfAndStoppedMoves() throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let first = try XCTUnwrap(tabs.activeID)
+        let last = try XCTUnwrap(tabs.addTab())
+        let item = DocumentTabDrag(ownerID: tabs.dragOwnerID, tabID: first)
+        let foreign = DocumentTabDrag(ownerID: UUID(), tabID: first)
+        let missing = DocumentTabDrag(ownerID: tabs.dragOwnerID, tabID: UUID())
+        for items in [[], [item, item], [foreign], [missing]] {
+            XCTAssertFalse(tabs.acceptTabDrop(items, onto: last))
+        }
+        XCTAssertFalse(tabs.acceptTabDrop([item], onto: first))
+        XCTAssertFalse(tabs.acceptTabDrop([item], onto: UUID()))
+        XCTAssertEqual(tabs.tabs.map(\.id), [first, last])
+        XCTAssertTrue(tabs.acceptTabDrop([item], onto: last))
+        XCTAssertEqual(tabs.tabs.map(\.id), [last, first])
+        tabs.stop()
+        XCTAssertFalse(tabs.move(first, to: last))
+        XCTAssertNil(tabs.neighbor(of: first, offset: -1))
+        XCTAssertFalse(tabs.acceptTabDrop([item], onto: last))
+    }
+
     func testExternalOpenPreservesDirtyTabAndDeduplicatesRepeatedRequests() async throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }

@@ -8,12 +8,13 @@ Tracking: [issue #19](https://github.com/PinedaTec-EU/LeonardoMD/issues/19). PR 
 - Opening a file normally replaces the active document. Already open files activate their tab; standardized paths and symlink aliases are deduplicated.
 - Dropping local `.md` / `.markdown` files on the window or sidebar opens them in new tabs. Finder/Dock document-open events use this same flow. Document drops reject unsupported/non-file URL batches atomically. Existing project-sidebar relocation is a separate action: one non-Markdown source already inside the current project may move within that project, with the existing file-operation and symlink guards. Unsupported external files do not enter that move path. Sidebar Markdown drops now open tabs; use the existing Move menu to relocate Markdown files.
 - Each tab owns an `AppSession` and retains its native editor/preview views, preserving selection, undo, scroll, mode, settings and project context. Inactive views cannot receive input. Sessions keep monitoring disk changes and retain existing autosave/conflict behavior.
+- Drag a tab onto another tab to move it to that position. The context menu also offers Move Left and Move Right, disabled at the corresponding edge. Reordering preserves the selected tab and its session, drafts, undo and scroll. Internal transfers are window-local and use a dedicated type, independent of external file drops. Tracking: [#51](https://github.com/PinedaTec-EU/LeonardoMD/issues/51).
 - Tab headers show full paths as tooltips. Their context menu offers Show in Finder, Copy Path and Close; location actions are disabled for empty tabs. Project-only tabs reveal their folder.
 - Cmd-W closes the active tab; Cmd-Shift-W closes the window. Closing the last tab leaves a fresh empty tab.
 - Tab/window/application close saves relevant sessions. Conflicts or failed saves prevent close and reveal the affected tab. Switching tabs retains conflicting drafts without requiring resolution first.
 - Rename/move/delete operations prepare affected sibling sessions, remap their paths after success, or clear deleted contexts. A sibling conflict prevents destructive operations.
 
-Tabs are window-local and are not restored across restarts. Reordering and split tab groups are outside this change. Keeping native views alive consumes resources per open tab; no fixed tab limit is imposed.
+Tabs are window-local and are not restored across restarts. Split tab groups and cross-window moves are unsupported. Keeping native views alive consumes resources per open tab; no fixed tab limit is imposed.
 
 ## Automated validation
 
