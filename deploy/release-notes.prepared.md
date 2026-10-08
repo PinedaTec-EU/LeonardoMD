@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.111
+
+- #69 Added: request central ledger processing after source merges ([#71](https://github.com/PinedaTec-EU/LeonardoMD/pull/71))
+
+Source: `a1701431cd9ade68da919a26b834f7f5aa9644ba`. Delta: `{"build": 1}`.
+
 ## 0.1.110
 
 - #53 Fixed: keep numeric versions across update channels ([#54](https://github.com/PinedaTec-EU/LeonardoMD/pull/54))
