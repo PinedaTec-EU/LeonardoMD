@@ -16,7 +16,6 @@ final class DocumentTabs {
     private(set) var activeID: UUID?
     private(set) var closing = false
     var updateWindow: ((String, URL?, Bool) -> Void)?
-    let dragOwnerID = UUID()
     private var stopped = false
     private let preferencesURL: URL
 
@@ -79,11 +78,6 @@ final class DocumentTabs {
               let index = tabs.firstIndex(where: { $0.id == id }),
               tabs.indices.contains(index + offset) else { return nil }
         return tabs[index + offset].id
-    }
-
-    func acceptTabDrop(_ items: [DocumentTabDrag], onto targetID: UUID) -> Bool {
-        guard items.count == 1, let item = items.first, item.ownerID == dragOwnerID else { return false }
-        return move(item.tabID, to: targetID)
     }
 
     func activateDocument(_ url: URL, line: Int? = nil) -> Bool {
