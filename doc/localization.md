@@ -54,3 +54,5 @@ Suggested new-note and copy filenames also come from the catalogs.
 
 Palette display names (Leonardo Classic, Paper White and Graphite Glass) are
 product names and remain consistent across interface languages.
+
+Refresh on main’s tab reordering retains the drag gesture, measured frames and session identities; directional context actions now use `Move left` / `Move right` catalog keys. Optional host captures in `validation/localization/refreshed-hosts/` were regenerated after this integration. Their native layer-backed Preferences controls are incomplete; the earlier real-app captures remain the evidence for those unchanged controls.
