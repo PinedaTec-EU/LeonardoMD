@@ -152,7 +152,10 @@ final class AppSession {
     }
 
     func openDocument(_ url: URL, line: Int? = nil) async {
-        if activateExistingDocument?(url, line) == true { return }
+        if activateExistingDocument?(url, line) == true {
+            NSDocumentController.shared.noteNewRecentDocumentURL(url)
+            return
+        }
         let started = ContinuousClock.now
         guard Self.readableDocumentExtensions.contains(url.pathExtension.lowercased()) else {
             openSystemURL(url)

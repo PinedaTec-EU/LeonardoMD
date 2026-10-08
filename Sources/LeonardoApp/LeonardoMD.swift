@@ -126,6 +126,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         while true {
             if windows.isEmpty { newEmptyWindow() }
             if let existing = windows.first(where: { $0.documents.activateDocument(url) }) {
+                NSDocumentController.shared.noteNewRecentDocumentURL(url)
                 existing.window?.deminiaturize(nil)
                 existing.window?.makeKeyAndOrderFront(nil)
                 return

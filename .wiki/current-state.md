@@ -53,3 +53,5 @@ Tab reordering moves existing session identities through `DocumentTabs.move`; a 
 Project sidebar omits the redundant Configuración footer; Preferences remains available from the application menu and Command-comma. Tracking: [#47](https://github.com/PinedaTec-EU/LeonardoMD/issues/47).
 
 Source merges request central `operation: all` through the checkout-free ARX-style adapter. Central App commits skip product CI; prepared notes are distinct from accepted publication notes. Live rollout remains tracked under [#69](https://github.com/PinedaTec-EU/LeonardoMD/issues/69) and central #294; see [contract](../doc/release-version-ledger.md).
+
+File recent items are composed by `RecentItemsMenu`, refreshed on submenu opening. Documents use native NSDocumentController history and register after successful loads or activation; projects/workspaces reuse global preferences. Missing targets are disabled; each category clears independently. Tracking: [#78](https://github.com/PinedaTec-EU/LeonardoMD/issues/78).
