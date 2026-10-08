@@ -51,3 +51,6 @@ Native application-menu accessibility captures are `menu-en.txt` and
 Before capture, use the application’s Bring all to front action and verify
 image dimensions; a window-manager thumbnail is not validation evidence.
 Suggested new-note and copy filenames also come from the catalogs.
+
+Palette display names (Leonardo Classic, Paper White and Graphite Glass) are
+product names and remain consistent across interface languages.

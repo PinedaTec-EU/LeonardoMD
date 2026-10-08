@@ -80,7 +80,7 @@ The application icon uses the approved Leonardo Classic folded-L artwork. Its or
 
 ## App updates
 
-Distribution builds include Sparkle 2.9.6. Use **LeonardoMD → Buscar actualizaciones…** to check and install an update. Enable **Comprobar actualizaciones automáticamente** for periodic checks (off initially; Sparkle stores the preference globally). Installation remains user initiated. Sparkle displays release notes, errors and the no-update result and verifies Ed25519 signatures before extraction. Its quit request goes through the application's existing unsaved-document and Git-operation termination guard.
+Distribution builds include Sparkle 2.9.6. Use **LeonardoMD → Check for updates…** (Spanish: **Buscar actualizaciones…**) to check and install an update. Enable **Automatically check for updates** (Spanish: **Comprobar actualizaciones automáticamente**) for periodic checks (off initially; Sparkle stores the preference globally). Installation remains user initiated. Sparkle displays release notes, errors and the no-update result and verifies Ed25519 signatures before extraction. Its quit request goes through the application's existing unsaved-document and Git-operation termination guard.
 
 The stable feed is `https://github.com/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml`. Public downloads require no GitHub token. Development builds without `SPARKLE_PUBLIC_KEY` display an explanatory dialog and cannot enable periodic checks.
 
