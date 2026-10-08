@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.113
+
+- #80 Fixed: build native QA copies from the real app bundle ([#82](https://github.com/PinedaTec-EU/LeonardoMD/pull/82))
+
+Source: `1c0113257daab469a7a09f239ed2966a7b0e8f3f`. Delta: `{"build": 2}`.
+
 ## 0.1.111
 
 - #69 Added: request central ledger processing after source merges ([#71](https://github.com/PinedaTec-EU/LeonardoMD/pull/71))
