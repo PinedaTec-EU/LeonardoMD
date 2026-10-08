@@ -55,3 +55,5 @@ Project sidebar omits the redundant Configuración footer; Preferences remains a
 Source merges request central `operation: all` through the checkout-free ARX-style adapter. Central App commits skip product CI; prepared notes are distinct from accepted publication notes. Live rollout remains tracked under [#69](https://github.com/PinedaTec-EU/LeonardoMD/issues/69) and central #294; see [contract](../doc/release-version-ledger.md).
 
 The document-free welcome screen has a transparent pencil wordmark tinted by the active ink and shown at 12% opacity below the controls. `WelcomeWatermark` hides decoration below 740 points of available height, excludes it from hit testing and accessibility, and is never attached to open documents. Tracking: [#75](https://github.com/PinedaTec-EU/LeonardoMD/issues/75).
+
+Welcome decoration also includes a left-offset transparent Vitruvian study in ochre (#A87832) at 8% opacity, requested in #75.

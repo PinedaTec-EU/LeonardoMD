@@ -11,3 +11,5 @@ Native SwiftUI `WorkspaceView` captures in English and Spanish use the existing 
 Command: set `LEONARDO_LOCALIZATION_EVIDENCE` to an output directory, then run `scripts/compile-and-record.py --pr-number 76 -- swift test --filter LocalizationVisualTests`.
 
 Visual review confirms readable text/actions and separate understated decoration in the captured light parchment palette. Dark palette and short-window live checks remain pending before acceptance, along with CI and independent judgment.
+
+Owner refinement: add an ochre Vitruvian figure behind the welcome at 8% opacity, offset left of the controls. `WelcomeVitruvian.png` uses built-in ImageGen, transparent fine pencil line art in #A87832, recognizable circle/square and superimposed limbs. The classical anatomical request was rejected by the generator; the generated educational variant wears fitted shorts and omits intimate details. The original generation is retained in the Codex image library. Both decorations share the short-window hiding, input and accessibility exclusions.

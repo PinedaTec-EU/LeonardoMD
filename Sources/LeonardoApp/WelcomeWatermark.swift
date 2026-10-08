@@ -6,10 +6,19 @@ struct WelcomeWatermark: View {
     let ink: Color
     private let minimumHeight: CGFloat = 740
     private let maximumWidth: CGFloat = 760
+    private let draftingOchre = Color(hex: "#A87832")
 
     var body: some View {
         GeometryReader { geometry in
             if geometry.size.height >= minimumHeight {
+                Image(nsImage: NSImage(contentsOf: Bundle.module.url(forResource: "WelcomeVitruvian", withExtension: "png")!)!)
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(draftingOchre)
+                    .opacity(0.08)
+                    .frame(width: min(540, geometry.size.width * 0.38, geometry.size.height * 0.62))
+                    .position(x: geometry.size.width * 0.22, y: geometry.size.height * 0.42)
                 VStack {
                     Spacer()
                     Image(nsImage: NSImage(contentsOf: Bundle.module.url(forResource: "WelcomeWatermark", withExtension: "png")!)!)
