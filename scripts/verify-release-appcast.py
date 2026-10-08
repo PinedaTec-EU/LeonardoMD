@@ -35,6 +35,9 @@ def verify(path, channel="stable"):
         pattern = r"v[0-9]+\.[0-9]+\.[0-9]+"
         if not re.fullmatch(pattern, release_tag):
             raise ValueError("Release tag must use the numeric canonical version")
+        displayed_version = item.find(SPARKLE + "shortVersionString")
+        if displayed_version is not None and displayed_version.text != release_tag[1:]:
+            raise ValueError("Displayed update version must match the numeric release tag")
         if int(enclosure.get("length", "0")) <= 0:
             raise ValueError("Empty update archive")
         version = item.find(SPARKLE + "version")

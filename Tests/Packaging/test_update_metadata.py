@@ -220,6 +220,21 @@ class UpdateMetadataTests(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         verify(feed, channel)
 
+    def test_appcast_display_version_cannot_add_maturity_suffix(self):
+        verify = load("verify-release-appcast").verify
+        signature = base64.b64encode(bytes(64)).decode()
+        with tempfile.TemporaryDirectory() as directory:
+            feed = Path(directory) / "appcast.xml"
+            for channel in ("stable", "beta"):
+                tag = '<sparkle:channel>beta</sparkle:channel>' if channel == 'beta' else ''
+                template = f'<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item>{tag}<sparkle:version>56</sparkle:version><sparkle:shortVersionString>DISPLAY</sparkle:shortVersionString><enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.56/update.zip" length="100" sparkle:edSignature="{signature}"/></item></channel></rss>'
+                feed.write_text(template.replace('DISPLAY', '0.1.56'))
+                verify(feed, channel)
+                for value in ('0.1.56-beta.1', '0.1.56-alpha.1', '0.1.57'):
+                    feed.write_text(template.replace('DISPLAY', value))
+                    with self.assertRaises(ValueError):
+                        verify(feed, channel)
+
     def test_unsigned_or_foreign_appcast_is_rejected(self):
         verify = load("verify-release-appcast").verify
         signature = base64.b64encode(bytes(64)).decode()
