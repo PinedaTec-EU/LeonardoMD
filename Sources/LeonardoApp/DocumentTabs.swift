@@ -62,6 +62,24 @@ final class DocumentTabs {
         updateTitle()
     }
 
+    /// Move the existing session to the target's original position without selecting it.
+    @discardableResult
+    func move(_ id: UUID, to targetID: UUID) -> Bool {
+        guard !closing, !stopped, id != targetID,
+              let source = tabs.firstIndex(where: { $0.id == id }),
+              let destination = tabs.firstIndex(where: { $0.id == targetID }) else { return false }
+        let tab = tabs.remove(at: source)
+        tabs.insert(tab, at: destination)
+        return true
+    }
+
+    func neighbor(of id: UUID, offset: Int) -> UUID? {
+        guard !closing, !stopped, (offset == -1 || offset == 1),
+              let index = tabs.firstIndex(where: { $0.id == id }),
+              tabs.indices.contains(index + offset) else { return nil }
+        return tabs[index + offset].id
+    }
+
     func activateDocument(_ url: URL, line: Int? = nil) -> Bool {
         guard !closing, let tab = tabs.first(where: {
             $0.session.documentURL?.standardizedFileURL.resolvingSymlinksInPath() == url.standardizedFileURL.resolvingSymlinksInPath()
