@@ -1,0 +1,27 @@
+Window: "", App: LocalizationQA.
+0 sheet Secondary Actions: Raise
+	1 container
+		2 text Preferencias
+		3 button Listo
+		4 pop up button Idioma, Value: Español, ID: interface-language
+		5 text El idioma de la interfaz se aplica a todas las ventanas.
+		6 tab group
+			7 tab Description: General, Value: 1, ID: gearshape
+			8 tab Description: Extensiones, Value: 0, ID: puzzlepiece.extension
+			9 scroll area
+				10 container
+					11 pop up button Paleta, Value: Paper White
+					12 pop up button Efecto de hoja, Value: Hoja blanca
+					13 button Personalizar / importar paleta…
+					14 toggle button Description: Mostrar frontmatter, Value: off
+					15 toggle button Description: Confirmar enlaces externos, Value: on
+					16 toggle button Description: Mostrar archivos ocultos, Value: off
+		17 text Las preferencias globales se aplican al visor individual y a proyectos que las heredan.
+18 menu bar
+	19 LocalizationQA
+	20 Archivo
+	21 Edición
+	22 Vista
+	23 Ventana
+
+The focused UI element is 0 sheet Secondary Actions: Raise

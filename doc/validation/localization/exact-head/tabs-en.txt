@@ -1,0 +1,31 @@
+Window: "Leonardo Localization QA", App: LocalizationQA.
+0 standard window Leonardo Localization QA, Secondary Actions: Raise
+	1 container
+		2 scroll area
+			3 unknown Description: Reorder tab notes.md, Help: Drag to reorder tab
+			4 button (selected) Description: notes.md, Help: /var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/LocalizationLive-727EF3A8-614F-4AC1-AF41-AFF7EE7A2147/notes.md
+			5 button Description: Close tab notes.md, ID: xmark
+		6 button Description: New tab, Help: New tab (⌘T), ID: new-document-tab
+		7 menu button Move
+		8 text notes.md Document viewer
+		9 container Description: Mode, ID: document-mode
+			10 button (selected) Preview
+			11 button Edit
+			12 button Split
+		13 button Description: Enter Full Screen, Help: Focus mode, ID: focus-mode
+		14 button Description: Share, Help: Export PDF, ID: square.and.arrow.up
+		15 button Description: Outline, ID: document-outline-button
+		16 text Saved · local file
+		17 image (selected) Description: Selected, ID: checkmark.circle
+		18 text Standalone document Markdown · UTF-8 5 words
+	19 close button
+	20 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	21 text Leonardo Localization QA
+22 menu bar
+	23 LocalizationQA
+	24 File
+	25 Edit
+	26 View
+	27 Window
+
+The focused UI element is 0 standard window Leonardo Localization QA, Secondary Actions: Raise

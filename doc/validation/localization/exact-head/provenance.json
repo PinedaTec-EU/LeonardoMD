@@ -1,0 +1,33 @@
+{
+  "source_sha": "9e870dbb91b6940b114337454eb5c99dd8ced364",
+  "capture_date": "2026-10-08",
+  "platform": "macOS native AppKit/SwiftUI via CUA",
+  "state": "Synthetic path-backed notes.md tab, Preferences English/Espa\u00f1ol, same About window retained across English to Spanish language change",
+  "capture_mode": "Committed LocalizationVisualTests live QA mode using copied Xcode XCTest runner, no production single-instance service claimed",
+  "images": {
+    "preferences-es.jpg": [
+      "  pixelWidth: 1160",
+      "  pixelHeight: 1240"
+    ],
+    "about-es.jpg": [
+      "  pixelWidth: 1440",
+      "  pixelHeight: 1192"
+    ],
+    "tabs-en.jpg": [
+      "  pixelWidth: 2520",
+      "  pixelHeight: 1764"
+    ],
+    "preferences-en.jpg": [
+      "  pixelWidth: 1160",
+      "  pixelHeight: 1240"
+    ],
+    "tabs-es.jpg": [
+      "  pixelWidth: 2520",
+      "  pixelHeight: 1764"
+    ],
+    "about-en.jpg": [
+      "  pixelWidth: 1440",
+      "  pixelHeight: 1192"
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+Window: "About LeonardoMD", App: LocalizationQA.
+0 standard window About LeonardoMD, Secondary Actions: Raise
+	1 container
+		2 image Leonardo MarkDown, by PinedaTec.eu
+		3 text Value: Version unavailable · development build, ID: about-version
+			4 text Version unavailable · development build
+		5 link Description: PinedaTec.eu, Value: pinedatec.eu
+	6 close button
+	7 zoom button (disabled)
+	8 text About LeonardoMD
+9 menu bar
+	10 LocalizationQA
+	11 File
+	12 Edit
+	13 View
+	14 Window
+
+The focused UI element is 0 standard window About LeonardoMD, Secondary Actions: Raise

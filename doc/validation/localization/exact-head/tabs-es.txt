@@ -1,0 +1,31 @@
+Window: "Leonardo Localization QA", App: LocalizationQA.
+0 standard window Leonardo Localization QA, Secondary Actions: Raise
+	1 container
+		2 scroll area
+			3 unknown Description: Reordenar pestaña notes.md, Help: Arrastra para reordenar la pestaña
+			4 button (selected) Description: notes.md, Help: /var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/LocalizationLive-F64DB294-ED31-4C26-841F-C3C03A205C92/notes.md
+			5 button Description: Cerrar pestaña notes.md, ID: xmark
+		6 button Description: Nueva pestaña, Help: Nueva pestaña (⌘T), ID: new-document-tab
+		7 menu button Move
+		8 text notes.md Visor de documento
+		9 container Description: Modo, ID: document-mode
+			10 button (selected) Lectura
+			11 button Edición
+			12 button Dividida
+		13 button Description: Enter Full Screen, Help: Modo foco, ID: focus-mode
+		14 button Description: Share, Help: Exportar PDF, ID: square.and.arrow.up
+		15 button Description: Índice, ID: document-outline-button
+		16 text Guardado · archivo local
+		17 image (selected) Description: Selected, ID: checkmark.circle
+		18 text Documento individual Markdown · UTF-8 5 palabras
+	19 close button
+	20 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	21 text Leonardo Localization QA
+22 menu bar
+	23 LocalizationQA
+	24 Archivo
+	25 Edición
+	26 Vista
+	27 Ventana
+
+The focused UI element is 0 standard window Leonardo Localization QA, Secondary Actions: Raise
