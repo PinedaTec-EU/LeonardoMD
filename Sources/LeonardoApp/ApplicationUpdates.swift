@@ -26,8 +26,8 @@ final class ApplicationUpdates: NSObject, NSMenuItemValidation, SPUUpdaterDelega
 
     func addMenuItems(to menu: NSMenu) {
         for (title, action) in [
-            ("Buscar actualizaciones…", #selector(checkForUpdates)),
-            ("Comprobar actualizaciones automáticamente", #selector(toggleAutomaticChecks))
+            (L10n.text("Check for updates…"), #selector(checkForUpdates)),
+            (L10n.text("Automatically check for updates"), #selector(toggleAutomaticChecks))
         ] {
             let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
             item.target = self
@@ -38,8 +38,8 @@ final class ApplicationUpdates: NSObject, NSMenuItemValidation, SPUUpdaterDelega
     @objc private func checkForUpdates() {
         guard let controller else {
             let alert = NSAlert()
-            alert.messageText = "Actualizaciones no configuradas"
-            alert.informativeText = "Este build de desarrollo no tiene un canal de actualizaciones firmado. Instala una versión de distribución para recibir actualizaciones."
+            alert.messageText = L10n.text("Updates not configured")
+            alert.informativeText = L10n.text("This development build has no signed update channel. Install a distribution version to receive updates.")
             alert.runModal()
             return
         }

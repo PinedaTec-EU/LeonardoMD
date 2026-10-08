@@ -3,11 +3,11 @@ import Foundation
 enum DocumentMode: String, CaseIterable, Identifiable {
     case preview, edit, split
     var id: Self { self }
-    var title: String {
+    @MainActor var title: String {
         switch self {
-        case .preview: "Lectura"
-        case .edit: "Edición"
-        case .split: "Dividida"
+        case .preview: L10n.text("Preview")
+        case .edit: L10n.text("Edit")
+        case .split: L10n.text("Split")
         }
     }
 }

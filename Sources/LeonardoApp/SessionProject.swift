@@ -17,7 +17,7 @@ extension AppSession {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
-        panel.prompt = "Abrir proyecto"
+        panel.prompt = L10n.text("Open project")
         presentFilePanel(panel) { [weak self] url in Task { await self?.openProject(url) } }
     }
     func openProject(_ url: URL) async {
@@ -101,7 +101,7 @@ extension AppSession {
     }
     func createItem(directory: Bool, parent: URL? = nil) {
         guard let root = projectURL,
-              let name = prompt(title: directory ? "Nueva carpeta" : "Nuevo Markdown", initial: directory ? "Carpeta" : "nota.md") else { return }
+              let name = prompt(title: directory ? L10n.text("New folder") : L10n.text("New Markdown"), initial: directory ? L10n.text("Folder") : L10n.text("New note filename")) else { return }
         let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
         let parentPath = relative(parent ?? root)
         Task {
@@ -117,7 +117,7 @@ extension AppSession {
         }
     }
     func rename(_ url: URL) {
-        guard let root = projectURL, let name = prompt(title: "Renombrar", initial: url.lastPathComponent) else { return }
+        guard let root = projectURL, let name = prompt(title: L10n.text("Rename"), initial: url.lastPathComponent) else { return }
         Task {
             guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
             do {
@@ -133,7 +133,7 @@ extension AppSession {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.directoryURL = projectURL
-        panel.prompt = "Mover aquí"
+        panel.prompt = L10n.text("Move here")
         presentFilePanel(panel) { [weak self] destination in self?.move(url, into: destination) }
     }
     func move(_ url: URL, into parent: URL) {
@@ -161,10 +161,10 @@ extension AppSession {
     func delete(_ url: URL) {
         guard let root = projectURL else { return }
         let alert = NSAlert()
-        alert.messageText = "¿Eliminar \(url.lastPathComponent)?"
-        alert.informativeText = "Esta operación elimina el elemento del disco."
-        alert.addButton(withTitle: "Cancelar")
-        alert.addButton(withTitle: "Eliminar")
+        alert.messageText = L10n.format("Delete %@?", url.lastPathComponent)
+        alert.informativeText = L10n.text("This operation deletes the item from disk.")
+        alert.addButton(withTitle: L10n.text("Cancel"))
+        alert.addButton(withTitle: L10n.text("Delete"))
         guard alert.runModal() == .alertSecondButtonReturn else { return }
         Task {
             guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
@@ -204,8 +204,8 @@ extension AppSession {
         let input = NSTextField(string: initial)
         input.frame = NSRect(x: 0, y: 0, width: 300, height: 24)
         alert.accessoryView = input
-        alert.addButton(withTitle: "Guardar")
-        alert.addButton(withTitle: "Cancelar")
+        alert.addButton(withTitle: L10n.text("Save"))
+        alert.addButton(withTitle: L10n.text("Cancel"))
         alert.window.initialFirstResponder = input
         return alert.runModal() == .alertFirstButtonReturn ? input.stringValue : nil
     }

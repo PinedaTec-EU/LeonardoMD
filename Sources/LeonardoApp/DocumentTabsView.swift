@@ -42,8 +42,8 @@ struct DocumentTabsView: View {
             .scrollIndicators(.hidden)
             .scrollClipDisabled()
             Button { documents.addTab() } label: { Image(systemName: "plus").padding(6) }
-                .help("Nueva pestaña (⌘T)")
-                .accessibilityLabel("Nueva pestaña")
+                .help(L10n.text("New tab (⌘T)"))
+                .accessibilityLabel(L10n.text("New tab"))
                 .accessibilityIdentifier("new-document-tab")
         }
         .coordinateSpace(name: TabReordering.coordinateSpace)
@@ -76,8 +76,8 @@ struct DocumentTabsView: View {
                 DocumentTabGrip()
                     .padding(4)
                     .contentShape(Rectangle())
-                    .help("Arrastra para reordenar la pestaña")
-                    .accessibilityLabel("Reordenar pestaña \(tab.title)")
+                    .help(L10n.text("Drag to reorder tab"))
+                    .accessibilityLabel(L10n.format("Reorder tab %@", tab.title))
             }
             Button { documents.select(tab.id) } label: {
                 HStack(spacing: 6) {
@@ -85,15 +85,15 @@ struct DocumentTabsView: View {
                     Text(tab.title).lineLimit(1)
                 }.frame(minWidth: 100, maxWidth: 200, alignment: .leading)
             }
+            .help(tab.location?.path ?? L10n.text("Open a document or project in this tab"))
             .accessibilityLabel(tab.title)
             .accessibilityAddTraits(tab.id == documents.activeID ? .isSelected : [])
             Button { Task { await documents.close(tab.id) } } label: {
                 Image(systemName: "xmark").font(.caption)
-            }.accessibilityLabel("Cerrar pestaña \(tab.title)")
+            }.accessibilityLabel(L10n.format("Close tab %@", tab.title))
         }
         .padding(4)
         .background(tab.id == documents.activeID ? documents.activeSession.accentColor.opacity(0.16) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
-        .help(tab.location?.path ?? "Abre un documento o proyecto en esta pestaña")
         .background {
             GeometryReader { geometry in
                 Color.clear.preference(key: TabFramesPreference.self, value: [tab.id: geometry.frame(in: .named(TabReordering.coordinateSpace))])
@@ -110,19 +110,19 @@ struct DocumentTabsView: View {
         .shadow(radius: tabDrag?.sourceID == tab.id ? 6 : 0)
         .highPriorityGesture(reorderGesture(for: tab.id))
         .contextMenu {
-            Button("Mover a la izquierda") { moveTab(tab.id, offset: -1) }
+            Button(L10n.text("Move left")) { moveTab(tab.id, offset: -1) }
                 .disabled(documents.neighbor(of: tab.id, offset: -1) == nil)
-            Button("Mover a la derecha") { moveTab(tab.id, offset: 1) }
+            Button(L10n.text("Move right")) { moveTab(tab.id, offset: 1) }
                 .disabled(documents.neighbor(of: tab.id, offset: 1) == nil)
             Divider()
-            Button("Mostrar en Finder") { documents.reveal(tab.id) }.disabled(tab.location == nil)
-            Button("Copiar ruta") {
+            Button(L10n.text("Show in Finder")) { documents.reveal(tab.id) }.disabled(tab.location == nil)
+            Button(L10n.text("Copy path")) {
                 guard let url = tab.location else { return }
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(url.path, forType: .string)
             }.disabled(tab.location == nil)
             Divider()
-            Button("Cerrar pestaña") { Task { await documents.close(tab.id) } }
+            Button(L10n.text("Close tab")) { Task { await documents.close(tab.id) } }
         }
     }
 }
