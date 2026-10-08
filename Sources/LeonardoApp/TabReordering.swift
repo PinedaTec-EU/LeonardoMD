@@ -9,6 +9,12 @@ enum TabReordering {
     }
 }
 
+struct TabDragState: Equatable {
+    let sourceID: UUID
+    let translation: CGSize
+    let location: CGPoint
+}
+
 struct TabFramesPreference: PreferenceKey {
     static let defaultValue: [UUID: CGRect] = [:]
 
