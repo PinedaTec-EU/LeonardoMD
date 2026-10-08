@@ -56,7 +56,7 @@ or inferred summary of the PR body.
 ## Shared engine operation
 
 The engine remains in `PinedaTec-EU/pinedatec-ci`, pinned to integrated commit
-`07144074ab282217b1fb12a0e94c021763090df6`; do not copy it or use a mutable pin.
+`c39d7c970b7c52c503302a77ca9ad8a08c9326d7`; do not copy it or use a mutable pin.
 `scripts/release-ledger.sh` is a thin operator entrypoint. Set
 `LEDGER_ENGINE_ROOT` to a clean checkout at that exact revision. It checks the
 revision and engine working tree, passes the workspace to the shared engine,
@@ -99,7 +99,7 @@ locally. Read-only `LEDGER_EVIDENCE_TOKEN` verifies release access and
 release, tag SHA, version and PR provenance, and renders the verified PR title,
 PR link, merge SHA and delta. Retries must not duplicate accepted notes.
 
-The engine creates `deploy/release-notes.md` only after acceptance. Notes group
+The engine creates `deploy/release-notes.md` only after acceptance. Materialized versions without a GitHub Release are intermediate checkpoints, not historical publications. The next accepted release accumulates their verified source changes since the previous accepted event. An earlier matching stable draft remains a pending publication and blocks later notes until it publishes. Do not backfill fictitious Releases; older publication after newer accepted notes remains rejected. Notes group
 by release/feature and preserve full versions. Open a reviewed notes-only PR on `codex/ledger-notes-<source-pr>` with
 exact title/squash subject `Release notes for <version> (#<source-pr>)`; its
 body identifies the release and evidence URL. Validate it with `validate-pr`
@@ -123,11 +123,11 @@ public consumer as data. The central catalog must allowlist LeonardoMD and its
 App installation must grant the existing scoped policy permissions for this
 repository. Public visibility does not grant fork code access to credentials.
 
-Activation depends on integration of the matching central public-target support,
-a successful exact-head App policy run and required-check binding. Until those
-are verified, dispatch delivery alone is not activation. Automatic version and
-notes writers remain subject to the central catalog, exact-head policy and
-publication evidence; do not claim a release from a merge or request.
+Central public-target support and catalog registration are integrated. Main protection requires Actions `test` (App `15368`) and `release-ledger-policy` (App `4862830`) with strict checks and administrator enforcement. The configured dispatch token was exercised on #56; #62 and #63 proved successive serial materialization.
+
+Keep GitHub automatic branch deletion enabled. After each generated PR merges, verify its remote ref is absent before requesting the next materialization; otherwise a stale branch can correctly fail the engine safety preflight. If a retired ref remains, check that no open PR uses it, delete only its verified SHA with a lease, and preserve any advanced ref. Recovery and automatic cleanup were verified in [#61](https://github.com/PinedaTec-EU/LeonardoMD/issues/61).
+
+Automatic merge additionally needs `statuses: read` granted to the App installation, not just configured in the App definition. This remains tracked in [pinedatec-ci#279](https://github.com/PinedaTec-EU/pinedatec-ci/issues/279). A failed merge-token step is not a policy verdict; the owner-authorized path still requires current-head checks, a strict fresh judge and normal branch protection. Version and notes writers retain their publication evidence gates; a merge or dispatch alone is not a release.
 
 ## Skill discovery
 
@@ -146,3 +146,5 @@ Sparkle configuration preserves the generated canonical bundle version/build. Ex
 ## Pin maintenance
 
 Refresh the immutable engine SHA after engine changes integrate into central main, through reviewed source PRs in the central catalog and this operator wrapper. Validate both against the same integrated snapshot; publisher-only commits with an unchanged engine tree do not require recursive pin refreshes. Never resolve mutable main at execution time. Main protection requires `test` from GitHub Actions and `release-ledger-policy` from App 4862830, including administrators. Dispatch-token execution was observed on PR #56 after readiness. Tracking: [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
+
+Integrate the central catalog refresh before enabling policy validation of the consumer pin PR. An App verdict binds the head, base and engine identity; if a queued run already recorded the old pin on that head, refresh the consumer head and obtain new current-pin validation instead of overwriting the immutable verdict.
