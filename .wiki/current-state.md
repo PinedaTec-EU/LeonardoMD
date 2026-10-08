@@ -44,3 +44,9 @@ Preferences groups General and Extensions tabs. Extension mutations accept expli
 Update PR #17 is refreshed on current main for [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15). Beta preparation supports separate feeds/keys, prerelease version validation and real Ed25519 archive verification; local beta candidates can skip notarization explicitly. See [updates](updates.md).
 
 Interface localization uses global observable LanguageSettings and processed en/es JSON catalogs; English is the default independently of OS locale. Native menus rebuild on language notifications. Status keys and computed Git summaries remain live. See [localization](../doc/localization.md); tracking [#57](https://github.com/PinedaTec-EU/LeonardoMD/issues/57).
+
+Ledger activation under #38 uses engine snapshot 07144074ab282217b1fb12a0e94c021763090df6, aligned with central catalog refresh #282. Refresh pins after integrated engine changes; preserve immutable references. Main has App-bound policy and Actions test protection; PR #56 proved the configured dispatch token. Materialization and accepted signed publication remain separately verified gates.
+
+Engine-backed regression fixtures start from the configured seed independently of production checkpoints; a separate case preserves existing applied history. This fixes [#60](https://github.com/PinedaTec-EU/LeonardoMD/issues/60), discovered after materialization #56.
+
+Tab reordering moves existing session identities through `DocumentTabs.move`; a local `DragGesture` resolves the pointer against measured header frames, avoiding the unsuccessful system Transferable route. Headers highlight the drag target and expose directional context actions. Bug: [#55](https://github.com/PinedaTec-EU/LeonardoMD/issues/55). Tracking: [#51](https://github.com/PinedaTec-EU/LeonardoMD/issues/51).
