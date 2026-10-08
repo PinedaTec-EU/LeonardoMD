@@ -45,6 +45,26 @@ class PackageVersionTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertFalse(output.exists())
 
+    def test_update_configuration_preserves_canonical_version_and_rejects_override(self):
+        result, output = self.run_generator("0.1.56")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("updates", ROOT / "scripts/configure-update-bundle.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        module.configure(output, {})
+        original = output.read_bytes()
+        metadata = plistlib.loads(original)
+        self.assertEqual(metadata["CFBundleShortVersionString"], "0.1.56")
+        self.assertEqual(metadata["CFBundleVersion"], "56")
+        for environment in ({"LEONARDO_VERSION": "0.1.0"}, {"LEONARDO_BUILD": "1"},
+                            {"LEONARDO_CHANNEL": "beta", "LEONARDO_VERSION": "0.1.57-beta.1"}):
+            with self.assertRaises(ValueError):
+                module.configure(output, environment)
+            self.assertEqual(output.read_bytes(), original)
+        module.configure(output, {"LEONARDO_CHANNEL": "beta", "LEONARDO_VERSION": "0.1.56-beta.1"})
+        self.assertEqual(plistlib.loads(output.read_bytes())["CFBundleVersion"], "56")
+
     def test_template_cannot_hide_a_second_version_source(self):
         result, output = self.run_generator("0.1.56", {"CFBundleVersion": "1"})
         self.assertNotEqual(result.returncode, 0)

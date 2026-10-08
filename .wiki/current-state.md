@@ -32,7 +32,7 @@ Document tabs own complete `AppSession` instances and retain native views. `Docu
 
 Sidebar external-drop correction: [#34](https://github.com/PinedaTec-EU/LeonardoMD/issues/34).
 
-Single-instance launching is coordinated by `SingleInstance` using a named CFMessagePort per bundle identifier/login session. `ApplicationDelegate` queues launch requests and opens external documents in tabs, selecting duplicates across windows. See [launch behavior and process validation](../doc/validation/single-instance.md). Tracking: [#22](https://github.com/PinedaTec-EU/LeonardoMD/issues/22), targeting main after PR #21 integration. Quit versions without the protocol before starting the updated app.
+Single-instance launching is coordinated by `SingleInstance` using a named CFMessagePort per product/login session, shared by QA bundle copies. `ApplicationDelegate` queues launch requests and opens external documents in tabs, selecting duplicates across windows. See [launch behavior and process validation](../doc/validation/single-instance.md). Tracking: [#22](https://github.com/PinedaTec-EU/LeonardoMD/issues/22), targeting main after PR #21 integration. Quit versions without the protocol before starting the updated app.
 
 CFMessagePort caches remote endpoints within a sender process. Keep reply-bearing sends serialized off the UI thread through the asynchronous `SingleInstance.forward` boundary; the concurrent regression prevents reply transport failures. Tracking: [#23](https://github.com/PinedaTec-EU/LeonardoMD/issues/23).
 
@@ -40,3 +40,5 @@ Document tags are parsed once through `LeonardoCore.MarkdownDocumentParser` (Ren
 
 Project URL containment matches normalized root aliases while preserving child components for symlink rejection. A real `/tmp`–`/private/tmp` fixture reproduces [#33](https://github.com/PinedaTec-EU/LeonardoMD/issues/33); regressions cover enumeration, search, mutation and `alias/../docs` rejection. [#9](https://github.com/PinedaTec-EU/LeonardoMD/issues/9) was closed after first-panel document opening passed in two fresh processes at main `041c63b`, version 0.1.0 build 1.
 Preferences groups General and Extensions tabs. Extension mutations accept explicit global/project scope; project inheritance remains portable. The document inspector only navigates headings. Tracking: [#29](https://github.com/PinedaTec-EU/LeonardoMD/issues/29), targeting main after PR #8 integration.
+
+Update PR #17 is refreshed on current main for [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15). Beta preparation supports separate feeds/keys, prerelease version validation and real Ed25519 archive verification; local beta candidates can skip notarization explicitly. See [updates](updates.md).

@@ -6,6 +6,11 @@
 <key>CFBundleName</key><string>LeonardoMD</string>
 <key>CFBundleIconFile</key><string>LeonardoMD.icns</string>
 <key>CFBundlePackageType</key><string>APPL</string>
+<key>SUFeedURL</key><string>https://github.com/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml</string>
+<key>SUEnableAutomaticChecks</key><false/>
+<key>SUAutomaticallyUpdate</key><false/>
+<key>SUAllowsAutomaticUpdates</key><false/>
+<key>SUVerifyUpdateBeforeExtraction</key><true/>
 <key>NSHighResolutionCapable</key><true/>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>CFBundleDocumentTypes</key><array><dict>

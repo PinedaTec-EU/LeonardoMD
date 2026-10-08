@@ -144,3 +144,7 @@ memory skills. Adapters link to canonical `../ai-skills-shared`; no shared skill
 body is copied into this repository.
 
 Tracking: [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
+
+## Signed update packaging
+
+Sparkle configuration preserves the generated canonical bundle version/build. Explicit release environment values must match them; beta labels may append `-beta.N` without changing the canonical build. Advance the ledger build before publishing another beta or stable package. Feed isolation, signature verification and notarization gates remain in the [signed release workflow](releases.md).

@@ -38,7 +38,8 @@
         ".skills/owner-pr-review/SKILL.md",
         ".gitignore",
         "doc/validation/about.md",
-        "doc/validation/document-tabs.md"
+        "doc/validation/document-tabs.md",
+        "doc/releases.md"
       ],
       "require_issue_title": true
     }
