@@ -32,7 +32,7 @@ Document tabs own complete `AppSession` instances and retain native views. `Docu
 
 Sidebar external-drop correction: [#34](https://github.com/PinedaTec-EU/LeonardoMD/issues/34).
 
-Single-instance launching is coordinated by `SingleInstance` using a named CFMessagePort per bundle identifier/login session. `ApplicationDelegate` queues launch requests and opens external documents in tabs, selecting duplicates across windows. See [launch behavior and process validation](../doc/validation/single-instance.md). Tracking: [#22](https://github.com/PinedaTec-EU/LeonardoMD/issues/22), targeting main after PR #21 integration. Quit versions without the protocol before starting the updated app.
+Single-instance launching is coordinated by `SingleInstance` using a named CFMessagePort per product/login session, shared by QA bundle copies. `ApplicationDelegate` queues launch requests and opens external documents in tabs, selecting duplicates across windows. See [launch behavior and process validation](../doc/validation/single-instance.md). Tracking: [#22](https://github.com/PinedaTec-EU/LeonardoMD/issues/22), targeting main after PR #21 integration. Quit versions without the protocol before starting the updated app.
 
 CFMessagePort caches remote endpoints within a sender process. Keep reply-bearing sends serialized off the UI thread through the asynchronous `SingleInstance.forward` boundary; the concurrent regression prevents reply transport failures. Tracking: [#23](https://github.com/PinedaTec-EU/LeonardoMD/issues/23).
 
@@ -42,3 +42,5 @@ Project URL containment matches normalized root aliases while preserving child c
 Preferences groups General and Extensions tabs. Extension mutations accept explicit global/project scope; project inheritance remains portable. The document inspector only navigates headings. Tracking: [#29](https://github.com/PinedaTec-EU/LeonardoMD/issues/29), targeting main after PR #8 integration.
 
 Text inputs use `PremiumTextFieldStyle` and the button-shared `PremiumControlBackground`; native naming alerts host that same SwiftUI field. General/Extensions use `PremiumTabPanel`: joined selectors overlap the header edge of a single bordered options panel, with raised selected and recessed unselected lighting. Scope and document modes retain `PremiumSelection`. Boolean settings use `PremiumSwitchStyle` by default. Checkboxes require a concrete selection rationale: Git file rows select a batch for a separate staging action. Tracking: [#39](https://github.com/PinedaTec-EU/LeonardoMD/issues/39).
+
+Update PR #17 is refreshed on current main for [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15). Beta preparation supports separate feeds/keys, prerelease version validation and real Ed25519 archive verification; local beta candidates can skip notarization explicitly. See [updates](updates.md).

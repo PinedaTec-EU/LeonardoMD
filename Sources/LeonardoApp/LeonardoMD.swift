@@ -35,6 +35,7 @@ struct LeonardoMD {
 
 @MainActor
 final class ApplicationDelegate: NSObject, NSApplicationDelegate {
+    private let updates = ApplicationUpdates()
     private var windows: [DocumentWindow] = []
     private let diagnostics: StartupDiagnostics
     private var recordedFirstWindow = false
@@ -68,6 +69,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         guard role == .primary else { forwardPendingLaunches(); return }
         diagnostics.record(.menuConfiguring)
         configureMenu()
+        updates.start()
         diagnostics.record(.menuConfigured)
         if windows.isEmpty { newEmptyWindow() }
         processPendingLaunches()
@@ -108,6 +110,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
                 if windows.isEmpty { newEmptyWindow() }
                 bringWindowsToFront()
                 for url in urls { await openExternalDocument(url) }
+                // Loading can suspend while another application takes focus.
+                bringWindowsToFront()
             }
         }
     }
@@ -218,6 +222,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         let app = submenu("LeonardoMD", in: menu)
         add("Acerca de LeonardoMD", action: #selector(showAbout), to: app)
         add("Preferencias…", action: #selector(preferences), key: ",", to: app)
+        updates.addMenuItems(to: app)
         app.addItem(.separator())
         add("Salir de LeonardoMD", action: #selector(NSApplication.terminate(_:)), key: "q", to: app)
         let file = submenu("Archivo", in: menu)
