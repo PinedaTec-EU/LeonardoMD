@@ -175,7 +175,6 @@
   "Use as workspace": "Usar como espacio",
   "Uses Git and credentials configured on your Mac. Pull requires a clean working tree; resolve conflicts manually.": "Se usan Git y las credenciales configuradas en tu Mac. Pull requiere el árbol limpio; los conflictos se resuelven manualmente.",
   "Version %@": "Versión %@",
-  "Version %@ · build %@": "Versión %@ · compilación %@",
   "Version control": "Control de versiones",
   "Version unavailable · development build": "Versión no disponible · ejecución de desarrollo",
   "View": "Vista",
