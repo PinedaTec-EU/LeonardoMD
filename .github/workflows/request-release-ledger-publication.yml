@@ -1,0 +1,33 @@
+name: Request automatic release ledger
+on:
+  pull_request_target:
+    branches: [main]
+    types: [closed]
+permissions:
+  contents: read
+jobs:
+  request:
+    if: >-
+      github.repository == 'PinedaTec-EU/LeonardoMD' &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.ref != 'automation/release-version-ledger' &&
+      github.event.pull_request.head.ref != 'automation/release-notes'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Trusted base workflow: no checkout or execution of source PR code.
+      - name: Request central version and notes processing
+        env:
+          GH_TOKEN: ${{ secrets.PINEDATEC_CI_DISPATCH_TOKEN }}
+          TARGET_REPOSITORY: ${{ github.repository }}
+          REQUEST_ID: source-${{ github.repository_id }}-${{ github.event.pull_request.number }}-${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN" || { echo '::error::PINEDATEC_CI_DISPATCH_TOKEN is required'; exit 1; }
+          python3 -I - <<'PYTHON' | gh api repos/PinedaTec-EU/pinedatec-ci/dispatches --method POST --input -
+          import json, os
+          print(json.dumps({'event_type': 'private-release-ledger', 'client_payload': {
+              'target_repository': os.environ['TARGET_REPOSITORY'], 'operation': 'all',
+              'pilot_request_id': os.environ['REQUEST_ID']}}))
+          PYTHON
