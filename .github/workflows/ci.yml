@@ -10,6 +10,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Test packaging version metadata
+        run: python3 -m unittest discover -s scripts/tests -v
       - name: Build and test
         env:
           LEONARDO_VISUAL_EVIDENCE: ${{ github.workspace }}/visual-evidence

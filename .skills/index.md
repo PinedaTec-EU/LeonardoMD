@@ -22,8 +22,16 @@ Load only the adapter relevant to the current task; do not read every skill by d
   - Canonical source: [SKILL.md](../../ai-skills-shared/.shared-skills/skills/operational-blockers/SKILL.md)
 - [github-issue-authoring](github-issue-authoring/SKILL.md) — workflow; when-github. Use when the repository uses GitHub Issues as its canonical tracker.
   - Canonical source: [SKILL.md](../../ai-skills-shared/.shared-skills/skills/github-issue-authoring/SKILL.md)
+- [deployment-target-validation](deployment-target-validation/SKILL.md) — workflow; when-detected. Use for repositories with infrastructure or deployment workflows that can target environments or hosts.
+  - Canonical source: [SKILL.md](../../ai-skills-shared/.shared-skills/skills/deployment-target-validation/SKILL.md)
 - [launch-convention](launch-convention/SKILL.md) — workflow; when-detected. Use when the repository owns local startup scripts or service/application run profiles.
   - Canonical source: [SKILL.md](../../ai-skills-shared/.shared-skills/skills/launch-convention/SKILL.md)
 - [web-color-tokens](web-color-tokens/SKILL.md) — workflow; when-detected. Use whenever a repository creates or modifies a web portal, website, dashboard, or browser UI so authored colors stay in semantic theme tokens.
   - Canonical source: [SKILL.md](../../ai-skills-shared/.shared-skills/skills/web-color-tokens/SKILL.md)
+- [release-cleanup](release-cleanup/SKILL.md) — workflow; task-only. Use before release delivery, deployment, TestFlight upload, or handoff audits.
+  - Canonical source: [SKILL.md](../../ai-skills-shared/.shared-skills/skills/release-cleanup/SKILL.md)
+- [release-version-ledger](release-version-ledger/SKILL.md) — release; when-detected. Use for repositories configured with an immutable per-PR release ledger or for an explicit adoption or operation task.
+  - Canonical source: [SKILL.md](../../ai-skills-shared/.shared-skills/skills/release-version-ledger/SKILL.md)
+- [shared-skills-bootstrap](shared-skills-bootstrap/SKILL.md) — bootstrap; task-only. Use to initialize or update the consumer repository's local shared-skill adapters.
+  - Canonical source: [SKILL.md](../../ai-skills-shared/.shared-skills/skills/shared-skills-bootstrap/SKILL.md)
 <!-- ai-skills-bootstrap:end -->

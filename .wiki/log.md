@@ -18,4 +18,9 @@
 
 - 2026-10-08: Revalidated [#9](https://github.com/PinedaTec-EU/LeonardoMD/issues/9) and [#31](https://github.com/PinedaTec-EU/LeonardoMD/issues/31) on 0.1.0 build 1 (`041c63b`) and closed both as no longer reproduced in the tested context. Corrected project root alias handling for [#33](https://github.com/PinedaTec-EU/LeonardoMD/issues/33), preserving symlink-component checks.
 
+- 2026-10-08: Prepared shared release-ledger adoption from seed 0.1.56, per-PR deltas, canonical packaged metadata and referenced release skills. Central automatic writers and CI access remain activation dependencies. Tracking: [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
+
+- 2026-10-08: Aligned #38 with the shared non-.NET `release.feature.build` semantics and added success-only Swift compilation recording; deltas count recorded commands rather than PRs. [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
 - 2026-10-08: Reopened [#22](https://github.com/PinedaTec-EU/LeonardoMD/issues/22): product-wide ownership replaces bundle-specific ownership; forwarded document batches reactivate after loading. Old QA executables require a graceful one-time quit.
+
+- 2026-10-08: Reconciled #38 with integrated signed-update packaging and product-wide instance ownership. Sparkle preserves ledger metadata and rejects release version/build overrides. [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).

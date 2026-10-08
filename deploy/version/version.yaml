@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "initial_version": "0.1.56",
+  "segments": [
+    "release",
+    "feature",
+    "build"
+  ],
+  "current_version": "0.1.56",
+  "applied": []
+}

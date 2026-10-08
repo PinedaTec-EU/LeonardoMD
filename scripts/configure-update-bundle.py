@@ -11,15 +11,26 @@ from pathlib import Path
 
 
 def configure(path, environment):
-    version = environment.get("LEONARDO_VERSION", "0.1.0")
-    build = environment.get("LEONARDO_BUILD", "1")
+    with path.open("rb") as source:
+        metadata = plistlib.load(source)
+    canonical = metadata.get("CFBundleShortVersionString")
+    canonical_build = metadata.get("CFBundleVersion")
+    ledger_version = (Path(__file__).resolve().parent.parent / "version.nfo").read_text().strip()
+    version = environment.get("LEONARDO_VERSION", canonical or ledger_version)
+    build = environment.get("LEONARDO_BUILD", canonical_build or ledger_version.split(".")[2])
     channel = environment.get("LEONARDO_CHANNEL", "stable")
     if channel not in ("stable", "beta"):
         raise ValueError("LEONARDO_CHANNEL must be stable or beta")
+    if canonical is not None:
+        expected = canonical if channel == "stable" else canonical + "-beta."
+        if (build != canonical_build
+                or (channel == "stable" and version != expected)
+                or (channel == "beta" and not version.startswith(expected))):
+            raise ValueError("Release metadata must match the canonical packaged ledger version/build")
     key = environment.get("SPARKLE_PUBLIC_KEY", "")
     pattern = r"[0-9]+\.[0-9]+\.[0-9]+" + (r"-beta\.[1-9][0-9]*" if channel == "beta" else "")
     if not re.fullmatch(pattern, version):
-        raise ValueError("Version must match the selected channel (major.minor.patch or major.minor.patch-beta.N)")
+        raise ValueError("Version must match the selected channel (release.feature.build or release.feature.build-beta.N)")
     feed = environment.get("LEONARDO_FEED_URL",
         "https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/update-feeds/beta/appcast.xml" if channel == "beta"
         else "https://github.com/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml")
@@ -44,8 +55,6 @@ def configure(path, environment):
         raise ValueError("SPARKLE_PUBLIC_KEY must encode a 32-byte Ed25519 public key")
     if environment.get("LEONARDO_DISTRIBUTION") == "1" and not key:
         raise ValueError("Distribution requires SPARKLE_PUBLIC_KEY")
-    with path.open("rb") as source:
-        metadata = plistlib.load(source)
     metadata["SUFeedURL"] = feed
     metadata["LeonardoUpdateChannel"] = channel
     metadata["CFBundleVersion"] = build
