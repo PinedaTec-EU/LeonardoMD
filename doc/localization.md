@@ -60,3 +60,5 @@ Refresh on main’s tab reordering retains the drag gesture, measured frames and
 Tab grip help and accessibility also use catalogs, including formatted document titles. `LocalizationTests` guards Spanish help/accessibility literals in app source to catch omissions during integration. Regression: [#65](https://github.com/PinedaTec-EU/LeonardoMD/issues/65).
 
 An open About window observes the same language-change notification and updates its native title synchronously; its existing SwiftUI content remains observable. The optional visual test also supports `LEONARDO_LOCALIZATION_LIVE_QA=1`, retaining native document-tabs, About and Preferences windows for CUA capture for ten minutes, using temporary synthetic documents and isolated preferences. This harness does not claim the application's single-instance service.
+
+Tab file-path help belongs to the selection button rather than its parent group, so it cannot override the reorder grip’s localized tooltip. Author-owned native screenshots and accessibility captures at the reviewed source head are linked in PR #58; evidence is stored separately from the source branch to preserve immutable review identity.

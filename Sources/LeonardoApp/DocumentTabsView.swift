@@ -85,6 +85,7 @@ struct DocumentTabsView: View {
                     Text(tab.title).lineLimit(1)
                 }.frame(minWidth: 100, maxWidth: 200, alignment: .leading)
             }
+            .help(tab.location?.path ?? L10n.text("Open a document or project in this tab"))
             .accessibilityLabel(tab.title)
             .accessibilityAddTraits(tab.id == documents.activeID ? .isSelected : [])
             Button { Task { await documents.close(tab.id) } } label: {
@@ -93,7 +94,6 @@ struct DocumentTabsView: View {
         }
         .padding(4)
         .background(tab.id == documents.activeID ? documents.activeSession.accentColor.opacity(0.16) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
-        .help(tab.location?.path ?? L10n.text("Open a document or project in this tab"))
         .background {
             GeometryReader { geometry in
                 Color.clear.preference(key: TabFramesPreference.self, value: [tab.id: geometry.frame(in: .named(TabReordering.coordinateSpace))])

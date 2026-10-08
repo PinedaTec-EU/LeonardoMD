@@ -62,6 +62,13 @@ final class LocalizationVisualTests: XCTestCase {
         let delegate = ApplicationDelegate(diagnostics: StartupDiagnostics(),
             instance: SingleInstance(name: "LocalizationLiveQA"), role: .primary)
         delegate.configureMenu()
+        NSApp.addWindowsItem(window, title: window.title, filename: false)
+        if let aboutWindow = about.window { NSApp.addWindowsItem(aboutWindow, title: aboutWindow.title, filename: false) }
+        let observer = NotificationCenter.default.addObserver(forName: LanguageSettings.didChange,
+            object: nil, queue: .main) { [weak delegate] _ in
+            MainActor.assumeIsolated { delegate?.configureMenu() }
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
         documents.activeSession.showPreferences = true
         holdNativeEventLoop()
     }
@@ -69,11 +76,11 @@ final class LocalizationVisualTests: XCTestCase {
     private func holdNativeEventLoop() {
         let timer = Timer.scheduledTimer(withTimeInterval: 600, repeats: false) { _ in
             MainActor.assumeIsolated {
-            NSApp.stop(nil)
-            let event = NSEvent.otherEvent(with: .applicationDefined, location: .zero,
+                NSApp.stop(nil)
+                let event = NSEvent.otherEvent(with: .applicationDefined, location: .zero,
                 modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil,
                 subtype: 0, data1: 0, data2: 0)!
-            NSApp.postEvent(event, atStart: false)
+                NSApp.postEvent(event, atStart: false)
             }
         }
         NSApp.run()
