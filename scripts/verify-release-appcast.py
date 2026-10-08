@@ -32,9 +32,9 @@ def verify(path, channel="stable"):
             raise ValueError("Update must reference this repository's HTTPS release assets")
         release_path = unquote(urlparse(enclosure.get("url")).path)
         release_tag = release_path.split("/download/", 1)[1].split("/", 1)[0]
-        pattern = r"v[0-9]+\.[0-9]+\.[0-9]+" + (r"-beta\.[1-9][0-9]*" if channel == "beta" else "")
+        pattern = r"v[0-9]+\.[0-9]+\.[0-9]+"
         if not re.fullmatch(pattern, release_tag):
-            raise ValueError("Release tag does not match appcast channel")
+            raise ValueError("Release tag must use the numeric canonical version")
         if int(enclosure.get("length", "0")) <= 0:
             raise ValueError("Empty update archive")
         version = item.find(SPARKLE + "version")
