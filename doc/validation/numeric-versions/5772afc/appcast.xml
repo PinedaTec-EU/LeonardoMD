@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss xmlns:leonardo="https://pinedatec.eu/xml-namespaces/leonardo" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>LeonardoMD</title>
+        <item leonardo:channel="beta">
+            <title>0.1.64</title>
+            <pubDate>Thu, 08 Oct 2026 20:52:14 +0200</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>64</sparkle:version>
+            <sparkle:shortVersionString>0.1.64</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"># LeonardoMD 0.1.64
+
+Local candidate using canonical numeric version0.1.64/build64.
+Update-channel identity stays internal, without maturity suffixes in visible versions.
+Signed local validation package, not a published release.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.64/LeonardoMD-0.1.64.zip" length="9174651" type="application/octet-stream" sparkle:edSignature="Q4zZ/niU9sprJx1WSXDGvHkeoKl2moT4fnbKJQNczYbcOH90sL5gJI8hjI5zE+NjHmEbYP0Z9L3V5aRt0rByDA==" />
+        </item>
+    </channel>
+</rss>
