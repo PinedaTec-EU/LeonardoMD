@@ -44,9 +44,18 @@
       "merge_sha": "e594acfa496ca560065d0c9113a40d7d1c9117ff",
       "pr": 64,
       "to_version": "0.1.85"
+    },
+    {
+      "delta": {
+        "build": 1
+      },
+      "from_version": "0.1.85",
+      "merge_sha": "63d4741fa78b7b7c84609e504cc84464c647f1b6",
+      "pr": 66,
+      "to_version": "0.1.86"
     }
   ],
-  "current_version": "0.1.85",
+  "current_version": "0.1.86",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

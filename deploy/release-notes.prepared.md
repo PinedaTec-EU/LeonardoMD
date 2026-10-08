@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.86
+
+- #38 Updated: refresh engine for accepted notes proposals ([#66](https://github.com/PinedaTec-EU/LeonardoMD/pull/66))
+
+Source: `63d4741fa78b7b7c84609e504cc84464c647f1b6`. Delta: `{"build": 1}`.
+
 ## 0.1.85
 
 - #38 Updated: activate checkpoint-aware ledger and document signed release ([#64](https://github.com/PinedaTec-EU/LeonardoMD/pull/64))
