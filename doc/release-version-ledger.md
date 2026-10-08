@@ -56,7 +56,7 @@ or inferred summary of the PR body.
 ## Shared engine operation
 
 The engine remains in `PinedaTec-EU/pinedatec-ci`, pinned to integrated commit
-`c39d7c970b7c52c503302a77ca9ad8a08c9326d7`; do not copy it or use a mutable pin.
+`fdc500c76d3f42f1162cd48ad1997601cce06336`; do not copy it or use a mutable pin.
 `scripts/release-ledger.sh` is a thin operator entrypoint. Set
 `LEDGER_ENGINE_ROOT` to a clean checkout at that exact revision. It checks the
 revision and engine working tree, passes the workspace to the shared engine,

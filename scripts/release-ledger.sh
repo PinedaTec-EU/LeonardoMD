@@ -2,7 +2,7 @@
 # Operator entrypoint: execute the reviewed shared engine, never a local fork.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-engine_sha='c39d7c970b7c52c503302a77ca9ad8a08c9326d7'
+engine_sha='fdc500c76d3f42f1162cd48ad1997601cce06336'
 : "${LEDGER_ENGINE_ROOT:?Set LEDGER_ENGINE_ROOT to a checkout of PinedaTec-EU/pinedatec-ci}"
 engine_root=$(cd "$LEDGER_ENGINE_ROOT" && pwd -P)
 test "$(git -C "$engine_root" rev-parse HEAD)" = "$engine_sha" || {
