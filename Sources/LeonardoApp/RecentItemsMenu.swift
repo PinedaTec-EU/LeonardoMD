@@ -14,10 +14,10 @@ final class RecentItemsMenu: NSObject, NSMenuDelegate {
         }
     }
 
-    private let session: () -> AppSession?
-    private let openDocument: (URL) -> Void
+    private let session: @MainActor () -> AppSession?
+    private let openDocument: @MainActor (URL) -> Void
 
-    init(session: @escaping () -> AppSession?, openDocument: @escaping (URL) -> Void) {
+    init(session: @escaping @MainActor () -> AppSession?, openDocument: @escaping @MainActor (URL) -> Void) {
         self.session = session
         self.openDocument = openDocument
     }

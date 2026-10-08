@@ -37,7 +37,7 @@ struct LeonardoMD {
 final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private let updates = ApplicationUpdates()
     private lazy var recentMenus = RecentItemsMenu(session: { [weak self] in self?.activeSession }, openDocument: { [weak self] url in
-        Task { await self?.openExternalDocument(url) }
+        Task { @MainActor [weak self] in await self?.openExternalDocument(url) }
     })
     private var windows: [DocumentWindow] = []
     private let diagnostics: StartupDiagnostics
