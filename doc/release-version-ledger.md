@@ -56,7 +56,7 @@ or inferred summary of the PR body.
 ## Shared engine operation
 
 The engine remains in `PinedaTec-EU/pinedatec-ci`, pinned to integrated commit
-`4ff32120218cdd58d019fcd3f70e51bc0fdb63f6`; do not copy it or use a mutable pin.
+`07144074ab282217b1fb12a0e94c021763090df6`; do not copy it or use a mutable pin.
 `scripts/release-ledger.sh` is a thin operator entrypoint. Set
 `LEDGER_ENGINE_ROOT` to a clean checkout at that exact revision. It checks the
 revision and engine working tree, passes the workspace to the shared engine,
@@ -142,3 +142,7 @@ Tracking: [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
 ## Signed update packaging
 
 Sparkle configuration preserves the generated canonical bundle version/build. Explicit release environment values must match them; beta labels may append `-beta.N` without changing the canonical build. Advance the ledger build before publishing another beta or stable package. Feed isolation, signature verification and notarization gates remain in the [signed release workflow](releases.md).
+
+## Pin maintenance
+
+Refresh the immutable engine SHA after engine changes integrate into central main, through reviewed source PRs in the central catalog and this operator wrapper. Validate both against the same integrated snapshot; publisher-only commits with an unchanged engine tree do not require recursive pin refreshes. Never resolve mutable main at execution time. Main protection requires `test` from GitHub Actions and `release-ledger-policy` from App 4862830, including administrators. Dispatch-token execution was observed on PR #56 after readiness. Tracking: [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).

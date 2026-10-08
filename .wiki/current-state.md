@@ -42,3 +42,5 @@ Project URL containment matches normalized root aliases while preserving child c
 Preferences groups General and Extensions tabs. Extension mutations accept explicit global/project scope; project inheritance remains portable. The document inspector only navigates headings. Tracking: [#29](https://github.com/PinedaTec-EU/LeonardoMD/issues/29), targeting main after PR #8 integration.
 
 Update PR #17 is refreshed on current main for [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15). Beta preparation supports separate feeds/keys, prerelease version validation and real Ed25519 archive verification; local beta candidates can skip notarization explicitly. See [updates](updates.md).
+
+Ledger activation under #38 uses engine snapshot 07144074ab282217b1fb12a0e94c021763090df6, aligned with central catalog refresh #282. Refresh pins after integrated engine changes; preserve immutable references. Main has App-bound policy and Actions test protection; PR #56 proved the configured dispatch token. Materialization and accepted signed publication remain separately verified gates.
