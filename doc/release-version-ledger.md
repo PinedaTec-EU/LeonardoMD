@@ -56,7 +56,7 @@ or inferred summary of the PR body.
 ## Shared engine operation
 
 The engine remains in `PinedaTec-EU/pinedatec-ci`, pinned to integrated commit
-`4ff32120218cdd58d019fcd3f70e51bc0fdb63f6`; do not copy it or use a mutable pin.
+`fdc500c76d3f42f1162cd48ad1997601cce06336`; do not copy it or use a mutable pin.
 `scripts/release-ledger.sh` is a thin operator entrypoint. Set
 `LEDGER_ENGINE_ROOT` to a clean checkout at that exact revision. It checks the
 revision and engine working tree, passes the workspace to the shared engine,
@@ -72,16 +72,44 @@ Inspect the output before advancing. For source-PR `validate-pr`, supply
 `LEDGER_PULL_REQUEST_NUMBER`, `LEDGER_PULL_REQUEST_TITLE`, `LEDGER_BASE_SHA`
 and `LEDGER_HEAD_SHA`; validation examines committed data and full SHAs.
 
-After the source PR merges into main, run the engine's `resolve-order` with
-read-only `LEDGER_SOURCE_TOKEN` and external `LEDGER_OUTPUT_PATH`. Inspect the
-integration-order JSON before selecting `calculate` with
-`LEDGER_INTEGRATION_ORDER_PATH`. Inspect the chosen PR/version before invoking
-`materialize` in an isolated checkout from current main. Propose its output in
-a separate reviewed PR on `codex/ledger-version-<source-pr>` with exact title and squash subject
-`v.<version> (#<source-pr>)`. Only the version output, checkpoint and deletion
-of the consumed entry may change. Validate and integrate this PR before
-publishing the corresponding release. Never materialize unmerged entries or
-write directly to main.
+## Automatic processing after source integration
+
+`.github/workflows/request-release-ledger-publication.yml` follows the
+[ARX adapter](https://github.com/PinedaTec-EU/kopernicus-arx/blob/main/.github/workflows/request-release-ledger-publication.yml)
+and the [central dispatch contract](https://github.com/PinedaTec-EU/pinedatec-ci/blob/main/docs/consumer-release-ledger-dispatch.md).
+The trusted `pull_request_target: closed` event requests processing only for
+merged source PRs into `main` in `PinedaTec-EU/LeonardoMD`. Unmerged closures
+and the catalog's `automation/release-version-ledger` and
+`automation/release-notes` branches are excluded to prevent recursive requests.
+No checkout, candidate code execution or publisher App credential is needed.
+
+The Ubuntu-hosted job uses the existing `PINEDATEC_CI_DISPATCH_TOKEN` to send
+`repository_dispatch` (event type `private-release-ledger`) to
+`PinedaTec-EU/pinedatec-ci`, with canonical `target_repository`, `operation: all`
+and a repository/PR/run correlation ID. This is the same transport as ARX;
+it is not a direct `workflow_dispatch`. Missing credentials or API failure fail
+the request. Reruns and the central 15-minute scheduler recover pending work.
+The catalog already enables LeonardoMD; this adapter changes no activation.
+
+The central pinned engine and serialized App writer consume merged entries in
+integration order and write version metadata and prepared notes directly with
+expected-head protection. Generated commits include `[skip ci]`, so the
+existing push/PR product CI remains unchanged and does not rerun for those
+updates. Source PR CI and exact-head policy/review gates remain required.
+Generated updates require no draft PR or manual review transition. Operator
+materialization helpers remain recovery tools, not the automatic delivery path.
+
+`deploy/release-notes.prepared.md` contains verified source changes for the
+materialized versions, without asserting publication. Evidence-backed accepted
+notes remain in `deploy/release-notes.md`. A successful merge or dispatch is
+neither an accepted release nor proof that the writer updated main.
+
+Verify a subsequent source merge with the consumer request-run URL, correlated
+central run and actual version/prepared-notes commit. Do not rely on the first
+adapter merge to execute its new base-owned workflow. Central rollout and App
+write capability remain tracked under
+[pinedatec-ci#294](https://github.com/PinedaTec-EU/pinedatec-ci/issues/294).
+Consumer tracking: [#69](https://github.com/PinedaTec-EU/LeonardoMD/issues/69).
 
 ## Accepted publication and notes
 
@@ -99,41 +127,38 @@ locally. Read-only `LEDGER_EVIDENCE_TOKEN` verifies release access and
 release, tag SHA, version and PR provenance, and renders the verified PR title,
 PR link, merge SHA and delta. Retries must not duplicate accepted notes.
 
-The engine creates `deploy/release-notes.md` only after acceptance. Notes group
-by release/feature and preserve full versions. Open a reviewed notes-only PR on `codex/ledger-notes-<source-pr>` with
-exact title/squash subject `Release notes for <version> (#<source-pr>)`; its
-body identifies the release and evidence URL. Validate it with `validate-pr`
-in `notes` mode and read-only evidence/source tokens. Do not invent historic
-release summaries for the initial baseline.
+The engine creates `deploy/release-notes.md` only after acceptance. Materialized versions without a GitHub Release are intermediate checkpoints, not historical publications. The next accepted release accumulates their verified source changes since the previous accepted event. An earlier matching stable draft remains a pending publication and blocks later notes until it publishes. Do not backfill fictitious Releases; older publication after newer accepted notes remains rejected. Notes group by release/feature and preserve full versions. The automatic
+central writer changes only the configured accepted-notes artifact after
+verification; legacy notes-only PR tooling remains an operator recovery path.
+Do not invent historic release summaries for the initial baseline.
 
 ## Trusted policy and activation dependencies
 
-The integrated-base `pull_request_target` workflow runs read-only
-`release-ledger-scope`, checking out PR data and executing only the immutable
-central engine. It rejects the reserved engine path before/after candidate
-checkout, including symlinks. Automatic branches are Bot-only; same-repository
-operator branches `codex/ledger-version-*` and `codex/ledger-notes-*` invoke the
-corresponding strict central mode, so manually proposed engine output remains
-subject to exact title/scope/arithmetic or accepted-evidence checks.
-No candidate script or local Action is executed in this privileged workflow.
+The integrated-base `pull_request_target` workflow requests central validation
+using `PINEDATEC_CI_DISPATCH_TOKEN`, following the sibling consumers' dispatch
+contract. It runs on GitHub-hosted Ubuntu with no checkout, executes no PR code,
+and ignores drafts, forks and non-main targets. The token is sent only to the
+`PinedaTec-EU/pinedatec-ci` repository dispatch endpoint. A dispatch acknowledgement
+is not a validation verdict. The App-owned `release-ledger-policy` check on the
+exact source SHA is authoritative; require that check with App ID `4862830`
+before source integration. No `RELEASE_LEDGER_ENGINE_TOKEN` is required.
 
-LeonardoMD is public and pinedatec-ci is private; native private Action sharing
-cannot supply the engine here. The policy checkout requires
-`RELEASE_LEDGER_ENGINE_TOKEN`, a fine-grained credential with **contents: read
-only for pinedatec-ci**, with credential persistence disabled. The credential
-reaches only the engine checkout and is not given to PR code or publication.
-Missing access fails explicitly. This adoption does not provision credentials.
-After integration, observe a successful exact-head policy run and require
-`release-ledger-scope` in branch rules. First adoption needs external trusted
-engine validation and independent review because its target workflow cannot
-execute from the base before integration.
+Public consumers cannot directly reference a private Action or reusable workflow.
+The private central workflow instead loads its own trusted engine and reads the
+public consumer as data. The central catalog must allowlist LeonardoMD and its
+App installation must grant the existing scoped policy permissions for this
+repository. Public visibility does not grant fork code access to credentials.
 
-Automatic writers are still pending: the existing central App publisher accepts
-private targets and has no LeonardoMD registration. Local operator execution
-of the shared engine is available. Complete public-target support, App access,
-target registration and exact-head check binding before enabling automatic
-materialization/notes writers. Do not add local App private keys or claim a
-schedule is active. Reserve `release-ledger-policy` for the central App check.
+Central public-target support and catalog registration are integrated. Main protection requires Actions `test` (App `15368`) and `release-ledger-policy` (App `4862830`) with strict checks and administrator enforcement. The configured dispatch token was exercised on #56; #62 and #63 proved successive serial materialization.
+
+For legacy generated-PR recovery, keep GitHub automatic branch deletion enabled. After each generated PR merges, verify its remote ref is absent before requesting the next materialization; otherwise a stale branch can correctly fail the engine safety preflight. If a retired ref remains, check that no open PR uses it, delete only its verified SHA with a lease, and preserve any advanced ref. Recovery and automatic cleanup were verified in [#61](https://github.com/PinedaTec-EU/LeonardoMD/issues/61).
+
+The automatic App writer requires default-branch write capability in the central
+installation. Consumer dispatch alone does not prove that capability; rollout
+verification remains under [central #294](https://github.com/PinedaTec-EU/pinedatec-ci/issues/294).
+Legacy generated-PR automatic merge permissions were tracked separately under
+[pinedatec-ci#279](https://github.com/PinedaTec-EU/pinedatec-ci/issues/279).
+Version/prepared-note writes preserve the accepted-publication evidence gate.
 
 ## Skill discovery
 
@@ -147,4 +172,12 @@ Tracking: [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
 
 ## Signed update packaging
 
-Sparkle configuration preserves the generated canonical bundle version/build. Explicit release environment values must match them; beta labels may append `-beta.N` without changing the canonical build. Advance the ledger build before publishing another beta or stable package. Feed isolation, signature verification and notarization gates remain in the [signed release workflow](releases.md).
+Sparkle configuration preserves the generated canonical bundle version/build. Explicit release environment values must match them; every channel uses the same numeric version with no beta/alpha/maturity suffixes. Advance the ledger build before publishing another beta or stable package. Feed isolation, signature verification and notarization gates remain in the [signed release workflow](releases.md).
+
+## Pin maintenance
+
+Refresh the immutable engine SHA after engine changes integrate into central main, through reviewed source PRs in the central catalog and this operator wrapper. Validate both against the same integrated snapshot; publisher-only commits with an unchanged engine tree do not require recursive pin refreshes. Never resolve mutable main at execution time. Main protection requires `test` from GitHub Actions and `release-ledger-policy` from App 4862830, including administrators. Dispatch-token execution was observed on PR #56 after readiness. Tracking: [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
+
+Integrate the central catalog refresh before enabling policy validation of the consumer pin PR. An App verdict binds the head, base and engine identity; if a queued run already recorded the old pin on that head, refresh the consumer head and obtain new current-pin validation instead of overwriting the immutable verdict.
+
+Publish the final consumer pin PR head only after the central catalog refresh integrates: queue inventory can validate drafts too. If an older engine already issued a check, refresh the consumer head after catalog integration and verify the new binding.

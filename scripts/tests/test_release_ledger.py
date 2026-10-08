@@ -18,11 +18,21 @@ class ReleaseLedgerTests(unittest.TestCase):
         scratch = tempfile.TemporaryDirectory()
         self.addCleanup(scratch.cleanup)
         self.root = Path(scratch.name)
-        for relative in ["deploy/version/release-ledger.json", "deploy/version/version.yaml",
-                         "version.nfo", "scripts/release-ledger.sh"]:
+        for relative in ["deploy/version/release-ledger.json", "scripts/release-ledger.sh"]:
             destination = self.root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / relative, destination)
+        config = json.loads((self.root / "deploy/version/release-ledger.json").read_text())
+        version = config["version"]
+        # Seed fixtures are independent of the production applied history.
+        (self.root / "deploy/version/version.yaml").write_text(json.dumps({
+            "schema_version": 1,
+            "initial_version": version["initial_version"],
+            "segments": version["segments"],
+            "current_version": version["initial_version"],
+            "applied": [],
+        }))
+        (self.root / "version.nfo").write_text(version["initial_version"] + "\n")
         (self.root / "Sources").mkdir()
         self.git("init", "-b", "main")
         self.git("config", "user.name", "Ledger fixture")
@@ -46,7 +56,7 @@ class ReleaseLedgerTests(unittest.TestCase):
         (self.root / "Sources/fixture.swift").write_text("// Consumer fixture\n")
         if entry:
             directory = self.root / "deploy/version/entries"
-            directory.mkdir()
+            directory.mkdir(exist_ok=True)
             (directory / "101.yaml").write_text(json.dumps(delta or {"build": 1}))
         return self.commit("#38 Added: source fixture")
 
@@ -87,6 +97,33 @@ class ReleaseLedgerTests(unittest.TestCase):
         self.assertIn("changed=false", result.stdout)
         self.assertEqual((self.root / "version.nfo").read_text().strip(), "0.1.57")
         self.assertFalse((self.root / "deploy/release-notes.md").exists())
+
+    def test_materialization_preserves_existing_applied_history(self):
+        (self.root / "Sources/prior.swift").write_text("// Earlier source PR\n")
+        directory = self.root / "deploy/version/entries"
+        directory.mkdir()
+        (directory / "100.yaml").write_text('{"build": 4}')
+        prior = self.commit("#38 Added: earlier source fixture")
+        order = self.root / "order.json"
+        order.write_text(json.dumps({"schema_version": 1,
+                                    "pull_requests": [{"number": 100, "merge_sha": prior}]}))
+        result = self.engine("materialize", LEDGER_INTEGRATION_ORDER_PATH=str(order))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.base = self.commit("v.0.1.60 (#100)")
+        head = self.source_change()
+        result = self.validate_source(head)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        order.write_text(json.dumps({"schema_version": 1,
+                                    "pull_requests": [{"number": 101, "merge_sha": head}]}))
+        result = self.engine("materialize", LEDGER_INTEGRATION_ORDER_PATH=str(order))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        state = json.loads((self.root / "deploy/version/version.yaml").read_text())
+        self.assertEqual(state["current_version"], "0.1.61")
+        self.assertEqual((self.root / "version.nfo").read_text().strip(), "0.1.61")
+        self.assertEqual([item["pr"] for item in state["applied"]], [100, 101])
+        self.assertEqual(state["applied"][0]["merge_sha"], prior)
+        self.assertEqual(state["applied"][1]["from_version"], "0.1.60")
+        self.assertFalse((directory / "101.yaml").exists())
 
     def test_recorded_entry_is_accepted_without_lock_artifacts(self):
         binary = self.root / ".build/swift"

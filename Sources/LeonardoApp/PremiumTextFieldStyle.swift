@@ -39,7 +39,7 @@ struct PremiumNameInput: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        TextField("Nombre", text: $value.text)
+        TextField(L10n.text("Name"), text: $value.text)
             .textFieldStyle(PremiumTextFieldStyle())
             .focused($focused)
             .accessibilityIdentifier("name-input")

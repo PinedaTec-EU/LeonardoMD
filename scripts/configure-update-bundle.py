@@ -21,16 +21,12 @@ def configure(path, environment):
     channel = environment.get("LEONARDO_CHANNEL", "stable")
     if channel not in ("stable", "beta"):
         raise ValueError("LEONARDO_CHANNEL must be stable or beta")
-    if canonical is not None:
-        expected = canonical if channel == "stable" else canonical + "-beta."
-        if (build != canonical_build
-                or (channel == "stable" and version != expected)
-                or (channel == "beta" and not version.startswith(expected))):
-            raise ValueError("Release metadata must match the canonical packaged ledger version/build")
+    if canonical is not None and (build != canonical_build or version != canonical):
+        raise ValueError("Release metadata must match the canonical packaged ledger version/build")
     key = environment.get("SPARKLE_PUBLIC_KEY", "")
-    pattern = r"[0-9]+\.[0-9]+\.[0-9]+" + (r"-beta\.[1-9][0-9]*" if channel == "beta" else "")
+    pattern = r"[0-9]+\.[0-9]+\.[0-9]+"
     if not re.fullmatch(pattern, version):
-        raise ValueError("Version must match the selected channel (release.feature.build or release.feature.build-beta.N)")
+        raise ValueError("Version must be numeric release.feature.build without channel suffixes")
     feed = environment.get("LEONARDO_FEED_URL",
         "https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/update-feeds/beta/appcast.xml" if channel == "beta"
         else "https://github.com/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml")

@@ -80,11 +80,11 @@ The application icon uses the approved Leonardo Classic folded-L artwork. Its or
 
 ## App updates
 
-Distribution builds include Sparkle 2.9.6. Use **LeonardoMD → Buscar actualizaciones…** to check and install an update. Enable **Comprobar actualizaciones automáticamente** for periodic checks (off initially; Sparkle stores the preference globally). Installation remains user initiated. Sparkle displays release notes, errors and the no-update result and verifies Ed25519 signatures before extraction. Its quit request goes through the application's existing unsaved-document and Git-operation termination guard.
+Distribution builds include Sparkle 2.9.6. Use **LeonardoMD → Check for updates…** (Spanish: **Buscar actualizaciones…**) to check and install an update. Enable **Automatically check for updates** (Spanish: **Comprobar actualizaciones automáticamente**) for periodic checks (off initially; Sparkle stores the preference globally). Installation remains user initiated. Sparkle displays release notes, errors and the no-update result and verifies Ed25519 signatures before extraction. Its quit request goes through the application's existing unsaved-document and Git-operation termination guard.
 
 The stable feed is `https://github.com/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml`. Public downloads require no GitHub token. Development builds without `SPARKLE_PUBLIC_KEY` display an explanatory dialog and cannot enable periodic checks.
 
-Beta candidates use a separate HTTPS feed and only opt into the beta Sparkle channel. Versions are displayed as `major.minor.patch-beta.N`; update ordering uses the monotonic numeric build shared with stable releases.
+Beta candidates use a separate HTTPS feed and only opt into the beta Sparkle channel. Every channel displays the canonical numeric `release.feature.build` version without maturity suffixes; channel identity stays in updater/feed metadata. Update ordering uses the monotonic numeric build shared with stable releases.
 
 See [signed release preparation](doc/releases.md). The channel becomes usable only after the first signed distribution release; an appcast alone is insufficient.
 Extension controls live in **Preferences → Extensions**. Select Global or This project before changing Mermaid or mathematics; project inheritance restores the global settings. The document inspector contains heading navigation.
@@ -92,3 +92,5 @@ Extension controls live in **Preferences → Extensions**. Select Global or This
 ## Release versioning
 
 The owner-approved baseline is **0.1.56**. Packaging requires Python 3 and derives bundle metadata from `version.nfo`. The `release.feature.build` model uses one `deploy/version/entries/<PR>.yaml` per source PR; successful Swift compilation commands accumulate its build delta; release notes use the verified source PR title after publication. See [the ledger workflow](doc/release-version-ledger.md) for operator use, trusted CI access and pending central automation activation.
+
+Interface language defaults to English. Preferences → Language offers English and Español; see [localization](doc/localization.md) for resource maintenance.

@@ -10,13 +10,23 @@ struct PreferencesView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
-                Text("Preferencias").font(.title2.bold())
+                Text(L10n.text("Preferences")).font(.title2.bold())
                 Spacer()
-                Button("Listo") { dismiss() }.keyboardShortcut(.defaultAction)
+                Button(L10n.text("Done")) { dismiss() }.keyboardShortcut(.defaultAction)
             }
+            HStack {
+                @Bindable var languages = LanguageSettings.shared
+                Picker(L10n.text("Language"), selection: $languages.language) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(language.nativeName).tag(language)
+                    }
+                }.accessibilityIdentifier("interface-language")
+            }
+            Text(L10n.text("Interface language applies to all windows."))
+                .font(.caption).foregroundStyle(.secondary)
             if session.projectURL != nil {
-                PremiumSelection(selection: $projectScope, options: [false, true], title: { $0 ? "Este proyecto" : "Global" })
-                    .accessibilityLabel("Ámbito")
+                PremiumSelection(selection: $projectScope, options: [false, true], title: { $0 ? L10n.text("This project") : L10n.text("Global") })
+                    .accessibilityLabel(L10n.text("Scope"))
             }
             PremiumTabPanel(selection: $section, options: PreferencesSection.allCases, title: { $0.title }) {
                 switch section {
@@ -26,43 +36,43 @@ struct PreferencesView: View {
                     ExtensionPreferences(session: session, projectScope: projectScope)
                 }
             }
-            Text(projectScope ? "Se guarda en .leonardomd/project.json. No contiene credenciales." : "Las preferencias globales se aplican al visor individual y a proyectos que las heredan.")
+            Text(projectScope ? L10n.text("Saved in .leonardomd/project.json. Contains no credentials.") : L10n.text("Global preferences apply to the standalone viewer and projects that inherit them."))
                 .font(.caption).foregroundStyle(.secondary)
-        }.buttonStyle(PremiumButtonStyle()).padding(24).frame(width: 580, height: 540)
+        }.buttonStyle(PremiumButtonStyle()).padding(24).frame(width: 580, height: 620)
         .onAppear { projectScope = session.projectURL != nil }
         .sheet(isPresented: $editingPalette) { PaletteEditor(session: session, projectScope: projectScope).modifier(SessionAppearance(session: session)) }
     }
 
     private var generalPreferences: some View {
             Form {
-                Picker("Paleta", selection: Binding(get: { projectScope ? session.projectConfiguration.palette?.rawValue ?? "inherit" : session.globalPreferences.palette.rawValue }, set: { session.setPalette($0, project: projectScope) })) {
-                    if projectScope { Text("Heredar global").tag("inherit") }
+                Picker(L10n.text("Palette"), selection: Binding(get: { projectScope ? session.projectConfiguration.palette?.rawValue ?? "inherit" : session.globalPreferences.palette.rawValue }, set: { session.setPalette($0, project: projectScope) })) {
+                    if projectScope { Text(L10n.text("Inherit global")).tag("inherit") }
                     ForEach(PaletteCatalog.all) { palette in Text(palette.displayName).tag(palette.id.rawValue) }
                 }
-                Picker("Efecto de hoja", selection: Binding(get: { projectScope ? session.projectConfiguration.paperEffect?.rawValue ?? "inherit" : session.globalPreferences.paperEffect.rawValue }, set: { session.setPaper($0, project: projectScope) })) {
-                    if projectScope { Text("Heredar global").tag("inherit") }
+                Picker(L10n.text("Paper effect"), selection: Binding(get: { projectScope ? session.projectConfiguration.paperEffect?.rawValue ?? "inherit" : session.globalPreferences.paperEffect.rawValue }, set: { session.setPaper($0, project: projectScope) })) {
+                    if projectScope { Text(L10n.text("Inherit global")).tag("inherit") }
                     ForEach(PaperEffect.allCases, id: \.self) { effect in Text(effect.title).tag(effect.rawValue) }
                 }
-                Button("Personalizar / importar paleta…") { editingPalette = true }
-                Toggle("Mostrar frontmatter", isOn: $session.showFrontmatter)
-                Toggle("Confirmar enlaces externos", isOn: $session.confirmExternalLinks)
-                Toggle("Mostrar archivos ocultos", isOn: $session.showHidden)
+                Button(L10n.text("Customize / import palette…")) { editingPalette = true }
+                Toggle(L10n.text("Show front matter"), isOn: $session.showFrontmatter)
+                Toggle(L10n.text("Confirm external links"), isOn: $session.confirmExternalLinks)
+                Toggle(L10n.text("Show hidden files"), isOn: $session.showHidden)
                 if projectScope {
-                    Toggle("Activar herramientas Git", isOn: Binding(get: { session.gitEnabled }, set: { session.setGitEnabled($0) }))
+                    Toggle(L10n.text("Enable Git tools"), isOn: Binding(get: { session.gitEnabled }, set: { session.setGitEnabled($0) }))
                 }
             }.formStyle(.grouped).toggleStyle(PremiumSwitchStyle())
     }
 }
 
 extension PaperEffect {
-    var title: String {
+    @MainActor var title: String {
         switch self {
-        case .white: "Hoja blanca"
-        case .solid: "Color sólido"
-        case .ruled: "Rayada"
-        case .grid: "Cuadrícula"
-        case .microgrid: "Microcuadrícula"
-        case .parchment: "Pergamino"
+        case .white: L10n.text("White paper")
+        case .solid: L10n.text("Solid color")
+        case .ruled: L10n.text("Ruled")
+        case .grid: L10n.text("Grid")
+        case .microgrid: L10n.text("Microgrid")
+        case .parchment: L10n.text("Parchment")
         }
     }
 }
@@ -70,10 +80,10 @@ extension PaperEffect {
 private enum PreferencesSection: CaseIterable {
     case general, extensions
 
-    var title: String {
+    @MainActor var title: String {
         switch self {
-        case .general: "General"
-        case .extensions: "Extensiones"
+        case .general: L10n.text("General")
+        case .extensions: L10n.text("Extensions")
         }
     }
 }

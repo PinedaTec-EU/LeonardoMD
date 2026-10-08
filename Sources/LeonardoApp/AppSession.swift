@@ -26,7 +26,7 @@ final class AppSession {
     var externalConflict = false
     var busy = false
     var saving = false
-    var saveStatus = "Archivo local"
+    var saveStatus = "Local file"
     var editorScroll = 0.0
     var requestedLine: Int?
     var rootEntries: [NavigationEntry] = []
@@ -36,7 +36,6 @@ final class AppSession {
     var searching = false
     var globalPreferences = GlobalPreferences.default
     var projectConfiguration = ProjectConfiguration.default
-    var gitSummary = "Git"
     var prepareRelatedFileOperation: ((URL) async -> Bool)?
     var relatedPathMoved: ((URL, URL) async -> Void)?
     var relatedPathDeleted: ((URL) -> Void)?
@@ -173,7 +172,7 @@ final class AppSession {
             mode = line == nil ? DocumentMode(rawValue: resolved.defaultMode.rawValue) ?? .preview : .edit
             requestedLine = line
             externalConflict = false
-            saveStatus = "Guardado · archivo local"
+            saveStatus = "Saved · local file"
             updateTitle()
             let elapsed = started.duration(to: .now).components
             let milliseconds = Double(elapsed.seconds) * 1000 + Double(elapsed.attoseconds) / 1e15
@@ -183,7 +182,7 @@ final class AppSession {
 
     func contentChanged() {
         guard snapshot != nil else { return }
-        saveStatus = isDirty ? "Cambios pendientes" : "Guardado · archivo local"
+        saveStatus = isDirty ? "Pending changes" : "Saved · local file"
         updateTitle()
         saveTask?.cancel()
         guard isDirty, !externalConflict else { return }
@@ -196,16 +195,16 @@ final class AppSession {
     func save() async {
         guard !saving, isDirty, let snapshot, let url = documentURL, !externalConflict else { return }
         saving = true
-        saveStatus = "Guardando…"
+        saveStatus = "Saving…"
         let draft = content
         logger.info("document_save_started")
         do {
             self.snapshot = try await documents.save(draft, to: url, expectedFingerprint: snapshot.fingerprint)
-            saveStatus = isDirty ? "Cambios pendientes" : "Guardado · archivo local"
+            saveStatus = isDirty ? "Pending changes" : "Saved · local file"
             logger.info("document_save_completed")
         } catch DocumentStoreError.conflict {
             externalConflict = true
-            saveStatus = "Conflicto externo · edición protegida"
+            saveStatus = "External conflict · edits protected"
         } catch { report(error) }
         saving = false
         updateTitle()
@@ -214,7 +213,7 @@ final class AppSession {
 
     func prepareNavigation(allowGitOperation: Bool = false) async -> Bool {
         guard !gitBusy || allowGitOperation else {
-            errorMessage = "Espera a que termine la operación Git de este proyecto antes de cambiar de documento."
+            errorMessage = L10n.text("Wait for this project's Git operation to finish before switching documents.")
             return false
         }
         while let pending = settingsTask { await pending.value }
@@ -223,7 +222,7 @@ final class AppSession {
         while saving { try? await Task.sleep(for: .milliseconds(20)) }
         await save()
         if isDirty {
-            if externalConflict { errorMessage = "Resuelve el cambio externo recargando o guardando una copia antes de abrir otro documento." }
+            if externalConflict { errorMessage = L10n.text("Resolve the external change by reloading or saving a copy before opening another document.") }
             return false
         }
         return true
@@ -233,9 +232,9 @@ final class AppSession {
         guard let url = documentURL else { return }
         if isDirty {
             let alert = NSAlert()
-            alert.messageText = "¿Descartar tu edición y recargar el archivo?"
-            alert.addButton(withTitle: "Recargar")
-            alert.addButton(withTitle: "Cancelar")
+            alert.messageText = L10n.text("Discard your edits and reload the file?")
+            alert.addButton(withTitle: L10n.text("Reload"))
+            alert.addButton(withTitle: L10n.text("Cancel"))
             guard alert.runModal() == .alertFirstButtonReturn else { return }
         }
         let previousContent = content
@@ -244,13 +243,13 @@ final class AppSession {
             guard documentURL == url else { return }
             guard content == previousContent else {
                 externalConflict = true
-                saveStatus = "Conflicto externo · edición protegida"
+                saveStatus = "External conflict · edits protected"
                 return
             }
             snapshot = loaded
             content = loaded.content
             externalConflict = false
-            saveStatus = "Guardado · archivo local"
+            saveStatus = "Saved · local file"
             updateTitle()
         } catch { externalConflict = true; report(error) }
     }
@@ -277,7 +276,7 @@ final class AppSession {
         if !externalConflict { changed = await documents.hasChanged(snapshot) }
         guard self.snapshot?.url == snapshot.url, self.snapshot?.fingerprint == snapshot.fingerprint else { return }
         if changed {
-            if isDirty { externalConflict = true; saveStatus = "Conflicto externo · edición protegida" }
+            if isDirty { externalConflict = true; saveStatus = "External conflict · edits protected" }
             else { await reloadFromDisk() }
         }
         if projectURL != nil { await refreshTree() }

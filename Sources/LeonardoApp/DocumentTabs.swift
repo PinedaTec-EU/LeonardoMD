@@ -5,7 +5,7 @@ import Observation
 struct DocumentTab: Identifiable {
     let id = UUID()
     let session: AppSession
-    var title: String { session.documentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? "Nueva pestaña" }
+    var title: String { session.documentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? L10n.text("New tab") }
     var location: URL? { session.documentURL ?? session.projectURL }
 }
 
@@ -60,6 +60,24 @@ final class DocumentTabs {
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         activeID = id
         updateTitle()
+    }
+
+    /// Move the existing session to the target's original position without selecting it.
+    @discardableResult
+    func move(_ id: UUID, to targetID: UUID) -> Bool {
+        guard !closing, !stopped, id != targetID,
+              let source = tabs.firstIndex(where: { $0.id == id }),
+              let destination = tabs.firstIndex(where: { $0.id == targetID }) else { return false }
+        let tab = tabs.remove(at: source)
+        tabs.insert(tab, at: destination)
+        return true
+    }
+
+    func neighbor(of id: UUID, offset: Int) -> UUID? {
+        guard !closing, !stopped, (offset == -1 || offset == 1),
+              let index = tabs.firstIndex(where: { $0.id == id }),
+              tabs.indices.contains(index + offset) else { return nil }
+        return tabs[index + offset].id
     }
 
     func activateDocument(_ url: URL, line: Int? = nil) -> Bool {

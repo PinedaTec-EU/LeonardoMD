@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-The maintainer needs a Developer ID Application identity, an existing `notarytool` Keychain profile, and a Sparkle Ed25519 signing key in the login Keychain. Generate the Sparkle key once using `.build/artifacts/sparkle/Sparkle/bin/generate_keys` after resolving the package. Keep the private key and Apple credentials out of the repository and release assets. Back up the key securely. Only its public value is embedded in the app.
+The maintainer needs a Developer ID Application identity, an existing `notarytool` Keychain profile, and a Sparkle Ed25519 signing key in the login Keychain. The stable LeonardoMD Keychain account is `LeonardoMD-stable`; set `SPARKLE_KEY_ACCOUNT=LeonardoMD-stable` and read its public key with `generate_keys --account LeonardoMD-stable -p`. Generate a missing Sparkle key once using `.build/artifacts/sparkle/Sparkle/bin/generate_keys` after resolving the package. Keep the private key and Apple credentials out of the repository and release assets. Back up the key securely. Only its public value is embedded in the app.
 
 Set `LEONARDO_VERSION` to the canonical `release.feature.build` in `version.nfo` and `LEONARDO_BUILD` to its third segment, strictly greater than every previous published build, `SPARKLE_PUBLIC_KEY` to the generated public key, `DEVELOPER_ID_APPLICATION` to the signing identity, `NOTARY_PROFILE` to the stored profile, and `RELEASE_NOTES_FILE` to a nonempty Markdown file. Supply these through the process environment, not tracked files. Ordinary development builds derive their version and build from `version.nfo` (initial seed 0.1.56 / 56) and do not enable the channel.
 
@@ -20,7 +20,7 @@ Install an older signed app in a writable Applications folder and publish a newe
 
 ## Beta candidates
 
-Set `LEONARDO_CHANNEL=beta` and append `-beta.N` to the canonical version (for example, `0.1.56-beta.1`). `LEONARDO_BUILD` must equal the canonical third segment. Before publishing a later beta or stable package, materialize a new ledger build greater than every previously published beta and stable build; changing beta.N alone does not advance Sparkle ordering. Sparkle orders updates by this numeric build, independently of the displayed version. Both channels share one monotonic build sequence. Keep beta and stable keys in separate Keychain accounts; select the beta account with `SPARKLE_KEY_ACCOUNT`. Use the matching public key in `SPARKLE_PUBLIC_KEY`.
+Set `LEONARDO_CHANNEL=beta` while keeping `LEONARDO_VERSION` equal to the numeric canonical version (for example, `0.1.56`) and `LEONARDO_BUILD` equal to its third segment. Do not append beta, alpha or other maturity suffixes: the visible version is identical across channels. Before publishing a later package, materialize a new ledger build greater than every previously published build. Sparkle orders updates by this numeric build. Channel selection belongs only in bundle/feed metadata and GitHub prerelease status, not in version strings. Keep beta and stable keys in separate Keychain accounts and use the matching `SPARKLE_PUBLIC_KEY` and `SPARKLE_KEY_ACCOUNT`.
 
 Beta bundles use `https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/update-feeds/beta/appcast.xml`, or an explicit `LEONARDO_FEED_URL` HTTPS test endpoint. The feed branch is a publication target, not created by preparation. Beta appcasts mark every item with `sparkle:channel=beta`; stable bundles do not opt into that channel. The verifier rejects prerelease tags in stable feeds. Public beta publication requires a GitHub prerelease (never latest) containing the ZIP, followed by an atomic update of the beta feed branch. Never replace the stable appcast with a beta feed.
 
@@ -29,3 +29,9 @@ Beta bundles use `https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/upda
 PR #8 is integrated. The implementation is refreshed on current main in PR #17. Keep issue #15 open until the hosted update and relaunch acceptance above is complete.
 
 Release preparation compares the bundle public update key against the existing Keychain signing account before signing or generating release assets. Feed paths must use canonical unescaped URLs; encoded or dot-segment aliases are rejected before bundle metadata changes.
+
+## First stable publication
+
+Stable [0.1.64](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.64) was published on 2026-10-08 from `3aebf4459edfa45c9c45e6a4ea64ac1ac216180d`, canonical version 0.1.64 / build 64. The arm64 application passed Developer ID signature verification, Apple notarization, stapling and Gatekeeper assessment. The release contains the verified ZIP and signed appcast. This proves signed distribution; hosted update/install/relaunch acceptance remains separately tracked in [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15).
+
+Every newly generated appcast item carries mandatory internal `leonardo:channel` publication metadata in the `https://pinedatec.eu/xml-namespaces/leonardo` namespace. It must agree with the selected publication channel and Sparkle markers: stable omits `sparkle:channel`, while beta has exactly one `beta` marker. Removing either binding or beta marker fails publication validation. Generation refuses to relabel existing bindings. Regenerate legacy appcasts before validating them with the current tooling. These metadata checks supplement the existing signed archive/key verification; they are not a cryptographic signature of the XML feed.

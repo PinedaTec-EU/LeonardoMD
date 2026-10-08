@@ -8,14 +8,14 @@ struct WorkspaceManager: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack {
-                Text("Espacio de trabajo").font(.title2.bold())
+                Text(L10n.text("Workspace")).font(.title2.bold())
                 Spacer()
-                Button("Listo") { dismiss() }
+                Button(L10n.text("Done")) { dismiss() }
             }
-            Text(session.workspaceURL?.path ?? "Selecciona una carpeta raíz").font(.caption).foregroundStyle(.secondary)
+            Text(session.workspaceURL?.path ?? L10n.text("Select a root folder")).font(.caption).foregroundStyle(.secondary)
             HStack {
-                Button("Seleccionar / crear carpeta…") { session.chooseWorkspace() }
-                Button("Nuevo proyecto…") { session.createProject() }.disabled(session.workspaceURL == nil)
+                Button(L10n.text("Select / create folder…")) { session.chooseWorkspace() }
+                Button(L10n.text("New project…")) { session.createProject() }.disabled(session.workspaceURL == nil)
             }
             List(session.workspaceProjects) { project in
                 HStack {
@@ -23,15 +23,15 @@ struct WorkspaceManager: View {
                     Button(project.name) { Task { await session.openProject(project.rootURL); dismiss() } }
                     Spacer()
                     Menu {
-                        Button("Renombrar…") { session.renameProject(project) }
-                        Button("Mostrar en Finder") { NSWorkspace.shared.activateFileViewerSelecting([project.rootURL]) }
-                        Button("Eliminar…", role: .destructive) { session.deleteProject(project) }
+                        Button(L10n.text("Rename…")) { session.renameProject(project) }
+                        Button(L10n.text("Show in Finder")) { NSWorkspace.shared.activateFileViewerSelecting([project.rootURL]) }
+                        Button(L10n.text("Delete…"), role: .destructive) { session.deleteProject(project) }
                     } label: { Image(systemName: "ellipsis.circle") }.menuStyle(.borderlessButton)
                 }.padding(.vertical, 6)
             }
-            if session.workspaceProjects.isEmpty { Text("Cada subcarpeta es un proyecto local. Crea uno para empezar.").foregroundStyle(.secondary) }
+            if session.workspaceProjects.isEmpty { Text(L10n.text("Each subfolder is a local project. Create one to get started.")).foregroundStyle(.secondary) }
             if !session.globalPreferences.recentWorkspacePaths.isEmpty {
-                Text("Espacios recientes").font(.headline)
+                Text(L10n.text("Recent workspaces")).font(.headline)
                 ForEach(session.globalPreferences.recentWorkspacePaths.prefix(5), id: \.self) { url in
                     Button(url.lastPathComponent) { Task { await session.openWorkspace(url) } }
                 }
@@ -46,7 +46,7 @@ extension AppSession {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
-        panel.prompt = "Usar como espacio"
+        panel.prompt = L10n.text("Use as workspace")
         presentFilePanel(panel) { [weak self] url in Task { await self?.openWorkspace(url) } }
     }
     func openWorkspace(_ url: URL) async {
@@ -67,7 +67,7 @@ extension AppSession {
         catch { if showWorkspace { report(error) } }
     }
     func createProject() {
-        guard let root = workspaceURL, let name = prompt(title: "Nuevo proyecto", initial: "Mi proyecto") else { return }
+        guard let root = workspaceURL, let name = prompt(title: L10n.text("New project"), initial: L10n.text("My project")) else { return }
         Task {
             do {
                 let project = try await files.createProject(named: name, in: root)
@@ -78,7 +78,7 @@ extension AppSession {
         }
     }
     func renameProject(_ project: ProjectDescriptor) {
-        guard let name = prompt(title: "Renombrar proyecto", initial: project.name) else { return }
+        guard let name = prompt(title: L10n.text("Rename project"), initial: project.name) else { return }
         Task { await renameProject(project, to: name) }
     }
     func renameProject(_ project: ProjectDescriptor, to name: String) async {
@@ -101,10 +101,10 @@ extension AppSession {
     }
     func deleteProject(_ project: ProjectDescriptor) {
         let alert = NSAlert()
-        alert.messageText = "¿Eliminar el proyecto \(project.name)?"
-        alert.informativeText = "Se eliminará toda su carpeta y su contenido del disco."
-        alert.addButton(withTitle: "Cancelar")
-        alert.addButton(withTitle: "Eliminar")
+        alert.messageText = L10n.format("Delete project %@?", project.name)
+        alert.informativeText = L10n.text("The entire folder and its contents will be deleted from disk.")
+        alert.addButton(withTitle: L10n.text("Cancel"))
+        alert.addButton(withTitle: L10n.text("Delete"))
         guard alert.runModal() == .alertSecondButtonReturn else { return }
         Task { await deleteConfirmedProject(project) }
     }
@@ -129,7 +129,7 @@ extension AppSession {
                 requestedLine = nil
                 editorScroll = 0
                 externalConflict = false
-                saveStatus = "Archivo local"
+                saveStatus = "Local file"
             }
             relatedPathDeleted?(project.rootURL)
             updateTitle()

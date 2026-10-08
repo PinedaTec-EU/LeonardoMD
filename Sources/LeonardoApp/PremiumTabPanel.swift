@@ -36,7 +36,7 @@ struct PremiumTabPanel<Value: Hashable, Content: View>: View {
                 }
                 .fixedSize()
                 .accessibilityElement(children: .contain)
-                .accessibilityLabel("Sección de preferencias")
+                .accessibilityLabel(L10n.text("Preferences section"))
                 .accessibilityIdentifier("preferences-section")
                 .offset(y: -headerOverlap)
             }

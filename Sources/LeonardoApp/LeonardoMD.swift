@@ -68,6 +68,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         if !arguments.isEmpty { pendingLaunches.append(arguments) }
         guard role == .primary else { forwardPendingLaunches(); return }
         diagnostics.record(.menuConfiguring)
+        NotificationCenter.default.addObserver(self, selector: #selector(languageChanged), name: LanguageSettings.didChange, object: nil)
         configureMenu()
         updates.start()
         diagnostics.record(.menuConfigured)
@@ -81,6 +82,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        NotificationCenter.default.removeObserver(self)
         diagnostics.record(.applicationWillTerminate)
     }
 
@@ -150,8 +152,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
             } catch {
                 logger.error("launch_forward_failed error=\(String(describing: error), privacy: .public)")
                 let alert = NSAlert()
-                alert.messageText = "No se pudo abrir la instancia activa de LeonardoMD"
-                alert.informativeText = "La solicitud no se ha entregado. Vuelve a intentarlo cuando la aplicación responda."
+                alert.messageText = L10n.text("Could not open the active LeonardoMD instance")
+                alert.informativeText = L10n.text("The request was not delivered. Try again when the application responds.")
                 alert.runModal()
                 exit(EXIT_FAILURE)
             }
@@ -217,37 +219,39 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     }
     private var activeSession: AppSession? { activeDocuments?.activeSession }
 
-    private func configureMenu() {
+    @objc private func languageChanged() { configureMenu() }
+
+    func configureMenu() {
         let menu = NSMenu()
         let app = submenu("LeonardoMD", in: menu)
-        add("Acerca de LeonardoMD", action: #selector(showAbout), to: app)
-        add("Preferencias…", action: #selector(preferences), key: ",", to: app)
+        add(L10n.text("About LeonardoMD"), action: #selector(showAbout), to: app)
+        add(L10n.text("Preferences…"), action: #selector(preferences), key: ",", to: app)
         updates.addMenuItems(to: app)
         app.addItem(.separator())
-        add("Salir de LeonardoMD", action: #selector(NSApplication.terminate(_:)), key: "q", to: app)
-        let file = submenu("Archivo", in: menu)
-        add("Nueva ventana", action: #selector(newEmptyWindow), key: "n", to: file)
-        add("Nueva pestaña", action: #selector(newTab), key: "t", to: file)
-        add("Cerrar pestaña", action: #selector(closeTab), key: "w", to: file)
-        add("Abrir documento…", action: #selector(openDocument), key: "o", to: file)
-        add("Abrir proyecto…", action: #selector(openProject), key: "o", modifiers: [.command, .shift], to: file)
-        add("Guardar", action: #selector(save), key: "s", to: file)
-        add("Exportar PDF…", action: #selector(exportPDF), key: "e", modifiers: [.command, .shift], to: file)
-        add("Cerrar ventana", action: #selector(NSWindow.performClose(_:)), key: "w", modifiers: [.command, .shift], to: file)
-        let editMenu = submenu("Edición", in: menu)
-        for (title, selector, key) in [("Deshacer", "undo:", "z"), ("Rehacer", "redo:", "Z"), ("Cortar", "cut:", "x"), ("Copiar", "copy:", "c"), ("Pegar", "paste:", "v"), ("Seleccionar todo", "selectAll:", "a")] {
+        add(L10n.text("Quit LeonardoMD"), action: #selector(NSApplication.terminate(_:)), key: "q", to: app)
+        let file = submenu(L10n.text("File"), in: menu)
+        add(L10n.text("New window"), action: #selector(newEmptyWindow), key: "n", to: file)
+        add(L10n.text("New tab"), action: #selector(newTab), key: "t", to: file)
+        add(L10n.text("Close tab"), action: #selector(closeTab), key: "w", to: file)
+        add(L10n.text("Open document…"), action: #selector(openDocument), key: "o", to: file)
+        add(L10n.text("Open project…"), action: #selector(openProject), key: "o", modifiers: [.command, .shift], to: file)
+        add(L10n.text("Save"), action: #selector(save), key: "s", to: file)
+        add(L10n.text("Export PDF…"), action: #selector(exportPDF), key: "e", modifiers: [.command, .shift], to: file)
+        add(L10n.text("Close window"), action: #selector(NSWindow.performClose(_:)), key: "w", modifiers: [.command, .shift], to: file)
+        let editMenu = submenu(L10n.text("Edit"), in: menu)
+        for (title, selector, key) in [(L10n.text("Undo"), "undo:", "z"), (L10n.text("Redo"), "redo:", "Z"), (L10n.text("Cut"), "cut:", "x"), (L10n.text("Copy"), "copy:", "c"), (L10n.text("Paste"), "paste:", "v"), (L10n.text("Select all"), "selectAll:", "a")] {
             add(title, action: NSSelectorFromString(selector), key: key, to: editMenu)
         }
-        let view = submenu("Vista", in: menu)
-        add("Lectura", action: #selector(preview), key: "1", to: view)
-        add("Edición", action: #selector(edit), key: "2", to: view)
-        add("Dividida", action: #selector(split), key: "3", to: view)
-        add("Modo foco", action: #selector(focus), key: "f", modifiers: [.command, .shift], to: view)
-        add("Índice del documento", action: #selector(outline), key: "i", modifiers: [.command, .option], to: view)
-        let window = submenu("Ventana", in: menu)
-        add("Minimizar", action: #selector(NSWindow.performMiniaturize(_:)), key: "m", to: window)
-        add("Zoom", action: #selector(NSWindow.performZoom(_:)), to: window)
-        add("Traer todo al frente", action: #selector(bringWindowsToFront), to: window)
+        let view = submenu(L10n.text("View"), in: menu)
+        add(L10n.text("Preview"), action: #selector(preview), key: "1", to: view)
+        add(L10n.text("Edit"), action: #selector(edit), key: "2", to: view)
+        add(L10n.text("Split"), action: #selector(split), key: "3", to: view)
+        add(L10n.text("Focus mode"), action: #selector(focus), key: "f", modifiers: [.command, .shift], to: view)
+        add(L10n.text("Document outline"), action: #selector(outline), key: "i", modifiers: [.command, .option], to: view)
+        let window = submenu(L10n.text("Window"), in: menu)
+        add(L10n.text("Minimize"), action: #selector(NSWindow.performMiniaturize(_:)), key: "m", to: window)
+        add(L10n.text("Zoom"), action: #selector(NSWindow.performZoom(_:)), to: window)
+        add(L10n.text("Bring all to front"), action: #selector(bringWindowsToFront), to: window)
         NSApp.windowsMenu = window
         NSApp.mainMenu = menu
     }
