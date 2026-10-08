@@ -56,7 +56,7 @@ or inferred summary of the PR body.
 ## Shared engine operation
 
 The engine remains in `PinedaTec-EU/pinedatec-ci`, pinned to integrated commit
-`c39d7c970b7c52c503302a77ca9ad8a08c9326d7`; do not copy it or use a mutable pin.
+`fdc500c76d3f42f1162cd48ad1997601cce06336`; do not copy it or use a mutable pin.
 `scripts/release-ledger.sh` is a thin operator entrypoint. Set
 `LEDGER_ENGINE_ROOT` to a clean checkout at that exact revision. It checks the
 revision and engine working tree, passes the workspace to the shared engine,
@@ -148,3 +148,5 @@ Sparkle configuration preserves the generated canonical bundle version/build. Ex
 Refresh the immutable engine SHA after engine changes integrate into central main, through reviewed source PRs in the central catalog and this operator wrapper. Validate both against the same integrated snapshot; publisher-only commits with an unchanged engine tree do not require recursive pin refreshes. Never resolve mutable main at execution time. Main protection requires `test` from GitHub Actions and `release-ledger-policy` from App 4862830, including administrators. Dispatch-token execution was observed on PR #56 after readiness. Tracking: [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
 
 Integrate the central catalog refresh before enabling policy validation of the consumer pin PR. An App verdict binds the head, base and engine identity; if a queued run already recorded the old pin on that head, refresh the consumer head and obtain new current-pin validation instead of overwriting the immutable verdict.
+
+Publish the final consumer pin PR head only after the central catalog refresh integrates: queue inventory can validate drafts too. If an older engine already issued a check, refresh the consumer head after catalog integration and verify the new binding.
