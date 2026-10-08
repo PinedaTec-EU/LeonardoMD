@@ -16,3 +16,20 @@ struct TabFramesPreference: PreferenceKey {
         value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
     }
 }
+
+/// Two vertical columns of dots identify the reorder affordance.
+struct DocumentTabGrip: View {
+    var body: some View {
+        HStack(spacing: 3) {
+            ForEach(0..<2) { _ in
+                VStack(spacing: 3) {
+                    ForEach(0..<3) { _ in
+                        Circle().frame(width: 2.5, height: 2.5)
+                    }
+                }
+            }
+        }
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .ignore)
+    }
+}
