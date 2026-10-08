@@ -26,7 +26,7 @@ struct PremiumSwitchStyle: ToggleStyle {
             .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: configuration.isOn)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityValue(configuration.isOn ? "Activado" : "Desactivado")
+        .accessibilityValue(configuration.isOn ? L10n.text("Enabled") : L10n.text("Disabled"))
         .accessibilityAddTraits(.isToggle)
         .accessibilityAction { if enabled { configuration.isOn.toggle() } }
     }

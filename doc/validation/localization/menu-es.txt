@@ -1,0 +1,9 @@
+Window: "LeonardoMD", App: LeonardoMD.
+0 LeonardoMD, Secondary Actions: Cancel, Pick
+	1 menu Secondary Actions: Cancel
+		2 Acerca de LeonardoMD, ID: showAbout
+		3 Preferencias…, ID: preferences
+		4 Buscar actualizaciones…, ID: checkForUpdates
+		5 (disabled) Comprobar actualizaciones automáticamente, ID: toggleAutomaticChecks
+		6 Salir de LeonardoMD, ID: terminate:
+		7 Quit and Keep Windows

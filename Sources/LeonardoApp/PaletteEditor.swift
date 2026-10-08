@@ -24,31 +24,31 @@ struct PaletteEditor: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("Personalizar paleta").font(.title2.bold())
+            Text(L10n.text("Customize palette")).font(.title2.bold())
             HStack {
                 VStack(alignment: .leading, spacing: 16) {
-                    ColorPicker("Hoja", selection: $surface, supportsOpacity: false)
-                    ColorPicker("Texto", selection: $ink, supportsOpacity: false)
-                    ColorPicker("Titulares", selection: $heading, supportsOpacity: false)
-                    ColorPicker("Acento", selection: $accent, supportsOpacity: false)
+                    ColorPicker(L10n.text("Paper"), selection: $surface, supportsOpacity: false)
+                    ColorPicker(L10n.text("Text"), selection: $ink, supportsOpacity: false)
+                    ColorPicker(L10n.text("Headings"), selection: $heading, supportsOpacity: false)
+                    ColorPicker(L10n.text("Accent"), selection: $accent, supportsOpacity: false)
                 }
                 VStack(alignment: .leading, spacing: 10) {
                     Text("LeonardoMD").font(.title2.bold()).foregroundStyle(heading)
-                    Text("Una lectura cómoda, con tu estilo.").foregroundStyle(ink)
-                    Text("Enlaces y acciones").foregroundStyle(accent)
+                    Text(L10n.text("Comfortable reading, in your style.")).foregroundStyle(ink)
+                    Text(L10n.text("Links and actions")).foregroundStyle(accent)
                 }.padding(24).frame(width: 260, height: 140).background(surface, in: RoundedRectangle(cornerRadius: 12))
             }
             let report = candidate.contrastReport
-            Text(String(format: "Contraste · Texto %.1f:1 · Titulares %.1f:1 · Acento %.1f:1", report.textOnSurface, report.headingOnSurface, report.accentOnSurface))
+            Text(String(format: L10n.text("Contrast · Text %.1f:1 · Headings %.1f:1 · Accent %.1f:1"), report.textOnSurface, report.headingOnSurface, report.accentOnSurface))
                 .font(.caption).foregroundStyle(report.isValid ? Color.secondary : Color.red)
             if let failure { Text(failure).font(.caption).foregroundStyle(.red) }
             HStack {
-                Button("Restaurar") { load(base.tokens) }
-                Button("Importar…") { importPalette() }
-                Button("Exportar…") { exportPalette() }
+                Button(L10n.text("Reset")) { load(base.tokens) }
+                Button(L10n.text("Import…")) { importPalette() }
+                Button(L10n.text("Export…")) { exportPalette() }
                 Spacer()
-                Button("Cancelar") { dismiss() }
-                Button("Aplicar") {
+                Button(L10n.text("Cancel")) { dismiss() }
+                Button(L10n.text("Apply")) {
                     if projectScope { session.projectConfiguration.customTokens = overrides }
                     else { session.globalPreferences.customTokens = overrides }
                     session.persistSettings()
@@ -76,10 +76,10 @@ struct PaletteEditor: View {
         do {
             let custom = try JSONDecoder().decode(PaletteTokenOverrides.self, from: Data(contentsOf: url))
             let palette = PaletteDefinition(id: base.id, displayName: base.displayName, tokens: custom.applying(to: base.tokens))
-            guard palette.contrastReport.isValid else { failure = "La paleta importada no tiene contraste suficiente."; return }
+            guard palette.contrastReport.isValid else { failure = L10n.text("The imported palette has insufficient contrast."); return }
             load(palette.tokens)
             failure = nil
-        } catch { failure = "No se pudo leer la paleta JSON." }
+        } catch { failure = L10n.text("Could not read the palette JSON.") }
     }
     private func exportPalette() {
         let panel = NSSavePanel()
@@ -93,7 +93,7 @@ struct PaletteEditor: View {
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             try encoder.encode(overrides).write(to: url, options: [.atomic])
             failure = nil
-        } catch { failure = "No se pudo exportar la paleta." }
+        } catch { failure = L10n.text("Could not export the palette.") }
     }
 }
 

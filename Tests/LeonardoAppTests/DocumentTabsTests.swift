@@ -16,6 +16,85 @@ final class DocumentTabsTests: XCTestCase {
         return url
     }
 
+    func testReorderBothDirectionsRetainsActiveSessionAndDraft() async throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let first = try XCTUnwrap(tabs.activeID)
+        let session = tabs.activeSession
+        await session.open(try document("draft.md", in: root))
+        session.content = "unsaved draft"
+        session.mode = .split
+        session.editorScroll = 0.6
+        let middle = try XCTUnwrap(tabs.addTab())
+        let last = try XCTUnwrap(tabs.addTab())
+        tabs.select(first)
+        XCTAssertTrue(tabs.move(first, to: last))
+        XCTAssertEqual(tabs.tabs.map(\.id), [middle, last, first])
+        XCTAssertTrue(tabs.move(first, to: middle))
+        XCTAssertEqual(tabs.tabs.map(\.id), [first, middle, last])
+        XCTAssertTrue(tabs.move(last, to: middle))
+        XCTAssertEqual(tabs.tabs.map(\.id), [first, last, middle])
+        XCTAssertEqual(tabs.activeID, first)
+        XCTAssertTrue(tabs.activeSession === session)
+        XCTAssertEqual(session.content, "unsaved draft")
+        XCTAssertTrue(session.isDirty)
+        XCTAssertEqual(session.mode, .split)
+        XCTAssertEqual(session.editorScroll, 0.6)
+        XCTAssertNil(tabs.neighbor(of: first, offset: -1))
+        XCTAssertNil(tabs.neighbor(of: middle, offset: 1))
+        XCTAssertEqual(tabs.neighbor(of: first, offset: 1), last)
+        XCTAssertEqual(tabs.neighbor(of: middle, offset: -1), last)
+    }
+
+    func testReorderingIsRejectedWhileWindowCloseWaitsForPendingWork() async throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let first = try XCTUnwrap(tabs.activeID)
+        let last = try XCTUnwrap(tabs.addTab())
+        let session = tabs.activeSession
+        var resume: CheckedContinuation<Void, Never>?
+        session.settingsTask = Task {
+            await withCheckedContinuation { resume = $0 }
+            session.settingsTask = nil
+        }
+        while resume == nil { await Task.yield() }
+        let close = Task { await tabs.prepareClose() }
+        while !tabs.closing { await Task.yield() }
+        XCTAssertFalse(tabs.move(first, to: last))
+        XCTAssertNil(tabs.neighbor(of: first, offset: 1))
+        XCTAssertEqual(tabs.tabs.map(\.id), [first, last])
+        resume?.resume()
+        let canClose = await close.value
+        XCTAssertTrue(canClose)
+    }
+
+    func testInvalidSelfAndStoppedMovesPreserveOrder() throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let first = try XCTUnwrap(tabs.activeID)
+        let last = try XCTUnwrap(tabs.addTab())
+        XCTAssertFalse(tabs.move(first, to: first))
+        XCTAssertFalse(tabs.move(first, to: UUID()))
+        XCTAssertFalse(tabs.move(UUID(), to: last))
+        XCTAssertEqual(tabs.tabs.map(\.id), [first, last])
+        tabs.stop()
+        XCTAssertFalse(tabs.move(first, to: last))
+        XCTAssertNil(tabs.neighbor(of: first, offset: 1))
+        XCTAssertEqual(tabs.tabs.map(\.id), [first, last])
+    }
+
+    func testPointerDestinationRequiresAnotherHeaderInThisBar() {
+        let first = UUID(), second = UUID()
+        let frames = [first: CGRect(x: 0, y: 0, width: 100, height: 40),
+                      second: CGRect(x: 106, y: 0, width: 100, height: 40)]
+        XCTAssertEqual(TabReordering.destination(at: CGPoint(x: 150, y: 20), frames: frames, excluding: first), second)
+        XCTAssertEqual(TabReordering.destination(at: CGPoint(x: 50, y: 20), frames: frames, excluding: second), first)
+        for point in [CGPoint(x: 50, y: 20), CGPoint(x: 103, y: 20), CGPoint(x: 150, y: 80), CGPoint(x: -10, y: 20)] {
+            XCTAssertNil(TabReordering.destination(at: point, frames: frames, excluding: first))
+        }
+        XCTAssertNil(TabReordering.destination(at: CGPoint(x: 150, y: 20), frames: [:], excluding: first))
+    }
+
     func testExternalOpenPreservesDirtyTabAndDeduplicatesRepeatedRequests() async throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }

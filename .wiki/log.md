@@ -24,3 +24,8 @@
 - 2026-10-08: Reopened [#22](https://github.com/PinedaTec-EU/LeonardoMD/issues/22): product-wide ownership replaces bundle-specific ownership; forwarded document batches reactivate after loading. Old QA executables require a graceful one-time quit.
 
 - 2026-10-08: Reconciled #38 with integrated signed-update packaging and product-wide instance ownership. Sparkle preserves ledger metadata and rejects release version/build overrides. [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
+
+- 2026-10-08: Added English-default global language selection and English/Spanish resource catalogs for [#57](https://github.com/PinedaTec-EU/LeonardoMD/issues/57).
+- 2026-10-08: Verified central policy dispatch and protected serial materialization under [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38), then published stable [0.1.64](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.64) from `3aebf44` with Developer ID, Apple notarization/stapling and signed update assets. [#61](https://github.com/PinedaTec-EU/LeonardoMD/issues/61) records automatic generated-branch cleanup; pinedatec-ci#279 remains the separate automatic merge permission gap.
+
+- 2026-10-08: refreshed the immutable engine to integrated `fdc500c76d3f42f1162cd48ad1997601cce06336`, correcting accepted-notes proposal body outputs ([central #289](https://github.com/PinedaTec-EU/pinedatec-ci/issues/289)); live notes completion stays under [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).

@@ -20,20 +20,20 @@ struct ProjectSidebar: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Image(systemName: "folder.fill")
-                Text(session.projectURL?.lastPathComponent ?? "Proyecto").font(.headline)
+                Text(session.projectURL?.lastPathComponent ?? L10n.text("Project")).font(.headline)
                 Spacer()
                 Button { session.chooseProject() } label: { Image(systemName: "folder.badge.plus") }
-                    .help("Abrir otro proyecto")
+                    .help(L10n.text("Open another project"))
             }
-            TextField("Buscar archivos y contenido", text: $session.searchQuery)
+            TextField(L10n.text("Search files and content"), text: $session.searchQuery)
                 .textFieldStyle(.roundedBorder)
                 .accessibilityIdentifier("project-search")
                 .onChange(of: session.searchQuery) { _, _ in session.scheduleSearch() }
             HStack {
-                Button { session.createItem(directory: false) } label: { Label("Nota", systemImage: "doc.badge.plus") }
+                Button { session.createItem(directory: false) } label: { Label(L10n.text("Note"), systemImage: "doc.badge.plus") }
                 Button { session.createItem(directory: true) } label: { Image(systemName: "folder.badge.plus") }
                 Spacer()
-                Toggle("Ocultos", isOn: $session.showHidden).toggleStyle(.checkbox).font(.caption)
+                Toggle(L10n.text("Hidden"), isOn: $session.showHidden).toggleStyle(.checkbox).font(.caption)
             }
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 2) {
@@ -64,9 +64,6 @@ struct ProjectSidebar: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }.buttonStyle(PremiumButtonStyle(compact: true)).accessibilityIdentifier("git-panel")
             }
-            Divider()
-            Button { session.showPreferences = true } label: { Label("Configuración", systemImage: "gearshape") }
-                .buttonStyle(PremiumButtonStyle(compact: true))
         }
         .buttonStyle(PremiumButtonStyle(compact: true))
         .padding(16)
@@ -100,15 +97,15 @@ struct FileTreeRow: View {
                     .background(session.documentURL == entry.url ? session.accentColor.opacity(0.14) : .clear, in: RoundedRectangle(cornerRadius: 6))
             }.buttonStyle(.plain)
                 .contextMenu {
-                    Button("Mostrar en Finder") { NSWorkspace.shared.activateFileViewerSelecting([entry.url]) }
-                    Button("Renombrar…") { session.rename(entry.url) }
-                    Button("Mover…") { session.move(entry.url) }
+                    Button(L10n.text("Show in Finder")) { NSWorkspace.shared.activateFileViewerSelecting([entry.url]) }
+                    Button(L10n.text("Rename…")) { session.rename(entry.url) }
+                    Button(L10n.text("Move…")) { session.move(entry.url) }
                     if entry.isDirectory {
-                        Button("Nueva nota…") { session.createItem(directory: false, parent: entry.url) }
-                        Button("Nueva carpeta…") { session.createItem(directory: true, parent: entry.url) }
+                        Button(L10n.text("New note…")) { session.createItem(directory: false, parent: entry.url) }
+                        Button(L10n.text("New folder…")) { session.createItem(directory: true, parent: entry.url) }
                     }
                     Divider()
-                    Button("Eliminar…", role: .destructive) { session.delete(entry.url) }
+                    Button(L10n.text("Delete…"), role: .destructive) { session.delete(entry.url) }
                 }
                 .onDrag { NSItemProvider(object: entry.url as NSURL) }
                 .onDrop(of: [.fileURL], isTargeted: nil) { providers in
