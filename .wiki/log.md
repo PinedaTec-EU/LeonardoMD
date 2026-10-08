@@ -31,3 +31,5 @@
 - 2026-10-08: refreshed the immutable engine to integrated `fdc500c76d3f42f1162cd48ad1997601cce06336`, correcting accepted-notes proposal body outputs ([central #289](https://github.com/PinedaTec-EU/pinedatec-ci/issues/289)); live notes completion stays under [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
 
 - 2026-10-08: Added the ARX-style source-merge dispatch adapter and documented automatic App version/prepared-note writes separately from accepted publication. [#69](https://github.com/PinedaTec-EU/LeonardoMD/issues/69).
+
+- 2026-10-09: Added the native QA launch convention to root `AGENTS.md` for [#80](https://github.com/PinedaTec-EU/LeonardoMD/issues/80): XCTest uses a test runner; visual QA preserves the real packaged executable, checks dependencies and verifies fresh-process readiness while respecting product-wide instance ownership. Original harness correction and runtime validation remain pending.
