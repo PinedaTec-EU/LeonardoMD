@@ -135,7 +135,10 @@ final class AppSession {
 
     func open(_ url: URL) async {
         await initialize()
-        if activateExistingDocument?(url, nil) == true { return }
+        if activateExistingDocument?(url, nil) == true {
+            NSDocumentController.shared.noteNewRecentDocumentURL(url)
+            return
+        }
         var directory: ObjCBool = false
         if FileManager.default.fileExists(atPath: url.path, isDirectory: &directory), directory.boolValue {
             await openProject(url)
