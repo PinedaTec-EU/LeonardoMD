@@ -36,6 +36,9 @@ struct LeonardoMD {
 @MainActor
 final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private let updates = ApplicationUpdates()
+    private lazy var recentMenus = RecentItemsMenu(session: { [weak self] in self?.activeSession }, openDocument: { [weak self] url in
+        Task { await self?.openExternalDocument(url) }
+    })
     private var windows: [DocumentWindow] = []
     private let diagnostics: StartupDiagnostics
     private var recordedFirstWindow = false
@@ -235,6 +238,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         add(L10n.text("Close tab"), action: #selector(closeTab), key: "w", to: file)
         add(L10n.text("Open document…"), action: #selector(openDocument), key: "o", to: file)
         add(L10n.text("Open project…"), action: #selector(openProject), key: "o", modifiers: [.command, .shift], to: file)
+        recentMenus.add(to: file)
         add(L10n.text("Save"), action: #selector(save), key: "s", to: file)
         add(L10n.text("Export PDF…"), action: #selector(exportPDF), key: "e", modifiers: [.command, .shift], to: file)
         add(L10n.text("Close window"), action: #selector(NSWindow.performClose(_:)), key: "w", modifiers: [.command, .shift], to: file)

@@ -129,7 +129,7 @@
   "Push": "Push",
   "Quit LeonardoMD": "Salir de LeonardoMD",
   "Recent history": "Historial reciente",
-  "Recent workspaces": "Espacios recientes",
+  "Recent workspaces": "Espacios de trabajo recientes",
   "Redo": "Rehacer",
   "Refresh": "Actualizar",
   "Reload": "Recargar",
@@ -186,5 +186,9 @@
   "Workspace": "Espacio de trabajo",
   "Workspaces…": "Espacios de trabajo…",
   "Your documents, your way.": "Tus documentos, a tu manera.",
-  "Zoom": "Zoom"
+  "Zoom": "Zoom",
+  "Recent documents": "Documentos recientes",
+  "Recent projects": "Proyectos recientes",
+  "No recent items": "No hay elementos recientes",
+  "Clear menu": "Vaciar menú"
 }

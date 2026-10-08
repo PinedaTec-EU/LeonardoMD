@@ -165,6 +165,7 @@ final class AppSession {
         do {
             let loaded = try await documents.read(url)
             guard !stopped else { return }
+            NSDocumentController.shared.noteNewRecentDocumentURL(url)
             documentURL = url
             snapshot = loaded
             content = loaded.content
