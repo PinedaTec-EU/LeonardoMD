@@ -24,3 +24,5 @@
 - 2026-10-08: Reopened [#22](https://github.com/PinedaTec-EU/LeonardoMD/issues/22): product-wide ownership replaces bundle-specific ownership; forwarded document batches reactivate after loading. Old QA executables require a graceful one-time quit.
 
 - 2026-10-08: Reconciled #38 with integrated signed-update packaging and product-wide instance ownership. Sparkle preserves ledger metadata and rejects release version/build overrides. [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
+
+- 2026-10-08: Added English-default global language selection and English/Spanish resource catalogs for [#57](https://github.com/PinedaTec-EU/LeonardoMD/issues/57).

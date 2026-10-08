@@ -22,11 +22,11 @@ struct ExtensionPreferences: View {
                     Text(L10n.text("Changing an extension creates a project-specific configuration."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
-                extensionCard("Mermaid", description: L10n.text("Diagrams inside your documents"),
+                extensionCard("Mermaid", identifier: "mermaid", description: L10n.text("Diagrams inside your documents"),
                               symbol: "point.3.connected.trianglepath.dotted",
                               enabled: Binding(get: { features.mermaidEnabled },
                                                set: { session.setMermaid($0, project: projectScope) }))
-                extensionCard(L10n.text("Math"), description: L10n.text("Formulas with KaTeX"), symbol: "sum",
+                extensionCard(L10n.text("Math"), identifier: "math", description: L10n.text("Formulas with KaTeX"), symbol: "sum",
                               enabled: Binding(get: { features.mathEnabled },
                                                set: { session.setMath($0, project: projectScope) }))
                 Text(L10n.text("Extensions load only when enabled. Changes apply to documents using this scope."))
@@ -35,10 +35,10 @@ struct ExtensionPreferences: View {
         }.toggleStyle(PremiumSwitchStyle())
     }
 
-    private func extensionCard(_ title: String, description: String, symbol: String, enabled: Binding<Bool>) -> some View {
+    private func extensionCard(_ title: String, identifier: String, description: String, symbol: String, enabled: Binding<Bool>) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Toggle(isOn: enabled) { Label(title, systemImage: symbol).font(.headline) }
-                .accessibilityIdentifier(title.lowercased() + "-toggle")
+                .accessibilityIdentifier(identifier + "-toggle")
             Text(description).font(.caption).foregroundStyle(.secondary)
             Text(enabled.wrappedValue ? L10n.text("Enabled") : L10n.text("Disabled"))
                 .font(.caption).foregroundStyle(enabled.wrappedValue ? session.accentColor : Color.secondary)

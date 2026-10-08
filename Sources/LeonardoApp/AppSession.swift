@@ -36,7 +36,6 @@ final class AppSession {
     var searching = false
     var globalPreferences = GlobalPreferences.default
     var projectConfiguration = ProjectConfiguration.default
-    var gitSummary = "Git"
     var prepareRelatedFileOperation: ((URL) async -> Bool)?
     var relatedPathMoved: ((URL, URL) async -> Void)?
     var relatedPathDeleted: ((URL) -> Void)?
@@ -183,7 +182,7 @@ final class AppSession {
 
     func contentChanged() {
         guard snapshot != nil else { return }
-        saveStatus = isDirty ? "Cambios pendientes" : L10n.text("Saved · local file")
+        saveStatus = isDirty ? "Pending changes" : "Saved · local file"
         updateTitle()
         saveTask?.cancel()
         guard isDirty, !externalConflict else { return }
@@ -201,7 +200,7 @@ final class AppSession {
         logger.info("document_save_started")
         do {
             self.snapshot = try await documents.save(draft, to: url, expectedFingerprint: snapshot.fingerprint)
-            saveStatus = isDirty ? "Cambios pendientes" : L10n.text("Saved · local file")
+            saveStatus = isDirty ? "Pending changes" : "Saved · local file"
             logger.info("document_save_completed")
         } catch DocumentStoreError.conflict {
             externalConflict = true

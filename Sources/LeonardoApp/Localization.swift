@@ -7,7 +7,12 @@ enum AppLanguage: String, CaseIterable, Identifiable {
     case spanish = "es"
 
     var id: Self { self }
-    var nativeName: String { self == .english ? "English" : "Español" }
+    var nativeName: String {
+        switch self {
+        case .english: "English"
+        case .spanish: "Español"
+        }
+    }
 }
 
 /// Immutable catalogs shared by SwiftUI and native AppKit surfaces.

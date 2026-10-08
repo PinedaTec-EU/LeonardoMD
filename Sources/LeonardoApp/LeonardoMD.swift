@@ -250,7 +250,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         add(L10n.text("Document outline"), action: #selector(outline), key: "i", modifiers: [.command, .option], to: view)
         let window = submenu(L10n.text("Window"), in: menu)
         add(L10n.text("Minimize"), action: #selector(NSWindow.performMiniaturize(_:)), key: "m", to: window)
-        add("Zoom", action: #selector(NSWindow.performZoom(_:)), to: window)
+        add(L10n.text("Zoom"), action: #selector(NSWindow.performZoom(_:)), to: window)
         add(L10n.text("Bring all to front"), action: #selector(bringWindowsToFront), to: window)
         NSApp.windowsMenu = window
         NSApp.mainMenu = menu

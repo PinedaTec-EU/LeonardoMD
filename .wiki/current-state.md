@@ -42,3 +42,5 @@ Project URL containment matches normalized root aliases while preserving child c
 Preferences groups General and Extensions tabs. Extension mutations accept explicit global/project scope; project inheritance remains portable. The document inspector only navigates headings. Tracking: [#29](https://github.com/PinedaTec-EU/LeonardoMD/issues/29), targeting main after PR #8 integration.
 
 Update PR #17 is refreshed on current main for [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15). Beta preparation supports separate feeds/keys, prerelease version validation and real Ed25519 archive verification; local beta candidates can skip notarization explicitly. See [updates](updates.md).
+
+Interface localization uses global observable LanguageSettings and processed en/es JSON catalogs; English is the default independently of OS locale. Native menus rebuild on language notifications. Status keys and computed Git summaries remain live. See [localization](../doc/localization.md); tracking [#57](https://github.com/PinedaTec-EU/LeonardoMD/issues/57).

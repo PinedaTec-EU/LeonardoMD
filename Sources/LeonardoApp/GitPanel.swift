@@ -20,9 +20,9 @@ struct GitPanel: View {
                 Button(L10n.text("Initialize Git")) { session.performGit(.initialize) }.buttonStyle(PremiumButtonStyle(prominent: true))
             } else {
                 HStack {
-                    Button("Fetch") { session.performGit(.fetch) }
-                    Button("Pull") { session.performGit(.pull) }
-                    Button("Push") { session.performGit(.push) }
+                    Button(L10n.text("Fetch")) { session.performGit(.fetch) }
+                    Button(L10n.text("Pull")) { session.performGit(.pull) }
+                    Button(L10n.text("Push")) { session.performGit(.push) }
                     Spacer()
                     Button(L10n.text("Refresh")) { Task { await session.refreshGit() } }
                 }
@@ -32,7 +32,7 @@ struct GitPanel: View {
                         Toggle(isOn: Binding(get: { selected.contains(change.path) }, set: { value in
                             if value { selected.insert(change.path) } else { selected.remove(change.path) }
                         })) { Text(change.path) }.toggleStyle(.checkbox)
-                        if change.isStaged { Text("Staged").font(.caption).foregroundStyle(.secondary) }
+                        if change.isStaged { Text(L10n.text("Staged")).font(.caption).foregroundStyle(.secondary) }
                         if change.status == .conflicted {
                             Button(L10n.text("Open conflict")) {
                                 if let root = session.projectURL {
@@ -53,7 +53,7 @@ struct GitPanel: View {
                 }
                 HStack {
                     TextField(L10n.text("Commit message"), text: $message)
-                    Button("Commit") { session.performGit(.commit(message)); message = "" }.disabled(message.trimmingCharacters(in: .whitespaces).isEmpty)
+                    Button(L10n.text("Commit")) { session.performGit(.commit(message)); message = "" }.disabled(message.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
                 Divider()
                 Text(L10n.text("Recent history")).font(.headline)
@@ -93,14 +93,20 @@ enum GitAction {
 }
 
 extension AppSession {
+    var gitSummary: String {
+        guard gitEnabled else { return L10n.text("Git disabled") }
+        guard let status = gitStatus else { return "Git" }
+        if status.state == .noRepository { return L10n.text("Initialize Git") }
+        let summary = L10n.format("%@ · %d changes · ↑%d ↓%d", status.branch ?? "HEAD", status.changes.count, status.ahead, status.behind)
+        return summary + (status.hasConflicts ? L10n.text(" · Conflict") : "")
+    }
+
     func refreshGit() async {
-        guard gitEnabled, let git else { gitSummary = L10n.text("Git disabled"); return }
+        guard gitEnabled, let git else { return }
         do {
             let status = try await git.status()
             gitStatus = status
-            if status.state == .noRepository { gitSummary = L10n.text("Initialize Git"); gitHistory = []; return }
-            gitSummary = L10n.format("%@ · %d changes · ↑%d ↓%d", status.branch ?? "HEAD", status.changes.count, status.ahead, status.behind)
-            if status.hasConflicts { gitSummary += L10n.text(" · Conflict") }
+            if status.state == .noRepository { gitHistory = []; return }
             gitHistory = (try? await git.history(limit: 20)) ?? []
         } catch { report(error) }
     }

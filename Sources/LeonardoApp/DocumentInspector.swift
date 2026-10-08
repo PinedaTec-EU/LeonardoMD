@@ -14,7 +14,7 @@ struct DocumentInspector: View {
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
             Spacer()
-            Button("Preferencias…") { session.showPreferences = true }
+            Button(L10n.text("Preferences…")) { session.showPreferences = true }
         }.buttonStyle(PremiumButtonStyle(compact: true)).padding(20).frame(width: 260).background(.regularMaterial)
     }
 }
