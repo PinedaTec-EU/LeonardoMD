@@ -39,9 +39,15 @@ final class AboutWindow: NSWindowController {
         window.contentView = NSHostingView(rootView: AboutView(version: ApplicationVersion()))
         window.center()
         super.init(window: window)
+        NotificationCenter.default.addObserver(self, selector: #selector(refreshLanguage),
+            name: LanguageSettings.didChange, object: nil)
     }
 
     required init?(coder: NSCoder) { nil }
+
+    @objc private func refreshLanguage() {
+        window?.title = L10n.text("About LeonardoMD")
+    }
 
     func present() {
         window?.title = L10n.text("About LeonardoMD")

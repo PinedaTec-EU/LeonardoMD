@@ -105,6 +105,21 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    func testOpenAboutWindowTitleChangesWithLanguage() {
+        _ = NSApplication.shared
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        LanguageSettings.shared.language = .english
+        let controller = AboutWindow()
+        defer { controller.close() }
+        controller.present()
+        XCTAssertTrue(controller.window?.isVisible == true)
+        LanguageSettings.shared.language = .spanish
+        XCTAssertEqual(controller.window?.title, "Acerca de LeonardoMD")
+        LanguageSettings.shared.language = .english
+        XCTAssertEqual(controller.window?.title, "About LeonardoMD")
+    }
+
     private func isolatedDefaults() -> (UserDefaults, String) {
         let name = "LocalizationTests.\(UUID().uuidString)"
         return (UserDefaults(suiteName: name)!, name)
