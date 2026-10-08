@@ -34,3 +34,12 @@ single-instance process. Layer-backed native controls may be absent from
 cache-display captures; use real application screenshots for those controls.
 
 Tracking: [#57](https://github.com/PinedaTec-EU/LeonardoMD/issues/57).
+
+## Native validation (2026-10-08)
+
+Packaged application validation confirmed English on first launch, immediate
+English → Spanish → English changes in Preferences and application menus,
+Spanish in a new window, and Spanish after relaunch. The final QA selection
+was restored to English. Real CUA captures are in
+[validation/localization](validation/localization/), at 580×620 points for
+Preferences and 1260×850 points for the empty document window.
