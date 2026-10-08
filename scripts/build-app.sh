@@ -24,4 +24,5 @@ cp -R "$framework" "$app_dir/Contents/Frameworks/"
 python3 scripts/configure-update-bundle.py "$app_dir/Contents/Info.plist"
 # Preserve Sparkle's vendor signatures in local builds. Distribution re-signs inside out.
 codesign --force --sign - "$app_dir"
+python3 scripts/qa-bundle.py --verify-only "$app_dir"
 printf '%s\n' "$app_dir"
