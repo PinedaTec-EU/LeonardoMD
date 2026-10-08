@@ -41,6 +41,11 @@ struct DocumentTabsView: View {
         .background(.bar)
     }
 
+    private func moveTab(_ id: UUID, offset: Int) {
+        guard let neighbor = documents.neighbor(of: id, offset: offset) else { return }
+        documents.move(id, to: neighbor)
+    }
+
     private func tabHeader(_ tab: DocumentTab) -> some View {
         HStack(spacing: 6) {
             Button { documents.select(tab.id) } label: {
@@ -58,7 +63,16 @@ struct DocumentTabsView: View {
         .padding(4)
         .background(tab.id == documents.activeID ? documents.activeSession.accentColor.opacity(0.16) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
         .help(tab.location?.path ?? "Abre un documento o proyecto en esta pestaña")
+        .draggable(DocumentTabDrag(ownerID: documents.dragOwnerID, tabID: tab.id))
+        .dropDestination(for: DocumentTabDrag.self) { items, _ in
+            documents.acceptTabDrop(items, onto: tab.id)
+        }
         .contextMenu {
+            Button("Mover a la izquierda") { moveTab(tab.id, offset: -1) }
+                .disabled(documents.neighbor(of: tab.id, offset: -1) == nil)
+            Button("Mover a la derecha") { moveTab(tab.id, offset: 1) }
+                .disabled(documents.neighbor(of: tab.id, offset: 1) == nil)
+            Divider()
             Button("Mostrar en Finder") { documents.reveal(tab.id) }.disabled(tab.location == nil)
             Button("Copiar ruta") {
                 guard let url = tab.location else { return }
