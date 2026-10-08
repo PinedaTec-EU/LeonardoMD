@@ -17,6 +17,8 @@ final class RecentItemsMenuTests: XCTestCase {
         await session.initialize()
         session.globalPreferences.recentProjectPaths = [root, root.appendingPathComponent("Missing project")]
         session.globalPreferences.recentWorkspacePaths = [root]
+        session.persistSettings()
+        await session.settingsTask?.value
         NSDocumentController.shared.clearRecentDocuments(nil)
         await session.openDocument(file)
         let menus = RecentItemsMenu(session: { session }, openDocument: { url in Task { await session.open(url) } })
