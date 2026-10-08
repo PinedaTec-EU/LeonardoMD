@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.110
+
+- #53 Fixed: keep numeric versions across update channels ([#54](https://github.com/PinedaTec-EU/LeonardoMD/pull/54))
+
+Source: `21e0ce2a6cd2069af68123382f648e81c5468a1a`. Delta: `{"build": 5}`.
+
 ## 0.1.105
 
 - #47 Changed: remove redundant sidebar configuration button ([#48](https://github.com/PinedaTec-EU/LeonardoMD/pull/48))
