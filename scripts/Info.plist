@@ -6,8 +6,6 @@
 <key>CFBundleName</key><string>LeonardoMD</string>
 <key>CFBundleIconFile</key><string>LeonardoMD.icns</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleVersion</key><string>1</string>
-<key>CFBundleShortVersionString</key><string>0.1.0</string>
 <key>SUFeedURL</key><string>https://github.com/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml</string>
 <key>SUEnableAutomaticChecks</key><false/>
 <key>SUAutomaticallyUpdate</key><false/>

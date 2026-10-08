@@ -1,0 +1,97 @@
+name: Trusted release ledger scope
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+permissions:
+  contents: read
+  pull-requests: read
+concurrency:
+  group: release-ledger-scope-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  release-ledger-scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ENGINE_SHA: 4ff32120218cdd58d019fcd3f70e51bc0fdb63f6
+      TRUSTED_ENGINE_ROOT: .trusted-release-ledger-engine
+    steps:
+      - name: Reject stale trusted engine path
+        run: |
+          set -euo pipefail
+          test ! -L "$TRUSTED_ENGINE_ROOT" && test ! -e "$TRUSTED_ENGINE_ROOT"
+      - name: Check out candidate as data
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/head
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Reject candidate-controlled engine path
+        run: |
+          set -euo pipefail
+          test ! -L "$TRUSTED_ENGINE_ROOT" && test ! -e "$TRUSTED_ENGINE_ROOT"
+      - name: Require read-only central engine access
+        env:
+          ENGINE_TOKEN: ${{ secrets.RELEASE_LEDGER_ENGINE_TOKEN }}
+        run: |
+          if [[ -z "$ENGINE_TOKEN" ]]; then
+            echo '::error::Configure RELEASE_LEDGER_ENGINE_TOKEN with contents:read for pinedatec-ci, or activate the central App policy for this public repository.'
+            exit 1
+          fi
+      - name: Check out immutable central engine
+        uses: actions/checkout@v4
+        with:
+          repository: PinedaTec-EU/pinedatec-ci
+          ref: 4ff32120218cdd58d019fcd3f70e51bc0fdb63f6
+          path: .trusted-release-ledger-engine
+          token: ${{ secrets.RELEASE_LEDGER_ENGINE_TOKEN }}
+          persist-credentials: false
+      - name: Validate exact-head ledger contract
+        env:
+          LEDGER_COMMAND: validate-pr
+          LEDGER_CONFIG_PATH: deploy/version/release-ledger.json
+          LEDGER_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+          LEDGER_PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
+          LEDGER_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          LEDGER_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          LEDGER_SOURCE_TOKEN: ${{ github.token }}
+          LEDGER_EVIDENCE_TOKEN: ${{ github.token }}
+          # Candidate content is always validated by immutable central code.
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          AUTHOR_TYPE: ${{ github.event.pull_request.user.type }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$LEDGER_HEAD_SHA"
+          test "$(git -C "$TRUSTED_ENGINE_ROOT" rev-parse HEAD)" = "$ENGINE_SHA"
+          git cat-file -e "${LEDGER_BASE_SHA}^{commit}"
+          export LEDGER_PULL_REQUEST_KIND=change
+          case "$HEAD_BRANCH" in
+            automation/release-version-ledger|automation/release-notes)
+              test "$AUTHOR_TYPE" = Bot
+              test "$HEAD_REPOSITORY" = "$GITHUB_REPOSITORY"
+              if [[ "$HEAD_BRANCH" = automation/release-version-ledger ]]; then
+                export LEDGER_PULL_REQUEST_KIND=materialization
+              else
+                export LEDGER_PULL_REQUEST_KIND=notes
+              fi
+              ;;
+            codex/ledger-version-*)
+              test "$HEAD_REPOSITORY" = "$GITHUB_REPOSITORY"
+              export LEDGER_PULL_REQUEST_KIND=materialization
+              ;;
+            codex/ledger-notes-*)
+              test "$HEAD_REPOSITORY" = "$GITHUB_REPOSITORY"
+              export LEDGER_PULL_REQUEST_KIND=notes
+              ;;
+          esac
+          python3 "$TRUSTED_ENGINE_ROOT/.github/actions/release-version-ledger/ledger.py"
+      - name: Remove trusted engine checkout
+        if: ${{ always() }}
+        run: |
+          if [[ -L "$TRUSTED_ENGINE_ROOT" ]]; then
+            rm -- "$TRUSTED_ENGINE_ROOT"
+          elif [[ -e "$TRUSTED_ENGINE_ROOT" ]]; then
+            rm -rf -- "$TRUSTED_ENGINE_ROOT"
+          fi

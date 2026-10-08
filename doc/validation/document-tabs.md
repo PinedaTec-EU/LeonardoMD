@@ -1,6 +1,6 @@
 # Document tabs
 
-Tracking: [issue #19](https://github.com/PinedaTec-EU/LeonardoMD/issues/19). PR #8 is integrated in main; PR #21 now targets main and includes the About and startup-diagnostics changes. No version-bump workflow exists in this repository.
+Tracking: [issue #19](https://github.com/PinedaTec-EU/LeonardoMD/issues/19). PR #8 is integrated in main; PR #21 now targets main and includes the About and startup-diagnostics changes. That integration context predates the ledger. Current release.feature.build versioning follows [the shared-ledger workflow](../release-version-ledger.md), with initial baseline 0.1.56.
 
 ## Behavior
 
