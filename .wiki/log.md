@@ -17,3 +17,5 @@
 - 2026-10-08: Implemented preview tag pills and current-project `tag:` search for [#20](https://github.com/PinedaTec-EU/LeonardoMD/issues/20). Shared the metadata parser with Core; added extraction, streaming-search, AppSession and real WebKit regressions plus reproducible CI captures.
 
 - 2026-10-08: Revalidated [#9](https://github.com/PinedaTec-EU/LeonardoMD/issues/9) and [#31](https://github.com/PinedaTec-EU/LeonardoMD/issues/31) on 0.1.0 build 1 (`041c63b`) and closed both as no longer reproduced in the tested context. Corrected project root alias handling for [#33](https://github.com/PinedaTec-EU/LeonardoMD/issues/33), preserving symlink-component checks.
+
+- 2026-10-08: Reopened [#22](https://github.com/PinedaTec-EU/LeonardoMD/issues/22): product-wide ownership replaces bundle-specific ownership; forwarded document batches reactivate after loading. Old QA executables require a graceful one-time quit.

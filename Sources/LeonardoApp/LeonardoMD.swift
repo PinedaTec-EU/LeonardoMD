@@ -110,6 +110,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
                 if windows.isEmpty { newEmptyWindow() }
                 bringWindowsToFront()
                 for url in urls { await openExternalDocument(url) }
+                // Loading can suspend while another application takes focus.
+                bringWindowsToFront()
             }
         }
     }
