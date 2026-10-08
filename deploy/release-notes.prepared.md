@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.103
+
+- #57 Added: English and Spanish interface languages ([#58](https://github.com/PinedaTec-EU/LeonardoMD/pull/58))
+
+Source: `19462dd860a2892cc7a8f022270b4ca398e83d93`. Delta: `{"build": 17}`.
+
 ## 0.1.86
 
 - #38 Updated: refresh engine for accepted notes proposals ([#66](https://github.com/PinedaTec-EU/LeonardoMD/pull/66))
