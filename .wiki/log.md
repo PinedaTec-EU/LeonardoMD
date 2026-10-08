@@ -29,3 +29,5 @@
 - 2026-10-08: Verified central policy dispatch and protected serial materialization under [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38), then published stable [0.1.64](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.64) from `3aebf44` with Developer ID, Apple notarization/stapling and signed update assets. [#61](https://github.com/PinedaTec-EU/LeonardoMD/issues/61) records automatic generated-branch cleanup; pinedatec-ci#279 remains the separate automatic merge permission gap.
 
 - 2026-10-08: refreshed the immutable engine to integrated `fdc500c76d3f42f1162cd48ad1997601cce06336`, correcting accepted-notes proposal body outputs ([central #289](https://github.com/PinedaTec-EU/pinedatec-ci/issues/289)); live notes completion stays under [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
+
+- 2026-10-08: Added the ARX-style source-merge dispatch adapter and documented automatic App version/prepared-note writes separately from accepted publication. [#69](https://github.com/PinedaTec-EU/LeonardoMD/issues/69).
