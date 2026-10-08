@@ -64,9 +64,6 @@ struct ProjectSidebar: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }.buttonStyle(PremiumButtonStyle(compact: true)).accessibilityIdentifier("git-panel")
             }
-            Divider()
-            Button { session.showPreferences = true } label: { Label(L10n.text("Settings"), systemImage: "gearshape") }
-                .buttonStyle(PremiumButtonStyle(compact: true))
         }
         .buttonStyle(PremiumButtonStyle(compact: true))
         .padding(16)

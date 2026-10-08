@@ -50,3 +50,4 @@ Ledger activation under #38 uses engine snapshot c39d7c970b7c52c503302a77ca9ad8a
 Engine-backed regression fixtures start from the configured seed independently of production checkpoints; a separate case preserves existing applied history. This fixes [#60](https://github.com/PinedaTec-EU/LeonardoMD/issues/60), discovered after materialization #56.
 
 Tab reordering moves existing session identities through `DocumentTabs.move`; a local `DragGesture` resolves the pointer against measured header frames, avoiding the unsuccessful system Transferable route. Headers highlight the drag target and expose directional context actions. Bug: [#55](https://github.com/PinedaTec-EU/LeonardoMD/issues/55). Tracking: [#51](https://github.com/PinedaTec-EU/LeonardoMD/issues/51).
+Project sidebar omits the redundant Configuración footer; Preferences remains available from the application menu and Command-comma. Tracking: [#47](https://github.com/PinedaTec-EU/LeonardoMD/issues/47).
