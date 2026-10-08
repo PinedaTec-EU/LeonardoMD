@@ -108,32 +108,26 @@ release summaries for the initial baseline.
 
 ## Trusted policy and activation dependencies
 
-The integrated-base `pull_request_target` workflow runs read-only
-`release-ledger-scope`, checking out PR data and executing only the immutable
-central engine. It rejects the reserved engine path before/after candidate
-checkout, including symlinks. Automatic branches are Bot-only; same-repository
-operator branches `codex/ledger-version-*` and `codex/ledger-notes-*` invoke the
-corresponding strict central mode, so manually proposed engine output remains
-subject to exact title/scope/arithmetic or accepted-evidence checks.
-No candidate script or local Action is executed in this privileged workflow.
+The integrated-base `pull_request_target` workflow requests central validation
+using `PINEDATEC_CI_DISPATCH_TOKEN`, following the sibling consumers' dispatch
+contract. It runs on GitHub-hosted Ubuntu with no checkout, executes no PR code,
+and ignores drafts, forks and non-main targets. The token is sent only to the
+`PinedaTec-EU/pinedatec-ci` repository dispatch endpoint. A dispatch acknowledgement
+is not a validation verdict. The App-owned `release-ledger-policy` check on the
+exact source SHA is authoritative; require that check with App ID `4862830`
+before source integration. No `RELEASE_LEDGER_ENGINE_TOKEN` is required.
 
-LeonardoMD is public and pinedatec-ci is private; native private Action sharing
-cannot supply the engine here. The policy checkout requires
-`RELEASE_LEDGER_ENGINE_TOKEN`, a fine-grained credential with **contents: read
-only for pinedatec-ci**, with credential persistence disabled. The credential
-reaches only the engine checkout and is not given to PR code or publication.
-Missing access fails explicitly. This adoption does not provision credentials.
-After integration, observe a successful exact-head policy run and require
-`release-ledger-scope` in branch rules. First adoption needs external trusted
-engine validation and independent review because its target workflow cannot
-execute from the base before integration.
+Public consumers cannot directly reference a private Action or reusable workflow.
+The private central workflow instead loads its own trusted engine and reads the
+public consumer as data. The central catalog must allowlist LeonardoMD and its
+App installation must grant the existing scoped policy permissions for this
+repository. Public visibility does not grant fork code access to credentials.
 
-Automatic writers are still pending: the existing central App publisher accepts
-private targets and has no LeonardoMD registration. Local operator execution
-of the shared engine is available. Complete public-target support, App access,
-target registration and exact-head check binding before enabling automatic
-materialization/notes writers. Do not add local App private keys or claim a
-schedule is active. Reserve `release-ledger-policy` for the central App check.
+Activation depends on integration of the matching central public-target support,
+a successful exact-head App policy run and required-check binding. Until those
+are verified, dispatch delivery alone is not activation. Automatic version and
+notes writers remain subject to the central catalog, exact-head policy and
+publication evidence; do not claim a release from a merge or request.
 
 ## Skill discovery
 

@@ -1,97 +1,84 @@
-name: Trusted release ledger scope
+name: Request central release ledger policy
+
 on:
   pull_request_target:
+    types: [opened, ready_for_review, synchronize, reopened, edited]
     branches: [main]
-    types: [opened, synchronize, reopened, ready_for_review, edited]
+
 permissions:
   contents: read
-  pull-requests: read
+
 concurrency:
-  group: release-ledger-scope-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: request-release-ledger-policy-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 jobs:
-  release-ledger-scope:
+  request-policy:
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    env:
-      ENGINE_SHA: 4ff32120218cdd58d019fcd3f70e51bc0fdb63f6
-      TRUSTED_ENGINE_ROOT: .trusted-release-ledger-engine
+    timeout-minutes: 5
     steps:
-      - name: Reject stale trusted engine path
-        run: |
-          set -euo pipefail
-          test ! -L "$TRUSTED_ENGINE_ROOT" && test ! -e "$TRUSTED_ENGINE_ROOT"
-      - name: Check out candidate as data
-        uses: actions/checkout@v4
-        with:
-          ref: refs/pull/${{ github.event.pull_request.number }}/head
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Reject candidate-controlled engine path
-        run: |
-          set -euo pipefail
-          test ! -L "$TRUSTED_ENGINE_ROOT" && test ! -e "$TRUSTED_ENGINE_ROOT"
-      - name: Require read-only central engine access
+      # No checkout: this base-owned script never loads or executes candidate code.
+      - name: Request validation from the central publisher
         env:
-          ENGINE_TOKEN: ${{ secrets.RELEASE_LEDGER_ENGINE_TOKEN }}
+          DISPATCH_TOKEN: ${{ secrets.PINEDATEC_CI_DISPATCH_TOKEN }}
         run: |
-          if [[ -z "$ENGINE_TOKEN" ]]; then
-            echo '::error::Configure RELEASE_LEDGER_ENGINE_TOKEN with contents:read for pinedatec-ci, or activate the central App policy for this public repository.'
-            exit 1
-          fi
-      - name: Check out immutable central engine
-        uses: actions/checkout@v4
-        with:
-          repository: PinedaTec-EU/pinedatec-ci
-          ref: 4ff32120218cdd58d019fcd3f70e51bc0fdb63f6
-          path: .trusted-release-ledger-engine
-          token: ${{ secrets.RELEASE_LEDGER_ENGINE_TOKEN }}
-          persist-credentials: false
-      - name: Validate exact-head ledger contract
-        env:
-          LEDGER_COMMAND: validate-pr
-          LEDGER_CONFIG_PATH: deploy/version/release-ledger.json
-          LEDGER_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
-          LEDGER_PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
-          LEDGER_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          LEDGER_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          LEDGER_SOURCE_TOKEN: ${{ github.token }}
-          LEDGER_EVIDENCE_TOKEN: ${{ github.token }}
-          # Candidate content is always validated by immutable central code.
-          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
-          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
-          AUTHOR_TYPE: ${{ github.event.pull_request.user.type }}
-        run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$LEDGER_HEAD_SHA"
-          test "$(git -C "$TRUSTED_ENGINE_ROOT" rev-parse HEAD)" = "$ENGINE_SHA"
-          git cat-file -e "${LEDGER_BASE_SHA}^{commit}"
-          export LEDGER_PULL_REQUEST_KIND=change
-          case "$HEAD_BRANCH" in
-            automation/release-version-ledger|automation/release-notes)
-              test "$AUTHOR_TYPE" = Bot
-              test "$HEAD_REPOSITORY" = "$GITHUB_REPOSITORY"
-              if [[ "$HEAD_BRANCH" = automation/release-version-ledger ]]; then
-                export LEDGER_PULL_REQUEST_KIND=materialization
-              else
-                export LEDGER_PULL_REQUEST_KIND=notes
-              fi
-              ;;
-            codex/ledger-version-*)
-              test "$HEAD_REPOSITORY" = "$GITHUB_REPOSITORY"
-              export LEDGER_PULL_REQUEST_KIND=materialization
-              ;;
-            codex/ledger-notes-*)
-              test "$HEAD_REPOSITORY" = "$GITHUB_REPOSITORY"
-              export LEDGER_PULL_REQUEST_KIND=notes
-              ;;
-          esac
-          python3 "$TRUSTED_ENGINE_ROOT/.github/actions/release-version-ledger/ledger.py"
-      - name: Remove trusted engine checkout
-        if: ${{ always() }}
-        run: |
-          if [[ -L "$TRUSTED_ENGINE_ROOT" ]]; then
-            rm -- "$TRUSTED_ENGINE_ROOT"
-          elif [[ -e "$TRUSTED_ENGINE_ROOT" ]]; then
-            rm -rf -- "$TRUSTED_ENGINE_ROOT"
-          fi
+          python3 -I - <<'PYTHON'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.request
+
+          repository = "PinedaTec-EU/LeonardoMD"
+          with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as source:
+              event = json.load(source)
+          pr = event.get("pull_request", {})
+          eligible = (
+              event.get("action") in {"opened", "ready_for_review", "synchronize", "reopened", "edited"}
+              and os.environ.get("GITHUB_EVENT_NAME") == "pull_request_target"
+              and os.environ.get("GITHUB_REPOSITORY") == repository
+              and pr.get("draft") is False
+              and pr.get("state") == "open"
+              and pr.get("head", {}).get("repo", {}).get("full_name") == repository
+              and pr.get("base", {}).get("repo", {}).get("full_name") == repository
+              and pr.get("base", {}).get("ref") == "main"
+          )
+          if not eligible:
+              print("Event does not require central policy validation.")
+              sys.exit(0)
+          token = os.environ.get("DISPATCH_TOKEN", "")
+          if not token:
+              sys.exit("PINEDATEC_CI_DISPATCH_TOKEN is required.")
+          payload = {
+              "event_type": "private-release-ledger",
+              "client_payload": {
+                  "target_repository": repository,
+                  "operation": "validate",
+                  "pilot_request_id": f"leonardo-pr{int(pr['number'])}-run{int(os.environ['GITHUB_RUN_ID'])}",
+              },
+          }
+          request = urllib.request.Request(
+              "https://api.github.com/repos/PinedaTec-EU/pinedatec-ci/dispatches",
+              data=json.dumps(payload).encode("utf-8"),
+              method="POST",
+              headers={
+                  "Authorization": f"Bearer {token}",
+                  "Accept": "application/vnd.github+json",
+                  "Content-Type": "application/json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  if response.status != 204:
+                      sys.exit(f"Dispatch failed with HTTP {response.status}.")
+          except urllib.error.HTTPError as error:
+              sys.exit(f"Dispatch failed with HTTP {error.code}.")
+          except urllib.error.URLError:
+              sys.exit("Dispatch failed due to a network error.")
+          print("Central validation requested; wait for the App release-ledger-policy check.")
+          PYTHON
