@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 @testable import LeonardoApp
 
@@ -54,6 +55,27 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(DocumentMode.preview.title, "Lectura")
         XCTAssertEqual(L10n.format("Close tab %@", "notes.md"), "Cerrar pestaña notes.md")
         XCTAssertEqual(L10n.format("%d words", 42), "42 palabras")
+    }
+
+    func testNativeMenusAndSuggestedFilenamesUseSelectedLanguage() {
+        _ = NSApplication.shared
+        let previousLanguage = LanguageSettings.shared.language
+        let previousMenu = NSApp.mainMenu
+        defer {
+            LanguageSettings.shared.language = previousLanguage
+            NSApp.mainMenu = previousMenu
+        }
+        let delegate = ApplicationDelegate(diagnostics: StartupDiagnostics(),
+            instance: SingleInstance(name: "LocalizationMenuTests"), role: .primary)
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            delegate.configureMenu()
+            let appMenu = NSApp.mainMenu?.items.first?.submenu
+            XCTAssertEqual(appMenu?.items[1].title, language == .english ? "Preferences…" : "Preferencias…")
+            XCTAssertEqual(NSApp.mainMenu?.items[1].title, language == .english ? "File" : "Archivo")
+            XCTAssertEqual(L10n.text("Copy filename suffix"), language == .english ? "-copy.md" : "-copia.md")
+            XCTAssertEqual(L10n.text("New note filename"), language == .english ? "note.md" : "nota.md")
+        }
     }
 
     private func isolatedDefaults() -> (UserDefaults, String) {

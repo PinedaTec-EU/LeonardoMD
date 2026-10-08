@@ -101,7 +101,7 @@ extension AppSession {
     }
     func createItem(directory: Bool, parent: URL? = nil) {
         guard let root = projectURL,
-              let name = prompt(title: directory ? L10n.text("New folder") : L10n.text("New Markdown"), initial: directory ? L10n.text("Folder") : "nota.md") else { return }
+              let name = prompt(title: directory ? L10n.text("New folder") : L10n.text("New Markdown"), initial: directory ? L10n.text("Folder") : L10n.text("New note filename")) else { return }
         let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
         let parentPath = relative(parent ?? root)
         Task {

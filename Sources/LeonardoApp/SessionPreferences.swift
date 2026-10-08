@@ -69,7 +69,7 @@ extension AppSession {
     func saveCopy() {
         guard let url = documentURL else { return }
         let panel = NSSavePanel()
-        panel.nameFieldStringValue = url.deletingPathExtension().lastPathComponent + "-copia.md"
+        panel.nameFieldStringValue = url.deletingPathExtension().lastPathComponent + L10n.text("Copy filename suffix")
         presentFilePanel(panel) { [weak self] destination in self?.saveCopy(to: destination, sourceURL: url) }
     }
     private func saveCopy(to destination: URL, sourceURL url: URL) {

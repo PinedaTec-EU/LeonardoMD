@@ -221,11 +221,11 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func languageChanged() { configureMenu() }
 
-    private func configureMenu() {
+    func configureMenu() {
         let menu = NSMenu()
         let app = submenu("LeonardoMD", in: menu)
         add(L10n.text("About LeonardoMD"), action: #selector(showAbout), to: app)
-        add("Preferencias…", action: #selector(preferences), key: ",", to: app)
+        add(L10n.text("Preferences…"), action: #selector(preferences), key: ",", to: app)
         updates.addMenuItems(to: app)
         app.addItem(.separator())
         add(L10n.text("Quit LeonardoMD"), action: #selector(NSApplication.terminate(_:)), key: "q", to: app)
