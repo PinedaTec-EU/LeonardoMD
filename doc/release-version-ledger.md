@@ -146,3 +146,5 @@ Sparkle configuration preserves the generated canonical bundle version/build. Ex
 ## Pin maintenance
 
 Refresh the immutable engine SHA after engine changes integrate into central main, through reviewed source PRs in the central catalog and this operator wrapper. Validate both against the same integrated snapshot; publisher-only commits with an unchanged engine tree do not require recursive pin refreshes. Never resolve mutable main at execution time. Main protection requires `test` from GitHub Actions and `release-ledger-policy` from App 4862830, including administrators. Dispatch-token execution was observed on PR #56 after readiness. Tracking: [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
+
+Integrate the central catalog refresh before enabling policy validation of the consumer pin PR. An App verdict binds the head, base and engine identity; if a queued run already recorded the old pin on that head, refresh the consumer head and obtain new current-pin validation instead of overwriting the immutable verdict.
