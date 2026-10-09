@@ -71,6 +71,8 @@ public actor DirectSyncAuthority {
         _ = try await mutate { try $0.approve(requestID: requestID, comparisonCode: code, projects: projectIDs, now: now) }
     }
 
+    public func reject(requestID: UUID) async throws { try await mutate { $0.reject(requestID: requestID) } }
+
     public func revoke(deviceID: UUID) async throws { try await mutate { try $0.revoke(deviceID: deviceID) } }
 
     public func status(deviceID: UUID, credential: String, now: Date) throws -> DirectDeviceStatus {

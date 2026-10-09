@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import OSLog
+import LeonardoSync
 
 @main
 @MainActor
@@ -74,6 +75,17 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(languageChanged), name: LanguageSettings.didChange, object: nil)
         configureMenu()
         updates.start()
+        DesktopSyncController.shared.buffers = { [weak self] root in
+            let root = root.standardizedFileURL.resolvingSymlinksInPath()
+            return self?.windows.flatMap { $0.documents.tabs }.compactMap { tab in
+                guard let url = tab.session.documentURL else { return nil }
+                let target = url.standardizedFileURL.resolvingSymlinksInPath()
+                guard target.path.hasPrefix(root.path + "/") else { return nil }
+                let relative = target.pathComponents.dropFirst(root.pathComponents.count).joined(separator: "/")
+                return OpenDocumentBuffer(path: relative, text: tab.session.content)
+            } ?? []
+        }
+        Task { await DesktopSyncController.shared.initialize() }
         diagnostics.record(.menuConfigured)
         if windows.isEmpty { newEmptyWindow() }
         processPendingLaunches()
@@ -87,6 +99,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         NotificationCenter.default.removeObserver(self)
         diagnostics.record(.applicationWillTerminate)
+        Task { await DesktopSyncController.shared.stop() }
     }
 
     func application(_ sender: NSApplication, open urls: [URL]) {

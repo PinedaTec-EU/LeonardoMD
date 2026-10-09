@@ -185,6 +185,10 @@ public actor ConfigurationStore {
         if updated.showHiddenFiles != baseline.showHiddenFiles {
             merged.showHiddenFiles = updated.showHiddenFiles
         }
+        if updated.mobileSync.enabled != baseline.mobileSync.enabled { merged.mobileSync.enabled = updated.mobileSync.enabled }
+        if updated.mobileSync.host != baseline.mobileSync.host { merged.mobileSync.host = updated.mobileSync.host }
+        if updated.mobileSync.port != baseline.mobileSync.port { merged.mobileSync.port = updated.mobileSync.port }
+        if updated.mobileSync.projects != baseline.mobileSync.projects { merged.mobileSync.projects = updated.mobileSync.projects }
         if updated.recentWorkspacePaths != baseline.recentWorkspacePaths {
             merged.recentWorkspacePaths = updated.recentWorkspacePaths
         }

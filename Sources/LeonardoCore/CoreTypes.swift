@@ -222,6 +222,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
     public var showHiddenFiles: Bool
     public var recentWorkspacePaths: [URL]
     public var recentProjectPaths: [URL]
+    public var mobileSync: MobileSyncPreferences
 
     public init(
         schemaVersion: Int = GlobalPreferences.currentSchemaVersion,
@@ -231,7 +232,8 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         markdown: MarkdownFeatures = MarkdownFeatures(),
         showHiddenFiles: Bool = false,
         recentWorkspacePaths: [URL] = [],
-        recentProjectPaths: [URL] = []
+        recentProjectPaths: [URL] = [],
+        mobileSync: MobileSyncPreferences = MobileSyncPreferences()
     ) {
         self.schemaVersion = schemaVersion
         self.palette = palette
@@ -241,6 +243,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         self.showHiddenFiles = showHiddenFiles
         self.recentWorkspacePaths = recentWorkspacePaths
         self.recentProjectPaths = recentProjectPaths
+        self.mobileSync = mobileSync
     }
 
     public static let `default` = GlobalPreferences()
@@ -254,6 +257,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         case showHiddenFiles
         case recentWorkspacePaths
         case recentProjectPaths
+        case mobileSync
     }
 
     public init(from decoder: Decoder) throws {
@@ -270,6 +274,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         showHiddenFiles = try container.decodeIfPresent(Bool.self, forKey: .showHiddenFiles) ?? false
         recentWorkspacePaths = try container.decodeIfPresent([URL].self, forKey: .recentWorkspacePaths) ?? []
         recentProjectPaths = try container.decodeIfPresent([URL].self, forKey: .recentProjectPaths) ?? []
+        mobileSync = try container.decodeIfPresent(MobileSyncPreferences.self, forKey: .mobileSync) ?? MobileSyncPreferences()
     }
 }
 

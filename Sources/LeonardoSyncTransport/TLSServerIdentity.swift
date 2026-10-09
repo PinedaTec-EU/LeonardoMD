@@ -6,14 +6,16 @@ import Network
 /// Immutable Security identity retained for the listener's lifetime.
 public final class TLSServerIdentity: @unchecked Sendable {
     private let identity: SecIdentity
+    private let lifetimeOwner: AnyObject?
     public let certificateFingerprint: Data
 
-    public init(identity: SecIdentity) throws {
+    public init(identity: SecIdentity, lifetimeOwner: AnyObject? = nil) throws {
         var certificate: SecCertificate?
         guard SecIdentityCopyCertificate(identity, &certificate) == errSecSuccess, let certificate else {
             throw TransportError.invalidIdentity
         }
         self.identity = identity
+        self.lifetimeOwner = lifetimeOwner
         certificateFingerprint = Data(SHA256.hash(data: SecCertificateCopyData(certificate) as Data))
     }
 
