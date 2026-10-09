@@ -111,3 +111,11 @@ Seven wire tests pass, including comparison of all 36 objects in actual Git-gene
 `GitTree` parses bounded binary trees, distinguishing directories, regular/executable files, symbolic links and submodules. It rejects malformed modes, traversal/control names, truncated identifiers and case/Unicode aliases. `GitFolderIndex` follows the selected commit's root tree, lists immediate subdirectories, and enumerates only allowed document/resource paths under an explicit `CorpusScope`; it omits links and submodules. Missing trees fail instead of widening the scope.
 
 Ten focused tree/wire tests pass. A real repository containing a 16 MiB code file discovers `docs` and selects only `docs/note.md` from a blob-free metadata pack. This establishes the selection boundary, not a working network import; HTTPS/SSH, fetching selected blobs, persistent Git state, publishing and desktop reconciliation remain pending.
+
+## Selective remote-reader checkpoint
+
+`GitRemoteReader` now separates reference discovery, blob-free commit/tree metadata and explicitly selected corpus transfer. `selectedBlobRequest` wants only unique selected object IDs; `GitSelectedCorpus` rejects missing or unsolicited blobs and validates the final scoped snapshot. Empty selections make no content request. A server rejecting reachable-object wants fails; there is no full-repository fallback.
+
+`GitHTTPTransport` implements smart HTTPS using normal system TLS trust, ephemeral sessions, explicit optional Basic credentials (including host-issued tokens), protocol-v2 headers, strict MIME/status checks and bounded streamed responses. It refuses redirects and implicit authentication challenges; credentials are not placed in URLs or logs. Application Keychain enrollment, SSH and mobile Git UI integration remain pending.
+
+Eleven HTTP/wire tests pass. HTTP tests use a URLProtocol fixture and therefore do not establish real TLS/network interoperability. A real `git upload-pack` fixture verifies the reader's three-stage ordering and imports only the selected Markdown document while leaving a 16 MiB unselected file out. The fixture explicitly enables reachable-object wants. Full native HTTPS/SSH host acceptance, mobile persistence/publication and desktop reconciliation remain pending.

@@ -133,6 +133,18 @@ final class GitWireTests: XCTestCase {
         XCTAssertEqual(try index.folders(), ["docs"])
         let selected = try index.files(in: CorpusScope(folder: "docs"))
         XCTAssertEqual(selected.map(\.path), ["docs/note.md"])
+        _ = try git(["-C", source.path, "config", "uploadpack.allowReachableSHA1InWant", "true"])
+        let blobResponse = try git(["upload-pack", "--stateless-rpc", source.path],
+                                   input: capabilities.selectedBlobRequest(objectIDs: selected.map(\.objectID)))
+        let blobs = try GitPack.decode(GitFetchResponse(response: blobResponse, capabilities: capabilities))
+        XCTAssertEqual(blobs.count, 1)
+        XCTAssertEqual(blobs.first?.kind, .blob)
+        let snapshot = try GitSelectedCorpus.snapshot(revision: tip, files: selected, blobs: blobs, scope: CorpusScope(folder: "docs"))
+        XCTAssertEqual(snapshot.files, [CorpusFile(path: "docs/note.md", content: Data("# Selected folder".utf8))])
+        XCTAssertThrowsError(try GitSelectedCorpus.snapshot(revision: tip, files: selected, blobs: [], scope: CorpusScope(folder: "docs")))
+        XCTAssertThrowsError(try capabilities.selectedBlobRequest(objectIDs: []))
+        XCTAssertThrowsError(try capabilities.selectedBlobRequest(objectIDs: [selected[0].objectID, selected[0].objectID]))
+
         XCTAssertThrowsError(try index.files(in: CorpusScope(folder: "missing")))
         XCTAssertEqual(parsed.objectCount, 3)
         XCTAssertTrue(parsed.shallowCommits.isSubset(of: [tip]))
@@ -142,6 +154,34 @@ final class GitWireTests: XCTestCase {
         let types = String(decoding: try git(["-C", receiver.path, "cat-file", "--batch-all-objects", "--batch-check=%(objecttype)"]), as: UTF8.self)
         let objects = Set(types.split(separator: "\n"))
         XCTAssertEqual(objects, ["commit", "tree"], "Folder discovery must transfer no document or code blobs")
+    }
+
+    func testRemoteReaderTransfersNoContentsBeforeExplicitFolderSelection() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        _ = try git(["init", "--quiet", root.path])
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("docs"), withIntermediateDirectories: true)
+        try Data("# Mobile".utf8).write(to: root.appendingPathComponent("docs/mobile.md"))
+        try Data(repeating: 7, count: 16 * 1_024 * 1_024).write(to: root.appendingPathComponent("unselected.bin"))
+        _ = try git(["-C", root.path, "add", "."])
+        _ = try git(["-C", root.path, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "--quiet", "-m", "fixture"])
+        _ = try git(["-C", root.path, "config", "uploadpack.allowFilter", "true"])
+        _ = try git(["-C", root.path, "config", "uploadpack.allowReachableSHA1InWant", "true"])
+        let transport = GitUploadFixture(root: root.path)
+        let reader = GitRemoteReader(transport: transport)
+        let discovery = try await reader.discover()
+        let tip = try XCTUnwrap(discovery.references.first(where: { $0.name == "HEAD" })?.objectID)
+        let metadata = try await reader.metadata(commitID: tip, discovery: discovery)
+        XCTAssertFalse(metadata.objects.contains { $0.kind == .blob })
+        XCTAssertEqual(try metadata.index.folders(), ["docs"])
+        let beforeSelection = await transport.requests
+        XCTAssertEqual(beforeSelection.count, 2)
+        let snapshot = try await reader.snapshot(metadata: metadata, scope: CorpusScope(folder: "docs"))
+        XCTAssertEqual(snapshot.files, [CorpusFile(path: "docs/mobile.md", content: Data("# Mobile".utf8))])
+        let requests = await transport.requests
+        XCTAssertEqual(requests.count, 3)
+        let last = try GitPacket.decode(XCTUnwrap(requests.last))
+        XCTAssertEqual(last.filter { if case .data(let data) = $0 { return data.starts(with: Data("want ".utf8)) }; return false }.count, 1)
     }
 
     func testActualGitAdvertisementGatesPartialTransfer() throws {
@@ -186,3 +226,32 @@ final class GitWireTests: XCTestCase {
         return data
     }
 }
+
+#if os(macOS)
+private actor GitUploadFixture: GitRemoteTransport {
+    let root: String
+    private(set) var requests: [Data] = []
+    init(root: String) { self.root = root }
+    func advertisement() async throws -> Data { try run(["--advertise-refs"]) }
+    func uploadPack(request: Data) async throws -> Data {
+        requests.append(request)
+        return try run([], input: request)
+    }
+    private func run(_ options: [String], input: Data? = nil) throws -> Data {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.arguments = ["upload-pack", "--stateless-rpc"] + options + [root]
+        process.environment = ["GIT_PROTOCOL": "version=2", "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null"]
+        let output = Pipe(), stdin = Pipe()
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+        process.standardInput = input == nil ? FileHandle.nullDevice : stdin
+        try process.run()
+        if let input { try stdin.fileHandleForWriting.write(contentsOf: input); try stdin.fileHandleForWriting.close() }
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { throw GitWireError.remoteFailure }
+        return data
+    }
+}
+#endif

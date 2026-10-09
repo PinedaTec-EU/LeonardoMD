@@ -42,11 +42,23 @@ public struct GitV2Capabilities: Sendable {
     /// Fetches only the selected tip's commit/tree metadata; file contents remain omitted.
     public func metadataRequest(want objectID: String) throws -> Data {
         try requireFolderTransfer()
-        let format = values["object-format"] ?? "sha1"
         guard isValidObjectID(objectID) else { throw GitWireError.invalidObjectID }
+        return try fetchRequest(arguments: ["want \(objectID)\n", "deepen 1\n", "filter blob:none\n", "done\n"])
+    }
+
+    /// Wants only explicitly selected file blobs. No commit traversal or fallback clone.
+    public func selectedBlobRequest(objectIDs: [String]) throws -> Data {
+        try requireFolderTransfer()
+        guard !objectIDs.isEmpty, objectIDs.count <= 10_000 else { throw GitWireError.responseTooLarge }
+        guard objectIDs.allSatisfy(isValidObjectID), Set(objectIDs).count == objectIDs.count else {
+            throw GitWireError.invalidObjectID
+        }
+        return try fetchRequest(arguments: objectIDs.sorted().map { "want \($0)\n" } + ["done\n"])
+    }
+
+    private func fetchRequest(arguments: [String]) throws -> Data {
         var headers = ["command=fetch\n"]
-        if values["object-format"] != nil { headers.append("object-format=\(format)\n") }
-        let arguments = ["want \(objectID)\n", "deepen 1\n", "filter blob:none\n", "done\n"]
+        if let format = values["object-format"] { headers.append("object-format=\(format)\n") }
         var result = Data()
         for header in headers { result += try GitPacket.data(Data(header.utf8)).encoded() }
         result += try GitPacket.delimiter.encoded()
