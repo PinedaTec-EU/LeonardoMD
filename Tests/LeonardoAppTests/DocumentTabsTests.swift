@@ -16,6 +16,29 @@ final class DocumentTabsTests: XCTestCase {
         return url
     }
 
+    private func waitForRecentDocuments(
+        _ expectedFirst: URL?,
+        in controller: NSDocumentController,
+        timeout: TimeInterval = 1
+    ) async throws -> Bool {
+        let expected = expectedFirst?.standardizedFileURL
+        let deadline = Date().addingTimeInterval(timeout)
+
+        func matches() -> Bool {
+            if let expected {
+                return controller.recentDocumentURLs.first?.standardizedFileURL == expected
+            }
+            return controller.recentDocumentURLs.isEmpty
+        }
+
+        repeat {
+            if matches() { return true }
+            try await Task.sleep(for: .milliseconds(10))
+        } while Date() < deadline
+
+        return matches()
+    }
+
     func testPeerRevocationClearsDraftAndPreservesSiblingWorkspace() async throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
@@ -186,19 +209,29 @@ final class DocumentTabsTests: XCTestCase {
         session.content = "unsaved draft"
         let tabID = tabs.activeID
 
+        let initialRegistrationObserved = try await waitForRecentDocuments(file, in: controller)
+        XCTAssertTrue(initialRegistrationObserved, "initial document open was not recorded in AppKit recents")
+
         controller.clearRecentDocuments(nil)
-        // Let AppKit finish its initial native history reset before reopening.
-        try await Task.sleep(for: .milliseconds(50))
+        let initialClearObserved = try await waitForRecentDocuments(nil, in: controller)
+        XCTAssertTrue(initialClearObserved, "initial AppKit recents clear did not settle")
         await session.open(file)
-        XCTAssertEqual(controller.recentDocumentURLs.first?.standardizedFileURL, file.standardizedFileURL)
+        let reopenedRegistrationObserved = try await waitForRecentDocuments(file, in: controller)
+        XCTAssertTrue(reopenedRegistrationObserved, "reopening the document was not recorded in AppKit recents")
 
         controller.clearRecentDocuments(nil)
+        let externalClearObserved = try await waitForRecentDocuments(nil, in: controller)
+        XCTAssertTrue(externalClearObserved, "external-open AppKit recents clear did not settle")
         await tabs.openExternalDocuments([file])
-        XCTAssertEqual(controller.recentDocumentURLs.first?.standardizedFileURL, file.standardizedFileURL)
+        let externalRegistrationObserved = try await waitForRecentDocuments(file, in: controller)
+        XCTAssertTrue(externalRegistrationObserved, "external open was not recorded in AppKit recents")
 
         controller.clearRecentDocuments(nil)
+        let droppedClearObserved = try await waitForRecentDocuments(nil, in: controller)
+        XCTAssertTrue(droppedClearObserved, "dropped-open AppKit recents clear did not settle")
         await tabs.openDroppedDocuments([file])
-        XCTAssertEqual(controller.recentDocumentURLs.first?.standardizedFileURL, file.standardizedFileURL)
+        let droppedRegistrationObserved = try await waitForRecentDocuments(file, in: controller)
+        XCTAssertTrue(droppedRegistrationObserved, "dropped open was not recorded in AppKit recents")
         XCTAssertEqual(tabs.tabs.count, 1)
         XCTAssertEqual(tabs.activeID, tabID)
         XCTAssertTrue(tabs.activeSession === session)

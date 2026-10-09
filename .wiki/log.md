@@ -76,3 +76,7 @@ HTTPS checkpoint for [#92](https://github.com/PinedaTec-EU/LeonardoMD/issues/92)
 ## 2026-10-09 — trusted ledger scope correction
 
 PR #93 restores the base release-ledger configuration after the exact-head central policy rejected the Mobile/** expansion. The earlier checkpoint describing mobile ledger coverage is superseded: this source PR has its valid delta through shared versioned paths, but future mobile-only automatic detection requires a separately authorized policy operation. Tracked in [issue #120](https://github.com/PinedaTec-EU/LeonardoMD/issues/120). Native acceptance source hashes and captures are unchanged.
+
+## 2026-10-09 — process-exit and native-history test checkpoint
+
+Compile delta189 passes 338 XCTest cases (ten optional skips) and twelve renderer tests. The real Git SSH fixture uses a termination handler installed before process launch, with balanced completion branches and PID/live-state diagnostics, rather than waitUntilExit. The real child cancellation regression and scoped fetch/push pass. The [#95](https://github.com/PinedaTec-EU/LeonardoMD/issues/95) recents test now waits for observable AppKit history transitions. [#121](https://github.com/PinedaTec-EU/LeonardoMD/issues/121) remains open because its original intermittent CI stall has not been conclusively attributed. No production/mobile source changed in this test refinement.

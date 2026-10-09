@@ -768,6 +768,7 @@ private struct RealGitSessionDiagnostic: Sendable {
     let id: Int
     var service: GitSSHService?
     var phases: [RealGitSessionPhase]
+    var processID: Int32?
     var terminationStatus: Int32?
 
     var terminated: Bool { terminationStatus != nil }
@@ -778,6 +779,7 @@ private final class RealGitSSHObservations: @unchecked Sendable {
     private var storage: [RealGitSSHObservation] = []
     private var nextSessionID = 0
     private var sessions: [Int: RealGitSessionDiagnostic] = [:]
+    private var processStateReaders: [Int: @Sendable () -> Bool] = [:]
 
     var values: [RealGitSSHObservation] {
         lock.lock(); defer { lock.unlock() }
@@ -790,11 +792,24 @@ private final class RealGitSSHObservations: @unchecked Sendable {
     }
 
     var diagnosticSummary: String {
-        diagnostics.map { diagnostic in
+        lock.lock()
+        let entries = sessions.values.sorted { $0.id < $1.id }.map { diagnostic in
+            (diagnostic, processStateReaders[diagnostic.id])
+        }
+        lock.unlock()
+        return entries.map { diagnostic, processStateReader in
             let service = diagnostic.service?.rawValue ?? "unknown"
             let phases = diagnostic.phases.map(\.rawValue).joined(separator: ",")
-            let status = diagnostic.terminationStatus.map(String.init) ?? "running"
-            return "#\(diagnostic.id) service=\(service) phases=[\(phases)] exit=\(status)"
+            let pid = diagnostic.processID.map(String.init) ?? "unknown"
+            let status: String
+            if let terminationStatus = diagnostic.terminationStatus {
+                status = "exit=\(terminationStatus)"
+            } else if let processStateReader {
+                status = "isRunning=\(processStateReader())"
+            } else {
+                status = "isRunning=unknown"
+            }
+            return "#\(diagnostic.id) service=\(service) pid=\(pid) \(status) phases=[\(phases)]"
         }.joined(separator: "; ")
     }
 
@@ -806,6 +821,7 @@ private final class RealGitSSHObservations: @unchecked Sendable {
             id: id,
             service: service,
             phases: [.handlerInitialized],
+            processID: nil,
             terminationStatus: nil
         )
         return id
@@ -823,6 +839,18 @@ private final class RealGitSSHObservations: @unchecked Sendable {
         }
     }
 
+    func processStartObserver(for sessionID: Int) -> @Sendable (Int32) -> Void {
+        { [weak self] processID in
+            self?.markProcessStarted(processID, for: sessionID)
+        }
+    }
+
+    func registerProcessStateReader(_ reader: @escaping @Sendable () -> Bool, for sessionID: Int?) {
+        guard let sessionID else { return }
+        lock.lock(); defer { lock.unlock() }
+        processStateReaders[sessionID] = reader
+    }
+
     func setService(_ service: GitSSHService, for sessionID: Int?) {
         guard let sessionID else { return }
         lock.lock(); defer { lock.unlock() }
@@ -837,6 +865,14 @@ private final class RealGitSSHObservations: @unchecked Sendable {
             diagnostic.phases.append(phase)
             sessions[sessionID] = diagnostic
         }
+    }
+
+    func markProcessStarted(_ processID: Int32, for sessionID: Int?) {
+        guard let sessionID else { return }
+        lock.lock(); defer { lock.unlock() }
+        guard var diagnostic = sessions[sessionID] else { return }
+        diagnostic.processID = processID
+        sessions[sessionID] = diagnostic
     }
 
     func markProcessExited(_ status: Int32, for sessionID: Int?) {
@@ -1589,18 +1625,21 @@ private final class RealGitProcessSession: @unchecked Sendable {
     private let completionQueue = DispatchQueue(label: "eu.pinedatec.LeonardoMD.real-ssh.git-completion")
     private let lock = NSLock()
     private let phaseObserver: (@Sendable (RealGitSessionPhase) -> Void)?
+    private let processStartObserver: (@Sendable (Int32) -> Void)?
     private let processExitObserver: (@Sendable (Int32) -> Void)?
     private var inputClosed = false
     private var stopped = false
 
     init(service: GitSSHService, repositoryPath: String, environment: [String: String],
          phaseObserver: (@Sendable (RealGitSessionPhase) -> Void)? = nil,
+         processStartObserver: (@Sendable (Int32) -> Void)? = nil,
          processExitObserver: (@Sendable (Int32) -> Void)? = nil) {
         process = Process()
         input = Pipe()
         output = Pipe()
         errors = Pipe()
         self.phaseObserver = phaseObserver
+        self.processStartObserver = processStartObserver
         self.processExitObserver = processExitObserver
         let executableService: String
         switch service {
@@ -1625,21 +1664,38 @@ private final class RealGitProcessSession: @unchecked Sendable {
         process.isRunning
     }
 
+    func stateReader() -> @Sendable () -> Bool {
+        { [weak self] in self?.isRunning ?? false }
+    }
+
     func start(output: @escaping @Sendable (Data, Bool) -> Void,
                finished: @escaping @Sendable (Int32) -> Void) throws {
-        try process.run()
-        mark(.processStarted)
-
         let streams: [(FileHandle, Bool)] = [(self.output.fileHandleForReading, false),
                                               (self.errors.fileHandleForReading, true)]
         let group = DispatchGroup()
 
-        // Enter every branch before starting any reader. A process that exits
-        // immediately must not let its readers reach zero before the waiter is
-        // registered, otherwise `notify` can run before process cleanup is
-        // represented by the group.
+        // Reserve every completion branch before starting the process. The
+        // termination handler can run immediately after `run()` returns, and
+        // the readers must still be represented before they are dispatched.
         for _ in streams { group.enter() }
         group.enter()
+
+        process.terminationHandler = { [weak self] process in
+            self?.processExitObserver?(process.terminationStatus)
+            self?.mark(.processExited)
+            group.leave()
+        }
+        do {
+            try process.run()
+        } catch {
+            process.terminationHandler = nil
+            for _ in streams { group.leave() }
+            group.leave()
+            throw error
+        }
+        processStartObserver?(process.processIdentifier)
+        mark(.processStarted)
+
         for (handle, isError) in streams {
             DispatchQueue.global(qos: .userInitiated).async {
                 defer { group.leave() }
@@ -1656,12 +1712,6 @@ private final class RealGitProcessSession: @unchecked Sendable {
             }
         }
 
-        DispatchQueue.global(qos: .userInitiated).async { [process] in
-            process.waitUntilExit()
-            self.processExitObserver?(process.terminationStatus)
-            self.mark(.processExited)
-            group.leave()
-        }
         group.notify(queue: completionQueue) { [process] in
             self.mark(.streamsClosed)
             finished(process.terminationStatus)
@@ -1827,6 +1877,9 @@ private final class RealGitSSHCommandHandler: ChannelDuplexHandler, @unchecked S
         let phaseObserver = sessionID.flatMap { sessionID in
             observations.map { $0.observer(for: sessionID) }
         }
+        let processStartObserver = sessionID.flatMap { sessionID in
+            observations.map { $0.processStartObserver(for: sessionID) }
+        }
         let processExitObserver = sessionID.flatMap { sessionID in
             observations.map { $0.processExitObserver(for: sessionID) }
         }
@@ -1835,8 +1888,10 @@ private final class RealGitSSHCommandHandler: ChannelDuplexHandler, @unchecked S
             repositoryPath: repositoryPath,
             environment: environment,
             phaseObserver: phaseObserver,
+            processStartObserver: processStartObserver,
             processExitObserver: processExitObserver
         )
+        observations?.registerProcessStateReader(runner.stateReader(), for: sessionID)
         process = runner
         let eventLoop = context.eventLoop
         let loopBoundContext = NIOLoopBound(context, eventLoop: eventLoop)
