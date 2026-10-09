@@ -54,7 +54,7 @@ public struct CorpusScope: Codable, Equatable, Sendable {
 
     private static func validatePath(_ path: String) throws {
         let parts = path.split(separator: "/", omittingEmptySubsequences: false)
-        guard !path.isEmpty, !path.contains("\\"), !path.contains(":"),
+        guard !path.isEmpty, path.utf8.count <= 4_096, !path.contains("\\"), !path.contains(":"),
               !path.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }),
               parts.allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." }) else {
             throw SyncError.invalidPath

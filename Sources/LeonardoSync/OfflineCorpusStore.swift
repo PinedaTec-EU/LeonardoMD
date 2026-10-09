@@ -28,8 +28,7 @@ public actor OfflineCorpusStore: CorpusStore {
         let url = try location(id)
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }
         let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-        // JSON encodes data as base64; bound decoding before allocating the corpus.
-        guard size <= limits.maximumCorpusBytes * 2 + limits.maximumFiles * 1_024 else {
+        guard size <= (try maximumEncodedBytes()) else {
             throw SyncError.sizeLimitExceeded
         }
         let project = try JSONDecoder().decode(OfflineProject.self, from: Data(contentsOf: url))
@@ -42,7 +41,9 @@ public actor OfflineCorpusStore: CorpusStore {
         try validate(project)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let url = try location(project.id)
-        try JSONEncoder().encode(project).write(to: url, options: .atomic)
+        let encoded = try JSONEncoder().encode(project)
+        guard encoded.count <= (try maximumEncodedBytes()) else { throw SyncError.sizeLimitExceeded }
+        try encoded.write(to: url, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
     }
 
@@ -59,10 +60,26 @@ public actor OfflineCorpusStore: CorpusStore {
     }
 
     private func validate(_ project: OfflineProject) throws {
+        guard project.name.utf8.count <= 1_024, (project.publishedRevision?.utf8.count ?? 0) <= 256 else {
+            throw SyncError.invalidSnapshot
+        }
         try project.base.validate(scope: project.scope, limits: limits)
         try CorpusSnapshot(revision: project.base.revision, files: project.files).validate(scope: project.scope, limits: limits)
         if let published = project.publishedFiles {
             try CorpusSnapshot(revision: project.publishedRevision ?? "", files: published).validate(scope: project.scope, limits: limits)
         }
+    }
+
+    private func maximumEncodedBytes() throws -> Int {
+        // Three content collections (base/current/published), each base64-expanded.
+        // Per-file allowance includes JSON escaping of a bounded 4 KiB path and framing.
+        let content = limits.maximumCorpusBytes.multipliedReportingOverflow(by: 4)
+        let metadata = limits.maximumFiles.multipliedReportingOverflow(by: 3 * (6 * 4_096 + 512))
+        let combined = content.partialValue.addingReportingOverflow(metadata.partialValue)
+        let total = combined.partialValue.addingReportingOverflow(64 * 1_024)
+        guard !content.overflow, !metadata.overflow, !combined.overflow, !total.overflow else {
+            throw SyncError.sizeLimitExceeded
+        }
+        return total.partialValue
     }
 }

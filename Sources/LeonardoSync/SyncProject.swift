@@ -25,7 +25,7 @@ public struct CorpusSnapshot: Codable, Equatable, Sendable {
     }
 
     public func validate(scope: CorpusScope, limits: CorpusLimits) throws {
-        guard !revision.isEmpty, files.count <= limits.maximumFiles else { throw SyncError.invalidSnapshot }
+        guard !revision.isEmpty, revision.utf8.count <= 256, files.count <= limits.maximumFiles else { throw SyncError.invalidSnapshot }
         var paths = Set<String>()
         var size = 0
         for file in files {

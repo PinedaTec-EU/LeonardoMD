@@ -80,4 +80,31 @@ final class CorpusTests: XCTestCase {
         let remaining = try await reopened.projectIDs()
         XCTAssertTrue(remaining.isEmpty)
     }
+
+    func testNearLimitCorpusCanBeReopenedWithPublishedBaseline() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let limits = CorpusLimits(maximumFiles: 1, maximumFileBytes: 2_048, maximumCorpusBytes: 2_048)
+        let data = Data(repeating: 42, count: 2_048)
+        let snapshot = CorpusSnapshot(revision: "base", files: [CorpusFile(path: "docs/a.md", content: data)])
+        var project = try OfflineProject(name: "Near limit", mode: .git, scope: CorpusScope(folder: "docs"), snapshot: snapshot, limits: limits)
+        try project.write(path: "docs/a.md", content: Data(repeating: 43, count: 2_048), limits: limits)
+        try project.markPublished(revision: "published")
+        try await OfflineCorpusStore(root: root, limits: limits).save(project)
+        let loaded = try await OfflineCorpusStore(root: root, limits: limits).load(id: project.id)
+        XCTAssertEqual(loaded, project)
+    }
+
+    func testEncodedLimitOverflowFailsWithoutCreatingAnUnreadableArchive() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let limits = CorpusLimits(maximumFiles: Int.max, maximumCorpusBytes: Int.max)
+        let project = try OfflineProject(name: "Empty", mode: .direct, scope: CorpusScope(folder: ""),
+            snapshot: CorpusSnapshot(revision: "empty", files: []))
+        do {
+            try await OfflineCorpusStore(root: root, limits: limits).save(project)
+            XCTFail("Unrepresentable encoded limit must fail")
+        } catch { XCTAssertEqual(error as? SyncError, .sizeLimitExceeded) }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(project.id.uuidString).appendingPathExtension("json").path))
+    }
 }
