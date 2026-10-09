@@ -3,6 +3,10 @@ import LeonardoSync
 
 struct MobileLibraryView: View {
     @Bindable var library: MobileLibrary
+    @State private var pairing = false
+    @State private var qrURL = ""
+    @AppStorage("directSyncIntervalMinutes") private var syncInterval = 0
+    @Environment(\.scenePhase) private var scenePhase
     var body: some View {
         NavigationStack {
             List(library.projects, id: \.id) { project in
@@ -19,11 +23,57 @@ struct MobileLibraryView: View {
             .overlay {
                 if library.projects.isEmpty {
                     ContentUnavailableView("Little Leonardo", systemImage: "book.closed",
-                        description: Text("Tus proyectos sincronizados aparecerán aquí. La conexión con LeonardoMD está en desarrollo."))
+                        description: Text("Conecta con LeonardoMD para descargar tus proyectos y consultarlos offline."))
                 }
             }
             .navigationTitle("Little Leonardo")
-            .refreshable { await library.reload() }
+            .refreshable { await library.synchronize(); await library.reload() }
+            .toolbar {
+                Button("Conectar", systemImage: "qrcode") { pairing = true }
+                    .disabled(library.connecting)
+                Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
+                    Task { await library.synchronize() }
+                }.disabled(library.connecting)
+            }
+            .safeAreaInset(edge: .bottom) {
+                if let code = library.comparisonCode {
+                    VStack {
+                        Text("Código de conexión: \(code)").font(.headline.monospacedDigit())
+                        Text("Comprueba que coincide en LeonardoMD, autoriza los proyectos y pulsa Sincronizar.")
+                            .font(.caption)
+                    }.padding().background(.regularMaterial)
+                }
+            }
+            .sheet(isPresented: $pairing) {
+                NavigationStack {
+                    Form {
+                        Text("Pega el enlace del QR generado en las preferencias de LeonardoMD. Ambos dispositivos deben estar en la misma red local.")
+                        TextField("littleleonardo://pair…", text: $qrURL)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        Picker("Sincronización automática", selection: $syncInterval) {
+                            Text("Solo manual").tag(0)
+                            ForEach([1, 5, 15, 30, 60], id: \.self) { Text("Cada \($0) min").tag($0) }
+                        }
+                        Text("La sincronización automática funciona mientras la app está activa.").font(.caption)
+                        Button("Solicitar conexión") {
+                            Task {
+                                await library.connect(qrURL: qrURL, deviceName: UIDevice.current.name)
+                                if library.comparisonCode != nil { qrURL = ""; pairing = false }
+                            }
+                        }.disabled(library.connecting || qrURL.isEmpty)
+                    }.navigationTitle("Conectar con LeonardoMD")
+                    .toolbar { Button("Cerrar") { pairing = false } }
+                }
+            }
+            .task(id: "\(syncInterval)-\(scenePhase)") {
+                guard scenePhase == .active, [1, 5, 15, 30, 60].contains(syncInterval) else { return }
+                while !Task.isCancelled {
+                    do { try await Task.sleep(for: .seconds(syncInterval * 60)) }
+                    catch { return }
+                    guard !Task.isCancelled else { return }
+                    await library.synchronize()
+                }
+            }
             .alert("No se pudo completar la operación", isPresented: Binding(
                 get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
                 Button("Aceptar") { library.error = nil }
@@ -96,7 +146,9 @@ struct MobileDocumentView: View {
 
     var body: some View {
         Group {
-            if editing { TextEditor(text: $text).font(.system(.body, design: .monospaced)).padding() }
+            if !library.projects.contains(where: { $0.id == projectID }) {
+                ContentUnavailableView("Acceso retirado", systemImage: "lock", description: Text("La copia local de este proyecto se ha eliminado."))
+            } else if editing { TextEditor(text: $text).font(.system(.body, design: .monospaced)).padding() }
             else {
                 ScrollView {
                     Text(text).font(.system(.body, design: .monospaced))
@@ -118,6 +170,13 @@ struct MobileDocumentView: View {
             }.disabled(saving || String(data: file.content, encoding: .utf8) == nil)
         }
         .onAppear { text = String(data: file.content, encoding: .utf8) ?? "Este documento no tiene una codificación UTF-8 válida." }
+        .onChange(of: library.projects) { _, projects in
+            if !projects.contains(where: { $0.id == projectID }) { text = ""; editing = false }
+            else if mode == .direct {
+                text = projects.first(where: { $0.id == projectID })?.files.first(where: { $0.path == file.path })
+                    .flatMap { String(data: $0.content, encoding: .utf8) } ?? "El documento ya no está disponible."
+            }
+        }
         .alert("Este proyecto es de solo lectura", isPresented: $readOnlyNotice) {
             Button("Aceptar", role: .cancel) {}
         } message: {

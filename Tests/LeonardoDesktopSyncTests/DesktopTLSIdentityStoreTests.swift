@@ -5,6 +5,37 @@ import LeonardoSyncTransport
 @testable import LeonardoDesktopSync
 
 final class DesktopTLSIdentityStoreTests: XCTestCase {
+    func testEnrollmentClientWaitsForConsentAndReadsOnlyGrantedCorpus() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let scope = try CorpusScope(folder: "docs")
+        let descriptor = SharedProjectDescriptor(id: UUID(), name: "Notes", scope: scope)
+        let snapshot = CorpusSnapshot(revision: "fixture", files: [CorpusFile(path: "docs/note.md", content: Data("unsaved".utf8), isUnsavedBuffer: true)])
+        let runtime = DesktopDirectRuntime(root: root, credentials: MemoryCredentials(), now: { Date() })
+        let running = try await runtime.start(host: "127.0.0.1", port: 0,
+            projects: [SharedProjectSource(descriptor: descriptor, snapshot: { snapshot })])
+        do {
+            let qr = try DirectPairingQR(endpoint: running.endpoint, certificateFingerprint: running.certificateFingerprint,
+                                        invitation: await runtime.createInvitation())
+            let client = try DirectEnrollmentClient(qr: qr)
+            let credential = try PairingRegistry.makeCredential()
+            let enrollment = try await client.begin(deviceName: "iPhone", credential: credential, now: Date())
+            let pending = try await client.status(deviceID: enrollment.deviceID, credential: credential)
+            XCTAssertEqual(pending.access, .pending)
+            XCTAssertTrue(pending.projects.isEmpty)
+            try await runtime.approve(requestID: enrollment.deviceID, code: enrollment.comparisonCode, projectIDs: [descriptor.id])
+            let granted = try await client.status(deviceID: enrollment.deviceID, credential: credential)
+            XCTAssertEqual(granted.projects, [descriptor])
+            let project = try await client.project(descriptor, deviceID: enrollment.deviceID, credential: credential)
+            XCTAssertEqual(project.mode, .direct)
+            XCTAssertEqual(project.files, snapshot.files)
+            try await runtime.revoke(deviceID: enrollment.deviceID)
+            let revoked = try await client.status(deviceID: enrollment.deviceID, credential: credential)
+            XCTAssertEqual(revoked.access, .revoked)
+            try await runtime.stop()
+        } catch { try? await runtime.stop(); throw error }
+    }
+
     func testDisabledRuntimeDoesNotProvisionIdentityAndRestartKeepsPin() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

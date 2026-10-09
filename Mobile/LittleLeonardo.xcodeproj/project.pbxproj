@@ -285,6 +285,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Little Leonardo";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Little Leonardo se conecta con LeonardoMD en tu red local para sincronizar los proyectos que autorices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -305,6 +306,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Little Leonardo";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Little Leonardo se conecta con LeonardoMD en tu red local para sincronizar los proyectos que autorices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
