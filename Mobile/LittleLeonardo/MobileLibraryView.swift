@@ -16,6 +16,8 @@ struct MobileLibraryView: View {
     @State private var host = ""
     @State private var port = "40882"
     @AppStorage("directSyncIntervalMinutes") private var syncInterval = 0
+    @AppStorage("gitAuthorName") private var gitAuthorName = "Little Leonardo"
+    @AppStorage("gitAuthorEmail") private var gitAuthorEmail = "little-leonardo@local.invalid"
     @Environment(\.scenePhase) private var scenePhase
     var body: some View {
         NavigationStack {
@@ -133,7 +135,14 @@ struct MobileLibraryView: View {
 
     private var synchronizationSettings: some View {
         NavigationStack {
-            Form { syncFrequency }
+            Form {
+                syncFrequency
+                Section("Autor de los commits Git") {
+                    TextField("Nombre", text: $gitAuthorName)
+                    TextField("Correo", text: $gitAuthorEmail).textInputAutocapitalization(.never).autocorrectionDisabled()
+                    Text("Esta identidad aparecerá en los commits enviados.").font(.caption)
+                }
+            }
                 .navigationTitle("Sincronización")
                 .toolbar { Button("Cerrar") { presentedSheet = nil } }
         }
@@ -147,6 +156,8 @@ struct MobileProjectView: View {
     @State private var newDocument = false
     @State private var documentName = ""
     @State private var deletingPath: String?
+    @AppStorage("gitAuthorName") private var gitAuthorName = "Little Leonardo"
+    @AppStorage("gitAuthorEmail") private var gitAuthorEmail = "little-leonardo@local.invalid"
     private var project: OfflineProject? { library.projects.first { $0.id == projectID } }
     var body: some View {
         List {
@@ -170,7 +181,14 @@ struct MobileProjectView: View {
             }
         }.navigationTitle(project?.name ?? "Proyecto")
         .toolbar {
-            if project?.mode == .git { Button("Nuevo documento", systemImage: "doc.badge.plus") { newDocument = true } }
+            if let project, project.mode == .git {
+                Button("Nuevo documento", systemImage: "doc.badge.plus") { newDocument = true }
+                Button("Enviar cambios", systemImage: "arrow.up.circle") {
+                    Task { await library.sendGitProject(projectID: projectID, authorName: gitAuthorName, authorEmail: gitAuthorEmail) }
+                }.disabled(library.connecting || project.publication == .sent && !library.pendingGitSends.contains(projectID)
+                           || !project.hasLocalChanges && !library.pendingGitSends.contains(projectID))
+                    .accessibilityIdentifier("git-send-changes")
+            }
         }
         .alert("Nuevo documento", isPresented: $newDocument) {
             TextField("Nombre.md", text: $documentName)

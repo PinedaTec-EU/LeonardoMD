@@ -7,23 +7,32 @@ public struct GitProjectConnection: Codable, Equatable, Sendable {
     public let branch: String
     public let scope: CorpusScope
     public let username: String?
+    public let lastPublishedCommit: String?
 
-    public init(projectID: UUID, endpoint: URL, branch: String, scope: CorpusScope, username: String? = nil) throws {
+    public init(projectID: UUID, endpoint: URL, branch: String, scope: CorpusScope, username: String? = nil, lastPublishedCommit: String? = nil) throws {
         _ = try GitHTTPTransport(endpoint: endpoint)
         guard endpoint.absoluteString.utf8.count <= 4_096, branch.hasPrefix("refs/heads/"), GitReference.isValidName(branch),
               username.map({ $0.utf8.count <= 1_024 && !$0.isEmpty && !$0.contains(":") && !$0.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }) }) ?? true else {
             throw GitRemoteError.invalidEndpoint
         }
+        if let id = lastPublishedCommit {
+            guard [40, 64].contains(id.utf8.count), id.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }) else { throw GitWireError.invalidObjectID }
+        }
+        self.lastPublishedCommit = lastPublishedCommit
         self.projectID = projectID; self.endpoint = endpoint; self.branch = branch; self.scope = scope; self.username = username
+    }
+
+    public func recordingPublication(_ commitID: String) throws -> Self {
+        try Self(projectID: projectID, endpoint: endpoint, branch: branch, scope: scope, username: username, lastPublishedCommit: commitID)
     }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(projectID: c.decode(UUID.self, forKey: .projectID), endpoint: c.decode(URL.self, forKey: .endpoint),
                       branch: c.decode(String.self, forKey: .branch), scope: c.decode(CorpusScope.self, forKey: .scope),
-                      username: c.decodeIfPresent(String.self, forKey: .username))
+                      username: c.decodeIfPresent(String.self, forKey: .username), lastPublishedCommit: c.decodeIfPresent(String.self, forKey: .lastPublishedCommit))
     }
-    private enum CodingKeys: String, CodingKey { case projectID, endpoint, branch, scope, username }
+    private enum CodingKeys: String, CodingKey { case projectID, endpoint, branch, scope, username, lastPublishedCommit }
 }
 
 public actor GitConnectionStore {

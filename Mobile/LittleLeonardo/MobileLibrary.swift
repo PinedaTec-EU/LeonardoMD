@@ -18,11 +18,14 @@ final class MobileLibrary {
     var error: String?
     private(set) var connecting = false
     private(set) var comparisonCode: String?
+    private(set) var pendingGitSends: Set<UUID> = []
     private(set) var gitStatus: [UUID: String] = [:]
     private let store: OfflineCorpusStore
     private let connectionURL: URL
     private let gitConnections: GitConnectionStore
     private let gitBaselines: GitBaselineStore
+    private let gitPublications: GitPublicationStore
+    private let gitDeviceID: UUID
     private let gitCredentials = GitCredentialStore()
     private let credentials = SecureCredentialStore()
     private var connections: [MobileDirectConnection] = []
@@ -35,6 +38,10 @@ final class MobileLibrary {
         connectionURL = root.deletingLastPathComponent().appendingPathComponent("connections.json")
         gitConnections = GitConnectionStore(root: root.deletingLastPathComponent().appendingPathComponent("GitConnections"))
         gitBaselines = GitBaselineStore(root: root.deletingLastPathComponent().appendingPathComponent("GitBaselines"))
+        gitPublications = GitPublicationStore(root: root.deletingLastPathComponent().appendingPathComponent("GitPublications"))
+        let existing = UserDefaults.standard.string(forKey: "gitDeviceID").flatMap(UUID.init(uuidString:))
+        gitDeviceID = existing ?? UUID()
+        UserDefaults.standard.set(gitDeviceID.uuidString, forKey: "gitDeviceID")
     }
 
     func reload() async {
@@ -51,6 +58,11 @@ final class MobileLibrary {
                 if let project = try await store.load(id: id) { loaded.append(project) }
             }
             guard savingProjects.isEmpty else { return }
+            var pending: Set<UUID> = []
+            for project in loaded where project.mode == .git {
+                if try await gitPublications.load(projectID: project.id) != nil { pending.insert(project.id) }
+            }
+            pendingGitSends = pending
             projects = loaded.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         } catch { self.error = error.localizedDescription }
     }
@@ -139,6 +151,11 @@ final class MobileLibrary {
         for project in projects where project.mode == .git {
             guard !Task.isCancelled else { return }
             do {
+                if try await gitPublications.load(projectID: project.id) != nil {
+                    pendingGitSends.insert(project.id)
+                    gitStatus[project.id] = "Envío preparado · Pulsa Enviar para comprobar o reintentar"
+                    continue
+                }
                 guard let connection = try await gitConnections.load(id: project.id) else { continue }
                 let password = try await gitCredentials.password(projectID: project.id)
                 if connection.username != nil, password == nil { throw GitRemoteError.authenticationRequired }
@@ -161,6 +178,25 @@ final class MobileLibrary {
                 gitStatus[project.id] = "No se pudo actualizar Git · Copia local conservada"
                 self.error = error.localizedDescription
             }
+        }
+    }
+
+    func sendGitProject(projectID: UUID, authorName: String, authorEmail: String) async {
+        guard !connecting, savingProjects.isEmpty, let project = projects.first(where: { $0.id == projectID }), project.mode == .git else { return }
+        connecting = true; defer { connecting = false }
+        do {
+            let identity = try GitCommitIdentity(name: authorName, email: authorEmail, timestamp: Int64(Date().timeIntervalSince1970))
+            let sender = MobileGitSender(corpus: store, connections: gitConnections, baselines: gitBaselines,
+                                         publications: gitPublications, credentials: gitCredentials, deviceID: gitDeviceID)
+            let updated = try await sender.send(project, identity: identity)
+            if let index = projects.firstIndex(where: { $0.id == projectID }) { projects[index] = updated }
+            pendingGitSends.remove(projectID)
+            gitStatus[projectID] = "Cambios enviados · Reconciliación pendiente en LeonardoMD"
+        } catch {
+            if let persisted = try? await store.load(id: projectID), let index = projects.firstIndex(where: { $0.id == projectID }) { projects[index] = persisted }
+            if (try? await gitPublications.load(projectID: projectID)) != nil { pendingGitSends.insert(projectID) }
+            gitStatus[projectID] = "No se pudo confirmar el envío · Tus cambios se conservan"
+            self.error = error.localizedDescription
         }
     }
 

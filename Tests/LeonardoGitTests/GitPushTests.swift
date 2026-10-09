@@ -1,5 +1,6 @@
 import XCTest
 @testable import LeonardoGit
+import LeonardoSync
 
 final class GitPushTests: XCTestCase {
     private let branch = "refs/heads/little-leonardo/device/project"
@@ -48,6 +49,55 @@ final class GitPushTests: XCTestCase {
     }
 
     #if os(macOS)
+    func testPreparedPublicationRecoversAfterRemoteAcceptanceWithoutLosingLaterEdits() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        for sha256 in [false, true] {
+            let directory = root.appendingPathComponent(sha256 ? "sha256" : "sha1")
+            _ = try runGit(["init", "--bare", "--quiet", "--object-format=\(sha256 ? "sha256" : "sha1")", directory.path])
+            let old = GitObject.create(kind: .blob, data: Data("old".utf8), sha256: sha256)
+            let tree = try GitTree.create(entries: [GitTreeEntry(name: "note.md", objectID: old.id, kind: .file, executable: false)], sha256: sha256)
+            let initial = GitObject.create(kind: .commit, data: Data("tree \(tree.id)\nauthor Fixture <fixture@example.invalid> 1 +0000\ncommitter Fixture <fixture@example.invalid> 1 +0000\n\nfixture\n".utf8), sha256: sha256)
+            _ = try runGit(["-C", directory.path, "index-pack", "--stdin"], input: GitPackWriter.encode(objects: [old, tree, initial], sha256: sha256))
+            _ = try runGit(["-C", directory.path, "update-ref", "refs/heads/main", initial.id])
+            let baseline = try GitBaseline(commitID: initial.id, objects: [initial, tree])
+            var project = try OfflineProject(name: "Recovery", mode: .git, scope: CorpusScope(folder: ""),
+                snapshot: CorpusSnapshot(revision: initial.id, files: [CorpusFile(path: "note.md", content: old.data)]))
+            try project.write(path: "note.md", content: Data("captured edit".utf8))
+            let journalRoot = directory.appendingPathComponent("publication-journal")
+            let journal = GitPublicationStore(root: journalRoot)
+            let prepared = try GitPreparedPublication(project: project, baseline: baseline, deviceID: UUID(),
+                identity: GitCommitIdentity(name: "Fixture", email: "fixture@example.invalid", timestamp: 1), expectedOldID: nil)
+            try await journal.save(prepared)
+            let transport = GitReceiveFixture(root: directory.path)
+            let publisher = GitPublisher(transport: transport)
+            let first = try prepared.restore(project: project, baseline: baseline)
+            let accepted = try await publisher.publish(first.commit, branch: prepared.branch, expectedOldID: prepared.expectedOldID)
+            XCTAssertEqual(accepted, .accepted)
+            // Simulate termination after the server accepts, before local acknowledgement is saved.
+            try project.write(path: "note.md", content: Data("later edit".utf8))
+            let restarted = GitPublicationStore(root: journalRoot)
+            let reloaded = try await restarted.load(projectID: project.id)
+            let pending = try XCTUnwrap(reloaded)
+            let retry = try pending.restore(project: project, baseline: baseline)
+            let recovered = try await publisher.publish(retry.commit, branch: pending.branch, expectedOldID: pending.expectedOldID)
+            XCTAssertEqual(recovered, .alreadyAccepted)
+            let pushes = await transport.pushCount
+            XCTAssertEqual(pushes, 1)
+            try project.markPublished(retry.capture)
+            let corpus = OfflineCorpusStore(root: directory.appendingPathComponent("corpus"))
+            try await corpus.save(project)
+            try await restarted.remove(projectID: project.id)
+            let persisted = try await corpus.load(id: project.id)
+            XCTAssertEqual(persisted?.files.first?.content, Data("later edit".utf8))
+            XCTAssertEqual(persisted?.publishedFiles?.first?.content, Data("captured edit".utf8))
+            XCTAssertEqual(persisted?.publishedRevision, pending.commitID)
+            let remoteContent = try runGit(["-C", directory.path, "show", "\(pending.branch):note.md"])
+            XCTAssertEqual(remoteContent, Data("captured edit".utf8))
+            _ = try runGit(["-C", directory.path, "fsck", "--full"])
+        }
+    }
+
     func testRealReceivePackAcceptsBothFormatsAndRetryIsIdempotent() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

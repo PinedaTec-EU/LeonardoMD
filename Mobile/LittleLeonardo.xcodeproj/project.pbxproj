@@ -20,6 +20,7 @@
 		DA52AFC54A29A9980B0601CC /* MobileQRScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */; };
 		674D0F49D2B450080B6C231E /* MobileGitConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95A6ED863D98F79753412C6A /* MobileGitConnectionView.swift */; };
 		E690EC10B778650361B2EF4D /* MobileGitEnrollment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3047F16A76D2E7CF7DC39C63 /* MobileGitEnrollment.swift */; };
+		562AF6F093F6017BC6111959 /* MobileGitSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5766F05ABFB4290C2135DFCB /* MobileGitSender.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,6 +44,7 @@
 		EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileQRScanner.swift; sourceTree = "<group>"; };
 		95A6ED863D98F79753412C6A /* MobileGitConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileGitConnectionView.swift; sourceTree = "<group>"; };
 		3047F16A76D2E7CF7DC39C63 /* MobileGitEnrollment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileGitEnrollment.swift; sourceTree = "<group>"; };
+		5766F05ABFB4290C2135DFCB /* MobileGitSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileGitSender.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,6 +121,7 @@
 				0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */,
 				D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */,
 				7849226B36C61649B125BDDC /* MobileLibraryView.swift */,
+				5766F05ABFB4290C2135DFCB /* MobileGitSender.swift */,
 				3047F16A76D2E7CF7DC39C63 /* MobileGitEnrollment.swift */,
 				95A6ED863D98F79753412C6A /* MobileGitConnectionView.swift */,
 				EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */,
@@ -229,6 +232,7 @@
 				C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */,
 				22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */,
 				2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */,
+				562AF6F093F6017BC6111959 /* MobileGitSender.swift in Sources */,
 				E690EC10B778650361B2EF4D /* MobileGitEnrollment.swift in Sources */,
 				674D0F49D2B450080B6C231E /* MobileGitConnectionView.swift in Sources */,
 				DA52AFC54A29A9980B0601CC /* MobileQRScanner.swift in Sources */,

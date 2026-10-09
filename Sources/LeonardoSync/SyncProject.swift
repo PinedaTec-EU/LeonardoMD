@@ -113,11 +113,25 @@ public struct OfflineProject: Codable, Equatable, Sendable {
         publication = .integrated
     }
 
-    public mutating func markPublished(revision: String) throws {
-        guard mode == .git, hasLocalChanges, !revision.isEmpty else { throw SyncError.invalidSnapshot }
+    public mutating func replaceLocalFiles(_ updated: [CorpusFile], limits: CorpusLimits = CorpusLimits()) throws {
+        guard mode == .git else { throw SyncError.readOnly }
         guard publication != .sent else { throw SyncError.publicationPending }
-        publishedFiles = files
-        publishedRevision = revision
+        try CorpusSnapshot(revision: base.revision, files: updated).validate(scope: scope, limits: limits)
+        files = updated.sorted { $0.path < $1.path }
+        publication = hasLocalChanges ? .localChanges : .integrated
+    }
+
+    public mutating func markPublished(revision: String) throws {
+        try markPublished(CorpusSnapshot(revision: revision, files: files))
+    }
+
+    /// Records the exact accepted capture without replacing edits made after preparation.
+    public mutating func markPublished(_ capture: CorpusSnapshot, limits: CorpusLimits = CorpusLimits()) throws {
+        guard mode == .git, capture.files != base.files else { throw SyncError.invalidSnapshot }
+        guard publication != .sent else { throw SyncError.publicationPending }
+        try capture.validate(scope: scope, limits: limits)
+        publishedFiles = capture.files
+        publishedRevision = capture.revision
         publication = .sent
     }
 

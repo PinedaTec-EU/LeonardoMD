@@ -1,7 +1,7 @@
 import Foundation
 import LeonardoSync
 
-public struct GitCommitIdentity: Sendable {
+public struct GitCommitIdentity: Sendable, Codable, Equatable {
     public let name: String
     public let email: String
     public let timestamp: Int64
@@ -13,6 +13,12 @@ public struct GitCommitIdentity: Sendable {
         }
         self.name = name; self.email = email; self.timestamp = timestamp
     }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        try self.init(name: c.decode(String.self, forKey: .name), email: c.decode(String.self, forKey: .email),
+                      timestamp: c.decode(Int64.self, forKey: .timestamp))
+    }
+    private enum CodingKeys: String, CodingKey { case name, email, timestamp }
     var header: String { "\(name) <\(email)> \(timestamp) +0000" }
 }
 
