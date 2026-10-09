@@ -67,7 +67,7 @@ struct ProjectSidebar: View {
         }
         .buttonStyle(PremiumButtonStyle(compact: true))
         .padding(16)
-        .frame(width: 250)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.regularMaterial)
         .onChange(of: session.showHidden) { _, _ in Task { await session.refreshTree() } }
     }
