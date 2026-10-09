@@ -50,6 +50,10 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private var pendingLaunches: [[URL]] = []
     private var processingLaunches = false
     private var launched = false
+    private var startupReady = false
+    private var startupTask: Task<Void, Never>?
+    private var quitting = false
+    private let restoration = SessionRestoration()
     private static let closeCheckInterval: Duration = .milliseconds(50)
 
     init(diagnostics: StartupDiagnostics, instance: SingleInstance, role: SingleInstance.Role) {
@@ -76,7 +80,11 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         updates.start()
         diagnostics.record(.menuConfigured)
         if windows.isEmpty { newEmptyWindow() }
-        processPendingLaunches()
+        startupTask = Task {
+            await restoreStartupSession()
+            startupReady = true
+            processPendingLaunches()
+        }
         NSApp.activate(ignoringOtherApps: true)
         diagnostics.record(.applicationReady)
         let elapsed = launchStarted.duration(to: .now).components
@@ -106,7 +114,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func processPendingLaunches() {
-        guard !processingLaunches else { return }
+        guard startupReady, !processingLaunches else { return }
         processingLaunches = true
         Task {
             defer { processingLaunches = false }
@@ -166,13 +174,40 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         Task {
+            await startupTask?.value
             var canTerminate = true
             for window in windows {
                 if await !window.documents.prepareClose() { canTerminate = false }
             }
+            if canTerminate {
+                do { if !windows.isEmpty { try saveSession() }; quitting = true }
+                catch { activeSession?.report(error); canTerminate = false }
+            }
             sender.reply(toApplicationShouldTerminate: canTerminate)
         }
         return .terminateLater
+    }
+
+    private func saveSession() throws {
+        try restoration.save(SavedSession(windows: windows.map { $0.documents.savedWindow }))
+    }
+
+    private func restoreStartupSession() async {
+        guard let session = activeSession else { return }
+        await session.initialize()
+        do {
+            let explicitURLs = pendingLaunches.flatMap { $0 }
+            guard let saved = try restoration.load(
+                restorePreviousSession: session.globalPreferences.restorePreviousSession,
+                explicitURLs: explicitURLs
+            ) else { return }
+            for (index, window) in saved.windows.enumerated() {
+                if index > 0 { newEmptyWindow() }
+                guard let controller = windows.last else { return }
+                await controller.documents.restore(window)
+            }
+            logger.info("startup_session_restored windows=\(saved.windows.count, privacy: .public)")
+        } catch { session.report(error) }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
@@ -187,7 +222,12 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         if isFirstWindow { diagnostics.record(.firstWindowCreated) }
         windows.append(controller)
         controller.onClose = { [weak self, weak controller] in
-            self?.windows.removeAll { $0 === controller }
+            guard let self else { return }
+            if windows.count == 1, !quitting {
+                do { try saveSession() }
+                catch { logger.error("session_capture_failed error=\(String(describing: error), privacy: .public)") }
+            }
+            windows.removeAll { $0 === controller }
         }
         controller.showWindow(nil)
         controller.window?.makeKeyAndOrderFront(nil)
@@ -285,6 +325,8 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
 
     init() {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1260, height: 850), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
+        // SessionRestoration owns reopening; do not also restore AppKit windows.
+        window.isRestorable = false
         window.isReleasedWhenClosed = false
         window.title = "LeonardoMD"
         window.titlebarAppearsTransparent = true

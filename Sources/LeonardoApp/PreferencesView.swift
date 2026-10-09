@@ -23,6 +23,7 @@ struct PreferencesView: View {
             }
             Text(L10n.text("Interface language applies to all windows."))
                 .font(.caption).foregroundStyle(.secondary)
+            StartupPreferences(session: session)
             if session.projectURL != nil {
                 PremiumSelection(selection: $projectScope, options: [false, true], title: { $0 ? L10n.text("This project") : L10n.text("Global") })
                     .accessibilityLabel(L10n.text("Scope"))

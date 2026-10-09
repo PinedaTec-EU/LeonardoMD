@@ -190,5 +190,9 @@
   "Recent documents": "Documentos recientes",
   "Recent projects": "Proyectos recientes",
   "No recent items": "No hay elementos recientes",
-  "Clear menu": "Vaciar menú"
+  "Clear menu": "Vaciar menú",
+  "On startup": "Al iniciar",
+  "Restore previous session": "Restaurar la sesión anterior",
+  "Start clean": "Abrir limpio",
+  "Applies to all windows on the next launch. Files opened explicitly always take priority.": "Se aplica a todas las ventanas en el próximo inicio. Los archivos abiertos explícitamente tienen prioridad."
 }

@@ -219,6 +219,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
     public var customTokens: PaletteTokenOverrides?
     public var paperEffect: PaperEffect
     public var markdown: MarkdownFeatures
+    public var restorePreviousSession: Bool
     public var showHiddenFiles: Bool
     public var recentWorkspacePaths: [URL]
     public var recentProjectPaths: [URL]
@@ -229,6 +230,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         customTokens: PaletteTokenOverrides? = nil,
         paperEffect: PaperEffect = .white,
         markdown: MarkdownFeatures = MarkdownFeatures(),
+        restorePreviousSession: Bool = true,
         showHiddenFiles: Bool = false,
         recentWorkspacePaths: [URL] = [],
         recentProjectPaths: [URL] = []
@@ -238,6 +240,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         self.customTokens = customTokens
         self.paperEffect = paperEffect
         self.markdown = markdown
+        self.restorePreviousSession = restorePreviousSession
         self.showHiddenFiles = showHiddenFiles
         self.recentWorkspacePaths = recentWorkspacePaths
         self.recentProjectPaths = recentProjectPaths
@@ -251,6 +254,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         case customTokens
         case paperEffect
         case markdown
+        case restorePreviousSession
         case showHiddenFiles
         case recentWorkspacePaths
         case recentProjectPaths
@@ -267,6 +271,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         customTokens = try container.decodeIfPresent(PaletteTokenOverrides.self, forKey: .customTokens)
         paperEffect = try container.decodeIfPresent(PaperEffect.self, forKey: .paperEffect) ?? .white
         markdown = try container.decodeIfPresent(MarkdownFeatures.self, forKey: .markdown) ?? MarkdownFeatures()
+        restorePreviousSession = try container.decodeIfPresent(Bool.self, forKey: .restorePreviousSession) ?? true
         showHiddenFiles = try container.decodeIfPresent(Bool.self, forKey: .showHiddenFiles) ?? false
         recentWorkspacePaths = try container.decodeIfPresent([URL].self, forKey: .recentWorkspacePaths) ?? []
         recentProjectPaths = try container.decodeIfPresent([URL].self, forKey: .recentProjectPaths) ?? []
