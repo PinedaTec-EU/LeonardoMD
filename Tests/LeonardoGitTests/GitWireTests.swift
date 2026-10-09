@@ -70,6 +70,57 @@ final class GitWireTests: XCTestCase {
         }
     }
 
+    func testScopedCommitsAndWrittenPacksAreAcceptedByRealGit() async throws {
+        let container = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: container) }
+        for format in ["sha1", "sha256"] {
+            let root = container.appendingPathComponent(format)
+            _ = try git(["init", "--quiet", "--object-format=\(format)", root.path])
+            try FileManager.default.createDirectory(at: root.appendingPathComponent("docs"), withIntermediateDirectories: true)
+            for (path, content) in [("docs/edit.md", "old"), ("docs/delete.md", "delete"), ("docs/code.swift", "untouched code"), ("docs/new.md", "unchanged sibling"), ("outside.bin", "outside bytes")] {
+                try Data(content.utf8).write(to: root.appendingPathComponent(path))
+            }
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: root.appendingPathComponent("docs/edit.md").path)
+            try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("docs/link.md"), withDestinationURL: root.appendingPathComponent("outside.bin"))
+            _ = try git(["-C", root.path, "add", "."])
+            _ = try git(["-C", root.path, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "--quiet", "-m", "fixture"])
+            _ = try git(["-C", root.path, "config", "uploadpack.allowFilter", "true"])
+            _ = try git(["-C", root.path, "config", "uploadpack.allowReachableSHA1InWant", "true"])
+            let gitlink = String(decoding: try git(["-C", root.path, "rev-parse", "HEAD"]), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            _ = try git(["-C", root.path, "update-index", "--add", "--cacheinfo", "160000,\(gitlink),docs/submodule"])
+            _ = try git(["-C", root.path, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "--quiet", "-m", "submodule fixture"])
+            let reader = GitRemoteReader(transport: GitUploadFixture(root: root.path))
+            let discovery = try await reader.discover()
+            let tip = try XCTUnwrap(discovery.references.first(where: { $0.name == "HEAD" })?.objectID)
+            let metadata = try await reader.metadata(commitID: tip, discovery: discovery)
+            let scope = try CorpusScope(folder: "docs")
+            let snapshot = try await reader.snapshot(metadata: metadata, scope: scope)
+            var project = try OfflineProject(name: "Fixture", mode: .git, scope: scope, snapshot: snapshot)
+            try project.write(path: "docs/edit.md", content: Data("edited".utf8))
+            try project.delete(path: "docs/delete.md")
+            try project.write(path: "docs/new/deep.md", content: Data("created".utf8))
+            try project.write(path: "docs/empty.md", content: Data())
+            let identity = try GitCommitIdentity(name: "Mobile Fixture", email: "fixture@example.invalid", timestamp: 1_700_000_000)
+            let built = try GitCommitBuilder.build(project: project, metadata: metadata, identity: identity)
+            XCTAssertEqual(built.objects.filter { $0.kind == .blob }.count, 3)
+            let pack = try GitPackWriter.encode(objects: built.objects, sha256: format == "sha256")
+            _ = try git(["-C", root.path, "index-pack", "--stdin"], input: pack)
+            XCTAssertEqual(try git(["-C", root.path, "cat-file", "commit", built.commit.id]), built.commit.data)
+            let changed = String(decoding: try git(["-C", root.path, "diff-tree", "--no-commit-id", "--name-only", "-r", tip, built.commit.id]), as: UTF8.self)
+            XCTAssertEqual(Set(changed.split(separator: "\n")), ["docs/edit.md", "docs/delete.md", "docs/new/deep.md", "docs/empty.md"])
+            for path in ["outside.bin", "docs/code.swift", "docs/link.md", "docs/submodule", "docs/new.md"] {
+                let before = try git(["-C", root.path, "ls-tree", tip, "--", path])
+                XCTAssertEqual(before, try git(["-C", root.path, "ls-tree", built.commit.id, "--", path]), path)
+            }
+            let editedMode = String(decoding: try git(["-C", root.path, "ls-tree", built.commit.id, "--", "docs/edit.md"]), as: UTF8.self)
+            XCTAssertTrue(editedMode.hasPrefix("100755"))
+            XCTAssertEqual(try git(["-C", root.path, "show", "\(built.commit.id):docs/new/deep.md"]), Data("created".utf8))
+            _ = try git(["-C", root.path, "fsck", "--full"])
+            XCTAssertThrowsError(try GitPackWriter.encode(objects: built.objects, sha256: format == "sha256", maximumBytes: 20))
+            XCTAssertThrowsError(try GitCommitIdentity(name: "Injected\ncommitter", email: "x", timestamp: 0))
+        }
+    }
+
     func testRealGitPackObjectsIncludingDeltasMatchCanonicalObjects() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

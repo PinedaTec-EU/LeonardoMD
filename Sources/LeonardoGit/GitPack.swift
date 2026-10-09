@@ -1,5 +1,4 @@
 import Foundation
-import CryptoKit
 
 public struct GitObject: Sendable, Equatable {
     public enum Kind: String, Sendable { case commit, tree, blob, tag }
@@ -27,11 +26,6 @@ public enum GitPack {
         var resolved: [Int: (GitObject, Int)] = [:]
         var queue: [Int] = []
         var total = 0
-        func make(_ kind: GitObject.Kind, _ data: Data) -> GitObject {
-            let content = Data("\(kind.rawValue) \(data.count)\0".utf8) + data
-            let digest = sha256 ? Data(SHA256.hash(data: content)) : Data(Insecure.SHA1.hash(data: content))
-            return GitObject(id: digest.map { String(format: "%02x", $0) }.joined(), kind: kind, data: data)
-        }
         func insert(_ index: Int, _ object: GitObject, depth: Int) throws {
             guard object.data.count <= limits.totalBytes - total else { throw GitWireError.responseTooLarge }
             total += object.data.count
@@ -39,7 +33,7 @@ public enum GitPack {
             queue.append(index)
         }
         for (index, entry) in entries.enumerated() {
-            if let kind = entry.kind { try insert(index, make(kind, entry.data), depth: 0) }
+            if let kind = entry.kind { try insert(index, GitObject.create(kind: kind, data: entry.data, sha256: sha256), depth: 0) }
             else if let base = entry.base { waiting[base, default: []].append(index) }
         }
         var cursor = 0
@@ -50,7 +44,7 @@ public enum GitPack {
                 for child in waiting.removeValue(forKey: key) ?? [] {
                     guard depth < limits.deltaDepth else { throw GitWireError.responseTooLarge }
                     let data = try GitDelta.apply(entries[child].data, to: object.data, maximumResultBytes: limits.objectBytes)
-                    try insert(child, make(object.kind, data), depth: depth + 1)
+                    try insert(child, GitObject.create(kind: object.kind, data: data, sha256: sha256), depth: depth + 1)
                 }
             }
         }

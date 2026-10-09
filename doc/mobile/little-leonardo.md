@@ -133,3 +133,11 @@ The live test found GitHub's service-envelope incompatibility, tracked in [#100]
 Manual and foreground-interval synchronization now also refreshes persisted HTTPS Git projects using their selected branch and fixed folder. An unchanged tip skips content transfer; a clean copy accepts the new scoped snapshot atomically. Local edits block replacement: the app distinguishes unpublished edits from a changed remote requiring desktop reconciliation. A sent publication remains pending until future explicit integration evidence; advancing the remote branch alone never clears that state. Network/authentication failure retains the offline corpus.
 
 Two domain tests verify atomic rejection of dirty, sent, direct and out-of-scope replacement. The real upload-pack reader regression additionally verifies unchanged, local-edit, remote-divergence, clean-update and awaiting-integration outcomes. Standalone sync settings expose the existing configurable foreground interval to Git-only users. Sending commits, receiving desktop integration evidence, SSH and full native Git acceptance remain pending.
+
+## Scoped commit and pack-writing checkpoint
+
+`GitCommitBuilder` builds a single-parent commit from a validated offline change set and its exact baseline metadata. Tree rewriting preserves untouched object IDs/modes, updates only scoped paths, removes empty directories and retains unsupported files, symlinks and submodule entries. Author identity/time are explicit inputs. Canonical object hashing is shared with pack decoding; bounded system-zlib compression writes complete-object packs with a verified format-specific checksum.
+
+Real Git accepts these objects through `index-pack` and `fsck --full` for SHA-1 and SHA-256. Tests verify edit/create/delete/empty-file behavior, executable permissions, unchanged code/link/submodule entries and Git tree ordering. Pack round trips test deduplication, large headers, empty blobs, tampered identifiers and object/pack bounds.
+
+This is local commit construction, not successful publication. The application must still persist baseline commit/tree metadata for sending after the remote branch advances, implement receive-pack negotiation/push/retry, save publication state only after confirmed acceptance and notify the desktop afterward. Desktop reconciliation and SSH remain pending.
