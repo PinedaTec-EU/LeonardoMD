@@ -1,5 +1,6 @@
 import XCTest
 @testable import LeonardoGit
+import LeonardoSync
 
 final class GitHTTPTransportTests: XCTestCase {
     private func client(_ path: String, limit: Int = 100) throws -> GitHTTPTransport {
@@ -23,6 +24,23 @@ final class GitHTTPTransportTests: XCTestCase {
             do { _ = try await client(path).advertisement(); XCTFail("Expected rejection") }
             catch { XCTAssertEqual(error as? GitRemoteError, expected) }
         }
+    }
+
+    func testExplicitLiveHTTPSRepositoryFolderImport() async throws {
+        guard let value = ProcessInfo.processInfo.environment["LEONARDO_GIT_HTTPS_QA_URL"],
+              let url = URL(string: value), let folder = ProcessInfo.processInfo.environment["LEONARDO_GIT_HTTPS_QA_FOLDER"] else {
+            throw XCTSkip("Requires an explicitly selected read-only HTTPS QA repository and folder")
+        }
+        let reader = GitRemoteReader(transport: try GitHTTPTransport(endpoint: url))
+        let discovery = try await reader.discover()
+        let tip = try XCTUnwrap(discovery.references.first(where: { $0.name == "HEAD" })?.objectID)
+        let metadata = try await reader.metadata(commitID: tip, discovery: discovery)
+        XCTAssertFalse(metadata.objects.contains { $0.kind == .blob })
+        let scope = try CorpusScope(folder: folder)
+        let snapshot = try await reader.snapshot(metadata: metadata, scope: scope)
+        XCTAssertFalse(snapshot.files.isEmpty)
+        XCTAssertTrue(snapshot.files.allSatisfy { $0.path.hasPrefix(folder + "/") })
+        XCTAssertTrue(snapshot.files.contains { ($0.path as NSString).pathExtension == "md" })
     }
 
     func testEndpointAndCredentialValidation() throws {

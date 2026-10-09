@@ -18,6 +18,8 @@
 		852C58BAA8EDEDB67FDE7FB4 /* LeonardoSync in Frameworks */ = {isa = PBXBuildFile; productRef = 7CAAF1CC01593584A9E0A7F9 /* LeonardoSync */; };
 		C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */; };
 		DA52AFC54A29A9980B0601CC /* MobileQRScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */; };
+		674D0F49D2B450080B6C231E /* MobileGitConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95A6ED863D98F79753412C6A /* MobileGitConnectionView.swift */; };
+		E690EC10B778650361B2EF4D /* MobileGitEnrollment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3047F16A76D2E7CF7DC39C63 /* MobileGitEnrollment.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,6 +41,8 @@
 		C53CBBB8313118CB2CF6782A /* LittleLeonardoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LittleLeonardoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileLibrary.swift; sourceTree = "<group>"; };
 		EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileQRScanner.swift; sourceTree = "<group>"; };
+		95A6ED863D98F79753412C6A /* MobileGitConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileGitConnectionView.swift; sourceTree = "<group>"; };
+		3047F16A76D2E7CF7DC39C63 /* MobileGitEnrollment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileGitEnrollment.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -115,6 +119,8 @@
 				0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */,
 				D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */,
 				7849226B36C61649B125BDDC /* MobileLibraryView.swift */,
+				3047F16A76D2E7CF7DC39C63 /* MobileGitEnrollment.swift */,
+				95A6ED863D98F79753412C6A /* MobileGitConnectionView.swift */,
 				EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */,
 			);
 			name = LittleLeonardo;
@@ -223,6 +229,8 @@
 				C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */,
 				22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */,
 				2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */,
+				E690EC10B778650361B2EF4D /* MobileGitEnrollment.swift in Sources */,
+				674D0F49D2B450080B6C231E /* MobileGitConnectionView.swift in Sources */,
 				DA52AFC54A29A9980B0601CC /* MobileQRScanner.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -5,6 +5,7 @@ import LeonardoRender
 struct MobileLibraryView: View {
     @Bindable var library: MobileLibrary
     @State private var pairing = false
+    @State private var gitPairing = false
     @State private var qrURL = ""
     @State private var scanning = false
     @State private var manualPairing = false
@@ -37,6 +38,8 @@ struct MobileLibraryView: View {
                 Button("Conectar", systemImage: "qrcode") { pairing = true }
                     .disabled(library.connecting)
                     .accessibilityIdentifier("open-pairing")
+                Button("Conectar Git", systemImage: "arrow.triangle.branch") { gitPairing = true }
+                    .disabled(library.connecting).accessibilityIdentifier("open-git-pairing")
                 Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
                     Task { await library.synchronize() }
                 }.disabled(library.connecting)
@@ -50,6 +53,7 @@ struct MobileLibraryView: View {
                     }.padding().background(.regularMaterial)
                 }
             }
+            .sheet(isPresented: $gitPairing) { MobileGitConnectionView(library: library) }
             .sheet(isPresented: $pairing) {
                 NavigationStack {
                     Form {

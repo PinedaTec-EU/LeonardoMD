@@ -5,7 +5,11 @@ public struct GitV2Capabilities: Sendable {
     public let values: [String: String]
 
     public init(advertisement: Data) throws {
-        let packets = try GitPacket.decode(advertisement)
+        var packets = try GitPacket.decode(advertisement)
+        if packets.first == .data(Data("# service=git-upload-pack\n".utf8)) {
+            guard packets.count >= 4, packets[1] == .flush else { throw GitWireError.invalidAdvertisement }
+            packets.removeFirst(2)
+        }
         guard packets.first == .data(Data("version 2\n".utf8)) || packets.first == .data(Data("version 2".utf8)),
               packets.last == .flush else { throw GitWireError.invalidAdvertisement }
         var values: [String: String] = [:]

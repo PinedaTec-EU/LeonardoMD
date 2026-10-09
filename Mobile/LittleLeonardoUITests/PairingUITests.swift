@@ -23,6 +23,26 @@ final class PairingUITests: XCTestCase {
         XCTAssertFalse(app.webViews.firstMatch.exists)
     }
 
+    @MainActor func testGitEnrollmentRequiresEndpointAndCanCancelWithoutConnecting() throws {
+        let app = XCUIApplication()
+        app.launch()
+        let connect = app.buttons["open-git-pairing"]
+        XCTAssertTrue(connect.waitForExistence(timeout: 10))
+        connect.tap()
+        let endpoint = app.textFields["git-endpoint"]
+        XCTAssertTrue(endpoint.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["git-discover"].isEnabled)
+        endpoint.tap()
+        endpoint.typeText("https://fixture.invalid/project.git")
+        XCTAssertTrue(app.buttons["git-discover"].isEnabled)
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "Git endpoint and device Keychain enrollment"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        app.buttons["Cerrar"].tap()
+        XCTAssertTrue(connect.waitForExistence(timeout: 5))
+    }
+
     @MainActor func testManualPairingFormRequiresAddressAndRetainsQRAlternative() throws {
         let app = XCUIApplication()
         app.launch()

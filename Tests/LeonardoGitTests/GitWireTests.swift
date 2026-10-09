@@ -30,6 +30,18 @@ final class GitWireTests: XCTestCase {
         XCTAssertTrue(packets.contains(.data(Data("deepen 1\n".utf8))))
     }
 
+    func testSmartHTTPServiceEnvelopeRequiresExactServiceAndFlush() throws {
+        let capabilities = try advertise(["version 2", "ls-refs", "fetch=shallow filter"])
+        let envelope = try GitPacket.data(Data("# service=git-upload-pack\n".utf8)).encoded() + GitPacket.flush.encoded()
+        try GitV2Capabilities(advertisement: envelope + capabilities).requireFolderTransfer()
+        for prefix in [
+            try GitPacket.data(Data("# service=git-receive-pack\n".utf8)).encoded() + GitPacket.flush.encoded(),
+            try GitPacket.data(Data("# service=git-upload-pack\n".utf8)).encoded() + GitPacket.delimiter.encoded(),
+            try GitPacket.data(Data("# service=git-upload-pack\n".utf8)).encoded()
+        ] { XCTAssertThrowsError(try GitV2Capabilities(advertisement: prefix + capabilities)) }
+        XCTAssertThrowsError(try GitV2Capabilities(advertisement: envelope + envelope + capabilities))
+    }
+
     #if os(macOS)
     func testRealGitReferenceDiscoveryForSHA1SHA256AndUnbornHEAD() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

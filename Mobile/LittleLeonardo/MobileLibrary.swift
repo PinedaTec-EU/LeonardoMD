@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import LeonardoSync
 import LeonardoSyncTransport
+import LeonardoGit
 
 private struct MobileDirectConnection: Codable {
     let deviceID: UUID
@@ -19,6 +20,8 @@ final class MobileLibrary {
     private(set) var comparisonCode: String?
     private let store: OfflineCorpusStore
     private let connectionURL: URL
+    private let gitConnections: GitConnectionStore
+    private let gitCredentials = GitCredentialStore()
     private let credentials = SecureCredentialStore()
     private var connections: [MobileDirectConnection] = []
     private var savingProjects: Set<UUID> = []
@@ -28,6 +31,7 @@ final class MobileLibrary {
             .appendingPathComponent("LittleLeonardo/Corpus", isDirectory: true)
         store = OfflineCorpusStore(root: root)
         connectionURL = root.deletingLastPathComponent().appendingPathComponent("connections.json")
+        gitConnections = GitConnectionStore(root: root.deletingLastPathComponent().appendingPathComponent("GitConnections"))
     }
 
     func reload() async {
@@ -135,6 +139,32 @@ final class MobileLibrary {
         guard data.count <= 2 * 1_024 * 1_024 else { throw SyncError.sizeLimitExceeded }
         try data.write(to: connectionURL, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: connectionURL.path)
+    }
+
+    func installGitProject(_ project: OfflineProject, connection: GitProjectConnection, password: String?) async -> Bool {
+        guard !connecting, savingProjects.isEmpty, project.mode == .git,
+              project.id == connection.projectID, project.scope == connection.scope,
+              !projects.contains(where: { $0.id == project.id }) else { return false }
+        savingProjects.insert(project.id)
+        defer { savingProjects.remove(project.id) }
+        do {
+            try Task.checkCancellation()
+            if let password { try await gitCredentials.save(password, projectID: project.id) }
+            try await gitConnections.save(connection)
+            try await store.save(project)
+            projects.append(project)
+            projects.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            return true
+        } catch {
+            do {
+                try await store.remove(id: project.id)
+                try await gitConnections.remove(id: project.id)
+                try await gitCredentials.remove(projectID: project.id)
+            }
+            catch { self.error = error.localizedDescription; return false }
+            if !(error is CancellationError) { self.error = error.localizedDescription }
+            return false
+        }
     }
 
     func saveText(projectID: UUID, path: String, text: String) async -> Bool {
