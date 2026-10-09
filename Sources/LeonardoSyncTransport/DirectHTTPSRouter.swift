@@ -15,6 +15,7 @@ public struct DirectHTTPSRouter: Sendable {
         let deviceName: String
         let credential: String
         let invitation: PairingInvitation?
+        let kind: PairingClientKind?
     }
 
     public func respond(to request: HTTPRequest) async -> HTTPResponse {
@@ -28,7 +29,7 @@ public struct DirectHTTPSRouter: Sendable {
             if request.method == "POST", request.path == "/v1/pair/request" {
                 let input = try JSONDecoder().decode(PairingStart.self, from: request.body)
                 let result = try await authority.beginPairing(deviceName: input.deviceName, credential: input.credential,
-                                                             invitation: input.invitation, now: now())
+                                                             invitation: input.invitation, now: now(), kind: input.kind ?? .readOnly)
                 return try json(result, status: 202)
             }
             let path = request.path.split(separator: "/", omittingEmptySubsequences: false)

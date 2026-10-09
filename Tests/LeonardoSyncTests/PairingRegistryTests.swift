@@ -5,6 +5,40 @@ final class PairingRegistryTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_000)
     private let credential = String(repeating: "a", count: 64)
 
+    func testProposalPermissionRequiresConsentedPeerKindAndProject() throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let project = UUID()
+        let reader = try registry.requestPairing(deviceName: "Phone", credential: credential, serverFingerprint: Data(repeating: 1, count: 32), now: now)
+        _ = try registry.approve(requestID: reader.id, comparisonCode: reader.comparisonCode, projects: [project], now: now)
+        XCTAssertThrowsError(try registry.authorizeReconciliation(deviceID: reader.id, credential: credential, projectID: project)) { XCTAssertEqual($0 as? SyncError, .readOnly) }
+        let secret = String(repeating: "b", count: 64)
+        let peer = try registry.requestPairing(deviceName: "Mac", credential: secret, serverFingerprint: Data(repeating: 1, count: 32), now: now, kind: .desktopPeer)
+        XCTAssertEqual(peer.kind, .desktopPeer)
+        let device = try registry.approve(requestID: peer.id, comparisonCode: peer.comparisonCode, projects: [project], now: now)
+        XCTAssertEqual(device.kind, .desktopPeer)
+        try registry.authorizeReconciliation(deviceID: device.id, credential: secret, projectID: project)
+        XCTAssertThrowsError(try registry.authorizeReconciliation(deviceID: device.id, credential: secret, projectID: UUID()))
+        try registry.revoke(deviceID: device.id)
+        XCTAssertThrowsError(try registry.authorizeReconciliation(deviceID: device.id, credential: secret, projectID: project)) { XCTAssertEqual($0 as? SyncError, .revoked) }
+    }
+
+    func testLegacyRegistryCannotGainProposalPermissionAndCodeBindsKind() throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let pin = Data(repeating: 1, count: 32)
+        let request = try registry.requestPairing(deviceName: "Old client", credential: credential, serverFingerprint: pin, now: now, kind: .desktopPeer)
+        XCTAssertNotEqual(request.comparisonCode, try PairingComparisonCode.make(serverFingerprint: pin, credential: credential, requestID: request.id))
+        let project = UUID()
+        _ = try registry.approve(requestID: request.id, comparisonCode: request.comparisonCode, projects: [project], now: now)
+        let bytes = try JSONEncoder().encode(registry)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: bytes) as? [String: Any])
+        var devices = try XCTUnwrap(object["devices"] as? [[String: Any]])
+        devices[0].removeValue(forKey: "kind")
+        object["devices"] = devices
+        let legacy = try JSONDecoder().decode(PairingRegistry.self, from: JSONSerialization.data(withJSONObject: object))
+        XCTAssertEqual(legacy.devices.first?.kind, .readOnly)
+        XCTAssertThrowsError(try legacy.authorizeReconciliation(deviceID: request.id, credential: credential, projectID: project)) { XCTAssertEqual($0 as? SyncError, .readOnly) }
+    }
+
     func testDefaultDisabledAndApprovalIsRequired() throws {
         var registry = PairingRegistry()
         XCTAssertThrowsError(try registry.createInvitation(now: now))

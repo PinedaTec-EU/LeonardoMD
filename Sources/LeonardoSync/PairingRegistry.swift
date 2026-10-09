@@ -13,12 +13,27 @@ public struct PairingInvitation: Codable, Equatable, Sendable {
     public let expiresAt: Date
 }
 
+public enum PairingClientKind: String, Codable, Equatable, Sendable { case readOnly, desktopPeer }
+
 public struct PairingRequest: Codable, Equatable, Sendable, Identifiable {
     public let id: UUID
     public let deviceName: String
     public let comparisonCode: String
     public let expiresAt: Date
     public let credentialDigest: Data
+    public let kind: PairingClientKind
+
+    init(id: UUID, deviceName: String, comparisonCode: String, expiresAt: Date, credentialDigest: Data, kind: PairingClientKind) {
+        self.id = id; self.deviceName = deviceName; self.comparisonCode = comparisonCode
+        self.expiresAt = expiresAt; self.credentialDigest = credentialDigest; self.kind = kind
+    }
+    private enum CodingKeys: String, CodingKey { case id, deviceName, comparisonCode, expiresAt, credentialDigest, kind }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        try self.init(id: c.decode(UUID.self, forKey: .id), deviceName: c.decode(String.self, forKey: .deviceName),
+                  comparisonCode: c.decode(String.self, forKey: .comparisonCode), expiresAt: c.decode(Date.self, forKey: .expiresAt),
+                  credentialDigest: c.decode(Data.self, forKey: .credentialDigest), kind: c.decodeIfPresent(PairingClientKind.self, forKey: .kind) ?? .readOnly)
+    }
 }
 
 public struct PairedDevice: Codable, Equatable, Sendable, Identifiable {
@@ -27,6 +42,19 @@ public struct PairedDevice: Codable, Equatable, Sendable, Identifiable {
     public let credentialDigest: Data
     public let projects: Set<UUID>
     public var revoked: Bool
+    public let kind: PairingClientKind
+
+    init(id: UUID, name: String, credentialDigest: Data, projects: Set<UUID>, revoked: Bool, kind: PairingClientKind) {
+        self.id = id; self.name = name; self.credentialDigest = credentialDigest
+        self.projects = projects; self.revoked = revoked; self.kind = kind
+    }
+    private enum CodingKeys: String, CodingKey { case id, name, credentialDigest, projects, revoked, kind }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        try self.init(id: c.decode(UUID.self, forKey: .id), name: c.decode(String.self, forKey: .name),
+                  credentialDigest: c.decode(Data.self, forKey: .credentialDigest), projects: c.decode(Set<UUID>.self, forKey: .projects),
+                  revoked: c.decode(Bool.self, forKey: .revoked), kind: c.decodeIfPresent(PairingClientKind.self, forKey: .kind) ?? .readOnly)
+    }
 }
 
 public enum DeviceAccess: String, Codable, Equatable, Sendable { case authorized, revoked, pending }
@@ -65,7 +93,7 @@ public struct PairingRegistry: Codable, Sendable {
     }
 
     public mutating func requestPairing(deviceName: String, credential: String,
-                                       invitation: PairingInvitation? = nil, serverFingerprint: Data, now: Date) throws -> PairingRequest {
+                                       invitation: PairingInvitation? = nil, serverFingerprint: Data, now: Date, kind: PairingClientKind = .readOnly) throws -> PairingRequest {
         guard enabled else { throw PairingError.disabled }
         expire(now: now)
         guard credential.count == 64, credential.allSatisfy(\.isHexDigit),
@@ -84,10 +112,10 @@ public struct PairingRegistry: Codable, Sendable {
             throw PairingError.invalidCredential
         }
         let id = UUID()
-        let code = try PairingComparisonCode.make(serverFingerprint: serverFingerprint, credential: credential, requestID: id)
+        let code = try PairingComparisonCode.make(serverFingerprint: serverFingerprint, credential: credential, requestID: id, kind: kind)
         let request = PairingRequest(id: id, deviceName: deviceName,
             comparisonCode: code, expiresAt: now.addingTimeInterval(Self.requestLifetime),
-            credentialDigest: credentialDigest)
+            credentialDigest: credentialDigest, kind: kind)
         requests.append(request)
         return request
     }
@@ -100,7 +128,7 @@ public struct PairingRegistry: Codable, Sendable {
               request.comparisonCode == comparisonCode else { throw PairingError.pendingApproval }
         guard !projects.isEmpty else { throw PairingError.invalidProject }
         let device = PairedDevice(id: request.id, name: request.deviceName, credentialDigest: request.credentialDigest,
-                                  projects: projects, revoked: false)
+                                  projects: projects, revoked: false, kind: request.kind)
         devices.append(device)
         requests.removeAll { $0.id == requestID }
         return device
@@ -121,6 +149,12 @@ public struct PairingRegistry: Codable, Sendable {
         if device.revoked { return .revoked }
         if let projectID, !device.projects.contains(projectID) { throw PairingError.invalidProject }
         return .authorized
+    }
+
+    /// Proposal permission is consented at enrollment and cannot be self-upgraded later.
+    public func authorizeReconciliation(deviceID: UUID, credential: String, projectID: UUID) throws {
+        guard try access(deviceID: deviceID, credential: credential, projectID: projectID) == .authorized else { throw SyncError.revoked }
+        guard devices.first(where: { $0.id == deviceID })?.kind == .desktopPeer else { throw SyncError.readOnly }
     }
 
     public func pairingStatus(requestID: UUID, credential: String, now: Date) throws -> DeviceAccess {

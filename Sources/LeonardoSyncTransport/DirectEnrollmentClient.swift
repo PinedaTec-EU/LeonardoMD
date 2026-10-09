@@ -29,17 +29,18 @@ public struct DirectEnrollmentClient: Sendable {
         let deviceName: String
         let credential: String
         let invitation: PairingInvitation?
+        let kind: PairingClientKind
     }
 
-    public func begin(deviceName: String, credential: String, now: Date) async throws -> DirectEnrollment {
+    public func begin(deviceName: String, credential: String, now: Date, kind: PairingClientKind = .readOnly) async throws -> DirectEnrollment {
         if let invitation, invitation.expiresAt <= now { throw PairingError.expiredInvitation }
         let response = try await client.request(method: "POST", path: "/v1/pair/request",
-            body: JSONEncoder().encode(PairingStart(deviceName: deviceName, credential: credential, invitation: invitation)))
+            body: JSONEncoder().encode(PairingStart(deviceName: deviceName, credential: credential, invitation: invitation, kind: kind)))
         guard response.status == 202 else { throw TransportError.unexpectedResponse }
         let challenge = try JSONDecoder().decode(PairingChallenge.self, from: response.body)
         guard challenge.expiresAt > now else { throw PairingError.expiredInvitation }
         let code = try PairingComparisonCode.make(serverFingerprint: fingerprint,
-                                                  credential: credential, requestID: challenge.id)
+                                                  credential: credential, requestID: challenge.id, kind: kind)
         guard code == challenge.comparisonCode else { throw TransportError.invalidIdentity }
         return DirectEnrollment(deviceID: challenge.id, comparisonCode: code, expiresAt: challenge.expiresAt)
     }

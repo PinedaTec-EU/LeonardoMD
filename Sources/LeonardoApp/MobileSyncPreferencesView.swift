@@ -104,6 +104,8 @@ private struct PairingConsentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(request.deviceName).font(.title2)
+            Text(L10n.text(request.kind == .desktopPeer ? "Desktop Mac · changes require review" : "Read-only device"))
+                .font(.caption).foregroundStyle(.secondary)
             Text(request.comparisonCode).font(.largeTitle.monospaced())
             Toggle(L10n.text("The codes match on both devices"), isOn: $confirmed)
             ForEach(controller.settings.projects) { project in

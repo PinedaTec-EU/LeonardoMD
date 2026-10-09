@@ -10,7 +10,7 @@ public struct DesktopPeerHTTPSRemote: DesktopPeerRemote {
         if let invitation {
             client = try DirectEnrollmentClient(qr: DirectPairingQR(endpoint: endpoint, certificateFingerprint: fingerprint, invitation: invitation))
         } else { client = try DirectEnrollmentClient(endpoint: endpoint, certificateFingerprint: fingerprint) }
-        let result = try await client.begin(deviceName: name, credential: credential, now: now)
+        let result = try await client.begin(deviceName: name, credential: credential, now: now, kind: .desktopPeer)
         return PairingChallenge(id: result.deviceID, comparisonCode: result.comparisonCode, expiresAt: result.expiresAt)
     }
     public func status(_ connection: DesktopPeerConnection, credential: String) async throws -> DirectDeviceStatus {

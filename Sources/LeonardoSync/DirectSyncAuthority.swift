@@ -65,10 +65,10 @@ public actor DirectSyncAuthority {
         try await mutate { try $0.createInvitation(now: now) }
     }
 
-    public func beginPairing(deviceName: String, credential: String, invitation: PairingInvitation?, now: Date) async throws -> PairingChallenge {
+    public func beginPairing(deviceName: String, credential: String, invitation: PairingInvitation?, now: Date, kind: PairingClientKind = .readOnly) async throws -> PairingChallenge {
         let request = try await mutate {
             try $0.requestPairing(deviceName: deviceName, credential: credential, invitation: invitation,
-                                  serverFingerprint: fingerprint, now: now)
+                                  serverFingerprint: fingerprint, now: now, kind: kind)
         }
         return PairingChallenge(id: request.id, comparisonCode: request.comparisonCode, expiresAt: request.expiresAt)
     }
@@ -76,6 +76,13 @@ public actor DirectSyncAuthority {
     public func approve(requestID: UUID, code: String, projectIDs: Set<UUID>, now: Date) async throws {
         guard projectIDs.allSatisfy({ projects[$0] != nil }) else { throw PairingError.invalidProject }
         _ = try await mutate { try $0.approve(requestID: requestID, comparisonCode: code, projects: projectIDs, now: now) }
+    }
+
+    public func reconciliationDescriptor(deviceID: UUID, credential: String, projectID: UUID) throws -> SharedProjectDescriptor {
+        guard !changing else { throw DirectAuthorityError.busy }
+        try registry.authorizeReconciliation(deviceID: deviceID, credential: credential, projectID: projectID)
+        guard let source = projects[projectID] else { throw PairingError.invalidProject }
+        return source.descriptor
     }
 
     public func reject(requestID: UUID) async throws { try await mutate { $0.reject(requestID: requestID) } }
