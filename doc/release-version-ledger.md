@@ -149,7 +149,7 @@ public consumer as data. The central catalog must allowlist LeonardoMD and its
 App installation must grant the existing scoped policy permissions for this
 repository. Public visibility does not grant fork code access to credentials.
 
-Central public-target support and catalog registration are integrated. Main protection requires Actions `test` (App `15368`) and `release-ledger-policy` (App `4862830`) with strict checks and administrator enforcement. The configured dispatch token was exercised on #56; #62 and #63 proved successive serial materialization.
+Central public-target support and catalog registration are integrated. Owner policy keeps `main` without native branch protection or rulesets. Before every source PR merge, the delivery workflow must verify successful exact-head Actions `test` (App `15368`) and `release-ledger-policy` (App `4862830`), freshness against current main, and a strict fresh-agent judge PASS. These are mandatory process gates; GitHub does not enforce them through branch settings. The configured dispatch token was exercised on #56; #62 and #63 proved successive serial materialization.
 
 For legacy generated-PR recovery, keep GitHub automatic branch deletion enabled. After each generated PR merges, verify its remote ref is absent before requesting the next materialization; otherwise a stale branch can correctly fail the engine safety preflight. If a retired ref remains, check that no open PR uses it, delete only its verified SHA with a lease, and preserve any advanced ref. Recovery and automatic cleanup were verified in [#61](https://github.com/PinedaTec-EU/LeonardoMD/issues/61).
 
@@ -176,8 +176,14 @@ Sparkle configuration preserves the generated canonical bundle version/build. Ex
 
 ## Pin maintenance
 
-Refresh the immutable engine SHA after engine changes integrate into central main, through reviewed source PRs in the central catalog and this operator wrapper. Validate both against the same integrated snapshot; publisher-only commits with an unchanged engine tree do not require recursive pin refreshes. Never resolve mutable main at execution time. Main protection requires `test` from GitHub Actions and `release-ledger-policy` from App 4862830, including administrators. Dispatch-token execution was observed on PR #56 after readiness. Tracking: [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
+Refresh the immutable engine SHA after engine changes integrate into central main, through reviewed source PRs in the central catalog and this operator wrapper. Validate both against the same integrated snapshot; publisher-only commits with an unchanged engine tree do not require recursive pin refreshes. Never resolve mutable main at execution time. Apply the same mandatory exact-head process gates to every operator, including administrators; do not enable branch protection as a merge prerequisite. Dispatch-token execution was observed on PR #56 after readiness. Tracking: [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
 
 Integrate the central catalog refresh before enabling policy validation of the consumer pin PR. An App verdict binds the head, base and engine identity; if a queued run already recorded the old pin on that head, refresh the consumer head and obtain new current-pin validation instead of overwriting the immutable verdict.
 
 Publish the final consumer pin PR head only after the central catalog refresh integrates: queue inventory can validate drafts too. If an older engine already issued a check, refresh the consumer head after catalog integration and verify the new binding.
+
+## Owner policy and sibling audit
+
+On 2026-10-09 the owner explicitly confirmed that main must remain unprotected. Read-only GitHub API inspection of all 41 PinedaTec-EU repositories found `main.protected=false` in every repository. All 31 private repositories returned HTTP 403 for protection/rulesets with the provider message requiring a plan upgrade or public visibility; the organization reports the free plan. The 10 public repositories have no active rulesets. Public LeonardoMD can technically enable protection, but the owner chooses the same unprotected-main policy. Absence of native protection is not itself a merge rejection under this local contract. Passing CI, exact-head ledger validation, owner authorization and independent judgment remain mandatory. Without native enforcement, another actor can bypass these process gates; this audit does not claim equivalent provider enforcement.
+
+Tracking: [#81](https://github.com/PinedaTec-EU/LeonardoMD/issues/81).
