@@ -4,6 +4,7 @@ public enum GitWireError: Error, Equatable, Sendable {
     case invalidPacket, truncatedPacket, responseTooLarge, invalidAdvertisement
     case filteringUnavailable, invalidObjectID, unsupportedObjectFormat
     case invalidFetchResponse, remoteFailure, invalidPack
+    case invalidDelta
 }
 
 public enum GitPacket: Equatable, Sendable {

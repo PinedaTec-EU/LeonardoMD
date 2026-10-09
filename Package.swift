@@ -8,7 +8,8 @@ let package = Package(
     dependencies: [.package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.9.6")],
     targets: [
         .target(name: "LeonardoCore"),
-        .target(name: "LeonardoGit"),
+        .target(name: "CLeonardoZlib", linkerSettings: [.linkedLibrary("z")]),
+        .target(name: "LeonardoGit", dependencies: ["CLeonardoZlib"]),
         .testTarget(name: "LeonardoGitTests", dependencies: ["LeonardoGit"]),
         .target(name: "LeonardoSync"),
         .target(name: "LeonardoSyncTransport", dependencies: ["LeonardoSync"]),
