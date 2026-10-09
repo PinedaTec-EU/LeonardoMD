@@ -10,6 +10,7 @@
 		22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */; };
 		2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7849226B36C61649B125BDDC /* MobileLibraryView.swift */; };
 		46EBC1E01C1296D54919D7A0 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
+		636F71B3D4E9A41FC1842500 /* LeonardoSyncTransport in Frameworks */ = {isa = PBXBuildFile; productRef = 00F8AB50590ED36AF1934837 /* LeonardoSyncTransport */; };
 		852C58BAA8EDEDB67FDE7FB4 /* LeonardoSync in Frameworks */ = {isa = PBXBuildFile; productRef = 7CAAF1CC01593584A9E0A7F9 /* LeonardoSync */; };
 		C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */; };
 /* End PBXBuildFile section */
@@ -29,6 +30,7 @@
 			files = (
 				46EBC1E01C1296D54919D7A0 /* Foundation.framework in Frameworks */,
 				852C58BAA8EDEDB67FDE7FB4 /* LeonardoSync in Frameworks */,
+				636F71B3D4E9A41FC1842500 /* LeonardoSyncTransport in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -97,6 +99,7 @@
 			name = LittleLeonardo;
 			packageProductDependencies = (
 				7CAAF1CC01593584A9E0A7F9 /* LeonardoSync */,
+				00F8AB50590ED36AF1934837 /* LeonardoSyncTransport */,
 			);
 			productName = LittleLeonardo;
 			productReference = 5B83DAE858F9656CCDF4D6B1 /* LittleLeonardo.app */;
@@ -345,6 +348,11 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		00F8AB50590ED36AF1934837 /* LeonardoSyncTransport */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EF04C10B9BAEA910A5BF75DB /* XCLocalSwiftPackageReference ".." */;
+			productName = LeonardoSyncTransport;
+		};
 		7CAAF1CC01593584A9E0A7F9 /* LeonardoSync */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = EF04C10B9BAEA910A5BF75DB /* XCLocalSwiftPackageReference ".." */;

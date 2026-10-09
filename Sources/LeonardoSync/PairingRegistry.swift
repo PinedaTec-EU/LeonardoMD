@@ -7,7 +7,7 @@ public enum PairingError: Error, Equatable, Sendable {
     case randomGenerationFailed
 }
 
-public struct PairingInvitation: Sendable {
+public struct PairingInvitation: Codable, Equatable, Sendable {
     public let id: UUID
     public let secret: String
     public let expiresAt: Date
@@ -29,7 +29,7 @@ public struct PairedDevice: Codable, Equatable, Sendable, Identifiable {
     public var revoked: Bool
 }
 
-public enum DeviceAccess: Equatable, Sendable { case authorized, revoked }
+public enum DeviceAccess: String, Codable, Equatable, Sendable { case authorized, revoked, pending }
 
 /// Pure consent policy. The transport must encrypt all requests and verify the server identity.
 /// Only digests are retained; bearer credentials and invitation secrets belong in secure storage.
@@ -65,7 +65,7 @@ public struct PairingRegistry: Codable, Sendable {
     }
 
     public mutating func requestPairing(deviceName: String, credential: String,
-                                       invitation: PairingInvitation? = nil, now: Date) throws -> PairingRequest {
+                                       invitation: PairingInvitation? = nil, serverFingerprint: Data, now: Date) throws -> PairingRequest {
         guard enabled else { throw PairingError.disabled }
         expire(now: now)
         guard credential.count == 64, credential.allSatisfy(\.isHexDigit),
@@ -83,10 +83,10 @@ public struct PairingRegistry: Codable, Sendable {
               !requests.contains(where: { Self.matches($0.credentialDigest, credentialDigest) }) else {
             throw PairingError.invalidCredential
         }
-        let entropy = try Self.randomBytes(count: 4)
-        let number = entropy.reduce(UInt32(0)) { ($0 << 8) | UInt32($1) } % 100_000_000
-        let request = PairingRequest(id: UUID(), deviceName: deviceName,
-            comparisonCode: String(format: "%08u", number), expiresAt: now.addingTimeInterval(Self.requestLifetime),
+        let id = UUID()
+        let code = try PairingComparisonCode.make(serverFingerprint: serverFingerprint, credential: credential, requestID: id)
+        let request = PairingRequest(id: id, deviceName: deviceName,
+            comparisonCode: code, expiresAt: now.addingTimeInterval(Self.requestLifetime),
             credentialDigest: credentialDigest)
         requests.append(request)
         return request
@@ -121,6 +121,14 @@ public struct PairingRegistry: Codable, Sendable {
         if device.revoked { return .revoked }
         if let projectID, !device.projects.contains(projectID) { throw PairingError.invalidProject }
         return .authorized
+    }
+
+    public func pairingStatus(requestID: UUID, credential: String, now: Date) throws -> DeviceAccess {
+        if devices.contains(where: { $0.id == requestID }) { return try access(deviceID: requestID, credential: credential) }
+        guard enabled else { throw PairingError.disabled }
+        guard let request = requests.first(where: { $0.id == requestID && $0.expiresAt > now }),
+              Self.matches(request.credentialDigest, Self.digest(credential)) else { throw PairingError.invalidCredential }
+        return .pending
     }
 
     public static func makeCredential() throws -> String {
