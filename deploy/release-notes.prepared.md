@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.135
+
+- #78 Added: expose recent documents projects and workspaces in File ([#79](https://github.com/PinedaTec-EU/LeonardoMD/pull/79))
+
+Source: `366a90b590f2d0e4a8e5db42247a71bca5fb1702`. Delta: `{"build": 11}`.
+
 ## 0.1.124
 
 - #75 Added: subtle Leonardo welcome watermark ([#76](https://github.com/PinedaTec-EU/LeonardoMD/pull/76))
