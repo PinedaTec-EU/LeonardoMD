@@ -104,6 +104,15 @@ public struct OfflineProject: Codable, Equatable, Sendable {
         files = snapshot.files
     }
 
+    public mutating func replaceGitSnapshot(_ snapshot: CorpusSnapshot, limits: CorpusLimits = CorpusLimits()) throws {
+        guard mode == .git else { throw SyncError.invalidSnapshot }
+        guard !hasLocalChanges, publication != .sent else { throw SyncError.publicationPending }
+        try snapshot.validate(scope: scope, limits: limits)
+        base = snapshot
+        files = snapshot.files
+        publication = .integrated
+    }
+
     public mutating func markPublished(revision: String) throws {
         guard mode == .git, hasLocalChanges, !revision.isEmpty else { throw SyncError.invalidSnapshot }
         guard publication != .sent else { throw SyncError.publicationPending }

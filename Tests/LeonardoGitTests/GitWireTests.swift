@@ -194,6 +194,30 @@ final class GitWireTests: XCTestCase {
         XCTAssertEqual(requests.count, 3)
         let last = try GitPacket.decode(XCTUnwrap(requests.last))
         XCTAssertEqual(last.filter { if case .data(let data) = $0 { return data.starts(with: Data("want ".utf8)) }; return false }.count, 1)
+        let connection = try GitProjectConnection(projectID: UUID(), endpoint: URL(string: "https://fixture.invalid/project.git")!,
+            branch: try XCTUnwrap(discovery.references.first(where: { $0.name == "HEAD" })?.symbolicTarget), scope: CorpusScope(folder: "docs"))
+        let original = try OfflineProject(id: connection.projectID, name: "Fixture", mode: .git, scope: connection.scope, snapshot: snapshot)
+        let refresher = GitProjectRefresher(transport: transport)
+        let unchanged = try await refresher.refresh(original, connection: connection)
+        XCTAssertEqual(unchanged, .unchanged)
+        var dirty = original
+        try dirty.write(path: "docs/mobile.md", content: Data("# Local edit".utf8))
+        let local = try await refresher.refresh(dirty, connection: connection)
+        XCTAssertEqual(local, .localChanges)
+        try Data("# Desktop edit".utf8).write(to: root.appendingPathComponent("docs/mobile.md"))
+        _ = try git(["-C", root.path, "add", "."])
+        _ = try git(["-C", root.path, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "--quiet", "-m", "desktop edit"])
+        let conflict = try await refresher.refresh(dirty, connection: connection)
+        XCTAssertEqual(conflict, .requiresReconciliation)
+        XCTAssertEqual(dirty.files[0].content, Data("# Local edit".utf8))
+        let clean = try await refresher.refresh(original, connection: connection)
+        guard case .updated(let updated) = clean else { return XCTFail("Clean copy did not refresh") }
+        XCTAssertEqual(updated.files[0].content, Data("# Desktop edit".utf8))
+        XCTAssertNotEqual(updated.base.revision, original.base.revision)
+        try dirty.markPublished(revision: String(repeating: "a", count: 40))
+        let pending = try await refresher.refresh(dirty, connection: connection)
+        XCTAssertEqual(pending, .awaitingIntegration)
+
     }
 
     func testActualGitAdvertisementGatesPartialTransfer() throws {

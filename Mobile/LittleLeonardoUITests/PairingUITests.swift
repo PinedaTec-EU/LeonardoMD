@@ -23,6 +23,17 @@ final class PairingUITests: XCTestCase {
         XCTAssertFalse(app.webViews.firstMatch.exists)
     }
 
+    @MainActor func testSyncSettingsAreAvailableWithoutDesktopPairing() throws {
+        let app = XCUIApplication()
+        app.launch()
+        let settings = app.buttons["open-sync-settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 10))
+        settings.tap()
+        XCTAssertTrue(app.staticTexts["La sincronización automática funciona mientras la app está activa."].waitForExistence(timeout: 5))
+        app.buttons["Cerrar"].tap()
+        XCTAssertTrue(settings.waitForExistence(timeout: 5))
+    }
+
     @MainActor func testGitEnrollmentRequiresEndpointAndCanCancelWithoutConnecting() throws {
         let app = XCUIApplication()
         app.launch()

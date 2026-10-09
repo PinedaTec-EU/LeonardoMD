@@ -2,10 +2,14 @@ import SwiftUI
 import LeonardoSync
 import LeonardoRender
 
+private enum MobileLibrarySheet: String, Identifiable {
+    case direct, git, settings
+    var id: String { rawValue }
+}
+
 struct MobileLibraryView: View {
     @Bindable var library: MobileLibrary
-    @State private var pairing = false
-    @State private var gitPairing = false
+    @State private var presentedSheet: MobileLibrarySheet?
     @State private var qrURL = ""
     @State private var scanning = false
     @State private var manualPairing = false
@@ -35,11 +39,13 @@ struct MobileLibraryView: View {
             .navigationTitle("Little Leonardo")
             .refreshable { await library.synchronize(); await library.reload() }
             .toolbar {
-                Button("Conectar", systemImage: "qrcode") { pairing = true }
+                Button("Conectar", systemImage: "qrcode") { presentedSheet = .direct }
                     .disabled(library.connecting)
                     .accessibilityIdentifier("open-pairing")
-                Button("Conectar Git", systemImage: "arrow.triangle.branch") { gitPairing = true }
+                Button("Conectar Git", systemImage: "arrow.triangle.branch") { presentedSheet = .git }
                     .disabled(library.connecting).accessibilityIdentifier("open-git-pairing")
+                Button("Ajustes de sincronización", systemImage: "gearshape") { presentedSheet = .settings }
+                    .accessibilityIdentifier("open-sync-settings")
                 Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
                     Task { await library.synchronize() }
                 }.disabled(library.connecting)
@@ -53,48 +59,11 @@ struct MobileLibraryView: View {
                     }.padding().background(.regularMaterial)
                 }
             }
-            .sheet(isPresented: $gitPairing) { MobileGitConnectionView(library: library) }
-            .sheet(isPresented: $pairing) {
-                NavigationStack {
-                    Form {
-                        Text("Ambos dispositivos deben estar en la misma red local. Comprueba el código en las dos pantallas antes de autorizar la conexión.")
-                        Picker("Método de conexión", selection: $manualPairing) {
-                            Text("QR").tag(false)
-                            Text("IP y puerto").tag(true)
-                        }.pickerStyle(.segmented).accessibilityIdentifier("pairing-method")
-                        if manualPairing {
-                            TextField("IP de LeonardoMD", text: $host)
-                                .textInputAutocapitalization(.never).autocorrectionDisabled()
-                                .accessibilityIdentifier("pairing-host")
-                            TextField("Puerto", text: $port).keyboardType(.numberPad)
-                                .accessibilityIdentifier("pairing-port")
-                        } else {
-                            TextField("littleleonardo://pair…", text: $qrURL)
-                                .textInputAutocapitalization(.never).autocorrectionDisabled()
-                            Button("Escanear QR", systemImage: "camera") { scanning = true }
-                                .disabled(library.connecting)
-                                .accessibilityIdentifier("scan-pairing-qr")
-                        }
-                        Picker("Sincronización automática", selection: $syncInterval) {
-                            Text("Solo manual").tag(0)
-                            ForEach([1, 5, 15, 30, 60], id: \.self) { Text("Cada \($0) min").tag($0) }
-                        }
-                        Text("La sincronización automática funciona mientras la app está activa.").font(.caption)
-                        Button("Solicitar conexión") {
-                            Task {
-                                if manualPairing {
-                                    await library.connectManual(host: host, port: port, deviceName: UIDevice.current.name)
-                                } else {
-                                    await library.connect(qrURL: qrURL, deviceName: UIDevice.current.name)
-                                }
-                                if library.comparisonCode != nil { qrURL = ""; pairing = false }
-                            }
-                        }.disabled(library.connecting || (manualPairing ? host.isEmpty || (UInt16(port) ?? 0) == 0 : qrURL.isEmpty))
-                    }.navigationTitle("Conectar con LeonardoMD")
-                    .toolbar { Button("Cerrar") { pairing = false } }
-                    .sheet(isPresented: $scanning) {
-                        MobileQRScannerScreen { qrURL = $0 }
-                    }
+            .sheet(item: $presentedSheet) { destination in
+                switch destination {
+                case .direct: directConnectionSheet
+                case .git: MobileGitConnectionView(library: library)
+                case .settings: synchronizationSettings
                 }
             }
             .task(id: "\(syncInterval)-\(scenePhase)") {
@@ -112,6 +81,64 @@ struct MobileLibraryView: View {
             } message: { Text(library.error ?? "") }
         }
     }
+    private var directConnectionSheet: some View {
+        NavigationStack {
+            Form {
+                Text("Ambos dispositivos deben estar en la misma red local. Comprueba el código en las dos pantallas antes de autorizar la conexión.")
+                Picker("Método de conexión", selection: $manualPairing) {
+                    Text("QR").tag(false)
+                    Text("IP y puerto").tag(true)
+                }.pickerStyle(.segmented).accessibilityIdentifier("pairing-method")
+                if manualPairing {
+                    TextField("IP de LeonardoMD", text: $host)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .accessibilityIdentifier("pairing-host")
+                    TextField("Puerto", text: $port).keyboardType(.numberPad)
+                        .accessibilityIdentifier("pairing-port")
+                } else {
+                    TextField("littleleonardo://pair…", text: $qrURL)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    Button("Escanear QR", systemImage: "camera") { scanning = true }
+                        .disabled(library.connecting)
+                        .accessibilityIdentifier("scan-pairing-qr")
+                }
+                syncFrequency
+                Button("Solicitar conexión") {
+                    Task {
+                        if manualPairing {
+                            await library.connectManual(host: host, port: port, deviceName: UIDevice.current.name)
+                        } else {
+                            await library.connect(qrURL: qrURL, deviceName: UIDevice.current.name)
+                        }
+                        if library.comparisonCode != nil { qrURL = ""; presentedSheet = nil }
+                    }
+                }.disabled(library.connecting || (manualPairing ? host.isEmpty || (UInt16(port) ?? 0) == 0 : qrURL.isEmpty))
+            }.navigationTitle("Conectar con LeonardoMD")
+            .toolbar { Button("Cerrar") { presentedSheet = nil } }
+            .sheet(isPresented: $scanning) {
+                MobileQRScannerScreen { qrURL = $0 }
+            }
+        }
+    }
+
+    private var syncFrequency: some View {
+        Group {
+            Picker("Sincronización automática", selection: $syncInterval) {
+                Text("Solo manual").tag(0)
+                ForEach([1, 5, 15, 30, 60], id: \.self) { Text("Cada \($0) min").tag($0) }
+            }
+            Text("La sincronización automática funciona mientras la app está activa.").font(.caption)
+        }
+    }
+
+    private var synchronizationSettings: some View {
+        NavigationStack {
+            Form { syncFrequency }
+                .navigationTitle("Sincronización")
+                .toolbar { Button("Cerrar") { presentedSheet = nil } }
+        }
+    }
+
 }
 
 struct MobileProjectView: View {
@@ -127,6 +154,7 @@ struct MobileProjectView: View {
                 Section {
                     Text(project.mode == .direct ? "Disponible offline · Solo lectura" : "Disponible offline · Git")
                         .font(.caption).foregroundStyle(.secondary)
+                    if let status = library.gitStatus[project.id] { Text(status).font(.caption).foregroundStyle(.secondary) }
                     Text("Carpeta: \(project.scope.folder.isEmpty ? "/" : project.scope.folder)")
                         .font(.caption)
                 }
@@ -222,7 +250,7 @@ struct MobileDocumentView: View {
         .onChange(of: library.projects) { _, projects in
             updateAssets(projects.first { $0.id == projectID })
             if !projects.contains(where: { $0.id == projectID }) { text = ""; editing = false }
-            else if mode == .direct {
+            else if mode == .direct || !editing {
                 text = projects.first(where: { $0.id == projectID })?.files.first(where: { $0.path == file.path })
                     .flatMap { String(data: $0.content, encoding: .utf8) } ?? "El documento ya no está disponible."
             }

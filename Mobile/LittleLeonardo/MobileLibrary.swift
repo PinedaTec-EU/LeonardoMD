@@ -18,6 +18,7 @@ final class MobileLibrary {
     var error: String?
     private(set) var connecting = false
     private(set) var comparisonCode: String?
+    private(set) var gitStatus: [UUID: String] = [:]
     private let store: OfflineCorpusStore
     private let connectionURL: URL
     private let gitConnections: GitConnectionStore
@@ -127,8 +128,36 @@ final class MobileLibrary {
                 try persistConnections()
             } catch { self.error = error.localizedDescription }
         }
+        await synchronizeGitProjects()
         comparisonCode = connections.first(where: { $0.comparisonCode != nil })?.comparisonCode
         projects.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    private func synchronizeGitProjects() async {
+        for project in projects where project.mode == .git {
+            guard !Task.isCancelled else { return }
+            do {
+                guard let connection = try await gitConnections.load(id: project.id) else { continue }
+                let password = try await gitCredentials.password(projectID: project.id)
+                if connection.username != nil, password == nil { throw GitRemoteError.authenticationRequired }
+                let transport = try GitHTTPTransport(endpoint: connection.endpoint, username: connection.username, password: password)
+                let result = try await GitProjectRefresher(transport: transport).refresh(project, connection: connection)
+                switch result {
+                case .updated(let updated):
+                    try await store.save(updated)
+                    if let index = projects.firstIndex(where: { $0.id == project.id }) { projects[index] = updated }
+                    gitStatus[project.id] = "Sincronizado"
+                case .unchanged: gitStatus[project.id] = "Sincronizado"
+                case .localChanges: gitStatus[project.id] = "Cambios locales pendientes de enviar"
+                case .awaitingIntegration: gitStatus[project.id] = "Cambios enviados · Reconciliación pendiente en LeonardoMD"
+                case .requiresReconciliation: gitStatus[project.id] = "Git ha cambiado · Conservamos tus cambios locales para reconciliar"
+                }
+            } catch {
+                if Task.isCancelled { return }
+                gitStatus[project.id] = "No se pudo actualizar Git · Copia local conservada"
+                self.error = error.localizedDescription
+            }
+        }
     }
 
     private func persistConnections() throws {
