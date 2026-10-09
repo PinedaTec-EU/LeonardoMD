@@ -5,6 +5,48 @@ import LeonardoSyncTransport
 @testable import LeonardoDesktopSync
 
 final class DesktopTLSIdentityStoreTests: XCTestCase {
+    func testManualIdentityProbeSendsNoHTTPAndEnrollmentRequiresConsent() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let identity = try await DesktopTLSIdentityStore(root: root, credentials: MemoryCredentials()).loadOrCreate()
+        let requests = ProbeRequests()
+        let listener = LANHTTPSListener(identity: identity) { _ in
+            await requests.record()
+            return HTTPResponse(status: 200)
+        }
+        let port = try await listener.start(host: "127.0.0.1")
+        do {
+            let endpoint = URL(string: "https://127.0.0.1:\(port)")!
+            let fingerprint = try await ServerIdentityProbe.fingerprint(endpoint: endpoint)
+            XCTAssertEqual(fingerprint, identity.certificateFingerprint)
+            let count = await requests.count
+            XCTAssertEqual(count, 0, "Certificate discovery must cancel before sending HTTP")
+            await listener.stop()
+        } catch { await listener.stop(); throw error }
+
+        let scope = try CorpusScope(folder: "docs")
+        let descriptor = SharedProjectDescriptor(id: UUID(), name: "Notes", scope: scope)
+        let runtime = DesktopDirectRuntime(root: root.appendingPathComponent("runtime"), credentials: MemoryCredentials(), now: { Date() })
+        let running = try await runtime.start(host: "127.0.0.1", port: 0, projects: [SharedProjectSource(descriptor: descriptor) {
+            CorpusSnapshot(revision: "empty", files: [])
+        }])
+        do {
+            let fingerprint = try await ServerIdentityProbe.fingerprint(endpoint: running.endpoint)
+            let client = try DirectEnrollmentClient(endpoint: running.endpoint, certificateFingerprint: fingerprint)
+            let credential = try PairingRegistry.makeCredential()
+            let enrollment = try await client.begin(deviceName: "Manual iPhone", credential: credential, now: Date())
+            let pending = try await client.status(deviceID: enrollment.deviceID, credential: credential)
+            XCTAssertEqual(pending.access, .pending)
+            XCTAssertTrue(pending.projects.isEmpty)
+            let consent = try await runtime.consentState()
+            XCTAssertEqual(consent.requests.first?.comparisonCode, enrollment.comparisonCode)
+            try await runtime.approve(requestID: enrollment.deviceID, code: enrollment.comparisonCode, projectIDs: [descriptor.id])
+            let granted = try await client.status(deviceID: enrollment.deviceID, credential: credential)
+            XCTAssertEqual(granted.access, .authorized)
+            try await runtime.stop()
+        } catch { try? await runtime.stop(); throw error }
+    }
+
     func testEnrollmentClientWaitsForConsentAndReadsOnlyGrantedCorpus() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -95,5 +137,10 @@ private actor MemoryCredentials: DeviceCredentialStore {
     func credential(deviceID: UUID) -> String? { values[deviceID] }
     func save(_ credential: String, deviceID: UUID) { values[deviceID] = credential }
     func remove(deviceID: UUID) { values.removeValue(forKey: deviceID) }
+}
+
+private actor ProbeRequests {
+    private(set) var count = 0
+    func record() { count += 1 }
 }
 #endif

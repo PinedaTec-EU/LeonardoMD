@@ -56,14 +56,35 @@ final class MobileLibrary {
             guard let url = URL(string: qrURL.trimmingCharacters(in: .whitespacesAndNewlines)) else { throw TransportError.invalidEndpoint }
             let qr = try DirectPairingQR.decode(url, now: Date())
             let client = try DirectEnrollmentClient(qr: qr)
-            let credential = try PairingRegistry.makeCredential()
-            let enrollment = try await client.begin(deviceName: deviceName, credential: credential, now: Date())
-            try await credentials.save(credential, deviceID: enrollment.deviceID)
-            connections.append(MobileDirectConnection(deviceID: enrollment.deviceID, endpoint: qr.endpoint,
-                fingerprint: qr.certificateFingerprint, projectIDs: [], comparisonCode: enrollment.comparisonCode))
-            try persistConnections()
-            comparisonCode = enrollment.comparisonCode
+            try await enroll(client: client, endpoint: qr.endpoint, fingerprint: qr.certificateFingerprint, deviceName: deviceName)
         } catch { self.error = error.localizedDescription }
+    }
+
+    func connectManual(host: String, port: String, deviceName: String) async {
+        guard !connecting, savingProjects.isEmpty else { return }
+        connecting = true
+        defer { connecting = false }
+        do {
+            guard let port = UInt16(port), port > 0 else { throw TransportError.invalidEndpoint }
+            var components = URLComponents()
+            components.scheme = "https"
+            components.host = host.trimmingCharacters(in: .whitespacesAndNewlines)
+            components.port = Int(port)
+            guard let endpoint = components.url else { throw TransportError.invalidEndpoint }
+            let fingerprint = try await ServerIdentityProbe.fingerprint(endpoint: endpoint)
+            let client = try DirectEnrollmentClient(endpoint: endpoint, certificateFingerprint: fingerprint)
+            try await enroll(client: client, endpoint: endpoint, fingerprint: fingerprint, deviceName: deviceName)
+        } catch { self.error = error.localizedDescription }
+    }
+
+    private func enroll(client: DirectEnrollmentClient, endpoint: URL, fingerprint: Data, deviceName: String) async throws {
+        let credential = try PairingRegistry.makeCredential()
+        let enrollment = try await client.begin(deviceName: deviceName, credential: credential, now: Date())
+        try await credentials.save(credential, deviceID: enrollment.deviceID)
+        connections.append(MobileDirectConnection(deviceID: enrollment.deviceID, endpoint: endpoint,
+            fingerprint: fingerprint, projectIDs: [], comparisonCode: enrollment.comparisonCode))
+        try persistConnections()
+        comparisonCode = enrollment.comparisonCode
     }
 
     func synchronize() async {

@@ -6,6 +6,9 @@ struct MobileLibraryView: View {
     @State private var pairing = false
     @State private var qrURL = ""
     @State private var scanning = false
+    @State private var manualPairing = false
+    @State private var host = ""
+    @State private var port = "40882"
     @AppStorage("directSyncIntervalMinutes") private var syncInterval = 0
     @Environment(\.scenePhase) private var scenePhase
     var body: some View {
@@ -49,12 +52,24 @@ struct MobileLibraryView: View {
             .sheet(isPresented: $pairing) {
                 NavigationStack {
                     Form {
-                        Text("Pega el enlace del QR generado en las preferencias de LeonardoMD. Ambos dispositivos deben estar en la misma red local.")
-                        TextField("littleleonardo://pair…", text: $qrURL)
-                            .textInputAutocapitalization(.never).autocorrectionDisabled()
-                        Button("Escanear QR", systemImage: "camera") { scanning = true }
-                            .disabled(library.connecting)
-                            .accessibilityIdentifier("scan-pairing-qr")
+                        Text("Ambos dispositivos deben estar en la misma red local. Comprueba el código en las dos pantallas antes de autorizar la conexión.")
+                        Picker("Método de conexión", selection: $manualPairing) {
+                            Text("QR").tag(false)
+                            Text("IP y puerto").tag(true)
+                        }.pickerStyle(.segmented).accessibilityIdentifier("pairing-method")
+                        if manualPairing {
+                            TextField("IP de LeonardoMD", text: $host)
+                                .textInputAutocapitalization(.never).autocorrectionDisabled()
+                                .accessibilityIdentifier("pairing-host")
+                            TextField("Puerto", text: $port).keyboardType(.numberPad)
+                                .accessibilityIdentifier("pairing-port")
+                        } else {
+                            TextField("littleleonardo://pair…", text: $qrURL)
+                                .textInputAutocapitalization(.never).autocorrectionDisabled()
+                            Button("Escanear QR", systemImage: "camera") { scanning = true }
+                                .disabled(library.connecting)
+                                .accessibilityIdentifier("scan-pairing-qr")
+                        }
                         Picker("Sincronización automática", selection: $syncInterval) {
                             Text("Solo manual").tag(0)
                             ForEach([1, 5, 15, 30, 60], id: \.self) { Text("Cada \($0) min").tag($0) }
@@ -62,10 +77,14 @@ struct MobileLibraryView: View {
                         Text("La sincronización automática funciona mientras la app está activa.").font(.caption)
                         Button("Solicitar conexión") {
                             Task {
-                                await library.connect(qrURL: qrURL, deviceName: UIDevice.current.name)
+                                if manualPairing {
+                                    await library.connectManual(host: host, port: port, deviceName: UIDevice.current.name)
+                                } else {
+                                    await library.connect(qrURL: qrURL, deviceName: UIDevice.current.name)
+                                }
                                 if library.comparisonCode != nil { qrURL = ""; pairing = false }
                             }
-                        }.disabled(library.connecting || qrURL.isEmpty)
+                        }.disabled(library.connecting || (manualPairing ? host.isEmpty || (UInt16(port) ?? 0) == 0 : qrURL.isEmpty))
                     }.navigationTitle("Conectar con LeonardoMD")
                     .toolbar { Button("Cerrar") { pairing = false } }
                     .sheet(isPresented: $scanning) {

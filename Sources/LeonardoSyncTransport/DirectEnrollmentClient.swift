@@ -28,11 +28,11 @@ public struct DirectEnrollmentClient: Sendable {
     private struct PairingStart: Encodable {
         let deviceName: String
         let credential: String
-        let invitation: PairingInvitation
+        let invitation: PairingInvitation?
     }
 
     public func begin(deviceName: String, credential: String, now: Date) async throws -> DirectEnrollment {
-        guard let invitation, invitation.expiresAt > now else { throw PairingError.expiredInvitation }
+        if let invitation, invitation.expiresAt <= now { throw PairingError.expiredInvitation }
         let response = try await client.request(method: "POST", path: "/v1/pair/request",
             body: JSONEncoder().encode(PairingStart(deviceName: deviceName, credential: credential, invitation: invitation)))
         guard response.status == 202 else { throw TransportError.unexpectedResponse }
