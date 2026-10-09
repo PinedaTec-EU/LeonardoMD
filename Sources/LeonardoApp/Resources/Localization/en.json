@@ -190,5 +190,9 @@
   "Recent documents": "Recent documents",
   "Recent projects": "Recent projects",
   "No recent items": "No recent items",
-  "Clear menu": "Clear menu"
+  "Clear menu": "Clear menu",
+  "On startup": "On startup",
+  "Restore previous session": "Restore previous session",
+  "Start clean": "Start clean",
+  "Applies to all windows on the next launch. Files opened explicitly always take priority.": "Applies to all windows on the next launch. Files opened explicitly always take priority."
 }
