@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.144
+
+- #88 Removed: redundant Preferences button from document outline ([#89](https://github.com/PinedaTec-EU/LeonardoMD/pull/89))
+
+Source: `d4b4dc511d22e6cd431b4e8eb58e235fab458f0d`. Delta: `{"build": 4}`.
+
 ## 0.1.140
 
 - #86 Added: resizable project sidebar ([#87](https://github.com/PinedaTec-EU/LeonardoMD/pull/87))
