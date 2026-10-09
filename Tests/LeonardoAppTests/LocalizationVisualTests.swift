@@ -8,6 +8,34 @@ import XCTest
 /// single-instance application or touch another running editor.
 @MainActor
 final class LocalizationVisualTests: XCTestCase {
+    func testCaptureDisabledMobileServiceInBothLanguages() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_LOCALIZATION_EVIDENCE"] else {
+            throw XCTSkip("Set LEONARDO_LOCALIZATION_EVIDENCE to export native interface captures")
+        }
+        let fixture = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: fixture, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: fixture) }
+        let preferencesURL = fixture.appendingPathComponent("preferences.json")
+        let session = AppSession(preferencesURL: preferencesURL)
+        let controller = DesktopSyncController(preferencesURL: preferencesURL)
+        await controller.initialize()
+        XCTAssertFalse(controller.settings.enabled)
+        XCTAssertNil(controller.running)
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous; session.stop() }
+        let destination = URL(fileURLWithPath: path, isDirectory: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let host = NSHostingView(rootView: MobileSyncPreferencesView(session: session, controller: controller)
+            .modifier(SessionAppearance(session: session)))
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            try await capture(host, size: NSSize(width: 580, height: 620),
+                to: destination.appendingPathComponent("mobile-preferences-\(language.rawValue).png"))
+        }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.appendingPathComponent("MobileSync/TLS").path))
+        await controller.stop()
+    }
+
     func testCapturePreferencesAndWorkspaceInBothLanguages() async throws {
         guard let path = ProcessInfo.processInfo.environment["LEONARDO_LOCALIZATION_EVIDENCE"] else {
             throw XCTSkip("Set LEONARDO_LOCALIZATION_EVIDENCE to export native interface captures")

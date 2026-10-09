@@ -101,6 +101,43 @@ final class ConfigurationStoreTests: XCTestCase {
         XCTAssertEqual(merged.markdown.defaultMode, .split)
     }
 
+    func testLegacyGlobalPreferencesDoNotEnableMobileService() async throws {
+        let directory = try TemporaryDirectory()
+        let url = directory.url.appendingPathComponent("preferences.json")
+        try Data("{}".utf8).write(to: url)
+        let preferences = try await ConfigurationStore.shared.loadGlobalPreferences(at: url)
+        XCTAssertFalse(preferences.mobileSync.enabled)
+        XCTAssertNil(preferences.mobileSync.host)
+        XCTAssertTrue(preferences.mobileSync.projects.isEmpty)
+        XCTAssertEqual(preferences.mobileSync.port, 40882)
+    }
+
+    func testStaleWindowProjectSelectionPreservesExplicitServiceConsent() async throws {
+        let directory = try TemporaryDirectory()
+        let url = directory.url.appendingPathComponent("preferences.json")
+        let baseline = GlobalPreferences()
+        let store = ConfigurationStore.shared
+        try await store.saveGlobalPreferences(baseline, at: url)
+        var serviceWindow = baseline
+        serviceWindow.mobileSync.enabled = true
+        serviceWindow.mobileSync.host = "192.168.1.7"
+        _ = try await store.mergeGlobalPreferences(updated: serviceWindow, baseline: baseline, at: url)
+        let shared = MobileSharedProject(rootURL: directory.url, name: "Fixture")
+        var projectWindow = baseline
+        projectWindow.mobileSync.projects = [shared]
+        projectWindow.mobileSync.port = 40883
+        let merged = try await store.mergeGlobalPreferences(updated: projectWindow, baseline: baseline, at: url)
+        XCTAssertTrue(merged.mobileSync.enabled)
+        XCTAssertEqual(merged.mobileSync.host, "192.168.1.7")
+        XCTAssertEqual(merged.mobileSync.port, 40883)
+        XCTAssertEqual(merged.mobileSync.projects, [shared])
+        var disabled = merged
+        disabled.mobileSync.enabled = false
+        let stopped = try await store.mergeGlobalPreferences(updated: disabled, baseline: merged, at: url)
+        XCTAssertFalse(stopped.mobileSync.enabled)
+        XCTAssertEqual(stopped.mobileSync.projects, [shared])
+    }
+
     func testProjectMergePreservesIndependentGitAndMarkdownChanges() async throws {
         let directory = try TemporaryDirectory()
         let projectRoot = directory.url.appendingPathComponent("Project", isDirectory: true)
