@@ -49,22 +49,17 @@ struct DesktopPeerPreferencesView: View {
                         Text(copy.name).font(.headline)
                         Text((copy.selection.folders + copy.selection.documents).joined(separator: ", "))
                             .font(.caption).foregroundStyle(.secondary)
-                        HStack {
-                            Button(L10n.text("Open")) {
-                                Task {
-                                    if let url = await controller.open(copy.id) {
-                                        await session.openProject(url)
-                                        if session.projectURL == url { dismiss() }
-                                    }
-                                }
-                            }
-                            Button(L10n.text("Compare changes")) {
-                                Task {
-                                    await controller.compare(copy.id)
-                                    if controller.comparisons[copy.id] != nil { reviewing = copy.id }
-                                }
-                            }
+                        ViewThatFits(in: .horizontal) {
+                            HStack { copyActions(copy) }
+                            VStack(alignment: .leading, spacing: 8) { copyActions(copy) }
                         }
+                        if controller.submitted.contains(copy.id) {
+                            Text(L10n.text("Sent for review on the other Mac. Later edits remain local."))
+                                .font(.caption).foregroundStyle(.secondary)
+                        } else if controller.pendingProposals[copy.id] != nil {
+                            Text(L10n.text("A saved proposal is pending. Retrying sends the original capture."))
+                                .font(.caption).foregroundStyle(.secondary)
+                        } else if controller.unchanged.contains(copy.id) { Text(L10n.text("No changes")) }
                     }
                 }
             }
@@ -80,6 +75,29 @@ struct DesktopPeerPreferencesView: View {
             Button(L10n.text("OK")) { controller.error = nil }
         } message: { Text(controller.error ?? "") }
     }
+
+    @ViewBuilder private func copyActions(_ copy: DesktopPeerCopy) -> some View {
+        Group {
+            Button(L10n.text("Open")) {
+                Task {
+                    if let url = await controller.open(copy.id) {
+                        await session.openProject(url)
+                        if session.projectURL == url { dismiss() }
+                    }
+                }
+            }
+            Button(L10n.text(controller.pendingProposals[copy.id] == nil ? "Send changes for review" : "Retry pending proposal")) {
+                Task { await controller.send(copy.id) }
+            }
+            Button(L10n.text("Compare changes")) {
+                Task {
+                    await controller.compare(copy.id)
+                    if controller.comparisons[copy.id] != nil { reviewing = copy.id }
+                }
+            }
+        }.fixedSize(horizontal: true, vertical: false)
+    }
+
 }
 
 private struct DesktopPeerPairingView: View {

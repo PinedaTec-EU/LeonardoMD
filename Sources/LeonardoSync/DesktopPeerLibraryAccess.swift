@@ -5,6 +5,7 @@ public protocol DesktopPeerRemote: Sendable {
     func begin(endpoint: URL, fingerprint: Data, invitation: PairingInvitation?, name: String,
                credential: String, now: Date) async throws -> PairingChallenge
     func status(_ connection: DesktopPeerConnection, credential: String) async throws -> DirectDeviceStatus
+    func publish(_ proposal: DesktopPeerProposal, connection: DesktopPeerConnection, credential: String) async throws
     func snapshot(_ descriptor: SharedProjectDescriptor, connection: DesktopPeerConnection, credential: String) async throws -> CorpusSnapshot
 }
 
@@ -18,7 +19,7 @@ public struct DesktopPeerComparison: Sendable {
 }
 
 public enum DesktopPeerLibraryError: Error, Equatable, Sendable {
-    case busy, unknownConnection, unknownCopy, unauthorizedProject, selectionChanged
+    case busy, unknownConnection, unknownCopy, unauthorizedProject, selectionChanged, sendingUnavailable
 }
 
 public protocol DesktopPeerAccessRevoker: Sendable {
@@ -32,5 +33,7 @@ public protocol DesktopPeerLibraryAccess: Sendable {
     func refresh(connectionID: UUID) async throws -> DirectDeviceStatus
     func importProject(connectionID: UUID, projectID: UUID) async throws -> DesktopPeerCopy
     func open(copyID: UUID) async throws -> URL
+    func pendingProposal(copyID: UUID) async throws -> DesktopPeerPendingProposal?
+    func send(copyID: UUID, buffers: [OpenDocumentBuffer]) async throws -> UUID?
     func compare(copyID: UUID, buffers: [OpenDocumentBuffer]) async throws -> DesktopPeerComparison
 }

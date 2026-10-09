@@ -2,10 +2,11 @@ import AppKit
 import SwiftUI
 import LeonardoCore
 import LeonardoSync
+import LeonardoDesktopSync
 import XCTest
 @testable import LeonardoApp
 
-/// Optional native captures use synthetic, empty sessions and never launch the
+/// Optional native captures use synthetic sessions and never launch the
 /// single-instance application or touch another running editor.
 @MainActor
 final class LocalizationVisualTests: XCTestCase {
@@ -15,7 +16,11 @@ final class LocalizationVisualTests: XCTestCase {
         }
         let fixture = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: fixture) }
-        let controller = DesktopPeerController(preferencesURL: fixture.appendingPathComponent("preferences.json"))
+        let suite = UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let controller = DesktopPeerController(preferencesURL: fixture.appendingPathComponent("preferences.json"), defaults: defaults)
+        defer { controller.stop() }
         let session = AppSession(preferencesURL: fixture.appendingPathComponent("preferences.json"))
         defer { session.stop() }
         await controller.initialize()
@@ -31,6 +36,32 @@ final class LocalizationVisualTests: XCTestCase {
                 to: destination.appendingPathComponent("desktop-peers-\(language.rawValue)-empty.png"), settlingMilliseconds: 600)
         }
         XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.path))
+        let root = fixture.appendingPathComponent("DesktopPeers")
+        let selection = try CorpusSelection(folders: ["docs"], documents: [])
+        let projectID = UUID()
+        var connection = try DesktopPeerConnection(remoteDeviceID: UUID(), endpoint: URL(string: "https://127.0.0.1:40882")!, fingerprint: Data(repeating: 1, count: 32))
+        try connection.authorize([projectID: selection])
+        var copy = try DesktopPeerCopy(connectionID: connection.id, remoteProjectID: projectID, name: "Research notes",
+            selection: selection, snapshot: CorpusSnapshot(revision: "base", files: []))
+        try copy.write(path: "docs/note.md", content: Data("fixture offline edit".utf8))
+        try connection.track(projectID: projectID, copyID: copy.id)
+        let copies = FileDesktopPeerCopyStore(root: root.appendingPathComponent("Copies"))
+        _ = try await DesktopPeerWorkspace(root: root.appendingPathComponent("Working"), copies: copies).install(copy)
+        try await FileDesktopPeerConnectionStore(root: root.appendingPathComponent("Connections")).save(connection)
+        let pending = try DesktopPeerPendingProposal(copy: copy)
+        try await FileDesktopPeerOutboxStore(root: root.appendingPathComponent("Outbox")).save(pending)
+        await controller.initialize()
+        XCTAssertNil(controller.error)
+        XCTAssertEqual(controller.pendingProposals[copy.id], pending.proposal.id)
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            for width in [540, 760] {
+                let host = NSHostingView(rootView: DesktopPeerPreferencesView(session: session, controller: controller)
+                    .modifier(SessionAppearance(session: session)))
+                try await capture(host, size: NSSize(width: width, height: 680),
+                    to: destination.appendingPathComponent("desktop-peers-\(language.rawValue)-pending-\(width).png"), settlingMilliseconds: 600)
+            }
+        }
     }
 
     func testCaptureScopedSharingInBothLanguages() async throws {

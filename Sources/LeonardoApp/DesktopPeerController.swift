@@ -17,6 +17,9 @@ final class DesktopPeerController {
     private(set) var connections: [DesktopPeerConnection] = []
     private(set) var copies: [DesktopPeerCopy] = []
     private(set) var available: [UUID: [SharedProjectDescriptor]] = [:]
+    private(set) var pendingProposals: [UUID: UUID] = [:]
+    private(set) var submitted: Set<UUID> = []
+    private(set) var unchanged: Set<UUID> = []
     private(set) var comparisons: [UUID: DesktopPeerComparison] = [:]
     private(set) var busy = false
     var error: String?
@@ -46,7 +49,8 @@ final class DesktopPeerController {
                 connections: FileDesktopPeerConnectionStore(root: root.appendingPathComponent("Connections", isDirectory: true)),
                 copies: copies, workspace: DesktopPeerWorkspace(root: workingRoot, copies: copies),
                 credentials: SecureCredentialStore(service: "eu.pinedatec.LeonardoMD.desktop-peers"),
-                remote: DesktopPeerHTTPSRemote(), revoker: revoker)
+                remote: DesktopPeerHTTPSRemote(), revoker: revoker,
+                outbox: FileDesktopPeerOutboxStore(root: root.appendingPathComponent("Outbox", isDirectory: true)))
         }
     }
 
@@ -81,6 +85,8 @@ final class DesktopPeerController {
                 for id in self.copies.map(\.id) {
                     guard !Task.isCancelled else { return }
                     await self.compare(id)
+                    guard !Task.isCancelled else { return }
+                    if self.copies.contains(where: { $0.id == id }) { await self.send(id) }
                 }
             }
         }
@@ -134,6 +140,20 @@ final class DesktopPeerController {
         catch { self.error = error.localizedDescription; return nil }
     }
 
+    func send(_ id: UUID) async {
+        guard !busy else { return }
+        busy = true; defer { busy = false }
+        error = nil; submitted.remove(id); unchanged.remove(id)
+        do {
+            let root = workingRoot.appendingPathComponent(id.uuidString, isDirectory: true)
+            let selection = copies.first { $0.id == id }?.selection
+            let selected = buffers(root).filter { selection?.contains($0.path) == true }
+            if try await library.send(copyID: id, buffers: selected) != nil { submitted.insert(id) }
+            else { unchanged.insert(id) }
+            try await reload()
+        } catch { self.error = error.localizedDescription; try? await reload() }
+    }
+
     func compare(_ id: UUID) async {
         guard !busy else { return }
         busy = true; defer { busy = false }
@@ -169,7 +189,13 @@ final class DesktopPeerController {
     private func reload() async throws {
         connections = try await library.connections()
         copies = try await library.copies()
+        var pending: [UUID: UUID] = [:]
+        for copy in copies {
+            if let intent = try await library.pendingProposal(copyID: copy.id) { pending[copy.id] = intent.proposal.id }
+        }
+        pendingProposals = pending
         let valid = Set(copies.map(\.id))
+        submitted.formIntersection(valid); unchanged.formIntersection(valid)
         comparisons = comparisons.filter { valid.contains($0.key) }
         let active = Set(connections.filter { !$0.revoked }.map(\.id))
         available = available.filter { active.contains($0.key) }

@@ -244,5 +244,9 @@
   "Workspace": "Espacio de trabajo",
   "Workspaces…": "Espacios de trabajo…",
   "Your documents, your way.": "Tus documentos, a tu manera.",
-  "Zoom": "Zoom"
+  "Zoom": "Zoom",
+  "Send changes for review": "Enviar cambios para revisar",
+  "Retry pending proposal": "Reintentar propuesta pendiente",
+  "Sent for review on the other Mac. Later edits remain local.": "Enviado para revisar en el otro Mac. Los cambios posteriores permanecen en local.",
+  "A saved proposal is pending. Retrying sends the original capture.": "Hay una propuesta guardada pendiente. Al reintentar se envía la captura original."
 }

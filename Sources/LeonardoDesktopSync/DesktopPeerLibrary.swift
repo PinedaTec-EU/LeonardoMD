@@ -10,16 +10,17 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
     private let workspace: any DesktopPeerWorkspaceAccess
     private let credentials: any DeviceCredentialStore
     private let remote: any DesktopPeerRemote
+    private let outbox: (any DesktopPeerOutboxStore)?
     private let revoker: any DesktopPeerAccessRevoker
     private let now: @Sendable () -> Date
     private var changing = false
 
     public init(connections: any DesktopPeerConnectionStore, copies: any DesktopPeerCopyStore,
                 workspace: any DesktopPeerWorkspaceAccess, credentials: any DeviceCredentialStore,
-                remote: any DesktopPeerRemote, revoker: any DesktopPeerAccessRevoker, now: @escaping @Sendable () -> Date = { Date() }) {
+                remote: any DesktopPeerRemote, revoker: any DesktopPeerAccessRevoker, outbox: (any DesktopPeerOutboxStore)? = nil, now: @escaping @Sendable () -> Date = { Date() }) {
         connectionStore = connections; copyStore = copies; self.workspace = workspace
         self.credentials = credentials; self.remote = remote; self.now = now
-        self.revoker = revoker
+        self.revoker = revoker; self.outbox = outbox
     }
 
     public func connections() async throws -> [DesktopPeerConnection] {
@@ -99,6 +100,45 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         return try await workspace.open(id: copyID)
     }
 
+    public func pendingProposal(copyID: UUID) async throws -> DesktopPeerPendingProposal? {
+        try enter(); defer { changing = false }
+        let copy = try await requireCopy(copyID)
+        guard let pending = try await outbox?.load(copyID: copyID) else { return nil }
+        try checkPending(pending, copy: copy)
+        return pending
+    }
+
+    public func send(copyID: UUID, buffers: [OpenDocumentBuffer]) async throws -> UUID? {
+        try enter(); defer { changing = false }
+        guard let outbox else { throw DesktopPeerLibraryError.sendingUnavailable }
+        let original = try await requireCopy(copyID)
+        let saved = try await outbox.load(copyID: copyID)
+        let copy = try await workspace.capture(id: copyID, buffers: buffers)
+        let pending: DesktopPeerPendingProposal
+        if let saved {
+            try checkPending(saved, copy: copy)
+            pending = saved
+        } else {
+            guard copy.hasLocalChanges else { return nil }
+            pending = try DesktopPeerPendingProposal(copy: copy)
+            // Persist the immutable intent before status checks or publication touch the network.
+            try await outbox.save(pending)
+        }
+        guard pending.proposal.base == copy.base else { throw ReconciliationError.staleComparison }
+        let refreshed = try await refresh(requireConnection(original.connectionID))
+        guard refreshed.status.access == .authorized else { throw DesktopPeerLibraryError.unauthorizedProject }
+        try checkOwnership(copy, connection: refreshed.connection)
+        let secret = try await requireCredential(refreshed.connection)
+        try await remote.publish(pending.proposal, connection: refreshed.connection, credential: secret)
+        // Submission only queues owner review. Keep the outbox and baseline until an exact receipt.
+        return pending.proposal.id
+    }
+
+    private func checkPending(_ pending: DesktopPeerPendingProposal, copy: DesktopPeerCopy) throws {
+        guard pending.copyID == copy.id, pending.connectionID == copy.connectionID,
+              pending.proposal.projectID == copy.remoteProjectID, pending.proposal.selection == copy.selection else { throw SyncError.invalidSnapshot }
+    }
+
     public func compare(copyID: UUID, buffers: [OpenDocumentBuffer]) async throws -> DesktopPeerComparison {
         try enter(); defer { changing = false }
         let original = try await requireCopy(copyID)
@@ -146,6 +186,7 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
                 guard copy.connectionID == connection.id, copy.remoteProjectID == projectID else { throw SyncError.invalidSnapshot }
             }
             try await workspace.remove(id: copyID)
+            try await outbox?.remove(copyID: copyID)
             connection.forgetCopy(projectID: projectID)
             try await connectionStore.save(connection)
         }

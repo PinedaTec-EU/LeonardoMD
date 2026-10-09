@@ -244,5 +244,9 @@
   "Workspace": "Workspace",
   "Workspaces…": "Workspaces…",
   "Your documents, your way.": "Your documents, your way.",
-  "Zoom": "Zoom"
+  "Zoom": "Zoom",
+  "Send changes for review": "Send changes for review",
+  "Retry pending proposal": "Retry pending proposal",
+  "Sent for review on the other Mac. Later edits remain local.": "Sent for review on the other Mac. Later edits remain local.",
+  "A saved proposal is pending. Retrying sends the original capture.": "A saved proposal is pending. Retrying sends the original capture."
 }

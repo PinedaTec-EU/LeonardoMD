@@ -17,6 +17,10 @@ public struct DesktopPeerHTTPSRemote: DesktopPeerRemote {
         try await DirectEnrollmentClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint)
             .status(deviceID: connection.remoteDeviceID, credential: credential)
     }
+    public func publish(_ proposal: DesktopPeerProposal, connection: DesktopPeerConnection, credential: String) async throws {
+        try await DesktopPeerProposalClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint)
+            .submit(proposal, deviceID: connection.remoteDeviceID, credential: credential)
+    }
     public func snapshot(_ descriptor: SharedProjectDescriptor, connection: DesktopPeerConnection, credential: String) async throws -> CorpusSnapshot {
         let project = try await DirectEnrollmentClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint)
             .project(descriptor, deviceID: connection.remoteDeviceID, credential: credential)

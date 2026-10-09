@@ -21,7 +21,8 @@ final class DesktopPeerLibraryTests: XCTestCase {
             let workspace = DesktopPeerWorkspace(root: root.appendingPathComponent("Working"), copies: copies)
             let revoker = PeerRevokerFixture()
             let library = DesktopPeerLibrary(connections: FileDesktopPeerConnectionStore(root: root.appendingPathComponent("Connections")),
-                copies: copies, workspace: workspace, credentials: PeerMemoryCredentials(), remote: DesktopPeerHTTPSRemote(), revoker: revoker)
+                copies: copies, workspace: workspace, credentials: PeerMemoryCredentials(), remote: DesktopPeerHTTPSRemote(), revoker: revoker,
+                outbox: FileDesktopPeerOutboxStore(root: root.appendingPathComponent("Outbox")))
             let connection = try await library.enroll(endpoint: running.endpoint, fingerprint: nil, invitation: nil, name: "MacBook QA")
             let registry = try await runtime.consentState()
             let request = try XCTUnwrap(registry.requests.first)
@@ -34,15 +35,71 @@ final class DesktopPeerLibraryTests: XCTestCase {
             let copy = try await library.importProject(connectionID: connection.id, projectID: descriptor.id)
             let directory = try await library.open(copyID: copy.id)
             XCTAssertEqual(try Data(contentsOf: directory.appendingPathComponent("docs/note.md")), Data("real TLS corpus".utf8))
+            try Data("sent over TLS".utf8).write(to: directory.appendingPathComponent("docs/note.md"))
+            let sentID = try await library.send(copyID: copy.id, buffers: [])
+            let intent = try await library.pendingProposal(copyID: copy.id)
+            XCTAssertEqual(sentID, intent?.proposal.id)
+            let inbox = try await runtime.incomingProposals()
+            XCTAssertEqual(inbox.first?.upload.proposalID, sentID)
+            let received = try await runtime.incomingProposal(deviceID: request.id, upload: XCTUnwrap(inbox.first?.upload))
+            XCTAssertEqual(received, intent?.proposal)
+            try Data("later native edit".utf8).write(to: directory.appendingPathComponent("docs/note.md"))
+            let retried = try await library.send(copyID: copy.id, buffers: [])
+            XCTAssertEqual(retried, sentID)
+            let later = try await copies.load(id: copy.id)
+            XCTAssertEqual(later?.files.first?.content, Data("later native edit".utf8))
+            XCTAssertEqual(later?.base, copy.base)
             try await runtime.revoke(deviceID: request.id)
             let status = try await library.refresh(connectionID: connection.id)
             XCTAssertEqual(status.access, .revoked)
             XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("Outbox").appendingPathComponent(copy.id.uuidString).appendingPathExtension("json").path))
             let closed = await revoker.closedIDs
             XCTAssertTrue(closed.contains(copy.id))
             do { _ = try await library.open(copyID: copy.id); XCTFail("Revoked TLS copy reopened") } catch {}
             try await runtime.stop()
         } catch { try? await runtime.stop(); throw error }
+    }
+
+    func testFailedSendPersistsCaptureAndReopenedRetryPreservesLaterEditsUntilReceipt() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "MacBook")
+        await fixture.remote.setAccess(.authorized)
+        let copy = try await fixture.library.importProject(connectionID: connection.id, projectID: fixture.remote.project.id)
+        let directory = try await fixture.library.open(copyID: copy.id)
+        let clean = try await fixture.library.send(copyID: copy.id, buffers: [])
+        XCTAssertNil(clean)
+        let noIntent = try await fixture.outbox.load(copyID: copy.id)
+        XCTAssertNil(noIntent)
+        try Data("first capture".utf8).write(to: directory.appendingPathComponent("docs/note.md"))
+        await fixture.remote.setReachable(false)
+        do { _ = try await fixture.library.send(copyID: copy.id, buffers: []); XCTFail("Offline send succeeded") }
+        catch { XCTAssertEqual((error as? URLError)?.code, .notConnectedToInternet) }
+        let loadedIntent = try await fixture.library.pendingProposal(copyID: copy.id)
+        let intent = try XCTUnwrap(loadedIntent)
+        XCTAssertEqual(intent.proposal.proposed.files.first?.content, Data("first capture".utf8))
+        try Data("later disk edit".utf8).write(to: directory.appendingPathComponent("docs/note.md"))
+        try Data("later addition".utf8).write(to: directory.appendingPathComponent("docs/new.md"))
+        await fixture.remote.setReachable(true)
+        let reopened = DesktopPeerLibrary(connections: fixture.connections, copies: fixture.copies, workspace: fixture.workspace,
+            credentials: fixture.credentials, remote: fixture.remote, revoker: PeerRevokerFixture(), outbox: fixture.outbox)
+        let retry = try await reopened.send(copyID: copy.id, buffers: [OpenDocumentBuffer(path: "docs/note.md", text: "active later draft")])
+        XCTAssertEqual(retry, intent.proposal.id)
+        let publications = await fixture.remote.publications
+        XCTAssertEqual(publications, [intent.proposal])
+        let loadedCopy = try await fixture.copies.load(id: copy.id)
+        let current = try XCTUnwrap(loadedCopy)
+        XCTAssertEqual(current.base, copy.base)
+        XCTAssertEqual(current.files.first { $0.path == "docs/note.md" }?.content, Data("active later draft".utf8))
+        XCTAssertEqual(current.files.first { $0.path == "docs/new.md" }?.content, Data("later addition".utf8))
+        let retained = try await reopened.pendingProposal(copyID: copy.id)
+        XCTAssertEqual(retained, intent)
+        await fixture.remote.setAccess(.revoked)
+        do { _ = try await reopened.send(copyID: copy.id, buffers: []); XCTFail("Revoked copy sent") } catch {}
+        let cleared = try await fixture.outbox.load(copyID: copy.id)
+        XCTAssertNil(cleared)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
     }
 
     func testApprovedImportOpensOfflineAndCapturesNativeEditsForManualComparison() async throws {
@@ -137,6 +194,7 @@ private struct PeerLibraryFixture {
     let workspace: PeerWorkspaceProxy
     let credentials = PeerMemoryCredentials()
     let remote: PeerRemoteFixture
+    let outbox: FileDesktopPeerOutboxStore
     let library: DesktopPeerLibrary
     init() throws {
         connectionRoot = root.appendingPathComponent("Connections")
@@ -144,8 +202,9 @@ private struct PeerLibraryFixture {
         copies = FileDesktopPeerCopyStore(root: root.appendingPathComponent("Copies"))
         workspace = PeerWorkspaceProxy(DesktopPeerWorkspace(root: root.appendingPathComponent("Working"), copies: copies))
         remote = try PeerRemoteFixture()
+        outbox = FileDesktopPeerOutboxStore(root: root.appendingPathComponent("Outbox"))
         library = DesktopPeerLibrary(connections: connections, copies: copies, workspace: workspace,
-            credentials: credentials, remote: remote, revoker: PeerRevokerFixture(), now: { Date(timeIntervalSince1970: 1_000) })
+            credentials: credentials, remote: remote, revoker: PeerRevokerFixture(), outbox: outbox, now: { Date(timeIntervalSince1970: 1_000) })
     }
 }
 
@@ -204,6 +263,12 @@ private actor PeerRemoteFixture: DesktopPeerRemote {
         snapshotCount += 1
         let files = [CorpusFile(path: "docs/note.md", content: Data("remote".utf8))]
         return CorpusSnapshot(revision: CorpusRevision.make(files: files), files: files)
+    }
+    private(set) var publications: [DesktopPeerProposal] = []
+    func publish(_ proposal: DesktopPeerProposal, connection: DesktopPeerConnection, credential: String) async throws {
+        try checkReachable()
+        guard access == .authorized, credentials.contains(credential), proposal.projectID == project.id else { throw SyncError.revoked }
+        publications.append(proposal)
     }
     private func checkReachable() throws { if !reachable { throw URLError(.notConnectedToInternet) } }
 }
