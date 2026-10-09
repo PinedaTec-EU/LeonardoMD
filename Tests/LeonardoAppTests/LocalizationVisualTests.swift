@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import LeonardoCore
+import LeonardoSync
 import XCTest
 @testable import LeonardoApp
 
@@ -8,6 +9,33 @@ import XCTest
 /// single-instance application or touch another running editor.
 @MainActor
 final class LocalizationVisualTests: XCTestCase {
+    func testCaptureScopedSharingInBothLanguages() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_LOCALIZATION_EVIDENCE"] else {
+            throw XCTSkip("Set LEONARDO_LOCALIZATION_EVIDENCE to export native interface captures")
+        }
+        let fixture = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: fixture) }
+        let controller = DesktopSyncController(preferencesURL: fixture.appendingPathComponent("preferences.json"))
+        let session = AppSession(preferencesURL: fixture.appendingPathComponent("preferences.json"))
+        defer { session.stop() }
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        let destination = URL(fileURLWithPath: path, isDirectory: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            for populated in [false, true] {
+                let selection = populated ? try CorpusSelection(folders: ["doc/manual"], documents: ["notes/architecture.md"]) : nil
+                let host = NSHostingView(rootView: SharedProjectSelectionView(root: fixture, controller: controller, selection: selection)
+                    .modifier(SessionAppearance(session: session)))
+                try await capture(host, size: NSSize(width: 540, height: 360),
+                    to: destination.appendingPathComponent("shared-selection-\(language.rawValue)-\(populated ? "selected" : "empty").png"), settlingMilliseconds: 600)
+            }
+        }
+        XCTAssertNil(controller.running)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.appendingPathComponent("MobileSync/TLS").path))
+    }
+
     func testCaptureDisabledMobileServiceInBothLanguages() async throws {
         guard let path = ProcessInfo.processInfo.environment["LEONARDO_LOCALIZATION_EVIDENCE"] else {
             throw XCTSkip("Set LEONARDO_LOCALIZATION_EVIDENCE to export native interface captures")
@@ -149,7 +177,7 @@ final class LocalizationVisualTests: XCTestCase {
         timer.invalidate()
     }
 
-    private func capture(_ view: NSView, size: NSSize, to url: URL) async throws {
+    private func capture(_ view: NSView, size: NSSize, to url: URL, settlingMilliseconds: Int = 150) async throws {
         view.frame = NSRect(origin: .zero, size: size)
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
                               styleMask: [.borderless], backing: .buffered, defer: false)
@@ -158,7 +186,7 @@ final class LocalizationVisualTests: XCTestCase {
         window.contentView = view
         window.orderFront(nil)
         defer { window.close() }
-        try await Task.sleep(for: .milliseconds(150))
+        try await Task.sleep(for: .milliseconds(settlingMilliseconds))
         view.layoutSubtreeIfNeeded()
         view.displayIfNeeded()
         let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))

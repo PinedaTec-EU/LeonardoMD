@@ -4,7 +4,10 @@ public struct SharedProjectDescriptor: Codable, Equatable, Sendable, Identifiabl
     public let id: UUID
     public let name: String
     public let scope: CorpusScope
-    public init(id: UUID, name: String, scope: CorpusScope) { self.id = id; self.name = name; self.scope = scope }
+    public let selection: CorpusSelection?
+    public init(id: UUID, name: String, scope: CorpusScope, selection: CorpusSelection? = nil) {
+        self.id = id; self.name = name; self.scope = scope; self.selection = selection
+    }
 }
 
 public struct SharedProjectSource: Sendable {
@@ -90,6 +93,7 @@ public actor DirectSyncAuthority {
         // Revocation/disable can happen while disk reads or main-actor buffer collection suspend.
         try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
         try snapshot.validate(scope: project.descriptor.scope, limits: CorpusLimits())
+        try project.descriptor.selection?.validate(snapshot)
         return snapshot
     }
 

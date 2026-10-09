@@ -208,5 +208,13 @@
   "Workspace": "Workspace",
   "Workspaces…": "Workspaces…",
   "Your documents, your way.": "Your documents, your way.",
-  "Zoom": "Zoom"
+  "Zoom": "Zoom",
+  "Select shared content": "Select shared content",
+  "Choose folders and documents": "Choose folders and documents",
+  "Entire project": "Entire project",
+  "Share selected content": "Share selected content",
+  "Select content inside the current project.": "Select content inside the current project.",
+  "Select Markdown, text or image files outside generated folders.": "Select Markdown, text or image files outside generated folders.",
+  "Select regular folders and documents without symbolic links.": "Select regular folders and documents without symbolic links.",
+  "Too many selected folders or documents.": "Too many selected folders or documents."
 }

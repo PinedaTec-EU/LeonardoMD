@@ -48,6 +48,7 @@ final class DesktopSyncController {
         busy = true
         defer { busy = false }
         do {
+            for project in updated.projects { _ = try CorpusSelection(folders: project.folders, documents: project.documents) }
             let previous = try await configurations.loadGlobalPreferences(at: preferencesURL)
             var next = previous
             next.mobileSync = updated
@@ -65,11 +66,12 @@ final class DesktopSyncController {
         running = try await runtime.start(host: host, port: settings.port, projects: sources)
     }
 
-    func share(_ root: URL) async {
+    func share(_ root: URL, selection: CorpusSelection? = nil) async {
         var updated = settings
         let root = root.standardizedFileURL.resolvingSymlinksInPath()
         guard !updated.projects.contains(where: { $0.rootURL == root }) else { return }
-        updated.projects.append(MobileSharedProject(rootURL: root, name: root.lastPathComponent))
+        updated.projects.append(MobileSharedProject(rootURL: root, name: root.lastPathComponent,
+            folders: selection?.folders ?? [""], documents: selection?.documents ?? []))
         await update(updated)
     }
 

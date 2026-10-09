@@ -2,6 +2,26 @@ import XCTest
 @testable import LeonardoSync
 
 final class DirectSyncAuthorityTests: XCTestCase {
+    func testSnapshotCannotBroadenSelectedDocumentsDespiteProjectApproval() async throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let credential = String(repeating: "a", count: 64)
+        let now = Date(timeIntervalSince1970: 1_000)
+        let request = try registry.requestPairing(deviceName: "Desktop", credential: credential, serverFingerprint: Data(repeating: 1, count: 32), now: now)
+        let project = SharedProjectDescriptor(id: UUID(), name: "Selected", scope: try CorpusScope(folder: ""),
+            selection: try CorpusSelection(folders: [], documents: ["docs/one.md"]))
+        _ = try registry.approve(requestID: request.id, comparisonCode: request.comparisonCode, projects: [project.id], now: now)
+        let authority = try DirectSyncAuthority(registry: registry,
+            projects: [SharedProjectSource(descriptor: project) {
+                CorpusSnapshot(revision: "r", files: [CorpusFile(path: "docs/private.md", content: Data("private".utf8))])
+            }], serverFingerprint: Data(repeating: 1, count: 32), persist: { _ in })
+        let status = try await authority.status(deviceID: request.id, credential: credential, now: now)
+        XCTAssertEqual(status.projects.first?.selection, project.selection)
+        do {
+            _ = try await authority.snapshot(deviceID: request.id, credential: credential, projectID: project.id)
+            XCTFail("Approval must not broaden the file selection")
+        } catch { XCTAssertEqual(error as? SyncError, .outsideScope) }
+    }
+
     func testComparisonCodeBindsCertificateCredentialAndRequest() throws {
         let id = UUID()
         let credential = String(repeating: "a", count: 64)

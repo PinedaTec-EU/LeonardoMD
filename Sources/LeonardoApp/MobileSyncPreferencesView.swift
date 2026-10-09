@@ -6,6 +6,7 @@ struct MobileSyncPreferencesView: View {
     let session: AppSession
     @Bindable var controller: DesktopSyncController
     @State private var approving: PairingRequest?
+    @State private var selectingContent = false
     var body: some View {
         Form {
             Toggle(L10n.text("Enable Little Leonardo service"), isOn: Binding(
@@ -21,12 +22,17 @@ struct MobileSyncPreferencesView: View {
                 ForEach(controller.addresses, id: \.self) { Text($0).tag($0) }
             }
             Section(L10n.text("Shared projects")) {
-                if let root = session.projectURL {
-                    Button(L10n.text("Share current project")) { Task { await controller.share(root) } }
+                if session.projectURL != nil {
+                    Button(L10n.text("Share current project")) { selectingContent = true }
                 }
                 ForEach(controller.settings.projects) { project in
                     HStack {
-                        Text(project.name); Spacer()
+                        VStack(alignment: .leading) {
+                            Text(project.name)
+                            Text((project.folders.map { $0.isEmpty ? L10n.text("Entire project") : $0 } + project.documents).joined(separator: ", "))
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
                         Button(L10n.text("Remove")) { Task { await controller.unshare(project.id) } }
                     }
                 }
@@ -67,6 +73,9 @@ struct MobileSyncPreferencesView: View {
             }
         }
         .sheet(item: $approving) { request in PairingConsentView(controller: controller, request: request) }
+        .sheet(isPresented: $selectingContent) {
+            if let root = session.projectURL { SharedProjectSelectionView(root: root, controller: controller) }
+        }
         .alert(L10n.text("Synchronization error"), isPresented: Binding(get: { controller.error != nil }, set: { if !$0 { controller.error = nil } })) {
             Button(L10n.text("OK")) { controller.error = nil }
         } message: { Text(controller.error ?? "") }

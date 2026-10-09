@@ -208,5 +208,13 @@
   "Workspace": "Espacio de trabajo",
   "Workspaces…": "Espacios de trabajo…",
   "Your documents, your way.": "Tus documentos, a tu manera.",
-  "Zoom": "Zoom"
+  "Zoom": "Zoom",
+  "Select shared content": "Seleccionar contenido compartido",
+  "Choose folders and documents": "Elegir carpetas y documentos",
+  "Entire project": "Proyecto completo",
+  "Share selected content": "Compartir selección",
+  "Select content inside the current project.": "Selecciona contenido dentro del proyecto actual.",
+  "Select Markdown, text or image files outside generated folders.": "Selecciona archivos Markdown, de texto o imágenes fuera de carpetas generadas.",
+  "Select regular folders and documents without symbolic links.": "Selecciona carpetas y documentos sin enlaces simbólicos.",
+  "Too many selected folders or documents.": "Hay demasiadas carpetas o documentos seleccionados."
 }
