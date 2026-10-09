@@ -40,7 +40,8 @@ public struct DesktopPeerCopy: Codable, Equatable, Sendable, Identifiable {
 
     public var current: CorpusSnapshot { CorpusSnapshot(revision: base.revision, files: files) }
     public var hasLocalChanges: Bool {
-        files != base.files.sorted { $0.path < $1.path }
+        let original = base.files.sorted { $0.path < $1.path }
+        return files.count != original.count || zip(files, original).contains { $0.path != $1.path || $0.content != $1.content }
     }
 
     public mutating func write(path: String, content: Data, isUnsavedBuffer: Bool = false,
@@ -89,5 +90,27 @@ public struct DesktopPeerCopy: Codable, Equatable, Sendable, Identifiable {
         guard resolved.files == accepted.files.sorted(by: { $0.path < $1.path }) else { throw SyncError.invalidSnapshot }
         base = accepted
         files = accepted.files.sorted { $0.path < $1.path }
+    }
+}
+
+extension DesktopPeerCopy {
+    /// Incorporate the exact accepted proposal while retaining bytes added/edited/deleted afterward.
+    public mutating func acknowledge(_ proposal: DesktopPeerProposal, receipt: DesktopPeerProposalReceipt) throws {
+        guard proposal.projectID == remoteProjectID, proposal.selection == selection,
+              receipt.proposalID == proposal.id, receipt.projectID == remoteProjectID else { throw ReconciliationError.staleComparison }
+        try selection.validate(receipt.accepted)
+        if base == receipt.accepted { return } // Retry after durable acknowledgement, before journal cleanup.
+        guard proposal.base == base else { throw ReconciliationError.staleComparison }
+        let sent = Dictionary(uniqueKeysWithValues: proposal.proposed.files.map { ($0.path, $0) })
+        let current = Dictionary(uniqueKeysWithValues: files.map { ($0.path, $0) })
+        var merged = Dictionary(uniqueKeysWithValues: receipt.accepted.files.map { ($0.path, $0) })
+        for path in Set(sent.keys).union(current.keys) where sent[path]?.content != current[path]?.content {
+            merged[path] = current[path]
+        }
+        let result = merged.values.sorted { $0.path < $1.path }
+        try selection.validate(CorpusSnapshot(revision: receipt.accepted.revision, files: result))
+        // Validate the entire merge before either baseline or local state changes.
+        base = receipt.accepted
+        files = result
     }
 }

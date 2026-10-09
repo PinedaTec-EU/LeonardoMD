@@ -65,6 +65,7 @@ public actor ProjectCorpusReader {
             if !FileManager.default.fileExists(atPath: url.path) { continue }
             try read(path: path, root: normalized, files: &files, byteCount: &byteCount)
         }
+        let diskFiles = files
         for buffer in buffers {
             try selection.validate(buffer.path)
             let data = Data(buffer.text.utf8)
@@ -72,7 +73,8 @@ public actor ProjectCorpusReader {
             guard data.count <= limits.maximumFileBytes,
                   data.count <= limits.maximumCorpusBytes - (byteCount - previousSize) else { throw SyncError.sizeLimitExceeded }
             byteCount += data.count - previousSize
-            files[buffer.path] = CorpusFile(path: buffer.path, content: data, isUnsavedBuffer: true)
+            files[buffer.path] = CorpusFile(path: buffer.path, content: data,
+                isUnsavedBuffer: diskFiles[buffer.path]?.content != data)
         }
         let ordered = files.values.sorted { $0.path < $1.path }
         let snapshot = CorpusSnapshot(revision: revision ?? CorpusRevision.make(files: ordered), files: ordered)

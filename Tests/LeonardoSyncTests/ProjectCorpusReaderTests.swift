@@ -19,6 +19,41 @@ final class ProjectCorpusReaderTests: XCTestCase {
         XCTAssertTrue(result.files[0].isUnsavedBuffer)
     }
 
+    func testSavedOpenBufferDoesNotChangeRevisionOrDirtyAnOfflineCopy() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try Data("saved".utf8).write(to: root.appendingPathComponent("note.md"))
+        let selection = try CorpusSelection(folders: [""], documents: [])
+        let reader = ProjectCorpusReader()
+        let disk = try await reader.snapshot(root: root, selection: selection)
+        let opened = try await reader.snapshot(root: root, selection: selection, buffers: [OpenDocumentBuffer(path: "note.md", text: "saved")])
+        XCTAssertFalse(try XCTUnwrap(opened.files.first).isUnsavedBuffer)
+        XCTAssertEqual(opened.revision, disk.revision)
+        var copy = try DesktopPeerCopy(connectionID: UUID(), remoteProjectID: UUID(), name: "Copy", selection: selection, snapshot: disk)
+        try copy.capture(opened)
+        XCTAssertFalse(copy.hasLocalChanges)
+    }
+
+    func testImportedDraftProvenanceDoesNotCreateLocalChangesAfterMaterialization() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try Data("disk".utf8).write(to: root.appendingPathComponent("note.md"))
+        let selection = try CorpusSelection(folders: [""], documents: [])
+        let reader = ProjectCorpusReader()
+        let incoming = try await reader.snapshot(root: root, selection: selection, buffers: [OpenDocumentBuffer(path: "note.md", text: "draft")])
+        XCTAssertTrue(try XCTUnwrap(incoming.files.first).isUnsavedBuffer)
+        var copy = try DesktopPeerCopy(connectionID: UUID(), remoteProjectID: UUID(), name: "Copy", selection: selection, snapshot: incoming)
+        // Materialization persists the transferred draft bytes on the receiving Mac.
+        try Data("draft".utf8).write(to: root.appendingPathComponent("note.md"))
+        let persisted = try await reader.snapshot(root: root, selection: selection)
+        try copy.capture(persisted)
+        XCTAssertFalse(copy.hasLocalChanges)
+        let comparison = try copy.compare(with: incoming)
+        XCTAssertTrue(comparison.differences.isEmpty)
+    }
+
     func testOversizedCorpusFailsInsteadOfTruncating() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

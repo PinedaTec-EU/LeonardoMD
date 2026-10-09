@@ -26,7 +26,7 @@ public actor FileDesktopPeerCopyStore: DesktopPeerCopyStore {
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }
         let metadata = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
         guard metadata.isRegularFile == true else { throw SyncError.invalidPath }
-        guard (metadata.fileSize ?? 0) <= (try maximumEncodedBytes()) else { throw SyncError.sizeLimitExceeded }
+        guard (metadata.fileSize ?? 0) <= (try DesktopPeerArchiveBudget.maximumEncodedBytes(limits: limits)) else { throw SyncError.sizeLimitExceeded }
         let copy = try JSONDecoder().decode(DesktopPeerCopy.self, from: Data(contentsOf: url))
         guard copy.id == id else { throw SyncError.invalidSnapshot }
         try validate(copy)
@@ -38,7 +38,7 @@ public actor FileDesktopPeerCopyStore: DesktopPeerCopyStore {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.withoutEscapingSlashes, .sortedKeys]
         let data = try encoder.encode(copy)
-        guard data.count <= (try maximumEncodedBytes()) else { throw SyncError.sizeLimitExceeded }
+        guard data.count <= (try DesktopPeerArchiveBudget.maximumEncodedBytes(limits: limits)) else { throw SyncError.sizeLimitExceeded }
         let destination = try location(copy.id)
         try PrivateDesktopFile.write(data, to: destination)
     }
@@ -59,15 +59,5 @@ public actor FileDesktopPeerCopyStore: DesktopPeerCopyStore {
         try copy.selection.validate(copy.current, limits: limits)
     }
 
-    private func maximumEncodedBytes() throws -> Int {
-        // Base + current base64 content, escaped paths in both collections and the explicit selection.
-        let content = limits.maximumCorpusBytes.multipliedReportingOverflow(by: 8)
-        let paths = limits.maximumFiles.multipliedReportingOverflow(by: 2 * (6 * 4_096 + 512))
-        let selection = CorpusLimits().maximumFiles * (6 * 4_096 + 512)
-        let combined = (content.partialValue / 3).addingReportingOverflow(paths.partialValue)
-        let total = combined.partialValue.addingReportingOverflow(selection + 64 * 1_024)
-        guard !content.overflow, !paths.overflow, !combined.overflow, !total.overflow else { throw SyncError.sizeLimitExceeded }
-        return total.partialValue
-    }
 }
 #endif

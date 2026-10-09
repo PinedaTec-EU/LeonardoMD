@@ -19,7 +19,7 @@ public struct ReconciliationDifference: Equatable, Sendable {
     public let base: CorpusFile?
     public let local: CorpusFile?
     public let remote: CorpusFile?
-    public var hasConflict: Bool { local != base && remote != base && local != remote }
+    public var hasConflict: Bool { local?.content != base?.content && remote?.content != base?.content && local?.content != remote?.content }
 }
 
 /// Immutable three-way comparison. Even non-conflicting changes require explicit decisions.
@@ -45,7 +45,7 @@ public struct ManualReconciliation: Sendable {
         let ours = Dictionary(uniqueKeysWithValues: local.files.map { ($0.path, $0) })
         let theirs = Dictionary(uniqueKeysWithValues: remote.files.map { ($0.path, $0) })
         differences = Set(original.keys).union(ours.keys).union(theirs.keys).sorted().compactMap { path in
-            guard ours[path] != original[path] || theirs[path] != original[path] else { return nil }
+            guard ours[path]?.content != original[path]?.content || theirs[path]?.content != original[path]?.content else { return nil }
             return ReconciliationDifference(path: path, base: original[path], local: ours[path], remote: theirs[path])
         }
     }
