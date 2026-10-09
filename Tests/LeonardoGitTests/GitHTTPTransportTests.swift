@@ -16,6 +16,10 @@ final class GitHTTPTransportTests: XCTestCase {
         let response = try await transport.uploadPack(request: Data("request".utf8))
         XCTAssertEqual(advertisement, Data("advertisement".utf8))
         XCTAssertEqual(response, Data("response".utf8))
+        let pushAdvertisement = try await transport.receiveAdvertisement()
+        let pushResponse = try await transport.receivePack(request: Data("push".utf8))
+        XCTAssertEqual(pushAdvertisement, Data("advertisement".utf8))
+        XCTAssertEqual(pushResponse, Data("response".utf8))
     }
 
     func testAuthenticationWrongMIMEAndStreamingLimits() async throws {
@@ -59,18 +63,19 @@ private final class GitHTTPFixture: URLProtocol, @unchecked Sendable {
         guard let url = request.url else { return }
         XCTAssertEqual(request.value(forHTTPHeaderField: "Git-Protocol"), "version=2")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Basic " + Data("fixture:synthetic".utf8).base64EncodedString())
-        let isFetch = url.path.hasSuffix("git-upload-pack")
+        let service = url.path.hasSuffix("git-receive-pack") || url.query?.contains("git-receive-pack") == true ? "git-receive-pack" : "git-upload-pack"
+        let isFetch = url.path.hasSuffix(service)
         if isFetch {
             XCTAssertEqual(request.httpMethod, "POST")
-            XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/x-git-upload-pack-request")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/x-\(service)-request")
             // URLSession may expose the upload as a body stream to URLProtocol.
             XCTAssertTrue(request.httpBody != nil || request.httpBodyStream != nil)
         } else {
             XCTAssertEqual(request.httpMethod, "GET")
-            XCTAssertEqual(URLComponents(url: url, resolvingAgainstBaseURL: false)?.query, "service=git-upload-pack")
+            XCTAssertEqual(URLComponents(url: url, resolvingAgainstBaseURL: false)?.query, "service=\(service)")
         }
         let status = url.path.contains("/auth/") ? 401 : url.path.contains("/forbidden/") ? 403 : 200
-        let mime = url.path.contains("/mime/") ? "text/html" : "application/x-git-upload-pack-" + (isFetch ? "result" : "advertisement")
+        let mime = url.path.contains("/mime/") ? "text/html" : "application/x-\(service)-" + (isFetch ? "result" : "advertisement")
         let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": mime])!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         let data = url.path.contains("/large/") ? Data(repeating: 1, count: 101) : Data((isFetch ? "response" : "advertisement").utf8)

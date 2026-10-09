@@ -151,3 +151,11 @@ Three archive tests cover SHA-1/SHA-256, exact-revision reopening, explicit rete
 ## Desktop peer extension
 
 The owner confirmed [#101](https://github.com/PinedaTec-EU/LeonardoMD/issues/101): pair Mac Studio/MacBook Pro (or other LeonardoMD instances), select folders and/or individual documents, and retain an editable offline copy on connection loss. Desktop direct mode supports creation/editing/deletion; reconnection requires manual base/local/remote reconciliation, preserving unsaved buffers. LAN and explicitly configured VPN/private-overlay connections are in scope. Mobile direct mode remains read-only. Desktop peer transport/UI/domain work is not yet implemented; current private-address policy must be extended and verified for relevant VPN routing without implicit public-interface exposure.
+
+## Receive-pack publication checkpoint
+
+`GitPublisher` now negotiates receive-pack references/capabilities, validates the selected object format, writes only the `refs/heads/little-leonardo/` namespace and requires report-status acceptance for the exact target branch. Its command carries the expected previous object ID, so a stale advertisement/branch state cannot be silently replaced. Retrying the exact prepared commit checks whether the remote branch already identifies it and avoids sending a duplicate pack. Device/project UUIDs generate a stable branch name. The wire contract follows [Git pack protocol](https://git-scm.com/docs/gitprotocol-pack).
+
+Smart HTTPS now includes receive-pack advertisement and POST endpoints with the same TLS/credential/redirect policy as fetch, bounded upload bodies and bounded result streams. HTTP contract tests cover their headers, MIME and paths with a URLProtocol fixture; they do not establish a live authenticated HTTPS push.
+
+Three push tests pass, including actual temporary bare repositories in both object formats. Git accepts branch creation/update, exact-commit retry does not send again, stale expected IDs fail, a rejecting pre-receive hook leaves the previous reference unchanged, and malformed status reports cannot count as acceptance. No production remote was written. Application publication-journal persistence, the iOS Send action, post-success desktop notification and reconciliation/SSH remain pending.

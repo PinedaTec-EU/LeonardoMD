@@ -8,3 +8,8 @@ public protocol GitRemoteTransport: Sendable {
 public enum GitRemoteError: Error, Equatable, Sendable {
     case invalidEndpoint, authenticationRequired, forbidden, unexpectedResponse, responseTooLarge
 }
+
+public protocol GitPushTransport: Sendable {
+    func receiveAdvertisement() async throws -> Data
+    func receivePack(request: Data) async throws -> Data
+}

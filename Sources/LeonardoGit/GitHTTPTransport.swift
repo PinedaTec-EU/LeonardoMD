@@ -1,7 +1,7 @@
 import Foundation
 
 /// Smart HTTPS with system TLS trust, ephemeral state and no redirect credential forwarding.
-public final class GitHTTPTransport: NSObject, GitRemoteTransport, URLSessionTaskDelegate, @unchecked Sendable {
+public final class GitHTTPTransport: NSObject, GitRemoteTransport, GitPushTransport, URLSessionTaskDelegate, @unchecked Sendable {
     private let endpoint: URL
     private let authorization: String?
     private let maximumResponseBytes: Int
@@ -33,11 +33,20 @@ public final class GitHTTPTransport: NSObject, GitRemoteTransport, URLSessionTas
         super.init()
     }
 
-    public func advertisement() async throws -> Data {
+    public func advertisement() async throws -> Data { try await advertisement(service: "git-upload-pack") }
+    public func receiveAdvertisement() async throws -> Data { try await advertisement(service: "git-receive-pack") }
+
+    private func advertisement(service: String) async throws -> Data {
         var components = URLComponents(url: endpoint.appendingPathComponent("info/refs"), resolvingAgainstBaseURL: false)!
-        components.queryItems = [URLQueryItem(name: "service", value: "git-upload-pack")]
+        components.queryItems = [URLQueryItem(name: "service", value: service)]
         guard let url = components.url else { throw GitRemoteError.invalidEndpoint }
-        return try await perform(url: url, body: nil, mime: "application/x-git-upload-pack-advertisement", limit: min(maximumResponseBytes, 2 * 1_024 * 1_024))
+        return try await perform(url: url, body: nil, mime: "application/x-\(service)-advertisement", limit: min(maximumResponseBytes, 2 * 1_024 * 1_024))
+    }
+
+    public func receivePack(request: Data) async throws -> Data {
+        guard request.count <= 256 * 1_024 * 1_024 + 16 * 1_024 else { throw GitRemoteError.responseTooLarge }
+        return try await perform(url: endpoint.appendingPathComponent("git-receive-pack"), body: request,
+                                 mime: "application/x-git-receive-pack-result", limit: min(maximumResponseBytes, 1_024 * 1_024))
     }
 
     public func uploadPack(request: Data) async throws -> Data {
@@ -53,7 +62,7 @@ public final class GitHTTPTransport: NSObject, GitRemoteTransport, URLSessionTas
         request.timeoutInterval = 120
         request.setValue("version=2", forHTTPHeaderField: "Git-Protocol")
         request.setValue(mime, forHTTPHeaderField: "Accept")
-        if body != nil { request.setValue("application/x-git-upload-pack-request", forHTTPHeaderField: "Content-Type") }
+        if body != nil { request.setValue(mime.replacingOccurrences(of: "-result", with: "-request"), forHTTPHeaderField: "Content-Type") }
         if let authorization { request.setValue(authorization, forHTTPHeaderField: "Authorization") }
         let config = configuration.copy() as! URLSessionConfiguration
         config.urlCache = nil
