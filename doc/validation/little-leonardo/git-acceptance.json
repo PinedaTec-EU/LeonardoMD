@@ -252,5 +252,71 @@
   "captures": {
     "deletedOpenDocument": "ios-git-deleted-open-document.png",
     "integrated": "ios-git-integrated.png"
+  },
+  "sshFixtureRevalidation": {
+    "date": "2026-10-10",
+    "compileDelta": 192,
+    "uiResult": "PASS",
+    "serverResult": "PASS",
+    "uiDurationSeconds": 138.046,
+    "serverDurationSeconds": 143.76,
+    "matchingSourceHashes": 185,
+    "capturesRetainedFromOriginalAcceptance": true,
+    "subsequentChanges": "Delta193 adds only two fail-fast guards in the separate SSH publication regression; native fixture and signed mobile/shared sources are unchanged.",
+    "verification": {
+      "baseRevision": "78356cbfeec0fa49ac640c39f794aac979764788",
+      "branch": "little-leonardo/9b0207e5-d87e-4afa-88f3-54494afc08b3/f803d131-9e37-4c17-9d7b-b6afc8658bf1",
+      "branchRef": "refs/heads/little-leonardo/9b0207e5-d87e-4afa-88f3-54494afc08b3/f803d131-9e37-4c17-9d7b-b6afc8658bf1",
+      "commitID": "9dc4cc4d3cb16f75dcc49158df15f249ea70a2b1",
+      "deleted": [
+        "docs/delete.md",
+        "docs/note.md"
+      ],
+      "deviceID": "9B0207E5-D87E-4AFA-88F3-54494AFC08B3",
+      "excludedBlobRequested": false,
+      "excludedTransferred": false,
+      "excludedUnchanged": true,
+      "files": [
+        "docs/new.md"
+      ],
+      "fsckPassed": true,
+      "parentCommitID": "78356cbfeec0fa49ac640c39f794aac979764788",
+      "projectID": "F803D131-9E37-4C17-9D7B-B6AFC8658BF1",
+      "rpcRequestBytes": [
+        0,
+        130,
+        142,
+        158,
+        0,
+        736,
+        0,
+        130,
+        142,
+        108,
+        0,
+        681
+      ],
+      "verificationCount": 2
+    },
+    "integration": {
+      "acceptedDigest": "sha256:8b0945199df78cf7a000f1b671ad8e95ced03f4323609b56c72f4c0e2558eccb",
+      "acceptedPaths": [
+        "docs/new.md"
+      ],
+      "baseRevision": "c6c96377a66c71c929a2de2b1308343db921a47a",
+      "deletedPaths": [
+        "docs/note.md"
+      ],
+      "integrationCommitID": "78356cbfeec0fa49ac640c39f794aac979764788",
+      "integrationCount": 1,
+      "integrationRef": "refs/heads/little-leonardo-integrations/9b0207e5-d87e-4afa-88f3-54494afc08b3/f803d131-9e37-4c17-9d7b-b6afc8658bf1/aa063e57814ed28df1a4cf5472d6b861e836333b",
+      "objectFormat": "sha1",
+      "parentCommitID": "aa063e57814ed28df1a4cf5472d6b861e836333b",
+      "proposalBranch": "refs/heads/little-leonardo/9b0207e5-d87e-4afa-88f3-54494afc08b3/f803d131-9e37-4c17-9d7b-b6afc8658bf1",
+      "proposalCommitID": "aa063e57814ed28df1a4cf5472d6b861e836333b",
+      "scope": "docs",
+      "sourceRevision": "c6c96377a66c71c929a2de2b1308343db921a47a",
+      "treeID": "991b860b569f23d82541a668b29808758f845858"
+    }
   }
 }
