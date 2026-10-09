@@ -36,7 +36,8 @@ public actor FileDesktopPeerConnectionStore: DesktopPeerConnectionStore {
         if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
     }
     private func validate(_ connection: DesktopPeerConnection) throws {
-        _ = try PinnedHTTPSClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint)
+        _ = try PinnedHTTPSClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint,
+                                  allowPrivateOverlay: true)
     }
     private func location(_ id: UUID) throws -> URL {
         let url = root.appendingPathComponent(id.uuidString).appendingPathExtension("json")

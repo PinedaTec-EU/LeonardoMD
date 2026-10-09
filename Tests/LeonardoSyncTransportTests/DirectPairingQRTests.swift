@@ -37,4 +37,20 @@ final class DirectPairingQRTests: XCTestCase {
             XCTAssertThrowsError(try DirectPairingQR.decode(URL(string: invalid)!, now: now))
         }
     }
+
+    func testExplicitPrivateOverlayPairingIsAcceptedButPublicAddressIsNot() throws {
+        let now = Date()
+        var registry = PairingRegistry()
+        registry.setEnabled(true)
+        let invitation = try registry.createInvitation(now: now)
+        let fingerprint = Data(repeating: 42, count: 32)
+        let qr = try DirectPairingQR(endpoint: URL(string: "https://100.64.0.1:40882")!,
+                                     certificateFingerprint: fingerprint, invitation: invitation)
+        let decoded = try DirectPairingQR.decode(qr.encodedURL(), now: now)
+        XCTAssertEqual(decoded.endpoint, qr.endpoint)
+        XCTAssertThrowsError(try DirectPairingQR(endpoint: URL(string: "https://100.63.255.255:40882")!,
+                                                certificateFingerprint: fingerprint, invitation: invitation))
+        XCTAssertThrowsError(try DirectPairingQR(endpoint: URL(string: "https://100.128.0.1:40882")!,
+                                                certificateFingerprint: fingerprint, invitation: invitation))
+    }
 }

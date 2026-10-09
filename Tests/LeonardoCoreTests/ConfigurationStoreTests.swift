@@ -112,6 +112,18 @@ final class ConfigurationStoreTests: XCTestCase {
         XCTAssertEqual(preferences.mobileSync.port, 40882)
     }
 
+    func testLegacyMobileSyncSettingsKeepPrivateOverlayDisabledAndRoundTripExplicitOptIn() throws {
+        let legacy = try JSONDecoder().decode(MobileSyncPreferences.self, from: Data(#"{"enabled":true,"host":"192.168.1.7"}"#.utf8))
+        XCTAssertTrue(legacy.enabled)
+        XCTAssertFalse(legacy.privateOverlayEnabled)
+
+        var optedIn = legacy
+        optedIn.privateOverlayEnabled = true
+        let encoded = try JSONEncoder().encode(optedIn)
+        let reopened = try JSONDecoder().decode(MobileSyncPreferences.self, from: encoded)
+        XCTAssertTrue(reopened.privateOverlayEnabled)
+    }
+
     func testStaleWindowProjectSelectionPreservesExplicitServiceConsent() async throws {
         let directory = try TemporaryDirectory()
         let url = directory.url.appendingPathComponent("preferences.json")

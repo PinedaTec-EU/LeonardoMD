@@ -25,9 +25,19 @@ final class HTTPTransportTests: XCTestCase {
         for address in ["127.0.0.1", "10.0.0.1", "192.168.1.2", "172.16.0.1", "::1", "fd00::1", "fe80::1"] {
             XCTAssertTrue(LocalNetworkAddress.isAllowed(address), address)
         }
-        for address in ["0.0.0.0", "8.8.8.8", "172.32.0.1", "example.com", "::", "2001:4860:4860::8888"] {
+        for address in ["0.0.0.0", "8.8.8.8", "172.32.0.1", "example.com", "::", "2001:4860:4860::8888",
+                        "100.63.255.255", "100.128.0.0"] {
             XCTAssertFalse(LocalNetworkAddress.isAllowed(address), address)
         }
+        XCTAssertFalse(LocalNetworkAddress.isAllowed("100.64.0.0"))
+        XCTAssertFalse(LocalNetworkAddress.isAllowed("100.127.255.255"))
+        for address in ["100.64.0.0", "100.127.255.255"] {
+            XCTAssertTrue(LocalNetworkAddress.isAllowed(address, allowPrivateOverlay: true), address)
+        }
+        XCTAssertFalse(LocalNetworkAddress.isAllowed("100.63.255.255", allowPrivateOverlay: true))
+        XCTAssertFalse(LocalNetworkAddress.isAllowed("100.128.0.0", allowPrivateOverlay: true))
+        XCTAssertThrowsError(try PinnedHTTPSClient(endpoint: URL(string: "https://100.64.0.1")!, certificateFingerprint: Data(repeating: 0, count: 32)))
+        XCTAssertNoThrow(try PinnedHTTPSClient(endpoint: URL(string: "https://100.64.0.1")!, certificateFingerprint: Data(repeating: 0, count: 32), allowPrivateOverlay: true))
         XCTAssertThrowsError(try PinnedHTTPSClient(endpoint: URL(string: "http://192.168.1.2")!, certificateFingerprint: Data(repeating: 0, count: 32)))
         XCTAssertThrowsError(try PinnedHTTPSClient(endpoint: URL(string: "https://example.com")!, certificateFingerprint: Data(repeating: 0, count: 32)))
     }

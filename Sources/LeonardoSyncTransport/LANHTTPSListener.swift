@@ -6,6 +6,7 @@ public actor LANHTTPSListener {
     public typealias Handler = @Sendable (HTTPRequest) async -> HTTPResponse
     private var listener: NWListener?
     private var connections: [UUID: NWConnection] = [:]
+    private var allowsPrivateOverlay = false
     private let identity: TLSServerIdentity
     private let handler: Handler
     private let queue = DispatchQueue(label: "eu.pinedatec.LeonardoMD.sync.https")
@@ -19,10 +20,13 @@ public actor LANHTTPSListener {
         self.handler = handler
     }
 
-    public func start(host: String, port: UInt16 = 0) async throws -> UInt16 {
-        guard listener == nil, LocalNetworkAddress.isAllowed(host), let requestedPort = NWEndpoint.Port(rawValue: port) else {
+    public func start(host: String, port: UInt16 = 0, allowPrivateOverlay: Bool = false) async throws -> UInt16 {
+        guard listener == nil,
+              LocalNetworkAddress.isAllowed(host, allowPrivateOverlay: allowPrivateOverlay),
+              let requestedPort = NWEndpoint.Port(rawValue: port) else {
             throw TransportError.invalidEndpoint
         }
+        allowsPrivateOverlay = allowPrivateOverlay
         let parameters = try NWParameters(tls: identity.options(), tcp: NWProtocolTCP.Options())
         parameters.requiredLocalEndpoint = .hostPort(host: NWEndpoint.Host(host), port: requestedPort)
         let listener = try NWListener(using: parameters)
@@ -61,6 +65,7 @@ public actor LANHTTPSListener {
     public func stop() {
         listener?.cancel()
         listener = nil
+        allowsPrivateOverlay = false
         for connection in connections.values { connection.cancel() }
         connections.removeAll()
         logger.notice("https_listener_stopped")
@@ -69,7 +74,9 @@ public actor LANHTTPSListener {
     private func accept(_ connection: NWConnection) {
         guard listener != nil, connections.count < Self.maximumConnections,
               case .hostPort(let host, _) = connection.endpoint,
-              LocalNetworkAddress.isAllowed(host.debugDescription) else { connection.cancel(); return }
+              LocalNetworkAddress.isAllowed(host.debugDescription, allowPrivateOverlay: allowsPrivateOverlay) else {
+            connection.cancel(); return
+        }
         let id = UUID()
         connections[id] = connection
         connection.start(queue: queue)

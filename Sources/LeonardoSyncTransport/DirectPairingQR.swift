@@ -7,7 +7,8 @@ public struct DirectPairingQR: Codable, Sendable {
     public let invitation: PairingInvitation
 
     public init(endpoint: URL, certificateFingerprint: Data, invitation: PairingInvitation) throws {
-        _ = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: certificateFingerprint)
+        _ = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: certificateFingerprint,
+                                  allowPrivateOverlay: true)
         guard invitation.secret.count == 64, invitation.secret.allSatisfy(\.isHexDigit) else {
             throw PairingError.invalidCredential
         }

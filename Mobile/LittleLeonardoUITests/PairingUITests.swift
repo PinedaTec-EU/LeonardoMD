@@ -1,6 +1,31 @@
 import XCTest
 
 final class PairingUITests: XCTestCase {
+    @MainActor func testCachedDocumentLinksNavigateInsideGrantedCorpusAndRejectMissingFiles() throws {
+        let app = XCUIApplication()
+        app.launch()
+        let fixture = app.staticTexts["QA · Links"].firstMatch
+        guard fixture.waitForExistence(timeout: 5) else {
+            throw XCTSkip("Requires the isolated QA link corpus in the simulator app container")
+        }
+        fixture.tap()
+        app.buttons["docs/start.md"].firstMatch.tap()
+        let web = app.webViews.firstMatch
+        XCTAssertTrue(web.links["Siguiente documento"].waitForExistence(timeout: 10))
+        web.links["Siguiente documento"].tap()
+        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Linked page"].waitForExistence(timeout: 10))
+        app.navigationBars.buttons["start.md"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.firstMatch.links["Documento ausente"].waitForExistence(timeout: 10))
+        app.webViews.firstMatch.links["Documento ausente"].tap()
+        XCTAssertTrue(app.alerts["Documento no disponible"].waitForExistence(timeout: 5))
+        app.alerts.buttons["Aceptar"].tap()
+        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Start page"].exists)
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Cached document navigation with missing-link denial"
+        capture.lifetime = .keepAlways
+        add(capture)
+    }
+
     @MainActor func testCachedMarkdownPreviewShowsRenderedHeadingTableAndImage() throws {
         let app = XCUIApplication()
         app.launch()

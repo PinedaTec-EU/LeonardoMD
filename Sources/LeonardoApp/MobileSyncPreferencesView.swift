@@ -14,6 +14,13 @@ struct MobileSyncPreferencesView: View {
                     var updated = controller.settings; updated.enabled = value
                     Task { await controller.update(updated) }
                 }))
+            Toggle(L10n.text("Allow private overlay VPN"), isOn: Binding(
+                get: { controller.settings.privateOverlayEnabled }, set: { value in
+                    var updated = controller.settings; updated.privateOverlayEnabled = value
+                    Task { await controller.update(updated) }
+                }))
+            Text(L10n.text("Private LAN is used by default. Enable this only for a private 100.64/10 overlay such as Tailscale."))
+                .font(.caption).foregroundStyle(.secondary)
             Picker(L10n.text("Local address"), selection: Binding(get: { controller.settings.host ?? "" }, set: { value in
                 var updated = controller.settings; updated.host = value.isEmpty ? nil : value
                 Task { await controller.update(updated) }

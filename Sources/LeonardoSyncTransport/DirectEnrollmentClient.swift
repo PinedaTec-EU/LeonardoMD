@@ -16,13 +16,15 @@ public struct DirectEnrollmentClient: Sendable {
     public init(qr: DirectPairingQR) throws {
         invitation = qr.invitation
         fingerprint = qr.certificateFingerprint
-        client = try PinnedHTTPSClient(endpoint: qr.endpoint, certificateFingerprint: qr.certificateFingerprint)
+        client = try PinnedHTTPSClient(endpoint: qr.endpoint, certificateFingerprint: qr.certificateFingerprint,
+                                       allowPrivateOverlay: true)
     }
 
     public init(endpoint: URL, certificateFingerprint: Data) throws {
         invitation = nil
         fingerprint = certificateFingerprint
-        client = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: certificateFingerprint)
+        client = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: certificateFingerprint,
+                                       allowPrivateOverlay: true)
     }
 
     private struct PairingStart: Encodable {

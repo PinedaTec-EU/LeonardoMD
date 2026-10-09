@@ -3,6 +3,19 @@ import Observation
 import LeonardoSync
 import LeonardoDesktopSync
 
+/// Native ownership and editor refresh are independent of the transport's receipt type.
+struct NativeReconciliationApplication<Value: Sendable>: Sendable {
+    let value: Value
+    let appliedNow: Bool
+    let appliedSnapshot: CorpusSnapshot
+    let retainedBufferPaths: Set<String>
+    init(value: Value, appliedNow: Bool, appliedSnapshot: CorpusSnapshot,
+         retainedBufferPaths: Set<String> = []) {
+        self.value = value; self.appliedNow = appliedNow
+        self.appliedSnapshot = appliedSnapshot; self.retainedBufferPaths = retainedBufferPaths
+    }
+}
+
 @MainActor @Observable
 final class NativeReconciliationLease {
     static let shared = NativeReconciliationLease()
@@ -29,6 +42,15 @@ final class NativeReconciliationLease {
         }
     }
     func run(projectRoot: URL, selection: CorpusSelection, operation: @MainActor () async throws -> DesktopPeerAcceptanceResult) async throws -> DesktopPeerAcceptanceResult {
+        try await runApplication(projectRoot: projectRoot, selection: selection) {
+            let result = try await operation()
+            return NativeReconciliationApplication(value: result, appliedNow: result.appliedNow,
+                appliedSnapshot: result.appliedSnapshot, retainedBufferPaths: result.retainedBufferPaths)
+        }
+    }
+
+    func runApplication<Value: Sendable>(projectRoot: URL, selection: CorpusSelection,
+                             operation: @MainActor () async throws -> NativeReconciliationApplication<Value>) async throws -> Value {
         guard root == nil else { throw DesktopRuntimeError.busy }
         root = projectRoot.standardizedFileURL.resolvingSymlinksInPath()
         defer {
@@ -82,6 +104,6 @@ final class NativeReconciliationLease {
                 }
             }
         }
-        return result
+        return result.value
     }
 }

@@ -217,12 +217,17 @@ struct MobileDocumentView: View {
     let projectID: UUID
     let file: CorpusFile
     let mode: SyncMode
+    var initialAnchor: String? = nil
     @State private var text = ""
     @State private var editing = false
     @State private var readOnlyNotice = false
     @State private var saving = false
     @State private var source = false
     @State private var assets: MarkdownMemoryAssets?
+    @State private var linkedDocument: CachedDocumentLink?
+    @State private var unavailableLink = false
+    @State private var didScrollToInitialAnchor = false
+    @StateObject private var previewController = MarkdownPreviewController()
     private let virtualRoot = URL(fileURLWithPath: "/LittleLeonardoCorpus", isDirectory: true)
     private var previewConfiguration: MarkdownPreviewConfiguration {
         MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true, externalLinkPolicy: .blocked,
@@ -237,7 +242,8 @@ struct MobileDocumentView: View {
             else if !source, ["md", "markdown"].contains((file.path as NSString).pathExtension.lowercased()) {
                 MarkdownPreview(content: text,
                     baseURL: virtualRoot.appendingPathComponent(file.path).deletingLastPathComponent(),
-                    configuration: previewConfiguration)
+                    configuration: previewConfiguration, controller: previewController,
+                    onLinkActivation: followLink)
             } else {
                 ScrollView {
                     Text(text).font(.system(.body, design: .monospaced))
@@ -262,8 +268,10 @@ struct MobileDocumentView: View {
             }.disabled(saving || String(data: file.content, encoding: .utf8) == nil)
         }
         .onAppear {
-            text = String(data: file.content, encoding: .utf8) ?? "Este documento no tiene una codificación UTF-8 válida."
-            updateAssets(library.projects.first { $0.id == projectID })
+            let project = library.projects.first { $0.id == projectID }
+            let current = project?.files.first { $0.path == file.path }
+            if !editing { text = current.flatMap { String(data: $0.content, encoding: .utf8) } ?? "El documento ya no está disponible." }
+            updateAssets(project)
         }
         .onChange(of: library.projects) { _, projects in
             updateAssets(projects.first { $0.id == projectID })
@@ -278,6 +286,32 @@ struct MobileDocumentView: View {
         } message: {
             Text("Para editar y enviar cambios desde Little Leonardo, crea un repositorio Git y conecta el proyecto mediante Git.")
         }
+        .alert("Documento no disponible", isPresented: $unavailableLink) {
+            Button("Aceptar", role: .cancel) {}
+        } message: { Text("El enlace no corresponde a un documento descargado dentro de la carpeta autorizada.") }
+        .navigationDestination(isPresented: Binding(get: { linkedDocument != nil }, set: { if !$0 { linkedDocument = nil } })) {
+            if let target = linkedDocument {
+                MobileDocumentView(library: library, projectID: projectID, file: target.file,
+                                   mode: mode, initialAnchor: target.anchor)
+            }
+        }
+        .onChange(of: previewController.isReady) { _, ready in
+            if ready, !didScrollToInitialAnchor, let initialAnchor {
+                previewController.scroll(to: initialAnchor)
+                didScrollToInitialAnchor = true
+            }
+        }
+    }
+
+    private func followLink(_ url: URL) {
+        guard let project = library.projects.first(where: { $0.id == projectID }),
+              let target = CachedDocumentLink(url: url, virtualRoot: virtualRoot,
+                                              scope: project.scope, files: project.files) else {
+            unavailableLink = true; return
+        }
+        if target.file.path == file.path {
+            if let anchor = target.anchor { previewController.scroll(to: anchor) }
+        } else { linkedDocument = target }
     }
 
     private func updateAssets(_ project: OfflineProject?) {

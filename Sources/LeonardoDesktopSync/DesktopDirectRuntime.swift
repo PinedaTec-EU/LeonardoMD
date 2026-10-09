@@ -32,8 +32,12 @@ public actor DesktopDirectRuntime {
         self.now = now
     }
 
-    public func start(host: String, port: UInt16, projects: [SharedProjectSource]) async throws -> RunningDirectService {
+    public func start(host: String, port: UInt16, projects: [SharedProjectSource],
+                      allowPrivateOverlay: Bool = false) async throws -> RunningDirectService {
         guard !transitioning else { throw DesktopRuntimeError.busy }
+        guard LocalNetworkAddress.isAllowed(host, allowPrivateOverlay: allowPrivateOverlay) else {
+            throw TransportError.invalidEndpoint
+        }
         transitioning = true
         defer { transitioning = false }
         try await stopService()
@@ -56,7 +60,8 @@ public actor DesktopDirectRuntime {
         self.authority = authority
         self.listener = listener
         do {
-            let actualPort = try await listener.start(host: host, port: port)
+            let actualPort = try await listener.start(host: host, port: port,
+                                                      allowPrivateOverlay: allowPrivateOverlay)
             guard expected == generation else { await listener.stop(); throw CancellationError() }
             var components = URLComponents()
             components.scheme = "https"; components.host = host; components.port = Int(actualPort)

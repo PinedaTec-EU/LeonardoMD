@@ -8,8 +8,10 @@ public final class PinnedHTTPSClient: NSObject, URLSessionDelegate, URLSessionTa
     private let endpoint: URL
     private let maximumResponseBytes: Int
 
-    public init(endpoint: URL, certificateFingerprint: Data, maximumResponseBytes: Int = 300 * 1_024 * 1_024) throws {
-        guard endpoint.scheme == "https", let host = endpoint.host, LocalNetworkAddress.isAllowed(host),
+    public init(endpoint: URL, certificateFingerprint: Data, maximumResponseBytes: Int = 300 * 1_024 * 1_024,
+                allowPrivateOverlay: Bool = false) throws {
+        guard endpoint.scheme == "https", let host = endpoint.host,
+              LocalNetworkAddress.isAllowed(host, allowPrivateOverlay: allowPrivateOverlay),
               endpoint.user == nil, endpoint.password == nil, endpoint.query == nil, endpoint.fragment == nil,
               endpoint.path.isEmpty || endpoint.path == "/", certificateFingerprint.count == 32, maximumResponseBytes > 0 else {
             throw TransportError.invalidEndpoint

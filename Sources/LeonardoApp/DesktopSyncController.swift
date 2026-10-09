@@ -32,7 +32,11 @@ final class DesktopSyncController {
             credentials: SecureCredentialStore(service: "eu.pinedatec.LeonardoMD.sync.tls"), now: { Date() })
     }
 
-    var addresses: [String] { LocalNetworkInterfaces.addresses() }
+    /// LAN addresses are listed first. Overlay addresses appear only after the
+    /// user explicitly enables the private-overlay preference.
+    var addresses: [String] {
+        LocalNetworkInterfaces.addresses(allowPrivateOverlay: settings.privateOverlayEnabled)
+    }
 
     func initialize() async {
         guard !initialized, !busy else { return }
@@ -51,6 +55,12 @@ final class DesktopSyncController {
         busy = true
         defer { busy = false }
         do {
+            var updated = updated
+            if !updated.privateOverlayEnabled,
+               let host = updated.host,
+               LocalNetworkAddress.isPrivateOverlay(host) {
+                updated.host = nil
+            }
             for project in updated.projects { _ = try CorpusSelection(folders: project.folders, documents: project.documents) }
             let previous = try await configurations.loadGlobalPreferences(at: preferencesURL)
             var next = previous
@@ -64,9 +74,20 @@ final class DesktopSyncController {
     }
 
     private func start() async throws {
-        guard let host = settings.host ?? addresses.first else { throw TransportError.invalidEndpoint }
+        let host: String
+        if let configured = settings.host {
+            guard LocalNetworkAddress.isAllowed(configured,
+                                                allowPrivateOverlay: settings.privateOverlayEnabled) else {
+                throw TransportError.invalidEndpoint
+            }
+            host = configured
+        } else {
+            guard let automatic = addresses.first else { throw TransportError.invalidEndpoint }
+            host = automatic
+        }
         let sources = try settings.projects.map { try DesktopSharedCorpus(buffers: buffers).source($0) }
-        running = try await runtime.start(host: host, port: settings.port, projects: sources)
+        running = try await runtime.start(host: host, port: settings.port, projects: sources,
+                                          allowPrivateOverlay: settings.privateOverlayEnabled)
     }
 
     func share(_ root: URL, selection: CorpusSelection? = nil) async {

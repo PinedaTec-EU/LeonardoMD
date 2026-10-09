@@ -6,7 +6,8 @@ import CryptoKit
 /// application data. This fingerprint is unverified until desktop cross-code consent.
 public enum ServerIdentityProbe {
     public static func fingerprint(endpoint: URL) async throws -> Data {
-        _ = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: Data(repeating: 0, count: 32))
+        _ = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: Data(repeating: 0, count: 32),
+                                  allowPrivateOverlay: true)
         let delegate = ProbeDelegate()
         let configuration = URLSessionConfiguration.ephemeral
         configuration.urlCache = nil

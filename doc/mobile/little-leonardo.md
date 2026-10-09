@@ -298,3 +298,14 @@ The complete peer-library fixture now uses real pinned HTTPS and actual source/w
 Git publication commits now include project/device/base/scope headers covered by the commit object ID. This verifies metadata integrity, not author identity. Strict device-branch discovery captures an exact commit; metadata is fetched before selected blobs, and three-way review produces immutable receipts addressed by that commit rather than a moving branch. SHA-1/SHA-256 fixtures verify these contracts and preserve existing publication/retry behavior. Native desktop application and receipt exchange remain pending.
 
 Combined validation passes 255 XCTest cases (eight optional capture skips) plus 12 renderer tests. The iOS Simulator target builds successfully. Configured VPN support, SSH, native Git integration and complete native iOS/two-Mac acceptance remain required.
+
+
+## Private overlays, cached links and desktop Git application checkpoint
+
+The desktop service remains LAN-only by default. An explicit private-overlay setting permits literal addresses in 100.64.0.0/10, discovers eligible utun interfaces and lists LAN addresses first. Manual/QR clients retain certificate pinning and cross-code consent. Public addresses, DNS, wildcard binds and neighboring 100.63/100.128 ranges remain rejected. Legacy preferences decode the opt-in as false. Boundary, interface-selection, QR and runtime tests cover the policy; a physical VPN session is not claimed.
+
+Little Leonardo follows local Markdown/text links only to UTF-8 documents already present in the authorized cache. Sibling links and anchors remain inside the app; missing, external-root, ungranted and non-document targets are rejected. A native iOS Simulator test opens a synthetic cached sibling, returns and verifies the missing-document alert. Its test case passed; Xcode's post-test diagnostic collection was still running when this checkpoint was recorded. The fixture is explicit layout/navigation evidence, not an enrolled user project.
+
+Desktop Git application now validates approved selection before selected blobs, compares physical files and selected open drafts separately, journals the approved physical result and stores an immutable exact-commit receipt. A transport-independent native lease preserves the Git index and unselected work. Tests exercise approved draft materialization, stale draft rejection, duplicate-buffer rejection, recovery and historical retries. The coordinator still needs native discovery/review UI and shared receipt delivery.
+
+Full local validation passes 269 XCTest cases (eight optional capture skips) plus 12 renderer tests. SSH, native Git UI/receipt exchange and complete native enrollment/refresh/revocation/retry acceptance remain unfinished.
