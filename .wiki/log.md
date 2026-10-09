@@ -35,3 +35,7 @@
 - 2026-10-09: Added the native QA launch convention to root `AGENTS.md` for [#80](https://github.com/PinedaTec-EU/LeonardoMD/issues/80): XCTest uses a test runner; visual QA preserves the real packaged executable, checks dependencies and verifies fresh-process readiness while respecting product-wide instance ownership. Original harness correction and runtime validation remain pending.
 
 - 2026-10-09: #80 QA packaging now copies the real signed bundle via `scripts/qa-bundle.py`; `launch.sh --qa` uses it, and build packaging rejects test-runner executables/XCTest linkage. See https://github.com/PinedaTec-EU/LeonardoMD/issues/80.
+
+## 2026-10-09 — Little Leonardo work in progress
+
+[#92](https://github.com/PinedaTec-EU/LeonardoMD/issues/92) defines the iOS companion, direct read-only LAN snapshots and folder-scoped Git editing. The new standalone `LeonardoSync` target provides corpus boundaries, offline state/persistence and safe project snapshot reading. See [mobile contract and pending implementation](../doc/mobile/little-leonardo.md). This does not establish a runnable iOS app or completed synchronization.
