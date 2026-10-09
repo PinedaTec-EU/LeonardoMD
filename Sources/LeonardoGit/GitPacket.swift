@@ -3,6 +3,7 @@ import Foundation
 public enum GitWireError: Error, Equatable, Sendable {
     case invalidPacket, truncatedPacket, responseTooLarge, invalidAdvertisement
     case filteringUnavailable, invalidObjectID, unsupportedObjectFormat
+    case invalidFetchResponse, remoteFailure, invalidPack
 }
 
 public enum GitPacket: Equatable, Sendable {
@@ -51,6 +52,13 @@ public enum GitPacket: Equatable, Sendable {
             default: throw GitWireError.invalidPacket
             }
         }
+        return packets
+    }
+
+    static func commandResponse(_ input: Data, maximumBytes: Int = 2 * 1_024 * 1_024) throws -> [GitPacket] {
+        var packets = try decode(input, maximumBytes: maximumBytes)
+        if packets.last == .responseEnd { packets.removeLast() }
+        guard packets.last == .flush else { throw GitWireError.invalidPacket }
         return packets
     }
 }

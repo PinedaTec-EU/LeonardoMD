@@ -93,3 +93,9 @@ Four tests pass, including real `git upload-pack` advertisements with filtering 
 ## Git reference discovery checkpoint
 
 Protocol-v2 `ls-refs` requests branch references and symbolic HEAD, including unborn HEAD when advertised. Replies enforce framing, negotiated object-ID length, valid Git ref names, unique names and valid attributes. Because Git permits the server to ignore `ref-prefix`, the client also filters returned references to HEAD and branch categories. Six wire tests pass; real repositories verify SHA-1/SHA-256, unborn HEAD and Unicode branch names, while `git check-ref-format` checks the validator cases. This discovers refs only, not folders or contents. HTTP/SSH connection, pack decoding, selected-folder import and publishing still remain unfinished.
+
+## Git fetch-response checkpoint
+
+Fresh `fetch` replies are decoded as ordered shallow-boundary and packfile sections. The client separates sideband progress from binary pack data, rejects fatal/unknown channels and unsolicited packfile URI sections, and enforces wire, pack and object-count bounds. It supports the optional stateless response-end marker, checks PACK header/version and verifies the SHA-1/SHA-256 trailer before exposing pack bytes. This is envelope/integrity validation; compressed object and delta decoding is still unfinished.
+
+Eight Git tests pass, including real SHA-1/SHA-256 packs, corrupted trailers, split binary packets, fatal channels, URI injection and size limits. The existing metadata regression now uses this parser before importing with Git CLI and still proves zero file blobs transferred. The module compiles in the iOS target. Network transport, native pack storage/decoding, folder import, publication and reconciliation remain pending.

@@ -32,7 +32,7 @@ public extension GitV2Capabilities {
 
     func references(response: Data) throws -> [GitReference] {
         try requireFolderTransfer()
-        let packets = try GitPacket.decode(response)
+        let packets = try GitPacket.commandResponse(response)
         guard packets.last == .flush else { throw GitWireError.invalidAdvertisement }
         var seen: Set<String> = []
         var references: [GitReference] = []

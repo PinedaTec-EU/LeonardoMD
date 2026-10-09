@@ -62,3 +62,5 @@ HTTPS checkpoint for [#92](https://github.com/PinedaTec-EU/LeonardoMD/issues/92)
 2026-10-09 — #92 / PR #93: introduced native `LeonardoGit` bounded pkt-line/capability foundation. Four tests pass against malformed framing and real upload-pack advertisements/metadata transfer; a clean receiver proves no blobs were transferred from a document + 16 MiB code fixture. iOS builds the module. No complete Git transport, folder import or publication is claimed.
 
 2026-10-09 — #92 / PR #93: added native Git-v2 branch/symbolic/unborn reference discovery and shared negotiated object-ID validation. Six wire tests pass against real SHA-1/SHA-256 repositories and ref-format validation; duplicate/injected replies and unexpected categories are rejected/filtered. No folder import or complete mobile Git synchronization is claimed.
+
+2026-10-09 — #92 / PR #93: added bounded Git fetch envelope/sideband decoding with ordered sections, SHA-1/SHA-256 pack checksum validation and stateless response-end support. Eight Git tests pass against real and corrupted replies; iOS compilation passes. Compressed-object/delta decoding and working Git synchronization remain unfinished.

@@ -48,6 +48,9 @@ final class GitWireTests: XCTestCase {
             let refs = try capability.references(response: git(["upload-pack", "--stateless-rpc", source.path], input: capability.referenceRequest()))
             XCTAssertEqual(refs.map(\.name), ["HEAD", "refs/heads/main", "refs/heads/notes/ñ"])
             XCTAssertEqual(refs.first?.objectID?.count, format == "sha1" ? 40 : 64)
+            let tip = try XCTUnwrap(refs.first?.objectID)
+            let fetched = try GitFetchResponse(response: git(["upload-pack", "--stateless-rpc", source.path], input: capability.metadataRequest(want: tip)), capabilities: capability)
+            XCTAssertEqual(fetched.objectCount, 2)
         }
     }
 
@@ -88,14 +91,10 @@ final class GitWireTests: XCTestCase {
         let tip = String(decoding: try git(["-C", source.path, "rev-parse", "HEAD"]), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
         let capabilities = try GitV2Capabilities(advertisement: git(["upload-pack", "--stateless-rpc", "--advertise-refs", source.path]))
         let response = try git(["upload-pack", "--stateless-rpc", source.path], input: capabilities.metadataRequest(want: tip))
-        var inPack = false
-        var pack = Data()
-        for packet in try GitPacket.decode(response) {
-            guard case .data(let data) = packet else { continue }
-            if data == Data("packfile\n".utf8) { inPack = true; continue }
-            if inPack, data.first == 1 { pack.append(data.dropFirst()) }
-        }
-        XCTAssertTrue(pack.starts(with: Data("PACK".utf8)))
+        let parsed = try GitFetchResponse(response: response, capabilities: capabilities)
+        let pack = parsed.pack
+        XCTAssertEqual(parsed.objectCount, 3)
+        XCTAssertTrue(parsed.shallowCommits.isSubset(of: [tip]))
         let receiver = root.appendingPathComponent("receiver")
         _ = try git(["init", "--bare", "--quiet", receiver.path])
         _ = try git(["-C", receiver.path, "index-pack", "--stdin"], input: pack)
