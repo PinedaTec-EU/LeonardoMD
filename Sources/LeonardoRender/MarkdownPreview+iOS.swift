@@ -1,10 +1,10 @@
-#if os(macOS)
+#if os(iOS)
 import SwiftUI
 
-/// Native macOS Markdown preview backed by an isolated WKWebView.
+/// Native iOS Markdown preview backed by an isolated WKWebView.
 @MainActor
-public struct MarkdownPreview: NSViewRepresentable {
-    public typealias NSViewType = NSView
+public struct MarkdownPreview: UIViewRepresentable {
+    public typealias UIViewType = UIView
     public let content: String
     public let baseURL: URL?
     public let configuration: MarkdownPreviewConfiguration
@@ -31,7 +31,7 @@ public struct MarkdownPreview: NSViewRepresentable {
         self.onScrollProgress = onScrollProgress
     }
 
-    public func makeNSView(context: Context) -> NSView {
+    public func makeUIView(context: Context) -> UIView {
         let host = MarkdownPreviewHost(frame: .zero)
         controller?.attach(host)
         host.apply(
@@ -45,10 +45,10 @@ public struct MarkdownPreview: NSViewRepresentable {
         return host
     }
 
-    public func updateNSView(_ nsView: NSView, context: Context) {
-        guard let nsView = nsView as? MarkdownPreviewHost else { return }
-        controller?.attach(nsView)
-        nsView.apply(
+    public func updateUIView(_ uiView: UIView, context: Context) {
+        guard let uiView = uiView as? MarkdownPreviewHost else { return }
+        controller?.attach(uiView)
+        uiView.apply(
             content: content,
             baseURL: baseURL,
             configuration: configuration,
@@ -58,9 +58,9 @@ public struct MarkdownPreview: NSViewRepresentable {
         )
     }
 
-    public static func dismantleNSView(_ nsView: NSView, coordinator: ()) {
-        (nsView as? MarkdownPreviewHost)?.teardown()
-        nsView.removeFromSuperview()
+    public static func dismantleUIView(_ uiView: UIView, coordinator: ()) {
+        (uiView as? MarkdownPreviewHost)?.teardown()
+        uiView.removeFromSuperview()
     }
 }
 

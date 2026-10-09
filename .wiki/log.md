@@ -56,3 +56,5 @@ HTTPS checkpoint for [#92](https://github.com/PinedaTec-EU/LeonardoMD/issues/92)
 2026-10-09 — #92 / PR #93: implemented private-IP/port manual enrollment. Certificate discovery cancels before HTTP and leaves authentication to pinned cross-code desktop consent. Five desktop TLS/enrollment tests and two native Simulator pairing UI tests pass. Full product pairing/revocation and Git remain pending.
 
 2026-10-09 — #92 / PR #93: localized desktop mobile-service consent/preferences in English and Spanish. Nine localization checks pass with inspected native disabled-panel captures; seven configuration-store tests pass including default-off migration and stale-window consent preservation. No real user configuration or packaged single-instance app was used.
+
+2026-10-09 — #92 / PR #93: ported the shared native WebKit Markdown renderer to iOS and added immutable corpus-memory image delivery with remote-image blocking. Twelve renderer tests, a real WebKit asset-removal test and an inspected native iOS heading/table/image/source-toggle fixture test pass. Mobile hyperlinks and complete enrollment/revocation acceptance remain pending; mobile Git is still unimplemented.

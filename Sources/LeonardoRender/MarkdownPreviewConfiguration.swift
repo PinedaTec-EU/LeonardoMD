@@ -10,6 +10,8 @@ public struct MarkdownPreviewConfiguration: Equatable, Sendable {
     public var renderDebounce: Duration
     /// Optional project boundary for relative local image assets.
     public var localAssetRoot: URL?
+    public var memoryAssets: MarkdownMemoryAssets?
+    public var allowsRemoteImages: Bool
 
     public init(
         allowsMermaid: Bool = false,
@@ -18,7 +20,9 @@ public struct MarkdownPreviewConfiguration: Equatable, Sendable {
         externalLinkPolicy: ExternalLinkPolicy = .systemBrowser,
         appearance: MarkdownAppearance = .default,
         renderDebounce: Duration = .milliseconds(80),
-        localAssetRoot: URL? = nil
+        localAssetRoot: URL? = nil,
+        memoryAssets: MarkdownMemoryAssets? = nil,
+        allowsRemoteImages: Bool = true
     ) {
         self.allowsMermaid = allowsMermaid
         self.allowsMath = allowsMath
@@ -27,6 +31,8 @@ public struct MarkdownPreviewConfiguration: Equatable, Sendable {
         self.appearance = appearance
         self.renderDebounce = renderDebounce
         self.localAssetRoot = localAssetRoot
+        self.memoryAssets = memoryAssets
+        self.allowsRemoteImages = allowsRemoteImages
     }
 
     public static let `default` = MarkdownPreviewConfiguration()

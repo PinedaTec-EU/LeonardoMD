@@ -13,6 +13,7 @@
 		3E6C7AD17D9D0EDFB5E779BA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
 		46EBC1E01C1296D54919D7A0 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
 		636F71B3D4E9A41FC1842500 /* LeonardoSyncTransport in Frameworks */ = {isa = PBXBuildFile; productRef = 00F8AB50590ED36AF1934837 /* LeonardoSyncTransport */; };
+		6BF5E353F685869C538746E5 /* LeonardoRender in Frameworks */ = {isa = PBXBuildFile; productRef = 3D12268B64E5D2FC1E9F4E35 /* LeonardoRender */; };
 		852C58BAA8EDEDB67FDE7FB4 /* LeonardoSync in Frameworks */ = {isa = PBXBuildFile; productRef = 7CAAF1CC01593584A9E0A7F9 /* LeonardoSync */; };
 		C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */; };
 		DA52AFC54A29A9980B0601CC /* MobileQRScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */; };
@@ -55,6 +56,7 @@
 				46EBC1E01C1296D54919D7A0 /* Foundation.framework in Frameworks */,
 				852C58BAA8EDEDB67FDE7FB4 /* LeonardoSync in Frameworks */,
 				636F71B3D4E9A41FC1842500 /* LeonardoSyncTransport in Frameworks */,
+				6BF5E353F685869C538746E5 /* LeonardoRender in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -136,6 +138,7 @@
 			packageProductDependencies = (
 				7CAAF1CC01593584A9E0A7F9 /* LeonardoSync */,
 				00F8AB50590ED36AF1934837 /* LeonardoSyncTransport */,
+				3D12268B64E5D2FC1E9F4E35 /* LeonardoRender */,
 			);
 			productName = LittleLeonardo;
 			productReference = 5B83DAE858F9656CCDF4D6B1 /* LittleLeonardo.app */;
@@ -474,6 +477,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = EF04C10B9BAEA910A5BF75DB /* XCLocalSwiftPackageReference ".." */;
 			productName = LeonardoSyncTransport;
+		};
+		3D12268B64E5D2FC1E9F4E35 /* LeonardoRender */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EF04C10B9BAEA910A5BF75DB /* XCLocalSwiftPackageReference ".." */;
+			productName = LeonardoRender;
 		};
 		7CAAF1CC01593584A9E0A7F9 /* LeonardoSync */ = {
 			isa = XCSwiftPackageProductDependency;

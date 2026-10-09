@@ -4,8 +4,10 @@ import WebKit
 final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
     private let baseDirectory: URL?
     private let assetRoot: URL?
+    private let memoryAssets: MarkdownMemoryAssets?
 
-    init(baseURL: URL?, assetRootURL: URL? = nil) {
+    init(baseURL: URL?, assetRootURL: URL? = nil, memoryAssets: MarkdownMemoryAssets? = nil) {
+        self.memoryAssets = memoryAssets
         if let baseURL, baseURL.isFileURL {
             let directory = baseURL.standardizedFileURL
             baseDirectory = directory
@@ -17,6 +19,17 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
     }
 
     func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
+        if let memoryAssets {
+            guard let url = urlSchemeTask.request.url, let data = memoryAssets.data(for: url) else {
+                urlSchemeTask.didFailWithError(MarkdownDocumentError.notFound)
+                return
+            }
+            urlSchemeTask.didReceive(URLResponse(url: url, mimeType: mimeType(for: url), expectedContentLength: data.count,
+                textEncodingName: isText(url) ? "utf-8" : nil))
+            urlSchemeTask.didReceive(data)
+            urlSchemeTask.didFinish()
+            return
+        }
         guard let url = urlSchemeTask.request.url,
               let fileURL = fileURL(for: url),
               isImage(fileURL),

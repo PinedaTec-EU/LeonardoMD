@@ -77,3 +77,9 @@ The iOS pairing form accepts a private/local IP literal and port. `ServerIdentit
 ## Desktop preference acceptance checkpoint
 
 Little Leonardo service/project/device consent labels are present in both desktop catalogs and follow the selected English/Spanish app language. Nine localization checks pass, including two inspected native `NSHostingView` captures of the disabled service panel from an isolated temporary configuration. They do not prove packaged application startup or enabled device-consent UI. The fixture asserts no TLS identity is created while disabled. Seven configuration-store tests pass; new regressions verify legacy preferences default off and independent stale-window project/port changes preserve explicit service consent.
+
+## Native Markdown reader checkpoint
+
+`LeonardoRender` now supports macOS and iOS through native WebKit hosts. The desktop process-based Git adapter remains macOS-only; this does not implement mobile Git. The mobile reader renders Markdown with bundled sanitization, diagrams/math and selected-corpus image assets from immutable memory. It can switch to source text for reading/editing. Mobile preview CSP blocks remote image loads; hyperlinks are currently blocked and navigation remains unfinished. The memory asset handler never falls back to disk when a memory corpus is supplied.
+
+Twelve renderer tests and a real macOS WebKit integration test pass; the latter renders a table and cached SVG, then verifies image removal after clearing the asset source. An iOS Simulator UI test passes for rendered heading/table/image and source toggle. Its inspected capture is in `/tmp/little-markdown-ios-ui.xcresult`; the corpus is an explicitly seeded synthetic `QA · Markdown` fixture, not an enrollment transfer or real user project. That UI test skips when the fixture is absent. Full mobile pairing/refresh/revocation and hyperlink acceptance remain pending.

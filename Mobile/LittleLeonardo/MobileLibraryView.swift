@@ -1,5 +1,6 @@
 import SwiftUI
 import LeonardoSync
+import LeonardoRender
 
 struct MobileLibraryView: View {
     @Bindable var library: MobileLibrary
@@ -170,13 +171,24 @@ struct MobileDocumentView: View {
     @State private var editing = false
     @State private var readOnlyNotice = false
     @State private var saving = false
+    @State private var source = false
+    @State private var assets: MarkdownMemoryAssets?
+    private let virtualRoot = URL(fileURLWithPath: "/LittleLeonardoCorpus", isDirectory: true)
+    private var previewConfiguration: MarkdownPreviewConfiguration {
+        MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true, externalLinkPolicy: .blocked,
+            localAssetRoot: virtualRoot, memoryAssets: assets, allowsRemoteImages: false)
+    }
 
     var body: some View {
         Group {
             if !library.projects.contains(where: { $0.id == projectID }) {
                 ContentUnavailableView("Acceso retirado", systemImage: "lock", description: Text("La copia local de este proyecto se ha eliminado."))
             } else if editing { TextEditor(text: $text).font(.system(.body, design: .monospaced)).padding() }
-            else {
+            else if !source, ["md", "markdown"].contains((file.path as NSString).pathExtension.lowercased()) {
+                MarkdownPreview(content: text,
+                    baseURL: virtualRoot.appendingPathComponent(file.path).deletingLastPathComponent(),
+                    configuration: previewConfiguration)
+            } else {
                 ScrollView {
                     Text(text).font(.system(.body, design: .monospaced))
                         .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading).padding()
@@ -185,6 +197,9 @@ struct MobileDocumentView: View {
         }
         .navigationTitle((file.path as NSString).lastPathComponent)
         .toolbar {
+            if !editing {
+                Button(source ? "Ver documento" : "Ver texto", systemImage: "chevron.left.forwardslash.chevron.right") { source.toggle() }
+            }
             Button(editing ? "Guardar" : "Editar") {
                 if editing {
                     saving = true
@@ -196,8 +211,12 @@ struct MobileDocumentView: View {
                 else { editing = true }
             }.disabled(saving || String(data: file.content, encoding: .utf8) == nil)
         }
-        .onAppear { text = String(data: file.content, encoding: .utf8) ?? "Este documento no tiene una codificación UTF-8 válida." }
+        .onAppear {
+            text = String(data: file.content, encoding: .utf8) ?? "Este documento no tiene una codificación UTF-8 válida."
+            updateAssets(library.projects.first { $0.id == projectID })
+        }
         .onChange(of: library.projects) { _, projects in
+            updateAssets(projects.first { $0.id == projectID })
             if !projects.contains(where: { $0.id == projectID }) { text = ""; editing = false }
             else if mode == .direct {
                 text = projects.first(where: { $0.id == projectID })?.files.first(where: { $0.path == file.path })
@@ -209,5 +228,9 @@ struct MobileDocumentView: View {
         } message: {
             Text("Para editar y enviar cambios desde Little Leonardo, crea un repositorio Git y conecta el proyecto mediante Git.")
         }
+    }
+
+    private func updateAssets(_ project: OfflineProject?) {
+        assets = project.map { MarkdownMemoryAssets(files: Dictionary(uniqueKeysWithValues: $0.files.map { ($0.path, $0.content) })) }
     }
 }

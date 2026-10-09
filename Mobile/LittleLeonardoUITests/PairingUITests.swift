@@ -1,6 +1,28 @@
 import XCTest
 
 final class PairingUITests: XCTestCase {
+    @MainActor func testCachedMarkdownPreviewShowsRenderedHeadingTableAndImage() throws {
+        let app = XCUIApplication()
+        app.launch()
+        let fixture = app.staticTexts["QA · Markdown"].firstMatch
+        guard fixture.waitForExistence(timeout: 5) else {
+            throw XCTSkip("Requires the isolated QA Markdown corpus in the simulator app container")
+        }
+        fixture.tap()
+        app.buttons["docs/preview.md"].firstMatch.tap()
+        let web = app.webViews.firstMatch
+        XCTAssertTrue(web.waitForExistence(timeout: 10))
+        XCTAssertTrue(web.staticTexts["Offline preview"].waitForExistence(timeout: 10))
+        XCTAssertTrue(web.staticTexts["Ready"].exists)
+        XCTAssertTrue(web.images["Cached diagram"].exists)
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "Offline Markdown corpus preview"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        app.buttons["Ver texto"].tap()
+        XCTAssertFalse(app.webViews.firstMatch.exists)
+    }
+
     @MainActor func testManualPairingFormRequiresAddressAndRetainsQRAlternative() throws {
         let app = XCUIApplication()
         app.launch()
