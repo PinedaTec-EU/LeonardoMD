@@ -47,7 +47,7 @@ Open `Mobile/LittleLeonardo.xcodeproj` and select the shared `LittleLeonardo` sc
 xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination 'generic/platform=iOS Simulator' -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO build
 ```
 
-CI builds this target alongside the macOS suite. Mobile sources are included in the release ledger's versioned path scope. Device installation and distribution require the owner's Apple signing configuration; neither is claimed by simulator validation.
+CI builds this target alongside the macOS suite. This PR carries a release delta because it changes the shared Sources/Tests paths. The trusted ledger currently does not list Mobile/**; extending automatic detection for future mobile-only changes requires a separately authorized policy operation. Do not alter protected ledger configuration inside a feature PR. Device installation and distribution require the owner's Apple signing configuration; neither is claimed by simulator validation.
 
 ## Pairing policy checkpoint
 

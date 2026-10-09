@@ -21,8 +21,7 @@
         "scripts/**",
         "launch.sh",
         ".github/workflows/**",
-        "deploy/version/release-ledger.json",
-        "Mobile/**"
+        "deploy/version/release-ledger.json"
       ],
       "materialization_paths": [],
       "bootstrap_paths": [
