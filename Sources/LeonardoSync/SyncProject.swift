@@ -38,6 +38,12 @@ public struct CorpusSnapshot: Codable, Equatable, Sendable {
                   file.content.count <= limits.maximumCorpusBytes - size else { throw SyncError.sizeLimitExceeded }
             size += file.content.count
         }
+        // Sorting directory-boundary keys groups descendants immediately after their ancestor.
+        // Plain file-name sorting would allow an intervening sibling such as a.md-other.md.
+        let directoryKeys = paths.map { $0 + "/" }.sorted()
+        for (ancestor, next) in zip(directoryKeys, directoryKeys.dropFirst()) {
+            guard !next.hasPrefix(ancestor) else { throw SyncError.invalidSnapshot }
+        }
     }
 }
 

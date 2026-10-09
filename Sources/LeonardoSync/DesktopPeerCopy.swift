@@ -57,6 +57,12 @@ public struct DesktopPeerCopy: Codable, Equatable, Sendable, Identifiable {
         files.removeAll { $0.path == path }
     }
 
+    /// Captures files/buffers edited through the native working directory without advancing base.
+    public mutating func capture(_ snapshot: CorpusSnapshot, limits: CorpusLimits = CorpusLimits()) throws {
+        try selection.validate(snapshot, limits: limits)
+        files = snapshot.files.sorted { $0.path < $1.path }
+    }
+
     /// Only a clean copy can follow the remote without explicit reconciliation.
     public mutating func refresh(_ snapshot: CorpusSnapshot, limits: CorpusLimits = CorpusLimits()) throws {
         guard !hasLocalChanges else { throw SyncError.publicationPending }

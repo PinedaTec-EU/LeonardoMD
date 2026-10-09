@@ -20,16 +20,30 @@ public actor ProjectCorpusReader {
     public func snapshot(root: URL, selection: CorpusSelection, revision: String? = nil,
                          buffers: [OpenDocumentBuffer] = []) throws -> CorpusSnapshot {
         let normalized = root.standardizedFileURL.resolvingSymlinksInPath()
+        guard try FileManager.default.attributesOfItem(atPath: normalized.path)[.type] as? FileAttributeType == .typeDirectory else {
+            throw SyncError.invalidPath
+        }
         let scope = try CorpusScope(folder: "")
         var files: [String: CorpusFile] = [:]
         var byteCount = 0
         for folder in selection.folders {
             var start = normalized
+            var missing = false
             for component in folder.split(separator: "/") {
                 start.appendPathComponent(String(component))
-                let type = try FileManager.default.attributesOfItem(atPath: start.path)[.type] as? FileAttributeType
+                let metadata: [FileAttributeKey: Any]
+                do { metadata = try FileManager.default.attributesOfItem(atPath: start.path) }
+                catch {
+                    let value = error as NSError
+                    if value.domain == NSCocoaErrorDomain && [NSFileNoSuchFileError, NSFileReadNoSuchFileError].contains(value.code) {
+                        missing = true; break
+                    }
+                    throw error
+                }
+                let type = metadata[.type] as? FileAttributeType
                 guard type == .typeDirectory else { throw SyncError.invalidPath }
             }
+            if missing { continue }
             guard let enumerator = FileManager.default.enumerator(at: start,
                 includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey],
                 options: [.skipsHiddenFiles]) else { throw SyncError.invalidPath }

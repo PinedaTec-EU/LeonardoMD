@@ -39,6 +39,25 @@ final class CorpusTests: XCTestCase {
         XCTAssertThrowsError(try snapshot().validate(scope: scope, limits: CorpusLimits(maximumFileBytes: 1)))
     }
 
+    func testSnapshotRejectsFileAncestorCollisionsAndWritesRemainAtomic() throws {
+        let scope = try CorpusScope(folder: "docs")
+        for parent in ["docs/a.md", "docs/A.md", "docs/cafe\u{301}.md"] {
+            let ancestor = parent == "docs/cafe\u{301}.md" ? "docs/café.md" : "docs/a.md"
+            let invalid = snapshot("base", [parent: "parent", ancestor + "/child.md": "child"])
+            XCTAssertThrowsError(try invalid.validate(scope: scope, limits: CorpusLimits()), parent)
+            let reversed = CorpusSnapshot(revision: invalid.revision, files: Array(invalid.files.reversed()))
+            XCTAssertThrowsError(try reversed.validate(scope: scope, limits: CorpusLimits()), parent)
+        }
+        var project = try OfflineProject(name: "Git", mode: .git, scope: scope, snapshot: snapshot())
+        let before = project
+        XCTAssertThrowsError(try project.write(path: "docs/a.md/child.md", content: Data("child".utf8)))
+        XCTAssertEqual(project, before)
+        XCTAssertThrowsError(try snapshot("base", ["docs/a.md": "file", "docs/a.md-other.md": "sibling",
+            "docs/a.md/child.md": "conflicting descendant"]).validate(scope: scope, limits: CorpusLimits()))
+        XCTAssertNoThrow(try snapshot("base", ["docs/a.md/child.md": "valid directory", "docs/a.md-other/note.md": "sibling"])
+            .validate(scope: scope, limits: CorpusLimits()))
+    }
+
     func testNewOfflineWorkSurvivesIntegrationOfEarlierSend() throws {
         var project = try OfflineProject(name: "Git", mode: .git, scope: CorpusScope(folder: "docs"), snapshot: snapshot())
         try project.write(path: "docs/a.md", content: Data("sent".utf8))
