@@ -52,6 +52,7 @@ extension DocumentTabs {
             let session = activeSession
             if let workspace = saved.workspace, Self.available(workspace, directory: true) {
                 await session.openWorkspace(workspace)
+                session.showWorkspace = false
             }
             guard acceptsExternalDrops else { return }
             if let project = saved.project, Self.available(project, directory: true) {
