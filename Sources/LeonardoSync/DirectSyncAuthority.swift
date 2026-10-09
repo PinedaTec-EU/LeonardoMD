@@ -23,11 +23,15 @@ public struct PairingChallenge: Codable, Sendable {
     public let id: UUID
     public let comparisonCode: String
     public let expiresAt: Date
+    public init(id: UUID, comparisonCode: String, expiresAt: Date) {
+        self.id = id; self.comparisonCode = comparisonCode; self.expiresAt = expiresAt
+    }
 }
 
 public struct DirectDeviceStatus: Codable, Sendable {
     public let access: DeviceAccess
     public let projects: [SharedProjectDescriptor]
+    public init(access: DeviceAccess, projects: [SharedProjectDescriptor]) { self.access = access; self.projects = projects }
 }
 
 public enum DirectAuthorityError: Error, Sendable { case busy }

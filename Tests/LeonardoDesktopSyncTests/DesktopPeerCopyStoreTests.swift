@@ -29,7 +29,7 @@ final class DesktopPeerCopyStoreTests: XCTestCase {
         let url = root.appendingPathComponent(copy.id.uuidString).appendingPathExtension("json")
         XCTAssertEqual((try FileManager.default.attributesOfItem(atPath: url.path)[.posixPermissions] as? NSNumber)?.intValue, 0o600)
         XCTAssertEqual((try FileManager.default.attributesOfItem(atPath: root.path)[.posixPermissions] as? NSNumber)?.intValue, 0o700)
-        XCTAssertFalse(try FileManager.default.contentsOfDirectory(atPath: root.path).contains { $0.hasPrefix(".copy-") })
+        XCTAssertFalse(try FileManager.default.contentsOfDirectory(atPath: root.path).contains { $0.hasPrefix(".write-") })
         try await reopened.remove(id: copy.id)
         let missing = try await reopened.load(id: copy.id)
         XCTAssertNil(missing)

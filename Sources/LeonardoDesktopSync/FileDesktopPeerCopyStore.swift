@@ -1,6 +1,5 @@
 #if os(macOS)
 import Foundation
-import Darwin
 import LeonardoSync
 
 /// Private, atomic metadata/corpus archives. A working directory is managed separately;
@@ -40,18 +39,8 @@ public actor FileDesktopPeerCopyStore: DesktopPeerCopyStore {
         encoder.outputFormatting = [.withoutEscapingSlashes, .sortedKeys]
         let data = try encoder.encode(copy)
         guard data.count <= (try maximumEncodedBytes()) else { throw SyncError.sizeLimitExceeded }
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
-        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: root.path)
         let destination = try location(copy.id)
-        let temporary = root.appendingPathComponent(".copy-" + UUID().uuidString)
-        guard FileManager.default.createFile(atPath: temporary.path, contents: data, attributes: [.posixPermissions: 0o600]) else {
-            throw CocoaError(.fileWriteUnknown)
-        }
-        defer { try? FileManager.default.removeItem(at: temporary) }
-        // Rename preserves the private temporary file's permissions at every observable stage.
-        guard Darwin.rename(temporary.path, destination.path) == 0 else {
-            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
-        }
+        try PrivateDesktopFile.write(data, to: destination)
     }
 
     public func remove(id: UUID) throws {
