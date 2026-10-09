@@ -8,7 +8,7 @@ Window: "Outline-QA.md", App: LeonardoMD QA.
 			6 button (selected) Description: Outline-QA.md, Help: /private/tmp/leonardo-outline-89/Outline-QA.md
 			7 button Description: Close tab Outline-QA.md, ID: xmark
 		8 button Description: New tab, Help: New tab (⌘T), ID: new-document-tab
-		9 menu button Move, ID: folder
+		9 menu button Move
 		10 text Outline-QA.md Document viewer
 		11 container Description: Mode, ID: document-mode
 			12 button (selected) Preview
