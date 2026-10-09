@@ -148,6 +148,15 @@ final class DesktopPeerController {
         } catch { self.error = error.localizedDescription; try? await reload() }
     }
 
+    func entryFilter(in url: URL) async throws -> @Sendable (URL, Bool) -> Bool {
+        let policy = DesktopPeerPathPolicy(root: workingRoot) { [library] id in
+            guard let copy = try await library.copies().first(where: { $0.id == id }) else { throw SyncError.revoked }
+            _ = try await library.open(copyID: id)
+            return copy.selection
+        }
+        return try await policy.entryFilter(in: url)
+    }
+
     func authorize(_ url: URL, intent: DesktopPeerPathIntent) async throws {
         let policy = DesktopPeerPathPolicy(root: workingRoot) { [library] id in
             guard let copy = try await library.copies().first(where: { $0.id == id }) else { throw SyncError.revoked }

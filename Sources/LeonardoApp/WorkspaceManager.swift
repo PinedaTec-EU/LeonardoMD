@@ -50,9 +50,15 @@ extension AppSession {
         presentFilePanel(panel) { [weak self] url in Task { await self?.openWorkspace(url) } }
     }
     func openWorkspace(_ url: URL) async {
+        guard !stopped else { return }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
         await initialize()
         do {
-            workspaceURL = try await files.openWorkspace(at: url)
+            try await authorizePath(url, .directory)
+            let opened = try await files.openWorkspace(at: url)
+            guard !stopped else { return }
+            workspaceURL = opened
             globalPreferences.recentWorkspacePaths.removeAll { $0 == url }
             globalPreferences.recentWorkspacePaths.insert(url, at: 0)
             globalPreferences.recentWorkspacePaths = Array(globalPreferences.recentWorkspacePaths.prefix(12))
@@ -63,13 +69,23 @@ extension AppSession {
     }
     func refreshWorkspace() async {
         guard let root = workspaceURL else { return }
-        do { workspaceProjects = try await files.projects(in: root) }
+        do {
+            let include = try await entryFilter(root)
+            let projects = try await files.projects(in: root)
+            guard !stopped, workspaceURL == root else { return }
+            workspaceProjects = projects.filter { include($0.rootURL, true) }
+        }
         catch { if showWorkspace { report(error) } }
     }
     func createProject() {
         guard let root = workspaceURL, let name = prompt(title: L10n.text("New project"), initial: L10n.text("My project")) else { return }
         Task {
+            guard !stopped else { return }
+            fileOperationCount += 1
+            defer { fileOperationCount -= 1 }
             do {
+                try await authorizePath(root.appendingPathComponent(name), .directoryMutation)
+                guard !stopped else { return }
                 let project = try await files.createProject(named: name, in: root)
                 await refreshWorkspace()
                 await openProject(project.rootURL)
@@ -83,7 +99,12 @@ extension AppSession {
     }
     func renameProject(_ project: ProjectDescriptor, to name: String) async {
         guard let workspace = workspaceURL, await prepareNavigation(), await prepareRelatedFileOperation?(project.rootURL) ?? true else { return }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
         do {
+            try await authorizePath(project.rootURL, .directoryMutation)
+            try await authorizePath(workspace.appendingPathComponent(name), .directoryMutation)
+            guard !stopped else { return }
             let renamed = try await files.renameProject(project, to: name, in: workspace)
             if projectURL == project.rootURL {
                 projectURL = renamed.rootURL
@@ -110,7 +131,11 @@ extension AppSession {
     }
     func deleteConfirmedProject(_ project: ProjectDescriptor) async {
         guard await prepareNavigation(), await prepareRelatedFileOperation?(project.rootURL) ?? true else { return }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
         do {
+            try await authorizePath(project.rootURL, .directoryMutation)
+            guard !stopped else { return }
             try await files.deleteProject(project)
             if projectURL == project.rootURL {
                 projectURL = nil

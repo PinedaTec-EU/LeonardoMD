@@ -9,6 +9,28 @@ struct DesktopPeerPathPolicy {
     let root: URL
     let selection: @MainActor (UUID) async throws -> CorpusSelection
 
+    func entryFilter(in url: URL) async throws -> @Sendable (URL, Bool) -> Bool {
+        try await authorize(url, intent: .directory)
+        let canonical = root.standardizedFileURL.resolvingSymlinksInPath()
+        let target = url.standardizedFileURL.resolvingSymlinksInPath()
+        guard target.path == canonical.path || target.path.hasPrefix(canonical.path + "/") else { return { _, _ in true } }
+        let components = Array(target.pathComponents.dropFirst(canonical.pathComponents.count))
+        guard let first = components.first, let id = UUID(uuidString: first) else { throw SyncError.invalidPath }
+        let grant = try await selection(id)
+        let copy = canonical.appendingPathComponent(first)
+        return { candidate, directory in
+            let path = candidate.standardizedFileURL.path
+            guard path.hasPrefix(copy.path + "/") else { return false }
+            let relative = String(path.dropFirst(copy.path.count + 1))
+            if directory {
+                guard (try? CorpusScope(folder: "").validate(relative + "/selection.md")) != nil else { return false }
+                return grant.folders.contains(relative) || grant.contains(relative + "/selection.md") ||
+                    (grant.folders + grant.documents).contains { $0.hasPrefix(relative + "/") }
+            }
+            return (try? grant.validate(relative)) != nil
+        }
+    }
+
     func authorize(_ url: URL, intent: DesktopPeerPathIntent) async throws {
         let root = root.standardizedFileURL.resolvingSymlinksInPath()
         let lexical = url.standardizedFileURL
@@ -31,7 +53,7 @@ struct DesktopPeerPathPolicy {
         case .document: try grant.validate(path)
         case .directory:
             if path.isEmpty { return }
-            _ = try CorpusScope(folder: path)
+            try CorpusScope(folder: "").validate(path + "/selection.md")
             guard grant.folders.contains(path) || grant.contains(path + "/selection.md") ||
                     (grant.folders + grant.documents).contains(where: { $0.hasPrefix(path + "/") }) else { throw SyncError.outsideScope }
         case .directoryMutation:

@@ -71,13 +71,17 @@ extension AppSession {
     func children(of url: URL) async -> [NavigationEntry] {
         guard let root = projectURL else { return [] }
         do {
-            return try await files.children(of: url, in: root, showHidden: showHidden)
+            let include = try await entryFilter(url)
+            let nodes = try await files.children(of: url, in: root, showHidden: showHidden)
+            guard !stopped, projectURL == root else { return [] }
+            return nodes.filter { include($0.url, $0.isDirectory) }
                 .map { NavigationEntry(url: $0.url, isDirectory: $0.isDirectory) }
         } catch { report(error); return [] }
     }
     func refreshTree() async {
         guard let root = projectURL else { return }
         let entries = await children(of: root)
+        guard !stopped, projectURL == root else { return }
         if entries != rootEntries { rootEntries = entries }
         treeRevision += 1
     }
@@ -92,9 +96,11 @@ extension AppSession {
             self.searchResults = []
             do {
                 let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
-                let stream = await self.files.searchStream(in: project, query: query, showHidden: self.showHidden)
+                let include = try await self.entryFilter(root)
+                guard !self.stopped, !Task.isCancelled else { return }
+                let stream = await self.files.searchStream(in: project, query: query, showHidden: self.showHidden, include: include)
                 for try await results in stream {
-                    guard !Task.isCancelled, self.projectURL == root, self.searchQuery == query else { return }
+                    guard !self.stopped, !Task.isCancelled, self.projectURL == root, self.searchQuery == query else { return }
                     self.searchResults += results.map { SearchResult(url: $0.url, line: $0.lineNumber ?? 1, snippet: $0.snippet) }
                 }
             } catch { if !Task.isCancelled { self.report(error) } }

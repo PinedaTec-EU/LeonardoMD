@@ -47,6 +47,9 @@ final class AppSession {
     var authorizePath: @MainActor (URL, DesktopPeerPathIntent) async throws -> Void = { url, intent in
         try await DesktopPeerController.shared.authorize(url, intent: intent)
     }
+    var entryFilter: @MainActor (URL) async throws -> (@Sendable (URL, Bool) -> Bool) = { url in
+        try await DesktopPeerController.shared.entryFilter(in: url)
+    }
     let documents = DocumentStore()
     let files = LocalProjectRepository()
     let configurations = ConfigurationStore.shared
