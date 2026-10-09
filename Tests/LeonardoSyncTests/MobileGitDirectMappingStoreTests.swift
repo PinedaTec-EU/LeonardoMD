@@ -41,7 +41,7 @@ final class MobileGitDirectMappingStoreTests: XCTestCase {
     func testFinalSymlinkIsRejectedWithoutChangingOutsideTarget() async throws {
         let root = try makeTemporaryRoot()
         defer { try? FileManager.default.removeItem(at: root) }
-        let outside = root.deletingLastPathComponent().appendingPathComponent("mapping-outside-(UUID().uuidString).json")
+        let outside = root.deletingLastPathComponent().appendingPathComponent("mapping-outside-\(UUID().uuidString).json")
         defer { try? FileManager.default.removeItem(at: outside) }
         let sentinel = Data("outside remains unchanged\n".utf8)
         try sentinel.write(to: outside, options: .atomic)
@@ -56,6 +56,33 @@ final class MobileGitDirectMappingStoreTests: XCTestCase {
         } catch let error as SyncError {
             XCTAssertEqual(error, .invalidPath)
         }
+        XCTAssertEqual(try Data(contentsOf: outside), sentinel)
+    }
+
+    func testRestoredRegularMappingCanBeRetriedAfterSymlinkRejection() async throws {
+        let root = try makeTemporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let outside = root.deletingLastPathComponent()
+            .appendingPathComponent("mapping-retry-outside-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: outside) }
+        let sentinel = Data("outside remains unchanged\n".utf8)
+        try sentinel.write(to: outside, options: .atomic)
+        let url = root.appendingPathComponent("GitDirectMappings.json")
+        try FileManager.default.createSymbolicLink(at: url, withDestinationURL: outside)
+        let store = MobileGitDirectMappingStore(url: url)
+        let mapping = MobileGitDirectMapping(gitProjectID: UUID(), connectionID: UUID(), sourceProjectID: UUID())
+
+        do {
+            try await store.save([mapping.gitProjectID: mapping])
+            XCTFail("A symlinked final mapping entry must be rejected")
+        } catch let error as SyncError {
+            XCTAssertEqual(error, .invalidPath)
+        }
+
+        try FileManager.default.removeItem(at: url)
+        try await store.save([mapping.gitProjectID: mapping])
+        let restored = try await store.load()
+        XCTAssertEqual(restored, [mapping.gitProjectID: mapping])
         XCTAssertEqual(try Data(contentsOf: outside), sentinel)
     }
 
@@ -80,7 +107,7 @@ final class MobileGitDirectMappingStoreTests: XCTestCase {
 
     private func makeTemporaryRoot() throws -> URL {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("little-leonardo-mapping-(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("little-leonardo-mapping-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true,
                                                  attributes: [.posixPermissions: 0o700])
         return root

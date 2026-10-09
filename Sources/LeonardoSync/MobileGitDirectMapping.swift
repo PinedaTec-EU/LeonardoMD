@@ -1,4 +1,9 @@
 import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// Explicit association between a mobile Git project and one authorized
 /// desktop source grant. These UUIDs intentionally have different meanings:
@@ -29,6 +34,13 @@ public enum MobileGitWakeupDelivery: Equatable, Sendable {
 /// lexical so a symlink cannot redirect reads or atomic replacement outside
 /// the application-support tree.
 public actor MobileGitDirectMappingStore {
+    private enum EntryKind {
+        case missing
+        case regular
+        case symbolicLink
+        case other
+    }
+
     private let url: URL
     private static let maximumBytes = 1 * 1_024 * 1_024
     private static let maximumMappings = 1_024
@@ -40,10 +52,17 @@ public actor MobileGitDirectMappingStore {
     }
 
     public func load() throws -> [UUID: MobileGitDirectMapping] {
-        guard FileManager.default.fileExists(atPath: url.path) else { return [:] }
-        let values = try url.resourceValues(forKeys: [.isSymbolicLinkKey, .isRegularFileKey, .fileSizeKey])
-        guard values.isSymbolicLink != true, values.isRegularFile == true,
-              (values.fileSize ?? 0) <= Self.maximumBytes else { throw SyncError.invalidSnapshot }
+        switch try entryKind() {
+        case .missing:
+            return [:]
+        case .symbolicLink, .other:
+            throw SyncError.invalidSnapshot
+        case .regular:
+            break
+        }
+        let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+        let fileSize = (attributes[.size] as? NSNumber)?.intValue ?? 0
+        guard fileSize <= Self.maximumBytes else { throw SyncError.invalidSnapshot }
         let decoded = try JSONDecoder().decode([MobileGitDirectMapping].self, from: Data(contentsOf: url))
         guard decoded.count <= Self.maximumMappings else { throw SyncError.sizeLimitExceeded }
         var result: [UUID: MobileGitDirectMapping] = [:]
@@ -63,9 +82,32 @@ public actor MobileGitDirectMappingStore {
         guard data.count <= Self.maximumBytes else { throw SyncError.sizeLimitExceeded }
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true,
                                                 attributes: [.posixPermissions: 0o700])
-        let existing = try? url.resourceValues(forKeys: [.isSymbolicLinkKey])
-        guard existing?.isSymbolicLink != true else { throw SyncError.invalidPath }
+        switch try entryKind() {
+        case .missing, .regular:
+            break
+        case .symbolicLink, .other:
+            throw SyncError.invalidPath
+        }
         try data.write(to: url, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+    }
+
+    private func entryKind() throws -> EntryKind {
+        var info = stat()
+        return try url.withUnsafeFileSystemRepresentation { path in
+            guard let path else { throw SyncError.invalidPath }
+            guard lstat(path, &info) == 0 else {
+                if errno == ENOENT { return .missing }
+                throw SyncError.invalidPath
+            }
+            switch info.st_mode & S_IFMT {
+            case S_IFREG:
+                return .regular
+            case S_IFLNK:
+                return .symbolicLink
+            default:
+                return .other
+            }
+        }
     }
 }

@@ -253,6 +253,10 @@ final class MobileLibrary {
                 let status = try await client.status(deviceID: connection.deviceID, credential: credential)
                 if status.access == .pending { continue }
                 let granted = status.access == .authorized ? Set(status.projects.map(\.id)) : []
+                await removeStaleDirectGitMappings(connectionID: connection.deviceID,
+                                                    authorizedSourceProjects: Dictionary(
+                                                        status.projects.map { ($0.id, $0) },
+                                                        uniquingKeysWith: { first, _ in first }))
                 for id in granted {
                     guard !projects.contains(where: { $0.id == id && $0.mode == .git }),
                           !connections.enumerated().contains(where: { $0.offset != index && $0.element.projectIDs.contains(id) }) else {
@@ -291,6 +295,29 @@ final class MobileLibrary {
         await synchronizeGitProjects()
         comparisonCode = connections.first(where: { $0.comparisonCode != nil })?.comparisonCode
         projects.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    /// A direct revocation invalidates only associations that depend on that
+    /// direct grant. Git projects, baselines and publication journals remain
+    /// independent and are deliberately untouched.
+    private func removeStaleDirectGitMappings(connectionID: UUID,
+                                              authorizedSourceProjects: [UUID: SharedProjectDescriptor]) async {
+        let staleIDs = directGitMappings.compactMap { id, mapping in
+            guard mapping.connectionID == connectionID,
+                  let project = projects.first(where: { $0.id == mapping.gitProjectID && $0.mode == .git }),
+                  let source = authorizedSourceProjects[mapping.sourceProjectID],
+                  source.allowsGitScope(project.scope) else { return id }
+            return nil
+        }
+        guard !staleIDs.isEmpty else { return }
+        var updated = directGitMappings
+        for id in staleIDs { updated.removeValue(forKey: id) }
+        do {
+            try await gitDirectMappings.save(updated)
+            directGitMappings = updated
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 
     private func synchronizeGitProjects() async {

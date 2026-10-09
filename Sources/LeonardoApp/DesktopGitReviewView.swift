@@ -61,7 +61,8 @@ struct DesktopGitReviewView: View {
             }
         }
         .padding(24)
-        .frame(minWidth: 920, idealWidth: 1_020, minHeight: 600, idealHeight: 700)
+        .frame(minWidth: 920, idealWidth: 1_020, minHeight: 600, idealHeight: 700,
+               alignment: .topLeading)
         .disabled(controller.busy)
         .interactiveDismissDisabled(controller.busy)
         .onAppear { selected = differences.first?.path }
@@ -70,17 +71,7 @@ struct DesktopGitReviewView: View {
     @ViewBuilder private func detail(_ difference: ReconciliationDifference) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(difference.path).font(.headline).textSelection(.enabled)
-            HStack {
-                decision(L10n.text("Use incoming"), .remote, path: difference.path)
-                decision(L10n.text("Keep local draft"), .local, path: difference.path)
-                decision(L10n.text("Delete file"), .delete, path: difference.path)
-                if isTextPath(difference.path) {
-                    Button(L10n.text("Edit custom")) {
-                        let initial = difference.local?.content ?? difference.remote?.content ?? Data()
-                        decisions[difference.path] = .content(initial)
-                    }
-                }
-            }
+            decisionControls(for: difference)
             if case .content(let bytes) = decisions[difference.path], isTextPath(difference.path) {
                 TextEditor(text: Binding(get: {
                     if case .content(let current) = decisions[difference.path] {
@@ -100,12 +91,55 @@ struct DesktopGitReviewView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    private func decision(_ title: String, _ choice: ReconciliationChoice, path: String) -> some View {
+    @ViewBuilder private func decisionControls(for difference: ReconciliationDifference) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
+                decision(L10n.text("Use incoming"), .remote, path: difference.path)
+                decision(L10n.text("Keep local draft"), .local, path: difference.path)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(alignment: .center, spacing: 8) {
+                decision(L10n.text("Delete file"), .delete, path: difference.path)
+                if isTextPath(difference.path) {
+                    customDecision(path: difference.path, difference: difference)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func decision(
+        _ title: String,
+        _ choice: ReconciliationChoice,
+        path: String
+    ) -> some View {
         Button {
             decisions[path] = choice
         } label: {
-            Label(title, systemImage: decisions[path] == choice ? "checkmark.circle.fill" : "circle")
+            Label {
+                Text(title)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: true, vertical: false)
+            } icon: {
+                Image(systemName: decisions[path] == choice ? "checkmark.circle.fill" : "circle")
+            }
         }
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private func customDecision(
+        path: String,
+        difference: ReconciliationDifference
+    ) -> some View {
+        Button {
+            let initial = difference.local?.content ?? difference.remote?.content ?? Data()
+            decisions[path] = .content(initial)
+        } label: {
+            Text(L10n.text("Edit custom"))
+                .lineLimit(nil)
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     @ViewBuilder private func version(_ title: String, _ file: CorpusFile?) -> some View {

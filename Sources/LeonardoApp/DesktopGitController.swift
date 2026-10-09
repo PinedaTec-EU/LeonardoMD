@@ -9,6 +9,18 @@ import LeonardoSync
 /// selected base/blob read or a filesystem transaction.
 @MainActor @Observable
 final class DesktopGitController {
+    private struct ReviewedPublicationIdentity: Equatable, Sendable {
+        let remote: String
+        let branchName: String
+        let proposalCommitID: String
+
+        init(remote: String, branch: GitPublishedBranch) {
+            self.remote = remote
+            self.branchName = branch.name
+            self.proposalCommitID = branch.commitID
+        }
+    }
+
     let projectRoot: URL
     private let stateRoot: URL
     private let adapter: DesktopGitCLIAdapter
@@ -20,9 +32,19 @@ final class DesktopGitController {
     private let identityOverride: GitCommitIdentity?
 
     private(set) var remotes: [DesktopGitRemote] = []
-    var selectedRemote: String?
+    var selectedRemote: String? {
+        didSet {
+            guard oldValue != selectedRemote else { return }
+            invalidateSelectionState(clearBranches: true)
+        }
+    }
     private(set) var branches: [GitPublishedBranch] = []
-    var selectedBranchID: String?
+    var selectedBranchID: String? {
+        didSet {
+            guard oldValue != selectedBranchID else { return }
+            invalidateSelectionState(clearBranches: false)
+        }
+    }
     private(set) var discovery: GitRemoteDiscovery?
     private(set) var proposalMetadata: DesktopGitProposalMetadata?
     private(set) var approvedSelection: CorpusSelection?
@@ -33,6 +55,7 @@ final class DesktopGitController {
     var error: String?
 
     private var coordinator: DesktopGitReconciliationCoordinator?
+    private var reviewedPublication: ReviewedPublicationIdentity?
 
     init(projectRoot: URL, stateRoot: URL,
          lease: NativeReconciliationLease = .shared,
@@ -74,32 +97,38 @@ final class DesktopGitController {
     /// object IDs from the local filtered object database.
     func fetchPublications() async {
         guard !busy, let selectedRemote else { return }
+        let remoteAtStart = selectedRemote
         busy = true; error = nil
         defer { busy = false }
         do {
-            _ = try await adapter.fetchPublishedBranches(remote: selectedRemote)
+            _ = try await adapter.fetchPublishedBranches(remote: remoteAtStart)
+            guard self.selectedRemote == remoteAtStart else { return }
             let next = await coordinatorForProject()
             let result = try await next.discover()
+            guard self.selectedRemote == remoteAtStart else { return }
             coordinator = next
             discovery = result.0
             branches = result.1
             if selectedBranchID == nil || !branches.contains(where: { $0.name == selectedBranchID }) {
                 selectedBranchID = branches.first?.name
             }
-            proposalMetadata = nil
-            approvedSelection = nil
-            review = nil
+            invalidateSelectionState(clearBranches: false)
         } catch { self.error = error.localizedDescription }
     }
 
     /// Reads one exact commit's authenticated publication headers. No selected
     /// blobs are requested until `approveScope()` is called by the UI.
     func inspectSelectedBranch() async {
-        guard !busy, let branch = selectedBranch, let discovery, let coordinator else { return }
+        guard !busy, let remote = selectedRemote, let branch = selectedBranch,
+              let discovery, let coordinator else { return }
+        let identity = ReviewedPublicationIdentity(remote: remote, branch: branch)
         busy = true; error = nil
         defer { busy = false }
         do {
-            proposalMetadata = try await coordinator.inspect(branch: branch, discovery: discovery)
+            let metadata = try await coordinator.inspect(branch: branch, discovery: discovery)
+            guard isCurrent(identity) else { return }
+            proposalMetadata = metadata
+            reviewedPublication = identity
             approvedSelection = nil
             review = nil
         } catch { self.error = error.localizedDescription }
@@ -109,7 +138,10 @@ final class DesktopGitController {
     /// reads the base and selected proposal blobs for the review screen.
     func approveScope() async {
         guard !busy, let metadata = proposalMetadata, let discovery,
-              let coordinator else { return }
+              let coordinator, let identity = reviewedPublication,
+              identity.branchName == metadata.branch.name,
+              identity.proposalCommitID == metadata.branch.commitID,
+              isCurrent(identity) else { return }
         busy = true; error = nil
         defer { busy = false }
         do {
@@ -118,6 +150,7 @@ final class DesktopGitController {
             let value = try await coordinator.review(branch: metadata.branch, discovery: discovery,
                                                       projectRoot: projectRoot,
                                                       approvedSelection: selection, base: base)
+            guard isCurrent(identity), value.commitID == identity.proposalCommitID else { return }
             approvedSelection = selection
             review = value
         } catch { self.error = error.localizedDescription }
@@ -125,20 +158,41 @@ final class DesktopGitController {
 
     func apply(decisions: [String: ReconciliationChoice]) async -> Bool {
         guard !busy, let review, let approvedSelection, let coordinator,
-              let selectedRemote else { return false }
+              let selectedRemote, let reviewedPublication,
+              reviewedPublication.remote == selectedRemote,
+              reviewedPublication.branchName == review.proposal.branch.name,
+              reviewedPublication.proposalCommitID == review.proposal.commitID,
+              isCurrent(reviewedPublication) else { return false }
+        let reviewIdentity = reviewedPublication
+        let remoteAtStart = selectedRemote
         busy = true; error = nil
         defer { busy = false }
         do {
-            let identity = try await publicationIdentity()
+            let commitIdentity = try await publicationIdentity()
+            guard isCurrent(reviewIdentity) else { return false }
+            try await publisher.bindDestination(for: review.proposal.branch, remoteName: remoteAtStart)
+            guard isCurrent(reviewIdentity) else { return false }
             let receipt = try await coordinator.apply(review, approvedSelection: approvedSelection,
                                                       decisions: decisions, projectRoot: projectRoot)
+            // The filesystem transaction may have completed while a caller
+            // changed the picker selection. Keep its exact receipt and publish
+            // it to the destination that was reviewed instead of dropping it
+            // or redirecting it to the new selection.
             lastReceipt = receipt
+            guard receipt.commitID == reviewIdentity.proposalCommitID else {
+                publicationPending = true
+                self.error = "The integration receipt does not match the reviewed publication."
+                return false
+            }
             do {
-                _ = try await publisher.publish(receipt: receipt, remoteName: selectedRemote,
-                                                identity: identity)
-                self.review = nil
-                self.proposalMetadata = nil
-                self.approvedSelection = nil
+                _ = try await publisher.publish(receipt: receipt, remoteName: remoteAtStart,
+                                                identity: commitIdentity)
+                if isCurrent(reviewIdentity) {
+                    self.review = nil
+                    self.proposalMetadata = nil
+                    self.approvedSelection = nil
+                    self.reviewedPublication = nil
+                }
                 publicationPending = false
                 return true
             } catch {
@@ -196,9 +250,27 @@ final class DesktopGitController {
     }
 
     func cancelReview() {
-        review = nil
+        invalidateSelectionState(clearBranches: false)
+    }
+
+    private func invalidateSelectionState(clearBranches: Bool) {
+        if clearBranches {
+            branches = []
+            discovery = nil
+            if selectedBranchID != nil {
+                selectedBranchID = nil
+            }
+        }
         proposalMetadata = nil
         approvedSelection = nil
+        review = nil
+        reviewedPublication = nil
+    }
+
+    private func isCurrent(_ identity: ReviewedPublicationIdentity) -> Bool {
+        selectedRemote == identity.remote
+            && selectedBranchID == identity.branchName
+            && selectedBranch?.commitID == identity.proposalCommitID
     }
 
     private func publicationIdentity() async throws -> GitCommitIdentity {
@@ -207,7 +279,6 @@ final class DesktopGitController {
     }
 
     private func retryPersistedReceiptsIfPossible(additional: [GitIntegrationReceipt] = []) async throws {
-        guard let remote = selectedRemote else { return }
         let identity = try await publicationIdentity()
         var candidates = additional
         if let lastReceipt { candidates.append(lastReceipt) }
@@ -219,7 +290,8 @@ final class DesktopGitController {
         for receipt in candidates {
             let key = "\(receipt.projectID.uuidString):\(receipt.deviceID.uuidString):\(receipt.commitID)"
             guard seen.insert(key).inserted else { continue }
-            _ = try await publisher.publish(receipt: receipt, remoteName: remote, identity: identity)
+            _ = try await publisher.retryReceipt(receipt, fallbackRemote: selectedRemote,
+                                                  identity: identity)
         }
     }
 

@@ -20,12 +20,13 @@ extension AppSession {
         panel.prompt = L10n.text("Open project")
         presentFilePanel(panel) { [weak self] url in Task { await self?.openProject(url) } }
     }
-    func openProject(_ url: URL) async {
-        do { try await authorizePath(url, .directory) } catch { report(error); return }
-        guard !stopped else { return }
+    @discardableResult
+    func openProject(_ url: URL) async -> Bool {
+        do { try await authorizePath(url, .directory) } catch { report(error); return false }
+        guard !stopped else { return false }
         await initialize()
-        guard await prepareNavigation() else { return }
-        guard !busy else { return }
+        guard await prepareNavigation() else { return false }
+        guard !busy else { return false }
         busy = true
         defer { busy = false }
         do {
@@ -47,7 +48,8 @@ extension AppSession {
             await refreshTree()
             await refreshGit()
             updateTitle()
-        } catch { report(error) }
+            return true
+        } catch { report(error); return false }
     }
     func detachProject() async {
         guard await prepareNavigation() else { return }

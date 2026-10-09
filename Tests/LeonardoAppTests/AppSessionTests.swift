@@ -152,6 +152,16 @@ final class AppSessionTests: XCTestCase {
         XCTAssertFalse(session.searching)
     }
 
+    func testOpeningMissingProjectReturnsFailureForDurableReviewCallers() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+
+        let opened = await session.openProject(root.appendingPathComponent("missing-project"))
+
+        XCTAssertFalse(opened)
+        XCTAssertNil(session.projectURL)
+    }
+
     func testTwoWindowsCreatingFeatureOverridesPreserveIndependentToggles() async throws {
         let (root, first) = try fixture()
         let second = AppSession(preferencesURL: first.globalPreferencesURL)

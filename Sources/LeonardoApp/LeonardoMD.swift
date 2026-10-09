@@ -111,7 +111,6 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.removeObserver(self)
         diagnostics.record(.applicationWillTerminate)
         DesktopPeerController.shared.stop()
-        Task { await DesktopSyncController.shared.stop() }
     }
 
     func application(_ sender: NSApplication, open urls: [URL]) {
@@ -195,6 +194,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
             for window in windows {
                 if await !window.documents.prepareClose() { canTerminate = false }
             }
+            if canTerminate { await DesktopSyncController.shared.stop() }
             sender.reply(toApplicationShouldTerminate: canTerminate)
         }
         return .terminateLater

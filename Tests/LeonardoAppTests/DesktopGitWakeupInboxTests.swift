@@ -42,7 +42,34 @@ final class DesktopGitWakeupInboxTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: outside), sentinel)
     }
 
-    func testPersistenceCoalescesOutOfOrderSnapshotsAndKeepsNewestGeneration() async throws {
+    func testRestoredRegularInboxCanBeRetriedAfterSymlinkRejection() async throws {
+        let root = try makeRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let outside = root.deletingLastPathComponent()
+            .appendingPathComponent("wakeup-retry-outside-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: outside) }
+        let sentinel = Data("outside\n".utf8)
+        try sentinel.write(to: outside, options: .atomic)
+        let url = root.appendingPathComponent("GitWakeups.json")
+        try FileManager.default.createSymbolicLink(at: url, withDestinationURL: outside)
+        let inbox = DesktopGitWakeupInbox(url: url)
+        let entry = try makeEntry()
+
+        do {
+            try await inbox.save([entry])
+            XCTFail("A symlinked final inbox entry must be rejected")
+        } catch let error as SyncError {
+            XCTAssertEqual(error, .invalidPath)
+        }
+        try FileManager.default.removeItem(at: url)
+        try await inbox.save([entry])
+
+        let loaded = try await inbox.load()
+        XCTAssertEqual(loaded, [entry])
+        XCTAssertEqual(try Data(contentsOf: outside), sentinel)
+    }
+
+    func testPersistenceSerializesSnapshotsAndKeepsLatestControllerState() async throws {
         let root = try makeRoot()
         defer { try? FileManager.default.removeItem(at: root) }
         let inbox = DesktopGitWakeupInbox(url: root.appendingPathComponent("GitWakeups.json"))
@@ -50,13 +77,45 @@ final class DesktopGitWakeupInboxTests: XCTestCase {
         let old = try makeEntry()
         let newer = try makeEntry()
 
-        async let high: Void = persistence.enqueue([newer], generation: 2)
-        async let low: Void = persistence.enqueue([old], generation: 1)
-        _ = try await high
-        _ = try await low
+        try await persistence.save([old])
+        try await persistence.save([newer])
 
         let loaded = try await inbox.load()
         XCTAssertEqual(loaded, [newer])
+    }
+
+    func testSaveReturnsOnlyAfterTheEventIsOnDisk() async throws {
+        let root = try makeRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let inbox = DesktopGitWakeupInbox(url: root.appendingPathComponent("GitWakeups.json"))
+        let persistence = DesktopGitWakeupPersistence(inbox: inbox)
+        let entry = try makeEntry()
+
+        try await persistence.save([entry])
+
+        let loaded = try await inbox.load()
+        XCTAssertEqual(loaded, [entry])
+    }
+
+    func testWakeupIdentityIncludesSourceScopeAndDirectProvenance() throws {
+        let sourceA = UUID()
+        let sourceB = UUID()
+        let directA = UUID()
+        let directB = UUID()
+        let gitProject = UUID()
+        let gitDevice = UUID()
+        let commit = String(repeating: "f", count: 40)
+        let first = try GitReconciliationWakeup(
+            gitProjectID: gitProject, sourceProjectID: sourceA, gitDeviceID: gitDevice,
+            directDeviceID: directA, proposalCommitID: commit, scope: try CorpusScope(folder: "docs"))
+        let second = try GitReconciliationWakeup(
+            gitProjectID: gitProject, sourceProjectID: sourceB, gitDeviceID: gitDevice,
+            directDeviceID: directB, proposalCommitID: commit, scope: try CorpusScope(folder: "docs/nested"))
+
+        XCTAssertNotEqual(DesktopGitWakeupIdentity(deviceID: directA, wakeup: first),
+                          DesktopGitWakeupIdentity(deviceID: directA, wakeup: second))
+        XCTAssertNotEqual(DesktopGitWakeupIdentity(deviceID: directA, wakeup: first),
+                          DesktopGitWakeupIdentity(deviceID: directB, wakeup: first))
     }
 
     func testWakeupPolicyRequiresCurrentSourceGrantAndDirectProvenance() throws {

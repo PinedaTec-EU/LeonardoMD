@@ -4,10 +4,16 @@ import LeonardoCore
 
 struct GitPanel: View {
     @Bindable var session: AppSession
+    @Bindable var desktopSync: DesktopSyncController
     @Environment(\.dismiss) private var dismiss
     @State private var selected: Set<String> = []
     @State private var message = ""
     @State private var controller: DesktopGitController?
+
+    init(session: AppSession, desktopSync: DesktopSyncController = .shared) {
+        self.session = session
+        self.desktopSync = desktopSync
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -105,7 +111,7 @@ struct GitPanel: View {
             .appendingPathComponent("GitIntegration", isDirectory: true)
         let created = DesktopGitController(
             projectRoot: root, stateRoot: stateRoot,
-            buffers: DesktopSyncController.shared.buffers)
+            buffers: desktopSync.buffers)
         controller = created
         await created.refreshRemotes()
         await created.recover()

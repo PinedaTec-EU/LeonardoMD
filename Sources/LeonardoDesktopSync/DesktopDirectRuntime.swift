@@ -40,13 +40,10 @@ public actor DesktopDirectRuntime {
     private var generation = 0
     private var transitioning = false
     private let now: @Sendable () -> Date
-    private let gitWakeup: GitReconciliationWakeupHandler
+    private let gitWakeup: GitReconciliationWakeupHandler?
 
     public init(root: URL, credentials: any DeviceCredentialStore, now: @escaping @Sendable () -> Date,
-                gitWakeup: @escaping GitReconciliationWakeupHandler = { deviceID, wakeup in
-                    NotificationCenter.default.post(name: .desktopGitReconciliationWakeup,
-                                                    object: DesktopGitReconciliationWakeup(deviceID: deviceID, wakeup: wakeup))
-                }) {
+                gitWakeup: GitReconciliationWakeupHandler? = nil) {
         identityStore = DesktopTLSIdentityStore(root: root.appendingPathComponent("TLS"), credentials: credentials)
         registryStore = PairingRegistryStore(url: root.appendingPathComponent("devices.json"))
         uploads = FileDesktopPeerUploadStore(root: root.appendingPathComponent("Proposals"))
@@ -58,7 +55,8 @@ public actor DesktopDirectRuntime {
     }
 
     public func start(host: String, port: UInt16, projects: [SharedProjectSource],
-                      allowPrivateOverlay: Bool = false) async throws -> RunningDirectService {
+                      allowPrivateOverlay: Bool = false,
+                      gitWakeupHandler: GitReconciliationWakeupHandler? = nil) async throws -> RunningDirectService {
         guard !transitioning else { throw DesktopRuntimeError.busy }
         guard LocalNetworkAddress.isAllowed(host, allowPrivateOverlay: allowPrivateOverlay) else {
             throw TransportError.invalidEndpoint
@@ -78,7 +76,7 @@ public actor DesktopDirectRuntime {
         let store = registryStore
         let authority = try DirectSyncAuthority(registry: registry, projects: projects,
             serverFingerprint: identity.certificateFingerprint, persist: { try await store.save($0) },
-            uploads: uploads, receipts: receipts, gitWakeup: gitWakeup)
+            uploads: uploads, receipts: receipts, gitWakeup: gitWakeupHandler ?? gitWakeup)
         try await registryStore.save(registry)
         guard expected == generation else { throw CancellationError() }
         let router = DirectHTTPSRouter(authority: authority, now: now)

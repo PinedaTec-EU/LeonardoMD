@@ -2,15 +2,16 @@
 
 Implementation tracking: [#92](https://github.com/PinedaTec-EU/LeonardoMD/issues/92).
 
-Latest local checkpoint (2026-10-09, PR #93, local compile delta 172):
+Latest local checkpoint (2026-10-09, PR #93, compile delta184):
 
-- Native direct iOS acceptance passes enrollment, read-only reading, refresh, offline retention, restart and revocation cleanup.
-- Actual standard-command SSH fetch and receive-pack pass against a generated-key bare Git fixture. Native iOS Git acceptance passes scoped import, offline edit/create/delete, restart, exact first publication, integration consumption without duplicate sending, and a second edit/publication based on that integration (101.927 seconds). The server independently verifies commit ancestry, selected document bytes, unchanged excluded code and that its large blob was never requested. This is generated-key loopback/simulator evidence, not a physical-device or third-party-host claim.
-- Desktop Git discovery, manual reconciliation, result publication/retry, wakeup persistence and localization pass 24 focused tests. Core integration consumption passes five regressions; direct/Git mapping persistence and authenticated wakeup contracts pass eight tests.
-- The combined local suite at compile delta 172 passes 324 XCTest cases (ten optional skips) plus twelve renderer tests. Signed iOS build-for-testing passes. A native controller/editor composition test passes actual HTTPS pairing, folder/document boundaries, offline edits/add/delete, conflicting drafts, manual application, subsequent receipt/send and open-editor revocation. It does not prove a second packaged process or two physical Macs.
-- Exact-head CI, independent review and main integration remain pending. The earlier CI compiler crash is tracked in [#111](https://github.com/PinedaTec-EU/LeonardoMD/issues/111); the candidate workflow selects installed stable Xcode 26.3.
+- Full local validation passes 337 XCTest cases (ten optional fixture/capture skips), plus twelve renderer tests, with zero failures. Ten opt-in native controller/component capture cases pass separately. Signed iOS build-for-testing passes.
+- Direct mobile remains read-only. Native iOS/server acceptance exercises enrollment, consent, refresh, offline retention, retry and revocation; cache and grant removal are verified separately (39.470seconds UI,53.727seconds server).
+- Git HTTPS/SSH uses selected-only transfer, durable device publication and exact integration receipts. Native iOS/server acceptance verifies byte content, ancestry, continuation and excluded-blob boundaries. The final native UI run passes in104.844seconds; its independent server passes in138.017seconds and verifies both publications after the bounded editor-settling correction tracked in [#118](https://github.com/PinedaTec-EU/LeonardoMD/issues/118).
+- Desktop native controllers exercise pinned HTTPS pairing, explicit folder/document boundaries, offline mutations/conflicts, manual application, receipt continuation and editor revocation. Review identity and original publication destination survive selection changes/restart; authenticated wakeups and their consumption are durable. Shutdown flushes the inbox before termination even if service shutdown persistence fails.
+- [Native captures and reproduction](../validation/little-leonardo/README.md) preserve implementation-owned evidence. Physical camera/two-Mac/VPN and fresh packaged desktop startup remain explicit limits; the owner's running app is preserved.
+- Hosted CI at prior head `2f6756d03ed3fc9a9de69cdbb7dcf5c6043f884d` passed with Xcode26.3. Current-head CI, fresh independent judgment and integration remain required.
 
-The dated subsystem checkpoints below describe evidence from earlier implementation stages; their historical “pending” statements are not the current status. This checkpoint records local validation; exact-head CI, independent review and main integration are still required.
+The subsystem checkpoints below are historical. Their pending statements are superseded by this summary and the final integrated validation section.
 
 ## Agreed product contract
 
@@ -332,3 +333,16 @@ Evidence: `/tmp/little-native-direct-ios4.xcresult`, `/tmp/little-native-direct-
 Native iOS QA that accesses Keychain must build with simulator ad hoc signing (`CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=-`). An unsigned layout build cannot establish credential persistence and must not be used as enrollment acceptance evidence. Use `-collect-test-diagnostics never` for these bounded runs; poll the original processes until their terminal result. No personal credentials or production remote were used.
 
 SSH transport, desktop Git CLI/review and durable real-commit integration exchange are implemented in the working tree and still require combined validation and native Git/two-desktop acceptance. The full feature is not yet delivered.
+
+
+## Final integrated implementation validation (2026-10-09)
+
+This checkpoint supersedes the unfinished-status statements above, which document earlier implementation stages. Native SSH/HTTPS Git import, selected-only transfer, offline mutation, immutable publication, desktop discovery/manual decisions, exact integration receipt consumption and continuation are implemented. Direct mobile remains read-only; direct desktop copies support offline editing and manual reconciliation. Service access is opt-in, scoped and pinned.
+
+Compile delta 184 passes 337 XCTest cases (ten optional fixture/capture skips), plus twelve renderer tests, with zero failures. Ten optional native controller/component capture cases also pass. The signed iOS Simulator build passes. Native Git UI/server acceptance proves real generated-key SSH, selected-folder import, edit/create/delete offline and restart, first publication, integration consumption and a second publication based on the integration commit; the excluded large-code blob is never requested or transferred. Native direct UI/server acceptance proves enrollment, authorization, refresh, cache retention while disconnected, retry and open-document revocation. Native desktop controller/editor tests exercise actual pinned HTTPS, scoped offline conflicts, explicit application, receipt continuation and editor/cache revocation.
+
+Authenticated Git wakeups now acknowledge only after awaited atomic persistence. Missing sinks fail explicitly. Termination awaits final persistence inside the existing application termination barrier, and runtime shutdown errors do not skip the independent inbox flush. Controlled sink failures return an error; actual HTTPS and filesystem tests prove retry after storage recovery. Canonical project/device/commit/scope identity deduplicates both pending and visible notices. Notices remain until the requested project opens successfully. Revocation and scope changes remove direct-to-Git notification associations without deleting independent Git work.
+
+Hosted CI for implementation head `2f6756d03ed3fc9a9de69cdbb7dcf5c6043f884d` passed macOS/iOS compilation, tests, packaging and update metadata with Xcode 26.3. The subsequent durability and layout corrections require their own current-head CI and strict independent judgment before delivery. See [native evidence](../validation/little-leonardo/README.md).
+
+Acceptance limits: simulator/generated-key loopback and native controller/component fixtures do not establish physical camera scanning, two physical Macs or a live VPN session. The running owner's desktop app is preserved; product-wide single-instance ownership prevents fresh packaged-desktop startup verification. Revocation of an unreachable device takes effect on contact. Git providers must support selected blob filtering; unsupported servers fail rather than downloading the entire repository.

@@ -3,6 +3,13 @@ import AppKit
 
 struct WorkspaceView: View {
     @Bindable var session: AppSession
+    @Bindable private var desktopSync: DesktopSyncController
+
+    init(session: AppSession, desktopSync: DesktopSyncController = .shared) {
+        self.session = session
+        self.desktopSync = desktopSync
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             toolbar
@@ -23,7 +30,7 @@ struct WorkspaceView: View {
         .background(session.surfaceColor)
         .sheet(isPresented: $session.showWorkspace) { WorkspaceManager(session: session).modifier(SessionAppearance(session: session)) }
         .sheet(isPresented: $session.showPreferences) { PreferencesView(session: session).modifier(SessionAppearance(session: session)) }
-        .sheet(isPresented: $session.showGit) { GitPanel(session: session).modifier(SessionAppearance(session: session)) }
+        .sheet(isPresented: $session.showGit) { GitPanel(session: session, desktopSync: desktopSync).modifier(SessionAppearance(session: session)) }
         .alert("LeonardoMD", isPresented: Binding(get: { session.errorMessage != nil }, set: { if !$0 { session.errorMessage = nil } })) {
             Button(L10n.text("OK")) { session.errorMessage = nil }
         } message: { Text(session.errorMessage ?? "") }
@@ -92,6 +99,26 @@ struct WorkspaceView: View {
                     .help(session.focus ? L10n.text("Exit focus mode") : L10n.text("Focus mode"))
                     .accessibilityIdentifier("focus-mode")
                 Button { session.exportPDF() } label: { Image(systemName: "square.and.arrow.up") }.help(L10n.text("Export PDF"))
+            }
+            if let notice = desktopSync.gitWakeups.first {
+                Button {
+                    Task { await desktopSync.reviewGitWakeup(notice, in: session) }
+                } label: {
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "bell.badge")
+                        Text("\(desktopSync.gitWakeups.count)")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 4)
+                            .background(.red, in: Capsule())
+                            .offset(x: 8, y: -8)
+                    }
+                    .frame(width: 28, height: 24)
+                }
+                .help(L10n.text("Git publications to review"))
+                .accessibilityLabel(L10n.text("Git publications to review"))
+                .accessibilityValue("\(desktopSync.gitWakeups.count)")
+                .accessibilityIdentifier("desktop-git-wakeup-badge")
             }
             Button { session.showInspector.toggle() } label: { Label(L10n.text("Outline"), systemImage: "list.bullet") }
                 .accessibilityIdentifier("document-outline-button")

@@ -93,7 +93,7 @@ struct MobileSyncPreferencesView: View {
                                 Button(L10n.text("Review Git publication")) {
                                     Task { await controller.reviewGitWakeup(notice, in: session) }
                                 }.accessibilityIdentifier("desktop-git-wakeup-review")
-                                Button(L10n.text("Dismiss")) { controller.dismissGitWakeup(notice) }
+                                Button(L10n.text("Dismiss")) { Task { await controller.dismissGitWakeup(notice) } }
                             }
                         }
                         .padding(.vertical, 4)

@@ -131,6 +131,12 @@ final class PairingUITests: XCTestCase {
         // below the short fixture text to place it at the end before deletion.
         editor.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.95)).tap()
         editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count) + text)
+        let valueExpectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == %@", text), object: editor)
+        guard XCTWaiter().wait(for: [valueExpectation], timeout: 5) == .completed else {
+            XCTFail("The UI fixture editor did not settle to the requested text before saving")
+            return
+        }
         XCTAssertEqual(editor.value as? String, text, "The UI fixture must replace the entire document before saving")
         app.buttons["Guardar"].tap()
         XCTAssertTrue(app.buttons["Editar"].waitForExistence(timeout: 10))

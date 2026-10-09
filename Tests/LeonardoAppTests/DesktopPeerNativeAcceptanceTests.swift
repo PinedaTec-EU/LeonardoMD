@@ -1,4 +1,6 @@
 import XCTest
+import AppKit
+import SwiftUI
 import LeonardoCore
 import LeonardoSync
 import LeonardoSyncTransport
@@ -9,6 +11,69 @@ import LeonardoDesktopSync
 /// It does not launch another packaged process or claim physical VPN coverage.
 @MainActor
 final class DesktopPeerNativeAcceptanceTests: XCTestCase {
+    func testNativeServiceAcknowledgesGitWakeupsOnlyAfterDurableReceiptAndAllowsRetry() async throws {
+        let fixture = try NativePeerAcceptanceFixture()
+        defer { fixture.cleanup() }
+        await fixture.owner.initialize()
+        await fixture.owner.update(fixture.enabledSettings)
+        let running = try XCTUnwrap(fixture.owner.running, fixture.owner.error ?? "Missing service")
+        do {
+            let client = try DirectEnrollmentClient(endpoint: running.endpoint,
+                certificateFingerprint: running.certificateFingerprint)
+            let credential = String(repeating: "e", count: 64)
+            let enrollment = try await client.begin(deviceName: "Synthetic Git iPhone",
+                credential: credential, now: Date())
+            await fixture.owner.refreshConsent()
+            let request = try XCTUnwrap(fixture.owner.consent.requests.first)
+            await fixture.owner.approve(request, projects: [fixture.shared.id])
+            let gitProjectID = UUID(), gitDeviceID = UUID()
+            let scope = try CorpusScope(folder: "docs")
+            let first = try GitReconciliationWakeup(gitProjectID: gitProjectID,
+                sourceProjectID: fixture.shared.id, gitDeviceID: gitDeviceID,
+                directDeviceID: enrollment.deviceID, proposalCommitID: String(repeating: "f", count: 40),
+                scope: scope)
+            print("Native durable Git receipt: first notification")
+            try await client.notifyGitReconciliation(first, deviceID: enrollment.deviceID, credential: credential)
+            XCTAssertEqual(fixture.owner.gitWakeups.map(\.wakeup), [first])
+            let inboxURL = fixture.root.appendingPathComponent("Owner/GitWakeups.json")
+            let inbox = DesktopGitWakeupInbox(url: inboxURL)
+            let initial = try await inbox.load()
+            XCTAssertEqual(initial.map(\.wakeup), [first])
+            try await captureWakeupIfRequested(fixture)
+
+            // A failed durable write must reach the HTTP client, preserve the
+            // protected target, and permit publication-notification retry.
+            let saved = try Data(contentsOf: inboxURL)
+            let sentinel = fixture.root.appendingPathComponent("inbox-sentinel")
+            try Data("untouched".utf8).write(to: sentinel)
+            try FileManager.default.removeItem(at: inboxURL)
+            try FileManager.default.createSymbolicLink(at: inboxURL, withDestinationURL: sentinel)
+            let second = try GitReconciliationWakeup(gitProjectID: gitProjectID,
+                sourceProjectID: fixture.shared.id, gitDeviceID: gitDeviceID,
+                directDeviceID: enrollment.deviceID, proposalCommitID: String(repeating: "d", count: 40),
+                scope: scope)
+            print("Native durable Git receipt: protected inbox failure")
+            do {
+                try await client.notifyGitReconciliation(second, deviceID: enrollment.deviceID, credential: credential)
+                XCTFail("A notification must not succeed when its durable inbox cannot be written")
+            } catch TransportError.unexpectedResponse {}
+            XCTAssertEqual(try String(contentsOf: sentinel, encoding: .utf8), "untouched")
+            try FileManager.default.removeItem(at: inboxURL)
+            try saved.write(to: inboxURL)
+            print("Native durable Git receipt: restored inbox retry")
+            try await client.notifyGitReconciliation(second, deviceID: enrollment.deviceID, credential: credential)
+            let retried = try await inbox.load()
+            XCTAssertEqual(retried.count, 2)
+            XCTAssertTrue(retried.contains { $0.wakeup == first })
+            XCTAssertTrue(retried.contains { $0.wakeup == second })
+            XCTAssertEqual(fixture.owner.gitWakeups.count, 2)
+            await fixture.owner.stop()
+        } catch {
+            await fixture.owner.stop()
+            throw error
+        }
+    }
+
     func testNativeControllersReconcileOfflineCopiesAndRevokeOpenEditors() async throws {
         let fixture = try NativePeerAcceptanceFixture()
         defer { fixture.cleanup() }
@@ -111,6 +176,23 @@ final class DesktopPeerNativeAcceptanceTests: XCTestCase {
         } catch {
             await fixture.owner.stop()
             throw error
+        }
+    }
+
+    private func captureWakeupIfRequested(_ fixture: NativePeerAcceptanceFixture) async throws {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_LOCALIZATION_EVIDENCE"] else { return }
+        let directory = URL(fileURLWithPath: path, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        await fixture.ownerEditor.openDocument(fixture.source.appendingPathComponent("docs/note.md"))
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let host = NSHostingView(rootView: WorkspaceView(session: fixture.ownerEditor,
+                desktopSync: fixture.owner).modifier(SessionAppearance(session: fixture.ownerEditor)))
+            try await NativeViewCaptureSupport.capture(host, size: NSSize(width: 1260, height: 850),
+                to: directory.appendingPathComponent("desktop-git-wakeup-workspace-\(language.rawValue).png"),
+                settlingMilliseconds: 800, title: "Leonardo Git wakeup QA")
         }
     }
 }

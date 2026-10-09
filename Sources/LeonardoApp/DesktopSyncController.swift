@@ -31,7 +31,6 @@ final class DesktopSyncController {
     // All ordinary access still occurs on MainActor during initialization.
     private nonisolated(unsafe) var wakeupObserver: NSObjectProtocol?
     private var pendingWakeups: [DesktopGitReconciliationWakeup] = []
-    private var wakeupPersistenceGeneration: UInt64 = 0
 
     init(preferencesURL: URL = AppSession.preferencesURL, configurations: ConfigurationStore = .shared,
          runtime: DesktopDirectRuntime? = nil) {
@@ -47,7 +46,11 @@ final class DesktopSyncController {
         wakeupObserver = NotificationCenter.default.addObserver(
             forName: .desktopGitReconciliationWakeup, object: nil, queue: .main) { [weak self] notification in
                 guard let event = notification.object as? DesktopGitReconciliationWakeup else { return }
-                Task { @MainActor [weak self] in self?.receiveGitWakeup(event) }
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    do { try await self.receiveGitWakeup(event) }
+                    catch { self.error = error.localizedDescription }
+                }
             }
     }
 
@@ -70,10 +73,13 @@ final class DesktopSyncController {
             if settings.enabled { try await start() }
             consent = try await runtime.consentState()
             let persistedWakeups = try await wakeupInbox.load()
-            pendingWakeups.append(contentsOf: persistedWakeups.map(\.event))
+            for entry in persistedWakeups {
+                pendingWakeups.removeAll { Self.pendingWakeupKey($0) == entry.identity }
+                pendingWakeups.append(entry.event)
+            }
             initialized = true
-            drainPendingWakeups()
-            purgeGitWakeups()
+            try await drainPendingWakeups()
+            try await purgeGitWakeups()
         } catch { self.error = error.localizedDescription }
     }
 
@@ -97,7 +103,7 @@ final class DesktopSyncController {
             running = nil; invitationURL = nil
             if settings.enabled { try await start() }
             consent = try await runtime.consentState()
-            purgeGitWakeups()
+            try await purgeGitWakeups()
         } catch { self.error = error.localizedDescription }
     }
 
@@ -115,7 +121,12 @@ final class DesktopSyncController {
         }
         let sources = try settings.projects.map { try DesktopSharedCorpus(buffers: buffers).source($0) }
         running = try await runtime.start(host: host, port: settings.port, projects: sources,
-                                          allowPrivateOverlay: settings.privateOverlayEnabled)
+            allowPrivateOverlay: settings.privateOverlayEnabled,
+            gitWakeupHandler: { [weak self] deviceID, wakeup in
+                guard let self else { throw CancellationError() }
+                try await self.receiveAuthenticatedGitWakeup(
+                    DesktopGitReconciliationWakeup(deviceID: deviceID, wakeup: wakeup))
+            })
     }
 
     func share(_ root: URL, selection: CorpusSelection? = nil) async {
@@ -137,8 +148,8 @@ final class DesktopSyncController {
         guard !busy else { return }
         do {
             consent = try await runtime.consentState()
-            drainPendingWakeups()
-            purgeGitWakeups()
+            try await drainPendingWakeups()
+            try await purgeGitWakeups()
             incoming = running == nil ? [] : try await runtime.incomingProposals()
         } catch { self.error = error.localizedDescription }
     }
@@ -147,62 +158,121 @@ final class DesktopSyncController {
     /// The notice is only a wake-up; Git review still requires choosing a
     /// remote/branch and approving the scoped differences in the panel.
     func reviewGitWakeup(_ notice: DesktopGitWakeupNotice, in session: AppSession) async {
-        guard let project = settings.projects.first(where: { $0.id == notice.wakeup.sourceProjectID }),
-              let device = consent.devices.first(where: { $0.id == notice.deviceID }),
-              let descriptor = try? descriptor(for: project),
-              Self.acceptsGitWakeup(
-                  DesktopGitReconciliationWakeup(deviceID: notice.deviceID, wakeup: notice.wakeup,
-                                                 receivedAt: notice.receivedAt),
-                  device: device, descriptor: descriptor) else {
-            gitWakeups.removeAll { $0.id == notice.id }
-            persistGitWakeups()
+        do {
+            guard let project = settings.projects.first(where: { $0.id == notice.wakeup.sourceProjectID }),
+                  let device = consent.devices.first(where: { $0.id == notice.deviceID }),
+                  let descriptor = try? descriptor(for: project),
+                  Self.acceptsGitWakeup(
+                      DesktopGitReconciliationWakeup(deviceID: notice.deviceID, wakeup: notice.wakeup,
+                                                     receivedAt: notice.receivedAt),
+                      device: device, descriptor: descriptor) else {
+                try await removeGitWakeup(notice)
+                return
+            }
+            // Keep the notice until opening the project succeeds. A failed
+            // path authorization, missing project or busy session must leave
+            // the authenticated prompt available after the error is fixed.
+            guard await session.openProject(project.rootURL) else { return }
+            try await removeGitWakeup(notice)
+            session.showGit = true
+        } catch { self.error = error.localizedDescription }
+    }
+
+    func dismissGitWakeup(_ notice: DesktopGitWakeupNotice) async {
+        do {
+            try await removeGitWakeup(notice)
+        } catch { self.error = error.localizedDescription }
+    }
+
+    /// Consumes a wakeup only after its durable removal succeeds. The visible
+    /// and pre-initialization queues are changed together; if the atomic file
+    /// write fails, restore the in-memory entries and best-effort rewrite the
+    /// unchanged durable snapshot so a transient filesystem error cannot hide
+    /// the user's review prompt.
+    private func removeGitWakeup(_ notice: DesktopGitWakeupNotice) async throws {
+        let identity = DesktopGitWakeupIdentity(deviceID: notice.deviceID, wakeup: notice.wakeup)
+        let removedVisible = gitWakeups.filter { $0.id == notice.id }
+        let removedPending = pendingWakeups.filter { Self.pendingWakeupKey($0) == identity }
+        guard !removedVisible.isEmpty || !removedPending.isEmpty else { return }
+
+        gitWakeups.removeAll { $0.id == notice.id }
+        pendingWakeups.removeAll { Self.pendingWakeupKey($0) == identity }
+        do {
+            try await persistGitWakeups()
+            // A delivery can arrive while the first snapshot is suspended.
+            // Reapply the removal to that newer in-memory snapshot and queue
+            // one final write so the older notice cannot be resurrected by a
+            // later persistence continuation.
+            if gitWakeups.contains(where: { $0.id == notice.id })
+                || pendingWakeups.contains(where: { Self.pendingWakeupKey($0) == identity }) {
+                gitWakeups.removeAll { $0.id == notice.id }
+                pendingWakeups.removeAll { Self.pendingWakeupKey($0) == identity }
+                try await persistGitWakeups()
+            }
+        } catch {
+            for value in removedVisible where !gitWakeups.contains(where: { $0.id == value.id }) {
+                gitWakeups.insert(value, at: 0)
+            }
+            for value in removedPending where !pendingWakeups.contains(where: { Self.pendingWakeupKey($0) == identity }) {
+                pendingWakeups.append(value)
+            }
+            try? await persistGitWakeups()
+            throw error
+        }
+    }
+
+    /// Durable sink for the authenticated direct-service callback. The
+    /// runtime may await this method before completing its HTTP response.
+    /// Unlike the process-local NotificationCenter observer, this path keeps
+    /// an authenticated event when the controller has not loaded current
+    /// consent yet. The next consent refresh drains or rejects it explicitly.
+    func receiveAuthenticatedGitWakeup(_ event: DesktopGitReconciliationWakeup) async throws {
+        guard event.wakeup.directDeviceID == nil || event.wakeup.directDeviceID == event.deviceID else {
+            throw SyncError.invalidSnapshot
+        }
+        guard initialized else {
+            appendPendingWakeup(event)
+            try await persistGitWakeups()
             return
         }
-        gitWakeups.removeAll { $0.id == notice.id }
-        persistGitWakeups()
-        await session.openProject(project.rootURL)
-        session.showGit = true
+        if currentGitWakeupIsAuthorized(event) {
+            try await enqueueGitWakeup(event)
+        } else {
+            // The direct authority has already authenticated the callback;
+            // local consent may simply be stale while the settings task is
+            // loading. Queue it durably rather than dropping it or showing it
+            // before the local project grant has been rechecked.
+            appendPendingWakeup(event)
+            try await persistGitWakeups()
+        }
     }
 
-    func dismissGitWakeup(_ notice: DesktopGitWakeupNotice) {
-        gitWakeups.removeAll { $0.id == notice.id }
-        persistGitWakeups()
-    }
-
-    private func receiveGitWakeup(_ event: DesktopGitReconciliationWakeup) {
+    private func receiveGitWakeup(_ event: DesktopGitReconciliationWakeup) async throws {
         guard event.wakeup.directDeviceID == nil || event.wakeup.directDeviceID == event.deviceID else {
             return
         }
         guard initialized else {
-            pendingWakeups.removeAll {
-                $0.deviceID == event.deviceID && $0.wakeup.gitProjectID == event.wakeup.gitProjectID
-                    && $0.wakeup.proposalCommitID == event.wakeup.proposalCommitID
-            }
-            pendingWakeups.append(event)
-            if pendingWakeups.count > 128 { pendingWakeups.removeFirst(pendingWakeups.count - 128) }
-            persistGitWakeups()
+            appendPendingWakeup(event)
+            try await persistGitWakeups()
             return
         }
-        guard let device = consent.devices.first(where: { $0.id == event.deviceID }),
-              !device.revoked,
-              event.wakeup.directDeviceID == nil || event.wakeup.directDeviceID == event.deviceID else {
+        guard currentGitWakeupIsAuthorized(event) else {
             return
         }
-        enqueueGitWakeup(event)
+        try await enqueueGitWakeup(event)
     }
 
-    private func drainPendingWakeups() {
+    private func drainPendingWakeups() async throws {
         let pending = pendingWakeups
         pendingWakeups.removeAll()
-        for event in pending { receiveGitWakeup(event) }
+        for event in pending { try await receiveGitWakeup(event) }
         // Even rejected pending events must clear the persisted queue. The
-        // individual accepted events also enqueue their newest visible list;
-        // this final snapshot covers the all-rejected case and coalesces with
-        // those writes in the persistence actor.
-        if !pending.isEmpty { persistGitWakeups() }
+        // Individual accepted events also enqueue their newest visible list;
+        // this final snapshot covers the all-rejected case.
+        if !pending.isEmpty { try await persistGitWakeups() }
     }
 
-    private func enqueueGitWakeup(_ event: DesktopGitReconciliationWakeup) {
+    private func enqueueGitWakeup(_ event: DesktopGitReconciliationWakeup) async throws {
         guard let device = consent.devices.first(where: { $0.id == event.deviceID }),
               let project = settings.projects.first(where: { $0.id == event.wakeup.sourceProjectID }),
               let descriptor = try? descriptor(for: project),
@@ -214,10 +284,10 @@ final class DesktopSyncController {
         gitWakeups.removeAll { $0.id == notice.id }
         gitWakeups.insert(notice, at: 0)
         if gitWakeups.count > 128 { gitWakeups.removeLast(gitWakeups.count - 128) }
-        persistGitWakeups()
+        try await persistGitWakeups()
     }
 
-    private func purgeGitWakeups() {
+    private func purgeGitWakeups() async throws {
         let before = gitWakeups
         let pendingBefore = pendingWakeups
         let devices = Dictionary(uniqueKeysWithValues: consent.devices.map { ($0.id, $0) })
@@ -237,21 +307,18 @@ final class DesktopSyncController {
             return !Self.acceptsGitWakeup(event, device: device, descriptor: descriptor)
         }
         let pendingChanged = pendingBefore.map(Self.pendingWakeupKey) != pendingWakeups.map(Self.pendingWakeupKey)
-        if before != gitWakeups || pendingChanged { persistGitWakeups() }
+        if before != gitWakeups || pendingChanged { try await persistGitWakeups() }
     }
 
-    private static func pendingWakeupKey(_ event: DesktopGitReconciliationWakeup) -> String {
-        wakeupKey(deviceID: event.deviceID, wakeup: event.wakeup)
+    private static func pendingWakeupKey(_ event: DesktopGitReconciliationWakeup) -> DesktopGitWakeupIdentity {
+        DesktopGitWakeupIdentity(deviceID: event.deviceID, wakeup: event.wakeup)
     }
 
-    private static func wakeupKey(deviceID: UUID, wakeup: GitReconciliationWakeup) -> String {
-        [deviceID.uuidString, wakeup.gitProjectID.uuidString,
-         wakeup.sourceProjectID.uuidString, wakeup.gitDeviceID.uuidString,
-         wakeup.directDeviceID?.uuidString ?? "", wakeup.proposalCommitID,
-         wakeup.scope.folder].joined(separator: ":")
+    private static func wakeupKey(deviceID: UUID, wakeup: GitReconciliationWakeup) -> DesktopGitWakeupIdentity {
+        DesktopGitWakeupIdentity(deviceID: deviceID, wakeup: wakeup)
     }
 
-    private func persistGitWakeups() {
+    private func persistGitWakeups() async throws {
         // Include pre-initialization events as well as visible notices. This
         // keeps a notification durable even if the app receives it while the
         // runtime consent state is still loading, and the bounded snapshot is
@@ -262,25 +329,32 @@ final class DesktopSyncController {
         let visibleEntries = gitWakeups.map {
             DesktopGitWakeupInbox.Entry(deviceID: $0.deviceID, wakeup: $0.wakeup, receivedAt: $0.receivedAt)
         }
-        var seen = Set<String>()
+        var seen = Set<DesktopGitWakeupIdentity>()
         let entries = Array((pendingEntries + visibleEntries)
             .sorted {
                 if $0.receivedAt != $1.receivedAt { return $0.receivedAt > $1.receivedAt }
-                return Self.wakeupKey(deviceID: $0.deviceID, wakeup: $0.wakeup)
-                    < Self.wakeupKey(deviceID: $1.deviceID, wakeup: $1.wakeup)
+                return Self.wakeupKey(deviceID: $0.deviceID, wakeup: $0.wakeup).stringValue
+                    < Self.wakeupKey(deviceID: $1.deviceID, wakeup: $1.wakeup).stringValue
             }
             .filter { seen.insert(Self.wakeupKey(deviceID: $0.deviceID, wakeup: $0.wakeup)).inserted }
             .prefix(128))
-        wakeupPersistenceGeneration &+= 1
-        let generation = wakeupPersistenceGeneration
-        let persistence = wakeupPersistence
-        Task { @MainActor [weak self] in
-            do {
-                try await persistence.enqueue(entries, generation: generation)
-            } catch {
-                self?.error = error.localizedDescription
-            }
+        try await wakeupPersistence.save(entries)
+    }
+
+    private func appendPendingWakeup(_ event: DesktopGitReconciliationWakeup) {
+        let identity = Self.pendingWakeupKey(event)
+        pendingWakeups.removeAll { Self.pendingWakeupKey($0) == identity }
+        pendingWakeups.append(event)
+        if pendingWakeups.count > DesktopGitWakeupInbox.maximumEntries {
+            pendingWakeups.removeFirst(pendingWakeups.count - DesktopGitWakeupInbox.maximumEntries)
         }
+    }
+
+    private func currentGitWakeupIsAuthorized(_ event: DesktopGitReconciliationWakeup) -> Bool {
+        guard let device = consent.devices.first(where: { $0.id == event.deviceID }),
+              let project = settings.projects.first(where: { $0.id == event.wakeup.sourceProjectID }),
+              let descriptor = try? descriptor(for: project) else { return false }
+        return Self.acceptsGitWakeup(event, device: device, descriptor: descriptor)
     }
 
     /// Checks both halves of the wakeup authorization: the direct paired
@@ -366,12 +440,19 @@ final class DesktopSyncController {
         do {
             try await action()
             consent = try await runtime.consentState()
-            purgeGitWakeups()
+            try await purgeGitWakeups()
         }
         catch { self.error = error.localizedDescription }
     }
 
-    func stop() async { do { try await runtime.stop(); running = nil } catch { self.error = error.localizedDescription } }
+    func stop() async {
+        do { try await runtime.stop(); running = nil }
+        catch { self.error = error.localizedDescription }
+        // A runtime transition failure must not skip the independently queued
+        // inbox flush, especially inside the application's termination barrier.
+        do { try await persistGitWakeups() }
+        catch { self.error = error.localizedDescription }
+    }
 }
 
 struct DesktopSourceReview: Identifiable {
@@ -387,7 +468,7 @@ struct DesktopGitWakeupNotice: Identifiable, Equatable {
     let receivedAt: Date
 
     var id: String {
-        "\(deviceID.uuidString):\(wakeup.gitDeviceID.uuidString):\(wakeup.gitProjectID.uuidString):\(wakeup.proposalCommitID)"
+        DesktopGitWakeupIdentity(deviceID: deviceID, wakeup: wakeup).stringValue
     }
 }
 private enum NativeSourceReviewError: Error { case ambiguousBuffers }

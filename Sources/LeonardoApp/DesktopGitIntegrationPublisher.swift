@@ -31,6 +31,7 @@ final class DesktopGitIntegrationPublisher {
     private let lease: NativeReconciliationLease
     private let process: DesktopGitIntegrationProcess
     private let outbox: DesktopGitIntegrationOutboxStore
+    private let destinations: DesktopGitPublicationDestinationStore
 
     init(projectRoot: URL, stateRoot: URL,
          lease: NativeReconciliationLease = .shared,
@@ -40,6 +41,17 @@ final class DesktopGitIntegrationPublisher {
         self.process = DesktopGitIntegrationProcess(executableURL: executableURL)
         self.outbox = DesktopGitIntegrationOutboxStore(
             root: stateRoot.appendingPathComponent("GitIntegrationOutbox", isDirectory: true))
+        self.destinations = DesktopGitPublicationDestinationStore(
+            root: stateRoot.appendingPathComponent("GitIntegrationDestinations", isDirectory: true))
+    }
+
+    /// Binds the reviewed proposal to its selected remote before the
+    /// filesystem transaction starts. Recovery can therefore retain the same
+    /// destination even if the picker changes or the process crashes before
+    /// the push outbox is created.
+    func bindDestination(for branch: GitPublishedBranch, remoteName: String) async throws {
+        _ = try await destinations.bind(projectID: branch.projectID, deviceID: branch.deviceID,
+                                        proposalCommitID: branch.commitID, remoteName: remoteName)
     }
 
     /// Creates the exact result commit, stores its durable push intent, and
@@ -47,13 +59,33 @@ final class DesktopGitIntegrationPublisher {
     func publish(receipt: GitIntegrationReceipt, remoteName: String,
                  identity: GitCommitIdentity,
                  message: String = "Little Leonardo integration") async throws -> GitIntegrationEnvelope {
+        let boundRemote = try await destinations.bind(projectID: receipt.projectID,
+                                                      deviceID: receipt.deviceID,
+                                                      proposalCommitID: receipt.commitID,
+                                                      remoteName: remoteName)
         let selection = try CorpusSelection(folders: [receipt.scope.folder], documents: [])
         return try await lease.runApplication(projectRoot: projectRoot, selection: selection) {
-            let envelope = try await self.prepareAndPublish(receipt: receipt, remoteName: remoteName,
+            let envelope = try await self.prepareAndPublish(receipt: receipt, remoteName: boundRemote,
                                                             identity: identity, message: message)
             return NativeReconciliationApplication(value: envelope, appliedNow: false,
                                                    appliedSnapshot: receipt.accepted)
         }
+    }
+
+    /// Retries one durable receipt using its original destination binding. A
+    /// fallback is used only for receipts created before destination bindings
+    /// existed; once a binding or outbox entry exists, the current picker is
+    /// never allowed to redirect this exact proposal.
+    func retryReceipt(_ receipt: GitIntegrationReceipt, fallbackRemote: String?,
+                      identity: GitCommitIdentity) async throws -> GitIntegrationEnvelope? {
+        let destination = try await destinations.load(projectID: receipt.projectID,
+                                                       deviceID: receipt.deviceID,
+                                                       proposalCommitID: receipt.commitID)
+        let outboxRemote = try await outbox.load(projectID: receipt.projectID,
+                                                 deviceID: receipt.deviceID,
+                                                 proposalCommitID: receipt.commitID)?.remoteName
+        guard let remote = destination ?? outboxRemote ?? fallbackRemote else { return nil }
+        return try await publish(receipt: receipt, remoteName: remote, identity: identity)
     }
 
     /// Retries every durable intent with its original local ref and commit.

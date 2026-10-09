@@ -1,5 +1,9 @@
 import Foundation
 
+public enum GitWakeupDeliveryError: Error, Sendable {
+    case unavailable
+}
+
 public struct SharedProjectDescriptor: Codable, Equatable, Sendable, Identifiable {
     public let id: UUID
     public let name: String
@@ -38,7 +42,7 @@ public struct DirectDeviceStatus: Codable, Sendable {
 
 public enum DirectAuthorityError: Error, Sendable { case busy }
 
-public typealias GitReconciliationWakeupHandler = @Sendable (UUID, GitReconciliationWakeup) async -> Void
+public typealias GitReconciliationWakeupHandler = @Sendable (UUID, GitReconciliationWakeup) async throws -> Void
 
 /// Single owner for consent state; a persisted mutation becomes visible atomically.
 public actor DirectSyncAuthority {
@@ -56,7 +60,7 @@ public actor DirectSyncAuthority {
                 persist: @escaping @Sendable (PairingRegistry) async throws -> Void,
                 uploads: (any DesktopPeerUploadStore)? = nil,
                 receipts: (any DesktopPeerReceiptStore)? = nil,
-                gitWakeup: @escaping GitReconciliationWakeupHandler = { _, _ in }) throws {
+                gitWakeup: GitReconciliationWakeupHandler? = nil) throws {
         guard serverFingerprint.count == 32, Set(projects.map { $0.descriptor.id }).count == projects.count else {
             throw PairingError.invalidProject
         }
@@ -66,7 +70,7 @@ public actor DirectSyncAuthority {
         self.persist = persist
         self.uploads = uploads
         self.receipts = receipts
-        self.gitWakeup = gitWakeup
+        self.gitWakeup = gitWakeup ?? { _, _ in throw GitWakeupDeliveryError.unavailable }
     }
 
     public func consentState() -> PairingRegistry { registry }
@@ -137,7 +141,7 @@ public actor DirectSyncAuthority {
                                            projectID: wakeup.sourceProjectID)
         guard let source = projects[wakeup.sourceProjectID] else { throw PairingError.invalidProject }
         guard source.descriptor.allowsGitScope(wakeup.scope) else { throw SyncError.outsideScope }
-        await gitWakeup(deviceID, wakeup)
+        try await gitWakeup(deviceID, wakeup)
     }
 
     private func checkAccess(deviceID: UUID, credential: String, projectID: UUID) throws {

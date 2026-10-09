@@ -63,6 +63,12 @@ final class DesktopGitControllerTests: XCTestCase {
         XCTAssertEqual(stored?.baseRevision, fixture.baseID)
         let expectedScope = try CorpusScope(folder: "docs")
         XCTAssertEqual(stored?.scope, expectedScope)
+        let destinations = DesktopGitPublicationDestinationStore(
+            root: state.appendingPathComponent("GitIntegrationDestinations"))
+        let destinationRemote = try await destinations.load(projectID: fixture.projectID,
+                                                            deviceID: fixture.deviceID,
+                                                            proposalCommitID: fixture.publicationID)
+        XCTAssertEqual(destinationRemote, "origin")
 
         let integrationRef = try GitIntegrationRef(deviceID: fixture.deviceID,
                                                     projectID: fixture.projectID,
@@ -86,6 +92,147 @@ final class DesktopGitControllerTests: XCTestCase {
         XCTAssertFalse(statusBefore.contains("docs/note.md"))
     }
 
+    func testChangingRemoteAfterReviewInvalidatesStateAndBlocksApply() async throws {
+        let fixture = try makeFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+
+        let state = fixture.root.appendingPathComponent("state", isDirectory: true)
+        let controller = DesktopGitController(projectRoot: fixture.desktop, stateRoot: state)
+
+        await controller.refreshRemotes()
+        XCTAssertTrue(controller.remotes.contains { $0.name == "origin" })
+        XCTAssertTrue(controller.remotes.contains { $0.name == "origin-mirror" })
+        XCTAssertEqual(controller.selectedRemote, "origin")
+        await controller.fetchPublications()
+        await controller.inspectSelectedBranch()
+        await controller.approveScope()
+        XCTAssertNotNil(controller.review)
+
+        let alternateBranch = try XCTUnwrap(controller.branches.first { $0.name == fixture.alternateBranch })
+        controller.selectedBranchID = alternateBranch.name
+
+        XCTAssertNil(controller.proposalMetadata)
+        XCTAssertNil(controller.approvedSelection)
+        XCTAssertNil(controller.review)
+        let branchApply = await controller.apply(decisions: ["docs/note.md": .remote])
+        XCTAssertFalse(branchApply)
+
+        // Re-open the original proposal before exercising remote selection.
+        controller.selectedBranchID = fixture.branch
+        await controller.inspectSelectedBranch()
+        await controller.approveScope()
+        XCTAssertNotNil(controller.review)
+
+        // This is a valid UI selection from the same repository. The reviewed
+        // proposal must not survive it or be published through the new remote.
+        controller.selectedRemote = "origin-mirror"
+
+        XCTAssertTrue(controller.branches.isEmpty)
+        XCTAssertNil(controller.selectedBranchID)
+        XCTAssertNil(controller.proposalMetadata)
+        XCTAssertNil(controller.approvedSelection)
+        XCTAssertNil(controller.review)
+        let applied = await controller.apply(decisions: ["docs/note.md": .remote])
+        XCTAssertFalse(applied)
+    }
+
+    func testApplyRetainsReceiptAndOriginalRemoteWhenSelectionChangesDuringTransaction() async throws {
+        let fixture = try makeFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+
+        let state = fixture.root.appendingPathComponent("state", isDirectory: true)
+        let lease = NativeReconciliationLease.shared
+        let previousSessions = lease.sessions
+        lease.sessions = { [] }
+        defer { lease.sessions = previousSessions }
+
+        var controllerRef: DesktopGitController?
+        var applyCaptures = 0
+        var changeSelectionDuringApply = false
+        controllerRef = DesktopGitController(
+            projectRoot: fixture.desktop,
+            stateRoot: state,
+            lease: lease,
+            buffers: { _ in
+                if changeSelectionDuringApply {
+                    applyCaptures += 1
+                    if applyCaptures == 2 {
+                        controllerRef?.selectedRemote = "origin-mirror"
+                    }
+                }
+                return []
+            })
+        let controller = try XCTUnwrap(controllerRef)
+
+        await controller.refreshRemotes()
+        await controller.fetchPublications()
+        await controller.inspectSelectedBranch()
+        await controller.approveScope()
+        XCTAssertNotNil(controller.review)
+        changeSelectionDuringApply = true
+
+        let applied = await controller.apply(decisions: ["docs/note.md": .remote])
+
+        XCTAssertTrue(applied)
+        XCTAssertEqual(controller.selectedRemote, "origin-mirror")
+        XCTAssertTrue(controller.branches.isEmpty)
+        XCTAssertEqual(controller.lastReceipt?.commitID, fixture.publicationID)
+        XCTAssertFalse(controller.publicationPending)
+
+        let destinations = DesktopGitPublicationDestinationStore(
+            root: state.appendingPathComponent("GitIntegrationDestinations"))
+        let destinationRemote = try await destinations.load(projectID: fixture.projectID,
+                                                            deviceID: fixture.deviceID,
+                                                            proposalCommitID: fixture.publicationID)
+        XCTAssertEqual(destinationRemote, "origin")
+        let integrationRef = try GitIntegrationRef(deviceID: fixture.deviceID,
+                                                   projectID: fixture.projectID,
+                                                   proposalCommitID: fixture.publicationID)
+        XCTAssertEqual(try runGit(["rev-parse", "--verify", integrationRef.name], at: fixture.remote)
+            .trimmingCharacters(in: .whitespacesAndNewlines).count, 40)
+    }
+
+    func testReopenedControllerRetriesDurableReceiptUsingOriginalDestination() async throws {
+        let fixture = try makeFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+
+        let state = fixture.root.appendingPathComponent("state", isDirectory: true)
+        let lease = NativeReconciliationLease.shared
+        let previousSessions = lease.sessions
+        lease.sessions = { [] }
+        defer { lease.sessions = previousSessions }
+
+        let first = DesktopGitController(projectRoot: fixture.desktop, stateRoot: state, lease: lease)
+        await first.refreshRemotes()
+        await first.fetchPublications()
+        await first.inspectSelectedBranch()
+        await first.approveScope()
+        let firstApplied = await first.apply(decisions: ["docs/note.md": .remote])
+        XCTAssertTrue(firstApplied)
+
+        let outbox = DesktopGitIntegrationOutboxStore(
+            root: state.appendingPathComponent("GitIntegrationOutbox"))
+        let pendingEntries = try await outbox.all()
+        XCTAssertTrue(pendingEntries.isEmpty)
+
+        let reopened = DesktopGitController(projectRoot: fixture.desktop, stateRoot: state, lease: lease)
+        await reopened.refreshRemotes()
+        reopened.selectedRemote = "origin-mirror"
+        await reopened.fetchPublications()
+        XCTAssertEqual(reopened.selectedRemote, "origin-mirror")
+        XCTAssertNotNil(reopened.selectedBranch)
+
+        await reopened.retryPublication()
+
+        XCTAssertFalse(reopened.publicationPending)
+        let destinations = DesktopGitPublicationDestinationStore(
+            root: state.appendingPathComponent("GitIntegrationDestinations"))
+        let destinationRemote = try await destinations.load(projectID: fixture.projectID,
+                                                            deviceID: fixture.deviceID,
+                                                            proposalCommitID: fixture.publicationID)
+        XCTAssertEqual(destinationRemote, "origin")
+    }
+
     private struct Fixture {
         let root: URL
         let remote: URL
@@ -93,6 +240,7 @@ final class DesktopGitControllerTests: XCTestCase {
         let projectID: UUID
         let deviceID: UUID
         let branch: String
+        let alternateBranch: String
         let baseID: String
         let publicationID: String
     }
@@ -112,6 +260,7 @@ final class DesktopGitControllerTests: XCTestCase {
 
         let projectID = UUID(uuidString: "11111111-1111-4111-8111-111111111111")!
         let deviceID = UUID(uuidString: "22222222-2222-4222-8222-222222222222")!
+        let alternateDeviceID = UUID(uuidString: "33333333-3333-4333-8333-333333333333")!
         let scope = try CorpusScope(folder: "docs")
         let keep = GitObject.create(kind: .blob, data: Data("keep".utf8))
         let old = GitObject.create(kind: .blob, data: Data("old".utf8))
@@ -147,8 +296,21 @@ final class DesktopGitControllerTests: XCTestCase {
         let publicationText = publicationHeaders.joined(separator: "\n") + "\n\nremote publication\n"
         let publication = GitObject.create(kind: .commit, data: Data(publicationText.utf8))
         let branch = GitDeviceBranch.name(deviceID: deviceID, projectID: projectID)
+        let alternateMetadata = try GitPublicationMetadata(projectID: projectID, deviceID: alternateDeviceID,
+                                                           baseRevision: base.id, scope: scope)
+        var alternateHeaders = [
+            "tree \(rootRemote.id)", "parent \(base.id)",
+            "author Fixture <fixture@example.invalid> 3 +0000",
+            "committer Fixture <fixture@example.invalid> 3 +0000"
+        ]
+        alternateHeaders.append(contentsOf: alternateMetadata.commitHeaders)
+        let alternatePublication = GitObject.create(
+            kind: .commit,
+            data: Data((alternateHeaders.joined(separator: "\n") + "\n\nalternate publication\n").utf8))
+        let alternateBranch = GitDeviceBranch.name(deviceID: alternateDeviceID, projectID: projectID)
 
-        for object in [keep, old, outside, remoteNote, docsBase, rootBase, base, docsRemote, rootRemote, publication] {
+        for object in [keep, old, outside, remoteNote, docsBase, rootBase, base, docsRemote, rootRemote,
+                       publication, alternatePublication] {
             let written = try runGit(["hash-object", "-w", "--stdin", "-t", object.kind.rawValue], at: source, input: object.data)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             XCTAssertEqual(written, object.id)
@@ -156,13 +318,16 @@ final class DesktopGitControllerTests: XCTestCase {
         try runGit(["symbolic-ref", "HEAD", "refs/heads/main"], at: source)
         try runGit(["update-ref", "refs/heads/main", base.id], at: source)
         try runGit(["update-ref", branch, publication.id], at: source)
+        try runGit(["update-ref", alternateBranch, alternatePublication.id], at: source)
         try runGit(["remote", "add", "origin", remote.path], at: source)
-        try runGit(["push", "origin", "refs/heads/main:refs/heads/main", branch + ":" + branch], at: source)
+        try runGit(["push", "origin", "refs/heads/main:refs/heads/main", branch + ":" + branch,
+                    alternateBranch + ":" + alternateBranch], at: source)
 
         try runGit(["init"], at: desktop)
         try runGit(["config", "user.name", "Desktop Fixture"], at: desktop)
         try runGit(["config", "user.email", "fixture@example.invalid"], at: desktop)
         try runGit(["remote", "add", "origin", remote.path], at: desktop)
+        try runGit(["remote", "add", "origin-mirror", remote.path], at: desktop)
         try runGit(["fetch", "--no-tags", "origin", "refs/heads/main:refs/remotes/origin/main"], at: desktop)
         try runGit(["checkout", "-B", "main", "refs/remotes/origin/main"], at: desktop)
         try Data("staged".utf8).write(to: desktop.appendingPathComponent("outside-staged.md"))
@@ -171,7 +336,8 @@ final class DesktopGitControllerTests: XCTestCase {
         try Data("draft outside".utf8).write(to: desktop.appendingPathComponent("outside-draft.md"))
 
         return Fixture(root: root, remote: remote, desktop: desktop, projectID: projectID, deviceID: deviceID,
-                       branch: branch, baseID: base.id, publicationID: publication.id)
+                       branch: branch, alternateBranch: alternateBranch,
+                       baseID: base.id, publicationID: publication.id)
     }
 
     private func runGit(_ arguments: [String], at root: URL, input: Data? = nil) throws -> String {
@@ -203,21 +369,9 @@ final class DesktopGitControllerTests: XCTestCase {
 
     private func capture(_ view: NSView, size: NSSize, to url: URL,
                          settlingMilliseconds: Int) async throws {
-        view.frame = NSRect(origin: .zero, size: size)
-        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
-                              styleMask: [.borderless], backing: .buffered, defer: false)
-        window.title = "Leonardo Git review QA"
-        window.isReleasedWhenClosed = false
-        window.contentView = view
-        window.orderFront(nil)
-        defer { window.close() }
-        try await Task.sleep(for: .milliseconds(settlingMilliseconds))
-        view.layoutSubtreeIfNeeded()
-        view.displayIfNeeded()
-        let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
-        view.cacheDisplay(in: view.bounds, to: bitmap)
-        let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
-        try png.write(to: url)
+        try await NativeViewCaptureSupport.capture(view, size: size, to: url,
+                                                   settlingMilliseconds: settlingMilliseconds,
+                                                   title: "Leonardo Git review QA")
     }
 }
 #endif

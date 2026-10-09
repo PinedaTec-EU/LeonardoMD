@@ -261,20 +261,8 @@ final class LocalizationVisualTests: XCTestCase {
     }
 
     private func capture(_ view: NSView, size: NSSize, to url: URL, settlingMilliseconds: Int = 150) async throws {
-        view.frame = NSRect(origin: .zero, size: size)
-        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
-                              styleMask: [.borderless], backing: .buffered, defer: false)
-        window.title = "Leonardo Localization QA"
-        window.isReleasedWhenClosed = false
-        window.contentView = view
-        window.orderFront(nil)
-        defer { window.close() }
-        try await Task.sleep(for: .milliseconds(settlingMilliseconds))
-        view.layoutSubtreeIfNeeded()
-        view.displayIfNeeded()
-        let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
-        view.cacheDisplay(in: view.bounds, to: bitmap)
-        let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
-        try png.write(to: url)
+        try await NativeViewCaptureSupport.capture(view, size: size, to: url,
+                                                   settlingMilliseconds: settlingMilliseconds,
+                                                   title: "Leonardo Localization QA")
     }
 }
