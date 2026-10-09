@@ -45,6 +45,13 @@ public struct DirectHTTPSRouter: Sendable {
             if request.method == "GET", path.count == 7, path[4] == "projects", path[6] == "snapshot", let projectID = UUID(uuidString: String(path[5])) {
                 return try json(await authority.snapshot(deviceID: deviceID, credential: credential, projectID: projectID))
             }
+            if request.method == "GET", path.count == 9, path[4] == "projects", path[6] == "proposals", path[8] == "receipt",
+               let projectID = UUID(uuidString: String(path[5])), let proposalID = UUID(uuidString: String(path[7])) {
+                guard let receipt = try await authority.proposalReceipt(deviceID: deviceID, credential: credential, projectID: projectID, proposalID: proposalID) else {
+                    return HTTPResponse(status: 404)
+                }
+                return try json(receipt)
+            }
             if request.method == "POST", path.count == 8, path[4] == "projects", path[6] == "proposals",
                let projectID = UUID(uuidString: String(path[5])) {
                 guard request.body.count <= HTTPRequestParser.maximumBodyBytes else { return HTTPResponse(status: 413) }

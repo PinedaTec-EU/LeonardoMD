@@ -44,9 +44,10 @@ public actor DirectSyncAuthority {
     private let persist: @Sendable (PairingRegistry) async throws -> Void
     private var changing = false
     private let uploads: (any DesktopPeerUploadStore)?
+    private let receipts: (any DesktopPeerReceiptStore)?
 
     public init(registry: PairingRegistry, projects: [SharedProjectSource], serverFingerprint: Data,
-                persist: @escaping @Sendable (PairingRegistry) async throws -> Void, uploads: (any DesktopPeerUploadStore)? = nil) throws {
+                persist: @escaping @Sendable (PairingRegistry) async throws -> Void, uploads: (any DesktopPeerUploadStore)? = nil, receipts: (any DesktopPeerReceiptStore)? = nil) throws {
         guard serverFingerprint.count == 32, Set(projects.map { $0.descriptor.id }).count == projects.count else {
             throw PairingError.invalidProject
         }
@@ -55,6 +56,7 @@ public actor DirectSyncAuthority {
         self.fingerprint = serverFingerprint
         self.persist = persist
         self.uploads = uploads
+        self.receipts = receipts
     }
 
     public func consentState() -> PairingRegistry { registry }
@@ -131,6 +133,19 @@ public actor DirectSyncAuthority {
 
 
 extension DirectSyncAuthority {
+    /// Historical accepted result; authorization is rechecked after suspended storage reads.
+    public func proposalReceipt(deviceID: UUID, credential: String, projectID: UUID, proposalID: UUID) async throws -> DesktopPeerProposalReceipt? {
+        let selection = try uploadSelection(deviceID: deviceID, credential: credential, projectID: projectID)
+        guard let receipts else { throw DirectAuthorityError.busy }
+        let receipt = try await receipts.load(deviceID: deviceID, projectID: projectID, proposalID: proposalID, selection: selection)
+        guard try uploadSelection(deviceID: deviceID, credential: credential, projectID: projectID) == selection else { throw SyncError.outsideScope }
+        if let receipt {
+            guard receipt.projectID == projectID, receipt.proposalID == proposalID else { throw SyncError.invalidSnapshot }
+            try selection.validate(receipt.accepted)
+        }
+        return receipt
+    }
+
     public func beginUpload(deviceID: UUID, credential: String, upload: DesktopPeerUpload) async throws -> DesktopPeerUploadProgress {
         let selection = try uploadSelection(deviceID: deviceID, credential: credential, projectID: upload.projectID)
         guard let uploads else { throw DirectAuthorityError.busy }

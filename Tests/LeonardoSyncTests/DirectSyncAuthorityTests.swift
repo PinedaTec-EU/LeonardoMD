@@ -42,6 +42,35 @@ final class DirectSyncAuthorityTests: XCTestCase {
         catch { XCTAssertEqual(error as? SyncError, .revoked) }
     }
 
+    func testReceiptReadRechecksRevocationAndRejectsReadOnlyClients() async throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let credential = String(repeating: "a", count: 64), now = Date()
+        let fingerprint = Data(repeating: 1, count: 32)
+        let project = SharedProjectDescriptor(id: UUID(), name: "Docs", scope: try CorpusScope(folder: "docs"))
+        let peer = try registry.requestPairing(deviceName: "Mac", credential: credential, serverFingerprint: fingerprint, now: now, kind: .desktopPeer)
+        let phoneCredential = String(repeating: "b", count: 64)
+        let phone = try registry.requestPairing(deviceName: "Phone", credential: phoneCredential, serverFingerprint: fingerprint, now: now)
+        for request in [peer, phone] {
+            _ = try registry.approve(requestID: request.id, comparisonCode: request.comparisonCode, projects: [project.id], now: now)
+        }
+        let receipt = try DesktopPeerProposalReceipt(proposalID: UUID(), projectID: project.id,
+            accepted: CorpusSnapshot(revision: "accepted", files: []))
+        let gate = SnapshotGate()
+        let authority = try DirectSyncAuthority(registry: registry,
+            projects: [SharedProjectSource(descriptor: project) { CorpusSnapshot(revision: "r", files: []) }],
+            serverFingerprint: fingerprint, persist: { _ in }, receipts: StalledReceiptStore(gate: gate, receipt: receipt))
+        do {
+            _ = try await authority.proposalReceipt(deviceID: phone.id, credential: phoneCredential, projectID: project.id, proposalID: receipt.proposalID)
+            XCTFail("Read-only client accessed reconciliation receipts")
+        } catch { XCTAssertEqual(error as? SyncError, .readOnly) }
+        let fetch = Task { try await authority.proposalReceipt(deviceID: peer.id, credential: credential, projectID: project.id, proposalID: receipt.proposalID) }
+        await gate.waitForRead()
+        try await authority.revoke(deviceID: peer.id)
+        await gate.finish()
+        do { _ = try await fetch.value; XCTFail("Receipt exposed after revocation") }
+        catch { XCTAssertEqual(error as? SyncError, .revoked) }
+    }
+
     func testComparisonCodeBindsCertificateCredentialAndRequest() throws {
         let id = UUID()
         let credential = String(repeating: "a", count: 64)
@@ -119,4 +148,14 @@ private struct StalledUploadStore: DesktopPeerUploadStore {
     func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws { throw SyncError.invalidSnapshot }
     func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) async throws -> DesktopPeerUpload? { nil }
     func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> DesktopPeerProposal { throw SyncError.invalidSnapshot }
+}
+
+private struct StalledReceiptStore: DesktopPeerReceiptStore {
+    let gate: SnapshotGate
+    let receipt: DesktopPeerProposalReceipt
+    func save(deviceID: UUID, selection: CorpusSelection, receipt: DesktopPeerProposalReceipt) async throws { throw SyncError.invalidSnapshot }
+    func load(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) async throws -> DesktopPeerProposalReceipt? {
+        _ = await gate.read()
+        return receipt
+    }
 }

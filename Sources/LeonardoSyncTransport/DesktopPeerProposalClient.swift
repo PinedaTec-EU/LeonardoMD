@@ -7,8 +7,21 @@ public enum DesktopPeerProposalTransportError: Error, Equatable, Sendable { case
 /// Sends only the immutable outbox capture. A submitted response means awaiting owner review.
 public struct DesktopPeerProposalClient: Sendable {
     private let client: PinnedHTTPSClient
+    private let receiptClient: PinnedHTTPSClient
     public init(endpoint: URL, certificateFingerprint: Data) throws {
+        receiptClient = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: certificateFingerprint, maximumResponseBytes: DesktopPeerArchiveBudget.maximumEncodedBytes())
         client = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: certificateFingerprint, maximumResponseBytes: 4 * 1_024)
+    }
+    public func receipt(proposalID: UUID, projectID: UUID, selection: CorpusSelection, deviceID: UUID, credential: String) async throws -> DesktopPeerProposalReceipt? {
+        let path = "/v1/devices/\(deviceID.uuidString)/projects/\(projectID.uuidString)/proposals/\(proposalID.uuidString)/receipt"
+        let response = try await receiptClient.request(method: "GET", path: path, credential: credential)
+        if response.status == 404 { return nil }
+        if response.status == 403 { throw DesktopPeerProposalTransportError.accessDenied }
+        guard response.status == 200 else { throw TransportError.unexpectedResponse }
+        let receipt = try JSONDecoder().decode(DesktopPeerProposalReceipt.self, from: response.body)
+        guard receipt.projectID == projectID, receipt.proposalID == proposalID else { throw SyncError.invalidSnapshot }
+        try selection.validate(receipt.accepted)
+        return receipt
     }
     public func submit(_ proposal: DesktopPeerProposal, deviceID: UUID, credential: String) async throws {
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]

@@ -28,6 +28,8 @@ final class DesktopPeerProposalTransportTests: XCTestCase {
             let proposal = try DesktopPeerProposal(projectID: descriptor.id, selection: selection, base: baseline,
                 proposed: CorpusSnapshot(revision: "incoming", files: [CorpusFile(path: "docs/note.md", content: Data(repeating: 66, count: 80_000))]))
             let client = try DesktopPeerProposalClient(endpoint: running.endpoint, certificateFingerprint: running.certificateFingerprint)
+            let missingReceipt = try await client.receipt(proposalID: proposal.id, projectID: descriptor.id, selection: selection, deviceID: paired.deviceID, credential: credential)
+            XCTAssertNil(missingReceipt)
             try await client.submit(proposal, deviceID: paired.deviceID, credential: credential)
             try await client.submit(proposal, deviceID: paired.deviceID, credential: credential)
             let pending = try await runtime.incomingProposals()
@@ -51,17 +53,29 @@ final class DesktopPeerProposalTransportTests: XCTestCase {
             XCTAssertEqual(reopenedPayload, proposal)
             let newClient = try DesktopPeerProposalClient(endpoint: running.endpoint, certificateFingerprint: running.certificateFingerprint)
             try await newClient.submit(proposal, deviceID: paired.deviceID, credential: credential)
+            // Seed an already persisted owner result; this does not simulate native application.
+            let receipt = try DesktopPeerProposalReceipt(proposalID: proposal.id, projectID: descriptor.id, accepted: baseline)
+            try await FileDesktopPeerReceiptStore(root: serviceRoot.appendingPathComponent("Receipts")).save(deviceID: paired.deviceID, selection: selection, receipt: receipt)
+            let downloaded = try await newClient.receipt(proposalID: proposal.id, projectID: descriptor.id, selection: selection, deviceID: paired.deviceID, credential: credential)
+            XCTAssertEqual(downloaded, receipt)
             let secondCredential = try PairingRegistry.makeCredential()
             let secondEnrollment = try DirectEnrollmentClient(endpoint: running.endpoint, certificateFingerprint: running.certificateFingerprint)
             let second = try await secondEnrollment.begin(deviceName: "Other Mac", credential: secondCredential, now: Date(), kind: .desktopPeer)
             try await runtime.approve(requestID: second.deviceID, code: second.comparisonCode, projectIDs: [descriptor.id])
             try await newClient.submit(proposal, deviceID: second.deviceID, credential: secondCredential)
+            let otherDeviceReceipt = try await newClient.receipt(proposalID: proposal.id, projectID: descriptor.id, selection: selection, deviceID: second.deviceID, credential: secondCredential)
+            XCTAssertNil(otherDeviceReceipt)
+
             let independent = try await runtime.incomingProposals()
             XCTAssertEqual(independent.count, 2)
             XCTAssertEqual(Set(independent.map(\.id)).count, 2) // Even a reused proposal ID cannot alias another authenticated sender.
             try await runtime.revoke(deviceID: paired.deviceID)
             do { try await newClient.submit(proposal, deviceID: paired.deviceID, credential: credential); XCTFail("Revoked sender submitted") }
             catch { XCTAssertEqual(error as? DesktopPeerProposalTransportError, .accessDenied) }
+            do {
+                _ = try await newClient.receipt(proposalID: proposal.id, projectID: descriptor.id, selection: selection, deviceID: paired.deviceID, credential: credential)
+                XCTFail("Revoked sender received receipt")
+            } catch { XCTAssertEqual(error as? DesktopPeerProposalTransportError, .accessDenied) }
             let denied = try await runtime.incomingProposals()
             XCTAssertEqual(denied.map(\.deviceID), [second.deviceID])
             do { _ = try await runtime.incomingProposal(deviceID: paired.deviceID, upload: upload); XCTFail("Revoked proposal reviewed") }
@@ -88,6 +102,10 @@ final class DesktopPeerProposalTransportTests: XCTestCase {
             let client = try DesktopPeerProposalClient(endpoint: running.endpoint, certificateFingerprint: running.certificateFingerprint)
             do { try await client.submit(proposal, deviceID: paired.deviceID, credential: credential); XCTFail("Read-only sender published") }
             catch { XCTAssertEqual(error as? DesktopPeerProposalTransportError, .accessDenied) }
+            do {
+                _ = try await client.receipt(proposalID: proposal.id, projectID: descriptor.id, selection: selection, deviceID: paired.deviceID, credential: credential)
+                XCTFail("Read-only client queried reconciliation receipts")
+            } catch { XCTAssertEqual(error as? DesktopPeerProposalTransportError, .accessDenied) }
             XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("Proposals").path))
             try await runtime.stop()
         } catch { try? await runtime.stop(); throw error }

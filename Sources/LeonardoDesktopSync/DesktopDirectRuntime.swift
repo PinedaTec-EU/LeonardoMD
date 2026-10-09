@@ -14,6 +14,7 @@ public actor DesktopDirectRuntime {
     private let identityStore: DesktopTLSIdentityStore
     private let registryStore: PairingRegistryStore
     private let uploads: FileDesktopPeerUploadStore
+    private let receipts: FileDesktopPeerReceiptStore
     private var authority: DirectSyncAuthority?
     private var listener: LANHTTPSListener?
     private var generation = 0
@@ -24,6 +25,7 @@ public actor DesktopDirectRuntime {
         identityStore = DesktopTLSIdentityStore(root: root.appendingPathComponent("TLS"), credentials: credentials)
         registryStore = PairingRegistryStore(url: root.appendingPathComponent("devices.json"))
         uploads = FileDesktopPeerUploadStore(root: root.appendingPathComponent("Proposals"))
+        receipts = FileDesktopPeerReceiptStore(root: root.appendingPathComponent("Receipts"))
         self.now = now
     }
 
@@ -43,7 +45,7 @@ public actor DesktopDirectRuntime {
         registry.setEnabled(true)
         let store = registryStore
         let authority = try DirectSyncAuthority(registry: registry, projects: projects,
-            serverFingerprint: identity.certificateFingerprint, persist: { try await store.save($0) }, uploads: uploads)
+            serverFingerprint: identity.certificateFingerprint, persist: { try await store.save($0) }, uploads: uploads, receipts: receipts)
         try await registryStore.save(registry)
         guard expected == generation else { throw CancellationError() }
         let router = DirectHTTPSRouter(authority: authority, now: now)
