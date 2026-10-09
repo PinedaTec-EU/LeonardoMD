@@ -13,6 +13,7 @@ public enum DesktopRuntimeError: Error, Sendable { case notRunning, busy }
 public actor DesktopDirectRuntime {
     private let identityStore: DesktopTLSIdentityStore
     private let registryStore: PairingRegistryStore
+    private let uploads: FileDesktopPeerUploadStore
     private var authority: DirectSyncAuthority?
     private var listener: LANHTTPSListener?
     private var generation = 0
@@ -22,6 +23,7 @@ public actor DesktopDirectRuntime {
     public init(root: URL, credentials: any DeviceCredentialStore, now: @escaping @Sendable () -> Date) {
         identityStore = DesktopTLSIdentityStore(root: root.appendingPathComponent("TLS"), credentials: credentials)
         registryStore = PairingRegistryStore(url: root.appendingPathComponent("devices.json"))
+        uploads = FileDesktopPeerUploadStore(root: root.appendingPathComponent("Proposals"))
         self.now = now
     }
 
@@ -41,7 +43,7 @@ public actor DesktopDirectRuntime {
         registry.setEnabled(true)
         let store = registryStore
         let authority = try DirectSyncAuthority(registry: registry, projects: projects,
-            serverFingerprint: identity.certificateFingerprint, persist: { try await store.save($0) })
+            serverFingerprint: identity.certificateFingerprint, persist: { try await store.save($0) }, uploads: uploads)
         try await registryStore.save(registry)
         guard expected == generation else { throw CancellationError() }
         let router = DirectHTTPSRouter(authority: authority, now: now)
@@ -82,6 +84,20 @@ public actor DesktopDirectRuntime {
     public func consentState() async throws -> PairingRegistry {
         if let authority { return await authority.consentState() }
         return try await registryStore.load()
+    }
+
+    public func incomingProposals() async throws -> [DesktopPeerIncomingProposal] {
+        guard !transitioning, let authority else { throw DesktopRuntimeError.notRunning }
+        return try await authority.incomingProposals()
+    }
+    public func incomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposal {
+        guard !transitioning, let authority else { throw DesktopRuntimeError.notRunning }
+        return try await authority.incomingProposal(deviceID: deviceID, upload: upload)
+    }
+
+    public func reviewIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposalReview {
+        guard !transitioning, let authority else { throw DesktopRuntimeError.notRunning }
+        return try await authority.reviewIncomingProposal(deviceID: deviceID, upload: upload)
     }
 
     public func createInvitation() async throws -> PairingInvitation {

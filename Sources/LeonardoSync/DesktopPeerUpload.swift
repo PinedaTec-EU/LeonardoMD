@@ -23,3 +23,39 @@ public struct DesktopPeerUpload: Codable, Equatable, Sendable {
                       byteCount: c.decode(Int.self, forKey: .byteCount), sha256: c.decode(String.self, forKey: .sha256))
     }
 }
+
+public struct DesktopPeerUploadProgress: Codable, Equatable, Sendable {
+    public let proposalID: UUID
+    public let receivedBytes: Int
+    public let submitted: Bool
+    public init(proposalID: UUID, receivedBytes: Int, submitted: Bool = false) {
+        self.proposalID = proposalID; self.receivedBytes = receivedBytes; self.submitted = submitted
+    }
+}
+
+public struct DesktopPeerUploadChunk: Codable, Sendable {
+    public let upload: DesktopPeerUpload
+    public let offset: Int
+    public let bytes: Data
+    public init(upload: DesktopPeerUpload, offset: Int, bytes: Data) {
+        self.upload = upload; self.offset = offset; self.bytes = bytes
+    }
+}
+
+public protocol DesktopPeerUploadStore: Sendable {
+    func begin(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> Int
+    func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data, selection: CorpusSelection) async throws -> Int
+    func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws
+    func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) async throws -> DesktopPeerUpload?
+    func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> DesktopPeerProposal
+}
+
+public struct DesktopPeerIncomingProposal: Sendable, Identifiable {
+    public let deviceID: UUID
+    public let deviceName: String
+    public let upload: DesktopPeerUpload
+    public var id: String { deviceID.uuidString + "/" + upload.projectID.uuidString + "/" + upload.proposalID.uuidString }
+    public init(deviceID: UUID, deviceName: String, upload: DesktopPeerUpload) {
+        self.deviceID = deviceID; self.deviceName = deviceName; self.upload = upload
+    }
+}

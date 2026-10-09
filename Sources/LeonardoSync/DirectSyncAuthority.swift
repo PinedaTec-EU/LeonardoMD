@@ -43,9 +43,10 @@ public actor DirectSyncAuthority {
     private let fingerprint: Data
     private let persist: @Sendable (PairingRegistry) async throws -> Void
     private var changing = false
+    private let uploads: (any DesktopPeerUploadStore)?
 
     public init(registry: PairingRegistry, projects: [SharedProjectSource], serverFingerprint: Data,
-                persist: @escaping @Sendable (PairingRegistry) async throws -> Void) throws {
+                persist: @escaping @Sendable (PairingRegistry) async throws -> Void, uploads: (any DesktopPeerUploadStore)? = nil) throws {
         guard serverFingerprint.count == 32, Set(projects.map { $0.descriptor.id }).count == projects.count else {
             throw PairingError.invalidProject
         }
@@ -53,6 +54,7 @@ public actor DirectSyncAuthority {
         self.projects = Dictionary(uniqueKeysWithValues: projects.map { ($0.descriptor.id, $0) })
         self.fingerprint = serverFingerprint
         self.persist = persist
+        self.uploads = uploads
     }
 
     public func consentState() -> PairingRegistry { registry }
@@ -124,5 +126,78 @@ public actor DirectSyncAuthority {
         try await persist(updated)
         registry = updated
         return result
+    }
+}
+
+
+extension DirectSyncAuthority {
+    public func beginUpload(deviceID: UUID, credential: String, upload: DesktopPeerUpload) async throws -> DesktopPeerUploadProgress {
+        let selection = try uploadSelection(deviceID: deviceID, credential: credential, projectID: upload.projectID)
+        guard let uploads else { throw DirectAuthorityError.busy }
+        let count = try await uploads.begin(deviceID: deviceID, upload: upload, selection: selection)
+        guard try uploadSelection(deviceID: deviceID, credential: credential, projectID: upload.projectID) == selection else { throw SyncError.outsideScope }
+        return DesktopPeerUploadProgress(proposalID: upload.proposalID, receivedBytes: count)
+    }
+
+    public func appendUpload(deviceID: UUID, credential: String, chunk: DesktopPeerUploadChunk) async throws -> DesktopPeerUploadProgress {
+        let selection = try uploadSelection(deviceID: deviceID, credential: credential, projectID: chunk.upload.projectID)
+        guard let uploads else { throw DirectAuthorityError.busy }
+        let count = try await uploads.append(deviceID: deviceID, upload: chunk.upload, offset: chunk.offset, bytes: chunk.bytes, selection: selection)
+        guard try uploadSelection(deviceID: deviceID, credential: credential, projectID: chunk.upload.projectID) == selection else { throw SyncError.outsideScope }
+        return DesktopPeerUploadProgress(proposalID: chunk.upload.proposalID, receivedBytes: count)
+    }
+
+    public func submitUpload(deviceID: UUID, credential: String, upload: DesktopPeerUpload) async throws -> DesktopPeerUploadProgress {
+        let selection = try uploadSelection(deviceID: deviceID, credential: credential, projectID: upload.projectID)
+        guard let uploads else { throw DirectAuthorityError.busy }
+        try await uploads.submit(deviceID: deviceID, upload: upload, selection: selection)
+        guard try uploadSelection(deviceID: deviceID, credential: credential, projectID: upload.projectID) == selection else { throw SyncError.outsideScope }
+        return DesktopPeerUploadProgress(proposalID: upload.proposalID, receivedBytes: upload.byteCount, submitted: true)
+    }
+
+    /// Owner-only API; intentionally not an HTTP endpoint. Payloads are loaded only on selection.
+    public func incomingProposals() async throws -> [DesktopPeerIncomingProposal] {
+        guard !changing else { throw DirectAuthorityError.busy }
+        guard let uploads else { return [] }
+        var result: [DesktopPeerIncomingProposal] = []
+        for device in registry.devices where !device.revoked && device.kind == .desktopPeer {
+            for projectID in device.projects {
+                guard let descriptor = projects[projectID]?.descriptor else { continue }
+                let selection = try descriptor.selection ?? CorpusSelection(folders: [descriptor.scope.folder], documents: [])
+                if let upload = try await uploads.pending(deviceID: device.id, projectID: projectID, selection: selection),
+                   ownerCanReview(deviceID: device.id, projectID: projectID) {
+                    result.append(DesktopPeerIncomingProposal(deviceID: device.id, deviceName: device.name, upload: upload))
+                }
+            }
+        }
+        return result.filter { ownerCanReview(deviceID: $0.deviceID, projectID: $0.upload.projectID) }
+    }
+
+    public func incomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposal {
+        guard ownerCanReview(deviceID: deviceID, projectID: upload.projectID),
+              let descriptor = projects[upload.projectID]?.descriptor, let uploads else { throw SyncError.revoked }
+        let selection = try descriptor.selection ?? CorpusSelection(folders: [descriptor.scope.folder], documents: [])
+        guard try await uploads.pending(deviceID: deviceID, projectID: upload.projectID, selection: selection) == upload else { throw SyncError.invalidSnapshot }
+        let proposal = try await uploads.finish(deviceID: deviceID, upload: upload, selection: selection)
+        guard ownerCanReview(deviceID: deviceID, projectID: upload.projectID) else { throw SyncError.revoked }
+        return proposal
+    }
+
+    public func reviewIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposalReview {
+        let proposal = try await incomingProposal(deviceID: deviceID, upload: upload)
+        guard let source = projects[upload.projectID], ownerCanReview(deviceID: deviceID, projectID: upload.projectID) else { throw SyncError.revoked }
+        let snapshot = try await source.snapshot()
+        guard ownerCanReview(deviceID: deviceID, projectID: upload.projectID) else { throw SyncError.revoked }
+        return try DesktopPeerProposalReview(proposal: proposal, source: snapshot)
+    }
+
+    private func ownerCanReview(deviceID: UUID, projectID: UUID) -> Bool {
+        !changing && registry.enabled && projects[projectID] != nil && registry.devices.contains {
+            $0.id == deviceID && !$0.revoked && $0.kind == .desktopPeer && $0.projects.contains(projectID)
+        }
+    }
+    private func uploadSelection(deviceID: UUID, credential: String, projectID: UUID) throws -> CorpusSelection {
+        let descriptor = try reconciliationDescriptor(deviceID: deviceID, credential: credential, projectID: projectID)
+        return try descriptor.selection ?? CorpusSelection(folders: [descriptor.scope.folder], documents: [])
     }
 }

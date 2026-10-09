@@ -22,6 +22,26 @@ final class DirectSyncAuthorityTests: XCTestCase {
         } catch { XCTAssertEqual(error as? SyncError, .outsideScope) }
     }
 
+    func testRevocationDuringUploadCannotReturnAcknowledgement() async throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let credential = String(repeating: "a", count: 64), now = Date()
+        let fingerprint = Data(repeating: 1, count: 32)
+        let request = try registry.requestPairing(deviceName: "MacBook", credential: credential, serverFingerprint: fingerprint, now: now, kind: .desktopPeer)
+        let project = SharedProjectDescriptor(id: UUID(), name: "Docs", scope: try CorpusScope(folder: "docs"))
+        _ = try registry.approve(requestID: request.id, comparisonCode: request.comparisonCode, projects: [project.id], now: now)
+        let gate = SnapshotGate()
+        let authority = try DirectSyncAuthority(registry: registry,
+            projects: [SharedProjectSource(descriptor: project) { CorpusSnapshot(revision: "r", files: []) }],
+            serverFingerprint: fingerprint, persist: { _ in }, uploads: StalledUploadStore(gate: gate))
+        let upload = try DesktopPeerUpload(proposalID: UUID(), projectID: project.id, byteCount: 1, sha256: String(repeating: "a", count: 64))
+        let transfer = Task { try await authority.beginUpload(deviceID: request.id, credential: credential, upload: upload) }
+        await gate.waitForRead()
+        try await authority.revoke(deviceID: request.id)
+        await gate.finish()
+        do { _ = try await transfer.value; XCTFail("Returned successful upload acknowledgement after revocation") }
+        catch { XCTAssertEqual(error as? SyncError, .revoked) }
+    }
+
     func testComparisonCodeBindsCertificateCredentialAndRequest() throws {
         let id = UUID()
         let credential = String(repeating: "a", count: 64)
@@ -88,4 +108,15 @@ private actor SnapshotGate {
         readContinuation?.resume(returning: CorpusSnapshot(revision: "r", files: []))
         readContinuation = nil
     }
+}
+
+private struct StalledUploadStore: DesktopPeerUploadStore {
+    let gate: SnapshotGate
+    func begin(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> Int {
+        _ = await gate.read(); return 0
+    }
+    func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data, selection: CorpusSelection) async throws -> Int { throw SyncError.invalidSnapshot }
+    func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws { throw SyncError.invalidSnapshot }
+    func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) async throws -> DesktopPeerUpload? { nil }
+    func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> DesktopPeerProposal { throw SyncError.invalidSnapshot }
 }

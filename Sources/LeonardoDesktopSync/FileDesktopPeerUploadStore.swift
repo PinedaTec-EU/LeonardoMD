@@ -5,7 +5,7 @@ import LeonardoSync
 
 /// Resumable staging only: verified uploads are never applied to the source project here.
 /// Callers must authorize the device/project on every operation, including finalization.
-public actor FileDesktopPeerUploadStore {
+public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
     private struct Manifest: Codable, Equatable {
         let deviceID: UUID
         let upload: DesktopPeerUpload
@@ -52,6 +52,29 @@ public actor FileDesktopPeerUploadStore {
             try handle.synchronize()
         }
         return max(count, offset + bytes.count)
+    }
+
+    public func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data, selection: CorpusSelection) throws -> Int {
+        let directory = try location(deviceID: deviceID, projectID: upload.projectID)
+        guard try requireManifest(at: directory, deviceID: deviceID, upload: upload).selection == selection else { throw SyncError.outsideScope }
+        return try append(deviceID: deviceID, upload: upload, offset: offset, bytes: bytes)
+    }
+
+    public func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) throws {
+        _ = try finish(deviceID: deviceID, upload: upload, selection: selection)
+        let directory = try location(deviceID: deviceID, projectID: upload.projectID)
+        try PrivateDesktopFile.write(JSONEncoder().encode(upload), to: directory.appendingPathComponent("submitted.json"))
+    }
+
+    public func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) throws -> DesktopPeerUpload? {
+        let directory = try location(deviceID: deviceID, projectID: projectID)
+        let marker = directory.appendingPathComponent("submitted.json")
+        try validateFile(marker, maximumBytes: 4 * 1_024)
+        guard FileManager.default.fileExists(atPath: marker.path) else { return nil }
+        let upload = try JSONDecoder().decode(DesktopPeerUpload.self, from: Data(contentsOf: marker))
+        guard upload.projectID == projectID,
+              try requireManifest(at: directory, deviceID: deviceID, upload: upload).selection == selection else { throw SyncError.outsideScope }
+        return upload
     }
 
     public func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) throws -> DesktopPeerProposal {
