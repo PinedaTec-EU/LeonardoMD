@@ -1,0 +1,148 @@
+import Foundation
+import CryptoKit
+import Security
+
+public enum PairingError: Error, Equatable, Sendable {
+    case disabled, invalidCredential, expiredInvitation, pendingApproval, unknownDevice, invalidProject
+    case randomGenerationFailed
+}
+
+public struct PairingInvitation: Sendable {
+    public let id: UUID
+    public let secret: String
+    public let expiresAt: Date
+}
+
+public struct PairingRequest: Codable, Equatable, Sendable, Identifiable {
+    public let id: UUID
+    public let deviceName: String
+    public let comparisonCode: String
+    public let expiresAt: Date
+    public let credentialDigest: Data
+}
+
+public struct PairedDevice: Codable, Equatable, Sendable, Identifiable {
+    public let id: UUID
+    public let name: String
+    public let credentialDigest: Data
+    public let projects: Set<UUID>
+    public var revoked: Bool
+}
+
+public enum DeviceAccess: Equatable, Sendable { case authorized, revoked }
+
+/// Pure consent policy. The transport must encrypt all requests and verify the server identity.
+/// Only digests are retained; bearer credentials and invitation secrets belong in secure storage.
+public struct PairingRegistry: Codable, Sendable {
+    public private(set) var enabled = false
+    public private(set) var devices: [PairedDevice] = []
+    public private(set) var requests: [PairingRequest] = []
+    private var invitations: [UUID: InvitationRecord] = [:]
+    private static let invitationLifetime: TimeInterval = 300
+    private static let requestLifetime: TimeInterval = 300
+    private static let maximumPendingRequests = 32
+
+    private struct InvitationRecord: Codable, Sendable {
+        let digest: Data
+        let expiresAt: Date
+    }
+
+    public init() {}
+
+    public mutating func setEnabled(_ enabled: Bool) {
+        self.enabled = enabled
+        if !enabled { invitations.removeAll(); requests.removeAll() }
+    }
+
+    public mutating func createInvitation(now: Date) throws -> PairingInvitation {
+        guard enabled else { throw PairingError.disabled }
+        expire(now: now)
+        let invitation = PairingInvitation(id: UUID(), secret: try Self.makeCredential(),
+                                          expiresAt: now.addingTimeInterval(Self.invitationLifetime))
+        // A newly displayed QR invalidates the previous QR; linked devices are unaffected.
+        invitations = [invitation.id: InvitationRecord(digest: Self.digest(invitation.secret), expiresAt: invitation.expiresAt)]
+        return invitation
+    }
+
+    public mutating func requestPairing(deviceName: String, credential: String,
+                                       invitation: PairingInvitation? = nil, now: Date) throws -> PairingRequest {
+        guard enabled else { throw PairingError.disabled }
+        expire(now: now)
+        guard credential.count == 64, credential.allSatisfy(\.isHexDigit),
+              !deviceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              deviceName.count <= 100, requests.count < Self.maximumPendingRequests else {
+            throw PairingError.invalidCredential
+        }
+        if let invitation {
+            guard let record = invitations[invitation.id], record.expiresAt > now,
+                  Self.matches(record.digest, Self.digest(invitation.secret)) else { throw PairingError.expiredInvitation }
+            invitations.removeValue(forKey: invitation.id)
+        }
+        let credentialDigest = Self.digest(credential)
+        guard !devices.contains(where: { Self.matches($0.credentialDigest, credentialDigest) }),
+              !requests.contains(where: { Self.matches($0.credentialDigest, credentialDigest) }) else {
+            throw PairingError.invalidCredential
+        }
+        let entropy = try Self.randomBytes(count: 4)
+        let number = entropy.reduce(UInt32(0)) { ($0 << 8) | UInt32($1) } % 100_000_000
+        let request = PairingRequest(id: UUID(), deviceName: deviceName,
+            comparisonCode: String(format: "%08u", number), expiresAt: now.addingTimeInterval(Self.requestLifetime),
+            credentialDigest: credentialDigest)
+        requests.append(request)
+        return request
+    }
+
+    /// Called only by the desktop UI after the user compares both displayed codes.
+    public mutating func approve(requestID: UUID, comparisonCode: String, projects: Set<UUID>, now: Date) throws -> PairedDevice {
+        guard enabled else { throw PairingError.disabled }
+        expire(now: now)
+        guard let request = requests.first(where: { $0.id == requestID }),
+              request.comparisonCode == comparisonCode else { throw PairingError.pendingApproval }
+        guard !projects.isEmpty else { throw PairingError.invalidProject }
+        let device = PairedDevice(id: request.id, name: request.deviceName, credentialDigest: request.credentialDigest,
+                                  projects: projects, revoked: false)
+        devices.append(device)
+        requests.removeAll { $0.id == requestID }
+        return device
+    }
+
+    public mutating func reject(requestID: UUID) { requests.removeAll { $0.id == requestID } }
+
+    public mutating func revoke(deviceID: UUID) throws {
+        guard let index = devices.firstIndex(where: { $0.id == deviceID }) else { throw PairingError.unknownDevice }
+        devices[index].revoked = true
+    }
+
+    /// Revocation status is available to the matching device solely to trigger local cleanup.
+    public func access(deviceID: UUID, credential: String, projectID: UUID? = nil) throws -> DeviceAccess {
+        guard enabled else { throw PairingError.disabled }
+        guard let device = devices.first(where: { $0.id == deviceID }),
+              Self.matches(device.credentialDigest, Self.digest(credential)) else { throw PairingError.invalidCredential }
+        if device.revoked { return .revoked }
+        if let projectID, !device.projects.contains(projectID) { throw PairingError.invalidProject }
+        return .authorized
+    }
+
+    public static func makeCredential() throws -> String {
+        try randomBytes(count: 32).map { String(format: "%02x", $0) }.joined()
+    }
+
+    private mutating func expire(now: Date) {
+        invitations = invitations.filter { $0.value.expiresAt > now }
+        requests.removeAll { $0.expiresAt <= now }
+    }
+
+    private static func digest(_ secret: String) -> Data { Data(SHA256.hash(data: Data(secret.utf8))) }
+
+    private static func matches(_ left: Data, _ right: Data) -> Bool {
+        guard left.count == right.count else { return false }
+        return zip(left, right).reduce(UInt8(0)) { $0 | ($1.0 ^ $1.1) } == 0
+    }
+
+    private static func randomBytes(count: Int) throws -> [UInt8] {
+        var bytes = [UInt8](repeating: 0, count: count)
+        let status = bytes.withUnsafeMutableBytes { SecRandomCopyBytes(kSecRandomDefault, count, $0.baseAddress!) }
+        guard status == errSecSuccess else { throw PairingError.randomGenerationFailed }
+        return bytes
+    }
+}

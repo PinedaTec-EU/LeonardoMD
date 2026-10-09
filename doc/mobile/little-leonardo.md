@@ -18,7 +18,7 @@ Send changes publishes a device-specific branch before sending an optional paire
 
 `LeonardoSync` is an independent Foundation-only SwiftPM library targeting macOS 14 and iOS 17. It currently contains corpus path/content limits, direct read-only and Git-editable offline state, atomic cache persistence and a project corpus reader with unsaved-buffer overlays. Its regression tests cover escapes, hidden/build exclusions, symlinks, case aliases, size limits, restart, deletion and later edits during integration.
 
-The native `Mobile/LittleLeonardo.xcodeproj` target builds for iPhone/iPad on iOS 17+. It loads cached projects, reads UTF-8 documents, blocks direct-mode editing with an explanation, and supports Git-mode offline creation/editing/deletion. A fresh process on iPhone 17 Pro Max / iOS 26.5 displayed both cached synthetic projects. This proves local corpus loading, not network or Git transfer. Network service, pairing, credential storage, revocation transport, real Git adapter, desktop reconciliation interface and end-to-end evidence remain pending. No partial-clone support is claimed for an iOS Git library until demonstrated with a large-repository fixture.
+The native `Mobile/LittleLeonardo.xcodeproj` target builds for iPhone/iPad on iOS 17+. It loads cached projects, reads UTF-8 documents, blocks direct-mode editing with an explanation, and supports Git-mode offline creation/editing/deletion. A fresh process on iPhone 17 Pro Max / iOS 26.5 displayed both cached synthetic projects. This proves local corpus loading, not network or Git transfer. Pairing consent policy, hashed authorization metadata and the Keychain adapter are implemented. Their transport/UI wiring is pending. Network service, pairing screens, credential-storage runtime validation, revocation transport, real Git adapter, desktop reconciliation interface and end-to-end evidence remain pending. No partial-clone support is claimed for an iOS Git library until demonstrated with a large-repository fixture.
 
 ## Boundaries to retain
 
@@ -37,3 +37,11 @@ xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -dest
 ```
 
 CI builds this target alongside the macOS suite. Mobile sources are included in the release ledger's versioned path scope. Device installation and distribution require the owner's Apple signing configuration; neither is claimed by simulator validation.
+
+## Pairing policy checkpoint
+
+`PairingRegistry` requires desktop consent with matching comparison code and a non-empty project grant. QR invitations expire after five minutes and are single-use; regenerating a QR invalidates the prior invitation. Manual pairing requests require the same explicit desktop consent. Authorization checks bind a device credential to the approved projects. Revocation persists, returns cleanup status only to the matching credential, and prevents document access. Disabling the service clears pending invitations/requests while preserving paired-device metadata.
+
+Raw bearer credentials are generated with the platform secure random source and stored by `SecureCredentialStore` in device-only, non-synchronizing Keychain entries. The registry persists credential hashes in a bounded, atomic host-local file with owner permissions. The transport must enforce TLS server verification before any credential exchange; that transport is not implemented yet. No certificate-validation bypass or plaintext LAN access is introduced by this checkpoint.
+
+Filesystem adapters resolve the trusted configured directory and preserve the final entry for symlink checks. Do not reject legitimate host-root aliases or normalize an untrusted descendant before checking it. Regression: [#96](https://github.com/PinedaTec-EU/LeonardoMD/issues/96).
