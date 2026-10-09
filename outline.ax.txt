@@ -1,0 +1,55 @@
+Window: "Outline-QA.md", App: LeonardoMD QA.
+0 standard window Outline-QA.md, URL: file:///private/tmp/leonardo-outline-89/Outline-QA.md, Secondary Actions: Raise
+	1 container
+		2 scroll area
+			3 button Description: New tab, Help: Open a document or project in this tab
+			4 button Description: Close tab New tab, ID: xmark
+			5 unknown Description: Reorder tab Outline-QA.md, Help: Drag to reorder tab
+			6 button (selected) Description: Outline-QA.md, Help: /private/tmp/leonardo-outline-89/Outline-QA.md
+			7 button Description: Close tab Outline-QA.md, ID: xmark
+		8 button Description: New tab, Help: New tab (⌘T), ID: new-document-tab
+		9 menu button Move, ID: folder
+		10 text Outline-QA.md Document viewer
+		11 container Description: Mode, ID: document-mode
+			12 button (selected) Preview
+			13 button Edit
+			14 button Split
+		15 button Description: Enter Full Screen, Help: Focus mode, ID: focus-mode
+		16 button Description: Share, Help: Export PDF, ID: square.and.arrow.up
+		17 button Description: Outline, ID: document-outline-button
+		18 scroll area
+			19 HTML content leonardo-document://local/leonardo-outline-89/
+				20 container
+					21 heading Outline validation, Value: 1
+						22 text Outline validation
+					23 text This document verifies heading navigation and the outline panel.
+					24 heading First section, Value: 2
+						25 text First section
+					26 text Preferences remain available from the application menu.
+					27 heading Second section, Value: 2
+						28 text Second section
+					29 text The outline contains only document navigation.
+					30 heading Details, Value: 3
+						31 text Details
+					32 text No preferences action appears beneath the headings.
+		33 text In this document
+		34 scroll area
+			35 button Outline validation
+			36 button First section
+			37 button Second section
+			38 button Details
+		39 image (selected) Description: Selected, ID: checkmark.circle
+		40 text Saved · local file Standalone document Markdown · UTF-8 40 words
+	41 close button
+	42 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	43 minimize button
+	44 image Outline-QA.md
+	45 text Outline-QA.md
+46 menu bar
+	47 LeonardoMD QA
+	48 File
+	49 Edit
+	50 View
+	51 Window
+
+The focused UI element is 0 standard window Outline-QA.md, URL: file:///private/tmp/leonardo-outline-89/Outline-QA.md, Secondary Actions: Raise
