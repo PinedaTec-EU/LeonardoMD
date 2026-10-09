@@ -5,7 +5,7 @@ import LeonardoSyncTransport
 @testable import LeonardoDesktopSync
 
 final class DesktopPeerProposalTransportTests: XCTestCase {
-    func testRealPinnedProposalDeliveryRetryRestartAndRevocationNeverWritesSource() async throws {
+    func testRealPinnedProposalDeliveryOwnerAcceptanceRetryRestartAndRevocation() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let original = root.appendingPathComponent("Source/docs/note.md")
@@ -16,7 +16,7 @@ final class DesktopPeerProposalTransportTests: XCTestCase {
         let baseline = CorpusSnapshot(revision: "source", files: [CorpusFile(path: "docs/note.md", content: Data("original source".utf8))])
         let reader = ProjectCorpusReader()
         let sourceRoot = original.deletingLastPathComponent().deletingLastPathComponent()
-        let source = SharedProjectSource(descriptor: descriptor) { try await reader.snapshot(root: sourceRoot, selection: selection) }
+        let source = SharedProjectSource(descriptor: descriptor, rootURL: sourceRoot) { try await reader.snapshot(root: sourceRoot, selection: selection) }
         let serviceRoot = root.appendingPathComponent("Service")
         let runtime = DesktopDirectRuntime(root: serviceRoot, credentials: ProposalMemoryCredentials(), now: { Date() })
         var running = try await runtime.start(host: "127.0.0.1", port: 0, projects: [source])
@@ -53,9 +53,18 @@ final class DesktopPeerProposalTransportTests: XCTestCase {
             XCTAssertEqual(reopenedPayload, proposal)
             let newClient = try DesktopPeerProposalClient(endpoint: running.endpoint, certificateFingerprint: running.certificateFingerprint)
             try await newClient.submit(proposal, deviceID: paired.deviceID, credential: credential)
-            // Seed an already persisted owner result; this does not simulate native application.
-            let receipt = try DesktopPeerProposalReceipt(proposalID: proposal.id, projectID: descriptor.id, accepted: baseline)
-            try await FileDesktopPeerReceiptStore(root: serviceRoot.appendingPathComponent("Receipts")).save(deviceID: paired.deviceID, selection: selection, receipt: receipt)
+            // This filesystem fixture owns all writes exclusively; native editor leases are separate.
+            let freshReview = try await runtime.reviewIncomingProposal(deviceID: paired.deviceID, upload: upload)
+            do {
+                _ = try await runtime.acceptIncomingProposal(deviceID: paired.deviceID, upload: upload, review: freshReview,
+                    decisions: ["docs/note.md": .remote], projectRoot: root, currentSource: freshReview.source, currentDisk: baseline)
+                XCTFail("Applied to a root outside the configured source")
+            } catch { XCTAssertEqual(error as? SyncError, .invalidSnapshot) }
+            let receipt = try await runtime.acceptIncomingProposal(deviceID: paired.deviceID, upload: upload, review: freshReview,
+                decisions: ["docs/note.md": .local], projectRoot: sourceRoot, currentSource: freshReview.source, currentDisk: baseline)
+            XCTAssertEqual(receipt.accepted.files, proposal.proposed.files)
+            XCTAssertEqual(try Data(contentsOf: original), proposal.proposed.files[0].content)
+            try Data("later source bytes".utf8).write(to: original)
             let downloaded = try await newClient.receipt(proposalID: proposal.id, projectID: descriptor.id, selection: selection, deviceID: paired.deviceID, credential: credential)
             XCTAssertEqual(downloaded, receipt)
             let secondCredential = try PairingRegistry.makeCredential()
@@ -80,7 +89,7 @@ final class DesktopPeerProposalTransportTests: XCTestCase {
             XCTAssertEqual(denied.map(\.deviceID), [second.deviceID])
             do { _ = try await runtime.incomingProposal(deviceID: paired.deviceID, upload: upload); XCTFail("Revoked proposal reviewed") }
             catch { XCTAssertEqual(error as? SyncError, .revoked) }
-            XCTAssertEqual(try Data(contentsOf: original), Data("original source".utf8))
+            XCTAssertEqual(try Data(contentsOf: original), Data("later source bytes".utf8))
             try await runtime.stop()
         } catch { try? await runtime.stop(); throw error }
     }

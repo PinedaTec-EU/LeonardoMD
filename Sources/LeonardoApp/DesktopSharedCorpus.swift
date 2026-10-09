@@ -13,7 +13,7 @@ struct DesktopSharedCorpus {
         let root = project.rootURL
         let reader = ProjectCorpusReader()
         let collect = buffers
-        return SharedProjectSource(descriptor: descriptor) {
+        return SharedProjectSource(descriptor: descriptor, rootURL: root) {
             let drafts = await collect(root).filter { selection.contains($0.path) }
             return try await reader.snapshot(root: root, selection: selection, buffers: drafts)
         }

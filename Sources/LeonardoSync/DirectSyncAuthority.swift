@@ -12,9 +12,11 @@ public struct SharedProjectDescriptor: Codable, Equatable, Sendable, Identifiabl
 
 public struct SharedProjectSource: Sendable {
     public let descriptor: SharedProjectDescriptor
+    public let rootURL: URL?
     public let snapshot: @Sendable () async throws -> CorpusSnapshot
-    public init(descriptor: SharedProjectDescriptor, snapshot: @escaping @Sendable () async throws -> CorpusSnapshot) {
+    public init(descriptor: SharedProjectDescriptor, rootURL: URL? = nil, snapshot: @escaping @Sendable () async throws -> CorpusSnapshot) {
         self.descriptor = descriptor
+        self.rootURL = rootURL?.standardizedFileURL.resolvingSymlinksInPath()
         self.snapshot = snapshot
     }
 }
@@ -43,6 +45,7 @@ public actor DirectSyncAuthority {
     private let fingerprint: Data
     private let persist: @Sendable (PairingRegistry) async throws -> Void
     private var changing = false
+    private var sourceEpoch = UUID()
     private let uploads: (any DesktopPeerUploadStore)?
     private let receipts: (any DesktopPeerReceiptStore)?
 
@@ -104,9 +107,11 @@ public actor DirectSyncAuthority {
     public func snapshot(deviceID: UUID, credential: String, projectID: UUID) async throws -> CorpusSnapshot {
         try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
         guard let project = projects[projectID] else { throw PairingError.invalidProject }
+        let epoch = sourceEpoch
         let snapshot = try await project.snapshot()
         // Revocation/disable can happen while disk reads or main-actor buffer collection suspend.
         try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
+        guard sourceEpoch == epoch else { throw DirectAuthorityError.busy }
         try snapshot.validate(scope: project.descriptor.scope, limits: CorpusLimits())
         try project.descriptor.selection?.validate(snapshot)
         return snapshot
@@ -201,9 +206,27 @@ extension DirectSyncAuthority {
     public func reviewIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposalReview {
         let proposal = try await incomingProposal(deviceID: deviceID, upload: upload)
         guard let source = projects[upload.projectID], ownerCanReview(deviceID: deviceID, projectID: upload.projectID) else { throw SyncError.revoked }
+        let epoch = sourceEpoch
         let snapshot = try await source.snapshot()
+        guard sourceEpoch == epoch else { throw ReconciliationError.staleComparison }
         guard ownerCanReview(deviceID: deviceID, projectID: upload.projectID) else { throw SyncError.revoked }
         return try DesktopPeerProposalReview(proposal: proposal, source: snapshot)
+    }
+
+    /// Owner-only critical section: consent changes and service reads cannot interleave with
+    /// application. The operation must additionally hold the native editor lease.
+    public func withOwnerApplication(deviceID: UUID, upload: DesktopPeerUpload,
+        operation: @Sendable (DesktopPeerProposal, URL) async throws -> DesktopPeerProposalReceipt) async throws -> DesktopPeerProposalReceipt {
+        let proposal = try await incomingProposal(deviceID: deviceID, upload: upload)
+        guard ownerCanReview(deviceID: deviceID, projectID: upload.projectID) else { throw SyncError.revoked }
+        guard let root = projects[upload.projectID]?.rootURL else { throw PairingError.invalidProject }
+        sourceEpoch = UUID()
+        changing = true
+        defer { changing = false }
+        let receipt = try await operation(proposal, root)
+        guard receipt.proposalID == proposal.id, receipt.projectID == proposal.projectID else { throw SyncError.invalidSnapshot }
+        try proposal.selection.validate(receipt.accepted)
+        return receipt
     }
 
     private func ownerCanReview(deviceID: UUID, projectID: UUID) -> Bool {

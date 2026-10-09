@@ -71,6 +71,66 @@ final class DirectSyncAuthorityTests: XCTestCase {
         catch { XCTAssertEqual(error as? SyncError, .revoked) }
     }
 
+    func testOwnerApplicationBlocksConsentChangesAndServiceReadsUntilItFinishes() async throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let credential = String(repeating: "a", count: 64), now = Date()
+        let fingerprint = Data(repeating: 1, count: 32)
+        let request = try registry.requestPairing(deviceName: "Mac", credential: credential, serverFingerprint: fingerprint, now: now, kind: .desktopPeer)
+        let project = SharedProjectDescriptor(id: UUID(), name: "Docs", scope: try CorpusScope(folder: "docs"))
+        _ = try registry.approve(requestID: request.id, comparisonCode: request.comparisonCode, projects: [project.id], now: now)
+        let selection = try CorpusSelection(folders: ["docs"], documents: [])
+        let snapshot = CorpusSnapshot(revision: "accepted", files: [])
+        let proposal = try DesktopPeerProposal(projectID: project.id, selection: selection, base: snapshot, proposed: snapshot)
+        let upload = try DesktopPeerUpload(proposalID: proposal.id, projectID: project.id, byteCount: 1, sha256: String(repeating: "a", count: 64))
+        let root = URL(fileURLWithPath: "/tmp/owner-application-fixture")
+        let authority = try DirectSyncAuthority(registry: registry,
+            projects: [SharedProjectSource(descriptor: project, rootURL: root) { snapshot }],
+            serverFingerprint: fingerprint, persist: { _ in }, uploads: FixedProposalUploadStore(proposal: proposal, upload: upload))
+        let gate = SnapshotGate()
+        let operation = Task { try await authority.withOwnerApplication(deviceID: request.id, upload: upload) { received, sourceRoot in
+            XCTAssertEqual(received, proposal)
+            XCTAssertEqual(sourceRoot, root)
+            _ = await gate.read()
+            return try DesktopPeerProposalReceipt(proposalID: received.id, projectID: received.projectID, accepted: snapshot)
+        } }
+        await gate.waitForRead()
+        do { try await authority.revoke(deviceID: request.id); XCTFail("Revocation interleaved with application") }
+        catch { XCTAssertEqual(error as? DirectAuthorityError, .busy) }
+        do { try await authority.setEnabled(false); XCTFail("Disable interleaved with application") }
+        catch { XCTAssertEqual(error as? DirectAuthorityError, .busy) }
+        do { _ = try await authority.snapshot(deviceID: request.id, credential: credential, projectID: project.id); XCTFail("Read interleaved with application") }
+        catch { XCTAssertEqual(error as? DirectAuthorityError, .busy) }
+        await gate.finish()
+        let receipt = try await operation.value
+        XCTAssertEqual(receipt.proposalID, proposal.id)
+        try await authority.revoke(deviceID: request.id)
+    }
+
+    func testReadStartedBeforeOwnerApplicationCannotFinishWithAnOlderCapture() async throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let credential = String(repeating: "a", count: 64), now = Date()
+        let fingerprint = Data(repeating: 1, count: 32)
+        let peer = try registry.requestPairing(deviceName: "Mac", credential: credential, serverFingerprint: fingerprint, now: now, kind: .desktopPeer)
+        let project = SharedProjectDescriptor(id: UUID(), name: "Docs", scope: try CorpusScope(folder: "docs"))
+        _ = try registry.approve(requestID: peer.id, comparisonCode: peer.comparisonCode, projects: [project.id], now: now)
+        let selection = try CorpusSelection(folders: ["docs"], documents: [])
+        let snapshot = CorpusSnapshot(revision: "accepted", files: [])
+        let proposal = try DesktopPeerProposal(projectID: project.id, selection: selection, base: snapshot, proposed: snapshot)
+        let upload = try DesktopPeerUpload(proposalID: proposal.id, projectID: project.id, byteCount: 1, sha256: String(repeating: "a", count: 64))
+        let gate = SnapshotGate()
+        let authority = try DirectSyncAuthority(registry: registry,
+            projects: [SharedProjectSource(descriptor: project, rootURL: URL(fileURLWithPath: "/tmp/epoch-fixture")) { await gate.read() }],
+            serverFingerprint: fingerprint, persist: { _ in }, uploads: FixedProposalUploadStore(proposal: proposal, upload: upload))
+        let read = Task { try await authority.snapshot(deviceID: peer.id, credential: credential, projectID: project.id) }
+        await gate.waitForRead()
+        _ = try await authority.withOwnerApplication(deviceID: peer.id, upload: upload) { proposal, _ in
+            try DesktopPeerProposalReceipt(proposalID: proposal.id, projectID: proposal.projectID, accepted: snapshot)
+        }
+        await gate.finish()
+        do { _ = try await read.value; XCTFail("Read spanning application escaped the service epoch") }
+        catch { XCTAssertEqual(error as? DirectAuthorityError, .busy) }
+    }
+
     func testComparisonCodeBindsCertificateCredentialAndRequest() throws {
         let id = UUID()
         let credential = String(repeating: "a", count: 64)
@@ -158,4 +218,14 @@ private struct StalledReceiptStore: DesktopPeerReceiptStore {
         _ = await gate.read()
         return receipt
     }
+}
+
+private struct FixedProposalUploadStore: DesktopPeerUploadStore {
+    let proposal: DesktopPeerProposal
+    let upload: DesktopPeerUpload
+    func begin(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> Int { 0 }
+    func append(deviceID: UUID, upload: DesktopPeerUpload, offset: Int, bytes: Data, selection: CorpusSelection) async throws -> Int { 0 }
+    func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws {}
+    func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) async throws -> DesktopPeerUpload? { upload }
+    func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> DesktopPeerProposal { proposal }
 }

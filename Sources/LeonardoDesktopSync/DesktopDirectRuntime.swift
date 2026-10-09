@@ -15,6 +15,7 @@ public actor DesktopDirectRuntime {
     private let registryStore: PairingRegistryStore
     private let uploads: FileDesktopPeerUploadStore
     private let receipts: FileDesktopPeerReceiptStore
+    private let acceptance: DesktopPeerAcceptance
     private var authority: DirectSyncAuthority?
     private var listener: LANHTTPSListener?
     private var generation = 0
@@ -25,7 +26,9 @@ public actor DesktopDirectRuntime {
         identityStore = DesktopTLSIdentityStore(root: root.appendingPathComponent("TLS"), credentials: credentials)
         registryStore = PairingRegistryStore(url: root.appendingPathComponent("devices.json"))
         uploads = FileDesktopPeerUploadStore(root: root.appendingPathComponent("Proposals"))
-        receipts = FileDesktopPeerReceiptStore(root: root.appendingPathComponent("Receipts"))
+        let receipts = FileDesktopPeerReceiptStore(root: root.appendingPathComponent("Receipts"))
+        self.receipts = receipts
+        acceptance = DesktopPeerAcceptance(root: root.appendingPathComponent("Acceptance"), receipts: receipts)
         self.now = now
     }
 
@@ -86,6 +89,21 @@ public actor DesktopDirectRuntime {
     public func consentState() async throws -> PairingRegistry {
         if let authority { return await authority.consentState() }
         return try await registryStore.load()
+    }
+
+    /// Native owner only. Call while holding exclusive editor ownership of projectRoot.
+    public func acceptIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload, review: DesktopPeerProposalReview,
+        decisions: [String: ReconciliationChoice], projectRoot: URL, currentSource: CorpusSnapshot, currentDisk: CorpusSnapshot) async throws -> DesktopPeerProposalReceipt {
+        guard !transitioning, let authority else { throw DesktopRuntimeError.notRunning }
+        transitioning = true
+        defer { transitioning = false }
+        let acceptance = self.acceptance
+        return try await authority.withOwnerApplication(deviceID: deviceID, upload: upload) { proposal, sourceRoot in
+            guard sourceRoot == projectRoot.standardizedFileURL.resolvingSymlinksInPath() else { throw SyncError.invalidSnapshot }
+            guard proposal == review.proposal else { throw ReconciliationError.staleComparison }
+            return try await acceptance.accept(deviceID: deviceID, review: review, decisions: decisions,
+                projectRoot: projectRoot, currentSource: currentSource, currentDisk: currentDisk)
+        }
     }
 
     public func incomingProposals() async throws -> [DesktopPeerIncomingProposal] {
