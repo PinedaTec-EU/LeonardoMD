@@ -105,3 +105,9 @@ Eight Git tests pass, including real SHA-1/SHA-256 packs, corrupted trailers, sp
 Bounded system-zlib decompression and Git delta reconstruction now decode complete commit/tree/blob/tag objects, offset deltas and reference deltas. Resolution uses dependency queues, rejects missing bases (no thin-pack request is made), and bounds individual objects, aggregate inflated content and delta-chain depth. Canonical object IDs use Git type/length headers and the negotiated SHA-1/SHA-256 hash.
 
 Seven wire tests pass, including comparison of all 36 objects in actual Git-generated packs against `git cat-file`, for both delta encodings; the fixture asserts that deltas really exist. Five focused delta/inflate tests cover copy/insertion instructions, sliced buffers, truncation, declared sizes and exact compressed-stream consumption. iOS compilation is checked separately. Network transport, scoped folder import, publication and desktop reconciliation remain unfinished.
+
+## Selected-folder metadata checkpoint
+
+`GitTree` parses bounded binary trees, distinguishing directories, regular/executable files, symbolic links and submodules. It rejects malformed modes, traversal/control names, truncated identifiers and case/Unicode aliases. `GitFolderIndex` follows the selected commit's root tree, lists immediate subdirectories, and enumerates only allowed document/resource paths under an explicit `CorpusScope`; it omits links and submodules. Missing trees fail instead of widening the scope.
+
+Ten focused tree/wire tests pass. A real repository containing a 16 MiB code file discovers `docs` and selects only `docs/note.md` from a blob-free metadata pack. This establishes the selection boundary, not a working network import; HTTPS/SSH, fetching selected blobs, persistent Git state, publishing and desktop reconciliation remain pending.

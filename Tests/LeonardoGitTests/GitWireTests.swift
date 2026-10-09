@@ -1,5 +1,6 @@
 import XCTest
 @testable import LeonardoGit
+import LeonardoSync
 
 final class GitWireTests: XCTestCase {
     func testBinaryPacketsAndControlMarkersRoundTrip() throws {
@@ -128,6 +129,11 @@ final class GitWireTests: XCTestCase {
         let response = try git(["upload-pack", "--stateless-rpc", source.path], input: capabilities.metadataRequest(want: tip))
         let parsed = try GitFetchResponse(response: response, capabilities: capabilities)
         let pack = parsed.pack
+        let index = try GitFolderIndex(objects: GitPack.decode(parsed), commitID: tip)
+        XCTAssertEqual(try index.folders(), ["docs"])
+        let selected = try index.files(in: CorpusScope(folder: "docs"))
+        XCTAssertEqual(selected.map(\.path), ["docs/note.md"])
+        XCTAssertThrowsError(try index.files(in: CorpusScope(folder: "missing")))
         XCTAssertEqual(parsed.objectCount, 3)
         XCTAssertTrue(parsed.shallowCommits.isSubset(of: [tip]))
         let receiver = root.appendingPathComponent("receiver")

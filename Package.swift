@@ -9,7 +9,7 @@ let package = Package(
     targets: [
         .target(name: "LeonardoCore"),
         .target(name: "CLeonardoZlib", linkerSettings: [.linkedLibrary("z")]),
-        .target(name: "LeonardoGit", dependencies: ["CLeonardoZlib"]),
+        .target(name: "LeonardoGit", dependencies: ["CLeonardoZlib", "LeonardoSync"]),
         .testTarget(name: "LeonardoGitTests", dependencies: ["LeonardoGit"]),
         .target(name: "LeonardoSync"),
         .target(name: "LeonardoSyncTransport", dependencies: ["LeonardoSync"]),
