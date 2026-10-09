@@ -82,8 +82,12 @@ final class MobileLibrary {
     /// Acquires one editing lease for a Git project. Callers must release it
     /// with `endDocumentEditing` when the editor saves or disappears.
     @discardableResult
-    func beginDocumentEditing(projectID: UUID) -> Bool {
-        guard projects.contains(where: { $0.id == projectID && $0.mode == .git }) else { return false }
+    func beginDocumentEditing(projectID: UUID, path: String) -> Bool {
+        guard !connecting, savingProjects.isEmpty,
+              let project = projects.first(where: { $0.id == projectID }),
+              project.mode == .git,
+              (try? project.scope.validate(path)) != nil,
+              project.files.contains(where: { $0.path == path }) else { return false }
         documentEditingLeases[projectID, default: 0] += 1
         return true
     }
@@ -96,6 +100,14 @@ final class MobileLibrary {
 
     func isDocumentEditing(projectID: UUID) -> Bool {
         documentEditingLeases[projectID] != nil
+    }
+
+    /// Returns the current corpus entry for a path. The caller must not retain
+    /// a previous `CorpusFile` as an authority after synchronization.
+    func currentFile(projectID: UUID, path: String) -> CorpusFile? {
+        guard let project = projects.first(where: { $0.id == projectID }),
+              (try? project.scope.validate(path)) != nil else { return nil }
+        return project.files.first { $0.path == path }
     }
 
     func connect(qrURL: String, deviceName: String) async {
@@ -512,7 +524,18 @@ final class MobileLibrary {
     }
 
     func saveText(projectID: UUID, path: String, text: String) async -> Bool {
-        await mutate(projectID: projectID) { try $0.write(path: path, content: Data(text.utf8)) }
+        guard let project = projects.first(where: { $0.id == projectID }),
+              project.mode == .git,
+              (try? project.scope.validate(path)) != nil,
+              project.files.contains(where: { $0.path == path }) else { return false }
+        return await mutate(projectID: projectID) { project in
+            guard project.mode == .git else { throw SyncError.readOnly }
+            try project.scope.validate(path)
+            guard project.files.contains(where: { $0.path == path }) else {
+                throw SyncError.invalidPath
+            }
+            try project.write(path: path, content: Data(text.utf8))
+        }
     }
 
     func createDocument(projectID: UUID, path: String) async -> Bool {

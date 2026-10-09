@@ -102,16 +102,47 @@ final class PairingUITests: XCTestCase {
         capture.lifetime = .keepAlways
         add(capture)
         try advanceGitFixture("integrate")
+        // Keep the document view open while the desktop consumes the exact
+        // proposal and removes this path from the accepted snapshot.  The
+        // view must invalidate its captured file before it can offer Edit;
+        // otherwise a later save would recreate the deleted path locally.
         app.buttons["docs/note.md"].tap()
-        app.buttons["document-sync"].tap()
+        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native Git Edited"].waitForExistence(timeout: 10))
+        let documentSync = app.buttons["document-sync"]
+        guard waitForDocumentSyncToFinish(app, timeout: 10) else {
+            XCTFail("The document sync control did not become ready before the integrated snapshot")
+            return
+        }
+        documentSync.tap()
+        guard app.staticTexts["Documento eliminado"].waitForExistence(timeout: 30) else {
+            XCTFail("The integrated snapshot did not report the document as deleted")
+            return
+        }
+        dismissNativeFailureIfPresent(app)
+        guard waitForDocumentSyncToFinish(app, timeout: 40) else {
+            XCTFail("The document sync did not finish before validating the integrated deletion")
+            return
+        }
+        dismissNativeFailureIfPresent(app)
+        XCTAssertTrue(app.staticTexts["Documento eliminado"].exists,
+                      "The integrated deletion status must remain visible after sync completion")
+        XCTAssertFalse(app.buttons["Editar"].isEnabled,
+                       "A document removed by the integrated snapshot must not offer stale Edit")
+        let deletedDocumentCapture = XCTAttachment(screenshot: app.screenshot())
+        deletedDocumentCapture.name = "Native SSH integrated deletion keeps an open document unavailable"
+        deletedDocumentCapture.lifetime = .keepAlways
+        add(deletedDocumentCapture)
         app.navigationBars.buttons[projectName].firstMatch.tap()
         XCTAssertTrue(app.staticTexts["Reconciliación integrada"].waitForExistence(timeout: 30))
         XCTAssertFalse(send.isEnabled, "The exact integrated proposal must not be sent again")
+        XCTAssertFalse(app.buttons["docs/note.md"].waitForExistence(timeout: 2),
+                       "The integrated deletion must remove the document from the project corpus")
         let integratedCapture = XCTAttachment(screenshot: app.screenshot())
         integratedCapture.name = "Native SSH integration consumed without duplicate changes"
         integratedCapture.lifetime = .keepAlways
         add(integratedCapture)
-        app.buttons["docs/note.md"].tap()
+        XCTAssertTrue(app.buttons["docs/new.md"].waitForExistence(timeout: 10))
+        app.buttons["docs/new.md"].tap()
         try editNativeGitDocument(app, text: "# Native Git Continued\n")
         app.navigationBars.buttons[projectName].firstMatch.tap()
         XCTAssertTrue(send.isEnabled)
@@ -123,9 +154,19 @@ final class PairingUITests: XCTestCase {
     }
 
     @MainActor private func editNativeGitDocument(_ app: XCUIApplication, text: String) throws {
-        app.buttons["Editar"].tap()
+        let editButton = app.buttons["Editar"]
+        let editReadiness = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == true AND isEnabled == true"), object: editButton)
+        guard XCTWaiter().wait(for: [editReadiness], timeout: 40) == .completed else {
+            XCTFail("The UI fixture Edit button did not become enabled before editing")
+            return
+        }
+        editButton.tap()
         let editor = app.textViews.firstMatch
-        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        guard editor.waitForExistence(timeout: 5) else {
+            XCTFail("The UI fixture editor did not appear after Edit became enabled")
+            return
+        }
         let old = editor.value as? String ?? ""
         // A center tap can put the caret before the first line on iOS. Tap
         // below the short fixture text to place it at the end before deletion.
@@ -140,6 +181,21 @@ final class PairingUITests: XCTestCase {
         XCTAssertEqual(editor.value as? String, text, "The UI fixture must replace the entire document before saving")
         app.buttons["Guardar"].tap()
         XCTAssertTrue(app.buttons["Editar"].waitForExistence(timeout: 10))
+    }
+
+    @MainActor private func waitForDocumentSyncToFinish(_ app: XCUIApplication, timeout: TimeInterval) -> Bool {
+        let documentSync = app.buttons["document-sync"]
+        let readiness = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == true AND isEnabled == true"), object: documentSync)
+        return XCTWaiter().wait(for: [readiness], timeout: timeout) == .completed
+    }
+
+    @MainActor private func dismissNativeFailureIfPresent(_ app: XCUIApplication) {
+        let failure = app.alerts["No se pudo completar la operación"]
+        guard failure.waitForExistence(timeout: 1) else { return }
+        failure.buttons["Aceptar"].tap()
+        XCTAssertFalse(failure.waitForExistence(timeout: 3),
+                       "The native Git failure alert must be dismissed before capture")
     }
 
     private func advanceGitFixture(_ phase: String) throws {
@@ -193,6 +249,14 @@ final class PairingUITests: XCTestCase {
         try advanceDirectFixture("revoke")
         app.buttons["document-sync"].tap()
         XCTAssertTrue(app.staticTexts["Acceso retirado"].waitForExistence(timeout: 15))
+        dismissNativeFailureIfPresent(app)
+        XCTAssertTrue(waitForDocumentSyncToFinish(app, timeout: 15),
+                      "The revocation sync did not finish before the final capture")
+        dismissNativeFailureIfPresent(app)
+        XCTAssertTrue(app.staticTexts["Acceso retirado"].exists,
+                      "The revoked project must remain unavailable after the sync settles")
+        XCTAssertFalse(app.buttons["Editar"].isEnabled,
+                       "A revoked project must not leave an enabled Edit action")
         XCTAssertFalse(app.webViews.firstMatch.exists)
         let capture = XCTAttachment(screenshot: app.screenshot())
         capture.name = "Enrolled direct project purged after confirmed revocation"

@@ -250,11 +250,24 @@ struct MobileDocumentView: View {
         MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true, externalLinkPolicy: .blocked,
             localAssetRoot: virtualRoot, memoryAssets: assets, allowsRemoteImages: false)
     }
+    private var liveProject: OfflineProject? {
+        library.projects.first { $0.id == projectID }
+    }
+    private var liveFile: CorpusFile? {
+        library.currentFile(projectID: projectID, path: file.path)
+    }
+    private var canEditLiveFile: Bool {
+        guard let liveFile else { return false }
+        return editing || String(data: liveFile.content, encoding: .utf8) != nil
+    }
 
     var body: some View {
         Group {
-            if !library.projects.contains(where: { $0.id == projectID }) {
+            if liveProject == nil {
                 ContentUnavailableView("Acceso retirado", systemImage: "lock", description: Text("La copia local de este proyecto se ha eliminado."))
+            } else if liveFile == nil {
+                ContentUnavailableView("Documento eliminado", systemImage: "trash",
+                    description: Text("La integración eliminó este documento del corpus local."))
             } else if editing { TextEditor(text: $text).font(.system(.body, design: .monospaced)).padding() }
             else if !source, ["md", "markdown"].contains((file.path as NSString).pathExtension.lowercased()) {
                 MarkdownPreview(content: text,
@@ -279,40 +292,55 @@ struct MobileDocumentView: View {
             }
             Button(editing ? "Guardar" : "Editar") {
                 if editing {
+                    guard liveFile != nil else {
+                        markDocumentUnavailable()
+                        return
+                    }
                     saving = true
                     Task {
                         if await library.saveText(projectID: projectID, path: file.path, text: text) {
                             editing = false
                             releaseEditingLease()
+                        } else if library.currentFile(projectID: projectID, path: file.path) == nil {
+                            markDocumentUnavailable()
                         }
                         saving = false
                     }
-                } else if mode == .direct { readOnlyNotice = true }
-                else if library.beginDocumentEditing(projectID: projectID) {
+                } else if liveProject?.mode == .direct { readOnlyNotice = true }
+                else if liveFile == nil {
+                    markDocumentUnavailable()
+                } else if library.beginDocumentEditing(projectID: projectID, path: file.path) {
                     holdsEditingLease = true
                     editing = true
                 }
-            }.disabled(saving || library.connecting || String(data: file.content, encoding: .utf8) == nil)
+            }.disabled(saving || library.connecting || !canEditLiveFile)
         }
         .onAppear {
             if editing, !holdsEditingLease {
-                holdsEditingLease = library.beginDocumentEditing(projectID: projectID)
+                if liveProject == nil || liveFile == nil {
+                    markDocumentUnavailable()
+                } else {
+                    holdsEditingLease = library.beginDocumentEditing(projectID: projectID, path: file.path)
+                }
             }
-            let project = library.projects.first { $0.id == projectID }
-            let current = project?.files.first { $0.path == file.path }
-            if !editing { text = current.flatMap { String(data: $0.content, encoding: .utf8) } ?? "El documento ya no está disponible." }
-            updateAssets(project)
+            if !editing {
+                if let liveFile {
+                    text = String(data: liveFile.content, encoding: .utf8) ?? "El documento no contiene texto legible."
+                } else {
+                    markDocumentUnavailable()
+                }
+            }
+            updateAssets(liveProject)
         }
         .onChange(of: library.projects) { _, projects in
-            updateAssets(projects.first { $0.id == projectID })
-            if !projects.contains(where: { $0.id == projectID }) {
-                text = ""
-                editing = false
-                releaseEditingLease()
+            let project = projects.first { $0.id == projectID }
+            updateAssets(project)
+            guard project != nil, let liveFile else {
+                markDocumentUnavailable()
+                return
             }
-            else if mode == .direct || !editing {
-                text = projects.first(where: { $0.id == projectID })?.files.first(where: { $0.path == file.path })
-                    .flatMap { String(data: $0.content, encoding: .utf8) } ?? "El documento ya no está disponible."
+            if !editing {
+                text = String(data: liveFile.content, encoding: .utf8) ?? "El documento no contiene texto legible."
             }
         }
         .onDisappear { releaseEditingLease() }
@@ -342,6 +370,12 @@ struct MobileDocumentView: View {
         guard holdsEditingLease else { return }
         library.endDocumentEditing(projectID: projectID)
         holdsEditingLease = false
+    }
+
+    private func markDocumentUnavailable() {
+        text = ""
+        editing = false
+        releaseEditingLease()
     }
 
     private func followLink(_ url: URL) {

@@ -1,7 +1,7 @@
 {
-  "date": "2026-10-09",
+  "date": "2026-10-10",
   "platform": "iPhone 17 Pro Max Simulator, iOS 26.5",
-  "serverDurationSeconds": 138.017,
+  "serverDurationSeconds": 139.294,
   "serverResult": "PASS",
   "serverTest": "GitSSHTransportTests.testServeNativeMobileGitQAFixture",
   "sourceSHA256": {
@@ -12,10 +12,10 @@
     "Mobile/LittleLeonardo/MobileGitEnrollment.swift": "3b7951263e9590531c4612bba763c86b8927083671ebf189fd426b10e0eab231",
     "Mobile/LittleLeonardo/MobileGitIntegration.swift": "bb5fe2b18a838527997337bcaed84748b4ffd41b190b78407a1b617e60774aaa",
     "Mobile/LittleLeonardo/MobileGitSender.swift": "41456d97e8c51c442893a00e83f7d2a1042d82785ae30e98635385b8a6e9c953",
-    "Mobile/LittleLeonardo/MobileLibrary.swift": "e8ef81e63f28f7e460122722e283f3795215098ce212a0f5311066f431c1ace9",
-    "Mobile/LittleLeonardo/MobileLibraryView.swift": "df13247062b689b5f23b306e640e8d2877be070b25e3e91b471377a87c5bfaf0",
+    "Mobile/LittleLeonardo/MobileLibrary.swift": "32a98414517e1554e9183ed6cebe8ec39e630ec11eb7a150ad6cfb9395021b6d",
+    "Mobile/LittleLeonardo/MobileLibraryView.swift": "528a7577112e2c7d09c5e3ba7e3086234023d9c30d3da63d8a61f1ddabe36a3a",
     "Mobile/LittleLeonardo/MobileQRScanner.swift": "cc3381e0c4efea9fa1e73dead1d5b593916d572b00320a2db21a5b0f2ccf8d9c",
-    "Mobile/LittleLeonardoUITests/PairingUITests.swift": "9ad2894e6e4e1e80e2084b975b822b7238d24cca5e52f67576b8dbde89d4c599",
+    "Mobile/LittleLeonardoUITests/PairingUITests.swift": "555752dd4d6b941a3a959daa324afa1dc13783749410c9ef53e151306c35d16d",
     "Package.swift": "6c5e02cd2ce9b2df3d7e94246e030b0964959a2e68480390071a38517a6f7f0c",
     "Sources/LeonardoApp/AboutWindow.swift": "7bd68a40d43c9e9e64e6e28e293506da989b08a0949039d1018b95c308cbbe36",
     "Sources/LeonardoApp/AppSession.swift": "9456ad62da9002b2a8367d3cd84938896241c3db286e097d27333d722cf01524",
@@ -191,42 +191,66 @@
     "Sources/LeonardoSyncTransport/ServerIdentityProbe.swift": "754f6cba66d624d10c0b84fb2effc8b42a33bb1790d43075ac5862307f2c248e",
     "Sources/LeonardoSyncTransport/TLSServerIdentity.swift": "b107e1f647c5d0710259eeecc6ee80d8b64a562ee1bf85186099599a10fb6d5c"
   },
-  "uiDurationSeconds": 104.844,
+  "uiDurationSeconds": 121.599,
   "uiResult": "PASS",
   "uiTest": "PairingUITests.testNativeSSHGitScopedImportOfflineMutationRestartAndPublication",
   "verification": {
-    "baseRevision": "12e2f9526e1244805d56e40501f6784861f1b82d",
-    "branch": "little-leonardo/9b0207e5-d87e-4afa-88f3-54494afc08b3/4cb795ef-2e80-445d-b29d-ad71bdc29f28",
-    "branchRef": "refs/heads/little-leonardo/9b0207e5-d87e-4afa-88f3-54494afc08b3/4cb795ef-2e80-445d-b29d-ad71bdc29f28",
-    "commitID": "679db12fd72bbf9dc1f35a3544d5087a60453445",
+    "baseRevision": "2792fd117ca48f56bf11f5b3d125e930dc81d721",
+    "branch": "little-leonardo/9b0207e5-d87e-4afa-88f3-54494afc08b3/a2bfda6c-8cf8-414a-8f65-61761c910b85",
+    "branchRef": "refs/heads/little-leonardo/9b0207e5-d87e-4afa-88f3-54494afc08b3/a2bfda6c-8cf8-414a-8f65-61761c910b85",
+    "commitID": "915e721a34a543bd10b95174538f34ac195d591f",
     "deleted": [
-      "docs/delete.md"
+      "docs/delete.md",
+      "docs/note.md"
     ],
     "deviceID": "9B0207E5-D87E-4AFA-88F3-54494AFC08B3",
     "excludedBlobRequested": false,
     "excludedTransferred": false,
     "excludedUnchanged": true,
     "files": [
-      "docs/new.md",
-      "docs/note.md"
+      "docs/new.md"
     ],
     "fsckPassed": true,
-    "parentCommitID": "12e2f9526e1244805d56e40501f6784861f1b82d",
-    "projectID": "4CB795EF-2E80-445D-B29D-AD71BDC29F28",
+    "parentCommitID": "2792fd117ca48f56bf11f5b3d125e930dc81d721",
+    "projectID": "A2BFDA6C-8CF8-414A-8F65-61761C910B85",
     "rpcRequestBytes": [
       0,
       130,
       142,
       158,
       0,
-      736,
+      737,
       0,
       130,
       142,
-      158,
+      108,
       0,
-      711
+      681
     ],
     "verificationCount": 2
+  },
+  "integration": {
+    "acceptedDigest": "sha256:8b0945199df78cf7a000f1b671ad8e95ced03f4323609b56c72f4c0e2558eccb",
+    "acceptedPaths": [
+      "docs/new.md"
+    ],
+    "baseRevision": "f567b23507e8fbcb71185dd2f6ccdbf07a9d3695",
+    "deletedPaths": [
+      "docs/note.md"
+    ],
+    "integrationCommitID": "2792fd117ca48f56bf11f5b3d125e930dc81d721",
+    "integrationCount": 1,
+    "integrationRef": "refs/heads/little-leonardo-integrations/9b0207e5-d87e-4afa-88f3-54494afc08b3/a2bfda6c-8cf8-414a-8f65-61761c910b85/a6cee532f96ffeb907d06e3be06a3f128adcc271",
+    "objectFormat": "sha1",
+    "parentCommitID": "a6cee532f96ffeb907d06e3be06a3f128adcc271",
+    "proposalBranch": "refs/heads/little-leonardo/9b0207e5-d87e-4afa-88f3-54494afc08b3/a2bfda6c-8cf8-414a-8f65-61761c910b85",
+    "proposalCommitID": "a6cee532f96ffeb907d06e3be06a3f128adcc271",
+    "scope": "docs",
+    "sourceRevision": "f567b23507e8fbcb71185dd2f6ccdbf07a9d3695",
+    "treeID": "991b860b569f23d82541a668b29808758f845858"
+  },
+  "captures": {
+    "deletedOpenDocument": "ios-git-deleted-open-document.png",
+    "integrated": "ios-git-integrated.png"
   }
 }

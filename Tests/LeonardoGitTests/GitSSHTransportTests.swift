@@ -1300,6 +1300,20 @@ private final class RealGitLoopbackSSHServer: @unchecked Sendable {
             }
         }
 
+        // The desktop acceptance path intentionally resolves this proposal by
+        // deleting the document that is open in the mobile UI.  Keep the
+        // proposal revision in the receipt, but build a new tree and digest
+        // for the exact accepted snapshot so the second mobile publication
+        // must continue from the real integrated bytes.
+        let acceptedSnapshot = CorpusSnapshot(
+            revision: publication.snapshot.revision,
+            files: publication.snapshot.files.filter { $0.path != "docs/note.md" })
+        guard acceptedSnapshot.files.count + 1 == publication.snapshot.files.count else {
+            throw RealGitFixtureError.verificationFailed(
+                "the first integration proposal did not contain docs/note.md")
+        }
+        try acceptedSnapshot.validate(scope: publication.metadata.scope, limits: CorpusLimits())
+        let integratedTreeID = try treeRemovingPath(publication.treeID, path: "docs/note.md")
         let receipt = try GitIntegrationReceipt(
             projectID: publication.branch.projectID,
             deviceID: publication.branch.deviceID,
@@ -1307,13 +1321,13 @@ private final class RealGitLoopbackSSHServer: @unchecked Sendable {
             commitID: publication.branch.commitID,
             baseRevision: publication.metadata.baseRevision,
             scope: publication.metadata.scope,
-            accepted: publication.snapshot)
+            accepted: acceptedSnapshot)
         let identity = try GitCommitIdentity(name: "Native Fixture",
                                               email: "fixture@example.invalid", timestamp: 2)
         let built = try GitIntegrationResult.buildCommit(
             receipt: receipt,
             parentCommitID: publication.branch.commitID,
-            treeID: publication.treeID,
+            treeID: integratedTreeID,
             identity: identity,
             sourceRevision: oldCommitID,
             message: "Native Git desktop integration")
@@ -1345,7 +1359,7 @@ private final class RealGitLoopbackSSHServer: @unchecked Sendable {
         let parsed = try GitIntegrationResult.parse(commitData: actualData, expectedCommitID: actualID)
         guard parsed == built.result,
               parsed.parentCommitID == publication.branch.commitID,
-              parsed.treeID == publication.treeID,
+              parsed.treeID == integratedTreeID,
               parsed.sourceRevision == oldCommitID else {
             throw RealGitFixtureError.verificationFailed("integration metadata does not match the proposal")
         }
@@ -1363,7 +1377,8 @@ private final class RealGitLoopbackSSHServer: @unchecked Sendable {
             "sourceRevision": parsed.sourceRevision,
             "acceptedDigest": parsed.acceptedDigest,
             "scope": parsed.scope.folder,
-            "acceptedPaths": publication.snapshot.files.map { $0.path },
+            "acceptedPaths": acceptedSnapshot.files.map { $0.path },
+            "deletedPaths": ["docs/note.md"],
             "objectFormat": parsed.integrationCommitID.count == 64 ? "sha256" : "sha1"
         ]
         try JSONSerialization.data(withJSONObject: metadata, options: [.sortedKeys])
@@ -1423,8 +1438,8 @@ private final class RealGitLoopbackSSHServer: @unchecked Sendable {
                 throw RealGitFixtureError.verificationFailed("docs/new.md content mismatch")
             }
         } else {
-            guard try readFile(branch: publishedBranch, path: "docs/note.md") == "# Native Git Continued\n",
-                  (try? readData(branch: publishedBranch, path: "docs/new.md")) != nil else {
+            guard (try? readData(branch: publishedBranch, path: "docs/note.md")) == nil,
+                  try readFile(branch: publishedBranch, path: "docs/new.md") == "# Native Git Continued\n" else {
                 throw RealGitFixtureError.verificationFailed(
                     "later publication content or selected files mismatch")
             }
@@ -1461,7 +1476,7 @@ private final class RealGitLoopbackSSHServer: @unchecked Sendable {
             "parentCommitID": expectedParent,
             "baseRevision": publication.metadata.baseRevision,
             "files": publication.snapshot.files.map { $0.path },
-            "deleted": ["docs/delete.md"],
+            "deleted": previousIntegration == nil ? ["docs/delete.md"] : ["docs/delete.md", "docs/note.md"],
             "verificationCount": verificationCount,
             "excludedUnchanged": true,
             // A false value proves that the excluded blob was not requested by
@@ -1513,6 +1528,41 @@ private final class RealGitLoopbackSSHServer: @unchecked Sendable {
         try Self.runGit(["--git-dir", repositoryPath, "show", "\(branch):\(path)"], at: root)
     }
 
+    /// Materializes a tree from the proposal while removing one path through
+    /// Git's index plumbing.  This keeps the integration commit's tree exact
+    /// even when the source worktree still contains the file.
+    private func treeRemovingPath(_ treeID: String, path: String) throws -> String {
+        guard [40, 64].contains(treeID.count) else {
+            throw RealGitFixtureError.verificationFailed("invalid proposal tree ID")
+        }
+        let indexDirectory = root.appendingPathComponent(
+            ".native-integration-index-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: indexDirectory,
+                                                withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: indexDirectory) }
+        let indexURL = indexDirectory.appendingPathComponent("index")
+        let environment = [
+            "GIT_DIR": repositoryPath,
+            "GIT_WORK_TREE": root.path,
+            "GIT_INDEX_FILE": indexURL.path
+        ]
+        _ = try Self.runGit(["read-tree", treeID], at: root, environmentOverrides: environment)
+        _ = try Self.runGit(["update-index", "--force-remove", "--", path],
+                            at: root, environmentOverrides: environment)
+        let remaining = try Self.runGit(["ls-files", "--stage", "--", path],
+                                        at: root, environmentOverrides: environment)
+        guard remaining.isEmpty else {
+            throw RealGitFixtureError.verificationFailed("integration tree retained deleted path \(path)")
+        }
+        let data = try Self.runGit(["write-tree"], at: root, environmentOverrides: environment)
+        let result = String(decoding: data, as: UTF8.self)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard [40, 64].contains(result.count) else {
+            throw RealGitFixtureError.verificationFailed("invalid integrated tree ID")
+        }
+        return result
+    }
+
     private func commitHasParent(_ commitID: String, parent expected: String) throws -> Bool {
         let value = try Self.runGit(["--git-dir", repositoryPath, "cat-file", "-p", commitID], at: root)
         let lines = String(decoding: value, as: UTF8.self).split(whereSeparator: \.isNewline)
@@ -1558,11 +1608,17 @@ private final class RealGitLoopbackSSHServer: @unchecked Sendable {
         return try bootstrap.bind(host: "127.0.0.1", port: port).wait()
     }
 
-    private static func runGit(_ arguments: [String], at directory: URL) throws -> Data {
+    private static func runGit(_ arguments: [String], at directory: URL,
+                               environmentOverrides: [String: String] = [:]) throws -> Data {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
         process.arguments = arguments
         process.currentDirectoryURL = directory
+        var environment = ProcessInfo.processInfo.environment
+        for (key, value) in environmentOverrides {
+            environment[key] = value
+        }
+        process.environment = environment
         let output = Pipe()
         let errors = Pipe()
         process.standardOutput = output

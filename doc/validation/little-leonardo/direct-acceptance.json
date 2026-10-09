@@ -1,10 +1,10 @@
 {
   "date": "2026-10-09",
   "platform": "iPhone 17 Pro Max Simulator, iOS 26.5",
-  "projectID": "104BFC3B-8A0E-407E-B270-4790072613D8",
+  "projectID": "C7D5AF31-C605-42FC-A60F-8D1E050D59FD",
   "revokedCorpusAbsent": true,
   "revokedGrantAbsent": true,
-  "serverDurationSeconds": 53.727,
+  "serverDurationSeconds": 53.364,
   "serverResult": "PASS",
   "serverTest": "MobileDirectAcceptanceFixtureTests.testServeNativeMobileAcceptanceFixture",
   "sourceSHA256": {
@@ -15,10 +15,10 @@
     "Mobile/LittleLeonardo/MobileGitEnrollment.swift": "3b7951263e9590531c4612bba763c86b8927083671ebf189fd426b10e0eab231",
     "Mobile/LittleLeonardo/MobileGitIntegration.swift": "bb5fe2b18a838527997337bcaed84748b4ffd41b190b78407a1b617e60774aaa",
     "Mobile/LittleLeonardo/MobileGitSender.swift": "41456d97e8c51c442893a00e83f7d2a1042d82785ae30e98635385b8a6e9c953",
-    "Mobile/LittleLeonardo/MobileLibrary.swift": "e8ef81e63f28f7e460122722e283f3795215098ce212a0f5311066f431c1ace9",
-    "Mobile/LittleLeonardo/MobileLibraryView.swift": "df13247062b689b5f23b306e640e8d2877be070b25e3e91b471377a87c5bfaf0",
+    "Mobile/LittleLeonardo/MobileLibrary.swift": "32a98414517e1554e9183ed6cebe8ec39e630ec11eb7a150ad6cfb9395021b6d",
+    "Mobile/LittleLeonardo/MobileLibraryView.swift": "528a7577112e2c7d09c5e3ba7e3086234023d9c30d3da63d8a61f1ddabe36a3a",
     "Mobile/LittleLeonardo/MobileQRScanner.swift": "cc3381e0c4efea9fa1e73dead1d5b593916d572b00320a2db21a5b0f2ccf8d9c",
-    "Mobile/LittleLeonardoUITests/PairingUITests.swift": "9ad2894e6e4e1e80e2084b975b822b7238d24cca5e52f67576b8dbde89d4c599",
+    "Mobile/LittleLeonardoUITests/PairingUITests.swift": "555752dd4d6b941a3a959daa324afa1dc13783749410c9ef53e151306c35d16d",
     "Package.swift": "6c5e02cd2ce9b2df3d7e94246e030b0964959a2e68480390071a38517a6f7f0c",
     "Sources/LeonardoApp/AboutWindow.swift": "7bd68a40d43c9e9e64e6e28e293506da989b08a0949039d1018b95c308cbbe36",
     "Sources/LeonardoApp/AppSession.swift": "9456ad62da9002b2a8367d3cd84938896241c3db286e097d27333d722cf01524",
@@ -194,7 +194,7 @@
     "Sources/LeonardoSyncTransport/ServerIdentityProbe.swift": "754f6cba66d624d10c0b84fb2effc8b42a33bb1790d43075ac5862307f2c248e",
     "Sources/LeonardoSyncTransport/TLSServerIdentity.swift": "b107e1f647c5d0710259eeecc6ee80d8b64a562ee1bf85186099599a10fb6d5c"
   },
-  "uiDurationSeconds": 39.47,
+  "uiDurationSeconds": 53.32,
   "uiResult": "PASS",
   "uiTest": "PairingUITests.testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation"
 }
