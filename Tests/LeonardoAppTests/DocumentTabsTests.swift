@@ -113,6 +113,44 @@ final class DocumentTabsTests: XCTestCase {
         XCTAssertEqual(tabs.tabs.count, 2)
     }
 
+    func testReopeningExistingDocumentRestoresClearedRecentsWithoutChangingDraft() async throws {
+        _ = NSApplication.shared
+        let controller = NSDocumentController.shared
+        let originalRecents = controller.recentDocumentURLs
+        let (root, tabs) = try fixture()
+        defer {
+            tabs.stop()
+            controller.clearRecentDocuments(nil)
+            for url in originalRecents.reversed() { controller.noteNewRecentDocumentURL(url) }
+            try? FileManager.default.removeItem(at: root)
+        }
+        let file = try document("existing.md", in: root)
+        await tabs.activeSession.open(file)
+        let session = tabs.activeSession
+        session.content = "unsaved draft"
+        let tabID = tabs.activeID
+
+        controller.clearRecentDocuments(nil)
+        // Let AppKit finish its initial native history reset before reopening.
+        try await Task.sleep(for: .milliseconds(50))
+        await session.open(file)
+        XCTAssertEqual(controller.recentDocumentURLs.first?.standardizedFileURL, file.standardizedFileURL)
+
+        controller.clearRecentDocuments(nil)
+        await tabs.openExternalDocuments([file])
+        XCTAssertEqual(controller.recentDocumentURLs.first?.standardizedFileURL, file.standardizedFileURL)
+
+        controller.clearRecentDocuments(nil)
+        await tabs.openDroppedDocuments([file])
+        XCTAssertEqual(controller.recentDocumentURLs.first?.standardizedFileURL, file.standardizedFileURL)
+        XCTAssertEqual(tabs.tabs.count, 1)
+        XCTAssertEqual(tabs.activeID, tabID)
+        XCTAssertTrue(tabs.activeSession === session)
+        XCTAssertEqual(session.content, "unsaved draft")
+        XCTAssertTrue(session.isDirty)
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "existing.md")
+    }
+
     func testPlusAndNavigationReplaceOnlyActiveTabAndReuseExistingFile() async throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }

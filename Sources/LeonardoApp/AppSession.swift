@@ -135,7 +135,10 @@ final class AppSession {
 
     func open(_ url: URL) async {
         await initialize()
-        if activateExistingDocument?(url, nil) == true { return }
+        if activateExistingDocument?(url, nil) == true {
+            NSDocumentController.shared.noteNewRecentDocumentURL(url)
+            return
+        }
         var directory: ObjCBool = false
         if FileManager.default.fileExists(atPath: url.path, isDirectory: &directory), directory.boolValue {
             await openProject(url)
@@ -152,7 +155,10 @@ final class AppSession {
     }
 
     func openDocument(_ url: URL, line: Int? = nil) async {
-        if activateExistingDocument?(url, line) == true { return }
+        if activateExistingDocument?(url, line) == true {
+            NSDocumentController.shared.noteNewRecentDocumentURL(url)
+            return
+        }
         let started = ContinuousClock.now
         guard Self.readableDocumentExtensions.contains(url.pathExtension.lowercased()) else {
             openSystemURL(url)
@@ -165,6 +171,7 @@ final class AppSession {
         do {
             let loaded = try await documents.read(url)
             guard !stopped else { return }
+            NSDocumentController.shared.noteNewRecentDocumentURL(url)
             documentURL = url
             snapshot = loaded
             content = loaded.content

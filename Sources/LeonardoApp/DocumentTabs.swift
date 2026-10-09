@@ -105,7 +105,10 @@ final class DocumentTabs {
     func openExternalDocuments(_ urls: [URL]) async {
         guard !closing, !stopped else { return }
         for url in urls where url.isFileURL {
-            if activateDocument(url) { continue }
+            if activateDocument(url) {
+                NSDocumentController.shared.noteNewRecentDocumentURL(url)
+                continue
+            }
             guard let id = addTab(), let tab = tabs.first(where: { $0.id == id }) else { return }
             await tab.session.open(url)
         }
