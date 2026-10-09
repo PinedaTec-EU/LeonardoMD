@@ -28,7 +28,7 @@ public actor ProjectCorpusReader {
         while let url = enumerator.nextObject() as? URL {
             let metadata = try url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey])
             if metadata.isSymbolicLink == true { enumerator.skipDescendants(); continue }
-            let path = String(url.path.dropFirst(normalized.path.count + 1))
+            let path = url.standardizedFileURL.pathComponents.dropFirst(normalized.pathComponents.count).joined(separator: "/")
             if metadata.isDirectory == true {
                 // Use a permitted probe extension to apply directory exclusions consistently.
                 if (try? scope.validate(path + "/corpus.md")) == nil { enumerator.skipDescendants() }
