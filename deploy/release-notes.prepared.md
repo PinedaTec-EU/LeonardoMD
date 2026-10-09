@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.140
+
+- #86 Added: resizable project sidebar ([#87](https://github.com/PinedaTec-EU/LeonardoMD/pull/87))
+
+Source: `7b7348a9dce81cf86e340f131b60e8da3c80a733`. Delta: `{"build": 5}`.
+
 ## 0.1.135
 
 - #78 Added: expose recent documents projects and workspaces in File ([#79](https://github.com/PinedaTec-EU/LeonardoMD/pull/79))
