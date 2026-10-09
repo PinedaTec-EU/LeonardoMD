@@ -39,3 +39,5 @@
 ## 2026-10-09 — Little Leonardo work in progress
 
 [#92](https://github.com/PinedaTec-EU/LeonardoMD/issues/92) defines the iOS companion, direct read-only LAN snapshots and folder-scoped Git editing. The new standalone `LeonardoSync` target provides corpus boundaries, offline state/persistence and safe project snapshot reading. See [mobile contract and pending implementation](../doc/mobile/little-leonardo.md). This does not establish a runnable iOS app or completed synchronization.
+
+Native iOS checkpoint for [#92](https://github.com/PinedaTec-EU/LeonardoMD/issues/92): shared `LittleLeonardo` Xcode scheme builds for iOS Simulator; a fresh process on iPhone 17 Pro Max loads synthetic cached direct/Git projects. Native local reading and Git-mode offline mutation controls exist; no network/Git synchronization claim. CI includes the iOS build and the ledger scopes `Mobile/**`.

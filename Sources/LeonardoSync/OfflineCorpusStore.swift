@@ -16,6 +16,14 @@ public actor OfflineCorpusStore: CorpusStore {
         self.limits = limits
     }
 
+    public func projectIDs() throws -> [UUID] {
+        guard FileManager.default.fileExists(atPath: root.path) else { return [] }
+        return try FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" }
+            .compactMap { UUID(uuidString: $0.deletingPathExtension().lastPathComponent) }
+            .sorted { $0.uuidString < $1.uuidString }
+    }
+
     public func load(id: UUID) throws -> OfflineProject? {
         let url = try location(id)
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }

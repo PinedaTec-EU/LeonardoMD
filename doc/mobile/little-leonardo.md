@@ -18,7 +18,7 @@ Send changes publishes a device-specific branch before sending an optional paire
 
 `LeonardoSync` is an independent Foundation-only SwiftPM library targeting macOS 14 and iOS 17. It currently contains corpus path/content limits, direct read-only and Git-editable offline state, atomic cache persistence and a project corpus reader with unsaved-buffer overlays. Its regression tests cover escapes, hidden/build exclusions, symlinks, case aliases, size limits, restart, deletion and later edits during integration.
 
-This is a foundation, not a working companion application. Network service, pairing, credential storage, revocation transport, native iOS UI, real Git adapter, desktop reconciliation interface and end-to-end evidence remain pending. No partial-clone support is claimed for an iOS Git library until demonstrated with a large-repository fixture.
+The native `Mobile/LittleLeonardo.xcodeproj` target builds for iPhone/iPad on iOS 17+. It loads cached projects, reads UTF-8 documents, blocks direct-mode editing with an explanation, and supports Git-mode offline creation/editing/deletion. A fresh process on iPhone 17 Pro Max / iOS 26.5 displayed both cached synthetic projects. This proves local corpus loading, not network or Git transfer. Network service, pairing, credential storage, revocation transport, real Git adapter, desktop reconciliation interface and end-to-end evidence remain pending. No partial-clone support is claimed for an iOS Git library until demonstrated with a large-repository fixture.
 
 ## Boundaries to retain
 
@@ -27,3 +27,13 @@ This is a foundation, not a working companion application. Network service, pair
 - Integration updates must identify the published commit whose work was accepted, rather than trusting any new remote revision.
 - Invalid or oversized snapshots fail atomically rather than silently delivering an incomplete corpus.
 - Reconciliation must preserve local work; neither desktop buffers nor mobile edits are implicitly discarded.
+
+## Native iOS build
+
+Open `Mobile/LittleLeonardo.xcodeproj` and select the shared `LittleLeonardo` scheme. Simulator builds do not require signing credentials:
+
+```sh
+xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination 'generic/platform=iOS Simulator' -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO build
+```
+
+CI builds this target alongside the macOS suite. Mobile sources are included in the release ledger's versioned path scope. Device installation and distribution require the owner's Apple signing configuration; neither is claimed by simulator validation.

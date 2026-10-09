@@ -70,10 +70,14 @@ final class CorpusTests: XCTestCase {
         try project.markPublished(revision: "pending-review")
         try await OfflineCorpusStore(root: root).save(project)
         let reopened = OfflineCorpusStore(root: root)
+        let ids = try await reopened.projectIDs()
+        XCTAssertEqual(ids, [project.id])
         let loaded = try await reopened.load(id: project.id)
         XCTAssertEqual(loaded, project)
         try await reopened.remove(id: project.id)
         let removed = try await reopened.load(id: project.id)
         XCTAssertNil(removed)
+        let remaining = try await reopened.projectIDs()
+        XCTAssertTrue(remaining.isEmpty)
     }
 }

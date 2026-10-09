@@ -16,6 +16,8 @@ jobs:
         env:
           LEONARDO_VISUAL_EVIDENCE: ${{ github.workspace }}/visual-evidence
         run: swift test
+      - name: Build iOS companion
+        run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "generic/platform=iOS Simulator" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO build
       - name: Validate update metadata
         run: python3 -m unittest discover -s Tests/Packaging
       - name: Record preview capture provenance
