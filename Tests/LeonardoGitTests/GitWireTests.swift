@@ -1,0 +1,105 @@
+import XCTest
+@testable import LeonardoGit
+
+final class GitWireTests: XCTestCase {
+    func testBinaryPacketsAndControlMarkersRoundTrip() throws {
+        let packets: [GitPacket] = [.data(Data([0, 255, 10, 13])), .delimiter, .data(Data()), .flush, .responseEnd]
+        let encoded = try packets.reduce(into: Data()) { $0 += try $1.encoded() }
+        XCTAssertEqual(try GitPacket.decode(encoded), packets)
+        for invalid in ["0003", "ffff", "000", "0007a", "zzzz"] {
+            XCTAssertThrowsError(try GitPacket.decode(Data(invalid.utf8)))
+        }
+        XCTAssertThrowsError(try GitPacket.decode(encoded, maximumBytes: 3))
+        XCTAssertThrowsError(try GitPacket.decode(encoded, maximumPackets: 1))
+        XCTAssertThrowsError(try GitPacket.data(Data(repeating: 0, count: 65_517)).encoded())
+    }
+
+    func testMissingFilteringAndMalformedCapabilitiesCannotProduceFetch() throws {
+        for lines in [["version 2", "ls-refs", "fetch=shallow"],
+                      ["version 2", "ls-refs", "fetch=filter"],
+                      ["version 2", "ls-refs", "fetch=shallow filter", "fetch=shallow filter"],
+                      ["version 2", ""], ["version 1", "fetch=shallow filter"]] {
+            let advertisement = try advertise(lines)
+            XCTAssertThrowsError(try GitV2Capabilities(advertisement: advertisement).metadataRequest(want: String(repeating: "a", count: 40)))
+        }
+        let supported = try GitV2Capabilities(advertisement: advertise(["version 2", "ls-refs", "fetch=shallow filter"]))
+        XCTAssertThrowsError(try supported.metadataRequest(want: "a\nfilter blob:limit=999"))
+        let packets = try GitPacket.decode(supported.metadataRequest(want: String(repeating: "a", count: 40)))
+        XCTAssertTrue(packets.contains(.data(Data("filter blob:none\n".utf8))))
+        XCTAssertTrue(packets.contains(.data(Data("deepen 1\n".utf8))))
+    }
+
+    #if os(macOS)
+    func testMetadataFetchFromRealRepositoryContainsNoFileBlobs() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let source = root.appendingPathComponent("source")
+        _ = try git(["init", "--quiet", source.path])
+        try FileManager.default.createDirectory(at: source.appendingPathComponent("docs"), withIntermediateDirectories: true)
+        try Data("# Selected folder".utf8).write(to: source.appendingPathComponent("docs/note.md"))
+        try Data(repeating: 42, count: 16 * 1_024 * 1_024).write(to: source.appendingPathComponent("large-code.bin"))
+        _ = try git(["-C", source.path, "add", "."])
+        _ = try git(["-C", source.path, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "--quiet", "-m", "fixture"])
+        _ = try git(["-C", source.path, "config", "uploadpack.allowFilter", "true"])
+        let tip = String(decoding: try git(["-C", source.path, "rev-parse", "HEAD"]), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        let capabilities = try GitV2Capabilities(advertisement: git(["upload-pack", "--stateless-rpc", "--advertise-refs", source.path]))
+        let response = try git(["upload-pack", "--stateless-rpc", source.path], input: capabilities.metadataRequest(want: tip))
+        var inPack = false
+        var pack = Data()
+        for packet in try GitPacket.decode(response) {
+            guard case .data(let data) = packet else { continue }
+            if data == Data("packfile\n".utf8) { inPack = true; continue }
+            if inPack, data.first == 1 { pack.append(data.dropFirst()) }
+        }
+        XCTAssertTrue(pack.starts(with: Data("PACK".utf8)))
+        let receiver = root.appendingPathComponent("receiver")
+        _ = try git(["init", "--bare", "--quiet", receiver.path])
+        _ = try git(["-C", receiver.path, "index-pack", "--stdin"], input: pack)
+        let types = String(decoding: try git(["-C", receiver.path, "cat-file", "--batch-all-objects", "--batch-check=%(objecttype)"]), as: UTF8.self)
+        let objects = Set(types.split(separator: "\n"))
+        XCTAssertEqual(objects, ["commit", "tree"], "Folder discovery must transfer no document or code blobs")
+    }
+
+    func testActualGitAdvertisementGatesPartialTransfer() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = try git(["init", "--bare", "--quiet", root.path])
+        let disabled = try GitV2Capabilities(advertisement: git(["upload-pack", "--stateless-rpc", "--advertise-refs", root.path]))
+        XCTAssertThrowsError(try disabled.requireFolderTransfer())
+        _ = try git(["-C", root.path, "config", "uploadpack.allowFilter", "true"])
+        let enabled = try GitV2Capabilities(advertisement: git(["upload-pack", "--stateless-rpc", "--advertise-refs", root.path]))
+        try enabled.requireFolderTransfer()
+        XCTAssertTrue(try enabled.metadataRequest(want: String(repeating: "a", count: 40)).contains(Data("filter blob:none\n".utf8)))
+    }
+
+    private func git(_ arguments: [String], input: Data? = nil) throws -> Data {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.arguments = arguments
+        process.environment = ProcessInfo.processInfo.environment.merging(["GIT_PROTOCOL": "version=2", "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null"]) { _, new in new }
+        let output = Pipe()
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+        let stdin = Pipe()
+        process.standardInput = input == nil ? FileHandle.nullDevice : stdin
+        try process.run()
+        if let input {
+            try stdin.fileHandleForWriting.write(contentsOf: input)
+            try stdin.fileHandleForWriting.close()
+        }
+        let result = output.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        XCTAssertEqual(process.terminationStatus, 0)
+        return result
+    }
+    #endif
+
+    private func advertise(_ lines: [String]) throws -> Data {
+        var data = Data()
+        for line in lines { data += try GitPacket.data(Data((line + "\n").utf8)).encoded() }
+        data += try GitPacket.flush.encoded()
+        return data
+    }
+}

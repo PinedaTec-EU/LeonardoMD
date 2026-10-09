@@ -4,10 +4,12 @@ import PackageDescription
 let package = Package(
     name: "LeonardoMD",
     platforms: [.macOS(.v14), .iOS(.v17)],
-    products: [.executable(name: "LeonardoMD", targets: ["LeonardoApp"]), .library(name: "LeonardoDesktopSync", targets: ["LeonardoDesktopSync"]), .library(name: "LeonardoSyncTransport", targets: ["LeonardoSyncTransport"]), .library(name: "LeonardoSync", targets: ["LeonardoSync"]), .library(name: "LeonardoCore", targets: ["LeonardoCore"]), .library(name: "LeonardoRender", targets: ["LeonardoRender"])],
+    products: [.library(name: "LeonardoGit", targets: ["LeonardoGit"]), .executable(name: "LeonardoMD", targets: ["LeonardoApp"]), .library(name: "LeonardoDesktopSync", targets: ["LeonardoDesktopSync"]), .library(name: "LeonardoSyncTransport", targets: ["LeonardoSyncTransport"]), .library(name: "LeonardoSync", targets: ["LeonardoSync"]), .library(name: "LeonardoCore", targets: ["LeonardoCore"]), .library(name: "LeonardoRender", targets: ["LeonardoRender"])],
     dependencies: [.package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.9.6")],
     targets: [
         .target(name: "LeonardoCore"),
+        .target(name: "LeonardoGit"),
+        .testTarget(name: "LeonardoGitTests", dependencies: ["LeonardoGit"]),
         .target(name: "LeonardoSync"),
         .target(name: "LeonardoSyncTransport", dependencies: ["LeonardoSync"]),
         .target(name: "LeonardoDesktopSync", dependencies: ["LeonardoSync", "LeonardoSyncTransport"]),
