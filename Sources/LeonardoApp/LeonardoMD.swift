@@ -188,10 +188,6 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         return .terminateLater
     }
 
-    // Application-owned restoration supersedes macOS saved-window restoration.
-    func applicationShouldSaveApplicationState(_ app: NSApplication) -> Bool { false }
-    func applicationShouldRestoreApplicationState(_ app: NSApplication) -> Bool { false }
-
     private func saveSession() throws {
         try restoration.save(SavedSession(windows: windows.map { $0.documents.savedWindow }))
     }
@@ -329,6 +325,8 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
 
     init() {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1260, height: 850), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
+        // SessionRestoration owns reopening; do not also restore AppKit windows.
+        window.isRestorable = false
         window.isReleasedWhenClosed = false
         window.title = "LeonardoMD"
         window.titlebarAppearsTransparent = true
