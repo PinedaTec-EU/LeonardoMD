@@ -5,6 +5,7 @@ struct MobileLibraryView: View {
     @Bindable var library: MobileLibrary
     @State private var pairing = false
     @State private var qrURL = ""
+    @State private var scanning = false
     @AppStorage("directSyncIntervalMinutes") private var syncInterval = 0
     @Environment(\.scenePhase) private var scenePhase
     var body: some View {
@@ -31,6 +32,7 @@ struct MobileLibraryView: View {
             .toolbar {
                 Button("Conectar", systemImage: "qrcode") { pairing = true }
                     .disabled(library.connecting)
+                    .accessibilityIdentifier("open-pairing")
                 Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
                     Task { await library.synchronize() }
                 }.disabled(library.connecting)
@@ -50,6 +52,9 @@ struct MobileLibraryView: View {
                         Text("Pega el enlace del QR generado en las preferencias de LeonardoMD. Ambos dispositivos deben estar en la misma red local.")
                         TextField("littleleonardo://pair…", text: $qrURL)
                             .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        Button("Escanear QR", systemImage: "camera") { scanning = true }
+                            .disabled(library.connecting)
+                            .accessibilityIdentifier("scan-pairing-qr")
                         Picker("Sincronización automática", selection: $syncInterval) {
                             Text("Solo manual").tag(0)
                             ForEach([1, 5, 15, 30, 60], id: \.self) { Text("Cada \($0) min").tag($0) }
@@ -63,6 +68,9 @@ struct MobileLibraryView: View {
                         }.disabled(library.connecting || qrURL.isEmpty)
                     }.navigationTitle("Conectar con LeonardoMD")
                     .toolbar { Button("Cerrar") { pairing = false } }
+                    .sheet(isPresented: $scanning) {
+                        MobileQRScannerScreen { qrURL = $0 }
+                    }
                 }
             }
             .task(id: "\(syncInterval)-\(scenePhase)") {

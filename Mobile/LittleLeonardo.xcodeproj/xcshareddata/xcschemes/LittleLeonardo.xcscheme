@@ -37,6 +37,16 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FB8B56BEE10614284AFC5E29"
+               BuildableName = "LittleLeonardoUITests.xctest"
+               BlueprintName = "LittleLeonardoUITests"
+               ReferencedContainer = "container:LittleLeonardo.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

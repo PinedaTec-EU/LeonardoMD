@@ -65,3 +65,7 @@ The iOS library accepts a pasted QR link, computes its comparison code independe
 ## Offline archive regression
 
 [#99](https://github.com/PinedaTec-EU/LeonardoMD/issues/99) records a valid near-limit corpus that could be saved but not reopened. The encoded bound now accounts for all three base/current/published collections, base64 expansion and escaped metadata, with checked integer arithmetic. Paths are bounded to 4 KiB, revisions to 256 bytes and stored project names to 1 KiB to make the metadata allowance finite. Save and load use the same encoded bound. The published-baseline restart regression and unrepresentable-limit rejection pass.
+
+## Camera scanner checkpoint
+
+The pairing screen can scan a QR with Apple VisionKit. Camera permission is requested only after the user opens the scanner. Unsupported/restricted hardware offers pasted-link enrollment; cancellation dismantles the scanner and stops capture. Only a valid, unexpired Little Leonardo QR is accepted, and reading it does not automatically authorize or start the network connection. The iOS Simulator UI test opens the scanner, verifies its unavailable fallback, cancels it, and verifies no connection request was initiated. Its real screenshot was inspected from `/tmp/little-camera-ui.xcresult`. Physical-camera capture and permission-denial behavior are implemented but not verified on a physical device.

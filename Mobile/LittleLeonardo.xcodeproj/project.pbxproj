@@ -7,23 +7,47 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		15243E6517E367904B34E1C3 /* PairingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88DCAC3D27E3676EFE8737FB /* PairingUITests.swift */; };
 		22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */; };
 		2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7849226B36C61649B125BDDC /* MobileLibraryView.swift */; };
+		3E6C7AD17D9D0EDFB5E779BA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
 		46EBC1E01C1296D54919D7A0 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
 		636F71B3D4E9A41FC1842500 /* LeonardoSyncTransport in Frameworks */ = {isa = PBXBuildFile; productRef = 00F8AB50590ED36AF1934837 /* LeonardoSyncTransport */; };
 		852C58BAA8EDEDB67FDE7FB4 /* LeonardoSync in Frameworks */ = {isa = PBXBuildFile; productRef = 7CAAF1CC01593584A9E0A7F9 /* LeonardoSync */; };
 		C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */; };
+		DA52AFC54A29A9980B0601CC /* MobileQRScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		603EE9018F4478E4F0651EB7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B73A091EF914B6DD6523F6A2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D476A74D288EC41321B83D17;
+			remoteInfo = LittleLeonardo;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LittleLeonardoApp.swift; sourceTree = "<group>"; };
 		5B83DAE858F9656CCDF4D6B1 /* LittleLeonardo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LittleLeonardo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7849226B36C61649B125BDDC /* MobileLibraryView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileLibraryView.swift; sourceTree = "<group>"; };
+		88DCAC3D27E3676EFE8737FB /* PairingUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PairingUITests.swift; sourceTree = "<group>"; };
 		C13EDFD74D289513F03789EC /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		C53CBBB8313118CB2CF6782A /* LittleLeonardoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LittleLeonardoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileLibrary.swift; sourceTree = "<group>"; };
+		EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileQRScanner.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		F1CFA41E4901A74516604574 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3E6C7AD17D9D0EDFB5E779BA /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FF9E935D9A4BF9791C6DBA48 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -41,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				5B83DAE858F9656CCDF4D6B1 /* LittleLeonardo.app */,
+				C53CBBB8313118CB2CF6782A /* LittleLeonardoUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -53,12 +78,22 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		8B071E7E1B6969A26E0658D0 /* LittleLeonardoUITests */ = {
+			isa = PBXGroup;
+			children = (
+				88DCAC3D27E3676EFE8737FB /* PairingUITests.swift */,
+			);
+			name = LittleLeonardoUITests;
+			path = LittleLeonardoUITests;
+			sourceTree = "<group>";
+		};
 		D790DB639180E062A2FDDAA7 = {
 			isa = PBXGroup;
 			children = (
 				5C2FE033350DFF0ABE9DDCDB /* Products */,
 				6BDA650CBB19A55BA57B812C /* Frameworks */,
 				F33613B9B52D4F5FD53F5807 /* LittleLeonardo */,
+				8B071E7E1B6969A26E0658D0 /* LittleLeonardoUITests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -76,6 +111,7 @@
 				0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */,
 				D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */,
 				7849226B36C61649B125BDDC /* MobileLibraryView.swift */,
+				EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */,
 			);
 			name = LittleLeonardo;
 			path = LittleLeonardo;
@@ -105,6 +141,24 @@
 			productReference = 5B83DAE858F9656CCDF4D6B1 /* LittleLeonardo.app */;
 			productType = "com.apple.product-type.application";
 		};
+		FB8B56BEE10614284AFC5E29 /* LittleLeonardoUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 96250E69ED1F18AF37A74FA8 /* Build configuration list for PBXNativeTarget "LittleLeonardoUITests" */;
+			buildPhases = (
+				6DA17CEEE55FBFFA512AF082 /* Sources */,
+				F1CFA41E4901A74516604574 /* Frameworks */,
+				4FA0A87B8FEEE63CDDC75525 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A3E0EA9EC9E2D629678BDFCC /* PBXTargetDependency */,
+			);
+			name = LittleLeonardoUITests;
+			productName = LittleLeonardoUITests;
+			productReference = C53CBBB8313118CB2CF6782A /* LittleLeonardoUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -133,12 +187,20 @@
 			projectRoot = "";
 			targets = (
 				D476A74D288EC41321B83D17 /* LittleLeonardo */,
+				FB8B56BEE10614284AFC5E29 /* LittleLeonardoUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		298209973FD89D4C56182B2F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4FA0A87B8FEEE63CDDC75525 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -155,12 +217,59 @@
 				C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */,
 				22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */,
 				2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */,
+				DA52AFC54A29A9980B0601CC /* MobileQRScanner.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6DA17CEEE55FBFFA512AF082 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				15243E6517E367904B34E1C3 /* PairingUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		A3E0EA9EC9E2D629678BDFCC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = LittleLeonardo;
+			target = D476A74D288EC41321B83D17 /* LittleLeonardo */;
+			targetProxy = 603EE9018F4478E4F0651EB7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		06A63060FF7894E6044E58FA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = eu.pinedatec.LittleLeonardo.UITests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = LittleLeonardo;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		07E410DA8BF5BE2C156E3D4A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = eu.pinedatec.LittleLeonardo.UITests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = LittleLeonardo;
+			};
+			name = Debug;
+		};
 		454D201309A2B0CB8DA237B8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -285,6 +394,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Little Leonardo";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Little Leonardo usa la cámara para leer el QR de conexión que muestra LeonardoMD.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Little Leonardo se conecta con LeonardoMD en tu red local para sincronizar los proyectos que autorices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -306,6 +416,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Little Leonardo";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Little Leonardo usa la cámara para leer el QR de conexión que muestra LeonardoMD.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Little Leonardo se conecta con LeonardoMD en tu red local para sincronizar los proyectos que autorices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -327,6 +438,15 @@
 			buildConfigurations = (
 				E65B968F960FA77F9773A617 /* Release */,
 				D7E83694D0A1BEF19AB94FAA /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		96250E69ED1F18AF37A74FA8 /* Build configuration list for PBXNativeTarget "LittleLeonardoUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				06A63060FF7894E6044E58FA /* Release */,
+				07E410DA8BF5BE2C156E3D4A /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
