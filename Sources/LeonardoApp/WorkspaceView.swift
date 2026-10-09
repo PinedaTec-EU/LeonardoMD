@@ -7,16 +7,14 @@ struct WorkspaceView: View {
         VStack(spacing: 0) {
             toolbar
             Divider()
-            HStack(spacing: 0) {
-                if session.presentation.showsSidebar {
+            if session.presentation.showsSidebar {
+                HSplitView {
                     ProjectSidebar(session: session)
-                    Divider()
+                        .frame(minWidth: 220, idealWidth: 250, maxWidth: 600)
+                    workspaceDocument.frame(minWidth: 440)
                 }
-                documentArea.frame(maxWidth: .infinity, maxHeight: .infinity).disabled(session.busy)
-                if session.presentation.showsInspector {
-                    Divider()
-                    DocumentInspector(session: session)
-                }
+            } else {
+                workspaceDocument
             }
             Divider()
             statusBar
@@ -49,6 +47,16 @@ struct WorkspaceView: View {
             session.persistSettings()
         }
         .task { await session.initialize() }
+    }
+
+    private var workspaceDocument: some View {
+        HStack(spacing: 0) {
+            documentArea.frame(maxWidth: .infinity, maxHeight: .infinity).disabled(session.busy)
+            if session.presentation.showsInspector {
+                Divider()
+                DocumentInspector(session: session)
+            }
+        }
     }
 
     private var toolbar: some View {
