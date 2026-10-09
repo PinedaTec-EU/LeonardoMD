@@ -30,6 +30,49 @@ final class GitWireTests: XCTestCase {
     }
 
     #if os(macOS)
+    func testRealGitReferenceDiscoveryForSHA1SHA256AndUnbornHEAD() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        for format in ["sha1", "sha256"] {
+            let source = root.appendingPathComponent(format)
+            _ = try git(["init", "--quiet", "--initial-branch=main", "--object-format=\(format)", source.path])
+            _ = try git(["-C", source.path, "config", "uploadpack.allowFilter", "true"])
+            let capability = try GitV2Capabilities(advertisement: git(["upload-pack", "--stateless-rpc", "--advertise-refs", source.path]))
+            let unborn = try capability.references(response: git(["upload-pack", "--stateless-rpc", source.path], input: capability.referenceRequest()))
+            XCTAssertEqual(unborn.count, 1)
+            XCTAssertEqual(unborn.first?.name, "HEAD")
+            XCTAssertNil(unborn.first?.objectID)
+            XCTAssertEqual(unborn.first?.symbolicTarget, "refs/heads/main")
+            _ = try git(["-C", source.path, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "--allow-empty", "--quiet", "-m", "fixture"])
+            _ = try git(["-C", source.path, "branch", "notes/ñ"])
+            let refs = try capability.references(response: git(["upload-pack", "--stateless-rpc", source.path], input: capability.referenceRequest()))
+            XCTAssertEqual(refs.map(\.name), ["HEAD", "refs/heads/main", "refs/heads/notes/ñ"])
+            XCTAssertEqual(refs.first?.objectID?.count, format == "sha1" ? 40 : 64)
+        }
+    }
+
+    func testReferenceValidationMatchesGitAndRejectsDuplicateOrInjectedReplies() throws {
+        let names = ["refs/heads/main", "refs/heads/notes/ñ", "refs/heads/.hidden", "refs/heads/a..b",
+                     "refs/heads/a.lock", "refs/heads/a//b", "refs/heads/a@{b", "refs/heads/a b", "refs/heads/a."]
+        for name in names {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+            process.arguments = ["check-ref-format", name]
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
+            try process.run(); process.waitUntilExit()
+            XCTAssertEqual(GitReference.isValidName(name), process.terminationStatus == 0, name)
+        }
+        let capability = try GitV2Capabilities(advertisement: advertise(["version 2", "ls-refs=unborn", "fetch=shallow filter"]))
+        let oid = String(repeating: "a", count: 40)
+        func reply(_ lines: [String]) throws -> Data { try advertise(lines) }
+        XCTAssertThrowsError(try capability.references(response: reply(["\(oid) refs/heads/main", "\(oid) refs/heads/main"])))
+        XCTAssertThrowsError(try capability.references(response: reply(["\(oid) refs/heads/main\nwant private"])))
+        XCTAssertThrowsError(try capability.references(response: reply(["unborn HEAD"])))
+        let filtered = try capability.references(response: reply(["\(oid) refs/tags/release", "\(oid) refs/heads/main"]))
+        XCTAssertEqual(filtered.map(\.name), ["refs/heads/main"])
+    }
+
     func testMetadataFetchFromRealRepositoryContainsNoFileBlobs() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
