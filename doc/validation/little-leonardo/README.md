@@ -4,7 +4,7 @@ These are actual native view/Simulator captures from implementation-owned fixtur
 
 ## Desktop captures
 
-Captured on 2026-10-09 from compile delta184 (the source changes committed together with this evidence), using ten passing optional native controller/component tests. `NativeViewCaptureSupport` hosts real SwiftUI/AppKit views and reapplies final capture geometry. The owner app remains running independently. Git review uses an actual scoped publication/controller fixture; wakeup badge uses an actual authenticated HTTPS notification persisted before acknowledgement. Remaining layouts use isolated synthetic component state.
+Captured on 2026-10-09 from compile delta184 (production/view sources unchanged through the subsequent ledger and SSH test-fixture corrections), using ten passing optional native controller/component tests. `NativeViewCaptureSupport` hosts real SwiftUI/AppKit views and reapplies final capture geometry. The owner app remains running independently. Git review uses an actual scoped publication/controller fixture; wakeup badge uses an actual authenticated HTTPS notification persisted before acknowledgement. Remaining layouts use isolated synthetic component state.
 
 - Git review: 960×700 points, EN/ES, project/device/commit/base/scope identity, all four decision labels visible, application disabled until a choice.
 - Git notification: 1260×850, Spanish workspace, persisted inbox badge1.

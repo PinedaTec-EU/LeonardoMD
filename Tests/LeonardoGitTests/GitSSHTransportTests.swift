@@ -88,44 +88,95 @@ final class GitSSHTransportTests: XCTestCase {
         })
 
         do {
-            _ = try await transport.advertisement()
-            XCTFail("The first real-Git connection must require host-key confirmation")
-        } catch let error as GitSSHError {
-            guard case .hostKeyConfirmationRequired(let challenge) = error else {
-                return XCTFail("Unexpected first-connection error: \(error)")
+            do {
+                _ = try await transport.advertisement()
+                XCTFail("The first real-Git connection must require host-key confirmation")
+            } catch let error as GitSSHError {
+                guard case .hostKeyConfirmationRequired(let challenge) = error else {
+                    return XCTFail("Unexpected first-connection error: \(error)")
+                }
+                XCTAssertEqual(challenge.pin, try server.hostKeyPin(for: endpoint))
             }
-            XCTAssertEqual(challenge.pin, try server.hostKeyPin(for: endpoint))
+            XCTAssertEqual(credentialCalls.value, 0, "Credentials must remain lazy until the host pin is accepted")
+
+            try await pins.save(try server.hostKeyPin(for: endpoint), for: endpoint)
+            let reader = GitRemoteReader(transport: transport)
+            let discovery = try await reader.discover()
+            let tip = try XCTUnwrap(discovery.references.first(where: { $0.name == server.branch })?.objectID)
+            XCTAssertEqual(tip, server.oldCommitID)
+            let metadata = try await reader.metadata(commitID: tip, discovery: discovery)
+            let snapshot = try await reader.snapshot(metadata: metadata, scope: try CorpusScope(folder: "docs"))
+            XCTAssertEqual(snapshot.files, [CorpusFile(path: "docs/note.md", content: Data("seed document\n".utf8))])
+
+            let blob = GitObject.create(kind: .blob, data: Data("pushed document\n".utf8))
+            let docs = try GitTree.create(entries: [GitTreeEntry(name: "pushed.md", objectID: blob.id,
+                                                                  kind: .file, executable: false)], sha256: false)
+            let root = try GitTree.create(entries: [GitTreeEntry(name: "docs", objectID: docs.id,
+                                                                 kind: .folder, executable: false)], sha256: false)
+            let commitData = Data(("tree \(root.id)\nparent \(server.oldCommitID)\n" +
+                "author Fixture <fixture@example.invalid> 1 +0000\n" +
+                "committer Fixture <fixture@example.invalid> 1 +0000\n\nPushed fixture\n").utf8)
+            let commit = GitObject.create(kind: .commit, data: commitData)
+            let result = try await GitPublisher(transport: transport).publish(
+                GitBuiltCommit(commit: commit, objects: [blob, docs, root, commit]),
+                branch: server.branch,
+                expectedOldID: server.oldCommitID
+            )
+            XCTAssertEqual(result, .accepted)
+            XCTAssertEqual(try server.revParse(server.branch), commit.id)
+            XCTAssertEqual(try server.readFile(branch: server.branch, path: "docs/pushed.md"), "pushed document\n")
+            try server.runFsck()
+            XCTAssertGreaterThan(credentialCalls.value, 0)
+        } catch {
+            throw RealGitFixtureError.verificationFailed(
+                "real Git SSH session failed: \(String(describing: error)); " +
+                "diagnostics=\(server.observations.diagnosticSummary)"
+            )
         }
-        XCTAssertEqual(credentialCalls.value, 0, "Credentials must remain lazy until the host pin is accepted")
+    }
 
-        try await pins.save(try server.hostKeyPin(for: endpoint), for: endpoint)
-        let reader = GitRemoteReader(transport: transport)
-        let discovery = try await reader.discover()
-        let tip = try XCTUnwrap(discovery.references.first(where: { $0.name == server.branch })?.objectID)
-        XCTAssertEqual(tip, server.oldCommitID)
-        let metadata = try await reader.metadata(commitID: tip, discovery: discovery)
-        let snapshot = try await reader.snapshot(metadata: metadata, scope: try CorpusScope(folder: "docs"))
-        XCTAssertEqual(snapshot.files, [CorpusFile(path: "docs/note.md", content: Data("seed document\n".utf8))])
+    func testRealGitProcessStopTerminatesAfterWriterStarts() async throws {
+        let server = try RealGitLoopbackSSHServer()
+        defer { server.stop() }
 
-        let blob = GitObject.create(kind: .blob, data: Data("pushed document\n".utf8))
-        let docs = try GitTree.create(entries: [GitTreeEntry(name: "pushed.md", objectID: blob.id,
-                                                              kind: .file, executable: false)], sha256: false)
-        let root = try GitTree.create(entries: [GitTreeEntry(name: "docs", objectID: docs.id,
-                                                              kind: .folder, executable: false)], sha256: false)
-        let commitData = Data(("tree \(root.id)\nparent \(server.oldCommitID)\n" +
-            "author Fixture <fixture@example.invalid> 1 +0000\n" +
-            "committer Fixture <fixture@example.invalid> 1 +0000\n\nPushed fixture\n").utf8)
-        let commit = GitObject.create(kind: .commit, data: commitData)
-        let result = try await GitPublisher(transport: transport).publish(
-            GitBuiltCommit(commit: commit, objects: [blob, docs, root, commit]),
-            branch: server.branch,
-            expectedOldID: server.oldCommitID
-        )
-        XCTAssertEqual(result, .accepted)
-        XCTAssertEqual(try server.revParse(server.branch), commit.id)
-        XCTAssertEqual(try server.readFile(branch: server.branch, path: "docs/pushed.md"), "pushed document\n")
-        try server.runFsck()
-        XCTAssertGreaterThan(credentialCalls.value, 0)
+        let sessionID = server.observations.beginSession(service: .uploadPack)
+        let writerStarted = expectation(description: "The fixture writer starts before stop")
+        let writerFinished = expectation(description: "The fixture writer finishes before stop")
+        let processFinished = expectation(description: "The Git process exits after stop")
+        let observer: @Sendable (RealGitSessionPhase) -> Void = { phase in
+            server.observations.mark(phase, for: sessionID)
+            if phase == .inputWriteStarted { writerStarted.fulfill() }
+            if phase == .inputWriteCompleted { writerFinished.fulfill() }
+        }
+        do {
+            let session = RealGitProcessSession(
+                service: .uploadPack,
+                repositoryPath: server.repositoryPath,
+                environment: [:],
+                phaseObserver: observer,
+                processExitObserver: server.observations.processExitObserver(for: sessionID)
+            )
+            try session.start(output: { _, _ in }, finished: { _ in
+                processFinished.fulfill()
+            })
+
+            // Leave the packet-line length incomplete. Git must remain alive
+            // waiting for its fourth byte, so the assertion below proves that
+            // stop terminates a live process rather than observing natural EOF.
+            session.write(Data("000".utf8))
+            await fulfillment(of: [writerStarted, writerFinished], timeout: 2)
+            XCTAssertTrue(session.isRunning, server.observations.diagnosticSummary)
+            session.stop()
+            await fulfillment(of: [processFinished], timeout: 5)
+            XCTAssertFalse(session.isRunning, server.observations.diagnosticSummary)
+        }
+
+        let diagnostic = try XCTUnwrap(server.observations.diagnostics.first)
+        XCTAssertTrue(diagnostic.phases.contains(.stopRequested), server.observations.diagnosticSummary)
+        XCTAssertTrue(diagnostic.phases.contains(.processInputClosed), server.observations.diagnosticSummary)
+        XCTAssertTrue(diagnostic.phases.contains(.processExited), server.observations.diagnosticSummary)
+        XCTAssertTrue(diagnostic.phases.contains(.streamsClosed), server.observations.diagnosticSummary)
+        XCTAssertTrue(diagnostic.terminated, server.observations.diagnosticSummary)
     }
 
     func testFileBackedNativeAuthRejectsAKeyOtherThanThePublishedOne() async throws {
@@ -683,22 +734,126 @@ private final class LoopbackSSHCommandHandler: ChannelDuplexHandler, @unchecked 
 /// A loopback server backed by a real bare Git repository.  The fixture server
 /// above is useful for deterministic wire cases; this server catches protocol
 /// regressions that only appear when Git itself parses the request and pack.
+private enum RealGitSessionPhase: String, Sendable {
+    case handlerInitialized
+    case handlerAdded
+    case environmentRequested
+    case execRequested
+    case commandResolved
+    case requestDataReceived
+    case requestDataBuffered
+    case processStartRequested
+    case processStarted
+    case stdoutAvailable
+    case stderrAvailable
+    case inputWriteStarted
+    case inputWriteCompleted
+    case processInputCloseQueued
+    case processInputClosed
+    case channelInputClosed
+    case stopRequested
+    case processExited
+    case streamsClosed
+    case channelInactive
+    case handlerFinished
+}
+
 private struct RealGitSSHObservation: Sendable {
     let service: GitSSHService
     let request: Data
+    let sessionID: Int?
+}
+
+private struct RealGitSessionDiagnostic: Sendable {
+    let id: Int
+    var service: GitSSHService?
+    var phases: [RealGitSessionPhase]
+    var terminationStatus: Int32?
+
+    var terminated: Bool { terminationStatus != nil }
 }
 
 private final class RealGitSSHObservations: @unchecked Sendable {
     private let lock = NSLock()
     private var storage: [RealGitSSHObservation] = []
+    private var nextSessionID = 0
+    private var sessions: [Int: RealGitSessionDiagnostic] = [:]
 
     var values: [RealGitSSHObservation] {
         lock.lock(); defer { lock.unlock() }
         return storage
     }
 
-    func append(service: GitSSHService, request: Data) {
-        lock.lock(); storage.append(RealGitSSHObservation(service: service, request: request)); lock.unlock()
+    var diagnostics: [RealGitSessionDiagnostic] {
+        lock.lock(); defer { lock.unlock() }
+        return sessions.values.sorted { $0.id < $1.id }
+    }
+
+    var diagnosticSummary: String {
+        diagnostics.map { diagnostic in
+            let service = diagnostic.service?.rawValue ?? "unknown"
+            let phases = diagnostic.phases.map(\.rawValue).joined(separator: ",")
+            let status = diagnostic.terminationStatus.map(String.init) ?? "running"
+            return "#\(diagnostic.id) service=\(service) phases=[\(phases)] exit=\(status)"
+        }.joined(separator: "; ")
+    }
+
+    func beginSession(service: GitSSHService? = nil) -> Int {
+        lock.lock(); defer { lock.unlock() }
+        let id = nextSessionID
+        nextSessionID += 1
+        sessions[id] = RealGitSessionDiagnostic(
+            id: id,
+            service: service,
+            phases: [.handlerInitialized],
+            terminationStatus: nil
+        )
+        return id
+    }
+
+    func observer(for sessionID: Int) -> @Sendable (RealGitSessionPhase) -> Void {
+        { [weak self] phase in
+            self?.mark(phase, for: sessionID)
+        }
+    }
+
+    func processExitObserver(for sessionID: Int) -> @Sendable (Int32) -> Void {
+        { [weak self] status in
+            self?.markProcessExited(status, for: sessionID)
+        }
+    }
+
+    func setService(_ service: GitSSHService, for sessionID: Int?) {
+        guard let sessionID else { return }
+        lock.lock(); defer { lock.unlock() }
+        sessions[sessionID]?.service = service
+    }
+
+    func mark(_ phase: RealGitSessionPhase, for sessionID: Int?) {
+        guard let sessionID else { return }
+        lock.lock(); defer { lock.unlock() }
+        guard var diagnostic = sessions[sessionID] else { return }
+        if !diagnostic.phases.contains(phase) {
+            diagnostic.phases.append(phase)
+            sessions[sessionID] = diagnostic
+        }
+    }
+
+    func markProcessExited(_ status: Int32, for sessionID: Int?) {
+        guard let sessionID else { return }
+        lock.lock(); defer { lock.unlock() }
+        guard var diagnostic = sessions[sessionID] else { return }
+        if !diagnostic.phases.contains(.processExited) {
+            diagnostic.phases.append(.processExited)
+        }
+        diagnostic.terminationStatus = status
+        sessions[sessionID] = diagnostic
+    }
+
+    func append(service: GitSSHService, request: Data, sessionID: Int? = nil) {
+        lock.lock()
+        storage.append(RealGitSSHObservation(service: service, request: request, sessionID: sessionID))
+        lock.unlock()
     }
 }
 
@@ -1433,14 +1588,20 @@ private final class RealGitProcessSession: @unchecked Sendable {
     private let inputQueue = DispatchQueue(label: "eu.pinedatec.LeonardoMD.real-ssh.git-input")
     private let completionQueue = DispatchQueue(label: "eu.pinedatec.LeonardoMD.real-ssh.git-completion")
     private let lock = NSLock()
+    private let phaseObserver: (@Sendable (RealGitSessionPhase) -> Void)?
+    private let processExitObserver: (@Sendable (Int32) -> Void)?
     private var inputClosed = false
     private var stopped = false
 
-    init(service: GitSSHService, repositoryPath: String, environment: [String: String]) {
+    init(service: GitSSHService, repositoryPath: String, environment: [String: String],
+         phaseObserver: (@Sendable (RealGitSessionPhase) -> Void)? = nil,
+         processExitObserver: (@Sendable (Int32) -> Void)? = nil) {
         process = Process()
         input = Pipe()
         output = Pipe()
         errors = Pipe()
+        self.phaseObserver = phaseObserver
+        self.processExitObserver = processExitObserver
         let executableService: String
         switch service {
         case .uploadPack: executableService = "upload-pack"
@@ -1456,15 +1617,30 @@ private final class RealGitProcessSession: @unchecked Sendable {
         process.standardError = errors
     }
 
+    private func mark(_ phase: RealGitSessionPhase) {
+        phaseObserver?(phase)
+    }
+
+    var isRunning: Bool {
+        process.isRunning
+    }
+
     func start(output: @escaping @Sendable (Data, Bool) -> Void,
                finished: @escaping @Sendable (Int32) -> Void) throws {
         try process.run()
+        mark(.processStarted)
 
         let streams: [(FileHandle, Bool)] = [(self.output.fileHandleForReading, false),
                                               (self.errors.fileHandleForReading, true)]
         let group = DispatchGroup()
+
+        // Enter every branch before starting any reader. A process that exits
+        // immediately must not let its readers reach zero before the waiter is
+        // registered, otherwise `notify` can run before process cleanup is
+        // represented by the group.
+        for _ in streams { group.enter() }
+        group.enter()
         for (handle, isError) in streams {
-            group.enter()
             DispatchQueue.global(qos: .userInitiated).async {
                 defer { group.leave() }
                 while true {
@@ -1474,17 +1650,20 @@ private final class RealGitProcessSession: @unchecked Sendable {
                     // session before the client can send its request.
                     let bytes = handle.availableData
                     guard !bytes.isEmpty else { break }
+                    self.mark(isError ? .stderrAvailable : .stdoutAvailable)
                     output(bytes, isError)
                 }
             }
         }
 
-        group.enter()
         DispatchQueue.global(qos: .userInitiated).async { [process] in
             process.waitUntilExit()
+            self.processExitObserver?(process.terminationStatus)
+            self.mark(.processExited)
             group.leave()
         }
         group.notify(queue: completionQueue) { [process] in
+            self.mark(.streamsClosed)
             finished(process.terminationStatus)
         }
     }
@@ -1493,19 +1672,20 @@ private final class RealGitProcessSession: @unchecked Sendable {
     /// chunk. This also keeps blocking Pipe writes away from the NIO event
     /// loop when Git is briefly busy producing a pack.
     func write(_ bytes: Data) {
-        inputQueue.async { [weak self] in
-            guard let self else { return }
+        inputQueue.async { [self] in
             self.lock.lock()
             let closed = self.inputClosed || self.stopped
             self.lock.unlock()
             guard !closed else { return }
+            self.mark(.inputWriteStarted)
             self.input.fileHandleForWriting.write(bytes)
+            self.mark(.inputWriteCompleted)
         }
     }
 
     func closeInput() {
-        inputQueue.async { [weak self] in
-            guard let self else { return }
+        self.mark(.processInputCloseQueued)
+        inputQueue.async { [self] in
             self.lock.lock()
             guard !self.inputClosed else {
                 self.lock.unlock()
@@ -1514,23 +1694,32 @@ private final class RealGitProcessSession: @unchecked Sendable {
             self.inputClosed = true
             self.lock.unlock()
             self.input.fileHandleForWriting.closeFile()
+            self.mark(.processInputClosed)
         }
     }
 
     func stop() {
-        inputQueue.async { [weak self] in
-            guard let self else { return }
-            self.lock.lock()
-            guard !self.stopped else {
-                self.lock.unlock()
-                return
-            }
-            self.stopped = true
-            let shouldCloseInput = !self.inputClosed
-            self.inputClosed = true
-            self.lock.unlock()
-            if shouldCloseInput { self.input.fileHandleForWriting.closeFile() }
-            if self.process.isRunning { self.process.terminate() }
+        lock.lock()
+        guard !stopped else {
+            lock.unlock()
+            return
+        }
+        stopped = true
+        let shouldCloseInput = !inputClosed
+        inputClosed = true
+        lock.unlock()
+
+        // Stop must bypass inputQueue. A previous Pipe.write can be blocked
+        // while Git is no longer reading; queueing termination behind it
+        // leaves the process and the test fixture alive until the outer test
+        // timeout.
+        mark(.stopRequested)
+        // Terminate first so a child that stopped reading releases a blocked
+        // Pipe.write before the writer's file handle is closed.
+        if process.isRunning { process.terminate() }
+        if shouldCloseInput {
+            input.fileHandleForWriting.closeFile()
+            mark(.processInputClosed)
         }
     }
 }
@@ -1544,6 +1733,7 @@ private final class RealGitSSHCommandHandler: ChannelDuplexHandler, @unchecked S
     private let repositoryPath: String
     private let commandPath: String
     private let observations: RealGitSSHObservations?
+    private let sessionID: Int?
     private var command = ""
     private var environment: [String: String] = [:]
     private var pendingRequest = Data()
@@ -1561,9 +1751,15 @@ private final class RealGitSSHCommandHandler: ChannelDuplexHandler, @unchecked S
         self.repositoryPath = repositoryPath
         self.commandPath = commandPath ?? repositoryPath
         self.observations = observations
+        self.sessionID = observations?.beginSession()
+    }
+
+    private func mark(_ phase: RealGitSessionPhase) {
+        observations?.mark(phase, for: sessionID)
     }
 
     func handlerAdded(context: ChannelHandlerContext) {
+        mark(.handlerAdded)
         let eventLoop = context.eventLoop
         let loopBoundContext = NIOLoopBound(context, eventLoop: eventLoop)
         context.channel.setOption(ChannelOptions.allowRemoteHalfClosure, value: true).whenFailure { error in
@@ -1576,11 +1772,14 @@ private final class RealGitSSHCommandHandler: ChannelDuplexHandler, @unchecked S
     func userInboundEventTriggered(context: ChannelHandlerContext, event: Any) {
         switch event {
         case let event as SSHChannelRequestEvent.EnvironmentRequest:
+            mark(.environmentRequested)
             environment[event.name] = event.value
         case let event as SSHChannelRequestEvent.ExecRequest:
+            mark(.execRequested)
             command = event.command
             startProcess(context: context)
         case ChannelEvent.inputClosed:
+            mark(.channelInputClosed)
             inputClosed = true
             process?.closeInput()
         default:
@@ -1596,6 +1795,7 @@ private final class RealGitSSHCommandHandler: ChannelDuplexHandler, @unchecked S
             return
         }
         let bytes = Data(buffer.readableBytesView)
+        mark(.requestDataReceived)
         guard bytes.count <= maximumRequestBytes - requestBytes else {
             context.fireErrorCaught(GitSSHError.responseTooLarge)
             process?.stop()
@@ -1607,11 +1807,13 @@ private final class RealGitSSHCommandHandler: ChannelDuplexHandler, @unchecked S
         if let process {
             process.write(bytes)
         } else {
+            mark(.requestDataBuffered)
             pendingRequest.append(bytes)
         }
     }
 
     private func startProcess(context: ChannelHandlerContext) {
+        mark(.processStartRequested)
         guard !started, !command.isEmpty else { return }
         started = true
         guard let service = Self.service(for: command, repositoryPath: commandPath) else {
@@ -1620,8 +1822,21 @@ private final class RealGitSSHCommandHandler: ChannelDuplexHandler, @unchecked S
             return
         }
         self.service = service
-        let runner = RealGitProcessSession(service: service, repositoryPath: repositoryPath,
-                                           environment: environment)
+        observations?.setService(service, for: sessionID)
+        mark(.commandResolved)
+        let phaseObserver = sessionID.flatMap { sessionID in
+            observations.map { $0.observer(for: sessionID) }
+        }
+        let processExitObserver = sessionID.flatMap { sessionID in
+            observations.map { $0.processExitObserver(for: sessionID) }
+        }
+        let runner = RealGitProcessSession(
+            service: service,
+            repositoryPath: repositoryPath,
+            environment: environment,
+            phaseObserver: phaseObserver,
+            processExitObserver: processExitObserver
+        )
         process = runner
         let eventLoop = context.eventLoop
         let loopBoundContext = NIOLoopBound(context, eventLoop: eventLoop)
@@ -1673,7 +1888,8 @@ private final class RealGitSSHCommandHandler: ChannelDuplexHandler, @unchecked S
     private func finish(context: ChannelHandlerContext, status: Int32) {
         guard !finished else { return }
         finished = true
-        if let service { observations?.append(service: service, request: request) }
+        mark(.handlerFinished)
+        if let service { observations?.append(service: service, request: request, sessionID: sessionID) }
         process = nil
         let promise = context.eventLoop.makePromise(of: Void.self)
         context.triggerUserOutboundEvent(SSHChannelRequestEvent.ExitStatus(exitStatus: Int(status)), promise: promise)
@@ -1687,6 +1903,7 @@ private final class RealGitSSHCommandHandler: ChannelDuplexHandler, @unchecked S
     }
 
     func channelInactive(context: ChannelHandlerContext) {
+        mark(.channelInactive)
         process?.stop()
         process = nil
         context.fireChannelInactive()
