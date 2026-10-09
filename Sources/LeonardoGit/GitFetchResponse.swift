@@ -1,5 +1,4 @@
 import Foundation
-import CryptoKit
 
 /// Response to a fresh `fetch` with `done`, without existing shallow boundaries or URI requests.
 public struct GitFetchResponse: Sendable {
@@ -55,16 +54,9 @@ public struct GitFetchResponse: Sendable {
                 }
             }
         }
-        let checksumSize = capabilities.values["object-format"] == "sha256" ? 32 : 20
-        guard sawPack, state == .pack, pack.count >= 12 + checksumSize, pack.starts(with: Data("PACK".utf8)) else {
-            throw GitWireError.invalidPack
-        }
-        let version = pack[4..<8].reduce(UInt32(0)) { ($0 << 8) | UInt32($1) }
-        let count = pack[8..<12].reduce(UInt32(0)) { ($0 << 8) | UInt32($1) }
-        guard [2, 3].contains(version), count <= maximumObjects else { throw GitWireError.invalidPack }
-        let body = pack.dropLast(checksumSize)
-        let checksum = checksumSize == 32 ? Data(SHA256.hash(data: body)) : Data(Insecure.SHA1.hash(data: body))
-        guard pack.suffix(checksumSize) == checksum else { throw GitWireError.invalidPack }
+        guard sawPack, state == .pack else { throw GitWireError.invalidPack }
+        let count = try GitPackEnvelope.objectCount(in: pack, sha256: capabilities.values["object-format"] == "sha256",
+                                                   maximumBytes: maximumPackBytes, maximumObjects: maximumObjects)
         self.pack = pack
         self.shallowCommits = shallow
         self.objectCount = count

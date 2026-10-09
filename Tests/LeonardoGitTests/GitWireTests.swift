@@ -101,7 +101,7 @@ final class GitWireTests: XCTestCase {
             try project.write(path: "docs/new/deep.md", content: Data("created".utf8))
             try project.write(path: "docs/empty.md", content: Data())
             let identity = try GitCommitIdentity(name: "Mobile Fixture", email: "fixture@example.invalid", timestamp: 1_700_000_000)
-            let built = try GitCommitBuilder.build(project: project, metadata: metadata, identity: identity)
+            let built = try GitCommitBuilder.build(project: project, baseline: metadata.baseline, identity: identity)
             XCTAssertEqual(built.objects.filter { $0.kind == .blob }.count, 3)
             let pack = try GitPackWriter.encode(objects: built.objects, sha256: format == "sha256")
             _ = try git(["-C", root.path, "index-pack", "--stdin"], input: pack)
@@ -262,9 +262,10 @@ final class GitWireTests: XCTestCase {
         XCTAssertEqual(conflict, .requiresReconciliation)
         XCTAssertEqual(dirty.files[0].content, Data("# Local edit".utf8))
         let clean = try await refresher.refresh(original, connection: connection)
-        guard case .updated(let updated) = clean else { return XCTFail("Clean copy did not refresh") }
+        guard case .updated(let updated, let baseline) = clean else { return XCTFail("Clean copy did not refresh") }
         XCTAssertEqual(updated.files[0].content, Data("# Desktop edit".utf8))
         XCTAssertNotEqual(updated.base.revision, original.base.revision)
+        XCTAssertEqual(baseline.commitID, updated.base.revision)
         try dirty.markPublished(revision: String(repeating: "a", count: 40))
         let pending = try await refresher.refresh(dirty, connection: connection)
         XCTAssertEqual(pending, .awaitingIntegration)

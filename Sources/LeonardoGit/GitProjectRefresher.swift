@@ -3,7 +3,7 @@ import LeonardoSync
 
 public enum GitRefreshResult: Sendable, Equatable {
     case unchanged, localChanges, awaitingIntegration, requiresReconciliation
-    case updated(OfflineProject)
+    case updated(OfflineProject, baseline: GitBaseline)
 }
 
 /// Refresh never treats a changed remote tip as evidence of desktop reconciliation.
@@ -27,6 +27,6 @@ public struct GitProjectRefresher: Sendable {
         try Task.checkCancellation()
         var updated = project
         try updated.replaceGitSnapshot(snapshot)
-        return .updated(updated)
+        return .updated(updated, baseline: metadata.baseline)
     }
 }

@@ -4,7 +4,7 @@ Implementation tracking: [#92](https://github.com/PinedaTec-EU/LeonardoMD/issues
 
 ## Agreed product contract
 
-Each project chooses direct read-only synchronization or Git editing. Git projects may choose direct mode. Only the direct service requires the desktop and mobile to share a private local network; Git can operate over the Internet.
+Little Leonardo projects choose direct read-only synchronization or Git editing, including direct mode for an existing Git project. Desktop-to-desktop direct synchronization additionally supports offline editing/creation/deletion with manual reconciliation. Direct connections require an authorized private-network path (LAN, or configured VPN for desktop peers); Git can operate over the Internet. Desktop peer work is tracked in [#101](https://github.com/PinedaTec-EU/LeonardoMD/issues/101).
 
 The desktop service is explicitly enabled, off by default. Pairing supports a unique QR or IP/port and a cross-checked code. Projects are explicitly authorized. Device credentials stay in platform secure storage, outside portable configuration. Turning off the service retains mobile corpus; revocation requests deletion on the next reachable contact and rejects further document access. Offline deletion cannot be guaranteed before contact. Git copies are independent of direct revocation.
 
@@ -18,7 +18,7 @@ Send changes publishes a device-specific branch before sending an optional paire
 
 `LeonardoSync` is an independent shared SwiftPM library targeting macOS 14 and iOS 17. It currently contains corpus path/content limits, direct read-only and Git-editable offline state, atomic cache persistence and a project corpus reader with unsaved-buffer overlays. Its regression tests cover escapes, hidden/build exclusions, symlinks, case aliases, size limits, restart, deletion and later edits during integration.
 
-The native `Mobile/LittleLeonardo.xcodeproj` target builds for iPhone/iPad on iOS 17+. It loads cached projects, reads UTF-8 documents, blocks direct-mode editing with an explanation, and supports Git-mode offline creation/editing/deletion. A fresh process on iPhone 17 Pro Max / iOS 26.5 displayed both cached synthetic projects. This proves local corpus loading, not network or Git transfer. Pairing consent policy, hashed authorization metadata and the Keychain adapter are implemented. Their transport/UI wiring is pending. Desktop network-service lifecycle, pairing screens, credential-storage runtime validation, mobile revocation cleanup, real Git adapter, desktop reconciliation interface and end-to-end evidence remain pending. No partial-clone support is claimed for an iOS Git library until demonstrated with a large-repository fixture.
+The native iPhone/iPad target builds on iOS 17+. Direct enrollment, desktop consent/service lifecycle, persistent TLS identity, read-only offline corpus and mobile Markdown preview are implemented with focused TLS and native UI evidence. HTTPS Git supports explicit branch/folder enrollment and clean-copy refresh; dirty or sent work is retained. Native commit/tree rewriting and pack output pass actual Git SHA-1/SHA-256 validation. These are partial implementation results: full native import/revocation/reconciliation acceptance, successful mobile publication, SSH and desktop peer editing/reconciliation remain pending. Later checkpoints below record the evidence and limitations of each subsystem.
 
 ## Boundaries to retain
 
@@ -141,3 +141,13 @@ Two domain tests verify atomic rejection of dirty, sent, direct and out-of-scope
 Real Git accepts these objects through `index-pack` and `fsck --full` for SHA-1 and SHA-256. Tests verify edit/create/delete/empty-file behavior, executable permissions, unchanged code/link/submodule entries and Git tree ordering. Pack round trips test deduplication, large headers, empty blobs, tampered identifiers and object/pack bounds.
 
 This is local commit construction, not successful publication. The application must still persist baseline commit/tree metadata for sending after the remote branch advances, implement receive-pack negotiation/push/retry, save publication state only after confirmed acceptance and notify the desktop afterward. Desktop reconciliation and SSH remain pending.
+
+## Durable Git baseline checkpoint
+
+Baseline commit/tree objects are archived as bounded, checksummed packs under project ID and exact revision, with no file blobs or credentials. Loading verifies object hashes, object formats, complete tree dependencies and the requested commit identity. Import persists the baseline before exposing the corpus; clean refresh writes the new revision archive before saving the corpus, then removes unused older archives only after success. Interrupted refresh therefore leaves the previous corpus's baseline available.
+
+Three archive tests cover SHA-1/SHA-256, exact-revision reopening, explicit retention, unrelated-file preservation, corruption, wrong identity, missing trees, blob rejection and symlink/path guards. Fetch-envelope and actual remote-reader regressions also pass. Application commit construction now consumes the durable baseline independently of the current server capability advertisement. Publication/retry and desktop reconciliation still remain unfinished.
+
+## Desktop peer extension
+
+The owner confirmed [#101](https://github.com/PinedaTec-EU/LeonardoMD/issues/101): pair Mac Studio/MacBook Pro (or other LeonardoMD instances), select folders and/or individual documents, and retain an editable offline copy on connection loss. Desktop direct mode supports creation/editing/deletion; reconnection requires manual base/local/remote reconciliation, preserving unsaved buffers. LAN and explicitly configured VPN/private-overlay connections are in scope. Mobile direct mode remains read-only. Desktop peer transport/UI/domain work is not yet implemented; current private-address policy must be extended and verified for relevant VPN routing without implicit public-interface exposure.

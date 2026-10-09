@@ -20,8 +20,19 @@ public enum GitPack {
     private struct Entry { let offset: Int; let kind: GitObject.Kind?; let base: Base?; let data: Data }
 
     public static func decode(_ response: GitFetchResponse, sha256: Bool = false, limits: Limits = Limits()) throws -> [GitObject] {
+        try decodeValidated(pack: response.pack, objectCount: response.objectCount, sha256: sha256, limits: limits)
+    }
+
+    public static func decode(pack: Data, sha256: Bool = false, limits: Limits = Limits(),
+                              maximumPackBytes: Int = 64 * 1_024 * 1_024, maximumObjects: UInt32 = 100_000) throws -> [GitObject] {
+        let normalized = Data(pack)
+        let count = try GitPackEnvelope.objectCount(in: normalized, sha256: sha256, maximumBytes: maximumPackBytes, maximumObjects: maximumObjects)
+        return try decodeValidated(pack: normalized, objectCount: count, sha256: sha256, limits: limits)
+    }
+
+    private static func decodeValidated(pack: Data, objectCount: UInt32, sha256: Bool, limits: Limits) throws -> [GitObject] {
         guard limits.objectBytes >= 0, limits.totalBytes >= 0, limits.deltaDepth >= 0 else { throw GitWireError.responseTooLarge }
-        let entries = try read(response, sha256: sha256, limits: limits)
+        let entries = try read(pack: pack, objectCount: objectCount, sha256: sha256, limits: limits)
         var waiting: [Base: [Int]] = [:]
         var resolved: [Int: (GitObject, Int)] = [:]
         var queue: [Int] = []
@@ -55,8 +66,7 @@ public enum GitPack {
         }
     }
 
-    private static func read(_ response: GitFetchResponse, sha256: Bool, limits: Limits) throws -> [Entry] {
-        let pack = response.pack
+    private static func read(pack: Data, objectCount: UInt32, sha256: Bool, limits: Limits) throws -> [Entry] {
         let end = pack.count - (sha256 ? 32 : 20)
         guard end >= 12 else { throw GitWireError.invalidPack }
         var cursor = 12
@@ -66,7 +76,7 @@ public enum GitPack {
         }
         var entries: [Entry] = []
         var inflatedBytes = 0
-        for _ in 0..<response.objectCount {
+        for _ in 0..<objectCount {
             let offset = cursor
             var value = try byte()
             let type = (value >> 4) & 7

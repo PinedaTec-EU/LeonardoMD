@@ -68,7 +68,7 @@ final class MobileGitEnrollment {
             let project = try OfflineProject(name: name, mode: .git, scope: scope, snapshot: snapshot)
             let connection = try GitProjectConnection(projectID: project.id, endpoint: endpoint, branch: branch,
                                                       scope: scope, username: username.isEmpty ? nil : username)
-            let saved = await library.installGitProject(project, connection: connection, password: username.isEmpty ? nil : password)
+            let saved = await library.installGitProject(project, connection: connection, baseline: metadata.baseline, password: username.isEmpty ? nil : password)
             if saved { password = "" }
             return saved
         } catch { report(error); return false }

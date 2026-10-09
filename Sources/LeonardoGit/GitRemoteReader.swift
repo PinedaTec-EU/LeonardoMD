@@ -7,9 +7,10 @@ public struct GitRemoteDiscovery: Sendable {
 }
 
 public struct GitRepositoryMetadata: Sendable {
-    public let commitID: String
-    public let index: GitFolderIndex
-    public let objects: [GitObject]
+    public let baseline: GitBaseline
+    public var commitID: String { baseline.commitID }
+    public var index: GitFolderIndex { baseline.index }
+    public var objects: [GitObject] { baseline.objects }
     fileprivate let capabilities: GitV2Capabilities
 }
 
@@ -31,8 +32,7 @@ public struct GitRemoteReader: Sendable {
         let response = try await transport.uploadPack(request: caps.metadataRequest(want: commitID))
         let objects = try decode(response, capabilities: caps)
         guard objects.allSatisfy({ $0.kind == .commit || $0.kind == .tree }) else { throw GitWireError.invalidPack }
-        return GitRepositoryMetadata(commitID: commitID, index: try GitFolderIndex(objects: objects, commitID: commitID),
-                                     objects: objects, capabilities: caps)
+        return GitRepositoryMetadata(baseline: try GitBaseline(commitID: commitID, objects: objects), capabilities: caps)
     }
 
     public func snapshot(metadata: GitRepositoryMetadata, scope: CorpusScope,

@@ -22,6 +22,7 @@ final class MobileLibrary {
     private let store: OfflineCorpusStore
     private let connectionURL: URL
     private let gitConnections: GitConnectionStore
+    private let gitBaselines: GitBaselineStore
     private let gitCredentials = GitCredentialStore()
     private let credentials = SecureCredentialStore()
     private var connections: [MobileDirectConnection] = []
@@ -33,6 +34,7 @@ final class MobileLibrary {
         store = OfflineCorpusStore(root: root)
         connectionURL = root.deletingLastPathComponent().appendingPathComponent("connections.json")
         gitConnections = GitConnectionStore(root: root.deletingLastPathComponent().appendingPathComponent("GitConnections"))
+        gitBaselines = GitBaselineStore(root: root.deletingLastPathComponent().appendingPathComponent("GitBaselines"))
     }
 
     func reload() async {
@@ -143,9 +145,11 @@ final class MobileLibrary {
                 let transport = try GitHTTPTransport(endpoint: connection.endpoint, username: connection.username, password: password)
                 let result = try await GitProjectRefresher(transport: transport).refresh(project, connection: connection)
                 switch result {
-                case .updated(let updated):
+                case .updated(let updated, let baseline):
+                    try await gitBaselines.save(baseline, projectID: project.id)
                     try await store.save(updated)
                     if let index = projects.firstIndex(where: { $0.id == project.id }) { projects[index] = updated }
+                    try await gitBaselines.retain(projectID: project.id, revision: updated.base.revision)
                     gitStatus[project.id] = "Sincronizado"
                 case .unchanged: gitStatus[project.id] = "Sincronizado"
                 case .localChanges: gitStatus[project.id] = "Cambios locales pendientes de enviar"
@@ -170,15 +174,16 @@ final class MobileLibrary {
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: connectionURL.path)
     }
 
-    func installGitProject(_ project: OfflineProject, connection: GitProjectConnection, password: String?) async -> Bool {
+    func installGitProject(_ project: OfflineProject, connection: GitProjectConnection, baseline: GitBaseline, password: String?) async -> Bool {
         guard !connecting, savingProjects.isEmpty, project.mode == .git,
-              project.id == connection.projectID, project.scope == connection.scope,
+              project.id == connection.projectID, project.scope == connection.scope, project.base.revision == baseline.commitID,
               !projects.contains(where: { $0.id == project.id }) else { return false }
         savingProjects.insert(project.id)
         defer { savingProjects.remove(project.id) }
         do {
             try Task.checkCancellation()
             if let password { try await gitCredentials.save(password, projectID: project.id) }
+            try await gitBaselines.save(baseline, projectID: project.id)
             try await gitConnections.save(connection)
             try await store.save(project)
             projects.append(project)
@@ -187,6 +192,7 @@ final class MobileLibrary {
         } catch {
             do {
                 try await store.remove(id: project.id)
+                try await gitBaselines.remove(projectID: project.id)
                 try await gitConnections.remove(id: project.id)
                 try await gitCredentials.remove(projectID: project.id)
             }
