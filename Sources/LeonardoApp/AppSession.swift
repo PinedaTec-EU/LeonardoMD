@@ -3,6 +3,7 @@ import SwiftUI
 import Observation
 import LeonardoCore
 import LeonardoSync
+import LeonardoDesktopSync
 import LeonardoRender
 import OSLog
 
@@ -13,7 +14,16 @@ final class AppSession {
     var showWorkspace = false
     var documentURL: URL?
     var projectURL: URL?
-    var content = ""
+    private var documentContent = ""
+    var content: String {
+        get { documentContent }
+        set {
+            guard !isSyncSuspended || syncUpdatingBuffer else { return }
+            documentContent = newValue
+        }
+    }
+    var syncUpdatingBuffer = false
+    var isSyncSuspended: Bool { NativeReconciliationLease.shared.holds(documentURL) || NativeReconciliationLease.shared.holds(projectURL) }
     var mode: DocumentMode = .preview
     var focus = false
     var showInspector = false
@@ -45,7 +55,9 @@ final class AppSession {
     var openDroppedDocuments: (([URL]) async -> Void)?
     var updateWindow: ((String, URL?, Bool) -> Void)?
     var authorizePath: @MainActor (URL, DesktopPeerPathIntent) async throws -> Void = { url, intent in
+        try NativeReconciliationLease.shared.check(url, intent: intent)
         try await DesktopPeerController.shared.authorize(url, intent: intent)
+        try NativeReconciliationLease.shared.check(url, intent: intent)
     }
     var entryFilter: @MainActor (URL) async throws -> (@Sendable (URL, Bool) -> Bool) = { url in
         try await DesktopPeerController.shared.entryFilter(in: url)
@@ -163,6 +175,7 @@ final class AppSession {
     }
 
     func openDocument(_ url: URL, line: Int? = nil) async {
+        guard !isSyncSuspended else { return }
         do { try await authorizePath(url, .document) } catch { report(error); return }
         guard !stopped else { return }
         if activateExistingDocument?(url, line) == true {
@@ -180,7 +193,7 @@ final class AppSession {
         defer { busy = false }
         do {
             let loaded = try await documents.read(url)
-            guard !stopped else { return }
+            guard !stopped, !isSyncSuspended, !NativeReconciliationLease.shared.holds(url) else { return }
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             documentURL = url
             snapshot = loaded
@@ -198,7 +211,7 @@ final class AppSession {
     }
 
     func contentChanged() {
-        guard !stopped, snapshot != nil else { return }
+        guard !stopped, !isSyncSuspended, snapshot != nil else { return }
         saveStatus = isDirty ? "Pending changes" : "Saved · local file"
         updateTitle()
         saveTask?.cancel()
@@ -210,7 +223,7 @@ final class AppSession {
     }
 
     func save() async {
-        guard !stopped, !saving, isDirty, let snapshot, let url = documentURL, !externalConflict else { return }
+        guard !stopped, !isSyncSuspended, !saving, isDirty, let snapshot, let url = documentURL, !externalConflict else { return }
         saving = true
         saveStatus = "Saving…"
         let draft = content
@@ -231,6 +244,7 @@ final class AppSession {
     }
 
     func prepareNavigation(allowGitOperation: Bool = false) async -> Bool {
+        guard !isSyncSuspended else { return false }
         guard !gitBusy || allowGitOperation else {
             errorMessage = L10n.text("Wait for this project's Git operation to finish before switching documents.")
             return false
@@ -248,7 +262,10 @@ final class AppSession {
     }
 
     func reloadFromDisk() async {
+        guard !isSyncSuspended, !busy, !saving else { return }
         guard let url = documentURL else { return }
+        busy = true
+        defer { busy = false }
         if isDirty {
             let alert = NSAlert()
             alert.messageText = L10n.text("Discard your edits and reload the file?")
@@ -259,7 +276,7 @@ final class AppSession {
         let previousContent = content
         do {
             let loaded = try await documents.read(url)
-            guard documentURL == url else { return }
+            guard !stopped, !isSyncSuspended, documentURL == url else { return }
             guard content == previousContent else {
                 externalConflict = true
                 saveStatus = "External conflict · edits protected"
@@ -274,6 +291,7 @@ final class AppSession {
     }
 
     func checkExternalChanges() async {
+        guard !isSyncSuspended else { return }
         if settingsTask == nil { do {
             let preferences = try await configurations.loadGlobalPreferences(at: globalPreferencesURL)
             if settingsTask == nil {
@@ -309,7 +327,9 @@ final class AppSession {
         monitorTask?.cancel()
     }
     func report(_ error: Error) {
-        if let syncError = error as? SyncError, syncError == .outsideScope {
+        if case DesktopRuntimeError.busy = error {
+            errorMessage = L10n.text("Synchronization is applying changes. Try again when it finishes.")
+        } else if let syncError = error as? SyncError, syncError == .outsideScope {
             errorMessage = L10n.text("This item is outside the content selected on the source Mac.")
         } else if let syncError = error as? SyncError, syncError == .revoked {
             errorMessage = L10n.text("Access to this linked copy was revoked.")

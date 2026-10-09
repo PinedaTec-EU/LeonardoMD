@@ -94,14 +94,20 @@ public actor DesktopDirectRuntime {
     /// Native owner only. Call while holding exclusive editor ownership of projectRoot.
     public func acceptIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload, review: DesktopPeerProposalReview,
         decisions: [String: ReconciliationChoice], projectRoot: URL, currentSource: CorpusSnapshot, currentDisk: CorpusSnapshot) async throws -> DesktopPeerProposalReceipt {
+        try await applyIncomingProposal(deviceID: deviceID, upload: upload, review: review, decisions: decisions,
+            projectRoot: projectRoot, currentSource: currentSource, currentDisk: currentDisk).receipt
+    }
+
+    public func applyIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload, review: DesktopPeerProposalReview,
+        decisions: [String: ReconciliationChoice], projectRoot: URL, currentSource: CorpusSnapshot, currentDisk: CorpusSnapshot) async throws -> DesktopPeerAcceptanceResult {
         guard !transitioning, let authority else { throw DesktopRuntimeError.notRunning }
         transitioning = true
         defer { transitioning = false }
         let acceptance = self.acceptance
-        return try await authority.withOwnerApplication(deviceID: deviceID, upload: upload) { proposal, sourceRoot in
+        return try await authority.withOwnerApplicationResult(deviceID: deviceID, upload: upload) { proposal, sourceRoot in
             guard sourceRoot == projectRoot.standardizedFileURL.resolvingSymlinksInPath() else { throw SyncError.invalidSnapshot }
             guard proposal == review.proposal else { throw ReconciliationError.staleComparison }
-            return try await acceptance.accept(deviceID: deviceID, review: review, decisions: decisions,
+            return try await acceptance.apply(deviceID: deviceID, review: review, decisions: decisions,
                 projectRoot: projectRoot, currentSource: currentSource, currentDisk: currentDisk)
         }
     }

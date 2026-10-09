@@ -29,10 +29,15 @@ public struct GitBuiltCommit: Sendable {
 
 public enum GitCommitBuilder {
     public static func build(project: OfflineProject, baseline: GitBaseline, identity: GitCommitIdentity,
-                             message: String = "Little Leonardo changes") throws -> GitBuiltCommit {
+                             message: String = "Little Leonardo changes",
+                             publication: GitPublicationMetadata? = nil) throws -> GitBuiltCommit {
         guard project.mode == .git, project.hasLocalChanges, project.publication != .sent,
               project.base.revision == baseline.commitID, !message.isEmpty, message.utf8.count <= 4_096,
               !message.contains("\0") else { throw SyncError.publicationPending }
+        if let publication {
+            guard publication.projectID == project.id, publication.baseRevision == baseline.commitID,
+                  publication.scope == project.scope else { throw SyncError.invalidSnapshot }
+        }
         try project.base.validate(scope: project.scope, limits: CorpusLimits())
         try CorpusSnapshot(revision: project.base.revision, files: project.files).validate(scope: project.scope, limits: CorpusLimits())
         guard let parent = baseline.objects.first(where: { $0.id == baseline.commitID }), parent.kind == .commit,
@@ -46,7 +51,13 @@ public enum GitCommitBuilder {
         let changes = paths.map { GitTreePatch.Change(components: $0.split(separator: "/").map(String.init), content: local[$0]) }
         var patch = GitTreePatch(trees: trees, sha256: baseline.commitID.count == 64)
         let root = try patch.apply(treeID: String(header.dropFirst(5)), changes: changes)
-        let data = Data("tree \(root.id)\nparent \(baseline.commitID)\nauthor \(identity.header)\ncommitter \(identity.header)\n\n\(message)\n".utf8)
+        // Git's fsck requires author/committer before extension headers. Keep
+        // publication metadata in the commit object, after the standard header
+        // block, so receive-pack accepts the published commit.
+        var headers = ["tree \(root.id)", "parent \(baseline.commitID)",
+                       "author \(identity.header)", "committer \(identity.header)"]
+        if let publication { headers.append(contentsOf: publication.commitHeaders) }
+        let data = Data((headers.joined(separator: "\n") + "\n\n\(message)\n").utf8)
         let commit = GitObject.create(kind: .commit, data: data, sha256: baseline.commitID.count == 64)
         return GitBuiltCommit(commit: commit, objects: patch.objects + [commit])
     }

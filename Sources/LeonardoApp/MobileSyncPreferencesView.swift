@@ -59,6 +59,20 @@ struct MobileSyncPreferencesView: View {
                     }
                 }
             }
+            Section(L10n.text("Incoming changes")) {
+                if controller.incoming.isEmpty { Text(L10n.text("No proposals awaiting review")).foregroundStyle(.secondary) }
+                ForEach(controller.incoming) { item in
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(item.deviceName)
+                            Text(controller.settings.projects.first(where: { $0.id == item.upload.projectID })?.name ?? item.upload.projectID.uuidString)
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button(L10n.text("Review changes")) { Task { await controller.reviewProposal(item) } }
+                    }
+                }
+            }
             Section(L10n.text("Linked devices")) {
                 ForEach(controller.consent.devices) { device in
                     HStack {
@@ -76,6 +90,7 @@ struct MobileSyncPreferencesView: View {
                 do { try await Task.sleep(for: .seconds(2)) } catch { return }
             }
         }
+        .sheet(item: $controller.reviewing) { value in DesktopSourceReviewView(controller: controller, value: value) }
         .sheet(item: $approving) { request in PairingConsentView(controller: controller, request: request) }
         .sheet(isPresented: $selectingContent) {
             if let root = session.projectURL { SharedProjectSelectionView(root: root, controller: controller) }

@@ -14,8 +14,11 @@ struct DesktopSharedCorpus {
         let reader = ProjectCorpusReader()
         let collect = buffers
         return SharedProjectSource(descriptor: descriptor, rootURL: root) {
+            guard await MainActor.run(body: { !NativeReconciliationLease.shared.holds(root) }) else { throw DirectAuthorityError.busy }
             let drafts = await collect(root).filter { selection.contains($0.path) }
-            return try await reader.snapshot(root: root, selection: selection, buffers: drafts)
+            let snapshot = try await reader.snapshot(root: root, selection: selection, buffers: drafts)
+            guard await MainActor.run(body: { !NativeReconciliationLease.shared.holds(root) }) else { throw DirectAuthorityError.busy }
+            return snapshot
         }
     }
 }

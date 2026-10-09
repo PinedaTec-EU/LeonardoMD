@@ -111,7 +111,7 @@ extension AppSession {
         } catch { report(error) }
     }
     func performGit(_ action: GitAction) {
-        guard !gitBusy, let git else { return }
+        guard !isSyncSuspended, !gitBusy, let git else { return }
         gitBusy = true
         logger.info("git_operation_started operation=\(action.name, privacy: .public)")
         Task {

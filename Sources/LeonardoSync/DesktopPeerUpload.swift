@@ -33,6 +33,21 @@ public struct DesktopPeerUploadProgress: Codable, Equatable, Sendable {
     }
 }
 
+/// Small proof sent after the client has durably incorporated an exact receipt. The request
+/// path binds device, project and proposal; the server checks these values against its receipt.
+public struct DesktopPeerReceiptAcknowledgement: Codable, Equatable, Sendable {
+    public let acceptedRevision: String
+    public let acceptedDigest: String
+
+    public init(receipt: DesktopPeerProposalReceipt) throws {
+        guard receipt.accepted.revision.utf8.count <= 4_096 else { throw SyncError.invalidSnapshot }
+        acceptedRevision = receipt.accepted.revision
+        acceptedDigest = CorpusRevision.make(files: receipt.accepted.files)
+    }
+
+    private enum CodingKeys: String, CodingKey { case acceptedRevision, acceptedDigest }
+}
+
 public struct DesktopPeerUploadChunk: Codable, Sendable {
     public let upload: DesktopPeerUpload
     public let offset: Int
@@ -48,6 +63,11 @@ public protocol DesktopPeerUploadStore: Sendable {
     func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws
     func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) async throws -> DesktopPeerUpload?
     func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> DesktopPeerProposal
+    /// Permanently closes the exact accepted upload slot while retaining a tombstone that
+    /// prevents a stale in-flight request from recreating it. The store resolves the full
+    /// descriptor from its manifest/tombstone so a repeated HTTP ACK remains idempotent even
+    /// though the wire proof intentionally carries only the accepted receipt identity.
+    func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) async throws
 }
 
 public struct DesktopPeerIncomingProposal: Sendable, Identifiable {

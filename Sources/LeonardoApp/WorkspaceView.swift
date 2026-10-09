@@ -141,6 +141,7 @@ struct WorkspaceView: View {
     private var editor: some View {
         MarkdownEditor(text: $session.content, scrollFraction: $session.editorScroll, requestedLine: session.requestedLine)
             .id(session.documentURL)
+            .disabled(session.isSyncSuspended)
             .onChange(of: session.content) { _, _ in session.contentChanged() }
     }
     private var statusBar: some View {

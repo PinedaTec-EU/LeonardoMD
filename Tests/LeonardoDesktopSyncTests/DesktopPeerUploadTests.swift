@@ -74,6 +74,50 @@ final class DesktopPeerUploadTests: XCTestCase {
         catch { XCTAssertEqual(error as? SyncError, .invalidPath) }
         XCTAssertEqual(try Data(contentsOf: external), Data("untouched".utf8))
     }
+
+    func testAcknowledgementClosesExactSlotAndTombstoneBlocksStaleRequests() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let deviceID = UUID(), projectID = UUID()
+        let selection = try CorpusSelection(folders: ["docs"], documents: [])
+        let proposal = try DesktopPeerProposal(projectID: projectID, selection: selection,
+            base: CorpusSnapshot(revision: "base", files: []), proposed: CorpusSnapshot(revision: "proposal", files: []))
+        let bytes = try JSONEncoder().encode(proposal)
+        let upload = try descriptor(proposal, bytes: bytes)
+        let store = FileDesktopPeerUploadStore(root: root)
+        _ = try await store.begin(deviceID: deviceID, upload: upload, selection: selection)
+        _ = try await store.append(deviceID: deviceID, upload: upload, offset: 0, bytes: bytes, selection: selection)
+        try await store.submit(deviceID: deviceID, upload: upload, selection: selection)
+        try await store.acknowledge(deviceID: deviceID, projectID: projectID, proposalID: proposal.id, selection: selection)
+        try await store.acknowledge(deviceID: deviceID, projectID: projectID, proposalID: proposal.id, selection: selection)
+        let pendingAfterAcknowledgement = try await store.pending(deviceID: deviceID, projectID: projectID, selection: selection)
+        XCTAssertNil(pendingAfterAcknowledgement)
+        do { _ = try await store.begin(deviceID: deviceID, upload: upload, selection: selection); XCTFail("Acknowledged proposal recreated") }
+        catch { XCTAssertEqual(error as? SyncError, .publicationPending) }
+
+        // A partial cleanup can leave a payload after manifest.json is gone.
+        // The durable tombstone must authorize clearing that orphan before a
+        // later proposal may reuse the device/project staging slot.
+        let directory = root.appendingPathComponent(deviceID.uuidString).appendingPathComponent(projectID.uuidString)
+        try Data([1]).write(to: directory.appendingPathComponent("payload.json"))
+
+        let next = try DesktopPeerProposal(projectID: projectID, selection: selection,
+            base: proposal.base, proposed: proposal.proposed)
+        let nextBytes = try JSONEncoder().encode(next)
+        let nextUpload = try descriptor(next, bytes: nextBytes)
+        do { _ = try await store.begin(deviceID: deviceID, upload: nextUpload, selection: selection); XCTFail("Orphan stage was reused") }
+        catch { XCTAssertEqual(error as? SyncError, .publicationPending) }
+        try await store.acknowledge(deviceID: deviceID, projectID: projectID, proposalID: proposal.id, selection: selection)
+        _ = try await store.begin(deviceID: deviceID, upload: nextUpload, selection: selection)
+        let nextOffset = try await store.append(deviceID: deviceID, upload: nextUpload, offset: 0, bytes: nextBytes, selection: selection)
+        XCTAssertEqual(nextOffset, nextBytes.count)
+        do { _ = try await store.append(deviceID: deviceID, upload: upload, offset: 0, bytes: bytes, selection: selection); XCTFail("Stale append recreated the accepted slot") }
+        catch { XCTAssertEqual(error as? SyncError, .invalidSnapshot) }
+        try await store.submit(deviceID: deviceID, upload: nextUpload, selection: selection)
+        try await store.acknowledge(deviceID: deviceID, projectID: projectID, proposalID: next.id, selection: selection)
+        do { _ = try await store.begin(deviceID: deviceID, upload: upload, selection: selection); XCTFail("Historical tombstone was discarded") }
+        catch { XCTAssertEqual(error as? SyncError, .publicationPending) }
+    }
     private func descriptor(_ proposal: DesktopPeerProposal, bytes: Data) throws -> DesktopPeerUpload {
         try DesktopPeerUpload(proposalID: proposal.id, projectID: proposal.projectID, byteCount: bytes.count,
             sha256: SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined())

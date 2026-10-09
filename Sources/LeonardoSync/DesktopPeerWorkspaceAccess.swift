@@ -11,5 +11,6 @@ public protocol DesktopPeerWorkspaceAccess: Sendable {
     func install(_ copy: DesktopPeerCopy) async throws -> URL
     func open(id: UUID) async throws -> URL
     func capture(id: UUID, buffers: [OpenDocumentBuffer]) async throws -> DesktopPeerCopy
+    func captureDisk(id: UUID) async throws -> CorpusSnapshot
     func remove(id: UUID) async throws
 }

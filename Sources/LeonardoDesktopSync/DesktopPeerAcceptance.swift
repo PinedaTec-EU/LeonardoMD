@@ -28,6 +28,12 @@ public actor DesktopPeerAcceptance {
 
     public func accept(deviceID: UUID, review: DesktopPeerProposalReview, decisions: [String: ReconciliationChoice],
                        projectRoot: URL, currentSource: CorpusSnapshot, currentDisk: CorpusSnapshot) async throws -> DesktopPeerProposalReceipt {
+        try await apply(deviceID: deviceID, review: review, decisions: decisions, projectRoot: projectRoot,
+            currentSource: currentSource, currentDisk: currentDisk).receipt
+    }
+
+    public func apply(deviceID: UUID, review: DesktopPeerProposalReview, decisions: [String: ReconciliationChoice],
+                       projectRoot: URL, currentSource: CorpusSnapshot, currentDisk: CorpusSnapshot) async throws -> DesktopPeerAcceptanceResult {
         try enter(); defer { busy = false }
         let proposal = review.proposal
         let root = projectRoot.standardizedFileURL.resolvingSymlinksInPath()
@@ -38,7 +44,7 @@ public actor DesktopPeerAcceptance {
                 try FileManager.default.removeItem(at: file)
                 throw ReconciliationError.staleComparison
             }
-            return receipt
+            return DesktopPeerAcceptanceResult(receipt: receipt, appliedNow: false)
         }
         let accepted = try review.resolve(decisions, currentSource: currentSource, revision: "accepted-" + UUID().uuidString)
         let transactionID = try await transactions.prepare(projectRoot: root, selection: proposal.selection, before: currentDisk, after: accepted)
@@ -47,7 +53,7 @@ public actor DesktopPeerAcceptance {
         // Binding is durable before source mutation; a receipt write failure leaves recoverable proof.
         try PrivateDesktopFile.write(JSONEncoder().encode(intent), to: file)
         let persisted = try await transactions.apply(id: transactionID, projectRoot: root)
-        return try await record(intent, persisted: persisted)
+        return try await DesktopPeerAcceptanceResult(receipt: record(intent, persisted: persisted), appliedNow: true)
     }
 
     public func recover(deviceID: UUID, projectID: UUID, proposalID: UUID, projectRoot: URL, selection: CorpusSelection) async throws -> DesktopPeerProposalReceipt? {

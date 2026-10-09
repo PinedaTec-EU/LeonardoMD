@@ -23,6 +23,21 @@ public struct DesktopPeerProposalClient: Sendable {
         try selection.validate(receipt.accepted)
         return receipt
     }
+
+    public func acknowledge(_ proposal: DesktopPeerProposal, receipt: DesktopPeerProposalReceipt,
+                            deviceID: UUID, credential: String) async throws {
+        guard receipt.proposalID == proposal.id, receipt.projectID == proposal.projectID else {
+            throw SyncError.invalidSnapshot
+        }
+        try proposal.selection.validate(receipt.accepted)
+        let proof = try DesktopPeerReceiptAcknowledgement(receipt: receipt)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        let path = "/v1/devices/\(deviceID.uuidString)/projects/\(proposal.projectID.uuidString)/proposals/\(proposal.id.uuidString)/ack"
+        let response = try await client.request(method: "POST", path: path, credential: credential, body: encoder.encode(proof))
+        if response.status == 403 { throw DesktopPeerProposalTransportError.accessDenied }
+        guard response.status == 200 || response.status == 204 else { throw TransportError.unexpectedResponse }
+    }
     public func submit(_ proposal: DesktopPeerProposal, deviceID: UUID, credential: String) async throws {
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         let bytes = try encoder.encode(proposal)

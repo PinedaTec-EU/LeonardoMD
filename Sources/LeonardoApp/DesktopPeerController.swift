@@ -45,12 +45,15 @@ final class DesktopPeerController {
         if let library { self.library = library }
         else {
             let copies = FileDesktopPeerCopyStore(root: root.appendingPathComponent("Copies", isDirectory: true))
+            let receiptIntents = FileDesktopPeerReceiptIntentStore(root: root.appendingPathComponent("ReceiptIntents", isDirectory: true))
             self.library = DesktopPeerLibrary(
                 connections: FileDesktopPeerConnectionStore(root: root.appendingPathComponent("Connections", isDirectory: true)),
                 copies: copies, workspace: DesktopPeerWorkspace(root: workingRoot, copies: copies),
                 credentials: SecureCredentialStore(service: "eu.pinedatec.LeonardoMD.desktop-peers"),
                 remote: DesktopPeerHTTPSRemote(), revoker: revoker,
-                outbox: FileDesktopPeerOutboxStore(root: root.appendingPathComponent("Outbox", isDirectory: true)))
+                outbox: FileDesktopPeerOutboxStore(root: root.appendingPathComponent("Outbox", isDirectory: true)),
+                receiptApplier: DesktopPeerReceiptApplier(workingRoot: workingRoot, copies: copies,
+                    intents: receiptIntents))
         }
     }
 
@@ -147,6 +150,13 @@ final class DesktopPeerController {
         do {
             let root = workingRoot.appendingPathComponent(id.uuidString, isDirectory: true)
             let selection = copies.first { $0.id == id }?.selection
+            if let copy = copies.first(where: { $0.id == id }),
+               let receipt = try await library.pendingReceipt(copyID: id) {
+                _ = try await NativeReconciliationLease.shared.run(projectRoot: root, selection: copy.selection) {
+                    let selected = self.buffers(root).filter { copy.selection.contains($0.path) }
+                    return try await self.library.acknowledge(copyID: id, receipt: receipt, buffers: selected)
+                }
+            }
             let selected = buffers(root).filter { selection?.contains($0.path) == true }
             if try await library.send(copyID: id, buffers: selected) != nil { submitted.insert(id) }
             else { unchanged.insert(id) }

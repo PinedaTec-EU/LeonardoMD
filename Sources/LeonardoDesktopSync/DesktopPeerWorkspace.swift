@@ -53,6 +53,18 @@ public actor DesktopPeerWorkspace: DesktopPeerWorkspaceAccess {
         return copy
     }
 
+    /// Captures only persisted bytes. Open editor buffers are intentionally excluded so
+    /// receipt integration can tell a later disk save from an editor draft.
+    public func captureDisk(id: UUID) async throws -> CorpusSnapshot {
+        guard !changing else { throw DesktopPeerWorkspaceError.busy }
+        changing = true
+        defer { changing = false }
+        guard let copy = try await copies.load(id: id) else { throw DesktopPeerWorkspaceError.unknownCopy }
+        let directory = try workspaceURL(id)
+        guard FileManager.default.fileExists(atPath: directory.path) else { throw DesktopPeerWorkspaceError.unknownCopy }
+        return try await reader.snapshot(root: directory, selection: copy.selection)
+    }
+
     public func remove(id: UUID) async throws {
         guard !changing else { throw DesktopPeerWorkspaceError.busy }
         changing = true

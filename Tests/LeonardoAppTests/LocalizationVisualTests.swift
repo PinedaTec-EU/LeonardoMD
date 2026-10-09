@@ -10,6 +10,34 @@ import XCTest
 /// single-instance application or touch another running editor.
 @MainActor
 final class LocalizationVisualTests: XCTestCase {
+    func testCaptureIncomingSourceReviewInBothLanguages() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_LOCALIZATION_EVIDENCE"] else {
+            throw XCTSkip("Set LEONARDO_LOCALIZATION_EVIDENCE to export native interface captures")
+        }
+        let fixture = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: fixture) }
+        let controller = DesktopSyncController(preferencesURL: fixture.appendingPathComponent("preferences.json"))
+        let session = AppSession(preferencesURL: fixture.appendingPathComponent("preferences.json"))
+        defer { session.stop() }
+        let selection = try CorpusSelection(folders: ["docs"], documents: [])
+        let base = CorpusSnapshot(revision: "base", files: [CorpusFile(path: "docs/notes.md", content: Data("# Notes\n\nOriginal paragraph.\n".utf8))])
+        let source = CorpusSnapshot(revision: "source", files: [CorpusFile(path: "docs/notes.md", content: Data("# Notes\n\nCurrent Mac draft.\n".utf8), isUnsavedBuffer: true)])
+        let incoming = CorpusSnapshot(revision: "incoming", files: [CorpusFile(path: "docs/notes.md", content: Data("# Notes\n\nIncoming Mac changes.\n".utf8))])
+        let proposal = try DesktopPeerProposal(projectID: UUID(), selection: selection, base: base, proposed: incoming)
+        let upload = try DesktopPeerUpload(proposalID: proposal.id, projectID: proposal.projectID, byteCount: 1, sha256: String(repeating: "a", count: 64))
+        let value = try DesktopSourceReview(item: DesktopPeerIncomingProposal(deviceID: UUID(), deviceName: "MacBook Pro", upload: upload), review: DesktopPeerProposalReview(proposal: proposal, source: source))
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        let destination = URL(fileURLWithPath: path, isDirectory: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let host = NSHostingView(rootView: DesktopSourceReviewView(controller: controller, value: value).modifier(SessionAppearance(session: session)).background(Color(nsColor: .windowBackgroundColor)))
+            try await capture(host, size: NSSize(width: 960, height: 660),
+                to: destination.appendingPathComponent("desktop-source-review-\(language.rawValue).png"), settlingMilliseconds: 600)
+        }
+    }
+
     func testCaptureDesktopPeerPreferencesInBothLanguages() async throws {
         guard let path = ProcessInfo.processInfo.environment["LEONARDO_LOCALIZATION_EVIDENCE"] else {
             throw XCTSkip("Set LEONARDO_LOCALIZATION_EVIDENCE to export native interface captures")

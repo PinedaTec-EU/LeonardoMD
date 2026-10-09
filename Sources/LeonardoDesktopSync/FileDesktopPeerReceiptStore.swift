@@ -1,5 +1,6 @@
 #if os(macOS)
 import Foundation
+import CryptoKit
 import LeonardoSync
 
 public actor FileDesktopPeerReceiptStore: DesktopPeerReceiptStore {
@@ -7,6 +8,14 @@ public actor FileDesktopPeerReceiptStore: DesktopPeerReceiptStore {
         let deviceID: UUID
         let selection: CorpusSelection
         let receipt: DesktopPeerProposalReceipt
+    }
+    private struct Marker: Codable {
+        let deviceID: UUID
+        let projectID: UUID
+        let proposalID: UUID
+        let selectionDigest: String
+        let byteCount: Int
+        let inode: UInt64
     }
     private let root: URL
     public init(root: URL) { self.root = root.standardizedFileURL.resolvingSymlinksInPath() }
@@ -17,12 +26,50 @@ public actor FileDesktopPeerReceiptStore: DesktopPeerReceiptStore {
         let destination = try location(deviceID: deviceID, projectID: receipt.projectID, proposalID: receipt.proposalID)
         if let existing = try read(destination) {
             guard existing == archive else { throw SyncError.publicationPending }
+            try mark(deviceID: deviceID, selection: selection, receipt: receipt, file: destination)
             return
         }
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         let bytes = try encoder.encode(archive)
         guard bytes.count <= (try DesktopPeerArchiveBudget.maximumEncodedBytes()) else { throw SyncError.sizeLimitExceeded }
         try PrivateDesktopFile.write(bytes, to: destination)
+        try mark(deviceID: deviceID, selection: selection, receipt: receipt, file: destination)
+    }
+
+    public func contains(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) throws -> Bool {
+        let file = try location(deviceID: deviceID, projectID: projectID, proposalID: proposalID)
+        let markerFile = file.appendingPathExtension("accepted")
+        guard FileManager.default.fileExists(atPath: markerFile.path) else {
+            // Existing pre-marker archives are validated once before migration.
+            guard let receipt = try load(deviceID: deviceID, projectID: projectID, proposalID: proposalID, selection: selection) else { return false }
+            try mark(deviceID: deviceID, selection: selection, receipt: receipt, file: file)
+            return true
+        }
+        let values = try markerFile.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
+        guard values.isRegularFile == true, values.isSymbolicLink != true else { throw SyncError.invalidPath }
+        guard (values.fileSize ?? 0) <= 4 * 1_024 else { throw SyncError.sizeLimitExceeded }
+        let marker = try JSONDecoder().decode(Marker.self, from: Data(contentsOf: markerFile))
+        guard marker.deviceID == deviceID, marker.projectID == projectID, marker.proposalID == proposalID else { throw SyncError.invalidSnapshot }
+        guard marker.selectionDigest == (try digest(selection)) else { throw SyncError.outsideScope }
+        let metadata = try file.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
+        let attributes = try FileManager.default.attributesOfItem(atPath: file.path)
+        guard metadata.isRegularFile == true, metadata.fileSize == marker.byteCount,
+              (attributes[.systemFileNumber] as? NSNumber)?.uint64Value == marker.inode else { throw SyncError.invalidSnapshot }
+        return true
+    }
+    private func mark(deviceID: UUID, selection: CorpusSelection, receipt: DesktopPeerProposalReceipt, file: URL) throws {
+        let markerFile = file.appendingPathExtension("accepted")
+        guard (try? markerFile.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) != true else { throw SyncError.invalidPath }
+        let attributes = try FileManager.default.attributesOfItem(atPath: file.path)
+        guard let count = (attributes[.size] as? NSNumber)?.intValue,
+              let inode = (attributes[.systemFileNumber] as? NSNumber)?.uint64Value else { throw SyncError.invalidSnapshot }
+        let marker = try Marker(deviceID: deviceID, projectID: receipt.projectID, proposalID: receipt.proposalID,
+            selectionDigest: digest(selection), byteCount: count, inode: inode)
+        try PrivateDesktopFile.write(JSONEncoder().encode(marker), to: markerFile)
+    }
+    private func digest(_ selection: CorpusSelection) throws -> String {
+        let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        return SHA256.hash(data: try encoder.encode(selection)).map { String(format: "%02x", $0) }.joined()
     }
 
     public func load(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) throws -> DesktopPeerProposalReceipt? {

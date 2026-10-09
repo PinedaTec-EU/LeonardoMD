@@ -5,6 +5,116 @@ import LeonardoSyncTransport
 @testable import LeonardoDesktopSync
 
 final class DesktopPeerLibraryTests: XCTestCase {
+    func testRealPinnedHTTPSLibraryConsumesReceiptPreservesLaterEditsAndAllowsNextProposal() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let sourceRoot = root.appendingPathComponent("Source")
+        let sourceFile = sourceRoot.appendingPathComponent("docs/note.md")
+        try FileManager.default.createDirectory(at: sourceFile.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("source baseline".utf8).write(to: sourceFile)
+        let selection = try CorpusSelection(folders: ["docs"], documents: [])
+        let descriptor = SharedProjectDescriptor(id: UUID(), name: "Receipt source", scope: try CorpusScope(folder: ""), selection: selection)
+        let reader = ProjectCorpusReader()
+        let source = SharedProjectSource(descriptor: descriptor, rootURL: sourceRoot) {
+            try await reader.snapshot(root: sourceRoot, selection: selection)
+        }
+        let runtime = DesktopDirectRuntime(root: root.appendingPathComponent("Server"), credentials: PeerMemoryCredentials(), now: { Date() })
+        let running = try await runtime.start(host: "127.0.0.1", port: 0, projects: [source])
+        do {
+            let connectionStore = FileDesktopPeerConnectionStore(root: root.appendingPathComponent("Connections"))
+            let copies = FileDesktopPeerCopyStore(root: root.appendingPathComponent("Copies"))
+            let workingRoot = root.appendingPathComponent("Working")
+            let workspace = DesktopPeerWorkspace(root: workingRoot, copies: copies)
+            let outbox = FileDesktopPeerOutboxStore(root: root.appendingPathComponent("Outbox"))
+            let intents = FileDesktopPeerReceiptIntentStore(root: root.appendingPathComponent("ReceiptIntents"))
+            let applier = DesktopPeerReceiptApplier(workingRoot: workingRoot, copies: copies, intents: intents)
+            let credentials = PeerMemoryCredentials()
+            let revoker = PeerRevokerFixture()
+            let library = DesktopPeerLibrary(connections: connectionStore, copies: copies, workspace: workspace,
+                credentials: credentials, remote: DesktopPeerHTTPSRemote(), revoker: revoker,
+                outbox: outbox, receiptApplier: applier)
+            let connection = try await library.enroll(endpoint: running.endpoint, fingerprint: nil, invitation: nil, name: "MacBook receipts")
+            let registry = try await runtime.consentState()
+            let request = try XCTUnwrap(registry.requests.first)
+            try await runtime.approve(requestID: request.id, code: request.comparisonCode, projectIDs: [descriptor.id])
+            let copy = try await library.importProject(connectionID: connection.id, projectID: descriptor.id)
+            let directory = try await library.open(copyID: copy.id)
+            XCTAssertEqual(try Data(contentsOf: directory.appendingPathComponent("docs/note.md")), Data("source baseline".utf8))
+
+            let sent = try await library.send(copyID: copy.id,
+                buffers: [OpenDocumentBuffer(path: "docs/note.md", text: "proposal draft")])
+            let firstID = try XCTUnwrap(sent)
+            let pendingValue = try await library.pendingProposal(copyID: copy.id)
+            let pending = try XCTUnwrap(pendingValue)
+            XCTAssertEqual(pending.proposal.id, firstID)
+            let incomingValues = try await runtime.incomingProposals()
+            let incoming = try XCTUnwrap(incomingValues.first)
+            let review = try await runtime.reviewIncomingProposal(deviceID: incoming.deviceID, upload: incoming.upload)
+            let ownerDisk = try await reader.snapshot(root: sourceRoot, selection: selection)
+            let acceptedResult = try await runtime.applyIncomingProposal(deviceID: incoming.deviceID, upload: incoming.upload,
+                review: review, decisions: ["docs/note.md": .local], projectRoot: sourceRoot,
+                currentSource: review.source, currentDisk: ownerDisk)
+            let receipt = acceptedResult.receipt
+            XCTAssertEqual(receipt.accepted.files.first?.content, Data("proposal draft".utf8))
+            XCTAssertEqual(try Data(contentsOf: sourceFile), Data("proposal draft".utf8))
+
+            // These bytes are created after the immutable proposal was sent. The open
+            // buffer must survive receipt application while the saved disk bytes remain.
+            try Data("later saved".utf8).write(to: directory.appendingPathComponent("docs/note.md"))
+            try Data("later addition".utf8).write(to: directory.appendingPathComponent("docs/later.md"))
+            let downloadedValue = try await library.pendingReceipt(copyID: copy.id)
+            let downloaded = try XCTUnwrap(downloadedValue)
+            XCTAssertEqual(downloaded, receipt)
+            let applied = try await library.acknowledge(copyID: copy.id, receipt: downloaded,
+                buffers: [OpenDocumentBuffer(path: "docs/note.md", text: "later draft")])
+            XCTAssertTrue(applied.appliedNow)
+            XCTAssertEqual(applied.retainedBufferPaths, ["docs/note.md"])
+            XCTAssertEqual(applied.appliedSnapshot.files.first { $0.path == "docs/note.md" }?.content, Data("later saved".utf8))
+            XCTAssertEqual(try Data(contentsOf: directory.appendingPathComponent("docs/note.md")), Data("later saved".utf8))
+            XCTAssertEqual(try Data(contentsOf: directory.appendingPathComponent("docs/later.md")), Data("later addition".utf8))
+            let acknowledgedValue = try await copies.load(id: copy.id)
+            let acknowledged = try XCTUnwrap(acknowledgedValue)
+            XCTAssertEqual(acknowledged.base, receipt.accepted)
+            XCTAssertEqual(acknowledged.files.first { $0.path == "docs/note.md" }?.content, Data("later draft".utf8))
+            XCTAssertTrue(acknowledged.files.first { $0.path == "docs/note.md" }?.isUnsavedBuffer == true)
+            XCTAssertFalse(acknowledged.files.first { $0.path == "docs/later.md" }?.isUnsavedBuffer == true)
+            let clearedIncoming = try await runtime.incomingProposals()
+            XCTAssertTrue(clearedIncoming.isEmpty)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("Outbox").appendingPathComponent(copy.id.uuidString).appendingPathExtension("json").path))
+
+            // Reopen the client from its durable stores and submit another proposal in
+            // the same device/project slot after the first ACK has closed it.
+            let reopenedWorkspace = DesktopPeerWorkspace(root: workingRoot, copies: copies)
+            let reopenedApplier = DesktopPeerReceiptApplier(workingRoot: workingRoot, copies: copies,
+                intents: FileDesktopPeerReceiptIntentStore(root: root.appendingPathComponent("ReceiptIntents")))
+            let reopenedRevoker = PeerRevokerFixture()
+            let reopened = DesktopPeerLibrary(connections: connectionStore, copies: copies, workspace: reopenedWorkspace,
+                credentials: credentials, remote: DesktopPeerHTTPSRemote(), revoker: reopenedRevoker,
+                outbox: outbox, receiptApplier: reopenedApplier)
+            let reopenedDirectory = try await reopened.open(copyID: copy.id)
+            XCTAssertEqual(reopenedDirectory, directory)
+            let secondSent = try await reopened.send(copyID: copy.id,
+                buffers: [OpenDocumentBuffer(path: "docs/note.md", text: "second draft")])
+            let secondID = try XCTUnwrap(secondSent)
+            XCTAssertNotEqual(secondID, firstID)
+            let secondIncoming = try await runtime.incomingProposals()
+            XCTAssertEqual(secondIncoming.map(\.upload.proposalID), [secondID])
+
+            try await runtime.revoke(deviceID: connection.remoteDeviceID)
+            let revoked = try await reopened.refresh(connectionID: connection.id)
+            XCTAssertEqual(revoked.access, .revoked)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+            let clearedOutbox = try await outbox.load(copyID: copy.id)
+            XCTAssertNil(clearedOutbox)
+            let closedIDs = await reopenedRevoker.closedIDs
+            XCTAssertTrue(closedIDs.contains(copy.id))
+            try await runtime.stop()
+        } catch {
+            try? await runtime.stop()
+            throw error
+        }
+    }
+
     func testRealPinnedHTTPSEnrollmentImportAndRevocation() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -228,6 +338,7 @@ private actor PeerWorkspaceProxy: DesktopPeerWorkspaceAccess {
     func install(_ copy: DesktopPeerCopy) async throws -> URL { try await workspace.install(copy) }
     func open(id: UUID) async throws -> URL { try await workspace.open(id: id) }
     func capture(id: UUID, buffers: [OpenDocumentBuffer]) async throws -> DesktopPeerCopy { try await workspace.capture(id: id, buffers: buffers) }
+    func captureDisk(id: UUID) async throws -> CorpusSnapshot { try await workspace.captureDisk(id: id) }
     func remove(id: UUID) async throws {
         if failRemoval { throw SyncError.invalidPath }
         try await workspace.remove(id: id)
@@ -265,10 +376,22 @@ private actor PeerRemoteFixture: DesktopPeerRemote {
         return CorpusSnapshot(revision: CorpusRevision.make(files: files), files: files)
     }
     private(set) var publications: [DesktopPeerProposal] = []
+    private var receipts: [UUID: DesktopPeerProposalReceipt] = [:]
     func publish(_ proposal: DesktopPeerProposal, connection: DesktopPeerConnection, credential: String) async throws {
         try checkReachable()
         guard access == .authorized, credentials.contains(credential), proposal.projectID == project.id else { throw SyncError.revoked }
         publications.append(proposal)
+    }
+    func receipt(_ proposal: DesktopPeerProposal, connection: DesktopPeerConnection, credential: String) async throws -> DesktopPeerProposalReceipt? {
+        try checkReachable()
+        guard access == .authorized, credentials.contains(credential), proposal.projectID == project.id else { throw SyncError.revoked }
+        return receipts[proposal.id]
+    }
+    func acknowledge(_ proposal: DesktopPeerProposal, receipt: DesktopPeerProposalReceipt,
+                     connection: DesktopPeerConnection, credential: String) async throws {
+        try checkReachable()
+        guard access == .authorized, credentials.contains(credential), proposal.projectID == project.id,
+              receipts[proposal.id] == receipt else { throw SyncError.revoked }
     }
     private func checkReachable() throws { if !reachable { throw URLError(.notConnectedToInternet) } }
 }

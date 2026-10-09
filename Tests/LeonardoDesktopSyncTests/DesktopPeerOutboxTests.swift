@@ -10,13 +10,15 @@ final class DesktopPeerOutboxTests: XCTestCase {
         var copy = try DesktopPeerCopy(connectionID: UUID(), remoteProjectID: UUID(), name: "Offline",
             selection: CorpusSelection(folders: ["docs"], documents: []), snapshot: CorpusSnapshot(revision: "base", files: []))
         try copy.write(path: "docs/note.md", content: Data("sent".utf8))
-        let pending = try DesktopPeerPendingProposal(copy: copy)
+        let diskAtSend = CorpusSnapshot(revision: "disk-at-send", files: [])
+        let pending = try DesktopPeerPendingProposal(copy: copy, diskAtSend: diskAtSend)
         let store = FileDesktopPeerOutboxStore(root: root)
         try await store.save(pending)
         try await store.save(pending)
         let reopened = FileDesktopPeerOutboxStore(root: root)
         let loaded = try await reopened.load(copyID: copy.id)
         XCTAssertEqual(loaded, pending)
+        XCTAssertEqual(loaded?.diskAtSend, diskAtSend)
         try copy.write(path: "docs/note.md", content: Data("later".utf8))
         do { try await store.save(DesktopPeerPendingProposal(copy: copy)); XCTFail("Replaced pending capture") }
         catch { XCTAssertEqual(error as? SyncError, .publicationPending) }

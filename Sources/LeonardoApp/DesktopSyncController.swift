@@ -12,6 +12,9 @@ final class DesktopSyncController {
     private(set) var running: RunningDirectService?
     private(set) var consent = PairingRegistry()
     private(set) var busy = false
+    private(set) var incoming: [DesktopPeerIncomingProposal] = []
+    var reviewing: DesktopSourceReview?
+    private let lease = NativeReconciliationLease.shared
     var error: String?
     private(set) var invitationURL: URL?
     var buffers: @MainActor (URL) -> [OpenDocumentBuffer] = { _ in [] }
@@ -83,7 +86,47 @@ final class DesktopSyncController {
 
     func refreshConsent() async {
         guard !busy else { return }
-        do { consent = try await runtime.consentState() } catch { self.error = error.localizedDescription }
+        do {
+            consent = try await runtime.consentState()
+            incoming = running == nil ? [] : try await runtime.incomingProposals()
+        } catch { self.error = error.localizedDescription }
+    }
+
+    func reviewProposal(_ item: DesktopPeerIncomingProposal) async {
+        guard !busy else { return }
+        busy = true; error = nil
+        defer { busy = false }
+        do { reviewing = DesktopSourceReview(item: item, review: try await runtime.reviewIncomingProposal(deviceID: item.deviceID, upload: item.upload)) }
+        catch { self.error = error.localizedDescription }
+    }
+
+    func applyReview(_ value: DesktopSourceReview, decisions: [String: ReconciliationChoice]) async -> Bool {
+        guard !busy, let project = settings.projects.first(where: { $0.id == value.item.upload.projectID }) else { return false }
+        busy = true; error = nil
+        defer { busy = false }
+        do {
+            let selection = try CorpusSelection(folders: project.folders, documents: project.documents)
+            guard selection == value.review.proposal.selection else { throw SyncError.outsideScope }
+            _ = try await lease.run(projectRoot: project.rootURL, selection: selection) {
+                let drafts = buffers(project.rootURL).filter { selection.contains($0.path) }
+                for group in Dictionary(grouping: drafts, by: \.path).values where Set(group.map(\.text)).count > 1 {
+                    throw NativeSourceReviewError.ambiguousBuffers
+                }
+                let reader = ProjectCorpusReader()
+                let disk = try await reader.snapshot(root: project.rootURL, selection: selection)
+                let source = try await reader.snapshot(root: project.rootURL, selection: selection, buffers: drafts)
+                return try await runtime.applyIncomingProposal(deviceID: value.item.deviceID, upload: value.item.upload,
+                    review: value.review, decisions: decisions, projectRoot: project.rootURL, currentSource: source, currentDisk: disk)
+            }
+            reviewing = nil
+            incoming = try await runtime.incomingProposals()
+            return true
+        } catch ReconciliationError.staleComparison {
+            error = L10n.text("The source changed. Reopen the review before applying decisions.")
+        } catch NativeSourceReviewError.ambiguousBuffers {
+            error = L10n.text("Multiple open editors contain different drafts of the same file. Close duplicate editors before reconciliation.")
+        } catch { self.error = error.localizedDescription }
+        return false
     }
 
     func createQR() async {
@@ -113,3 +156,10 @@ final class DesktopSyncController {
 
     func stop() async { do { try await runtime.stop(); running = nil } catch { self.error = error.localizedDescription } }
 }
+
+struct DesktopSourceReview: Identifiable {
+    let item: DesktopPeerIncomingProposal
+    let review: DesktopPeerProposalReview
+    var id: String { item.id }
+}
+private enum NativeSourceReviewError: Error { case ambiguousBuffers }

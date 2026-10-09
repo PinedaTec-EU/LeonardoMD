@@ -12,15 +12,19 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
     private let remote: any DesktopPeerRemote
     private let outbox: (any DesktopPeerOutboxStore)?
     private let revoker: any DesktopPeerAccessRevoker
+    private let receiptApplier: (any LeonardoSync.DesktopPeerReceiptApplier)?
     private let now: @Sendable () -> Date
     private var changing = false
 
     public init(connections: any DesktopPeerConnectionStore, copies: any DesktopPeerCopyStore,
                 workspace: any DesktopPeerWorkspaceAccess, credentials: any DeviceCredentialStore,
-                remote: any DesktopPeerRemote, revoker: any DesktopPeerAccessRevoker, outbox: (any DesktopPeerOutboxStore)? = nil, now: @escaping @Sendable () -> Date = { Date() }) {
+                remote: any DesktopPeerRemote, revoker: any DesktopPeerAccessRevoker,
+                outbox: (any DesktopPeerOutboxStore)? = nil,
+                receiptApplier: (any LeonardoSync.DesktopPeerReceiptApplier)? = nil,
+                now: @escaping @Sendable () -> Date = { Date() }) {
         connectionStore = connections; copyStore = copies; self.workspace = workspace
         self.credentials = credentials; self.remote = remote; self.now = now
-        self.revoker = revoker; self.outbox = outbox
+        self.revoker = revoker; self.outbox = outbox; self.receiptApplier = receiptApplier
     }
 
     public func connections() async throws -> [DesktopPeerConnection] {
@@ -108,6 +112,46 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         return pending
     }
 
+    public func pendingReceipt(copyID: UUID) async throws -> DesktopPeerProposalReceipt? {
+        try enter(); defer { changing = false }
+        guard let outbox else { return nil }
+        let copy = try await requireCopy(copyID)
+        guard let pending = try await outbox.load(copyID: copyID) else { return nil }
+        try checkPending(pending, copy: copy)
+        let refreshed = try await refresh(requireConnection(copy.connectionID))
+        guard refreshed.status.access == .authorized else { throw DesktopPeerLibraryError.unauthorizedProject }
+        try checkOwnership(copy, connection: refreshed.connection)
+        let secret = try await requireCredential(refreshed.connection)
+        return try await remote.receipt(pending.proposal, connection: refreshed.connection, credential: secret)
+    }
+
+    public func acknowledge(copyID: UUID, receipt: DesktopPeerProposalReceipt,
+                           buffers: [OpenDocumentBuffer]) async throws -> DesktopPeerAcceptanceResult {
+        try enter(); defer { changing = false }
+        guard let outbox, let receiptApplier else { throw DesktopPeerLibraryError.acknowledgementUnavailable }
+        let original = try await requireCopy(copyID)
+        guard let pending = try await outbox.load(copyID: copyID) else { throw DesktopPeerLibraryError.unknownCopy }
+        try checkPending(pending, copy: original)
+        guard receipt.proposalID == pending.proposal.id, receipt.projectID == pending.proposal.projectID else {
+            throw SyncError.invalidSnapshot
+        }
+        try pending.proposal.selection.validate(receipt.accepted)
+        let captured = try await workspace.capture(id: copyID, buffers: buffers)
+        try checkPending(pending, copy: captured)
+        let refreshed = try await refresh(requireConnection(original.connectionID))
+        guard refreshed.status.access == .authorized else { throw DesktopPeerLibraryError.unauthorizedProject }
+        try checkOwnership(captured, connection: refreshed.connection)
+        let secret = try await requireCredential(refreshed.connection)
+        let result = try await receiptApplier.apply(copyID: copyID, proposal: pending.proposal,
+                                                    receipt: receipt, diskAtSend: pending.diskAtSend)
+        // Local application is durable before the remote slot is closed. If this call fails,
+        // the immutable outbox and acknowledgement intent remain retryable.
+        try await remote.acknowledge(pending.proposal, receipt: receipt,
+                                     connection: refreshed.connection, credential: secret)
+        try await outbox.remove(copyID: copyID)
+        return result
+    }
+
     public func send(copyID: UUID, buffers: [OpenDocumentBuffer]) async throws -> UUID? {
         try enter(); defer { changing = false }
         guard let outbox else { throw DesktopPeerLibraryError.sendingUnavailable }
@@ -120,7 +164,8 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
             pending = saved
         } else {
             guard copy.hasLocalChanges else { return nil }
-            pending = try DesktopPeerPendingProposal(copy: copy)
+            let diskAtSend = try await workspace.captureDisk(id: copyID)
+            pending = try DesktopPeerPendingProposal(copy: copy, diskAtSend: diskAtSend)
             // Persist the immutable intent before status checks or publication touch the network.
             try await outbox.save(pending)
         }

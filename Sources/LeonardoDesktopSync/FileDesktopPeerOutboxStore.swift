@@ -14,7 +14,7 @@ public actor FileDesktopPeerOutboxStore: DesktopPeerOutboxStore {
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }
         let metadata = try url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
         guard metadata.isRegularFile == true else { throw SyncError.invalidPath }
-        guard (metadata.fileSize ?? 0) <= (try DesktopPeerArchiveBudget.maximumEncodedBytes(limits: limits)) else { throw SyncError.sizeLimitExceeded }
+        guard (metadata.fileSize ?? 0) <= (try DesktopPeerArchiveBudget.maximumPendingBytes(limits: limits)) else { throw SyncError.sizeLimitExceeded }
         let pending = try JSONDecoder().decode(DesktopPeerPendingProposal.self, from: Data(contentsOf: url))
         guard pending.copyID == copyID else { throw SyncError.invalidSnapshot }
         try validate(pending)
@@ -28,7 +28,7 @@ public actor FileDesktopPeerOutboxStore: DesktopPeerOutboxStore {
         }
         let encoder = JSONEncoder(); encoder.outputFormatting = [.withoutEscapingSlashes, .sortedKeys]
         let bytes = try encoder.encode(pending)
-        guard bytes.count <= (try DesktopPeerArchiveBudget.maximumEncodedBytes(limits: limits)) else { throw SyncError.sizeLimitExceeded }
+        guard bytes.count <= (try DesktopPeerArchiveBudget.maximumPendingBytes(limits: limits)) else { throw SyncError.sizeLimitExceeded }
         try PrivateDesktopFile.write(bytes, to: location(pending.copyID))
     }
     public func remove(copyID: UUID) throws {
@@ -43,6 +43,10 @@ public actor FileDesktopPeerOutboxStore: DesktopPeerOutboxStore {
     private func validate(_ pending: DesktopPeerPendingProposal) throws {
         try pending.proposal.selection.validate(pending.proposal.base, limits: limits)
         try pending.proposal.selection.validate(pending.proposal.proposed, limits: limits)
+        if let diskAtSend = pending.diskAtSend {
+            try pending.proposal.selection.validate(diskAtSend, limits: limits)
+            guard diskAtSend.files.allSatisfy({ !$0.isUnsavedBuffer }) else { throw SyncError.invalidSnapshot }
+        }
     }
 }
 #endif

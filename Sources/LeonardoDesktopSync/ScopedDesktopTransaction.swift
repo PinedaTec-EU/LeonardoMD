@@ -11,6 +11,13 @@ public actor ScopedDesktopTransaction {
     public init(journals: URL) { self.journals = journals.standardizedFileURL.resolvingSymlinksInPath() }
 
     public func prepare(projectRoot: URL, selection: CorpusSelection, before: CorpusSnapshot, after: CorpusSnapshot) async throws -> UUID {
+        try await prepare(id: UUID(), projectRoot: projectRoot, selection: selection, before: before, after: after)
+    }
+
+    /// Uses a caller-owned ID so a higher-level acknowledgement intent can bind the
+    /// transaction before filesystem mutation begins.
+    public func prepare(id: UUID, projectRoot: URL, selection: CorpusSelection,
+                        before: CorpusSnapshot, after: CorpusSnapshot) async throws -> UUID {
         try enter(); defer { busy = false }
         let root = try canonicalRoot(projectRoot)
         try selection.validate(before); try selection.validate(after)
@@ -23,7 +30,7 @@ public actor ScopedDesktopTransaction {
         }
         var permissions: [String: Int] = [:]
         for file in before.files { permissions[file.path] = try files.permissions(file.path) }
-        let journal = DesktopTransactionJournal(id: UUID(), projectRoot: root, selection: selection,
+        let journal = DesktopTransactionJournal(id: id, projectRoot: root, selection: selection,
             before: before, after: after, permissions: permissions, missingParents: missingParents, replacedDirectoryPermissions: replacedDirectoryPermissions, phase: .prepared)
         try journal.validate(id: journal.id, projectRoot: root)
         let current = try await reader.snapshot(root: root, selection: selection, revision: before.revision)
@@ -57,6 +64,8 @@ public actor ScopedDesktopTransaction {
     public func recover(id: UUID, projectRoot: URL) async throws -> CorpusSnapshot? {
         try enter(); defer { busy = false }
         let root = try canonicalRoot(projectRoot)
+        let file = try location(id)
+        guard FileManager.default.fileExists(atPath: file.path) else { return nil }
         var journal = try load(id: id, root: root)
         if journal.phase == .applied { return journal.after }
         if journal.phase == .rolledBack { return nil }

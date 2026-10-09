@@ -208,6 +208,7 @@ private struct StalledUploadStore: DesktopPeerUploadStore {
     func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws { throw SyncError.invalidSnapshot }
     func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) async throws -> DesktopPeerUpload? { nil }
     func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> DesktopPeerProposal { throw SyncError.invalidSnapshot }
+    func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) async throws { throw SyncError.invalidSnapshot }
 }
 
 private struct StalledReceiptStore: DesktopPeerReceiptStore {
@@ -228,4 +229,5 @@ private struct FixedProposalUploadStore: DesktopPeerUploadStore {
     func submit(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws {}
     func pending(deviceID: UUID, projectID: UUID, selection: CorpusSelection) async throws -> DesktopPeerUpload? { upload }
     func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) async throws -> DesktopPeerProposal { proposal }
+    func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) async throws {}
 }

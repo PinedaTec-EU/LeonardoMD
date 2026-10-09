@@ -138,6 +138,27 @@ public actor DirectSyncAuthority {
 
 
 extension DirectSyncAuthority {
+    /// An authenticated client may close only the exact proposal whose durable result it
+    /// incorporated. Keep consent stable across storage awaits and retain the receipt.
+    public func acknowledgeProposal(deviceID: UUID, credential: String, projectID: UUID,
+                                    proposalID: UUID, proof: DesktopPeerReceiptAcknowledgement) async throws {
+        let selection = try uploadSelection(deviceID: deviceID, credential: credential, projectID: projectID)
+        guard let receipts, let uploads else { throw DirectAuthorityError.busy }
+        changing = true
+        defer { changing = false }
+        guard let receipt = try await receipts.load(deviceID: deviceID, projectID: projectID,
+                                                    proposalID: proposalID, selection: selection),
+              receipt.projectID == projectID, receipt.proposalID == proposalID else {
+            throw SyncError.invalidSnapshot
+        }
+        try selection.validate(receipt.accepted)
+        guard try DesktopPeerReceiptAcknowledgement(receipt: receipt) == proof else {
+            throw SyncError.invalidSnapshot
+        }
+        try await uploads.acknowledge(deviceID: deviceID, projectID: projectID,
+                                      proposalID: proposalID, selection: selection)
+    }
+
     /// Historical accepted result; authorization is rechecked after suspended storage reads.
     public func proposalReceipt(deviceID: UUID, credential: String, projectID: UUID, proposalID: UUID) async throws -> DesktopPeerProposalReceipt? {
         let selection = try uploadSelection(deviceID: deviceID, credential: credential, projectID: projectID)
@@ -186,6 +207,8 @@ extension DirectSyncAuthority {
                 let selection = try descriptor.selection ?? CorpusSelection(folders: [descriptor.scope.folder], documents: [])
                 if let upload = try await uploads.pending(deviceID: device.id, projectID: projectID, selection: selection),
                    ownerCanReview(deviceID: device.id, projectID: projectID) {
+                    if let receipts, try await receipts.contains(deviceID: device.id, projectID: projectID, proposalID: upload.proposalID, selection: selection) { continue }
+                    guard ownerCanReview(deviceID: device.id, projectID: projectID) else { continue }
                     result.append(DesktopPeerIncomingProposal(deviceID: device.id, deviceName: device.name, upload: upload))
                 }
             }
@@ -217,16 +240,24 @@ extension DirectSyncAuthority {
     /// application. The operation must additionally hold the native editor lease.
     public func withOwnerApplication(deviceID: UUID, upload: DesktopPeerUpload,
         operation: @Sendable (DesktopPeerProposal, URL) async throws -> DesktopPeerProposalReceipt) async throws -> DesktopPeerProposalReceipt {
+        try await withOwnerApplicationResult(deviceID: deviceID, upload: upload) { proposal, root in
+            try await DesktopPeerAcceptanceResult(receipt: operation(proposal, root), appliedNow: false)
+        }.receipt
+    }
+
+    public func withOwnerApplicationResult(deviceID: UUID, upload: DesktopPeerUpload,
+        operation: @Sendable (DesktopPeerProposal, URL) async throws -> DesktopPeerAcceptanceResult) async throws -> DesktopPeerAcceptanceResult {
         let proposal = try await incomingProposal(deviceID: deviceID, upload: upload)
         guard ownerCanReview(deviceID: deviceID, projectID: upload.projectID) else { throw SyncError.revoked }
         guard let root = projects[upload.projectID]?.rootURL else { throw PairingError.invalidProject }
         sourceEpoch = UUID()
         changing = true
         defer { changing = false }
-        let receipt = try await operation(proposal, root)
+        let result = try await operation(proposal, root)
+        let receipt = result.receipt
         guard receipt.proposalID == proposal.id, receipt.projectID == proposal.projectID else { throw SyncError.invalidSnapshot }
         try proposal.selection.validate(receipt.accepted)
-        return receipt
+        return result
     }
 
     private func ownerCanReview(deviceID: UUID, projectID: UUID) -> Bool {

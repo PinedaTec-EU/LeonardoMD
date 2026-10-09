@@ -65,3 +65,17 @@ public struct DesktopPeerProposalReview: Sendable {
     }
 }
 
+
+/// Local owner outcome, never a wire receipt. Recovery must not replace later editor buffers.
+public struct DesktopPeerAcceptanceResult: Sendable {
+    public let receipt: DesktopPeerProposalReceipt
+    public let appliedNow: Bool
+    public let appliedSnapshot: CorpusSnapshot
+    public let retainedBufferPaths: Set<String>
+    public init(receipt: DesktopPeerProposalReceipt, appliedNow: Bool,
+                appliedSnapshot: CorpusSnapshot? = nil, retainedBufferPaths: Set<String> = []) {
+        self.receipt = receipt; self.appliedNow = appliedNow
+        self.appliedSnapshot = appliedSnapshot ?? receipt.accepted
+        self.retainedBufferPaths = retainedBufferPaths
+    }
+}

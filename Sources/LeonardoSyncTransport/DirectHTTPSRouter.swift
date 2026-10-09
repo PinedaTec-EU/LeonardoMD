@@ -52,6 +52,14 @@ public struct DirectHTTPSRouter: Sendable {
                 }
                 return try json(receipt)
             }
+            if request.method == "POST", path.count == 9, path[4] == "projects", path[6] == "proposals", path[8] == "ack",
+               let projectID = UUID(uuidString: String(path[5])), let proposalID = UUID(uuidString: String(path[7])) {
+                guard request.body.count <= 8 * 1_024 else { return HTTPResponse(status: 413) }
+                let proof = try JSONDecoder().decode(DesktopPeerReceiptAcknowledgement.self, from: request.body)
+                try await authority.acknowledgeProposal(deviceID: deviceID, credential: credential,
+                                                       projectID: projectID, proposalID: proposalID, proof: proof)
+                return HTTPResponse(status: 204)
+            }
             if request.method == "POST", path.count == 8, path[4] == "projects", path[6] == "proposals",
                let projectID = UUID(uuidString: String(path[5])) {
                 guard request.body.count <= HTTPRequestParser.maximumBodyBytes else { return HTTPResponse(status: 413) }

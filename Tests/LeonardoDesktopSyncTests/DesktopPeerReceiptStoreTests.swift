@@ -17,6 +17,8 @@ final class DesktopPeerReceiptStoreTests: XCTestCase {
         let reopened = FileDesktopPeerReceiptStore(root: root)
         let loaded = try await reopened.load(deviceID: deviceID, projectID: projectID, proposalID: proposalID, selection: selection)
         XCTAssertEqual(loaded, receipt)
+        let recorded = try await reopened.contains(deviceID: deviceID, projectID: projectID, proposalID: proposalID, selection: selection)
+        XCTAssertTrue(recorded)
         let absent = try await reopened.load(deviceID: UUID(), projectID: projectID, proposalID: proposalID, selection: selection)
         XCTAssertNil(absent)
         let replacement = try DesktopPeerProposalReceipt(proposalID: proposalID, projectID: projectID,

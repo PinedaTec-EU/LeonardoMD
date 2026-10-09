@@ -12,15 +12,21 @@ public struct GitPreparedPublication: Codable, Sendable, Equatable {
     public var branch: String { GitDeviceBranch.name(deviceID: deviceID, projectID: projectID) }
     private let scope: CorpusScope
     private let identity: GitCommitIdentity
+    // Optional keeps journals written before commit metadata was introduced recoverable.
+    private let publicationMetadata: GitPublicationMetadata?
     private let files: [File]
     private let pack: Data
     static let maximumPackBytes = 256 * 1_024 * 1_024
 
     public init(project: OfflineProject, baseline: GitBaseline, deviceID: UUID,
                 identity: GitCommitIdentity, expectedOldID: String?) throws {
-        let built = try GitCommitBuilder.build(project: project, baseline: baseline, identity: identity)
+        let publicationMetadata = try GitPublicationMetadata(projectID: project.id, deviceID: deviceID,
+                                                             baseRevision: project.base.revision, scope: project.scope)
+        let built = try GitCommitBuilder.build(project: project, baseline: baseline, identity: identity,
+                                               publication: publicationMetadata)
         self.projectID = project.id; self.deviceID = deviceID; self.baseRevision = project.base.revision
-        self.scope = project.scope; self.identity = identity; self.expectedOldID = expectedOldID
+        self.scope = project.scope; self.identity = identity; self.publicationMetadata = publicationMetadata
+        self.expectedOldID = expectedOldID
         self.commitID = built.commit.id
         self.files = project.files.map { File(path: $0.path, objectID: GitObject.create(kind: .blob, data: $0.content, sha256: project.base.revision.count == 64).id) }
         self.pack = try GitPackWriter.encode(objects: built.objects, sha256: project.base.revision.count == 64)
@@ -45,7 +51,8 @@ public struct GitPreparedPublication: Codable, Sendable, Equatable {
         try capture.validate(scope: scope, limits: CorpusLimits())
         var draft = project
         try draft.replaceLocalFiles(captured)
-        let rebuilt = try GitCommitBuilder.build(project: draft, baseline: baseline, identity: identity)
+        let rebuilt = try GitCommitBuilder.build(project: draft, baseline: baseline, identity: identity,
+                                                 publication: publicationMetadata)
         guard rebuilt.commit.id == commitID else { throw GitWireError.invalidPack }
         // Rebuild from the verified scope instead of trusting archived extra objects.
         return (rebuilt, capture)

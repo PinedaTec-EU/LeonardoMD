@@ -67,6 +67,25 @@ final class DesktopPeerProposalTransportTests: XCTestCase {
             try Data("later source bytes".utf8).write(to: original)
             let downloaded = try await newClient.receipt(proposalID: proposal.id, projectID: descriptor.id, selection: selection, deviceID: paired.deviceID, credential: credential)
             XCTAssertEqual(downloaded, receipt)
+            let incorrectReceipt = try DesktopPeerProposalReceipt(proposalID: proposal.id, projectID: descriptor.id,
+                accepted: CorpusSnapshot(revision: "incorrect", files: baseline.files))
+            do {
+                try await newClient.acknowledge(proposal, receipt: incorrectReceipt, deviceID: paired.deviceID, credential: credential)
+                XCTFail("An incorrect receipt closed the proposal")
+            } catch { XCTAssertEqual(error as? TransportError, .unexpectedResponse) }
+            try await newClient.acknowledge(proposal, receipt: receipt, deviceID: paired.deviceID, credential: credential)
+            try await newClient.acknowledge(proposal, receipt: receipt, deviceID: paired.deviceID, credential: credential)
+            let nextProposal = try DesktopPeerProposal(projectID: descriptor.id, selection: selection,
+                base: receipt.accepted, proposed: receipt.accepted)
+            try await newClient.submit(nextProposal, deviceID: paired.deviceID, credential: credential)
+            // A delayed ACK of the old result cannot remove the newly submitted slot.
+            try await newClient.acknowledge(proposal, receipt: receipt, deviceID: paired.deviceID, credential: credential)
+            let nextPending = try await runtime.incomingProposals()
+            XCTAssertEqual(nextPending.map(\.upload.proposalID), [nextProposal.id])
+            do {
+                try await newClient.submit(proposal, deviceID: paired.deviceID, credential: credential)
+                XCTFail("An acknowledged proposal was recreated")
+            } catch { XCTAssertEqual(error as? SyncError, .publicationPending) }
             let secondCredential = try PairingRegistry.makeCredential()
             let secondEnrollment = try DirectEnrollmentClient(endpoint: running.endpoint, certificateFingerprint: running.certificateFingerprint)
             let second = try await secondEnrollment.begin(deviceName: "Other Mac", credential: secondCredential, now: Date(), kind: .desktopPeer)
@@ -77,6 +96,7 @@ final class DesktopPeerProposalTransportTests: XCTestCase {
 
             let independent = try await runtime.incomingProposals()
             XCTAssertEqual(independent.count, 2)
+            XCTAssertEqual(Set(independent.map(\.deviceID)), [paired.deviceID, second.deviceID])
             XCTAssertEqual(Set(independent.map(\.id)).count, 2) // Even a reused proposal ID cannot alias another authenticated sender.
             try await runtime.revoke(deviceID: paired.deviceID)
             do { try await newClient.submit(proposal, deviceID: paired.deviceID, credential: credential); XCTFail("Revoked sender submitted") }
@@ -111,6 +131,11 @@ final class DesktopPeerProposalTransportTests: XCTestCase {
             let client = try DesktopPeerProposalClient(endpoint: running.endpoint, certificateFingerprint: running.certificateFingerprint)
             do { try await client.submit(proposal, deviceID: paired.deviceID, credential: credential); XCTFail("Read-only sender published") }
             catch { XCTAssertEqual(error as? DesktopPeerProposalTransportError, .accessDenied) }
+            let fakeReceipt = try DesktopPeerProposalReceipt(proposalID: proposal.id, projectID: descriptor.id, accepted: snapshot)
+            do {
+                try await client.acknowledge(proposal, receipt: fakeReceipt, deviceID: paired.deviceID, credential: credential)
+                XCTFail("Read-only client acknowledged a proposal")
+            } catch { XCTAssertEqual(error as? DesktopPeerProposalTransportError, .accessDenied) }
             do {
                 _ = try await client.receipt(proposalID: proposal.id, projectID: descriptor.id, selection: selection, deviceID: paired.deviceID, credential: credential)
                 XCTFail("Read-only client queried reconciliation receipts")

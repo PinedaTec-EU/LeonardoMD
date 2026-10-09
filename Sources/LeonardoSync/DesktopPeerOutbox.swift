@@ -4,9 +4,23 @@ public struct DesktopPeerPendingProposal: Codable, Equatable, Sendable {
     public let connectionID: UUID
     public let copyID: UUID
     public let proposal: DesktopPeerProposal
+    /// The disk-only snapshot captured alongside the proposal. It lets receipt
+    /// integration distinguish a later save from bytes that were already on disk
+    /// while an open editor buffer was captured.
+    public let diskAtSend: CorpusSnapshot?
+
     public init(copy: DesktopPeerCopy) throws {
+        try self.init(copy: copy, diskAtSend: nil)
+    }
+
+    public init(copy: DesktopPeerCopy, diskAtSend: CorpusSnapshot?) throws {
+        if let diskAtSend {
+            try copy.selection.validate(diskAtSend)
+            guard diskAtSend.files.allSatisfy({ !$0.isUnsavedBuffer }) else { throw SyncError.invalidSnapshot }
+        }
         connectionID = copy.connectionID; copyID = copy.id
         proposal = try DesktopPeerProposal(copy: copy)
+        self.diskAtSend = diskAtSend
     }
 }
 
@@ -27,5 +41,21 @@ public enum DesktopPeerArchiveBudget {
         let total = combined.partialValue.addingReportingOverflow(selection + 64 * 1_024)
         guard !content.overflow, !paths.overflow, !combined.overflow, !total.overflow else { throw SyncError.sizeLimitExceeded }
         return total.partialValue
+    }
+
+    /// Pending proposals add a disk-only capture to the base/proposed archive.
+    public static func maximumPendingBytes(limits: CorpusLimits = CorpusLimits()) throws -> Int {
+        let base = try maximumEncodedBytes(limits: limits)
+        let (value, overflow) = base.multipliedReportingOverflow(by: 2)
+        guard !overflow else { throw SyncError.sizeLimitExceeded }
+        return value
+    }
+
+    /// Receipt intents retain proposal, disk-before, applied and merged state for recovery.
+    public static func maximumReceiptIntentBytes(limits: CorpusLimits = CorpusLimits()) throws -> Int {
+        let base = try maximumEncodedBytes(limits: limits)
+        let (value, overflow) = base.multipliedReportingOverflow(by: 3)
+        guard !overflow else { throw SyncError.sizeLimitExceeded }
+        return value
     }
 }

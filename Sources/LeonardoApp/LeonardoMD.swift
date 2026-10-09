@@ -85,10 +85,14 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
                 return OpenDocumentBuffer(path: relative, text: tab.session.content)
             } ?? []
         }
+        NativeReconciliationLease.shared.sessions = { [weak self] in
+            self?.windows.flatMap { $0.documents.tabs.map(\.session) } ?? []
+        }
         DesktopPeerController.shared.buffers = DesktopSyncController.shared.buffers
         DesktopPeerController.shared.revoker.close = { [weak self] ids in
             let root = DesktopPeerController.shared.workingRoot
             let folders = ids.map { root.appendingPathComponent($0.uuidString, isDirectory: true) }
+            await NativeReconciliationLease.shared.waitUntilReleased(folders)
             for window in self?.windows ?? [] { await window.documents.revokeWorkspaces(folders) }
         }
         Task { await DesktopPeerController.shared.initialize() }

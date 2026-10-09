@@ -11,15 +11,25 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
         let upload: DesktopPeerUpload
         let selection: CorpusSelection
     }
+    private struct Tombstone: Codable, Equatable {
+        let manifest: Manifest
+    }
     private let root: URL
     public init(root: URL) { self.root = root.standardizedFileURL.resolvingSymlinksInPath() }
 
     public func begin(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) throws -> Int {
         let directory = try location(deviceID: deviceID, projectID: upload.projectID)
+        // Tombstones are retained per proposal ID. A stale begin must remain blocked even
+        // after a later proposal has reused the active staging slot.
+        if try tombstone(at: directory, proposalID: upload.proposalID) != nil { throw SyncError.publicationPending }
         let expected = Manifest(deviceID: deviceID, upload: upload, selection: selection)
         if let existing = try manifest(at: directory) {
             guard existing == expected else { throw SyncError.publicationPending }
         } else {
+            // A failed cleanup can leave payload.json or submitted.json after
+            // manifest.json has gone. Do not let a new proposal reinterpret
+            // those bytes as its own staging slot.
+            guard try !hasStagedFiles(at: directory) else { throw SyncError.publicationPending }
             try PrivateDesktopFile.write(JSONEncoder().encode(expected), to: directory.appendingPathComponent("manifest.json"))
         }
         return try received(at: directory, upload: upload)
@@ -79,6 +89,9 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
 
     public func finish(deviceID: UUID, upload: DesktopPeerUpload, selection: CorpusSelection) throws -> DesktopPeerProposal {
         let directory = try location(deviceID: deviceID, projectID: upload.projectID)
+        if try tombstone(at: directory, proposalID: upload.proposalID) != nil {
+            throw SyncError.publicationPending
+        }
         let saved = try requireManifest(at: directory, deviceID: deviceID, upload: upload)
         guard saved.selection == selection else { throw SyncError.outsideScope }
         guard try received(at: directory, upload: upload) == upload.byteCount else { throw SyncError.invalidSnapshot }
@@ -96,6 +109,36 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
         return proposal
     }
 
+    public func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) throws {
+        let directory = try location(deviceID: deviceID, projectID: projectID)
+        if let existing = try tombstone(at: directory, proposalID: proposalID) {
+            guard existing.manifest.deviceID == deviceID,
+                  existing.manifest.upload.projectID == projectID,
+                  existing.manifest.upload.proposalID == proposalID,
+                  existing.manifest.selection == selection else { throw SyncError.publicationPending }
+            if let current = try manifest(at: directory), current != existing.manifest { return }
+            try removeStagedFiles(at: directory, expectedManifest: existing.manifest)
+            return
+        }
+        guard let manifest = try manifest(at: directory), manifest.deviceID == deviceID,
+              manifest.upload.projectID == projectID,
+              manifest.upload.proposalID == proposalID else { throw SyncError.invalidSnapshot }
+        guard manifest.selection == selection else { throw SyncError.outsideScope }
+        let marker = directory.appendingPathComponent("submitted.json")
+        try validateFile(marker, maximumBytes: 4 * 1_024)
+        guard FileManager.default.fileExists(atPath: marker.path),
+              try JSONDecoder().decode(DesktopPeerUpload.self, from: Data(contentsOf: marker)) == manifest.upload else {
+            throw SyncError.invalidSnapshot
+        }
+        let tombstone = Tombstone(manifest: manifest)
+        try PrivateDesktopFile.write(JSONEncoder().encode(tombstone), to: tombstoneLocation(at: directory, proposalID: proposalID))
+        do { try removeStagedFiles(at: directory, expectedManifest: manifest) }
+        catch {
+            // Retaining the tombstone makes the retry idempotent and blocks stale uploads.
+            throw error
+        }
+    }
+
     /// Only the authenticated owner's device/project staging directory is addressed.
     public func remove(deviceID: UUID, projectID: UUID) throws {
         let directory = try location(deviceID: deviceID, projectID: projectID)
@@ -111,6 +154,53 @@ public actor FileDesktopPeerUploadStore: DesktopPeerUploadStore {
         try validateFile(file, maximumBytes: 10_000 * (6 * 4_096 + 512) + 64 * 1_024)
         guard FileManager.default.fileExists(atPath: file.path) else { return nil }
         return try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: file))
+    }
+    private func tombstone(at directory: URL, proposalID: UUID) throws -> Tombstone? {
+        let acknowledged = directory.appendingPathComponent("acknowledged", isDirectory: true)
+        let acknowledgedValues = try? acknowledged.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey])
+        guard acknowledgedValues?.isSymbolicLink != true,
+              !FileManager.default.fileExists(atPath: acknowledged.path) || acknowledgedValues?.isDirectory == true else {
+            throw SyncError.invalidPath
+        }
+        let file = try tombstoneLocation(at: directory, proposalID: proposalID)
+        try validateFile(file, maximumBytes: 16 * 1_024)
+        guard FileManager.default.fileExists(atPath: file.path) else { return nil }
+        return try JSONDecoder().decode(Tombstone.self, from: Data(contentsOf: file))
+    }
+    private func tombstoneLocation(at directory: URL, proposalID: UUID) throws -> URL {
+        let acknowledged = directory.appendingPathComponent("acknowledged", isDirectory: true)
+        let values = try? acknowledged.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey])
+        guard values?.isSymbolicLink != true,
+              !FileManager.default.fileExists(atPath: acknowledged.path) || values?.isDirectory == true else {
+            throw SyncError.invalidPath
+        }
+        let file = acknowledged.appendingPathComponent(proposalID.uuidString).appendingPathExtension("json")
+        guard (try? file.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) != true else {
+            throw SyncError.invalidPath
+        }
+        return file
+    }
+    private func removeStagedFiles(at directory: URL, expectedManifest: Manifest) throws {
+        if let current = try manifest(at: directory) {
+            guard current == expectedManifest else { throw SyncError.invalidSnapshot }
+        }
+        // A previous cleanup can have removed manifest.json after leaving another staged
+        // file behind. The tombstone still authenticates the exact old upload, so clear all
+        // known stage names rather than allowing an orphan payload into a new proposal.
+        for name in ["payload.json", "submitted.json", "manifest.json"] {
+            let file = directory.appendingPathComponent(name)
+            try validateFile(file, maximumBytes: name == "payload.json" ? expectedManifest.upload.byteCount : 16 * 1_024)
+            if FileManager.default.fileExists(atPath: file.path) { try FileManager.default.removeItem(at: file) }
+        }
+    }
+    private func hasStagedFiles(at directory: URL) throws -> Bool {
+        let payloadMaximum = try DesktopPeerArchiveBudget.maximumEncodedBytes()
+        for name in ["payload.json", "submitted.json", "manifest.json"] {
+            let file = directory.appendingPathComponent(name)
+            try validateFile(file, maximumBytes: name == "payload.json" ? payloadMaximum : 16 * 1_024)
+            if FileManager.default.fileExists(atPath: file.path) { return true }
+        }
+        return false
     }
     private func received(at directory: URL, upload: DesktopPeerUpload) throws -> Int {
         let file = directory.appendingPathComponent("payload.json")
