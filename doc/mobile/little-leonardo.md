@@ -96,6 +96,12 @@ Protocol-v2 `ls-refs` requests branch references and symbolic HEAD, including un
 
 ## Git fetch-response checkpoint
 
-Fresh `fetch` replies are decoded as ordered shallow-boundary and packfile sections. The client separates sideband progress from binary pack data, rejects fatal/unknown channels and unsolicited packfile URI sections, and enforces wire, pack and object-count bounds. It supports the optional stateless response-end marker, checks PACK header/version and verifies the SHA-1/SHA-256 trailer before exposing pack bytes. This is envelope/integrity validation; compressed object and delta decoding is still unfinished.
+Fresh `fetch` replies are decoded as ordered shallow-boundary and packfile sections. The client separates sideband progress from binary pack data, rejects fatal/unknown channels and unsolicited packfile URI sections, and enforces wire, pack and object-count bounds. It supports the optional stateless response-end marker, checks PACK header/version and verifies the SHA-1/SHA-256 trailer before exposing pack bytes. This validates the envelope and pack integrity before object decoding.
 
 Eight Git tests pass, including real SHA-1/SHA-256 packs, corrupted trailers, split binary packets, fatal channels, URI injection and size limits. The existing metadata regression now uses this parser before importing with Git CLI and still proves zero file blobs transferred. The module compiles in the iOS target. Network transport, native pack storage/decoding, folder import, publication and reconciliation remain pending.
+
+## Native pack decoding checkpoint
+
+Bounded system-zlib decompression and Git delta reconstruction now decode complete commit/tree/blob/tag objects, offset deltas and reference deltas. Resolution uses dependency queues, rejects missing bases (no thin-pack request is made), and bounds individual objects, aggregate inflated content and delta-chain depth. Canonical object IDs use Git type/length headers and the negotiated SHA-1/SHA-256 hash.
+
+Seven wire tests pass, including comparison of all 36 objects in actual Git-generated packs against `git cat-file`, for both delta encodings; the fixture asserts that deltas really exist. Five focused delta/inflate tests cover copy/insertion instructions, sliced buffers, truncation, declared sizes and exact compressed-stream consumption. iOS compilation is checked separately. Network transport, scoped folder import, publication and desktop reconciliation remain unfinished.

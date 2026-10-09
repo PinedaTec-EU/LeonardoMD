@@ -51,6 +51,41 @@ final class GitWireTests: XCTestCase {
             let tip = try XCTUnwrap(refs.first?.objectID)
             let fetched = try GitFetchResponse(response: git(["upload-pack", "--stateless-rpc", source.path], input: capability.metadataRequest(want: tip)), capabilities: capability)
             XCTAssertEqual(fetched.objectCount, 2)
+            let decoded = try GitPack.decode(fetched, sha256: format == "sha256")
+            XCTAssertEqual(Set(decoded.map(\.kind)), [.commit, .tree])
+            XCTAssertTrue(decoded.contains { $0.id == tip })
+        }
+    }
+
+    func testRealGitPackObjectsIncludingDeltasMatchCanonicalObjects() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        _ = try git(["init", "--quiet", root.path])
+        let repeated = String(repeating: "Shared document paragraph with stable content.\n", count: 400)
+        for index in 0..<12 {
+            try Data((repeated + "Revision \(index)\n").utf8).write(to: root.appendingPathComponent("note.md"))
+            _ = try git(["-C", root.path, "add", "."])
+            _ = try git(["-C", root.path, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "--quiet", "-m", "revision"])
+        }
+        let caps = try GitV2Capabilities(advertisement: advertise(["version 2", "ls-refs", "fetch=shallow filter"]))
+        for options in [[], ["--delta-base-offset"]] {
+            let pack = try git(["-C", root.path, "pack-objects", "--all", "--stdout"] + options)
+            var wire = try GitPacket.data(Data("packfile\n".utf8)).encoded()
+            for start in stride(from: 0, to: pack.count, by: 60_000) {
+                wire += try GitPacket.data(Data([1]) + pack[start..<min(start + 60_000, pack.count)]).encoded()
+            }
+            wire += try GitPacket.flush.encoded()
+            let response = try GitFetchResponse(response: wire, capabilities: caps)
+            let objects = try GitPack.decode(response)
+            XCTAssertEqual(objects.count, 36)
+            for object in objects {
+                XCTAssertEqual(object.data, try git(["-C", root.path, "cat-file", object.kind.rawValue, object.id]))
+            }
+            var limits = GitPack.Limits()
+            limits.deltaDepth = 0
+            XCTAssertThrowsError(try GitPack.decode(response, limits: limits), "Fixture must contain actual deltas")
+            limits = GitPack.Limits(); limits.totalBytes = 1
+            XCTAssertThrowsError(try GitPack.decode(response, limits: limits))
         }
     }
 
