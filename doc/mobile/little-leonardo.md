@@ -227,3 +227,10 @@ Desktop proposals capture the selected baseline and proposed corpus under an imm
 Saved buffers identical to disk no longer alter revision/provenance, and materializing an imported draft no longer creates a false local edit. Content comparisons ignore draft provenance while strict review capture checks retain it. Actual-file failing/passing evidence is tracked in [#103](https://github.com/PinedaTec-EU/LeonardoMD/issues/103).
 
 Full validation passes 217 XCTest cases (seven optional skips) plus 12 renderer tests; the iOS Simulator target builds. Proposal transport, native decision editing and transactional filesystem application, durable source inbox/receipt exchange and end-to-end acceptance remain unfinished. These models and archives do not themselves send or apply proposals.
+
+
+## Resumable desktop upload staging checkpoint
+
+An immutable descriptor carries proposal/project IDs, total encoded byte count and SHA-256. The private desktop staging adapter owns a single pending transfer per authenticated device/project namespace; different metadata cannot replace it. Payload fragments are bounded to 20 KiB, below the HTTP request body ceiling even with Base64 encoding. Reopening uses actual received file length; identical retransmissions and interrupted partial appends preserve the original submission. Finalization checks exact length and streaming SHA-256 before decoding, then checks proposal/project identity and the unchanged selected scope. It performs no source-project writes.
+
+Actual filesystem tests cover a multi-fragment proposal, reopened partial transfer, exact retries, private permissions, sender isolation, changed grants, digest corruption, replacement attempts, oversized/incomplete input and an untrusted payload symlink. Full validation passes 219 XCTest cases (seven optional skips) plus 12 renderer tests; the iOS Simulator target builds. Every forthcoming HTTP operation must authorize the current device/project grant and recheck after asynchronous adapter work. Authenticated routes, durable owner inbox, manual application and receipts remain unfinished.
