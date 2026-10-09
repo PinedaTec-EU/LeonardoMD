@@ -26,7 +26,8 @@ final class LocalizationVisualTests: XCTestCase {
             LanguageSettings.shared.language = language
             for restore in [true, false] {
                 session.globalPreferences.restorePreviousSession = restore
-                let view = NSHostingView(rootView: PreferencesView(session: session).modifier(SessionAppearance(session: session)))
+                let view = NSHostingView(rootView: PreferencesView(session: session)
+                    .modifier(SessionAppearance(session: session)).background(session.surfaceColor))
                 try await capture(view, size: NSSize(width: 580, height: 620),
                     to: destination.appendingPathComponent("startup-\(language.rawValue)-\(restore ? "restore" : "clean").png"))
             }
