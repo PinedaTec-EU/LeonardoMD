@@ -9,6 +9,30 @@ import XCTest
 /// single-instance application or touch another running editor.
 @MainActor
 final class LocalizationVisualTests: XCTestCase {
+    func testCaptureDesktopPeerPreferencesInBothLanguages() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_LOCALIZATION_EVIDENCE"] else {
+            throw XCTSkip("Set LEONARDO_LOCALIZATION_EVIDENCE to export native interface captures")
+        }
+        let fixture = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: fixture) }
+        let controller = DesktopPeerController(preferencesURL: fixture.appendingPathComponent("preferences.json"))
+        let session = AppSession(preferencesURL: fixture.appendingPathComponent("preferences.json"))
+        defer { session.stop() }
+        await controller.initialize()
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        let destination = URL(fileURLWithPath: path, isDirectory: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let host = NSHostingView(rootView: DesktopPeerPreferencesView(session: session, controller: controller)
+                .modifier(SessionAppearance(session: session)))
+            try await capture(host, size: NSSize(width: 540, height: 430),
+                to: destination.appendingPathComponent("desktop-peers-\(language.rawValue)-empty.png"), settlingMilliseconds: 600)
+        }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.path))
+    }
+
     func testCaptureScopedSharingInBothLanguages() async throws {
         guard let path = ProcessInfo.processInfo.environment["LEONARDO_LOCALIZATION_EVIDENCE"] else {
             throw XCTSkip("Set LEONARDO_LOCALIZATION_EVIDENCE to export native interface captures")

@@ -156,6 +156,33 @@ final class DocumentTabs {
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 
+    /// Revocation discards access to these copies; it never saves their drafts.
+    /// Wait for existing I/O before the library removes the working directories.
+    func revokeWorkspaces(_ roots: [URL]) async {
+        let paths = roots.map { $0.standardizedFileURL.resolvingSymlinksInPath().path }
+        let affected = tabs.filter { tab in
+            [tab.session.documentURL, tab.session.projectURL].compactMap { $0 }.contains { url in
+                let path = url.standardizedFileURL.resolvingSymlinksInPath().path
+                return paths.contains { path == $0 || path.hasPrefix($0 + "/") }
+            }
+        }
+        guard !affected.isEmpty else { return }
+        for tab in affected { tab.session.stop(); tab.session.clearRevokedContent() }
+        // Existing close operations own their tab indices until their awaits finish.
+        while closing { try? await Task.sleep(for: .milliseconds(20)) }
+        let ids = Set(affected.map(\.id))
+        tabs.removeAll { ids.contains($0.id) }
+        if tabs.isEmpty {
+            // Keep the active-session invariant even while a window is terminating.
+            if addTab() == nil {
+                tabs = [DocumentTab(session: AppSession(preferencesURL: preferencesURL))]
+                activeID = tabs[0].id
+            }
+        } else if activeID.map(ids.contains) == true { activeID = tabs[0].id }
+        updateTitle()
+        for tab in affected { await tab.session.finishRevocation() }
+    }
+
     func stop() {
         stopped = true
         tabs.forEach { $0.session.stop() }

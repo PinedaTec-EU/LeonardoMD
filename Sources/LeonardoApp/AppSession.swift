@@ -188,7 +188,7 @@ final class AppSession {
     }
 
     func contentChanged() {
-        guard snapshot != nil else { return }
+        guard !stopped, snapshot != nil else { return }
         saveStatus = isDirty ? "Pending changes" : "Saved · local file"
         updateTitle()
         saveTask?.cancel()
@@ -200,7 +200,7 @@ final class AppSession {
     }
 
     func save() async {
-        guard !saving, isDirty, let snapshot, let url = documentURL, !externalConflict else { return }
+        guard !stopped, !saving, isDirty, let snapshot, let url = documentURL, !externalConflict else { return }
         saving = true
         saveStatus = "Saving…"
         let draft = content

@@ -85,6 +85,13 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
                 return OpenDocumentBuffer(path: relative, text: tab.session.content)
             } ?? []
         }
+        DesktopPeerController.shared.buffers = DesktopSyncController.shared.buffers
+        DesktopPeerController.shared.revoker.close = { [weak self] ids in
+            let root = DesktopPeerController.shared.workingRoot
+            let folders = ids.map { root.appendingPathComponent($0.uuidString, isDirectory: true) }
+            for window in self?.windows ?? [] { await window.documents.revokeWorkspaces(folders) }
+        }
+        Task { await DesktopPeerController.shared.initialize() }
         Task { await DesktopSyncController.shared.initialize() }
         diagnostics.record(.menuConfigured)
         if windows.isEmpty { newEmptyWindow() }
@@ -99,6 +106,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         NotificationCenter.default.removeObserver(self)
         diagnostics.record(.applicationWillTerminate)
+        DesktopPeerController.shared.stop()
         Task { await DesktopSyncController.shared.stop() }
     }
 

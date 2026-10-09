@@ -16,6 +16,58 @@ final class DocumentTabsTests: XCTestCase {
         return url
     }
 
+    func testPeerRevocationClearsDraftAndPreservesSiblingWorkspace() async throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let copy = root.appendingPathComponent("copy")
+        let sibling = root.appendingPathComponent("copy-other")
+        for folder in [copy, sibling] { try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true) }
+        let revoked = tabs.activeSession
+        let revokedID = try XCTUnwrap(tabs.activeID)
+        let file = try document("note.md", in: copy)
+        await revoked.open(file)
+        revoked.content = "private revoked draft"
+        revoked.contentChanged()
+        _ = tabs.addTab()
+        let retained = tabs.activeSession
+        await retained.open(try document("other.md", in: sibling))
+        retained.content = "other draft"
+        await tabs.revokeWorkspaces([copy])
+        XCTAssertFalse(tabs.tabs.contains { $0.id == revokedID })
+        XCTAssertTrue(tabs.activeSession === retained)
+        XCTAssertEqual(retained.content, "other draft")
+        XCTAssertTrue(retained.isDirty)
+        XCTAssertTrue(revoked.stopped)
+        XCTAssertNil(revoked.documentURL)
+        XCTAssertNil(revoked.snapshot)
+        XCTAssertEqual(revoked.content, "")
+        // Revocation cancels pending autosave; subsequent callbacks cannot recreate it.
+        revoked.content = "late callback"
+        revoked.contentChanged()
+        await revoked.save()
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "note.md")
+    }
+
+    func testPeerRevocationWaitsForExistingOperationAndKeepsBlankTab() async throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let session = tabs.activeSession
+        await session.open(try document("note.md", in: root))
+        session.busy = true
+        var finished = false
+        let revocation = Task { await tabs.revokeWorkspaces([root]); finished = true }
+        while !session.stopped { await Task.yield() }
+        XCTAssertEqual(session.content, "")
+        XCTAssertFalse(finished)
+        XCTAssertFalse(tabs.activeSession === session)
+        session.busy = false
+        await revocation.value
+        XCTAssertTrue(finished)
+        XCTAssertEqual(tabs.tabs.count, 1)
+        XCTAssertNil(tabs.activeSession.documentURL)
+        XCTAssertEqual(tabs.activeSession.content, "")
+    }
+
     func testReorderBothDirectionsRetainsActiveSessionAndDraft() async throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }

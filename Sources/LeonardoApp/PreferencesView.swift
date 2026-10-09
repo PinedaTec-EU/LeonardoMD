@@ -34,8 +34,10 @@ struct PreferencesView: View {
                     .tag("extensions").tabItem { Label(L10n.text("Extensions"), systemImage: "puzzlepiece.extension") }
                 MobileSyncPreferencesView(session: session, controller: .shared)
                     .tag("mobile").tabItem { Label("Little Leonardo", systemImage: "iphone") }
+                DesktopPeerPreferencesView(session: session, controller: .shared)
+                    .tag("peers").tabItem { Label(L10n.text("Linked Macs"), systemImage: "desktopcomputer") }
             }
-            Text(selectedTab == "mobile" ? L10n.text("Service and device settings belong to this Mac.") : projectScope ? L10n.text("Saved in .leonardomd/project.json. Contains no credentials.") : L10n.text("Global preferences apply to the standalone viewer and projects that inherit them."))
+            Text((selectedTab == "mobile" || selectedTab == "peers") ? L10n.text("Service and device settings belong to this Mac.") : projectScope ? L10n.text("Saved in .leonardomd/project.json. Contains no credentials.") : L10n.text("Global preferences apply to the standalone viewer and projects that inherit them."))
                 .font(.caption).foregroundStyle(.secondary)
         }.buttonStyle(PremiumButtonStyle()).padding(24).frame(width: 580, height: 620)
         .onAppear { projectScope = session.projectURL != nil }

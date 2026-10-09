@@ -9,7 +9,7 @@ struct MobileSyncPreferencesView: View {
     @State private var selectingContent = false
     var body: some View {
         Form {
-            Toggle(L10n.text("Enable Little Leonardo service"), isOn: Binding(
+            Toggle(L10n.text("Enable direct synchronization service"), isOn: Binding(
                 get: { controller.settings.enabled }, set: { value in
                     var updated = controller.settings; updated.enabled = value
                     Task { await controller.update(updated) }
@@ -41,6 +41,10 @@ struct MobileSyncPreferencesView: View {
                 Text(running.endpoint.absoluteString).textSelection(.enabled)
                 Button(L10n.text("Create pairing QR")) { Task { await controller.createQR() } }
                 if let url = controller.invitationURL, let image = qrImage(url.absoluteString) {
+                    Button(L10n.text("Copy pairing link")) {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(url.absoluteString, forType: .string)
+                    }
                     Image(nsImage: image).interpolation(.none).resizable().frame(width: 170, height: 170)
                         .accessibilityLabel(L10n.text("Little Leonardo pairing QR"))
                 }
@@ -101,7 +105,7 @@ private struct PairingConsentView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text(request.deviceName).font(.title2)
             Text(request.comparisonCode).font(.largeTitle.monospaced())
-            Toggle(L10n.text("The code matches Little Leonardo"), isOn: $confirmed)
+            Toggle(L10n.text("The codes match on both devices"), isOn: $confirmed)
             ForEach(controller.settings.projects) { project in
                 Toggle(project.name, isOn: Binding(get: { projects.contains(project.id) }, set: {
                     if $0 { projects.insert(project.id) } else { projects.remove(project.id) }
