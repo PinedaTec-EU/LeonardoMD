@@ -17,6 +17,7 @@ struct SavedSession: Codable, Equatable {
 struct SessionRestoration {
     let fileURL: URL
 
+    @MainActor
     init(preferencesURL: URL = AppSession.preferencesURL) {
         fileURL = preferencesURL.deletingLastPathComponent().appendingPathComponent("session.json")
     }
@@ -45,15 +46,18 @@ extension DocumentTabs {
         let initialID = activeID
         var selectedID = initialID
         for (index, saved) in window.tabs.enumerated() {
+            guard acceptsExternalDrops else { return }
             // Preserve empty tabs and selection, while skipping unavailable locations.
             if index > 0 { _ = addTab() }
             let session = activeSession
             if let workspace = saved.workspace, Self.available(workspace, directory: true) {
                 await session.openWorkspace(workspace)
             }
+            guard acceptsExternalDrops else { return }
             if let project = saved.project, Self.available(project, directory: true) {
                 await session.openProject(project)
             }
+            guard acceptsExternalDrops else { return }
             if let document = saved.document, Self.available(document, directory: false) {
                 await session.openDocument(document)
             }

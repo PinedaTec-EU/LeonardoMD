@@ -51,6 +51,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private var processingLaunches = false
     private var launched = false
     private var startupReady = false
+    private var startupTask: Task<Void, Never>?
     private var quitting = false
     private let restoration = SessionRestoration()
     private static let closeCheckInterval: Duration = .milliseconds(50)
@@ -79,7 +80,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         updates.start()
         diagnostics.record(.menuConfigured)
         if windows.isEmpty { newEmptyWindow() }
-        Task {
+        startupTask = Task {
             await restoreStartupSession()
             startupReady = true
             processPendingLaunches()
@@ -173,6 +174,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         Task {
+            await startupTask?.value
             var canTerminate = true
             for window in windows {
                 if await !window.documents.prepareClose() { canTerminate = false }

@@ -8,6 +8,31 @@ import XCTest
 /// single-instance application or touch another running editor.
 @MainActor
 final class LocalizationVisualTests: XCTestCase {
+    func testCaptureStartupPreferenceWithProjectScope() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_STARTUP_EVIDENCE"] else {
+            throw XCTSkip("Set LEONARDO_STARTUP_EVIDENCE to export startup preference captures")
+        }
+        let destination = URL(fileURLWithPath: path, isDirectory: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let fixture = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: fixture, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: fixture) }
+        let session = AppSession(preferencesURL: fixture.appendingPathComponent("preferences.json"))
+        defer { session.stop() }
+        await session.openProject(fixture)
+        let previousLanguage = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previousLanguage }
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            for restore in [true, false] {
+                session.globalPreferences.restorePreviousSession = restore
+                let view = NSHostingView(rootView: PreferencesView(session: session).modifier(SessionAppearance(session: session)))
+                try await capture(view, size: NSSize(width: 580, height: 620),
+                    to: destination.appendingPathComponent("startup-\(language.rawValue)-\(restore ? "restore" : "clean").png"))
+            }
+        }
+    }
+
     func testCapturePreferencesAndWorkspaceInBothLanguages() async throws {
         guard let path = ProcessInfo.processInfo.environment["LEONARDO_LOCALIZATION_EVIDENCE"] else {
             throw XCTSkip("Set LEONARDO_LOCALIZATION_EVIDENCE to export native interface captures")
