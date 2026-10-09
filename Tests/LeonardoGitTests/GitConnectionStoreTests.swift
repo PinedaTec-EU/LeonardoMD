@@ -45,10 +45,15 @@ final class GitConnectionStoreTests: XCTestCase {
     }
 
     func testInvalidBranchUsernameAndCredentialValuesFailBeforeStorage() async throws {
-        for branch in ["main", "refs/tags/release", "refs/heads/a..b"] {
+        let reservedPublication = "refs/heads/little-leonardo/main"
+        let reservedIntegration = "refs/heads/little-leonardo-integrations/device/project/proposal"
+        for branch in ["main", "refs/tags/release", "refs/heads/a..b", reservedPublication, reservedIntegration,
+                       "refs/heads/little-leonardo", "refs/heads/little-leonardo-integrations"] {
             XCTAssertThrowsError(try GitProjectConnection(projectID: UUID(), endpoint: URL(string: "https://fixture.invalid/repo")!,
                                                          branch: branch, scope: CorpusScope(folder: "docs")))
         }
+        XCTAssertNoThrow(try GitProjectConnection(projectID: UUID(), endpoint: URL(string: "https://fixture.invalid/repo")!,
+                                                  branch: "refs/heads/little-leonardo-notes", scope: CorpusScope(folder: "docs")))
         let store = GitCredentialStore(service: "fixture.invalid.unused")
         for value in ["", "line\nsecret", String(repeating: "a", count: 16 * 1_024 + 1)] {
             do { try await store.save(value, projectID: UUID()); XCTFail("Invalid secret accepted") } catch {}

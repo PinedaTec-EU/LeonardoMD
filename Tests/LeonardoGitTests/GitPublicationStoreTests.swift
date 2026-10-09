@@ -83,4 +83,52 @@ final class GitPublicationStoreTests: XCTestCase {
         try FileManager.default.createSymbolicLink(at: url, withDestinationURL: root.appendingPathComponent("outside"))
         do { try await store.save(prepared); XCTFail("Symlink write accepted") } catch {}
     }
+
+    func testReconciliationRequestPublishesCleanSnapshotWithHashBoundPurpose() throws {
+        let (_, baseline) = try fixture(sha256: false)
+        let clean = try OfflineProject(
+            name: "Fixture", mode: .git, scope: CorpusScope(folder: "docs"),
+            snapshot: CorpusSnapshot(revision: baseline.commitID, files: [
+                CorpusFile(path: "docs/keep.md", content: Data("old".utf8)),
+                CorpusFile(path: "docs/note.md", content: Data("old".utf8))
+            ]))
+        let identity = try GitCommitIdentity(name: "Fixture", email: "fixture@example.invalid", timestamp: 1)
+        let prepared = try GitPreparedPublication(
+            project: clean, baseline: baseline, deviceID: UUID(), identity: identity,
+            expectedOldID: nil, purpose: .reconciliationRequest)
+        XCTAssertEqual(prepared.purpose, .reconciliationRequest)
+        let restarted = try JSONDecoder().decode(GitPreparedPublication.self,
+                                                 from: JSONEncoder().encode(prepared))
+        XCTAssertEqual(restarted, prepared)
+
+        var missingPurpose = try XCTUnwrap(JSONSerialization.jsonObject(
+            with: JSONEncoder().encode(prepared)) as? [String: Any])
+        missingPurpose.removeValue(forKey: "purpose")
+        let missingPurposeData = try JSONSerialization.data(withJSONObject: missingPurpose)
+        XCTAssertThrowsError(try JSONDecoder().decode(GitPreparedPublication.self,
+                                                        from: missingPurposeData))
+
+        var missingMetadata = try XCTUnwrap(JSONSerialization.jsonObject(
+            with: JSONEncoder().encode(prepared)) as? [String: Any])
+        missingMetadata.removeValue(forKey: "publicationMetadata")
+        let missingMetadataData = try JSONSerialization.data(withJSONObject: missingMetadata)
+        XCTAssertThrowsError(try JSONDecoder().decode(GitPreparedPublication.self,
+                                                        from: missingMetadataData))
+
+        let restored = try restarted.restore(project: clean, baseline: baseline)
+        XCTAssertEqual(restored.capture.files, clean.files)
+        let metadata = try GitPublicationMetadata.parse(commit: restored.commit.commit,
+                                                        expectedCommitID: restored.commit.commit.id)
+        XCTAssertEqual(metadata.purpose, .reconciliationRequest)
+
+        var sent = clean
+        try sent.markPublished(restored.capture, purpose: .reconciliationRequest)
+        XCTAssertEqual(sent.publication, .sent)
+        XCTAssertEqual(sent.publishedFiles, clean.files)
+        XCTAssertThrowsError(try GitCommitBuilder.build(project: clean, baseline: baseline,
+                                                        identity: identity))
+        XCTAssertThrowsError(try GitCommitBuilder.build(project: clean, baseline: baseline,
+                                                        identity: identity,
+                                                        purpose: .reconciliationRequest))
+    }
 }

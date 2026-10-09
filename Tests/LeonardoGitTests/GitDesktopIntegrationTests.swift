@@ -131,6 +131,7 @@ final class GitDesktopIntegrationTests: XCTestCase {
             XCTAssertEqual(publication.deviceID, fixture.deviceID)
             XCTAssertEqual(publication.baseRevision, fixture.baseRevision)
             XCTAssertEqual(publication.scope, fixture.scope)
+            XCTAssertEqual(publication.purpose, .normalChanges)
 
             var tamperedData = fixture.built.commit.data
             tamperedData.append(0x20)
@@ -144,6 +145,13 @@ final class GitDesktopIntegrationTests: XCTestCase {
             let wrongParent = Data(wrongText.utf8)
             let wrong = GitObject.create(kind: .commit, data: wrongParent, sha256: sha256)
             XCTAssertThrowsError(try GitPublicationMetadata.parse(commit: wrong))
+
+            let missingPurposeText = commitText.replacingOccurrences(
+                of: "little-leonardo-purpose normalChanges\n", with: "")
+            let missingPurpose = GitObject.create(kind: .commit, data: Data(missingPurposeText.utf8),
+                                                  sha256: sha256)
+            XCTAssertThrowsError(try GitPublicationMetadata.parse(
+                commit: missingPurpose, expectedCommitID: missingPurpose.id))
         }
     }
 

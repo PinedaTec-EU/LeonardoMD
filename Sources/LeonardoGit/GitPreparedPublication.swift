@@ -9,27 +9,55 @@ public struct GitPreparedPublication: Codable, Sendable, Equatable {
     public let baseRevision: String
     public let commitID: String
     public let expectedOldID: String?
+    public let purpose: GitPublicationPurpose
     public var branch: String { GitDeviceBranch.name(deviceID: deviceID, projectID: projectID) }
     private let scope: CorpusScope
     private let identity: GitCommitIdentity
-    // Optional keeps journals written before commit metadata was introduced recoverable.
-    private let publicationMetadata: GitPublicationMetadata?
+    private let publicationMetadata: GitPublicationMetadata
     private let files: [File]
     private let pack: Data
     static let maximumPackBytes = 256 * 1_024 * 1_024
 
     public init(project: OfflineProject, baseline: GitBaseline, deviceID: UUID,
-                identity: GitCommitIdentity, expectedOldID: String?) throws {
+                identity: GitCommitIdentity, expectedOldID: String?,
+                purpose: GitPublicationPurpose = .normalChanges) throws {
         let publicationMetadata = try GitPublicationMetadata(projectID: project.id, deviceID: deviceID,
-                                                             baseRevision: project.base.revision, scope: project.scope)
+                                                             baseRevision: project.base.revision, scope: project.scope,
+                                                             purpose: purpose)
         let built = try GitCommitBuilder.build(project: project, baseline: baseline, identity: identity,
-                                               publication: publicationMetadata)
+                                               publication: publicationMetadata, purpose: purpose)
         self.projectID = project.id; self.deviceID = deviceID; self.baseRevision = project.base.revision
         self.scope = project.scope; self.identity = identity; self.publicationMetadata = publicationMetadata
         self.expectedOldID = expectedOldID
+        self.purpose = purpose
         self.commitID = built.commit.id
         self.files = project.files.map { File(path: $0.path, objectID: GitObject.create(kind: .blob, data: $0.content, sha256: project.base.revision.count == 64).id) }
         self.pack = try GitPackWriter.encode(objects: built.objects, sha256: project.base.revision.count == 64)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case projectID, deviceID, baseRevision, commitID, expectedOldID, purpose,
+             scope, identity, publicationMetadata, files, pack
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let metadata = try container.decode(GitPublicationMetadata.self,
+                                            forKey: .publicationMetadata)
+        self.projectID = try container.decode(UUID.self, forKey: .projectID)
+        self.deviceID = try container.decode(UUID.self, forKey: .deviceID)
+        self.baseRevision = try container.decode(String.self, forKey: .baseRevision)
+        self.commitID = try container.decode(String.self, forKey: .commitID)
+        self.expectedOldID = try container.decodeIfPresent(String.self, forKey: .expectedOldID)
+        self.purpose = try container.decode(GitPublicationPurpose.self, forKey: .purpose)
+        self.scope = try container.decode(CorpusScope.self, forKey: .scope)
+        self.identity = try container.decode(GitCommitIdentity.self, forKey: .identity)
+        self.publicationMetadata = metadata
+        self.files = try container.decode([File].self, forKey: .files)
+        self.pack = try container.decode(Data.self, forKey: .pack)
+        if metadata.purpose != purpose {
+            throw SyncError.invalidSnapshot
+        }
     }
 
     public func restore(project: OfflineProject, baseline: GitBaseline) throws -> (commit: GitBuiltCommit, capture: CorpusSnapshot) {
@@ -52,7 +80,7 @@ public struct GitPreparedPublication: Codable, Sendable, Equatable {
         var draft = project
         try draft.replaceLocalFiles(captured)
         let rebuilt = try GitCommitBuilder.build(project: draft, baseline: baseline, identity: identity,
-                                                 publication: publicationMetadata)
+                                                 publication: publicationMetadata, purpose: purpose)
         guard rebuilt.commit.id == commitID else { throw GitWireError.invalidPack }
         // Rebuild from the verified scope instead of trusting archived extra objects.
         return (rebuilt, capture)

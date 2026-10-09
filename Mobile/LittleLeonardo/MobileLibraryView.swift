@@ -68,20 +68,20 @@ struct MobileLibraryView: View {
                 case .settings: synchronizationSettings
                 }
             }
-            .task(id: "\(syncInterval)-\(scenePhase)") {
-                guard scenePhase == .active, [1, 5, 15, 30, 60].contains(syncInterval) else { return }
-                while !Task.isCancelled {
-                    do { try await Task.sleep(for: .seconds(syncInterval * 60)) }
-                    catch { return }
-                    guard !Task.isCancelled else { return }
-                    await library.synchronize()
-                }
-            }
-            .alert("No se pudo completar la operación", isPresented: Binding(
-                get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
-                Button("Aceptar") { library.error = nil }
-            } message: { Text(library.error ?? "") }
         }
+        .task(id: "\(syncInterval)-\(scenePhase)") {
+            guard scenePhase == .active, [1, 5, 15, 30, 60].contains(syncInterval) else { return }
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(syncInterval * 60)) }
+                catch { return }
+                guard !Task.isCancelled else { return }
+                await library.synchronize()
+            }
+        }
+        .alert("No se pudo completar la operación", isPresented: Binding(
+            get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
+            Button("Aceptar") { library.error = nil }
+        } message: { Text(library.error ?? "") }
     }
     private var directConnectionSheet: some View {
         NavigationStack {
@@ -175,6 +175,7 @@ struct MobileProjectView: View {
                     }.swipeActions {
                         if project.mode == .git {
                             Button("Eliminar", role: .destructive) { deletingPath = file.path }
+                                .disabled(library.connecting)
                         }
                     }
                 }
@@ -182,12 +183,27 @@ struct MobileProjectView: View {
         }.navigationTitle(project?.name ?? "Proyecto")
         .toolbar {
             if let project, project.mode == .git {
+                NavigationLink {
+                    MobileGitDirectMappingView(library: library, projectID: projectID)
+                } label: {
+                    Label("Avisar a LeonardoMD", systemImage: "bell")
+                }.accessibilityIdentifier("git-direct-notification-settings")
                 Button("Nuevo documento", systemImage: "doc.badge.plus") { newDocument = true }
+                    .disabled(library.connecting)
                 Button("Enviar cambios", systemImage: "arrow.up.circle") {
                     Task { await library.sendGitProject(projectID: projectID, authorName: gitAuthorName, authorEmail: gitAuthorEmail) }
                 }.disabled(library.connecting || project.publication == .sent && !library.pendingGitSends.contains(projectID)
                            || !project.hasLocalChanges && !library.pendingGitSends.contains(projectID))
                     .accessibilityIdentifier("git-send-changes")
+                if library.gitReconciliationRequired.contains(projectID), !project.hasLocalChanges {
+                    Button("Solicitar reconciliación", systemImage: "arrow.triangle.branch") {
+                        Task {
+                            await library.sendGitProject(projectID: projectID, authorName: gitAuthorName,
+                                authorEmail: gitAuthorEmail, purpose: .reconciliationRequest)
+                        }
+                    }.disabled(library.connecting || project.publication == .sent)
+                        .accessibilityIdentifier("git-request-reconciliation")
+                }
             }
         }
         .alert("Nuevo documento", isPresented: $newDocument) {
@@ -198,7 +214,7 @@ struct MobileProjectView: View {
                 Task {
                     if await library.createDocument(projectID: projectID, path: path) { documentName = "" }
                 }
-            }
+            }.disabled(library.connecting)
             Button("Cancelar", role: .cancel) { documentName = "" }
         } message: { Text("Se creará dentro de la carpeta autorizada del proyecto.") }
         .alert("Eliminar documento", isPresented: Binding(get: { deletingPath != nil }, set: { if !$0 { deletingPath = nil } })) {
@@ -206,7 +222,7 @@ struct MobileProjectView: View {
                 guard let path = deletingPath else { return }
                 Task { _ = await library.deleteFile(projectID: projectID, path: path) }
                 deletingPath = nil
-            }
+            }.disabled(library.connecting)
             Button("Cancelar", role: .cancel) { deletingPath = nil }
         } message: { Text(deletingPath ?? "") }
     }
@@ -220,6 +236,7 @@ struct MobileDocumentView: View {
     var initialAnchor: String? = nil
     @State private var text = ""
     @State private var editing = false
+    @State private var holdsEditingLease = false
     @State private var readOnlyNotice = false
     @State private var saving = false
     @State private var source = false
@@ -253,6 +270,10 @@ struct MobileDocumentView: View {
         }
         .navigationTitle((file.path as NSString).lastPathComponent)
         .toolbar {
+            Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
+                Task { await library.synchronize() }
+            }.disabled(library.connecting || editing)
+                .accessibilityIdentifier("document-sync")
             if !editing {
                 Button(source ? "Ver documento" : "Ver texto", systemImage: "chevron.left.forwardslash.chevron.right") { source.toggle() }
             }
@@ -260,14 +281,23 @@ struct MobileDocumentView: View {
                 if editing {
                     saving = true
                     Task {
-                        if await library.saveText(projectID: projectID, path: file.path, text: text) { editing = false }
+                        if await library.saveText(projectID: projectID, path: file.path, text: text) {
+                            editing = false
+                            releaseEditingLease()
+                        }
                         saving = false
                     }
                 } else if mode == .direct { readOnlyNotice = true }
-                else { editing = true }
-            }.disabled(saving || String(data: file.content, encoding: .utf8) == nil)
+                else if library.beginDocumentEditing(projectID: projectID) {
+                    holdsEditingLease = true
+                    editing = true
+                }
+            }.disabled(saving || library.connecting || String(data: file.content, encoding: .utf8) == nil)
         }
         .onAppear {
+            if editing, !holdsEditingLease {
+                holdsEditingLease = library.beginDocumentEditing(projectID: projectID)
+            }
             let project = library.projects.first { $0.id == projectID }
             let current = project?.files.first { $0.path == file.path }
             if !editing { text = current.flatMap { String(data: $0.content, encoding: .utf8) } ?? "El documento ya no está disponible." }
@@ -275,12 +305,17 @@ struct MobileDocumentView: View {
         }
         .onChange(of: library.projects) { _, projects in
             updateAssets(projects.first { $0.id == projectID })
-            if !projects.contains(where: { $0.id == projectID }) { text = ""; editing = false }
+            if !projects.contains(where: { $0.id == projectID }) {
+                text = ""
+                editing = false
+                releaseEditingLease()
+            }
             else if mode == .direct || !editing {
                 text = projects.first(where: { $0.id == projectID })?.files.first(where: { $0.path == file.path })
                     .flatMap { String(data: $0.content, encoding: .utf8) } ?? "El documento ya no está disponible."
             }
         }
+        .onDisappear { releaseEditingLease() }
         .alert("Este proyecto es de solo lectura", isPresented: $readOnlyNotice) {
             Button("Aceptar", role: .cancel) {}
         } message: {
@@ -301,6 +336,12 @@ struct MobileDocumentView: View {
                 didScrollToInitialAnchor = true
             }
         }
+    }
+
+    private func releaseEditingLease() {
+        guard holdsEditingLease else { return }
+        library.endDocumentEditing(projectID: projectID)
+        holdsEditingLease = false
     }
 
     private func followLink(_ url: URL) {

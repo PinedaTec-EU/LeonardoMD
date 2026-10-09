@@ -61,4 +61,15 @@ public struct DirectEnrollmentClient: Sendable {
         return try OfflineProject(id: descriptor.id, name: descriptor.name, mode: .direct,
                                   scope: descriptor.scope, snapshot: snapshot)
     }
+
+    /// Prompts the paired desktop to inspect a Git publication. The direct
+    /// credential authorizes the source project in the URL; the Git project
+    /// identity in the body is never treated as a grant or replacement ID.
+    public func notifyGitReconciliation(_ wakeup: GitReconciliationWakeup,
+                                        deviceID: UUID, credential: String) async throws {
+        let response = try await client.request(method: "POST",
+            path: "/v1/devices/\(deviceID.uuidString)/projects/\(wakeup.sourceProjectID.uuidString)/git-wakeup",
+            credential: credential, body: try JSONEncoder().encode(wakeup))
+        guard response.status == 204 else { throw TransportError.unexpectedResponse }
+    }
 }

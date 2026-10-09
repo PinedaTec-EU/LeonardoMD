@@ -21,6 +21,8 @@
 		674D0F49D2B450080B6C231E /* MobileGitConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95A6ED863D98F79753412C6A /* MobileGitConnectionView.swift */; };
 		E690EC10B778650361B2EF4D /* MobileGitEnrollment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3047F16A76D2E7CF7DC39C63 /* MobileGitEnrollment.swift */; };
 		562AF6F093F6017BC6111959 /* MobileGitSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5766F05ABFB4290C2135DFCB /* MobileGitSender.swift */; };
+		FC0D3FAC5AD74CCF9D75A451 /* MobileGitIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70CAB6D3C2D948039788E971 /* MobileGitIntegration.swift */; };
+		A8F6D0E4C9B741D3B1E6F205 /* MobileGitDirectMappingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4E8C1F9A2D64307A5D0E8C1 /* MobileGitDirectMappingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,6 +47,8 @@
 		95A6ED863D98F79753412C6A /* MobileGitConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileGitConnectionView.swift; sourceTree = "<group>"; };
 		3047F16A76D2E7CF7DC39C63 /* MobileGitEnrollment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileGitEnrollment.swift; sourceTree = "<group>"; };
 		5766F05ABFB4290C2135DFCB /* MobileGitSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileGitSender.swift; sourceTree = "<group>"; };
+		70CAB6D3C2D948039788E971 /* MobileGitIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileGitIntegration.swift; sourceTree = "<group>"; };
+		B4E8C1F9A2D64307A5D0E8C1 /* MobileGitDirectMappingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileGitDirectMappingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -122,6 +126,8 @@
 				D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */,
 				7849226B36C61649B125BDDC /* MobileLibraryView.swift */,
 				5766F05ABFB4290C2135DFCB /* MobileGitSender.swift */,
+				70CAB6D3C2D948039788E971 /* MobileGitIntegration.swift */,
+				B4E8C1F9A2D64307A5D0E8C1 /* MobileGitDirectMappingView.swift */,
 				3047F16A76D2E7CF7DC39C63 /* MobileGitEnrollment.swift */,
 				95A6ED863D98F79753412C6A /* MobileGitConnectionView.swift */,
 				EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */,
@@ -233,6 +239,8 @@
 				22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */,
 				2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */,
 				562AF6F093F6017BC6111959 /* MobileGitSender.swift in Sources */,
+				FC0D3FAC5AD74CCF9D75A451 /* MobileGitIntegration.swift in Sources */,
+				A8F6D0E4C9B741D3B1E6F205 /* MobileGitDirectMappingView.swift in Sources */,
 				E690EC10B778650361B2EF4D /* MobileGitEnrollment.swift in Sources */,
 				674D0F49D2B450080B6C231E /* MobileGitConnectionView.swift in Sources */,
 				DA52AFC54A29A9980B0601CC /* MobileQRScanner.swift in Sources */,

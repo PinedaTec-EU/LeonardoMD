@@ -44,6 +44,59 @@ public actor GitIntegrationReceiptStore {
         if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
     }
 
+    /// Enumerates durable receipts without consulting a branch tip. Callers
+    /// use this after a crash between local application and publication; each
+    /// returned receipt still carries its exact proposal commit and scope.
+    public func all(projectID: UUID? = nil, deviceID: UUID? = nil) throws -> [GitIntegrationReceipt] {
+        guard FileManager.default.fileExists(atPath: root.path) else { return [] }
+        let rootValues = try root.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+        guard rootValues.isSymbolicLink != true, rootValues.isDirectory == true else {
+            throw SyncError.invalidPath
+        }
+        var result: [GitIntegrationReceipt] = []
+        for projectDirectory in try FileManager.default.contentsOfDirectory(
+            at: root, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey]) {
+            let projectValues = try projectDirectory.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+            guard projectValues.isSymbolicLink != true, projectValues.isDirectory == true else {
+                throw SyncError.invalidPath
+            }
+            guard let foundProject = UUID(uuidString: projectDirectory.lastPathComponent),
+                  projectID.map({ $0 == foundProject }) ?? true else { continue }
+            for deviceDirectory in try FileManager.default.contentsOfDirectory(
+                at: projectDirectory, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey]) {
+                let deviceValues = try deviceDirectory.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+                guard deviceValues.isSymbolicLink != true, deviceValues.isDirectory == true else {
+                    throw SyncError.invalidPath
+                }
+                guard let foundDevice = UUID(uuidString: deviceDirectory.lastPathComponent),
+                      deviceID.map({ $0 == foundDevice }) ?? true else { continue }
+                for file in try FileManager.default.contentsOfDirectory(
+                    at: deviceDirectory,
+                    includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
+                    where file.pathExtension == "json" {
+                    let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
+                    guard values.isSymbolicLink != true, values.isRegularFile == true else {
+                        throw SyncError.invalidPath
+                    }
+                    guard (values.fileSize ?? 0) <= Self.maximumEncodedBytes else {
+                        throw SyncError.sizeLimitExceeded
+                    }
+                    let commitID = file.deletingPathExtension().lastPathComponent
+                    let receipt = try JSONDecoder().decode(GitIntegrationReceipt.self,
+                                                           from: Data(contentsOf: file))
+                    guard receipt.projectID == foundProject, receipt.deviceID == foundDevice,
+                          receipt.commitID == commitID else { throw SyncError.invalidSnapshot }
+                    result.append(receipt)
+                }
+            }
+        }
+        return result.sorted {
+            if $0.projectID != $1.projectID { return $0.projectID.uuidString < $1.projectID.uuidString }
+            if $0.deviceID != $1.deviceID { return $0.deviceID.uuidString < $1.deviceID.uuidString }
+            return $0.commitID < $1.commitID
+        }
+    }
+
     private func location(projectID: UUID, deviceID: UUID, commitID: String) throws -> URL {
         guard [40, 64].contains(commitID.utf8.count),
               commitID.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }),

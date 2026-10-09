@@ -12,6 +12,7 @@ public struct GitPublishedProposal: Sendable {
     public var commitID: String { branch.commitID }
     public var scope: CorpusScope { publication.scope }
     public var baseRevision: String { publication.baseRevision }
+    public var purpose: GitPublicationPurpose { publication.purpose }
 
     public init(branch: GitPublishedBranch, publication: GitPublicationMetadata,
                 repository: GitRepositoryMetadata, snapshot: CorpusSnapshot) throws {

@@ -44,10 +44,14 @@ public struct GitV2Capabilities: Sendable {
     }
 
     /// Fetches only the selected tip's commit/tree metadata; file contents remain omitted.
-    public func metadataRequest(want objectID: String) throws -> Data {
+    /// A larger depth is used only for bounded ancestry proofs and never
+    /// permits a blob-bearing or unbounded history transfer.
+    public func metadataRequest(want objectID: String, depth: Int = 1) throws -> Data {
         try requireFolderTransfer()
-        guard isValidObjectID(objectID) else { throw GitWireError.invalidObjectID }
-        return try fetchRequest(arguments: ["want \(objectID)\n", "deepen 1\n", "filter blob:none\n", "done\n"])
+        guard isValidObjectID(objectID), (1...1_024).contains(depth) else {
+            throw GitWireError.invalidObjectID
+        }
+        return try fetchRequest(arguments: ["want \(objectID)\n", "deepen \(depth)\n", "filter blob:none\n", "done\n"])
     }
 
     /// Wants only explicitly selected file blobs. No commit traversal or fallback clone.

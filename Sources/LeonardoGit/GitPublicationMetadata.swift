@@ -11,13 +11,29 @@ public struct GitPublicationMetadata: Codable, Equatable, Sendable {
     public let deviceID: UUID
     public let baseRevision: String
     public let scope: CorpusScope
+    public let purpose: GitPublicationPurpose
 
-    public init(projectID: UUID, deviceID: UUID, baseRevision: String, scope: CorpusScope) throws {
+    public init(projectID: UUID, deviceID: UUID, baseRevision: String, scope: CorpusScope,
+                purpose: GitPublicationPurpose = .normalChanges) throws {
         guard Self.isObjectID(baseRevision) else { throw GitWireError.invalidObjectID }
         self.projectID = projectID
         self.deviceID = deviceID
         self.baseRevision = baseRevision
         self.scope = scope
+        self.purpose = purpose
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case projectID, deviceID, baseRevision, scope, purpose
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        try self.init(projectID: container.decode(UUID.self, forKey: .projectID),
+                      deviceID: container.decode(UUID.self, forKey: .deviceID),
+                      baseRevision: container.decode(String.self, forKey: .baseRevision),
+                      scope: container.decode(CorpusScope.self, forKey: .scope),
+                      purpose: container.decode(GitPublicationPurpose.self, forKey: .purpose))
     }
 
     /// Parses and verifies metadata from one exact commit object.
@@ -63,7 +79,12 @@ public struct GitPublicationMetadata: Codable, Equatable, Sendable {
             throw GitWireError.invalidPack
         }
         let scope = try decodeScope(scopeValue)
-        return try Self(projectID: projectID, deviceID: deviceID, baseRevision: baseRevision, scope: scope)
+        guard let purposeValue = values["little-leonardo-purpose"],
+              let purpose = GitPublicationPurpose(rawValue: purposeValue) else {
+            throw GitWireError.invalidPack
+        }
+        return try Self(projectID: projectID, deviceID: deviceID,
+                        baseRevision: baseRevision, scope: scope, purpose: purpose)
     }
 
     /// The canonical commit header lines. Their values contain no whitespace
@@ -73,7 +94,8 @@ public struct GitPublicationMetadata: Codable, Equatable, Sendable {
             "little-leonardo-project \(projectID.uuidString.lowercased())",
             "little-leonardo-device \(deviceID.uuidString.lowercased())",
             "little-leonardo-base \(baseRevision)",
-            "little-leonardo-scope \(Self.encodeScope(scope))"
+            "little-leonardo-scope \(Self.encodeScope(scope))",
+            "little-leonardo-purpose \(purpose.rawValue)"
         ]
     }
 

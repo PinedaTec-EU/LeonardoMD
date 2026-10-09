@@ -80,6 +80,26 @@ struct MobileSyncPreferencesView: View {
                     }
                 }
             }
+            Section(L10n.text("Git publications to review")) {
+                if controller.gitWakeups.isEmpty {
+                    Text(L10n.text("No Git publications are waiting for review")).foregroundStyle(.secondary)
+                } else {
+                    ForEach(controller.gitWakeups) { notice in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(notice.source.name).font(.headline)
+                            Text("Git · \(notice.wakeup.proposalCommitID.prefix(12)) · \(notice.wakeup.scope.folder.isEmpty ? "/" : notice.wakeup.scope.folder)")
+                                .font(.caption).foregroundStyle(.secondary)
+                            HStack {
+                                Button(L10n.text("Review Git publication")) {
+                                    Task { await controller.reviewGitWakeup(notice, in: session) }
+                                }.accessibilityIdentifier("desktop-git-wakeup-review")
+                                Button(L10n.text("Dismiss")) { controller.dismissGitWakeup(notice) }
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
             Section(L10n.text("Linked devices")) {
                 ForEach(controller.consent.devices) { device in
                     HStack {

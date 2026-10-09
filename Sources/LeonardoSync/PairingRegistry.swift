@@ -157,6 +157,15 @@ public struct PairingRegistry: Codable, Sendable {
         guard devices.first(where: { $0.id == deviceID })?.kind == .desktopPeer else { throw SyncError.readOnly }
     }
 
+    /// A read-only paired device may prompt the owner to inspect a Git result.
+    /// This does not grant proposal, source-write, or corpus-read authority;
+    /// the exact source-project grant remains the only authorization input.
+    public func authorizeNotification(deviceID: UUID, credential: String, projectID: UUID) throws {
+        guard try access(deviceID: deviceID, credential: credential, projectID: projectID) == .authorized else {
+            throw SyncError.revoked
+        }
+    }
+
     public func pairingStatus(requestID: UUID, credential: String, now: Date) throws -> DeviceAccess {
         if devices.contains(where: { $0.id == requestID }) { return try access(deviceID: requestID, credential: credential) }
         guard enabled else { throw PairingError.disabled }

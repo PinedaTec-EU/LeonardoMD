@@ -38,6 +38,8 @@ public struct DirectDeviceStatus: Codable, Sendable {
 
 public enum DirectAuthorityError: Error, Sendable { case busy }
 
+public typealias GitReconciliationWakeupHandler = @Sendable (UUID, GitReconciliationWakeup) async -> Void
+
 /// Single owner for consent state; a persisted mutation becomes visible atomically.
 public actor DirectSyncAuthority {
     private var registry: PairingRegistry
@@ -48,9 +50,13 @@ public actor DirectSyncAuthority {
     private var sourceEpoch = UUID()
     private let uploads: (any DesktopPeerUploadStore)?
     private let receipts: (any DesktopPeerReceiptStore)?
+    private let gitWakeup: GitReconciliationWakeupHandler
 
     public init(registry: PairingRegistry, projects: [SharedProjectSource], serverFingerprint: Data,
-                persist: @escaping @Sendable (PairingRegistry) async throws -> Void, uploads: (any DesktopPeerUploadStore)? = nil, receipts: (any DesktopPeerReceiptStore)? = nil) throws {
+                persist: @escaping @Sendable (PairingRegistry) async throws -> Void,
+                uploads: (any DesktopPeerUploadStore)? = nil,
+                receipts: (any DesktopPeerReceiptStore)? = nil,
+                gitWakeup: @escaping GitReconciliationWakeupHandler = { _, _ in }) throws {
         guard serverFingerprint.count == 32, Set(projects.map { $0.descriptor.id }).count == projects.count else {
             throw PairingError.invalidProject
         }
@@ -60,6 +66,7 @@ public actor DirectSyncAuthority {
         self.persist = persist
         self.uploads = uploads
         self.receipts = receipts
+        self.gitWakeup = gitWakeup
     }
 
     public func consentState() -> PairingRegistry { registry }
@@ -115,6 +122,22 @@ public actor DirectSyncAuthority {
         try snapshot.validate(scope: project.descriptor.scope, limits: CorpusLimits())
         try project.descriptor.selection?.validate(snapshot)
         return snapshot
+    }
+
+    /// Delivers an authenticated prompt for an already-published Git result.
+    ///
+    /// This route has no corpus or Git write authority. The authenticated
+    /// pairing device must hold the exact desktop source-project grant and the
+    /// payload must repeat that source project's scope. The Git project/device
+    /// identifiers are metadata for the desktop consumer only.
+    public func notifyGitReconciliation(deviceID: UUID, credential: String,
+                                        wakeup: GitReconciliationWakeup) async throws {
+        guard !changing else { throw DirectAuthorityError.busy }
+        try registry.authorizeNotification(deviceID: deviceID, credential: credential,
+                                           projectID: wakeup.sourceProjectID)
+        guard let source = projects[wakeup.sourceProjectID] else { throw PairingError.invalidProject }
+        guard source.descriptor.allowsGitScope(wakeup.scope) else { throw SyncError.outsideScope }
+        await gitWakeup(deviceID, wakeup)
     }
 
     private func checkAccess(deviceID: UUID, credential: String, projectID: UUID) throws {

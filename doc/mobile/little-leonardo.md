@@ -2,6 +2,16 @@
 
 Implementation tracking: [#92](https://github.com/PinedaTec-EU/LeonardoMD/issues/92).
 
+Latest local checkpoint (2026-10-09, PR #93, local compile delta 172):
+
+- Native direct iOS acceptance passes enrollment, read-only reading, refresh, offline retention, restart and revocation cleanup.
+- Actual standard-command SSH fetch and receive-pack pass against a generated-key bare Git fixture. Native iOS Git acceptance passes scoped import, offline edit/create/delete, restart, exact first publication, integration consumption without duplicate sending, and a second edit/publication based on that integration (101.927 seconds). The server independently verifies commit ancestry, selected document bytes, unchanged excluded code and that its large blob was never requested. This is generated-key loopback/simulator evidence, not a physical-device or third-party-host claim.
+- Desktop Git discovery, manual reconciliation, result publication/retry, wakeup persistence and localization pass 24 focused tests. Core integration consumption passes five regressions; direct/Git mapping persistence and authenticated wakeup contracts pass eight tests.
+- The combined local suite at compile delta 172 passes 324 XCTest cases (ten optional skips) plus twelve renderer tests. Signed iOS build-for-testing passes. A native controller/editor composition test passes actual HTTPS pairing, folder/document boundaries, offline edits/add/delete, conflicting drafts, manual application, subsequent receipt/send and open-editor revocation. It does not prove a second packaged process or two physical Macs.
+- Exact-head CI, independent review and main integration remain pending. The earlier CI compiler crash is tracked in [#111](https://github.com/PinedaTec-EU/LeonardoMD/issues/111); the candidate workflow selects installed stable Xcode 26.3.
+
+The dated subsystem checkpoints below describe evidence from earlier implementation stages; their historical “pending” statements are not the current status. This checkpoint records local validation; exact-head CI, independent review and main integration are still required.
+
 ## Agreed product contract
 
 Little Leonardo projects choose direct read-only synchronization or Git editing, including direct mode for an existing Git project. Desktop-to-desktop direct synchronization additionally supports offline editing/creation/deletion with manual reconciliation. Direct connections require an authorized private-network path (LAN, or configured VPN for desktop peers); Git can operate over the Internet. Desktop peer work is tracked in [#101](https://github.com/PinedaTec-EU/LeonardoMD/issues/101).
@@ -309,3 +319,16 @@ Little Leonardo follows local Markdown/text links only to UTF-8 documents alread
 Desktop Git application now validates approved selection before selected blobs, compares physical files and selected open drafts separately, journals the approved physical result and stores an immutable exact-commit receipt. A transport-independent native lease preserves the Git index and unselected work. Tests exercise approved draft materialization, stale draft rejection, duplicate-buffer rejection, recovery and historical retries. The coordinator still needs native discovery/review UI and shared receipt delivery.
 
 Full local validation passes 269 XCTest cases (eight optional capture skips) plus 12 renderer tests. SSH, native Git UI/receipt exchange and complete native enrollment/refresh/revocation/retry acceptance remain unfinished.
+
+
+## Native direct acceptance and navigation failure correction
+
+The cached-link native run finished successfully and its capture was inspected; post-test diagnostic collection is no longer active. The signed native direct acceptance now passes one XCTest case with zero failures (39.415 seconds). It uses actual pinned HTTPS enrollment, explicit desktop authorization, generated device credentials in Keychain and an isolated synthetic project. It verifies initial download, the read-only edit notice, live document refresh, offline cache retention with a visible error, service restart/retry and revocation while the document is open. The inspected revocation capture shows Access withdrawn; a separate app-container check verifies the project's cache is absent and its grant is no longer retained.
+
+The run exposed [issue #104](https://github.com/PinedaTec-EU/LeonardoMD/issues/104): library-level alerts were hidden after navigation to a document. The alert and automatic foreground synchronization task now belong to the NavigationStack, and the document has its own manual synchronization action. The passing native flow covers the error presentation regression. The issue remains open until delivery is integrated into main.
+
+Evidence: `/tmp/little-native-direct-ios4.xcresult`, `/tmp/little-native-direct-ios4.log`, `/tmp/little-native-direct-service4.log`, `/tmp/little-native-direct-success-captures/1468C9F2-C71F-4100-9552-45F190890752.png`. The optional service fixture is `MobileDirectAcceptanceFixtureTests`; it requires an explicitly owned temporary root and does not start in normal suites. The mobile test requires explicit runner environment flags.
+
+Native iOS QA that accesses Keychain must build with simulator ad hoc signing (`CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=-`). An unsigned layout build cannot establish credential persistence and must not be used as enrollment acceptance evidence. Use `-collect-test-diagnostics never` for these bounded runs; poll the original processes until their terminal result. No personal credentials or production remote were used.
+
+SSH transport, desktop Git CLI/review and durable real-commit integration exchange are implemented in the working tree and still require combined validation and native Git/two-desktop acceptance. The full feature is not yet delivered.

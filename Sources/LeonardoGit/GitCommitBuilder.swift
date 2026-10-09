@@ -30,13 +30,23 @@ public struct GitBuiltCommit: Sendable {
 public enum GitCommitBuilder {
     public static func build(project: OfflineProject, baseline: GitBaseline, identity: GitCommitIdentity,
                              message: String = "Little Leonardo changes",
-                             publication: GitPublicationMetadata? = nil) throws -> GitBuiltCommit {
-        guard project.mode == .git, project.hasLocalChanges, project.publication != .sent,
+                             publication: GitPublicationMetadata? = nil,
+                             purpose: GitPublicationPurpose = .normalChanges) throws -> GitBuiltCommit {
+        let purposeAllowsCleanSnapshot = purpose == .reconciliationRequest && !project.hasLocalChanges
+        guard project.mode == .git, (project.hasLocalChanges || purposeAllowsCleanSnapshot),
+              project.publication != .sent,
               project.base.revision == baseline.commitID, !message.isEmpty, message.utf8.count <= 4_096,
               !message.contains("\0") else { throw SyncError.publicationPending }
         if let publication {
             guard publication.projectID == project.id, publication.baseRevision == baseline.commitID,
-                  publication.scope == project.scope else { throw SyncError.invalidSnapshot }
+                  publication.scope == project.scope, publication.purpose == purpose else {
+                throw SyncError.invalidSnapshot
+            }
+        } else if purpose == .reconciliationRequest {
+            // A clean reconciliation snapshot is an explicit user action. It
+            // must carry its purpose in the authenticated commit metadata so a
+            // retry or receiver cannot mistake it for an ordinary publication.
+            throw SyncError.invalidSnapshot
         }
         try project.base.validate(scope: project.scope, limits: CorpusLimits())
         try CorpusSnapshot(revision: project.base.revision, files: project.files).validate(scope: project.scope, limits: CorpusLimits())

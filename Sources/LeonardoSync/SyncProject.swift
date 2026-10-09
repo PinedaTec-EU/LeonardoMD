@@ -132,8 +132,15 @@ public struct OfflineProject: Codable, Equatable, Sendable {
     }
 
     /// Records the exact accepted capture without replacing edits made after preparation.
-    public mutating func markPublished(_ capture: CorpusSnapshot, limits: CorpusLimits = CorpusLimits()) throws {
-        guard mode == .git, capture.files != base.files else { throw SyncError.invalidSnapshot }
+    /// A reconciliation request may intentionally publish an unchanged clean
+    /// snapshot so the desktop can review an overlapping source-branch move.
+    public mutating func markPublished(_ capture: CorpusSnapshot,
+                                       limits: CorpusLimits = CorpusLimits(),
+                                       purpose: GitPublicationPurpose = .normalChanges) throws {
+        guard mode == .git,
+              purpose == .reconciliationRequest || capture.files != base.files else {
+            throw SyncError.invalidSnapshot
+        }
         guard publication != .sent else { throw SyncError.publicationPending }
         try capture.validate(scope: scope, limits: limits)
         publishedFiles = capture.files

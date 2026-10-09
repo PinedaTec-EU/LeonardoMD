@@ -9,9 +9,29 @@ public struct GitProjectConnection: Codable, Equatable, Sendable {
     public let username: String?
     public let lastPublishedCommit: String?
 
+    /// Returns whether a branch belongs to a Little Leonardo protocol
+    /// namespace. Those refs are publication or integration state and cannot
+    /// be used as the ordinary source branch of a project connection.
+    public static func isReservedBranch(_ branch: String) -> Bool {
+        ["refs/heads/little-leonardo", "refs/heads/little-leonardo-integrations"].contains {
+            branch == $0 || branch.hasPrefix($0 + "/")
+        }
+    }
+
+    /// Validates the branch boundary shared by enrollment and persisted
+    /// connections. Git syntax alone is insufficient because protocol refs
+    /// are valid Git heads but have a different owner and lifecycle.
+    public static func isAllowedSourceBranch(_ branch: String) -> Bool {
+        branch.hasPrefix("refs/heads/") && GitReference.isValidName(branch) && !isReservedBranch(branch)
+    }
+
     public init(projectID: UUID, endpoint: URL, branch: String, scope: CorpusScope, username: String? = nil, lastPublishedCommit: String? = nil) throws {
-        _ = try GitHTTPTransport(endpoint: endpoint)
-        guard endpoint.absoluteString.utf8.count <= 4_096, branch.hasPrefix("refs/heads/"), GitReference.isValidName(branch),
+        if endpoint.scheme?.lowercased() == "ssh" {
+            _ = try GitSSHEndpoint(url: endpoint, username: username)
+        } else {
+            _ = try GitHTTPTransport(endpoint: endpoint)
+        }
+        guard endpoint.absoluteString.utf8.count <= 4_096, Self.isAllowedSourceBranch(branch),
               username.map({ $0.utf8.count <= 1_024 && !$0.isEmpty && !$0.contains(":") && !$0.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }) }) ?? true else {
             throw GitRemoteError.invalidEndpoint
         }

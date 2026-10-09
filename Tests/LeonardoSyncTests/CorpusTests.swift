@@ -80,6 +80,22 @@ final class CorpusTests: XCTestCase {
         XCTAssertEqual(project, before)
     }
 
+    func testDeletionAfterSendSurvivesExactIntegration() throws {
+        var project = try OfflineProject(name: "Git", mode: .git,
+            scope: CorpusScope(folder: "docs"), snapshot: snapshot())
+        try project.write(path: "docs/a.md", content: Data("sent".utf8))
+        try project.markPublished(revision: "device-commit")
+        try project.delete(path: "docs/a.md")
+
+        try project.acceptIntegration(snapshot("merged", ["docs/a.md": "sent"]))
+
+        XCTAssertTrue(project.files.isEmpty)
+        XCTAssertEqual(project.base.files.map(\.path), ["docs/a.md"])
+        XCTAssertEqual(project.base.revision, "merged")
+        XCTAssertEqual(project.publication, .localChanges)
+        XCTAssertNil(project.publishedRevision)
+    }
+
     func testPersistenceSurvivesRestartAndDeletion() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

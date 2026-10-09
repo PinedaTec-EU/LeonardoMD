@@ -10,6 +10,25 @@ public struct RunningDirectService: Sendable {
 
 public enum DesktopRuntimeError: Error, Sendable { case notRunning, busy }
 
+public extension Notification.Name {
+    /// Posted after an authenticated mobile Git publication prompt is
+    /// accepted. Consumers should inspect the immutable Git ref named by the
+    /// payload; this notification never applies a merge by itself.
+    static let desktopGitReconciliationWakeup = Notification.Name("LeonardoDesktopGitReconciliationWakeup")
+}
+
+public struct DesktopGitReconciliationWakeup: Sendable {
+    public let deviceID: UUID
+    public let wakeup: GitReconciliationWakeup
+    public let receivedAt: Date
+
+    public init(deviceID: UUID, wakeup: GitReconciliationWakeup, receivedAt: Date = Date()) {
+        self.deviceID = deviceID
+        self.wakeup = wakeup
+        self.receivedAt = receivedAt
+    }
+}
+
 public actor DesktopDirectRuntime {
     private let identityStore: DesktopTLSIdentityStore
     private let registryStore: PairingRegistryStore
@@ -21,8 +40,13 @@ public actor DesktopDirectRuntime {
     private var generation = 0
     private var transitioning = false
     private let now: @Sendable () -> Date
+    private let gitWakeup: GitReconciliationWakeupHandler
 
-    public init(root: URL, credentials: any DeviceCredentialStore, now: @escaping @Sendable () -> Date) {
+    public init(root: URL, credentials: any DeviceCredentialStore, now: @escaping @Sendable () -> Date,
+                gitWakeup: @escaping GitReconciliationWakeupHandler = { deviceID, wakeup in
+                    NotificationCenter.default.post(name: .desktopGitReconciliationWakeup,
+                                                    object: DesktopGitReconciliationWakeup(deviceID: deviceID, wakeup: wakeup))
+                }) {
         identityStore = DesktopTLSIdentityStore(root: root.appendingPathComponent("TLS"), credentials: credentials)
         registryStore = PairingRegistryStore(url: root.appendingPathComponent("devices.json"))
         uploads = FileDesktopPeerUploadStore(root: root.appendingPathComponent("Proposals"))
@@ -30,6 +54,7 @@ public actor DesktopDirectRuntime {
         self.receipts = receipts
         acceptance = DesktopPeerAcceptance(root: root.appendingPathComponent("Acceptance"), receipts: receipts)
         self.now = now
+        self.gitWakeup = gitWakeup
     }
 
     public func start(host: String, port: UInt16, projects: [SharedProjectSource],
@@ -52,7 +77,8 @@ public actor DesktopDirectRuntime {
         registry.setEnabled(true)
         let store = registryStore
         let authority = try DirectSyncAuthority(registry: registry, projects: projects,
-            serverFingerprint: identity.certificateFingerprint, persist: { try await store.save($0) }, uploads: uploads, receipts: receipts)
+            serverFingerprint: identity.certificateFingerprint, persist: { try await store.save($0) },
+            uploads: uploads, receipts: receipts, gitWakeup: gitWakeup)
         try await registryStore.save(registry)
         guard expected == generation else { throw CancellationError() }
         let router = DirectHTTPSRouter(authority: authority, now: now)

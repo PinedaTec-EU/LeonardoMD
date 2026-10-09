@@ -4,6 +4,12 @@ import LeonardoDesktopSync
 import LeonardoGit
 import LeonardoSync
 
+extension Notification.Name {
+    /// Local wake-up after the exact receipt is durable. Consumers must read
+    /// the receipt store; this notification is not a remote delivery proof.
+    static let desktopGitIntegrationDidComplete = Notification.Name("LeonardoDesktopGitIntegrationDidComplete")
+}
+
 /// The immutable material presented by the desktop Git review screen.
 ///
 /// `approvedSelection` is supplied by the owner application. A scope carried by a
@@ -26,155 +32,27 @@ struct DesktopGitReview: Sendable, Identifiable {
     var scope: CorpusScope { proposal.scope }
 }
 
-/// A durable binding written before any selected working-tree bytes are changed.
-/// The final receipt is written only after the transaction journal reaches `.applied`.
-struct DesktopGitIntegrationIntent: Codable, Equatable, Sendable {
-    let transactionID: UUID
-    let projectRoot: URL
-    let approvedSelection: CorpusSelection
-    let receipt: GitIntegrationReceipt
-    let before: CorpusSnapshot
-    let after: CorpusSnapshot
-    let retainedBufferPaths: Set<String>
-
-    init(transactionID: UUID, projectRoot: URL, approvedSelection: CorpusSelection,
-         receipt: GitIntegrationReceipt, before: CorpusSnapshot, after: CorpusSnapshot,
-         retainedBufferPaths: Set<String> = []) throws {
-        let expectedSelection = try CorpusSelection(folders: [receipt.scope.folder], documents: [])
-        guard approvedSelection == expectedSelection,
-              before.revision == receipt.baseRevision,
-              after == receipt.accepted,
-              before.files.allSatisfy({ !$0.isUnsavedBuffer }),
-              after.files.allSatisfy({ !$0.isUnsavedBuffer }) else { throw SyncError.invalidSnapshot }
-        try approvedSelection.validate(before)
-        try approvedSelection.validate(after)
-        for path in retainedBufferPaths { try approvedSelection.validate(path) }
-        self.transactionID = transactionID
-        self.projectRoot = projectRoot.standardizedFileURL.resolvingSymlinksInPath()
-        self.approvedSelection = approvedSelection
-        self.receipt = receipt
-        self.before = before
-        self.after = after
-        self.retainedBufferPaths = retainedBufferPaths
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case transactionID, projectRoot, approvedSelection, receipt, before, after, retainedBufferPaths
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        try self.init(
-            transactionID: container.decode(UUID.self, forKey: .transactionID),
-            projectRoot: container.decode(URL.self, forKey: .projectRoot),
-            approvedSelection: container.decode(CorpusSelection.self, forKey: .approvedSelection),
-            receipt: container.decode(GitIntegrationReceipt.self, forKey: .receipt),
-            before: container.decode(CorpusSnapshot.self, forKey: .before),
-            after: container.decode(CorpusSnapshot.self, forKey: .after),
-            retainedBufferPaths: container.decodeIfPresent(Set<String>.self, forKey: .retainedBufferPaths) ?? [])
-    }
+/// Metadata shown before the user approves a local folder. It contains no
+/// selected blobs and therefore cannot broaden the caller's read scope.
+struct DesktopGitProposalMetadata: Sendable, Identifiable {
+    let branch: GitPublishedBranch
+    let projectID: UUID
+    let deviceID: UUID
+    let baseRevision: String
+    let scope: CorpusScope
+    let purpose: GitPublicationPurpose
+    var id: String { branch.commitID }
 }
 
-/// Private durable storage for pending Git integration intents.
-///
-/// It is deliberately separate from `GitIntegrationReceiptStore`: an intent is
-/// recoverable work, while a receipt means that the selected filesystem result has
-/// already been verified and accepted.
-actor DesktopGitIntegrationIntentStore {
-    private let root: URL
-    private static let maximumEncodedBytes = CorpusLimits().maximumCorpusBytes * 4 + 4 * 1_024 * 1_024
-
-    init(root: URL) {
-        self.root = root.standardizedFileURL.resolvingSymlinksInPath()
-    }
-
-    func load(projectID: UUID, deviceID: UUID, commitID: String) throws -> DesktopGitIntegrationIntent? {
-        let file = try location(projectID: projectID, deviceID: deviceID, commitID: commitID)
-        guard FileManager.default.fileExists(atPath: file.path) else { return nil }
-        let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
-        guard values.isSymbolicLink != true, values.isRegularFile == true else { throw SyncError.invalidPath }
-        guard (values.fileSize ?? 0) <= Self.maximumEncodedBytes else { throw SyncError.sizeLimitExceeded }
-        let intent = try JSONDecoder().decode(DesktopGitIntegrationIntent.self, from: Data(contentsOf: file))
-        guard intent.receipt.projectID == projectID, intent.receipt.deviceID == deviceID,
-              intent.receipt.commitID == commitID else { throw SyncError.invalidSnapshot }
-        return intent
-    }
-
-    func save(_ intent: DesktopGitIntegrationIntent) throws {
-        let file = try location(projectID: intent.receipt.projectID, deviceID: intent.receipt.deviceID,
-                                commitID: intent.receipt.commitID)
-        if let existing = try load(projectID: intent.receipt.projectID, deviceID: intent.receipt.deviceID,
-                                   commitID: intent.receipt.commitID) {
-            guard existing == intent else { throw SyncError.publicationPending }
-            return
+extension GitPublicationPurpose {
+    /// Localization keys for the desktop review surfaces. The purpose remains
+    /// part of the authenticated publication metadata and is not duplicated in
+    /// the integration receipt.
+    var desktopLocalizedLabelKey: String {
+        switch self {
+        case .normalChanges: "Normal changes"
+        case .reconciliationRequest: "Reconciliation request"
         }
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-        let bytes = try encoder.encode(intent)
-        guard bytes.count <= Self.maximumEncodedBytes else { throw SyncError.sizeLimitExceeded }
-        let directory = file.deletingLastPathComponent()
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
-                                                attributes: [.posixPermissions: 0o700])
-        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
-        try bytes.write(to: file, options: .atomic)
-        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
-    }
-
-    func remove(projectID: UUID, deviceID: UUID, commitID: String) throws {
-        let file = try location(projectID: projectID, deviceID: deviceID, commitID: commitID)
-        guard FileManager.default.fileExists(atPath: file.path) else { return }
-        let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
-        guard values.isSymbolicLink != true, values.isRegularFile == true else { throw SyncError.invalidPath }
-        try FileManager.default.removeItem(at: file)
-    }
-
-    func all() throws -> [DesktopGitIntegrationIntent] {
-        guard FileManager.default.fileExists(atPath: root.path) else { return [] }
-        let rootValues = try root.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
-        guard rootValues.isSymbolicLink != true, rootValues.isDirectory == true else { throw SyncError.invalidPath }
-        var result: [DesktopGitIntegrationIntent] = []
-        for projectDirectory in try FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey]) {
-            let projectValues = try projectDirectory.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
-            guard projectValues.isSymbolicLink != true, projectValues.isDirectory == true else { throw SyncError.invalidPath }
-            guard let projectID = UUID(uuidString: projectDirectory.lastPathComponent) else { continue }
-            for deviceDirectory in try FileManager.default.contentsOfDirectory(at: projectDirectory, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey]) {
-                let deviceValues = try deviceDirectory.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
-                guard deviceValues.isSymbolicLink != true, deviceValues.isDirectory == true else { throw SyncError.invalidPath }
-                guard let deviceID = UUID(uuidString: deviceDirectory.lastPathComponent) else { continue }
-                for file in try FileManager.default.contentsOfDirectory(at: deviceDirectory, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey]) where file.pathExtension == "json" {
-                    let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
-                    guard values.isSymbolicLink != true, values.isRegularFile == true else { throw SyncError.invalidPath }
-                    guard (values.fileSize ?? 0) <= Self.maximumEncodedBytes else { throw SyncError.sizeLimitExceeded }
-                    let commitID = file.deletingPathExtension().lastPathComponent
-                    guard
-                          [40, 64].contains(commitID.utf8.count),
-                          commitID.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }),
-                          commitID.contains(where: { $0 != "0" }) else { throw SyncError.invalidPath }
-                    let intent = try JSONDecoder().decode(DesktopGitIntegrationIntent.self, from: Data(contentsOf: file))
-                    guard intent.receipt.projectID == projectID,
-                          intent.receipt.deviceID == deviceID, intent.receipt.commitID == commitID else {
-                        throw SyncError.invalidSnapshot
-                    }
-                    result.append(intent)
-                }
-            }
-        }
-        return result
-    }
-
-    private func location(projectID: UUID, deviceID: UUID, commitID: String) throws -> URL {
-        guard [40, 64].contains(commitID.utf8.count),
-              commitID.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }),
-              commitID.contains(where: { $0 != "0" }) else { throw GitWireError.invalidObjectID }
-        let projectDirectory = root.appendingPathComponent(projectID.uuidString, isDirectory: true)
-        let deviceDirectory = projectDirectory.appendingPathComponent(deviceID.uuidString, isDirectory: true)
-        let file = deviceDirectory.appendingPathComponent(commitID).appendingPathExtension("json")
-        for candidate in [projectDirectory, deviceDirectory, file] {
-            guard (try? candidate.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) != true else {
-                throw SyncError.invalidPath
-            }
-        }
-        return file
     }
 }
 
@@ -223,7 +101,9 @@ final class DesktopGitReconciliationCoordinator {
          stateRoot: URL,
          lease: NativeReconciliationLease = .shared,
          buffers: @escaping @MainActor (URL) -> [OpenDocumentBuffer] = { _ in [] },
-         notice: @escaping IntegrationNotice = { _ in },
+         notice: @escaping IntegrationNotice = { receipt in
+             NotificationCenter.default.post(name: .desktopGitIntegrationDidComplete, object: receipt)
+         },
          limits: CorpusLimits = CorpusLimits()) {
         let stateRoot = stateRoot.standardizedFileURL.resolvingSymlinksInPath()
         self.reader = GitRemoteReader(transport: transport)
@@ -241,6 +121,17 @@ final class DesktopGitReconciliationCoordinator {
     func discover(projectID: UUID? = nil, deviceID: UUID? = nil) async throws -> (GitRemoteDiscovery, [GitPublishedBranch]) {
         let discovery = try await reader.discover()
         return (discovery, try reader.publishedBranches(from: discovery, projectID: projectID, deviceID: deviceID))
+    }
+
+    /// Reads only the exact publication commit metadata. The caller must still
+    /// approve the returned folder before requesting any selected blobs.
+    func inspect(branch: GitPublishedBranch, discovery: GitRemoteDiscovery) async throws -> DesktopGitProposalMetadata {
+        let metadata = try await readProposalMetadata(branch: branch, discovery: discovery)
+        return DesktopGitProposalMetadata(branch: metadata.branch, projectID: metadata.publication.projectID,
+                                          deviceID: metadata.publication.deviceID,
+                                          baseRevision: metadata.publication.baseRevision,
+                                          scope: metadata.publication.scope,
+                                          purpose: metadata.publication.purpose)
     }
 
     /// Creates a review after proving that remote metadata matches the owner's explicit scope.
@@ -310,8 +201,44 @@ final class DesktopGitReconciliationCoordinator {
         return recovered
     }
 
+    /// Recovers every durable transaction for this project root. Each intent
+    /// carries the folder that the user approved before the transaction, so
+    /// reopening the Git panel does not need to infer a scope from a branch or
+    /// request any remote blobs first.
+    func recover(projectRoot: URL) async throws -> [GitIntegrationReceipt] {
+        try enter()
+        defer { changing = false }
+        let root = try canonicalRoot(projectRoot)
+        let allIntents = try await intents.all()
+        let pending = allIntents.filter { $0.projectRoot == root }
+        var recovered: [GitIntegrationReceipt] = []
+        for intent in pending {
+            let result: GitIntegrationReceipt? = try await lease.runApplication(
+                projectRoot: root, selection: intent.approvedSelection) {
+                    guard let outcome = try await self.recoverUnderLease(intent, root: root) else {
+                        return NativeReconciliationApplication<GitIntegrationReceipt?>(
+                            value: nil, appliedNow: false,
+                            appliedSnapshot: CorpusSnapshot(revision: "recovery", files: []))
+                    }
+                    return NativeReconciliationApplication(value: outcome.receipt,
+                                                           appliedNow: outcome.appliedNow,
+                                                           appliedSnapshot: outcome.appliedSnapshot,
+                                                           retainedBufferPaths: outcome.retainedBufferPaths)
+                }
+            if let result { recovered.append(result) }
+        }
+        return recovered
+    }
+
     private func loadProposalMetadata(branch: GitPublishedBranch, discovery: GitRemoteDiscovery,
                                       approvedSelection: CorpusSelection) async throws -> ProposalMetadata {
+        let metadata = try await readProposalMetadata(branch: branch, discovery: discovery)
+        guard metadata.selection == approvedSelection else { throw SyncError.outsideScope }
+        return metadata
+    }
+
+    private func readProposalMetadata(branch: GitPublishedBranch,
+                                      discovery: GitRemoteDiscovery) async throws -> ProposalMetadata {
         guard let advertised = discovery.references.first(where: { $0.name == branch.name }),
               advertised.objectID == branch.commitID else { throw GitWireError.invalidObjectID }
         // This request contains only commits and trees. Do not request blobs until
@@ -325,7 +252,6 @@ final class DesktopGitReconciliationCoordinator {
             throw GitWireError.invalidPack
         }
         let selection = try CorpusSelection(folders: [publication.scope.folder], documents: [])
-        guard selection == approvedSelection else { throw SyncError.outsideScope }
         return ProposalMetadata(branch: branch, publication: publication,
                                 repository: repository, selection: selection)
     }
@@ -345,6 +271,17 @@ final class DesktopGitReconciliationCoordinator {
         if let existing = try await receipts.load(projectID: identity.branch.projectID,
                                                    deviceID: identity.branch.deviceID,
                                                    commitID: identity.commitID) {
+            // A crash may have left the durable intent after the receipt was
+            // written but before the notice/cleanup sequence completed. Replay
+            // the exact-commit notice only while that intent is still pending.
+            if try await intents.load(projectID: identity.branch.projectID,
+                                      deviceID: identity.branch.deviceID,
+                                      commitID: identity.commitID) != nil {
+                await notice(existing)
+                try await intents.remove(projectID: identity.branch.projectID,
+                                        deviceID: identity.branch.deviceID,
+                                        commitID: identity.commitID)
+            }
             let current = CorpusSnapshot(revision: existing.commitID, files: initial.diskPhysical.files)
             return LeaseResult(receipt: existing, appliedNow: false, appliedSnapshot: current,
                                retainedBufferPaths: [])
@@ -464,6 +401,11 @@ final class DesktopGitReconciliationCoordinator {
         let persisted = CorpusSnapshot(revision: resolved.revision,
                                        files: resolved.files.map { CorpusFile(path: $0.path,
                                                                                 content: $0.content) })
+        // The current shared receipt contract deliberately keeps `commitID` /
+        // `accepted.revision` as the reviewed proposal identity. It is not a
+        // Git tree identity when a local or custom choice changed bytes. A
+        // future receipt sink must build and verify a resolved Git commit
+        // before exposing that result as a Git baseline.
         return try GitIntegrationReceipt(proposal: value.proposal, accepted: persisted)
     }
 
