@@ -35,3 +35,5 @@
 - 2026-10-09: Added the native QA launch convention to root `AGENTS.md` for [#80](https://github.com/PinedaTec-EU/LeonardoMD/issues/80): XCTest uses a test runner; visual QA preserves the real packaged executable, checks dependencies and verifies fresh-process readiness while respecting product-wide instance ownership. Original harness correction and runtime validation remain pending.
 
 - 2026-10-09: #80 QA packaging now copies the real signed bundle via `scripts/qa-bundle.py`; `launch.sh --qa` uses it, and build packaging rejects test-runner executables/XCTest linkage. See https://github.com/PinedaTec-EU/LeonardoMD/issues/80.
+
+- 2026-10-09: Removed the redundant Preferences action and footer spacer from the document outline. Preferences remain in the application menu (⌘,). Tracking: [#88](https://github.com/PinedaTec-EU/LeonardoMD/issues/88).

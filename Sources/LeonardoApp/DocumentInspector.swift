@@ -13,8 +13,6 @@ struct DocumentInspector: View {
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
-            Spacer()
-            Button(L10n.text("Preferences…")) { session.showPreferences = true }
         }.buttonStyle(PremiumButtonStyle(compact: true)).padding(20).frame(width: 260).background(.regularMaterial)
     }
 }
