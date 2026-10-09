@@ -54,6 +54,7 @@ final class DocumentTabsTests: XCTestCase {
         let session = tabs.activeSession
         await session.open(try document("note.md", in: root))
         session.busy = true
+        session.fileOperationCount = 1
         var finished = false
         let revocation = Task { await tabs.revokeWorkspaces([root]); finished = true }
         while !session.stopped { await Task.yield() }
@@ -61,6 +62,9 @@ final class DocumentTabsTests: XCTestCase {
         XCTAssertFalse(finished)
         XCTAssertFalse(tabs.activeSession === session)
         session.busy = false
+        for _ in 0..<10 { await Task.yield() }
+        XCTAssertFalse(finished)
+        session.fileOperationCount = 0
         await revocation.value
         XCTAssertTrue(finished)
         XCTAssertEqual(tabs.tabs.count, 1)

@@ -22,7 +22,7 @@ extension AppSession {
         await searchTask?.value
         await initializationTask?.value
         while let task = settingsTask { await task.value }
-        while saving || busy || gitBusy { try? await Task.sleep(for: .milliseconds(20)) }
+        while saving || busy || gitBusy || fileOperationCount > 0 { try? await Task.sleep(for: .milliseconds(20)) }
         stop()
         clearRevokedContent()
     }

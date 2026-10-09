@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import Observation
 import LeonardoCore
+import LeonardoSync
 import LeonardoRender
 import OSLog
 
@@ -26,6 +27,7 @@ final class AppSession {
     var externalConflict = false
     var busy = false
     var saving = false
+    var fileOperationCount = 0
     var saveStatus = "Local file"
     var editorScroll = 0.0
     var requestedLine: Int?
@@ -42,6 +44,9 @@ final class AppSession {
     var activateExistingDocument: ((URL, Int?) -> Bool)?
     var openDroppedDocuments: (([URL]) async -> Void)?
     var updateWindow: ((String, URL?, Bool) -> Void)?
+    var authorizePath: @MainActor (URL, DesktopPeerPathIntent) async throws -> Void = { url, intent in
+        try await DesktopPeerController.shared.authorize(url, intent: intent)
+    }
     let documents = DocumentStore()
     let files = LocalProjectRepository()
     let configurations = ConfigurationStore.shared
@@ -155,6 +160,8 @@ final class AppSession {
     }
 
     func openDocument(_ url: URL, line: Int? = nil) async {
+        do { try await authorizePath(url, .document) } catch { report(error); return }
+        guard !stopped else { return }
         if activateExistingDocument?(url, line) == true {
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             return
@@ -206,6 +213,8 @@ final class AppSession {
         let draft = content
         logger.info("document_save_started")
         do {
+            try await authorizePath(url, .document)
+            guard !stopped else { saving = false; return }
             self.snapshot = try await documents.save(draft, to: url, expectedFingerprint: snapshot.fingerprint)
             saveStatus = isDirty ? "Pending changes" : "Saved · local file"
             logger.info("document_save_completed")
@@ -297,7 +306,11 @@ final class AppSession {
         monitorTask?.cancel()
     }
     func report(_ error: Error) {
-        errorMessage = String(describing: error)
+        if let syncError = error as? SyncError, syncError == .outsideScope {
+            errorMessage = L10n.text("This item is outside the content selected on the source Mac.")
+        } else if let syncError = error as? SyncError, syncError == .revoked {
+            errorMessage = L10n.text("Access to this linked copy was revoked.")
+        } else { errorMessage = String(describing: error) }
         logger.error("operation_failed category=\(String(reflecting: type(of: error)), privacy: .public)")
     }
     func updateTitle() { updateWindow?(documentURL?.lastPathComponent ?? projectURL?.lastPathComponent ?? "LeonardoMD", documentURL, isDirty) }
