@@ -16,6 +16,85 @@ final class DocumentTabsTests: XCTestCase {
         return url
     }
 
+    private func waitForRecentDocuments(
+        _ expectedFirst: URL?,
+        in controller: NSDocumentController,
+        timeout: TimeInterval = 1
+    ) async throws -> Bool {
+        let expected = expectedFirst?.standardizedFileURL
+        let deadline = Date().addingTimeInterval(timeout)
+
+        func matches() -> Bool {
+            if let expected {
+                return controller.recentDocumentURLs.first?.standardizedFileURL == expected
+            }
+            return controller.recentDocumentURLs.isEmpty
+        }
+
+        repeat {
+            if matches() { return true }
+            try await Task.sleep(for: .milliseconds(10))
+        } while Date() < deadline
+
+        return matches()
+    }
+
+    func testPeerRevocationClearsDraftAndPreservesSiblingWorkspace() async throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let copy = root.appendingPathComponent("copy")
+        let sibling = root.appendingPathComponent("copy-other")
+        for folder in [copy, sibling] { try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true) }
+        let revoked = tabs.activeSession
+        let revokedID = try XCTUnwrap(tabs.activeID)
+        let file = try document("note.md", in: copy)
+        await revoked.open(file)
+        revoked.content = "private revoked draft"
+        revoked.contentChanged()
+        _ = tabs.addTab()
+        let retained = tabs.activeSession
+        await retained.open(try document("other.md", in: sibling))
+        retained.content = "other draft"
+        await tabs.revokeWorkspaces([copy])
+        XCTAssertFalse(tabs.tabs.contains { $0.id == revokedID })
+        XCTAssertTrue(tabs.activeSession === retained)
+        XCTAssertEqual(retained.content, "other draft")
+        XCTAssertTrue(retained.isDirty)
+        XCTAssertTrue(revoked.stopped)
+        XCTAssertNil(revoked.documentURL)
+        XCTAssertNil(revoked.snapshot)
+        XCTAssertEqual(revoked.content, "")
+        // Revocation cancels pending autosave; subsequent callbacks cannot recreate it.
+        revoked.content = "late callback"
+        revoked.contentChanged()
+        await revoked.save()
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "note.md")
+    }
+
+    func testPeerRevocationWaitsForExistingOperationAndKeepsBlankTab() async throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let session = tabs.activeSession
+        await session.open(try document("note.md", in: root))
+        session.busy = true
+        session.fileOperationCount = 1
+        var finished = false
+        let revocation = Task { await tabs.revokeWorkspaces([root]); finished = true }
+        while !session.stopped { await Task.yield() }
+        XCTAssertEqual(session.content, "")
+        XCTAssertFalse(finished)
+        XCTAssertFalse(tabs.activeSession === session)
+        session.busy = false
+        for _ in 0..<10 { await Task.yield() }
+        XCTAssertFalse(finished)
+        session.fileOperationCount = 0
+        await revocation.value
+        XCTAssertTrue(finished)
+        XCTAssertEqual(tabs.tabs.count, 1)
+        XCTAssertNil(tabs.activeSession.documentURL)
+        XCTAssertEqual(tabs.activeSession.content, "")
+    }
+
     func testReorderBothDirectionsRetainsActiveSessionAndDraft() async throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
@@ -130,19 +209,29 @@ final class DocumentTabsTests: XCTestCase {
         session.content = "unsaved draft"
         let tabID = tabs.activeID
 
+        let initialRegistrationObserved = try await waitForRecentDocuments(file, in: controller)
+        XCTAssertTrue(initialRegistrationObserved, "initial document open was not recorded in AppKit recents")
+
         controller.clearRecentDocuments(nil)
-        // Let AppKit finish its initial native history reset before reopening.
-        try await Task.sleep(for: .milliseconds(50))
+        let initialClearObserved = try await waitForRecentDocuments(nil, in: controller)
+        XCTAssertTrue(initialClearObserved, "initial AppKit recents clear did not settle")
         await session.open(file)
-        XCTAssertEqual(controller.recentDocumentURLs.first?.standardizedFileURL, file.standardizedFileURL)
+        let reopenedRegistrationObserved = try await waitForRecentDocuments(file, in: controller)
+        XCTAssertTrue(reopenedRegistrationObserved, "reopening the document was not recorded in AppKit recents")
 
         controller.clearRecentDocuments(nil)
+        let externalClearObserved = try await waitForRecentDocuments(nil, in: controller)
+        XCTAssertTrue(externalClearObserved, "external-open AppKit recents clear did not settle")
         await tabs.openExternalDocuments([file])
-        XCTAssertEqual(controller.recentDocumentURLs.first?.standardizedFileURL, file.standardizedFileURL)
+        let externalRegistrationObserved = try await waitForRecentDocuments(file, in: controller)
+        XCTAssertTrue(externalRegistrationObserved, "external open was not recorded in AppKit recents")
 
         controller.clearRecentDocuments(nil)
+        let droppedClearObserved = try await waitForRecentDocuments(nil, in: controller)
+        XCTAssertTrue(droppedClearObserved, "dropped-open AppKit recents clear did not settle")
         await tabs.openDroppedDocuments([file])
-        XCTAssertEqual(controller.recentDocumentURLs.first?.standardizedFileURL, file.standardizedFileURL)
+        let droppedRegistrationObserved = try await waitForRecentDocuments(file, in: controller)
+        XCTAssertTrue(droppedRegistrationObserved, "dropped open was not recorded in AppKit recents")
         XCTAssertEqual(tabs.tabs.count, 1)
         XCTAssertEqual(tabs.activeID, tabID)
         XCTAssertTrue(tabs.activeSession === session)

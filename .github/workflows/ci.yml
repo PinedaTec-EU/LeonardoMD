@@ -6,16 +6,25 @@ concurrency:
 jobs:
   test:
     runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify selected toolchain
+        run: |
+          test -d "$DEVELOPER_DIR"
+          xcodebuild -version
+          swift --version
       - name: Test packaging version metadata
         run: python3 -m unittest discover -s scripts/tests -v
       - name: Build and test
         env:
           LEONARDO_VISUAL_EVIDENCE: ${{ github.workspace }}/visual-evidence
         run: swift test
+      - name: Build iOS companion
+        run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "generic/platform=iOS Simulator" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO build
       - name: Validate update metadata
         run: python3 -m unittest discover -s Tests/Packaging
       - name: Record preview capture provenance

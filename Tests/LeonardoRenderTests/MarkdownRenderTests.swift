@@ -5,6 +5,26 @@ import Testing
 
 struct MarkdownRenderTests {
     @Test
+    func memoryAssetsOnlyServeSelectedImagePaths() throws {
+        let bytes = Data([1, 2, 3])
+        let assets = MarkdownMemoryAssets(files: ["docs/images/diagrama ñ.png": bytes, "private.txt": bytes])
+        #expect(assets.data(for: try #require(URL(string: "leonardo-document://local/docs/images/diagrama%20%C3%B1.png"))) == bytes)
+        for value in ["https://local/docs/images/diagrama%20%C3%B1.png", "leonardo-document://outside/docs/images/diagrama%20%C3%B1.png",
+                      "leonardo-document://local/private.txt", "leonardo-document://local/missing.png",
+                      "leonardo-document://local/docs/../private.png"] {
+            #expect(assets.data(for: try #require(URL(string: value))) == nil)
+        }
+    }
+
+    @Test
+    func offlinePreviewDisallowsRemoteImageLoads() throws {
+        let html = try MarkdownHTMLShell.make(content: "![remote](https://example.invalid/image.png)", baseURL: nil,
+            configuration: MarkdownPreviewConfiguration(allowsRemoteImages: false))
+        #expect(html.contains("img-src leonardo-document: data:;"))
+        #expect(!html.contains("img-src leonardo-document: data: http:"))
+    }
+
+    @Test
     func packagedAssetsMatchRecordedHashesIncludingEmbeddedSanitizer() throws {
         let metadata = try #require(MarkdownResourceCatalog.url(forFile: "THIRD_PARTY_SOURCES.json"))
         let manifest = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: metadata)) as? [String: Any])

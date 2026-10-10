@@ -314,7 +314,8 @@ public actor LocalProjectRepository {
     public func searchStream(
         in project: ProjectDescriptor,
         query: String,
-        showHidden: Bool = false
+        showHidden: Bool = false,
+        include: @escaping @Sendable (URL, Bool) -> Bool = { _, _ in true }
     ) -> AsyncThrowingStream<[SearchMatch], Error> {
         AsyncThrowingStream<[SearchMatch], Error> { continuation in
             let task = Task { [self] in
@@ -336,6 +337,11 @@ public actor LocalProjectRepository {
 
                     while let url = enumerator.nextObject() as? URL {
                         try Task.checkCancellation()
+                        let directory = isDirectory(url)
+                        guard include(url, directory) else {
+                            if directory { enumerator.skipDescendants() }
+                            continue
+                        }
                         let result = try scanSearchEntry(
                             url,
                             root: root,

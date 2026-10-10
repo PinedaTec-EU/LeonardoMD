@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 /// Native macOS Markdown preview backed by an isolated WKWebView.
@@ -62,3 +63,5 @@ public struct MarkdownPreview: NSViewRepresentable {
         nsView.removeFromSuperview()
     }
 }
+
+#endif

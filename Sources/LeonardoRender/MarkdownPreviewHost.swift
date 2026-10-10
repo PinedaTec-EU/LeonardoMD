@@ -1,10 +1,16 @@
+#if os(macOS)
 import AppKit
+typealias NativeMarkdownView = NSView
+#else
+import UIKit
+typealias NativeMarkdownView = UIView
+#endif
 import Foundation
 import os.log
 import WebKit
 
 @MainActor
-final class MarkdownPreviewHost: NSView, WKScriptMessageHandler, WKNavigationDelegate {
+final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKNavigationDelegate {
     var onReady: ((Bool) -> Void)?
     var onScrollProgress: ((Double) -> Void)?
     private(set) var tagHandler: ((String) -> Void)?
@@ -24,20 +30,31 @@ final class MarkdownPreviewHost: NSView, WKScriptMessageHandler, WKNavigationDel
     private var loadStartedAtUptime: UInt64?
     private let renderLogger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "renderer")
 
-    override init(frame frameRect: NSRect) {
+    override init(frame frameRect: CGRect) {
         super.init(frame: frameRect)
+        #if os(macOS)
         wantsLayer = true
+        #endif
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
+        #if os(macOS)
         wantsLayer = true
+        #endif
     }
 
+    #if os(macOS)
     override func layout() {
         super.layout()
         webView?.frame = bounds
     }
+    #else
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        webView?.frame = bounds
+    }
+    #endif
 
     func apply(
         content: String,
@@ -52,6 +69,8 @@ final class MarkdownPreviewHost: NSView, WKScriptMessageHandler, WKNavigationDel
             || previousConfiguration.allowsMermaid != configuration.allowsMermaid
             || previousConfiguration.allowsMath != configuration.allowsMath
         let assetRootChanged = previousConfiguration.localAssetRoot != configuration.localAssetRoot
+            || previousConfiguration.memoryAssets != configuration.memoryAssets
+            || previousConfiguration.allowsRemoteImages != configuration.allowsRemoteImages
         let contentChanged = !hasState || self.content != content
         let baseURLChanged = !hasState || documentURL != baseURL
         let renderOptionsChanged = !hasState
@@ -151,7 +170,8 @@ final class MarkdownPreviewHost: NSView, WKScriptMessageHandler, WKNavigationDel
         resourceHandler = MarkdownResourceSchemeHandler(configuration: configuration)
         documentHandler = MarkdownDocumentSchemeHandler(
             baseURL: documentURL,
-            assetRootURL: configuration.localAssetRoot ?? documentURL?.deletingLastPathComponent()
+            assetRootURL: configuration.localAssetRoot ?? documentURL?.deletingLastPathComponent(),
+            memoryAssets: configuration.memoryAssets
         )
 
         let webConfiguration = WKWebViewConfiguration()
@@ -170,9 +190,16 @@ final class MarkdownPreviewHost: NSView, WKScriptMessageHandler, WKNavigationDel
         userContentController.add(self, name: "leonardoPDFReady")
 
         let newWebView = WKWebView(frame: bounds, configuration: webConfiguration)
+        #if os(macOS)
         newWebView.autoresizingMask = [.width, .height]
-        newWebView.navigationDelegate = self
         newWebView.setValue(false, forKey: "drawsBackground")
+        #else
+        newWebView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        newWebView.isOpaque = false
+        newWebView.backgroundColor = .clear
+        newWebView.scrollView.backgroundColor = .clear
+        #endif
+        newWebView.navigationDelegate = self
         addSubview(newWebView)
         webView = newWebView
         ready = false
@@ -343,7 +370,11 @@ final class MarkdownPreviewHost: NSView, WKScriptMessageHandler, WKNavigationDel
             if let linkHandler {
                 linkHandler(url)
             } else {
+                #if os(macOS)
                 NSWorkspace.shared.open(url)
+                #else
+                UIApplication.shared.open(url)
+                #endif
             }
         }
     }

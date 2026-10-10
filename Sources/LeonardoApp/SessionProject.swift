@@ -20,10 +20,13 @@ extension AppSession {
         panel.prompt = L10n.text("Open project")
         presentFilePanel(panel) { [weak self] url in Task { await self?.openProject(url) } }
     }
-    func openProject(_ url: URL) async {
+    @discardableResult
+    func openProject(_ url: URL) async -> Bool {
+        do { try await authorizePath(url, .directory) } catch { report(error); return false }
+        guard !stopped else { return false }
         await initialize()
-        guard await prepareNavigation() else { return }
-        guard !busy else { return }
+        guard await prepareNavigation() else { return false }
+        guard !busy else { return false }
         busy = true
         defer { busy = false }
         do {
@@ -45,7 +48,8 @@ extension AppSession {
             await refreshTree()
             await refreshGit()
             updateTitle()
-        } catch { report(error) }
+            return true
+        } catch { report(error); return false }
     }
     func detachProject() async {
         guard await prepareNavigation() else { return }
@@ -69,13 +73,17 @@ extension AppSession {
     func children(of url: URL) async -> [NavigationEntry] {
         guard let root = projectURL else { return [] }
         do {
-            return try await files.children(of: url, in: root, showHidden: showHidden)
+            let include = try await entryFilter(url)
+            let nodes = try await files.children(of: url, in: root, showHidden: showHidden)
+            guard !stopped, projectURL == root else { return [] }
+            return nodes.filter { include($0.url, $0.isDirectory) }
                 .map { NavigationEntry(url: $0.url, isDirectory: $0.isDirectory) }
         } catch { report(error); return [] }
     }
     func refreshTree() async {
         guard let root = projectURL else { return }
         let entries = await children(of: root)
+        guard !stopped, projectURL == root else { return }
         if entries != rootEntries { rootEntries = entries }
         treeRevision += 1
     }
@@ -90,9 +98,11 @@ extension AppSession {
             self.searchResults = []
             do {
                 let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
-                let stream = await self.files.searchStream(in: project, query: query, showHidden: self.showHidden)
+                let include = try await self.entryFilter(root)
+                guard !self.stopped, !Task.isCancelled else { return }
+                let stream = await self.files.searchStream(in: project, query: query, showHidden: self.showHidden, include: include)
                 for try await results in stream {
-                    guard !Task.isCancelled, self.projectURL == root, self.searchQuery == query else { return }
+                    guard !self.stopped, !Task.isCancelled, self.projectURL == root, self.searchQuery == query else { return }
                     self.searchResults += results.map { SearchResult(url: $0.url, line: $0.lineNumber ?? 1, snippet: $0.snippet) }
                 }
             } catch { if !Task.isCancelled { self.report(error) } }
@@ -105,7 +115,13 @@ extension AppSession {
         let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
         let parentPath = relative(parent ?? root)
         Task {
+            guard !stopped else { return }
+            fileOperationCount += 1
+            defer { fileOperationCount -= 1 }
             do {
+                let filename = !directory && URL(fileURLWithPath: name).pathExtension.isEmpty ? name + ".md" : name
+                try await authorizePath((parent ?? root).appendingPathComponent(filename), directory ? .directoryMutation : .document)
+                guard !stopped else { return }
                 if directory { _ = try await files.createFolder(named: name, in: project, at: parentPath) }
                 else {
                     let node = try await files.createMarkdown(named: name, in: project, at: parentPath)
@@ -119,8 +135,15 @@ extension AppSession {
     func rename(_ url: URL) {
         guard let root = projectURL, let name = prompt(title: L10n.text("Rename"), initial: url.lastPathComponent) else { return }
         Task {
+            guard !stopped else { return }
+            fileOperationCount += 1
+            defer { fileOperationCount -= 1 }
             guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
             do {
+                let intent: DesktopPeerPathIntent = (try url.resourceValues(forKeys: [.isDirectoryKey])).isDirectory == true ? .directoryMutation : .document
+                try await authorizePath(url, intent)
+                try await authorizePath(url.deletingLastPathComponent().appendingPathComponent(name), intent)
+                guard !stopped else { return }
                 let node = try await files.rename(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root), to: name)
                 await updateMovedDocument(from: url, to: node.url)
                 await relatedPathMoved?(url, node.url)
@@ -139,8 +162,15 @@ extension AppSession {
     func move(_ url: URL, into parent: URL) {
         guard let root = projectURL else { return }
         Task {
+            guard !stopped else { return }
+            fileOperationCount += 1
+            defer { fileOperationCount -= 1 }
             guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
             do {
+                let intent: DesktopPeerPathIntent = (try url.resourceValues(forKeys: [.isDirectoryKey])).isDirectory == true ? .directoryMutation : .document
+                try await authorizePath(url, intent)
+                try await authorizePath(parent.appendingPathComponent(url.lastPathComponent), intent)
+                guard !stopped else { return }
                 let node = try await files.move(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root), to: relative(parent))
                 await updateMovedDocument(from: url, to: node.url)
                 await relatedPathMoved?(url, node.url)
@@ -167,8 +197,14 @@ extension AppSession {
         alert.addButton(withTitle: L10n.text("Delete"))
         guard alert.runModal() == .alertSecondButtonReturn else { return }
         Task {
+            guard !stopped else { return }
+            fileOperationCount += 1
+            defer { fileOperationCount -= 1 }
             guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
             do {
+                let intent: DesktopPeerPathIntent = (try url.resourceValues(forKeys: [.isDirectoryKey])).isDirectory == true ? .directoryMutation : .document
+                try await authorizePath(url, intent)
+                guard !stopped else { return }
                 try await files.delete(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root))
                 if let current = documentURL, current == url || current.path.hasPrefix(url.path + "/") {
                     documentURL = nil; snapshot = nil; content = ""; updateTitle()

@@ -80,7 +80,13 @@ extension AppSession {
         }
         let draft = content
         Task {
+            guard !stopped else { return }
+            fileOperationCount += 1
+            defer { fileOperationCount -= 1 }
             do {
+                try await authorizePath(url, .document)
+                try await authorizePath(destination, .document)
+                guard !stopped else { return }
                 _ = try await documents.save(draft, to: destination)
                 guard documentURL == url, content == draft else {
                     errorMessage = L10n.text("The copy was saved. Later changes remain in the original document.")

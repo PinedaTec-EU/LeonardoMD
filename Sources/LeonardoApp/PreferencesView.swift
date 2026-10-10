@@ -6,6 +6,7 @@ struct PreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var projectScope = false
     @State private var editingPalette = false
+    @State private var selectedTab = "general"
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
@@ -27,12 +28,16 @@ struct PreferencesView: View {
                 PremiumSelection(selection: $projectScope, options: [false, true], title: { $0 ? L10n.text("This project") : L10n.text("Global") })
                     .accessibilityLabel(L10n.text("Scope"))
             }
-            TabView {
-                generalPreferences.tabItem { Label(L10n.text("General"), systemImage: "gearshape") }
+            TabView(selection: $selectedTab) {
+                generalPreferences.tag("general").tabItem { Label(L10n.text("General"), systemImage: "gearshape") }
                 ExtensionPreferences(session: session, projectScope: projectScope)
-                    .tabItem { Label(L10n.text("Extensions"), systemImage: "puzzlepiece.extension") }
+                    .tag("extensions").tabItem { Label(L10n.text("Extensions"), systemImage: "puzzlepiece.extension") }
+                MobileSyncPreferencesView(session: session, controller: .shared)
+                    .tag("mobile").tabItem { Label("Little Leonardo", systemImage: "iphone") }
+                DesktopPeerPreferencesView(session: session, controller: .shared)
+                    .tag("peers").tabItem { Label(L10n.text("Linked Macs"), systemImage: "desktopcomputer") }
             }
-            Text(projectScope ? L10n.text("Saved in .leonardomd/project.json. Contains no credentials.") : L10n.text("Global preferences apply to the standalone viewer and projects that inherit them."))
+            Text((selectedTab == "mobile" || selectedTab == "peers") ? L10n.text("Service and device settings belong to this Mac.") : projectScope ? L10n.text("Saved in .leonardomd/project.json. Contains no credentials.") : L10n.text("Global preferences apply to the standalone viewer and projects that inherit them."))
                 .font(.caption).foregroundStyle(.secondary)
         }.buttonStyle(PremiumButtonStyle()).padding(24).frame(width: 580, height: 620)
         .onAppear { projectScope = session.projectURL != nil }

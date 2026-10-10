@@ -5,6 +5,26 @@ import WebKit
 
 @MainActor
 final class WebKitRuntimeTests: XCTestCase {
+    func testOfflineMemoryImageAndMarkdownRenderWithoutFilesystemAssets() async throws {
+        let root = URL(fileURLWithPath: "/LeonardoMemoryFixture", isDirectory: true)
+        let svg = Data("<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect width='12' height='12' fill='blue'/></svg>".utf8)
+        let source = "# Offline corpus\n\n| Column | Value |\n| --- | --- |\n| Local | Ready |\n\n![Cached diagram](images/diagram.svg)"
+        let configuration = MarkdownPreviewConfiguration(localAssetRoot: root,
+            memoryAssets: MarkdownMemoryAssets(files: ["docs/images/diagram.svg": svg]), allowsRemoteImages: false)
+        let (host, window) = makeHost(content: source, base: root.appendingPathComponent("docs", isDirectory: true), config: configuration)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelector('h1')?.textContent === 'Offline corpus' && document.querySelector('table') !== null && document.querySelector('img')?.naturalWidth === 12", in: web)
+        let imageURL = try await evaluate("document.querySelector('img').src", in: web)
+        XCTAssertEqual(imageURL, "leonardo-document://local/docs/images/diagram.svg")
+        var cleared = configuration
+        cleared.memoryAssets = MarkdownMemoryAssets(files: [:])
+        host.apply(content: source, baseURL: root.appendingPathComponent("docs", isDirectory: true), configuration: cleared,
+            onLinkActivation: nil, onScrollProgress: nil)
+        let updated = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelector('img')?.complete && document.querySelector('img')?.naturalWidth === 0", in: updated)
+    }
+
     private func evaluate(_ script: String, in web: WKWebView) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             web.evaluateJavaScript(script) { result, error in
