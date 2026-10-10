@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.337
+
+- #92 Added: implement Little Leonardo and desktop peer synchronization ([#93](https://github.com/PinedaTec-EU/LeonardoMD/pull/93))
+
+Source: `a2ff7c96e36f55d8eca39f96f55ae221ebb82497`. Delta: `{"build": 193}`.
+
 ## 0.1.144
 
 - #88 Removed: redundant Preferences button from document outline ([#89](https://github.com/PinedaTec-EU/LeonardoMD/pull/89))
