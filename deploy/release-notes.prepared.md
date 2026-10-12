@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.348
+
+- #123 Added: user-selected beta channel and update preferences ([#124](https://github.com/PinedaTec-EU/LeonardoMD/pull/124))
+
+Source: `04eaaeb524882ed1859412f6c55ba6d3cd25c641`. Delta: `{"build": 11}`.
+
 ## 0.1.337
 
 - #92 Added: implement Little Leonardo and desktop peer synchronization ([#93](https://github.com/PinedaTec-EU/LeonardoMD/pull/93))
