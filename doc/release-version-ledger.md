@@ -48,6 +48,18 @@ the trusted policy job verifies each committed entry. CI does not write deltas
 or infer counts from jobs/retries.
 Main builds without a pending source PR do not allocate a source-PR delta.
 
+Release-only stable promotions use an issue-linked source PR containing
+`deploy/release-promotions/<PR>.json`. This is a versioned publication input,
+not generated release history. Record schema version 1, the source PR number,
+validated beta tag/source SHA, archive SHA-256 and canonical hosted acceptance
+URL. Its successful source-PR packaging compilation allocates the next build
+through the existing recorder and central materialization. Do not invent a
+functional app change or edit `version.nfo` to obtain a promotion build.
+The promotion record is checked during independent review against the public
+beta and its hosted acceptance; the ledger validates its delta, not that
+external acceptance. Confirm the app/dependency tree matches the validated
+beta before preparing stable. Documentation-only work remains exempt.
+
 Use an English issue-linked title, e.g. `#38 Added: adopt release version ledger`.
 The title is the release-note summary; the body contains implementation and
 validation detail. The central renderer uses the verified title, not a copied
