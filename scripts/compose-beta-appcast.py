@@ -29,7 +29,7 @@ def compose(stable, beta, output):
         build = int(item.find(release_appcast.SPARKLE + "version").text)
         # One numeric build/tag identifies one immutable package, not two channels.
         url = item.find("enclosure").get("url")
-        release = url.split("/download/", 1)[1].split("/", 1)[0]
+        release = release_appcast.release_tag(url)
         if build in builds or release in releases:
             raise ValueError("Stable and beta releases must have distinct increasing builds and tags")
         builds.add(build)

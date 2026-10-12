@@ -81,6 +81,30 @@ class UpdateChannelPackagingTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(output.read_bytes(), b'previous feed')
 
+    def test_encoded_duplicate_tags_and_noncanonical_paths_are_rejected_atomically(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stable, beta, output = root / 'stable.xml', root / 'beta.xml', root / 'combined.xml'
+            stable.write_text(self.feed('stable', [400]))
+            for alias in ['%76%30.%31.%34%30%30', 'v0%2e1%2e400', 'v0.1.400/../v0.1.415']:
+                beta.write_text(self.feed('beta', [415]).replace('/v0.1.415/', '/' + alias + '/')
+                                .replace('<sparkle:shortVersionString>0.1.415</sparkle:shortVersionString>',
+                                         '<sparkle:shortVersionString>0.1.400</sparkle:shortVersionString>'))
+                before = stable.read_bytes(), beta.read_bytes()
+                output.write_bytes(b'previous subscription')
+                result = self.compose(stable, beta, output)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('canonical, unescaped', result.stderr)
+                self.assertEqual(output.read_bytes(), b'previous subscription')
+                self.assertEqual((stable.read_bytes(), beta.read_bytes()), before)
+            # A direct duplicate tag with a different build must also fail.
+            beta.write_text(self.feed('beta', [415]).replace('/v0.1.415/', '/v0.1.400/')
+                            .replace('>0.1.415<', '>0.1.400<'))
+            result = self.compose(stable, beta, output)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('distinct increasing builds and tags', result.stderr)
+            self.assertEqual(output.read_bytes(), b'previous subscription')
+
     def configure(self, path, channel, key):
         environment = {k: v for k, v in os.environ.items() if not k.startswith(('LEONARDO_', 'SPARKLE_'))}
         environment.update(LEONARDO_DISTRIBUTION='1', LEONARDO_CHANNEL=channel, SPARKLE_PUBLIC_KEY=key)
