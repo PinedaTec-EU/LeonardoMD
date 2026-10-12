@@ -18,11 +18,12 @@ final class ApplicationUpdates {
     private(set) var startupError: String?
     private(set) var isStarted = false
     @ObservationIgnored private let defaults: UserDefaults
+    @ObservationIgnored private let pendingDecision: PendingUpdateDecisionStore
     @ObservationIgnored private let driver: (any ApplicationUpdateDriver)?
     @ObservationIgnored private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "updates")
 
     var canChangeChannel: Bool {
-        !sessionInProgress && !hasDeferredUpdate
+        !sessionInProgress && !pendingDecision.hasPendingDecision
             && driver?.sessionInProgress != true && driver?.hasDeferredUpdate != true
     }
 
@@ -31,7 +32,11 @@ final class ApplicationUpdates {
         self.defaults = defaults
         self.configuration = configuration
         channel = UpdateChannel(rawValue: defaults.string(forKey: Self.channelPreferenceKey) ?? "") ?? .stable
-        self.driver = driver ?? (configuration.isConfigured ? SparkleUpdateDriver(configuration: configuration) : nil)
+        let pendingDecision = PendingUpdateDecisionStore(defaults: defaults, installedBuild: configuration.version.build)
+        self.pendingDecision = pendingDecision
+        hasDeferredUpdate = pendingDecision.hasPendingDecision
+        self.driver = driver ?? (configuration.isConfigured
+            ? SparkleUpdateDriver(configuration: configuration, pendingDecision: pendingDecision) : nil)
     }
 
     func start() {
@@ -81,7 +86,7 @@ final class ApplicationUpdates {
         guard isStarted, let driver else { return }
         canCheckForUpdates = driver.canCheckForUpdates
         sessionInProgress = driver.sessionInProgress
-        hasDeferredUpdate = driver.hasDeferredUpdate
+        hasDeferredUpdate = pendingDecision.hasPendingDecision || driver.hasDeferredUpdate
         automaticallyChecksForUpdates = driver.automaticallyChecksForUpdates
         lastUpdateCheckDate = driver.lastUpdateCheckDate
     }

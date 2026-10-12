@@ -4,9 +4,9 @@ Tracking: [#123](https://github.com/PinedaTec-EU/LeonardoMD/issues/123), [PR #12
 
 ## Local checks
 
-- Full Swift test run: 349 XCTest cases, zero failures, nine optional skips. The Updates native capture case ran with `LEONARDO_UPDATE_EVIDENCE` set; other device/runtime opt-in cases remain skipped.
+- Full Swift test run: 352 XCTest cases, zero failures, nine optional skips locally with captures enabled. CI may skip an additional platform-dependent native case; report its own count separately rather than copying the local count. The Updates native capture case ran with `LEONARDO_UPDATE_EVIDENCE` set; other device/runtime opt-in cases remain skipped.
 - `scripts/tests`: 24 cases, zero failures, seven private-engine cases skipped without `LEDGER_ENGINE_ROOT`.
-- `Tests/Packaging`: 19 cases, zero failures, including both channel trust roots, subscription defaults, atomic mixed-feed composition and negative inputs.
+- `Tests/Packaging`: 20 cases, zero failures, including both channel trust roots, subscription defaults, atomic mixed-feed composition, canonical encoded-tag/path rejection and negative inputs. A separate-process preferences read plus a reconstructed driver proves durable pending-decision recovery; offline errors preserve it and completed builds/no-update/skip resolve it.
 - Real macOS development packaging passed `build-app.sh` and `qa-bundle.py --verify-only`: real LeonardoMD executable, packaged resources/frameworks, local signature, no XCTest linkage. Packaged numeric version remains the current ledger checkpoint; source PR compilation deltas are recorded in `deploy/version/entries/124.yaml`, not materialized manually.
 
 The optional native capture harness renders isolated `NSHostingView` fixtures in English and Spanish for stable, beta, waiting for stable, active check, deferred download, unconfigured development and startup failure. It uses a test-only driver and isolated updater defaults, never network/installation or a replacement of the owner's app. The full Preferences fixture is 580×620 points; the Updates component fixture is 532×550 points with the same appearance/button styles.

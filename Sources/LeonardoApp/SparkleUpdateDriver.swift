@@ -19,14 +19,23 @@ protocol ApplicationUpdateDriver: AnyObject {
 @MainActor
 final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDelegate {
     var channel = UpdateChannel.stable
-    private(set) var hasDeferredUpdate = false
+    var hasDeferredUpdate: Bool { pendingDecision.hasPendingDecision }
     var stateDidChange: (@MainActor () -> Void)?
     private let configuration: UpdateConfiguration
+    private let pendingDecision: PendingUpdateDecisionStore
     private var observations: [NSKeyValueObservation] = []
     private lazy var controller = SPUStandardUpdaterController(
         startingUpdater: false, updaterDelegate: self, userDriverDelegate: nil)
 
-    init(configuration: UpdateConfiguration) { self.configuration = configuration }
+    init(configuration: UpdateConfiguration, pendingDecision: PendingUpdateDecisionStore) {
+        self.configuration = configuration
+        self.pendingDecision = pendingDecision
+    }
+
+    convenience init(configuration: UpdateConfiguration, defaults: UserDefaults = .standard) {
+        self.init(configuration: configuration,
+            pendingDecision: PendingUpdateDecisionStore(defaults: defaults, installedBuild: configuration.version.build))
+    }
 
     var canCheckForUpdates: Bool { controller.updater.canCheckForUpdates }
     var sessionInProgress: Bool { controller.updater.sessionInProgress }
@@ -58,18 +67,33 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
 
     func updater(_ updater: SPUUpdater, userDidMake choice: SPUUserUpdateChoice,
                  forUpdate updateItem: SUAppcastItem, state: SPUUserUpdateState) {
-        recordChoice(choice, stage: state.stage)
+        recordChoice(choice, stage: state.stage, targetBuild: updateItem.versionString)
     }
 
     // Sparkle can resume a downloaded update without reading the new feed.
     // Keep the subscription fixed until the user resolves that pending update.
-    func recordChoice(_ choice: SPUUserUpdateChoice, stage: SPUUserUpdateStage) {
-        hasDeferredUpdate = choice != .skip && stage != .notDownloaded
+    func recordChoice(_ choice: SPUUserUpdateChoice, stage: SPUUserUpdateStage, targetBuild: String) {
+        if choice == .install || (choice == .dismiss && stage != .notDownloaded) {
+            // Persist before the download/installer begins, including interrupted processes.
+            pendingDecision.retain(targetBuild: targetBuild)
+        } else {
+            // Skip, or dismissal of a fresh non-downloaded candidate, resolves a stale guard.
+            pendingDecision.clear()
+        }
         stateDidChange?()
     }
 
     func updater(_ updater: SPUUpdater, didAbortWithError error: Error) {
-        hasDeferredUpdate = false
+        resolveCheck(error)
+    }
+
+    func resolveCheck(_ error: Error) {
+        let failure = error as NSError
+        if failure.domain == SUSparkleErrorDomain && failure.code == Int(SUError.noUpdateError.rawValue) {
+            // A successful fresh check with no update proves no resumable update was used.
+            pendingDecision.clear()
+        }
+        // Transport/installer errors do not prove a pending artifact has been removed.
         stateDidChange?()
     }
 
