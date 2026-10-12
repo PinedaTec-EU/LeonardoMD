@@ -107,6 +107,35 @@ final class ApplicationUpdatesTests: XCTestCase {
         }
     }
 
+    func testDownloadedDeferredUpdateBlocksChannelChangeUntilSkipped() {
+        let (defaults, suite) = isolatedDefaults()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let driver = FakeUpdateDriver()
+        let updates = ApplicationUpdates(defaults: defaults, configuration: configuration(.beta), driver: driver)
+        updates.start()
+        updates.selectChannel(.beta)
+        driver.hasDeferredUpdate = true
+        driver.stateDidChange?()
+        XCTAssertFalse(updates.canChangeChannel)
+        updates.selectChannel(.stable)
+        XCTAssertEqual(updates.channel, .beta)
+        updates.checkForUpdates()
+        XCTAssertEqual(driver.checkCount, 1, "User can reopen the pending update to skip or finish it")
+        driver.hasDeferredUpdate = false
+        driver.stateDidChange?()
+        updates.selectChannel(.stable)
+        XCTAssertEqual(updates.channel, .stable)
+        let adapter = SparkleUpdateDriver(configuration: configuration())
+        adapter.recordChoice(.dismiss, stage: .downloaded)
+        XCTAssertTrue(adapter.hasDeferredUpdate)
+        adapter.recordChoice(.skip, stage: .downloaded)
+        XCTAssertFalse(adapter.hasDeferredUpdate)
+        adapter.recordChoice(.dismiss, stage: .notDownloaded)
+        XCTAssertFalse(adapter.hasDeferredUpdate)
+        adapter.recordChoice(.install, stage: .installing)
+        XCTAssertTrue(adapter.hasDeferredUpdate)
+    }
+
     func testCommonKeyAndBothHTTPSFeedsAreRequired() {
         var info = configurationInfo()
         XCTAssertTrue(UpdateConfiguration(info: info).isConfigured)
@@ -153,6 +182,7 @@ final class FakeUpdateDriver: ApplicationUpdateDriver {
     var channel = UpdateChannel.stable
     var canCheckForUpdates = true
     var sessionInProgress = false
+    var hasDeferredUpdate = false
     var automaticallyChecksForUpdates = false { didSet { automaticWrites += 1 } }
     var automaticWrites = 0
     var lastUpdateCheckDate: Date?

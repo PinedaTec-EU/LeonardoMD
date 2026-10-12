@@ -313,7 +313,7 @@
   "Last check": "Last check",
   "Never": "Never",
   "Check for updates now": "Check for updates now",
-  "Finish or cancel the current update before changing channel.": "Finish or cancel the current update before changing channel.",
   "Updates unavailable": "Updates unavailable",
-  "Update preferences apply to all windows on this Mac.": "Update preferences apply to all windows on this Mac."
+  "Update preferences apply to all windows on this Mac.": "Update preferences apply to all windows on this Mac.",
+  "Finish or skip the current update before changing channel.": "Finish or skip the current update before changing channel."
 }

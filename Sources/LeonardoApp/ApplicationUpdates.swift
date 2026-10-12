@@ -12,6 +12,7 @@ final class ApplicationUpdates {
     private(set) var channel: UpdateChannel
     private(set) var canCheckForUpdates = false
     private(set) var sessionInProgress = false
+    private(set) var hasDeferredUpdate = false
     private(set) var automaticallyChecksForUpdates = false
     private(set) var lastUpdateCheckDate: Date?
     private(set) var startupError: String?
@@ -20,7 +21,10 @@ final class ApplicationUpdates {
     @ObservationIgnored private let driver: (any ApplicationUpdateDriver)?
     @ObservationIgnored private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "updates")
 
-    var canChangeChannel: Bool { !sessionInProgress && driver?.sessionInProgress != true }
+    var canChangeChannel: Bool {
+        !sessionInProgress && !hasDeferredUpdate
+            && driver?.sessionInProgress != true && driver?.hasDeferredUpdate != true
+    }
 
     init(defaults: UserDefaults = .standard, configuration: UpdateConfiguration = UpdateConfiguration(),
          driver: (any ApplicationUpdateDriver)? = nil) {
@@ -77,6 +81,7 @@ final class ApplicationUpdates {
         guard isStarted, let driver else { return }
         canCheckForUpdates = driver.canCheckForUpdates
         sessionInProgress = driver.sessionInProgress
+        hasDeferredUpdate = driver.hasDeferredUpdate
         automaticallyChecksForUpdates = driver.automaticallyChecksForUpdates
         lastUpdateCheckDate = driver.lastUpdateCheckDate
     }

@@ -5,6 +5,18 @@ struct UpdatePreferencesView: View {
 
     var body: some View {
         Form {
+            if !updates.configuration.isConfigured {
+                Section {
+                    Text(L10n.text("Updates not configured")).font(.headline)
+                    Text(L10n.text("This development build has no signed update channel. Install a distribution version to receive updates."))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            } else if let error = updates.startupError {
+                Section {
+                    Text(L10n.text("Updates unavailable")).font(.headline)
+                    Text(error).font(.caption).foregroundStyle(.secondary)
+                }
+            }
             Section {
                 LabeledContent(L10n.text("Installed version")) {
                     Text(updates.configuration.version.version ?? L10n.text("Development build"))
@@ -37,29 +49,19 @@ struct UpdatePreferencesView: View {
                     .font(.caption).foregroundStyle(.secondary)
                 LabeledContent(L10n.text("Last check")) {
                     if let date = updates.lastUpdateCheckDate {
-                        Text(date.formatted(date: .abbreviated, time: .shortened))
+                        Text(date.formatted(.dateTime.day().month(.abbreviated).year().hour().minute()
+                            .locale(Locale(identifier: LanguageSettings.shared.language.rawValue))))
                     } else { Text(L10n.text("Never")) }
                 }
                 Button(L10n.text("Check for updates now")) { updates.checkForUpdates() }
                     .disabled(!updates.canCheckForUpdates)
                     .accessibilityIdentifier("update-check-now")
-                if updates.sessionInProgress {
-                    Text(L10n.text("Finish or cancel the current update before changing channel."))
+                if updates.sessionInProgress || updates.hasDeferredUpdate {
+                    Text(L10n.text("Finish or skip the current update before changing channel."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
-            if !updates.configuration.isConfigured {
-                Section {
-                    Text(L10n.text("Updates not configured")).font(.headline)
-                    Text(L10n.text("This development build has no signed update channel. Install a distribution version to receive updates."))
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-            } else if let error = updates.startupError {
-                Section {
-                    Text(L10n.text("Updates unavailable")).font(.headline)
-                    Text(error).font(.caption).foregroundStyle(.secondary)
-                }
-            }
+
         }
         .formStyle(.grouped).toggleStyle(PremiumSwitchStyle())
     }
