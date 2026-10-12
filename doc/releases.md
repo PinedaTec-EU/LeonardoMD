@@ -14,6 +14,30 @@ The archive contains only the application. Sparkle infers supported hardware and
 
 Before publishing, inspect the version/build, appcast URLs, release notes and archive contents. Confirm the build is newer than the current stable feed. Publish the ZIP and appcast together in a draft GitHub release and make it public only when complete. GitHub's latest stable release must always have the feed asset. Retain old release ZIPs referenced by prior feeds. This change does not publish a release or provision signing credentials.
 
+## Publication progression and explicit exceptions
+
+The normal publication path is an accepted PR integrated into `main`, followed
+by a published, signed and notarized beta with recorded acceptance, and then a
+stable promotion. Use the repository-local
+[leonardo-release skill](../.skills/leonardo-release/SKILL.md) for these operations.
+Record the beta source SHA, version/build, tag, archive digest and actual hosted
+update/install/relaunch evidence in the canonical issue before stable promotion.
+A local candidate or an unvalidated public beta does not satisfy this stage.
+The stable candidate must preserve that validated functional source: ledger
+version materialization and channel metadata may change, but functional code or
+dependency changes return the candidate to beta. Stable uses a new higher build
+and new tag, never a relabeled beta artifact.
+
+The owner may explicitly authorize direct stable publication for a named
+candidate or bounded publication request. Record the direct instruction,
+candidate identity, skipped beta stage, reason (or explicitly unspecified),
+missing acceptance evidence, residual risk and follow-up in the canonical issue
+and publication record. This is a one-request exception; an ordinary release or
+merge request does not imply it. Do not ask again after a clear instruction.
+The exception does not waive PR CI/review, signing, notarization, archive
+verification, build ordering, feed isolation or the remaining release acceptance
+checks. Changing this policy authorizes no publication or merge.
+
 ## Acceptance on a release candidate
 
 Install an older signed app in a writable Applications folder and publish a newer signed candidate on a controlled test feed. Verify manual no-update/error/update dialogs, persisted periodic-check preference, release notes, download, install and relaunch. Edit a document before installation; cancel quit and confirm the draft survives, then save and retry. Confirm Git operations also prevent premature quit. Tamper with the ZIP and confirm signature rejection before extraction; test offline mode and an unsupported architecture. Repeat with the production feed before claiming end-to-end release acceptance.

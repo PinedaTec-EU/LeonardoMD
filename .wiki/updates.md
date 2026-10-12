@@ -17,3 +17,5 @@ PR #54 also restores marker-stripping protection with mandatory internal publica
 Channel acceptance matrix and publication/key recovery contract: [releases](../doc/releases.md), tracking [#123](https://github.com/PinedaTec-EU/LeonardoMD/issues/123). Local policy/capture evidence does not prove hosted install/relaunch or resolve #15/#84.
 
 Follow-up regressions: durable decision recovery [#125](https://github.com/PinedaTec-EU/LeonardoMD/issues/125), canonical archive URL/tag identity [#126](https://github.com/PinedaTec-EU/LeonardoMD/issues/126). The guard resolves on a completed/superseding build or explicit/confirmed Sparkle resolution; transport errors preserve it.
+
+Owner publication policy ([#123](https://github.com/PinedaTec-EU/LeonardoMD/issues/123)): accepted PR → published/validated beta → stable from the validated functional source, using a new higher build. The local [release skill](../.skills/leonardo-release/SKILL.md) permits a candidate-scoped explicit owner exception to beta, recorded with missing evidence and residual risk; other technical gates remain. This policy change grants no current publication or merge authorization.
