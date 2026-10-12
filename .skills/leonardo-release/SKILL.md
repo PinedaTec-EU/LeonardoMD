@@ -24,6 +24,15 @@ do not modify shared merge or version-ledger skills to enforce it elsewhere.
    retain the common signing key, stable-only feed and refreshed combined beta
    feed. Never relabel the beta entry or reuse its tag/build.
 
+For a release-only promotion, use an issue-linked PR with a versioned
+`scripts/release-promotions/<PR>.json` input (schema 1, source PR number, beta
+tag/source SHA, archive SHA-256 and canonical hosted acceptance URL). Review
+that evidence against the actual beta. Record successful packaging compilation
+with the existing source-PR recorder, integrate the PR and wait for central
+version materialization before stable preparation. The ledger checks the
+delta, not external beta acceptance; the release operator/judge verifies that
+evidence. Do not manufacture an app change or edit resolved version artifacts.
+
 Compare the stable candidate with the validated beta source. Version-ledger
 materialization and channel/publication metadata are expected differences;
 functional code or dependency changes require another beta and acceptance.
