@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss xmlns:leonardo="https://pinedatec.eu/xml-namespaces/leonardo" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>LeonardoMD</title>
+        <item leonardo:channel="stable">
+            <title>0.1.337</title>
+            <pubDate>Sun, 11 Oct 2026 20:48:06 +0200</pubDate>
+            <sparkle:version>337</sparkle:version>
+            <sparkle:shortVersionString>0.1.337</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"># LeonardoMD 0.1.337
+
+- Little Leonardo para iOS: conexión directa de lectura con documentos seleccionados y trabajo offline con Git.
+- Sincronización entre dos LeonardoMD, con copias offline editables y reconciliación manual.
+- Emparejamiento validado mediante QR o dirección de red, permisos por proyecto y servicio desactivado por defecto.
+- Git sincroniza las carpetas seleccionadas y mantiene propuestas en ramas independientes para su revisión en escritorio.
+- Correcciones de integridad, revocación, publicación Git y documentos eliminados durante la reconciliación.
+
+Esta distribución contiene LeonardoMD para macOS Apple silicon. La app iOS aún no se distribuye por App Store/TestFlight.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.337/LeonardoMD-0.1.337.zip" length="15636635" type="application/octet-stream" sparkle:edSignature="4sItrfjwJXIdxzM2QEZNWuzBY9Q7mWFFEpblY1agey8a8lS8f7M1GNgbLq8/iqc8O7Tv/ehmCUtWDGH76rzZDw==" />
+        </item>
+    </channel>
+</rss>
