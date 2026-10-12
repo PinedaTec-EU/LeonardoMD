@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.349
+
+- #15 Added: allocate builds for validated stable promotions ([#127](https://github.com/PinedaTec-EU/LeonardoMD/pull/127))
+
+Source: `b660146e1220cf383a04bcfa33d71ab01e77ec33`. Delta: `{"build": 1}`.
+
 ## 0.1.348
 
 - #123 Added: user-selected beta channel and update preferences ([#124](https://github.com/PinedaTec-EU/LeonardoMD/pull/124))
