@@ -7,6 +7,9 @@
 <key>CFBundleIconFile</key><string>LeonardoMD.icns</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>SUFeedURL</key><string>https://github.com/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml</string>
+<key>LeonardoStableFeedURL</key><string>https://github.com/PinedaTec-EU/LeonardoMD/releases/latest/download/appcast.xml</string>
+<key>LeonardoBetaFeedURL</key><string>https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/update-feeds/beta/appcast.xml</string>
+<key>LeonardoUpdatePublicKey</key><string>a3GPslwOW8arEKunqgwyZDTsngVAFY8jLjQiR1bzyxI=</string>
 <key>SUEnableAutomaticChecks</key><false/>
 <key>SUAutomaticallyUpdate</key><false/>
 <key>SUAllowsAutomaticUpdates</key><false/>

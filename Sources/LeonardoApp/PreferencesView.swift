@@ -6,7 +6,14 @@ struct PreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var projectScope = false
     @State private var editingPalette = false
-    @State private var selectedTab = "general"
+    @State private var selectedTab: String
+    private let updates: ApplicationUpdates
+
+    init(session: AppSession, updates: ApplicationUpdates = .shared, selectedTab: String = "general") {
+        self.session = session
+        self.updates = updates
+        _selectedTab = State(initialValue: selectedTab)
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
@@ -24,7 +31,7 @@ struct PreferencesView: View {
             }
             Text(L10n.text("Interface language applies to all windows."))
                 .font(.caption).foregroundStyle(.secondary)
-            if session.projectURL != nil {
+            if session.projectURL != nil && (selectedTab == "general" || selectedTab == "extensions") {
                 PremiumSelection(selection: $projectScope, options: [false, true], title: { $0 ? L10n.text("This project") : L10n.text("Global") })
                     .accessibilityLabel(L10n.text("Scope"))
             }
@@ -36,8 +43,10 @@ struct PreferencesView: View {
                     .tag("mobile").tabItem { Label("Little Leonardo", systemImage: "iphone") }
                 DesktopPeerPreferencesView(session: session, controller: .shared)
                     .tag("peers").tabItem { Label(L10n.text("Linked Macs"), systemImage: "desktopcomputer") }
+                UpdatePreferencesView(updates: updates)
+                    .tag("updates").tabItem { Label(L10n.text("Updates"), systemImage: "arrow.triangle.2.circlepath") }
             }
-            Text((selectedTab == "mobile" || selectedTab == "peers") ? L10n.text("Service and device settings belong to this Mac.") : projectScope ? L10n.text("Saved in .leonardomd/project.json. Contains no credentials.") : L10n.text("Global preferences apply to the standalone viewer and projects that inherit them."))
+            Text(selectedTab == "updates" ? L10n.text("Update preferences apply to all windows on this Mac.") : (selectedTab == "mobile" || selectedTab == "peers") ? L10n.text("Service and device settings belong to this Mac.") : projectScope ? L10n.text("Saved in .leonardomd/project.json. Contains no credentials.") : L10n.text("Global preferences apply to the standalone viewer and projects that inherit them."))
                 .font(.caption).foregroundStyle(.secondary)
         }.buttonStyle(PremiumButtonStyle()).padding(24).frame(width: 580, height: 620)
         .onAppear { projectScope = session.projectURL != nil }

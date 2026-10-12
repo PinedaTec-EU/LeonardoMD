@@ -298,5 +298,22 @@
   "Workspace": "Espacio de trabajo",
   "Workspaces…": "Espacios de trabajo…",
   "Your documents, your way.": "Tus documentos, a tu manera.",
-  "Zoom": "Zoom"
+  "Zoom": "Zoom",
+  "Updates": "Actualizaciones",
+  "Stable": "Estable",
+  "Beta": "Beta",
+  "Installed version": "Versión instalada",
+  "Installed channel": "Canal instalado",
+  "Development build": "Versión de desarrollo",
+  "Update channel": "Canal de actualizaciones",
+  "Beta includes stable releases and experimental versions. You may encounter unfinished features or errors.": "Beta incluye versiones estables y experimentales. Puedes encontrar funciones incompletas o errores.",
+  "Receive stable releases only.": "Recibe solo versiones estables.",
+  "Your beta stays installed until a newer stable version is available. Changing channel does not downgrade the app.": "Tu beta seguirá instalada hasta que haya una versión estable más reciente. Cambiar de canal no instala una versión anterior.",
+  "Checks run periodically. You decide when to install an update.": "Las comprobaciones son periódicas. Tú decides cuándo instalar una actualización.",
+  "Last check": "Última comprobación",
+  "Never": "Nunca",
+  "Check for updates now": "Buscar actualizaciones ahora",
+  "Finish or cancel the current update before changing channel.": "Termina o cancela la actualización en curso antes de cambiar de canal.",
+  "Updates unavailable": "Actualizaciones no disponibles",
+  "Update preferences apply to all windows on this Mac.": "Las preferencias de actualización se aplican a todas las ventanas de este Mac."
 }
