@@ -2,7 +2,29 @@
 <rss xmlns:leonardo="https://pinedatec.eu/xml-namespaces/leonardo" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>LeonardoMD</title>
-        <item leonardo:channel="beta">
+        <item leonardo:channel="stable">
+            <title>0.1.349</title>
+            <pubDate>Mon, 12 Oct 2026 15:23:19 +0200</pubDate>
+            <sparkle:version>349</sparkle:version>
+            <sparkle:shortVersionString>0.1.349</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"># LeonardoMD 0.1.349
+
+This stable release enables future beta subscriptions.
+
+- Open Preferences → Updates to choose Stable or Beta. Stable is the default; opting into Beta includes both stable and experimental releases.
+- Use Check for updates now or enable periodic automatic checks in Preferences. You decide when to install.
+- Active or deferred update decisions protect the channel selection and survive restart.
+- Returning from Beta to Stable waits for a newer stable build; the app never downgrades.
+
+This arm64 distribution requires macOS 14 or later. It preserves the existing stable signing trust root and user data. Old beta packages with a different update signing key must install a current signed/notarized package manually.
+
+Promoted from validated beta 0.1.348 with unchanged application and dependency sources, using a higher ledger-materialized build. Publication and hosted update evidence: https://github.com/PinedaTec-EU/LeonardoMD/issues/15#issuecomment-6124736089
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.349/LeonardoMD-0.1.349.zip" length="15676621" type="application/octet-stream" sparkle:edSignature="c3Rz+eF7I6eIB4dBLE0PBX8qxIP4ODg5bTDknDTtbNw7RUcniXXlPFCNhiOAxjoF/LxKPfTYCVxRrv8PyC+4Dg==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.1.348</title>
             <pubDate>Mon, 12 Oct 2026 14:51:09 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
@@ -22,25 +44,6 @@ This arm64 package requires macOS 14 or later. Both channels retain the existing
 This beta carries the integrated channel selector from PR #124. Publication validation and hosted acceptance are recorded in issue #15. Stable promotion uses a later numeric build from the same functional source.
 </description>
             <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.348/LeonardoMD-0.1.348.zip" length="15676603" type="application/octet-stream" sparkle:edSignature="rM342dnVaYQJS5G01BiE4/xq4FfCSQO3+MVhmpIBlO8i7bz6F7fyWmk2ZLyefR3fgaNAOVzuf0x4gM61tC48Cg==" />
-        </item>
-    <item leonardo:channel="stable">
-            <title>0.1.337</title>
-            <pubDate>Sun, 11 Oct 2026 20:48:06 +0200</pubDate>
-            <sparkle:version>337</sparkle:version>
-            <sparkle:shortVersionString>0.1.337</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD 0.1.337
-
-- Little Leonardo para iOS: conexión directa de lectura con documentos seleccionados y trabajo offline con Git.
-- Sincronización entre dos LeonardoMD, con copias offline editables y reconciliación manual.
-- Emparejamiento validado mediante QR o dirección de red, permisos por proyecto y servicio desactivado por defecto.
-- Git sincroniza las carpetas seleccionadas y mantiene propuestas en ramas independientes para su revisión en escritorio.
-- Correcciones de integridad, revocación, publicación Git y documentos eliminados durante la reconciliación.
-
-Esta distribución contiene LeonardoMD para macOS Apple silicon. La app iOS aún no se distribuye por App Store/TestFlight.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.337/LeonardoMD-0.1.337.zip" length="15636635" type="application/octet-stream" sparkle:edSignature="4sItrfjwJXIdxzM2QEZNWuzBY9Q7mWFFEpblY1agey8a8lS8f7M1GNgbLq8/iqc8O7Tv/ehmCUtWDGH76rzZDw==" />
         </item>
     </channel>
 </rss>
