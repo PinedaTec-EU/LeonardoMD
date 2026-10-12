@@ -49,7 +49,7 @@ or infer counts from jobs/retries.
 Main builds without a pending source PR do not allocate a source-PR delta.
 
 Release-only stable promotions use an issue-linked source PR containing
-`deploy/release-promotions/<PR>.json`. This is a versioned publication input,
+`scripts/release-promotions/<PR>.json`. This is a versioned publication input,
 not generated release history. Record schema version 1, the source PR number,
 validated beta tag/source SHA, archive SHA-256 and canonical hosted acceptance
 URL. Its successful source-PR packaging compilation allocates the next build

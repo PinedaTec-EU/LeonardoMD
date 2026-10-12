@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "source_pr": 127,
+  "beta_tag": "v0.1.348",
+  "beta_source_sha": "319e193da7812d95c28953d613b716cffca41f42",
+  "beta_archive_sha256": "c4544d1a27e2d2cf62a6426a472a165b1e3140284256f6fab0e00123f87f5eb7",
+  "acceptance_url": "https://github.com/PinedaTec-EU/LeonardoMD/issues/15#issuecomment-6124736089"
+}

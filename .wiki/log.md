@@ -92,3 +92,7 @@ Compile delta189 passes 338 XCTest cases (ten optional skips) and twelve rendere
 ## 2026-10-12 — explicit release progression
 
 Owner clarification for [#123](https://github.com/PinedaTec-EU/LeonardoMD/issues/123), PR #124: normal publication requires accepted PR, hosted validated beta, then stable from that functional source with a new higher build. A repository-local release skill records candidate-specific explicit beta exceptions without waiving CI/review, trust or distribution validation. The shared merge policy remains unchanged; no current publication/merge exception is authorized.
+
+## 2026-10-12 — published channel-selector beta
+
+[Beta 0.1.348](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.348) from materialized source `319e193` is Developer ID signed/notarized/stapled and publicly Ed25519-verified. The combined beta feed is reachable. Real Sparkle update from a controlled signed/notarized v0.1.337 starting copy installed and relaunched 0.1.348; Preferences channel selection and stable waiting/beta no-update pass. The owner authorized normal app closure; `/Applications` installation is preserved. [#15 hosted evidence](https://github.com/PinedaTec-EU/LeonardoMD/issues/15#issuecomment-6124736089) records limits. PR #127 prepares a release-only promotion input and one successful packaging build delta within existing scripts scope, without app/dependency changes or a resolved-version edit. Stable publication remains pending.

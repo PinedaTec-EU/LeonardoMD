@@ -25,7 +25,7 @@ do not modify shared merge or version-ledger skills to enforce it elsewhere.
    feed. Never relabel the beta entry or reuse its tag/build.
 
 For a release-only promotion, use an issue-linked PR with a versioned
-`deploy/release-promotions/<PR>.json` input (schema 1, source PR number, beta
+`scripts/release-promotions/<PR>.json` input (schema 1, source PR number, beta
 tag/source SHA, archive SHA-256 and canonical hosted acceptance URL). Review
 that evidence against the actual beta. Record successful packaging compilation
 with the existing source-PR recorder, integrate the PR and wait for central
