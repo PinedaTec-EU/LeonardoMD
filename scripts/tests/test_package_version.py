@@ -46,7 +46,8 @@ class PackageVersionTests(unittest.TestCase):
                 self.assertFalse(output.exists())
 
     def test_update_configuration_preserves_canonical_version_and_rejects_override(self):
-        result, output = self.run_generator("0.1.56")
+        template = plistlib.loads((ROOT / "scripts/Info.plist").read_bytes())
+        result, output = self.run_generator("0.1.56", template)
         self.assertEqual(result.returncode, 0, result.stderr)
         import importlib.util
         spec = importlib.util.spec_from_file_location("updates", ROOT / "scripts/configure-update-bundle.py")

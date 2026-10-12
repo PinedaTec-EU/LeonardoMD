@@ -8,6 +8,14 @@ Load only the adapter relevant to the current task.
 Canonical source: `../ai-skills-shared`.
 <!-- ai-skills-bootstrap:end -->
 
+## Release progression
+
+For macOS release preparation, publication or promotion, use the repository-local
+[leonardo-release skill](.skills/leonardo-release/SKILL.md). The normal progression
+is accepted PR → published and validated beta → stable. Only an explicit owner
+instruction for the candidate may skip beta; the skill records that exception
+without waiving the remaining delivery and distribution gates.
+
 ## Native macOS QA launch convention
 
 Prevent the temporary QA startup failure tracked in [issue #80](https://github.com/PinedaTec-EU/LeonardoMD/issues/80):

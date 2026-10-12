@@ -36,7 +36,7 @@ struct LeonardoMD {
 
 @MainActor
 final class ApplicationDelegate: NSObject, NSApplicationDelegate {
-    private let updates = ApplicationUpdates()
+    private let updates = ApplicationUpdates.shared
     private lazy var recentMenus = RecentItemsMenu(session: { [weak self] in self?.activeSession }, openDocument: { [weak self] url in
         Task { @MainActor [weak self] in await self?.openExternalDocument(url) }
     })
@@ -255,7 +255,6 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         let app = submenu("LeonardoMD", in: menu)
         add(L10n.text("About LeonardoMD"), action: #selector(showAbout), to: app)
         add(L10n.text("Preferences…"), action: #selector(preferences), key: ",", to: app)
-        updates.addMenuItems(to: app)
         app.addItem(.separator())
         add(L10n.text("Quit LeonardoMD"), action: #selector(NSApplication.terminate(_:)), key: "q", to: app)
         let file = submenu(L10n.text("File"), in: menu)

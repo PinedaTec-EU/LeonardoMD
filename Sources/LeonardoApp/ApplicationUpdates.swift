@@ -1,63 +1,93 @@
-import AppKit
-import Sparkle
+import Foundation
+import Observation
 import OSLog
 
-/// Owns Sparkle for the lifetime of the application. Sparkle retains its own preferences.
-@MainActor
-final class ApplicationUpdates: NSObject, NSMenuItemValidation, SPUUpdaterDelegate {
-    private var controller: SPUStandardUpdaterController?
-    private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "updates")
+/// One application-wide subscription; Sparkle owns check scheduling and its preferences.
+@MainActor @Observable
+final class ApplicationUpdates {
+    static let shared = ApplicationUpdates()
+    static let channelPreferenceKey = "updateChannel"
+
+    let configuration: UpdateConfiguration
+    private(set) var channel: UpdateChannel
+    private(set) var canCheckForUpdates = false
+    private(set) var sessionInProgress = false
+    private(set) var hasDeferredUpdate = false
+    private(set) var automaticallyChecksForUpdates = false
+    private(set) var lastUpdateCheckDate: Date?
+    private(set) var startupError: String?
+    private(set) var isStarted = false
+    @ObservationIgnored private let defaults: UserDefaults
+    @ObservationIgnored private let pendingDecision: PendingUpdateDecisionStore
+    @ObservationIgnored private let driver: (any ApplicationUpdateDriver)?
+    @ObservationIgnored private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "updates")
+
+    var canChangeChannel: Bool {
+        !sessionInProgress && !pendingDecision.hasPendingDecision
+            && driver?.sessionInProgress != true && driver?.hasDeferredUpdate != true
+    }
+
+    init(defaults: UserDefaults = .standard, configuration: UpdateConfiguration = UpdateConfiguration(),
+         driver: (any ApplicationUpdateDriver)? = nil) {
+        self.defaults = defaults
+        self.configuration = configuration
+        channel = UpdateChannel(rawValue: defaults.string(forKey: Self.channelPreferenceKey) ?? "") ?? .stable
+        let pendingDecision = PendingUpdateDecisionStore(defaults: defaults, installedBuild: configuration.version.build)
+        self.pendingDecision = pendingDecision
+        hasDeferredUpdate = pendingDecision.hasPendingDecision
+        self.driver = driver ?? (configuration.isConfigured
+            ? SparkleUpdateDriver(configuration: configuration, pendingDecision: pendingDecision) : nil)
+    }
 
     func start() {
-        guard let key = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String,
-              let bytes = Data(base64Encoded: key), bytes.count == 32 else {
+        guard !isStarted else { return }
+        guard let driver else {
             logger.info("update_channel_unconfigured")
             return
         }
-        let controller = SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: self, userDriverDelegate: nil)
-        self.controller = controller
-        controller.startUpdater()
-        logger.info("update_controller_started")
-    }
-
-    func allowedChannels(for updater: SPUUpdater) -> Set<String> {
-        Bundle.main.object(forInfoDictionaryKey: "LeonardoUpdateChannel") as? String == "beta" ? ["beta"] : []
-    }
-
-    func addMenuItems(to menu: NSMenu) {
-        for (title, action) in [
-            (L10n.text("Check for updates…"), #selector(checkForUpdates)),
-            (L10n.text("Automatically check for updates"), #selector(toggleAutomaticChecks))
-        ] {
-            let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
-            item.target = self
-            menu.addItem(item)
+        driver.channel = channel
+        driver.stateDidChange = { [weak self] in self?.refreshState() }
+        startupError = nil
+        do {
+            try driver.start()
+            isStarted = true
+            refreshState()
+            logger.info("update_controller_started channel=\(self.channel.rawValue, privacy: .public)")
+        } catch {
+            startupError = error.localizedDescription
+            logger.error("update_controller_start_failed")
         }
     }
 
-    @objc private func checkForUpdates() {
-        guard let controller else {
-            let alert = NSAlert()
-            alert.messageText = L10n.text("Updates not configured")
-            alert.informativeText = L10n.text("This development build has no signed update channel. Install a distribution version to receive updates.")
-            alert.runModal()
-            return
-        }
-        logger.info("update_manual_check")
-        controller.checkForUpdates(nil)
+    func selectChannel(_ value: UpdateChannel) {
+        guard canChangeChannel, value != channel else { return }
+        channel = value
+        defaults.set(value.rawValue, forKey: Self.channelPreferenceKey)
+        driver?.channel = value
+        if isStarted { driver?.resetUpdateCycle() }
+        logger.info("update_channel_selected channel=\(value.rawValue, privacy: .public)")
     }
 
-    @objc private func toggleAutomaticChecks() {
-        guard let updater = controller?.updater else { return }
-        updater.automaticallyChecksForUpdates.toggle()
-        logger.info("update_automatic_checks enabled=\(updater.automaticallyChecksForUpdates, privacy: .public)")
+    func setAutomaticChecks(_ enabled: Bool) {
+        guard isStarted, let driver else { return }
+        driver.automaticallyChecksForUpdates = enabled
+        refreshState()
+        logger.info("update_automatic_checks enabled=\(enabled, privacy: .public)")
     }
 
-    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
-        if menuItem.action == #selector(toggleAutomaticChecks) {
-            menuItem.state = controller?.updater.automaticallyChecksForUpdates == true ? .on : .off
-            return controller != nil
-        }
-        return controller?.updater.canCheckForUpdates ?? true
+    func checkForUpdates() {
+        guard isStarted, canCheckForUpdates else { return }
+        logger.info("update_manual_check channel=\(self.channel.rawValue, privacy: .public)")
+        driver?.checkForUpdates()
+        refreshState()
+    }
+
+    private func refreshState() {
+        guard isStarted, let driver else { return }
+        canCheckForUpdates = driver.canCheckForUpdates
+        sessionInProgress = driver.sessionInProgress
+        hasDeferredUpdate = pendingDecision.hasPendingDecision || driver.hasDeferredUpdate
+        automaticallyChecksForUpdates = driver.automaticallyChecksForUpdates
+        lastUpdateCheckDate = driver.lastUpdateCheckDate
     }
 }
