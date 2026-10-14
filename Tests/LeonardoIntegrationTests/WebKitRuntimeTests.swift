@@ -25,6 +25,162 @@ final class WebKitRuntimeTests: XCTestCase {
         try await waitFor("document.querySelector('img')?.complete && document.querySelector('img')?.naturalWidth === 0", in: updated)
     }
 
+    func testTableDirectiveKeepsShortColumnsAndWrapsLongHeaders() async throws {
+        let source = """
+        # Table widths
+
+        <!-- leonardo:table widths="10ch 15ch auto" -->
+
+        | Fecha | Encabezado largo con valores de solamente dos caracteres | Resultado esencial |
+        | :--- | :--- | :--- |
+        | 14/10/2026 | Sí | Una explicación que utiliza el espacio restante disponible. |
+        | 15/10/2026 | No | https://example.invalid/a/very/long/unbroken/path/for/layout |
+        """
+        let (host, window) = makeHost(content: source)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelector('table.table-sized colgroup') !== null", in: web)
+        let layout = """
+        (() => {
+          const table = document.querySelector('table');
+          const headers = table.rows[0].cells;
+          const range = document.createRange();
+          range.selectNodeContents(headers[0]);
+          return headers[1].offsetWidth < 200 && headers[1].offsetHeight > 60 &&
+            range.getClientRects().length === 1 && table.querySelectorAll('col').length === 3 &&
+            getComputedStyle(table).tableLayout === 'fixed' &&
+            getComputedStyle(headers[0]).wordBreak === 'normal';
+        })()
+        """
+        try await waitFor(layout, in: web)
+        try await captureTagPreview(web, name: "tables-light-wide")
+        _ = try await evaluate("document.body.style.transition = 'none'", in: web)
+        host.apply(content: source, baseURL: nil,
+            configuration: MarkdownPreviewConfiguration(appearance: MarkdownAppearance(
+                backgroundHex: "#171717", textHex: "#F1F1EB", headingHex: "#9BD1FA",
+                accentHex: "#9BD1FA", codeBackgroundHex: "#262626")),
+            onLinkActivation: nil, onScrollProgress: nil)
+        try await waitFor("getComputedStyle(document.body).backgroundColor === 'rgb(23, 23, 23)'", in: web)
+        try await captureTagPreview(web, name: "tables-dark-wide")
+        window.setContentSize(NSSize(width: 400, height: 800))
+        try await waitFor("document.querySelector('.table-viewport').scrollWidth > document.querySelector('.table-viewport').clientWidth", in: web)
+        try await waitFor(layout, in: web)
+        let scroll = try await evaluate("""
+        (() => {
+          const viewport = document.querySelector('.table-viewport');
+          viewport.focus(); viewport.scrollLeft = 100;
+          return viewport.scrollLeft > 0 && document.activeElement === viewport &&
+            document.documentElement.scrollWidth <= window.innerWidth;
+        })()
+        """, in: web)
+        XCTAssertEqual(scroll, "1")
+        try await captureTagPreview(web, name: "tables-dark-narrow-scrolled")
+    }
+
+    func testTableDirectivesAreScopedValidatedAndExcludedFromCode() async throws {
+        let table = "| A | B |\n| --- | --- |\n| Sí | No |\n"
+        let source = """
+        ```markdown
+        <!-- leonardo:table widths="10ch 15ch" -->
+        \(table)
+        ```
+
+        <!-- leonardo:table widths="10ch 15ch" -->
+
+        \(table)
+
+        \(table)
+
+        <!-- leonardo:table widths="10ch" -->
+
+        \(table)
+
+        <!-- leonardo:table widths="0ch auto" -->
+
+        \(table)
+
+        <!-- leonardo:table widths="201ch auto" -->
+
+        \(table)
+
+        <!-- leonardo:table widths="10ch;position:fixed auto" -->
+
+        \(table)
+
+        <!-- leonardo:table widths="10ch 15ch" -->
+
+        Intervening paragraph.
+
+        \(table)
+
+        > <!-- leonardo:table widths="8ch auto" -->
+        >
+        > | A | B |
+        > | --- | --- |
+        > | Sí | No |
+
+        - <!-- leonardo:table widths="8ch auto" -->
+
+          | A | B |
+          | --- | --- |
+          | Sí | No |
+        """
+        let (host, window) = makeHost(content: source)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelectorAll('table').length === 9", in: web)
+        let scopes = try await evaluate("""
+        (() => {
+          const tables = [...document.querySelectorAll('table')];
+          return tables.filter(t => t.classList.contains('table-sized')).length === 3 &&
+            tables[0].querySelectorAll('col').length === 2 &&
+            tables.slice(1, 7).every(t => !t.querySelector('colgroup')) &&
+            document.querySelector('blockquote table.table-sized') !== null &&
+            document.querySelector('li table.table-sized') !== null &&
+            document.querySelector('pre code').textContent.includes('leonardo:table') &&
+            tables.every(t => t.parentElement.className === 'table-viewport');
+        })()
+        """, in: web)
+        XCTAssertEqual(scopes, "1")
+        // Incremental updates must remove the old directive and its widths.
+        host.apply(content: table, baseURL: nil, configuration: .default,
+            onLinkActivation: nil, onScrollProgress: nil)
+        try await waitFor("document.querySelectorAll('table').length === 1 && document.querySelectorAll('colgroup').length === 0", in: web)
+    }
+
+    func testUnconfiguredTablesPreserveWordsAndAllFixedWidthsDoNotStretch() async throws {
+        let source = """
+        | Fecha | Resultado esencial |
+        | --- | --- |
+        | 14/10/2026 | Una explicación larga con varias palabras que necesita ajustarse. |
+
+        <!-- leonardo:table widths="10ch 5ch" -->
+
+        | Fecha | Un encabezado bastante largo |
+        | --- | --- |
+        | 14/10/2026 | Sí |
+        """
+        let (host, window) = makeHost(content: source)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelectorAll('table').length === 2", in: web)
+        let fixed = try await evaluate("document.querySelector('table.table-sized').offsetWidth < 250", in: web)
+        XCTAssertEqual(fixed, "1")
+        window.setContentSize(NSSize(width: 220, height: 800))
+        try await waitFor("window.innerWidth === 220", in: web)
+        let word = try await evaluate("""
+        (() => {
+          const cell = document.querySelector('th');
+          const range = document.createRange(); range.selectNodeContents(cell);
+          return range.getClientRects().length === 1 &&
+            getComputedStyle(cell).overflowWrap === 'normal' &&
+            document.documentElement.scrollWidth <= window.innerWidth;
+        })()
+        """, in: web)
+        XCTAssertEqual(word, "1")
+        try await captureTagPreview(web, name: "tables-natural-and-fixed-narrow")
+    }
+
     private func evaluate(_ script: String, in web: WKWebView) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             web.evaluateJavaScript(script) { result, error in

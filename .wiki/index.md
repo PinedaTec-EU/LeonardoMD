@@ -7,3 +7,5 @@ Read [current state](current-state.md), then the relevant source target. Human p
 - [Change log](log.md)
 
 - [Updates](updates.md)
+
+- [Table layout](table-layout.md)

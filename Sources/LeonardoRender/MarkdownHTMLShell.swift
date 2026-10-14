@@ -48,6 +48,7 @@ enum MarkdownHTMLShell {
         <body>
           <main id="leonardo-markdown" class="markdown-body" aria-live="polite"></main>
           <script id="leonardo-payload" type="application/json">\(encodedPayload)</script>
+          <script src="\(resourceURL(.tableLayout))"></script>
           <script src="\(resourceURL(.runtime))"></script>
         </body>
         </html>

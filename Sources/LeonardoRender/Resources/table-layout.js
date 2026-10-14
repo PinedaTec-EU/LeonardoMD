@@ -1,0 +1,69 @@
+(() => {
+  "use strict";
+
+  // Only validated numeric ch values reach CSS; directives never inject markup.
+  const directive = /^<!--\s*leonardo:table\s+widths="([^"]+)"\s*-->\s*$/;
+  const maximumCharacters = 200;
+  const automaticMinimumCharacters = 12;
+  const horizontalCellPadding = 1.5;
+
+  function parseWidths(raw) {
+    const match = directive.exec(raw);
+    if (!match) return null;
+    const widths = match[1].trim().split(/\s+/);
+    return widths.every((width) => width === "auto" || (
+      /^[1-9]\d*ch$/.test(width) && Number(width.slice(0, -2)) <= maximumCharacters
+    )) ? widths : null;
+  }
+
+  function annotateTables(tokens) {
+    let pending = null;
+    tokens.forEach((token) => {
+      if (token.type === "space") return;
+      if (token.type === "table" && pending?.length === token.header.length) {
+        token.leonardoWidths = pending;
+      }
+      pending = token.type === "html" ? parseWidths(token.raw) : null;
+      if (token.tokens) annotateTables(token.tokens);
+      if (token.items) token.items.forEach((item) => annotateTables(item.tokens));
+    });
+    return tokens;
+  }
+
+  function sizedTable(token) {
+    const widths = token.leonardoWidths;
+    if (!widths) return false;
+    const characters = widths.reduce((sum, width) => sum + (
+      width === "auto" ? automaticMinimumCharacters : Number(width.slice(0, -2))
+    ), 0);
+    const padding = widths.length * horizontalCellPadding;
+    const total = `calc(${characters}ch + ${padding}em + ${widths.length + 1}px)`;
+    const tableWidth = widths.includes("auto") ? `max(100%, ${total})` : total;
+    const columns = widths.map((width) => width === "auto" ? "<col>" :
+      `<col style="width: calc(${width} + ${horizontalCellPadding}em + 1px)">`).join("");
+    const html = window.marked.Renderer.prototype.table.call(this, token);
+    return html.replace("<table>",
+      `<table class="table-sized" style="width: ${tableWidth}"><colgroup>${columns}</colgroup>`);
+  }
+
+  const parser = new window.marked.Marked({
+    gfm: true,
+    breaks: false,
+    hooks: { processAllTokens: annotateTables },
+    renderer: { table: sizedTable }
+  });
+
+  window.LeonardoTables = {
+    render: (markdown) => parser.parse(markdown),
+    prepare(root) {
+      root.querySelectorAll("table").forEach((table) => {
+        const viewport = document.createElement("div");
+        viewport.className = "table-viewport";
+        // Keyboard users can reach and scroll an overflowing table.
+        viewport.tabIndex = 0;
+        table.before(viewport);
+        viewport.appendChild(table);
+      });
+    }
+  };
+})();

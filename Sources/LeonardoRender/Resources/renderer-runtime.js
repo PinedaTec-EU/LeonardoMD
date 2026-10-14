@@ -350,8 +350,9 @@
     diagramTimers.clear();
     document.querySelectorAll("body > .front-matter, body > .document-tags").forEach((panel) => panel.remove());
     try {
-      const rendered = window.marked.parse(payload.markdown || "", { gfm: true, breaks: false });
+      const rendered = window.LeonardoTables.render(payload.markdown || "");
       root.innerHTML = sanitizeHTML(rendered);
+      window.LeonardoTables.prepare(root);
       installHeadingAnchors();
       root.querySelectorAll("img").forEach((image) => {
         image.loading = "lazy";
