@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.353
+
+- #130 Fixed: support Markdown table width comments ([#131](https://github.com/PinedaTec-EU/LeonardoMD/pull/131))
+
+Source: `cc3be97d99542efc216ca694ea7144629593c274`. Delta: `{"build": 3}`.
+
 ## 0.1.350
 
 - #128 Updated: Move language into General preferences ([#129](https://github.com/PinedaTec-EU/LeonardoMD/pull/129))
