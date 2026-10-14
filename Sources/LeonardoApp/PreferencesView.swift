@@ -21,16 +21,6 @@ struct PreferencesView: View {
                 Spacer()
                 Button(L10n.text("Done")) { dismiss() }.keyboardShortcut(.defaultAction)
             }
-            HStack {
-                @Bindable var languages = LanguageSettings.shared
-                Picker(L10n.text("Language"), selection: $languages.language) {
-                    ForEach(AppLanguage.allCases) { language in
-                        Text(language.nativeName).tag(language)
-                    }
-                }.accessibilityIdentifier("interface-language")
-            }
-            Text(L10n.text("Interface language applies to all windows."))
-                .font(.caption).foregroundStyle(.secondary)
             if session.projectURL != nil && (selectedTab == "general" || selectedTab == "extensions") {
                 PremiumSelection(selection: $projectScope, options: [false, true], title: { $0 ? L10n.text("This project") : L10n.text("Global") })
                     .accessibilityLabel(L10n.text("Scope"))
@@ -55,6 +45,16 @@ struct PreferencesView: View {
 
     private var generalPreferences: some View {
             Form {
+                HStack {
+                    @Bindable var languages = LanguageSettings.shared
+                    Picker(L10n.text("Language"), selection: $languages.language) {
+                        ForEach(AppLanguage.allCases) { language in
+                            Text(language.nativeName).tag(language)
+                        }
+                    }.accessibilityIdentifier("interface-language")
+                }
+                Text(L10n.text("Interface language applies to all windows."))
+                    .font(.caption).foregroundStyle(.secondary)
                 Picker(L10n.text("Palette"), selection: Binding(get: { projectScope ? session.projectConfiguration.palette?.rawValue ?? "inherit" : session.globalPreferences.palette.rawValue }, set: { session.setPalette($0, project: projectScope) })) {
                     if projectScope { Text(L10n.text("Inherit global")).tag("inherit") }
                     ForEach(PaletteCatalog.all) { palette in Text(palette.displayName).tag(palette.id.rawValue) }

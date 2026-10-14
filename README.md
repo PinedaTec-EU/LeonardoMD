@@ -98,7 +98,7 @@ Drag the divider beside the project files/folders sidebar to widen or narrow it.
 
 The owner-approved baseline is **0.1.56**. Packaging requires Python 3 and derives bundle metadata from `version.nfo`. The `release.feature.build` model uses one `deploy/version/entries/<PR>.yaml` per source PR; successful Swift compilation commands accumulate its build delta; release notes use the verified source PR title after publication. See [the ledger workflow](doc/release-version-ledger.md) for operator use, trusted CI access and pending central automation activation.
 
-Interface language defaults to English. Preferences → Language offers English and Español; see [localization](doc/localization.md) for resource maintenance.
+Interface language defaults to English. Preferences → General → Language offers English and Español; see [localization](doc/localization.md) for resource maintenance.
 
 ### Native QA launches
 
