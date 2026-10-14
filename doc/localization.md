@@ -1,7 +1,7 @@
 # Interface languages
 
 LeonardoMD defaults to **English**, independently of the macOS language. Choose
-**English** or **Español** in Preferences → Language. This is a global interface
+**English** or **Español** in Preferences → General → Language. This is a global interface
 preference, stored as `interfaceLanguage` in the application's UserDefaults;
 it is never written to a shared project. Changes update open SwiftUI surfaces
 and the native application menus without recreating document sessions.
