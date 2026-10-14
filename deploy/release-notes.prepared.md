@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.350
+
+- #128 Updated: Move language into General preferences ([#129](https://github.com/PinedaTec-EU/LeonardoMD/pull/129))
+
+Source: `6611285bbe8d240e7a29c079a9e0b17a6900bc8a`. Delta: `{"build": 1}`.
+
 ## 0.1.349
 
 - #15 Added: allocate builds for validated stable promotions ([#127](https://github.com/PinedaTec-EU/LeonardoMD/pull/127))
