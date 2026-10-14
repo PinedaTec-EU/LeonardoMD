@@ -106,12 +106,28 @@ body[data-paper-effect="parchment"] {
   opacity: 0.9;
 }
 
-.markdown-body table {
-  border-collapse: collapse;
-  display: block;
+.table-viewport {
   max-width: 100%;
   overflow-x: auto;
-  width: max-content;
+  margin: 1em 0;
+}
+
+.table-viewport:focus-visible {
+  outline: 2px solid var(--ld-accent);
+  outline-offset: 2px;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  width: auto;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.markdown-body table.table-sized {
+  table-layout: fixed;
+  /* Emergency wrapping for a token wider than an explicitly chosen column. */
+  overflow-wrap: break-word;
 }
 
 .markdown-body th,
@@ -119,6 +135,7 @@ body[data-paper-effect="parchment"] {
   border: 1px solid color-mix(in srgb, var(--ld-text) 22%, transparent);
   padding: 0.45em 0.75em;
   text-align: left;
+  vertical-align: top;
 }
 
 .markdown-body th {
