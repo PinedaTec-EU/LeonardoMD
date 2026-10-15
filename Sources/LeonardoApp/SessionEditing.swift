@@ -30,9 +30,12 @@ extension AppSession {
     }
 
     func toggleProtection() async {
-        guard !stopped, !isSyncSuspended, !busy else { return }
+        guard !stopped, !isClosing, !isSyncSuspended, !busy else { return }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         if !isProtected, !(await flushPreviewEdits()) { return }
+        guard !isClosing, !stopped else { return }
         isProtected.toggle()
     }
 
@@ -45,10 +48,12 @@ extension AppSession {
     }
 
     func setDocumentMode(_ value: DocumentMode) async {
-        guard !stopped, !busy, !isSyncSuspended else { return }
+        guard !stopped, !isClosing, !busy, !isSyncSuspended else { return }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
         let url = documentURL
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
-        guard await flushPreviewEdits(), documentURL == url, !stopped, !isSyncSuspended else { return }
+        guard await flushPreviewEdits(), documentURL == url, !stopped, !isClosing, !isSyncSuspended else { return }
         mode = value
     }
 
@@ -65,7 +70,7 @@ extension AppSession {
         switch unsavedChangesDecision(documentURL?.lastPathComponent ?? "LeonardoMD") {
         case .cancel: return false
         case .save:
-            await save()
+            await save(allowClosing: true)
             return !isDirty
         case .discard:
             guard let snapshot else { return false }

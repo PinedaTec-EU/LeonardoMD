@@ -88,6 +88,43 @@ final class DocumentTabsTests: XCTestCase {
         }
     }
 
+    func testQueuedProjectOpenIsJoinedAndRejectedBeforeCloseApproval() async throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let session = tabs.activeSession
+        var resume: CheckedContinuation<Void, Never>?
+        let suspended = expectation(description: "Project authorization suspended before busy flag")
+        session.authorizePath = { _, _ in
+            await withCheckedContinuation { continuation in
+                resume = continuation
+                suspended.fulfill()
+            }
+        }
+        let opening = Task { await session.openProject(root) }
+        await fulfillment(of: [suspended], timeout: 2)
+        XCTAssertFalse(session.busy)
+        XCTAssertEqual(session.fileOperationCount, 1)
+        let closing = Task { await tabs.prepareClose() }
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertTrue(session.isClosing)
+        XCTAssertTrue(tabs.hasPendingWork)
+        resume?.resume()
+        let opened = await opening.value
+        let approved = await closing.value
+        XCTAssertFalse(opened)
+        XCTAssertTrue(approved)
+        XCTAssertNil(session.projectURL)
+        let mode = session.mode
+        let protection = session.isProtected
+        await session.setDocumentMode(.edit)
+        await session.toggleProtection()
+        await session.detachProject()
+        await session.save()
+        XCTAssertEqual(session.mode, mode)
+        XCTAssertEqual(session.isProtected, protection)
+        XCTAssertEqual(session.fileOperationCount, 0)
+    }
+
     func testPreparedCloseDoesNotAcceptNewWorkAfterApproval() async throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }

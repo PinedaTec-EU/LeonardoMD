@@ -23,16 +23,19 @@ extension AppSession {
     @discardableResult
     func openProject(_ url: URL) async -> Bool {
         guard !isClosing, !stopped else { return false }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
         do { try await authorizePath(url, .directory) } catch { report(error); return false }
         guard !stopped, !isClosing else { return false }
         await initialize()
         guard await prepareNavigation() else { return false }
-        guard !busy else { return false }
+        guard !busy, !isClosing, !stopped else { return false }
         busy = true
         defer { busy = false }
         do {
             _ = try await files.project(at: url)
             let configuration = try await configurations.loadProjectConfiguration(for: url)
+            guard !isClosing, !stopped else { return false }
             projectURL = url
             git = GitRepository(rootURL: url)
             projectConfiguration = configuration
@@ -53,7 +56,10 @@ extension AppSession {
         } catch { report(error); return false }
     }
     func detachProject() async {
-        guard await prepareNavigation() else { return }
+        guard !isClosing, !stopped else { return }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
+        guard await prepareNavigation(), !isClosing, !stopped else { return }
         projectURL = nil
         projectConfiguration = .default
         projectBaseline = .default

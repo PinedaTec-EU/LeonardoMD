@@ -160,7 +160,10 @@ final class AppSession {
 
     func open(_ url: URL) async {
         guard !isClosing, !stopped else { return }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
         await initialize()
+        guard !isClosing, !stopped else { return }
         if activateExistingDocument?(url, nil) == true {
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             return
@@ -182,6 +185,8 @@ final class AppSession {
 
     func openDocument(_ url: URL, line: Int? = nil) async {
         guard !isClosing, !stopped, !isSyncSuspended else { return }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
         do { try await authorizePath(url, .document) } catch { report(error); return }
         guard !stopped, !isClosing else { return }
         if activateExistingDocument?(url, line) == true {
@@ -194,12 +199,12 @@ final class AppSession {
             return
         }
         guard await prepareNavigation() else { return }
-        guard !busy else { return }
+        guard !busy, !isClosing, !stopped else { return }
         busy = true
         defer { busy = false }
         do {
             let loaded = try await documents.read(url)
-            guard !stopped, !isSyncSuspended, !NativeReconciliationLease.shared.holds(url) else { return }
+            guard !stopped, !isClosing, !isSyncSuspended, !NativeReconciliationLease.shared.holds(url) else { return }
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             isProtected = true
             documentURL = url
@@ -224,8 +229,11 @@ final class AppSession {
         saveTask?.cancel()
     }
 
-    func save() async {
-        guard await flushPreviewEdits() else { return }
+    func save(allowClosing: Bool = false) async {
+        guard !stopped, !isClosing || allowClosing else { return }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
+        guard await flushPreviewEdits(), !stopped, !isClosing || allowClosing else { return }
         guard !stopped, !isSyncSuspended, !saving, isDirty, let snapshot, let url = documentURL, !externalConflict else { return }
         saving = true
         saveStatus = "Saving…"
@@ -233,7 +241,7 @@ final class AppSession {
         logger.info("document_save_started")
         do {
             try await authorizePath(url, .document)
-            guard !stopped else { saving = false; return }
+            guard !stopped, !isClosing || allowClosing else { saving = false; return }
             self.snapshot = try await documents.save(draft, to: url, expectedFingerprint: snapshot.fingerprint)
             saveStatus = isDirty ? "Pending changes" : "Saved · local file"
             logger.info("document_save_completed")

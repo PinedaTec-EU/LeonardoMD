@@ -41,10 +41,10 @@ Existing WebKit table layout and renderer engine/security checks remain required
 
 ## Local validation results
 
-- Full Swift suite: 385 XCTest cases, 15 optional skips (the capture-enabled run has 14), zero failures; 12 Swift Testing renderer checks pass.
+- Full Swift suite: 386 XCTest cases, 15 optional skips (the capture-enabled run has 14), zero failures; 12 Swift Testing renderer checks pass.
 - Final focused run: two real-WebKit editing cases and eight session editing cases pass, including exact source restoration.
 - Packaging/recorder Python suite: 24 cases, seven engine-dependent skips, zero failures.
-- Nineteen successful recorded Swift compilation commands allocate build delta 19 for source PR #145; unsuccessful/interrupted runs allocate no delta.
+- Twenty successful recorded Swift compilation commands allocate build delta 20 for source PR #145; unsuccessful/interrupted runs allocate no delta.
 - Captures were inspected for solid/outlined lock states, enabled Save, explicit English/Spanish unsaved labels, and actual rendered edits.
 
 Remote CI and independent review are separate delivery gates. These local checks do not establish integration, publication or a packaged startup acceptance.
@@ -56,3 +56,5 @@ Additional regressions cover metadata-only insertion without a final newline ([#
 Conflict-copy regression [#153](https://github.com/PinedaTec-EU/LeonardoMD/issues/153) uses actual WebKit with its edit-message delivery suppressed: Save copy flushes the visible source before capturing it, blocks late input during authorization, and commits the verified saved snapshot without an asynchronous reopen. A failed destination write retains the original URL, snapshot, dirty draft and conflict. Individual-tab close is locked before asynchronous preparation, with cancellation restoring editing; a delayed authorization callback cannot insert unprompted input. The final focused native run passes 26 cases (one optional capture skip).
 
 Pending-preview synchronization regression [#154](https://github.com/PinedaTec-EU/LeonardoMD/issues/154) delays real WebKit edit delivery before shared-buffer capture, reconciliation acquisition and external-change detection. All retain the visible draft. Buffer providers are async/throwing and callers propagate capture failures. Close waits for busy, file-operation, saving, settings, Git and reconciliation work; native tab/window checks hold busy/file counters until explicitly released.
+
+Async document/project opening, mode/protection transitions, detach and save register operation ownership before their first suspension. Close joins that work, and final closing/stopped checks reject resumed transitions. A deterministic suspended-project-authorization regression proves that close cannot approve until the operation exits, and that no project/mode/protection transition is accepted after approval. An initial full run had one WebKit readiness timeout before editing; the unchanged-code full rerun passes all 386 XCTest cases. No successful build delta was allocated to that failed run.
