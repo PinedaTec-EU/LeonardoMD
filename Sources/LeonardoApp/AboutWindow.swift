@@ -4,6 +4,7 @@ import SwiftUI
 struct ApplicationVersion {
     let version: String?
     let build: String?
+    let channel: String
 
     init(bundle: Bundle = .main) {
         self.init(info: bundle.infoDictionary ?? [:])
@@ -12,12 +13,13 @@ struct ApplicationVersion {
     init(info: [String: Any]) {
         version = Self.nonEmpty(info["CFBundleShortVersionString"])
         build = Self.nonEmpty(info["CFBundleVersion"])
+        channel = Self.nonEmpty(info["LeonardoUpdateChannel"]) ?? "development"
     }
 
     @MainActor var displayText: String {
-        guard let version else { return L10n.text("Version unavailable · development build") }
-        if let build { return L10n.format("Version %@ · build %@", version, build) }
-        return L10n.format("Version %@", version)
+        let channelTitle = L10n.text(channel)
+        guard let version else { return L10n.format("Version unavailable · %@", channelTitle) }
+        return L10n.format("Version %@ · %@", version, channelTitle)
     }
 
     private static func nonEmpty(_ value: Any?) -> String? {
