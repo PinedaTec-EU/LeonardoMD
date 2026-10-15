@@ -50,6 +50,7 @@ struct MarkdownEditor: NSViewRepresentable {
             scroll.contentView.scroll(to: NSPoint(x: 0, y: available * scrollFraction))
             scroll.reflectScrolledClipView(scroll.contentView)
         }
+        context.coordinator.expectedText = text
         if let line = requestedLine, line != context.coordinator.lastLine {
             context.coordinator.lastLine = line
             let lines = text.components(separatedBy: "\n")
@@ -62,13 +63,30 @@ struct MarkdownEditor: NSViewRepresentable {
 
     @MainActor final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: MarkdownEditor
+        var expectedText: String
         var lastLine: Int?
         var lastScrollFraction = 0.0
         var scrollObserver: NSObjectProtocol?
-        init(_ parent: MarkdownEditor) { self.parent = parent }
+        init(_ parent: MarkdownEditor) { self.parent = parent; expectedText = parent.text }
+        func textView(_ editor: NSTextView, shouldChangeTextIn range: NSRange, replacementString: String?) -> Bool {
+            guard parent.text == expectedText else {
+                restoreSharedDraft(in: editor)
+                return false
+            }
+            return true
+        }
+        private func restoreSharedDraft(in editor: NSTextView) {
+            let selection = editor.selectedRange()
+            expectedText = parent.text
+            editor.string = expectedText
+            editor.setSelectedRange(NSRange(location: min(selection.location, (expectedText as NSString).length), length: 0))
+        }
         func textDidChange(_ notification: Notification) {
             guard let editor = notification.object as? NSTextView else { return }
+            guard parent.text == expectedText else { restoreSharedDraft(in: editor); return }
             parent.text = editor.string
+            expectedText = parent.text
+            if editor.string != expectedText { restoreSharedDraft(in: editor) }
         }
         func observe(_ scroll: NSScrollView) {
             scrollObserver = NotificationCenter.default.addObserver(
