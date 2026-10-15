@@ -115,11 +115,35 @@ final class PreviewEditingTests: XCTestCase {
         let ready = expectation(description: "Protected preview ready")
         host.onReady = { if $0 { ready.fulfill() } }
         host.onEdit = { _, _ in XCTFail("Protected preview must reject editing"); return false }
-        host.apply(content: "# Protected\n\nText", baseURL: nil, configuration: .default,
+        let source = "---\r\ntitle: Keep\r\n---"
+        host.apply(content: source, baseURL: nil, configuration: .default,
                    onLinkActivation: nil, onScrollProgress: nil)
         await fulfillment(of: [ready], timeout: 10)
         let webView = try XCTUnwrap(host.subviews.compactMap { $0 as? WKWebView }.first)
         let count = try await webView.evaluateJavaScript("document.querySelectorAll('[contenteditable=\"plaintext-only\"]').length") as? Int
         XCTAssertEqual(count, 0)
+        var configuration = MarkdownPreviewConfiguration.default
+        configuration.allowsEditing = true
+        var buffer = source
+        let edited = expectation(description: "Empty body retains front matter boundary")
+        host.onEdit = { expected, replacement in
+            XCTAssertEqual(expected, source)
+            buffer = replacement
+            edited.fulfill()
+            return true
+        }
+        host.apply(content: source, baseURL: nil, configuration: configuration, onLinkActivation: nil, onScrollProgress: nil)
+        _ = try await webView.evaluateJavaScript("""
+        (() => {
+          const empty = document.querySelector('.preview-empty');
+          empty.innerText = 'Written';
+          empty.dispatchEvent(new InputEvent('input', {bubbles: true}));
+          return true;
+        })()
+        """)
+        await fulfillment(of: [edited], timeout: 3)
+        XCTAssertEqual(buffer, source + "\r\nWritten")
+        XCTAssertEqual(MarkdownDocumentParser.parse(buffer).frontMatter["title"], "Keep")
+        XCTAssertEqual(MarkdownDocumentParser.parse(buffer).body, "Written")
     }
 }

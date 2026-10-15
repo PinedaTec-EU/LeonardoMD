@@ -112,7 +112,9 @@
       empty.dataset.leonardoRender = renderID;
       empty.dataset.leonardoEdit = "0";
       root.appendChild(empty);
-      ranges.push({ start: source.length, end: source.length, kind: "text", language: "" });
+      const needsSeparator = !window.LeonardoEditing.body && source.length > 0 && !/[\r\n]$/.test(source);
+      ranges.push({ start: source.length, end: source.length, kind: "text", language: "",
+        leadingSeparator: needsSeparator ? (source.includes("\r\n") ? "\r\n" : "\n") : "" });
     }
     root.querySelectorAll("[data-leonardo-edit]").forEach((element) => {
       if (element.dataset.leonardoRender !== renderID || element.querySelector(".math-rendered")) return;
@@ -142,7 +144,7 @@
       return `${fence}${pad}${text}${pad}${fence}`;
     }
     if (!text) return "";
-    return escapeMarkdown(text).replace(/\n/g, "  \n");
+    return (range.leadingSeparator || "") + escapeMarkdown(text).replace(/\n/g, "  \n");
   }
 
   function editableText(node) {
