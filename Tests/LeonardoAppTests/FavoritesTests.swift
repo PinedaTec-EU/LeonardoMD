@@ -11,7 +11,7 @@ final class FavoritesTests: XCTestCase {
             throw XCTSkip("Opt-in native welcome capture")
         }
         _ = NSApplication.shared
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let root = URL(fileURLWithPath: destination, isDirectory: true).appendingPathComponent("fixture")
         let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }
         await session.initialize()
@@ -24,9 +24,25 @@ final class FavoritesTests: XCTestCase {
         ]
         session.globalPreferences.recentProjectPaths = [root.appendingPathComponent("LeonardoMD"), root.appendingPathComponent("Other project")]
         session.globalPreferences.recentWorkspacePaths = [root.appendingPathComponent("PinedaTec")]
-        let view = NSHostingView(rootView: WelcomeView(session: session).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
-        try await NativeViewCaptureSupport.capture(view, size: NSSize(width: 1100, height: 850),
-                                                  to: URL(fileURLWithPath: destination), title: "Leonardo Favorites QA")
+        let language = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = language }
+        let directory = URL(fileURLWithPath: destination, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        for locale in [AppLanguage.english, .spanish] {
+            LanguageSettings.shared.language = locale
+            let view = NSHostingView(rootView: WelcomeView(session: session).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
+            try await NativeViewCaptureSupport.capture(view, size: NSSize(width: 1100, height: 1150),
+                to: directory.appendingPathComponent("welcome-\(locale.rawValue).png"), title: "Leonardo Favorites QA")
+        }
+        session.toggleFavorite(root.appendingPathComponent("LeonardoMD"), kind: .project)
+        let changed = NSHostingView(rootView: SavedItemsView(session: session).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
+        try await NativeViewCaptureSupport.capture(changed, size: NSSize(width: 760, height: 850),
+            to: directory.appendingPathComponent("removed-project-es.png"), title: "Leonardo Favorites QA")
+        session.globalPreferences.palette = .graphiteGlass
+        let narrow = NSHostingView(rootView: WelcomeView(session: session).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
+        try await NativeViewCaptureSupport.capture(narrow, size: NSSize(width: 600, height: 600),
+            to: directory.appendingPathComponent("welcome-narrow-dark-es.png"), title: "Leonardo Favorites QA")
+        await session.settingsTask?.value
     }
 
     func testFavoritesPersistIndependentlyOfRecentsAndCanBeRemoved() async throws {
@@ -131,6 +147,26 @@ final class FavoritesTests: XCTestCase {
         let saved = try await session.configurations.loadGlobalPreferences(at: session.globalPreferencesURL)
         XCTAssertTrue(saved.recentProjectPaths.isEmpty)
         XCTAssertEqual(saved.favorites, [FavoriteItem(kind: .project, url: root)])
+    }
+
+    func testSavedItemOpeningDispatchesThroughEachExistingWorkflow() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let project = root.appendingPathComponent("Project")
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        let file = project.appendingPathComponent("notes.md")
+        try "# Favorite document".write(to: file, atomically: true, encoding: .utf8)
+        let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        await session.initialize()
+        await session.openSavedItem(file, kind: .document)
+        XCTAssertEqual(session.documentURL?.path, file.path)
+        await session.openSavedItem(project, kind: .project)
+        XCTAssertEqual(session.projectURL?.path, project.path)
+        await session.openSavedItem(root, kind: .workspace)
+        XCTAssertEqual(session.workspaceURL?.path, root.path)
+        XCTAssertTrue(session.showWorkspace)
+        XCTAssertNil(session.errorMessage)
+        await session.settingsTask?.value
     }
 
     func testMissingAndWrongKindTargetsCannotOpenButRemainRemovable() async throws {
