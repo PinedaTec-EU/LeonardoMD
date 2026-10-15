@@ -1,8 +1,8 @@
+import AppKit
 import SwiftUI
 
 struct MarkdownAssociationPreferences: View {
     @Bindable var associations: MarkdownAssociations
-    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Section(L10n.text("Default Markdown application")) {
@@ -23,8 +23,8 @@ struct MarkdownAssociationPreferences: View {
             }
         }
         .onAppear { associations.refresh() }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { associations.refresh() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            associations.refresh()
         }
     }
 

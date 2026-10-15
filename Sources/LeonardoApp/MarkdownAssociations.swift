@@ -59,7 +59,7 @@ final class MarkdownAssociations {
                     let failure = NSAlert()
                     failure.messageText = L10n.text("Markdown default was not fully changed")
                     failure.informativeText = L10n.text("The change was cancelled or could not be completed. Check General preferences to see the current association and try again.")
-                    failure.beginSheetModal(for: window)
+                    await failure.beginSheetModal(for: window)
                 }
             }
         }

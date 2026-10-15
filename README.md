@@ -10,7 +10,7 @@ Requires macOS 14 or later and Swift 6 / Xcode command-line tools.
 ./launch.sh
 ```
 
-The entrypoint builds an optimized, locally signed app at `output/LeonardoMD.app` and opens it. A document path can be supplied as an argument. You can also open Markdown files with LeonardoMD from Finder's **Open With** menu. No account, API key or network connection is needed to read documents.
+The entrypoint builds an optimized, locally signed app at `output/LeonardoMD.app` and opens it. A document path can be supplied as an argument. You can also open Markdown files with LeonardoMD from Finder's **Open With** menu. On startup, distribution builds offer to become the default for `.md` and `.markdown` if needed: choose **Use LeonardoMD**, **Ask next time**, or **Never ask again**. **Preferences → General → Default Markdown application** shows the current status and lets you change the default or re-enable the prompt. This setting applies to the whole Mac, including every project; `.txt` and individual file overrides are unaffected. macOS may ask for consent, and cancellation or failure is reported without claiming success. No account, API key or network connection is needed to read documents.
 
 ## Document and project modes
 

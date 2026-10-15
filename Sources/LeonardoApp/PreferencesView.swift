@@ -7,11 +7,13 @@ struct PreferencesView: View {
     @State private var projectScope = false
     @State private var editingPalette = false
     @State private var selectedTab: String
+    private let associations: MarkdownAssociations
     private let updates: ApplicationUpdates
 
-    init(session: AppSession, updates: ApplicationUpdates = .shared, selectedTab: String = "general") {
+    init(session: AppSession, updates: ApplicationUpdates = .shared, associations: MarkdownAssociations = .shared, selectedTab: String = "general") {
         self.session = session
         self.updates = updates
+        self.associations = associations
         _selectedTab = State(initialValue: selectedTab)
     }
     var body: some View {
@@ -55,7 +57,7 @@ struct PreferencesView: View {
                 }
                 Text(L10n.text("Interface language applies to all windows."))
                     .font(.caption).foregroundStyle(.secondary)
-                MarkdownAssociationPreferences(associations: .shared)
+                MarkdownAssociationPreferences(associations: associations)
                 Picker(L10n.text("Palette"), selection: Binding(get: { projectScope ? session.projectConfiguration.palette?.rawValue ?? "inherit" : session.globalPreferences.palette.rawValue }, set: { session.setPalette($0, project: projectScope) })) {
                     if projectScope { Text(L10n.text("Inherit global")).tag("inherit") }
                     ForEach(PaletteCatalog.all) { palette in Text(palette.displayName).tag(palette.id.rawValue) }
