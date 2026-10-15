@@ -95,7 +95,7 @@ struct FileTreeRow: View {
                     Spacer(minLength: 0)
                 }.padding(.vertical, 6).padding(.horizontal, 6)
                     .background(session.documentURL == entry.url ? session.accentColor.opacity(0.14) : .clear, in: RoundedRectangle(cornerRadius: 6))
-            }.buttonStyle(.plain)
+            }
                 .contextMenu {
                     Button(L10n.text("Show in Finder")) { NSWorkspace.shared.activateFileViewerSelecting([entry.url]) }
                     Button(L10n.text("Rename…")) { session.rename(entry.url) }
@@ -107,6 +107,9 @@ struct FileTreeRow: View {
                     Divider()
                     Button(L10n.text("Delete…"), role: .destructive) { session.delete(entry.url) }
                 }
+                // Include the context menu in the plain-style scope so it cannot
+                // inherit the sidebar's stateful PremiumButtonStyle.
+                .buttonStyle(.plain)
                 .onDrag { NSItemProvider(object: entry.url as NSURL) }
                 .onDrop(of: [.fileURL], isTargeted: nil) { providers in
                     guard entry.isDirectory else { return false }
