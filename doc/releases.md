@@ -6,6 +6,24 @@ The maintainer needs a Developer ID Application identity, an existing `notarytoo
 
 Set `LEONARDO_VERSION` to the canonical `release.feature.build` in `version.nfo` and `LEONARDO_BUILD` to its third segment, strictly greater than every previous published build, `SPARKLE_PUBLIC_KEY` to the generated public key, `DEVELOPER_ID_APPLICATION` to the signing identity, `NOTARY_PROFILE` to the stored profile, and `RELEASE_NOTES_FILE` to a nonempty Markdown file. Supply these through the process environment, not tracked files. Ordinary development builds derive their version and build from `version.nfo` (initial seed 0.1.56 / 56) and do not enable the channel.
 
+## Local signing and notarization configuration
+
+Verified on 2026-10-15 for the existing releases on this Mac:
+
+- Developer ID identity: `Developer ID Application: JOSE MANUEL RODRIGUEZ PINEDA (AU2Z3P42U7)`.
+- Notarytool Keychain profile: `x-notch-notary`. Despite its historical name, this existing profile is also used for LeonardoMD; `notarytool` resolves it from the current user's Keychain without a `--keychain` override.
+- Sparkle signing account: `LeonardoMD-stable`, shared by stable and beta. Read only its public key with the command in Prerequisites.
+
+Set `NOTARY_PROFILE=x-notch-notary` and `DEVELOPER_ID_APPLICATION` to the identity above when invoking `prepare-release.sh`. Verify profile access without exposing credentials:
+
+```bash
+xcrun notarytool history --keychain-profile x-notch-notary
+```
+
+GitHub beta is a public prerelease plus its subscription feed. Apple notarization is a separate verification of that downloadable macOS package; it is not App Store publication or local installation. Publication does not authorize replacing `/Applications/LeonardoMD.app` or running an update on the owner's Mac. Hosted installation/relaunch acceptance must remain explicitly pending when installation is excluded.
+
+Keep credentials in the Keychain, never in this document or tracked environment files. Tracking: [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15).
+
 ## Prepare and inspect
 
 Run `./scripts/prepare-release.sh` from the repository. It builds the app, embeds Sparkle including symlinks and executable helpers, signs nested components inside out with hardened runtime, verifies signatures, notarizes, staples, assesses Gatekeeper, then generates the archive and EdDSA-signed appcast. It stops on failure. Release notes are embedded in the appcast. Output is under `output/release-<version>/`. No tag or release is published by this script.
