@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.369
+
+- #137 Added: persist favorites and show welcome item lists ([#138](https://github.com/PinedaTec-EU/LeonardoMD/pull/138))
+
+Source: `754cfe63dd715e06ba70885a68170f8587e1f8f6`. Delta: `{"build": 8}`.
+
 ## 0.1.361
 
 - #136 Fixed: isolate sidebar context menu button styling ([#139](https://github.com/PinedaTec-EU/LeonardoMD/pull/139))
