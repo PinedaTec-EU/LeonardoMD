@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.375
+
+- #146 Added: heading-colored border to document metadata ([#147](https://github.com/PinedaTec-EU/LeonardoMD/pull/147))
+
+Source: `4747278c9984fef3847feed6a1f09d1576404b47`. Delta: `{"build": 2}`.
+
 ## 0.1.373
 
 - #142 Fixed: show installed channel beside application version ([#143](https://github.com/PinedaTec-EU/LeonardoMD/pull/143))
