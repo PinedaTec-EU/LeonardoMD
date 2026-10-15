@@ -109,4 +109,20 @@ the preview. Native WebKit width, scope, invalid-input, update, dark/light and
 narrow-window checks pass; full Swift validation passes. See [table layout](table-layout.md).
 Integration and publication are separate gates.
 
+## 2026-10-15 — Markdown default application choice
+
+[#133](https://github.com/PinedaTec-EU/LeonardoMD/issues/133), proposed in
+[PR #134](https://github.com/PinedaTec-EU/LeonardoMD/pull/134): the primary
+process offers a Markdown-only default association after initial Finder opens.
+`MarkdownAssociations` owns once-per-process policy and Mac-global suppression;
+`WorkspaceMarkdownAssociationDriver` isolates Launch Services and rejects
+unregistered Markdown instead of falling back to plain text. General preferences
+shows status and exposes manual change/re-enable even in project scope.
+QA identities and non-app test executables cannot modify associations.
+Native visual tests use a fake driver and isolated preferences; they do not prove
+a new packaged process or actual system-consent interaction.
+Local cleanup of 33 old registrations is recorded in
+[#135](https://github.com/PinedaTec-EU/LeonardoMD/issues/135); files and the
+running installed app were preserved. Rediscovery can register old copies again.
+
 - [#137](https://github.com/PinedaTec-EU/LeonardoMD/issues/137): typed favorites live in global preferences independently of recents. Membership merges preserve independent window changes; `SessionFavorites` shares actions between native `FavoritesMenu` and the scrollable `WelcomeView` / `SavedItemsView`. See [behavior and validation](../doc/validation/favorites/README.md).
