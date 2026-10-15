@@ -3,21 +3,21 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.1.361</title>
-            <pubDate>Thu, 15 Oct 2026 12:23:26 +0200</pubDate>
+            <title>0.1.369</title>
+            <pubDate>Thu, 15 Oct 2026 13:43:29 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>361</sparkle:version>
-            <sparkle:shortVersionString>0.1.361</sparkle:shortVersionString>
+            <sparkle:version>369</sparkle:version>
+            <sparkle:shortVersionString>0.1.369</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD 0.1.361 Beta
+            <description sparkle:format="markdown"># LeonardoMD 0.1.369 Beta
 
-- Added a choice to make LeonardoMD the default application for Markdown documents, including an option in General preferences.
-- Fixed sidebar context menu button styling and restored clear native menu actions.
+- Save favorite documents, projects and workspaces, with persistent favorites and welcome item lists.
+- Includes the recent default Markdown application choice, sidebar context menu styling fix and table-width comment support.
 
-Includes all changes in main since beta 0.1.353. Signed and notarized for Apple silicon Macs. Select Beta in Preferences → Updates to receive this channel; Stable remains the default subscription.
+Signed and notarized for Apple silicon Macs. Select Beta in Preferences → Updates to receive beta updates.
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.361/LeonardoMD-0.1.361.zip" length="15709098" type="application/octet-stream" sparkle:edSignature="ZAGWiaIZ0FeIt0px6cwXkfclccNfu+vt4d4x9qFyuT+SJVv8qUi+9zAEdT0Zfu46+W82/pxfj8/shuCIk/qCBg==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.369/LeonardoMD-0.1.369.zip" length="15748717" type="application/octet-stream" sparkle:edSignature="iah86A8uX9FqdJhomn8K6+YvAnX4Cz+cDEUqJatSvecVIpKvWU6IZUclp3hTZczREnWB0iIE6iMvxwxHr7lSCg==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.349</title>
