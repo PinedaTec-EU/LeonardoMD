@@ -22,8 +22,9 @@ extension AppSession {
     }
     @discardableResult
     func openProject(_ url: URL) async -> Bool {
+        guard !isClosing, !stopped else { return false }
         do { try await authorizePath(url, .directory) } catch { report(error); return false }
-        guard !stopped else { return false }
+        guard !stopped, !isClosing else { return false }
         await initialize()
         guard await prepareNavigation() else { return false }
         guard !busy else { return false }
@@ -115,7 +116,7 @@ extension AppSession {
         let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
         let parentPath = relative(parent ?? root)
         Task {
-            guard !stopped else { return }
+            guard !stopped, !isClosing else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
             do {
@@ -135,7 +136,7 @@ extension AppSession {
     func rename(_ url: URL) {
         guard let root = projectURL, let name = prompt(title: L10n.text("Rename"), initial: url.lastPathComponent) else { return }
         Task {
-            guard !stopped else { return }
+            guard !stopped, !isClosing else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
             guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
@@ -162,7 +163,7 @@ extension AppSession {
     func move(_ url: URL, into parent: URL) {
         guard let root = projectURL else { return }
         Task {
-            guard !stopped else { return }
+            guard !stopped, !isClosing else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
             guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
@@ -197,7 +198,7 @@ extension AppSession {
         alert.addButton(withTitle: L10n.text("Delete"))
         guard alert.runModal() == .alertSecondButtonReturn else { return }
         Task {
-            guard !stopped else { return }
+            guard !stopped, !isClosing else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
             guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }

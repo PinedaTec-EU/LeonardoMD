@@ -21,6 +21,14 @@ enum UnsavedChangesPrompt {
 }
 
 extension AppSession {
+    func waitForCloseOperations() async -> Bool {
+        while busy || saving || gitBusy || fileOperationCount > 0 || settingsTask != nil || isSyncSuspended || isCapturingPreview {
+            if stopped || Task.isCancelled { return false }
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        return !stopped && !Task.isCancelled
+    }
+
     func toggleProtection() async {
         guard !stopped, !isSyncSuspended, !busy else { return }
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)

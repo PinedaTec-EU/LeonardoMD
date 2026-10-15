@@ -62,6 +62,32 @@ final class DocumentTabsTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "draft")
     }
 
+    func testCloseWaitsForBusyAndFileOperationsForTabsAndWindows() async throws {
+        for windowClose in [false, true] {
+            for fileOperation in [false, true] {
+                let (root, tabs) = try fixture()
+                let session = tabs.activeSession
+                let id = try XCTUnwrap(tabs.activeID)
+                if fileOperation { session.fileOperationCount = 1 } else { session.busy = true }
+                XCTAssertTrue(tabs.hasPendingWork)
+                let closing = Task { @MainActor in
+                    if windowClose { return await tabs.prepareClose() }
+                    await tabs.close(id)
+                    return session.stopped
+                }
+                try await Task.sleep(for: .milliseconds(50))
+                XCTAssertFalse(session.stopped)
+                XCTAssertTrue(session.isClosing)
+                if fileOperation { session.fileOperationCount = 0 } else { session.busy = false }
+                let approved = await closing.value
+                XCTAssertTrue(approved)
+                if windowClose { tabs.cancelPreparedClose() }
+                tabs.stop()
+                try? FileManager.default.removeItem(at: root)
+            }
+        }
+    }
+
     func testPreparedCloseDoesNotAcceptNewWorkAfterApproval() async throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }

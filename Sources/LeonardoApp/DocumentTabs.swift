@@ -26,7 +26,7 @@ final class DocumentTabs {
     }
 
     var activeSession: AppSession { tabs.first { $0.id == activeID }!.session }
-    var hasPendingWork: Bool { tabs.contains { $0.session.isDirty || $0.session.saving || $0.session.settingsTask != nil || $0.session.gitBusy } }
+    var hasPendingWork: Bool { tabs.contains { $0.session.isDirty || $0.session.busy || $0.session.fileOperationCount > 0 || $0.session.saving || $0.session.settingsTask != nil || $0.session.gitBusy } }
     var acceptsExternalDrops: Bool { !closing && !stopped }
 
     @discardableResult
@@ -126,7 +126,7 @@ final class DocumentTabs {
         guard await session.flushPreviewEdits() else { return }
         session.isClosing = true
         defer { if !session.stopped { session.isClosing = false } }
-        guard await session.prepareNavigation() else {
+        guard await session.waitForCloseOperations(), await session.prepareNavigation() else {
             activeID = id
             updateTitle()
             return
@@ -151,7 +151,7 @@ final class DocumentTabs {
         for tab in tabs {
             guard await tab.session.flushPreviewEdits() else { return false }
             tab.session.isClosing = true
-            guard await tab.session.prepareNavigation() else {
+            guard await tab.session.waitForCloseOperations(), await tab.session.prepareNavigation() else {
                 activeID = tab.id
                 updateTitle()
                 return false
