@@ -130,19 +130,7 @@ struct WorkspaceView: View {
 
     @ViewBuilder private var documentArea: some View {
         if session.documentURL == nil {
-            VStack(spacing: 18) {
-                Image(systemName: "doc.richtext").font(.system(size: 54, weight: .light)).foregroundStyle(session.accentColor)
-                Text(L10n.text("Your documents, your way.")).font(.largeTitle.weight(.semibold))
-                Text(L10n.text("Open a Markdown file to read it instantly\nor a folder to work with a project."))
-                    .multilineTextAlignment(.center).foregroundStyle(.secondary)
-                HStack {
-                    Button(L10n.text("Open document…")) { session.chooseDocument() }.buttonStyle(PremiumButtonStyle(prominent: true))
-                    Button(L10n.text("Open project…")) { session.chooseProject() }.buttonStyle(PremiumButtonStyle())
-                }
-                Button(L10n.text("Manage workspaces…")) { session.showWorkspace = true }.buttonStyle(PremiumButtonStyle())
-                Text(L10n.text("Local · No account · Optional extensions")).font(.caption).foregroundStyle(.secondary)
-            }.frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background { WelcomeWatermark() }
+            WelcomeView(session: session)
         } else {
             VStack(spacing: 0) {
                 if session.externalConflict {

@@ -220,6 +220,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
     public var paperEffect: PaperEffect
     public var markdown: MarkdownFeatures
     public var showHiddenFiles: Bool
+    public var favorites: [FavoriteItem]
     public var recentWorkspacePaths: [URL]
     public var recentProjectPaths: [URL]
     public var mobileSync: MobileSyncPreferences
@@ -231,6 +232,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         paperEffect: PaperEffect = .white,
         markdown: MarkdownFeatures = MarkdownFeatures(),
         showHiddenFiles: Bool = false,
+        favorites: [FavoriteItem] = [],
         recentWorkspacePaths: [URL] = [],
         recentProjectPaths: [URL] = [],
         mobileSync: MobileSyncPreferences = MobileSyncPreferences()
@@ -241,6 +243,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         self.paperEffect = paperEffect
         self.markdown = markdown
         self.showHiddenFiles = showHiddenFiles
+        self.favorites = favorites
         self.recentWorkspacePaths = recentWorkspacePaths
         self.recentProjectPaths = recentProjectPaths
         self.mobileSync = mobileSync
@@ -255,6 +258,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         case paperEffect
         case markdown
         case showHiddenFiles
+        case favorites
         case recentWorkspacePaths
         case recentProjectPaths
         case mobileSync
@@ -272,6 +276,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         paperEffect = try container.decodeIfPresent(PaperEffect.self, forKey: .paperEffect) ?? .white
         markdown = try container.decodeIfPresent(MarkdownFeatures.self, forKey: .markdown) ?? MarkdownFeatures()
         showHiddenFiles = try container.decodeIfPresent(Bool.self, forKey: .showHiddenFiles) ?? false
+        favorites = try container.decodeIfPresent([FavoriteItem].self, forKey: .favorites) ?? []
         recentWorkspacePaths = try container.decodeIfPresent([URL].self, forKey: .recentWorkspacePaths) ?? []
         recentProjectPaths = try container.decodeIfPresent([URL].self, forKey: .recentProjectPaths) ?? []
         mobileSync = try container.decodeIfPresent(MobileSyncPreferences.self, forKey: .mobileSync) ?? MobileSyncPreferences()
