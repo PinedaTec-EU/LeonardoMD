@@ -6,7 +6,7 @@ import XCTest
 @MainActor
 final class PreviewEditingTests: XCTestCase {
     func testRenderedEditsPreserveMarkdownFrontMatterCRLFAndLaterRanges() async throws {
-        let source = "---\r\ntitle: Keep\r\n---\r\n# Heading\r\n\r\nA **bold** and [link](https://example.com).\r\n\r\n| One | Two |\r\n| --- | --- |\r\n| Cell | Value |\r\n| --- | Other |\r\n\r\n`code`\r\n"
+        let source = "---\r\ntitle: Keep\r\n---\r\n# Heading\r\n\r\nA **bold** and [link](https://example.com).\r\n\r\n| One | Two |\r\n| --- | --- |\r\n| Cell | Value |\r\n| --- | Other |\r\n\r\n`code`\r\n\r\n**outer *inner***\r\n"
         let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -18,11 +18,13 @@ final class PreviewEditingTests: XCTestCase {
         var configuration = MarkdownPreviewConfiguration.default
         configuration.allowsEditing = true
         var buffer = source
+        var received: [String] = []
         let edits = expectation(description: "Native bridge receives mapped edits")
-        edits.expectedFulfillmentCount = 6
+        edits.expectedFulfillmentCount = 14
         host.onEdit = { expected, replacement in
             XCTAssertEqual(expected, buffer)
             buffer = replacement
+            received.append(replacement)
             edits.fulfill()
             return true
         }
@@ -35,6 +37,10 @@ final class PreviewEditingTests: XCTestCase {
         _ = try await webView.evaluateJavaScript("""
         (() => {
           const bold = document.querySelector('strong [data-leonardo-edit]');
+          bold.innerText = '';
+          bold.dispatchEvent(new InputEvent('input', {bubbles: true}));
+          bold.innerText = 'bold';
+          bold.dispatchEvent(new InputEvent('input', {bubbles: true}));
           bold.innerText = 'longer *bold*';
           bold.dispatchEvent(new InputEvent('input', {bubbles: true}));
           const cell = Array.from(document.querySelectorAll('td [data-leonardo-edit]')).find(e => e.textContent === 'Cell');
@@ -47,15 +53,31 @@ final class PreviewEditingTests: XCTestCase {
           heading.innerText = 'New heading';
           heading.dispatchEvent(new InputEvent('input', {bubbles: true}));
           const code = document.querySelector('code [data-leonardo-edit]');
+          code.innerText = '';
+          code.dispatchEvent(new InputEvent('input', {bubbles: true}));
+          code.innerText = 'code';
+          code.dispatchEvent(new InputEvent('input', {bubbles: true}));
           code.innerText = 'a`b';
           code.dispatchEvent(new InputEvent('input', {bubbles: true}));
           bold.innerText = 'bold';
           bold.dispatchEvent(new InputEvent('input', {bubbles: true}));
+          const nested = Array.from(document.querySelectorAll('strong')).find(e => e.textContent.includes('outer'));
+          const parts = nested.querySelectorAll('[data-leonardo-edit]');
+          for (const part of parts) { part.innerText = ''; part.dispatchEvent(new InputEvent('input', {bubbles: true})); }
+          parts[0].innerText = 'outer ';
+          parts[0].dispatchEvent(new InputEvent('input', {bubbles: true}));
+          parts[1].innerText = 'inner';
+          parts[1].dispatchEvent(new InputEvent('input', {bubbles: true}));
           return true;
         })()
         """)
         await fulfillment(of: [edits], timeout: 3)
-        XCTAssertEqual(buffer, source.replacingOccurrences(of: "| Cell |", with: "| Changed |").replacingOccurrences(of: "| --- | Other |", with: "| Row | Other |").replacingOccurrences(of: "# Heading", with: "# New heading").replacingOccurrences(of: "`code`", with: "``a`b``"))
+        let expected = source.replacingOccurrences(of: "| Cell |", with: "| Changed |").replacingOccurrences(of: "| --- | Other |", with: "| Row | Other |").replacingOccurrences(of: "# Heading", with: "# New heading").replacingOccurrences(of: "`code`", with: "``a`b``")
+        XCTAssertEqual(buffer, expected)
+        XCTAssertEqual(received[11], expected.replacingOccurrences(of: "**outer *inner***", with: ""))
+        XCTAssertEqual(received[12], expected.replacingOccurrences(of: "**outer *inner***", with: "**outer** "))
+        XCTAssertEqual(received[0], source.replacingOccurrences(of: "**bold**", with: ""))
+        XCTAssertEqual(received[1], source, "Restoring an emptied formatted run must restore the exact original source")
         // Re-applying the native buffer must preserve the same focused DOM.
         _ = try await webView.evaluateJavaScript("document.querySelector('strong span').dataset.caretTest = 'kept'")
         host.apply(content: buffer, baseURL: nil, configuration: configuration, onLinkActivation: nil, onScrollProgress: nil)

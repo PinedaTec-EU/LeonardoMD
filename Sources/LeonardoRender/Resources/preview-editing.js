@@ -5,6 +5,8 @@
   // preserve all bytes outside that range (including CRLF and front matter).
   let source = "";
   let ranges = [];
+  let originalSource = "";
+  let groups = [];
   let enabled = false;
   let renderID = "";
   const escapeHTML = (text) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -14,6 +16,8 @@
     source = payload.source || "";
     enabled = payload.allowsEditing === true;
     ranges = [];
+    groups = [];
+    originalSource = source;
     renderID = Array.from(crypto.getRandomValues(new Uint32Array(4))).join("-");
   }
 
@@ -39,6 +43,14 @@
         cursor = end;
         if (token.tokens) {
           visit(token.tokens, start, end);
+          if (["strong", "em", "del"].includes(token.type) && !hasOpaqueContent(token)) {
+            const groupStart = originalOffsets[start], groupEnd = originalOffsets[end];
+            const leaves = ranges.filter((range) => range.start >= groupStart && range.end <= groupEnd);
+            if (leaves.length) {
+              const marker = token.type === "em" ? token.raw[0] : token.raw.slice(0, 2);
+              groups.push({ start: groupStart, end: groupEnd, marker, leaves });
+            }
+          }
         } else if (token.items) {
           visit(token.items, start, end);
         } else if (token.type === "table") {
@@ -82,6 +94,12 @@
     return tokens;
   }
 
+  function hasOpaqueContent(token) {
+    if (token.tokens) return token.tokens.some(hasOpaqueContent);
+    if (token.type === "br") return false;
+    return !["text", "escape", "codespan"].includes(token.type) || token.leonardoEditID === undefined;
+  }
+
   function span(token, html) {
     if (token.leonardoEditID === undefined) return html;
     return `<span data-leonardo-render="${renderID}" data-leonardo-edit="${token.leonardoEditID}">${html}</span>`;
@@ -102,8 +120,10 @@
       if (!range) return;
       element.contentEditable = enabled ? "plaintext-only" : "false";
       element.spellcheck = false;
-      range.originalSource = source.slice(range.start, range.end);
-      range.originalText = element.innerText;
+      range.originalSource = originalSource.slice(range.start, range.end);
+      range.replacement = range.originalSource;
+      range.originalText = editableText(element);
+      range.currentText = range.originalText;
       element.addEventListener("input", (event) => {
         if (!enabled || event.isComposing) return;
         applyInput(element, range);
@@ -113,6 +133,7 @@
   }
 
   function serialize(text, range) {
+    if (range.kind === "codespan" && !text) return "";
     if (range.kind === "code" || range.kind === "codespan") {
       const longest = (text.match(/`+/g) || []).reduce((maximum, run) => Math.max(maximum, run.length), 0);
       const fence = "`".repeat(Math.max(range.kind === "code" ? 3 : 1, longest + 1));
@@ -120,23 +141,61 @@
       const pad = text.startsWith("`") || text.endsWith("`") || (text.startsWith(" ") && text.endsWith(" ") && text.trim()) ? " " : "";
       return `${fence}${pad}${text}${pad}${fence}`;
     }
+    if (!text) return "";
     return escapeMarkdown(text).replace(/\n/g, "  \n");
   }
 
+  function editableText(node) {
+    if (node.nodeType === Node.TEXT_NODE) return node.nodeValue || "";
+    const children = Array.from(node.childNodes);
+    if (children.length === 1 && children[0].nodeName === "BR") return "";
+    let text = "", previousBlock = false;
+    children.forEach((child, index) => {
+      const block = /^(DIV|P)$/.test(child.nodeName);
+      if (((block && index > 0) || previousBlock) && !text.endsWith("\n")) text += "\n";
+      text += child.nodeName === "BR" ? "\n" : editableText(child);
+      previousBlock = block;
+    });
+    return text;
+  }
+
   function applyInput(element, range) {
-    const text = element.innerText.replace(/\r\n/g, "\n");
-    const replacement = text === range.originalText ? range.originalSource : serialize(text, range);
+    const text = editableText(element).replace(/\r\n/g, "\n");
+    range.currentText = text;
+    range.replacement = text === range.originalText ? range.originalSource : serialize(text, range);
     const previous = source;
-    source = source.slice(0, range.start) + replacement + source.slice(range.end);
+    source = patchedSource();
     if (source === previous) return;
-    const delta = replacement.length - (range.end - range.start);
-    const oldEnd = range.end;
-    range.end = range.start + replacement.length;
-    for (const other of ranges) {
-      if (other !== range && other.start >= oldEnd) { other.start += delta; other.end += delta; }
-    }
     const handler = window.webkit?.messageHandlers?.leonardoEdit;
     if (handler) handler.postMessage({ expected: previous, replacement: source });
+  }
+
+  function patchedSource() {
+    // Keep immutable original coordinates. Removing an entire empty formatting
+    // group supersedes its leaf patches; typing again restores its delimiters.
+    let patches = ranges.filter((range) => range.replacement !== undefined &&
+      range.replacement !== originalSource.slice(range.start, range.end));
+    for (const group of [...groups].sort((left, right) => (left.end - left.start) - (right.end - right.start))) {
+      const children = patches.filter((patch) => patch.start >= group.start && patch.end <= group.end);
+      if (!children.length) continue;
+      const empty = group.leaves.every((leaf) => typeof leaf.currentText === "string" && !leaf.currentText.trim());
+      const inner = patchRange(group.start + group.marker.length, group.end - group.marker.length, children);
+      const pieces = /^(\s*)([\s\S]*?)(\s*)$/.exec(inner);
+      const replacement = empty ? "" : pieces[1] + group.marker + pieces[2] + group.marker + pieces[3];
+      patches = patches.filter((patch) => !children.includes(patch));
+      patches.push({ start: group.start, end: group.end, replacement });
+    }
+    return patchRange(0, originalSource.length, patches);
+  }
+
+  function patchRange(start, end, patches) {
+    let result = "", cursor = start;
+    for (const patch of [...patches].sort((left, right) => left.start - right.start)) {
+      if (patch.start < cursor || patch.end > end) continue;
+      result += originalSource.slice(cursor, patch.start) + patch.replacement;
+      cursor = patch.end;
+    }
+    return result + originalSource.slice(cursor, end);
   }
 
   window.LeonardoEditing = {
