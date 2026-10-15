@@ -52,6 +52,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private var pendingLaunches: [[URL]] = []
     private var processingLaunches = false
     private var launched = false
+    private var terminationPending = false
     private static let closeCheckInterval: Duration = .milliseconds(50)
 
     init(diagnostics: StartupDiagnostics, instance: SingleInstance, role: SingleInstance.Role) {
@@ -125,17 +126,17 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
 
     private func enqueueLaunch(_ urls: [URL]) {
         pendingLaunches.append(urls)
-        guard launched else { return }
+        guard launched, !terminationPending else { return }
         if role == .primary { processPendingLaunches() }
         else { forwardPendingLaunches() }
     }
 
     private func processPendingLaunches() {
-        guard !processingLaunches else { return }
+        guard !processingLaunches, !terminationPending else { return }
         processingLaunches = true
         Task {
             defer { processingLaunches = false }
-            while !pendingLaunches.isEmpty {
+            while !terminationPending && !pendingLaunches.isEmpty {
                 let urls = pendingLaunches.removeFirst()
                 if windows.isEmpty { newEmptyWindow() }
                 bringWindowsToFront()
@@ -143,7 +144,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
                 // Loading can suspend while another application takes focus.
                 bringWindowsToFront()
             }
-            if let window = windows.last?.window {
+            if !terminationPending, let window = windows.last?.window {
                 MarkdownAssociations.shared.presentStartupPrompt(on: window)
             }
         }
@@ -152,6 +153,10 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private func openExternalDocument(_ url: URL) async {
         guard url.isFileURL else { return }
         while true {
+            if terminationPending {
+                try? await Task.sleep(for: Self.closeCheckInterval)
+                continue
+            }
             if windows.isEmpty { newEmptyWindow() }
             if let existing = windows.first(where: { $0.documents.activateDocument(url) }) {
                 NSDocumentController.shared.noteNewRecentDocumentURL(url)
@@ -193,12 +198,17 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard !terminationPending else { return .terminateLater }
+        terminationPending = true
         Task {
             var canTerminate = true
             for window in windows {
                 if await !window.documents.prepareClose() { canTerminate = false; break }
             }
             if canTerminate { await DesktopSyncController.shared.stop() }
+            else { windows.forEach { $0.documents.cancelPreparedClose() } }
+            terminationPending = canTerminate
+            if !canTerminate, role == .primary { processPendingLaunches() }
             sender.reply(toApplicationShouldTerminate: canTerminate)
         }
         return .terminateLater
@@ -209,6 +219,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     @objc func newEmptyWindow() { newWindow(url: nil) }
 
     func newWindow(url: URL?) {
+        guard !terminationPending else { return }
         let isFirstWindow = !recordedFirstWindow
         recordedFirstWindow = true
         if isFirstWindow { diagnostics.record(.firstWindowCreating) }
@@ -250,7 +261,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private var activeDocuments: DocumentTabs? {
         windows.first { $0.window === NSApp.mainWindow }?.documents ?? windows.last?.documents
     }
-    private var activeSession: AppSession? { activeDocuments?.activeSession }
+    private var activeSession: AppSession? { terminationPending ? nil : activeDocuments?.activeSession }
 
     @objc private func languageChanged() { configureMenu() }
 

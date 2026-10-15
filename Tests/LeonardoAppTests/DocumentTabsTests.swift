@@ -39,6 +39,23 @@ final class DocumentTabsTests: XCTestCase {
         return matches()
     }
 
+    func testPreparedCloseDoesNotAcceptNewWorkAfterApproval() async throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        await tabs.activeSession.open(try document("note.md", in: root, content: "original"))
+        let session = tabs.activeSession
+        await session.toggleProtection()
+        let prepared = await tabs.prepareClose()
+        XCTAssertTrue(prepared)
+        XCTAssertTrue(tabs.closing)
+        XCTAssertNil(tabs.addTab())
+        XCTAssertFalse(session.editDocument(expected: "original", replacement: "late draft"))
+        tabs.cancelPreparedClose()
+        XCTAssertFalse(tabs.closing)
+        XCTAssertTrue(session.editDocument(expected: "original", replacement: "retained draft"))
+        XCTAssertNotNil(tabs.addTab())
+    }
+
     func testPeerRevocationClearsDraftAndPreservesSiblingWorkspace() async throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }

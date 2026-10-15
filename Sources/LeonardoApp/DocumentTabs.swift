@@ -17,6 +17,7 @@ final class DocumentTabs {
     private(set) var closing = false
     var updateWindow: ((String, URL?, Bool) -> Void)?
     private var stopped = false
+    private var preparedForClose = false
     private let preferencesURL: URL
 
     init(preferencesURL: URL = AppSession.preferencesURL) {
@@ -142,15 +143,31 @@ final class DocumentTabs {
         guard !closing else { return false }
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         closing = true
-        defer { closing = false }
+        var approved = false
+        defer { if !approved { releaseClosePreparation() } }
         for tab in tabs {
             guard await tab.session.prepareNavigation() else {
                 activeID = tab.id
                 updateTitle()
                 return false
             }
+            tab.session.isClosing = true
         }
-        return !hasPendingWork
+        guard !hasPendingWork else { return false }
+        approved = true
+        preparedForClose = true
+        return true
+    }
+
+    func cancelPreparedClose() {
+        guard preparedForClose, !stopped else { return }
+        releaseClosePreparation()
+    }
+
+    private func releaseClosePreparation() {
+        tabs.forEach { $0.session.isClosing = false }
+        preparedForClose = false
+        closing = false
     }
 
     func reveal(_ id: UUID) {
@@ -170,8 +187,8 @@ final class DocumentTabs {
         }
         guard !affected.isEmpty else { return }
         for tab in affected { tab.session.stop(); tab.session.clearRevokedContent() }
-        // Existing close operations own their tab indices until their awaits finish.
-        while closing { try? await Task.sleep(for: .milliseconds(20)) }
+        // Active close iterations own indices; completed preparation no longer does.
+        while closing && !preparedForClose { try? await Task.sleep(for: .milliseconds(20)) }
         let ids = Set(affected.map(\.id))
         tabs.removeAll { ids.contains($0.id) }
         if tabs.isEmpty {

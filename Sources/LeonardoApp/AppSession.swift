@@ -24,8 +24,9 @@ final class AppSession {
     }
     var syncUpdatingBuffer = false
     var isSyncSuspended: Bool { NativeReconciliationLease.shared.holds(documentURL) || NativeReconciliationLease.shared.holds(projectURL) }
+    var isClosing = false
     var isProtected = true
-    var canEditDocument: Bool { documentURL != nil && !isProtected && !isSyncSuspended && !busy && !stopped }
+    var canEditDocument: Bool { documentURL != nil && !isProtected && !isClosing && !isSyncSuspended && !busy && !stopped }
     var unsavedChangesDecision: @MainActor (String) -> UnsavedChangesDecision = UnsavedChangesPrompt.show
     var mode: DocumentMode = .preview
     var focus = false
