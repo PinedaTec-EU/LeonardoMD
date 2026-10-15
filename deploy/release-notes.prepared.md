@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.358
+
+- #133 Added: offer default Markdown application choice ([#134](https://github.com/PinedaTec-EU/LeonardoMD/pull/134))
+
+Source: `dba651f58275b1714678eb0a06aa0af9944c43d7`. Delta: `{"build": 5}`.
+
 ## 0.1.353
 
 - #130 Fixed: support Markdown table width comments ([#131](https://github.com/PinedaTec-EU/LeonardoMD/pull/131))
