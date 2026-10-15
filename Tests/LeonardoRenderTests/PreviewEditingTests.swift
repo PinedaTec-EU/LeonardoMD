@@ -20,7 +20,7 @@ final class PreviewEditingTests: XCTestCase {
         var buffer = source
         var received: [String] = []
         let edits = expectation(description: "Native bridge receives mapped edits")
-        edits.expectedFulfillmentCount = 14
+        edits.expectedFulfillmentCount = 15
         host.onEdit = { expected, replacement in
             XCTAssertEqual(expected, buffer)
             buffer = replacement
@@ -64,6 +64,8 @@ final class PreviewEditingTests: XCTestCase {
           const nested = Array.from(document.querySelectorAll('strong')).find(e => e.textContent.includes('outer'));
           const parts = nested.querySelectorAll('[data-leonardo-edit]');
           for (const part of parts) { part.innerText = ''; part.dispatchEvent(new InputEvent('input', {bubbles: true})); }
+          parts[0].innerText = ' ';
+          parts[0].dispatchEvent(new InputEvent('input', {bubbles: true}));
           parts[0].innerText = 'outer ';
           parts[0].dispatchEvent(new InputEvent('input', {bubbles: true}));
           parts[1].innerText = 'inner';
@@ -75,7 +77,8 @@ final class PreviewEditingTests: XCTestCase {
         let expected = source.replacingOccurrences(of: "| Cell |", with: "| Changed |").replacingOccurrences(of: "| --- | Other |", with: "| Row | Other |").replacingOccurrences(of: "# Heading", with: "# New heading").replacingOccurrences(of: "`code`", with: "``a`b``")
         XCTAssertEqual(buffer, expected)
         XCTAssertEqual(received[11], expected.replacingOccurrences(of: "**outer *inner***", with: ""))
-        XCTAssertEqual(received[12], expected.replacingOccurrences(of: "**outer *inner***", with: "**outer** "))
+        XCTAssertEqual(received[12], expected.replacingOccurrences(of: "**outer *inner***", with: " "))
+        XCTAssertEqual(received[13], expected.replacingOccurrences(of: "**outer *inner***", with: "**outer** "))
         XCTAssertEqual(received[0], source.replacingOccurrences(of: "**bold**", with: ""))
         XCTAssertEqual(received[1], source, "Restoring an emptied formatted run must restore the exact original source")
         // Re-applying the native buffer must preserve the same focused DOM.

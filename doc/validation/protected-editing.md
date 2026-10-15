@@ -44,9 +44,9 @@ Existing WebKit table layout and renderer engine/security checks remain required
 - Full Swift suite: 377 XCTest cases, 15 optional skips (the capture-enabled run has 14), zero failures; 12 Swift Testing renderer checks pass.
 - Final focused run: two real-WebKit editing cases and five session editing cases pass, including exact source restoration.
 - Packaging/recorder Python suite: 24 cases, seven engine-dependent skips, zero failures.
-- Ten successful recorded Swift compilation commands allocate build delta 10 for source PR #145; unsuccessful/interrupted runs allocate no delta.
+- Eleven successful recorded Swift compilation commands allocate build delta 11 for source PR #145; unsuccessful/interrupted runs allocate no delta.
 - Captures were inspected for solid/outlined lock states, enabled Save, explicit English/Spanish unsaved labels, and actual rendered edits.
 
 Remote CI and independent review are separate delivery gates. These local checks do not establish integration, publication or a packaged startup acceptance.
 
-Complete formatted-run deletion is covered by [#148](https://github.com/PinedaTec-EU/LeonardoMD/issues/148): empty bold/emphasis/strikethrough runs, including nested runs, and inline code remove their delimiters; restoring original text restores the exact original source.
+Complete formatted-run deletion is covered by [#148](https://github.com/PinedaTec-EU/LeonardoMD/issues/148): empty bold/emphasis/strikethrough runs, including nested runs, and inline code remove their delimiters; restoring original text restores the exact original source. Whitespace-only content is retained outside empty formatting markers.

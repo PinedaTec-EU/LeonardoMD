@@ -181,7 +181,7 @@
       const empty = group.leaves.every((leaf) => typeof leaf.currentText === "string" && !leaf.currentText.trim());
       const inner = patchRange(group.start + group.marker.length, group.end - group.marker.length, children);
       const pieces = /^(\s*)([\s\S]*?)(\s*)$/.exec(inner);
-      const replacement = empty ? "" : pieces[1] + group.marker + pieces[2] + group.marker + pieces[3];
+      const replacement = empty ? inner : pieces[1] + group.marker + pieces[2] + group.marker + pieces[3];
       patches = patches.filter((patch) => !children.includes(patch));
       patches.push({ start: group.start, end: group.end, replacement });
     }
