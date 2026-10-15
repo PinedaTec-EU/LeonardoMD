@@ -124,3 +124,5 @@ a new packaged process or actual system-consent interaction.
 Local cleanup of 33 old registrations is recorded in
 [#135](https://github.com/PinedaTec-EU/LeonardoMD/issues/135); files and the
 running installed app were preserved. Rediscovery can register old copies again.
+
+- [#137](https://github.com/PinedaTec-EU/LeonardoMD/issues/137): typed favorites live in global preferences independently of recents. Membership merges preserve independent window changes; `SessionFavorites` shares actions between native `FavoritesMenu` and the scrollable `WelcomeView` / `SavedItemsView`. See [behavior and validation](../doc/validation/favorites/README.md).

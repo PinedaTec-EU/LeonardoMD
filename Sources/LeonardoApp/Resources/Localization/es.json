@@ -330,5 +330,19 @@
   "Install a distribution version to change file associations.": "Instala una versión de distribución para cambiar las asociaciones de archivos.",
   "Could not determine the current Markdown application.": "No se ha podido determinar la aplicación actual para Markdown.",
   "LeonardoMD is not the default for all Markdown files.": "LeonardoMD no es la aplicación predeterminada para todos los archivos Markdown.",
-  "LeonardoMD is the default Markdown application.": "LeonardoMD es la aplicación predeterminada para Markdown."
+  "LeonardoMD is the default Markdown application.": "LeonardoMD es la aplicación predeterminada para Markdown.",
+  "Add to favorites": "Añadir a favoritos",
+  "Documents": "Ficheros",
+  "Favorite": "Favorito",
+  "Favorite current document": "Marcar fichero actual como favorito",
+  "Favorite current project": "Marcar proyecto actual como favorito",
+  "Favorite current workspace": "Marcar workspace actual como favorito",
+  "Favorites": "Favoritos",
+  "Item unavailable": "Elemento no disponible",
+  "No favorites yet": "Aún no hay favoritos",
+  "Not favorite": "No favorito",
+  "Projects": "Proyectos",
+  "Recent items": "Recientes",
+  "Remove from favorites": "Quitar de favoritos",
+  "Workspaces": "Workspaces"
 }
