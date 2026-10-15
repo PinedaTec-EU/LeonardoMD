@@ -108,3 +108,5 @@ standard GFM syntax. Normal tables preserve words; both paths scroll within
 the preview. Native WebKit width, scope, invalid-input, update, dark/light and
 narrow-window checks pass; full Swift validation passes. See [table layout](table-layout.md).
 Integration and publication are separate gates.
+
+- [#137](https://github.com/PinedaTec-EU/LeonardoMD/issues/137): typed favorites live in global preferences independently of recents. Membership merges preserve independent window changes; `SessionFavorites` shares actions between native `FavoritesMenu` and the scrollable `WelcomeView` / `SavedItemsView`. See [behavior and validation](../doc/validation/favorites/README.md).

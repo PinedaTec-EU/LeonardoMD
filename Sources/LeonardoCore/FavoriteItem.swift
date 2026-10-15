@@ -10,6 +10,7 @@ public struct FavoriteItem: Codable, Hashable, Sendable {
 
     public init(kind: Kind, url: URL) {
         self.kind = kind
-        self.url = url.standardizedFileURL
+        // Keep identity stable when a folder appears/disappears or a caller adds a trailing slash.
+        self.url = URL(fileURLWithPath: url.standardizedFileURL.path, isDirectory: false)
     }
 }
