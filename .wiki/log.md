@@ -1,5 +1,7 @@
 # Changes
 
+- 2026-10-15: [#146](https://github.com/PinedaTec-EU/LeonardoMD/issues/146): Visible front matter uses a left border bound to the same `--ld-heading` token as document titles.
+
 - 2026-10-14: [#128](https://github.com/PinedaTec-EU/LeonardoMD/issues/128), [PR #129](https://github.com/PinedaTec-EU/LeonardoMD/pull/129): Interface Language and its global-scope note now live inside General, before Palette; the shared language binding is unchanged.
 
 - 2026-10-12: [#123](https://github.com/PinedaTec-EU/LeonardoMD/issues/123), [PR #124](https://github.com/PinedaTec-EU/LeonardoMD/pull/124): Added global Updates preferences, explicit stable/beta choice, common stable trust root, atomic beta-feed composition and a release acceptance matrix. Durable pending-decision and canonical-tag regressions are tracked in [#125](https://github.com/PinedaTec-EU/LeonardoMD/issues/125) and [#126](https://github.com/PinedaTec-EU/LeonardoMD/issues/126). Hosted acceptance remains separate in #15/#84.

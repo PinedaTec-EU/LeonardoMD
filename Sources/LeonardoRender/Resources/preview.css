@@ -205,6 +205,7 @@ body[data-paper-effect="parchment"] {
   width: min(100%, 920px);
   margin: 22px auto -14px;
   padding: 0 42px;
+  border-left: 3px solid var(--ld-heading);
   color: color-mix(in srgb, var(--ld-text) 76%, transparent);
   font-size: 0.9em;
 }
