@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.373
+
+- #142 Fixed: show installed channel beside application version ([#143](https://github.com/PinedaTec-EU/LeonardoMD/pull/143))
+
+Source: `90a336482a322642140b3f040c8743b03933a550`. Delta: `{"build": 3}`.
+
 ## 0.1.370
 
 - #15 Added: promote validated beta 369 to stable ([#141](https://github.com/PinedaTec-EU/LeonardoMD/pull/141))
