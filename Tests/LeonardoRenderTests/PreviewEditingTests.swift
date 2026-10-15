@@ -75,6 +75,13 @@ final class PreviewEditingTests: XCTestCase {
         host.apply(content: buffer, baseURL: nil, configuration: configuration, onLinkActivation: nil, onScrollProgress: nil)
         let locked = try await webView.evaluateJavaScript("document.querySelectorAll('[contenteditable=\"plaintext-only\"]').length") as? Int
         XCTAssertEqual(locked, 0)
+        host.onReady = nil
+        configuration.allowsEditing = true
+        buffer = "# Latest raw draft"
+        host.apply(content: buffer, baseURL: nil, configuration: configuration, onLinkActivation: nil, onScrollProgress: nil)
+        let pendingRawFlush = await host.flushEdits()
+        XCTAssertTrue(pendingRawFlush)
+        XCTAssertEqual(buffer, "# Latest raw draft", "Flushing must not replace a pending raw edit with the old DOM")
     }
 
     func testLockedPreviewDoesNotExposeEditableText() async throws {

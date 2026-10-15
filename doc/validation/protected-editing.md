@@ -36,7 +36,7 @@ Regression checks exercise protection/relocking, manual save, stale draft reject
 Save/Discard/Cancel, conflict retention and inactive-tab/window cancellation.
 Real WebKit tests exercise source/front-matter/CRLF preservation, successive edits
 with shifting ranges, a row value matching a table separator, code delimiter
-expansion, restoring original text, flush, caret-DOM preservation and re-locking.
+expansion, restoring original text, flush, caret-DOM preservation, re-locking and protection against a stale DOM overwriting a pending raw edit.
 Existing WebKit table layout and renderer engine/security checks remain required.
 
 ## Local validation results
@@ -44,7 +44,7 @@ Existing WebKit table layout and renderer engine/security checks remain required
 - Full Swift suite: 377 XCTest cases, 14 optional skips, zero failures; 12 Swift Testing renderer checks pass.
 - Final focused run: two real-WebKit editing cases and five session editing cases pass, including exact source restoration.
 - Packaging/recorder Python suite: 24 cases, seven engine-dependent skips, zero failures.
-- Six successful recorded Swift compilation commands allocate build delta 6 for source PR #145; unsuccessful/interrupted runs allocate no delta.
+- Seven successful recorded Swift compilation commands allocate build delta 7 for source PR #145; unsuccessful/interrupted runs allocate no delta.
 - Captures were inspected for solid/outlined lock states, enabled Save, explicit English/Spanish unsaved labels, and actual rendered edits.
 
 Remote CI and independent review are separate delivery gates. These local checks do not establish integration, publication or a packaged startup acceptance.

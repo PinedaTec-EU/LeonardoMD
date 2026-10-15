@@ -117,11 +117,16 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
 
     func flushEdits() async -> Bool {
         guard configuration.allowsEditing, ready, let webView else { return true }
+        // A pending native-to-DOM update makes the raw buffer authoritative.
+        // Reading the previous page here would overwrite a recent raw edit.
+        guard renderWorkItem == nil else { return true }
+        let expected = content
         do {
             let value = try await webView.evaluateJavaScript("window.LeonardoEditing.currentSource()")
             guard self.webView === webView, let replacement = value as? String else { return false }
             if replacement == content { return true }
-            guard configuration.allowsEditing, onEdit?(content, replacement) == true else { return false }
+            guard content == expected, renderWorkItem == nil, configuration.allowsEditing,
+                  onEdit?(expected, replacement) == true else { return false }
             content = replacement
             return true
         } catch { return false }
