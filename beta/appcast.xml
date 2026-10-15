@@ -3,26 +3,31 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.1.373</title>
-            <pubDate>Thu, 15 Oct 2026 16:27:14 +0200</pubDate>
+            <title>0.1.395</title>
+            <pubDate>Thu, 15 Oct 2026 20:15:50 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>373</sparkle:version>
-            <sparkle:shortVersionString>0.1.373</sparkle:shortVersionString>
+            <sparkle:version>395</sparkle:version>
+            <sparkle:shortVersionString>0.1.395</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description sparkle:format="markdown">## Changes
 
-- About now shows the installed distribution channel beside the numeric version, without repeating its build component.
-- The main status bar shows the same version/channel before file status.
-- Development packages identify their channel as development; update subscription choice remains independent of the installed package.
+- Edit rendered Markdown text directly in Preview, while Edit continues to show the raw source.
+- Newly opened documents start protected. Use the toolbar padlock to enable writing or protect the draft again.
+- Save manually with Command-S; unsaved changes are explicitly marked.
+- Closing tabs, windows or the app offers Save, Discard and Cancel when changes are pending.
+- Preserve pending preview edits across conflict-copy saves, external changes and synchronization.
+- Document metadata now uses its heading color for the border.
 
 ## Distribution
 
 macOS arm64 beta. Developer ID signed, Apple notarized, and Sparkle archive signature verified before publication. This is a GitHub prerelease and does not change the stable release.
 
+Source: `48b1ceb23de9340d898ceabe101bf593819f3c6d`, including PR #145 and PR #146. Structural Markdown authoring, raw HTML and generated diagram/math changes use the raw editor.
+
 This publication does not install the app on the owner's system. Hosted installation/relaunch acceptance is pending.
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.373/LeonardoMD-0.1.373.zip" length="15750828" type="application/octet-stream" sparkle:edSignature="ewI1gAMEWzlYXEJrNg8uRVma14O2mg7NR0T9OoVzXDWBB7ENNNfbtZ2onYvDxXjsTeF1cDFbzRASSdWuSaFDAw==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.395/LeonardoMD-0.1.395.zip" length="15845155" type="application/octet-stream" sparkle:edSignature="P1fv/r008Ln0RjxTjK9K18ux33BXYsOfxd/OOfHdsBCkiYN8fEPAXwAxd0oCyMOuBxo9GOc/R8J0Ra7XQGC1BA==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.370</title>
