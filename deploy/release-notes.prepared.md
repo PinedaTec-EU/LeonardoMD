@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.370
+
+- #15 Added: promote validated beta 369 to stable ([#141](https://github.com/PinedaTec-EU/LeonardoMD/pull/141))
+
+Source: `48b477871f74a285b9ff5be96bb6925a581db11e`. Delta: `{"build": 1}`.
+
 ## 0.1.369
 
 - #137 Added: persist favorites and show welcome item lists ([#138](https://github.com/PinedaTec-EU/LeonardoMD/pull/138))
