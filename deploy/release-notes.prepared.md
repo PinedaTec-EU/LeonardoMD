@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.361
+
+- #136 Fixed: isolate sidebar context menu button styling ([#139](https://github.com/PinedaTec-EU/LeonardoMD/pull/139))
+
+Source: `ae5af291fa0fadd63c573c8f76fd2f42969e632f`. Delta: `{"build": 3}`.
+
 ## 0.1.358
 
 - #133 Added: offer default Markdown application choice ([#134](https://github.com/PinedaTec-EU/LeonardoMD/pull/134))
