@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.395
+
+- #144 Added: protected preview editing and manual saving ([#145](https://github.com/PinedaTec-EU/LeonardoMD/pull/145))
+
+Source: `350cc9b5e09d111e689284cd30eb44a49f1742c1`. Delta: `{"build": 20}`.
+
 ## 0.1.375
 
 - #146 Added: heading-colored border to document metadata ([#147](https://github.com/PinedaTec-EU/LeonardoMD/pull/147))
