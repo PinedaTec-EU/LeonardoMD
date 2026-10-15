@@ -2,7 +2,25 @@
 <rss xmlns:leonardo="https://pinedatec.eu/xml-namespaces/leonardo" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>LeonardoMD</title>
-        <item leonardo:channel="beta">
+        <item leonardo:channel="stable">
+            <title>0.1.370</title>
+            <pubDate>Thu, 15 Oct 2026 14:03:46 +0200</pubDate>
+            <sparkle:version>370</sparkle:version>
+            <sparkle:shortVersionString>0.1.370</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"># LeonardoMD 0.1.370
+
+- Persistent favorites for documents, projects and workspaces, with welcome lists of favorites and recent items.
+- Choose LeonardoMD as the default application for Markdown documents.
+- Improved sidebar context menu styling.
+- Markdown table width comments apply to the next table only; ordinary tables retain natural widths.
+
+Promoted from the signed, notarized beta 0.1.369 after real hosted update, installation and relaunch validation.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.370/LeonardoMD-0.1.370.zip" length="15748718" type="application/octet-stream" sparkle:edSignature="URFjE8STwqnWSQIvblMYk1k9lYAUsT1uP4UxWQDjtdqVAjN1FVEubCjWcN7Ljzdp31PFITU4WkdYO5PEwtuwCQ==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.1.369</title>
             <pubDate>Thu, 15 Oct 2026 13:43:29 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
@@ -18,28 +36,6 @@
 Signed and notarized for Apple silicon Macs. Select Beta in Preferences → Updates to receive beta updates.
 </description>
             <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.369/LeonardoMD-0.1.369.zip" length="15748717" type="application/octet-stream" sparkle:edSignature="iah86A8uX9FqdJhomn8K6+YvAnX4Cz+cDEUqJatSvecVIpKvWU6IZUclp3hTZczREnWB0iIE6iMvxwxHr7lSCg==" />
-        </item>
-    <item leonardo:channel="stable">
-            <title>0.1.349</title>
-            <pubDate>Mon, 12 Oct 2026 15:23:19 +0200</pubDate>
-            <sparkle:version>349</sparkle:version>
-            <sparkle:shortVersionString>0.1.349</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD 0.1.349
-
-This stable release enables future beta subscriptions.
-
-- Open Preferences → Updates to choose Stable or Beta. Stable is the default; opting into Beta includes both stable and experimental releases.
-- Use Check for updates now or enable periodic automatic checks in Preferences. You decide when to install.
-- Active or deferred update decisions protect the channel selection and survive restart.
-- Returning from Beta to Stable waits for a newer stable build; the app never downgrades.
-
-This arm64 distribution requires macOS 14 or later. It preserves the existing stable signing trust root and user data. Old beta packages with a different update signing key must install a current signed/notarized package manually.
-
-Promoted from validated beta 0.1.348 with unchanged application and dependency sources, using a higher ledger-materialized build. Publication and hosted update evidence: https://github.com/PinedaTec-EU/LeonardoMD/issues/15#issuecomment-6124736089
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.349/LeonardoMD-0.1.349.zip" length="15676621" type="application/octet-stream" sparkle:edSignature="c3Rz+eF7I6eIB4dBLE0PBX8qxIP4ODg5bTDknDTtbNw7RUcniXXlPFCNhiOAxjoF/LxKPfTYCVxRrv8PyC+4Dg==" />
         </item>
     </channel>
 </rss>
