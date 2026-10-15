@@ -123,6 +123,9 @@ final class DocumentTabs {
         closing = true
         defer { closing = false }
         let session = tabs[index].session
+        guard await session.flushPreviewEdits() else { return }
+        session.isClosing = true
+        defer { if !session.stopped { session.isClosing = false } }
         guard await session.prepareNavigation() else {
             activeID = id
             updateTitle()
@@ -146,6 +149,8 @@ final class DocumentTabs {
         var approved = false
         defer { if !approved { releaseClosePreparation() } }
         for tab in tabs {
+            guard await tab.session.flushPreviewEdits() else { return false }
+            tab.session.isClosing = true
             guard await tab.session.prepareNavigation() else {
                 activeID = tab.id
                 updateTitle()

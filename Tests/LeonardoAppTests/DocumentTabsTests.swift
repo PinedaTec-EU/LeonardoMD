@@ -39,6 +39,29 @@ final class DocumentTabsTests: XCTestCase {
         return matches()
     }
 
+    func testIndividualCloseRejectsLateInputAndCancellationUnlocksSession() async throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let file = try document("closing.md", in: root, content: "original")
+        let id = try XCTUnwrap(tabs.activeID)
+        let session = tabs.activeSession
+        await session.open(file)
+        await session.toggleProtection()
+        XCTAssertTrue(session.editDocument(expected: "original", replacement: "draft"))
+        session.unsavedChangesDecision = { _ in .cancel }
+        await tabs.close(id)
+        XCTAssertTrue(session.canEditDocument)
+        session.unsavedChangesDecision = { _ in .save }
+        session.authorizePath = { _, _ in
+            await Task.yield()
+            XCTAssertTrue(session.isClosing)
+            XCTAssertFalse(session.editDocument(expected: "draft", replacement: "late input"))
+        }
+        await tabs.close(id)
+        XCTAssertTrue(session.stopped)
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "draft")
+    }
+
     func testPreparedCloseDoesNotAcceptNewWorkAfterApproval() async throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
