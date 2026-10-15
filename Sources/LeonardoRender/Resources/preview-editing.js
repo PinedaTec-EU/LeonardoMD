@@ -8,7 +8,7 @@
   let enabled = false;
   let renderID = "";
   const escapeHTML = (text) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const escapeMarkdown = (text) => text.replace(/&/g, "&amp;").replace(/([\\`*_[\]{}<>#!|~])/g, "\\$1");
+  const escapeMarkdown = (text) => text.replace(/&/g, "&amp;").replace(/([\\`*_[\]{}<>#!|~.+()=\-])/g, "\\$1");
 
   function begin(payload) {
     source = payload.source || "";
@@ -24,8 +24,8 @@
     if (offset < 0 || normalized.slice(offset) !== body) return tokens;
     const originalOffsets = [];
     for (let index = 0; index < source.length; index += 1) {
-      if (source[index] === "\r" && source[index + 1] === "\n") continue;
       originalOffsets.push(index);
+      if (source[index] === "\r" && source[index + 1] === "\n") index += 1;
     }
     originalOffsets.push(source.length);
 
@@ -42,12 +42,20 @@
         } else if (token.items) {
           visit(token.items, start, end);
         } else if (token.type === "table") {
-          let cellCursor = start;
-          for (const cell of [...token.header, ...token.rows.flat()]) {
-            const cellStart = normalized.indexOf(cell.text, cellCursor);
-            if (cellStart < cellCursor || cellStart + cell.text.length > end) continue;
-            visit(cell.tokens, cellStart, cellStart + cell.text.length);
-            cellCursor = cellStart + cell.text.length;
+          const lines = token.raw.split("\n");
+          let lineStart = start;
+          for (let rowIndex = 0; rowIndex < lines.length; rowIndex += 1) {
+            const cells = rowIndex === 0 ? token.header : token.rows[rowIndex - 2];
+            const lineEnd = lineStart + lines[rowIndex].length;
+            let cellCursor = lineStart;
+            for (const cell of cells || []) {
+              if (!cell.text) continue;
+              const cellStart = normalized.indexOf(cell.text, cellCursor);
+              if (cellStart < cellCursor || cellStart + cell.text.length > lineEnd) continue;
+              visit(cell.tokens, cellStart, cellStart + cell.text.length);
+              cellCursor = cellStart + cell.text.length;
+            }
+            lineStart = lineEnd + 1;
           }
         } else if (["text", "escape", "codespan", "code"].includes(token.type)) {
           let textStart = start;
@@ -62,7 +70,11 @@
           // preview. Their source stays available in the raw editor.
           if (token.type === "code" && token.lang === "mermaid") continue;
           token.leonardoEditID = ranges.length;
-          ranges.push({ start: originalOffsets[textStart], end: originalOffsets[textEnd], code: ["code", "codespan"].includes(token.type) });
+          ranges.push({
+            start: originalOffsets[token.type === "code" || token.type === "codespan" ? start : textStart],
+            end: originalOffsets[token.type === "code" || token.type === "codespan" ? end : textEnd],
+            kind: token.type, language: token.lang || ""
+          });
         }
       }
     }
@@ -76,12 +88,22 @@
   }
 
   function prepare(root) {
+    if (ranges.length === 0 && !window.LeonardoEditing.body.trim()) {
+      const empty = document.createElement("span");
+      empty.className = "preview-empty";
+      empty.dataset.leonardoRender = renderID;
+      empty.dataset.leonardoEdit = "0";
+      root.appendChild(empty);
+      ranges.push({ start: source.length, end: source.length, kind: "text", language: "" });
+    }
     root.querySelectorAll("[data-leonardo-edit]").forEach((element) => {
       if (element.dataset.leonardoRender !== renderID || element.querySelector(".math-rendered")) return;
       const range = ranges[Number(element.dataset.leonardoEdit)];
       if (!range) return;
       element.contentEditable = enabled ? "plaintext-only" : "false";
       element.spellcheck = false;
+      range.originalSource = source.slice(range.start, range.end);
+      range.originalText = element.innerText;
       element.addEventListener("input", (event) => {
         if (!enabled || event.isComposing) return;
         applyInput(element, range);
@@ -90,9 +112,20 @@
     });
   }
 
+  function serialize(text, range) {
+    if (range.kind === "code" || range.kind === "codespan") {
+      const longest = (text.match(/`+/g) || []).reduce((maximum, run) => Math.max(maximum, run.length), 0);
+      const fence = "`".repeat(Math.max(range.kind === "code" ? 3 : 1, longest + 1));
+      if (range.kind === "code") return `${fence}${range.language}\n${text}\n${fence}\n`;
+      const pad = text.startsWith("`") || text.endsWith("`") || (text.startsWith(" ") && text.endsWith(" ") && text.trim()) ? " " : "";
+      return `${fence}${pad}${text}${pad}${fence}`;
+    }
+    return escapeMarkdown(text).replace(/\n/g, "  \n");
+  }
+
   function applyInput(element, range) {
     const text = element.innerText.replace(/\r\n/g, "\n");
-    const replacement = range.code ? text : escapeMarkdown(text).replace(/\n/g, "  \n");
+    const replacement = text === range.originalText ? range.originalSource : serialize(text, range);
     const previous = source;
     source = source.slice(0, range.start) + replacement + source.slice(range.end);
     if (source === previous) return;
@@ -108,6 +141,7 @@
 
   window.LeonardoEditing = {
     body: "", begin, annotate, span, prepare, escapeHTML,
+    currentSource: () => source,
     setEditable(root, value) {
       enabled = value === true;
       root.querySelectorAll("[data-leonardo-edit]").forEach((element) => {

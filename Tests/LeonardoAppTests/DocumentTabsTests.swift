@@ -416,6 +416,7 @@ final class DocumentTabsTests: XCTestCase {
         await reader.open(file)
         reader.mode = .edit
         reader.editorScroll = 0.4
+        reader.unsavedChangesDecision = { _ in .save }
         reader.content = "draft"
         let project = try XCTUnwrap(owner.workspaceProjects.first)
         await owner.renameProject(project, to: "Renamed")

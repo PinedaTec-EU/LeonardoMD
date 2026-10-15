@@ -85,7 +85,9 @@ final class DocumentTabs {
             $0.session.documentURL?.standardizedFileURL.resolvingSymlinksInPath() == url.standardizedFileURL.resolvingSymlinksInPath()
         }) else { return false }
         select(tab.id)
-        if let line { tab.session.mode = .edit; tab.session.requestedLine = line }
+        if let line {
+            Task { await tab.session.setDocumentMode(.edit); tab.session.requestedLine = line }
+        }
         return true
     }
 

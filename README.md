@@ -19,7 +19,7 @@ The entrypoint builds an optimized, locally signed app at `output/LeonardoMD.app
 - **Workspace:** select or create a root folder, discover its projects, and create, rename or delete project folders from the workspace manager.
 - **Recent items:** File provides separate document, project and workspace histories. Entries show their parent path; unavailable targets are disabled. Each submenu can clear its own history.
 - **Focus:** hides project navigation and the inspector while preserving the document and project. Toggle it again to restore those panels.
-- **Reading / Editing / Split:** native source editing with undo, autosave and an approximately synchronized rendered preview. External file changes reload clean documents; conflicting edits stay protected until you reload or save a copy.
+- **Reading / Editing / Split:** protected-by-default source and rendered-text editing, native undo and an approximately synchronized preview. Unlock the toolbar padlock to edit; use Save or ⌘S to persist changes. Unsaved drafts are marked explicitly and closing or navigating away offers Save, Discard or Cancel. Preview editing preserves untouched Markdown; raw HTML, rendered math and diagrams are edited through the raw Edit view. External file changes reload clean documents; conflicting edits stay protected until you reload or save a copy.
 
 | Shortcut | Action |
 | --- | --- |

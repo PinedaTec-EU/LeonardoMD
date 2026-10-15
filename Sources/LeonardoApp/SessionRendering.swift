@@ -82,6 +82,7 @@ extension AppSession {
     }
     private func exportPDF(to destination: URL, documentURL: URL) {
         Task {
+            guard await flushPreviewEdits() else { return }
             let previousMode = mode
             defer { mode = previousMode }
             do {

@@ -21,10 +21,26 @@ enum UnsavedChangesPrompt {
 }
 
 extension AppSession {
-    func toggleProtection() {
+    func toggleProtection() async {
         guard !stopped, !isSyncSuspended, !busy else { return }
+        if !isProtected, !(await flushPreviewEdits()) { return }
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         isProtected.toggle()
+    }
+
+    func flushPreviewEdits() async -> Bool {
+        guard await renderer.flushEdits() else {
+            errorMessage = L10n.text("Preview edits could not be synchronized. Try again before closing.")
+            return false
+        }
+        return true
+    }
+
+    func setDocumentMode(_ value: DocumentMode) async {
+        guard !stopped, !busy, !isSyncSuspended else { return }
+        let url = documentURL
+        guard await flushPreviewEdits(), documentURL == url, !stopped, !isSyncSuspended else { return }
+        mode = value
     }
 
     @discardableResult

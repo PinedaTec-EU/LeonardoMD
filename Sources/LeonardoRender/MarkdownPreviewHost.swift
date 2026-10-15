@@ -115,6 +115,18 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         }
     }
 
+    func flushEdits() async -> Bool {
+        guard configuration.allowsEditing, ready, let webView else { return true }
+        do {
+            let value = try await webView.evaluateJavaScript("window.LeonardoEditing.currentSource()")
+            guard self.webView === webView, let replacement = value as? String else { return false }
+            if replacement == content { return true }
+            guard configuration.allowsEditing, onEdit?(content, replacement) == true else { return false }
+            content = replacement
+            return true
+        } catch { return false }
+    }
+
     func exportPDF() async throws -> Data {
         guard let webView else { throw MarkdownRenderError.webViewUnavailable }
         let timeoutTask = Task { @MainActor [weak self] in
@@ -391,7 +403,8 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     ) {
         switch message.name {
         case "leonardoEdit":
-            guard message.frameInfo.isMainFrame,
+            guard message.webView === webView,
+                  message.frameInfo.isMainFrame,
                   configuration.allowsEditing,
                   let body = message.body as? [String: Any],
                   let expected = body["expected"] as? String,

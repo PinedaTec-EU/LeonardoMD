@@ -99,7 +99,7 @@ struct WorkspaceView: View {
             }
             Spacer(minLength: 8)
             if session.documentURL != nil {
-                Button { session.toggleProtection() } label: {
+                Button { Task { await session.toggleProtection() } } label: {
                     Image(systemName: session.isProtected ? "lock.fill" : "lock.open")
                         .opacity(session.isProtected ? 1 : 0.5)
                 }
@@ -113,7 +113,7 @@ struct WorkspaceView: View {
                 }
                 .disabled(!session.isDirty || session.saving || session.externalConflict || session.isSyncSuspended)
                 .help(L10n.text("Save (⌘S)"))
-                PremiumSelection(selection: $session.mode, options: DocumentMode.allCases, title: { $0.title })
+                PremiumSelection(selection: Binding(get: { session.mode }, set: { value in Task { await session.setDocumentMode(value) } }), options: DocumentMode.allCases, title: { $0.title })
                     .accessibilityLabel(L10n.text("Mode"))
                     .accessibilityIdentifier("document-mode")
                 Button { session.focus.toggle() } label: { Image(systemName: session.focus ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right") }

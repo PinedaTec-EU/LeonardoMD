@@ -332,7 +332,7 @@
     root.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target.closest("a[href]") : null;
       if (!target) return;
-      if (payload.allowsEditing && target.closest("[contenteditable]")) { event.preventDefault(); return; }
+      if (payload.allowsEditing && event.target.closest('[contenteditable="plaintext-only"]')) { event.preventDefault(); return; }
       event.preventDefault();
       postMessage("leonardoLink", { href: target.getAttribute("href") || "" });
     });

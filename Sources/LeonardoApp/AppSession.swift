@@ -222,6 +222,7 @@ final class AppSession {
     }
 
     func save() async {
+        guard await flushPreviewEdits() else { return }
         guard !stopped, !isSyncSuspended, !saving, isDirty, let snapshot, let url = documentURL, !externalConflict else { return }
         saving = true
         saveStatus = "Saving…"
@@ -250,9 +251,9 @@ final class AppSession {
         }
         while let pending = settingsTask { await pending.value }
         saveTask?.cancel()
-        // Wait for a current autosave to finish before changing the document identity.
+        // Wait for a current save to finish before changing the document identity.
         while saving { try? await Task.sleep(for: .milliseconds(20)) }
-        guard await resolveUnsavedChanges() else { return false }
+        guard await flushPreviewEdits(), await resolveUnsavedChanges() else { return false }
         if isDirty {
             if externalConflict { errorMessage = L10n.text("Resolve the external change by reloading or saving a copy before opening another document.") }
             return false

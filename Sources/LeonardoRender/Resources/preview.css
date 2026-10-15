@@ -285,3 +285,7 @@ body[data-paper-effect="parchment"] {
 [data-leonardo-edit][contenteditable="plaintext-only"] { cursor: text; min-width: 0.25em; }
 [data-leonardo-edit][contenteditable="plaintext-only"]:focus { outline: 1px solid var(--ld-accent); outline-offset: 3px; }
 @media print { [data-leonardo-edit]:focus { outline: none; } }
+
+.preview-empty { display: block; min-height: 1.5em; }
+[data-leonardo-edit][contenteditable="false"] { display: contents; }
+.preview-empty[contenteditable="false"] { display: block; }

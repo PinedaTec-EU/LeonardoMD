@@ -196,7 +196,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         Task {
             var canTerminate = true
             for window in windows {
-                if await !window.documents.prepareClose() { canTerminate = false }
+                if await !window.documents.prepareClose() { canTerminate = false; break }
             }
             if canTerminate { await DesktopSyncController.shared.stop() }
             sender.reply(toApplicationShouldTerminate: canTerminate)
@@ -236,9 +236,9 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     @objc private func save() { Task { await activeSession?.save() } }
     @objc private func exportPDF() { activeSession?.exportPDF() }
     @objc private func focus() { activeSession?.focus.toggle() }
-    @objc private func preview() { activeSession?.mode = .preview }
-    @objc private func edit() { activeSession?.mode = .edit }
-    @objc private func split() { activeSession?.mode = .split }
+    @objc private func preview() { Task { await activeSession?.setDocumentMode(.preview) } }
+    @objc private func edit() { Task { await activeSession?.setDocumentMode(.edit) } }
+    @objc private func split() { Task { await activeSession?.setDocumentMode(.split) } }
     @objc private func outline() { activeSession?.showInspector.toggle() }
     @objc private func preferences() { activeSession?.showPreferences = true }
     @objc private func bringWindowsToFront() {
@@ -330,7 +330,7 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
     }
     required init?(coder: NSCoder) { nil }
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        if closeAfterSave || !documents.hasPendingWork { return true }
+        if closeAfterSave { return true }
         Task {
             guard await documents.prepareClose() else { return }
             closeAfterSave = true

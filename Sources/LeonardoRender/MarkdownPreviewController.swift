@@ -37,6 +37,8 @@ public final class MarkdownPreviewController: ObservableObject {
         )
     }
 
+    public func flushEdits() async -> Bool { await host?.flushEdits() ?? true }
+
     public func exportPDF() async throws -> Data {
         guard let host else { throw MarkdownRenderError.webViewUnavailable }
         return try await host.exportPDF()
