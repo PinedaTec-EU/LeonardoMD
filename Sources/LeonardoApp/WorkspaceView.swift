@@ -161,6 +161,9 @@ struct WorkspaceView: View {
     }
     private var statusBar: some View {
         HStack {
+            Text(ApplicationVersion().displayText)
+                .accessibilityIdentifier("status-version")
+            Divider().frame(height: 12)
             if session.busy { ProgressView().controlSize(.mini) }
             Label(L10n.text(session.saveStatus), systemImage: session.isDirty ? "circle.fill" : "checkmark.circle")
             Spacer()

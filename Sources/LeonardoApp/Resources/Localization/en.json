@@ -286,10 +286,7 @@
   "Use as workspace": "Use as workspace",
   "Use incoming": "Use incoming",
   "Uses Git and credentials configured on your Mac. Pull requires a clean working tree; resolve conflicts manually.": "Uses Git and credentials configured on your Mac. Pull requires a clean working tree; resolve conflicts manually.",
-  "Version %@": "Version %@",
-  "Version %@ · build %@": "Version %@ · build %@",
   "Version control": "Version control",
-  "Version unavailable · development build": "Version unavailable · development build",
   "View": "View",
   "View only this document": "View only this document",
   "Wait for this project's Git operation to finish before switching documents.": "Wait for this project's Git operation to finish before switching documents.",
@@ -344,5 +341,10 @@
   "Projects": "Projects",
   "Recent items": "Recent items",
   "Remove from favorites": "Remove from favorites",
-  "Workspaces": "Workspaces"
+  "Workspaces": "Workspaces",
+  "Version %@ · %@": "Version %@ · %@",
+  "Version unavailable · %@": "Version unavailable · %@",
+  "stable": "stable",
+  "beta": "beta",
+  "development": "development"
 }
