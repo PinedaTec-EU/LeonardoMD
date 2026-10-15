@@ -50,7 +50,7 @@ extension AppSession {
         presentFilePanel(panel) { [weak self] url in Task { await self?.openWorkspace(url) } }
     }
     func openWorkspace(_ url: URL) async {
-        guard !stopped else { return }
+        guard !stopped, !isClosing else { return }
         fileOperationCount += 1
         defer { fileOperationCount -= 1 }
         await initialize()
@@ -80,7 +80,7 @@ extension AppSession {
     func createProject() {
         guard let root = workspaceURL, let name = prompt(title: L10n.text("New project"), initial: L10n.text("My project")) else { return }
         Task {
-            guard !stopped else { return }
+            guard !stopped, !isClosing else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
             do {
@@ -99,6 +99,7 @@ extension AppSession {
     }
     func renameProject(_ project: ProjectDescriptor, to name: String) async {
         guard let workspace = workspaceURL, await prepareNavigation(), await prepareRelatedFileOperation?(project.rootURL) ?? true else { return }
+        guard !isClosing else { return }
         fileOperationCount += 1
         defer { fileOperationCount -= 1 }
         do {
@@ -131,6 +132,7 @@ extension AppSession {
     }
     func deleteConfirmedProject(_ project: ProjectDescriptor) async {
         guard await prepareNavigation(), await prepareRelatedFileOperation?(project.rootURL) ?? true else { return }
+        guard !isClosing else { return }
         fileOperationCount += 1
         defer { fileOperationCount -= 1 }
         do {

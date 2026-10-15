@@ -72,33 +72,52 @@ extension AppSession {
         panel.nameFieldStringValue = url.deletingPathExtension().lastPathComponent + L10n.text("Copy filename suffix")
         presentFilePanel(panel) { [weak self] destination in self?.saveCopy(to: destination, sourceURL: url) }
     }
-    private func saveCopy(to destination: URL, sourceURL url: URL) {
-        guard documentURL == url else { return }
+    func saveCopy(to destination: URL, sourceURL url: URL) {
+        Task { await saveCopyAndOpen(to: destination, sourceURL: url) }
+    }
+
+    func saveCopyAndOpen(to destination: URL, sourceURL url: URL) async {
+        guard documentURL == url, !stopped, !busy, !isClosing else { return }
         guard destination.standardizedFileURL.resolvingSymlinksInPath() != url.standardizedFileURL.resolvingSymlinksInPath() else {
             errorMessage = L10n.text("Choose another file to keep both versions.")
             return
         }
+        NSApplication.shared.keyWindow?.makeFirstResponder(nil)
+        guard await flushPreviewEdits(), documentURL == url, !stopped, !busy, !isClosing else { return }
+        // No suspension between the final preview snapshot and the input lock.
+        busy = true
+        fileOperationCount += 1
+        defer { busy = false; fileOperationCount -= 1 }
         let draft = content
-        Task {
-            guard !stopped else { return }
-            fileOperationCount += 1
-            defer { fileOperationCount -= 1 }
-            do {
-                try await authorizePath(url, .document)
-                try await authorizePath(destination, .document)
-                guard !stopped else { return }
-                _ = try await documents.save(draft, to: destination)
-                guard documentURL == url, content == draft else {
-                    errorMessage = L10n.text("The copy was saved. Later changes remain in the original document.")
-                    return
-                }
-                // The original remains protected; open the saved copy as a standalone document.
-                snapshot = nil
-                content = ""
-                externalConflict = false
-                await open(destination)
-            } catch { report(error) }
-        }
+        do {
+            try await authorizePath(url, .document)
+            try await authorizePath(destination, .document)
+            guard !stopped, documentURL == url, content == draft else { return }
+            let copy = try await documents.save(draft, to: destination)
+            guard !stopped, documentURL == url, content == draft else {
+                errorMessage = L10n.text("The copy was saved. Later changes remain in the original document.")
+                return
+            }
+            // save returns a verified, readable snapshot. Commit it synchronously;
+            // failures above retain every part of the original conflict session.
+            projectURL = nil
+            projectConfiguration = .default
+            projectBaseline = .default
+            rootEntries = []
+            resetSearch()
+            focus = false
+            documentURL = destination
+            snapshot = copy
+            content = copy.content
+            externalConflict = false
+            isProtected = true
+            editorScroll = 0
+            requestedLine = nil
+            mode = DocumentMode(rawValue: resolved.defaultMode.rawValue) ?? .preview
+            saveStatus = "Saved · local file"
+            NSDocumentController.shared.noteNewRecentDocumentURL(destination)
+            updateTitle()
+        } catch { report(error) }
     }
     func jumpToHeading(_ line: Int) {
         requestedLine = line

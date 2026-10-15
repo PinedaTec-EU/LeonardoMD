@@ -52,6 +52,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private var pendingLaunches: [[URL]] = []
     private var processingLaunches = false
     private var launched = false
+    private var terminationPending = false
     private static let closeCheckInterval: Duration = .milliseconds(50)
 
     init(diagnostics: StartupDiagnostics, instance: SingleInstance, role: SingleInstance.Role) {
@@ -77,14 +78,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         configureMenu()
         updates.start()
         DesktopSyncController.shared.buffers = { [weak self] root in
-            let root = root.standardizedFileURL.resolvingSymlinksInPath()
-            return self?.windows.flatMap { $0.documents.tabs }.compactMap { tab in
-                guard let url = tab.session.documentURL else { return nil }
-                let target = url.standardizedFileURL.resolvingSymlinksInPath()
-                guard target.path.hasPrefix(root.path + "/") else { return nil }
-                let relative = target.pathComponents.dropFirst(root.pathComponents.count).joined(separator: "/")
-                return OpenDocumentBuffer(path: relative, text: tab.session.content)
-            } ?? []
+            try await NativeReconciliationLease.shared.captureBuffers(in: root,
+                from: self?.windows.flatMap { $0.documents.tabs.map(\.session) } ?? [])
         }
         NativeReconciliationLease.shared.sessions = { [weak self] in
             self?.windows.flatMap { $0.documents.tabs.map(\.session) } ?? []
@@ -125,17 +120,17 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
 
     private func enqueueLaunch(_ urls: [URL]) {
         pendingLaunches.append(urls)
-        guard launched else { return }
+        guard launched, !terminationPending else { return }
         if role == .primary { processPendingLaunches() }
         else { forwardPendingLaunches() }
     }
 
     private func processPendingLaunches() {
-        guard !processingLaunches else { return }
+        guard !processingLaunches, !terminationPending else { return }
         processingLaunches = true
         Task {
             defer { processingLaunches = false }
-            while !pendingLaunches.isEmpty {
+            while !terminationPending && !pendingLaunches.isEmpty {
                 let urls = pendingLaunches.removeFirst()
                 if windows.isEmpty { newEmptyWindow() }
                 bringWindowsToFront()
@@ -143,7 +138,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
                 // Loading can suspend while another application takes focus.
                 bringWindowsToFront()
             }
-            if let window = windows.last?.window {
+            if !terminationPending, let window = windows.last?.window {
                 MarkdownAssociations.shared.presentStartupPrompt(on: window)
             }
         }
@@ -152,6 +147,10 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private func openExternalDocument(_ url: URL) async {
         guard url.isFileURL else { return }
         while true {
+            if terminationPending {
+                try? await Task.sleep(for: Self.closeCheckInterval)
+                continue
+            }
             if windows.isEmpty { newEmptyWindow() }
             if let existing = windows.first(where: { $0.documents.activateDocument(url) }) {
                 NSDocumentController.shared.noteNewRecentDocumentURL(url)
@@ -193,12 +192,17 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard !terminationPending else { return .terminateLater }
+        terminationPending = true
         Task {
             var canTerminate = true
             for window in windows {
-                if await !window.documents.prepareClose() { canTerminate = false }
+                if await !window.documents.prepareClose() { canTerminate = false; break }
             }
             if canTerminate { await DesktopSyncController.shared.stop() }
+            else { windows.forEach { $0.documents.cancelPreparedClose() } }
+            terminationPending = canTerminate
+            if !canTerminate, role == .primary { processPendingLaunches() }
             sender.reply(toApplicationShouldTerminate: canTerminate)
         }
         return .terminateLater
@@ -209,6 +213,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     @objc func newEmptyWindow() { newWindow(url: nil) }
 
     func newWindow(url: URL?) {
+        guard !terminationPending else { return }
         let isFirstWindow = !recordedFirstWindow
         recordedFirstWindow = true
         if isFirstWindow { diagnostics.record(.firstWindowCreating) }
@@ -236,9 +241,9 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     @objc private func save() { Task { await activeSession?.save() } }
     @objc private func exportPDF() { activeSession?.exportPDF() }
     @objc private func focus() { activeSession?.focus.toggle() }
-    @objc private func preview() { activeSession?.mode = .preview }
-    @objc private func edit() { activeSession?.mode = .edit }
-    @objc private func split() { activeSession?.mode = .split }
+    @objc private func preview() { Task { await activeSession?.setDocumentMode(.preview) } }
+    @objc private func edit() { Task { await activeSession?.setDocumentMode(.edit) } }
+    @objc private func split() { Task { await activeSession?.setDocumentMode(.split) } }
     @objc private func outline() { activeSession?.showInspector.toggle() }
     @objc private func preferences() { activeSession?.showPreferences = true }
     @objc private func bringWindowsToFront() {
@@ -250,7 +255,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private var activeDocuments: DocumentTabs? {
         windows.first { $0.window === NSApp.mainWindow }?.documents ?? windows.last?.documents
     }
-    private var activeSession: AppSession? { activeDocuments?.activeSession }
+    private var activeSession: AppSession? { terminationPending ? nil : activeDocuments?.activeSession }
 
     @objc private func languageChanged() { configureMenu() }
 
@@ -330,7 +335,7 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
     }
     required init?(coder: NSCoder) { nil }
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        if closeAfterSave || !documents.hasPendingWork { return true }
+        if closeAfterSave { return true }
         Task {
             guard await documents.prepareClose() else { return }
             closeAfterSave = true

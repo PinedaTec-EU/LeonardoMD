@@ -6,6 +6,7 @@ import WebKit
 public final class MarkdownPreviewController: ObservableObject {
     @Published public private(set) var isReady = false
 
+    public var onEdit: ((String, String) -> Bool)?
     public var onScrollProgress: ((Double) -> Void)?
 
     private weak var host: MarkdownPreviewHost?
@@ -36,6 +37,8 @@ public final class MarkdownPreviewController: ObservableObject {
         )
     }
 
+    public func flushEdits() async -> Bool { await host?.flushEdits() ?? true }
+
     public func exportPDF() async throws -> Data {
         guard let host else { throw MarkdownRenderError.webViewUnavailable }
         return try await host.exportPDF()
@@ -50,6 +53,7 @@ public final class MarkdownPreviewController: ObservableObject {
     }
 
     func attach(_ host: MarkdownPreviewHost) {
+        host.onEdit = onEdit
         if self.host === host {
             host.onScrollProgress = onScrollProgress
             return

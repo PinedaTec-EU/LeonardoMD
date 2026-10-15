@@ -17,6 +17,7 @@ final class DocumentTabs {
     private(set) var closing = false
     var updateWindow: ((String, URL?, Bool) -> Void)?
     private var stopped = false
+    private var preparedForClose = false
     private let preferencesURL: URL
 
     init(preferencesURL: URL = AppSession.preferencesURL) {
@@ -25,7 +26,7 @@ final class DocumentTabs {
     }
 
     var activeSession: AppSession { tabs.first { $0.id == activeID }!.session }
-    var hasPendingWork: Bool { tabs.contains { $0.session.isDirty || $0.session.saving || $0.session.settingsTask != nil || $0.session.gitBusy } }
+    var hasPendingWork: Bool { tabs.contains { $0.session.isDirty || $0.session.busy || $0.session.fileOperationCount > 0 || $0.session.saving || $0.session.settingsTask != nil || $0.session.gitBusy } }
     var acceptsExternalDrops: Bool { !closing && !stopped }
 
     @discardableResult
@@ -85,7 +86,9 @@ final class DocumentTabs {
             $0.session.documentURL?.standardizedFileURL.resolvingSymlinksInPath() == url.standardizedFileURL.resolvingSymlinksInPath()
         }) else { return false }
         select(tab.id)
-        if let line { tab.session.mode = .edit; tab.session.requestedLine = line }
+        if let line {
+            Task { await tab.session.setDocumentMode(.edit); tab.session.requestedLine = line }
+        }
         return true
     }
 
@@ -120,7 +123,10 @@ final class DocumentTabs {
         closing = true
         defer { closing = false }
         let session = tabs[index].session
-        guard await session.prepareNavigation() else {
+        guard await session.flushPreviewEdits() else { return }
+        session.isClosing = true
+        defer { if !session.stopped { session.isClosing = false } }
+        guard await session.waitForCloseOperations(), await session.prepareNavigation() else {
             activeID = id
             updateTitle()
             return
@@ -140,15 +146,33 @@ final class DocumentTabs {
         guard !closing else { return false }
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         closing = true
-        defer { closing = false }
+        var approved = false
+        defer { if !approved { releaseClosePreparation() } }
         for tab in tabs {
-            guard await tab.session.prepareNavigation() else {
+            guard await tab.session.flushPreviewEdits() else { return false }
+            tab.session.isClosing = true
+            guard await tab.session.waitForCloseOperations(), await tab.session.prepareNavigation() else {
                 activeID = tab.id
                 updateTitle()
                 return false
             }
+            tab.session.isClosing = true
         }
-        return !hasPendingWork
+        guard !hasPendingWork else { return false }
+        approved = true
+        preparedForClose = true
+        return true
+    }
+
+    func cancelPreparedClose() {
+        guard preparedForClose, !stopped else { return }
+        releaseClosePreparation()
+    }
+
+    private func releaseClosePreparation() {
+        tabs.forEach { $0.session.isClosing = false }
+        preparedForClose = false
+        closing = false
     }
 
     func reveal(_ id: UUID) {
@@ -168,8 +192,8 @@ final class DocumentTabs {
         }
         guard !affected.isEmpty else { return }
         for tab in affected { tab.session.stop(); tab.session.clearRevokedContent() }
-        // Existing close operations own their tab indices until their awaits finish.
-        while closing { try? await Task.sleep(for: .milliseconds(20)) }
+        // Active close iterations own indices; completed preparation no longer does.
+        while closing && !preparedForClose { try? await Task.sleep(for: .milliseconds(20)) }
         let ids = Set(affected.map(\.id))
         tabs.removeAll { ids.contains($0.id) }
         if tabs.isEmpty {

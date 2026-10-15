@@ -24,6 +24,11 @@ final class AppSession {
     }
     var syncUpdatingBuffer = false
     var isSyncSuspended: Bool { NativeReconciliationLease.shared.holds(documentURL) || NativeReconciliationLease.shared.holds(projectURL) }
+    var isClosing = false
+    var isCapturingPreview = false
+    var isProtected = true
+    var canEditDocument: Bool { documentURL != nil && !isProtected && !isClosing && !isCapturingPreview && !isSyncSuspended && !busy && !stopped }
+    var unsavedChangesDecision: @MainActor (String) -> UnsavedChangesDecision = UnsavedChangesPrompt.show
     var mode: DocumentMode = .preview
     var focus = false
     var showInspector = false
@@ -154,7 +159,11 @@ final class AppSession {
     }
 
     func open(_ url: URL) async {
+        guard !isClosing, !stopped else { return }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
         await initialize()
+        guard !isClosing, !stopped else { return }
         if activateExistingDocument?(url, nil) == true {
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             return
@@ -175,9 +184,11 @@ final class AppSession {
     }
 
     func openDocument(_ url: URL, line: Int? = nil) async {
-        guard !isSyncSuspended else { return }
+        guard !isClosing, !stopped, !isSyncSuspended else { return }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
         do { try await authorizePath(url, .document) } catch { report(error); return }
-        guard !stopped else { return }
+        guard !stopped, !isClosing else { return }
         if activateExistingDocument?(url, line) == true {
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             return
@@ -188,13 +199,14 @@ final class AppSession {
             return
         }
         guard await prepareNavigation() else { return }
-        guard !busy else { return }
+        guard !busy, !isClosing, !stopped else { return }
         busy = true
         defer { busy = false }
         do {
             let loaded = try await documents.read(url)
-            guard !stopped, !isSyncSuspended, !NativeReconciliationLease.shared.holds(url) else { return }
+            guard !stopped, !isClosing, !isSyncSuspended, !NativeReconciliationLease.shared.holds(url) else { return }
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
+            isProtected = true
             documentURL = url
             snapshot = loaded
             content = loaded.content
@@ -215,14 +227,13 @@ final class AppSession {
         saveStatus = isDirty ? "Pending changes" : "Saved · local file"
         updateTitle()
         saveTask?.cancel()
-        guard isDirty, !externalConflict else { return }
-        saveTask = Task { [weak self] in
-            do { try await Task.sleep(for: .milliseconds(700)) } catch { return }
-            await self?.save()
-        }
     }
 
-    func save() async {
+    func save(allowClosing: Bool = false) async {
+        guard !stopped, !isClosing || allowClosing else { return }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
+        guard await flushPreviewEdits(), !stopped, !isClosing || allowClosing else { return }
         guard !stopped, !isSyncSuspended, !saving, isDirty, let snapshot, let url = documentURL, !externalConflict else { return }
         saving = true
         saveStatus = "Saving…"
@@ -230,7 +241,7 @@ final class AppSession {
         logger.info("document_save_started")
         do {
             try await authorizePath(url, .document)
-            guard !stopped else { saving = false; return }
+            guard !stopped, !isClosing || allowClosing else { saving = false; return }
             self.snapshot = try await documents.save(draft, to: url, expectedFingerprint: snapshot.fingerprint)
             saveStatus = isDirty ? "Pending changes" : "Saved · local file"
             logger.info("document_save_completed")
@@ -251,9 +262,9 @@ final class AppSession {
         }
         while let pending = settingsTask { await pending.value }
         saveTask?.cancel()
-        // Wait for a current autosave to finish before changing the document identity.
+        // Wait for a current save to finish before changing the document identity.
         while saving { try? await Task.sleep(for: .milliseconds(20)) }
-        await save()
+        guard await flushPreviewEdits(), await resolveUnsavedChanges() else { return false }
         if isDirty {
             if externalConflict { errorMessage = L10n.text("Resolve the external change by reloading or saving a copy before opening another document.") }
             return false
@@ -262,7 +273,9 @@ final class AppSession {
     }
 
     func reloadFromDisk() async {
-        guard !isSyncSuspended, !busy, !saving else { return }
+        guard !isSyncSuspended, !busy, !saving, !isClosing else { return }
+        NSApplication.shared.keyWindow?.makeFirstResponder(nil)
+        guard await flushPreviewEdits(), !isSyncSuspended, !busy, !saving, !isClosing else { return }
         guard let url = documentURL else { return }
         busy = true
         defer { busy = false }
@@ -313,6 +326,8 @@ final class AppSession {
         if !externalConflict { changed = await documents.hasChanged(snapshot) }
         guard self.snapshot?.url == snapshot.url, self.snapshot?.fingerprint == snapshot.fingerprint else { return }
         if changed {
+            guard await flushPreviewEdits(), !isSyncSuspended, !isClosing,
+                  self.snapshot == snapshot else { return }
             if isDirty { externalConflict = true; saveStatus = "External conflict · edits protected" }
             else { await reloadFromDisk() }
         }

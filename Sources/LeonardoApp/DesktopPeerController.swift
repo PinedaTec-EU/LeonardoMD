@@ -27,7 +27,7 @@ final class DesktopPeerController {
     private let defaults: UserDefaults
     private var automaticTask: Task<Void, Never>?
     static let intervals = [0, 1, 5, 15, 30, 60]
-    var buffers: @MainActor (URL) -> [OpenDocumentBuffer] = { _ in [] }
+    var buffers: @MainActor (URL) async throws -> [OpenDocumentBuffer] = { _ in [] }
     let workingRoot: URL
     let revoker: DesktopPeerEditorRevoker
     private let library: any DesktopPeerLibraryAccess
@@ -153,11 +153,11 @@ final class DesktopPeerController {
             if let copy = copies.first(where: { $0.id == id }),
                let receipt = try await library.pendingReceipt(copyID: id) {
                 _ = try await NativeReconciliationLease.shared.run(projectRoot: root, selection: copy.selection) {
-                    let selected = self.buffers(root).filter { copy.selection.contains($0.path) }
+                    let selected = try await self.buffers(root).filter { copy.selection.contains($0.path) }
                     return try await self.library.acknowledge(copyID: id, receipt: receipt, buffers: selected)
                 }
             }
-            let selected = buffers(root).filter { selection?.contains($0.path) == true }
+            let selected = try await buffers(root).filter { selection?.contains($0.path) == true }
             if try await library.send(copyID: id, buffers: selected) != nil { submitted.insert(id) }
             else { unchanged.insert(id) }
             try await reload()
@@ -172,7 +172,7 @@ final class DesktopPeerController {
         do {
             let root = workingRoot.appendingPathComponent(id.uuidString, isDirectory: true)
             let selection = copies.first { $0.id == id }?.selection
-            let selectedBuffers = buffers(root).filter { selection?.contains($0.path) == true }
+            let selectedBuffers = try await buffers(root).filter { selection?.contains($0.path) == true }
             comparisons[id] = try await library.compare(copyID: id, buffers: selectedBuffers)
             try await reload()
         } catch { self.error = error.localizedDescription; try? await reload() }

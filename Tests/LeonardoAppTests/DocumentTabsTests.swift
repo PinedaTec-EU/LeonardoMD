@@ -39,6 +39,109 @@ final class DocumentTabsTests: XCTestCase {
         return matches()
     }
 
+    func testIndividualCloseRejectsLateInputAndCancellationUnlocksSession() async throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let file = try document("closing.md", in: root, content: "original")
+        let id = try XCTUnwrap(tabs.activeID)
+        let session = tabs.activeSession
+        await session.open(file)
+        await session.toggleProtection()
+        XCTAssertTrue(session.editDocument(expected: "original", replacement: "draft"))
+        session.unsavedChangesDecision = { _ in .cancel }
+        await tabs.close(id)
+        XCTAssertTrue(session.canEditDocument)
+        session.unsavedChangesDecision = { _ in .save }
+        session.authorizePath = { _, _ in
+            await Task.yield()
+            XCTAssertTrue(session.isClosing)
+            XCTAssertFalse(session.editDocument(expected: "draft", replacement: "late input"))
+        }
+        await tabs.close(id)
+        XCTAssertTrue(session.stopped)
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "draft")
+    }
+
+    func testCloseWaitsForBusyAndFileOperationsForTabsAndWindows() async throws {
+        for windowClose in [false, true] {
+            for fileOperation in [false, true] {
+                let (root, tabs) = try fixture()
+                let session = tabs.activeSession
+                let id = try XCTUnwrap(tabs.activeID)
+                if fileOperation { session.fileOperationCount = 1 } else { session.busy = true }
+                XCTAssertTrue(tabs.hasPendingWork)
+                let closing = Task { @MainActor in
+                    if windowClose { return await tabs.prepareClose() }
+                    await tabs.close(id)
+                    return session.stopped
+                }
+                try await Task.sleep(for: .milliseconds(50))
+                XCTAssertFalse(session.stopped)
+                XCTAssertTrue(session.isClosing)
+                if fileOperation { session.fileOperationCount = 0 } else { session.busy = false }
+                let approved = await closing.value
+                XCTAssertTrue(approved)
+                if windowClose { tabs.cancelPreparedClose() }
+                tabs.stop()
+                try? FileManager.default.removeItem(at: root)
+            }
+        }
+    }
+
+    func testQueuedProjectOpenIsJoinedAndRejectedBeforeCloseApproval() async throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let session = tabs.activeSession
+        var resume: CheckedContinuation<Void, Never>?
+        let suspended = expectation(description: "Project authorization suspended before busy flag")
+        session.authorizePath = { _, _ in
+            await withCheckedContinuation { continuation in
+                resume = continuation
+                suspended.fulfill()
+            }
+        }
+        let opening = Task { await session.openProject(root) }
+        await fulfillment(of: [suspended], timeout: 2)
+        XCTAssertFalse(session.busy)
+        XCTAssertEqual(session.fileOperationCount, 1)
+        let closing = Task { await tabs.prepareClose() }
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertTrue(session.isClosing)
+        XCTAssertTrue(tabs.hasPendingWork)
+        resume?.resume()
+        let opened = await opening.value
+        let approved = await closing.value
+        XCTAssertFalse(opened)
+        XCTAssertTrue(approved)
+        XCTAssertNil(session.projectURL)
+        let mode = session.mode
+        let protection = session.isProtected
+        await session.setDocumentMode(.edit)
+        await session.toggleProtection()
+        await session.detachProject()
+        await session.save()
+        XCTAssertEqual(session.mode, mode)
+        XCTAssertEqual(session.isProtected, protection)
+        XCTAssertEqual(session.fileOperationCount, 0)
+    }
+
+    func testPreparedCloseDoesNotAcceptNewWorkAfterApproval() async throws {
+        let (root, tabs) = try fixture()
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        await tabs.activeSession.open(try document("note.md", in: root, content: "original"))
+        let session = tabs.activeSession
+        await session.toggleProtection()
+        let prepared = await tabs.prepareClose()
+        XCTAssertTrue(prepared)
+        XCTAssertTrue(tabs.closing)
+        XCTAssertNil(tabs.addTab())
+        XCTAssertFalse(session.editDocument(expected: "original", replacement: "late draft"))
+        tabs.cancelPreparedClose()
+        XCTAssertFalse(tabs.closing)
+        XCTAssertTrue(session.editDocument(expected: "original", replacement: "retained draft"))
+        XCTAssertNotNil(tabs.addTab())
+    }
+
     func testPeerRevocationClearsDraftAndPreservesSiblingWorkspace() async throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
@@ -353,6 +456,7 @@ final class DocumentTabsTests: XCTestCase {
         firstSession.contentChanged()
         tabs.addTab()
         await tabs.activeSession.open(second)
+        firstSession.unsavedChangesDecision = { _ in .save }
         await tabs.close(firstID)
         XCTAssertEqual(tabs.tabs.count, 1)
         XCTAssertTrue(firstSession.stopped)
@@ -368,6 +472,7 @@ final class DocumentTabsTests: XCTestCase {
         await tabs.activeSession.open(url)
         let id = try XCTUnwrap(tabs.activeID)
         let conflicted = tabs.activeSession
+        conflicted.unsavedChangesDecision = { _ in .save }
         conflicted.content = "draft"
         try "external".write(to: url, atomically: true, encoding: .utf8)
         tabs.addTab()
@@ -394,6 +499,7 @@ final class DocumentTabsTests: XCTestCase {
         tabs.addTab()
         await tabs.activeSession.open(second)
         tabs.activeSession.content = "second draft"
+        for tab in tabs.tabs { tab.session.unsavedChangesDecision = { _ in .save } }
         let canClose = await tabs.prepareClose()
         XCTAssertTrue(canClose)
         XCTAssertEqual(try String(contentsOf: first, encoding: .utf8), "first draft")
@@ -413,6 +519,7 @@ final class DocumentTabsTests: XCTestCase {
         await reader.open(file)
         reader.mode = .edit
         reader.editorScroll = 0.4
+        reader.unsavedChangesDecision = { _ in .save }
         reader.content = "draft"
         let project = try XCTUnwrap(owner.workspaceProjects.first)
         await owner.renameProject(project, to: "Renamed")

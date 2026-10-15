@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import Observation
 import LeonardoSync
 import LeonardoDesktopSync
@@ -41,6 +42,31 @@ final class NativeReconciliationLease {
             try? await Task.sleep(for: .milliseconds(20))
         }
     }
+    /// Capture each visible editor before reading native buffers. Under an active
+    /// lease, the acquisition barrier already flushed and suspended these editors.
+    func captureBuffers(in projectRoot: URL, from candidates: [AppSession]) async throws -> [OpenDocumentBuffer] {
+        let projectRoot = projectRoot.standardizedFileURL.resolvingSymlinksInPath()
+        let affected = candidates.filter { session in
+            guard let url = session.documentURL?.standardizedFileURL.resolvingSymlinksInPath() else { return false }
+            return url.path.hasPrefix(projectRoot.path + "/")
+        }
+        var locked: [AppSession] = []
+        defer { locked.forEach { $0.isCapturingPreview = false } }
+        NSApplication.shared.keyWindow?.makeFirstResponder(nil)
+        for session in affected where !holds(session.documentURL) {
+            guard !session.isCapturingPreview, !session.isClosing, !session.stopped,
+                  await session.flushPreviewEdits() else { throw DesktopRuntimeError.busy }
+            session.isCapturingPreview = true
+            locked.append(session)
+        }
+        return affected.compactMap { session in
+            guard let url = session.documentURL?.standardizedFileURL.resolvingSymlinksInPath(),
+                  url.path.hasPrefix(projectRoot.path + "/"), !session.stopped else { return nil }
+            let relative = url.pathComponents.dropFirst(projectRoot.pathComponents.count).joined(separator: "/")
+            return OpenDocumentBuffer(path: relative, text: session.content)
+        }
+    }
+
     func run(projectRoot: URL, selection: CorpusSelection, operation: @MainActor () async throws -> DesktopPeerAcceptanceResult) async throws -> DesktopPeerAcceptanceResult {
         try await runApplication(projectRoot: projectRoot, selection: selection) {
             let result = try await operation()
@@ -51,6 +77,22 @@ final class NativeReconciliationLease {
 
     func runApplication<Value: Sendable>(projectRoot: URL, selection: CorpusSelection,
                              operation: @MainActor () async throws -> NativeReconciliationApplication<Value>) async throws -> Value {
+        guard root == nil else { throw DesktopRuntimeError.busy }
+        let targetRoot = projectRoot.standardizedFileURL.resolvingSymlinksInPath()
+        func belongs(_ url: URL?) -> Bool {
+            guard let url = url?.standardizedFileURL.resolvingSymlinksInPath() else { return false }
+            return url == targetRoot || url.path.hasPrefix(targetRoot.path + "/")
+        }
+        let preparing = sessions().filter { belongs($0.projectURL) || belongs($0.documentURL) }
+        var locked: [AppSession] = []
+        defer { locked.forEach { $0.isCapturingPreview = false } }
+        NSApplication.shared.keyWindow?.makeFirstResponder(nil)
+        for session in preparing {
+            guard !session.isCapturingPreview, !session.isClosing,
+                  await session.flushPreviewEdits() else { throw DesktopRuntimeError.busy }
+            session.isCapturingPreview = true
+            locked.append(session)
+        }
         guard root == nil else { throw DesktopRuntimeError.busy }
         root = projectRoot.standardizedFileURL.resolvingSymlinksInPath()
         defer {

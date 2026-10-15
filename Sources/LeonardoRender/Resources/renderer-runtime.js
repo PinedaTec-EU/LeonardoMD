@@ -56,7 +56,7 @@
     return window.DOMPurify.sanitize(value, {
       USE_PROFILES: { html: true },
       FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form"],
-      FORBID_ATTR: ["srcdoc", "action", "formaction"]
+      FORBID_ATTR: ["srcdoc", "action", "formaction", "contenteditable"]
     });
   }
 
@@ -332,6 +332,7 @@
     root.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target.closest("a[href]") : null;
       if (!target) return;
+      if (payload.allowsEditing && event.target.closest('[contenteditable="plaintext-only"]')) { event.preventDefault(); return; }
       event.preventDefault();
       postMessage("leonardoLink", { href: target.getAttribute("href") || "" });
     });
@@ -350,6 +351,8 @@
     diagramTimers.clear();
     document.querySelectorAll("body > .front-matter, body > .document-tags").forEach((panel) => panel.remove());
     try {
+      window.LeonardoEditing.begin(payload);
+      window.LeonardoEditing.body = payload.markdown || "";
       const rendered = window.LeonardoTables.render(payload.markdown || "");
       root.innerHTML = sanitizeHTML(rendered);
       window.LeonardoTables.prepare(root);
@@ -363,6 +366,7 @@
       highlightCode();
       renderMath();
       prepareMermaid();
+      window.LeonardoEditing.prepare(root);
       installInteractions();
       postMessage("leonardoReady", {
         mermaid: features.mermaid,
@@ -376,6 +380,7 @@
 
   window.LeonardoPreview = {
     setAppearance,
+    setEditable(value) { payload.allowsEditing = value; window.LeonardoEditing.setEditable(root, value); },
     updateContent(nextPayload) {
       if (!nextPayload || typeof nextPayload.markdown !== "string") return;
       payload = Object.assign(payload, nextPayload);

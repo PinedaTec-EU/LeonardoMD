@@ -9,6 +9,7 @@ enum MarkdownResource: String, CaseIterable {
     case katex = "katex.min.js"
     case katexStyles = "katex.min.css"
     case previewStyles = "preview.css"
+    case previewEditing = "preview-editing.js"
     case tableLayout = "table-layout.js"
     case runtime = "renderer-runtime.js"
 
@@ -16,7 +17,7 @@ enum MarkdownResource: String, CaseIterable {
         switch self {
         case .katexStyles, .previewStyles:
             return "text/css"
-        case .marked, .dompurify, .highlight, .mermaid, .katex, .tableLayout, .runtime:
+        case .marked, .dompurify, .highlight, .mermaid, .katex, .previewEditing, .tableLayout, .runtime:
             return "text/javascript"
         }
     }
@@ -36,7 +37,7 @@ enum MarkdownResourceCatalog {
         if configuration.allowsMermaid {
             resources.append(.mermaid)
         }
-        resources.append(contentsOf: [.tableLayout, .runtime])
+        resources.append(contentsOf: [.previewEditing, .tableLayout, .runtime])
         return resources
     }
 

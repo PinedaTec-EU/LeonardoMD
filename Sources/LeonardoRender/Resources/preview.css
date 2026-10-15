@@ -280,3 +280,12 @@ body[data-paper-effect="parchment"] {
 
 .tag-pill:hover, .tag-pill:active { background: var(--ld-tag-hover); }
 .tag-pill:focus-visible { outline: 2px solid var(--ld-tag-focus); outline-offset: 3px; }
+
+/* An outlined focus ring identifies the rendered text currently being edited. */
+[data-leonardo-edit][contenteditable="plaintext-only"] { cursor: text; min-width: 0.25em; }
+[data-leonardo-edit][contenteditable="plaintext-only"]:focus { outline: 1px solid var(--ld-accent); outline-offset: 3px; }
+@media print { [data-leonardo-edit]:focus { outline: none; } }
+
+.preview-empty { display: block; min-height: 1.5em; }
+[data-leonardo-edit][contenteditable="false"] { display: contents; }
+.preview-empty[contenteditable="false"] { display: block; }

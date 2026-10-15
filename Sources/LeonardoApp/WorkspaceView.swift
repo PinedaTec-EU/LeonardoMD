@@ -86,13 +86,34 @@ struct WorkspaceView: View {
                 }
             } label: { Image(systemName: "folder").padding(8).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.primary.opacity(0.1))).shadow(color: .black.opacity(0.08), radius: 3, y: 2) }.menuStyle(.borderlessButton).frame(width: 38)
             VStack(alignment: .leading, spacing: 2) {
-                Text(session.documentURL?.lastPathComponent ?? "LeonardoMD").font(.headline).lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(session.documentURL?.lastPathComponent ?? "LeonardoMD").font(.headline).lineLimit(1)
+                    if session.isDirty {
+                        Label(L10n.text("Unsaved changes"), systemImage: "circle.fill")
+                            .font(.caption.weight(.semibold))
+                            .accessibilityIdentifier("document-unsaved-changes")
+                    }
+                }
                 Text(session.projectURL == nil ? L10n.text("Document viewer") : session.projectURL!.lastPathComponent)
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer(minLength: 8)
             if session.documentURL != nil {
-                PremiumSelection(selection: $session.mode, options: DocumentMode.allCases, title: { $0.title })
+                Button { Task { await session.toggleProtection() } } label: {
+                    Image(systemName: session.isProtected ? "lock.fill" : "lock.open")
+                        .opacity(session.isProtected ? 1 : 0.5)
+                }
+                .help(L10n.text(session.isProtected ? "Protected · click to enable editing" : "Writable · click to protect"))
+                .accessibilityLabel(L10n.text("Document protection"))
+                .accessibilityValue(L10n.text(session.isProtected ? "Read only" : "Writable"))
+                .accessibilityIdentifier("document-protection")
+                .disabled(session.isSyncSuspended || session.busy)
+                Button { Task { await session.save() } } label: {
+                    Label(L10n.text("Save"), systemImage: "square.and.arrow.down")
+                }
+                .disabled(!session.isDirty || session.saving || session.externalConflict || session.isSyncSuspended)
+                .help(L10n.text("Save (⌘S)"))
+                PremiumSelection(selection: Binding(get: { session.mode }, set: { value in Task { await session.setDocumentMode(value) } }), options: DocumentMode.allCases, title: { $0.title })
                     .accessibilityLabel(L10n.text("Mode"))
                     .accessibilityIdentifier("document-mode")
                 Button { session.focus.toggle() } label: { Image(systemName: session.focus ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right") }
@@ -154,10 +175,9 @@ struct WorkspaceView: View {
         }
     }
     private var editor: some View {
-        MarkdownEditor(text: $session.content, scrollFraction: $session.editorScroll, requestedLine: session.requestedLine)
+        MarkdownEditor(text: Binding(get: { session.content }, set: { _ = session.editDocument(expected: session.content, replacement: $0) }), scrollFraction: $session.editorScroll, requestedLine: session.requestedLine)
             .id(session.documentURL)
-            .disabled(session.isSyncSuspended)
-            .onChange(of: session.content) { _, _ in session.contentChanged() }
+            .disabled(!session.canEditDocument)
     }
     private var statusBar: some View {
         HStack {

@@ -25,7 +25,7 @@ final class DesktopGitController {
     private let stateRoot: URL
     private let adapter: DesktopGitCLIAdapter
     private let lease: NativeReconciliationLease
-    private let buffers: @MainActor (URL) -> [OpenDocumentBuffer]
+    private let buffers: @MainActor (URL) async throws -> [OpenDocumentBuffer]
     private let notice: DesktopGitReconciliationCoordinator.IntegrationNotice
     private let publisher: DesktopGitIntegrationPublisher
     private let receipts: GitIntegrationReceiptStore
@@ -59,7 +59,7 @@ final class DesktopGitController {
 
     init(projectRoot: URL, stateRoot: URL,
          lease: NativeReconciliationLease = .shared,
-         buffers: @escaping @MainActor (URL) -> [OpenDocumentBuffer] = { _ in [] },
+         buffers: @escaping @MainActor (URL) async throws -> [OpenDocumentBuffer] = { _ in [] },
          notice: @escaping DesktopGitReconciliationCoordinator.IntegrationNotice = { receipt in
              NotificationCenter.default.post(name: .desktopGitIntegrationDidComplete, object: receipt)
          }, identity: GitCommitIdentity? = nil) {

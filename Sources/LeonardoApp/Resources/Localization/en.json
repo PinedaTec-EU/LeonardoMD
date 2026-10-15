@@ -346,5 +346,17 @@
   "Version unavailable · %@": "Version unavailable · %@",
   "stable": "stable",
   "beta": "beta",
-  "development": "development"
+  "development": "development",
+  "Discard changes": "Discard changes",
+  "Document protection": "Document protection",
+  "Protected · click to enable editing": "Protected · click to enable editing",
+  "Read only": "Read only",
+  "Save (⌘S)": "Save (⌘S)",
+  "Save changes to %@?": "Save changes to %@?",
+  "Unsaved": "Unsaved",
+  "Unsaved changes": "Unsaved changes",
+  "Writable": "Writable",
+  "Writable · click to protect": "Writable · click to protect",
+  "Your changes have not been saved. Discarding cannot be undone.": "Your changes have not been saved. Discarding cannot be undone.",
+  "Preview edits could not be synchronized. Try again before closing.": "Preview edits could not be synchronized. Try again before closing."
 }

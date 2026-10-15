@@ -346,5 +346,17 @@
   "Version unavailable · %@": "Versión no disponible · %@",
   "stable": "stable",
   "beta": "beta",
-  "development": "desarrollo"
+  "development": "desarrollo",
+  "Discard changes": "Descartar cambios",
+  "Document protection": "Protección del documento",
+  "Protected · click to enable editing": "Protegido · pulsa para permitir la edición",
+  "Read only": "Solo lectura",
+  "Save (⌘S)": "Guardar (⌘S)",
+  "Save changes to %@?": "¿Guardar los cambios de %@?",
+  "Unsaved": "Sin guardar",
+  "Unsaved changes": "Cambios sin guardar",
+  "Writable": "Editable",
+  "Writable · click to protect": "Editable · pulsa para proteger",
+  "Your changes have not been saved. Discarding cannot be undone.": "Tus cambios no se han guardado. No se puede deshacer el descarte.",
+  "Preview edits could not be synchronized. Try again before closing.": "No se han podido sincronizar los cambios del preview. Inténtalo de nuevo antes de cerrar."
 }

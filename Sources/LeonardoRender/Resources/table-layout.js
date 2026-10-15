@@ -49,8 +49,23 @@
   const parser = new window.marked.Marked({
     gfm: true,
     breaks: false,
-    hooks: { processAllTokens: annotateTables },
-    renderer: { table: sizedTable }
+    hooks: { processAllTokens: (tokens) => window.LeonardoEditing.annotate(annotateTables(tokens)) },
+    renderer: {
+      table: sizedTable,
+      text(token) {
+        const html = window.marked.Renderer.prototype.text.call(this, token);
+        return window.LeonardoEditing.span(token, html);
+      },
+      codespan(token) {
+        return `<code>${window.LeonardoEditing.span(token, window.LeonardoEditing.escapeHTML(token.text))}</code>`;
+      },
+      code(token) {
+        const html = window.marked.Renderer.prototype.code.call(this, token);
+        if (token.leonardoEditID === undefined) return html;
+        return html.replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, (_, open, body, close) =>
+          open + window.LeonardoEditing.span(token, body.replace(/\n$/, "")) + close);
+      }
+    }
   });
 
   window.LeonardoTables = {
