@@ -41,10 +41,10 @@ Existing WebKit table layout and renderer engine/security checks remain required
 
 ## Local validation results
 
-- Full Swift suite: 380 XCTest cases, 15 optional skips (the capture-enabled run has 14), zero failures; 12 Swift Testing renderer checks pass.
-- Final focused run: two real-WebKit editing cases and five session editing cases pass, including exact source restoration.
+- Full Swift suite: 383 XCTest cases, 15 optional skips (the capture-enabled run has 14), zero failures; 12 Swift Testing renderer checks pass.
+- Final focused run: two real-WebKit editing cases and seven session editing cases pass, including exact source restoration.
 - Packaging/recorder Python suite: 24 cases, seven engine-dependent skips, zero failures.
-- Fifteen successful recorded Swift compilation commands allocate build delta 15 for source PR #145; unsuccessful/interrupted runs allocate no delta.
+- Seventeen successful recorded Swift compilation commands allocate build delta 17 for source PR #145; unsuccessful/interrupted runs allocate no delta.
 - Captures were inspected for solid/outlined lock states, enabled Save, explicit English/Spanish unsaved labels, and actual rendered edits.
 
 Remote CI and independent review are separate delivery gates. These local checks do not establish integration, publication or a packaged startup acceptance.
@@ -52,3 +52,5 @@ Remote CI and independent review are separate delivery gates. These local checks
 Complete formatted-run deletion is covered by [#148](https://github.com/PinedaTec-EU/LeonardoMD/issues/148): empty bold/emphasis/strikethrough runs, including nested runs, and inline code remove their delimiters; restoring original text restores the exact original source. Whitespace-only content is retained outside empty formatting markers.
 
 Additional regressions cover metadata-only insertion without a final newline ([#149](https://github.com/PinedaTec-EU/LeonardoMD/issues/149)), stale raw input and native marked text ([#150](https://github.com/PinedaTec-EU/LeonardoMD/issues/150)), visible preview composition at flush ([#151](https://github.com/PinedaTec-EU/LeonardoMD/issues/151)), and approved-close quiescence with cancellation recovery ([#152](https://github.com/PinedaTec-EU/LeonardoMD/issues/152)).
+
+Conflict-copy regression [#153](https://github.com/PinedaTec-EU/LeonardoMD/issues/153) uses actual WebKit with its edit-message delivery suppressed: Save copy flushes the visible source before capturing it, blocks late input during authorization, and commits the verified saved snapshot without an asynchronous reopen. A failed destination write retains the original URL, snapshot, dirty draft and conflict. Individual-tab close is locked before asynchronous preparation, with cancellation restoring editing; a delayed authorization callback cannot insert unprompted input. The final focused native run passes 26 cases (one optional capture skip).

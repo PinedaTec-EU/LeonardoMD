@@ -1,5 +1,7 @@
 import AppKit
 import SwiftUI
+import WebKit
+@testable import LeonardoRender
 import XCTest
 @testable import LeonardoApp
 
@@ -74,6 +76,65 @@ final class SessionEditingTests: XCTestCase {
         await tabs.close(dirtyID)
         XCTAssertEqual(tabs.tabs.count, 1)
         XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "original")
+    }
+
+    func testConflictCopyLocksLateInputAndCommitsVerifiedSnapshot() async throws {
+        let (root, session) = try await fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let original = try XCTUnwrap(session.documentURL)
+        let destination = root.appendingPathComponent("copy.md")
+        await session.toggleProtection()
+        let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { host.teardown(); window.close() }
+        session.renderer.onEdit = { expected, replacement in session.editDocument(expected: expected, replacement: replacement) }
+        session.renderer.attach(host)
+        let ready = expectation(description: "Conflict preview ready")
+        host.onReady = { if $0 { ready.fulfill() } }
+        var configuration = MarkdownPreviewConfiguration.default
+        configuration.allowsEditing = true
+        host.apply(content: session.content, baseURL: nil, configuration: configuration, onLinkActivation: nil, onScrollProgress: nil)
+        await fulfillment(of: [ready], timeout: 10)
+        let webView = try XCTUnwrap(host.subviews.compactMap { $0 as? WKWebView }.first)
+        _ = try await webView.evaluateJavaScript("""
+        window.webkit.messageHandlers.leonardoEdit.postMessage = () => {};
+        const leaf = document.querySelector('[data-leonardo-edit]');
+        leaf.innerText = 'visible preview draft';
+        leaf.dispatchEvent(new InputEvent('input', {bubbles: true}));
+        """)
+        XCTAssertEqual(session.content, "# Original", "The asynchronous bridge is deliberately delayed")
+        session.externalConflict = true
+        session.authorizePath = { _, _ in
+            await Task.yield()
+            XCTAssertFalse(session.editDocument(expected: session.content, replacement: "late callback"))
+        }
+        await session.saveCopyAndOpen(to: destination, sourceURL: original)
+        XCTAssertEqual(try String(contentsOf: destination, encoding: .utf8), "# visible preview draft")
+        XCTAssertEqual(session.content, "# visible preview draft")
+        XCTAssertEqual(session.documentURL, destination)
+        XCTAssertFalse(session.isDirty)
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertTrue(session.isProtected)
+    }
+
+    func testFailedConflictCopyRetainsOriginalSession() async throws {
+        let (root, session) = try await fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let original = try XCTUnwrap(session.documentURL)
+        let snapshot = session.snapshot
+        await session.toggleProtection()
+        XCTAssertTrue(session.editDocument(expected: session.content, replacement: "retained draft"))
+        session.externalConflict = true
+        await session.saveCopyAndOpen(to: root.appendingPathComponent("missing/copy.md"), sourceURL: original)
+        XCTAssertEqual(session.documentURL, original)
+        XCTAssertEqual(session.snapshot, snapshot)
+        XCTAssertEqual(session.content, "retained draft")
+        XCTAssertTrue(session.externalConflict)
+        XCTAssertTrue(session.canEditDocument)
+        XCTAssertNotNil(session.errorMessage)
     }
 
     func testCaptureProtectionAndUnsavedStates() async throws {
