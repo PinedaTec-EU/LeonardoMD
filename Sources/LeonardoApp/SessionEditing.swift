@@ -23,8 +23,8 @@ enum UnsavedChangesPrompt {
 extension AppSession {
     func toggleProtection() async {
         guard !stopped, !isSyncSuspended, !busy else { return }
-        if !isProtected, !(await flushPreviewEdits()) { return }
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
+        if !isProtected, !(await flushPreviewEdits()) { return }
         isProtected.toggle()
     }
 
@@ -39,6 +39,7 @@ extension AppSession {
     func setDocumentMode(_ value: DocumentMode) async {
         guard !stopped, !busy, !isSyncSuspended else { return }
         let url = documentURL
+        NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         guard await flushPreviewEdits(), documentURL == url, !stopped, !isSyncSuspended else { return }
         mode = value
     }

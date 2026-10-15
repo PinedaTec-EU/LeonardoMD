@@ -20,7 +20,7 @@ final class PreviewEditingTests: XCTestCase {
         var buffer = source
         var received: [String] = []
         let edits = expectation(description: "Native bridge receives mapped edits")
-        edits.expectedFulfillmentCount = 15
+        edits.expectedFulfillmentCount = 17
         host.onEdit = { expected, replacement in
             XCTAssertEqual(expected, buffer)
             buffer = replacement
@@ -34,11 +34,17 @@ final class PreviewEditingTests: XCTestCase {
         let webView = try XCTUnwrap(host.subviews.compactMap { $0 as? WKWebView }.first)
         let count = try await webView.evaluateJavaScript("document.querySelectorAll('[contenteditable=\"plaintext-only\"]').length") as? Int
         XCTAssertGreaterThan(count ?? 0, 4)
-        _ = try await webView.evaluateJavaScript("""
+        let compositionVisible = try await webView.evaluateJavaScript("""
         (() => {
           const bold = document.querySelector('strong [data-leonardo-edit]');
           bold.innerText = '';
           bold.dispatchEvent(new InputEvent('input', {bubbles: true}));
+          bold.innerText = 'bold';
+          bold.dispatchEvent(new InputEvent('input', {bubbles: true}));
+          bold.innerText = '編集中';
+          bold.dispatchEvent(new InputEvent('input', {bubbles: true, isComposing: true}));
+          const compositionSeen = window.LeonardoEditing.currentSource().includes('編集中');
+          bold.dispatchEvent(new CompositionEvent('compositionend', {bubbles: true}));
           bold.innerText = 'bold';
           bold.dispatchEvent(new InputEvent('input', {bubbles: true}));
           bold.innerText = 'longer *bold*';
@@ -70,15 +76,16 @@ final class PreviewEditingTests: XCTestCase {
           parts[0].dispatchEvent(new InputEvent('input', {bubbles: true}));
           parts[1].innerText = 'inner';
           parts[1].dispatchEvent(new InputEvent('input', {bubbles: true}));
-          return true;
+          return compositionSeen;
         })()
-        """)
+        """) as? Bool
         await fulfillment(of: [edits], timeout: 3)
+        XCTAssertEqual(compositionVisible, true)
         let expected = source.replacingOccurrences(of: "| Cell |", with: "| Changed |").replacingOccurrences(of: "| --- | Other |", with: "| Row | Other |").replacingOccurrences(of: "# Heading", with: "# New heading").replacingOccurrences(of: "`code`", with: "``a`b``")
         XCTAssertEqual(buffer, expected)
-        XCTAssertEqual(received[11], expected.replacingOccurrences(of: "**outer *inner***", with: ""))
-        XCTAssertEqual(received[12], expected.replacingOccurrences(of: "**outer *inner***", with: " "))
-        XCTAssertEqual(received[13], expected.replacingOccurrences(of: "**outer *inner***", with: "**outer** "))
+        XCTAssertEqual(received[13], expected.replacingOccurrences(of: "**outer *inner***", with: ""))
+        XCTAssertEqual(received[14], expected.replacingOccurrences(of: "**outer *inner***", with: " "))
+        XCTAssertEqual(received[15], expected.replacingOccurrences(of: "**outer *inner***", with: "**outer** "))
         XCTAssertEqual(received[0], source.replacingOccurrences(of: "**bold**", with: ""))
         XCTAssertEqual(received[1], source, "Restoring an emptied formatted run must restore the exact original source")
         // Re-applying the native buffer must preserve the same focused DOM.

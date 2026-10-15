@@ -126,8 +126,8 @@
       range.replacement = range.originalSource;
       range.originalText = editableText(element);
       range.currentText = range.originalText;
-      element.addEventListener("input", (event) => {
-        if (!enabled || event.isComposing) return;
+      element.addEventListener("input", () => {
+        if (!enabled) return;
         applyInput(element, range);
       });
       element.addEventListener("compositionend", () => { if (enabled) applyInput(element, range); });
