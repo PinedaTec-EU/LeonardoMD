@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.396
+
+- #15 Added: promote accepted beta 395 to stable ([#155](https://github.com/PinedaTec-EU/LeonardoMD/pull/155))
+
+Source: `d522b9aadc1b992fd659d52c01dc7504823631b7`. Delta: `{"build": 1}`.
+
 ## 0.1.395
 
 - #144 Added: protected preview editing and manual saving ([#145](https://github.com/PinedaTec-EU/LeonardoMD/pull/145))
