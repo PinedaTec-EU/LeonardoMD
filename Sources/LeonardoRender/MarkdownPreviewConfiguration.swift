@@ -2,6 +2,7 @@ import Foundation
 
 /// Controls the capabilities and visual treatment of a Markdown preview.
 public struct MarkdownPreviewConfiguration: Equatable, Sendable {
+    public var allowsEditing: Bool = false
     public var allowsMermaid: Bool
     public var allowsMath: Bool
     public var frontMatter: FrontMatterVisibility

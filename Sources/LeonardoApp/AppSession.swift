@@ -24,6 +24,9 @@ final class AppSession {
     }
     var syncUpdatingBuffer = false
     var isSyncSuspended: Bool { NativeReconciliationLease.shared.holds(documentURL) || NativeReconciliationLease.shared.holds(projectURL) }
+    var isProtected = true
+    var canEditDocument: Bool { documentURL != nil && !isProtected && !isSyncSuspended && !busy && !stopped }
+    var unsavedChangesDecision: @MainActor (String) -> UnsavedChangesDecision = UnsavedChangesPrompt.show
     var mode: DocumentMode = .preview
     var focus = false
     var showInspector = false
@@ -195,6 +198,7 @@ final class AppSession {
             let loaded = try await documents.read(url)
             guard !stopped, !isSyncSuspended, !NativeReconciliationLease.shared.holds(url) else { return }
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
+            isProtected = true
             documentURL = url
             snapshot = loaded
             content = loaded.content
@@ -215,11 +219,6 @@ final class AppSession {
         saveStatus = isDirty ? "Pending changes" : "Saved · local file"
         updateTitle()
         saveTask?.cancel()
-        guard isDirty, !externalConflict else { return }
-        saveTask = Task { [weak self] in
-            do { try await Task.sleep(for: .milliseconds(700)) } catch { return }
-            await self?.save()
-        }
     }
 
     func save() async {
@@ -253,7 +252,7 @@ final class AppSession {
         saveTask?.cancel()
         // Wait for a current autosave to finish before changing the document identity.
         while saving { try? await Task.sleep(for: .milliseconds(20)) }
-        await save()
+        guard await resolveUnsavedChanges() else { return false }
         if isDirty {
             if externalConflict { errorMessage = L10n.text("Resolve the external change by reloading or saving a copy before opening another document.") }
             return false

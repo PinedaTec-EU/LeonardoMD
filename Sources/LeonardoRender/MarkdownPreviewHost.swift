@@ -11,6 +11,7 @@ import WebKit
 
 @MainActor
 final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKNavigationDelegate {
+    var onEdit: ((String, String) -> Bool)?
     var onReady: ((Bool) -> Void)?
     var onScrollProgress: ((Double) -> Void)?
     private(set) var tagHandler: ((String) -> Void)?
@@ -97,6 +98,9 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             return
         }
 
+        if previousConfiguration.allowsEditing != configuration.allowsEditing {
+            evaluate("window.LeonardoPreview?.setEditable(\(configuration.allowsEditing));")
+        }
         if previousConfiguration.appearance != configuration.appearance {
             updateAppearance()
         }
@@ -149,6 +153,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         renderWorkItem = nil
         markFailed(with: MarkdownRenderError.webViewUnavailable)
         if let webView {
+            webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoEdit")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoTag")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoLink")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoReady")
@@ -183,6 +188,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             webConfiguration.setURLSchemeHandler(documentHandler, forURLScheme: MarkdownHTMLShell.documentScheme)
         }
         let userContentController = webConfiguration.userContentController
+        userContentController.add(self, name: "leonardoEdit")
         userContentController.add(self, name: "leonardoTag")
         userContentController.add(self, name: "leonardoLink")
         userContentController.add(self, name: "leonardoReady")
@@ -384,6 +390,20 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         didReceive message: WKScriptMessage
     ) {
         switch message.name {
+        case "leonardoEdit":
+            guard message.frameInfo.isMainFrame,
+                  configuration.allowsEditing,
+                  let body = message.body as? [String: Any],
+                  let expected = body["expected"] as? String,
+                  let replacement = body["replacement"] as? String,
+                  expected == content,
+                  onEdit?(expected, replacement) == true else {
+                scheduleContentUpdate(immediately: true)
+                return
+            }
+            // Acknowledge the same buffer locally so SwiftUI does not redraw the
+            // DOM and move the caret after every keystroke.
+            content = replacement
         case "leonardoReady":
             if let body = message.body as? [String: Any],
                let durationNumber = body["durationMs"] as? NSNumber {

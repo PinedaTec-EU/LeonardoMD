@@ -48,6 +48,7 @@ enum MarkdownHTMLShell {
         <body>
           <main id="leonardo-markdown" class="markdown-body" aria-live="polite"></main>
           <script id="leonardo-payload" type="application/json">\(encodedPayload)</script>
+          <script src="\(resourceURL(.previewEditing))"></script>
           <script src="\(resourceURL(.tableLayout))"></script>
           <script src="\(resourceURL(.runtime))"></script>
         </body>
@@ -63,6 +64,8 @@ enum MarkdownHTMLShell {
         let document = MarkdownDocumentParser.parse(content)
         let payload = MarkdownRenderPayload(
             markdown: document.body,
+            source: content,
+            allowsEditing: configuration.allowsEditing,
             frontMatter: document.frontMatter,
             tags: document.tags,
             showFrontMatter: configuration.frontMatter == .metadata,
@@ -100,6 +103,8 @@ enum MarkdownHTMLShell {
 
 private struct MarkdownRenderPayload: Encodable {
     let markdown: String
+    let source: String
+    let allowsEditing: Bool
     let frontMatter: [String: String]
     let tags: [String]
     let showFrontMatter: Bool

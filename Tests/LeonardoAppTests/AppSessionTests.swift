@@ -8,6 +8,7 @@ final class AppSessionTests: XCTestCase {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
+        session.unsavedChangesDecision = { _ in .save }
         return (root, session)
     }
 

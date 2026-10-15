@@ -353,6 +353,7 @@ final class DocumentTabsTests: XCTestCase {
         firstSession.contentChanged()
         tabs.addTab()
         await tabs.activeSession.open(second)
+        firstSession.unsavedChangesDecision = { _ in .save }
         await tabs.close(firstID)
         XCTAssertEqual(tabs.tabs.count, 1)
         XCTAssertTrue(firstSession.stopped)
@@ -368,6 +369,7 @@ final class DocumentTabsTests: XCTestCase {
         await tabs.activeSession.open(url)
         let id = try XCTUnwrap(tabs.activeID)
         let conflicted = tabs.activeSession
+        conflicted.unsavedChangesDecision = { _ in .save }
         conflicted.content = "draft"
         try "external".write(to: url, atomically: true, encoding: .utf8)
         tabs.addTab()
@@ -394,6 +396,7 @@ final class DocumentTabsTests: XCTestCase {
         tabs.addTab()
         await tabs.activeSession.open(second)
         tabs.activeSession.content = "second draft"
+        for tab in tabs.tabs { tab.session.unsavedChangesDecision = { _ in .save } }
         let canClose = await tabs.prepareClose()
         XCTAssertTrue(canClose)
         XCTAssertEqual(try String(contentsOf: first, encoding: .utf8), "first draft")

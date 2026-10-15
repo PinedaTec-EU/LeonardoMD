@@ -5,7 +5,10 @@ import LeonardoRender
 
 extension AppSession {
     var preview: some View {
-        MarkdownPreview(
+        renderer.onEdit = { [weak self] expected, replacement in
+            self?.editDocument(expected: expected, replacement: replacement) ?? false
+        }
+        return MarkdownPreview(
             content: content,
             baseURL: documentURL?.deletingLastPathComponent(),
             configuration: renderConfiguration,
@@ -37,7 +40,7 @@ extension AppSession {
         case .parchment: effect = .parchment
         }
         let background = resolved.paperEffect == .white ? "#F8F8F5" : tokens.surface
-        return MarkdownPreviewConfiguration(
+        var configuration = MarkdownPreviewConfiguration(
             allowsMermaid: features.mermaidEnabled,
             allowsMath: features.mathEnabled,
             frontMatter: showFrontmatter ? .metadata : .hidden,
@@ -45,6 +48,8 @@ extension AppSession {
             appearance: MarkdownAppearance(backgroundHex: background, textHex: tokens.text, headingHex: tokens.heading, accentHex: tokens.accent, codeBackgroundHex: tokens.codeBackground, paperEffect: effect),
             localAssetRoot: projectURL
         )
+        configuration.allowsEditing = canEditDocument
+        return configuration
     }
     func followLink(_ url: URL) async {
         guard !stopped else { return }
