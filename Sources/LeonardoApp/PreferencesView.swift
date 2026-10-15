@@ -55,6 +55,7 @@ struct PreferencesView: View {
                 }
                 Text(L10n.text("Interface language applies to all windows."))
                     .font(.caption).foregroundStyle(.secondary)
+                MarkdownAssociationPreferences(associations: .shared)
                 Picker(L10n.text("Palette"), selection: Binding(get: { projectScope ? session.projectConfiguration.palette?.rawValue ?? "inherit" : session.globalPreferences.palette.rawValue }, set: { session.setPalette($0, project: projectScope) })) {
                     if projectScope { Text(L10n.text("Inherit global")).tag("inherit") }
                     ForEach(PaletteCatalog.all) { palette in Text(palette.displayName).tag(palette.id.rawValue) }

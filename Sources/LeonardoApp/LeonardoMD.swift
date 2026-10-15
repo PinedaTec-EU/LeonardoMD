@@ -142,6 +142,9 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
                 // Loading can suspend while another application takes focus.
                 bringWindowsToFront()
             }
+            if let window = windows.last?.window {
+                MarkdownAssociations.shared.presentStartupPrompt(on: window)
+            }
         }
     }
 
