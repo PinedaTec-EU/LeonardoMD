@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import WebKit
+import LeonardoSync
 @testable import LeonardoRender
 import XCTest
 @testable import LeonardoApp
@@ -118,6 +119,62 @@ final class SessionEditingTests: XCTestCase {
         XCTAssertFalse(session.isDirty)
         XCTAssertFalse(session.externalConflict)
         XCTAssertTrue(session.isProtected)
+    }
+
+    func testPendingPreviewIsCapturedBeforeSyncAndExternalReload() async throws {
+        for boundary in 0..<3 {
+            let (root, session) = try await fixture()
+            defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+            let original = try XCTUnwrap(session.documentURL)
+            await session.toggleProtection()
+        let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { host.teardown(); window.close() }
+        session.renderer.onEdit = { expected, replacement in session.editDocument(expected: expected, replacement: replacement) }
+        session.renderer.attach(host)
+        let ready = expectation(description: "Conflict preview ready")
+        host.onReady = { if $0 { ready.fulfill() } }
+        var configuration = MarkdownPreviewConfiguration.default
+        configuration.allowsEditing = true
+        host.apply(content: session.content, baseURL: nil, configuration: configuration, onLinkActivation: nil, onScrollProgress: nil)
+        await fulfillment(of: [ready], timeout: 10)
+        let webView = try XCTUnwrap(host.subviews.compactMap { $0 as? WKWebView }.first)
+        _ = try await webView.evaluateJavaScript("""
+        window.webkit.messageHandlers.leonardoEdit.postMessage = () => {};
+        const leaf = document.querySelector('[data-leonardo-edit]');
+        leaf.innerText = 'pending';
+        leaf.dispatchEvent(new InputEvent('input', {bubbles: true}));
+        """)
+        XCTAssertEqual(session.content, "# Original", "The asynchronous bridge is deliberately delayed")
+            if boundary == 2 {
+                try "external disk".write(to: original, atomically: true, encoding: .utf8)
+                await session.checkExternalChanges()
+                XCTAssertTrue(session.externalConflict)
+                XCTAssertEqual(session.content, "# pending")
+            } else {
+                let lease = NativeReconciliationLease.shared
+                let previousSessions = lease.sessions
+                lease.sessions = { [session] }
+                defer { lease.sessions = previousSessions }
+                if boundary == 0 {
+                    let buffers = try await lease.captureBuffers(in: root, from: [session])
+                    XCTAssertEqual(buffers.first?.text, "# pending")
+                } else {
+                _ = try await lease.runApplication(projectRoot: root, selection: CorpusSelection(folders: [""], documents: [])) {
+                    XCTAssertEqual(session.content, "# pending")
+                    let frozen = try await lease.captureBuffers(in: root, from: [session])
+                    XCTAssertEqual(frozen.first?.text, "# pending")
+                    return NativeReconciliationApplication(value: true, appliedNow: false,
+                        appliedSnapshot: CorpusSnapshot(revision: "test", files: []))
+                }
+                }
+                XCTAssertFalse(session.isCapturingPreview)
+                XCTAssertTrue(session.canEditDocument)
+            }
+        }
     }
 
     func testFailedConflictCopyRetainsOriginalSession() async throws {

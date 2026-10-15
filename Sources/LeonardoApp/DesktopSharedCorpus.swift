@@ -4,7 +4,7 @@ import LeonardoSync
 
 @MainActor
 struct DesktopSharedCorpus {
-    let buffers: @MainActor (URL) -> [OpenDocumentBuffer]
+    let buffers: @MainActor (URL) async throws -> [OpenDocumentBuffer]
 
     func source(_ project: MobileSharedProject) throws -> SharedProjectSource {
         let scope = try CorpusScope(folder: "")
@@ -15,7 +15,7 @@ struct DesktopSharedCorpus {
         let collect = buffers
         return SharedProjectSource(descriptor: descriptor, rootURL: root) {
             guard await MainActor.run(body: { !NativeReconciliationLease.shared.holds(root) }) else { throw DirectAuthorityError.busy }
-            let drafts = await collect(root).filter { selection.contains($0.path) }
+            let drafts = try await collect(root).filter { selection.contains($0.path) }
             let snapshot = try await reader.snapshot(root: root, selection: selection, buffers: drafts)
             guard await MainActor.run(body: { !NativeReconciliationLease.shared.holds(root) }) else { throw DirectAuthorityError.busy }
             return snapshot

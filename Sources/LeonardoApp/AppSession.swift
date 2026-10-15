@@ -25,8 +25,9 @@ final class AppSession {
     var syncUpdatingBuffer = false
     var isSyncSuspended: Bool { NativeReconciliationLease.shared.holds(documentURL) || NativeReconciliationLease.shared.holds(projectURL) }
     var isClosing = false
+    var isCapturingPreview = false
     var isProtected = true
-    var canEditDocument: Bool { documentURL != nil && !isProtected && !isClosing && !isSyncSuspended && !busy && !stopped }
+    var canEditDocument: Bool { documentURL != nil && !isProtected && !isClosing && !isCapturingPreview && !isSyncSuspended && !busy && !stopped }
     var unsavedChangesDecision: @MainActor (String) -> UnsavedChangesDecision = UnsavedChangesPrompt.show
     var mode: DocumentMode = .preview
     var focus = false
@@ -158,6 +159,7 @@ final class AppSession {
     }
 
     func open(_ url: URL) async {
+        guard !isClosing, !stopped else { return }
         await initialize()
         if activateExistingDocument?(url, nil) == true {
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
@@ -179,9 +181,9 @@ final class AppSession {
     }
 
     func openDocument(_ url: URL, line: Int? = nil) async {
-        guard !isSyncSuspended else { return }
+        guard !isClosing, !stopped, !isSyncSuspended else { return }
         do { try await authorizePath(url, .document) } catch { report(error); return }
-        guard !stopped else { return }
+        guard !stopped, !isClosing else { return }
         if activateExistingDocument?(url, line) == true {
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             return
@@ -263,7 +265,9 @@ final class AppSession {
     }
 
     func reloadFromDisk() async {
-        guard !isSyncSuspended, !busy, !saving else { return }
+        guard !isSyncSuspended, !busy, !saving, !isClosing else { return }
+        NSApplication.shared.keyWindow?.makeFirstResponder(nil)
+        guard await flushPreviewEdits(), !isSyncSuspended, !busy, !saving, !isClosing else { return }
         guard let url = documentURL else { return }
         busy = true
         defer { busy = false }
@@ -314,6 +318,8 @@ final class AppSession {
         if !externalConflict { changed = await documents.hasChanged(snapshot) }
         guard self.snapshot?.url == snapshot.url, self.snapshot?.fingerprint == snapshot.fingerprint else { return }
         if changed {
+            guard await flushPreviewEdits(), !isSyncSuspended, !isClosing,
+                  self.snapshot == snapshot else { return }
             if isDirty { externalConflict = true; saveStatus = "External conflict · edits protected" }
             else { await reloadFromDisk() }
         }

@@ -93,14 +93,14 @@ final class DesktopGitReconciliationCoordinator {
     private let transactions: ScopedDesktopTransaction
     private let corpusReader: ProjectCorpusReader
     private let lease: NativeReconciliationLease
-    private let buffers: @MainActor (URL) -> [OpenDocumentBuffer]
+    private let buffers: @MainActor (URL) async throws -> [OpenDocumentBuffer]
     private let notice: IntegrationNotice
     private var changing = false
 
     init(transport: any GitRemoteTransport,
          stateRoot: URL,
          lease: NativeReconciliationLease = .shared,
-         buffers: @escaping @MainActor (URL) -> [OpenDocumentBuffer] = { _ in [] },
+         buffers: @escaping @MainActor (URL) async throws -> [OpenDocumentBuffer] = { _ in [] },
          notice: @escaping IntegrationNotice = { receipt in
              NotificationCenter.default.post(name: .desktopGitIntegrationDidComplete, object: receipt)
          },
@@ -367,7 +367,7 @@ final class DesktopGitReconciliationCoordinator {
 
     private func captureCurrent(root: URL, selection: CorpusSelection,
                                 revision: String) async throws -> CurrentCapture {
-        let selectedBuffers = try selectedBuffers(for: root, selection: selection)
+        let selectedBuffers = try await selectedBuffers(for: root, selection: selection)
         let physical = try await corpusReader.snapshot(root: root, selection: selection,
                                                         revision: revision)
         let local = try await corpusReader.snapshot(root: root, selection: selection,
@@ -375,10 +375,10 @@ final class DesktopGitReconciliationCoordinator {
         return CurrentCapture(diskPhysical: physical, local: local, buffers: selectedBuffers)
     }
 
-    private func selectedBuffers(for root: URL, selection: CorpusSelection) throws -> [OpenDocumentBuffer] {
+    private func selectedBuffers(for root: URL, selection: CorpusSelection) async throws -> [OpenDocumentBuffer] {
         var grouped: [String: Set<String>] = [:]
         var selected: [OpenDocumentBuffer] = []
-        for buffer in buffers(root) where selection.contains(buffer.path) {
+        for buffer in try await buffers(root) where selection.contains(buffer.path) {
             try selection.validate(buffer.path)
             grouped[buffer.path, default: []].insert(buffer.text)
             selected.append(buffer)

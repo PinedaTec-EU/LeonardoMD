@@ -78,14 +78,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         configureMenu()
         updates.start()
         DesktopSyncController.shared.buffers = { [weak self] root in
-            let root = root.standardizedFileURL.resolvingSymlinksInPath()
-            return self?.windows.flatMap { $0.documents.tabs }.compactMap { tab in
-                guard let url = tab.session.documentURL else { return nil }
-                let target = url.standardizedFileURL.resolvingSymlinksInPath()
-                guard target.path.hasPrefix(root.path + "/") else { return nil }
-                let relative = target.pathComponents.dropFirst(root.pathComponents.count).joined(separator: "/")
-                return OpenDocumentBuffer(path: relative, text: tab.session.content)
-            } ?? []
+            try await NativeReconciliationLease.shared.captureBuffers(in: root,
+                from: self?.windows.flatMap { $0.documents.tabs.map(\.session) } ?? [])
         }
         NativeReconciliationLease.shared.sessions = { [weak self] in
             self?.windows.flatMap { $0.documents.tabs.map(\.session) } ?? []

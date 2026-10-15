@@ -18,7 +18,7 @@ final class DesktopSyncController {
     private let lease = NativeReconciliationLease.shared
     var error: String?
     private(set) var invitationURL: URL?
-    var buffers: @MainActor (URL) -> [OpenDocumentBuffer] = { _ in [] }
+    var buffers: @MainActor (URL) async throws -> [OpenDocumentBuffer] = { _ in [] }
     private let configurations: ConfigurationStore
     private let preferencesURL: URL
     private let runtime: DesktopDirectRuntime
@@ -395,7 +395,7 @@ final class DesktopSyncController {
             let selection = try CorpusSelection(folders: project.folders, documents: project.documents)
             guard selection == value.review.proposal.selection else { throw SyncError.outsideScope }
             _ = try await lease.run(projectRoot: project.rootURL, selection: selection) {
-                let drafts = buffers(project.rootURL).filter { selection.contains($0.path) }
+                let drafts = try await buffers(project.rootURL).filter { selection.contains($0.path) }
                 for group in Dictionary(grouping: drafts, by: \.path).values where Set(group.map(\.text)).count > 1 {
                     throw NativeSourceReviewError.ambiguousBuffers
                 }
