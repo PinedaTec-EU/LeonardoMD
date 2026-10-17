@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.405
+
+- #15 Updated: promote validated beta 0.1.404 to stable ([#162](https://github.com/PinedaTec-EU/LeonardoMD/pull/162))
+
+Source: `2dfa983b9e4e92578e595b197ddfd863a7a407a2`. Delta: `{"build": 1}`.
+
 ## 0.1.404
 
 - #160 Fixed: deduplicate recent project and workspace paths ([#161](https://github.com/PinedaTec-EU/LeonardoMD/pull/161))
