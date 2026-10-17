@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.399
+
+- #156 Updated: compact Home recents and adapt Leonardo background ([#157](https://github.com/PinedaTec-EU/LeonardoMD/pull/157))
+
+Source: `a62e099bc740851ba615049b358b8a2805a8e31e`. Delta: `{"build": 3}`.
+
 ## 0.1.396
 
 - #15 Added: promote accepted beta 395 to stable ([#155](https://github.com/PinedaTec-EU/LeonardoMD/pull/155))
