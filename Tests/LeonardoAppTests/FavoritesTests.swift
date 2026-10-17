@@ -13,9 +13,17 @@ final class FavoritesTests: XCTestCase {
             let lettering = WelcomeWatermark.letteringSize(in: size)
             XCTAssertGreaterThan(lettering.width, 0)
             XCTAssertEqual(lettering.width / lettering.height, 3, accuracy: 0.001)
-            XCTAssertGreaterThanOrEqual(size.width * 0.40 - lettering.width / 2, 0)
-            XCTAssertLessThanOrEqual(size.width * 0.40 + lettering.width / 2, size.width)
+            XCTAssertGreaterThanOrEqual(size.width / 2 - lettering.width / 2, 0)
+            XCTAssertLessThanOrEqual(size.width / 2 + lettering.width / 2, size.width)
             XCTAssertLessThanOrEqual(lettering.height + 24, size.height)
+        }
+    }
+
+    func testLeonardoLetteringDoublesPreviousSizeWhereCanvasAllows() {
+        for size in [CGSize(width: 600, height: 400), CGSize(width: 1260, height: 687),
+                     CGSize(width: 1600, height: 1000), CGSize(width: 2000, height: 1400)] {
+            let previousWidth = min(640, size.width * 0.72, size.height * 0.54)
+            XCTAssertGreaterThanOrEqual(WelcomeWatermark.letteringSize(in: size).width, previousWidth * 2)
         }
     }
 
@@ -53,6 +61,20 @@ final class FavoritesTests: XCTestCase {
             try await NativeViewCaptureSupport.capture(view, size: NSSize(width: 760, height: 650),
                 to: directory.appendingPathComponent("recent-\(kind.rawValue)-es.png"), title: "Leonardo Recent Tabs QA")
         }
+        let scrolled = NSHostingView(rootView: WelcomeView(session: session).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
+        try await NativeViewCaptureSupport.capture(scrolled, size: NSSize(width: 1100, height: 700),
+            to: directory.appendingPathComponent("welcome-scrolled-es.png"), title: "Leonardo Home Scroll QA") { view in
+                func findScrollView(_ candidate: NSView) -> NSScrollView? {
+                    if let scroll = candidate as? NSScrollView { return scroll }
+                    return candidate.subviews.lazy.compactMap { findScrollView($0) }.first
+                }
+                let scroll = try XCTUnwrap(findScrollView(view))
+                let document = try XCTUnwrap(scroll.documentView)
+                let offset = min(180, max(0, document.bounds.height - scroll.contentView.bounds.height))
+                XCTAssertGreaterThan(offset, 0, "Fixture must exercise actual scrolling")
+                scroll.contentView.scroll(to: NSPoint(x: 0, y: offset))
+                scroll.reflectScrolledClipView(scroll.contentView)
+            }
         session.toggleFavorite(root.appendingPathComponent("LeonardoMD"), kind: .project)
         let changed = NSHostingView(rootView: SavedItemsView(session: session).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
         try await NativeViewCaptureSupport.capture(changed, size: NSSize(width: 760, height: 850),

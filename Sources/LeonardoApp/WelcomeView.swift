@@ -4,19 +4,6 @@ struct WelcomeView: View {
     @Bindable var session: AppSession
 
     var body: some View {
-        GeometryReader { geometry in
-            VStack(spacing: 0) {
-                Color.clear
-                    .frame(height: WelcomeWatermark.letteringSize(in: geometry.size).height + 24)
-                    .accessibilityHidden(true)
-                welcomeContent
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background { WelcomeWatermark() }
-    }
-
-    private var welcomeContent: some View {
         ScrollView {
             VStack(spacing: 18) {
                 Image(systemName: "doc.richtext").font(.system(size: 54, weight: .light)).foregroundStyle(session.accentColor)
@@ -36,5 +23,6 @@ struct WelcomeView: View {
             .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background { WelcomeWatermark() }
     }
 }

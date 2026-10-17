@@ -3,9 +3,9 @@ import AppKit
 
 /// Notebook sketches frame the welcome controls without taking part in interaction.
 struct WelcomeWatermark: View {
-    // The lettering asset is 3:1. Reserve its actual height outside scrolling content.
+    // The 3:1 lettering is twice the previous target size, fitting narrow canvases.
     static func letteringSize(in size: CGSize) -> CGSize {
-        let width = max(0, min(640, size.width * 0.72, size.height * 0.54))
+        let width = max(0, min(1280, max(0, size.width - 24), size.height * 1.08))
         return CGSize(width: width, height: width / 3)
     }
 
@@ -18,7 +18,7 @@ struct WelcomeWatermark: View {
             let lettering = Self.letteringSize(in: geometry.size)
             sketch("WelcomeWatermark", opacity: 0.40)
                 .frame(width: lettering.width, height: lettering.height)
-                .position(x: width * 0.40, y: lettering.height / 2 + 12)
+                .position(x: width / 2, y: lettering.height / 2 + 12)
             if height >= 500 {
                 sketch("WelcomeWings", opacity: 0.30)
                     .frame(width: min(637.5, width * 0.50, height * 0.65))

@@ -14,7 +14,8 @@ enum NativeViewCaptureSupport {
                         size: NSSize,
                         to url: URL,
                         settlingMilliseconds: Int = 150,
-                        title: String = "Leonardo Localization QA") async throws {
+                        title: String = "Leonardo Localization QA",
+                        beforeCapture: ((NSView) throws -> Void)? = nil) async throws {
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
                               styleMask: [.borderless], backing: .buffered, defer: false)
         window.title = title
@@ -40,6 +41,7 @@ enum NativeViewCaptureSupport {
         view.frame = NSRect(origin: .zero, size: size)
         view.bounds = NSRect(origin: .zero, size: size)
         view.layoutSubtreeIfNeeded()
+        try beforeCapture?(view)
         view.displayIfNeeded()
         reportGeometry("laid-out")
         let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
