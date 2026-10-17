@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.404
+
+- #160 Fixed: deduplicate recent project and workspace paths ([#161](https://github.com/PinedaTec-EU/LeonardoMD/pull/161))
+
+Source: `42a57f14c8f1429adde18ac67c5373e8dc0c5f95`. Delta: `{"build": 2}`.
+
 ## 0.1.402
 
 - #158 Fixed: restore large Leonardo background beneath scrolling Home ([#159](https://github.com/PinedaTec-EU/LeonardoMD/pull/159))
