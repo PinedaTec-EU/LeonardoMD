@@ -3,27 +3,33 @@ import AppKit
 
 /// Notebook sketches frame the welcome controls without taking part in interaction.
 struct WelcomeWatermark: View {
-    private let minimumHeight: CGFloat = 740
+    // The lettering asset is 3:1. Reserve its actual height outside scrolling content.
+    static func letteringSize(in size: CGSize) -> CGSize {
+        let width = max(0, min(640, size.width * 0.72, size.height * 0.54))
+        return CGSize(width: width, height: width / 3)
+    }
+
     private let draftingOchre = Color(hex: "#A87832")
 
     var body: some View {
         GeometryReader { geometry in
-            if geometry.size.height >= minimumHeight {
-                let width = geometry.size.width
-                let height = geometry.size.height
+            let width = geometry.size.width
+            let height = geometry.size.height
+            let lettering = Self.letteringSize(in: geometry.size)
+            sketch("WelcomeWatermark", opacity: 0.40)
+                .frame(width: lettering.width, height: lettering.height)
+                .position(x: width * 0.40, y: lettering.height / 2 + 12)
+            if height >= 500 {
+                sketch("WelcomeWings", opacity: 0.30)
+                    .frame(width: min(637.5, width * 0.50, height * 0.65))
+                    .rotationEffect(.degrees(-8))
+                    .position(x: width * 0.31, y: height * 0.85)
+            }
+            if width >= 1100 && height >= 740 {
                 let figureSize = min(510, width * 0.32, height * 0.65)
-                if width >= 1100 {
-                    sketch("WelcomeVitruvian", opacity: 0.32)
+                sketch("WelcomeVitruvian", opacity: 0.32)
                     .frame(width: figureSize)
                     .position(x: width - figureSize / 2 - 18, y: height * 0.48)
-                }
-                sketch("WelcomeWings", opacity: 0.30)
-                    .frame(width: min(637.5, width * 0.50))
-                    .rotationEffect(.degrees(-8))
-                    .position(x: width * 0.27, y: height * 0.19)
-                sketch("WelcomeWatermark", opacity: 0.40)
-                    .frame(width: min(640, width * 0.52))
-                    .position(x: width * 0.31, y: height * 0.85)
             }
         }
         .clipped()
