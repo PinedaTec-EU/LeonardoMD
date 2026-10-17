@@ -2,7 +2,28 @@
 <rss xmlns:leonardo="https://pinedatec.eu/xml-namespaces/leonardo" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>LeonardoMD</title>
-        <item leonardo:channel="stable">
+        <item leonardo:channel="beta">
+            <title>0.1.399</title>
+            <pubDate>Sat, 17 Oct 2026 13:31:47 +0200</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>399</sparkle:version>
+            <sparkle:shortVersionString>0.1.399</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"># LeonardoMD 0.1.399 Beta
+
+- Home keeps the existing favorites groups and displays recent documents, projects and workspaces in separate tabs, shortening the list.
+- Leonardo lettering moves above the content, stays visible while scrolling and adapts to smaller canvases. The flying machine moves to the lower background.
+
+Source: PR #157, issue #156. Numeric version/build: 0.1.399 / 399. Public beta for Apple silicon (arm64), macOS 14 or later.
+
+Signed with Developer ID and Apple-notarized. Beta subscriptions receive this candidate through Preferences → Updates → Beta. Stable subscriptions remain on stable releases. A beta package starts with a stable subscription unless the user explicitly selects Beta.
+
+Hosted update, installation and relaunch acceptance is pending. This publication does not install or replace your current app. Legacy beta installations with the previous signing key require manual installation of the signed/notarized package; preserve existing preferences and document data.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.399/LeonardoMD-0.1.399.zip" length="15853302" type="application/octet-stream" sparkle:edSignature="uMWhCxsZ0uWQnijz2Wg5wrqZYtgU/MBGWZpIUJiT/qu3jLJQ/gUNL2Di2p8+J60jJWnEUwsFAgphXhf6XOsYAQ==" />
+        </item>
+    <item leonardo:channel="stable">
             <title>0.1.396</title>
             <pubDate>Thu, 15 Oct 2026 21:00:41 +0200</pubDate>
             <sparkle:version>396</sparkle:version>
@@ -29,33 +50,6 @@ Hosted owner acceptance: https://github.com/PinedaTec-EU/LeonardoMD/issues/15#is
 This publication does not install or restart the owner's application. Extended updater acceptance remains tracked in issue #15.
 </description>
             <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.396/LeonardoMD-0.1.396.zip" length="15845189" type="application/octet-stream" sparkle:edSignature="0UC+XYzmWEUHlyZlxdpcVKofivAkwxYN3oEgTEErlA8lrQFG2XIPgQt7zAUXK/iNrQiSRS7ZZDFIEOf4Gza9Bg==" />
-        </item>
-    <item leonardo:channel="beta">
-            <title>0.1.395</title>
-            <pubDate>Thu, 15 Oct 2026 20:15:50 +0200</pubDate>
-            <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>395</sparkle:version>
-            <sparkle:shortVersionString>0.1.395</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">## Changes
-
-- Edit rendered Markdown text directly in Preview, while Edit continues to show the raw source.
-- Newly opened documents start protected. Use the toolbar padlock to enable writing or protect the draft again.
-- Save manually with Command-S; unsaved changes are explicitly marked.
-- Closing tabs, windows or the app offers Save, Discard and Cancel when changes are pending.
-- Preserve pending preview edits across conflict-copy saves, external changes and synchronization.
-- Document metadata now uses its heading color for the border.
-
-## Distribution
-
-macOS arm64 beta. Developer ID signed, Apple notarized, and Sparkle archive signature verified before publication. This is a GitHub prerelease and does not change the stable release.
-
-Source: `48b1ceb23de9340d898ceabe101bf593819f3c6d`, including PR #145 and PR #146. Structural Markdown authoring, raw HTML and generated diagram/math changes use the raw editor.
-
-This publication does not install the app on the owner's system. Hosted installation/relaunch acceptance is pending.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.395/LeonardoMD-0.1.395.zip" length="15845155" type="application/octet-stream" sparkle:edSignature="P1fv/r008Ln0RjxTjK9K18ux33BXYsOfxd/OOfHdsBCkiYN8fEPAXwAxd0oCyMOuBxo9GOc/R8J0Ra7XQGC1BA==" />
         </item>
     </channel>
 </rss>
