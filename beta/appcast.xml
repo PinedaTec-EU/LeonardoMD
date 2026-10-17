@@ -3,25 +3,26 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.1.399</title>
-            <pubDate>Sat, 17 Oct 2026 13:31:47 +0200</pubDate>
+            <title>0.1.402</title>
+            <pubDate>Sat, 17 Oct 2026 14:55:35 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>399</sparkle:version>
-            <sparkle:shortVersionString>0.1.399</sparkle:shortVersionString>
+            <sparkle:version>402</sparkle:version>
+            <sparkle:shortVersionString>0.1.402</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD 0.1.399 Beta
+            <description sparkle:format="markdown"># LeonardoMD 0.1.402 Beta
 
-- Home keeps the existing favorites groups and displays recent documents, projects and workspaces in separate tabs, shortening the list.
-- Leonardo lettering moves above the content, stays visible while scrolling and adapts to smaller canvases. The flying machine moves to the lower background.
+- Leonardo lettering is enlarged and rendered behind the complete Home body.
+- Removed the reserved top band: favorites and recent-item content scroll over the fixed lettering.
+- Favorites and recent-category tabs keep their existing layout and actions.
 
-Source: PR #157, issue #156. Numeric version/build: 0.1.399 / 399. Public beta for Apple silicon (arm64), macOS 14 or later.
+Source: PR #159, issue #158. Numeric version/build: 0.1.402 / 402. Apple silicon (arm64), macOS 14 or later.
 
-Signed with Developer ID and Apple-notarized. Beta subscriptions receive this candidate through Preferences → Updates → Beta. Stable subscriptions remain on stable releases. A beta package starts with a stable subscription unless the user explicitly selects Beta.
+Developer ID signed and Apple-notarized. Select Beta in Preferences → Updates to receive beta candidates. Stable remains the default subscription, including in beta packages.
 
-Hosted update, installation and relaunch acceptance is pending. This publication does not install or replace your current app. Legacy beta installations with the previous signing key require manual installation of the signed/notarized package; preserve existing preferences and document data.
+Hosted update/install/relaunch acceptance remains pending. Publication does not replace an installed application. Legacy beta installations with an older update-signing key require manual installation of the signed/notarized package while preserving preferences and user data.
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.399/LeonardoMD-0.1.399.zip" length="15853302" type="application/octet-stream" sparkle:edSignature="uMWhCxsZ0uWQnijz2Wg5wrqZYtgU/MBGWZpIUJiT/qu3jLJQ/gUNL2Di2p8+J60jJWnEUwsFAgphXhf6XOsYAQ==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.402/LeonardoMD-0.1.402.zip" length="15850676" type="application/octet-stream" sparkle:edSignature="/jWKUuyfa+J1P8J5ZuKgGsVpYXeZWzW+vfVz9mIViQRi3YP/YW6VC4BvFiKaUq4w13Ytk0B1NHIb/CXimcyXDw==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.396</title>
