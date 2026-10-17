@@ -3,26 +3,25 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.1.402</title>
-            <pubDate>Sat, 17 Oct 2026 14:55:35 +0200</pubDate>
+            <title>0.1.404</title>
+            <pubDate>Sat, 17 Oct 2026 16:12:00 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>402</sparkle:version>
-            <sparkle:shortVersionString>0.1.402</sparkle:shortVersionString>
+            <sparkle:version>404</sparkle:version>
+            <sparkle:shortVersionString>0.1.404</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD 0.1.402 Beta
+            <description sparkle:format="markdown">## Fixed
 
-- Leonardo lettering is enlarged and rendered behind the complete Home body.
-- Removed the reserved top band: favorites and recent-item content scroll over the fixed lettering.
-- Favorites and recent-category tabs keep their existing layout and actions.
+- Prevent duplicate recent project and workspace entries when the same folder is opened through URL forms with or without a trailing slash.
+- Remove existing duplicate history when preferences are loaded, while preserving recency order and favorite stars.
 
-Source: PR #159, issue #158. Numeric version/build: 0.1.402 / 402. Apple silicon (arm64), macOS 14 or later.
+## Distribution
 
-Developer ID signed and Apple-notarized. Select Beta in Preferences → Updates to receive beta candidates. Stable remains the default subscription, including in beta packages.
+Signed and notarized macOS arm64 beta. Select Beta in Preferences → Updates to subscribe. This prerelease does not replace the stable channel.
 
-Hosted update/install/relaunch acceptance remains pending. Publication does not replace an installed application. Legacy beta installations with an older update-signing key require manual installation of the signed/notarized package while preserving preferences and user data.
+Hosted update/install/relaunch acceptance remains pending; publication alone does not assert it passed.
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.402/LeonardoMD-0.1.402.zip" length="15850676" type="application/octet-stream" sparkle:edSignature="/jWKUuyfa+J1P8J5ZuKgGsVpYXeZWzW+vfVz9mIViQRi3YP/YW6VC4BvFiKaUq4w13Ytk0B1NHIb/CXimcyXDw==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.404/LeonardoMD-0.1.404.zip" length="15852524" type="application/octet-stream" sparkle:edSignature="SiTGP8CjpoXj29tofW66JaVvRZ37iS0Ir/lHNXfSkUKj/T2zaXtLsBG1/Sp3ERCzy3DlySUQyTZu0zzdAVZkCQ==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.396</title>
