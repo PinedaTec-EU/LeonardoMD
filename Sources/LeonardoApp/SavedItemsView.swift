@@ -3,29 +3,48 @@ import LeonardoCore
 
 struct SavedItemsView: View {
     @Bindable var session: AppSession
+    @State var recentKind: FavoriteItem.Kind = .document
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            collection("Favorites", favorites: true)
+            favorites
             Divider()
-            collection("Recent items", favorites: false)
+            recentItems
         }
         .padding(20)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
         .accessibilityIdentifier("welcome-saved-items")
     }
 
-    private func collection(_ title: String, favorites: Bool) -> some View {
+    private var recentItems: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(L10n.text(title)).font(.title2.weight(.semibold))
+            Text(L10n.text("Recent items")).font(.title2.weight(.semibold))
+            Picker(L10n.text("Recent items"), selection: $recentKind) {
+                ForEach(FavoriteItem.Kind.allCases, id: \.self) { kind in
+                    Text(L10n.text(kind.title)).tag(kind)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .accessibilityIdentifier("welcome-recent-tabs")
+            let urls = session.recentItems(recentKind)
+            if urls.isEmpty {
+                Text(L10n.text("No recent items"))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            ForEach(urls, id: \.self) { url in row(url, kind: recentKind) }
+        }
+    }
+
+    private var favorites: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(L10n.text("Favorites")).font(.title2.weight(.semibold))
             ForEach(FavoriteItem.Kind.allCases, id: \.self) { kind in
-                let urls = favorites
-                    ? session.globalPreferences.favorites.filter { $0.kind == kind }.map(\.url)
-                    : session.recentItems(kind)
+                let urls = session.globalPreferences.favorites.filter { $0.kind == kind }.map(\.url)
                 VStack(alignment: .leading, spacing: 6) {
                     Label(L10n.text(kind.title), systemImage: kind.symbol).font(.headline)
                     if urls.isEmpty {
-                        Text(L10n.text(favorites ? "No favorites yet" : "No recent items"))
+                        Text(L10n.text("No favorites yet"))
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     ForEach(urls, id: \.self) { url in row(url, kind: kind) }
