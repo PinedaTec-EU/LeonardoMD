@@ -3,7 +3,7 @@ import LeonardoCore
 
 struct SavedItemsView: View {
     @Bindable var session: AppSession
-    @State private var recentKind: FavoriteItem.Kind = .document
+    @State var recentKind: FavoriteItem.Kind = .document
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -25,6 +25,7 @@ struct SavedItemsView: View {
                 }
             }
             .pickerStyle(.segmented)
+            .labelsHidden()
             .accessibilityIdentifier("welcome-recent-tabs")
             let urls = session.recentItems(recentKind)
             if urls.isEmpty {

@@ -6,6 +6,19 @@ import LeonardoCore
 
 @MainActor
 final class FavoritesTests: XCTestCase {
+    func testLeonardoLetteringFitsSupportedCanvases() {
+        for size in [CGSize(width: 320, height: 240), CGSize(width: 600, height: 400),
+                     CGSize(width: 600, height: 600), CGSize(width: 1260, height: 687),
+                     CGSize(width: 1600, height: 1000)] {
+            let lettering = WelcomeWatermark.letteringSize(in: size)
+            XCTAssertGreaterThan(lettering.width, 0)
+            XCTAssertEqual(lettering.width / lettering.height, 3, accuracy: 0.001)
+            XCTAssertGreaterThanOrEqual(size.width * 0.40 - lettering.width / 2, 0)
+            XCTAssertLessThanOrEqual(size.width * 0.40 + lettering.width / 2, size.width)
+            XCTAssertLessThanOrEqual(lettering.height + 24, size.height)
+        }
+    }
+
     func testNativeWelcomeCapture() async throws {
         guard let destination = ProcessInfo.processInfo.environment["LEONARDO_FAVORITES_CAPTURE"] else {
             throw XCTSkip("Opt-in native welcome capture")
@@ -34,6 +47,12 @@ final class FavoritesTests: XCTestCase {
             try await NativeViewCaptureSupport.capture(view, size: NSSize(width: 1100, height: 1150),
                 to: directory.appendingPathComponent("welcome-\(locale.rawValue).png"), title: "Leonardo Favorites QA")
         }
+        for kind in FavoriteItem.Kind.allCases {
+            let view = NSHostingView(rootView: SavedItemsView(session: session, recentKind: kind)
+                .padding(20).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
+            try await NativeViewCaptureSupport.capture(view, size: NSSize(width: 760, height: 650),
+                to: directory.appendingPathComponent("recent-\(kind.rawValue)-es.png"), title: "Leonardo Recent Tabs QA")
+        }
         session.toggleFavorite(root.appendingPathComponent("LeonardoMD"), kind: .project)
         let changed = NSHostingView(rootView: SavedItemsView(session: session).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
         try await NativeViewCaptureSupport.capture(changed, size: NSSize(width: 760, height: 850),
@@ -42,6 +61,11 @@ final class FavoritesTests: XCTestCase {
         let narrow = NSHostingView(rootView: WelcomeView(session: session).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
         try await NativeViewCaptureSupport.capture(narrow, size: NSSize(width: 600, height: 600),
             to: directory.appendingPathComponent("welcome-narrow-dark-es.png"), title: "Leonardo Favorites QA")
+        for size in [NSSize(width: 600, height: 400), NSSize(width: 1260, height: 687)] {
+            let view = NSHostingView(rootView: WelcomeView(session: session).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
+            try await NativeViewCaptureSupport.capture(view, size: size,
+                to: directory.appendingPathComponent("welcome-\(Int(size.width))x\(Int(size.height))-es.png"), title: "Leonardo Home QA")
+        }
         await session.settingsTask?.value
     }
 

@@ -4,7 +4,7 @@ Tracking: [#137](https://github.com/PinedaTec-EU/LeonardoMD/issues/137).
 
 File → Favorites toggles the active document, project or workspace; unavailable
 contexts are disabled and checked items are already favorites. The welcome
-screen groups favorites and recent history by type. Stars share the same
+screen groups favorites by type and displays one recent-history category at a time through native segmented tabs. Stars share the same
 membership, including filled stars on recent rows that are already favorites.
 Favorites remain when recent history is cleared or evicted. Missing targets
 stay listed with opening disabled and their star available for removal.
