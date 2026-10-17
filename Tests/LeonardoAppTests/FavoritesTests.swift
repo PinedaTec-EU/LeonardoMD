@@ -45,6 +45,8 @@ final class FavoritesTests: XCTestCase {
         ]
         session.globalPreferences.recentProjectPaths = [root.appendingPathComponent("LeonardoMD"), root.appendingPathComponent("Other project")]
         session.globalPreferences.recentWorkspacePaths = [root.appendingPathComponent("PinedaTec")]
+        session.persistSettings()
+        await session.settingsTask?.value
         let language = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = language }
         let directory = URL(fileURLWithPath: destination, isDirectory: true)
@@ -61,6 +63,15 @@ final class FavoritesTests: XCTestCase {
             try await NativeViewCaptureSupport.capture(view, size: NSSize(width: 760, height: 650),
                 to: directory.appendingPathComponent("recent-\(kind.rawValue)-es.png"), title: "Leonardo Recent Tabs QA")
         }
+        let originalFavorites = session.globalPreferences.favorites
+        session.globalPreferences.favorites += (1...8).map {
+            FavoriteItem(kind: .document, url: root.appendingPathComponent("Notes-\($0).md"))
+        }
+        session.persistSettings()
+        await session.settingsTask?.value
+        let initial = NSHostingView(rootView: WelcomeView(session: session).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
+        try await NativeViewCaptureSupport.capture(initial, size: NSSize(width: 1100, height: 700),
+            to: directory.appendingPathComponent("welcome-before-scroll-es.png"), title: "Leonardo Home Scroll QA")
         let scrolled = NSHostingView(rootView: WelcomeView(session: session).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
         try await NativeViewCaptureSupport.capture(scrolled, size: NSSize(width: 1100, height: 700),
             to: directory.appendingPathComponent("welcome-scrolled-es.png"), title: "Leonardo Home Scroll QA") { view in
@@ -71,15 +82,22 @@ final class FavoritesTests: XCTestCase {
                 let scroll = try XCTUnwrap(findScrollView(view))
                 let document = try XCTUnwrap(scroll.documentView)
                 let offset = min(180, max(0, document.bounds.height - scroll.contentView.bounds.height))
-                XCTAssertGreaterThan(offset, 0, "Fixture must exercise actual scrolling")
+                XCTAssertEqual(offset, 180, "Fixture must scroll far enough for the body to cover the lettering")
                 scroll.contentView.scroll(to: NSPoint(x: 0, y: offset))
                 scroll.reflectScrolledClipView(scroll.contentView)
+                XCTAssertEqual(scroll.contentView.bounds.origin.y, offset, accuracy: 1)
             }
+        session.globalPreferences.favorites = originalFavorites
+        session.persistSettings()
+        await session.settingsTask?.value
         session.toggleFavorite(root.appendingPathComponent("LeonardoMD"), kind: .project)
+        await session.settingsTask?.value
         let changed = NSHostingView(rootView: SavedItemsView(session: session).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
         try await NativeViewCaptureSupport.capture(changed, size: NSSize(width: 760, height: 850),
             to: directory.appendingPathComponent("removed-project-es.png"), title: "Leonardo Favorites QA")
         session.globalPreferences.palette = .graphiteGlass
+        session.persistSettings()
+        await session.settingsTask?.value
         let narrow = NSHostingView(rootView: WelcomeView(session: session).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
         try await NativeViewCaptureSupport.capture(narrow, size: NSSize(width: 600, height: 600),
             to: directory.appendingPathComponent("welcome-narrow-dark-es.png"), title: "Leonardo Favorites QA")

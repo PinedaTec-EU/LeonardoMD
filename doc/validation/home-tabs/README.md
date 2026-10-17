@@ -1,5 +1,7 @@
 # Home recent tabs and background
 
+Historical evidence for beta 0.1.399 / PR #157. Its reserved lettering header is superseded by [#158](https://github.com/PinedaTec-EU/LeonardoMD/issues/158); current layering evidence lives in `../home-background/`.
+
 Tracking: [#156](https://github.com/PinedaTec-EU/LeonardoMD/issues/156). Related visibility bug: [#85](https://github.com/PinedaTec-EU/LeonardoMD/issues/85).
 
 Native NSHostingView captures on macOS, 2026-10-17, with synthetic fixtures. Screen: document-free Home and its saved-items component. No browser/URL applies. `source-hashes.json` identifies the exact source inputs. These are component captures, not packaged-app startup evidence.
