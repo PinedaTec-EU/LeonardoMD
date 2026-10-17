@@ -2,7 +2,28 @@
 <rss xmlns:leonardo="https://pinedatec.eu/xml-namespaces/leonardo" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>LeonardoMD</title>
-        <item leonardo:channel="beta">
+        <item leonardo:channel="stable">
+            <title>0.1.405</title>
+            <pubDate>Sat, 17 Oct 2026 18:11:11 +0200</pubDate>
+            <sparkle:version>405</sparkle:version>
+            <sparkle:shortVersionString>0.1.405</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">## Improvements and fixes
+
+- Home presents recent documents, projects and workspaces in separate tabs alongside persistent favorites.
+- Larger Leonardo lettering sits behind the Home content without reserving a top band, and the background adapts to smaller windows.
+- Recent projects and workspaces no longer appear twice when the same folder is opened through different URL forms. Existing duplicate history is cleaned on load while preserving order and favorite stars.
+
+## Distribution
+
+Stable release for Apple silicon (arm64), macOS 14 or later. Developer ID signed and Apple-notarized, retaining the existing Sparkle update key.
+
+Promotes beta 0.1.404, validated by the owner with confirmation that duplicate entries are resolved. The functional code and dependencies are unchanged; a new higher build is used for stable updates. General updater channel-matrix acceptance remains tracked separately in issues #15 and #84.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.405/LeonardoMD-0.1.405.zip" length="15852531" type="application/octet-stream" sparkle:edSignature="n6Twuj0VZZ29gqeCVkuhsmIwYqG7u22OXSofrlZUnTy2LMKBuuZNieXD6X/UP0iyMKVY5iv/pFXQ5fI4nNb/BQ==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.1.404</title>
             <pubDate>Sat, 17 Oct 2026 16:12:00 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
@@ -22,34 +43,6 @@ Signed and notarized macOS arm64 beta. Select Beta in Preferences → Updates to
 Hosted update/install/relaunch acceptance remains pending; publication alone does not assert it passed.
 </description>
             <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.404/LeonardoMD-0.1.404.zip" length="15852524" type="application/octet-stream" sparkle:edSignature="SiTGP8CjpoXj29tofW66JaVvRZ37iS0Ir/lHNXfSkUKj/T2zaXtLsBG1/Sp3ERCzy3DlySUQyTZu0zzdAVZkCQ==" />
-        </item>
-    <item leonardo:channel="stable">
-            <title>0.1.396</title>
-            <pubDate>Thu, 15 Oct 2026 21:00:41 +0200</pubDate>
-            <sparkle:version>396</sparkle:version>
-            <sparkle:shortVersionString>0.1.396</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">## Changes
-
-- Edit rendered Markdown text directly in Preview, while Edit continues to show the raw source.
-- Newly opened documents start protected. Use the toolbar padlock to enable writing or protect the draft again.
-- Save manually with Command-S; unsaved changes are explicitly marked.
-- Closing tabs, windows or the app offers Save, Discard and Cancel when changes are pending.
-- Preserve pending preview edits across conflict-copy saves, external changes and synchronization.
-- Document metadata now uses its heading color for the border.
-
-## Distribution
-
-Stable promotion of the owner-accepted beta 0.1.395, with unchanged application and dependency source. A higher numeric build lets Sparkle offer this stable package to existing beta installations.
-
-macOS arm64. Developer ID signed, Apple notarized and Sparkle archive signature verified before publication. Updates install only on user action. The combined beta subscription also includes this stable release.
-
-Hosted owner acceptance: https://github.com/PinedaTec-EU/LeonardoMD/issues/15#issuecomment-6199258979
-
-This publication does not install or restart the owner's application. Extended updater acceptance remains tracked in issue #15.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.396/LeonardoMD-0.1.396.zip" length="15845189" type="application/octet-stream" sparkle:edSignature="0UC+XYzmWEUHlyZlxdpcVKofivAkwxYN3oEgTEErlA8lrQFG2XIPgQt7zAUXK/iNrQiSRS7ZZDFIEOf4Gza9Bg==" />
         </item>
     </channel>
 </rss>
