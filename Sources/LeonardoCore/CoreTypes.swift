@@ -221,8 +221,12 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
     public var markdown: MarkdownFeatures
     public var showHiddenFiles: Bool
     public var favorites: [FavoriteItem]
-    public var recentWorkspacePaths: [URL]
-    public var recentProjectPaths: [URL]
+    public var recentWorkspacePaths: [URL] {
+        didSet { recentWorkspacePaths = Self.uniqueRecentPaths(recentWorkspacePaths) }
+    }
+    public var recentProjectPaths: [URL] {
+        didSet { recentProjectPaths = Self.uniqueRecentPaths(recentProjectPaths) }
+    }
     public var mobileSync: MobileSyncPreferences
 
     public init(
@@ -244,8 +248,8 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         self.markdown = markdown
         self.showHiddenFiles = showHiddenFiles
         self.favorites = favorites
-        self.recentWorkspacePaths = recentWorkspacePaths
-        self.recentProjectPaths = recentProjectPaths
+        self.recentWorkspacePaths = Self.uniqueRecentPaths(recentWorkspacePaths)
+        self.recentProjectPaths = Self.uniqueRecentPaths(recentProjectPaths)
         self.mobileSync = mobileSync
     }
 
@@ -277,8 +281,8 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         markdown = try container.decodeIfPresent(MarkdownFeatures.self, forKey: .markdown) ?? MarkdownFeatures()
         showHiddenFiles = try container.decodeIfPresent(Bool.self, forKey: .showHiddenFiles) ?? false
         favorites = try container.decodeIfPresent([FavoriteItem].self, forKey: .favorites) ?? []
-        recentWorkspacePaths = try container.decodeIfPresent([URL].self, forKey: .recentWorkspacePaths) ?? []
-        recentProjectPaths = try container.decodeIfPresent([URL].self, forKey: .recentProjectPaths) ?? []
+        recentWorkspacePaths = Self.uniqueRecentPaths(try container.decodeIfPresent([URL].self, forKey: .recentWorkspacePaths) ?? [])
+        recentProjectPaths = Self.uniqueRecentPaths(try container.decodeIfPresent([URL].self, forKey: .recentProjectPaths) ?? [])
         mobileSync = try container.decodeIfPresent(MobileSyncPreferences.self, forKey: .mobileSync) ?? MobileSyncPreferences()
     }
 }
