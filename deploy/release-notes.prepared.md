@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.402
+
+- #158 Fixed: restore large Leonardo background beneath scrolling Home ([#159](https://github.com/PinedaTec-EU/LeonardoMD/pull/159))
+
+Source: `08b15075af45b22f81d5602d01c41be3e46d3d03`. Delta: `{"build": 3}`.
+
 ## 0.1.399
 
 - #156 Updated: compact Home recents and adapt Leonardo background ([#157](https://github.com/PinedaTec-EU/LeonardoMD/pull/157))
