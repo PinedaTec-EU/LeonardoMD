@@ -2,7 +2,8 @@ import Foundation
 
 extension AppSession {
     func clearRevokedContent() {
-        documentURL = nil; snapshot = nil; content = ""
+        documentURL = nil; documentSourceURL = nil; snapshot = nil; content = ""
+        documentKind = .markdown; documentStorage = .localFile; leonardoFormatWarning = false
         projectURL = nil; workspaceURL = nil; workspaceProjects = []
         rootEntries = []; resetSearch()
         git = nil; gitStatus = nil; gitHistory = []

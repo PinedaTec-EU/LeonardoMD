@@ -81,7 +81,7 @@ struct DocumentTabsView: View {
             }
             Button { documents.select(tab.id) } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: tab.session.isDirty ? "circle.fill" : "doc.text")
+                    Image(systemName: tab.session.isDirty ? "circle.fill" : tab.session.documentStatusIcon)
                     Text(tab.title).lineLimit(1)
                     if tab.session.isDirty { Text(L10n.text("Unsaved")).font(.caption2) }
                 }.frame(minWidth: 100, maxWidth: 200, alignment: .leading)

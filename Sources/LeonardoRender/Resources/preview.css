@@ -289,3 +289,9 @@ body[data-paper-effect="parchment"] {
 .preview-empty { display: block; min-height: 1.5em; }
 [data-leonardo-edit][contenteditable="false"] { display: contents; }
 .preview-empty[contenteditable="false"] { display: block; }
+
+/* Leonardo layout keeps document backgrounds behind content without swallowing input. */
+.markdown-body.leonardo-document { position: relative; isolation: isolate; }
+.leonardo-document-background { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.markdown-body .leonardo-document-background img { margin: 0; max-width: none; display: block; }
+.leonardo-field-value { border-bottom: 1px dotted var(--ld-accent); white-space: pre-wrap; }

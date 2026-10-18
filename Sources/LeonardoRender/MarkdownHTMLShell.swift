@@ -1,4 +1,5 @@
 import Foundation
+import LeonardoCore
 
 enum MarkdownHTMLShell {
     static let resourceScheme = "leonardo-resource"
@@ -50,6 +51,7 @@ enum MarkdownHTMLShell {
           <script id="leonardo-payload" type="application/json">\(encodedPayload)</script>
           <script src="\(resourceURL(.previewEditing))"></script>
           <script src="\(resourceURL(.tableLayout))"></script>
+          <script src="\(resourceURL(.leonardoLayout))"></script>
           <script src="\(resourceURL(.runtime))"></script>
         </body>
         </html>
@@ -62,8 +64,10 @@ enum MarkdownHTMLShell {
         configuration: MarkdownPreviewConfiguration
     ) throws -> String {
         let document = MarkdownDocumentParser.parse(content)
+        let leonardo = configuration.allowsLeonardoFormat ? try LeonardoFormatParser.parse(content) : nil
         let payload = MarkdownRenderPayload(
-            markdown: document.body,
+            markdown: leonardo?.body ?? document.body,
+            leonardo: leonardo?.metadata,
             source: content,
             allowsEditing: configuration.allowsEditing,
             frontMatter: document.frontMatter,
@@ -103,6 +107,7 @@ enum MarkdownHTMLShell {
 
 private struct MarkdownRenderPayload: Encodable {
     let markdown: String
+    let leonardo: LeonardoMetadata?
     let source: String
     let allowsEditing: Bool
     let frontMatter: [String: String]

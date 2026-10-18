@@ -13,6 +13,22 @@ final class AppSession {
     var workspaceProjects: [ProjectDescriptor] = []
     var showWorkspace = false
     var documentURL: URL?
+    /// The logical document format is independent from the bytes currently
+    /// loaded into the editor. For an internally opened `.mdlz`, `documentURL`
+    /// points at the extracted `.mdlf`/`.mdlr` while `documentSourceURL`
+    /// remains the package shown to the user and used by the window chrome.
+    var documentKind: AppDocumentKind = .markdown
+    var documentStorage: AppDocumentStorage = .localFile
+    var documentSourceURL: URL?
+    var leonardoFormatWarning = false
+    var packageOpenPreference: LeonardoPackageOpenPreference {
+        get { LeonardoPackageOpenPreference(rawValue: UserDefaults.standard.string(forKey: LeonardoPackageOpenPreference.defaultsKey) ?? "") ?? .defaultValue }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: LeonardoPackageOpenPreference.defaultsKey) }
+    }
+    var migrateMarkdownOnSave: Bool {
+        get { UserDefaults.standard.object(forKey: "migrateMarkdownOnSave") as? Bool ?? false }
+        set { UserDefaults.standard.set(newValue, forKey: "migrateMarkdownOnSave") }
+    }
     var projectURL: URL?
     private var documentContent = ""
     var content: String {
@@ -59,6 +75,14 @@ final class AppSession {
     var activateExistingDocument: ((URL, Int?) -> Bool)?
     var openDroppedDocuments: (([URL]) async -> Void)?
     var updateWindow: ((String, URL?, Bool) -> Void)?
+    /// Package opening is supplied by the package transport owner. Keeping the
+    /// boundary as a session closure prevents AppSession from knowing whether
+    /// the bytes came from a ZIP implementation, a future document provider,
+    /// or a user-selected extraction directory.
+    var openPackageDocument: @MainActor (URL, LeonardoPackageOpenPreference) async -> Bool = { _, _ in false }
+    /// The format owner supplies the canonical MD -> MDLF migration. The app
+    /// owns the preference and prompt, but never invents a second serializer.
+    var migrateMarkdownDocument: @MainActor () async -> Bool = { false }
     var authorizePath: @MainActor (URL, DesktopPeerPathIntent) async throws -> Void = { url, intent in
         try NativeReconciliationLease.shared.check(url, intent: intent)
         try await DesktopPeerController.shared.authorize(url, intent: intent)
@@ -88,7 +112,13 @@ final class AppSession {
     var stopped = false
     let globalPreferencesURL: URL
     @ObservationIgnored let openSystemURL: @MainActor (URL) -> Void
-    static let readableDocumentExtensions: Set<String> = ["md", "markdown", "txt"]
+    static let readableDocumentExtensions: Set<String> = ["md", "markdown", "txt", "mdlf", "mdlr"]
+    static let packageDocumentExtensions: Set<String> = ["mdlz"]
+    static let supportedDocumentExtensions: Set<String> = readableDocumentExtensions.union(packageDocumentExtensions)
+
+    static func documentKind(for url: URL) -> AppDocumentKind {
+        AppDocumentKind.classify(url)
+    }
 
     init(
         preferencesURL: URL = AppSession.preferencesURL,
@@ -194,12 +224,26 @@ final class AppSession {
             return
         }
         let started = ContinuousClock.now
-        guard Self.readableDocumentExtensions.contains(url.pathExtension.lowercased()) else {
+        let kind = Self.documentKind(for: url)
+        guard Self.supportedDocumentExtensions.contains(url.pathExtension.lowercased()) else {
             openSystemURL(url)
             return
         }
         guard await prepareNavigation() else { return }
         guard !busy, !isClosing, !stopped else { return }
+        if kind == .leonardoPackage {
+            busy = true
+            defer { busy = false }
+            documentSourceURL = url.standardizedFileURL
+            guard await openPackageDocument(url, packageOpenPreference) else {
+                documentSourceURL = nil
+                errorMessage = L10n.text("The Leonardo package could not be opened.")
+                return
+            }
+            documentKind = .leonardoPackage
+            documentStorage = packageOpenPreference == .extracted ? .extracted : .package
+            return
+        }
         busy = true
         defer { busy = false }
         do {
@@ -208,10 +252,14 @@ final class AppSession {
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             isProtected = true
             documentURL = url
+            documentSourceURL = nil
+            documentKind = kind
+            documentStorage = .localFile
+            leonardoFormatWarning = kind == .markdown && Self.containsLeonardoMarkers(loaded.content)
             snapshot = loaded
             content = loaded.content
             editorScroll = 0
-            mode = line == nil ? DocumentMode(rawValue: resolved.defaultMode.rawValue) ?? .preview : .edit
+            mode = line == nil ? kind.defaultMode(global: resolved.defaultMode) : .edit
             requestedLine = line
             externalConflict = false
             saveStatus = "Saved · local file"
@@ -235,6 +283,10 @@ final class AppSession {
         defer { fileOperationCount -= 1 }
         guard await flushPreviewEdits(), !stopped, !isClosing || allowClosing else { return }
         guard !stopped, !isSyncSuspended, !saving, isDirty, let snapshot, let url = documentURL, !externalConflict else { return }
+        if documentKind == .markdown, migrateMarkdownOnSave,
+           await migrateMarkdownDocument() {
+            return
+        }
         saving = true
         saveStatus = "Saving…"
         let draft = content
@@ -351,7 +403,9 @@ final class AppSession {
         } else { errorMessage = String(describing: error) }
         logger.error("operation_failed category=\(String(reflecting: type(of: error)), privacy: .public)")
     }
-    func updateTitle() { updateWindow?(documentURL?.lastPathComponent ?? projectURL?.lastPathComponent ?? "LeonardoMD", documentURL, isDirty) }
+    func updateTitle() {
+        updateWindow?(displayDocumentURL?.lastPathComponent ?? projectURL?.lastPathComponent ?? "LeonardoMD", displayDocumentURL, isDirty)
+    }
 }
 
 extension Color {

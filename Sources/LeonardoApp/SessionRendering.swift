@@ -48,7 +48,11 @@ extension AppSession {
             appearance: MarkdownAppearance(backgroundHex: background, textHex: tokens.text, headingHex: tokens.heading, accentHex: tokens.accent, codeBackgroundHex: tokens.codeBackground, paperEffect: effect),
             localAssetRoot: projectURL
         )
-        configuration.allowsEditing = canEditDocument
+        configuration.allowsLeonardoFormat = documentKind.isLeonardo
+        // Form filling is a separate interaction channel. A protected MDLR
+        // remains writable through its declared fields while source editing
+        // stays locked behind the toolbar padlock.
+        configuration.allowsEditing = canEditDocument && mode != .fill
         return configuration
     }
     func followLink(_ url: URL) async {
@@ -57,7 +61,7 @@ extension AppSession {
             renderer.scroll(to: fragment)
             return
         }
-        if url.isFileURL, Self.readableDocumentExtensions.contains(url.pathExtension.lowercased()) {
+        if url.isFileURL, Self.supportedDocumentExtensions.contains(url.pathExtension.lowercased()) {
             await openDocument(url)
         } else if url.isFileURL || confirmExternalLinks {
             // Document-authored local links always require approval before a

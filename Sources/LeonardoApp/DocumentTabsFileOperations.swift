@@ -41,6 +41,10 @@ extension DocumentTabs {
             }
             if let url = session.documentURL, contains(url, in: source) {
                 session.documentURL = nil
+                session.documentSourceURL = nil
+                session.documentKind = .markdown
+                session.documentStorage = .localFile
+                session.leonardoFormatWarning = false
                 session.snapshot = nil
                 session.content = ""
                 session.requestedLine = nil

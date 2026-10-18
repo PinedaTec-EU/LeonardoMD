@@ -87,15 +87,25 @@ struct WorkspaceView: View {
             } label: { Image(systemName: "folder").padding(8).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.primary.opacity(0.1))).shadow(color: .black.opacity(0.08), radius: 3, y: 2) }.menuStyle(.borderlessButton).frame(width: 38)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(session.documentURL?.lastPathComponent ?? "LeonardoMD").font(.headline).lineLimit(1)
+                Text(session.displayDocumentURL?.lastPathComponent ?? "LeonardoMD").font(.headline).lineLimit(1)
                     if session.isDirty {
                         Label(L10n.text("Unsaved changes"), systemImage: "circle.fill")
                             .font(.caption.weight(.semibold))
                             .accessibilityIdentifier("document-unsaved-changes")
                     }
                 }
-                Text(session.projectURL == nil ? L10n.text("Document viewer") : session.projectURL!.lastPathComponent)
-                    .font(.caption).foregroundStyle(.secondary)
+                HStack(spacing: 5) {
+                    Image(systemName: session.documentStatusIcon)
+                    Text(session.documentFormatLabel)
+                    Text("·")
+                    Image(systemName: session.documentStorageIcon)
+                    Text(session.documentStorageLabel)
+                    if session.projectURL != nil {
+                        Text("·")
+                        Text(session.projectURL!.lastPathComponent)
+                    }
+                }
+                .font(.caption).foregroundStyle(.secondary)
             }
             Spacer(minLength: 8)
             if session.documentURL != nil {
@@ -113,7 +123,7 @@ struct WorkspaceView: View {
                 }
                 .disabled(!session.isDirty || session.saving || session.externalConflict || session.isSyncSuspended)
                 .help(L10n.text("Save (⌘S)"))
-                PremiumSelection(selection: Binding(get: { session.mode }, set: { value in Task { await session.setDocumentMode(value) } }), options: DocumentMode.allCases, title: { $0.title })
+                PremiumSelection(selection: Binding(get: { session.mode }, set: { value in Task { await session.setDocumentMode(value) } }), options: session.availableDocumentModes, title: { $0.title })
                     .accessibilityLabel(L10n.text("Mode"))
                     .accessibilityIdentifier("document-mode")
                 Button { session.focus.toggle() } label: { Image(systemName: session.focus ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right") }
@@ -162,6 +172,20 @@ struct WorkspaceView: View {
                         Button(L10n.text("Save copy…")) { session.saveCopy() }
                     }.padding(12).background(Color.orange.opacity(0.14))
                 }
+                if session.leonardoFormatWarning {
+                    HStack(spacing: 10) {
+                        Label(L10n.text("This Markdown contains Leonardo document markers."), systemImage: "doc.badge.gearshape")
+                        Spacer()
+                        Button(L10n.text("Save as MDLF…")) {
+                            Task {
+                                if await session.migrateMarkdownNow() { session.leonardoFormatWarning = false }
+                            }
+                        }
+                        Button(L10n.text("Dismiss")) { session.leonardoFormatWarning = false }
+                    }
+                    .padding(12)
+                    .background(session.accentColor.opacity(0.12))
+                }
                 switch session.mode {
                 case .preview: session.preview
                 case .edit: editor
@@ -170,6 +194,7 @@ struct WorkspaceView: View {
                         editor.frame(minWidth: 220)
                         session.preview.frame(minWidth: 220)
                     }
+                case .fill: session.preview
                 }
             }
         }
@@ -188,7 +213,9 @@ struct WorkspaceView: View {
             Label(L10n.text(session.saveStatus), systemImage: session.isDirty ? "circle.fill" : "checkmark.circle")
             Spacer()
             Text(session.focus ? L10n.text("Focus") : session.projectURL == nil ? L10n.text("Standalone document") : L10n.text("Project"))
-            Text("Markdown · UTF-8")
+            Label(session.documentFormatLabel, systemImage: session.documentStatusIcon)
+            Label(session.documentStorageLabel, systemImage: session.documentStorageIcon)
+            Text("UTF-8")
             Text(L10n.format("%d words", session.wordCount))
         }.font(.caption).foregroundStyle(.secondary).padding(.horizontal, 18).padding(.vertical, 8)
     }

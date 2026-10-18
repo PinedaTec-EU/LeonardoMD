@@ -58,6 +58,12 @@ struct PreferencesView: View {
                 Text(L10n.text("Interface language applies to all windows."))
                     .font(.caption).foregroundStyle(.secondary)
                 MarkdownAssociationPreferences(associations: associations)
+                Picker(L10n.text("When opening an MDLZ package"), selection: Binding(get: { session.packageOpenPreference }, set: { session.packageOpenPreference = $0 })) {
+                    ForEach(LeonardoPackageOpenPreference.allCases) { preference in
+                        Text(preference.title).tag(preference)
+                    }
+                }
+                Toggle(L10n.text("Migrate Markdown to MDLF when saving"), isOn: Binding(get: { session.migrateMarkdownOnSave }, set: { session.migrateMarkdownOnSave = $0 }))
                 Picker(L10n.text("Palette"), selection: Binding(get: { projectScope ? session.projectConfiguration.palette?.rawValue ?? "inherit" : session.globalPreferences.palette.rawValue }, set: { session.setPalette($0, project: projectScope) })) {
                     if projectScope { Text(L10n.text("Inherit global")).tag("inherit") }
                     ForEach(PaletteCatalog.all) { palette in Text(palette.displayName).tag(palette.id.rawValue) }

@@ -75,6 +75,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         let contentChanged = !hasState || self.content != content
         let baseURLChanged = !hasState || documentURL != baseURL
         let renderOptionsChanged = !hasState
+            || previousConfiguration.allowsLeonardoFormat != configuration.allowsLeonardoFormat
             || previousConfiguration.frontMatter != configuration.frontMatter
             || previousConfiguration.renderDebounce != configuration.renderDebounce
 

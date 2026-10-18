@@ -6,7 +6,14 @@ import LeonardoCore
 extension AppSession {
     func chooseDocument() {
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.plainText, UTType(filenameExtension: "md") ?? .plainText]
+        panel.allowedContentTypes = [.plainText] + AppDocumentKind.allCases.compactMap { kind in
+            switch kind {
+            case .markdown: return nil
+            case .leonardoTemplate: return UTType(filenameExtension: "mdlf")
+            case .leonardoResponse: return UTType(filenameExtension: "mdlr")
+            case .leonardoPackage: return UTType(filenameExtension: "mdlz")
+            }
+        } + [UTType(filenameExtension: "md") ?? .plainText]
         panel.allowsMultipleSelection = false
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
@@ -43,7 +50,8 @@ extension AppSession {
             resetSearch()
             focus = false
             if let documentURL, !documentURL.path.hasPrefix(url.path + "/") {
-                self.documentURL = nil; snapshot = nil; content = ""
+                self.documentURL = nil; documentSourceURL = nil; snapshot = nil; content = ""
+                documentKind = .markdown; documentStorage = .localFile; leonardoFormatWarning = false
             }
             globalPreferences.recentProjectPaths.removeAll { $0 == url }
             globalPreferences.recentProjectPaths.insert(url, at: 0)

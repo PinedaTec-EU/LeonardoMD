@@ -1,0 +1,41 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "leonardo-format",
+  "version": "0.1.0",
+  "description": "Read, validate, fill, edit, extract and repackage open Leonardo Markdown documents (.mdlf, .mdlr and .mdlz).",
+  "author": {
+    "name": "PinedaTec",
+    "url": "https://pinedatec.com"
+  },
+  "homepage": "https://github.com/PinedaTec-EU/LeonardoMD",
+  "repository": "https://github.com/PinedaTec-EU/LeonardoMD",
+  "license": "MIT",
+  "keywords": [
+    "leonardo",
+    "markdown",
+    "mdlf",
+    "mdlr",
+    "mdlz",
+    "forms",
+    "documents"
+  ],
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/leonardo-format/SKILL.md",
+      "interface": {
+        "displayName": "Leonardo Format",
+        "shortDescription": "Work with open Leonardo documents and forms.",
+        "longDescription": "Understand, validate, fill, edit, extract and repackage Markdown-based Leonardo documents and their MDLZ asset bundles.",
+        "developerName": "PinedaTec",
+        "category": "Productivity",
+        "capabilities": ["Read", "Write"],
+        "websiteURL": "https://github.com/PinedaTec-EU/LeonardoMD",
+        "defaultPrompt": [
+          "Read this MDLF document using the Leonardo format specification.",
+          "Validate and safely extract this MDLZ bundle before editing it."
+        ],
+        "brandColor": "#A87832"
+      }
+    }
+  }
+}

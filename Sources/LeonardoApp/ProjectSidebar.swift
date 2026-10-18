@@ -8,7 +8,9 @@ struct NavigationEntry: Identifiable, Hashable {
     var name: String { url.lastPathComponent }
     var symbol: String {
         if isDirectory { return "folder" }
-        if ["md", "markdown"].contains(url.pathExtension.lowercased()) { return "doc.text" }
+        if AppDocumentKind.isSupportedExtension(url.pathExtension) {
+            return AppDocumentKind.classify(url).iconName
+        }
         if ["png", "jpg", "jpeg", "svg", "gif", "webp"].contains(url.pathExtension.lowercased()) { return "photo" }
         return "doc"
     }

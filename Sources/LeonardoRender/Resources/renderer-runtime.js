@@ -356,6 +356,7 @@
       const rendered = window.LeonardoTables.render(payload.markdown || "");
       root.innerHTML = sanitizeHTML(rendered);
       window.LeonardoTables.prepare(root);
+      window.LeonardoLayout?.apply(root, payload);
       installHeadingAnchors();
       root.querySelectorAll("img").forEach((image) => {
         image.loading = "lazy";

@@ -6,7 +6,7 @@ struct DocumentTab: Identifiable {
     let id = UUID()
     let session: AppSession
     var title: String { session.documentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? L10n.text("New tab") }
-    var location: URL? { session.documentURL ?? session.projectURL }
+    var location: URL? { session.displayDocumentURL ?? session.projectURL }
 }
 
 /// Each tab owns the existing editor session, including async saves and project operations.
@@ -83,7 +83,7 @@ final class DocumentTabs {
 
     func activateDocument(_ url: URL, line: Int? = nil) -> Bool {
         guard !closing, let tab = tabs.first(where: {
-            $0.session.documentURL?.standardizedFileURL.resolvingSymlinksInPath() == url.standardizedFileURL.resolvingSymlinksInPath()
+            $0.session.displayDocumentURL?.standardizedFileURL.resolvingSymlinksInPath() == url.standardizedFileURL.resolvingSymlinksInPath()
         }) else { return false }
         select(tab.id)
         if let line {
@@ -94,7 +94,7 @@ final class DocumentTabs {
 
     static func acceptsDrop(_ urls: [URL]) -> Bool {
         !urls.isEmpty && urls.allSatisfy { url in
-            guard url.isFileURL, ["md", "markdown"].contains(url.pathExtension.lowercased()) else { return false }
+            guard url.isFileURL, AppDocumentKind.isSupportedExtension(url.pathExtension) else { return false }
             var directory: ObjCBool = false
             return FileManager.default.fileExists(atPath: url.path, isDirectory: &directory) && !directory.boolValue
         }
@@ -213,6 +213,6 @@ final class DocumentTabs {
     }
     func updateTitle() {
         let session = activeSession
-        updateWindow?(session.documentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? "LeonardoMD", session.documentURL, tabs.contains { $0.session.isDirty })
+        updateWindow?(session.displayDocumentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? "LeonardoMD", session.displayDocumentURL, tabs.contains { $0.session.isDirty })
     }
 }
