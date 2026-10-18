@@ -128,3 +128,9 @@ Local cleanup of 33 old registrations is recorded in
 running installed app were preserved. Rediscovery can register old copies again.
 
 - [#137](https://github.com/PinedaTec-EU/LeonardoMD/issues/137): typed favorites live in global preferences independently of recents. Membership merges preserve independent window changes; `SessionFavorites` shares actions between native `FavoritesMenu` and the scrollable `WelcomeView` / `SavedItemsView`. See [behavior and validation](../doc/validation/favorites/README.md).
+
+## 2026-10-18 — Compilation count adapter
+
+The shared compilation-count skill and `.skills/compilation-count.json` select
+command eligibility and the existing counter/recorder. Historical allocations
+and delivery-only identifiers are preserved. Tracking: [#163](https://github.com/PinedaTec-EU/LeonardoMD/issues/163).
