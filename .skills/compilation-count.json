@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "mode": "delegate",
+  "commands": [
+    [
+      "swift",
+      "build"
+    ],
+    [
+      "swift",
+      "test"
+    ],
+    [
+      "swift",
+      "run"
+    ]
+  ],
+  "segment": "build",
+  "recorder": "scripts/compile-and-record.py",
+  "notes": "Use the existing Swift recorder with --pr-number; do not double-count through the shared wrapper."
+}

@@ -10,6 +10,8 @@ Load only the adapter relevant to the current task; do not read every skill by d
 
 - [ai-context-layer](ai-context-layer/SKILL.md) — global; always. Use in every managed repository so agents maintain the local .wiki context layer.
   - Canonical source: [SKILL.md](../../ai-skills-shared/.shared-skills/skills/ai-context-layer/SKILL.md)
+- [compilation-count](compilation-count/SKILL.md) — global; always. Before compiler-bearing commands, record successful invocations with the consumer adapter; preserve existing version shapes and delivery-only counters.
+  - Canonical source: [SKILL.md](../../ai-skills-shared/.shared-skills/skills/compilation-count/SKILL.md)
 - [engineering-guardrails](engineering-guardrails/SKILL.md) — global; always. Use for production code, scripts, adapters, and entrypoints to prevent structural debt.
   - Canonical source: [SKILL.md](../../ai-skills-shared/.shared-skills/skills/engineering-guardrails/SKILL.md)
 - [git-sync-before-edit](git-sync-before-edit/SKILL.md) — global; always. Use before edits in every Git repository and during long editing sessions.
