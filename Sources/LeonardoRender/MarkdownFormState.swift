@@ -13,15 +13,7 @@ struct MarkdownFormState {
               let data = try? JSONSerialization.data(withJSONObject: values),
               let changes = try? JSONDecoder().decode([String: LeonardoJSONValue].self, from: data),
               let document = try? LeonardoFormatParser.parse(content), document.isForm else { return nil }
-        for (fieldID, value) in changes {
-            guard let field = document.metadata.fields[fieldID], !field.readOnly else { return nil }
-            switch (field.type, value) {
-            case (.checkbox, .boolean), (.number, .number), (.number, .null): break
-            case (.checkbox, _): return nil
-            case (_, .string): break
-            default: return nil
-            }
-        }
+        guard document.applyingFormValues(changes) != nil else { return nil }
         // A second flush (for example during tab close) must be a no-op
         // after the same values were already acknowledged by the session.
         return changes.filter { document.metadata.values[$0.key] != $0.value }

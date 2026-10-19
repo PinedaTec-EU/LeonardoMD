@@ -2,6 +2,7 @@
 import AppKit
 import SwiftUI
 import WebKit
+import PDFKit
 import XCTest
 import LeonardoCore
 @testable import LeonardoApp
@@ -75,6 +76,10 @@ final class InlineFormTests: XCTestCase {
         XCTAssertEqual(session.content, before)
         let pdf = try await session.renderer.exportPDF()
         XCTAssertTrue(pdf.starts(with: Data("%PDF-".utf8)))
+        let pdfText = try XCTUnwrap(PDFDocument(data: pdf)?.string)
+        XCTAssertTrue(pdfText.contains("SOL-024"))
+        XCTAssertTrue(pdfText.contains("invalid"))
+        XCTAssertFalse(pdfText.contains("Solo lectura"), "PDF must omit the generated read-only badge")
         let interactiveAgain = try await web.evaluateJavaScript("!document.querySelector('main').classList.contains('leonardo-form-export')") as? Bool
         XCTAssertEqual(interactiveAgain, true)
         if let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
@@ -111,6 +116,11 @@ final class InlineFormTests: XCTestCase {
             let image = try await web.takeSnapshot(configuration: nil)
             let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
             try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: destination.appendingPathComponent("document-\(name).png"))
+            _ = try await web.evaluateJavaScript("document.querySelector('[data-field=\"copy\"]').scrollIntoView({block:'center'})")
+            let lower = try await web.takeSnapshot(configuration: nil)
+            let lowerBitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(lower.tiffRepresentation)))
+            try XCTUnwrap(lowerBitmap.representation(using: .png, properties: [:])).write(to: destination.appendingPathComponent("document-lower-\(name).png"))
+            _ = try await web.evaluateJavaScript("window.scrollTo(0, 0)")
             for field in ["email", "reference"] {
                 session.showLeonardoFieldHelp(field)
                 let panel = NSHostingView(rootView: LeonardoFieldHelp(session: session).modifier(SessionAppearance(session: session)))

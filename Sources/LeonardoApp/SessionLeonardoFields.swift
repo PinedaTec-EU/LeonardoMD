@@ -52,13 +52,13 @@ extension AppSession {
         } else {
             value = .string(text)
         }
-        return updateLeonardoField(fieldID, value: value, definition: definition)
+        return updateLeonardoField(fieldID, value: value)
     }
 
     @discardableResult
     func updateLeonardoCheckbox(_ fieldID: String, value: Bool) -> Bool {
         guard let definition = leonardoFieldDefinition(fieldID), definition.type == .checkbox else { return false }
-        return updateLeonardoField(fieldID, value: .boolean(value), definition: definition)
+        return updateLeonardoField(fieldID, value: .boolean(value))
     }
 
     var canFillLeonardoForm: Bool {
@@ -76,17 +76,8 @@ extension AppSession {
     /// All form entry points share authorization; the source padlock is independent.
     func updateLeonardoFields(expected: String, changes: [String: LeonardoJSONValue]) -> String? {
         guard canFillLeonardoForm, content == expected,
-              var document = leonardoDocument, document.isForm else { return nil }
-        for (fieldID, value) in changes {
-            guard let definition = document.metadata.fields[fieldID], !definition.readOnly else { return nil }
-            switch (definition.type, value) {
-            case (.checkbox, .boolean), (.number, .number), (.number, .null): break
-            case (.checkbox, _): return nil
-            case (_, .string): break // Invalid draft answers remain saveable.
-            default: return nil
-            }
-        }
-        for (fieldID, value) in changes { document.metadata.values[fieldID] = value }
+              let current = leonardoDocument,
+              let document = current.applyingFormValues(changes) else { return nil }
         guard let replacement = try? LeonardoFormatParser.serialize(document) else { return nil }
         if replacement != content {
             content = replacement
@@ -97,8 +88,7 @@ extension AppSession {
 
     private func updateLeonardoField(
         _ fieldID: String,
-        value: LeonardoJSONValue,
-        definition: LeonardoFieldDefinition
+        value: LeonardoJSONValue
     ) -> Bool {
         updateLeonardoFields(expected: content, changes: [fieldID: value]) != nil
     }
