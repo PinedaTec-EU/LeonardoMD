@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.464
+
+- #198 Added: checkbox and switch form appearances ([#199](https://github.com/PinedaTec-EU/LeonardoMD/pull/199))
+
+Source: `e098a85483aed9da0e6c1ec3e85af12deda9c69a`. Delta: `{"build": 3}`.
+
 ## 0.1.461
 
 - #191 Fixed: preserve Markdown metadata during MDLF migration ([#192](https://github.com/PinedaTec-EU/LeonardoMD/pull/192))
