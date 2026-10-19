@@ -1,0 +1,4 @@
+Head: 818dece493dc119906c281ab312fda0c71d599d4
+Surface: real native WorkspaceView / WKWebView (1440x1024 points window), integrated selected field-help sidebar in light theme; separate help panels in both themes
+Fixture: synthetic form showcase; all types, repeated text, invalid email draft, switch on; editable and read-only help
+Limits: hosted XCTest component validation, no fresh packaged process claim; owner’s running app untouched
