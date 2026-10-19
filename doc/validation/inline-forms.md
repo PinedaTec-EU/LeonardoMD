@@ -15,7 +15,8 @@ using the repository compilation recorder for the source PR. The native test
 hosts real `WorkspaceView` and WKWebView against the self-contained
 `doc/format/examples/form-showcase/service-request.mdlr` fixture. It checks rapid
 Unicode/IME input, repeated fields, immediate manual save, read-only rejection,
-atomic batch validation, checkbox/switch persistence, contextual help, reopening,
+atomic batch validation, delayed callbacks across byte-identical files,
+checkbox/switch persistence, contextual help, reopening,
 Preview mode and clean PDF values. The bridge regressions reject stale sources,
 unknown fields, wrong types and read-only changes. Existing package session tests
 cover the shared guarded form updates through MDLZ save/reopen.

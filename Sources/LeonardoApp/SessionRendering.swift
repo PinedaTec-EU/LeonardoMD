@@ -5,13 +5,19 @@ import LeonardoRender
 
 extension AppSession {
     var preview: some View {
+        let previewDocumentURL = documentURL
         renderer.onEdit = { [weak self] expected, replacement in
-            self?.editDocument(expected: expected, replacement: replacement) ?? false
+            guard let self, self.documentURL == previewDocumentURL else { return false }
+            return self.editDocument(expected: expected, replacement: replacement)
         }
         renderer.onFormEdit = { [weak self] expected, changes in
-            self?.updateLeonardoFields(expected: expected, changes: changes)
+            guard let self, self.documentURL == previewDocumentURL else { return nil }
+            return self.updateLeonardoFields(expected: expected, changes: changes)
         }
-        renderer.onFieldHelp = { [weak self] fieldID in self?.showLeonardoFieldHelp(fieldID) }
+        renderer.onFieldHelp = { [weak self] fieldID in
+            guard let self, self.documentURL == previewDocumentURL else { return }
+            self.showLeonardoFieldHelp(fieldID)
+        }
         return MarkdownPreview(
             content: content,
             baseURL: documentURL?.deletingLastPathComponent(),
@@ -23,6 +29,7 @@ extension AppSession {
             },
             onTagActivation: { self.search(tag: $0) }
         )
+        .id(documentURL)
         .onChange(of: editorScroll) { _, fraction in
             if self.mode == .split { self.renderer.scroll(toFraction: fraction) }
         }

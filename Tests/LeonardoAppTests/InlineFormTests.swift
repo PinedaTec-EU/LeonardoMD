@@ -98,6 +98,24 @@ final class InlineFormTests: XCTestCase {
         await session.openDocument(url)
         XCTAssertEqual(session.leonardoFieldText("name"), "Ada 漢字")
         XCTAssertEqual(session.leonardoFieldBool("notifications"), true)
+        // A callback retained by the previous view cannot write to another
+        // file even when the full source bytes happen to be identical.
+        _ = try await webView(in: host)
+        for _ in 0..<100 {
+            if session.renderer.isReady { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let staleEdit = try XCTUnwrap(session.renderer.onFormEdit)
+        let staleHelp = try XCTUnwrap(session.renderer.onFieldHelp)
+        let other = directory.appendingPathComponent("identical-response.mdlr")
+        try FileManager.default.copyItem(at: url, to: other)
+        await session.openDocument(other)
+        let unchanged = session.content
+        XCTAssertNil(staleEdit(unchanged, ["name": .string("Wrong document")]))
+        XCTAssertEqual(session.content, unchanged)
+        session.showInspector = false
+        staleHelp("email")
+        XCTAssertFalse(session.showInspector)
     }
 
     private func capture(web: WKWebView, session: AppSession, output: String, pdf: Data) async throws {
