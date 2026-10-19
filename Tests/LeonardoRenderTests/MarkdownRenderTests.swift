@@ -6,6 +6,23 @@ import LeonardoCore
 
 struct MarkdownRenderTests {
     @Test
+    func nativeMDLFMetadataUsesTitleAndDoesNotLeakToStandardMarkdown() throws {
+        let source = try LeonardoFormatParser.serialize(LeonardoDocument(
+            body: "# Body", metadata: LeonardoMetadata(document: LeonardoDocumentDescriptor(title: "Native document"))
+        ))
+        var configuration = MarkdownPreviewConfiguration(frontMatter: .metadata)
+        configuration.allowsLeonardoFormat = true
+        let json = try MarkdownHTMLShell.payloadJSON(content: source, baseURL: nil, configuration: configuration)
+        let payload = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+        #expect(payload["frontMatter"] as? [String: String] == ["title": "Native document"])
+        configuration.allowsLeonardoFormat = false
+        let standard = try MarkdownHTMLShell.payloadJSON(content: "---\ntitle: Plain\n---\n# Plain", baseURL: nil, configuration: configuration)
+        let plain = try #require(JSONSerialization.jsonObject(with: Data(standard.utf8)) as? [String: Any])
+        #expect(plain["frontMatter"] as? [String: String] == ["title": "Plain"])
+        #expect(plain["markdown"] as? String == "# Plain")
+    }
+
+    @Test
     func migratedPreviewUsesAuthorMetadataAndNeverJSONEnvelopeProperties() throws {
         let original = "---\ntitle: Article\nauthor: José\ntags: [Swift, docs]\n---\n# Edited body\n"
         let document = LeonardoMarkdownMigration.convert(original, fallbackTitle: "filename")

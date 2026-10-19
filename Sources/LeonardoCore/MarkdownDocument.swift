@@ -21,24 +21,22 @@ public enum MarkdownDocumentParser {
         guard let parts = splitFrontMatter(normalized) else {
             return MarkdownDocument(body: normalized)
         }
-        let lines = parts.header.split(separator: "\n", omittingEmptySubsequences: false)
-        guard let closing = lines.dropFirst().firstIndex(where: { $0 == Substring(delimiter) || $0 == Substring(alternateDelimiter) }) else {
-            return MarkdownDocument(body: normalized)
-        }
-        let metadataLines = lines[1..<closing]
+        let metadataLines = parts.metadata.split(separator: "\n", omittingEmptySubsequences: false)[...]
         return MarkdownDocument(body: parts.body, frontMatter: parseMetadata(metadataLines), tags: FrontMatterTags.parse(metadataLines.map(String.init)))
     }
 
     /// Separates the envelope without normalizing the author's bytes.
-    static func splitFrontMatter(_ source: String) -> (header: String, body: String)? {
-        let lines = source.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
+    static func splitFrontMatter(_ source: String) -> (header: String, metadata: String, body: String)? {
+        let lines = source.split(omittingEmptySubsequences: false, whereSeparator: { $0 == "\n" || $0 == "\r\n" })
         guard lines.first == Substring(delimiter),
               let closing = lines.dropFirst().firstIndex(where: {
                   $0 == Substring(delimiter) || $0 == Substring(alternateDelimiter)
               }) else { return nil }
         let end = lines[closing].endIndex
         let bodyStart = end == source.endIndex ? end : source.index(after: end)
-        return (String(source[..<bodyStart]), String(source[bodyStart...]))
+        let metadataStart = source.index(after: lines[0].endIndex)
+        let metadata = String(source[metadataStart..<lines[closing].startIndex])
+        return (String(source[..<bodyStart]), metadata, String(source[bodyStart...]))
     }
 
     private static func parseMetadata(_ lines: ArraySlice<Substring>) -> [String: String] {
