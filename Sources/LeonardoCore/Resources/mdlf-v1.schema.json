@@ -46,6 +46,7 @@
       "required": ["type"],
       "properties": {
         "type": { "enum": ["text", "multiline", "number", "date", "checkbox", "select", "email", "url"] },
+        "appearance": { "enum": ["checkbox", "switch"] },
         "label": { "type": "string" },
         "required": { "type": "boolean" },
         "readOnly": { "type": "boolean" },

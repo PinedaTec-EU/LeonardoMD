@@ -147,8 +147,17 @@ public enum LeonardoJSONValue: Codable, Equatable, Sendable {
     }
 }
 
+/// Presentation of a boolean form field; the stored answer remains a boolean.
+public enum LeonardoFieldAppearance: String, Codable, CaseIterable, Sendable {
+    case checkbox
+    case `switch`
+}
+
 public struct LeonardoFieldDefinition: Codable, Equatable, Sendable {
     public var type: LeonardoFieldType
+    public var appearance: LeonardoFieldAppearance?
+
+    public var resolvedAppearance: LeonardoFieldAppearance { appearance ?? .checkbox }
     public var label: String?
     public var required: Bool
     public var readOnly: Bool
@@ -166,6 +175,7 @@ public struct LeonardoFieldDefinition: Codable, Equatable, Sendable {
 
     public init(
         type: LeonardoFieldType = .text,
+        appearance: LeonardoFieldAppearance? = nil,
         label: String? = nil,
         required: Bool = false,
         readOnly: Bool = false,
@@ -181,6 +191,7 @@ public struct LeonardoFieldDefinition: Codable, Equatable, Sendable {
         defaultValue: LeonardoJSONValue? = nil
     ) {
         self.type = type
+        self.appearance = appearance
         self.label = label
         self.required = required
         self.readOnly = readOnly
@@ -197,13 +208,14 @@ public struct LeonardoFieldDefinition: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case type, label, required, readOnly, minLength, maxLength, pattern
+        case type, appearance, label, required, readOnly, minLength, maxLength, pattern
         case minimum, maximum, options, placeholder, helpText, validationMessage, defaultValue
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         type = try container.decodeIfPresent(LeonardoFieldType.self, forKey: .type) ?? .text
+        appearance = try container.decodeIfPresent(LeonardoFieldAppearance.self, forKey: .appearance)
         label = try container.decodeIfPresent(String.self, forKey: .label)
         required = try container.decodeIfPresent(Bool.self, forKey: .required) ?? false
         readOnly = try container.decodeIfPresent(Bool.self, forKey: .readOnly) ?? false

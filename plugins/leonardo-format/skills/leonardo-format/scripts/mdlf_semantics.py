@@ -170,6 +170,8 @@ def _validate_opacity(value: object, path: str) -> None:
 def _validate_field(definition: object, path: str) -> None:
     if not isinstance(definition, dict):
         return
+    if "appearance" in definition and definition.get("type") != "checkbox":
+        _fail(f"{path}.appearance", "appearance is only supported for checkbox fields")
     minimum_length = definition.get("minLength")
     maximum_length = definition.get("maxLength")
     if isinstance(minimum_length, int) and isinstance(maximum_length, int) and minimum_length > maximum_length:

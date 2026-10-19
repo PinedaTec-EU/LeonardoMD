@@ -259,6 +259,9 @@ public enum LeonardoFormatValidator {
                     diagnostics.append(LeonardoDiagnostic(severity: .error, code: "field.pattern", message: "The validation expression is not a valid regular expression.", fieldID: fieldID))
                 }
             }
+            if definition.appearance != nil && definition.type != .checkbox {
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "field.appearance", message: "Appearance is only supported for checkbox fields.", fieldID: fieldID))
+            }
             validateOptions(definition, fieldID: fieldID, into: &diagnostics)
             let value = metadata.values[fieldID] ?? definition.defaultValue
             if value == nil || value?.isNullOrEmpty == true {

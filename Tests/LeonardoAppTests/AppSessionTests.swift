@@ -278,6 +278,35 @@ final class AppSessionTests: XCTestCase {
         XCTAssertTrue(session.leonardoFormatWarning)
     }
 
+    func testCheckboxAppearancesPreserveFillGuardsAndManualSaving() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        for appearance: LeonardoFieldAppearance? in [nil, .checkbox, .switch] {
+            let response = root.appendingPathComponent("controls.mdlr")
+            let document = LeonardoDocument(body: "{{field:enabled}}", metadata: LeonardoMetadata(
+                document: LeonardoDocumentDescriptor(kind: .form),
+                fields: [
+                    "enabled": LeonardoFieldDefinition(type: .checkbox, appearance: appearance),
+                    "locked": LeonardoFieldDefinition(type: .checkbox, appearance: appearance, readOnly: true)
+                ], values: ["enabled": .boolean(false), "locked": .boolean(false)]))
+            let original = try LeonardoFormatParser.serialize(document)
+            try original.write(to: response, atomically: true, encoding: .utf8)
+            await session.open(response)
+            XCTAssertEqual(session.mode, .fill)
+            XCTAssertTrue(session.updateLeonardoCheckbox("enabled", value: true))
+            XCTAssertFalse(session.updateLeonardoCheckbox("locked", value: true))
+            XCTAssertTrue(session.leonardoFieldBool("enabled"))
+            XCTAssertTrue(session.isDirty)
+            XCTAssertEqual(try String(contentsOf: response, encoding: .utf8), original)
+            await session.save()
+            let saved = try LeonardoFormatParser.parse(String(contentsOf: response, encoding: .utf8))
+            XCTAssertEqual(saved.metadata.fields["enabled"]?.appearance, appearance)
+            XCTAssertEqual(saved.metadata.values["enabled"], .boolean(true))
+            await session.setDocumentMode(.preview)
+            XCTAssertFalse(session.updateLeonardoCheckbox("enabled", value: false))
+        }
+    }
+
     func testProtectedResponseCanUpdateDeclaredFieldThroughFillMode() async throws {
         let (root, session) = try fixture()
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }

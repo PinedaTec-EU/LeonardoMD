@@ -10,6 +10,46 @@ import LeonardoCore
 /// are exercised together with the native form panel.
 @MainActor
 final class LeonardoFormatVisualTests: XCTestCase {
+    func testCaptureBooleanFieldAppearances() async throws {
+        guard let evidencePath = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] else {
+            throw XCTSkip("Set LEONARDO_VISUAL_EVIDENCE to export boolean field captures")
+        }
+        let destination = URL(fileURLWithPath: evidencePath, isDirectory: true)
+            .appendingPathComponent("form-appearance", isDirectory: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let fixture = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: fixture, withIntermediateDirectories: true)
+        let session = AppSession(preferencesURL: fixture.appendingPathComponent("preferences.json"))
+        defer { session.stop(); try? FileManager.default.removeItem(at: fixture) }
+        let document = LeonardoDocument(body: "# Controls", metadata: LeonardoMetadata(
+            document: LeonardoDocumentDescriptor(kind: .form), fields: [
+                "a": LeonardoFieldDefinition(type: .checkbox, label: "Default checkbox"),
+                "b": LeonardoFieldDefinition(type: .checkbox, appearance: .checkbox, label: "Explicit checkbox"),
+                "c": LeonardoFieldDefinition(type: .checkbox, appearance: .switch, label: "Switch"),
+                "d": LeonardoFieldDefinition(type: .checkbox, appearance: .switch, label: "Read-only switch", readOnly: true)
+            ]))
+        let url = fixture.appendingPathComponent("controls.mdlr")
+        try LeonardoFormatParser.serialize(document).write(to: url, atomically: true, encoding: .utf8)
+        await session.open(url)
+        for on in [false, true] {
+            await session.setDocumentMode(.fill)
+            for field in ["a", "b", "c"] { XCTAssertTrue(session.updateLeonardoCheckbox(field, value: on)) }
+            for mode: DocumentMode in [.fill, .preview] {
+                await session.setDocumentMode(mode)
+                for scheme: ColorScheme in [.light, .dark] {
+                    let view = NSHostingView(rootView: DocumentInspector(session: session)
+                        .preferredColorScheme(scheme))
+                    let name = "controls-\(on ? "on" : "off")-\(mode == .fill ? "fill" : "preview")-\(scheme == .light ? "light" : "dark").png"
+                    try await NativeViewCaptureSupport.capture(view, size: NSSize(width: 320, height: 500),
+                        to: destination.appendingPathComponent(name), title: "Form Appearance QA")
+                }
+            }
+        }
+        let sha = ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local-working-tree"
+        try "Head: \(sha)\nSurface: native DocumentInspector, NSHostingView, 320x500 points\nStates: default checkbox, explicit checkbox, switch, read-only switch; on/off, fill/preview, light/dark\nFixture: synthetic boolean form; no fresh packaged startup claim\n".write(
+            to: destination.appendingPathComponent("provenance.txt"), atomically: true, encoding: .utf8)
+    }
+
     func testCaptureLeonardoChromeFillPackageAndExtractedStates() async throws {
         guard let evidencePath = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] else {
             throw XCTSkip("Set LEONARDO_VISUAL_EVIDENCE to export Leonardo native captures")
@@ -30,9 +70,13 @@ final class LeonardoFormatVisualTests: XCTestCase {
             metadata: LeonardoMetadata(
                 document: LeonardoDocumentDescriptor(title: "Request", kind: .form),
                 fields: [
+                    "checkbox": LeonardoFieldDefinition(type: .checkbox, appearance: .checkbox, label: "Checkbox"),
+                    "default": LeonardoFieldDefinition(type: .checkbox, label: "Default checkbox"),
+                    "switch": LeonardoFieldDefinition(type: .checkbox, appearance: .switch, label: "Switch"),
                     "name": LeonardoFieldDefinition(label: "Name", required: true, placeholder: "Your name"),
                     "details": LeonardoFieldDefinition(type: .multiline, label: "Details", helpText: "Add context for the owner.")
-                ]
+                ],
+                values: ["checkbox": .boolean(true), "default": .boolean(false), "switch": .boolean(true)]
             )
         )
         let source = try LeonardoFormatParser.serialize(document)
@@ -111,7 +155,7 @@ final class LeonardoFormatVisualTests: XCTestCase {
             try await capture(session: session, state: "mdlz-extracted-fill", language: language, destination: destination)
         }
 
-        try "Surface: WorkspaceView with the native Leonardo form inspector\nStates: local MDLF initial preview/fill, MDLR initial fill, MDLZ initial preview, MDLZ package fill workspace, explicitly extracted MDLZ workspace; General preferences with all three package choices and migration off/on/off on the same hosting view at 580x620\nView size: 1260x850 points\nLanguages: en, es\nFixture: synthetic form with text and multiline fields; package transport creates the MDLZ\nLimit: opt-in NSHostingView bitmap evidence, no claim about a fresh packaged process\n".write(
+        try "Surface: WorkspaceView with the native Leonardo form inspector\nStates: local MDLF initial preview/fill, MDLR initial fill, MDLZ initial preview, MDLZ package fill workspace, explicitly extracted MDLZ workspace; General preferences with all three package choices and migration off/on/off on the same hosting view at 580x620\nView size: 1260x850 points\nLanguages: en, es\nFixture: synthetic form with text, multiline, explicit/default checkbox and switch fields; package transport creates the MDLZ\nLimit: opt-in NSHostingView bitmap evidence, no claim about a fresh packaged process\n".write(
             to: destination.appendingPathComponent("capture-context.txt"), atomically: true, encoding: .utf8)
     }
 
