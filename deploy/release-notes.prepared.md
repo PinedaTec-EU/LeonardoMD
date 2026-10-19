@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.407
+
+- #173 Fixed: keep preference scope inside its tab ([#174](https://github.com/PinedaTec-EU/LeonardoMD/pull/174))
+
+Source: `37ac8fe0ed61318611a1c7bf4ccfaea7245e22a7`. Delta: `{"build": 2}`.
+
 ## 0.1.405
 
 - #15 Updated: promote validated beta 0.1.404 to stable ([#162](https://github.com/PinedaTec-EU/LeonardoMD/pull/162))
