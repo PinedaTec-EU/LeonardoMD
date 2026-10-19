@@ -247,9 +247,6 @@ final class AppSession {
                 // The package adapter returns false for both cancellation and
                 // a reported transport error. Do not turn a cancelled panel
                 // into a new alert; the adapter has already reported errors.
-                if errorMessage == nil {
-                    errorMessage = L10n.text("The Leonardo package could not be opened.")
-                }
                 return
             }
             if let previousPackageWorkspace {

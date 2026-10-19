@@ -204,6 +204,26 @@ final class AppSessionTests: XCTestCase {
         XCTAssertEqual(session.headings.map(\.line), [1, 6])
     }
 
+    func testCancelledPackageOpenPreservesDocumentWithoutInventingAnError() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let document = root.appendingPathComponent("current.md")
+        try "Current document".write(to: document, atomically: true, encoding: .utf8)
+        await session.open(document)
+        session.openPackageDocument = { _, _ in false }
+        await session.open(root.appendingPathComponent("cancelled.mdlz"))
+        XCTAssertNil(session.errorMessage)
+        XCTAssertEqual(session.documentURL, document)
+        XCTAssertEqual(session.content, "Current document")
+        session.openPackageDocument = { [weak session] _, _ in
+            session?.errorMessage = "Specific transport error"
+            return false
+        }
+        await session.open(root.appendingPathComponent("failed.mdlz"))
+        XCTAssertEqual(session.errorMessage, "Specific transport error")
+        XCTAssertEqual(session.documentURL, document)
+    }
+
     func testMarkdownWarningOnlyRecognizesAnExplicitLeonardoHeader() async throws {
         let (root, session) = try fixture()
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }
