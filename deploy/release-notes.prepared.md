@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.435
+
+- #167 Added: open Leonardo documents, forms and agent plugins ([#168](https://github.com/PinedaTec-EU/LeonardoMD/pull/168))
+
+Source: `11f699c64f9bba03789871d08db5782e005c038b`. Delta: `{"build": 28}`.
+
 ## 0.1.407
 
 - #173 Fixed: keep preference scope inside its tab ([#174](https://github.com/PinedaTec-EU/LeonardoMD/pull/174))
