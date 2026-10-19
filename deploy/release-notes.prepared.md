@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.437
+
+- #185 Added: preferences gear beside new tab ([#186](https://github.com/PinedaTec-EU/LeonardoMD/pull/186))
+
+Source: `c1b2f894fcb0fbec87da682f2a9ca53ad5dbe53a`. Delta: `{"build": 2}`.
+
 ## 0.1.435
 
 - #167 Added: open Leonardo documents, forms and agent plugins ([#168](https://github.com/PinedaTec-EU/LeonardoMD/pull/168))
