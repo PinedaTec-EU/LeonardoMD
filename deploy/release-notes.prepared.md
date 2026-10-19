@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.461
+
+- #191 Fixed: preserve Markdown metadata during MDLF migration ([#192](https://github.com/PinedaTec-EU/LeonardoMD/pull/192))
+
+Source: `78b37c0b83b3299ea7c29b54b2434b1c657fba38`. Delta: `{"build": 6}`.
+
 ## 0.1.455
 
 - #196 Fixed: keep MDLF JSON metadata out of invoice preview ([#197](https://github.com/PinedaTec-EU/LeonardoMD/pull/197))
