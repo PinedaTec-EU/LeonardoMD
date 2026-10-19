@@ -7,10 +7,11 @@ Tracking: [#167](https://github.com/PinedaTec-EU/LeonardoMD/issues/167), [PR #16
 Use the source PR compilation recorder for every successful compiling command:
 
 ```sh
-LEONARDO_VISUAL_EVIDENCE="$PWD/output/format-evidence" python3 scripts/compile-and-record.py --pr-number 168 -- swift test
+: "${LEONARDO_SOURCE_PR:?Set the active source PR number before compiling}"
+LEONARDO_VISUAL_EVIDENCE="$PWD/output/format-evidence" python3 scripts/compile-and-record.py --pr-number "$LEONARDO_SOURCE_PR" -- swift test
 ```
 
-The new native fixture `LeonardoFormatVisualTests` hosts the actual `WorkspaceView` and form inspector at 1260 × 850 points. It captures local MDLF, package mode and extracted-folder mode in English and Spanish. `WebKitRuntimeTests` exercises the real renderer, field values as literal text, code exclusion, rich-to-standard context changes, background loading, table sizing and legacy-comment exclusion in MDLF.
+The new native fixture `LeonardoFormatVisualTests` hosts the actual `WorkspaceView` and form inspector at 1260 × 850 points. It captures local MDLF, package mode and extracted-folder mode in English and Spanish. The additional `mdlf-initial-preview-{en,es}.png` and `mdlz-initial-preview-{en,es}.png` captures show newly opened standalone and packaged MDLF in Preview before any manual mode change; `mdlr-initial-fill-{en,es}.png` shows standalone MDLR opening in Fill. `WebKitRuntimeTests` exercises the real renderer, field values as literal text, code exclusion, rich-to-standard context changes, background loading, table sizing and legacy-comment exclusion in MDLF.
 
 This is native XCTest/view-hosting and real WebKit evidence, not an image mockup. It does not start a standalone XCTest application. The owner's installed LeonardoMD process remains running; fresh packaged-process/first-window startup has not been established for this change.
 
@@ -63,3 +64,5 @@ The format capture test writes six General-preferences images under `leonardo-fo
 Each language reuses the same hosting view while changing all three choices and migration off → on → off. These captures show the concise labels and updated switch state in the Mac-wide section of General. `LeonardoFormatPreferencesTests` separately verifies cross-session observation and persistence. Native hosting does not paint the glass header/tab chrome in these bitmaps; the evidence establishes form-control rendering, with the previously accepted scope composition retained. The grouped form scrolls to additional settings. This synthetic component fixture does not prove physical interaction or fresh packaged-process startup. Tracking: [#183](https://github.com/PinedaTec-EU/LeonardoMD/issues/183).
 
 Close regressions verify that accepted close waits for package retirement and cancelled close retains the workspace. Pending-load revocation covers Markdown/MDLZ in blank tabs and tabs with unrelated drafts; a suspended authorization gate proves revocation waits and the revoked result is never applied, while source bytes and unrelated content remain unchanged ([#180](https://github.com/PinedaTec-EU/LeonardoMD/issues/180)).
+
+`LeonardoOpeningModeTests` regressions ([#189](https://github.com/PinedaTec-EU/LeonardoMD/issues/189)) exercise all three normal opening preferences for both internal-package and explicit-extraction workflows. Standalone and packaged MDLF follow that preference (Preview by default); MDLR packages retain Fill. The assertions also retain protected editing, source identity, document bytes and original archive bytes.
