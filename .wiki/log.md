@@ -134,3 +134,7 @@ running installed app were preserved. Rediscovery can register old copies again.
 The shared compilation-count skill and `.skills/compilation-count.json` select
 command eligibility and the existing counter/recorder. Historical allocations
 and delivery-only identifiers are preserved. Tracking: [#163](https://github.com/PinedaTec-EU/LeonardoMD/issues/163).
+
+## 2026-10-19 — Preferences scope containment
+
+General and Extensions now own their Global / This project header inside the tab content, keeping the window header and navigation stationary. General puts palette/paper (and project-only Git) first, with language, non-project viewing settings and Markdown associations in separate Mac-wide sections. Storage behavior and themes are unchanged. The owner selected Product Design mockup 2; misleading OS-wide language copy in that generated target is corrected in the implementation. Tracking: [#173](https://github.com/PinedaTec-EU/LeonardoMD/issues/173). Validation and current delivery state live on the issue/PR; no packaged visual acceptance is implied by this note.
