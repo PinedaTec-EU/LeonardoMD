@@ -23,64 +23,98 @@ struct PreferencesView: View {
                 Spacer()
                 Button(L10n.text("Done")) { dismiss() }.keyboardShortcut(.defaultAction)
             }
-            if session.projectURL != nil && (selectedTab == "general" || selectedTab == "extensions") {
-                PremiumSelection(selection: $projectScope, options: [false, true], title: { $0 ? L10n.text("This project") : L10n.text("Global") })
-                    .accessibilityLabel(L10n.text("Scope"))
-            }
             TabView(selection: $selectedTab) {
                 generalPreferences.tag("general").tabItem { Label(L10n.text("General"), systemImage: "gearshape") }
-                ExtensionPreferences(session: session, projectScope: projectScope)
-                    .tag("extensions").tabItem { Label(L10n.text("Extensions"), systemImage: "puzzlepiece.extension") }
-                MobileSyncPreferencesView(session: session, controller: .shared)
+                VStack(spacing: 0) {
+                    scopeHeader("Extensions")
+                    ExtensionPreferences(session: session, projectScope: projectScope)
+                }
+                .tag("extensions").tabItem { Label(L10n.text("Extensions"), systemImage: "puzzlepiece.extension") }
+                macPreferences("Service and device settings belong to this Mac.") {
+                    MobileSyncPreferencesView(session: session, controller: .shared)
+                }
                     .tag("mobile").tabItem { Label("Little Leonardo", systemImage: "iphone") }
-                DesktopPeerPreferencesView(session: session, controller: .shared)
+                macPreferences("Service and device settings belong to this Mac.") {
+                    DesktopPeerPreferencesView(session: session, controller: .shared)
+                }
                     .tag("peers").tabItem { Label(L10n.text("Linked Macs"), systemImage: "desktopcomputer") }
-                UpdatePreferencesView(updates: updates)
+                macPreferences("Update preferences apply to all windows on this Mac.") {
+                    UpdatePreferencesView(updates: updates)
+                }
                     .tag("updates").tabItem { Label(L10n.text("Updates"), systemImage: "arrow.triangle.2.circlepath") }
             }
-            Text(selectedTab == "updates" ? L10n.text("Update preferences apply to all windows on this Mac.") : (selectedTab == "mobile" || selectedTab == "peers") ? L10n.text("Service and device settings belong to this Mac.") : projectScope ? L10n.text("Saved in .leonardomd/project.json. Contains no credentials.") : L10n.text("Global preferences apply to the standalone viewer and projects that inherit them."))
-                .font(.caption).foregroundStyle(.secondary)
         }.buttonStyle(PremiumButtonStyle()).padding(24).frame(width: 580, height: 620)
         .onAppear { projectScope = session.projectURL != nil }
+        .onChange(of: session.projectURL) { _, root in
+            if root == nil { projectScope = false }
+        }
         .sheet(isPresented: $editingPalette) { PaletteEditor(session: session, projectScope: projectScope).modifier(SessionAppearance(session: session)) }
     }
 
+    private func macPreferences<Content: View>(_ explanation: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            content().frame(maxWidth: .infinity, maxHeight: .infinity)
+            Text(L10n.text(explanation)).font(.caption).foregroundStyle(.secondary)
+                .padding(.horizontal, 16).padding(.bottom, 12)
+        }
+    }
+
+    private func scopeHeader(_ title: String) -> some View {
+        PreferencesScopeHeader(title: title, projectURL: session.projectURL, projectScope: $projectScope)
+    }
+
     private var generalPreferences: some View {
+        VStack(spacing: 0) {
+            scopeHeader("General")
             Form {
-                HStack {
+                Section(L10n.text("Appearance")) {
+                    appearancePreferences
+                    if projectScope {
+                        Text(L10n.text("Saved in .leonardomd/project.json. Contains no credentials."))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Section(L10n.text("On this Mac")) {
                     @Bindable var languages = LanguageSettings.shared
                     Picker(L10n.text("Language"), selection: $languages.language) {
                         ForEach(AppLanguage.allCases) { language in
                             Text(language.nativeName).tag(language)
                         }
                     }.accessibilityIdentifier("interface-language")
-                }
-                Text(L10n.text("Interface language applies to all windows."))
-                    .font(.caption).foregroundStyle(.secondary)
-                MarkdownAssociationPreferences(associations: associations)
-                Picker(L10n.text("When opening an MDLZ package"), selection: Binding(get: { session.packageOpenPreference }, set: { session.packageOpenPreference = $0 })) {
-                    ForEach(LeonardoPackageOpenPreference.allCases) { preference in
-                        Text(preference.title).tag(preference)
+                    Text(L10n.text("Interface language applies to all windows."))
+                        .font(.caption).foregroundStyle(.secondary)
+                    Picker(L10n.text("When opening an MDLZ package"), selection: Binding(get: { session.packageOpenPreference }, set: { session.packageOpenPreference = $0 })) {
+                        ForEach(LeonardoPackageOpenPreference.allCases) { preference in
+                            Text(preference.title).tag(preference)
+                        }
                     }
+                    Toggle(L10n.text("Migrate Markdown to MDLF when saving"), isOn: Binding(get: { session.migrateMarkdownOnSave }, set: { session.migrateMarkdownOnSave = $0 }))
+                    Toggle(L10n.text("Show front matter"), isOn: $session.showFrontmatter)
+                    Toggle(L10n.text("Confirm external links"), isOn: $session.confirmExternalLinks)
+                    Toggle(L10n.text("Show hidden files"), isOn: $session.showHidden)
                 }
-                Toggle(L10n.text("Migrate Markdown to MDLF when saving"), isOn: Binding(get: { session.migrateMarkdownOnSave }, set: { session.migrateMarkdownOnSave = $0 }))
-                Picker(L10n.text("Palette"), selection: Binding(get: { projectScope ? session.projectConfiguration.palette?.rawValue ?? "inherit" : session.globalPreferences.palette.rawValue }, set: { session.setPalette($0, project: projectScope) })) {
-                    if projectScope { Text(L10n.text("Inherit global")).tag("inherit") }
-                    ForEach(PaletteCatalog.all) { palette in Text(palette.displayName).tag(palette.id.rawValue) }
-                }
-                Picker(L10n.text("Paper effect"), selection: Binding(get: { projectScope ? session.projectConfiguration.paperEffect?.rawValue ?? "inherit" : session.globalPreferences.paperEffect.rawValue }, set: { session.setPaper($0, project: projectScope) })) {
-                    if projectScope { Text(L10n.text("Inherit global")).tag("inherit") }
-                    ForEach(PaperEffect.allCases, id: \.self) { effect in Text(effect.title).tag(effect.rawValue) }
-                }
-                Button(L10n.text("Customize / import palette…")) { editingPalette = true }
-                Toggle(L10n.text("Show front matter"), isOn: $session.showFrontmatter)
-                Toggle(L10n.text("Confirm external links"), isOn: $session.confirmExternalLinks)
-                Toggle(L10n.text("Show hidden files"), isOn: $session.showHidden)
-                if projectScope {
-                    Toggle(L10n.text("Enable Git tools"), isOn: Binding(get: { session.gitEnabled }, set: { session.setGitEnabled($0) }))
-                }
+                MarkdownAssociationPreferences(associations: associations)
             }.formStyle(.grouped).toggleStyle(PremiumSwitchStyle())
+        }
     }
+
+    private var appearancePreferences: some View {
+        Group {
+            Picker(L10n.text("Palette"), selection: Binding(get: { projectScope ? session.projectConfiguration.palette?.rawValue ?? "inherit" : session.globalPreferences.palette.rawValue }, set: { session.setPalette($0, project: projectScope) })) {
+                if projectScope { Text(L10n.text("Inherit global")).tag("inherit") }
+                ForEach(PaletteCatalog.all) { palette in Text(palette.displayName).tag(palette.id.rawValue) }
+            }.accessibilityIdentifier("preferences-palette")
+            Picker(L10n.text("Paper effect"), selection: Binding(get: { projectScope ? session.projectConfiguration.paperEffect?.rawValue ?? "inherit" : session.globalPreferences.paperEffect.rawValue }, set: { session.setPaper($0, project: projectScope) })) {
+                if projectScope { Text(L10n.text("Inherit global")).tag("inherit") }
+                ForEach(PaperEffect.allCases, id: \.self) { effect in Text(effect.title).tag(effect.rawValue) }
+            }.accessibilityIdentifier("preferences-paper")
+            Button(L10n.text("Customize / import palette…")) { editingPalette = true }
+            if projectScope {
+                Toggle(L10n.text("Enable Git tools"), isOn: Binding(get: { session.gitEnabled }, set: { session.setGitEnabled($0) }))
+            }
+        }
+    }
+
 }
 
 extension PaperEffect {

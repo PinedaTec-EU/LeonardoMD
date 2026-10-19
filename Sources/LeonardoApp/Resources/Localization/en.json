@@ -1,4 +1,7 @@
 {
+  "Appearance": "Appearance",
+  "Project: %@": "Project: %@",
+  "On this Mac": "On this Mac",
   " · Conflict": " · Conflict",
   "%@ · %d changes · ↑%d ↓%d": "%@ · %d changes · ↑%d ↓%d",
   "%d words": "%d words",

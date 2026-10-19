@@ -37,6 +37,8 @@ The preview supports CommonMark/GFM headings, lists, quotes, tables, tasks, high
 
 **Mermaid and mathematics are disabled by default.** Enable them in Extensions globally for the standalone viewer or override them for a project. Disabled engines are excluded from the WebKit resource allowlist and are neither loaded nor executed. Changing the active engines tears down the old execution context. Mermaid also renders visible diagrams lazily. Disabling an engine leaves its source readable.
 
+Preferences keep their tab navigation fixed. General and Extensions each contain their own Global / This project selector. In General, palette and paper effect follow that scope; language, viewing behavior and Markdown file association are grouped separately as Mac-wide settings.
+
 PDF export uses the rendered document. Palettes and lightweight ruled/grid/parchment effects are configurable globally or per project. Project settings are portable JSON in `.leonardomd/project.json`; unknown schema versions are rejected. User preferences are stored separately in `~/Library/Application Support/LeonardoMD/preferences.json`.
 
 Custom palette colors can be edited and imported/exported as JSON. The app validates reading contrast before applying them. Main-window and sheet controls share palette colors and tactile hover/pressed states.
@@ -108,7 +110,7 @@ Drag the divider beside the project files/folders sidebar to widen or narrow it.
 
 The owner-approved baseline is **0.1.56**. Packaging requires Python 3 and derives bundle metadata from `version.nfo`. The `release.feature.build` model uses one `deploy/version/entries/<PR>.yaml` per source PR; successful Swift compilation commands accumulate its build delta; release notes use the verified source PR title after publication. See [the ledger workflow](doc/release-version-ledger.md) for operator use, trusted CI access and pending central automation activation.
 
-Interface language defaults to English. Preferences → General → Language offers English and Español; see [localization](doc/localization.md) for resource maintenance.
+Interface language defaults to English. Preferences → General → On this Mac → Language offers English and Español; see [localization](doc/localization.md) for resource maintenance.
 
 ### Native QA launches
 
