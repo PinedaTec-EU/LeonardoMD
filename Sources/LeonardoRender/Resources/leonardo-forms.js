@@ -93,6 +93,7 @@
       output.textContent = valueText(value, field) || "________";
       if (!payload.allowsFormFilling) { wrapper.append(output); return wrapper; }
       wrapper.classList.add("leonardo-form-field");
+      if (field.type === "checkbox" && !field.readOnly) wrapper.classList.add("leonardo-form-boolean");
       const id = `leonardo-input-${++sequence}`;
       const header = document.createElement("span"); header.className = "leonardo-field-label";
       const caption = document.createElement("label"); caption.htmlFor = id;

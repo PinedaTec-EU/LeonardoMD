@@ -23,7 +23,10 @@ the native test writes `inline-forms/` with real light/dark WebKit document
 captures (upper/lower scroll positions), separate native editable/read-only help
 panels, PDF and provenance. CI supplies both variables and uploads the directory
 in its exact-head preview artifact. Compare those captures to the approved mock;
-mock images are design references, never validation evidence.
+mock images are design references, never validation evidence. Wait until the actual
+computed body background reaches the target palette before taking a theme
+capture: checking only a changed CSS token can capture the 120 ms transition
+halfway through and falsely show light content with dark controls.
 
 These are hosted native component tests, not proof of fresh packaged startup.
 Do not terminate an owner's running LeonardoMD instance or disguise XCTest as

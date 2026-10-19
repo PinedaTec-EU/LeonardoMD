@@ -24,6 +24,10 @@ struct MarkdownFormStateTests {
         let changes = try #require(state.changes(from: ["source": source, "changes": ["name": "漢字", "checkbox": true, "hours": "-"]], content: source))
         #expect(changes["checkbox"] == .boolean(true))
         #expect(changes["hours"] == .string("-"), "Incomplete numeric drafts must remain lossless")
+        let updated = try #require(document.applyingFormValues(changes))
+        let acknowledged = try LeonardoFormatParser.serialize(updated)
+        let repeatedFlush = state.changes(from: ["source": source, "changes": ["name": "漢字", "checkbox": true, "hours": "-"]], content: acknowledged)
+        #expect(repeatedFlush?.isEmpty == true, "Repeated flushes must not attempt another mutation during tab close")
     }
 
     @Test func formPayloadRequiresExplicitFormatOptInAndCarriesDiagnostics() throws {

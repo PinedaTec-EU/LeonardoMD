@@ -1,7 +1,7 @@
 /* Form colors derive from the active document palette, including dark palettes. */
 :root {
   --ld-field-background: color-mix(in srgb, var(--ld-background) 82%, white);
-  --ld-field-border: color-mix(in srgb, var(--ld-text) 32%, var(--ld-background));
+  --ld-field-border: color-mix(in srgb, var(--ld-text) 58%, var(--ld-background));
   --ld-field-muted: color-mix(in srgb, var(--ld-text) 72%, var(--ld-background));
   --ld-field-readonly: color-mix(in srgb, var(--ld-text) 6%, var(--ld-background));
 }
@@ -10,6 +10,10 @@
 .leonardo-form-row > [data-leonardo-edit] { display: contents; }
 .leonardo-form-row .leonardo-form-field { display: flex; width: 100%; min-width: 0; }
 .leonardo-form-row .leonardo-form-readonly { max-width: 20em; }
+.leonardo-form-field.leonardo-form-boolean { display: grid; grid-template-columns: auto 1fr; gap: 8px 10px; align-items: center; }
+.leonardo-form-boolean > .leonardo-field-label { grid-column: 2; grid-row: 1; }
+.leonardo-form-boolean > input { grid-column: 1; grid-row: 1; }
+.leonardo-form-boolean > .leonardo-field-diagnostic { grid-column: 1 / -1; }
 .leonardo-field-label { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.85em; font-weight: 600; }
 .leonardo-field-help { appearance: none; border: 1px solid var(--ld-field-muted); color: var(--ld-field-muted); background: transparent; border-radius: 50%; width: 22px; height: 22px; padding: 0; line-height: 20px; font: inherit; cursor: pointer; }
 .leonardo-field-help:hover, .leonardo-field-help[aria-pressed="true"] { background: var(--ld-field-readonly); color: var(--ld-accent); border-color: var(--ld-accent); }
@@ -28,11 +32,11 @@ input.leonardo-form-switch:checked::after { transform: translateX(15px); backgro
 .leonardo-field-diagnostic:empty { display: none; }
 .leonardo-form-export .leonardo-field-label, .leonardo-form-export .leonardo-form-input, .leonardo-form-export .leonardo-field-diagnostic { display: none; }
 .leonardo-form-export .leonardo-form-row { display: block; }
-.leonardo-form-export .leonardo-form-field { display: inline; min-width: 0; margin: 0; }
+.leonardo-form-export .leonardo-form-field.leonardo-form-boolean, .leonardo-form-export .leonardo-form-field { display: inline; min-width: 0; margin: 0; }
 .leonardo-form-export .leonardo-form-field > .leonardo-field-output { display: inline; background: none; padding: 0; }
 @media print {
   .leonardo-form-row { display: block; }
   .leonardo-field-label, .leonardo-form-input, .leonardo-field-diagnostic { display: none; }
-  .leonardo-form-field { display: inline; min-width: 0; margin: 0; }
+  .leonardo-form-field.leonardo-form-boolean, .leonardo-form-field { display: inline; min-width: 0; margin: 0; }
   .leonardo-form-field > .leonardo-field-output { display: inline; background: none; padding: 0; }
 }

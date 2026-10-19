@@ -108,11 +108,11 @@ final class InlineFormTests: XCTestCase {
             session.globalPreferences.palette = palette
             session.globalPreferences.paperEffect = .solid
             let background = session.renderConfiguration.appearance.backgroundHex
-            for _ in 0..<100 {
-                let actual = try await web.evaluateJavaScript("document.documentElement.style.getPropertyValue('--ld-background')") as? String
-                if actual == background { break }
-                try await Task.sleep(for: .milliseconds(20))
+            let rgb = stride(from: 1, to: 7, by: 2).map { offset in
+                Int(String(background.dropFirst(offset).prefix(2)), radix: 16)!
             }
+            let cssBackground = "rgb(\(rgb[0]), \(rgb[1]), \(rgb[2]))"
+            try await waitFor("getComputedStyle(document.body).backgroundColor === '\(cssBackground)'", in: web)
             let image = try await web.takeSnapshot(configuration: nil)
             let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
             try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: destination.appendingPathComponent("document-\(name).png"))
