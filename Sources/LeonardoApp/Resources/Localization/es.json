@@ -424,5 +424,22 @@
   "A select field must declare at least one option.": "Un campo de selección debe declarar al menos una opción.",
   "Options are ignored for this field type.": "Las opciones se ignoran para este tipo de campo.",
   "A value is present for an undeclared field.": "Hay un valor para un campo no declarado.",
-  "Appearance is only supported for checkbox fields.": "La apariencia solo se admite en campos de tipo checkbox."
+  "Appearance is only supported for checkbox fields.": "La apariencia solo se admite en campos de tipo checkbox.",
+  "Field help": "Ayuda del campo",
+  "Close field help": "Cerrar ayuda del campo",
+  "No additional help for this field.": "No hay ayuda adicional para este campo.",
+  "Example": "Ejemplo",
+  "Field properties": "Propiedades del campo",
+  "Editable": "Editable",
+  "This value cannot be modified.": "Este valor no se puede modificar.",
+  "You can modify this value.": "Puedes modificar este valor.",
+  "Required": "Obligatorio",
+  "Optional": "Opcional",
+  "Complete this field before finalizing.": "Completa este campo antes de finalizar.",
+  "You may leave this field empty.": "Puedes dejar este campo vacío.",
+  "Help follows the field you select with (?).": "La ayuda cambia al consultar otro campo con (?).",
+  "Select (?) beside a field to see its help and properties.": "Pulsa (?) junto a un campo para ver su ayuda y propiedades.",
+  "Help for": "Ayuda de",
+  "Yes": "Sí",
+  "No": "No"
 }

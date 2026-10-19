@@ -8,6 +8,10 @@ extension AppSession {
         renderer.onEdit = { [weak self] expected, replacement in
             self?.editDocument(expected: expected, replacement: replacement) ?? false
         }
+        renderer.onFormEdit = { [weak self] expected, changes in
+            self?.updateLeonardoFields(expected: expected, changes: changes)
+        }
+        renderer.onFieldHelp = { [weak self] fieldID in self?.showLeonardoFieldHelp(fieldID) }
         return MarkdownPreview(
             content: content,
             baseURL: documentURL?.deletingLastPathComponent(),
@@ -60,6 +64,8 @@ extension AppSession {
         // remains writable through its declared fields while source editing
         // stays locked behind the toolbar padlock.
         configuration.allowsEditing = canEditDocument && mode != .fill
+        configuration.allowsFormFilling = canFillLeonardoForm
+        configuration.formLabels = TranslationCatalog.catalogs[LanguageSettings.shared.language] ?? [:]
         return configuration
     }
     func followLink(_ url: URL) async {

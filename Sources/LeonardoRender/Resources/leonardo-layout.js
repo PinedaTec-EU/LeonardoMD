@@ -37,13 +37,8 @@
         const field = metadata.fields?.[match[1]];
         if (!field) continue;
         fragment.append(document.createTextNode(text.slice(cursor, match.index)));
-        const span = document.createElement("span");
-        span.className = "leonardo-field-value";
-        span.dataset.field = match[1];
-        span.setAttribute("aria-label", field.label || match[1]);
         const value = Object.hasOwn(metadata.values || {}, match[1]) ? metadata.values[match[1]] : field.defaultValue;
-        span.textContent = value === null || value === undefined ? "________" : String(value);
-        fragment.append(span);
+        fragment.append(window.LeonardoForms.field(match[1], field, value));
         cursor = match.index + match[0].length;
       }
       if (cursor) {
@@ -149,7 +144,9 @@
       document.getElementById("leonardo-page-style")?.remove();
       if (!payload.leonardo) return;
       const metadata = payload.leonardo;
+      window.LeonardoForms.begin(payload, root);
       fillText(root, metadata);
+      window.LeonardoForms.showDiagnostics(payload.formDiagnostics || {});
       const layout = metadata.layout || {};
       applyImages(root, layout.images);
       applyTables(root, layout.tables);

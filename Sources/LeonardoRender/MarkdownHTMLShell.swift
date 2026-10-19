@@ -39,6 +39,7 @@ enum MarkdownHTMLShell {
           <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src \(documentScheme): data:\(configuration.allowsRemoteImages ? " http: https:" : ""); style-src 'unsafe-inline' \(resourceScheme):; script-src 'unsafe-inline' \(resourceScheme):; font-src \(resourceScheme): data:; connect-src 'none';">
           \(documentBase)
           <link rel="stylesheet" href="\(resourceURL(.previewStyles))">
+          <link rel="stylesheet" href="\(resourceURL(.formStyles))">
           \(mathStylesheet)
           <script src="\(resourceURL(.marked))"></script>
           <script src="\(resourceURL(.dompurify))"></script>
@@ -51,6 +52,7 @@ enum MarkdownHTMLShell {
           <script id="leonardo-payload" type="application/json">\(encodedPayload)</script>
           <script src="\(resourceURL(.previewEditing))"></script>
           <script src="\(resourceURL(.tableLayout))"></script>
+          <script src="\(resourceURL(.leonardoForms))"></script>
           <script src="\(resourceURL(.leonardoLayout))"></script>
           <script src="\(resourceURL(.runtime))"></script>
         </body>
@@ -72,6 +74,11 @@ enum MarkdownHTMLShell {
             leonardo: leonardo?.metadata,
             source: content,
             allowsEditing: configuration.allowsEditing,
+            allowsFormFilling: configuration.allowsFormFilling,
+            formLabels: configuration.formLabels,
+            formDiagnostics: leonardo.map { document in
+                Dictionary(grouping: LeonardoFormatValidator.validate(document, context: .draft).filter { $0.fieldID != nil }, by: { $0.fieldID! }).mapValues { $0.map(\.message) }
+            } ?? [:],
             frontMatter: document.frontMatter,
             tags: document.tags,
             showFrontMatter: configuration.frontMatter == .metadata,
@@ -112,6 +119,9 @@ private struct MarkdownRenderPayload: Encodable {
     let leonardo: LeonardoMetadata?
     let source: String
     let allowsEditing: Bool
+    let allowsFormFilling: Bool
+    let formLabels: [String: String]
+    let formDiagnostics: [String: [String]]
     let frontMatter: [String: String]
     let tags: [String]
     let showFrontMatter: Bool
