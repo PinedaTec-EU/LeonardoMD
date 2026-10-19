@@ -49,6 +49,17 @@ PR capture tests prefer `EVIDENCE_SHA`, set to the checked-out pull-request head
 
 Package revocation regressions cover a directly opened archive without a project and a save paused before archive commit. The source ZIP stays byte-identical after cancellation; temporary content remains until the worker settles, then is removed. Ordinary stop is covered by the same paused-save regression. These checks exercise the linked-workspace identity and package retirement contracts tracked in [#175](https://github.com/PinedaTec-EU/LeonardoMD/issues/175) and [#176](https://github.com/PinedaTec-EU/LeonardoMD/issues/176).
 
-After reconciling the Preferences scope change from PR #174, the same capture test also writes `format-preferences-en.png` and `format-preferences-es.png` (580 × 620 points). They show package-open and migration controls in the Mac-wide section of General. Native hosting does not paint the glass header/tab chrome in these bitmaps; they establish the form controls only, while the scope composition is retained from the separately accepted Preferences implementation. The grouped form scrolls to additional settings.
+The format capture test writes six General-preferences images under `leonardo-format/`, each at 580 × 620 points:
+
+| Language | Package choice | Migration | File |
+|---|---|---|---|
+| English | Use package | Off | `format-preferences-en-package-migration-false.png` |
+| English | Ask each time | On | `format-preferences-en-ask-migration-true.png` |
+| English | Extract to folder | Off | `format-preferences-en-extracted-migration-false.png` |
+| Spanish | Usar paquete | Off | `format-preferences-es-package-migration-false.png` |
+| Spanish | Preguntar | On | `format-preferences-es-ask-migration-true.png` |
+| Spanish | Extraer a carpeta | Off | `format-preferences-es-extracted-migration-false.png` |
+
+Each language reuses the same hosting view while changing all three choices and migration off → on → off. These captures show the concise labels and updated switch state in the Mac-wide section of General. `LeonardoFormatPreferencesTests` separately verifies cross-session observation and persistence. Native hosting does not paint the glass header/tab chrome in these bitmaps; the evidence establishes form-control rendering, with the previously accepted scope composition retained. The grouped form scrolls to additional settings. This synthetic component fixture does not prove physical interaction or fresh packaged-process startup. Tracking: [#183](https://github.com/PinedaTec-EU/LeonardoMD/issues/183).
 
 Close regressions verify that accepted close waits for package retirement and cancelled close retains the workspace. Pending-load revocation covers Markdown/MDLZ in blank tabs and tabs with unrelated drafts; a suspended authorization gate proves revocation waits and the revoked result is never applied, while source bytes and unrelated content remain unchanged ([#180](https://github.com/PinedaTec-EU/LeonardoMD/issues/180)).

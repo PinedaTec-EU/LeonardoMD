@@ -26,13 +26,14 @@ final class AppSession {
     /// the user, so it is left in place.
     var packageWorkspace: LeonardoPackageWorkspace?
     var leonardoFormatWarning = false
+    private let formatPreferences = LeonardoFormatPreferences.shared
     var packageOpenPreference: LeonardoPackageOpenPreference {
-        get { LeonardoPackageOpenPreference(rawValue: UserDefaults.standard.string(forKey: LeonardoPackageOpenPreference.defaultsKey) ?? "") ?? .defaultValue }
-        set { UserDefaults.standard.set(newValue.rawValue, forKey: LeonardoPackageOpenPreference.defaultsKey) }
+        get { formatPreferences.packageOpenPreference }
+        set { formatPreferences.packageOpenPreference = newValue }
     }
     var migrateMarkdownOnSave: Bool {
-        get { UserDefaults.standard.object(forKey: "migrateMarkdownOnSave") as? Bool ?? false }
-        set { UserDefaults.standard.set(newValue, forKey: "migrateMarkdownOnSave") }
+        get { formatPreferences.migrateMarkdownOnSave }
+        set { formatPreferences.migrateMarkdownOnSave = newValue }
     }
     var projectURL: URL?
     private var documentContent = ""

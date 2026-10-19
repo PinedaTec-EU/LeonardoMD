@@ -1,6 +1,6 @@
 # Open Leonardo documents
 
-Tracking: [#167](https://github.com/PinedaTec-EU/LeonardoMD/issues/167), implementation [PR #168](https://github.com/PinedaTec-EU/LeonardoMD/pull/168). The work is under validation; this page does not claim release or integration.
+Tracking: [#167](https://github.com/PinedaTec-EU/LeonardoMD/issues/167), implementation [PR #168](https://github.com/PinedaTec-EU/LeonardoMD/pull/168). Integrated in beta 0.1.435.
 
 - Canonical public contract: [`doc/format/README.md`](../doc/format/README.md), JSON Schema and examples in the same directory. UTF-8 Markdown body plus explicit JSON front matter, `format: mdlf`, `formatVersion: 1`. Structural metadata is closed to prevent unknown properties disappearing on save; unknown versions are rejected.
 - `.md` stays standard Markdown. `.mdlf` authors documents/forms; exported `.mdlr` opens in fill mode. Definitions and values live outside the body, referenced using `{{field:id}}`; extension is a mode hint, not access control.
@@ -29,3 +29,5 @@ Extraction is an exclusive descriptor-relative transaction with no-follow traver
 Revocation and file operations share `workspaceIdentityURLs`, including the durable package source ([#175](https://github.com/PinedaTec-EU/LeonardoMD/issues/175)). Package retirement is centralized in `SessionPackageWorkspace`; saves own a tracked task and propagate cancellation into repacking before archive commit. Stopped sessions clear visible content immediately, join in-flight I/O, then delete temporary workspaces ([#176](https://github.com/PinedaTec-EU/LeonardoMD/issues/176)). CI capture context uses the checked-out `EVIDENCE_SHA` ([#177](https://github.com/PinedaTec-EU/LeonardoMD/issues/177)).
 
 Accepted application/window/tab close now joins temporary retirement before exit; cancellation preserves live packages (#176). Pending document access has its own revocable identity in `SessionDocumentAccess`: revoke only the incoming load when a tab owns an unrelated draft, wait for that load to settle, and never apply its result afterward. Standard Markdown and package adapters share this boundary. Tracking: [#180](https://github.com/PinedaTec-EU/LeonardoMD/issues/180).
+
+Format preferences share `LeonardoFormatPreferences` across sessions. Computed UserDefaults access must explicitly participate in Observation so switches and pickers refresh immediately; direct UserDefaults-only bindings do not notify SwiftUI. Regression: [#183](https://github.com/PinedaTec-EU/LeonardoMD/issues/183).

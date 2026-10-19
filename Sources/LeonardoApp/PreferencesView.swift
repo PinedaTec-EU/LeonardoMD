@@ -83,12 +83,12 @@ struct PreferencesView: View {
                     }.accessibilityIdentifier("interface-language")
                     Text(L10n.text("Interface language applies to all windows."))
                         .font(.caption).foregroundStyle(.secondary)
-                    Picker(L10n.text("When opening an MDLZ package"), selection: Binding(get: { session.packageOpenPreference }, set: { session.packageOpenPreference = $0 })) {
+                    Picker(L10n.text("Open MDLZ packages"), selection: Binding(get: { session.packageOpenPreference }, set: { session.packageOpenPreference = $0 })) {
                         ForEach(LeonardoPackageOpenPreference.allCases) { preference in
                             Text(preference.title).tag(preference)
                         }
                     }
-                    Toggle(L10n.text("Migrate Markdown to MDLF when saving"), isOn: Binding(get: { session.migrateMarkdownOnSave }, set: { session.migrateMarkdownOnSave = $0 }))
+                    Toggle(L10n.text("Save Markdown as MDLF"), isOn: Binding(get: { session.migrateMarkdownOnSave }, set: { session.migrateMarkdownOnSave = $0 }))
                     Toggle(L10n.text("Show front matter"), isOn: $session.showFrontmatter)
                     Toggle(L10n.text("Confirm external links"), isOn: $session.confirmExternalLinks)
                     Toggle(L10n.text("Show hidden files"), isOn: $session.showHidden)

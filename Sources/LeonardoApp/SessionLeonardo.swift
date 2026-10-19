@@ -168,8 +168,8 @@ extension AppSession {
         let alert = NSAlert()
         alert.messageText = L10n.text("Open Leonardo package")
         alert.informativeText = packageURL.lastPathComponent
-        alert.addButton(withTitle: L10n.text("Open package and save it as a package"))
-        alert.addButton(withTitle: L10n.text("Extract into a folder"))
+        alert.addButton(withTitle: LeonardoPackageOpenPreference.package.title)
+        alert.addButton(withTitle: LeonardoPackageOpenPreference.extracted.title)
         alert.addButton(withTitle: L10n.text("Cancel"))
         switch alert.runModal() {
         case .alertFirstButtonReturn: return .package
