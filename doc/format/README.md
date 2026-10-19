@@ -137,6 +137,20 @@ caps a value checked by a pattern at 32 KiB. The native evaluator applies a
 constraint. Dates use the proleptic Gregorian calendar in UTC and must be
 real `YYYY-MM-DD` dates, including leap-year rules.
 
+### Standard Markdown migration
+
+Conversion to MDLF separates an existing Markdown front matter envelope from
+its prose. The complete original envelope, including delimiters, comments,
+unknown YAML structures and line endings, is retained as the string
+`values.markdownFrontMatter`. This is an application convention inside the
+existing opaque `values` contract, not a new v1 structural property. The body
+keeps the latest edited prose byte for byte. The source `.md` remains untouched.
+The recognized original title becomes `document.title`, with the filename as
+fallback. Preview metadata and tags reuse the standard Markdown reader on the
+retained envelope; its lightweight parsing is not a general YAML interpreter.
+Documents without this retained value keep their structural metadata out of
+the preview panel, including the document descriptor title.
+
 ## Declarative layout
 
 Layout is optional. Markdown flow remains the default; absolute placement is a

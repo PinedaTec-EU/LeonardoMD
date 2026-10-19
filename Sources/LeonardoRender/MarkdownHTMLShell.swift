@@ -64,10 +64,9 @@ enum MarkdownHTMLShell {
         configuration: MarkdownPreviewConfiguration
     ) throws -> String {
         let leonardo = configuration.allowsLeonardoFormat ? try LeonardoFormatParser.parse(content) : nil
-        // MDLF's JSON envelope configures the document; it is not generic
-        // Markdown front matter to display above the laid-out page.
-        let document = leonardo.map { MarkdownDocument(body: $0.body) }
-            ?? MarkdownDocumentParser.parse(content)
+        // Only retained author front matter belongs in this panel. MDLF's
+        // structural JSON stays out of the generic Markdown metadata path.
+        let document = leonardo.map(LeonardoMarkdownMigration.previewMetadata) ?? MarkdownDocumentParser.parse(content)
         let payload = MarkdownRenderPayload(
             markdown: leonardo?.body ?? document.body,
             leonardo: leonardo?.metadata,

@@ -1,6 +1,7 @@
 import Foundation
 import CryptoKit
 import Testing
+import LeonardoCore
 @testable import LeonardoRender
 
 struct MarkdownRenderTests {
@@ -30,6 +31,40 @@ struct MarkdownRenderTests {
         #expect((payload["frontMatter"] as? [String: String])?["title"] == "Invoice")
         #expect(payload["tags"] as? [String] == ["billing"])
         #expect(payload["leonardo"] == nil)
+    }
+
+    @Test
+    func nativeMDLFMetadataStaysHiddenAndDoesNotLeakToStandardMarkdown() throws {
+        let source = try LeonardoFormatParser.serialize(LeonardoDocument(
+            body: "# Body", metadata: LeonardoMetadata(document: LeonardoDocumentDescriptor(title: "Native document"))
+        ))
+        var configuration = MarkdownPreviewConfiguration(frontMatter: .metadata)
+        configuration.allowsLeonardoFormat = true
+        let json = try MarkdownHTMLShell.payloadJSON(content: source, baseURL: nil, configuration: configuration)
+        let payload = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+        #expect((payload["frontMatter"] as? [String: String])?.isEmpty == true)
+        configuration.allowsLeonardoFormat = false
+        let standard = try MarkdownHTMLShell.payloadJSON(content: "---\ntitle: Plain\n---\n# Plain", baseURL: nil, configuration: configuration)
+        let plain = try #require(JSONSerialization.jsonObject(with: Data(standard.utf8)) as? [String: Any])
+        #expect(plain["frontMatter"] as? [String: String] == ["title": "Plain"])
+        #expect(plain["markdown"] as? String == "# Plain")
+    }
+
+    @Test
+    func migratedPreviewUsesAuthorMetadataAndNeverJSONEnvelopeProperties() throws {
+        let original = "---\ntitle: Article\nauthor: José\ntags: [Swift, docs]\n---\n# Edited body\n"
+        let document = LeonardoMarkdownMigration.convert(original, fallbackTitle: "filename")
+        let content = try LeonardoFormatParser.serialize(document)
+        var configuration = MarkdownPreviewConfiguration(frontMatter: .metadata)
+        configuration.allowsLeonardoFormat = true
+        let json = try MarkdownHTMLShell.payloadJSON(content: content, baseURL: nil, configuration: configuration)
+        let payload = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+        let metadata = try #require(payload["frontMatter"] as? [String: String])
+        #expect(metadata["title"] == "Article")
+        #expect(metadata["author"] == "José")
+        #expect(metadata["formatVersion"] == nil)
+        #expect(payload["markdown"] as? String == "# Edited body\n")
+        #expect(payload["tags"] as? [String] == ["Swift", "docs"])
     }
 
     @Test

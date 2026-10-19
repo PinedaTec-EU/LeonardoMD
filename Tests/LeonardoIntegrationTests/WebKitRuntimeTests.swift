@@ -1,10 +1,38 @@
 import XCTest
 import AppKit
 import WebKit
+import LeonardoCore
 @testable import LeonardoRender
 
 @MainActor
 final class WebKitRuntimeTests: XCTestCase {
+    func testMigratedMarkdownRendersMetadataOutsideEditedArticle() async throws {
+        let markdown = "---\ntitle: Migration example\nauthor: Example Author\ntags: [Docs, Swift]\nsource_url: https://example.com/article\ncustom:\n  nested: retained\n---\n# Migration example\n\nMy saved edit, preserved.\n"
+        let source = try LeonardoFormatParser.serialize(
+            LeonardoMarkdownMigration.convert(markdown, fallbackTitle: "filename")
+        )
+        var config = MarkdownPreviewConfiguration(frontMatter: .metadata)
+        config.allowsLeonardoFormat = true
+        let (host, window) = makeHost(content: source, config: config)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelector('#leonardo-markdown h1')?.textContent === 'Migration example' && document.querySelector('.front-matter') !== null", in: web)
+        let article = try await evaluate("document.querySelector('#leonardo-markdown').innerText", in: web)
+        XCTAssertTrue(article.contains("My saved edit, preserved."))
+        XCTAssertFalse(article.contains("source_url"))
+        let metadata = try await evaluate("document.querySelector('.front-matter').innerText", in: web)
+        XCTAssertTrue(metadata.contains("Example Author"))
+        XCTAssertTrue(metadata.contains("https://example.com/article"))
+        XCTAssertFalse(metadata.contains("formatVersion"))
+        let tags = try await evaluate("document.querySelectorAll('.tag-pill').length", in: web)
+        XCTAssertEqual(tags, "2")
+        try await captureTagPreview(web, name: "mdlf-migration-metadata")
+        config.frontMatter = .hidden
+        host.apply(content: source, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
+        try await waitFor("document.querySelector('.front-matter') === null && document.querySelectorAll('.tag-pill').length === 2", in: web)
+        try await captureTagPreview(web, name: "mdlf-migration-hidden-metadata")
+    }
+
     func testLeonardoLayoutAndFieldValuesUseExplicitOptIn() async throws {
         let source = """
         ---
