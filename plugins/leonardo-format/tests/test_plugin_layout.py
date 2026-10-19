@@ -49,14 +49,16 @@ class PluginLayoutTests(unittest.TestCase):
         self.assertIn("pack ./request-package ./request.mdlz", skill)
 
     def test_transport_helper_bundles_dependency_free_schema_evaluator(self) -> None:
-        helper = PLUGIN_ROOT / "skills/leonardo-format/scripts/mdlz.py"
-        evaluator = PLUGIN_ROOT / "skills/leonardo-format/scripts/mdlf_schema.py"
-        semantics = PLUGIN_ROOT / "skills/leonardo-format/scripts/mdlf_semantics.py"
-        self.assertTrue(helper.is_file())
-        self.assertTrue(evaluator.is_file())
-        self.assertTrue(semantics.is_file())
+        scripts = PLUGIN_ROOT / "skills/leonardo-format/scripts"
+        helper = scripts / "mdlz.py"
+        evaluator = scripts / "mdlf_schema.py"
+        semantics = scripts / "mdlf_semantics.py"
+        extractor = scripts / "mdlz_extract.py"
+        for runtime_module in (helper, evaluator, semantics, extractor):
+            self.assertTrue(runtime_module.is_file(), runtime_module)
         self.assertIn("mdlf_schema", helper.read_text(encoding="utf-8"))
         self.assertIn("mdlf_semantics", helper.read_text(encoding="utf-8"))
+        self.assertIn("mdlz_extract", helper.read_text(encoding="utf-8"))
         self.assertNotIn("import jsonschema", helper.read_text(encoding="utf-8"))
 
     def test_bundled_schema_matches_canonical_contract(self) -> None:

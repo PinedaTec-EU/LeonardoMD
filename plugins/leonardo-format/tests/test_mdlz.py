@@ -7,12 +7,14 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT_DIRECTORY = Path(__file__).parents[1] / "skills" / "leonardo-format" / "scripts"
 sys.path.insert(0, str(SCRIPT_DIRECTORY))
 
 import mdlz  # noqa: E402
+import mdlz_extract  # noqa: E402
 
 
 DOCUMENT = """---
@@ -33,6 +35,62 @@ class MDLZHelperTests(unittest.TestCase):
     def write_archive(self, path: Path, document: str, content: str) -> None:
         with zipfile.ZipFile(path, "w") as archive:
             archive.writestr(document, content)
+
+    def test_directory_expansion_and_aliases_are_rejected_before_effects(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for case in ("expansion", "aliases"):
+                archive = root / f"{case}.mdlz"
+                with zipfile.ZipFile(archive, "w") as handle:
+                    handle.writestr("document.mdlf", DOCUMENT)
+                    if case == "expansion":
+                        for index in range(34):
+                            name = "/".join(["assets", str(index)] + ["d"] * 61 + ["file"])
+                            handle.writestr(name, b"")
+                    else:
+                        handle.writestr("assets/A/first", b"")
+                        handle.writestr("assets/a/second", b"")
+                destination = root / f"{case}-extracted"
+                with self.assertRaisesRegex(mdlz.ArchiveError, "directory"):
+                    mdlz.extract_archive(archive, destination)
+                self.assertFalse(destination.exists())
+            source = root / "source"
+            source.mkdir()
+            (source / "document.mdlf").write_text(DOCUMENT)
+            for branch in ("a", "d"):
+                path = source / "assets" / branch / "b" / "c" / "file"
+                path.parent.mkdir(parents=True)
+                path.write_bytes(b"")
+            with self.assertRaisesRegex(mdlz.ArchiveError, "directory"):
+                mdlz.pack_directory(source, root / "budget.mdlz", mdlz.Limits(max_entries=4))
+            self.assertFalse((root / "budget.mdlz").exists())
+
+    def test_final_verification_rejects_retargeted_child_and_destination_parent(self) -> None:
+        for target in ("child", "parent"):
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                parent = root / "parent"
+                parent.mkdir()
+                destination = parent / "destination"
+                outside = root / "outside"
+                outside.mkdir()
+                archive = root / "valid.mdlz"
+                with zipfile.ZipFile(archive, "w") as handle:
+                    handle.writestr("document.mdlf", DOCUMENT)
+                    handle.writestr("assets/data", b"data")
+
+                def replace_at_return(event: str, _name: str) -> None:
+                    if event == "before-return":
+                        path = destination / "assets" if target == "child" else parent
+                        moved = destination / "owned-assets" if target == "child" else root / "owned-parent"
+                        path.rename(moved)
+                        path.symlink_to(outside, target_is_directory=True)
+
+                with self.assertRaises(mdlz.ArchiveError):
+                    mdlz.extract_archive(archive, destination, event_callback=replace_at_return)
+                self.assertEqual(list(outside.iterdir()), [])
+                link = destination / "assets" if target == "child" else parent
+                self.assertTrue(link.is_symlink())
 
     def test_limits_match_the_swift_transport_envelope(self) -> None:
         self.assertEqual(mdlz.MAX_ARCHIVE_BYTES, 64 * 1024 * 1024)
@@ -180,6 +238,211 @@ class MDLZHelperTests(unittest.TestCase):
 
             with self.assertRaisesRegex(mdlz.ArchiveError, "outside the limit"):
                 mdlz.inspect_archive(valid, mdlz.Limits(max_archive_bytes=1))
+
+    def test_extract_rejects_preexisting_file_symlink_and_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "valid.mdlz"
+            self.write_archive(archive, "document.mdlf", DOCUMENT)
+            outside = root / "outside.txt"
+            outside.write_text("outside", encoding="utf-8")
+
+            for kind in ("file", "symlink", "directory"):
+                with self.subTest(kind=kind):
+                    destination = root / f"destination-{kind}"
+                    if kind == "file":
+                        destination.write_text("keep", encoding="utf-8")
+                    elif kind == "symlink":
+                        destination.symlink_to(outside)
+                    else:
+                        destination.mkdir()
+                        (destination / "keep.txt").write_text("keep", encoding="utf-8")
+
+                    with self.assertRaisesRegex(mdlz.ArchiveError, "already exists"):
+                        mdlz.extract_archive(archive, destination)
+
+                    if kind == "file":
+                        self.assertEqual(destination.read_text(encoding="utf-8"), "keep")
+                    elif kind == "symlink":
+                        self.assertTrue(destination.is_symlink())
+                        self.assertEqual(destination.readlink(), outside)
+                    else:
+                        self.assertEqual((destination / "keep.txt").read_text(encoding="utf-8"), "keep")
+
+    def test_extract_rejects_more_than_64_path_components(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "too-deep.mdlz"
+            member = "/".join(["assets", *[f"directory-{index}" for index in range(63)], "file.txt"])
+            with zipfile.ZipFile(archive, "w") as handle:
+                handle.writestr("document.mdlf", DOCUMENT)
+                handle.writestr(member, b"x")
+
+            with self.assertRaisesRegex(mdlz.ArchiveError, "64"):
+                mdlz.inspect_archive(archive)
+
+    def test_root_claim_preserves_competing_empty_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "valid.mdlz"
+            self.write_archive(archive, "document.mdlf", DOCUMENT)
+            destination = root / "destination"
+            moved_claim = root / "claimed-root-moved-away"
+
+            def replace_claimed_root(event: str, name: str) -> None:
+                if event == "root-claimed":
+                    destination.rename(moved_claim)
+                    destination.mkdir()
+
+            with self.assertRaisesRegex(mdlz.ArchiveError, "changed during claim"):
+                mdlz.extract_archive(archive, destination, event_callback=replace_claimed_root)
+
+            self.assertTrue(destination.is_dir())
+            self.assertEqual(list(destination.iterdir()), [])
+            self.assertTrue(moved_claim.is_dir())
+
+    def test_parent_symlink_swap_is_rejected_without_writing_outside(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "parent-swap.mdlz"
+            with zipfile.ZipFile(archive, "w") as handle:
+                handle.writestr("document.mdlf", DOCUMENT)
+                handle.writestr("assets/first.txt", b"first")
+                handle.writestr("assets/second.txt", b"second")
+            destination = root / "destination"
+            outside = root / "outside"
+            outside.mkdir()
+            swapped = False
+
+            def swap_parent(event: str, name: str) -> None:
+                nonlocal swapped
+                if event == "directory-opened" and name == "assets" and not swapped:
+                    current = destination / "assets"
+                    current.rename(destination / "assets-original")
+                    current.symlink_to(outside, target_is_directory=True)
+                    swapped = True
+
+            with self.assertRaisesRegex(mdlz.ArchiveError, "symlink"):
+                mdlz.extract_archive(archive, destination, event_callback=swap_parent)
+
+            self.assertTrue((destination / "assets").is_symlink())
+            self.assertEqual(list(outside.iterdir()), [])
+            self.assertEqual(
+                (destination / "assets-original" / "first.txt").read_bytes(),
+                b"first",
+            )
+            self.assertFalse((destination / "assets-original" / "second.txt").exists())
+
+    def test_competing_empty_parent_directory_is_preserved(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "parent-directory.mdlz"
+            with zipfile.ZipFile(archive, "w") as handle:
+                handle.writestr("document.mdlf", DOCUMENT)
+                handle.writestr("assets/data.txt", b"data")
+            destination = root / "destination"
+
+            def create_competing_parent(event: str, name: str) -> None:
+                if event == "member-start" and name == "assets/data.txt":
+                    (destination / "assets").mkdir()
+
+            with self.assertRaisesRegex(mdlz.ArchiveError, "before it could be claimed"):
+                mdlz.extract_archive(archive, destination, event_callback=create_competing_parent)
+
+            self.assertTrue((destination / "assets").is_dir())
+            self.assertEqual(list((destination / "assets").iterdir()), [])
+
+    def test_failure_cleanup_removes_only_owned_entries_and_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "failure.mdlz"
+            with zipfile.ZipFile(archive, "w") as handle:
+                handle.writestr("document.mdlf", DOCUMENT)
+                handle.writestr("assets/data.txt", b"data")
+            destination = root / "destination"
+
+            def stop_before_asset(event: str, name: str) -> None:
+                if event == "member-start" and name == "assets/data.txt":
+                    raise RuntimeError("scheduled extraction failure")
+
+            with self.assertRaisesRegex(RuntimeError, "scheduled extraction failure"):
+                mdlz.extract_archive(archive, destination, event_callback=stop_before_asset)
+
+            self.assertFalse(destination.exists())
+
+    def test_failure_cleanup_preserves_unrelated_injected_entry(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "injected.mdlz"
+            with zipfile.ZipFile(archive, "w") as handle:
+                handle.writestr("document.mdlf", DOCUMENT)
+                handle.writestr("assets/data.txt", b"data")
+            destination = root / "destination"
+
+            def inject_and_stop(event: str, name: str) -> None:
+                if event == "file-created" and name == "document.mdlf":
+                    (destination / "unrelated.txt").write_text("keep", encoding="utf-8")
+                if event == "member-start" and name == "assets/data.txt":
+                    raise RuntimeError("scheduled extraction failure")
+
+            with self.assertRaisesRegex(RuntimeError, "scheduled extraction failure"):
+                mdlz.extract_archive(archive, destination, event_callback=inject_and_stop)
+
+            self.assertEqual((destination / "unrelated.txt").read_text(encoding="utf-8"), "keep")
+            self.assertFalse((destination / "document.mdlf").exists())
+
+    def test_failure_cleanup_preserves_replaced_file_destination(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "replaced-file.mdlz"
+            with zipfile.ZipFile(archive, "w") as handle:
+                handle.writestr("document.mdlf", DOCUMENT)
+                handle.writestr("assets/data.txt", b"data")
+            destination = root / "destination"
+            replacement = destination / "document.mdlf"
+
+            def replace_and_stop(event: str, name: str) -> None:
+                if event == "file-created" and name == "document.mdlf":
+                    replacement.rename(destination / "document-original.mdlf")
+                    replacement.write_text("replacement", encoding="utf-8")
+                if event == "member-start" and name == "assets/data.txt":
+                    raise RuntimeError("scheduled extraction failure")
+
+            with self.assertRaisesRegex(RuntimeError, "scheduled extraction failure"):
+                mdlz.extract_archive(archive, destination, event_callback=replace_and_stop)
+
+            self.assertEqual(replacement.read_text(encoding="utf-8"), "replacement")
+
+    def test_parent_symlink_is_rejected_without_creating_destination(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "parent-link.mdlz"
+            self.write_archive(archive, "document.mdlf", DOCUMENT)
+            outside = root / "outside"
+            outside.mkdir()
+            linked_parent = root / "linked-parent"
+            linked_parent.symlink_to(outside, target_is_directory=True)
+            destination = linked_parent / "destination"
+
+            with self.assertRaisesRegex(mdlz.ArchiveError, "symlink"):
+                mdlz.extract_archive(archive, destination)
+
+            self.assertFalse((outside / "destination").exists())
+            self.assertTrue(linked_parent.is_symlink())
+
+    def test_extraction_fails_closed_without_no_follow_capability(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "valid.mdlz"
+            self.write_archive(archive, "document.mdlf", DOCUMENT)
+            destination = root / "destination"
+
+            with mock.patch.object(mdlz_extract.os, "O_NOFOLLOW", 0):
+                with self.assertRaisesRegex(mdlz.ArchiveError, "secure extraction requires"):
+                    mdlz.extract_archive(archive, destination)
+                self.assertEqual(mdlz.inspect_archive(archive)["document"], "document.mdlf")
+
+            self.assertFalse(destination.exists())
 
     def test_unicode_casefold_collisions_are_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

@@ -210,8 +210,15 @@ request.mdlz
 
 The contained document keeps its extension and relative references. A package
 reader must reject absolute paths, `..` components, duplicate normalized names,
-symlinks and entries that escape the extraction directory. Extraction is an
+symlinks, members deeper than 64 slash-separated components (including the
+filename), and entries that escape the extraction directory. Extraction is an
 explicit user choice; a package can also be worked on in an application-owned
 temporary directory and rewritten on save. When a user chooses extraction,
 Leonardo works on the extracted MDLF/MDLR and requires **Export package…** to
-create a new MDLZ.
+create a new MDLZ. A descriptor-relative implementation should claim the
+destination exclusively, use no-follow traversal and exclusive file creation,
+and remove only entries it can still identify as its own after a failure. If
+the host lacks those capabilities, extraction must fail closed; inspection,
+validation and packing remain usable because MDLZ is still a conventional ZIP.
+
+MDLZ validation also limits distinct implicit parent directories to 2,048, rejects differently spelled parent paths with the same NFC/casefold key, and verifies the claimed destination and extracted tree before returning. These limits apply to native reading/writing and plugin inspection/extraction/packing.

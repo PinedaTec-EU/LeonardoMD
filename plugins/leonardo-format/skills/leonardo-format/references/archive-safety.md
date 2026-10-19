@@ -8,8 +8,9 @@ archive content:
   member; it additionally rejects compression ratios above 500 for members of
   at least 64 KiB;
 - member names use canonical POSIX relative paths; absolute paths, drive
-  prefixes, NUL bytes, backslashes, `.`/empty components, and `..` components
-  are rejected;
+  prefixes, NUL bytes, backslashes, `.`/empty components, `..` components, and
+  more than 64 slash-separated components (including the filename) are
+  rejected;
 - normalized Unicode and case-folded names may not collide;
 - ZIP symlinks and special file types are rejected, including entries encoded
   through external file attributes;
@@ -24,8 +25,15 @@ archive content:
 - the root document is parsed, version-checked, duplicate-key checked and
   validated against the bundled v1 schema before `inspect` reports results,
   `extract` creates a directory, or `pack` writes an archive;
-- extraction writes into a new sibling directory and creates files without
-  replacement, so a failed extraction cannot overwrite an existing folder;
+- extraction claims its destination directory atomically and exclusively,
+  opens every path component with descriptor-relative `O_NOFOLLOW`, creates
+  files with descriptor-relative `O_EXCL`, and cleans up only entries whose
+  recorded ownership identity still matches;
+- extraction fails closed when the host lacks the required `dir_fd` or
+  no-follow capabilities; `inspect`, `validate`, and `pack` remain usable and
+  the MDLZ remains a conventional ZIP;
+- on macOS, only root-owned `/tmp` and `/var` aliases to `/private/tmp` and
+  `/private/var` are accepted; user-controlled symlink components are rejected;
 - packing refuses source symlinks, missing roots, multiple documents, and an
   existing output; entries are sorted and use stable timestamps for repeatable
   output;
@@ -36,3 +44,5 @@ declarative definition safety rules. They do not make Markdown, HTML, SVG,
 regular expressions, or other document payloads executable or safe to evaluate.
 Hosts must keep their normal rendering sanitization; current form values remain
 opaque draft data.
+
+MDLZ validation also limits distinct implicit parent directories to 2,048, rejects differently spelled parent paths with the same NFC/casefold key, and verifies the claimed destination and extracted tree before returning. These limits apply to native reading/writing and plugin inspection/extraction/packing.

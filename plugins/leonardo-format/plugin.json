@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "leonardo-format",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Read, validate, fill, edit, extract and repackage open Leonardo Markdown documents (.mdlf, .mdlr and .mdlz).",
   "author": {
     "name": "PinedaTec",

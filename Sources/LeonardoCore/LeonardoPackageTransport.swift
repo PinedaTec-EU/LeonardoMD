@@ -23,13 +23,22 @@ public struct LeonardoPackageWorkspace: Sendable {
     public let documentURL: URL
     private let sourceDigest: Data?
     private let temporary: Bool
+    fileprivate let extractionOwnership: LeonardoExtractionOwnership
 
-    fileprivate init(packageURL: URL?, directoryURL: URL, documentURL: URL, digest: Data?, temporary: Bool) {
+    fileprivate init(
+        packageURL: URL?,
+        directoryURL: URL,
+        documentURL: URL,
+        digest: Data?,
+        temporary: Bool,
+        extractionOwnership: LeonardoExtractionOwnership
+    ) {
         self.packageURL = packageURL
         self.directoryURL = directoryURL
         self.documentURL = documentURL
         self.sourceDigest = digest
         self.temporary = temporary
+        self.extractionOwnership = extractionOwnership
     }
 
     fileprivate func verifySource() throws {
@@ -39,38 +48,56 @@ public struct LeonardoPackageWorkspace: Sendable {
 
     fileprivate func relocated(to url: URL) -> Self {
         Self(packageURL: url, directoryURL: directoryURL, documentURL: documentURL,
-             digest: sourceDigest, temporary: temporary)
+             digest: sourceDigest, temporary: temporary, extractionOwnership: extractionOwnership)
     }
 
     fileprivate func removeTemporaryFiles() {
-        if temporary { try? FileManager.default.removeItem(at: directoryURL) }
+        if temporary {
+            LeonardoSecureExtraction.removeOwnedTemporaryWorkspace(
+                at: directoryURL,
+                ownership: extractionOwnership
+            )
+        }
+    }
+
+    fileprivate func verifyExtractionOwnership() throws {
+        try LeonardoSecureExtraction.verifyWorkspace(at: directoryURL, ownership: extractionOwnership)
     }
 }
 
 public enum LeonardoPackageTransport {
     public static func open(_ packageURL: URL, extractingTo destination: URL? = nil) throws -> LeonardoPackageWorkspace {
+        try open(packageURL, extractingTo: destination, hooks: nil)
+    }
+
+    internal static func openForTesting(
+        _ packageURL: URL,
+        extractingTo destination: URL? = nil,
+        hooks: LeonardoSecureExtractionHooks
+    ) throws -> LeonardoPackageWorkspace {
+        try open(packageURL, extractingTo: destination, hooks: hooks)
+    }
+
+    private static func open(
+        _ packageURL: URL,
+        extractingTo destination: URL?,
+        hooks: LeonardoSecureExtractionHooks?
+    ) throws -> LeonardoPackageWorkspace {
         let bytes = try boundedRead(packageURL)
         let entries = try LeonardoZIPArchive.read(bytes)
         let main = try primaryDocument(entries)
-        let manager = FileManager.default
         let temporary = destination == nil
-        let folder = destination ?? manager.temporaryDirectory.appendingPathComponent("Leonardo-\(UUID().uuidString)", isDirectory: true)
-        guard !manager.fileExists(atPath: folder.path), !isSymlink(folder) else { throw LeonardoPackageError.destinationExists }
-        try rejectSymlinkComponents(folder.deletingLastPathComponent())
-        try manager.createDirectory(at: folder, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+        let folder = destination ?? FileManager.default.temporaryDirectory
+            .appendingPathComponent("Leonardo-\(UUID().uuidString)", isDirectory: true)
+        let ownership: LeonardoExtractionOwnership
         do {
-            for entry in entries {
-                let target = folder.appendingPathComponent(entry.name)
-                try manager.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try entry.data.write(to: target, options: [.atomic])
-            }
-        } catch {
-            try? manager.removeItem(at: folder)
-            throw error
+            ownership = try LeonardoSecureExtraction.extract(entries: entries, to: folder, hooks: hooks)
+        } catch let error as LeonardoSecureExtractionFailure {
+            throw error.packageError
         }
         return LeonardoPackageWorkspace(packageURL: temporary ? packageURL : nil, directoryURL: folder,
             documentURL: folder.appendingPathComponent(main.name), digest: temporary ? Data(SHA256.hash(data: bytes)) : nil,
-            temporary: temporary)
+            temporary: temporary, extractionOwnership: ownership)
     }
 
     /// Returns a refreshed fingerprint for subsequent conflict-aware saves.
@@ -78,13 +105,16 @@ public enum LeonardoPackageTransport {
     public static func save(_ workspace: LeonardoPackageWorkspace) throws -> LeonardoPackageWorkspace {
         guard let packageURL = workspace.packageURL else { return workspace }
         try workspace.verifySource()
+        try workspace.verifyExtractionOwnership()
         let entries = try directoryEntries(workspace.directoryURL)
         _ = try primaryDocument(entries)
         let bytes = try LeonardoZIPArchive.write(entries)
         try workspace.verifySource()
+        try workspace.verifyExtractionOwnership()
         try bytes.write(to: packageURL, options: [.atomic])
         return LeonardoPackageWorkspace(packageURL: packageURL, directoryURL: workspace.directoryURL,
-            documentURL: workspace.documentURL, digest: Data(SHA256.hash(data: bytes)), temporary: true)
+            documentURL: workspace.documentURL, digest: Data(SHA256.hash(data: bytes)), temporary: true,
+            extractionOwnership: workspace.extractionOwnership)
     }
 
     public static func export(documentURL: URL, content: String, to packageURL: URL, assetRoot: URL? = nil) throws {
@@ -145,10 +175,6 @@ public enum LeonardoPackageTransport {
             entries.append(.init(name: relative, data: bytes))
         }
         return entries
-    }
-
-    private static func isSymlink(_ url: URL) -> Bool {
-        (try? FileManager.default.attributesOfItem(atPath: url.path)[.type] as? FileAttributeType) == .typeSymbolicLink
     }
 
     private static func rejectSymlinkComponents(_ url: URL) throws {

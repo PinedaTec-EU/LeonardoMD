@@ -19,10 +19,15 @@ import uuid
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Iterable, Iterator
+from typing import Callable, Iterable, Iterator
 
 from mdlf_schema import SchemaValidationError, validate_metadata
 from mdlf_semantics import MetadataSemanticError, validate_metadata_semantics
+from mdlz_extract import (
+    MAX_PATH_COMPONENTS,
+    SecureExtractionError,
+    extract_archive as extract_archive_secure,
+)
 
 
 ARCHIVE_SUFFIX = ".mdlz"
@@ -35,6 +40,7 @@ MAX_MEMBER_BYTES = 32 * 1024 * 1024
 MAX_TOTAL_BYTES = 32 * 1024 * 1024
 MAX_COMPRESSION_RATIO = 500
 MIN_RATIO_CHECK_BYTES = 64 * 1024
+MAX_MEMBER_PATH_COMPONENTS = MAX_PATH_COMPONENTS
 WINDOWS_DRIVE = re.compile(r"^[A-Za-z]:")
 SUPPORTED_FORMAT_VERSIONS = frozenset({1})
 DEFAULT_SCHEMA_PATH = Path(__file__).resolve().parents[1] / "references" / "mdlf-v1.schema.json"
@@ -117,6 +123,10 @@ def _canonical_member_name(raw_name: str, *, is_directory: bool) -> str:
     parts = name.split("/")
     if not name or any(part in {"", ".", ".."} for part in parts):
         raise ArchiveError(f"archive member is not a canonical relative path: {raw_name!r}")
+    if len(parts) > MAX_MEMBER_PATH_COMPONENTS:
+        raise ArchiveError(
+            f"archive member has too many path components (limit {MAX_MEMBER_PATH_COMPONENTS}): {raw_name!r}"
+        )
     if any(ord(character) < 0x20 for character in name):
         raise ArchiveError(f"archive member contains a control character: {raw_name!r}")
     return name
@@ -132,6 +142,20 @@ def _member_type(info: zipfile.ZipInfo) -> int:
 
 def _is_zip_directory(info: zipfile.ZipInfo) -> bool:
     return info.is_dir() or _member_type(info) == stat.S_IFDIR
+
+
+def _validate_directory_budget(names: Iterable[str], limit: int) -> None:
+    directories: dict[str, str] = {}
+    for name in names:
+        parts = name.split("/")
+        for depth in range(1, len(parts)):
+            prefix = "/".join(parts[:depth])
+            key = _collision_key(prefix)
+            if key in directories and directories[key] != prefix:
+                raise ArchiveError("archive contains ambiguous directory paths")
+            directories[key] = prefix
+            if len(directories) > limit:
+                raise ArchiveError(f"archive exceeds the directory expansion limit ({limit})")
 
 
 def _validate_zip_members(
@@ -200,6 +224,7 @@ def _validate_zip_members(
             if _collision_key(parent.as_posix()) in files:
                 raise ArchiveError(f"archive contains conflicting parent paths: {entry.name!r}")
             parent = parent.parent
+    _validate_directory_budget((entry.name for entry in entries), limits.max_entries)
     return entries, documents[0]
 
 
@@ -254,87 +279,38 @@ def inspect_archive(path: Path, limits: Limits = Limits()) -> dict[str, object]:
                     "maxMemberBytes": limits.max_member_bytes,
                     "maxTotalBytes": limits.max_total_bytes,
                     "maxCompressionRatio": limits.max_compression_ratio,
+                    "maxPathComponents": MAX_MEMBER_PATH_COMPONENTS,
                 },
             }
     except zipfile.BadZipFile as exc:
         raise ArchiveError(f"not a valid ZIP archive: {path}") from exc
 
 
-def _ensure_within(root: Path, candidate: Path) -> None:
-    try:
-        candidate.relative_to(root)
-    except ValueError as exc:
-        raise ArchiveError(f"archive member escapes the extraction directory: {candidate}") from exc
-
-
-def _write_archive_member(archive: zipfile.ZipFile, entry: ArchiveEntry, target: Path) -> None:
-    target.parent.mkdir(parents=True, exist_ok=True)
-    for parent in [target.parent, *target.parent.parents]:
-        if parent == target.parent.parent:
-            break
-        if parent.exists() and parent.is_symlink():
-            raise ArchiveError(f"extraction path contains a symlink: {parent}")
-    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-    try:
-        descriptor = os.open(target, flags, 0o600)
-    except FileExistsError as exc:
-        raise ArchiveError(f"duplicate extraction target: {target}") from exc
-    try:
-        with os.fdopen(descriptor, "wb") as output, archive.open(entry.info, "r") as source:
-            remaining = entry.info.file_size
-            while remaining:
-                chunk = source.read(min(CHUNK_SIZE, remaining))
-                if not chunk:
-                    raise ArchiveError(f"archive member ended before its declared size: {entry.name!r}")
-                output.write(chunk)
-                remaining -= len(chunk)
-            if source.read(1):
-                raise ArchiveError(f"archive member exceeded its declared size: {entry.name!r}")
-    except Exception:
-        try:
-            target.unlink()
-        except FileNotFoundError:
-            pass
-        raise
-
-
-def extract_archive(path: Path, destination: Path, limits: Limits = Limits()) -> dict[str, object]:
+def extract_archive(
+    path: Path,
+    destination: Path,
+    limits: Limits = Limits(),
+    *,
+    event_callback: Callable[[str, str], None] | None = None,
+) -> dict[str, object]:
     _assert_archive_file(path, limits)
-    if os.path.lexists(destination):
-        raise ArchiveError(f"extraction destination already exists: {destination}")
-    parent = destination.parent
-    _assert_directory(parent, "extraction destination parent")
-
-    temporary = parent / f".{destination.name}.mdlz-extract-{uuid.uuid4().hex}"
     try:
         with zipfile.ZipFile(path, "r") as archive:
             entries, document = _validate_zip_members(archive, limits)
             _validate_archive_document(archive, document, limits)
-            # Do not create an extraction directory until the archive and its
-            # root document have passed every validation gate.
-            temporary.mkdir(mode=0o700)
-            for entry in entries:
-                target = temporary.joinpath(*entry.name.split("/"))
-                _ensure_within(temporary, target)
-                if entry.is_directory:
-                    target.mkdir(parents=True, exist_ok=True)
-                    continue
-                _write_archive_member(archive, entry, target)
-        try:
-            temporary.rename(destination)
-        except FileExistsError as exc:
-            raise ArchiveError(f"extraction destination appeared during extraction: {destination}") from exc
-        return {
-            "archive": _display_path(path),
-            "destination": _display_path(destination),
-            "document": document,
-            "entries": len(entries),
-        }
+            return extract_archive_secure(
+                archive,
+                entries,
+                destination,
+                document,
+                archive_display=_display_path(path),
+                destination_display=_display_path(destination),
+                event_callback=event_callback,
+            )
+    except SecureExtractionError as exc:
+        raise ArchiveError(str(exc)) from exc
     except zipfile.BadZipFile as exc:
         raise ArchiveError(f"not a valid ZIP archive: {path}") from exc
-    finally:
-        if temporary.exists():
-            shutil.rmtree(temporary, ignore_errors=True)
 
 
 def _iter_source_entries(root: Path, limits: Limits = Limits()) -> tuple[list[SourceEntry], str]:
@@ -388,6 +364,7 @@ def _iter_source_entries(root: Path, limits: Limits = Limits()) -> tuple[list[So
         raise ArchiveError(f"source contains too many entries (limit {limits.max_entries})")
     if len(documents) != 1:
         raise ArchiveError(f"source must contain exactly one root .mdlf or .mdlr document (found {len(documents)})")
+    _validate_directory_budget((entry.name for entry in entries), limits.max_entries)
     return entries, documents[0]
 
 

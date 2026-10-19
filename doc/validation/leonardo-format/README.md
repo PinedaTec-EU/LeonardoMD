@@ -42,3 +42,5 @@ Native and plugin validation consume the same acceptance/rejection corpus in
 `Tests/FormatContractFixtures`. Tests check schema copy identity, definition and
 layout safety, portable patterns, opaque invalid draft answers, Unicode archive
 collisions and the shared 64 MiB archive / 32 MiB expansion limits.
+
+Secure-extraction regressions cover exclusive destination claims against files, symlinks and directories; retargeted parent/child paths; ownership-aware failure cleanup and temporary discard; and path/directory expansion limits. The tests use per-call scheduling hooks, with no shared mutable race state. Plugin extraction fails before effects on hosts without descriptor-relative no-follow support; read/validation/packing remain available.

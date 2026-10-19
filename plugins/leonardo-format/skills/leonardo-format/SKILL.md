@@ -75,6 +75,8 @@ destination. `pack` accepts one root `.mdlf`/`.mdlr` and regular files below
 `assets/`, writes deterministic ZIP entries, and refuses to overwrite an
 existing output. The transport envelope is 64 MiB for the ZIP and 32 MiB for
 expanded content in total or for any one member, with at most 2,048 entries.
+Each ZIP member is limited to 64 slash-separated path components, including
+its filename.
 Directory records are ignored as nonsemantic transport noise: `pack` omits
 them and `inspect`/`extract` do not report or recreate empty directories.
 Every command validates the UTF-8/front-matter envelope and the bundled v1
@@ -87,6 +89,15 @@ V1 patterns use the common Python `re` and ICU subset; engine-specific escapes
 such as `\p`, `\X` and `\z`, named/conditional/atomic groups, look-around,
 backreferences and quantified groups are rejected. Current `values` remain
 opaque so a draft with invalid answers can still be transported.
+
+Extraction claims the destination with an exclusive descriptor-relative
+`mkdir`, traverses and writes with `dir_fd` plus `O_NOFOLLOW`, and tracks entry
+ownership for failure cleanup. It fails closed when the host does not provide
+those capabilities; `inspect`, `validate`, and `pack` remain usable and MDLZ
+remains a conventional ZIP. The boundary prevents this helper from replacing
+preexisting destination entries and preserves entries that are replaced or
+injected during cleanup. It does not claim isolation from an arbitrary
+privileged or same-UID process with authority over the filesystem.
 
 ## Generate an MDLZ package
 
@@ -230,3 +241,5 @@ the bundled v1 metadata schema, and the bundled definition/layout safety rules.
 before producing output or creating an extraction directory. Pass `--schema`
 only when an additional explicit schema constraint is needed. The application
 parser remains authoritative for body placeholders and host rendering.
+
+MDLZ validation also limits distinct implicit parent directories to 2,048, rejects differently spelled parent paths with the same NFC/casefold key, and verifies the claimed destination and extracted tree before returning. These limits apply to native reading/writing and plugin inspection/extraction/packing.

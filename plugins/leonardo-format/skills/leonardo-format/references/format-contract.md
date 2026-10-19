@@ -63,7 +63,8 @@ document with a lowercase `.mdlf` or `.mdlr` suffix and may contain regular
 resources below `assets/`. The package does not carry executable behavior or a
 second hidden source of document state. The transport envelope is at most 64
 MiB of ZIP bytes, 32 MiB of expanded content in total or for one member, and
-2,048 entries. Directory records are validated for safe paths but are
+2,048 entries. Each ZIP member has at most 64 slash-separated path components,
+including its filename. Directory records are validated for safe paths but are
 nonsemantic transport noise: packers omit them and readers ignore them. Readers
 also apply the versioned definition and layout safety rules; current `values`
 are draft data and are not rejected merely because an answer is invalid.
@@ -72,3 +73,5 @@ When the canonical contract changes, update `doc/format/`, examples, the
 application parser, and this plugin's bundled references together. Do not copy
 an old schema into a new plugin release without recording the supported format
 version.
+
+MDLZ validation also limits distinct implicit parent directories to 2,048, rejects differently spelled parent paths with the same NFC/casefold key, and verifies the claimed destination and extracted tree before returning. These limits apply to native reading/writing and plugin inspection/extraction/packing.

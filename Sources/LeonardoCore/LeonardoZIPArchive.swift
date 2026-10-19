@@ -7,6 +7,8 @@ enum LeonardoZIPArchive {
     static let maximumArchiveBytes = 64 * 1_024 * 1_024
     static let maximumExpandedBytes = 32 * 1_024 * 1_024
     static let maximumEntries = 2_048
+    static let maximumDirectories = maximumEntries
+    static let maximumPathComponents = 64
 
     struct Entry {
         let name: String
@@ -55,6 +57,7 @@ enum LeonardoZIPArchive {
             cursor = next
         }
         guard cursor == end else { throw failure("Unexpected ZIP directory contents") }
+        try validateDirectoryBudget(entries)
         let files = Set(entries.map { collisionKey($0.name) })
         for entry in entries {
             var parent = (entry.name as NSString).deletingLastPathComponent
@@ -102,6 +105,7 @@ enum LeonardoZIPArchive {
 
     static func write(_ entries: [Entry]) throws -> Data {
         guard !entries.isEmpty, entries.count <= maximumEntries else { throw failure("Invalid ZIP entry count") }
+        try validateDirectoryBudget(entries)
         var output = Data()
         var directory = Data()
         var total = 0
@@ -133,13 +137,31 @@ enum LeonardoZIPArchive {
         return output
     }
 
+    private static func validateDirectoryBudget(_ entries: [Entry]) throws {
+        var directories: [String: String] = [:]
+        for entry in entries {
+            var prefix = ""
+            for component in entry.name.split(separator: "/").dropLast() {
+                prefix = prefix.isEmpty ? String(component) : prefix + "/" + component
+                let key = collisionKey(prefix)
+                guard directories[key] == nil || directories[key] == prefix else {
+                    throw failure("Ambiguous ZIP directory paths")
+                }
+                directories[key] = prefix
+                guard directories.count <= maximumDirectories else {
+                    throw failure("ZIP directory expansion limit exceeded")
+                }
+            }
+        }
+    }
+
     static func safePath(_ name: String) -> Bool {
         guard !name.isEmpty, !name.hasPrefix("/"), !name.contains("\\"),
               !name.contains(":"), !name.unicodeScalars.contains(where: { $0.value < 32 }) else { return false }
-        let components = name.split(separator: "/", omittingEmptySubsequences: false)
-        return components.enumerated().allSatisfy { index, value in
-            value != "." && value != ".." && (!value.isEmpty || index == components.count - 1)
-        }
+        let path = name.hasSuffix("/") ? String(name.dropLast()) : name
+        let components = path.split(separator: "/", omittingEmptySubsequences: false)
+        guard !components.isEmpty, components.count <= maximumPathComponents else { return false }
+        return components.allSatisfy { !$0.isEmpty && $0 != "." && $0 != ".." }
     }
 
     private static func collisionKey(_ name: String) -> String {

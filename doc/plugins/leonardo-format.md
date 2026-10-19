@@ -8,7 +8,10 @@ keeping `.md` on the standard Markdown path. The format contract and schema in
 second parser or a private document dialect.
 
 The package contains one provider-neutral skill, a bundled copy of the v1
-machine schema, and a dependency-free Python transport helper. The root
+machine schema, and dependency-free Python transport helpers. The runtime
+modules are `mdlf_schema.py`, `mdlf_semantics.py`, `mdlz.py`, and
+`mdlz_extract.py` under `skills/leonardo-format/scripts/`; the latter owns the
+descriptor-relative extraction boundary. The root
 `plugin.json` is the portable manifest. The
 `.claude-plugin/plugin.json` file supports direct Claude Code plugin loading,
 and `.codex-plugin/plugin.json` supplies the Codex compatibility overlay. No
@@ -164,13 +167,27 @@ python3 ./plugins/leonardo-format/skills/leonardo-format/scripts/mdlz.py \
 The helper refuses path traversal, absolute or ambiguous names, symlinks and
 special files, duplicate case/Unicode paths, unsafe archive expansion, more
 than one root document, files outside `assets/`, and accidental overwrites.
-The transport envelope is 64 MiB for the ZIP and 32 MiB for expanded content in
-total or for any one member, with at most 2,048 entries. Directory records are
-validated for safe paths but are nonsemantic transport noise: `pack` omits
-them, while `inspect` and `extract` ignore them. `inspect` is read-only.
-`extract` creates a new destination folder; saving that folder does not update
-the original archive, so use `pack` (or Leonardo's export action) to create a
-new `.mdlz`.
+Each ZIP member is limited to 64 slash-separated components, including its
+filename. The transport envelope is 64 MiB for the ZIP and 32 MiB for expanded
+content in total or for any one member, with at most 2,048 entries. Directory
+records are validated for safe paths but are nonsemantic transport noise:
+`pack` omits them, while `inspect` and `extract` ignore them. `inspect` is
+read-only.
+
+`extract` atomically claims a new destination directory with POSIX
+descriptor-relative `mkdir`, traverses each component with `O_NOFOLLOW`, and
+writes files with descriptor-relative exclusive creation. Failure cleanup is
+ownership-aware and leaves preexisting, injected, or replacement entries
+intact. If `dir_fd` or no-follow support is unavailable, extraction fails
+closed; `inspect`, `validate`, and `pack` remain usable and MDLZ remains a
+conventional ZIP. This boundary does not claim isolation from arbitrary
+privileged or same-UID processes that can modify the filesystem. Saving an
+extracted folder does not update the original archive, so use `pack` (or
+Leonardo's export action) to create a new `.mdlz`.
+
+On macOS, the descriptor walk recognizes only the root-owned `/tmp` and `/var`
+aliases to `/private/tmp` and `/private/var`; user-controlled symlink
+components are rejected.
 
 The helper has no third-party runtime dependency. Every command validates the
 UTF-8/front-matter envelope, the bundled v1 metadata schema, and the bundled
@@ -200,8 +217,10 @@ python3 -m unittest discover \
 
 The tests cover deterministic packing, round-trip extraction, traversal and
 symlink rejection, Unicode/case collisions, source-layout rules, destination
-conflicts, duplicate keys, unknown metadata, unsupported versions and
-UTF-8/front-matter checks. The bundled evaluator and semantic checks apply the
+file/symlink/directory conflicts, descriptor-relative parent-symlink races,
+atomic root-claim replacement, ownership-aware failure cleanup, the 64-component
+limit, duplicate keys, unknown metadata, unsupported versions and UTF-8/front-
+matter checks. The bundled evaluator and semantic checks apply the
 shared field and layout contract from `doc/format/mdlf-v1.schema.json` (or the
 bundled copy when the plugin is installed); the application parser remains
 authoritative for host rendering and body behavior. The helper stays
@@ -214,3 +233,5 @@ contract changes. Keep the root and compatibility manifests aligned. A plugin
 release must ship the same schema revision that the skill references, and the
 archive helper must remain dependency-free so a host can inspect transport
 before loading document content.
+
+MDLZ validation also limits distinct implicit parent directories to 2,048, rejects differently spelled parent paths with the same NFC/casefold key, and verifies the claimed destination and extracted tree before returning. These limits apply to native reading/writing and plugin inspection/extraction/packing.
