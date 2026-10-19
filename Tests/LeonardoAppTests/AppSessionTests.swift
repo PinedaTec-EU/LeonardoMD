@@ -32,6 +32,26 @@ final class AppSessionTests: XCTestCase {
         return (template, package, source)
     }
 
+    private func leonardoResourceFormFixture(
+        in root: URL,
+        name: String,
+        body: String
+    ) throws -> (template: URL, asset: URL, source: String) {
+        let template = root.appendingPathComponent(name).appendingPathExtension("mdlf")
+        let asset = root.appendingPathComponent("logo.png")
+        let document = LeonardoDocument(
+            body: body,
+            metadata: LeonardoMetadata(
+                document: LeonardoDocumentDescriptor(kind: .form),
+                fields: ["name": LeonardoFieldDefinition(required: true)]
+            )
+        )
+        let source = try LeonardoFormatParser.serialize(document)
+        try source.write(to: template, atomically: true, encoding: .utf8)
+        try Data([137, 80, 78, 71, 1, 2, 3]).write(to: asset, options: .atomic)
+        return (template, asset, source)
+    }
+
     func testTagActivationPopulatesProjectSearchAndRevealsSidebar() async throws {
         let (root, session) = try fixture()
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }
@@ -498,6 +518,99 @@ final class AppSessionTests: XCTestCase {
             })
         }
         XCTAssertEqual(try String(contentsOf: fixture.template, encoding: .utf8), fixture.source)
+    }
+
+    func testResponseExportRejectsMDLRForHTMLAndReferenceImages() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let cases = [
+            ("html", "<img src=\"logo.png\" alt=\"Logo\">\n\nName: {{field:name}}"),
+            ("reference", "![Logo][logo]\n\n[logo]: logo.png\n\nName: {{field:name}}")
+        ]
+
+        for (name, body) in cases {
+            let fixture = try leonardoResourceFormFixture(in: root, name: name, body: body)
+            let before = try Data(contentsOf: fixture.template)
+            await session.open(fixture.template)
+            let destination = root.appendingPathComponent("\(name)-response.mdlr")
+            session.errorMessage = nil
+
+            // A stale or manually overridden panel selection must not produce
+            // a non-portable response when the document contains local media.
+            await session.exportLeonardoResponse(
+                to: destination,
+                documentURL: fixture.template,
+                panelRequiresPackage: false
+            )
+
+            XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path))
+            XCTAssertEqual(try Data(contentsOf: fixture.template), before)
+            XCTAssertNotNil(session.errorMessage)
+        }
+    }
+
+    func testResponseExportPackagesHTMLAndReferenceImagesInMovedFolder() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let moved = root.appendingPathComponent("moved")
+        try FileManager.default.createDirectory(at: moved, withIntermediateDirectories: true)
+        let cases = [
+            ("html", "<img src=\"logo.png\" alt=\"Logo\">\n\nName: {{field:name}}"),
+            ("reference", "![Logo][logo]\n\n[logo]: logo.png\n\nName: {{field:name}}")
+        ]
+
+        for (name, body) in cases {
+            let fixture = try leonardoResourceFormFixture(in: root, name: name, body: body)
+            let before = try Data(contentsOf: fixture.template)
+            await session.open(fixture.template)
+            let destination = moved.appendingPathComponent("\(name)-response.mdlz")
+
+            await session.exportLeonardoResponse(
+                to: destination,
+                documentURL: fixture.template,
+                panelRequiresPackage: false
+            )
+
+            XCTAssertTrue(FileManager.default.fileExists(atPath: destination.path))
+            XCTAssertEqual(try Data(contentsOf: fixture.template), before)
+            let workspace = try LeonardoPackageTransport.open(destination)
+            defer { LeonardoPackageTransport.discard(workspace) }
+            let loaded = try String(contentsOf: workspace.documentURL, encoding: .utf8)
+            let parsed = try LeonardoFormatParser.parse(loaded)
+            XCTAssertTrue(parsed.body.contains("assets/"))
+            let assetsURL = workspace.directoryURL.appendingPathComponent("assets", isDirectory: true)
+            let assets = try FileManager.default.contentsOfDirectory(
+                at: assetsURL,
+                includingPropertiesForKeys: nil
+            )
+            XCTAssertEqual(assets.count, 1)
+            let sourceAsset = try Data(contentsOf: fixture.asset)
+            let packagedAssetURL = try XCTUnwrap(assets.first)
+            let packagedAsset = try Data(contentsOf: packagedAssetURL)
+            XCTAssertEqual(packagedAsset, sourceAsset)
+        }
+    }
+
+    func testResponseExportIgnoresCodeOnlyImageReferences() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let fixture = try leonardoResourceFormFixture(
+            in: root,
+            name: "code-only",
+            body: "```html\n<img src=\"logo.png\">\n```\n\nName: {{field:name}}"
+        )
+        let before = try Data(contentsOf: fixture.template)
+        await session.open(fixture.template)
+        let destination = root.appendingPathComponent("code-only-response.mdlr")
+
+        await session.exportLeonardoResponse(
+            to: destination,
+            documentURL: fixture.template,
+            panelRequiresPackage: false
+        )
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: destination.path))
+        XCTAssertEqual(try Data(contentsOf: fixture.template), before)
     }
 
     func testDeniedPackageResponseExportAuthorizesOriginalPackageBeforeWritingMDLZ() async throws {

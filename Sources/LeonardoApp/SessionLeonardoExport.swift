@@ -176,23 +176,11 @@ extension AppSession {
     }
 
     private func containsLocalResources(_ document: LeonardoDocument) -> Bool {
-        var references: [String] = []
-        if let regex = try? NSRegularExpression(pattern: #"!\[[^\]\n]*\]\(\s*<?([^>\s)]+)"#) {
-            let range = NSRange(document.body.startIndex..., in: document.body)
-            references += regex.matches(in: document.body, range: range).compactMap {
-                guard $0.numberOfRanges > 1, let valueRange = Range($0.range(at: 1), in: document.body) else { return nil }
-                return String(document.body[valueRange])
-            }
-        }
-        if let layout = document.metadata.layout {
-            references += layout.images.map(\.source)
-            if let image = layout.background?.image { references.append(image) }
-        }
-        return references.contains { reference in
-            guard !reference.isEmpty, !reference.hasPrefix("#") else { return false }
-            let scheme = URL(string: reference)?.scheme?.lowercased()
-            return scheme == nil || scheme == "file"
-        }
+        // Core owns the same Markdown masking and resource grammar used by
+        // package export, including HTML and reference-style images. If the
+        // detector cannot parse the draft, choose the portable path rather
+        // than allowing a potentially non-portable MDLR response.
+        (try? LeonardoLocalImagePolicy.hasLocalResources(in: document)) ?? true
     }
 
     /// Panel-free package export adapter.  The UI wrapper supplies a selected

@@ -123,6 +123,82 @@ struct LeonardoPackageTests {
         #expect(parsed.body.contains("![sample](missing.png)"))
     }
 
+    @Test func localImagePolicyUsesThePortableScannerWithoutReadingFiles() throws {
+        var ignored = LeonardoDocument(body: """
+        `![inline](missing.png)`
+
+        ```markdown
+        ![fenced](missing.png)
+        ```
+
+        ![remote](https://example.com/remote.png)
+        """)
+        ignored.metadata.values = ["answer": .string("![value](missing.png)")]
+        #expect(try LeonardoLocalImagePolicy.hasLocalResources(in: ignored) == false)
+
+        let referenceBody = """
+        ![hero][logo]
+        ![logo][]
+        ![logo]
+        [logo]: <missing.png>
+        """
+        let local = LeonardoDocument(body: referenceBody)
+        #expect(try LeonardoLocalImagePolicy.hasLocalResources(in: local))
+
+        var layoutOnly = LeonardoDocument(body: "No body image")
+        layoutOnly.metadata.layout = LeonardoLayout(
+            background: LeonardoBackground(image: "background.png"),
+            images: [LeonardoImageLayout(source: "foreground.png")]
+        )
+        #expect(try LeonardoLocalImagePolicy.hasLocalResources(in: layoutOnly))
+    }
+
+    @Test func exportCollectsHTMLAndReferenceImagesAndLeavesSourceUntouched() throws {
+        let root = try temporary()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let sourceURL = root.appendingPathComponent("source.mdlf")
+        let packageURL = root.appendingPathComponent("export.mdlz")
+        try Data([7, 8, 9]).write(to: root.appendingPathComponent("logo.png"))
+        let text = try source("""
+        <img alt="logo" src="logo.png">
+        ![hero][logo]
+        ![logo][]
+        ![logo]
+
+        [logo]: <logo.png>
+
+        <img src="https://example.com/remote.png">
+        `![ignored](missing.png)`
+
+        ```md
+        <img src="missing.png">
+        ```
+        """)
+        try text.write(to: sourceURL, atomically: true, encoding: .utf8)
+
+        try LeonardoPackageTransport.export(documentURL: sourceURL, content: text, to: packageURL)
+        let workspace = try LeonardoPackageTransport.open(packageURL)
+        defer { LeonardoPackageTransport.discard(workspace) }
+        let parsed = try LeonardoFormatParser.parse(String(contentsOf: workspace.documentURL, encoding: .utf8))
+        let assets = try FileManager.default.contentsOfDirectory(
+            at: workspace.directoryURL.appendingPathComponent("assets"),
+            includingPropertiesForKeys: nil
+        )
+        let asset = try #require(assets.first?.lastPathComponent)
+        let assetPath = "assets/\(asset)"
+
+        #expect(try String(contentsOf: sourceURL, encoding: .utf8) == text)
+        #expect(parsed.body.contains("<img alt=\"logo\" src=\"\(assetPath)\">"))
+        #expect(parsed.body.contains("![hero][logo]"))
+        #expect(parsed.body.contains("![logo][]"))
+        #expect(parsed.body.contains("![logo]\n\n[logo]:"))
+        #expect(parsed.body.contains("[logo]: <\(assetPath)>"))
+        #expect(parsed.body.contains("https://example.com/remote.png"))
+        #expect(parsed.body.contains("`![ignored](missing.png)`"))
+        #expect(parsed.body.contains("<img src=\"missing.png\">"))
+        #expect(assets.count == 1)
+    }
+
     @Test func exportUsesTheSameLocalImageBoundaryAsPreview() throws {
         let root = try temporary()
         defer { try? FileManager.default.removeItem(at: root) }

@@ -24,6 +24,8 @@ This is native XCTest/view-hosting and real WebKit evidence, not an image mockup
 
 A save/export decision selects its output format before showing the save panel. Extracted documents show the actual MDLF/MDLR filename and require export to create a new package.
 
+Response selection and package collection share one Core resource scanner. Regression tests cover HTML and reference-style images, relocated exported packages, source-byte preservation, and code examples that must not be treated as resources.
+
 Final command results and exact reviewed SHA are recorded on the PR; the source documentation does not assert release publication.
 
 Hosted WebKit regression: [#169](https://github.com/PinedaTec-EU/LeonardoMD/issues/169) records the remote-only background readiness timeout. Background images explicitly use eager loading before their source is assigned; real WebKit asserts that policy. The old source-string assertion for unconditional lazy loading was replaced by the runtime behavior check. Plugin tests also run in the normal macOS CI workflow.
