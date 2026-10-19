@@ -14,7 +14,8 @@ implementation [PR #192](https://github.com/PinedaTec-EU/LeonardoMD/pull/192).
   Existing tests cover disguised MDLF, unsupported versions, exclusive destination
   creation, conflicts, authorization and pending preview edits.
 - Render payloads expose original metadata and tags; native MDLF without migrated
-  metadata uses its document title. Standard Markdown remains isolated.
+  metadata keeps the structural envelope out of the panel, even when a document
+  title is present. Standard Markdown remains isolated.
 - `WebKitRuntimeTests.testMigratedMarkdownRendersMetadataOutsideEditedArticle`
   renders a synthetic document in the real native WKWebView. It checks the edited
   article, author, URL and tags, excludes internal JSON from metadata, then hides

@@ -6,7 +6,35 @@ import LeonardoCore
 
 struct MarkdownRenderTests {
     @Test
-    func nativeMDLFMetadataUsesTitleAndDoesNotLeakToStandardMarkdown() throws {
+    func leonardoEnvelopeIsNotGenericPreviewMetadata() throws {
+        let source = "---\n{\"format\":\"mdlf\",\"formatVersion\":1,\"layout\":{\"background\":{\"image\":\"assets/logo.svg\"}}}\n---\n# Invoice\n"
+        var configuration = MarkdownPreviewConfiguration(frontMatter: .metadata)
+        configuration.allowsLeonardoFormat = true
+        let data = Data(try MarkdownHTMLShell.payloadJSON(content: source, baseURL: nil, configuration: configuration).utf8)
+        let payload = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect((payload["frontMatter"] as? [String: String])?.isEmpty == true)
+        #expect((payload["tags"] as? [String])?.isEmpty == true)
+        #expect(payload["markdown"] as? String == "# Invoice\n")
+        #expect(payload["source"] as? String == source)
+        let metadata = try #require(payload["leonardo"] as? [String: Any])
+        let layout = try #require(metadata["layout"] as? [String: Any])
+        let background = try #require(layout["background"] as? [String: Any])
+        #expect(background["image"] as? String == "assets/logo.svg")
+    }
+
+    @Test
+    func standardMarkdownRetainsGenericPreviewMetadata() throws {
+        let source = "---\ntitle: Invoice\ntags: [billing]\n---\n# Invoice\n"
+        let configuration = MarkdownPreviewConfiguration(frontMatter: .metadata)
+        let data = Data(try MarkdownHTMLShell.payloadJSON(content: source, baseURL: nil, configuration: configuration).utf8)
+        let payload = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect((payload["frontMatter"] as? [String: String])?["title"] == "Invoice")
+        #expect(payload["tags"] as? [String] == ["billing"])
+        #expect(payload["leonardo"] == nil)
+    }
+
+    @Test
+    func nativeMDLFMetadataStaysHiddenAndDoesNotLeakToStandardMarkdown() throws {
         let source = try LeonardoFormatParser.serialize(LeonardoDocument(
             body: "# Body", metadata: LeonardoMetadata(document: LeonardoDocumentDescriptor(title: "Native document"))
         ))
@@ -14,7 +42,7 @@ struct MarkdownRenderTests {
         configuration.allowsLeonardoFormat = true
         let json = try MarkdownHTMLShell.payloadJSON(content: source, baseURL: nil, configuration: configuration)
         let payload = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
-        #expect(payload["frontMatter"] as? [String: String] == ["title": "Native document"])
+        #expect((payload["frontMatter"] as? [String: String])?.isEmpty == true)
         configuration.allowsLeonardoFormat = false
         let standard = try MarkdownHTMLShell.payloadJSON(content: "---\ntitle: Plain\n---\n# Plain", baseURL: nil, configuration: configuration)
         let plain = try #require(JSONSerialization.jsonObject(with: Data(standard.utf8)) as? [String: Any])

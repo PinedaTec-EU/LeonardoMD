@@ -20,7 +20,6 @@ public enum LeonardoMarkdownMigration {
         if case let .string(header) = document.metadata.values[frontMatterValueKey] {
             return MarkdownDocumentParser.parse(header)
         }
-        let title = document.metadata.document.title.map { ["title": $0] } ?? [:]
-        return MarkdownDocument(body: "", frontMatter: title)
+        return MarkdownDocument(body: "")
     }
 }

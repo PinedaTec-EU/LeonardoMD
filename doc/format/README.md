@@ -148,8 +148,8 @@ keeps the latest edited prose byte for byte. The source `.md` remains untouched.
 The recognized original title becomes `document.title`, with the filename as
 fallback. Preview metadata and tags reuse the standard Markdown reader on the
 retained envelope; its lightweight parsing is not a general YAML interpreter.
-Documents without this retained value show their document title as metadata
-rather than exposing internal JSON properties.
+Documents without this retained value keep their structural metadata out of
+the preview panel, including the document descriptor title.
 
 ## Declarative layout
 
@@ -208,6 +208,37 @@ Table width comments such as `<!-- leonardo:table widths=... -->` are not part
 of MDLF v1 and Leonardo must not generate them. Existing `.md` files can still
 be rendered as standard Markdown; conversion to MDLF is an explicit save or
 export operation.
+
+## Image background with editable text
+
+Open [the invoice example](examples/invoice/invoice.mdlf) in Leonardo with its
+sibling `assets/letterhead.svg` preserved. The SVG contains graphic shapes; the
+invoice text and table remain ordinary Markdown in the MDLF body. This example
+uses `layout.background.image`, not HTML or CSS embedded in a `.md` file:
+
+```json
+"background": {
+  "image": "assets/letterhead.svg",
+  "opacity": 1,
+  "fit": "fill"
+}
+```
+
+Choose **Preview**, unlock the document with the toolbar padlock, and edit
+“Empresa de ejemplo” directly in the preview. Save with **⌘S**, close the tab,
+and reopen the same `.mdlf`: the image and your text edit must both remain.
+Reopening protects the document again; unlock it to make another edit. **Export
+PDF** should retain the background and the changed text. Keep the image next to
+the document when moving this loose-file example, or export an MDLZ to carry
+both together.
+
+The current macOS UI does not provide an image import/drag/resize workflow;
+this example authors the image reference in the MDLF metadata. In contrast,
+standard Markdown has no native image-behind-text layout; HTML in a `.md` is a
+separate rendering path and does not validate MDLF or its Preview editing.
+
+See [the native validation record](../validation/mdlf-background.md) for the
+packaged application used and the save/reopen evidence.
 
 ## MDLZ transport
 
