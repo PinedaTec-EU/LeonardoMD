@@ -3,18 +3,30 @@
 Tracking: [issue #196](https://github.com/PinedaTec-EU/LeonardoMD/issues/196),
 [PR #197](https://github.com/PinedaTec-EU/LeonardoMD/pull/197).
 
-## Reproduction and disposition
+## Root cause and correction
 
-The installed `/Applications/LeonardoMD.app` reported **0.1.441 beta** and
-reproduced the absent-background/generic-metadata result, including after a
-normal quit and fresh launch. Source inspection alone did not establish why
-that installed binary behaved differently.
+With **Show metadata** enabled, `MarkdownHTMLShell.payloadJSON` parsed the
+complete MDLF source through the generic Markdown front-matter parser. That
+created a tall panel containing technical JSON keys and displaced the invoice
+and its image background below the first viewport. The initial report that the
+image did not load was incomplete: inspection of public beta 0.1.445 confirmed
+the image below the metadata panel.
 
-A clean release compilation of current main-based source loaded the same MDLF
-background correctly. No runtime renderer patch was needed to obtain this
-result. This change adds the missing reproducible fixture, native regression
-coverage and user instructions; it does not claim to repair or replace the
-installed 0.1.441 artifact or identify its binary/source discrepancy.
+The installed **0.1.441 beta** executable matches the public 0.1.441 archive
+(SHA-256 `b369fb607bc9548ec97ef2709151b7a558fc8d9fa8b7dcb74b5133a226778d02`).
+A first QA build did not show the problem because its fresh preference domain
+had Show metadata off. This was a masked condition, not evidence that a clean
+build alone repaired the defect.
+
+The correction parses opted-in MDLF once and builds the generic preview view
+of its body without routing its JSON envelope through Markdown metadata parsing.
+The full original source and typed Leonardo layout still reach the renderer
+and editing bridge. Standard Markdown keeps its existing front matter and tags.
+The regression explicitly enables **Show metadata** and failed before this fix.
+
+Migration of original Markdown/YAML content belongs to
+[issue #191](https://github.com/PinedaTec-EU/LeonardoMD/issues/191); this change
+does not implement that migration or a replacement metadata inspector.
 
 ## Packaged native acceptance — 2026-10-19
 
@@ -23,17 +35,19 @@ installed 0.1.441 artifact or identify its binary/source discrepancy.
   resources and Sparkle framework; no XCTest framework in the GUI executable.
 - QA bundle numeric metadata: **0.1.445**. Its channel label was **stable** from
   local packaging defaults; this is a local QA candidate, not a published
-  stable release. Source runtime baseline: `efd35b9`.
-- New process PID: **21357**, from a disposable `LeonardoMDQA.app` bundle.
+  stable release. Source base: `efd35b9`, with the PR #197 metadata correction applied.
+- Fresh process identity is recorded in the capture provenance for the final
+  disposable `LeonardoMDQA.app` bundle.
   The owner authorized normal termination of the installed instance. Fresh
   startup produced a real window; acceptance was not forwarded to that instance.
 - Input: `/tmp/Leonardo-factura-imagen-real/Factura-con-imagen-de-fondo.mdlf`
   and its real `assets/membrete.svg`. The committed equivalent lives under
   `doc/format/examples/invoice/`.
-- Preview displayed the SVG letterhead, logo and watermark beneath the Markdown
-  invoice. The image contains no SVG text elements.
+- With **Show metadata enabled**, Preview displayed the SVG letterhead, logo
+  and watermark beneath the Markdown invoice without a technical JSON panel.
+  The image contains no SVG text elements.
 - Unlocked the toolbar padlock, selected the customer in Preview, replaced it
-  with **CLIENTE VALIDADO DESDE PREVIEW**, and pressed **⌘S**.
+  with **CLIENTE VALIDADO MDLF CORREGIDO**, and pressed **⌘S**.
 - Closed the document tab, reopened the same MDLF through the app, and observed
   both the background and the changed customer. Read back the saved MDLF to
   verify the native image reference, changed body and absence of HTML markup.
@@ -48,7 +62,8 @@ The source/head and bundle digest are recorded in `mdlf-background/provenance.js
 
 `Tests/LeonardoAppTests/MDLFBackgroundPreviewTests.swift` hosts `WorkspaceView`
 and its real WKWebView with a temporary copy of the committed MDLF invoice.
-It verifies image decoding, the Preview-to-session editing bridge, persistence,
+With Show metadata enabled, it verifies absence of the generic JSON panel,
+image decoding, the Preview-to-session editing bridge, persistence,
 exact preservation of all source bytes outside the changed customer, metadata
 preservation, reopen rendering, and PDF production. With
 `LEONARDO_VISUAL_EVIDENCE` set, it captures the reopened preview, PDF and head

@@ -21,6 +21,7 @@ final class MDLFBackgroundPreviewTests: XCTestCase {
         session.authorizePath = { _, _ in }
         defer { session.stop() }
         await session.openDocument(documentURL)
+        session.showFrontmatter = true
         session.mode = .preview
         session.isProtected = false
         XCTAssertTrue(session.renderConfiguration.allowsLeonardoFormat)
@@ -33,6 +34,7 @@ final class MDLFBackgroundPreviewTests: XCTestCase {
         defer { window.close() }
         let web = try await findWebView(in: hosting)
         try await waitFor("document.querySelector('.leonardo-document-background img')?.naturalWidth > 0", in: web)
+        try await waitFor("document.querySelector('.front-matter') === null", in: web)
         let metadata = try LeonardoFormatParser.parse(original).metadata
         _ = try await web.evaluateJavaScript("""
         (() => {

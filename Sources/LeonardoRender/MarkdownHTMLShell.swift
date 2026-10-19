@@ -63,8 +63,11 @@ enum MarkdownHTMLShell {
         baseURL: URL?,
         configuration: MarkdownPreviewConfiguration
     ) throws -> String {
-        let document = MarkdownDocumentParser.parse(content)
         let leonardo = configuration.allowsLeonardoFormat ? try LeonardoFormatParser.parse(content) : nil
+        // MDLF's JSON envelope configures the document; it is not generic
+        // Markdown front matter to display above the laid-out page.
+        let document = leonardo.map { MarkdownDocument(body: $0.body) }
+            ?? MarkdownDocumentParser.parse(content)
         let payload = MarkdownRenderPayload(
             markdown: leonardo?.body ?? document.body,
             leonardo: leonardo?.metadata,
