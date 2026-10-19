@@ -104,6 +104,9 @@ final class InlineFormTests: XCTestCase {
         let destination = URL(fileURLWithPath: output).appendingPathComponent("inline-forms")
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
         try pdf.write(to: destination.appendingPathComponent("form.pdf"))
+        // Capture the stable theme endpoint rather than WebKit's transition
+        // clock, which can be paused in an inactive XCTest-hosted window.
+        _ = try await web.evaluateJavaScript("document.body.style.transition = 'none'")
         for (name, palette): (String, PaletteID) in [("light", .leonardoClassic), ("dark", .graphiteGlass)] {
             session.globalPreferences.palette = palette
             session.globalPreferences.paperEffect = .solid

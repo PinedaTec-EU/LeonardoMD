@@ -5,6 +5,8 @@ Tracking: [#206](https://github.com/PinedaTec-EU/LeonardoMD/issues/206).
 The approved composition is a document with in-place controls and optional right
 field-help sidebar. The sidebar has help above and independent editability and
 requiredness properties at its lower edge. It never duplicates inputs.
+[Approved image-generated design reference](inline-forms/approved-design.png)
+(design target only; not application evidence).
 
 ## Automated checks
 
@@ -26,7 +28,9 @@ in its exact-head preview artifact. Compare those captures to the approved mock;
 mock images are design references, never validation evidence. Wait until the actual
 computed body background reaches the target palette before taking a theme
 capture: checking only a changed CSS token can capture the 120 ms transition
-halfway through and falsely show light content with dark controls.
+halfway through and falsely show light content with dark controls. The capture
+harness disables only the body theme transition to reach its stable endpoint
+in inactive XCTest windows; it does not replace colors or compose pixels.
 
 These are hosted native component tests, not proof of fresh packaged startup.
 Do not terminate an owner's running LeonardoMD instance or disguise XCTest as
