@@ -3,24 +3,24 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.1.441</title>
-            <pubDate>Mon, 19 Oct 2026 13:20:23 +0200</pubDate>
+            <title>0.1.445</title>
+            <pubDate>Mon, 19 Oct 2026 16:36:52 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>441</sparkle:version>
-            <sparkle:shortVersionString>0.1.441</sparkle:shortVersionString>
+            <sparkle:version>445</sparkle:version>
+            <sparkle:shortVersionString>0.1.445</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD 0.1.441
+            <description sparkle:format="markdown"># LeonardoMD 0.1.445 — Beta
 
-- Shorter MDLZ opening choices and preference labels in English and Spanish.
-- Fixed the Markdown-to-MDLF preference switch so its state refreshes immediately and stays consistent between document sessions.
-- Added a Preferences gear beside the new-tab button.
+- Los documentos MDLF y los paquetes MDLZ abren en Vista previa por defecto.
+- Los formularios MDLR conservan el modo Rellenar, incluidos los paquetes y los documentos extraídos.
+- Se respetan las preferencias explícitas Editar/Dividir y la navegación a una línea del código.
 
-Includes the open MDLF/MDLR document and MDLZ transport formats introduced in 0.1.435. The Codex/Claude format plugin remains at 0.2.5.
+Corrección integrada en [PR #190](https://github.com/PinedaTec-EU/LeonardoMD/pull/190).
 
-Beta for Apple Silicon, macOS 14 or later. Signed with Developer ID and notarized by Apple. The stable channel remains unchanged.
+macOS 14 o posterior · Apple Silicon (arm64).
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.441/LeonardoMD-0.1.441.zip" length="16301240" type="application/octet-stream" sparkle:edSignature="pZqL8WI5my5hKY64rRYOw/HnhZFjNgWHvGHVPuZJpYlO3ynfif8O324jOe6Quk55E7XURccvCy8nFM7b5TzzDA==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.445/LeonardoMD-0.1.445.zip" length="16300990" type="application/octet-stream" sparkle:edSignature="MPH6ekT2DiB4lSRt/+fDjf0uBNELeirMCmOPq9DXjCcICDJFmwrIidCKzZj/sd9Qwl2HHOGKo9RpqhofSSuzBg==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.405</title>
