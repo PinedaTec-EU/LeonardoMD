@@ -3,26 +3,31 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.1.461</title>
-            <pubDate>Mon, 19 Oct 2026 19:15:02 +0200</pubDate>
+            <title>0.1.476</title>
+            <pubDate>Tue, 20 Oct 2026 01:52:26 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>461</sparkle:version>
-            <sparkle:shortVersionString>0.1.461</sparkle:shortVersionString>
+            <sparkle:version>476</sparkle:version>
+            <sparkle:shortVersionString>0.1.476</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD 0.1.461
+            <description sparkle:format="markdown">## Formularios editables sobre el documento
 
-Beta para macOS Apple Silicon.
+- Rellena los ocho tipos de campo directamente en el documento, con controles visibles, validaciones y sincronización de campos repetidos.
+- Consulta la ayuda con (?). El panel lateral muestra al pie si el campo es editable o de solo lectura y obligatorio u opcional.
+- Incluye un ejemplo completo de formulario y respuesta, con casillas, interruptores, valores iniciales y restricciones.
+- Conserva el guardado manual y los borradores incompletos; Preview y PDF muestran los valores sin controles.
+- Incluye la limpieza de metadatos opcionales vacíos integrada desde la beta anterior.
 
-- Corrige la conversión de Markdown a MDLF: conserva el texto editado y los metadatos originales sin incorporarlos como contenido del artículo.
-- Muestra los metadatos del autor sin exponer la estructura JSON interna del documento.
-- Conserva la corrección de la vista previa de los documentos MDLF nativos.
+Las fórmulas y los campos calculados quedan para una próxima versión (#203).
 
-Fuente: 7cc91a4e86c101e3933950d9c43a7664fb590d7e. PR #192; seguimiento #191.
+Beta para macOS Apple Silicon (arm64), firmada con Developer ID y notarizada por Apple. La publicación no sustituye la instalación de este Mac. La aceptación real de actualización, instalación y relanzamiento queda pendiente.
 
-Paquete firmado con Developer ID y notarizado por Apple. La aceptación de actualización, instalación y reapertura del artículo sigue pendiente.
+Cambio principal: #206 / PR #207. Revisión independiente y validaciones: https://github.com/PinedaTec-EU/LeonardoMD/pull/207#issuecomment-6279354170
+
+Versión: 0.1.476 · build 476 · canal beta.
+Fuente inmutable: `c24315e78495b4107bbdfd5d98f05ee85fde36ea`.
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.461/LeonardoMD-0.1.461.zip" length="16303046" type="application/octet-stream" sparkle:edSignature="hknjU3oqVUtbq6im6M3cadTb3Y2Rls3D/RrIKwSLFa2AFeJSHz2za9WKdaW4VvAo7JTkv4RJsqdRBd/eu2kzDg==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.476/LeonardoMD-0.1.476.zip" length="16321702" type="application/octet-stream" sparkle:edSignature="qXGqKu7LOmf+L+yLLF0xivyqDqUUcb8ifXhxBOdO6d+dbWXZ0T8LbUPR78n/cwyXG16ErWrMPaoKqqJ1cBw9BA==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.405</title>
