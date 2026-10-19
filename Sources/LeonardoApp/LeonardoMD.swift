@@ -199,7 +199,10 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
             for window in windows {
                 if await !window.documents.prepareClose() { canTerminate = false; break }
             }
-            if canTerminate { await DesktopSyncController.shared.stop() }
+            if canTerminate {
+                await DesktopSyncController.shared.stop()
+                for window in windows { await window.documents.finishPreparedClose() }
+            }
             else { windows.forEach { $0.documents.cancelPreparedClose() } }
             terminationPending = canTerminate
             if !canTerminate, role == .primary { processPendingLaunches() }
@@ -340,6 +343,7 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
         if closeAfterSave { return true }
         Task {
             guard await documents.prepareClose() else { return }
+            await documents.finishPreparedClose()
             closeAfterSave = true
             sender.performClose(nil)
         }

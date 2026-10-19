@@ -62,6 +62,34 @@ final class SessionPackageSaveTests: XCTestCase {
         return PackageFixture(root: root, template: template, package: package, source: source, tabs: tabs)
     }
 
+    func testAcceptedCloseJoinsPackageRetirementBeforeReturning() async throws {
+        let fixture = try await packageFixture()
+        let session = fixture.session
+        let workspace = try XCTUnwrap(session.packageWorkspace)
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let prepared = await fixture.tabs.prepareClose()
+        XCTAssertTrue(prepared)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: workspace.directoryURL.path))
+        await fixture.tabs.finishPreparedClose()
+        XCTAssertTrue(session.stopped)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: workspace.directoryURL.path))
+    }
+
+    func testCancelledClosePreservesPackageWorkspace() async throws {
+        let fixture = try await packageFixture()
+        let session = fixture.session
+        let workspace = try XCTUnwrap(session.packageWorkspace)
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let prepared = await fixture.tabs.prepareClose()
+        XCTAssertTrue(prepared)
+        fixture.tabs.cancelPreparedClose()
+        await fixture.tabs.finishPreparedClose()
+        XCTAssertFalse(session.stopped)
+        XCTAssertEqual(session.packageWorkspace?.directoryURL, workspace.directoryURL)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: workspace.documentURL.path))
+        XCTAssertEqual(session.content, fixture.source)
+    }
+
     func testDirectPackageRevocationMatchesDurableSourceArchive() async throws {
         let fixture = try await packageFixture()
         let session = fixture.session

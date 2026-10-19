@@ -133,6 +133,7 @@ final class DocumentTabs {
             return
         }
         session.stop()
+        await session.waitForPackageWorkspaceDisposal()
         tabs.remove(at: index)
         if tabs.isEmpty {
             closing = false
@@ -163,6 +164,13 @@ final class DocumentTabs {
         approved = true
         preparedForClose = true
         return true
+    }
+
+    /// Finalize only after every window has accepted close preparation.
+    func finishPreparedClose() async {
+        guard preparedForClose, !stopped else { return }
+        stop()
+        for tab in tabs { await tab.session.waitForPackageWorkspaceDisposal() }
     }
 
     func cancelPreparedClose() {
