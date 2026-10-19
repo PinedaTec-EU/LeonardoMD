@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.445
+
+- #189 Fixed: Open MDLF and MDLZ documents in preview by default ([#190](https://github.com/PinedaTec-EU/LeonardoMD/pull/190))
+
+Source: `4f330d747986bce95c1398f4b9322f3be20024c2`. Delta: `{"build": 4}`.
+
 ## 0.1.441
 
 - #183 Fixed: Refresh format preferences and shorten package choices ([#184](https://github.com/PinedaTec-EU/LeonardoMD/pull/184))
