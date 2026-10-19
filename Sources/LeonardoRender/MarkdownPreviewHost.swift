@@ -6,12 +6,16 @@ import UIKit
 typealias NativeMarkdownView = UIView
 #endif
 import Foundation
+import LeonardoCore
 import os.log
 import WebKit
 
 @MainActor
 final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKNavigationDelegate {
     var onEdit: ((String, String) -> Bool)?
+    var onFormEdit: ((String, [String: LeonardoJSONValue]) -> String?)?
+    var onFieldHelp: ((String) -> Void)?
+    private var formState = MarkdownFormState()
     var onReady: ((Bool) -> Void)?
     var onScrollProgress: ((Double) -> Void)?
     private(set) var tagHandler: ((String) -> Void)?
@@ -76,6 +80,8 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         let baseURLChanged = !hasState || documentURL != baseURL
         let renderOptionsChanged = !hasState
             || previousConfiguration.allowsLeonardoFormat != configuration.allowsLeonardoFormat
+            || previousConfiguration.allowsFormFilling != configuration.allowsFormFilling
+            || previousConfiguration.formLabels != configuration.formLabels
             || previousConfiguration.frontMatter != configuration.frontMatter
             || previousConfiguration.renderDebounce != configuration.renderDebounce
 
@@ -117,7 +123,16 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     }
 
     func flushEdits() async -> Bool {
-        guard configuration.allowsEditing, ready, let webView else { return true }
+        guard ready, let webView else { return true }
+        if configuration.allowsFormFilling {
+            guard renderWorkItem == nil else { return true }
+            do {
+                guard let snapshot = try await webView.evaluateJavaScript("window.LeonardoForms.snapshot()") else { return false }
+                guard self.webView === webView, configuration.allowsFormFilling else { return false }
+                return applyFormSnapshot(snapshot)
+            } catch { return false }
+        }
+        guard configuration.allowsEditing else { return true }
         // A pending native-to-DOM update makes the raw buffer authoritative.
         // Reading the previous page here would overwrite a recent raw edit.
         guard renderWorkItem == nil else { return true }
@@ -144,9 +159,12 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             }
         }
         defer { timeoutTask.cancel() }
+        guard await flushEdits() else { throw MarkdownRenderError.invalidPayload }
         try await flushPendingRender()
         try await waitUntilReady()
         try await renderAllDiagramsForPDF()
+        _ = try await webView.evaluateJavaScript("window.LeonardoForms?.setExporting(true)")
+        defer { evaluate("window.LeonardoForms?.setExporting(false)") }
         return try await withCheckedThrowingContinuation { continuation in
             let pdfConfiguration = WKPDFConfiguration()
             webView.createPDF(configuration: pdfConfiguration) { result in
@@ -171,6 +189,8 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         renderWorkItem = nil
         markFailed(with: MarkdownRenderError.webViewUnavailable)
         if let webView {
+            webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoForm")
+            webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoFieldHelp")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoEdit")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoTag")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoLink")
@@ -206,6 +226,8 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             webConfiguration.setURLSchemeHandler(documentHandler, forURLScheme: MarkdownHTMLShell.documentScheme)
         }
         let userContentController = webConfiguration.userContentController
+        userContentController.add(self, name: "leonardoForm")
+        userContentController.add(self, name: "leonardoFieldHelp")
         userContentController.add(self, name: "leonardoEdit")
         userContentController.add(self, name: "leonardoTag")
         userContentController.add(self, name: "leonardoLink")
@@ -275,6 +297,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             ready = false
             onReady?(false)
             loadStartedAtUptime = DispatchTime.now().uptimeNanoseconds
+            formState.baseline = content
             webView.loadHTMLString(html, baseURL: htmlBaseURL)
         } catch {
             loadStartedAtUptime = nil
@@ -298,6 +321,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
                 baseURL: documentURL,
                 configuration: configuration
             )
+            formState.baseline = content
             evaluate("window.LeonardoPreview && window.LeonardoPreview.updateContent(\(payload));")
         } catch {
             scheduleLoad(immediately: true)
@@ -403,11 +427,42 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         }
     }
 
+    private func applyFormSnapshot(_ snapshot: Any) -> Bool {
+        guard configuration.allowsLeonardoFormat, configuration.allowsFormFilling,
+              renderWorkItem == nil,
+              let changes = formState.changes(from: snapshot, content: content) else { return false }
+        if changes.isEmpty { return true }
+        guard let replacement = onFormEdit?(content, changes) else { return false }
+        content = replacement
+        if let document = try? LeonardoFormatParser.parse(content) {
+            let diagnostics = LeonardoFormatValidator.validate(document, context: .draft)
+            let grouped = Dictionary(grouping: diagnostics.filter { $0.fieldID != nil }, by: { $0.fieldID! })
+                .mapValues { $0.map(\.message) }
+            if let data = try? JSONEncoder().encode(grouped), let json = String(data: data, encoding: .utf8) {
+                evaluate("window.LeonardoForms?.showDiagnostics(\(json));")
+            }
+        }
+        return true
+    }
+
     func userContentController(
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
     ) {
         switch message.name {
+        case "leonardoForm":
+            guard message.webView === webView, message.frameInfo.isMainFrame,
+                  applyFormSnapshot(message.body) else {
+                scheduleContentUpdate(immediately: true)
+                return
+            }
+        case "leonardoFieldHelp":
+            guard message.webView === webView, message.frameInfo.isMainFrame,
+                  configuration.allowsFormFilling, renderWorkItem == nil,
+                  let body = message.body as? [String: String], body["source"] == formState.baseline,
+                  let fieldID = body["fieldID"],
+                  (try? LeonardoFormatParser.parse(content).metadata.fields[fieldID]) != nil else { return }
+            onFieldHelp?(fieldID)
         case "leonardoEdit":
             guard message.webView === webView,
                   message.frameInfo.isMainFrame,

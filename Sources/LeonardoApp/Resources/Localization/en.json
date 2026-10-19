@@ -424,5 +424,22 @@
   "A select field must declare at least one option.": "A select field must declare at least one option.",
   "Options are ignored for this field type.": "Options are ignored for this field type.",
   "A value is present for an undeclared field.": "A value is present for an undeclared field.",
-  "Appearance is only supported for checkbox fields.": "Appearance is only supported for checkbox fields."
+  "Appearance is only supported for checkbox fields.": "Appearance is only supported for checkbox fields.",
+  "Field help": "Field help",
+  "Close field help": "Close field help",
+  "No additional help for this field.": "No additional help for this field.",
+  "Example": "Example",
+  "Field properties": "Field properties",
+  "Editable": "Editable",
+  "This value cannot be modified.": "This value cannot be modified.",
+  "You can modify this value.": "You can modify this value.",
+  "Required": "Required",
+  "Optional": "Optional",
+  "Complete this field before finalizing.": "Complete this field before finalizing.",
+  "You may leave this field empty.": "You may leave this field empty.",
+  "Help follows the field you select with (?).": "Help follows the field you select with (?).",
+  "Select (?) beside a field to see its help and properties.": "Select (?) beside a field to see its help and properties.",
+  "Help for": "Help for",
+  "Yes": "Yes",
+  "No": "No"
 }

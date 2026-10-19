@@ -297,3 +297,26 @@ the host lacks those capabilities, extraction must fail closed; inspection,
 validation and packing remain usable because MDLZ is still a conventional ZIP.
 
 MDLZ validation also limits distinct implicit parent directories to 2,048, rejects differently spelled parent paths with the same NFC/casefold key, and verifies the claimed destination and extracted tree before returning. These limits apply to native reading/writing and plugin inspection/extraction/packing.
+
+## Filling forms in LeonardoMD
+
+Choose **Fill form** to edit declared fields directly at their `{{field:id}}`
+positions in the rendered document. The source padlock protects source editing;
+it does not prevent filling writable declared fields. Repeated placeholders
+share one value. A paragraph containing only placeholders becomes a responsive
+form row in Fill mode; put two placeholders in the same paragraph for two
+columns when space permits. Prose and authored tables keep their layout.
+Each field has a keyboard-accessible **?** help button,
+including read-only fields. Its contextual sidebar explains the selected field
+and separately reports editable/read-only and required/optional. It contains no
+duplicate input controls; close it to recover document space.
+
+Inputs and focus boundaries follow the active document palette. Draft validation
+messages appear beside the affected fields. Saving remains manual and permits
+incomplete or invalid draft answers. Preview and PDF show values without input
+controls or help buttons. Read-only fields remain immutable through form entry.
+
+See [the complete form demonstration](examples/form-showcase/README.md) for all
+current field types, defaults, constraints, repeated values and contextual help.
+Calculated fields and formulas are not supported yet; they are tracked for a
+future version in [#203](https://github.com/PinedaTec-EU/LeonardoMD/issues/203).

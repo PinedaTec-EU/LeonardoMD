@@ -46,7 +46,7 @@ extension AppSession {
             // from the temporary package workspace to the user-owned folder.
             if previousMode == .fill, availableDocumentModes.contains(.fill) {
                 mode = .fill
-                showInspector = true
+                selectedLeonardoFieldID = nil
             }
             if let previousWorkspace {
                 await disposePackageWorkspace(previousWorkspace)
@@ -129,7 +129,6 @@ extension AppSession {
             }
 
             let kind = AppDocumentKind.classify(workspace.documentURL)
-            let parsed = try? LeonardoFormatParser.parse(loaded.content)
             let nextMode: DocumentMode
             if kind == .leonardoResponse {
                 nextMode = .fill
@@ -149,7 +148,7 @@ extension AppSession {
             externalConflict = false
             leonardoFormatWarning = false
             mode = nextMode
-            if nextMode == .fill || parsed?.isForm == true { showInspector = true }
+            selectedLeonardoFieldID = nil
             saveStatus = extraction == nil ? "Saved · package" : "Saved · extracted folder"
             NSDocumentController.shared.noteNewRecentDocumentURL(extraction == nil ? packageURL : workspace.documentURL)
             openedWorkspace = nil
@@ -312,80 +311,4 @@ extension AppSession {
         }
     }
 
-}
-
-extension AppSession {
-    var leonardoDocument: LeonardoDocument? {
-        guard documentKind.isLeonardo else { return nil }
-        return try? LeonardoFormatParser.parse(content)
-    }
-
-    var leonardoFieldIDs: [String] {
-        leonardoDocument?.metadata.fields.keys.sorted() ?? []
-    }
-
-    func leonardoFieldDefinition(_ fieldID: String) -> LeonardoFieldDefinition? {
-        leonardoDocument?.metadata.fields[fieldID]
-    }
-
-    func leonardoFieldValue(_ fieldID: String) -> LeonardoJSONValue? {
-        guard let document = leonardoDocument,
-              let definition = document.metadata.fields[fieldID] else { return nil }
-        return document.metadata.values[fieldID] ?? definition.defaultValue
-    }
-
-    func leonardoFieldText(_ fieldID: String) -> String {
-        guard let value = leonardoFieldValue(fieldID) else { return "" }
-        switch value {
-        case .string(let value): return value
-        case .number(let value): return String(value)
-        case .boolean(let value): return value ? "true" : "false"
-        case .array, .object: return ""
-        case .null: return ""
-        }
-    }
-
-    func leonardoFieldBool(_ fieldID: String) -> Bool {
-        leonardoFieldValue(fieldID)?.booleanValue ?? false
-    }
-
-    func leonardoFieldDiagnostics(_ fieldID: String) -> [LeonardoDiagnostic] {
-        guard let document = leonardoDocument else { return [] }
-        return LeonardoFormatValidator.validate(document, context: .draft).filter { $0.fieldID == fieldID }
-    }
-
-    @discardableResult
-    func updateLeonardoField(_ fieldID: String, text: String) -> Bool {
-        guard let definition = leonardoFieldDefinition(fieldID) else { return false }
-        let value: LeonardoJSONValue
-        if definition.type == .number, let number = Double(text.trimmingCharacters(in: .whitespacesAndNewlines)), number.isFinite {
-            value = .number(number)
-        } else if definition.type == .number, text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            value = .null
-        } else {
-            value = .string(text)
-        }
-        return updateLeonardoField(fieldID, value: value, definition: definition)
-    }
-
-    @discardableResult
-    func updateLeonardoCheckbox(_ fieldID: String, value: Bool) -> Bool {
-        guard let definition = leonardoFieldDefinition(fieldID), definition.type == .checkbox else { return false }
-        return updateLeonardoField(fieldID, value: .boolean(value), definition: definition)
-    }
-
-    private func updateLeonardoField(
-        _ fieldID: String,
-        value: LeonardoJSONValue,
-        definition: LeonardoFieldDefinition
-    ) -> Bool {
-        guard documentURL != nil, documentKind.isLeonardo, !definition.readOnly,
-              mode == .fill, !stopped, !isClosing, !busy, !isSyncSuspended,
-              var document = leonardoDocument else { return false }
-        document.metadata.values[fieldID] = value
-        guard let replacement = try? LeonardoFormatParser.serialize(document) else { return false }
-        content = replacement
-        contentChanged()
-        return true
-    }
 }

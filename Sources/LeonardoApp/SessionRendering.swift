@@ -5,8 +5,18 @@ import LeonardoRender
 
 extension AppSession {
     var preview: some View {
+        let previewDocumentURL = documentURL
         renderer.onEdit = { [weak self] expected, replacement in
-            self?.editDocument(expected: expected, replacement: replacement) ?? false
+            guard let self, self.documentURL == previewDocumentURL else { return false }
+            return self.editDocument(expected: expected, replacement: replacement)
+        }
+        renderer.onFormEdit = { [weak self] expected, changes in
+            guard let self, self.documentURL == previewDocumentURL else { return nil }
+            return self.updateLeonardoFields(expected: expected, changes: changes)
+        }
+        renderer.onFieldHelp = { [weak self] fieldID in
+            guard let self, self.documentURL == previewDocumentURL else { return }
+            self.showLeonardoFieldHelp(fieldID)
         }
         return MarkdownPreview(
             content: content,
@@ -19,6 +29,7 @@ extension AppSession {
             },
             onTagActivation: { self.search(tag: $0) }
         )
+        .id(documentURL)
         .onChange(of: editorScroll) { _, fraction in
             if self.mode == .split { self.renderer.scroll(toFraction: fraction) }
         }
@@ -60,6 +71,8 @@ extension AppSession {
         // remains writable through its declared fields while source editing
         // stays locked behind the toolbar padlock.
         configuration.allowsEditing = canEditDocument && mode != .fill
+        configuration.allowsFormFilling = canFillLeonardoForm
+        configuration.formLabels = TranslationCatalog.catalogs[LanguageSettings.shared.language] ?? [:]
         return configuration
     }
     func followLink(_ url: URL) async {

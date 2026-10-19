@@ -60,6 +60,7 @@ final class AppSession {
     }
     var mode: DocumentMode = .preview
     var focus = false
+    var selectedLeonardoFieldID: String?
     var showInspector = false
     var showPreferences = false
     var showGit = false

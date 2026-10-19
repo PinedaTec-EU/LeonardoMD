@@ -8,17 +8,19 @@ enum MarkdownResource: String, CaseIterable {
     case mermaid = "mermaid.min.js"
     case katex = "katex.min.js"
     case katexStyles = "katex.min.css"
+    case formStyles = "leonardo-forms.css"
     case previewStyles = "preview.css"
     case previewEditing = "preview-editing.js"
     case tableLayout = "table-layout.js"
+    case leonardoForms = "leonardo-forms.js"
     case leonardoLayout = "leonardo-layout.js"
     case runtime = "renderer-runtime.js"
 
     var mimeType: String {
         switch self {
-        case .katexStyles, .previewStyles:
+        case .katexStyles, .previewStyles, .formStyles:
             return "text/css"
-        case .marked, .dompurify, .highlight, .mermaid, .katex, .previewEditing, .tableLayout, .leonardoLayout, .runtime:
+        case .marked, .dompurify, .highlight, .mermaid, .katex, .previewEditing, .tableLayout, .leonardoForms, .leonardoLayout, .runtime:
             return "text/javascript"
         }
     }
@@ -30,7 +32,7 @@ enum MarkdownResourceCatalog {
             .marked,
             .dompurify,
             .highlight,
-            .previewStyles
+            .previewStyles, .formStyles
         ]
         if configuration.allowsMath {
             resources.append(contentsOf: [.katex, .katexStyles])
@@ -38,7 +40,7 @@ enum MarkdownResourceCatalog {
         if configuration.allowsMermaid {
             resources.append(.mermaid)
         }
-        resources.append(contentsOf: [.previewEditing, .tableLayout, .leonardoLayout, .runtime])
+        resources.append(contentsOf: [.previewEditing, .tableLayout, .leonardoForms, .leonardoLayout, .runtime])
         return resources
     }
 

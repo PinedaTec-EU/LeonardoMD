@@ -55,7 +55,7 @@ extension AppSession {
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         guard await flushPreviewEdits(), documentURL == url, !stopped, !isClosing, !isSyncSuspended else { return }
         mode = value
-        if value == .fill { showInspector = true }
+        if value != .fill { selectedLeonardoFieldID = nil }
     }
 
     @discardableResult
