@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.476
+
+- #206 Added: inline form controls and contextual field help ([#207](https://github.com/PinedaTec-EU/LeonardoMD/pull/207))
+
+Source: `32ebcb6fe30cbdec3d13e5a6ea1a8557a63936e9`. Delta: `{"build": 10}`.
+
 ## 0.1.466
 
 - #204 Fixed: omit empty optional Leonardo metadata ([#205](https://github.com/PinedaTec-EU/LeonardoMD/pull/205))
