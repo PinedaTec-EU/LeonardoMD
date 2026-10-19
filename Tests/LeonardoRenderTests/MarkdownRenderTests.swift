@@ -115,7 +115,6 @@ struct MarkdownRenderTests {
         #expect(runtime.contains("htmlLabels: false"))
         #expect(runtime.contains("securityLevel: \"strict\""))
         #expect(runtime.contains("installHeadingAnchors"))
-        #expect(runtime.contains("image.loading = \"lazy\""))
         #expect(runtime.contains("image.loading = \"eager\""))
     }
 

@@ -131,6 +131,7 @@
     if (!background.image) return;
     const image = document.createElement("img");
     image.alt = "";
+    image.loading = "eager";
     image.src = background.image;
     image.style.width = "100%";
     image.style.height = "100%";

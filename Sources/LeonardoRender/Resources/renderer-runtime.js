@@ -359,7 +359,7 @@
       window.LeonardoLayout?.apply(root, payload);
       installHeadingAnchors();
       root.querySelectorAll("img").forEach((image) => {
-        image.loading = "lazy";
+        image.loading = image.closest(".leonardo-document-background") ? "eager" : "lazy";
         image.decoding = "async";
       });
       renderFrontMatter();

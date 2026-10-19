@@ -67,6 +67,10 @@ final class WebKitRuntimeTests: XCTestCase {
         defer { host.teardown(); window.close() }
         let web = try XCTUnwrap(webView(of: host))
         try await waitFor("document.querySelectorAll('img').length === 2 && Array.from(document.querySelectorAll('img')).every(i => i.naturalWidth === 20)", in: web)
+        let readiness = try await evaluate("JSON.stringify(Array.from(document.querySelectorAll('img')).map(i => ({src:i.getAttribute('src'),currentSrc:i.currentSrc,complete:i.complete,width:i.naturalWidth,loading:i.loading})))", in: web)
+        print("Leonardo fixture image readiness: \(readiness)")
+        let backgroundLoading = try await evaluate("document.querySelector('.leonardo-document-background img').loading", in: web)
+        XCTAssertEqual(backgroundLoading, "eager")
         let result4 = try await evaluate("document.querySelector('.leonardo-document-background').style.opacity", in: web)
         XCTAssertEqual(result4, "0.2")
         let result5 = try await evaluate("document.querySelector('p img').style.width", in: web)

@@ -12,3 +12,5 @@ Tracking: [#167](https://github.com/PinedaTec-EU/LeonardoMD/issues/167), impleme
 - `plugins/leonardo-format` contains shared Codex/Claude skill instructions and a Python transport CLI, including package creation. Follow the same versioned schema rather than inventing a separate dialect.
 
 Native QA must preserve the owner's installed running instance. XCTest native hosting/WebKit captures verify UI components; they do not establish fresh packaged-process readiness.
+
+Hosted WebKit background readiness is tracked separately in [#169](https://github.com/PinedaTec-EU/LeonardoMD/issues/169). Decorative backgrounds must opt into eager loading before setting their source and retain that policy after document rendering; ordinary Markdown images may remain lazy.
