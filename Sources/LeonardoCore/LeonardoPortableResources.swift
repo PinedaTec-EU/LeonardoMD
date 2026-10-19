@@ -180,7 +180,7 @@ enum LeonardoPortableResources {
             }
             let values = try? resolved.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
             guard values?.isRegularFile == true, let size = values?.fileSize,
-                  size <= LeonardoZIPArchive.maximumArchiveBytes / 2 else { throw LeonardoPackageError.missingAsset(reference) }
+                  size <= LeonardoZIPArchive.maximumExpandedBytes else { throw LeonardoPackageError.missingAsset(reference) }
             let bytes = try Data(contentsOf: resolved)
             let hash = SHA256.hash(data: bytes).prefix(8).map { String(format: "%02x", $0) }.joined()
             let suffix = url.pathExtension.lowercased().filter { $0.isASCII && $0.isLetter || $0.isNumber }
@@ -218,7 +218,7 @@ enum LeonardoPortableResources {
                 result.replaceSubrange(start..<end.lowerBound, with: String(decoding: encoded, as: UTF8.self))
             }
         }
-        guard assets.values.reduce(0, { $0 + $1.count }) <= LeonardoZIPArchive.maximumArchiveBytes / 2 else {
+        guard assets.values.reduce(0, { $0 + $1.count }) <= LeonardoZIPArchive.maximumExpandedBytes else {
             throw LeonardoPackageError.invalidArchive("Resources exceed package size limit")
         }
         return Collection(content: result, assets: assets.sorted(by: { $0.key < $1.key }).map { .init(name: $0.key, data: $0.value) })

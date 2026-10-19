@@ -78,6 +78,17 @@ The machine-readable Draft 2020-12 schema is kept beside this document at
 `doc/format/mdlf-v1.schema.json`. It describes the same closed structural
 vocabulary and optional layout defaults as the Swift reader.
 
+The schema covers all local type, enum, pattern, length and numeric bounds.
+Implementations also apply these v1 semantic definition rules before parsing
+or writing a document: `minLength` cannot exceed `maxLength`, `minimum` cannot
+exceed `maximum`, select fields must declare unique non-empty options, and
+pattern expressions must obey the portable v1 subset and safety limits
+described below. Layout
+dimensions must be finite and within their unit range, custom page sizes need
+positive dimensions, occurrences are one-based and unique, and metadata asset
+references must be relative paths or `http`/`https` URLs. These rules concern
+the document definition; invalid current answers remain serializable drafts.
+
 The app may save a draft with validation warnings. A final submission uses
 `.submission`, which turns missing required values into errors.
 
@@ -113,10 +124,15 @@ valid values for the built-in scalar field types. `select` values must match an
 option's `value`. A missing required value is a warning while editing and an
 error on submission; an incomplete response can always be saved as a draft.
 
-Patterns use ICU/`NSRegularExpression` syntax. To keep validation bounded,
-v1 applies a 25 ms matching budget, limits expressions to 512 UTF-8 bytes, rejects backreferences, look-around
-and quantified groups (including `(a|aa)+`), and caps a value checked by a
-pattern at 32 KiB. Applications may impose stricter limits. A non-empty
+Patterns use the intersection of the Python `re` and ICU/
+`NSRegularExpression` dialects: literals, character classes, ordinary groups,
+alternation, anchors and quantifiers are portable; engine-specific escapes
+(`\p`, `\P`, `\X`, `\R`, `\N{}`, `\A`, `\Z`, `\z`) and named,
+conditional or atomic groups are rejected by every v1 reader. To keep
+validation bounded, v1 limits expressions to 512 UTF-8 bytes, rejects
+backreferences, look-around and quantified groups (including `(a|aa)+`), and
+caps a value checked by a pattern at 32 KiB. The native evaluator applies a
+25 ms matching budget. Applications may impose stricter limits. A non-empty
 `validationMessage` replaces the default message when a field value fails a
 constraint. Dates use the proleptic Gregorian calendar in UTC and must be
 real `YYYY-MM-DD` dates, including leap-year rules.

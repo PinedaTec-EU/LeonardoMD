@@ -5,7 +5,7 @@ import Foundation
 /// All entries are checked and decompressed before the caller writes any files.
 enum LeonardoZIPArchive {
     static let maximumArchiveBytes = 64 * 1_024 * 1_024
-    static let maximumExpandedBytes = 128 * 1_024 * 1_024
+    static let maximumExpandedBytes = 32 * 1_024 * 1_024
     static let maximumEntries = 2_048
 
     struct Entry {
@@ -35,27 +35,31 @@ enum LeonardoZIPArchive {
             let next = cursor + 46 + nameLength + Int(data.u16(cursor + 30)) + Int(data.u16(cursor + 32))
             guard next <= end,
                   let name = String(data: data.subdata(in: cursor + 46..<cursor + 46 + nameLength), encoding: .utf8),
-                  safePath(name), names.insert(name.precomposedStringWithCanonicalMapping.lowercased()).inserted
+                  safePath(name)
             else { throw failure("Unsafe or duplicate ZIP path") }
+            let isDirectory = name.hasSuffix("/")
+            if !isDirectory {
+                guard names.insert(collisionKey(name)).inserted else { throw failure("Unsafe or duplicate ZIP path") }
+            }
             let flags = data.u16(cursor + 8)
             let method = data.u16(cursor + 10)
             let mode = (data.u32(cursor + 38) >> 16) & 0xf000
             guard flags & 0x2041 == 0, method == 0 || method == 8,
-                  mode == 0 || mode == 0x8000 || (mode == 0x4000 && name.hasSuffix("/"))
+                  mode == 0 || mode == 0x8000 || (mode == 0x4000 && isDirectory)
             else { throw failure("Encrypted, linked or unsupported ZIP entry") }
             let expanded = Int(data.u32(cursor + 24))
             total += expanded
             guard expanded <= maximumExpandedBytes, total <= maximumExpandedBytes else { throw failure("ZIP expansion limit exceeded") }
             let value = try entryData(data, directory: cursor, directoryStart: offset, name: name, method: method)
-            if !name.hasSuffix("/") { entries.append(Entry(name: name, data: value)) }
+            if !isDirectory { entries.append(Entry(name: name, data: value)) }
             cursor = next
         }
         guard cursor == end else { throw failure("Unexpected ZIP directory contents") }
-        let files = Set(entries.map { $0.name.lowercased() })
+        let files = Set(entries.map { collisionKey($0.name) })
         for entry in entries {
             var parent = (entry.name as NSString).deletingLastPathComponent
             while !parent.isEmpty {
-                guard !files.contains(parent.lowercased()) else { throw failure("Conflicting ZIP paths") }
+                guard !files.contains(collisionKey(parent)) else { throw failure("Conflicting ZIP paths") }
                 parent = (parent as NSString).deletingLastPathComponent
             }
         }
@@ -101,10 +105,12 @@ enum LeonardoZIPArchive {
         var output = Data()
         var directory = Data()
         var total = 0
+        var names = Set<String>()
         for entry in entries.sorted(by: { $0.name < $1.name }) {
-            guard safePath(entry.name), !entry.name.hasSuffix("/"), entry.name.utf8.count <= 65_535 else { throw failure("Unsafe ZIP path") }
+            guard safePath(entry.name), !entry.name.hasSuffix("/"), entry.name.utf8.count <= 65_535,
+                  names.insert(collisionKey(entry.name)).inserted else { throw failure("Unsafe or duplicate ZIP path") }
             total += entry.data.count
-            guard total <= maximumArchiveBytes / 2 else { throw failure("Package exceeds export size limit") }
+            guard total <= maximumExpandedBytes else { throw failure("Package exceeds export size limit") }
             let name = Data(entry.name.utf8)
             let checksum = crc(entry.data)
             let position = output.count
@@ -123,6 +129,7 @@ enum LeonardoZIPArchive {
         output.put32(0x06054b50); output.put16(0); output.put16(0)
         output.put16(entries.count); output.put16(entries.count)
         output.put32(directory.count); output.put32(position); output.put16(0)
+        guard output.count <= maximumArchiveBytes else { throw failure("Package exceeds archive size limit") }
         return output
     }
 
@@ -133,6 +140,13 @@ enum LeonardoZIPArchive {
         return components.enumerated().allSatisfy { index, value in
             value != "." && value != ".." && (!value.isEmpty || index == components.count - 1)
         }
+    }
+
+    private static func collisionKey(_ name: String) -> String {
+        name.precomposedStringWithCanonicalMapping.folding(
+            options: [.caseInsensitive],
+            locale: Locale(identifier: "en_US_POSIX")
+        )
     }
 
     private static func crc(_ data: Data) -> UInt32 {

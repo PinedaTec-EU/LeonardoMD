@@ -31,3 +31,14 @@ Final command results and exact reviewed SHA are recorded on the PR; the source 
 Hosted WebKit regression: [#169](https://github.com/PinedaTec-EU/LeonardoMD/issues/169) records the remote-only background readiness timeout. Background images explicitly use eager loading before their source is assigned; real WebKit asserts that policy. The old source-string assertion for unconditional lazy loading was replaced by the runtime behavior check. Plugin tests also run in the normal macOS CI workflow.
 
 The follow-up runner diagnostics showed both SVG images complete with positive raster widths (950 and 400), rather than the 20 reported locally. Readiness therefore checks successful decoding, while separate assertions check the declared geometry and eager-background policy; it does not assume identical WebKit SVG raster dimensions.
+
+`SessionRenderingPackageAssetTests` opens packaged and extracted documents while
+an active project contains conflicting assets with the same names. It verifies
+the workspace asset root and real WebKit preview/PDF export. With the evidence
+environment above it writes `package-assets/package.png`, `extracted.png` and
+`capture-context.txt` (800 × 600 points) alongside the other captures.
+
+Native and plugin validation consume the same acceptance/rejection corpus in
+`Tests/FormatContractFixtures`. Tests check schema copy identity, definition and
+layout safety, portable patterns, opaque invalid draft answers, Unicode archive
+collisions and the shared 64 MiB archive / 32 MiB expansion limits.

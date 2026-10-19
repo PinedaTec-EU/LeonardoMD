@@ -164,14 +164,24 @@ python3 ./plugins/leonardo-format/skills/leonardo-format/scripts/mdlz.py \
 The helper refuses path traversal, absolute or ambiguous names, symlinks and
 special files, duplicate case/Unicode paths, unsafe archive expansion, more
 than one root document, files outside `assets/`, and accidental overwrites.
-`inspect` is read-only. `extract` creates a new destination folder; saving that
-folder does not update the original archive, so use `pack` (or Leonardo's
-export action) to create a new `.mdlz`.
+The transport envelope is 64 MiB for the ZIP and 32 MiB for expanded content in
+total or for any one member, with at most 2,048 entries. Directory records are
+validated for safe paths but are nonsemantic transport noise: `pack` omits
+them, while `inspect` and `extract` ignore them. `inspect` is read-only.
+`extract` creates a new destination folder; saving that folder does not update
+the original archive, so use `pack` (or Leonardo's export action) to create a
+new `.mdlz`.
 
 The helper has no third-party runtime dependency. Every command validates the
-UTF-8/front-matter envelope and the bundled v1 metadata schema before reporting
-or writing anything. Pass `--schema` only when an additional explicit JSON
-Schema constraint is needed:
+UTF-8/front-matter envelope, the bundled v1 metadata schema, and the bundled
+definition/layout safety rules before reporting or writing anything. Those
+semantic checks reject unsafe metadata asset references, invalid definition
+ranges or options, non-portable or unsafe regular expressions, and invalid
+layout bounds while leaving current draft values opaque. V1 patterns use the
+common Python `re`/ICU subset and reject engine-specific escapes such as
+`\p`, `\X` and `\z`, named/conditional/atomic groups, look-around,
+backreferences and quantified groups. Pass `--schema` only when an additional
+explicit JSON Schema constraint is needed:
 
 ```bash
 python3 ./plugins/leonardo-format/skills/leonardo-format/scripts/mdlz.py \
@@ -191,9 +201,10 @@ python3 -m unittest discover \
 The tests cover deterministic packing, round-trip extraction, traversal and
 symlink rejection, Unicode/case collisions, source-layout rules, destination
 conflicts, duplicate keys, unknown metadata, unsupported versions and
-UTF-8/front-matter checks. Semantic field and layout validation belongs to
-`doc/format/mdlf-v1.schema.json` (or the bundled copy when the plugin is
-installed) and the application parser. The helper's bundled evaluator is
+UTF-8/front-matter checks. The bundled evaluator and semantic checks apply the
+shared field and layout contract from `doc/format/mdlf-v1.schema.json` (or the
+bundled copy when the plugin is installed); the application parser remains
+authoritative for host rendering and body behavior. The helper stays
 dependency-free; `--schema` adds an explicit second schema constraint.
 
 ## Release discipline

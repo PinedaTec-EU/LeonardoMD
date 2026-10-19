@@ -91,13 +91,96 @@ struct LeonardoPackageTests {
         #expect(!LeonardoZIPArchive.safePath("/absolute"))
         #expect(!LeonardoZIPArchive.safePath("assets\\outside"))
         let document = LeonardoZIPArchive.Entry(name: "document.mdlf", data: Data(try source().utf8))
-        let duplicate = try LeonardoZIPArchive.write([document, document])
-        #expect(throws: LeonardoPackageError.self) { try LeonardoZIPArchive.read(duplicate) }
+        #expect(throws: LeonardoPackageError.self) {
+            try LeonardoZIPArchive.write([document, document])
+        }
         var corrupt = try LeonardoZIPArchive.write([document])
         corrupt[30 + document.name.utf8.count] ^= 1
         #expect(throws: LeonardoPackageError.self) { try LeonardoZIPArchive.read(corrupt) }
         let archive = try LeonardoZIPArchive.write([document, .init(name: "assets/a", data: Data()), .init(name: "assets/a/b", data: Data())])
         #expect(throws: LeonardoPackageError.self) { try LeonardoZIPArchive.read(archive) }
+    }
+
+    @Test func zipWriterRejectsCanonicalCollisionsAndReaderRejectsNormalizedParents() throws {
+        let document = LeonardoZIPArchive.Entry(name: "document.mdlf", data: Data(try source().utf8))
+        #expect(throws: LeonardoPackageError.self) {
+            try LeonardoZIPArchive.write([
+                document,
+                .init(name: "assets/ß", data: Data([1])),
+                .init(name: "assets/ss", data: Data([2]))
+            ])
+        }
+        let parentConflict = try LeonardoZIPArchive.write([
+            document,
+            .init(name: "assets/σ", data: Data([1])),
+            .init(name: "assets/ς/child", data: Data([2]))
+        ])
+        #expect(throws: LeonardoPackageError.self) {
+            try LeonardoZIPArchive.read(parentConflict)
+        }
+    }
+
+    @Test func zipReaderRejectsUnicodeCasefoldCollisionsAndIgnoresEmptyDirectories() throws {
+        let root = try temporary()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let document = root.appendingPathComponent("document.mdlf")
+        try source().write(to: document, atomically: true, encoding: .utf8)
+        let assets = root.appendingPathComponent("assets", isDirectory: true)
+        try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
+        let cases = [("ß", "ss"), ("σ", "ς")]
+        for (index, names) in cases.enumerated() {
+            let first = assets.appendingPathComponent(names.0)
+            let second = assets.appendingPathComponent(names.1)
+            try Data([1]).write(to: first)
+            try Data([2]).write(to: second)
+            let archive = root.appendingPathComponent("collision-\(index).mdlz")
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+            process.currentDirectoryURL = root
+            process.arguments = ["-q", archive.path, document.lastPathComponent, "assets/\(names.0)", "assets/\(names.1)"]
+            try process.run()
+            process.waitUntilExit()
+            #expect(process.terminationStatus == 0)
+            #expect(throws: LeonardoPackageError.self) {
+                try LeonardoZIPArchive.read(Data(contentsOf: archive))
+            }
+        }
+
+        let emptyDirectoryArchive = root.appendingPathComponent("empty-directory.mdlz")
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+        process.currentDirectoryURL = root
+        process.arguments = ["-q", "-r", emptyDirectoryArchive.path, document.lastPathComponent, "assets-empty"]
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("assets-empty"), withIntermediateDirectories: true)
+        try process.run()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == 0)
+        let entries = try LeonardoZIPArchive.read(Data(contentsOf: emptyDirectoryArchive))
+        #expect(entries.map(\.name) == [document.lastPathComponent])
+    }
+
+    @Test func zipReaderAndWriterUseThe32MiBExpandedEnvelope() throws {
+        let document = LeonardoZIPArchive.Entry(name: "document.mdlf", data: Data(try source().utf8))
+        let oversized = Data(repeating: 0x5A, count: LeonardoZIPArchive.maximumExpandedBytes + 1)
+        #expect(throws: LeonardoPackageError.self) {
+            try LeonardoZIPArchive.write([document, .init(name: "assets/large.bin", data: oversized)])
+        }
+
+        let root = try temporary()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try source().write(to: root.appendingPathComponent("document.mdlf"), atomically: true, encoding: .utf8)
+        try oversized.write(to: root.appendingPathComponent("large.bin"))
+        let archive = root.appendingPathComponent("large.mdlz")
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+        process.currentDirectoryURL = root
+        process.arguments = ["-q", "-0", archive.path, "document.mdlf", "large.bin"]
+        try process.run()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == 0)
+        #expect(throws: LeonardoPackageError.self) {
+            try LeonardoZIPArchive.read(Data(contentsOf: archive))
+        }
     }
 
     @Test func exportSkipsCodeExamplesAndKeepsMetadataResourcesInSync() throws {

@@ -37,7 +37,20 @@ class MDLZHelperTests(unittest.TestCase):
     def test_limits_match_the_swift_transport_envelope(self) -> None:
         self.assertEqual(mdlz.MAX_ARCHIVE_BYTES, 64 * 1024 * 1024)
         self.assertEqual(mdlz.MAX_ENTRIES, 2_048)
-        self.assertEqual(mdlz.MAX_TOTAL_BYTES, 128 * 1024 * 1024)
+        self.assertEqual(mdlz.MAX_MEMBER_BYTES, 32 * 1024 * 1024)
+        self.assertEqual(mdlz.MAX_TOTAL_BYTES, 32 * 1024 * 1024)
+
+    def test_pack_rejects_more_than_the_transport_entry_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "source"
+            assets = source / "assets"
+            assets.mkdir(parents=True)
+            (source / "request.mdlf").write_text(DOCUMENT, encoding="utf-8")
+            for index in range(mdlz.MAX_ENTRIES):
+                (assets / f"{index}.txt").write_bytes(b"")
+            with self.assertRaisesRegex(mdlz.ArchiveError, "too many entries"):
+                mdlz.pack_directory(source, root / "request.mdlz")
 
     def test_pack_inspect_extract_round_trip(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -45,6 +58,7 @@ class MDLZHelperTests(unittest.TestCase):
             source = root / "source"
             assets = source / "assets" / "nested"
             assets.mkdir(parents=True)
+            (source / "empty-directory").mkdir()
             (source / "request.mdlf").write_text(DOCUMENT, encoding="utf-8")
             (source / "assets" / "logo.txt").write_text("logo", encoding="utf-8")
             (assets / "seal.txt").write_text("seal", encoding="utf-8")
@@ -56,7 +70,7 @@ class MDLZHelperTests(unittest.TestCase):
             self.assertEqual(inspected["document"], "request.mdlf")
             self.assertEqual(
                 {entry["path"] for entry in inspected["entries"]},
-                {"assets", "assets/logo.txt", "assets/nested", "assets/nested/seal.txt", "request.mdlf"},
+                {"assets/logo.txt", "assets/nested/seal.txt", "request.mdlf"},
             )
 
             destination = root / "extracted"
@@ -64,6 +78,20 @@ class MDLZHelperTests(unittest.TestCase):
             self.assertEqual(extracted["document"], "request.mdlf")
             self.assertEqual((destination / "request.mdlf").read_text(encoding="utf-8"), DOCUMENT)
             self.assertEqual((destination / "assets" / "nested" / "seal.txt").read_text(), "seal")
+
+    def test_empty_directory_records_are_nonsemantic(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "directories.mdlz"
+            with zipfile.ZipFile(archive, "w") as handle:
+                handle.writestr("assets/", b"")
+                handle.writestr("document.mdlf", DOCUMENT)
+
+            inspected = mdlz.inspect_archive(archive)
+            self.assertEqual({entry["path"] for entry in inspected["entries"]}, {"document.mdlf"})
+            destination = root / "extracted"
+            mdlz.extract_archive(archive, destination)
+            self.assertFalse((destination / "assets").exists())
 
     def test_pack_is_deterministic(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -152,6 +180,43 @@ class MDLZHelperTests(unittest.TestCase):
 
             with self.assertRaisesRegex(mdlz.ArchiveError, "outside the limit"):
                 mdlz.inspect_archive(valid, mdlz.Limits(max_archive_bytes=1))
+
+    def test_unicode_casefold_collisions_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for index, names in enumerate((("assets/ß", "assets/ss"), ("assets/σ", "assets/ς"))):
+                archive = root / f"collision-{index}.mdlz"
+                with zipfile.ZipFile(archive, "w") as handle:
+                    handle.writestr("document.mdlf", DOCUMENT)
+                    for name in names:
+                        handle.writestr(name, b"x")
+                with self.assertRaisesRegex(mdlz.ArchiveError, "colliding"):
+                    mdlz.inspect_archive(archive)
+
+            archive = root / "parent-collision.mdlz"
+            with zipfile.ZipFile(archive, "w") as handle:
+                handle.writestr("document.mdlf", DOCUMENT)
+                handle.writestr("assets/σ", b"x")
+                handle.writestr("assets/ς/child", b"y")
+            with self.assertRaisesRegex(mdlz.ArchiveError, "conflicting parent"):
+                mdlz.inspect_archive(archive)
+
+    def test_package_limits_reject_more_than_32_mib_expanded(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            oversized = ("---\n"
+                         '{"format": "mdlf", "formatVersion": 1}\n'
+                         "---\n") + ("x" * (32 * 1024 * 1024))
+            document = root / "oversized.mdlf"
+            document.write_text(oversized, encoding="utf-8")
+            with self.assertRaisesRegex(mdlz.ArchiveError, "too large"):
+                mdlz.validate_document(document)
+
+            archive = root / "oversized.mdlz"
+            with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED) as handle:
+                handle.writestr("oversized.mdlf", oversized.encode("utf-8"))
+            with self.assertRaisesRegex(mdlz.ArchiveError, "too large|expands"):
+                mdlz.inspect_archive(archive)
 
     def test_archive_commands_reject_invalid_root_before_effects(self) -> None:
         invalid_documents = {
@@ -243,6 +308,70 @@ class MDLZHelperTests(unittest.TestCase):
 
             with self.assertRaisesRegex(mdlz.ArchiveError, "unknown property"):
                 mdlz.validate_document(document)
+
+    def test_shared_semantic_fixtures_match_the_native_contract(self) -> None:
+        fixtures = Path(__file__).parents[3] / "Tests" / "FormatContractFixtures"
+        for document in sorted((fixtures / "valid").glob("*.mdlf")):
+            self.assertEqual(mdlz.validate_document(document)["formatVersion"], 1, document.name)
+        for document in sorted((fixtures / "invalid").glob("*.mdlf")):
+            with self.assertRaises(mdlz.ArchiveError, msg=document.name):
+                mdlz.validate_document(document)
+
+    def test_metadata_semantics_reject_unsafe_definitions_but_keep_draft_values_opaque(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+
+            def write(name: str, metadata: dict[str, object]) -> Path:
+                path = root / name
+                path.write_text(
+                    "---\n" + json.dumps(metadata, ensure_ascii=False) + "\n---\nBody\n",
+                    encoding="utf-8",
+                )
+                return path
+
+            cases = {
+                "length.mdlf": {
+                    "format": "mdlf",
+                    "formatVersion": 1,
+                    "fields": {"name": {"type": "text", "minLength": 4, "maxLength": 2}},
+                },
+                "number.mdlf": {
+                    "format": "mdlf",
+                    "formatVersion": 1,
+                    "fields": {"amount": {"type": "number", "minimum": 10, "maximum": 2}},
+                },
+                "options.mdlf": {
+                    "format": "mdlf",
+                    "formatVersion": 1,
+                    "fields": {"choice": {"type": "select", "options": [{"value": "a"}, {"value": "a"}]}},
+                },
+                "pattern.mdlf": {
+                    "format": "mdlf",
+                    "formatVersion": 1,
+                    "fields": {"name": {"type": "text", "pattern": "(a+)+"}},
+                },
+                "pattern-length.mdlf": {
+                    "format": "mdlf",
+                    "formatVersion": 1,
+                    "fields": {"name": {"type": "text", "pattern": "é" * 257}},
+                },
+                "pattern-invalid.mdlf": {
+                    "format": "mdlf",
+                    "formatVersion": 1,
+                    "fields": {"name": {"type": "text", "pattern": "["}},
+                },
+                "asset.mdlf": {
+                    "format": "mdlf",
+                    "formatVersion": 1,
+                    "layout": {"background": {"image": "../outside.png"}},
+                },
+            }
+            for name, metadata in cases.items():
+                with self.assertRaises(mdlz.ArchiveError, msg=name):
+                    mdlz.validate_document(write(name, metadata))
+
+            draft = Path(__file__).parents[3] / "Tests" / "FormatContractFixtures" / "valid" / "draft-invalid-values.mdlf"
+            self.assertEqual(mdlz.validate_document(draft)["formatVersion"], 1)
 
     def test_schema_evaluator_fails_closed_on_unknown_assertions(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

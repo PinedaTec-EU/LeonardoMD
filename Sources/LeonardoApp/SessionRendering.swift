@@ -40,13 +40,20 @@ extension AppSession {
         case .parchment: effect = .parchment
         }
         let background = resolved.paperEffect == .white ? "#F8F8F5" : tokens.surface
+        let localAssetRoot: URL?
+        switch documentStorage {
+        case .package, .extracted:
+            localAssetRoot = packageWorkspace?.directoryURL
+        case .localFile:
+            localAssetRoot = projectURL
+        }
         var configuration = MarkdownPreviewConfiguration(
             allowsMermaid: features.mermaidEnabled,
             allowsMath: features.mathEnabled,
             frontMatter: showFrontmatter ? .metadata : .hidden,
             externalLinkPolicy: .callbackOnly,
             appearance: MarkdownAppearance(backgroundHex: background, textHex: tokens.text, headingHex: tokens.heading, accentHex: tokens.accent, codeBackgroundHex: tokens.codeBackground, paperEffect: effect),
-            localAssetRoot: projectURL
+            localAssetRoot: localAssetRoot
         )
         configuration.allowsLeonardoFormat = documentKind.isLeonardo
         // Form filling is a separate interaction channel. A protected MDLR

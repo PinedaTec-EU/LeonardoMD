@@ -19,7 +19,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-crypto.git", exact: "4.5.2")
     ],
     targets: [
-        .target(name: "LeonardoCore", dependencies: ["CLeonardoZlib"]),
+        .target(name: "LeonardoCore", dependencies: ["CLeonardoZlib"], resources: [.process("Resources")]),
         .target(name: "CLeonardoZlib", linkerSettings: [.linkedLibrary("z")]),
         .target(name: "LeonardoGit", dependencies: [
             "CLeonardoZlib", "LeonardoSync",

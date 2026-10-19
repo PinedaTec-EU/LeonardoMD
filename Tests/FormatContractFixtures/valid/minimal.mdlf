@@ -1,0 +1,15 @@
+---
+{
+  "format": "mdlf",
+  "formatVersion": 1,
+  "document": { "kind": "form", "revision": 1 },
+  "fields": {
+    "name": { "type": "text", "required": true, "maxLength": 80 }
+  },
+  "values": { "name": null },
+  "layout": {}
+}
+---
+# Request
+
+Name: {{field:name}}

@@ -48,10 +48,25 @@ provides the fill-mode opening hint. Readers use the same schema for both
 suffixes and must accept a valid MDLF document named `.mdlr` even when its
 metadata kind is `document`.
 
+Field `pattern` values use the portable v1 intersection of Python `re` and
+ICU/`NSRegularExpression`: literals, character classes, ordinary groups,
+alternation, anchors and quantifiers are supported. Engine-specific escapes
+(`\p`, `\P`, `\X`, `\R`, `\N{}`, `\A`, `\Z`, `\z`) and named,
+conditional or atomic groups are rejected by every v1 reader. Patterns are
+limited to 512 UTF-8 bytes; backreferences, look-around and quantified groups
+are rejected, and values checked by a pattern are limited to 32 KiB. These
+definition checks are separate from invalid current answers, which remain
+transportable drafts.
+
 An MDLZ package is conventional transport. It must contain exactly one root
 document with a lowercase `.mdlf` or `.mdlr` suffix and may contain regular
 resources below `assets/`. The package does not carry executable behavior or a
-second hidden source of document state.
+second hidden source of document state. The transport envelope is at most 64
+MiB of ZIP bytes, 32 MiB of expanded content in total or for one member, and
+2,048 entries. Directory records are validated for safe paths but are
+nonsemantic transport noise: packers omit them and readers ignore them. Readers
+also apply the versioned definition and layout safety rules; current `values`
+are draft data and are not rejected merely because an answer is invalid.
 
 When the canonical contract changes, update `doc/format/`, examples, the
 application parser, and this plugin's bundled references together. Do not copy

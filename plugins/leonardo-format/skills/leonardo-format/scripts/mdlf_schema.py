@@ -297,4 +297,3 @@ def validate_metadata(metadata: dict[str, object], schema_path: Path) -> None:
 
     schema = _load_schema(schema_path)
     _validate_schema_value(metadata, schema, schema)
-

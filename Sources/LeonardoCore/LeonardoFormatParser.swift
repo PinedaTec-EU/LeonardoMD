@@ -48,6 +48,7 @@ public enum LeonardoFormatParser {
               metadata.formatVersion <= LeonardoFormat.currentVersion else {
             throw LeonardoFormatError.unsupportedVersion(metadata.formatVersion)
         }
+        try LeonardoFormatMetadataSafety.validate(metadata)
         return LeonardoDocument(body: parts.body, metadata: metadata)
     }
 
@@ -69,6 +70,8 @@ public enum LeonardoFormatParser {
         } catch {
             throw LeonardoFormatError.invalidMetadataJSON
         }
+        try LeonardoFormatMetadataSchema.validate(document.metadata)
+        try LeonardoFormatMetadataSafety.validate(document.metadata)
         guard let metadata = String(data: data, encoding: .utf8) else {
             throw LeonardoFormatError.invalidMetadataJSON
         }
@@ -476,7 +479,13 @@ public enum LeonardoFormatValidator {
         }
         let scheme = URL(string: value)?.scheme?.lowercased()
         let unsafeScheme = scheme != nil && !["http", "https"].contains(scheme)
-        if value.hasPrefix("/") || unsafeScheme || value.split(separator: "/").contains(where: { $0 == ".." }) {
+        let hasControlCharacter = value.unicodeScalars.contains { $0.value < 0x20 || $0.value == 0x7F }
+        let hasBackslash = value.contains("\\")
+        if value.hasPrefix("/")
+            || hasBackslash
+            || hasControlCharacter
+            || unsafeScheme
+            || value.split(separator: "/").contains(where: { $0 == ".." }) {
             diagnostics.append(LeonardoDiagnostic(severity: .error, code: code, message: "Asset references must be relative paths or safe web URLs."))
         }
     }
@@ -559,6 +568,18 @@ public enum LeonardoFormatValidator {
         if forbiddenFragments.contains(where: { pattern.contains($0) })
             || pattern.range(of: #"\\(?:[1-9]|k<)"#, options: .regularExpression) != nil {
             return "Validation expressions cannot use backreferences or look-around constructs."
+        }
+        // V1 deliberately uses the intersection of the Python `re` and
+        // ICU/NSRegularExpression dialects. Engine-specific escapes and
+        // named/conditional/atomic groups would otherwise make the same
+        // MDLF validate differently in the native app and agent helpers.
+        let nonPortableFragments = [
+            #"\p{"#, #"\P{"#, #"\X"#, #"\R"#, #"\N{"#,
+            #"\A"#, #"\Z"#, #"\z"#,
+            "(?<", "(?P<", "(?P=", "(?(", "(?>"
+        ]
+        if nonPortableFragments.contains(where: { pattern.contains($0) }) {
+            return "Validation expressions must use the portable v1 regular-expression subset."
         }
         // A repeated group can make ICU backtracking exponential when it
         // contains alternatives or another repetition. V1 rejects all

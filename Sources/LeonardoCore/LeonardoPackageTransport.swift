@@ -141,7 +141,7 @@ public enum LeonardoPackageTransport {
             guard values.isRegularFile == true else { continue }
             let bytes = try boundedRead(url)
             total += bytes.count
-            guard total <= LeonardoZIPArchive.maximumArchiveBytes else { throw LeonardoPackageError.invalidArchive("Package is too large") }
+            guard total <= LeonardoZIPArchive.maximumExpandedBytes else { throw LeonardoPackageError.invalidArchive("Package is too large") }
             entries.append(.init(name: relative, data: bytes))
         }
         return entries

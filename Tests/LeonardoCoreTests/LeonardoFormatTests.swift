@@ -315,4 +315,111 @@ final class LeonardoFormatTests: XCTestCase {
         let document = LeonardoDocument(body: "| A | B |\n|---|---|\n| 1 | 2 |", metadata: LeonardoMetadata(layout: layout))
         XCTAssertTrue(LeonardoFormatValidator.isValid(document))
     }
+
+    func testCanonicalSchemaBytesMatchPluginAndCoreResource() throws {
+        let repository = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let canonical = try Data(contentsOf: repository.appendingPathComponent("doc/format/mdlf-v1.schema.json"))
+        let plugin = try Data(contentsOf: repository.appendingPathComponent("plugins/leonardo-format/skills/leonardo-format/references/mdlf-v1.schema.json"))
+        XCTAssertEqual(canonical, plugin, "The plugin must ship the canonical MDLF schema byte-for-byte.")
+        XCTAssertEqual(canonical, try LeonardoFormatMetadataSchema.bundledSchemaData(), "The Core resource must match the canonical MDLF schema byte-for-byte.")
+    }
+
+    func testSharedContractFixturesMatchNativeAcceptanceRules() throws {
+        let repository = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let fixtures = repository.appendingPathComponent("Tests/FormatContractFixtures")
+        let valid = try FileManager.default.contentsOfDirectory(
+            at: fixtures.appendingPathComponent("valid"),
+            includingPropertiesForKeys: nil
+        ).filter { $0.pathExtension == "mdlf" }
+        for file in valid {
+            XCTAssertNoThrow(try LeonardoFormatParser.parse(String(contentsOf: file, encoding: .utf8)), file.lastPathComponent)
+        }
+        let invalid = try FileManager.default.contentsOfDirectory(
+            at: fixtures.appendingPathComponent("invalid"),
+            includingPropertiesForKeys: nil
+        ).filter { $0.pathExtension == "mdlf" }
+        for file in invalid {
+            XCTAssertThrowsError(try LeonardoFormatParser.parse(String(contentsOf: file, encoding: .utf8)), file.lastPathComponent)
+        }
+    }
+
+    func testNativeSchemaEvaluatorFailsClosedOnUnknownAssertion() {
+        let schema = Data(#"{"type":"object","unevaluatedProperties":false}"#.utf8)
+        let value: [String: Any] = ["known": true]
+        XCTAssertThrowsError(try LeonardoJSONSchemaEvaluator.validate(value: value, schemaData: schema))
+    }
+
+    func testCanonicalSchemaRejectsInvalidFieldIdentifierAndBounds() {
+        let invalidMetadata = [
+            "{\"format\":\"mdlf\",\"formatVersion\":1,\"fields\":{\"1bad\":{\"type\":\"text\"}}}",
+            "{\"format\":\"mdlf\",\"formatVersion\":1,\"fields\":{\"name\":{\"type\":\"text\",\"minLength\":-1}}}",
+            "{\"format\":\"mdlf\",\"formatVersion\":1,\"layout\":{\"background\":{\"opacity\":1.1}}}",
+            "{\"format\":\"mdlf\",\"formatVersion\":1,\"document\":{\"revision\":0}}"
+        ]
+        for metadata in invalidMetadata {
+            XCTAssertThrowsError(try LeonardoFormatParser.parse("---\n\(metadata)\n---\nBody"), metadata)
+        }
+    }
+
+    func testSerializeAppliesCanonicalSchemaToProgrammaticMetadata() {
+        let invalidFieldID = LeonardoDocument(
+            body: "Body",
+            metadata: LeonardoMetadata(fields: ["1bad": LeonardoFieldDefinition()])
+        )
+        XCTAssertThrowsError(try LeonardoFormatParser.serialize(invalidFieldID))
+
+        let invalidOpacity = LeonardoDocument(
+            body: "Body",
+            metadata: LeonardoMetadata(
+                layout: LeonardoLayout(background: LeonardoBackground(opacity: 2))
+            )
+        )
+        XCTAssertThrowsError(try LeonardoFormatParser.serialize(invalidOpacity))
+    }
+
+    func testUnsafeMetadataAssetIsRejectedWhileBodyImageRemainsOpaque() throws {
+        let source = "---\n{\"format\":\"mdlf\",\"formatVersion\":1}\n---\n![body image](../outside.png)"
+        XCTAssertNoThrow(try LeonardoFormatParser.parse(source))
+
+        let metadata = "---\n{\"format\":\"mdlf\",\"formatVersion\":1,\"layout\":{\"images\":[{\"source\":\"../outside.png\"}]}}\n---\nBody"
+        XCTAssertThrowsError(try LeonardoFormatParser.parse(metadata))
+    }
+
+    func testMetadataSemanticDefinitionsAreRejectedButInvalidDraftAnswersRoundTrip() throws {
+        let invalidDefinitions = [
+            "{\"format\":\"mdlf\",\"formatVersion\":1,\"fields\":{\"name\":{\"type\":\"text\",\"minLength\":4,\"maxLength\":2}}}",
+            "{\"format\":\"mdlf\",\"formatVersion\":1,\"fields\":{\"choice\":{\"type\":\"select\",\"options\":[]}}}",
+            "{\"format\":\"mdlf\",\"formatVersion\":1,\"layout\":{\"background\":{\"image\":\"../escape.png\"}}}"
+        ]
+        for metadata in invalidDefinitions {
+            XCTAssertThrowsError(try LeonardoFormatParser.parse("---\n\(metadata)\n---\nBody"), metadata)
+        }
+
+        let draft = """
+        ---
+        {
+          "format": "mdlf",
+          "formatVersion": 1,
+          "fields": {
+            "date": { "type": "date", "required": true },
+            "name": { "type": "text", "required": true, "pattern": "^[A-Z]+$" }
+          },
+          "values": { "date": "2023-02-29", "name": "lowercase" }
+        }
+        ---
+        Date: {{field:date}}
+        Name: {{field:name}}
+        """
+        let document = try LeonardoFormatParser.parse(draft)
+        let diagnostics = LeonardoFormatValidator.validate(document, context: .draft)
+        XCTAssertTrue(diagnostics.contains { $0.code == "value.date" && $0.severity == .error })
+        XCTAssertTrue(diagnostics.contains { $0.code == "value.pattern" })
+        XCTAssertNoThrow(try LeonardoFormatParser.serialize(document))
+    }
 }

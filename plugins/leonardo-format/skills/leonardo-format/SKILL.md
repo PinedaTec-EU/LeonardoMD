@@ -73,12 +73,20 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/mdlz.py" validate document.mdlf \
 entries, duplicate normalized names, oversized members, and an existing
 destination. `pack` accepts one root `.mdlf`/`.mdlr` and regular files below
 `assets/`, writes deterministic ZIP entries, and refuses to overwrite an
-existing output. Every command validates the UTF-8/front-matter envelope and
-the bundled v1 metadata schema before reporting or writing anything. The
-optional `validate --schema` flag applies an additional explicit JSON Schema
-after the bundled contract; the helper remains dependency-free. Full document
-semantics still come from the versioned Leonardo schema and application
-parser.
+existing output. The transport envelope is 64 MiB for the ZIP and 32 MiB for
+expanded content in total or for any one member, with at most 2,048 entries.
+Directory records are ignored as nonsemantic transport noise: `pack` omits
+them and `inspect`/`extract` do not report or recreate empty directories.
+Every command validates the UTF-8/front-matter envelope and the bundled v1
+metadata schema before reporting or writing anything. The optional
+`validate --schema` flag applies an additional explicit JSON Schema after the
+bundled contract; the helper remains dependency-free. Bundled semantic checks
+also reject unsafe metadata asset references, invalid definition ranges or
+options, non-portable or unsafe regular expressions, and invalid layout bounds.
+V1 patterns use the common Python `re` and ICU subset; engine-specific escapes
+such as `\p`, `\X` and `\z`, named/conditional/atomic groups, look-around,
+backreferences and quantified groups are rejected. Current `values` remain
+opaque so a draft with invalid answers can still be transported.
 
 ## Generate an MDLZ package
 
@@ -205,7 +213,8 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/mdlz.py" inspect ./request-form.mdlz
 
 The output must contain exactly one root `.mdlf` or `.mdlr` plus any regular
 files below `assets/`; do not put a second document, a directory tree beside
-`assets/`, or a nested ZIP in the package. The package can be handed to a
+`assets/`, or a nested ZIP in the package. Empty directory records are omitted
+by the packer and ignored when reading a package. The package can be handed to a
 different agent or host and inspected without Leonardo. If the recipient works
 on an extracted folder, explain that saving the folder does not update the
 original package and that `pack`/Export is required to create a new `.mdlz`.
@@ -215,9 +224,9 @@ The format is declarative. If a user asks to run code embedded in a document,
 separate that request from Leonardo format handling and ask for an explicit,
 appropriate workflow.
 
-The helper's default `validate` command checks the UTF-8/front-matter envelope
-and the bundled v1 metadata schema. `inspect`, `extract`, and `pack` apply the
-same validation to the root document before producing output or creating an
-extraction directory. Pass `--schema` only when an additional explicit schema
-constraint is needed. The application parser remains authoritative for body
-placeholders and full document semantics.
+The helper's default `validate` command checks the UTF-8/front-matter envelope,
+the bundled v1 metadata schema, and the bundled definition/layout safety rules.
+`inspect`, `extract`, and `pack` apply the same validation to the root document
+before producing output or creating an extraction directory. Pass `--schema`
+only when an additional explicit schema constraint is needed. The application
+parser remains authoritative for body placeholders and host rendering.

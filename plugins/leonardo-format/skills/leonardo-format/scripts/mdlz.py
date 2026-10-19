@@ -22,6 +22,7 @@ from pathlib import Path, PurePosixPath
 from typing import Iterable, Iterator
 
 from mdlf_schema import SchemaValidationError, validate_metadata
+from mdlf_semantics import MetadataSemanticError, validate_metadata_semantics
 
 
 ARCHIVE_SUFFIX = ".mdlz"
@@ -30,8 +31,8 @@ ASSET_PREFIX = "assets/"
 CHUNK_SIZE = 1024 * 1024
 MAX_ARCHIVE_BYTES = 64 * 1024 * 1024
 MAX_ENTRIES = 2_048
-MAX_MEMBER_BYTES = 128 * 1024 * 1024
-MAX_TOTAL_BYTES = 128 * 1024 * 1024
+MAX_MEMBER_BYTES = 32 * 1024 * 1024
+MAX_TOTAL_BYTES = 32 * 1024 * 1024
 MAX_COMPRESSION_RATIO = 500
 MIN_RATIO_CHECK_BYTES = 64 * 1024
 WINDOWS_DRIVE = re.compile(r"^[A-Za-z]:")
@@ -63,7 +64,6 @@ class ArchiveEntry:
 class SourceEntry:
     path: Path
     name: str
-    is_directory: bool
 
 
 def _display_path(path: Path) -> str:
@@ -110,7 +110,7 @@ def _canonical_member_name(raw_name: str, *, is_directory: bool) -> str:
         raise ArchiveError("archive member has an empty name or NUL byte")
     if "\\" in raw_name:
         raise ArchiveError(f"archive member uses a backslash: {raw_name!r}")
-    if raw_name.startswith("/") or WINDOWS_DRIVE.match(raw_name):
+    if raw_name.startswith("/") or WINDOWS_DRIVE.match(raw_name) or ":" in raw_name:
         raise ArchiveError(f"archive member is absolute: {raw_name!r}")
 
     name = raw_name[:-1] if is_directory and raw_name.endswith("/") else raw_name
@@ -160,10 +160,11 @@ def _validate_zip_members(
             raise ArchiveError(f"archive member uses an unsupported compression method: {info.filename!r}")
 
         name = _canonical_member_name(info.filename, is_directory=is_directory)
-        key = _collision_key(name)
-        if key in names:
-            raise ArchiveError(f"archive contains duplicate or colliding member names: {name!r}")
-        names.add(key)
+        if not is_directory:
+            key = _collision_key(name)
+            if key in names:
+                raise ArchiveError(f"archive contains duplicate or colliding member names: {name!r}")
+            names.add(key)
 
         if info.file_size < 0 or info.file_size > limits.max_member_bytes:
             raise ArchiveError(
@@ -176,22 +177,29 @@ def _validate_zip_members(
             if info.compress_size <= 0 or info.file_size / info.compress_size > limits.max_compression_ratio:
                 raise ArchiveError(f"archive member has a suspicious compression ratio: {name!r}")
 
-        if is_directory:
-            if name != "assets" and not name.startswith(ASSET_PREFIX):
-                raise ArchiveError(f"only the assets directory may be present beside the document: {name!r}")
-        elif _is_document_name(name):
+        if not is_directory and _is_document_name(name):
             if "/" in name:
                 raise ArchiveError(f"the document must be at the archive root: {name!r}")
             documents.append(name)
-        elif name.startswith(ASSET_PREFIX):
+        elif not is_directory and name.startswith(ASSET_PREFIX):
             pass
-        else:
+        elif not is_directory:
             raise ArchiveError(f"non-document archive members must be below assets/: {name!r}")
 
-        entries.append(ArchiveEntry(info=info, name=name, is_directory=is_directory))
+        # Directory records are transport noise. Hosts create parent folders
+        # for file entries, so empty directories are intentionally nonsemantic.
+        if not is_directory:
+            entries.append(ArchiveEntry(info=info, name=name, is_directory=False))
 
     if len(documents) != 1:
         raise ArchiveError(f"archive must contain exactly one root .mdlf or .mdlr document (found {len(documents)})")
+    files = {_collision_key(entry.name) for entry in entries}
+    for entry in entries:
+        parent = PurePosixPath(entry.name).parent
+        while str(parent) != ".":
+            if _collision_key(parent.as_posix()) in files:
+                raise ArchiveError(f"archive contains conflicting parent paths: {entry.name!r}")
+            parent = parent.parent
     return entries, documents[0]
 
 
@@ -346,14 +354,10 @@ def _iter_source_entries(root: Path, limits: Limits = Limits()) -> tuple[list[So
             if not stat.S_ISDIR(mode):
                 raise ArchiveError(f"source directory contains a special entry: {directory}")
             relative = directory.relative_to(root).as_posix()
-            name = _canonical_member_name(relative, is_directory=True)
-            if name != "assets" and not name.startswith(ASSET_PREFIX):
-                raise ArchiveError(f"only assets/ may contain source files: {name!r}")
-            key = _collision_key(name)
-            if key in names:
-                raise ArchiveError(f"source names collide after normalization: {name!r}")
-            names.add(key)
-            entries.append(SourceEntry(path=directory, name=name, is_directory=True))
+            _canonical_member_name(relative, is_directory=True)
+            # Directory records are not part of the package contract. Parent
+            # folders are recreated from each regular file path on extraction.
+            continue
 
         for file_name in sorted(file_names):
             file_path = current_path / file_name
@@ -378,20 +382,13 @@ def _iter_source_entries(root: Path, limits: Limits = Limits()) -> tuple[list[So
             total_bytes += size
             if total_bytes > limits.max_total_bytes:
                 raise ArchiveError(f"source expands beyond the total limit of {limits.max_total_bytes} bytes")
-            entries.append(SourceEntry(path=file_path, name=name, is_directory=False))
+            entries.append(SourceEntry(path=file_path, name=name))
 
+    if len(entries) > limits.max_entries:
+        raise ArchiveError(f"source contains too many entries (limit {limits.max_entries})")
     if len(documents) != 1:
         raise ArchiveError(f"source must contain exactly one root .mdlf or .mdlr document (found {len(documents)})")
     return entries, documents[0]
-
-
-def _zip_directory_info(name: str) -> zipfile.ZipInfo:
-    info = zipfile.ZipInfo(name.rstrip("/") + "/")
-    info.date_time = (1980, 1, 1, 0, 0, 0)
-    info.create_system = 3
-    info.external_attr = (stat.S_IFDIR | 0o755) << 16 | 0x10
-    info.compress_type = zipfile.ZIP_STORED
-    return info
 
 
 def _zip_file_info(name: str) -> zipfile.ZipInfo:
@@ -420,10 +417,7 @@ def pack_directory(source: Path, output: Path, limits: Limits = Limits()) -> dic
             compresslevel=9,
             strict_timestamps=False,
         ) as archive:
-            for entry in sorted(entries, key=lambda item: (not item.is_directory, item.name)):
-                if entry.is_directory:
-                    archive.writestr(_zip_directory_info(entry.name), b"")
-                    continue
+            for entry in sorted(entries, key=lambda item: item.name):
                 info = _zip_file_info(entry.name)
                 with entry.path.open("rb") as source_stream, archive.open(info, "w") as target:
                     shutil.copyfileobj(source_stream, target, length=CHUNK_SIZE)
@@ -508,6 +502,13 @@ def _validate_metadata_schema(metadata: dict[str, object], schema_path: Path) ->
         raise ArchiveError(str(exc)) from exc
 
 
+def _validate_metadata_semantics(metadata: dict[str, object]) -> None:
+    try:
+        validate_metadata_semantics(metadata)
+    except MetadataSemanticError as exc:
+        raise ArchiveError(str(exc)) from exc
+
+
 def _validate_document_bytes(path: Path, data: bytes, *, schema_path: Path | None = None) -> dict[str, object]:
     suffix = path.suffix.lower()
     if suffix not in DOCUMENT_SUFFIXES:
@@ -533,6 +534,7 @@ def _validate_document_bytes(path: Path, data: bytes, *, schema_path: Path | Non
 
     bundled_schema = DEFAULT_SCHEMA_PATH
     _validate_metadata_schema(metadata, bundled_schema)
+    _validate_metadata_semantics(metadata)
     semantic_validation = "bundled-schema"
     selected_schema = schema_path or bundled_schema
     if schema_path is not None and schema_path.resolve() != bundled_schema.resolve():
