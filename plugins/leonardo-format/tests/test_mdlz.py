@@ -575,6 +575,26 @@ class MDLZHelperTests(unittest.TestCase):
             with self.assertRaisesRegex(mdlz.ArchiveError, "unknown property"):
                 mdlz.validate_document(document)
 
+    def test_checkbox_appearance_survives_package_transport(self) -> None:
+        fixture = Path(__file__).parents[3] / "Tests/FormatContractFixtures/valid/checkbox-appearance.mdlf"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "source"
+            source.mkdir()
+            (source / "response.mdlr").write_bytes(fixture.read_bytes())
+            archive = root / "controls.mdlz"
+            mdlz.pack_directory(source, archive)
+            destination = root / "extracted"
+            mdlz.extract_archive(archive, destination)
+            response = destination / "response.mdlr"
+            mdlz.validate_document(response)
+            self.assertEqual(response.read_bytes(), fixture.read_bytes())
+            restored = json.loads(response.read_text().split("---", 2)[1])
+            self.assertEqual(restored["fields"]["enabled"]["appearance"], "switch")
+            self.assertEqual(restored["fields"]["explicit"]["appearance"], "checkbox")
+            self.assertNotIn("appearance", restored["fields"]["default"])
+            self.assertIs(restored["values"]["enabled"], False)
+
     def test_shared_semantic_fixtures_match_the_native_contract(self) -> None:
         fixtures = Path(__file__).parents[3] / "Tests" / "FormatContractFixtures"
         for document in sorted((fixtures / "valid").glob("*.mdlf")):

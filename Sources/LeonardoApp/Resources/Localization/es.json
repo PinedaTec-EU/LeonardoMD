@@ -423,5 +423,6 @@
   "Select options must be unique.": "Las opciones de selección deben ser únicas.",
   "A select field must declare at least one option.": "Un campo de selección debe declarar al menos una opción.",
   "Options are ignored for this field type.": "Las opciones se ignoran para este tipo de campo.",
-  "A value is present for an undeclared field.": "Hay un valor para un campo no declarado."
+  "A value is present for an undeclared field.": "Hay un valor para un campo no declarado.",
+  "Appearance is only supported for checkbox fields.": "La apariencia solo se admite en campos de tipo checkbox."
 }

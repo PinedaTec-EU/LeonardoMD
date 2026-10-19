@@ -48,6 +48,12 @@ provides the fill-mode opening hint. Readers use the same schema for both
 suffixes and must accept a valid MDLF document named `.mdlr` even when its
 metadata kind is `document`.
 
+For `type: "checkbox"`, optional `appearance` accepts `"checkbox"` or `"switch"`.
+Omitting it defaults to checkbox. Preserve the hint during filling and export;
+it changes only the native control, never boolean values, validation or manual
+saving. Other types cannot declare it. Older v1 readers reject this previously
+unknown property; omit it when targeting those readers.
+
 Field `pattern` values use the portable v1 intersection of Python `re` and
 ICU/`NSRegularExpression`: literals, character classes, ordinary groups,
 alternation, anchors and quantifiers are supported. Engine-specific escapes

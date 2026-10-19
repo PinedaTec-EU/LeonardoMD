@@ -3,6 +3,32 @@ import XCTest
 @testable import LeonardoCore
 
 final class LeonardoFormatTests: XCTestCase {
+    func testCheckboxAppearancesRoundTripWithoutChangingBooleanValues() throws {
+        for appearance: LeonardoFieldAppearance? in [nil, .checkbox, .switch] {
+            let field = LeonardoFieldDefinition(type: .checkbox, appearance: appearance, required: true)
+            XCTAssertEqual(field.resolvedAppearance, appearance ?? .checkbox)
+            for value in [true, false] {
+                let document = LeonardoDocument(body: "{{field:enabled}}", metadata: LeonardoMetadata(
+                    document: LeonardoDocumentDescriptor(kind: .form),
+                    fields: ["enabled": field], values: ["enabled": .boolean(value)]))
+                let source = try LeonardoFormatParser.serialize(document)
+                let restored = try LeonardoFormatParser.parse(source)
+                XCTAssertEqual(restored.metadata, document.metadata)
+                XCTAssertEqual(restored.body, document.body)
+                XCTAssertEqual(restored.metadata.fields["enabled"]?.resolvedAppearance, appearance ?? .checkbox)
+                XCTAssertTrue(LeonardoFormatValidator.validate(restored, context: .submission).isEmpty)
+                if appearance == nil { XCTAssertFalse(source.contains("appearance")) }
+            }
+        }
+    }
+
+    func testProgrammaticAppearanceOnTextCannotBeSerialized() throws {
+        let document = LeonardoDocument(body: "", metadata: LeonardoMetadata(
+            fields: ["name": LeonardoFieldDefinition(type: .text, appearance: .checkbox)]))
+        XCTAssertThrowsError(try LeonardoFormatParser.serialize(document))
+        XCTAssertTrue(LeonardoFormatValidator.validate(document).contains { $0.code == "field.appearance" })
+    }
+
     func testFormatCorpusParsesRoundTripsAndHasNoSemanticErrors() throws {
         let repository = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

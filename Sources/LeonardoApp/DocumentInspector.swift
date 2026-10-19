@@ -77,8 +77,13 @@ private struct LeonardoFormFieldRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             if definition.type == .checkbox {
-                Toggle(label, isOn: checkboxBinding)
-                    .toggleStyle(.checkbox)
+                if definition.resolvedAppearance == .switch {
+                    Toggle(label, isOn: checkboxBinding)
+                        .toggleStyle(PremiumSwitchStyle())
+                } else {
+                    Toggle(label, isOn: checkboxBinding)
+                        .toggleStyle(.checkbox)
+                }
             } else {
                 Text(label)
                     .font(.caption.weight(.semibold))

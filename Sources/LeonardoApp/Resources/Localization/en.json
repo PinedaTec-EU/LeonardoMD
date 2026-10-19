@@ -423,5 +423,6 @@
   "Select options must be unique.": "Select options must be unique.",
   "A select field must declare at least one option.": "A select field must declare at least one option.",
   "Options are ignored for this field type.": "Options are ignored for this field type.",
-  "A value is present for an undeclared field.": "A value is present for an undeclared field."
+  "A value is present for an undeclared field.": "A value is present for an undeclared field.",
+  "Appearance is only supported for checkbox fields.": "Appearance is only supported for checkbox fields."
 }

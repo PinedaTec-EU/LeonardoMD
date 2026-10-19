@@ -30,9 +30,13 @@ final class LeonardoFormatVisualTests: XCTestCase {
             metadata: LeonardoMetadata(
                 document: LeonardoDocumentDescriptor(title: "Request", kind: .form),
                 fields: [
+                    "checkbox": LeonardoFieldDefinition(type: .checkbox, appearance: .checkbox, label: "Checkbox"),
+                    "default": LeonardoFieldDefinition(type: .checkbox, label: "Default checkbox"),
+                    "switch": LeonardoFieldDefinition(type: .checkbox, appearance: .switch, label: "Switch"),
                     "name": LeonardoFieldDefinition(label: "Name", required: true, placeholder: "Your name"),
                     "details": LeonardoFieldDefinition(type: .multiline, label: "Details", helpText: "Add context for the owner.")
-                ]
+                ],
+                values: ["checkbox": .boolean(true), "default": .boolean(false), "switch": .boolean(true)]
             )
         )
         let source = try LeonardoFormatParser.serialize(document)
@@ -111,7 +115,7 @@ final class LeonardoFormatVisualTests: XCTestCase {
             try await capture(session: session, state: "mdlz-extracted-fill", language: language, destination: destination)
         }
 
-        try "Surface: WorkspaceView with the native Leonardo form inspector\nStates: local MDLF initial preview/fill, MDLR initial fill, MDLZ initial preview, MDLZ package fill workspace, explicitly extracted MDLZ workspace; General preferences with all three package choices and migration off/on/off on the same hosting view at 580x620\nView size: 1260x850 points\nLanguages: en, es\nFixture: synthetic form with text and multiline fields; package transport creates the MDLZ\nLimit: opt-in NSHostingView bitmap evidence, no claim about a fresh packaged process\n".write(
+        try "Surface: WorkspaceView with the native Leonardo form inspector\nStates: local MDLF initial preview/fill, MDLR initial fill, MDLZ initial preview, MDLZ package fill workspace, explicitly extracted MDLZ workspace; General preferences with all three package choices and migration off/on/off on the same hosting view at 580x620\nView size: 1260x850 points\nLanguages: en, es\nFixture: synthetic form with text, multiline, explicit/default checkbox and switch fields; package transport creates the MDLZ\nLimit: opt-in NSHostingView bitmap evidence, no claim about a fresh packaged process\n".write(
             to: destination.appendingPathComponent("capture-context.txt"), atomically: true, encoding: .utf8)
     }
 

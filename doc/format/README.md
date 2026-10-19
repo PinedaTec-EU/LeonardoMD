@@ -57,8 +57,10 @@ parse error with its JSON path, which prevents an editor from silently
 discarding data it cannot preserve. Arbitrary JSON remains valid inside
 `values` and `defaultValue`. Structural entries with an identity (`field.type`,
 option `value`, image `source`, table `occurrence`, and dimension `value` plus
-`unit`) are required. A future structural extension requires a new
-`formatVersion`.
+`unit`) are required. Changes to field/value semantics require a new `formatVersion`. The optional
+checkbox `appearance` presentation hint is part of this v1 contract revision;
+older v1 readers reject that previously unknown property. Omit it when
+targeting those readers.
 
 Duplicate object keys are invalid at every nesting level, including inside
 `values` and `defaultValue`; readers must reject them before dictionary
@@ -117,6 +119,22 @@ Supported field types are `text`, `multiline`, `number`, `date`, `checkbox`,
 `select`, `email` and `url`. Definitions may contain `label`, `required`,
 `readOnly`, `minLength`, `maxLength`, `pattern`, `minimum`, `maximum`,
 `options`, `placeholder`, `helpText`, `validationMessage` and `defaultValue`.
+
+A `checkbox` field may additionally declare `"appearance": "checkbox"` or
+`"appearance": "switch"`. Omission defaults to checkbox. The hint changes only
+its native form control: values remain JSON booleans, validation, read-only
+behavior and manual saving remain unchanged, and body placeholders still show
+the value as text. Other field types cannot declare `appearance`; unknown
+appearances are invalid. The schema restricts the vocabulary and the semantic
+validator enforces the checkbox-only constraint.
+
+```json
+"fields": {
+  "accepted": { "type": "checkbox", "appearance": "checkbox" },
+  "enabled": { "type": "checkbox", "appearance": "switch" },
+  "legacy": { "type": "checkbox" }
+}
+```
 
 Values are JSON primitives (`string`, finite `number`, `boolean` or `null`),
 arrays and objects are retained for forward-compatible metadata but are not
