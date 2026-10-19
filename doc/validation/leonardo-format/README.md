@@ -27,3 +27,5 @@ A save/export decision selects its output format before showing the save panel. 
 Final command results and exact reviewed SHA are recorded on the PR; the source documentation does not assert release publication.
 
 Hosted WebKit regression: [#169](https://github.com/PinedaTec-EU/LeonardoMD/issues/169) records the remote-only background readiness timeout. Background images explicitly use eager loading before their source is assigned; real WebKit asserts that policy. The old source-string assertion for unconditional lazy loading was replaced by the runtime behavior check. Plugin tests also run in the normal macOS CI workflow.
+
+The follow-up runner diagnostics showed both SVG images complete with positive raster widths (950 and 400), rather than the 20 reported locally. Readiness therefore checks successful decoding, while separate assertions check the declared geometry and eager-background policy; it does not assume identical WebKit SVG raster dimensions.
