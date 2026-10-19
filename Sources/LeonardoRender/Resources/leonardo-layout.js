@@ -121,12 +121,14 @@
   function applyBackground(root, background) {
     root.querySelector(":scope > .leonardo-document-background")?.remove();
     if (!background) return;
-    if (background.color && /^#[0-9a-f]{3,8}$/i.test(background.color)) root.style.backgroundColor = background.color;
-    if (!background.image) return;
     // Use an img so the existing asset containment/CSP and PDF readiness checks apply.
     const layer = document.createElement("div");
     layer.className = "leonardo-document-background";
     layer.setAttribute("aria-hidden", "true");
+    if (background.color && /^#[0-9a-f]{3,8}$/i.test(background.color)) layer.style.backgroundColor = background.color;
+    layer.style.opacity = Number.isFinite(background.opacity) ? String(Math.min(1, Math.max(0, background.opacity))) : "1";
+    root.prepend(layer);
+    if (!background.image) return;
     const image = document.createElement("img");
     image.alt = "";
     image.src = background.image;
@@ -138,7 +140,6 @@
     if (x || y) image.style.objectPosition = `${x || "50%"} ${y || "50%"}`;
     layer.style.opacity = Number.isFinite(background.opacity) ? String(Math.min(1, Math.max(0, background.opacity))) : "1";
     layer.append(image);
-    root.prepend(layer);
   }
   window.LeonardoLayout = {
     apply(root, payload) {

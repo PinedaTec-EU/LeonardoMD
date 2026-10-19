@@ -41,6 +41,16 @@ PDF export uses the rendered document. Palettes and lightweight ruled/grid/parch
 
 Custom palette colors can be edited and imported/exported as JSON. The app validates reading contrast before applying them. Main-window and sheet controls share palette colors and tactile hover/pressed states.
 
+## Open Leonardo documents and forms
+
+Leonardo documents use `.mdlf`, an open UTF-8 Markdown body with versioned JSON metadata for fields, answers and layout. Standard `.md` files retain normal Markdown behavior. **Preferences → General** can opt into saving Markdown edits as MDLF while preserving the original file. A file carrying an explicit Leonardo declaration with a Markdown extension shows a conversion notice.
+
+Export a form as `.mdlr` to open it in **Fill form** mode. Fill the declared fields in the inspector; validation messages do not prevent saving an unfinished draft. Structural source editing remains available through the document mode and protection controls. Background images, image dimensions/placement and table column widths are declared in the public metadata contract.
+
+**Export Leonardo package** produces an ordinary `.mdlz` ZIP containing one MDLF/MDLR document and its local resources under `assets/`. Package opening defaults to editing the package itself; preferences can ask or extract to a new folder. When working in an extracted folder, Save updates those ordinary files and **Export Leonardo package** creates a new transport package. The title and status bar distinguish format, storage and mode so the save destination stays visible.
+
+See the [format specification, schema and examples](doc/format/README.md) and the [Codex/Claude plugin and MDLZ generation guide](doc/plugins/leonardo-format.md). No proprietary binary document representation is required.
+
 ## Document tags
 
 Tags in YAML frontmatter appear as clickable pills above the preview, even when the metadata table is hidden. In a project, clicking a pill fills the sidebar search and reveals navigation if focus mode was active. Standalone documents show their tags without creating a project.

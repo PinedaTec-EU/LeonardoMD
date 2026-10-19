@@ -1,0 +1,27 @@
+# Leonardo document validation
+
+Tracking: [#167](https://github.com/PinedaTec-EU/LeonardoMD/issues/167), [PR #168](https://github.com/PinedaTec-EU/LeonardoMD/pull/168).
+
+## Reproduction
+
+Use the source PR compilation recorder for every successful compiling command:
+
+```sh
+LEONARDO_VISUAL_EVIDENCE="$PWD/output/format-evidence" python3 scripts/compile-and-record.py --pr-number 168 -- swift test
+```
+
+The new native fixture `LeonardoFormatVisualTests` hosts the actual `WorkspaceView` and form inspector at 1260 × 850 points. It captures local MDLF, package mode and extracted-folder mode in English and Spanish. `WebKitRuntimeTests` exercises the real renderer, field values as literal text, code exclusion, rich-to-standard context changes, background loading, table sizing and legacy-comment exclusion in MDLF.
+
+This is native XCTest/view-hosting and real WebKit evidence, not an image mockup. It does not start a standalone XCTest application. The owner's installed LeonardoMD process remains running; fresh packaged-process/first-window startup has not been established for this change.
+
+## Automated scope
+
+- Core: explicit format/version, unknown-key rejection, partial layout defaults, canonical examples, opaque body/CRLF preservation, typed draft/submission validation, dates, custom messages and bounded regular-expression execution.
+- Transport: conventional stored/DEFLATE ZIP interoperability, checksums and unsafe/duplicate paths, extraction ownership, original-file preservation, external-change conflicts, repeated saves, renamed packages, asset-reference rewriting, code/answer exclusion and local-image containment.
+- Application: standard Markdown detection, form initial modes/field persistence, migration conflicts, package saving, drag policy and native chrome states.
+- Plugin: Python CLI transport regressions, portable/host manifests, bundled schema identity and authoring instructions. `claude plugin validate ./plugins/leonardo-format` checks the Claude manifest.
+- Both public example documents validate with `mdlz.py validate <document> --schema doc/format/mdlf-v1.schema.json` when the optional `jsonschema` dependency is available. The ordinary CLI remains dependency-free and reports envelope-only validation explicitly.
+
+A save/export decision selects its output format before showing the save panel. Extracted documents show the actual MDLF/MDLR filename and require export to create a new package.
+
+Final command results and exact reviewed SHA are recorded on the PR; the source documentation does not assert release publication.

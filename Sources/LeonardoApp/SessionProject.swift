@@ -50,6 +50,7 @@ extension AppSession {
             resetSearch()
             focus = false
             if let documentURL, !documentURL.path.hasPrefix(url.path + "/") {
+                discardPackageWorkspace()
                 self.documentURL = nil; documentSourceURL = nil; snapshot = nil; content = ""
                 documentKind = .markdown; documentStorage = .localFile; leonardoFormatWarning = false
             }

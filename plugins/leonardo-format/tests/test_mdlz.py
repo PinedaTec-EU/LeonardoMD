@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import stat
 import sys
 import tempfile
@@ -29,6 +30,11 @@ DOCUMENT = """---
 
 
 class MDLZHelperTests(unittest.TestCase):
+    def test_limits_match_the_swift_transport_envelope(self) -> None:
+        self.assertEqual(mdlz.MAX_ARCHIVE_BYTES, 64 * 1024 * 1024)
+        self.assertEqual(mdlz.MAX_ENTRIES, 2_048)
+        self.assertEqual(mdlz.MAX_TOTAL_BYTES, 128 * 1024 * 1024)
+
     def test_pack_inspect_extract_round_trip(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -113,6 +119,12 @@ class MDLZHelperTests(unittest.TestCase):
             with self.assertRaisesRegex(mdlz.ArchiveError, "symlink"):
                 mdlz.inspect_archive(linked)
 
+            compressed = root / "compressed.mdlz"
+            with zipfile.ZipFile(compressed, "w", compression=zipfile.ZIP_BZIP2) as archive:
+                archive.writestr("form.mdlf", DOCUMENT)
+            with self.assertRaisesRegex(mdlz.ArchiveError, "compression method"):
+                mdlz.inspect_archive(compressed)
+
     def test_extract_rejects_collisions_and_existing_destination(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -133,6 +145,9 @@ class MDLZHelperTests(unittest.TestCase):
             destination.mkdir()
             with self.assertRaisesRegex(mdlz.ArchiveError, "already exists"):
                 mdlz.extract_archive(valid, destination)
+
+            with self.assertRaisesRegex(mdlz.ArchiveError, "outside the limit"):
+                mdlz.inspect_archive(valid, mdlz.Limits(max_archive_bytes=1))
 
     def test_document_validation_checks_utf8_and_format_envelope(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -155,6 +170,25 @@ class MDLZHelperTests(unittest.TestCase):
             unsupported.write_text(DOCUMENT.replace('"formatVersion": 1', '"formatVersion": 99'), encoding="utf-8")
             with self.assertRaisesRegex(mdlz.ArchiveError, "unsupported"):
                 mdlz.validate_document(unsupported)
+
+    def test_schema_validation_is_optional_and_explicit(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            document = root / "document.mdlf"
+            document.write_text(DOCUMENT, encoding="utf-8")
+            schema = root / "schema.json"
+            schema.write_text(
+                json.dumps({"type": "object", "required": ["format"]}),
+                encoding="utf-8",
+            )
+            try:
+                import jsonschema  # noqa: F401
+            except ImportError:
+                with self.assertRaisesRegex(mdlz.ArchiveError, "optional Python package 'jsonschema'"):
+                    mdlz.validate_document(document, schema_path=schema)
+            else:
+                result = mdlz.validate_document(document, schema_path=schema)
+                self.assertEqual(result["semanticValidation"], "jsonschema")
 
 
 if __name__ == "__main__":

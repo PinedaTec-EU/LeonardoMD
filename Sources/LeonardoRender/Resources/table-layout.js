@@ -3,6 +3,7 @@
 
   // Only validated numeric ch values reach CSS; directives never inject markup.
   const directive = /^<!--\s*leonardo:table\s+widths="([^"]+)"\s*-->\s*$/;
+  let allowsLegacyWidths = true;
   const maximumCharacters = 200;
   const automaticMinimumCharacters = 12;
   const horizontalCellPadding = 1.5;
@@ -49,7 +50,7 @@
   const parser = new window.marked.Marked({
     gfm: true,
     breaks: false,
-    hooks: { processAllTokens: (tokens) => window.LeonardoEditing.annotate(annotateTables(tokens)) },
+    hooks: { processAllTokens: (tokens) => window.LeonardoEditing.annotate(allowsLegacyWidths ? annotateTables(tokens) : tokens) },
     renderer: {
       table: sizedTable,
       text(token) {
@@ -69,7 +70,10 @@
   });
 
   window.LeonardoTables = {
-    render: (markdown) => parser.parse(markdown),
+    render(markdown, legacyWidths = true) {
+      allowsLegacyWidths = legacyWidths;
+      return parser.parse(markdown);
+    },
     prepare(root) {
       root.querySelectorAll("table").forEach((table) => {
         const viewport = document.createElement("div");

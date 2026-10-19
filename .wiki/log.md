@@ -134,3 +134,5 @@ running installed app were preserved. Rediscovery can register old copies again.
 The shared compilation-count skill and `.skills/compilation-count.json` select
 command eligibility and the existing counter/recorder. Historical allocations
 and delivery-only identifiers are preserved. Tracking: [#163](https://github.com/PinedaTec-EU/LeonardoMD/issues/163).
+
+- 2026-10-19: Open Leonardo MDLF/MDLR/MDLZ implementation and agent plugins started under [#167](https://github.com/PinedaTec-EU/LeonardoMD/issues/167), [PR #168](https://github.com/PinedaTec-EU/LeonardoMD/pull/168). Contract, native integration, transport and validation are tracked in [format context](leonardo-format.md).

@@ -20,6 +20,11 @@ final class AppSession {
     var documentKind: AppDocumentKind = .markdown
     var documentStorage: AppDocumentStorage = .localFile
     var documentSourceURL: URL?
+    /// The extracted workspace backing an open MDLZ.  A workspace with a
+    /// package URL is temporary and must be discarded when the tab closes;
+    /// an explicitly extracted workspace has a nil package URL and belongs to
+    /// the user, so it is left in place.
+    var packageWorkspace: LeonardoPackageWorkspace?
     var leonardoFormatWarning = false
     var packageOpenPreference: LeonardoPackageOpenPreference {
         get { LeonardoPackageOpenPreference(rawValue: UserDefaults.standard.string(forKey: LeonardoPackageOpenPreference.defaultsKey) ?? "") ?? .defaultValue }
@@ -231,17 +236,25 @@ final class AppSession {
         }
         guard await prepareNavigation() else { return }
         guard !busy, !isClosing, !stopped else { return }
+        // Keep an existing temporary package workspace alive until the next
+        // document has loaded successfully. A cancelled package dialog or a
+        // failed read must leave the current tab usable.
+        let previousPackageWorkspace = packageWorkspace
         if kind == .leonardoPackage {
             busy = true
             defer { busy = false }
-            documentSourceURL = url.standardizedFileURL
             guard await openPackageDocument(url, packageOpenPreference) else {
-                documentSourceURL = nil
-                errorMessage = L10n.text("The Leonardo package could not be opened.")
+                // The package adapter returns false for both cancellation and
+                // a reported transport error. Do not turn a cancelled panel
+                // into a new alert; the adapter has already reported errors.
+                if errorMessage == nil {
+                    errorMessage = L10n.text("The Leonardo package could not be opened.")
+                }
                 return
             }
-            documentKind = .leonardoPackage
-            documentStorage = packageOpenPreference == .extracted ? .extracted : .package
+            if let previousPackageWorkspace {
+                LeonardoPackageTransport.discard(previousPackageWorkspace)
+            }
             return
         }
         busy = true
@@ -249,6 +262,16 @@ final class AppSession {
         do {
             let loaded = try await documents.read(url)
             guard !stopped, !isClosing, !isSyncSuspended, !NativeReconciliationLease.shared.holds(url) else { return }
+            // A declared Leonardo suffix opts into the versioned parser. Do
+            // this before mutating session state so a future or malformed
+            // document leaves the currently open tab intact.
+            if kind.isLeonardo {
+                _ = try LeonardoFormatParser.parse(loaded.content)
+            }
+            if let previousPackageWorkspace {
+                LeonardoPackageTransport.discard(previousPackageWorkspace)
+                packageWorkspace = nil
+            }
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             isProtected = true
             documentURL = url
@@ -283,8 +306,12 @@ final class AppSession {
         defer { fileOperationCount -= 1 }
         guard await flushPreviewEdits(), !stopped, !isClosing || allowClosing else { return }
         guard !stopped, !isSyncSuspended, !saving, isDirty, let snapshot, let url = documentURL, !externalConflict else { return }
-        if documentKind == .markdown, migrateMarkdownOnSave,
-           await migrateMarkdownDocument() {
+        if documentKind == .markdown, migrateMarkdownOnSave {
+            // Migration owns the destination and may fail because a sibling
+            // MDLF already exists or because the source is not writable. Do
+            // not fall through to saving the draft back to the Markdown file:
+            // the preference explicitly changes the save target.
+            _ = await migrateMarkdownDocument()
             return
         }
         saving = true
@@ -294,10 +321,42 @@ final class AppSession {
         do {
             try await authorizePath(url, .document)
             guard !stopped, !isClosing || allowClosing else { saving = false; return }
-            self.snapshot = try await documents.save(draft, to: url, expectedFingerprint: snapshot.fingerprint)
+            let savedSnapshot = try await documents.save(draft, to: url, expectedFingerprint: snapshot.fingerprint)
+            if let workspace = packageWorkspace, workspace.packageURL != nil {
+                // ZIP work is synchronous and intentionally outside MainActor;
+                // the returned workspace carries the new source digest for the
+                // next save and protects against an external package change.
+                do {
+                    let refreshed = try await Task.detached(priority: nil) {
+                        try LeonardoPackageTransport.save(workspace)
+                    }.value
+                    packageWorkspace = refreshed
+                } catch {
+                    // The package write happens after the temporary document
+                    // write. Restore that workspace file to the previous
+                    // snapshot so a retry does not conflict with our own
+                    // failed attempt; the draft remains dirty in memory.
+                    if let restored = try? await documents.save(
+                        snapshot.content,
+                        to: url,
+                        expectedFingerprint: savedSnapshot.fingerprint
+                    ) {
+                        // Atomic replacement refreshes the modification date.
+                        // Keep the restored fingerprint so a later retry is
+                        // compared with the file we just restored, rather
+                        // than with the pre-failure snapshot.
+                        self.snapshot = restored
+                    }
+                    throw error
+                }
+            }
+            self.snapshot = savedSnapshot
             saveStatus = isDirty ? "Pending changes" : "Saved · local file"
             logger.info("document_save_completed")
         } catch DocumentStoreError.conflict {
+            externalConflict = true
+            saveStatus = "External conflict · edits protected"
+        } catch LeonardoPackageError.changedOnDisk {
             externalConflict = true
             saveStatus = "External conflict · edits protected"
         } catch { report(error) }
@@ -389,6 +448,7 @@ final class AppSession {
     func stop() {
         stopped = true
         pendingExternalURL = nil
+        discardPackageWorkspace()
         saveTask?.cancel()
         searchTask?.cancel()
         monitorTask?.cancel()
@@ -405,6 +465,12 @@ final class AppSession {
     }
     func updateTitle() {
         updateWindow?(displayDocumentURL?.lastPathComponent ?? projectURL?.lastPathComponent ?? "LeonardoMD", displayDocumentURL, isDirty)
+    }
+
+    func discardPackageWorkspace() {
+        guard let packageWorkspace else { return }
+        LeonardoPackageTransport.discard(packageWorkspace)
+        self.packageWorkspace = nil
     }
 }
 

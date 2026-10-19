@@ -37,6 +37,11 @@ public struct LeonardoPackageWorkspace: Sendable {
         guard try LeonardoPackageTransport.digest(packageURL) == sourceDigest else { throw LeonardoPackageError.changedOnDisk }
     }
 
+    fileprivate func relocated(to url: URL) -> Self {
+        Self(packageURL: url, directoryURL: directoryURL, documentURL: documentURL,
+             digest: sourceDigest, temporary: temporary)
+    }
+
     fileprivate func removeTemporaryFiles() {
         if temporary { try? FileManager.default.removeItem(at: directoryURL) }
     }
@@ -82,8 +87,8 @@ public enum LeonardoPackageTransport {
             documentURL: workspace.documentURL, digest: Data(SHA256.hash(data: bytes)), temporary: true)
     }
 
-    public static func export(documentURL: URL, content: String, to packageURL: URL) throws {
-        let resources = try LeonardoPortableResources.collect(content: content, documentURL: documentURL)
+    public static func export(documentURL: URL, content: String, to packageURL: URL, assetRoot: URL? = nil) throws {
+        let resources = try LeonardoPortableResources.collect(content: content, documentURL: documentURL, assetRoot: assetRoot)
         let fileName = documentURL.deletingPathExtension().lastPathComponent + "." +
             (documentURL.pathExtension.lowercased() == "mdlr" ? "mdlr" : "mdlf")
         let entries = [LeonardoZIPArchive.Entry(name: fileName, data: Data(resources.content.utf8))] + resources.assets
@@ -92,9 +97,14 @@ public enum LeonardoPackageTransport {
         try bytes.write(to: packageURL, options: [.atomic])
     }
 
+    /// File operations may rename a package while its extracted workspace stays open.
+    public static func relocating(_ workspace: LeonardoPackageWorkspace, to packageURL: URL) -> LeonardoPackageWorkspace {
+        workspace.relocated(to: packageURL)
+    }
+
     public static func discard(_ workspace: LeonardoPackageWorkspace) { workspace.removeTemporaryFiles() }
 
-    fileprivate static func digest(_ url: URL) throws -> Data { Data(SHA256.hash(data: boundedRead(url))) }
+    fileprivate static func digest(_ url: URL) throws -> Data { Data(SHA256.hash(data: try boundedRead(url))) }
 
     private static func boundedRead(_ url: URL) throws -> Data {
         let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
@@ -119,16 +129,16 @@ public enum LeonardoPackageTransport {
 
     private static func directoryEntries(_ root: URL) throws -> [LeonardoZIPArchive.Entry] {
         try rejectSymlinkComponents(root)
-        guard let iterator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey]) else {
+        guard let iterator = FileManager.default.enumerator(atPath: root.path) else {
             throw LeonardoPackageError.invalidArchive("Cannot read package workspace")
         }
         var entries: [LeonardoZIPArchive.Entry] = []
         var total = 0
-        for case let url as URL in iterator {
+        for case let relative as String in iterator {
+            let url = root.appendingPathComponent(relative)
             let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
             guard values.isSymbolicLink != true else { throw LeonardoPackageError.invalidArchive("Symbolic links cannot be packaged") }
             guard values.isRegularFile == true else { continue }
-            let relative = String(url.path.dropFirst(root.path.count + 1))
             let bytes = try boundedRead(url)
             total += bytes.count
             guard total <= LeonardoZIPArchive.maximumArchiveBytes else { throw LeonardoPackageError.invalidArchive("Package is too large") }
@@ -142,12 +152,15 @@ public enum LeonardoPackageTransport {
     }
 
     private static func rejectSymlinkComponents(_ url: URL) throws {
-        // System /tmp and /var aliases are legitimate macOS roots; compare their resolved parent.
-        let normalized = url.resolvingSymlinksInPath()
-        var current = normalized
-        while current.path != "/" {
-            guard !isSymlink(current) else { throw LeonardoPackageError.invalidArchive("Symbolic link destination") }
-            current.deleteLastPathComponent()
+        // Foundation may canonicalize /private/var back to /var. Walk lexical
+        // components and allow only the two OS-owned aliases, never user links.
+        var path = ""
+        for component in url.standardizedFileURL.path.split(separator: "/") {
+            path += "/" + component
+            let value = try? FileManager.default.attributesOfItem(atPath: path)[.type] as? FileAttributeType
+            if value == .typeSymbolicLink && path != "/var" && path != "/tmp" {
+                throw LeonardoPackageError.invalidArchive("Symbolic link destination")
+            }
         }
     }
 }

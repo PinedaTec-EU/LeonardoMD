@@ -3,12 +3,17 @@
 The bundled helper applies the following boundary before it reads or writes
 archive content:
 
+- its limits match the host transport envelope: at most 64 MiB of ZIP bytes,
+  2,048 entries, and 128 MiB of expanded content or one member; it additionally
+  rejects compression ratios above 500 for members of at least 64 KiB;
 - member names use canonical POSIX relative paths; absolute paths, drive
   prefixes, NUL bytes, backslashes, `.`/empty components, and `..` components
   are rejected;
 - normalized Unicode and case-folded names may not collide;
 - ZIP symlinks and special file types are rejected, including entries encoded
   through external file attributes;
+- only ZIP Stored and raw DEFLATE entries are accepted, matching the native
+  Leonardo reader;
 - member count, uncompressed member size, total size, and suspicious
   compression ratios are bounded before extraction;
 - exactly one root `.mdlf` or `.mdlr` is required; non-document files belong

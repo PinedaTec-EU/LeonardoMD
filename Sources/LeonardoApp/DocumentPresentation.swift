@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import LeonardoCore
 
 /// The on-disk suffix is part of the user's workflow, while the renderer and
@@ -28,7 +29,8 @@ enum AppDocumentKind: String, CaseIterable, Identifiable, Sendable {
     @MainActor func defaultMode(global: MarkdownMode) -> DocumentMode {
         switch self {
         case .leonardoResponse: return .fill
-        case .markdown, .leonardoTemplate, .leonardoPackage:
+        case .leonardoTemplate: return .edit
+        case .markdown, .leonardoPackage:
             return DocumentMode(rawValue: global.rawValue) ?? .preview
         }
     }
@@ -42,8 +44,14 @@ enum AppDocumentKind: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    static func isSupportedExtension(_ extension: String) -> Bool {
-        ["md", "markdown", "txt", "mdlf", "mdlr", "mdlz"].contains(extension.lowercased())
+    static func isSupportedExtension(_ fileExtension: String) -> Bool {
+        ["md", "markdown", "txt", "mdlf", "mdlr", "mdlz"].contains(fileExtension.lowercased())
+    }
+
+    /// Drag and drop intentionally accepts document formats with a Markdown
+    /// surface, while plain text remains available through the open panel.
+    static func isSupportedDropExtension(_ fileExtension: String) -> Bool {
+        ["md", "markdown", "mdlf", "mdlr", "mdlz"].contains(fileExtension.lowercased())
     }
 }
 
@@ -91,11 +99,18 @@ enum LeonardoPackageOpenPreference: String, CaseIterable, Identifiable, Sendable
 }
 
 extension AppSession {
-    var displayDocumentURL: URL? { documentSourceURL ?? documentURL }
+    var displayDocumentURL: URL? {
+        switch documentStorage {
+        case .package:
+            return documentSourceURL ?? documentURL
+        case .localFile, .extracted:
+            return documentURL ?? documentSourceURL
+        }
+    }
 
     var availableDocumentModes: [DocumentMode] {
         var modes: [DocumentMode] = [.preview, .edit, .split]
-        if documentKind.supportsFormFilling { modes.append(.fill) }
+        if documentKind.supportsFormFilling, leonardoDocument?.isForm == true { modes.append(.fill) }
         return modes
     }
 
@@ -116,22 +131,39 @@ extension AppSession {
         }
     }
 
+    var documentLocationLabel: String? {
+        switch documentStorage {
+        case .localFile: return nil
+        case .package: return documentSourceURL?.deletingLastPathComponent().lastPathComponent
+        case .extracted: return documentURL?.deletingLastPathComponent().lastPathComponent
+        }
+    }
+
     var documentStatusIcon: String { documentKind.iconName }
     var documentStorageIcon: String { documentStorage.iconName }
 
-    static func containsLeonardoMarkers(_ source: String) -> Bool {
-        let parsed = MarkdownDocumentParser.parse(source)
-        if parsed.frontMatter.contains(where: { key, value in
-            let normalizedKey = key.lowercased().replacingOccurrences(of: "_", with: "")
-            let normalizedValue = value.lowercased()
-            return normalizedKey == "format" && normalizedValue == "leonardo"
-                || normalizedKey == "formatversion"
-                || normalizedKey == "leonardo"
-        }) {
-            return true
+    var documentStatusColor: Color {
+        switch documentKind {
+        case .markdown: .secondary
+        case .leonardoTemplate: .orange
+        case .leonardoResponse: .purple
+        case .leonardoPackage: .teal
         }
-        return source.range(of: "<!-- leonardo:", options: [.caseInsensitive]) != nil
-            || source.range(of: "{{ field:", options: [.caseInsensitive]) != nil
+    }
+
+    var documentStorageColor: Color {
+        switch documentStorage {
+        case .localFile: .secondary
+        case .package: .teal
+        case .extracted: .green
+        }
+    }
+
+    static func containsLeonardoMarkers(_ source: String) -> Bool {
+        switch LeonardoFormatParser.detect(source) {
+        case .leonardo, .malformedLeonardo: return true
+        case .markdown: return false
+        }
     }
 
     func requestMarkdownMigration() {

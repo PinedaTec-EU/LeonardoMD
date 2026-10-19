@@ -203,6 +203,109 @@ final class AppSessionTests: XCTestCase {
         XCTAssertEqual(session.headings.map(\.title), ["Title", "Section"])
         XCTAssertEqual(session.headings.map(\.line), [1, 6])
     }
+
+    func testMarkdownWarningOnlyRecognizesAnExplicitLeonardoHeader() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let tokenExample = root.appendingPathComponent("token.md")
+        try "# Example\n\n{{field:name}}".write(to: tokenExample, atomically: true, encoding: .utf8)
+        await session.open(tokenExample)
+        XCTAssertFalse(session.leonardoFormatWarning)
+
+        let explicit = root.appendingPathComponent("explicit.md")
+        try "---\n{\"format\":\"mdlf\"}\n---\n# Example".write(to: explicit, atomically: true, encoding: .utf8)
+        await session.open(explicit)
+        XCTAssertTrue(session.leonardoFormatWarning)
+    }
+
+    func testProtectedResponseCanUpdateDeclaredFieldThroughFillMode() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let response = root.appendingPathComponent("response.mdlr")
+        let document = LeonardoDocument(
+            body: "Name: {{field:name}}",
+            metadata: LeonardoMetadata(
+                document: LeonardoDocumentDescriptor(kind: .form),
+                fields: ["name": LeonardoFieldDefinition(required: true)]
+            )
+        )
+        try LeonardoFormatParser.serialize(document).write(to: response, atomically: true, encoding: .utf8)
+
+        await session.open(response)
+        XCTAssertEqual(session.mode, .fill)
+        XCTAssertTrue(session.isProtected)
+        XCTAssertTrue(session.updateLeonardoField("name", text: "Ada"))
+        XCTAssertEqual(session.leonardoFieldText("name"), "Ada")
+        XCTAssertTrue(session.isDirty)
+    }
+
+    func testMarkdownMigrationFailurePreservesSourceAndDraft() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let tabs = DocumentTabs(preferencesURL: root.appendingPathComponent("preferences.json"))
+        let preferenceKey = "migrateMarkdownOnSave"
+        let previousPreference = UserDefaults.standard.object(forKey: preferenceKey)
+        defer {
+            tabs.stop()
+            try? FileManager.default.removeItem(at: root)
+            if let previousPreference {
+                UserDefaults.standard.set(previousPreference, forKey: preferenceKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: preferenceKey)
+            }
+        }
+        let source = root.appendingPathComponent("note.md")
+        let destination = root.appendingPathComponent("note.mdlf")
+        try "original".write(to: source, atomically: true, encoding: .utf8)
+        try "existing destination".write(to: destination, atomically: true, encoding: .utf8)
+
+        let session = tabs.activeSession
+        await session.open(source)
+        session.migrateMarkdownOnSave = true
+        session.content = "draft"
+        session.contentChanged()
+        await session.save()
+
+        XCTAssertEqual(session.documentURL, source)
+        XCTAssertEqual(session.content, "draft")
+        XCTAssertTrue(session.isDirty)
+        XCTAssertEqual(try String(contentsOf: source, encoding: .utf8), "original")
+        XCTAssertEqual(try String(contentsOf: destination, encoding: .utf8), "existing destination")
+    }
+
+    func testOpeningPackageSavesFieldValuesBackToThePackage() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let tabs = DocumentTabs(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
+        let template = root.appendingPathComponent("form.mdlf")
+        let package = root.appendingPathComponent("form.mdlz")
+        let document = LeonardoDocument(
+            body: "Name: {{field:name}}",
+            metadata: LeonardoMetadata(
+                document: LeonardoDocumentDescriptor(kind: .form),
+                fields: ["name": LeonardoFieldDefinition(required: true)]
+            )
+        )
+        let source = try LeonardoFormatParser.serialize(document)
+        try source.write(to: template, atomically: true, encoding: .utf8)
+        try LeonardoPackageTransport.export(documentURL: template, content: source, to: package)
+
+        let session = tabs.activeSession
+        session.packageOpenPreference = .package
+        await session.open(package)
+        XCTAssertEqual(session.documentStorage, .package)
+        XCTAssertEqual(session.documentKind, .leonardoTemplate)
+        await session.setDocumentMode(.fill)
+        XCTAssertTrue(session.updateLeonardoField("name", text: "Ada"))
+        await session.save()
+        XCTAssertFalse(session.isDirty)
+
+        let reopened = try LeonardoPackageTransport.open(package)
+        defer { LeonardoPackageTransport.discard(reopened) }
+        let loaded = try await session.documents.read(reopened.documentURL)
+        XCTAssertEqual(try LeonardoFormatParser.parse(loaded.content).metadata.values["name"]?.stringValue, "Ada")
+    }
     func testWorkspaceRenameRemapsStandaloneDocumentAndPreservesDraftAndMode() async throws {
         let (root, session) = try fixture()
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }

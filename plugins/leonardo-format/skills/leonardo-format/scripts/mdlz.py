@@ -26,9 +26,10 @@ ARCHIVE_SUFFIX = ".mdlz"
 DOCUMENT_SUFFIXES = frozenset({".mdlf", ".mdlr"})
 ASSET_PREFIX = "assets/"
 CHUNK_SIZE = 1024 * 1024
-MAX_ENTRIES = 1_024
-MAX_MEMBER_BYTES = 64 * 1024 * 1024
-MAX_TOTAL_BYTES = 256 * 1024 * 1024
+MAX_ARCHIVE_BYTES = 64 * 1024 * 1024
+MAX_ENTRIES = 2_048
+MAX_MEMBER_BYTES = 128 * 1024 * 1024
+MAX_TOTAL_BYTES = 128 * 1024 * 1024
 MAX_COMPRESSION_RATIO = 500
 MIN_RATIO_CHECK_BYTES = 64 * 1024
 WINDOWS_DRIVE = re.compile(r"^[A-Za-z]:")
@@ -41,6 +42,7 @@ class ArchiveError(ValueError):
 
 @dataclass(frozen=True)
 class Limits:
+    max_archive_bytes: int = MAX_ARCHIVE_BYTES
     max_entries: int = MAX_ENTRIES
     max_member_bytes: int = MAX_MEMBER_BYTES
     max_total_bytes: int = MAX_TOTAL_BYTES
@@ -87,6 +89,15 @@ def _assert_directory(path: Path, label: str, *, must_exist: bool = True) -> Non
         raise ArchiveError(f"{label} must not be a symlink: {path}")
     if not stat.S_ISDIR(mode):
         raise ArchiveError(f"{label} must be a directory: {path}")
+
+
+def _assert_archive_file(path: Path, limits: Limits) -> None:
+    _assert_regular_file(path, "archive")
+    if path.suffix.lower() != ARCHIVE_SUFFIX:
+        raise ArchiveError(f"archive must use the {ARCHIVE_SUFFIX} extension: {path}")
+    size = path.stat().st_size
+    if size < 22 or size > limits.max_archive_bytes:
+        raise ArchiveError(f"archive size is outside the limit of {limits.max_archive_bytes} bytes: {path}")
 
 
 def _canonical_member_name(raw_name: str, *, is_directory: bool) -> str:
@@ -142,6 +153,8 @@ def _validate_zip_members(
             raise ArchiveError(f"archive member has an unsupported file type: {info.filename!r}")
         if info.flag_bits & 0x1:
             raise ArchiveError(f"encrypted archive members are unsupported: {info.filename!r}")
+        if info.compress_type not in {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED}:
+            raise ArchiveError(f"archive member uses an unsupported compression method: {info.filename!r}")
 
         name = _canonical_member_name(info.filename, is_directory=is_directory)
         key = _collision_key(name)
@@ -184,9 +197,7 @@ def _is_document_name(name: str) -> bool:
 
 
 def inspect_archive(path: Path, limits: Limits = Limits()) -> dict[str, object]:
-    _assert_regular_file(path, "archive")
-    if path.suffix.lower() != ARCHIVE_SUFFIX:
-        raise ArchiveError(f"archive must use the {ARCHIVE_SUFFIX} extension: {path}")
+    _assert_archive_file(path, limits)
     try:
         with zipfile.ZipFile(path, "r") as archive:
             entries, document = _validate_zip_members(archive, limits)
@@ -204,6 +215,7 @@ def inspect_archive(path: Path, limits: Limits = Limits()) -> dict[str, object]:
                 ],
                 "totalUncompressedBytes": sum(entry.info.file_size for entry in entries),
                 "limits": {
+                    "maxArchiveBytes": limits.max_archive_bytes,
                     "maxEntries": limits.max_entries,
                     "maxMemberBytes": limits.max_member_bytes,
                     "maxTotalBytes": limits.max_total_bytes,
@@ -253,9 +265,7 @@ def _write_archive_member(archive: zipfile.ZipFile, entry: ArchiveEntry, target:
 
 
 def extract_archive(path: Path, destination: Path, limits: Limits = Limits()) -> dict[str, object]:
-    _assert_regular_file(path, "archive")
-    if path.suffix.lower() != ARCHIVE_SUFFIX:
-        raise ArchiveError(f"archive must use the {ARCHIVE_SUFFIX} extension: {path}")
+    _assert_archive_file(path, limits)
     if os.path.lexists(destination):
         raise ArchiveError(f"extraction destination already exists: {destination}")
     parent = destination.parent
@@ -387,6 +397,11 @@ def pack_directory(source: Path, output: Path, limits: Limits = Limits()) -> dic
                 info = _zip_file_info(entry.name)
                 with entry.path.open("rb") as source_stream, archive.open(info, "w") as target:
                     shutil.copyfileobj(source_stream, target, length=CHUNK_SIZE)
+        archive_size = temporary.stat().st_size
+        if archive_size > limits.max_archive_bytes:
+            raise ArchiveError(
+                f"package exceeds the compressed archive limit of {limits.max_archive_bytes} bytes"
+            )
         try:
             os.link(temporary, output)
         except FileExistsError as exc:
@@ -448,8 +463,36 @@ def _parse_format_front_matter(text: str) -> dict[str, object]:
     return metadata
 
 
-def validate_document(path: Path) -> dict[str, object]:
-    """Check the MDLF envelope, leaving detailed validation to the schema."""
+def _validate_metadata_schema(metadata: dict[str, object], schema_path: Path) -> None:
+    """Optionally validate metadata with the host's jsonschema package."""
+
+    _assert_regular_file(schema_path, "schema")
+    try:
+        import jsonschema
+    except ImportError as exc:
+        raise ArchiveError(
+            "schema validation requires the optional Python package 'jsonschema'; "
+            "the default envelope validation has no third-party dependencies"
+        ) from exc
+    try:
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ArchiveError(f"schema is not valid UTF-8 JSON: {schema_path}") from exc
+    try:
+        validator_class = jsonschema.validators.validator_for(schema)
+        validator_class.check_schema(schema)
+        validator = validator_class(schema)
+        errors = sorted(validator.iter_errors(metadata), key=lambda error: tuple(str(item) for item in error.path))
+    except (TypeError, ValueError, jsonschema.exceptions.SchemaError) as exc:
+        raise ArchiveError(f"schema cannot be used for validation: {schema_path}: {exc}") from exc
+    if errors:
+        error = errors[0]
+        location = "$" + "".join(f"[{item!r}]" for item in error.path)
+        raise ArchiveError(f"schema validation failed at {location}: {error.message}")
+
+
+def validate_document(path: Path, *, schema_path: Path | None = None) -> dict[str, object]:
+    """Check the MDLF envelope and optionally its metadata JSON Schema."""
 
     _assert_regular_file(path, "document")
     suffix = path.suffix.lower()
@@ -477,6 +520,8 @@ def validate_document(path: Path) -> dict[str, object]:
         raise ArchiveError("document fields metadata must be an object")
     if values is not None and not isinstance(values, dict):
         raise ArchiveError("document values metadata must be an object")
+    if schema_path is not None:
+        _validate_metadata_schema(metadata, schema_path)
     return {
         "document": _display_path(path),
         "extension": suffix,
@@ -487,7 +532,8 @@ def validate_document(path: Path) -> dict[str, object]:
         "documentKind": kind,
         "fieldCount": len(fields) if isinstance(fields, dict) else 0,
         "valueCount": len(values) if isinstance(values, dict) else 0,
-        "semanticValidation": "Use the versioned Leonardo schema under doc/format.",
+        "semanticValidation": "jsonschema" if schema_path is not None else "not-run",
+        "schema": _display_path(schema_path) if schema_path is not None else None,
     }
 
 
@@ -508,6 +554,11 @@ def _parser() -> argparse.ArgumentParser:
 
     validate_command = commands.add_parser("validate", help="validate an MDLF/MDLR or MDLZ transport")
     validate_command.add_argument("path", type=Path)
+    validate_command.add_argument(
+        "--schema",
+        type=Path,
+        help="optionally validate document metadata with a JSON Schema (requires jsonschema)",
+    )
     return parser
 
 
@@ -520,8 +571,10 @@ def _run(arguments: argparse.Namespace) -> dict[str, object]:
         return pack_directory(arguments.source, arguments.output)
     if arguments.command == "validate":
         if arguments.path.suffix.lower() == ARCHIVE_SUFFIX:
+            if arguments.schema is not None:
+                raise ArchiveError("--schema applies to .mdlf and .mdlr documents, not MDLZ archives")
             return inspect_archive(arguments.path)
-        return validate_document(arguments.path)
+        return validate_document(arguments.path, schema_path=arguments.schema)
     raise ArchiveError(f"unknown command: {arguments.command}")
 
 

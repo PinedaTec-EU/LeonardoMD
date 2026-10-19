@@ -5,7 +5,7 @@ import Observation
 struct DocumentTab: Identifiable {
     let id = UUID()
     let session: AppSession
-    var title: String { session.documentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? L10n.text("New tab") }
+    var title: String { session.displayDocumentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? L10n.text("New tab") }
     var location: URL? { session.displayDocumentURL ?? session.projectURL }
 }
 
@@ -35,6 +35,7 @@ final class DocumentTabs {
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         let session = AppSession(preferencesURL: preferencesURL)
         let tab = DocumentTab(session: session)
+        configureLeonardoTransport(for: session)
         session.activateExistingDocument = { [weak self] url, line in
             self?.activateDocument(url, line: line) ?? false
         }
@@ -94,7 +95,7 @@ final class DocumentTabs {
 
     static func acceptsDrop(_ urls: [URL]) -> Bool {
         !urls.isEmpty && urls.allSatisfy { url in
-            guard url.isFileURL, AppDocumentKind.isSupportedExtension(url.pathExtension) else { return false }
+            guard url.isFileURL, AppDocumentKind.isSupportedDropExtension(url.pathExtension) else { return false }
             var directory: ObjCBool = false
             return FileManager.default.fileExists(atPath: url.path, isDirectory: &directory) && !directory.boolValue
         }

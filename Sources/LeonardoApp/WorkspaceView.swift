@@ -95,11 +95,15 @@ struct WorkspaceView: View {
                     }
                 }
                 HStack(spacing: 5) {
-                    Image(systemName: session.documentStatusIcon)
-                    Text(session.documentFormatLabel)
+                    Image(systemName: session.documentStatusIcon).foregroundStyle(session.documentStatusColor)
+                    Text(session.documentFormatLabel).foregroundStyle(session.documentStatusColor)
                     Text("·")
-                    Image(systemName: session.documentStorageIcon)
-                    Text(session.documentStorageLabel)
+                    Image(systemName: session.documentStorageIcon).foregroundStyle(session.documentStorageColor)
+                    Text(session.documentStorageLabel).foregroundStyle(session.documentStorageColor)
+                    if let location = session.documentLocationLabel {
+                        Text("·")
+                        Text(location).foregroundStyle(session.documentStorageColor).lineLimit(1)
+                    }
                     if session.projectURL != nil {
                         Text("·")
                         Text(session.projectURL!.lastPathComponent)
@@ -130,6 +134,25 @@ struct WorkspaceView: View {
                     .help(session.focus ? L10n.text("Exit focus mode") : L10n.text("Focus mode"))
                     .accessibilityIdentifier("focus-mode")
                 Button { session.exportPDF() } label: { Image(systemName: "square.and.arrow.up") }.help(L10n.text("Export PDF"))
+                if session.documentKind.isLeonardo {
+                    Button { session.exportLeonardoPackage() } label: { Image(systemName: "archivebox") }
+                        .help(L10n.text("Export Leonardo package"))
+                        .accessibilityLabel(L10n.text("Export Leonardo package"))
+                        .accessibilityIdentifier("export-leonardo-package")
+                }
+                if session.documentStorage == .package {
+                    Button { session.extractLeonardoPackageToFolder() } label: { Image(systemName: "folder.badge.gearshape") }
+                        .help(L10n.text("Extract and work in a folder…"))
+                        .accessibilityLabel(L10n.text("Extract and work in a folder…"))
+                        .accessibilityIdentifier("extract-leonardo-package")
+                        .disabled(session.busy || session.isSyncSuspended)
+                }
+                if session.leonardoDocument?.isForm == true {
+                    Button { session.exportLeonardoResponse() } label: { Image(systemName: "doc.badge.arrow.up") }
+                        .help(L10n.text("Export Leonardo response"))
+                        .accessibilityLabel(L10n.text("Export Leonardo response"))
+                        .accessibilityIdentifier("export-leonardo-response")
+                }
             }
             if let notice = desktopSync.gitWakeups.first {
                 Button {
@@ -214,7 +237,9 @@ struct WorkspaceView: View {
             Spacer()
             Text(session.focus ? L10n.text("Focus") : session.projectURL == nil ? L10n.text("Standalone document") : L10n.text("Project"))
             Label(session.documentFormatLabel, systemImage: session.documentStatusIcon)
+                .foregroundStyle(session.documentStatusColor)
             Label(session.documentStorageLabel, systemImage: session.documentStorageIcon)
+                .foregroundStyle(session.documentStorageColor)
             Text("UTF-8")
             Text(L10n.format("%d words", session.wordCount))
         }.font(.caption).foregroundStyle(.secondary).padding(.horizontal, 18).padding(.vertical, 8)

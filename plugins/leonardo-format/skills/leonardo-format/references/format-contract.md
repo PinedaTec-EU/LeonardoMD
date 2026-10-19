@@ -1,10 +1,11 @@
 # Leonardo format contract
 
 The canonical contract lives in the repository's `doc/format/` directory and
-is versioned with the application. It is the only source of truth for the
-front-matter keys, field/value types, layout vocabulary, rendering semantics,
-and migration rules. The plugin must be released with the same contract
-revision that its skill describes.
+is versioned with the application. The machine-readable v1 schema is
+`doc/format/mdlf-v1.schema.json`. These files are the only source of truth for
+the front-matter keys, field/value types, layout vocabulary, rendering
+semantics, and migration rules. The plugin must be released with the same
+contract revision that its skill describes.
 
 The public extension roles are stable:
 

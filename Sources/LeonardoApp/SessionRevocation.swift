@@ -2,6 +2,7 @@ import Foundation
 
 extension AppSession {
     func clearRevokedContent() {
+        discardPackageWorkspace()
         documentURL = nil; documentSourceURL = nil; snapshot = nil; content = ""
         documentKind = .markdown; documentStorage = .localFile; leonardoFormatWarning = false
         projectURL = nil; workspaceURL = nil; workspaceProjects = []

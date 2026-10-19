@@ -17,6 +17,14 @@ extension DocumentTabs {
             let session = tab.session
             let scroll = session.editorScroll
             await session.updateMovedDocument(from: source, to: destination)
+            if session.documentStorage == .package,
+               let package = session.documentSourceURL,
+               let movedPackage = relocated(package, from: source, to: destination) {
+                session.documentSourceURL = movedPackage
+                if let workspace = session.packageWorkspace {
+                    session.packageWorkspace = LeonardoPackageTransport.relocating(workspace, to: movedPackage)
+                }
+            }
             session.editorScroll = scroll
             if let project = session.projectURL, let moved = relocated(project, from: source, to: destination) {
                 session.projectURL = moved
@@ -39,7 +47,11 @@ extension DocumentTabs {
                 session.rootEntries = []
                 session.resetSearch()
             }
-            if let url = session.documentURL, contains(url, in: source) {
+            if let url = session.documentURL,
+               (contains(url, in: source)
+                || (session.documentStorage == .package
+                    && session.documentSourceURL.map({ contains($0, in: source) }) == true)) {
+                session.discardPackageWorkspace()
                 session.documentURL = nil
                 session.documentSourceURL = nil
                 session.documentKind = .markdown
@@ -57,7 +69,11 @@ extension DocumentTabs {
     }
 
     private func affects(_ session: AppSession, source: URL) -> Bool {
-        [session.documentURL, session.projectURL].compactMap { $0 }.contains { contains($0, in: source) }
+        [session.documentURL,
+         session.documentStorage == .package ? session.documentSourceURL : nil,
+         session.projectURL]
+            .compactMap { $0 }
+            .contains { contains($0, in: source) }
     }
 
     private func contains(_ url: URL, in source: URL) -> Bool {

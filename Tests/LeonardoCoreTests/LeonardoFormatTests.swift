@@ -1,7 +1,26 @@
+import Foundation
 import XCTest
 @testable import LeonardoCore
 
 final class LeonardoFormatTests: XCTestCase {
+    func testFormatCorpusParsesRoundTripsAndHasNoSemanticErrors() throws {
+        let repository = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let examples = repository.appendingPathComponent("doc/format/examples", isDirectory: true)
+        for name in ["request.mdlf", "request.mdlr"] {
+            let url = examples.appendingPathComponent(name)
+            let source = try String(contentsOf: url, encoding: .utf8)
+            let document = try LeonardoFormatParser.parse(source)
+            let errors = LeonardoFormatValidator.validate(document).filter { $0.severity == .error }
+            XCTAssertTrue(errors.isEmpty, "\(name) has errors: \(errors)")
+            let restored = try LeonardoFormatParser.parse(try LeonardoFormatParser.serialize(document))
+            XCTAssertEqual(restored.body, document.body, name)
+            XCTAssertEqual(restored.metadata, document.metadata, name)
+        }
+    }
+
     func testParsesJSONFrontMatterAndKeepsBodySeparate() throws {
         let source = """
         ---
@@ -27,6 +46,13 @@ final class LeonardoFormatTests: XCTestCase {
         XCTAssertEqual(document.metadata.fields["name"]?.type, .text)
         XCTAssertEqual(document.metadata.values["name"]?.stringValue, "Ada")
         XCTAssertEqual(LeonardoFormatParser.detect(source), .leonardo(version: 1))
+    }
+
+    func testBodyPreservesLeadingTrailingWhitespaceAndCRLF() throws {
+        let source = "---\r\n{\"format\":\"mdlf\",\"formatVersion\":1}\r\n---\r\n\r\n# Body  \r\n"
+        let document = try LeonardoFormatParser.parse(source)
+        XCTAssertEqual(document.body, "\r\n# Body  \r\n")
+        XCTAssertEqual(try LeonardoFormatParser.parse(try LeonardoFormatParser.serialize(document)).body, document.body)
     }
 
     func testRoundTripUsesCanonicalSortedJSONAndNormalizesLineEndings() throws {
@@ -67,6 +93,27 @@ final class LeonardoFormatTests: XCTestCase {
         XCTAssertThrowsError(try LeonardoFormatParser.parse(wrong)) { error in
             XCTAssertEqual(error as? LeonardoFormatError, .missingFormatIdentifier)
         }
+    }
+
+    func testUnknownStructuralMetadataIsRejectedInsteadOfDiscarded() {
+        let source = "---\n{\"format\":\"mdlf\",\"formatVersion\":1,\"layout\":{\"background\":{\"tint\":\"blue\"}}}\n---\nBody"
+        XCTAssertThrowsError(try LeonardoFormatParser.parse(source)) { error in
+            XCTAssertEqual(error as? LeonardoFormatError, .unknownMetadataKey("layout.background.tint"))
+        }
+    }
+
+    func testPartialLayoutObjectsUseDocumentedDefaults() throws {
+        let source = "---\n{\"format\":\"mdlf\",\"formatVersion\":1,\"layout\":{\"background\":{\"position\":{}},\"tables\":[{\"occurrence\":1,\"width\":{\"value\":100,\"unit\":\"percent\"},\"columns\":[{}]}]}}\n---\nBody"
+        let document = try LeonardoFormatParser.parse(source)
+        let background = try XCTUnwrap(document.metadata.layout?.background)
+        XCTAssertEqual(background.opacity, 1)
+        XCTAssertEqual(background.fit, .cover)
+        XCTAssertEqual(background.position.placement, .flow)
+        let table = try XCTUnwrap(document.metadata.layout?.tables.first)
+        XCTAssertEqual(table.occurrence, 1)
+        XCTAssertEqual(table.repeatHeader, true)
+        XCTAssertEqual(table.allowRowBreak, true)
+        XCTAssertEqual(table.columns.count, 1)
     }
 
     func testModeHintsAreExtensionOnly() {
@@ -115,6 +162,53 @@ final class LeonardoFormatTests: XCTestCase {
         XCTAssertTrue(diagnostics.contains { $0.code == "value.pattern" && $0.fieldID == "email" })
         XCTAssertTrue(diagnostics.contains { $0.code == "value.option" && $0.fieldID == "choice" })
         XCTAssertTrue(diagnostics.contains { $0.code == "value.type" && $0.fieldID == "done" })
+    }
+
+    func testExpensiveUngroupedPatternHasABoundedExecutionBudget() {
+        let clock = ContinuousClock()
+        let start = clock.now
+        let document = LeonardoDocument(body: "{{field:code}}", metadata: LeonardoMetadata(
+            fields: ["code": LeonardoFieldDefinition(pattern: "^a+a+a+a+a+a+a+a+$")],
+            values: ["code": .string(String(repeating: "a", count: 5_000) + "!")]))
+        let diagnostics = LeonardoFormatValidator.validate(document)
+        XCTAssertTrue(diagnostics.contains { $0.code == "value.pattern" })
+        XCTAssertLessThan(start.duration(to: clock.now), .seconds(2))
+    }
+
+    func testDateValidationUsesGregorianCalendarAndCustomMessage() {
+        let document = LeonardoDocument(
+            body: "{{field:date}} {{field:unsafe}}",
+            metadata: LeonardoMetadata(
+                fields: [
+                    "date": LeonardoFieldDefinition(type: .date),
+                    "unsafe": LeonardoFieldDefinition(
+                        type: .text,
+                        pattern: "(a|aa)+$",
+                        validationMessage: "Use a simple identifier."
+                    )
+                ],
+                values: [
+                    "date": .string("2023-02-29"),
+                    "unsafe": .string("bbb")
+                ]
+            )
+        )
+
+        var diagnostics = LeonardoFormatValidator.validate(document)
+        XCTAssertTrue(diagnostics.contains { $0.code == "value.date" && $0.fieldID == "date" })
+        XCTAssertTrue(diagnostics.contains { $0.code == "field.patternSafety" && $0.fieldID == "unsafe" })
+        XCTAssertFalse(diagnostics.contains { $0.code == "value.pattern" && $0.fieldID == "unsafe" })
+
+        var leapYear = document
+        leapYear.metadata.values["date"] = .string("2024-02-29")
+        diagnostics = LeonardoFormatValidator.validate(leapYear)
+        XCTAssertFalse(diagnostics.contains { $0.code == "value.date" && $0.fieldID == "date" })
+
+        var custom = document
+        custom.metadata.values["unsafe"] = .string("abc")
+        custom.metadata.fields["unsafe"]?.pattern = "^a+$"
+        diagnostics = LeonardoFormatValidator.validate(custom)
+        XCTAssertTrue(diagnostics.contains { $0.code == "value.pattern" && $0.message == "Use a simple identifier." })
     }
 
     func testUnknownBodyFieldAndUnsafeAssetAreRejected() {

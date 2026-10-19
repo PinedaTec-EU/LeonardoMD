@@ -117,7 +117,7 @@
         leadingSeparator: needsSeparator ? (source.includes("\r\n") ? "\r\n" : "\n") : "" });
     }
     root.querySelectorAll("[data-leonardo-edit]").forEach((element) => {
-      if (element.dataset.leonardoRender !== renderID || element.querySelector(".math-rendered")) return;
+      if (element.dataset.leonardoRender !== renderID || element.querySelector(".math-rendered, .leonardo-field-value")) return;
       const range = ranges[Number(element.dataset.leonardoEdit)];
       if (!range) return;
       element.contentEditable = enabled ? "plaintext-only" : "false";
@@ -206,7 +206,7 @@
     setEditable(root, value) {
       enabled = value === true;
       root.querySelectorAll("[data-leonardo-edit]").forEach((element) => {
-        element.contentEditable = enabled && element.dataset.leonardoRender === renderID && !element.querySelector(".math-rendered") ? "plaintext-only" : "false";
+        element.contentEditable = enabled && element.dataset.leonardoRender === renderID && !element.querySelector(".math-rendered, .leonardo-field-value") ? "plaintext-only" : "false";
         if (!enabled && element === document.activeElement) element.blur();
       });
     }

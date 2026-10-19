@@ -24,6 +24,11 @@ public enum LeonardoFormatParser {
         guard let formatVersion = dictionary["formatVersion"] as? Int else {
             throw LeonardoFormatError.missingFormatVersion
         }
+        guard formatVersion > 0,
+              formatVersion <= LeonardoFormat.currentVersion else {
+            throw LeonardoFormatError.unsupportedVersion(formatVersion)
+        }
+        try LeonardoFormatMetadataSchema.validate(dictionary)
         let metadata: LeonardoMetadata
         do {
             metadata = try JSONDecoder().decode(LeonardoMetadata.self, from: data)
@@ -71,10 +76,12 @@ public enum LeonardoFormatParser {
 
     public static func detect(_ source: String) -> LeonardoFormatDetection {
         guard let parts = try? splitFrontMatter(source) else { return .markdown }
-        guard let data = parts.metadata.data(using: .utf8),
-              let object = try? JSONSerialization.jsonObject(with: data),
-              let dictionary = object as? [String: Any],
-              let format = dictionary["format"] as? String,
+        guard let data = parts.metadata.data(using: .utf8) else { return .markdown }
+        guard let object = try? JSONSerialization.jsonObject(with: data),
+              let dictionary = object as? [String: Any] else {
+            return containsLeonardoMarker(parts.metadata) ? .malformedLeonardo : .markdown
+        }
+        guard let format = dictionary["format"] as? String,
               format == LeonardoFormat.identifier else {
             // A standard Markdown document may use ordinary YAML front matter
             // or a JSON example. Only the explicit mdlf marker opts it in.
@@ -84,6 +91,10 @@ public enum LeonardoFormatParser {
             return .malformedLeonardo
         }
         return .leonardo(version: version)
+    }
+
+    private static func containsLeonardoMarker(_ metadata: String) -> Bool {
+        metadata.range(of: #""format"\s*:\s*"mdlf""#, options: .regularExpression) != nil
     }
 
     public static func modeHint(forPathExtension pathExtension: String) -> LeonardoFileModeHint? {
@@ -111,7 +122,7 @@ public enum LeonardoFormatParser {
         let bodyStart = lines[closingIndex].next
         let metadata = String(source[metadataStart..<metadataEnd]).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !metadata.isEmpty else { throw LeonardoFormatError.invalidFrontMatter }
-        return (metadata, String(source[bodyStart...]))
+        return (metadata, String(source[bodyStart..<source.endIndex]))
     }
 
     private struct LineSlice {
@@ -126,8 +137,7 @@ public enum LeonardoFormatParser {
         while cursor < source.endIndex {
             let start = cursor
             while cursor < source.endIndex,
-                  source[cursor] != "\n",
-                  source[cursor] != "\r" {
+                  !source[cursor].isNewline {
                 cursor = source.index(after: cursor)
             }
             let end = cursor
@@ -140,7 +150,7 @@ public enum LeonardoFormatParser {
             }
             result.append(LineSlice(text: source[start..<end], start: start, next: cursor))
         }
-        if source.isEmpty || source.last == "\n" || source.last == "\r" {
+        if source.isEmpty || source.last?.isNewline == true {
             result.append(LineSlice(text: source[source.endIndex..<source.endIndex], start: source.endIndex, next: source.endIndex))
         }
         return result
@@ -152,8 +162,14 @@ public enum LeonardoFormatValidator {
     private static let maximumPatternInputBytes = 32_768
     private static let fieldIDPattern = try! NSRegularExpression(pattern: "^[A-Za-z][A-Za-z0-9_.-]{0,63}$")
     private static let fieldTokenPattern = try! NSRegularExpression(pattern: "\\{\\{\\s*field:([A-Za-z][A-Za-z0-9_.-]{0,63})\\s*\\}\\}")
-    private static let datePattern = try! NSRegularExpression(pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+    private static let isoDateShape = try! NSRegularExpression(pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
     private static let emailPattern = try! NSRegularExpression(pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
+    private static let gregorianUTC: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        if let timeZone = TimeZone(secondsFromGMT: 0) { calendar.timeZone = timeZone }
+        calendar.locale = Locale(identifier: "en_US_POSIX")
+        return calendar
+    }()
 
     public static func validate(
         _ document: LeonardoDocument,
@@ -181,8 +197,9 @@ public enum LeonardoFormatValidator {
             diagnostics.append(LeonardoDiagnostic(severity: .error, code: "format.identifier", message: "The metadata format must be mdlf."))
             return
         }
-        guard metadata.formatVersion == LeonardoFormat.currentVersion else {
+        if metadata.formatVersion != LeonardoFormat.currentVersion {
             diagnostics.append(LeonardoDiagnostic(severity: .error, code: "format.version", message: "The metadata format version is unsupported."))
+            return
         }
         if let revision = metadata.document.revision, revision < 1 {
             diagnostics.append(LeonardoDiagnostic(severity: .error, code: "document.revision", message: "Document revision must be positive."))
@@ -238,7 +255,7 @@ public enum LeonardoFormatValidator {
             if value == nil || value?.isNullOrEmpty == true {
                 if definition.required {
                     let severity: LeonardoDiagnosticSeverity = context == .submission ? .error : .warning
-                    diagnostics.append(LeonardoDiagnostic(severity: severity, code: "field.required", message: "A value is required.", fieldID: fieldID))
+                    diagnostics.append(LeonardoDiagnostic(severity: severity, code: "field.required", message: validationMessage(definition, fallback: "A value is required."), fieldID: fieldID))
                 }
                 continue
             }
@@ -282,49 +299,49 @@ public enum LeonardoFormatValidator {
         switch definition.type {
         case .text, .multiline, .email, .url, .date, .select:
             guard let string = value.stringValue else {
-                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.type", message: "This field requires a string value.", fieldID: fieldID))
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.type", message: validationMessage(definition, fallback: "This field requires a string value."), fieldID: fieldID))
                 return
             }
             if let minLength = definition.minLength, string.count < minLength {
-                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.minLength", message: "The value is shorter than the allowed minimum.", fieldID: fieldID))
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.minLength", message: validationMessage(definition, fallback: "The value is shorter than the allowed minimum."), fieldID: fieldID))
             }
             if let maxLength = definition.maxLength, string.count > maxLength {
-                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.maxLength", message: "The value is longer than the allowed maximum.", fieldID: fieldID))
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.maxLength", message: validationMessage(definition, fallback: "The value is longer than the allowed maximum."), fieldID: fieldID))
             }
             if definition.pattern != nil,
                string.utf8.count > maximumPatternInputBytes {
-                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.patternInputLength", message: "Values checked by a regular expression are limited to 32768 UTF-8 bytes.", fieldID: fieldID))
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.patternInputLength", message: validationMessage(definition, fallback: "Values checked by a regular expression are limited to 32768 UTF-8 bytes."), fieldID: fieldID))
             } else if let pattern = definition.pattern,
                       let expression = safeExpression(pattern),
                       !matches(string, pattern: expression) {
-                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.pattern", message: "The value does not match the validation expression.", fieldID: fieldID))
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.pattern", message: validationMessage(definition, fallback: "The value does not match the validation expression."), fieldID: fieldID))
             }
             switch definition.type {
             case .email where !matches(string, pattern: emailPattern):
-                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.email", message: "The value is not a valid email address.", fieldID: fieldID))
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.email", message: validationMessage(definition, fallback: "The value is not a valid email address."), fieldID: fieldID))
             case .url where !isValidURL(string):
-                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.url", message: "The value is not a valid URL.", fieldID: fieldID))
-            case .date where !matches(string, pattern: datePattern):
-                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.date", message: "Dates must use YYYY-MM-DD.", fieldID: fieldID))
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.url", message: validationMessage(definition, fallback: "The value is not a valid URL."), fieldID: fieldID))
+            case .date where !isValidISODate(string):
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.date", message: validationMessage(definition, fallback: "Dates must use YYYY-MM-DD."), fieldID: fieldID))
             case .select where !definition.options.contains(where: { $0.value == string }):
-                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.option", message: "The value is not one of the allowed options.", fieldID: fieldID))
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.option", message: validationMessage(definition, fallback: "The value is not one of the allowed options."), fieldID: fieldID))
             default:
                 break
             }
         case .number:
             guard let number = value.numberValue, number.isFinite else {
-                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.type", message: "This field requires a finite number.", fieldID: fieldID))
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.type", message: validationMessage(definition, fallback: "This field requires a finite number."), fieldID: fieldID))
                 return
             }
             if let minimum = definition.minimum, number < minimum {
-                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.minimum", message: "The number is below the allowed minimum.", fieldID: fieldID))
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.minimum", message: validationMessage(definition, fallback: "The number is below the allowed minimum."), fieldID: fieldID))
             }
             if let maximum = definition.maximum, number > maximum {
-                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.maximum", message: "The number exceeds the allowed maximum.", fieldID: fieldID))
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.maximum", message: validationMessage(definition, fallback: "The number exceeds the allowed maximum."), fieldID: fieldID))
             }
         case .checkbox:
             guard value.booleanValue != nil else {
-                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.type", message: "This field requires a boolean value.", fieldID: fieldID))
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.type", message: validationMessage(definition, fallback: "This field requires a boolean value."), fieldID: fieldID))
                 return
             }
         }
@@ -485,7 +502,44 @@ public enum LeonardoFormatValidator {
 
     private static func matches(_ value: String, pattern: NSRegularExpression) -> Bool {
         let range = NSRange(value.startIndex..<value.endIndex, in: value)
-        return pattern.firstMatch(in: value, range: range) != nil
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .milliseconds(25))
+        var found = false
+        pattern.enumerateMatches(in: value, options: [.reportProgress], range: range) { result, _, stop in
+            if result != nil {
+                found = true
+                stop.pointee = true
+            } else if clock.now >= deadline {
+                // ICU periodically reports progress even while backtracking.
+                // Treat budget exhaustion as invalid instead of freezing the UI.
+                stop.pointee = true
+            }
+        }
+        return found
+    }
+
+    private static func isValidISODate(_ value: String) -> Bool {
+        guard matches(value, pattern: isoDateShape) else { return false }
+        let components = value.split(separator: "-", omittingEmptySubsequences: false)
+        guard components.count == 3,
+              let year = Int(components[0]),
+              let month = Int(components[1]),
+              let day = Int(components[2]),
+              year >= 1 else { return false }
+        let requested = DateComponents(calendar: gregorianUTC, timeZone: gregorianUTC.timeZone,
+                                       year: year, month: month, day: day)
+        guard let date = gregorianUTC.date(from: requested) else { return false }
+        let normalized = gregorianUTC.dateComponents([.year, .month, .day], from: date)
+        return normalized.year == year && normalized.month == month && normalized.day == day
+    }
+
+    private static func validationMessage(
+        _ definition: LeonardoFieldDefinition,
+        fallback: String
+    ) -> String {
+        guard let custom = definition.validationMessage?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !custom.isEmpty else { return fallback }
+        return custom
     }
 
     private static func safeExpression(_ pattern: String) -> NSRegularExpression? {
@@ -495,15 +549,17 @@ public enum LeonardoFormatValidator {
     }
 
     private static func unsafePatternReason(_ pattern: String) -> String? {
-        let forbiddenFragments = ["\\1", "\\2", "\\3", "(?=", "(?!", "(?<=", "(?<!"]
-        if forbiddenFragments.contains(where: pattern.contains) {
+        let forbiddenFragments = ["(?=", "(?!", "(?<=", "(?<!"]
+        if forbiddenFragments.contains(where: { pattern.contains($0) })
+            || pattern.range(of: #"\\(?:[1-9]|k<)"#, options: .regularExpression) != nil {
             return "Validation expressions cannot use backreferences or look-around constructs."
         }
-        // Nested unbounded quantifiers are the common source of catastrophic
-        // backtracking in ICU regexes. Reject the simple nested-group forms;
-        // values are also capped before execution below.
-        if pattern.range(of: #"\((?:[^()\\]|\\.)*[+*?](?:[^()\\]|\\.)*\)[+*?]"#, options: .regularExpression) != nil {
-            return "Validation expressions cannot contain nested quantifiers."
+        // A repeated group can make ICU backtracking exponential when it
+        // contains alternatives or another repetition. V1 rejects all
+        // quantified groups; simple character-class and literal quantifiers
+        // remain available and values are capped before execution.
+        if pattern.range(of: #"\)(?:[+*?]|\{\d)"#, options: .regularExpression) != nil {
+            return "Validation expressions cannot quantify groups."
         }
         return nil
     }

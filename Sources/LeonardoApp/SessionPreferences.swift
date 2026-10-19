@@ -108,6 +108,7 @@ extension AppSession {
             focus = false
             documentURL = destination
             documentSourceURL = nil
+            discardPackageWorkspace()
             documentKind = AppDocumentKind.classify(destination)
             documentStorage = .localFile
             leonardoFormatWarning = false

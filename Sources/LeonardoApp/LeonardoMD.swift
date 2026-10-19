@@ -244,6 +244,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     @objc private func preview() { Task { await activeSession?.setDocumentMode(.preview) } }
     @objc private func edit() { Task { await activeSession?.setDocumentMode(.edit) } }
     @objc private func split() { Task { await activeSession?.setDocumentMode(.split) } }
+    @objc private func fill() { Task { await activeSession?.setDocumentMode(.fill) } }
     @objc private func outline() { activeSession?.showInspector.toggle() }
     @objc private func preferences() { activeSession?.showPreferences = true }
     @objc private func bringWindowsToFront() {
@@ -285,6 +286,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         add(L10n.text("Preview"), action: #selector(preview), key: "1", to: view)
         add(L10n.text("Edit"), action: #selector(edit), key: "2", to: view)
         add(L10n.text("Split"), action: #selector(split), key: "3", to: view)
+        add(L10n.text("Fill form"), action: #selector(fill), key: "4", to: view)
         add(L10n.text("Focus mode"), action: #selector(focus), key: "f", modifiers: [.command, .shift], to: view)
         add(L10n.text("Document outline"), action: #selector(outline), key: "i", modifiers: [.command, .option], to: view)
         let window = submenu(L10n.text("Window"), in: menu)
