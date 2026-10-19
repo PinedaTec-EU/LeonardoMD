@@ -3,30 +3,24 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.1.435</title>
-            <pubDate>Mon, 19 Oct 2026 11:37:52 +0200</pubDate>
+            <title>0.1.441</title>
+            <pubDate>Mon, 19 Oct 2026 13:20:23 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>435</sparkle:version>
-            <sparkle:shortVersionString>0.1.435</sparkle:shortVersionString>
+            <sparkle:version>441</sparkle:version>
+            <sparkle:shortVersionString>0.1.441</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">## Open Leonardo documents and forms
+            <description sparkle:format="markdown"># LeonardoMD 0.1.441
 
-- Author open `.mdlf` documents with versioned JSON metadata and Markdown content. Ordinary `.md` files retain standard Markdown behavior.
-- Export `.mdlr` forms that open ready to fill, with typed fields, validation and answers stored separately from the document body. Draft answers can be saved before validation is complete.
-- Configure backgrounds, image sizing and placement, and table widths.
-- Transport documents and local assets in conventional `.mdlz` ZIP packages. Work directly in the package or extract to a chosen folder; visible indicators show the working format, mode and save target.
-- Preserve package assets, external-change conflicts and source documents across save/export operations.
-- Keep preference scope inside the active tab; package-open and migration settings apply across the Mac.
-- Use the included Codex/Claude plugin contract and Python helper to generate, validate, inspect, extract and repack MDLZ.
+- Shorter MDLZ opening choices and preference labels in English and Spanish.
+- Fixed the Markdown-to-MDLF preference switch so its state refreshes immediately and stays consistent between document sessions.
+- Added a Preferences gear beside the new-tab button.
 
-To receive beta updates, choose Beta in Preferences → Updates. Fresh installations keep Stable selected until you opt in.
+Includes the open MDLF/MDLR document and MDLZ transport formats introduced in 0.1.435. The Codex/Claude format plugin remains at 0.2.5.
 
-This beta is intended for validation of the new document workflows. Hosted update/install/relaunch acceptance is tracked separately; publication does not claim those checks or install the application on the maintainer’s Mac.
-
-Source change: https://github.com/PinedaTec-EU/LeonardoMD/pull/168
+Beta for Apple Silicon, macOS 14 or later. Signed with Developer ID and notarized by Apple. The stable channel remains unchanged.
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.435/LeonardoMD-0.1.435.zip" length="16296415" type="application/octet-stream" sparkle:edSignature="3E+WLug8TudHyjxG7ZSSJvPQSgQv1Bd3ScZtu9R+rbqA4ZvU5ZA1BuG/5cGBxBA0TRvTBELjxFnmQRdDY4YKBQ==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.441/LeonardoMD-0.1.441.zip" length="16301240" type="application/octet-stream" sparkle:edSignature="pZqL8WI5my5hKY64rRYOw/HnhZFjNgWHvGHVPuZJpYlO3ynfif8O324jOe6Quk55E7XURccvCy8nFM7b5TzzDA==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.405</title>
