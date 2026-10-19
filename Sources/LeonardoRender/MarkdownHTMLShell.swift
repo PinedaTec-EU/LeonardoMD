@@ -63,8 +63,8 @@ enum MarkdownHTMLShell {
         baseURL: URL?,
         configuration: MarkdownPreviewConfiguration
     ) throws -> String {
-        let document = MarkdownDocumentParser.parse(content)
         let leonardo = configuration.allowsLeonardoFormat ? try LeonardoFormatParser.parse(content) : nil
+        let document = leonardo.map(LeonardoMarkdownMigration.previewMetadata) ?? MarkdownDocumentParser.parse(content)
         let payload = MarkdownRenderPayload(
             markdown: leonardo?.body ?? document.body,
             leonardo: leonardo?.metadata,

@@ -1,9 +1,27 @@
 import Foundation
 import CryptoKit
 import Testing
+import LeonardoCore
 @testable import LeonardoRender
 
 struct MarkdownRenderTests {
+    @Test
+    func migratedPreviewUsesAuthorMetadataAndNeverJSONEnvelopeProperties() throws {
+        let original = "---\ntitle: Article\nauthor: José\ntags: [Swift, docs]\n---\n# Edited body\n"
+        let document = LeonardoMarkdownMigration.convert(original, fallbackTitle: "filename")
+        let content = try LeonardoFormatParser.serialize(document)
+        var configuration = MarkdownPreviewConfiguration(frontMatter: .metadata)
+        configuration.allowsLeonardoFormat = true
+        let json = try MarkdownHTMLShell.payloadJSON(content: content, baseURL: nil, configuration: configuration)
+        let payload = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+        let metadata = try #require(payload["frontMatter"] as? [String: String])
+        #expect(metadata["title"] == "Article")
+        #expect(metadata["author"] == "José")
+        #expect(metadata["formatVersion"] == nil)
+        #expect(payload["markdown"] as? String == "# Edited body\n")
+        #expect(payload["tags"] as? [String] == ["Swift", "docs"])
+    }
+
     @Test
     func memoryAssetsOnlyServeSelectedImagePaths() throws {
         let bytes = Data([1, 2, 3])

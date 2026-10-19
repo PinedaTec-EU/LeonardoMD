@@ -236,14 +236,11 @@ extension AppSession {
         do {
             switch LeonardoFormatParser.detect(content) {
             case .markdown:
-                let metadata = LeonardoMetadata(
-                    document: LeonardoDocumentDescriptor(
-                        title: sourceURL.deletingPathExtension().lastPathComponent,
-                        kind: .document
-                    )
-                )
                 serialized = try LeonardoFormatParser.serialize(
-                    LeonardoDocument(body: content, metadata: metadata)
+                    LeonardoMarkdownMigration.convert(
+                        content,
+                        fallbackTitle: sourceURL.deletingPathExtension().lastPathComponent
+                    )
                 )
             case .leonardo:
                 let existing = try LeonardoFormatParser.parse(content)

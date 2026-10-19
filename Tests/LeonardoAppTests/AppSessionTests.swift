@@ -333,6 +333,29 @@ final class AppSessionTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: destination, encoding: .utf8), "existing destination")
     }
 
+    func testMarkdownMigrationSeparatesYAMLFromLatestDraft() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("article.md")
+        let header = "---\ntitle: Article\nauthor: José\ncustom:\n  nested: yes\n---\n"
+        let original = header + "# Original\n"
+        let editedBody = "# Edited article\n\nMy saved change,\n"
+        try original.write(to: source, atomically: true, encoding: .utf8)
+        await session.open(source)
+        session.content = header + editedBody
+        session.contentChanged()
+
+        let migrated = await session.migrateMarkdownToLeonardo()
+
+        XCTAssertTrue(migrated)
+        let saved = try LeonardoFormatParser.parse(String(contentsOf: source.deletingPathExtension().appendingPathExtension("mdlf"), encoding: .utf8))
+        XCTAssertEqual(saved.body, editedBody)
+        XCTAssertEqual(saved.metadata.document.title, "Article")
+        XCTAssertEqual(saved.metadata.values[LeonardoMarkdownMigration.frontMatterValueKey], .string(header))
+        XCTAssertEqual(try String(contentsOf: source, encoding: .utf8), original)
+        XCTAssertFalse(session.isDirty)
+    }
+
     func testMarkdownMigrationPreservesValidLeonardoDocumentInDisguisedMarkdown() async throws {
         let (root, session) = try fixture()
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }
