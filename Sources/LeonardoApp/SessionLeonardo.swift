@@ -84,6 +84,8 @@ extension AppSession {
     /// exercise the same authorization and transport path deterministically.
     func openLeonardoPackage(_ packageURL: URL, extractingTo extraction: URL?) async -> Bool {
         guard !stopped, !isClosing, !isSyncSuspended else { return false }
+        let access = beginDocumentAccess(to: packageURL)
+        defer { finishDocumentAccess(access) }
         // `open(_:)` owns the normal busy flag while this adapter runs.  Do
         // not reject that caller, but remember the surrounding identity so an
         // authorization callback cannot switch the tab before transport
@@ -104,7 +106,7 @@ extension AppSession {
             if let extraction {
                 try await authorizePath(extraction, .directoryMutation)
             }
-            guard !stopped, !isClosing, !isSyncSuspended,
+            guard documentAccessIsActive(access), !isClosing, !isSyncSuspended,
                   fileOperationCount == expectedOperationCount,
                   documentURL?.standardizedFileURL == expectedDocumentURL,
                   documentSourceURL?.standardizedFileURL == expectedSourceURL,
@@ -115,7 +117,7 @@ extension AppSession {
             }.value
             openedWorkspace = workspace
             let loaded = try await documents.read(workspace.documentURL)
-            guard !stopped, !isClosing, !isSyncSuspended,
+            guard documentAccessIsActive(access), !isClosing, !isSyncSuspended,
                   fileOperationCount == expectedOperationCount,
                   documentURL?.standardizedFileURL == expectedDocumentURL,
                   documentSourceURL?.standardizedFileURL == expectedSourceURL,

@@ -117,6 +117,7 @@ final class AppSession {
     let renderer = MarkdownPreviewController()
     var snapshot: DocumentSnapshot?
     var saveTask: Task<Void, Never>?
+    @ObservationIgnored var pendingDocumentAccesses: [UUID: PendingDocumentAccess] = [:]
     @ObservationIgnored var packageWorkspaceDisposalTask: Task<Void, Never>?
     @ObservationIgnored var pendingPackageWorkspaceDisposals: [(workspace: LeonardoPackageWorkspace, waitForIO: Bool)] = []
     /// Test-only synchronization point for deterministic cancellation coverage.
@@ -233,10 +234,10 @@ final class AppSession {
 
     func openDocument(_ url: URL, line: Int? = nil) async {
         guard !isClosing, !stopped, !isSyncSuspended else { return }
-        fileOperationCount += 1
-        defer { fileOperationCount -= 1 }
+        let access = beginDocumentAccess(to: url)
+        defer { finishDocumentAccess(access) }
         do { try await authorizePath(url, .document) } catch { report(error); return }
-        guard !stopped, !isClosing else { return }
+        guard documentAccessIsActive(access), !isClosing else { return }
         if activateExistingDocument?(url, line) == true {
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             return
@@ -248,7 +249,7 @@ final class AppSession {
             return
         }
         guard await prepareNavigation() else { return }
-        guard !busy, !isClosing, !stopped else { return }
+        guard !busy, !isClosing, documentAccessIsActive(access) else { return }
         // Keep an existing temporary package workspace alive until the next
         // document has loaded successfully. A cancelled package dialog or a
         // failed read must leave the current tab usable.
@@ -271,7 +272,7 @@ final class AppSession {
         defer { busy = false }
         do {
             let loaded = try await documents.read(url)
-            guard !stopped, !isClosing, !isSyncSuspended, !NativeReconciliationLease.shared.holds(url) else { return }
+            guard documentAccessIsActive(access), !isClosing, !isSyncSuspended, !NativeReconciliationLease.shared.holds(url) else { return }
             // A declared Leonardo suffix opts into the versioned parser. Do
             // this before mutating session state so a future or malformed
             // document leaves the currently open tab intact.
@@ -281,7 +282,7 @@ final class AppSession {
             if let previousPackageWorkspace {
                 discardPackageWorkspace()
                 await waitForPackageWorkspaceDisposal()
-                guard !stopped, !isClosing, !isSyncSuspended else { return }
+                guard documentAccessIsActive(access), !isClosing, !isSyncSuspended else { return }
             }
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             isProtected = true

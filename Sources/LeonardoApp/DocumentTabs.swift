@@ -193,13 +193,17 @@ final class DocumentTabs {
     /// Wait for existing I/O before the library removes the working directories.
     func revokeWorkspaces(_ roots: [URL]) async {
         let paths = roots.map { $0.standardizedFileURL.resolvingSymlinksInPath().path }
+        let pending = tabs.compactMap { tab -> (AppSession, Set<UUID>)? in
+            let ids = tab.session.revokeDocumentAccesses(under: paths)
+            return ids.isEmpty ? nil : (tab.session, ids)
+        }
         let affected = tabs.filter { tab in
             tab.session.workspaceIdentityURLs.contains { url in
                 let path = url.standardizedFileURL.resolvingSymlinksInPath().path
                 return paths.contains { path == $0 || path.hasPrefix($0 + "/") }
             }
         }
-        guard !affected.isEmpty else { return }
+        guard !affected.isEmpty || !pending.isEmpty else { return }
         for tab in affected {
             tab.session.stop()
             tab.session.clearRevokedContent()
@@ -217,6 +221,7 @@ final class DocumentTabs {
         } else if activeID.map(ids.contains) == true { activeID = tabs[0].id }
         updateTitle()
         for tab in affected { await tab.session.finishRevocation() }
+        for (session, ids) in pending { await session.waitForDocumentAccesses(ids) }
     }
 
     func stop() {
