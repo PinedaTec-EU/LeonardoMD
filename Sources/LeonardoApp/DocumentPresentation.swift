@@ -29,8 +29,7 @@ enum AppDocumentKind: String, CaseIterable, Identifiable, Sendable {
     @MainActor func defaultMode(global: MarkdownMode) -> DocumentMode {
         switch self {
         case .leonardoResponse: return .fill
-        case .leonardoTemplate: return .edit
-        case .markdown, .leonardoPackage:
+        case .markdown, .leonardoTemplate, .leonardoPackage:
             return DocumentMode(rawValue: global.rawValue) ?? .preview
         }
     }

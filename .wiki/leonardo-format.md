@@ -32,4 +32,4 @@ Accepted application/window/tab close now joins temporary retirement before exit
 
 Format preferences share `LeonardoFormatPreferences` across sessions. Computed UserDefaults access must explicitly participate in Observation so switches and pickers refresh immediately; direct UserDefaults-only bindings do not notify SwiftUI. Regression: [#183](https://github.com/PinedaTec-EU/LeonardoMD/issues/183).
 
-MDLZ opening follows the normal resolved Markdown mode (Preview by default) for inner MDLF documents; do not apply the inner MDLF authoring default. Inner MDLR responses retain Fill, including explicit extraction. Regression: [#189](https://github.com/PinedaTec-EU/LeonardoMD/issues/189).
+Standalone MDLF and MDLZ with inner MDLF follow the normal resolved Markdown mode (Preview by default). Standalone and packaged MDLR responses retain Fill, including explicit extraction. Explicit source-line navigation still selects Edit. Regression: [#189](https://github.com/PinedaTec-EU/LeonardoMD/issues/189).
