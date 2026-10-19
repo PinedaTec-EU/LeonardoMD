@@ -1,4 +1,7 @@
 {
+  "Appearance": "Apariencia",
+  "Project: %@": "Proyecto: %@",
+  "On this Mac": "En este Mac",
   " · Conflict": " · Conflicto",
   "%@ · %d changes · ↑%d ↓%d": "%@ · %d cambios · ↑%d ↓%d",
   "%d words": "%d palabras",

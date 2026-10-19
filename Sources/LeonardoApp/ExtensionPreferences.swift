@@ -12,8 +12,6 @@ struct ExtensionPreferences: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text(projectScope ? L10n.text("Project extensions") : L10n.text("Global extensions"))
-                    .font(.headline)
                 if projectScope {
                     Toggle(L10n.text("Inherit global extensions"), isOn: Binding(
                         get: { session.projectConfiguration.markdown == nil },
