@@ -18,7 +18,7 @@ This is native XCTest/view-hosting and real WebKit evidence, not an image mockup
 
 - Core: explicit format/version, unknown-key rejection, partial layout defaults, canonical examples, opaque body/CRLF preservation, typed draft/submission validation, dates, custom messages and bounded regular-expression execution.
 - Transport: conventional stored/DEFLATE ZIP interoperability, checksums and unsafe/duplicate paths, extraction ownership, original-file preservation, external-change conflicts, repeated saves, renamed packages, asset-reference rewriting, code/answer exclusion and local-image containment.
-- Application: standard Markdown detection, form initial modes/field persistence, migration conflicts, package saving, drag policy and native chrome states.
+- Application: standard Markdown detection, form initial modes/field persistence, migration conflicts and pending preview edits, authorization denial without writes, package saving, drag policy and native chrome states.
 - Plugin: Python CLI transport regressions, portable/host manifests, bundled schema identity and authoring instructions. `claude plugin validate ./plugins/leonardo-format` checks the Claude manifest.
 - Both public example documents validate with `mdlz.py validate <document> --schema doc/format/mdlf-v1.schema.json` when the optional `jsonschema` dependency is available. The ordinary CLI remains dependency-free and reports envelope-only validation explicitly.
 

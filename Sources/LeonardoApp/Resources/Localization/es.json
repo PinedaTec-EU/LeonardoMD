@@ -381,6 +381,7 @@
   "Extract Leonardo package": "Extraer paquete Leonardo",
   "Choose a new folder for the package contents.": "Elige una carpeta nueva para el contenido del paquete.",
   "The MDLF destination already exists. Choose another name before migrating.": "El destino MDLF ya existe. Elige otro nombre antes de migrar.",
+  "The Markdown source changed on disk. Reload it before migrating.": "El Markdown de origen ha cambiado en el disco. Vuelve a cargarlo antes de migrar.",
   "Export Leonardo package": "Exportar paquete Leonardo",
   "Export Leonardo response": "Exportar respuesta Leonardo",
   "The MDLZ destination already exists. Choose another name.": "El destino MDLZ ya existe. Elige otro nombre.",

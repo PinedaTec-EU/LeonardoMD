@@ -308,7 +308,7 @@ final class AppSession {
             // MDLF already exists or because the source is not writable. Do
             // not fall through to saving the draft back to the Markdown file:
             // the preference explicitly changes the save target.
-            _ = await migrateMarkdownDocument()
+            _ = await migrateMarkdownToLeonardo(allowSaveReentry: true, allowClosing: allowClosing)
             return
         }
         saving = true
@@ -317,6 +317,14 @@ final class AppSession {
         logger.info("document_save_started")
         do {
             try await authorizePath(url, .document)
+            if let packageURL = packageWorkspace?.packageURL,
+               packageURL.standardizedFileURL != url.standardizedFileURL {
+                // Package saves first update the extracted working document,
+                // then repack it. Authorize the real package before the first
+                // temporary write so a denied package never mutates the
+                // workspace in the first place.
+                try await authorizePath(packageURL, .document)
+            }
             guard !stopped, !isClosing || allowClosing else { saving = false; return }
             let savedSnapshot = try await documents.save(draft, to: url, expectedFingerprint: snapshot.fingerprint)
             if let workspace = packageWorkspace, workspace.packageURL != nil {

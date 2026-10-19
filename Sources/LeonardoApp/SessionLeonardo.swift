@@ -1,6 +1,5 @@
 import AppKit
 import Foundation
-import UniformTypeIdentifiers
 import LeonardoCore
 
 /// App-side lifecycle and editing adapters for the open Leonardo format.
@@ -76,14 +75,52 @@ extension AppSession {
             }
         }
 
+        return await openLeonardoPackage(packageURL, extractingTo: extraction)
+    }
+
+    /// Opens a package with a caller-supplied extraction destination.  The
+    /// preference-facing overload above owns AppKit's panels; this adapter is
+    /// deliberately panel-free so tests, automation, and future agents can
+    /// exercise the same authorization and transport path deterministically.
+    func openLeonardoPackage(_ packageURL: URL, extractingTo extraction: URL?) async -> Bool {
+        guard !stopped, !isClosing, !isSyncSuspended else { return false }
+        // `open(_:)` owns the normal busy flag while this adapter runs.  Do
+        // not reject that caller, but remember the surrounding identity so an
+        // authorization callback cannot switch the tab before transport
+        // writes the extracted workspace.
+        let expectedDocumentURL = documentURL?.standardizedFileURL
+        let expectedSourceURL = documentSourceURL?.standardizedFileURL
+        let expectedKind = documentKind.rawValue
+        let expectedStorage = documentStorage.rawValue
+        let expectedOperationCount = fileOperationCount
+
         var openedWorkspace: LeonardoPackageWorkspace?
         do {
+            // The package remains the source identity even when the
+            // transport materializes a temporary working document. An
+            // explicit extraction creates a directory tree, so authorize
+            // that mutation before the transport writes its first byte.
+            try await authorizePath(packageURL, .document)
+            if let extraction {
+                try await authorizePath(extraction, .directoryMutation)
+            }
+            guard !stopped, !isClosing, !isSyncSuspended,
+                  fileOperationCount == expectedOperationCount,
+                  documentURL?.standardizedFileURL == expectedDocumentURL,
+                  documentSourceURL?.standardizedFileURL == expectedSourceURL,
+                  documentKind.rawValue == expectedKind,
+                  documentStorage.rawValue == expectedStorage else { return false }
             let workspace = try await Task.detached(priority: nil) {
                 try LeonardoPackageTransport.open(packageURL, extractingTo: extraction)
             }.value
             openedWorkspace = workspace
             let loaded = try await documents.read(workspace.documentURL)
-            guard !stopped, !isClosing, !isSyncSuspended else {
+            guard !stopped, !isClosing, !isSyncSuspended,
+                  fileOperationCount == expectedOperationCount,
+                  documentURL?.standardizedFileURL == expectedDocumentURL,
+                  documentSourceURL?.standardizedFileURL == expectedSourceURL,
+                  documentKind.rawValue == expectedKind,
+                  documentStorage.rawValue == expectedStorage else {
                 LeonardoPackageTransport.discard(workspace)
                 openedWorkspace = nil
                 return false
@@ -152,8 +189,43 @@ extension AppSession {
         return panel.runModal() == .OK ? panel.url : nil
     }
 
-    func migrateMarkdownToLeonardo() async -> Bool {
-        guard documentKind == .markdown, let sourceURL = documentURL else { return false }
+    func migrateMarkdownToLeonardo(
+        allowSaveReentry: Bool = false,
+        allowClosing: Bool = false
+    ) async -> Bool {
+        guard documentKind == .markdown, let sourceURL = documentURL,
+              !stopped, (!isClosing || allowClosing), !isSyncSuspended,
+              !externalConflict,
+              !busy, !saving else { return false }
+
+        // `save()` owns one file-operation slot while it invokes the
+        // migration preference. Direct UI migration must be idle; the only
+        // permitted re-entry is that exact save path.
+        let calledFromSave = allowSaveReentry && fileOperationCount == 1
+        guard calledFromSave || (!allowSaveReentry && fileOperationCount == 0) else { return false }
+
+        let ownsOperation = !calledFromSave
+        if ownsOperation { fileOperationCount += 1 }
+        var ownsBusy = false
+        defer {
+            if ownsBusy { busy = false }
+            if ownsOperation { fileOperationCount -= 1 }
+        }
+
+        NSApplication.shared.keyWindow?.makeFirstResponder(nil)
+        guard await flushPreviewEdits(),
+              documentKind == .markdown,
+              documentURL == sourceURL,
+              !stopped, (!isClosing || allowClosing), !isSyncSuspended,
+              !externalConflict, !busy,
+              let sourceSnapshot = snapshot,
+              sourceSnapshot.url.standardizedFileURL == sourceURL.standardizedFileURL else { return false }
+        // Keep the preview editable while its asynchronous DOM-to-native
+        // bridge is flushed. Lock the session only after the latest content
+        // has reached `content` and the source snapshot is captured.
+        busy = true
+        ownsBusy = true
+
         let destination = sourceURL.deletingPathExtension().appendingPathExtension("mdlf")
         if FileManager.default.fileExists(atPath: destination.path) {
             errorMessage = L10n.text("The MDLF destination already exists. Choose another name before migrating.")
@@ -166,13 +238,24 @@ extension AppSession {
             )
         )
         do {
-            // Keep the original Markdown bytes as the MDLF body.  This also
+            // Authorize both identities before the exclusive destination
+            // create. `createNew(preserving:)` performs the final source
+            // fingerprint check, closing the race after this authorization.
+            try await authorizePath(sourceURL, .document)
+            try await authorizePath(destination, .document)
+            guard documentKind == .markdown,
+                  documentURL == sourceURL,
+                  snapshot?.fingerprint == sourceSnapshot.fingerprint,
+                  !stopped, (!isClosing || allowClosing), !isSyncSuspended,
+                  !externalConflict, ownsBusy else { return false }
+
+            // Keep the original Markdown bytes as the MDLF body. This also
             // preserves ordinary YAML front matter inside a Markdown file;
             // Leonardo metadata is the only front matter this wrapper owns.
             let serialized = try LeonardoFormatParser.serialize(
                 LeonardoDocument(body: content, metadata: metadata)
             )
-            let saved = try await documents.save(serialized, to: destination)
+            let saved = try await documents.createNew(serialized, to: destination, preserving: sourceSnapshot)
             documentURL = destination
             documentSourceURL = nil
             documentKind = .leonardoTemplate
@@ -188,134 +271,24 @@ extension AppSession {
             NSDocumentController.shared.noteNewRecentDocumentURL(destination)
             updateTitle()
             return true
+        } catch let error as FileSystemRepositoryError {
+            if case .itemAlreadyExists = error {
+                errorMessage = L10n.text("The MDLF destination already exists. Choose another name before migrating.")
+            } else {
+                report(error)
+            }
+            return false
+        } catch DocumentStoreError.conflict {
+            externalConflict = true
+            saveStatus = "External conflict · edits protected"
+            errorMessage = L10n.text("The Markdown source changed on disk. Reload it before migrating.")
+            return false
         } catch {
             report(error)
             return false
         }
     }
 
-    func exportLeonardoPackage() {
-        guard let documentURL, documentKind.isLeonardo else { return }
-        let panel = NSSavePanel()
-        panel.title = L10n.text("Export Leonardo package")
-        panel.nameFieldStringValue = documentURL.deletingPathExtension().lastPathComponent + ".mdlz"
-        panel.allowedContentTypes = [UTType(filenameExtension: "mdlz") ?? .data]
-        presentFilePanel(panel) { [weak self] destination in
-            Task { await self?.exportLeonardoPackage(to: destination, documentURL: documentURL) }
-        }
-    }
-
-    func exportLeonardoResponse() {
-        guard let documentURL, let document = leonardoDocument, document.isForm else { return }
-        let hasLocalResources = containsLocalResources(document)
-        let panel = NSSavePanel()
-        panel.title = L10n.text("Export Leonardo response")
-        panel.nameFieldStringValue = documentURL.deletingPathExtension().lastPathComponent + (hasLocalResources ? ".mdlz" : ".mdlr")
-        let responseType = UTType(filenameExtension: "mdlr") ?? .plainText
-        let packageType = UTType(filenameExtension: "mdlz") ?? .data
-        // A response containing local assets must be portable. Keep the
-        // panel's selected destination aligned with that decision so the
-        // callback never silently changes `foo.mdlr` into `foo.mdlz`.
-        panel.allowedContentTypes = hasLocalResources ? [packageType] : [responseType, packageType]
-        presentFilePanel(panel) { [weak self] destination in
-            Task {
-                await self?.exportLeonardoResponse(
-                    to: destination,
-                    documentURL: documentURL,
-                    panelRequiresPackage: hasLocalResources
-                )
-            }
-        }
-    }
-
-    private func exportLeonardoResponse(
-        to destination: URL,
-        documentURL: URL,
-        panelRequiresPackage: Bool
-    ) async {
-        guard self.documentURL == documentURL, !stopped, !busy, !isClosing else { return }
-        guard await flushPreviewEdits(), self.documentURL == documentURL,
-              var document = leonardoDocument else { return }
-        let destinationExtension = destination.pathExtension.lowercased()
-        let hasLocalResources = containsLocalResources(document)
-        if (panelRequiresPackage || hasLocalResources) && destinationExtension != "mdlz" {
-            // This can only happen when a preview edit becomes visible after
-            // the panel was configured, or when AppKit returns a manually
-            // overridden extension. Never redirect the export to a sibling
-            // path without showing that path in a save panel first.
-            let derivedPackageURL = destination.deletingPathExtension().appendingPathExtension("mdlz")
-            errorMessage = FileManager.default.fileExists(atPath: derivedPackageURL.path)
-                ? L10n.text("The MDLZ destination already exists. Choose another name.")
-                : L10n.text("Forms with local resources must be exported as an MDLZ package. Choose an MDLZ destination.")
-            return
-        }
-        let responseURL = ["mdlr", "mdlz"].contains(destinationExtension)
-            ? destination
-            : destination.appendingPathExtension("mdlr")
-        do {
-            document.metadata.document.kind = .form
-            let serialized = try LeonardoFormatParser.serialize(document)
-            if responseURL.pathExtension.lowercased() == "mdlz" {
-                let packageURL = responseURL.deletingPathExtension().appendingPathExtension("mdlz")
-                try await exportResponsePackage(serialized: serialized, sourceURL: documentURL, to: packageURL)
-                saveStatus = "Exported · package"
-            } else {
-                _ = try await documents.save(serialized, to: responseURL)
-                saveStatus = "Exported · response"
-            }
-        } catch {
-            report(error)
-        }
-    }
-
-    private func exportResponsePackage(serialized: String, sourceURL: URL, to packageURL: URL) async throws {
-        // The transport only needs the document URL for its root filename and
-        // the parent directory used to resolve local assets. The virtual MDLR
-        // avoids writing a hidden staging document beside a read-only source.
-        let virtualDocumentURL = sourceURL.deletingPathExtension().appendingPathExtension("mdlr")
-        let assetRoot = packageWorkspace?.directoryURL ?? projectURL
-        try await Task.detached(priority: nil) {
-            try LeonardoPackageTransport.export(documentURL: virtualDocumentURL, content: serialized, to: packageURL, assetRoot: assetRoot)
-        }.value
-    }
-
-    private func containsLocalResources(_ document: LeonardoDocument) -> Bool {
-        var references: [String] = []
-        if let regex = try? NSRegularExpression(pattern: #"!\[[^\]\n]*\]\(\s*<?([^>\s)]+)"#) {
-            let range = NSRange(document.body.startIndex..., in: document.body)
-            references += regex.matches(in: document.body, range: range).compactMap {
-                guard $0.numberOfRanges > 1, let valueRange = Range($0.range(at: 1), in: document.body) else { return nil }
-                return String(document.body[valueRange])
-            }
-        }
-        if let layout = document.metadata.layout {
-            references += layout.images.map(\.source)
-            if let image = layout.background?.image { references.append(image) }
-        }
-        return references.contains { reference in
-            guard !reference.isEmpty, !reference.hasPrefix("#") else { return false }
-            let scheme = URL(string: reference)?.scheme?.lowercased()
-            return scheme == nil || scheme == "file"
-        }
-    }
-
-    private func exportLeonardoPackage(to destination: URL, documentURL: URL) async {
-        guard self.documentURL == documentURL, !stopped, !busy, !isClosing else { return }
-        guard await flushPreviewEdits(), self.documentURL == documentURL else { return }
-        let packageURL = destination.pathExtension.lowercased() == "mdlz"
-            ? destination
-            : destination.appendingPathExtension("mdlz")
-        let draft = content
-        let assetRoot = packageWorkspace?.directoryURL ?? projectURL
-        do {
-            try await Task.detached(priority: nil) {
-                try LeonardoPackageTransport.export(documentURL: documentURL, content: draft, to: packageURL, assetRoot: assetRoot)
-            }.value
-            saveStatus = "Exported · package"
-        } catch {
-            report(error)
-        }
-    }
 }
 
 extension AppSession {
