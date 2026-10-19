@@ -32,6 +32,12 @@ struct LeonardoSecureExtractionTests {
                 .init(name: "assets/a/second", data: Data())
             ])
         }
+        #expect(throws: LeonardoPackageError.self) {
+            try LeonardoZIPArchive.write([
+                .init(name: "assets/é/first", data: Data()),
+                .init(name: "assets/e\u{301}/second", data: Data())
+            ])
+        }
     }
 
     @Test func finalVerificationRejectsRetargetedChildAndDestinationParent() throws {

@@ -39,7 +39,7 @@ class MDLZHelperTests(unittest.TestCase):
     def test_directory_expansion_and_aliases_are_rejected_before_effects(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            for case in ("expansion", "aliases"):
+            for case in ("expansion", "aliases", "unicode-aliases"):
                 archive = root / f"{case}.mdlz"
                 with zipfile.ZipFile(archive, "w") as handle:
                     handle.writestr("document.mdlf", DOCUMENT)
@@ -47,6 +47,9 @@ class MDLZHelperTests(unittest.TestCase):
                         for index in range(34):
                             name = "/".join(["assets", str(index)] + ["d"] * 61 + ["file"])
                             handle.writestr(name, b"")
+                    elif case == "unicode-aliases":
+                        handle.writestr("assets/é/first", b"")
+                        handle.writestr("assets/e\u0301/second", b"")
                     else:
                         handle.writestr("assets/A/first", b"")
                         handle.writestr("assets/a/second", b"")

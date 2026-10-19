@@ -144,7 +144,7 @@ enum LeonardoZIPArchive {
             for component in entry.name.split(separator: "/").dropLast() {
                 prefix = prefix.isEmpty ? String(component) : prefix + "/" + component
                 let key = collisionKey(prefix)
-                guard directories[key] == nil || directories[key] == prefix else {
+                if let previous = directories[key], !previous.utf8.elementsEqual(prefix.utf8) {
                     throw failure("Ambiguous ZIP directory paths")
                 }
                 directories[key] = prefix
