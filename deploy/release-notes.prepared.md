@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.441
+
+- #183 Fixed: Refresh format preferences and shorten package choices ([#184](https://github.com/PinedaTec-EU/LeonardoMD/pull/184))
+
+Source: `0f11f8b1a6b79b1c5b3d43f35bf01379c0500575`. Delta: `{"build": 4}`.
+
 ## 0.1.437
 
 - #185 Added: preferences gear beside new tab ([#186](https://github.com/PinedaTec-EU/LeonardoMD/pull/186))
