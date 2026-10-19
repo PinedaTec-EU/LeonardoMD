@@ -23,7 +23,10 @@
 
   function annotate(tokens) {
     const normalized = source.replace(/\r\n/g, "\n");
-    const body = window.LeonardoEditing.body;
+    // Marked token raws use LF, while the MDLF parser deliberately preserves
+    // the document's original CRLF body. Compare on the normalized body but
+    // keep offsets mapped back to the untouched source below.
+    const body = (window.LeonardoEditing.body || "").replace(/\r\n/g, "\n");
     const offset = normalized.length - body.length;
     if (offset < 0 || normalized.slice(offset) !== body) return tokens;
     const originalOffsets = [];

@@ -38,6 +38,48 @@ final class WebKitRuntimeTests: XCTestCase {
         try await waitFor("document.querySelector('.leonardo-field-value') === null && !document.querySelector('#leonardo-markdown').classList.contains('leonardo-document')", in: web)
     }
 
+    func testLeonardoCRLFEditingKeepsSourceBytesAndNativeCallback() async throws {
+        let source = "---\r\n{\"format\":\"mdlf\",\"formatVersion\":1}\r\n---\r\n# CRLF document\r\n\r\nEditable text\r\n"
+        var configuration = MarkdownPreviewConfiguration()
+        configuration.allowsLeonardoFormat = true
+        configuration.allowsEditing = true
+        let (host, window) = makeHost(content: source, config: configuration)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        let edited = expectation(description: "Native callback receives the CRLF edit")
+        var callbackExpected: String?
+        var callbackReplacement: String?
+        host.onEdit = { expected, replacement in
+            callbackExpected = expected
+            callbackReplacement = replacement
+            edited.fulfill()
+            return true
+        }
+
+        try await waitFor("document.querySelector('p [contenteditable=\"plaintext-only\"]') !== null", in: web)
+        let editableText = try await evaluate(
+            "document.querySelector('p [contenteditable=\"plaintext-only\"]')?.textContent || ''",
+            in: web
+        )
+        XCTAssertEqual(editableText, "Editable text")
+
+        let currentSource = try await evaluate("""
+        (() => {
+          const editable = document.querySelector('p [contenteditable="plaintext-only"]');
+          editable.innerText = 'Edited text';
+          editable.dispatchEvent(new InputEvent('input', {bubbles: true}));
+          return window.LeonardoEditing.currentSource();
+        })()
+        """, in: web)
+        await fulfillment(of: [edited], timeout: 3)
+
+        let expected = source.replacingOccurrences(of: "Editable text", with: "Edited text")
+        XCTAssertEqual(callbackExpected, source)
+        XCTAssertEqual(callbackReplacement, expected)
+        XCTAssertEqual(currentSource, expected)
+        XCTAssertEqual(Data(currentSource.utf8), Data(expected.utf8), "The MDLF header and CRLF bytes must remain untouched")
+    }
+
     func testLeonardoDoesNotInterpretLegacyTableComments() async throws {
         let source = "---\n{\"format\":\"mdlf\",\"formatVersion\":1}\n---\n<!-- leonardo:table widths=\"10ch 20ch\" -->\n\n| A | B |\n| --- | --- |\n| One | Two |"
         var config = MarkdownPreviewConfiguration()
