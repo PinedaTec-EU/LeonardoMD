@@ -91,9 +91,9 @@ enum LeonardoPackageOpenPreference: String, CaseIterable, Identifiable, Sendable
 
     @MainActor var title: String {
         switch self {
-        case .package: L10n.text("Open package and save it as a package")
-        case .ask: L10n.text("Ask how to open each package")
-        case .extracted: L10n.text("Extract into a folder")
+        case .package: L10n.text("Use package")
+        case .ask: L10n.text("Ask each time")
+        case .extracted: L10n.text("Extract to folder")
         }
     }
 }
