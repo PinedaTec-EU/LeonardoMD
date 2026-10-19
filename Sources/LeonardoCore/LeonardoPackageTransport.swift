@@ -102,15 +102,23 @@ public enum LeonardoPackageTransport {
 
     /// Returns a refreshed fingerprint for subsequent conflict-aware saves.
     @discardableResult
-    public static func save(_ workspace: LeonardoPackageWorkspace) throws -> LeonardoPackageWorkspace {
+    public static func save(
+        _ workspace: LeonardoPackageWorkspace,
+        beforeArchiveCommit: (@Sendable () -> Void)? = nil
+    ) throws -> LeonardoPackageWorkspace {
         guard let packageURL = workspace.packageURL else { return workspace }
+        try checkCancellation()
         try workspace.verifySource()
         try workspace.verifyExtractionOwnership()
         let entries = try directoryEntries(workspace.directoryURL)
+        try checkCancellation()
         _ = try primaryDocument(entries)
         let bytes = try LeonardoZIPArchive.write(entries)
+        try checkCancellation()
         try workspace.verifySource()
         try workspace.verifyExtractionOwnership()
+        beforeArchiveCommit?()
+        try checkCancellation()
         try bytes.write(to: packageURL, options: [.atomic])
         return LeonardoPackageWorkspace(packageURL: packageURL, directoryURL: workspace.directoryURL,
             documentURL: workspace.documentURL, digest: Data(SHA256.hash(data: bytes)), temporary: true,
@@ -135,6 +143,10 @@ public enum LeonardoPackageTransport {
     public static func discard(_ workspace: LeonardoPackageWorkspace) { workspace.removeTemporaryFiles() }
 
     fileprivate static func digest(_ url: URL) throws -> Data { Data(SHA256.hash(data: try boundedRead(url))) }
+
+    private static func checkCancellation() throws {
+        try Task.checkCancellation()
+    }
 
     private static func boundedRead(_ url: URL) throws -> Data {
         let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
@@ -165,6 +177,7 @@ public enum LeonardoPackageTransport {
         var entries: [LeonardoZIPArchive.Entry] = []
         var total = 0
         for case let relative as String in iterator {
+            try checkCancellation()
             let url = root.appendingPathComponent(relative)
             let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
             guard values.isSymbolicLink != true else { throw LeonardoPackageError.invalidArchive("Symbolic links cannot be packaged") }

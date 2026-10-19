@@ -49,7 +49,7 @@ extension AppSession {
                 showInspector = true
             }
             if let previousWorkspace {
-                LeonardoPackageTransport.discard(previousWorkspace)
+                await disposePackageWorkspace(previousWorkspace)
             }
         }
     }
@@ -121,7 +121,7 @@ extension AppSession {
                   documentSourceURL?.standardizedFileURL == expectedSourceURL,
                   documentKind.rawValue == expectedKind,
                   documentStorage.rawValue == expectedStorage else {
-                LeonardoPackageTransport.discard(workspace)
+                await disposePackageWorkspace(workspace)
                 openedWorkspace = nil
                 return false
             }
@@ -155,7 +155,7 @@ extension AppSession {
             return true
         } catch {
             if let openedWorkspace {
-                LeonardoPackageTransport.discard(openedWorkspace)
+                await disposePackageWorkspace(openedWorkspace)
             }
             report(error)
             return false

@@ -60,7 +60,11 @@ extension AppSession {
     private func reloadPackage(_ identity: PackageReloadIdentity) async {
         var replacement: LeonardoPackageWorkspace?
         defer {
-            if let replacement { LeonardoPackageTransport.discard(replacement) }
+            if let replacement {
+                Task { @MainActor [replacement] in
+                    await self.disposePackageWorkspace(replacement)
+                }
+            }
         }
         do {
             try await authorizePath(identity.sourceURL, .document)
@@ -95,7 +99,7 @@ extension AppSession {
             mode = nextMode
             saveStatus = "Saved · package"
             replacement = nil
-            LeonardoPackageTransport.discard(identity.workspace)
+            await disposePackageWorkspace(identity.workspace)
             updateTitle()
         } catch {
             // An authorization/read/parse callback may have moved the tab to

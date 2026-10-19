@@ -108,6 +108,7 @@ extension AppSession {
         _ saved: DocumentSnapshot,
         identity: SaveIdentity
     ) async -> Bool {
+        guard !stopped else { return false }
         guard let restored = try? await documents.save(
             identity.snapshot.content,
             to: identity.documentURL,
@@ -116,11 +117,44 @@ extension AppSession {
         // A callback may have moved this session to another document while
         // the captured workspace was being restored. Never apply the old
         // document's replacement fingerprint to that new session.
-        if saveSessionMatches(identity) { snapshot = restored }
+        if !stopped, saveSessionMatches(identity) { snapshot = restored }
         return true
     }
 
+    private func repackPackage(_ workspace: LeonardoPackageWorkspace) async throws -> LeonardoPackageWorkspace {
+        let beforeArchiveCommit = beforePackageArchiveCommitForTesting
+        let worker = Task.detached(priority: nil) {
+            try LeonardoPackageTransport.save(workspace, beforeArchiveCommit: beforeArchiveCommit)
+        }
+        return try await withTaskCancellationHandler(operation: {
+            do {
+                try Task.checkCancellation()
+                return try await worker.value
+            } catch {
+                worker.cancel()
+                _ = await worker.result
+                throw error
+            }
+        }, onCancel: {
+            worker.cancel()
+        })
+    }
+
     func save(allowClosing: Bool = false) async {
+        if let saveTask {
+            await saveTask.value
+            return
+        }
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.performSave(allowClosing: allowClosing)
+            self.saveTask = nil
+        }
+        saveTask = task
+        await task.value
+    }
+
+    private func performSave(allowClosing: Bool) async {
         guard !stopped, !isClosing || allowClosing, !busy else { return }
         fileOperationCount += 1
         defer { fileOperationCount -= 1 }
@@ -168,9 +202,7 @@ extension AppSession {
                     _ = await restoreWorkingDocument(saved, identity: identity)
                     return
                 }
-                let refreshed = try await Task.detached(priority: nil) {
-                    try LeonardoPackageTransport.save(workspace)
-                }.value
+                let refreshed = try await repackPackage(workspace)
                 guard saveSessionMatches(identity) else { return }
                 packageWorkspace = refreshed
             }
@@ -189,6 +221,10 @@ extension AppSession {
             guard saveSessionMatches(identity, allowingRollbackFingerprint: restored) else { return }
             externalConflict = true
             saveStatus = "External conflict · edits protected"
+        } catch is CancellationError {
+            if !stopped, let workingSnapshot {
+                _ = await restoreWorkingDocument(workingSnapshot, identity: identity)
+            }
         } catch {
             let restored = if let workingSnapshot {
                 await restoreWorkingDocument(workingSnapshot, identity: identity)

@@ -174,6 +174,7 @@ final class SessionPackageLifecycleTests: XCTestCase {
 
         try await owner.files.delete("request.mdlz", in: fixture.project)
         fixture.tabs.pathDeleted(fixture.package, excluding: owner)
+        await owner.waitForPackageWorkspaceDisposal()
 
         XCTAssertNil(owner.packageWorkspace)
         XCTAssertNil(owner.documentURL)

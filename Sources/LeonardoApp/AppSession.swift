@@ -117,6 +117,12 @@ final class AppSession {
     let renderer = MarkdownPreviewController()
     var snapshot: DocumentSnapshot?
     var saveTask: Task<Void, Never>?
+    @ObservationIgnored var packageWorkspaceDisposalTask: Task<Void, Never>?
+    @ObservationIgnored var pendingPackageWorkspaceDisposals: [(workspace: LeonardoPackageWorkspace, waitForIO: Bool)] = []
+    /// Test-only synchronization point for deterministic cancellation coverage.
+    /// Production leaves this nil; package transport still checks cancellation
+    /// immediately before its archive commit.
+    @ObservationIgnored var beforePackageArchiveCommitForTesting: (@Sendable () -> Void)?
     var searchTask: Task<Void, Never>?
     var monitorTask: Task<Void, Never>?
     var initialized = false
@@ -257,7 +263,7 @@ final class AppSession {
                 return
             }
             if let previousPackageWorkspace {
-                LeonardoPackageTransport.discard(previousPackageWorkspace)
+                await disposePackageWorkspace(previousPackageWorkspace)
             }
             return
         }
@@ -273,8 +279,9 @@ final class AppSession {
                 _ = try LeonardoFormatParser.parse(loaded.content)
             }
             if let previousPackageWorkspace {
-                LeonardoPackageTransport.discard(previousPackageWorkspace)
-                packageWorkspace = nil
+                discardPackageWorkspace()
+                await waitForPackageWorkspaceDisposal()
+                guard !stopped, !isClosing, !isSyncSuspended else { return }
             }
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             isProtected = true
@@ -313,7 +320,7 @@ final class AppSession {
         while let pending = settingsTask { await pending.value }
         saveTask?.cancel()
         // Wait for a current save to finish before changing the document identity.
-        while saving { try? await Task.sleep(for: .milliseconds(20)) }
+        while saving || saveTask != nil { try? await Task.sleep(for: .milliseconds(20)) }
         guard await flushPreviewEdits(), await resolveUnsavedChanges() else { return false }
         if isDirty {
             if externalConflict { errorMessage = L10n.text("Resolve the external change by reloading or saving a copy before opening another document.") }
@@ -356,8 +363,8 @@ final class AppSession {
     func stop() {
         stopped = true
         pendingExternalURL = nil
-        discardPackageWorkspace()
         saveTask?.cancel()
+        discardPackageWorkspace()
         searchTask?.cancel()
         monitorTask?.cancel()
     }
@@ -373,12 +380,6 @@ final class AppSession {
     }
     func updateTitle() {
         updateWindow?(displayDocumentURL?.lastPathComponent ?? projectURL?.lastPathComponent ?? "LeonardoMD", displayDocumentURL, isDirty)
-    }
-
-    func discardPackageWorkspace() {
-        guard let packageWorkspace else { return }
-        LeonardoPackageTransport.discard(packageWorkspace)
-        self.packageWorkspace = nil
     }
 }
 

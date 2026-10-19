@@ -54,6 +54,16 @@ extension AppSession {
         saveStatus = "Local file"
         updateTitle()
     }
+
+    /// Paths that identify a session's linked working copy. A package's
+    /// extracted document is temporary, so package sessions use the durable
+    /// archive URL for revocation and related path changes.
+    var workspaceIdentityURLs: [URL] {
+        [documentURL,
+         documentStorage == .package ? documentSourceURL : nil,
+         projectURL]
+            .compactMap { $0 }
+    }
 }
 
 extension DocumentTabs {
@@ -101,11 +111,7 @@ extension DocumentTabs {
     }
 
     private func affects(_ session: AppSession, source: URL) -> Bool {
-        [session.documentURL,
-         session.documentStorage == .package ? session.documentSourceURL : nil,
-         session.projectURL]
-            .compactMap { $0 }
-            .contains { contains($0, in: source) }
+        session.workspaceIdentityURLs.contains { contains($0, in: source) }
     }
 
     private func contains(_ url: URL, in source: URL) -> Bool {
@@ -115,4 +121,5 @@ extension DocumentTabs {
     private func relocated(_ url: URL, from source: URL, to destination: URL) -> URL? {
         leonardoRelocated(url, from: source, to: destination)
     }
+
 }

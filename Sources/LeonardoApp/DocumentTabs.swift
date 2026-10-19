@@ -26,7 +26,7 @@ final class DocumentTabs {
     }
 
     var activeSession: AppSession { tabs.first { $0.id == activeID }!.session }
-    var hasPendingWork: Bool { tabs.contains { $0.session.isDirty || $0.session.busy || $0.session.fileOperationCount > 0 || $0.session.saving || $0.session.settingsTask != nil || $0.session.gitBusy } }
+    var hasPendingWork: Bool { tabs.contains { $0.session.isDirty || $0.session.busy || $0.session.fileOperationCount > 0 || $0.session.saving || $0.session.saveTask != nil || $0.session.settingsTask != nil || $0.session.gitBusy } }
     var acceptsExternalDrops: Bool { !closing && !stopped }
 
     @discardableResult
@@ -186,13 +186,16 @@ final class DocumentTabs {
     func revokeWorkspaces(_ roots: [URL]) async {
         let paths = roots.map { $0.standardizedFileURL.resolvingSymlinksInPath().path }
         let affected = tabs.filter { tab in
-            [tab.session.documentURL, tab.session.projectURL].compactMap { $0 }.contains { url in
+            tab.session.workspaceIdentityURLs.contains { url in
                 let path = url.standardizedFileURL.resolvingSymlinksInPath().path
                 return paths.contains { path == $0 || path.hasPrefix($0 + "/") }
             }
         }
         guard !affected.isEmpty else { return }
-        for tab in affected { tab.session.stop(); tab.session.clearRevokedContent() }
+        for tab in affected {
+            tab.session.stop()
+            tab.session.clearRevokedContent()
+        }
         // Active close iterations own indices; completed preparation no longer does.
         while closing && !preparedForClose { try? await Task.sleep(for: .milliseconds(20)) }
         let ids = Set(affected.map(\.id))

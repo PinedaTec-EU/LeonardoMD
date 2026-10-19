@@ -1,9 +1,28 @@
 import XCTest
+import Foundation
 import LeonardoCore
 @testable import LeonardoApp
 
 @MainActor
 final class SessionPackageSaveTests: XCTestCase {
+    private final class PackageArchiveCommitGate: @unchecked Sendable {
+        let reached: XCTestExpectation
+        private let release = DispatchSemaphore(value: 0)
+
+        init(reached: XCTestExpectation) {
+            self.reached = reached
+        }
+
+        func pause() {
+            reached.fulfill()
+            release.wait()
+        }
+
+        func open() {
+            release.signal()
+        }
+    }
+
     @MainActor private struct PackageFixture {
         let root: URL
         let template: URL
@@ -41,6 +60,94 @@ final class SessionPackageSaveTests: XCTestCase {
         let opened = await session.openLeonardoPackage(package, extractingTo: nil)
         XCTAssertTrue(opened)
         return PackageFixture(root: root, template: template, package: package, source: source, tabs: tabs)
+    }
+
+    func testDirectPackageRevocationMatchesDurableSourceArchive() async throws {
+        let fixture = try await packageFixture()
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let workspace = try XCTUnwrap(session.packageWorkspace)
+        let packageBefore = try Data(contentsOf: fixture.package)
+
+        XCTAssertNil(session.projectURL)
+        XCTAssertEqual(session.documentSourceURL?.standardizedFileURL, fixture.package.standardizedFileURL)
+
+        await fixture.tabs.revokeWorkspaces([fixture.root])
+
+        XCTAssertTrue(session.stopped)
+        XCTAssertFalse(fixture.tabs.tabs.contains { $0.session === session })
+        XCTAssertNil(session.documentURL)
+        XCTAssertNil(session.documentSourceURL)
+        XCTAssertNil(session.packageWorkspace)
+        XCTAssertEqual(session.content, "")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: workspace.directoryURL.path))
+        XCTAssertEqual(try Data(contentsOf: fixture.package), packageBefore)
+    }
+
+    func testRevocationWaitsForPausedPackageRepackAndCancelsBeforeCommit() async throws {
+        let fixture = try await packageFixture()
+        let session = fixture.session
+        let workspace = try XCTUnwrap(session.packageWorkspace)
+        let packageBefore = try Data(contentsOf: fixture.package)
+        let draft = try documentSource(body: "Draft: {{field:name}}")
+        let reached = expectation(description: "package archive commit paused")
+        let gate = PackageArchiveCommitGate(reached: reached)
+        defer {
+            gate.open()
+            session.beforePackageArchiveCommitForTesting = nil
+            fixture.tabs.stop()
+            try? FileManager.default.removeItem(at: fixture.root)
+        }
+
+        session.beforePackageArchiveCommitForTesting = { gate.pause() }
+        session.content = draft
+        session.contentChanged()
+        let save = Task { @MainActor in await session.save() }
+        await fulfillment(of: [reached], timeout: 2)
+
+        let revocation = Task { @MainActor in
+            await fixture.tabs.revokeWorkspaces([fixture.root])
+        }
+        while !session.stopped { await Task.yield() }
+        for _ in 0..<20 { await Task.yield() }
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: workspace.directoryURL.path))
+        XCTAssertEqual(try Data(contentsOf: fixture.package), packageBefore)
+
+        gate.open()
+        await revocation.value
+        await save.value
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: workspace.directoryURL.path))
+        XCTAssertEqual(try Data(contentsOf: fixture.package), packageBefore)
+        XCTAssertNil(session.documentURL)
+        XCTAssertNil(session.snapshot)
+        XCTAssertEqual(session.content, "")
+    }
+
+    func testStopWaitsForPausedPackageRepackBeforeDisposal() async throws {
+        let fixture = try await packageFixture()
+        let session = fixture.session
+        let workspace = try XCTUnwrap(session.packageWorkspace)
+        let packageBefore = try Data(contentsOf: fixture.package)
+        let reached = expectation(description: "package commit paused before stop")
+        let gate = PackageArchiveCommitGate(reached: reached)
+        defer {
+            gate.open()
+            fixture.tabs.stop()
+            try? FileManager.default.removeItem(at: fixture.root)
+        }
+        session.beforePackageArchiveCommitForTesting = { gate.pause() }
+        session.content = try documentSource(body: "Draft to cancel")
+        let save = Task { await session.save() }
+        await fulfillment(of: [reached], timeout: 2)
+        session.stop()
+        XCTAssertTrue(FileManager.default.fileExists(atPath: workspace.directoryURL.path))
+        gate.open()
+        await save.value
+        await session.waitForPackageWorkspaceDisposal()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: workspace.directoryURL.path))
+        XCTAssertEqual(try Data(contentsOf: fixture.package), packageBefore)
     }
 
     func testSaveAbortsBeforeWritingWhenAuthorizationChangesLocalIdentity() async throws {
