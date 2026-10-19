@@ -96,6 +96,18 @@ The app may save a draft with validation warnings. A final submission uses
 
 ## Metadata
 
+The canonical writer omits empty optional `fields` and `values` objects and a
+`document` descriptor equal to its default (ordinary document, with no id,
+title, revision or locale). A minimal envelope therefore contains only
+`format` and `formatVersion`. Readers accept both omitted and explicitly empty
+objects using the same v1 defaults. A form kind, any supplied descriptor
+property (including an empty string), populated fields/values and explicit
+layout configuration are retained. Absent layout is omitted; an explicitly
+supplied layout, including `{}`, remains present. Cleanup is not recursive:
+`null`, `false`, empty strings, arrays and objects inside `values` are data.
+This policy applies when a document or response is serialized; it does not
+rewrite unopened files or alter the Markdown body.
+
 `document` contains an optional stable `id`, human title, `kind` (`document`
 or `form`), semantic template `revision` and BCP-47 `locale`. The semantic
 revision is separate from `formatVersion`; changing a form's fields should

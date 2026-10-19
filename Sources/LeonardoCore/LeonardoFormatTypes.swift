@@ -260,6 +260,22 @@ public struct LeonardoMetadata: Codable, Equatable, Sendable {
         case format, formatVersion, document, fields, values, layout
     }
 
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(format, forKey: .format)
+        try container.encode(formatVersion, forKey: .formatVersion)
+        if document != LeonardoDocumentDescriptor() {
+            try container.encode(document, forKey: .document)
+        }
+        if !fields.isEmpty {
+            try container.encode(fields, forKey: .fields)
+        }
+        if !values.isEmpty {
+            try container.encode(values, forKey: .values)
+        }
+        try container.encodeIfPresent(layout, forKey: .layout)
+    }
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         format = try container.decodeIfPresent(String.self, forKey: .format) ?? LeonardoFormat.identifier
