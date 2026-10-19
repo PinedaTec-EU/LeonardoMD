@@ -24,8 +24,10 @@ cover the shared guarded form updates through MDLZ save/reopen.
 With `LEONARDO_VISUAL_EVIDENCE=/absolute/output/path` and `EVIDENCE_SHA=<full-head>`,
 the native test writes `inline-forms/` with real light/dark WebKit document
 captures (upper/lower scroll positions), integrated WorkspaceView captures with
-selected editable/required and read-only/optional help, separate native help
-panels, PDF and provenance. CI supplies both variables and uploads the directory
+selected editable/required and read-only/optional help in the light theme,
+separate help panels in both themes, PDF and provenance. Native bitmap caching
+omits WebKit content after a dark appearance switch, so combined dark captures
+are excluded; dark document and help captures remain separate original surfaces. CI supplies both variables and uploads the directory
 in its exact-head preview artifact. Compare those captures to the approved mock;
 mock images are design references, never validation evidence. Wait until the actual
 computed body background reaches the target palette before taking a theme

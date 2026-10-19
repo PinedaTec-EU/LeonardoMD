@@ -143,8 +143,9 @@ final class InlineFormTests: XCTestCase {
         // clock, which can be paused in an inactive XCTest-hosted window.
         _ = try await web.evaluateJavaScript("document.body.style.transition = 'none'")
         for (name, palette): (String, PaletteID) in [("light", .leonardoClassic), ("dark", .graphiteGlass)] {
-            session.globalPreferences.palette = palette
-            session.globalPreferences.paperEffect = .solid
+            session.setPalette(palette.rawValue, project: false)
+            session.setPaper(PaperEffect.solid.rawValue, project: false)
+            await session.settingsTask?.value
             let background = session.renderConfiguration.appearance.backgroundHex
             let rgb = stride(from: 1, to: 7, by: 2).map { offset in
                 Int(String(background.dropFirst(offset).prefix(2)), radix: 16)!
@@ -161,18 +162,21 @@ final class InlineFormTests: XCTestCase {
             _ = try await web.evaluateJavaScript("window.scrollTo(0, 0)")
             for field in ["email", "reference"] {
                 session.showLeonardoFieldHelp(field)
+                host.window?.makeKeyAndOrderFront(nil)
                 try await Task.sleep(for: .milliseconds(250))
-                host.layoutSubtreeIfNeeded()
-                host.displayIfNeeded()
-                let integrated = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-                host.cacheDisplay(in: host.bounds, to: integrated)
-                try XCTUnwrap(integrated.representation(using: .png, properties: [:])).write(to: destination.appendingPathComponent("workspace-\(field)-\(name).png"))
+                if name == "light" {
+                    host.layoutSubtreeIfNeeded()
+                    host.displayIfNeeded()
+                    let integrated = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                    host.cacheDisplay(in: host.bounds, to: integrated)
+                    try XCTUnwrap(integrated.representation(using: .png, properties: [:])).write(to: destination.appendingPathComponent("workspace-\(field)-\(name).png"))
+                }
                 let panel = NSHostingView(rootView: LeonardoFieldHelp(session: session).modifier(SessionAppearance(session: session)))
                 try await NativeViewCaptureSupport.capture(panel, size: NSSize(width: 320, height: 800), to: destination.appendingPathComponent("help-\(field)-\(name).png"))
             }
         }
         let sha = ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local-working-tree"
-        try "Head: \(sha)\nSurface: real native WorkspaceView / WKWebView (1440x1024 points window), integrated selected field-help sidebar and separate detail panels (320x800 points)\nFixture: synthetic form showcase; all types, repeated text, invalid email draft, switch on; editable and read-only help\nLimits: hosted XCTest component validation, no fresh packaged process claim; owner’s running app untouched\n".write(to: destination.appendingPathComponent("provenance.txt"), atomically: true, encoding: .utf8)
+        try "Head: \(sha)\nSurface: real native WorkspaceView / WKWebView (1440x1024 points window), integrated selected field-help sidebar in light theme; separate help panels in both themes\nFixture: synthetic form showcase; all types, repeated text, invalid email draft, switch on; editable and read-only help\nLimits: hosted XCTest component validation, no fresh packaged process claim; owner’s running app untouched\n".write(to: destination.appendingPathComponent("provenance.txt"), atomically: true, encoding: .utf8)
     }
 
     private func webView(in view: NSView) async throws -> WKWebView {
