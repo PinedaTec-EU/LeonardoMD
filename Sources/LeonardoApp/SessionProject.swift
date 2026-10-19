@@ -49,7 +49,8 @@ extension AppSession {
             projectBaseline = configuration
             resetSearch()
             focus = false
-            if let documentURL, !documentURL.path.hasPrefix(url.path + "/") {
+            if let currentDocument = displayDocumentURL,
+               !currentDocument.standardizedFileURL.path.hasPrefix(url.standardizedFileURL.path + "/") {
                 discardPackageWorkspace()
                 self.documentURL = nil; documentSourceURL = nil; snapshot = nil; content = ""
                 documentKind = .markdown; documentStorage = .localFile; leonardoFormatWarning = false

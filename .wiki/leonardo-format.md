@@ -21,3 +21,5 @@ Tracking: [#167](https://github.com/PinedaTec-EU/LeonardoMD/issues/167), impleme
 Native QA must preserve the owner's installed running instance. XCTest native hosting/WebKit captures verify UI components; they do not establish fresh packaged-process readiness.
 
 Hosted WebKit background readiness is tracked separately in [#169](https://github.com/PinedaTec-EU/LeonardoMD/issues/169). Decorative backgrounds must opt into eager loading before setting their source and retain that policy after document rendering; ordinary Markdown images may remain lazy.
+
+Project membership must use `displayDocumentURL` (the source archive in package mode), never the temporary extracted `documentURL`. Reopening/selecting a containing project retains workspace identity and content. Regression tracking: [#170](https://github.com/PinedaTec-EU/LeonardoMD/issues/170). The shared invalid corpus also covers exact opening delimiters ([#171](https://github.com/PinedaTec-EU/LeonardoMD/issues/171)).

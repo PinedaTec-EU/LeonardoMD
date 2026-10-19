@@ -57,6 +57,30 @@ final class SessionPackageLifecycleTests: XCTestCase {
         return try LeonardoFormatParser.parse(loaded.content).metadata.values["name"]?.stringValue
     }
 
+    func testSelectingContainingProjectsPreservesOpenPackageIdentityAndContent() async throws {
+        let fixture = try await fixture()
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        try await saveValue("Ada", in: session)
+        let workspace = try XCTUnwrap(session.packageWorkspace)
+        let documentURL = try XCTUnwrap(session.documentURL)
+        let content = session.content
+
+        for project in [fixture.project.rootURL, fixture.root] {
+            let opened = await session.openProject(project)
+            XCTAssertTrue(opened)
+            XCTAssertEqual(session.documentStorage, .package)
+            XCTAssertEqual(session.documentSourceURL, fixture.package)
+            XCTAssertEqual(session.documentURL, documentURL)
+            XCTAssertEqual(session.packageWorkspace?.directoryURL, workspace.directoryURL)
+            XCTAssertEqual(session.packageWorkspace?.packageURL, fixture.package)
+            XCTAssertEqual(session.content, content)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: documentURL.path))
+        }
+        let value = try await readValue(from: fixture.package, using: session)
+        XCTAssertEqual(value, "Ada")
+    }
+
     func testOwnerPackageFileRenameRemapsArchiveAndSurvivesSaveAndReopen() async throws {
         let fixture = try await fixture()
         let session = fixture.session
