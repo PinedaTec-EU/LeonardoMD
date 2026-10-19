@@ -31,3 +31,5 @@ Revocation and file operations share `workspaceIdentityURLs`, including the dura
 Accepted application/window/tab close now joins temporary retirement before exit; cancellation preserves live packages (#176). Pending document access has its own revocable identity in `SessionDocumentAccess`: revoke only the incoming load when a tab owns an unrelated draft, wait for that load to settle, and never apply its result afterward. Standard Markdown and package adapters share this boundary. Tracking: [#180](https://github.com/PinedaTec-EU/LeonardoMD/issues/180).
 
 Format preferences share `LeonardoFormatPreferences` across sessions. Computed UserDefaults access must explicitly participate in Observation so switches and pickers refresh immediately; direct UserDefaults-only bindings do not notify SwiftUI. Regression: [#183](https://github.com/PinedaTec-EU/LeonardoMD/issues/183).
+
+MDLZ opening follows the normal resolved Markdown mode (Preview by default) for inner MDLF documents; do not apply the inner MDLF authoring default. Inner MDLR responses retain Fill, including explicit extraction. Regression: [#189](https://github.com/PinedaTec-EU/LeonardoMD/issues/189).

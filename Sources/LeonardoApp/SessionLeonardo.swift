@@ -134,7 +134,7 @@ extension AppSession {
             if kind == .leonardoResponse {
                 nextMode = .fill
             } else {
-                nextMode = kind.defaultMode(global: resolved.defaultMode)
+                nextMode = AppDocumentKind.leonardoPackage.defaultMode(global: resolved.defaultMode)
             }
             packageWorkspace = workspace
             documentURL = workspace.documentURL

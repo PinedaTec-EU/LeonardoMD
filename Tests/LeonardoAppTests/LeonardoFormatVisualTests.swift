@@ -75,6 +75,8 @@ final class LeonardoFormatVisualTests: XCTestCase {
 
             session.packageOpenPreference = .package
             await session.open(packageURL)
+            XCTAssertEqual(session.mode, .preview)
+            try await capture(session: session, state: "mdlz-initial-preview", language: language, destination: destination)
             await session.setDocumentMode(.fill)
             session.showInspector = true
             try await capture(session: session, state: "mdlz-package-fill", language: language, destination: destination)
@@ -101,7 +103,7 @@ final class LeonardoFormatVisualTests: XCTestCase {
             try await capture(session: session, state: "mdlz-extracted-fill", language: language, destination: destination)
         }
 
-        try "Surface: WorkspaceView with the native Leonardo form inspector\nStates: local MDLF, MDLZ package workspace, explicitly extracted MDLZ workspace; General preferences with all three package choices and migration off/on/off on the same hosting view at 580x620\nView size: 1260x850 points\nLanguages: en, es\nFixture: synthetic form with text and multiline fields; package transport creates the MDLZ\nLimit: opt-in NSHostingView bitmap evidence, no claim about a fresh packaged process\n".write(
+        try "Surface: WorkspaceView with the native Leonardo form inspector\nStates: local MDLF, MDLZ initial preview, MDLZ package fill workspace, explicitly extracted MDLZ workspace; General preferences with all three package choices and migration off/on/off on the same hosting view at 580x620\nView size: 1260x850 points\nLanguages: en, es\nFixture: synthetic form with text and multiline fields; package transport creates the MDLZ\nLimit: opt-in NSHostingView bitmap evidence, no claim about a fresh packaged process\n".write(
             to: destination.appendingPathComponent("capture-context.txt"), atomically: true, encoding: .utf8)
     }
 
