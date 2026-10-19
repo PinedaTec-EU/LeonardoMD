@@ -11,13 +11,14 @@ enum MarkdownResource: String, CaseIterable {
     case previewStyles = "preview.css"
     case previewEditing = "preview-editing.js"
     case tableLayout = "table-layout.js"
+    case leonardoLayout = "leonardo-layout.js"
     case runtime = "renderer-runtime.js"
 
     var mimeType: String {
         switch self {
         case .katexStyles, .previewStyles:
             return "text/css"
-        case .marked, .dompurify, .highlight, .mermaid, .katex, .previewEditing, .tableLayout, .runtime:
+        case .marked, .dompurify, .highlight, .mermaid, .katex, .previewEditing, .tableLayout, .leonardoLayout, .runtime:
             return "text/javascript"
         }
     }
@@ -37,7 +38,7 @@ enum MarkdownResourceCatalog {
         if configuration.allowsMermaid {
             resources.append(.mermaid)
         }
-        resources.append(contentsOf: [.previewEditing, .tableLayout, .runtime])
+        resources.append(contentsOf: [.previewEditing, .tableLayout, .leonardoLayout, .runtime])
         return resources
     }
 

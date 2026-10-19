@@ -5,6 +5,122 @@ import WebKit
 
 @MainActor
 final class WebKitRuntimeTests: XCTestCase {
+    func testLeonardoLayoutAndFieldValuesUseExplicitOptIn() async throws {
+        let source = """
+        ---
+        {"format":"mdlf","formatVersion":1,"fields":{"name":{"type":"text"}},"values":{"name":"<b>Ana</b>"},"layout":{"tables":[{"occurrence":1,"width":{"value":100,"unit":"percent"},"columns":[{"width":{"value":25,"unit":"percent"}},{"width":{"value":75,"unit":"percent"}}],"repeatHeader":true,"allowRowBreak":false}]}}
+        ---
+        # Form
+
+        Hello {{field:name}}
+
+        `{{field:name}}`
+
+        | A | B |
+        | --- | --- |
+        | One | Two |
+        """
+        var config = MarkdownPreviewConfiguration()
+        config.allowsLeonardoFormat = true
+        let (host, window) = makeHost(content: source, config: config)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelector('.leonardo-field-value')?.textContent === '<b>Ana</b>' && document.querySelectorAll('table col').length === 2", in: web)
+        let result1 = try await evaluate("document.querySelector('code').textContent", in: web)
+        XCTAssertEqual(result1, "{{field:name}}")
+        let result2 = try await evaluate("document.querySelectorAll('.leonardo-field-value b').length", in: web)
+        XCTAssertEqual(result2, "0")
+        let result3 = try await evaluate("document.querySelector('col').style.width", in: web)
+        XCTAssertEqual(result3, "25%")
+        try await captureTagPreview(web, name: "leonardo-form-layout")
+        config.allowsLeonardoFormat = false
+        host.apply(content: source, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
+        try await waitFor("document.querySelector('.leonardo-field-value') === null && !document.querySelector('#leonardo-markdown').classList.contains('leonardo-document')", in: web)
+    }
+
+    func testLeonardoCRLFEditingKeepsSourceBytesAndNativeCallback() async throws {
+        let source = "---\r\n{\"format\":\"mdlf\",\"formatVersion\":1}\r\n---\r\n# CRLF document\r\n\r\nEditable text\r\n"
+        var configuration = MarkdownPreviewConfiguration()
+        configuration.allowsLeonardoFormat = true
+        configuration.allowsEditing = true
+        let (host, window) = makeHost(content: source, config: configuration)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        let edited = expectation(description: "Native callback receives the CRLF edit")
+        var callbackExpected: String?
+        var callbackReplacement: String?
+        host.onEdit = { expected, replacement in
+            callbackExpected = expected
+            callbackReplacement = replacement
+            edited.fulfill()
+            return true
+        }
+
+        try await waitFor("document.querySelector('p [contenteditable=\"plaintext-only\"]') !== null", in: web)
+        let editableText = try await evaluate(
+            "document.querySelector('p [contenteditable=\"plaintext-only\"]')?.textContent || ''",
+            in: web
+        )
+        XCTAssertEqual(editableText, "Editable text")
+
+        let currentSource = try await evaluate("""
+        (() => {
+          const editable = document.querySelector('p [contenteditable="plaintext-only"]');
+          editable.innerText = 'Edited text';
+          editable.dispatchEvent(new InputEvent('input', {bubbles: true}));
+          return window.LeonardoEditing.currentSource();
+        })()
+        """, in: web)
+        await fulfillment(of: [edited], timeout: 3)
+
+        let expected = source.replacingOccurrences(of: "Editable text", with: "Edited text")
+        XCTAssertEqual(callbackExpected, source)
+        XCTAssertEqual(callbackReplacement, expected)
+        XCTAssertEqual(currentSource, expected)
+        XCTAssertEqual(Data(currentSource.utf8), Data(expected.utf8), "The MDLF header and CRLF bytes must remain untouched")
+    }
+
+    func testLeonardoDoesNotInterpretLegacyTableComments() async throws {
+        let source = "---\n{\"format\":\"mdlf\",\"formatVersion\":1}\n---\n<!-- leonardo:table widths=\"10ch 20ch\" -->\n\n| A | B |\n| --- | --- |\n| One | Two |"
+        var config = MarkdownPreviewConfiguration()
+        config.allowsLeonardoFormat = true
+        let (host, window) = makeHost(content: source, config: config)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelector('table') !== null", in: web)
+        let columns = try await evaluate("document.querySelectorAll('table col').length", in: web)
+        XCTAssertEqual(columns, "0")
+    }
+
+    func testLeonardoBackgroundAndPositionedImageLoadFromOpenAssets() async throws {
+        let root = URL(fileURLWithPath: "/LeonardoLayoutFixture", isDirectory: true)
+        let svg = Data("<svg xmlns='http://www.w3.org/2000/svg' width='20' height='10'><rect width='20' height='10' fill='blue'/></svg>".utf8)
+        let source = """
+        ---
+        {"format":"mdlf","formatVersion":1,"layout":{"background":{"image":"assets/bg.svg","opacity":0.2,"fit":"cover","position":{"placement":"flow","anchor":"center"}},"images":[{"source":"assets/bg.svg","occurrence":1,"size":{"width":{"value":50,"unit":"percent"},"preserveAspectRatio":true},"position":{"placement":"relative","x":{"value":8,"unit":"points"},"anchor":"topLeading"},"fit":"contain","opacity":1}]}}
+        ---
+        # Background
+
+        ![Example](assets/bg.svg)
+        """
+        var config = MarkdownPreviewConfiguration(localAssetRoot: root, memoryAssets: MarkdownMemoryAssets(files: ["assets/bg.svg": svg]))
+        config.allowsLeonardoFormat = true
+        let (host, window) = makeHost(content: source, base: root, config: config)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelectorAll('img').length === 2 && Array.from(document.querySelectorAll('img')).every(i => i.complete && i.naturalWidth > 0)", in: web)
+        let readiness = try await evaluate("JSON.stringify(Array.from(document.querySelectorAll('img')).map(i => ({src:i.getAttribute('src'),currentSrc:i.currentSrc,complete:i.complete,width:i.naturalWidth,loading:i.loading})))", in: web)
+        print("Leonardo fixture image readiness: \(readiness)")
+        let backgroundLoading = try await evaluate("document.querySelector('.leonardo-document-background img').loading", in: web)
+        XCTAssertEqual(backgroundLoading, "eager")
+        let result4 = try await evaluate("document.querySelector('.leonardo-document-background').style.opacity", in: web)
+        XCTAssertEqual(result4, "0.2")
+        let result5 = try await evaluate("document.querySelector('p img').style.width", in: web)
+        XCTAssertEqual(result5, "50%")
+        let result6 = try await evaluate("document.querySelector('p img').style.position", in: web)
+        XCTAssertEqual(result6, "relative")
+    }
+
     func testOfflineMemoryImageAndMarkdownRenderWithoutFilesystemAssets() async throws {
         let root = URL(fileURLWithPath: "/LeonardoMemoryFixture", isDirectory: true)
         let svg = Data("<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect width='12' height='12' fill='blue'/></svg>".utf8)

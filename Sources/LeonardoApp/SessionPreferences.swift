@@ -107,6 +107,11 @@ extension AppSession {
             resetSearch()
             focus = false
             documentURL = destination
+            documentSourceURL = nil
+            discardPackageWorkspace()
+            documentKind = AppDocumentKind.classify(destination)
+            documentStorage = .localFile
+            leonardoFormatWarning = false
             snapshot = copy
             content = copy.content
             externalConflict = false

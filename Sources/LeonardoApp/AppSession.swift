@@ -13,6 +13,27 @@ final class AppSession {
     var workspaceProjects: [ProjectDescriptor] = []
     var showWorkspace = false
     var documentURL: URL?
+    /// The logical document format is independent from the bytes currently
+    /// loaded into the editor. For an internally opened `.mdlz`, `documentURL`
+    /// points at the extracted `.mdlf`/`.mdlr` while `documentSourceURL`
+    /// remains the package shown to the user and used by the window chrome.
+    var documentKind: AppDocumentKind = .markdown
+    var documentStorage: AppDocumentStorage = .localFile
+    var documentSourceURL: URL?
+    /// The extracted workspace backing an open MDLZ.  A workspace with a
+    /// package URL is temporary and must be discarded when the tab closes;
+    /// an explicitly extracted workspace has a nil package URL and belongs to
+    /// the user, so it is left in place.
+    var packageWorkspace: LeonardoPackageWorkspace?
+    var leonardoFormatWarning = false
+    var packageOpenPreference: LeonardoPackageOpenPreference {
+        get { LeonardoPackageOpenPreference(rawValue: UserDefaults.standard.string(forKey: LeonardoPackageOpenPreference.defaultsKey) ?? "") ?? .defaultValue }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: LeonardoPackageOpenPreference.defaultsKey) }
+    }
+    var migrateMarkdownOnSave: Bool {
+        get { UserDefaults.standard.object(forKey: "migrateMarkdownOnSave") as? Bool ?? false }
+        set { UserDefaults.standard.set(newValue, forKey: "migrateMarkdownOnSave") }
+    }
     var projectURL: URL?
     private var documentContent = ""
     var content: String {
@@ -29,6 +50,13 @@ final class AppSession {
     var isProtected = true
     var canEditDocument: Bool { documentURL != nil && !isProtected && !isClosing && !isCapturingPreview && !isSyncSuspended && !busy && !stopped }
     var unsavedChangesDecision: @MainActor (String) -> UnsavedChangesDecision = UnsavedChangesPrompt.show
+    var confirmDiscardForReload: @MainActor () -> Bool = {
+        let alert = NSAlert()
+        alert.messageText = L10n.text("Discard your edits and reload the file?")
+        alert.addButton(withTitle: L10n.text("Reload"))
+        alert.addButton(withTitle: L10n.text("Cancel"))
+        return alert.runModal() == .alertFirstButtonReturn
+    }
     var mode: DocumentMode = .preview
     var focus = false
     var showInspector = false
@@ -59,6 +87,14 @@ final class AppSession {
     var activateExistingDocument: ((URL, Int?) -> Bool)?
     var openDroppedDocuments: (([URL]) async -> Void)?
     var updateWindow: ((String, URL?, Bool) -> Void)?
+    /// Package opening is supplied by the package transport owner. Keeping the
+    /// boundary as a session closure prevents AppSession from knowing whether
+    /// the bytes came from a ZIP implementation, a future document provider,
+    /// or a user-selected extraction directory.
+    var openPackageDocument: @MainActor (URL, LeonardoPackageOpenPreference) async -> Bool = { _, _ in false }
+    /// The format owner supplies the canonical MD -> MDLF migration. The app
+    /// owns the preference and prompt, but never invents a second serializer.
+    var migrateMarkdownDocument: @MainActor () async -> Bool = { false }
     var authorizePath: @MainActor (URL, DesktopPeerPathIntent) async throws -> Void = { url, intent in
         try NativeReconciliationLease.shared.check(url, intent: intent)
         try await DesktopPeerController.shared.authorize(url, intent: intent)
@@ -81,6 +117,13 @@ final class AppSession {
     let renderer = MarkdownPreviewController()
     var snapshot: DocumentSnapshot?
     var saveTask: Task<Void, Never>?
+    @ObservationIgnored var pendingDocumentAccesses: [UUID: PendingDocumentAccess] = [:]
+    @ObservationIgnored var packageWorkspaceDisposalTask: Task<Void, Never>?
+    @ObservationIgnored var pendingPackageWorkspaceDisposals: [(workspace: LeonardoPackageWorkspace, waitForIO: Bool)] = []
+    /// Test-only synchronization point for deterministic cancellation coverage.
+    /// Production leaves this nil; package transport still checks cancellation
+    /// immediately before its archive commit.
+    @ObservationIgnored var beforePackageArchiveCommitForTesting: (@Sendable () -> Void)?
     var searchTask: Task<Void, Never>?
     var monitorTask: Task<Void, Never>?
     var initialized = false
@@ -88,7 +131,13 @@ final class AppSession {
     var stopped = false
     let globalPreferencesURL: URL
     @ObservationIgnored let openSystemURL: @MainActor (URL) -> Void
-    static let readableDocumentExtensions: Set<String> = ["md", "markdown", "txt"]
+    static let readableDocumentExtensions: Set<String> = ["md", "markdown", "txt", "mdlf", "mdlr"]
+    static let packageDocumentExtensions: Set<String> = ["mdlz"]
+    static let supportedDocumentExtensions: Set<String> = readableDocumentExtensions.union(packageDocumentExtensions)
+
+    static func documentKind(for url: URL) -> AppDocumentKind {
+        AppDocumentKind.classify(url)
+    }
 
     init(
         preferencesURL: URL = AppSession.preferencesURL,
@@ -185,33 +234,67 @@ final class AppSession {
 
     func openDocument(_ url: URL, line: Int? = nil) async {
         guard !isClosing, !stopped, !isSyncSuspended else { return }
-        fileOperationCount += 1
-        defer { fileOperationCount -= 1 }
+        let access = beginDocumentAccess(to: url)
+        defer { finishDocumentAccess(access) }
         do { try await authorizePath(url, .document) } catch { report(error); return }
-        guard !stopped, !isClosing else { return }
+        guard documentAccessIsActive(access), !isClosing else { return }
         if activateExistingDocument?(url, line) == true {
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             return
         }
         let started = ContinuousClock.now
-        guard Self.readableDocumentExtensions.contains(url.pathExtension.lowercased()) else {
+        let kind = Self.documentKind(for: url)
+        guard Self.supportedDocumentExtensions.contains(url.pathExtension.lowercased()) else {
             openSystemURL(url)
             return
         }
         guard await prepareNavigation() else { return }
-        guard !busy, !isClosing, !stopped else { return }
+        guard !busy, !isClosing, documentAccessIsActive(access) else { return }
+        // Keep an existing temporary package workspace alive until the next
+        // document has loaded successfully. A cancelled package dialog or a
+        // failed read must leave the current tab usable.
+        let previousPackageWorkspace = packageWorkspace
+        if kind == .leonardoPackage {
+            busy = true
+            defer { busy = false }
+            guard await openPackageDocument(url, packageOpenPreference) else {
+                // The package adapter returns false for both cancellation and
+                // a reported transport error. Do not turn a cancelled panel
+                // into a new alert; the adapter has already reported errors.
+                return
+            }
+            if let previousPackageWorkspace {
+                await disposePackageWorkspace(previousPackageWorkspace)
+            }
+            return
+        }
         busy = true
         defer { busy = false }
         do {
             let loaded = try await documents.read(url)
-            guard !stopped, !isClosing, !isSyncSuspended, !NativeReconciliationLease.shared.holds(url) else { return }
+            guard documentAccessIsActive(access), !isClosing, !isSyncSuspended, !NativeReconciliationLease.shared.holds(url) else { return }
+            // A declared Leonardo suffix opts into the versioned parser. Do
+            // this before mutating session state so a future or malformed
+            // document leaves the currently open tab intact.
+            if kind.isLeonardo {
+                _ = try LeonardoFormatParser.parse(loaded.content)
+            }
+            if let previousPackageWorkspace {
+                discardPackageWorkspace()
+                await waitForPackageWorkspaceDisposal()
+                guard documentAccessIsActive(access), !isClosing, !isSyncSuspended else { return }
+            }
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
             isProtected = true
             documentURL = url
+            documentSourceURL = nil
+            documentKind = kind
+            documentStorage = .localFile
+            leonardoFormatWarning = kind == .markdown && Self.containsLeonardoMarkers(loaded.content)
             snapshot = loaded
             content = loaded.content
             editorScroll = 0
-            mode = line == nil ? DocumentMode(rawValue: resolved.defaultMode.rawValue) ?? .preview : .edit
+            mode = line == nil ? kind.defaultMode(global: resolved.defaultMode) : .edit
             requestedLine = line
             externalConflict = false
             saveStatus = "Saved · local file"
@@ -229,31 +312,6 @@ final class AppSession {
         saveTask?.cancel()
     }
 
-    func save(allowClosing: Bool = false) async {
-        guard !stopped, !isClosing || allowClosing else { return }
-        fileOperationCount += 1
-        defer { fileOperationCount -= 1 }
-        guard await flushPreviewEdits(), !stopped, !isClosing || allowClosing else { return }
-        guard !stopped, !isSyncSuspended, !saving, isDirty, let snapshot, let url = documentURL, !externalConflict else { return }
-        saving = true
-        saveStatus = "Saving…"
-        let draft = content
-        logger.info("document_save_started")
-        do {
-            try await authorizePath(url, .document)
-            guard !stopped, !isClosing || allowClosing else { saving = false; return }
-            self.snapshot = try await documents.save(draft, to: url, expectedFingerprint: snapshot.fingerprint)
-            saveStatus = isDirty ? "Pending changes" : "Saved · local file"
-            logger.info("document_save_completed")
-        } catch DocumentStoreError.conflict {
-            externalConflict = true
-            saveStatus = "External conflict · edits protected"
-        } catch { report(error) }
-        saving = false
-        updateTitle()
-        if isDirty && !externalConflict { contentChanged() }
-    }
-
     func prepareNavigation(allowGitOperation: Bool = false) async -> Bool {
         guard !isSyncSuspended else { return false }
         guard !gitBusy || allowGitOperation else {
@@ -263,44 +321,13 @@ final class AppSession {
         while let pending = settingsTask { await pending.value }
         saveTask?.cancel()
         // Wait for a current save to finish before changing the document identity.
-        while saving { try? await Task.sleep(for: .milliseconds(20)) }
+        while saving || saveTask != nil { try? await Task.sleep(for: .milliseconds(20)) }
         guard await flushPreviewEdits(), await resolveUnsavedChanges() else { return false }
         if isDirty {
             if externalConflict { errorMessage = L10n.text("Resolve the external change by reloading or saving a copy before opening another document.") }
             return false
         }
         return true
-    }
-
-    func reloadFromDisk() async {
-        guard !isSyncSuspended, !busy, !saving, !isClosing else { return }
-        NSApplication.shared.keyWindow?.makeFirstResponder(nil)
-        guard await flushPreviewEdits(), !isSyncSuspended, !busy, !saving, !isClosing else { return }
-        guard let url = documentURL else { return }
-        busy = true
-        defer { busy = false }
-        if isDirty {
-            let alert = NSAlert()
-            alert.messageText = L10n.text("Discard your edits and reload the file?")
-            alert.addButton(withTitle: L10n.text("Reload"))
-            alert.addButton(withTitle: L10n.text("Cancel"))
-            guard alert.runModal() == .alertFirstButtonReturn else { return }
-        }
-        let previousContent = content
-        do {
-            let loaded = try await documents.read(url)
-            guard !stopped, !isSyncSuspended, documentURL == url else { return }
-            guard content == previousContent else {
-                externalConflict = true
-                saveStatus = "External conflict · edits protected"
-                return
-            }
-            snapshot = loaded
-            content = loaded.content
-            externalConflict = false
-            saveStatus = "Saved · local file"
-            updateTitle()
-        } catch { externalConflict = true; report(error) }
     }
 
     func checkExternalChanges() async {
@@ -338,6 +365,7 @@ final class AppSession {
         stopped = true
         pendingExternalURL = nil
         saveTask?.cancel()
+        discardPackageWorkspace()
         searchTask?.cancel()
         monitorTask?.cancel()
     }
@@ -351,7 +379,9 @@ final class AppSession {
         } else { errorMessage = String(describing: error) }
         logger.error("operation_failed category=\(String(reflecting: type(of: error)), privacy: .public)")
     }
-    func updateTitle() { updateWindow?(documentURL?.lastPathComponent ?? projectURL?.lastPathComponent ?? "LeonardoMD", documentURL, isDirty) }
+    func updateTitle() {
+        updateWindow?(displayDocumentURL?.lastPathComponent ?? projectURL?.lastPathComponent ?? "LeonardoMD", displayDocumentURL, isDirty)
+    }
 }
 
 extension Color {

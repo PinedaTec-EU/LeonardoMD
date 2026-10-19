@@ -5,8 +5,8 @@ import Observation
 struct DocumentTab: Identifiable {
     let id = UUID()
     let session: AppSession
-    var title: String { session.documentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? L10n.text("New tab") }
-    var location: URL? { session.documentURL ?? session.projectURL }
+    var title: String { session.displayDocumentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? L10n.text("New tab") }
+    var location: URL? { session.displayDocumentURL ?? session.projectURL }
 }
 
 /// Each tab owns the existing editor session, including async saves and project operations.
@@ -26,7 +26,7 @@ final class DocumentTabs {
     }
 
     var activeSession: AppSession { tabs.first { $0.id == activeID }!.session }
-    var hasPendingWork: Bool { tabs.contains { $0.session.isDirty || $0.session.busy || $0.session.fileOperationCount > 0 || $0.session.saving || $0.session.settingsTask != nil || $0.session.gitBusy } }
+    var hasPendingWork: Bool { tabs.contains { $0.session.isDirty || $0.session.busy || $0.session.fileOperationCount > 0 || $0.session.saving || $0.session.saveTask != nil || $0.session.settingsTask != nil || $0.session.gitBusy } }
     var acceptsExternalDrops: Bool { !closing && !stopped }
 
     @discardableResult
@@ -35,6 +35,7 @@ final class DocumentTabs {
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         let session = AppSession(preferencesURL: preferencesURL)
         let tab = DocumentTab(session: session)
+        configureLeonardoTransport(for: session)
         session.activateExistingDocument = { [weak self] url, line in
             self?.activateDocument(url, line: line) ?? false
         }
@@ -83,7 +84,7 @@ final class DocumentTabs {
 
     func activateDocument(_ url: URL, line: Int? = nil) -> Bool {
         guard !closing, let tab = tabs.first(where: {
-            $0.session.documentURL?.standardizedFileURL.resolvingSymlinksInPath() == url.standardizedFileURL.resolvingSymlinksInPath()
+            $0.session.displayDocumentURL?.standardizedFileURL.resolvingSymlinksInPath() == url.standardizedFileURL.resolvingSymlinksInPath()
         }) else { return false }
         select(tab.id)
         if let line {
@@ -94,7 +95,7 @@ final class DocumentTabs {
 
     static func acceptsDrop(_ urls: [URL]) -> Bool {
         !urls.isEmpty && urls.allSatisfy { url in
-            guard url.isFileURL, ["md", "markdown"].contains(url.pathExtension.lowercased()) else { return false }
+            guard url.isFileURL, AppDocumentKind.isSupportedDropExtension(url.pathExtension) else { return false }
             var directory: ObjCBool = false
             return FileManager.default.fileExists(atPath: url.path, isDirectory: &directory) && !directory.boolValue
         }
@@ -132,6 +133,7 @@ final class DocumentTabs {
             return
         }
         session.stop()
+        await session.waitForPackageWorkspaceDisposal()
         tabs.remove(at: index)
         if tabs.isEmpty {
             closing = false
@@ -164,6 +166,13 @@ final class DocumentTabs {
         return true
     }
 
+    /// Finalize only after every window has accepted close preparation.
+    func finishPreparedClose() async {
+        guard preparedForClose, !stopped else { return }
+        stop()
+        for tab in tabs { await tab.session.waitForPackageWorkspaceDisposal() }
+    }
+
     func cancelPreparedClose() {
         guard preparedForClose, !stopped else { return }
         releaseClosePreparation()
@@ -184,14 +193,21 @@ final class DocumentTabs {
     /// Wait for existing I/O before the library removes the working directories.
     func revokeWorkspaces(_ roots: [URL]) async {
         let paths = roots.map { $0.standardizedFileURL.resolvingSymlinksInPath().path }
+        let pending = tabs.compactMap { tab -> (AppSession, Set<UUID>)? in
+            let ids = tab.session.revokeDocumentAccesses(under: paths)
+            return ids.isEmpty ? nil : (tab.session, ids)
+        }
         let affected = tabs.filter { tab in
-            [tab.session.documentURL, tab.session.projectURL].compactMap { $0 }.contains { url in
+            tab.session.workspaceIdentityURLs.contains { url in
                 let path = url.standardizedFileURL.resolvingSymlinksInPath().path
                 return paths.contains { path == $0 || path.hasPrefix($0 + "/") }
             }
         }
-        guard !affected.isEmpty else { return }
-        for tab in affected { tab.session.stop(); tab.session.clearRevokedContent() }
+        guard !affected.isEmpty || !pending.isEmpty else { return }
+        for tab in affected {
+            tab.session.stop()
+            tab.session.clearRevokedContent()
+        }
         // Active close iterations own indices; completed preparation no longer does.
         while closing && !preparedForClose { try? await Task.sleep(for: .milliseconds(20)) }
         let ids = Set(affected.map(\.id))
@@ -205,6 +221,7 @@ final class DocumentTabs {
         } else if activeID.map(ids.contains) == true { activeID = tabs[0].id }
         updateTitle()
         for tab in affected { await tab.session.finishRevocation() }
+        for (session, ids) in pending { await session.waitForDocumentAccesses(ids) }
     }
 
     func stop() {
@@ -213,6 +230,6 @@ final class DocumentTabs {
     }
     func updateTitle() {
         let session = activeSession
-        updateWindow?(session.documentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? "LeonardoMD", session.documentURL, tabs.contains { $0.session.isDirty })
+        updateWindow?(session.displayDocumentURL?.lastPathComponent ?? session.projectURL?.lastPathComponent ?? "LeonardoMD", session.displayDocumentURL, tabs.contains { $0.session.isDirty })
     }
 }

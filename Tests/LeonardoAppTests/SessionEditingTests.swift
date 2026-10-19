@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import WebKit
 import LeonardoSync
+import LeonardoCore
 @testable import LeonardoRender
 import XCTest
 @testable import LeonardoApp
@@ -175,6 +176,43 @@ final class SessionEditingTests: XCTestCase {
                 XCTAssertTrue(session.canEditDocument)
             }
         }
+    }
+
+    func testMarkdownMigrationCapturesPendingPreviewBeforeCreatingMDLF() async throws {
+        let (root, session) = try await fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        await session.toggleProtection()
+
+        let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { host.teardown(); window.close() }
+        session.renderer.onEdit = { expected, replacement in session.editDocument(expected: expected, replacement: replacement) }
+        session.renderer.attach(host)
+        let ready = expectation(description: "Migration preview ready")
+        host.onReady = { if $0 { ready.fulfill() } }
+        var configuration = MarkdownPreviewConfiguration.default
+        configuration.allowsEditing = true
+        host.apply(content: session.content, baseURL: nil, configuration: configuration, onLinkActivation: nil, onScrollProgress: nil)
+        await fulfillment(of: [ready], timeout: 10)
+        let webView = try XCTUnwrap(host.subviews.compactMap { $0 as? WKWebView }.first)
+        _ = try await webView.evaluateJavaScript("""
+        window.webkit.messageHandlers.leonardoEdit.postMessage = () => {};
+        const leaf = document.querySelector('[data-leonardo-edit]');
+        leaf.innerText = 'Preview draft';
+        leaf.dispatchEvent(new InputEvent('input', {bubbles: true}));
+        """)
+        XCTAssertEqual(session.content, "# Original", "The asynchronous bridge is deliberately delayed")
+
+        let migrated = await session.migrateMarkdownToLeonardo()
+        XCTAssertTrue(migrated)
+        let destination = root.appendingPathComponent("note.mdlf")
+        let loaded = try await session.documents.read(destination)
+        XCTAssertEqual(try LeonardoFormatParser.parse(loaded.content).body, "# Preview draft")
+        XCTAssertEqual(session.documentURL, destination)
+        XCTAssertFalse(session.isDirty)
     }
 
     func testFailedConflictCopyRetainsOriginalSession() async throws {

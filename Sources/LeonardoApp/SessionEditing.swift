@@ -22,7 +22,7 @@ enum UnsavedChangesPrompt {
 
 extension AppSession {
     func waitForCloseOperations() async -> Bool {
-        while busy || saving || gitBusy || fileOperationCount > 0 || settingsTask != nil || isSyncSuspended || isCapturingPreview {
+        while busy || saving || saveTask != nil || gitBusy || fileOperationCount > 0 || settingsTask != nil || isSyncSuspended || isCapturingPreview {
             if stopped || Task.isCancelled { return false }
             try? await Task.sleep(for: .milliseconds(20))
         }
@@ -55,6 +55,7 @@ extension AppSession {
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         guard await flushPreviewEdits(), documentURL == url, !stopped, !isClosing, !isSyncSuspended else { return }
         mode = value
+        if value == .fill { showInspector = true }
     }
 
     @discardableResult

@@ -353,12 +353,13 @@
     try {
       window.LeonardoEditing.begin(payload);
       window.LeonardoEditing.body = payload.markdown || "";
-      const rendered = window.LeonardoTables.render(payload.markdown || "");
+      const rendered = window.LeonardoTables.render(payload.markdown || "", !payload.leonardo);
       root.innerHTML = sanitizeHTML(rendered);
       window.LeonardoTables.prepare(root);
+      window.LeonardoLayout?.apply(root, payload);
       installHeadingAnchors();
       root.querySelectorAll("img").forEach((image) => {
-        image.loading = "lazy";
+        image.loading = image.closest(".leonardo-document-background") ? "eager" : "lazy";
         image.decoding = "async";
       });
       renderFrontMatter();
@@ -383,7 +384,7 @@
     setEditable(value) { payload.allowsEditing = value; window.LeonardoEditing.setEditable(root, value); },
     updateContent(nextPayload) {
       if (!nextPayload || typeof nextPayload.markdown !== "string") return;
-      payload = Object.assign(payload, nextPayload);
+      payload = Object.assign(payload, nextPayload, { leonardo: nextPayload.leonardo || null });
       renderDocument();
     },
     renderAllDiagrams,

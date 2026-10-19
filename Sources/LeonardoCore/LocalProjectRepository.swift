@@ -596,7 +596,7 @@ public actor LocalProjectRepository {
         "png", "jpg", "jpeg", "gif", "webp", "heic", "tif", "tiff", "svg", "bmp", "ico"
     ]
 
-    private static let markdownExtensions: Set<String> = ["md", "markdown"]
+    private static let markdownExtensions: Set<String> = ["md", "markdown", "mdlf", "mdlr"]
 
     private static let alwaysIgnoredDirectoryNames: Set<String> = [".git", ".build", ".worktrees"]
 }

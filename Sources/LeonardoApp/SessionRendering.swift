@@ -40,15 +40,26 @@ extension AppSession {
         case .parchment: effect = .parchment
         }
         let background = resolved.paperEffect == .white ? "#F8F8F5" : tokens.surface
+        let localAssetRoot: URL?
+        switch documentStorage {
+        case .package, .extracted:
+            localAssetRoot = packageWorkspace?.directoryURL
+        case .localFile:
+            localAssetRoot = projectURL
+        }
         var configuration = MarkdownPreviewConfiguration(
             allowsMermaid: features.mermaidEnabled,
             allowsMath: features.mathEnabled,
             frontMatter: showFrontmatter ? .metadata : .hidden,
             externalLinkPolicy: .callbackOnly,
             appearance: MarkdownAppearance(backgroundHex: background, textHex: tokens.text, headingHex: tokens.heading, accentHex: tokens.accent, codeBackgroundHex: tokens.codeBackground, paperEffect: effect),
-            localAssetRoot: projectURL
+            localAssetRoot: localAssetRoot
         )
-        configuration.allowsEditing = canEditDocument
+        configuration.allowsLeonardoFormat = documentKind.isLeonardo
+        // Form filling is a separate interaction channel. A protected MDLR
+        // remains writable through its declared fields while source editing
+        // stays locked behind the toolbar padlock.
+        configuration.allowsEditing = canEditDocument && mode != .fill
         return configuration
     }
     func followLink(_ url: URL) async {
@@ -57,7 +68,7 @@ extension AppSession {
             renderer.scroll(to: fragment)
             return
         }
-        if url.isFileURL, Self.readableDocumentExtensions.contains(url.pathExtension.lowercased()) {
+        if url.isFileURL, Self.supportedDocumentExtensions.contains(url.pathExtension.lowercased()) {
             await openDocument(url)
         } else if url.isFileURL || confirmExternalLinks {
             // Document-authored local links always require approval before a

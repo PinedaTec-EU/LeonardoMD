@@ -19,8 +19,11 @@ jobs:
           swift --version
       - name: Test packaging version metadata
         run: python3 -m unittest discover -s scripts/tests -v
+      - name: Test Leonardo agent plugin
+        run: python3 -m unittest discover -s plugins/leonardo-format/tests -v
       - name: Build and test
         env:
+          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           LEONARDO_VISUAL_EVIDENCE: ${{ github.workspace }}/visual-evidence
         run: swift test
       - name: Build iOS companion

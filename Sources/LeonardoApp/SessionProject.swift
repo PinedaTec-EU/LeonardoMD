@@ -6,7 +6,14 @@ import LeonardoCore
 extension AppSession {
     func chooseDocument() {
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.plainText, UTType(filenameExtension: "md") ?? .plainText]
+        panel.allowedContentTypes = [.plainText] + AppDocumentKind.allCases.compactMap { kind in
+            switch kind {
+            case .markdown: return nil
+            case .leonardoTemplate: return UTType(filenameExtension: "mdlf")
+            case .leonardoResponse: return UTType(filenameExtension: "mdlr")
+            case .leonardoPackage: return UTType(filenameExtension: "mdlz")
+            }
+        } + [UTType(filenameExtension: "md") ?? .plainText]
         panel.allowsMultipleSelection = false
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
@@ -42,8 +49,11 @@ extension AppSession {
             projectBaseline = configuration
             resetSearch()
             focus = false
-            if let documentURL, !documentURL.path.hasPrefix(url.path + "/") {
-                self.documentURL = nil; snapshot = nil; content = ""
+            if let currentDocument = displayDocumentURL,
+               !currentDocument.standardizedFileURL.path.hasPrefix(url.standardizedFileURL.path + "/") {
+                discardPackageWorkspace()
+                self.documentURL = nil; documentSourceURL = nil; snapshot = nil; content = ""
+                documentKind = .markdown; documentStorage = .localFile; leonardoFormatWarning = false
             }
             globalPreferences.recentProjectPaths.removeAll { $0 == url }
             globalPreferences.recentProjectPaths.insert(url, at: 0)
@@ -186,12 +196,17 @@ extension AppSession {
         }
     }
     func updateMovedDocument(from source: URL, to destination: URL) async {
-        guard let current = documentURL else { return }
         let previousMode = mode
-        if current == source { await openDocument(destination) }
-        else if current.path.hasPrefix(source.path + "/") {
-            let suffix = String(current.path.dropFirst(source.path.count + 1))
-            await openDocument(destination.appendingPathComponent(suffix))
+        // Package tabs edit an extracted temporary document, so documentURL
+        // is outside the moved project. Remap the package identity first;
+        // regular documents continue through the existing reopen path.
+        remapPackageIdentity(from: source, to: destination)
+        if let current = documentURL {
+            if current == source { await openDocument(destination) }
+            else if current.path.hasPrefix(source.path + "/") {
+                let suffix = String(current.path.dropFirst(source.path.count + 1))
+                await openDocument(destination.appendingPathComponent(suffix))
+            }
         }
         mode = previousMode
     }
@@ -213,9 +228,7 @@ extension AppSession {
                 try await authorizePath(url, intent)
                 guard !stopped else { return }
                 try await files.delete(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root))
-                if let current = documentURL, current == url || current.path.hasPrefix(url.path + "/") {
-                    documentURL = nil; snapshot = nil; content = ""; updateTitle()
-                }
+                clearDeletedDocument(at: url)
                 relatedPathDeleted?(url)
                 await refreshTree()
             } catch { report(error) }

@@ -9,3 +9,5 @@ Read [current state](current-state.md), then the relevant source target. Human p
 - [Updates](updates.md)
 
 - [Table layout](table-layout.md)
+
+- [Open Leonardo documents and agent plugins](leonardo-format.md)

@@ -1,4 +1,5 @@
 import Foundation
+import LeonardoCore
 import WebKit
 
 final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
@@ -84,7 +85,7 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
         let isInDocumentDirectory = candidatePath == root || candidatePath.hasPrefix(root + "/")
         let isInAssetRoot = candidatePath == assetRoot || candidatePath.hasPrefix(assetRoot + "/")
         guard isInDocumentDirectory || isInAssetRoot else { return nil }
-        guard ["bmp", "gif", "ico", "jpeg", "jpg", "png", "svg", "tif", "tiff", "webp"]
+        guard LeonardoLocalImagePolicy.extensions
             .contains(candidate.pathExtension.lowercased()) else { return nil }
         return candidate
     }
@@ -112,13 +113,13 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
         let root = assetRoot.resolvingSymlinksInPath().standardizedFileURL.path
         let candidatePath = candidate.path
         guard candidatePath == root || candidatePath.hasPrefix(root + "/") else { return nil }
-        guard ["bmp", "gif", "ico", "jpeg", "jpg", "png", "svg", "tif", "tiff", "webp"]
+        guard LeonardoLocalImagePolicy.extensions
             .contains(candidate.pathExtension.lowercased()) else { return nil }
         return candidate
     }
 
     private func isImage(_ url: URL) -> Bool {
-        ["bmp", "gif", "ico", "jpeg", "jpg", "png", "svg", "tif", "tiff", "webp"]
+        LeonardoLocalImagePolicy.extensions
             .contains(url.pathExtension.lowercased())
     }
 

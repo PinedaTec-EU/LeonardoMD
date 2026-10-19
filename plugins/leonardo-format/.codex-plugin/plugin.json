@@ -1,0 +1,15 @@
+{
+  "name": "leonardo-format",
+  "version": "0.2.5",
+  "description": "Read, validate, fill, edit, extract and repackage open Leonardo Markdown documents (.mdlf, .mdlr and .mdlz).",
+  "author": {
+    "name": "PinedaTec",
+    "url": "https://pinedatec.com"
+  },
+  "skills": "./skills/",
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/leonardo-format/SKILL.md"
+    }
+  }
+}

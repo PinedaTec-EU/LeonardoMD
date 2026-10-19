@@ -43,3 +43,29 @@ int leonardo_deflate(const uint8_t *input, size_t input_count, uint8_t *output,
     *written = result == Z_OK ? size : 0;
     return result;
 }
+
+int leonardo_zip_inflate(const uint8_t *input, size_t input_count, uint8_t *output,
+                         size_t output_capacity, size_t *written, size_t *consumed) {
+    if (!written || !consumed || !input || !output || input_count > UINT_MAX || output_capacity > UINT_MAX)
+        return Z_STREAM_ERROR;
+    *written = 0;
+    *consumed = 0;
+    z_stream stream;
+    memset(&stream, 0, sizeof(stream));
+    stream.next_in = (Bytef *)input;
+    stream.avail_in = (uInt)input_count;
+    stream.next_out = output;
+    stream.avail_out = (uInt)output_capacity;
+    int result = inflateInit2(&stream, -MAX_WBITS);
+    if (result != Z_OK) return result;
+    result = inflate(&stream, Z_FINISH);
+    *written = stream.total_out;
+    *consumed = stream.total_in;
+    inflateEnd(&stream);
+    return result;
+}
+
+uint32_t leonardo_crc32(const uint8_t *input, size_t count) {
+    if (count > UINT_MAX) return 0;
+    return (uint32_t)crc32(0L, input, (uInt)count);
+}
