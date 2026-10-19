@@ -1,5 +1,7 @@
 # LeonardoMD
 
+![LeonardoMD product artwork](Sources/LeonardoApp/Resources/AboutBanner.png)
+
 Native macOS Markdown reading and editing, backed by real local files. Open a single document for a clean, fast viewer, or open a folder as a project with navigation, search and optional Git.
 
 ## Run
