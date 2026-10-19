@@ -45,6 +45,12 @@ struct DocumentTabsView: View {
                 .help(L10n.text("New tab (⌘T)"))
                 .accessibilityLabel(L10n.text("New tab"))
                 .accessibilityIdentifier("new-document-tab")
+            Button { documents.activeSession.showPreferences = true } label: {
+                Image(systemName: "gearshape").padding(6)
+            }
+            .help(L10n.text("Preferences…"))
+            .accessibilityLabel(L10n.text("Preferences"))
+            .accessibilityIdentifier("tab-bar-preferences")
         }
         .coordinateSpace(name: TabReordering.coordinateSpace)
         .onPreferenceChange(TabFramesPreference.self) { tabFrames = $0 }
