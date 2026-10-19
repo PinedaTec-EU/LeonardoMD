@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.455
+
+- #196 Fixed: keep MDLF JSON metadata out of invoice preview ([#197](https://github.com/PinedaTec-EU/LeonardoMD/pull/197))
+
+Source: `ab9bc550ca56295e7e2bceb6dfc4a2c43597216d`. Delta: `{"build": 10}`.
+
 ## 0.1.445
 
 - #189 Fixed: Open MDLF and MDLZ documents in preview by default ([#190](https://github.com/PinedaTec-EU/LeonardoMD/pull/190))
