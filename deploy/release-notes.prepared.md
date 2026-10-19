@@ -2,6 +2,12 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.466
+
+- #204 Fixed: omit empty optional Leonardo metadata ([#205](https://github.com/PinedaTec-EU/LeonardoMD/pull/205))
+
+Source: `b40aaeb95389dbf952d58f2b80908c5e737d46cc`. Delta: `{"build": 2}`.
+
 ## 0.1.464
 
 - #198 Added: checkbox and switch form appearances ([#199](https://github.com/PinedaTec-EU/LeonardoMD/pull/199))
