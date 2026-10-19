@@ -168,10 +168,10 @@ than one root document, files outside `assets/`, and accidental overwrites.
 folder does not update the original archive, so use `pack` (or Leonardo's
 export action) to create a new `.mdlz`.
 
-The helper has no third-party runtime dependency. Its default `validate`
-command checks the UTF-8/front-matter envelope; when a host already provides
-the optional `jsonschema` package, pass the bundled schema explicitly for
-metadata validation:
+The helper has no third-party runtime dependency. Every command validates the
+UTF-8/front-matter envelope and the bundled v1 metadata schema before reporting
+or writing anything. Pass `--schema` only when an additional explicit JSON
+Schema constraint is needed:
 
 ```bash
 python3 ./plugins/leonardo-format/skills/leonardo-format/scripts/mdlz.py \
@@ -190,11 +190,11 @@ python3 -m unittest discover \
 
 The tests cover deterministic packing, round-trip extraction, traversal and
 symlink rejection, Unicode/case collisions, source-layout rules, destination
-conflicts, and UTF-8 document checks. Semantic field and layout validation
-belongs to `doc/format/mdlf-v1.schema.json` (or the bundled copy when the
-plugin is installed) and the application parser. The helper's `validate`
-command checks the UTF-8/front-matter envelope by default; `--schema` enables
-optional metadata JSON Schema validation when `jsonschema` is available.
+conflicts, duplicate keys, unknown metadata, unsupported versions and
+UTF-8/front-matter checks. Semantic field and layout validation belongs to
+`doc/format/mdlf-v1.schema.json` (or the bundled copy when the plugin is
+installed) and the application parser. The helper's bundled evaluator is
+dependency-free; `--schema` adds an explicit second schema constraint.
 
 ## Release discipline
 

@@ -18,6 +18,9 @@ archive content:
   compression ratios are bounded before extraction;
 - exactly one root `.mdlf` or `.mdlr` is required; non-document files belong
   under `assets/`;
+- the root document is parsed, version-checked, duplicate-key checked and
+  validated against the bundled v1 schema before `inspect` reports results,
+  `extract` creates a directory, or `pack` writes an archive;
 - extraction writes into a new sibling directory and creates files without
   replacement, so a failed extraction cannot overwrite an existing folder;
 - packing refuses source symlinks, missing roots, multiple documents, and an

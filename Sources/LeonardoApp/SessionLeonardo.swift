@@ -226,17 +226,47 @@ extension AppSession {
         busy = true
         ownsBusy = true
 
+        // Validate and canonicalize the payload before requesting any path
+        // authorization or attempting the exclusive destination create. A
+        // Markdown suffix can still contain a complete MDLF document; wrapping
+        // that source again would hide its fields, values, and document kind.
+        let serialized: String
+        do {
+            switch LeonardoFormatParser.detect(content) {
+            case .markdown:
+                let metadata = LeonardoMetadata(
+                    document: LeonardoDocumentDescriptor(
+                        title: sourceURL.deletingPathExtension().lastPathComponent,
+                        kind: .document
+                    )
+                )
+                serialized = try LeonardoFormatParser.serialize(
+                    LeonardoDocument(body: content, metadata: metadata)
+                )
+            case .leonardo:
+                let existing = try LeonardoFormatParser.parse(content)
+                serialized = try LeonardoFormatParser.serialize(existing)
+            case .malformedLeonardo:
+                errorMessage = "This Markdown contains an invalid Leonardo document header. Fix it before migrating."
+                return false
+            }
+        } catch let error as LeonardoFormatError {
+            if case .unsupportedVersion = error {
+                errorMessage = error.localizedDescription
+            } else {
+                report(error)
+            }
+            return false
+        } catch {
+            report(error)
+            return false
+        }
+
         let destination = sourceURL.deletingPathExtension().appendingPathExtension("mdlf")
         if FileManager.default.fileExists(atPath: destination.path) {
             errorMessage = L10n.text("The MDLF destination already exists. Choose another name before migrating.")
             return false
         }
-        let metadata = LeonardoMetadata(
-            document: LeonardoDocumentDescriptor(
-                title: sourceURL.deletingPathExtension().lastPathComponent,
-                kind: .document
-            )
-        )
         do {
             // Authorize both identities before the exclusive destination
             // create. `createNew(preserving:)` performs the final source
@@ -249,12 +279,6 @@ extension AppSession {
                   !stopped, (!isClosing || allowClosing), !isSyncSuspended,
                   !externalConflict, ownsBusy else { return false }
 
-            // Keep the original Markdown bytes as the MDLF body. This also
-            // preserves ordinary YAML front matter inside a Markdown file;
-            // Leonardo metadata is the only front matter this wrapper owns.
-            let serialized = try LeonardoFormatParser.serialize(
-                LeonardoDocument(body: content, metadata: metadata)
-            )
             let saved = try await documents.createNew(serialized, to: destination, preserving: sourceSnapshot)
             documentURL = destination
             documentSourceURL = nil

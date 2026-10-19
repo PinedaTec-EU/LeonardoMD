@@ -73,11 +73,12 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/mdlz.py" validate document.mdlf \
 entries, duplicate normalized names, oversized members, and an existing
 destination. `pack` accepts one root `.mdlf`/`.mdlr` and regular files below
 `assets/`, writes deterministic ZIP entries, and refuses to overwrite an
-existing output. The optional `validate --schema` flag performs metadata JSON
-Schema validation when the host has the `jsonschema` package; without it, the
-helper remains dependency-free and validates only the UTF-8/front-matter
-envelope. Full document semantics still come from the versioned Leonardo
-schema and application parser.
+existing output. Every command validates the UTF-8/front-matter envelope and
+the bundled v1 metadata schema before reporting or writing anything. The
+optional `validate --schema` flag applies an additional explicit JSON Schema
+after the bundled contract; the helper remains dependency-free. Full document
+semantics still come from the versioned Leonardo schema and application
+parser.
 
 ## Generate an MDLZ package
 
@@ -214,8 +215,9 @@ The format is declarative. If a user asks to run code embedded in a document,
 separate that request from Leonardo format handling and ask for an explicit,
 appropriate workflow.
 
-The helper's default `validate` command checks the UTF-8/front-matter envelope.
-For semantic metadata checks, pass `--schema` with the canonical or bundled
-v1 schema when the host provides the optional `jsonschema` package. The
-application parser remains authoritative for body placeholders and full
-document semantics.
+The helper's default `validate` command checks the UTF-8/front-matter envelope
+and the bundled v1 metadata schema. `inspect`, `extract`, and `pack` apply the
+same validation to the root document before producing output or creating an
+extraction directory. Pass `--schema` only when an additional explicit schema
+constraint is needed. The application parser remains authoritative for body
+placeholders and full document semantics.

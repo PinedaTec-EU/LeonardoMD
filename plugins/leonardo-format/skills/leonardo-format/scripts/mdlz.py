@@ -21,6 +21,8 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Iterable, Iterator
 
+from mdlf_schema import SchemaValidationError, validate_metadata
+
 
 ARCHIVE_SUFFIX = ".mdlz"
 DOCUMENT_SUFFIXES = frozenset({".mdlf", ".mdlr"})
@@ -34,6 +36,7 @@ MAX_COMPRESSION_RATIO = 500
 MIN_RATIO_CHECK_BYTES = 64 * 1024
 WINDOWS_DRIVE = re.compile(r"^[A-Za-z]:")
 SUPPORTED_FORMAT_VERSIONS = frozenset({1})
+DEFAULT_SCHEMA_PATH = Path(__file__).resolve().parents[1] / "references" / "mdlf-v1.schema.json"
 
 
 class ArchiveError(ValueError):
@@ -196,11 +199,34 @@ def _is_document_name(name: str) -> bool:
     return "/" not in name and Path(name).suffix.lower() in DOCUMENT_SUFFIXES
 
 
+def _validate_archive_document(
+    archive: zipfile.ZipFile,
+    document: str,
+    limits: Limits,
+) -> dict[str, object]:
+    """Validate the root document while it is still inside the archive."""
+
+    try:
+        info = archive.getinfo(document)
+    except KeyError as exc:
+        raise ArchiveError(f"archive root document disappeared: {document!r}") from exc
+    if info.file_size > limits.max_member_bytes:
+        raise ArchiveError(f"document is too large (limit {limits.max_member_bytes} bytes): {document}")
+    try:
+        data = archive.read(info)
+    except (OSError, RuntimeError, zipfile.BadZipFile) as exc:
+        raise ArchiveError(f"could not read archive document: {document!r}") from exc
+    if len(data) != info.file_size:
+        raise ArchiveError(f"archive document size changed while reading: {document!r}")
+    return _validate_document_bytes(Path(document), data)
+
+
 def inspect_archive(path: Path, limits: Limits = Limits()) -> dict[str, object]:
     _assert_archive_file(path, limits)
     try:
         with zipfile.ZipFile(path, "r") as archive:
             entries, document = _validate_zip_members(archive, limits)
+            _validate_archive_document(archive, document, limits)
             return {
                 "archive": _display_path(path),
                 "document": document,
@@ -272,10 +298,13 @@ def extract_archive(path: Path, destination: Path, limits: Limits = Limits()) ->
     _assert_directory(parent, "extraction destination parent")
 
     temporary = parent / f".{destination.name}.mdlz-extract-{uuid.uuid4().hex}"
-    temporary.mkdir(mode=0o700)
     try:
         with zipfile.ZipFile(path, "r") as archive:
             entries, document = _validate_zip_members(archive, limits)
+            _validate_archive_document(archive, document, limits)
+            # Do not create an extraction directory until the archive and its
+            # root document have passed every validation gate.
+            temporary.mkdir(mode=0o700)
             for entry in entries:
                 target = temporary.joinpath(*entry.name.split("/"))
                 _ensure_within(temporary, target)
@@ -381,6 +410,7 @@ def pack_directory(source: Path, output: Path, limits: Limits = Limits()) -> dic
         raise ArchiveError(f"package output already exists: {output}")
     _assert_directory(output.parent, "package output parent")
     entries, document = _iter_source_entries(source, limits)
+    _validate_document_bytes(source / document, (source / document).read_bytes())
     temporary = output.parent / f".{output.name}.mdlz-pack-{uuid.uuid4().hex}"
     try:
         with zipfile.ZipFile(
@@ -430,6 +460,10 @@ def _metadata_without_duplicate_keys(value: list[tuple[str, object]]) -> dict[st
     return result
 
 
+def _reject_json_constant(token: str) -> None:
+    raise ValueError(f"invalid JSON constant: {token}")
+
+
 def _parse_format_front_matter(text: str) -> dict[str, object]:
     normalized = text.replace("\r\n", "\n").replace("\r", "\n")
     if normalized.startswith("\ufeff"):
@@ -447,7 +481,11 @@ def _parse_format_front_matter(text: str) -> dict[str, object]:
     if not metadata_text:
         raise ArchiveError("document has empty front matter")
     try:
-        metadata = json.loads(metadata_text, object_pairs_hook=_metadata_without_duplicate_keys)
+        metadata = json.loads(
+            metadata_text,
+            object_pairs_hook=_metadata_without_duplicate_keys,
+            parse_constant=_reject_json_constant,
+        )
     except (TypeError, ValueError, json.JSONDecodeError) as exc:
         raise ArchiveError(f"document front matter is not valid JSON: {exc}") from exc
     if not isinstance(metadata, dict):
@@ -464,44 +502,18 @@ def _parse_format_front_matter(text: str) -> dict[str, object]:
 
 
 def _validate_metadata_schema(metadata: dict[str, object], schema_path: Path) -> None:
-    """Optionally validate metadata with the host's jsonschema package."""
-
-    _assert_regular_file(schema_path, "schema")
     try:
-        import jsonschema
-    except ImportError as exc:
-        raise ArchiveError(
-            "schema validation requires the optional Python package 'jsonschema'; "
-            "the default envelope validation has no third-party dependencies"
-        ) from exc
-    try:
-        schema = json.loads(schema_path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ArchiveError(f"schema is not valid UTF-8 JSON: {schema_path}") from exc
-    try:
-        validator_class = jsonschema.validators.validator_for(schema)
-        validator_class.check_schema(schema)
-        validator = validator_class(schema)
-        errors = sorted(validator.iter_errors(metadata), key=lambda error: tuple(str(item) for item in error.path))
-    except (TypeError, ValueError, jsonschema.exceptions.SchemaError) as exc:
-        raise ArchiveError(f"schema cannot be used for validation: {schema_path}: {exc}") from exc
-    if errors:
-        error = errors[0]
-        location = "$" + "".join(f"[{item!r}]" for item in error.path)
-        raise ArchiveError(f"schema validation failed at {location}: {error.message}")
+        validate_metadata(metadata, schema_path)
+    except SchemaValidationError as exc:
+        raise ArchiveError(str(exc)) from exc
 
 
-def validate_document(path: Path, *, schema_path: Path | None = None) -> dict[str, object]:
-    """Check the MDLF envelope and optionally its metadata JSON Schema."""
-
-    _assert_regular_file(path, "document")
+def _validate_document_bytes(path: Path, data: bytes, *, schema_path: Path | None = None) -> dict[str, object]:
     suffix = path.suffix.lower()
     if suffix not in DOCUMENT_SUFFIXES:
         raise ArchiveError(f"document must use .mdlf or .mdlr: {path}")
-    size = path.stat().st_size
-    if size > MAX_MEMBER_BYTES:
+    if len(data) > MAX_MEMBER_BYTES:
         raise ArchiveError(f"document is too large (limit {MAX_MEMBER_BYTES} bytes)")
-    data = path.read_bytes()
     try:
         text = data.decode("utf-8")
     except UnicodeDecodeError as exc:
@@ -512,17 +524,20 @@ def validate_document(path: Path, *, schema_path: Path | None = None) -> dict[st
     metadata = _parse_format_front_matter(text)
     document_metadata = metadata.get("document")
     kind = document_metadata.get("kind") if isinstance(document_metadata, dict) else None
-    # The suffix is an opening-mode hint. The shared MDLF schema remains the
-    # source of semantic truth, so a valid document-kind document is still
-    # readable when it has been named .mdlr by a producer or transport step.
     fields = metadata.get("fields")
     values = metadata.get("values")
     if fields is not None and not isinstance(fields, dict):
         raise ArchiveError("document fields metadata must be an object")
     if values is not None and not isinstance(values, dict):
         raise ArchiveError("document values metadata must be an object")
-    if schema_path is not None:
+
+    bundled_schema = DEFAULT_SCHEMA_PATH
+    _validate_metadata_schema(metadata, bundled_schema)
+    semantic_validation = "bundled-schema"
+    selected_schema = schema_path or bundled_schema
+    if schema_path is not None and schema_path.resolve() != bundled_schema.resolve():
         _validate_metadata_schema(metadata, schema_path)
+        semantic_validation = "bundled-schema+external"
     return {
         "document": _display_path(path),
         "extension": suffix,
@@ -533,9 +548,16 @@ def validate_document(path: Path, *, schema_path: Path | None = None) -> dict[st
         "documentKind": kind,
         "fieldCount": len(fields) if isinstance(fields, dict) else 0,
         "valueCount": len(values) if isinstance(values, dict) else 0,
-        "semanticValidation": "jsonschema" if schema_path is not None else "not-run",
-        "schema": _display_path(schema_path) if schema_path is not None else None,
+        "semanticValidation": semantic_validation,
+        "schema": _display_path(selected_schema),
     }
+
+
+def validate_document(path: Path, *, schema_path: Path | None = None) -> dict[str, object]:
+    """Check the MDLF envelope and bundled schema, plus an optional schema."""
+
+    _assert_regular_file(path, "document")
+    return _validate_document_bytes(path, path.read_bytes(), schema_path=schema_path)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -558,7 +580,7 @@ def _parser() -> argparse.ArgumentParser:
     validate_command.add_argument(
         "--schema",
         type=Path,
-        help="optionally validate document metadata with a JSON Schema (requires jsonschema)",
+        help="optionally apply an additional JSON Schema after the bundled MDLF schema",
     )
     return parser
 

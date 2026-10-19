@@ -20,7 +20,7 @@ This is native XCTest/view-hosting and real WebKit evidence, not an image mockup
 - Transport: conventional stored/DEFLATE ZIP interoperability, checksums and unsafe/duplicate paths, extraction ownership, original-file preservation, external-change conflicts, repeated saves, renamed packages, asset-reference rewriting, code/answer exclusion and local-image containment.
 - Application: standard Markdown detection, form initial modes/field persistence, migration conflicts and pending preview edits, authorization denial without writes, package saving, drag policy and native chrome states.
 - Plugin: Python CLI transport regressions, portable/host manifests, bundled schema identity and authoring instructions. `claude plugin validate ./plugins/leonardo-format` checks the Claude manifest.
-- Both public example documents validate with `mdlz.py validate <document> --schema doc/format/mdlf-v1.schema.json` when the optional `jsonschema` dependency is available. The ordinary CLI remains dependency-free and reports envelope-only validation explicitly.
+- Both public example documents validate with `mdlz.py validate <document>`. The dependency-free helper always applies its bundled canonical schema, including to the root document before archive inspect, extraction or packing; `--schema` adds an external constraint without relaxing the canonical schema.
 
 A save/export decision selects its output format before showing the save panel. Extracted documents show the actual MDLF/MDLR filename and require export to create a new package.
 

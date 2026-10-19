@@ -333,6 +333,99 @@ final class AppSessionTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: destination, encoding: .utf8), "existing destination")
     }
 
+    func testMarkdownMigrationPreservesValidLeonardoDocumentInDisguisedMarkdown() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("valid.md")
+        let destination = root.appendingPathComponent("valid.mdlf")
+        let document = LeonardoDocument(
+            body: "Name: {{field:name}}",
+            metadata: LeonardoMetadata(
+                document: LeonardoDocumentDescriptor(kind: .form),
+                fields: ["name": LeonardoFieldDefinition(required: true)],
+                values: ["name": .string("Ada")]
+            )
+        )
+        let original = try LeonardoFormatParser.serialize(document)
+        try original.write(to: source, atomically: true, encoding: .utf8)
+
+        await session.open(source)
+        XCTAssertTrue(session.leonardoFormatWarning)
+        let migrated = await session.migrateMarkdownToLeonardo()
+
+        XCTAssertTrue(migrated)
+        let loaded = try String(contentsOf: destination, encoding: .utf8)
+        XCTAssertEqual(try LeonardoFormatParser.parse(loaded), document)
+        XCTAssertEqual(try String(contentsOf: source, encoding: .utf8), original)
+        XCTAssertEqual(session.documentURL, destination)
+        XCTAssertEqual(session.documentKind, .leonardoTemplate)
+        XCTAssertFalse(session.isDirty)
+    }
+
+    func testMarkdownMigrationRejectsFutureLeonardoVersionWithoutCreatingDestination() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("future.md")
+        let destination = root.appendingPathComponent("future.mdlf")
+        let original = """
+        ---
+        {
+          "document" : { "kind" : "document" },
+          "fields" : {},
+          "format" : "mdlf",
+          "formatVersion" : 99,
+          "values" : {}
+        }
+        ---
+        Future body
+        """
+        try original.write(to: source, atomically: true, encoding: .utf8)
+
+        await session.open(source)
+        var authorizationCalls = 0
+        session.authorizePath = { _, _ in authorizationCalls += 1 }
+        XCTAssertTrue(session.leonardoFormatWarning)
+        let migrated = await session.migrateMarkdownToLeonardo()
+
+        XCTAssertFalse(migrated)
+        XCTAssertEqual(authorizationCalls, 0)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path))
+        XCTAssertEqual(try String(contentsOf: source, encoding: .utf8), original)
+        XCTAssertEqual(session.documentURL, source)
+        XCTAssertEqual(session.documentKind, .markdown)
+        XCTAssertTrue(session.errorMessage?.contains("99") == true)
+    }
+
+    func testMarkdownMigrationRejectsMalformedLeonardoHeaderWithoutCreatingDestination() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("malformed.md")
+        let destination = root.appendingPathComponent("malformed.mdlf")
+        let original = """
+        ---
+        {
+          "format" : "mdlf"
+        }
+        ---
+        Malformed body
+        """
+        try original.write(to: source, atomically: true, encoding: .utf8)
+
+        await session.open(source)
+        var authorizationCalls = 0
+        session.authorizePath = { _, _ in authorizationCalls += 1 }
+        XCTAssertTrue(session.leonardoFormatWarning)
+        let migrated = await session.migrateMarkdownToLeonardo()
+
+        XCTAssertFalse(migrated)
+        XCTAssertEqual(authorizationCalls, 0)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path))
+        XCTAssertEqual(try String(contentsOf: source, encoding: .utf8), original)
+        XCTAssertEqual(session.documentURL, source)
+        XCTAssertEqual(session.documentKind, .markdown)
+        XCTAssertNotNil(session.errorMessage)
+    }
+
     func testDeniedDirectMarkdownMigrationDoesNotCreateDestination() async throws {
         let (root, session) = try fixture()
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }

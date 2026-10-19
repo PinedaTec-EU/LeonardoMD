@@ -48,6 +48,14 @@ class PluginLayoutTests(unittest.TestCase):
         self.assertIn("source_ref = \"images/logo.png\"", skill)
         self.assertIn("pack ./request-package ./request.mdlz", skill)
 
+    def test_transport_helper_bundles_dependency_free_schema_evaluator(self) -> None:
+        helper = PLUGIN_ROOT / "skills/leonardo-format/scripts/mdlz.py"
+        evaluator = PLUGIN_ROOT / "skills/leonardo-format/scripts/mdlf_schema.py"
+        self.assertTrue(helper.is_file())
+        self.assertTrue(evaluator.is_file())
+        self.assertIn("mdlf_schema", helper.read_text(encoding="utf-8"))
+        self.assertNotIn("import jsonschema", helper.read_text(encoding="utf-8"))
+
     def test_bundled_schema_matches_canonical_contract(self) -> None:
         canonical = PLUGIN_ROOT.parents[1] / "doc/format/mdlf-v1.schema.json"
         bundled = PLUGIN_ROOT / "skills/leonardo-format/references/mdlf-v1.schema.json"

@@ -104,12 +104,7 @@ final class LeonardoFormatTests: XCTestCase {
     }
 
     func testRejectsEscapedSpellingsOfDuplicateKeys() {
-        let source = #"""
-        ---
-        {"format":"mdlf","formatVersion":1,"values":{"\u0070ayload":1,"payload":2}}
-        ---
-        Body
-        """#
+        let source = "---\n{\"format\":\"mdlf\",\"formatVersion\":1,\"values\":{\"\\u0070ayload\":1,\"payload\":2}}\n---\nBody"
         XCTAssertThrowsError(try LeonardoFormatParser.parse(source)) { error in
             XCTAssertEqual(error as? LeonardoFormatError, .invalidMetadataJSON)
         }

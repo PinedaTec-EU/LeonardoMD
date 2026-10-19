@@ -50,6 +50,13 @@ final class AppSession {
     var isProtected = true
     var canEditDocument: Bool { documentURL != nil && !isProtected && !isClosing && !isCapturingPreview && !isSyncSuspended && !busy && !stopped }
     var unsavedChangesDecision: @MainActor (String) -> UnsavedChangesDecision = UnsavedChangesPrompt.show
+    var confirmDiscardForReload: @MainActor () -> Bool = {
+        let alert = NSAlert()
+        alert.messageText = L10n.text("Discard your edits and reload the file?")
+        alert.addButton(withTitle: L10n.text("Reload"))
+        alert.addButton(withTitle: L10n.text("Cancel"))
+        return alert.runModal() == .alertFirstButtonReturn
+    }
     var mode: DocumentMode = .preview
     var focus = false
     var showInspector = false
@@ -297,79 +304,6 @@ final class AppSession {
         saveTask?.cancel()
     }
 
-    func save(allowClosing: Bool = false) async {
-        guard !stopped, !isClosing || allowClosing else { return }
-        fileOperationCount += 1
-        defer { fileOperationCount -= 1 }
-        guard await flushPreviewEdits(), !stopped, !isClosing || allowClosing else { return }
-        guard !stopped, !isSyncSuspended, !saving, isDirty, let snapshot, let url = documentURL, !externalConflict else { return }
-        if documentKind == .markdown, migrateMarkdownOnSave {
-            // Migration owns the destination and may fail because a sibling
-            // MDLF already exists or because the source is not writable. Do
-            // not fall through to saving the draft back to the Markdown file:
-            // the preference explicitly changes the save target.
-            _ = await migrateMarkdownToLeonardo(allowSaveReentry: true, allowClosing: allowClosing)
-            return
-        }
-        saving = true
-        saveStatus = "Saving…"
-        let draft = content
-        logger.info("document_save_started")
-        do {
-            try await authorizePath(url, .document)
-            if let packageURL = packageWorkspace?.packageURL,
-               packageURL.standardizedFileURL != url.standardizedFileURL {
-                // Package saves first update the extracted working document,
-                // then repack it. Authorize the real package before the first
-                // temporary write so a denied package never mutates the
-                // workspace in the first place.
-                try await authorizePath(packageURL, .document)
-            }
-            guard !stopped, !isClosing || allowClosing else { saving = false; return }
-            let savedSnapshot = try await documents.save(draft, to: url, expectedFingerprint: snapshot.fingerprint)
-            if let workspace = packageWorkspace, workspace.packageURL != nil {
-                // ZIP work is synchronous and intentionally outside MainActor;
-                // the returned workspace carries the new source digest for the
-                // next save and protects against an external package change.
-                do {
-                    let refreshed = try await Task.detached(priority: nil) {
-                        try LeonardoPackageTransport.save(workspace)
-                    }.value
-                    packageWorkspace = refreshed
-                } catch {
-                    // The package write happens after the temporary document
-                    // write. Restore that workspace file to the previous
-                    // snapshot so a retry does not conflict with our own
-                    // failed attempt; the draft remains dirty in memory.
-                    if let restored = try? await documents.save(
-                        snapshot.content,
-                        to: url,
-                        expectedFingerprint: savedSnapshot.fingerprint
-                    ) {
-                        // Atomic replacement refreshes the modification date.
-                        // Keep the restored fingerprint so a later retry is
-                        // compared with the file we just restored, rather
-                        // than with the pre-failure snapshot.
-                        self.snapshot = restored
-                    }
-                    throw error
-                }
-            }
-            self.snapshot = savedSnapshot
-            saveStatus = isDirty ? "Pending changes" : "Saved · local file"
-            logger.info("document_save_completed")
-        } catch DocumentStoreError.conflict {
-            externalConflict = true
-            saveStatus = "External conflict · edits protected"
-        } catch LeonardoPackageError.changedOnDisk {
-            externalConflict = true
-            saveStatus = "External conflict · edits protected"
-        } catch { report(error) }
-        saving = false
-        updateTitle()
-        if isDirty && !externalConflict { contentChanged() }
-    }
-
     func prepareNavigation(allowGitOperation: Bool = false) async -> Bool {
         guard !isSyncSuspended else { return false }
         guard !gitBusy || allowGitOperation else {
@@ -386,37 +320,6 @@ final class AppSession {
             return false
         }
         return true
-    }
-
-    func reloadFromDisk() async {
-        guard !isSyncSuspended, !busy, !saving, !isClosing else { return }
-        NSApplication.shared.keyWindow?.makeFirstResponder(nil)
-        guard await flushPreviewEdits(), !isSyncSuspended, !busy, !saving, !isClosing else { return }
-        guard let url = documentURL else { return }
-        busy = true
-        defer { busy = false }
-        if isDirty {
-            let alert = NSAlert()
-            alert.messageText = L10n.text("Discard your edits and reload the file?")
-            alert.addButton(withTitle: L10n.text("Reload"))
-            alert.addButton(withTitle: L10n.text("Cancel"))
-            guard alert.runModal() == .alertFirstButtonReturn else { return }
-        }
-        let previousContent = content
-        do {
-            let loaded = try await documents.read(url)
-            guard !stopped, !isSyncSuspended, documentURL == url else { return }
-            guard content == previousContent else {
-                externalConflict = true
-                saveStatus = "External conflict · edits protected"
-                return
-            }
-            snapshot = loaded
-            content = loaded.content
-            externalConflict = false
-            saveStatus = "Saved · local file"
-            updateTitle()
-        } catch { externalConflict = true; report(error) }
     }
 
     func checkExternalChanges() async {
