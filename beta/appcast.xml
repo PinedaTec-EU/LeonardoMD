@@ -2,7 +2,33 @@
 <rss xmlns:leonardo="https://pinedatec.eu/xml-namespaces/leonardo" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>LeonardoMD</title>
-        <item leonardo:channel="stable">
+        <item leonardo:channel="beta">
+            <title>0.1.435</title>
+            <pubDate>Mon, 19 Oct 2026 11:37:52 +0200</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>435</sparkle:version>
+            <sparkle:shortVersionString>0.1.435</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">## Open Leonardo documents and forms
+
+- Author open `.mdlf` documents with versioned JSON metadata and Markdown content. Ordinary `.md` files retain standard Markdown behavior.
+- Export `.mdlr` forms that open ready to fill, with typed fields, validation and answers stored separately from the document body. Draft answers can be saved before validation is complete.
+- Configure backgrounds, image sizing and placement, and table widths.
+- Transport documents and local assets in conventional `.mdlz` ZIP packages. Work directly in the package or extract to a chosen folder; visible indicators show the working format, mode and save target.
+- Preserve package assets, external-change conflicts and source documents across save/export operations.
+- Keep preference scope inside the active tab; package-open and migration settings apply across the Mac.
+- Use the included Codex/Claude plugin contract and Python helper to generate, validate, inspect, extract and repack MDLZ.
+
+To receive beta updates, choose Beta in Preferences → Updates. Fresh installations keep Stable selected until you opt in.
+
+This beta is intended for validation of the new document workflows. Hosted update/install/relaunch acceptance is tracked separately; publication does not claim those checks or install the application on the maintainer’s Mac.
+
+Source change: https://github.com/PinedaTec-EU/LeonardoMD/pull/168
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.435/LeonardoMD-0.1.435.zip" length="16296415" type="application/octet-stream" sparkle:edSignature="3E+WLug8TudHyjxG7ZSSJvPQSgQv1Bd3ScZtu9R+rbqA4ZvU5ZA1BuG/5cGBxBA0TRvTBELjxFnmQRdDY4YKBQ==" />
+        </item>
+    <item leonardo:channel="stable">
             <title>0.1.405</title>
             <pubDate>Sat, 17 Oct 2026 18:11:11 +0200</pubDate>
             <sparkle:version>405</sparkle:version>
@@ -22,27 +48,6 @@ Stable release for Apple silicon (arm64), macOS 14 or later. Developer ID signed
 Promotes beta 0.1.404, validated by the owner with confirmation that duplicate entries are resolved. The functional code and dependencies are unchanged; a new higher build is used for stable updates. General updater channel-matrix acceptance remains tracked separately in issues #15 and #84.
 </description>
             <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.405/LeonardoMD-0.1.405.zip" length="15852531" type="application/octet-stream" sparkle:edSignature="n6Twuj0VZZ29gqeCVkuhsmIwYqG7u22OXSofrlZUnTy2LMKBuuZNieXD6X/UP0iyMKVY5iv/pFXQ5fI4nNb/BQ==" />
-        </item>
-    <item leonardo:channel="beta">
-            <title>0.1.404</title>
-            <pubDate>Sat, 17 Oct 2026 16:12:00 +0200</pubDate>
-            <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>404</sparkle:version>
-            <sparkle:shortVersionString>0.1.404</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">## Fixed
-
-- Prevent duplicate recent project and workspace entries when the same folder is opened through URL forms with or without a trailing slash.
-- Remove existing duplicate history when preferences are loaded, while preserving recency order and favorite stars.
-
-## Distribution
-
-Signed and notarized macOS arm64 beta. Select Beta in Preferences → Updates to subscribe. This prerelease does not replace the stable channel.
-
-Hosted update/install/relaunch acceptance remains pending; publication alone does not assert it passed.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.404/LeonardoMD-0.1.404.zip" length="15852524" type="application/octet-stream" sparkle:edSignature="SiTGP8CjpoXj29tofW66JaVvRZ37iS0Ir/lHNXfSkUKj/T2zaXtLsBG1/Sp3ERCzy3DlySUQyTZu0zzdAVZkCQ==" />
         </item>
     </channel>
 </rss>
