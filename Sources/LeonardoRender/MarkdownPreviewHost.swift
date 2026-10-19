@@ -127,7 +127,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         if configuration.allowsFormFilling {
             guard renderWorkItem == nil else { return true }
             do {
-                let snapshot = try await webView.evaluateJavaScript("window.LeonardoForms.snapshot()")
+                guard let snapshot = try await webView.evaluateJavaScript("window.LeonardoForms.snapshot()") else { return false }
                 guard self.webView === webView, configuration.allowsFormFilling else { return false }
                 return applyFormSnapshot(snapshot)
             } catch { return false }
@@ -159,6 +159,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             }
         }
         defer { timeoutTask.cancel() }
+        guard await flushEdits() else { throw MarkdownRenderError.invalidPayload }
         try await flushPendingRender()
         try await waitUntilReady()
         try await renderAllDiagramsForPDF()

@@ -119,11 +119,14 @@ Edita los campos sobre el documento. Los marcados con * son obligatorios. Pulsa 
 
 ## Datos principales
 
-| Solicitante | Contacto |
-| --- | --- |
-| {{field:name}} | {{field:email}} |
-| {{field:website}} | {{field:date}} |
-| {{field:hours}} | {{field:priority}} |
+{{field:name}}
+{{field:email}}
+
+{{field:website}}
+{{field:date}}
+
+{{field:hours}}
+{{field:priority}}
 
 ## Detalles del servicio
 

@@ -303,7 +303,10 @@ MDLZ validation also limits distinct implicit parent directories to 2,048, rejec
 Choose **Fill form** to edit declared fields directly at their `{{field:id}}`
 positions in the rendered document. The source padlock protects source editing;
 it does not prevent filling writable declared fields. Repeated placeholders
-share one value. Each field has a keyboard-accessible **?** help button,
+share one value. A paragraph containing only placeholders becomes a responsive
+form row in Fill mode; put two placeholders in the same paragraph for two
+columns when space permits. Prose and authored tables keep their layout.
+Each field has a keyboard-accessible **?** help button,
 including read-only fields. Its contextual sidebar explains the selected field
 and separately reports editable/read-only and required/optional. It contains no
 duplicate input controls; close it to recover document space.

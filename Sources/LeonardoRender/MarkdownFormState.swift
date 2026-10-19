@@ -22,10 +22,8 @@ struct MarkdownFormState {
             default: return nil
             }
         }
-        return changes
+        // A second flush (for example during tab close) must be a no-op
+        // after the same values were already acknowledged by the session.
+        return changes.filter { document.metadata.values[$0.key] != $0.value }
     }
-}
-
-public enum MarkdownFormLabels {
-    public static let keys = ["Read only", "Required", "Optional", "Help for", "Yes", "No"]
 }

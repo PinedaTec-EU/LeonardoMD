@@ -36,9 +36,11 @@ final class InlineFormTests: XCTestCase {
         (() => {
           const name = document.querySelector('[data-field-input="name"]');
           name.focus(); name.dataset.focusProof = 'kept';
-          for (const value of ['A', 'Ada ', 'Ada ñ', 'Ada 漢字']) {
+          for (const value of ['A', 'Ada ', 'Ada ñ']) {
             name.value = value; name.dispatchEvent(new InputEvent('input', {bubbles:true}));
           }
+          name.value = 'Ada 漢字';
+          name.dispatchEvent(new InputEvent('input', {bubbles:true, isComposing:true}));
           const email = document.querySelector('[data-field-input="email"]');
           email.value = 'invalid'; email.dispatchEvent(new InputEvent('input', {bubbles:true}));
           const toggle = document.querySelector('[data-field-input="notifications"]');
@@ -79,7 +81,14 @@ final class InlineFormTests: XCTestCase {
             try await capture(web: web, session: session, output: output, pdf: pdf)
         }
         await session.setDocumentMode(.preview)
-        try await waitFor("document.querySelectorAll('[data-field-input]').length === 0 && document.body.textContent.includes('Ada 漢字')", in: web)
+        XCTAssertEqual(session.mode, .preview)
+        var previewWeb = web
+        for _ in 0..<100 {
+            previewWeb = try await webView(in: host)
+            if previewWeb !== web { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        try await waitFor("document.querySelectorAll('[data-field-input]').length === 0 && document.body.textContent.includes('Ada 漢字')", in: previewWeb)
         XCTAssertFalse(session.updateLeonardoField("name", text: "blocked"))
         await session.openDocument(url)
         XCTAssertEqual(session.leonardoFieldText("name"), "Ada 漢字")
@@ -90,13 +99,23 @@ final class InlineFormTests: XCTestCase {
         let destination = URL(fileURLWithPath: output).appendingPathComponent("inline-forms")
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
         try pdf.write(to: destination.appendingPathComponent("form.pdf"))
-        let image = try await web.takeSnapshot(configuration: nil)
-        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
-        try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: destination.appendingPathComponent("document.png"))
-        for field in ["email", "reference"] {
-            session.showLeonardoFieldHelp(field)
-            let panel = NSHostingView(rootView: LeonardoFieldHelp(session: session).modifier(SessionAppearance(session: session)))
-            try await NativeViewCaptureSupport.capture(panel, size: NSSize(width: 320, height: 800), to: destination.appendingPathComponent("help-\(field).png"))
+        for (name, palette): (String, PaletteID) in [("light", .leonardoClassic), ("dark", .graphiteGlass)] {
+            session.globalPreferences.palette = palette
+            session.globalPreferences.paperEffect = .solid
+            let background = session.renderConfiguration.appearance.backgroundHex
+            for _ in 0..<100 {
+                let actual = try await web.evaluateJavaScript("document.documentElement.style.getPropertyValue('--ld-background')") as? String
+                if actual == background { break }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            let image = try await web.takeSnapshot(configuration: nil)
+            let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
+            try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: destination.appendingPathComponent("document-\(name).png"))
+            for field in ["email", "reference"] {
+                session.showLeonardoFieldHelp(field)
+                let panel = NSHostingView(rootView: LeonardoFieldHelp(session: session).modifier(SessionAppearance(session: session)))
+                try await NativeViewCaptureSupport.capture(panel, size: NSSize(width: 320, height: 800), to: destination.appendingPathComponent("help-\(field)-\(name).png"))
+            }
         }
         let sha = ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local-working-tree"
         try "Head: \(sha)\nSurface: real native WorkspaceView / WKWebView (1440x1024 points window), separate native field-help panels (320x800 points)\nFixture: synthetic form showcase; all types, repeated text, invalid email draft, switch on; editable and read-only help\nLimits: hosted XCTest component validation, no fresh packaged process claim; owner’s running app untouched\n".write(to: destination.appendingPathComponent("provenance.txt"), atomically: true, encoding: .utf8)

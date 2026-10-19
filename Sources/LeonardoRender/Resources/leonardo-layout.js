@@ -146,6 +146,7 @@
       const metadata = payload.leonardo;
       window.LeonardoForms.begin(payload, root);
       fillText(root, metadata);
+      window.LeonardoForms.layoutRows(root);
       window.LeonardoForms.showDiagnostics(payload.formDiagnostics || {});
       const layout = metadata.layout || {};
       applyImages(root, layout.images);

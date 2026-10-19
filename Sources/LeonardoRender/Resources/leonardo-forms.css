@@ -6,7 +6,10 @@
   --ld-field-readonly: color-mix(in srgb, var(--ld-text) 6%, var(--ld-background));
 }
 .leonardo-form-field { display: inline-flex; flex-direction: column; gap: 6px; min-width: min(100%, 15em); max-width: 100%; margin: 4px 0; vertical-align: top; border: 0; font-size: 0.95em; }
-p > .leonardo-form-field:only-child { display: flex; width: 100%; }
+.leonardo-form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 20px 28px; }
+.leonardo-form-row > [data-leonardo-edit] { display: contents; }
+.leonardo-form-row .leonardo-form-field { display: flex; width: 100%; min-width: 0; }
+.leonardo-form-row .leonardo-form-readonly { max-width: 20em; }
 .leonardo-field-label { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.85em; font-weight: 600; }
 .leonardo-field-help { appearance: none; border: 1px solid var(--ld-field-muted); color: var(--ld-field-muted); background: transparent; border-radius: 50%; width: 22px; height: 22px; padding: 0; line-height: 20px; font: inherit; cursor: pointer; }
 .leonardo-field-help:hover, .leonardo-field-help[aria-pressed="true"] { background: var(--ld-field-readonly); color: var(--ld-accent); border-color: var(--ld-accent); }
@@ -24,9 +27,11 @@ input.leonardo-form-switch:checked::after { transform: translateX(15px); backgro
 .leonardo-field-diagnostic { font-size: 0.8em; color: var(--ld-text); border-left: 2px solid var(--ld-accent); padding-left: 7px; white-space: normal; }
 .leonardo-field-diagnostic:empty { display: none; }
 .leonardo-form-export .leonardo-field-label, .leonardo-form-export .leonardo-form-input, .leonardo-form-export .leonardo-field-diagnostic { display: none; }
+.leonardo-form-export .leonardo-form-row { display: block; }
 .leonardo-form-export .leonardo-form-field { display: inline; min-width: 0; margin: 0; }
 .leonardo-form-export .leonardo-form-field > .leonardo-field-output { display: inline; background: none; padding: 0; }
 @media print {
+  .leonardo-form-row { display: block; }
   .leonardo-field-label, .leonardo-form-input, .leonardo-field-diagnostic { display: none; }
   .leonardo-form-field { display: inline; min-width: 0; margin: 0; }
   .leonardo-form-field > .leonardo-field-output { display: inline; background: none; padding: 0; }

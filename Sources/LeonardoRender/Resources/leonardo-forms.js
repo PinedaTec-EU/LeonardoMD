@@ -10,7 +10,10 @@
     return typeof value === "object" ? "" : String(value);
   };
   function post(name, body) { window.webkit?.messageHandlers?.[name]?.postMessage(body); }
-  function snapshot() { return { source: payload.source || "", changes }; }
+  function snapshot() {
+    for (const [fieldID, value] of Object.entries(changes)) synchronize(fieldID, value, document.activeElement);
+    return { source: payload.source || "", changes };
+  }
   function inputValue(input, field) {
     if (field.type === "checkbox") return input.checked;
     const text = input.value;
@@ -39,6 +42,7 @@
   function makeInput(fieldID, field, value, id) {
     const input = document.createElement(field.type === "multiline" ? "textarea" : field.type === "select" ? "select" : "input");
     input.id = id;
+    input.lang = payload.leonardo?.document?.locale || "en";
     input.className = "leonardo-form-input";
     input.dataset.fieldInput = fieldID;
     if (field.type === "select") {
@@ -58,11 +62,21 @@
       if (field.type === "number") input.inputMode = "decimal";
       if (field.type === "date" && value && !/^\d{4}-\d\d-\d\d$/.test(String(value))) input.type = "text";
     }
-    if (field.type !== "checkbox") input.value = value === null || value === undefined ? "" : String(value);
+    if (field.type !== "checkbox") {
+      input.value = value === null || value === undefined ? "" : String(value);
+      if (field.type === "date" && value && input.value !== String(value)) {
+        input.type = "text"; input.value = String(value);
+      }
+    }
     if (field.placeholder) input.placeholder = field.placeholder;
     input.setAttribute("aria-required", String(!!field.required));
     const event = ["select", "checkbox"].includes(field.type) ? "change" : "input";
-    input.addEventListener(event, e => { if (!e.isComposing) commit(fieldID, field, input); });
+    input.addEventListener(event, e => {
+      // Keep IME input available to a synchronous save flush, but do not
+      // publish/rewrite the composing control until composition completes.
+      if (e.isComposing) changes[fieldID] = inputValue(input, field);
+      else commit(fieldID, field, input);
+    });
     input.addEventListener("compositionend", () => commit(fieldID, field, input));
     return input;
   }
@@ -96,6 +110,8 @@
       if (field.readOnly) {
         wrapper.classList.add("leonardo-form-readonly");
         output.id = id;
+        output.setAttribute("role", "textbox"); output.setAttribute("aria-readonly", "true");
+        output.setAttribute("aria-label", field.label || fieldID);
         const badge = document.createElement("span"); badge.className = "leonardo-field-status"; badge.textContent = label("Read only");
         header.append(badge); wrapper.append(output);
       } else {
@@ -109,6 +125,16 @@
       const entries = controls.get(fieldID) || [];
       entries.push({input, output, diagnostic, field}); controls.set(fieldID, entries);
       return wrapper;
+    },
+    layoutRows(container) {
+      // A paragraph containing only fields is a form row. Prose and tables
+      // retain their authored layout; no metadata or source rewriting is needed.
+      for (const paragraph of container.querySelectorAll("p")) {
+        if (!paragraph.querySelector(".leonardo-form-field")) continue;
+        const copy = paragraph.cloneNode(true);
+        copy.querySelectorAll(".leonardo-form-field").forEach(field => field.remove());
+        if (!copy.textContent.trim() && !copy.querySelector("img, code, pre")) paragraph.classList.add("leonardo-form-row");
+      }
     },
     snapshot,
     showDiagnostics(diagnostics) {
