@@ -512,8 +512,9 @@ def validate_document(path: Path, *, schema_path: Path | None = None) -> dict[st
     metadata = _parse_format_front_matter(text)
     document_metadata = metadata.get("document")
     kind = document_metadata.get("kind") if isinstance(document_metadata, dict) else None
-    if suffix == ".mdlr" and kind != "form":
-        raise ArchiveError(".mdlr documents must declare document.kind as form")
+    # The suffix is an opening-mode hint. The shared MDLF schema remains the
+    # source of semantic truth, so a valid document-kind document is still
+    # readable when it has been named .mdlr by a producer or transport step.
     fields = metadata.get("fields")
     values = metadata.get("values")
     if fields is not None and not isinstance(fields, dict):

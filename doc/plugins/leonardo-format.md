@@ -76,7 +76,9 @@ EOF
 
 An exported response keeps that definition and body, replaces `values` with
 the current answers, and uses `.mdlr`. Preserve the field IDs and leave
-`document.kind` as `form`; the extension gives agents the fill-mode hint.
+`document.kind` as `form` when generating a form. The extension gives agents
+the fill-mode hint; readers still use the shared MDLF schema and accept a
+valid `.mdlr` whose metadata kind is `document`.
 
 ```bash
 mkdir -p ./request-package/assets

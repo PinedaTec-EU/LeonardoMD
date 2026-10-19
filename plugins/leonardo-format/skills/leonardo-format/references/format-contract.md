@@ -44,7 +44,9 @@ the canonical schema. Field identifiers are stable keys; the Markdown body
 references them as `{{field:customerName}}`. Form values are outside the body,
 so filling a form does not rewrite its prose or field definition. A `.mdlr`
 export normally carries `document.kind: "form"`; the extension additionally
-provides the fill-mode opening hint.
+provides the fill-mode opening hint. Readers use the same schema for both
+suffixes and must accept a valid MDLF document named `.mdlr` even when its
+metadata kind is `document`.
 
 An MDLZ package is conventional transport. It must contain exactly one root
 document with a lowercase `.mdlf` or `.mdlr` suffix and may contain regular

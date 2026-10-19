@@ -171,6 +171,30 @@ class MDLZHelperTests(unittest.TestCase):
             with self.assertRaisesRegex(mdlz.ArchiveError, "unsupported"):
                 mdlz.validate_document(unsupported)
 
+    def test_mdlr_extension_is_only_an_opening_mode_hint(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            document = root / "document.mdlr"
+            document.write_text(DOCUMENT.replace('"kind": "form"', '"kind": "document"'), encoding="utf-8")
+
+            result = mdlz.validate_document(document)
+
+            self.assertEqual(result["extension"], ".mdlr")
+            self.assertEqual(result["documentKind"], "document")
+
+    def test_duplicate_front_matter_keys_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            document = Path(temporary) / "duplicate.mdlf"
+            document.write_text(
+                "---\n"
+                '{"format": "mdlf", "format": "mdlf", "formatVersion": 1}\n'
+                "---\n\n# Duplicate\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(mdlz.ArchiveError, "duplicate metadata key"):
+                mdlz.validate_document(document)
+
     def test_schema_validation_is_optional_and_explicit(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -24,6 +24,9 @@ MDLR uses the same schema as MDLF. Exporting a form copies the field
 definitions, body and layout and writes its current values (which may be
 empty). The extension supplies the fill-mode hint; the metadata's
 `document.kind: "form"` makes the intent visible to agents and other tools.
+Readers do not impose a different metadata schema based on the extension;
+they accept a valid MDLF document named `.mdlr` even when its kind is
+`document`. Form generators should still declare `kind: "form"`.
 
 ## File grammar
 
@@ -56,6 +59,11 @@ discarding data it cannot preserve. Arbitrary JSON remains valid inside
 option `value`, image `source`, table `occurrence`, and dimension `value` plus
 `unit`) are required. A future structural extension requires a new
 `formatVersion`.
+
+Duplicate object keys are invalid at every nesting level, including inside
+`values` and `defaultValue`; readers must reject them before dictionary
+conversion can discard an earlier value. Escaped spellings of the same key
+also count as duplicates.
 
 The public portable Swift contract is:
 

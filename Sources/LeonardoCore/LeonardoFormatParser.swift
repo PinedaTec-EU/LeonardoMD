@@ -13,6 +13,7 @@ public enum LeonardoFormatParser {
         guard let data = parts.metadata.data(using: .utf8) else {
             throw LeonardoFormatError.invalidMetadataJSON
         }
+        try LeonardoJSONDuplicateKeyValidator.validate(parts.metadata)
         guard let object = try? JSONSerialization.jsonObject(with: data),
               let dictionary = object as? [String: Any] else {
             throw LeonardoFormatError.invalidMetadataJSON
@@ -77,6 +78,11 @@ public enum LeonardoFormatParser {
     public static func detect(_ source: String) -> LeonardoFormatDetection {
         guard let parts = try? splitFrontMatter(source) else { return .markdown }
         guard let data = parts.metadata.data(using: .utf8) else { return .markdown }
+        do {
+            try LeonardoJSONDuplicateKeyValidator.validate(parts.metadata)
+        } catch {
+            return containsLeonardoMarker(parts.metadata) ? .malformedLeonardo : .markdown
+        }
         guard let object = try? JSONSerialization.jsonObject(with: data),
               let dictionary = object as? [String: Any] else {
             return containsLeonardoMarker(parts.metadata) ? .malformedLeonardo : .markdown

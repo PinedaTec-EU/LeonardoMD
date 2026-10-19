@@ -81,6 +81,75 @@ final class LeonardoFormatTests: XCTestCase {
         }
     }
 
+    func testRejectsDuplicateRootMetadataKeysBeforeDictionaryConversion() {
+        let source = "---\n{\"format\":\"mdlf\",\"formatVersion\":1,\"format\":\"mdlf\"}\n---\nBody"
+        XCTAssertThrowsError(try LeonardoFormatParser.parse(source)) { error in
+            XCTAssertEqual(error as? LeonardoFormatError, .invalidMetadataJSON)
+        }
+        XCTAssertEqual(LeonardoFormatParser.detect(source), .malformedLeonardo)
+    }
+
+    func testRejectsDuplicateKeysInsideFieldDefinitions() {
+        let source = "---\n{\"format\":\"mdlf\",\"formatVersion\":1,\"fields\":{\"name\":{\"type\":\"text\",\"type\":\"email\"}}}\n---\nBody"
+        XCTAssertThrowsError(try LeonardoFormatParser.parse(source)) { error in
+            XCTAssertEqual(error as? LeonardoFormatError, .invalidMetadataJSON)
+        }
+    }
+
+    func testRejectsDuplicateKeysInsideNestedOpaqueValues() {
+        let source = "---\n{\"format\":\"mdlf\",\"formatVersion\":1,\"values\":{\"payload\":{\"items\":[{\"name\":1,\"name\":2}]}}}\n---\nBody"
+        XCTAssertThrowsError(try LeonardoFormatParser.parse(source)) { error in
+            XCTAssertEqual(error as? LeonardoFormatError, .invalidMetadataJSON)
+        }
+    }
+
+    func testRejectsEscapedSpellingsOfDuplicateKeys() {
+        let source = #"""
+        ---
+        {"format":"mdlf","formatVersion":1,"values":{"\u0070ayload":1,"payload":2}}
+        ---
+        Body
+        """#
+        XCTAssertThrowsError(try LeonardoFormatParser.parse(source)) { error in
+            XCTAssertEqual(error as? LeonardoFormatError, .invalidMetadataJSON)
+        }
+    }
+
+    func testRejectsIncompleteOrTrailingMetadataBeforeDictionaryConversion() {
+        for metadata in [
+            "{\"format\":\"mdlf\",\"formatVersion\":1,}",
+            "{\"format\":\"mdlf\",\"formatVersion\":1} true",
+            "\u{FEFF}{\"format\":\"mdlf\",\"formatVersion\":1,\"values\":{\"a\":1,\"a\":2}}"
+        ] {
+            XCTAssertThrowsError(try LeonardoFormatParser.parse("---\n" + metadata + "\n---\nBody")) {
+                XCTAssertEqual($0 as? LeonardoFormatError, .invalidMetadataJSON)
+            }
+        }
+    }
+
+    func testAllowsRepeatedKeysInSeparateObjects() throws {
+        let source = """
+        ---
+        {
+          "format": "mdlf",
+          "formatVersion": 1,
+          "fields": {
+            "first": { "type": "text", "label": "First" },
+            "second": { "type": "text", "label": "Second" }
+          },
+          "values": {
+            "first": { "label": "one" },
+            "second": { "label": "two" }
+          }
+        }
+        ---
+        Body
+        """
+        let document = try LeonardoFormatParser.parse(source)
+        XCTAssertEqual(document.metadata.fields.count, 2)
+        XCTAssertEqual(document.metadata.values.count, 2)
+    }
+
     func testVersionAndFormatFailuresAreExplicit() throws {
         let future = "---\n{\"format\":\"mdlf\",\"formatVersion\":2}\n---\nBody"
         XCTAssertEqual(LeonardoFormatParser.detect(future), .leonardo(version: 2))

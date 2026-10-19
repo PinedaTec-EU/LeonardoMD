@@ -117,9 +117,11 @@ EOF
 
 When the form is exported for a recipient, preserve the same front matter and
 body, put the current answers in `values`, and use `.mdlr` as the output
-extension. The metadata must still declare `document.kind` as `form`; the
-extension changes the default opening mode to fill fields. Keep field IDs
-stable while changing labels or presentation.
+extension. Form generators should declare `document.kind` as `form`; the
+extension changes the default opening mode to fill fields. Readers use the
+same MDLF schema for both suffixes and must accept a valid `.mdlr` whose
+metadata kind is `document`. Keep field IDs stable while changing labels or
+presentation.
 
 ```bash
 mkdir -p ./request-package/assets
