@@ -92,7 +92,7 @@ final class SessionRenderingPackageAssetTests: XCTestCase {
             Preview and PDF: both use the captured renderConfiguration.localAssetRoot
             Active project: \(project.path)
             Package source: \(package.path)
-            Provenance head: \(ProcessInfo.processInfo.environment["GITHUB_SHA"] ?? ProcessInfo.processInfo.environment["CI_COMMIT_SHA"] ?? "unknown")
+            Provenance head: \(ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? ProcessInfo.processInfo.environment["GITHUB_SHA"] ?? ProcessInfo.processInfo.environment["CI_COMMIT_SHA"] ?? "unknown")
             Evidence root: \(evidenceDirectory.path)
             """
             try context.write(to: evidenceDirectory.appendingPathComponent("capture-context.txt"), atomically: true, encoding: .utf8)
