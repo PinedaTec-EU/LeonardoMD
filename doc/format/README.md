@@ -191,4 +191,3 @@ explicit user choice; a package can also be worked on in an application-owned
 temporary directory and rewritten on save. When a user chooses extraction,
 Leonardo works on the extracted MDLF/MDLR and requires **Export package…** to
 create a new MDLZ.
-
