@@ -44,3 +44,5 @@ layout safety, portable patterns, opaque invalid draft answers, Unicode archive
 collisions and the shared 64 MiB archive / 32 MiB expansion limits.
 
 Secure-extraction regressions cover exclusive destination claims against files, symlinks and directories; retargeted parent/child paths; ownership-aware failure cleanup and temporary discard; and path/directory expansion limits. The tests use per-call scheduling hooks, with no shared mutable race state. Plugin extraction fails before effects on hosts without descriptor-relative no-follow support; read/validation/packing remain available.
+
+PR capture tests prefer `EVIDENCE_SHA`, set to the checked-out pull-request head by CI, over the event's synthetic merge SHA. Directory-alias regressions include distinct NFC/NFD spellings of a shared parent, in addition to case folding.
