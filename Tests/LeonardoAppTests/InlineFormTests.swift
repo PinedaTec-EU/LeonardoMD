@@ -83,7 +83,7 @@ final class InlineFormTests: XCTestCase {
         let interactiveAgain = try await web.evaluateJavaScript("!document.querySelector('main').classList.contains('leonardo-form-export')") as? Bool
         XCTAssertEqual(interactiveAgain, true)
         if let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
-            try await capture(web: web, session: session, output: output, pdf: pdf)
+            try await capture(web: web, host: host, session: session, output: output, pdf: pdf)
         }
         await session.setDocumentMode(.preview)
         XCTAssertEqual(session.mode, .preview)
@@ -98,6 +98,23 @@ final class InlineFormTests: XCTestCase {
         await session.openDocument(url)
         XCTAssertEqual(session.leonardoFieldText("name"), "Ada 漢字")
         XCTAssertEqual(session.leonardoFieldBool("notifications"), true)
+        await session.setDocumentMode(.fill)
+        var numericWeb = previewWeb
+        for _ in 0..<100 {
+            numericWeb = try await webView(in: host)
+            if numericWeb !== previewWeb { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        try await waitFor("document.querySelector('[data-field-input=\"hours\"]') !== null", in: numericWeb)
+        for draft in ["1.", "1.e2", "1e", "1e+", "-", ".", "-."] {
+            let literal = String(data: try JSONEncoder().encode(draft), encoding: .utf8)!
+            _ = try await numericWeb.evaluateJavaScript("(() => { const n = document.querySelector('[data-field-input=\"hours\"]'); n.value = \(literal); n.dispatchEvent(new InputEvent('input', {bubbles:true})); })()")
+            await session.save()
+            let persisted = try LeonardoFormatParser.parse(String(contentsOf: url, encoding: .utf8))
+            XCTAssertEqual(persisted.metadata.values["hours"], .string(draft))
+        }
+        await session.openDocument(url)
+        XCTAssertEqual(session.leonardoFieldText("hours"), "-.")
         // A callback retained by the previous view cannot write to another
         // file even when the full source bytes happen to be identical.
         _ = try await webView(in: host)
@@ -118,7 +135,7 @@ final class InlineFormTests: XCTestCase {
         XCTAssertFalse(session.showInspector)
     }
 
-    private func capture(web: WKWebView, session: AppSession, output: String, pdf: Data) async throws {
+    private func capture(web: WKWebView, host: NSView, session: AppSession, output: String, pdf: Data) async throws {
         let destination = URL(fileURLWithPath: output).appendingPathComponent("inline-forms")
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
         try pdf.write(to: destination.appendingPathComponent("form.pdf"))
@@ -144,12 +161,18 @@ final class InlineFormTests: XCTestCase {
             _ = try await web.evaluateJavaScript("window.scrollTo(0, 0)")
             for field in ["email", "reference"] {
                 session.showLeonardoFieldHelp(field)
+                try await Task.sleep(for: .milliseconds(250))
+                host.layoutSubtreeIfNeeded()
+                host.displayIfNeeded()
+                let integrated = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                host.cacheDisplay(in: host.bounds, to: integrated)
+                try XCTUnwrap(integrated.representation(using: .png, properties: [:])).write(to: destination.appendingPathComponent("workspace-\(field)-\(name).png"))
                 let panel = NSHostingView(rootView: LeonardoFieldHelp(session: session).modifier(SessionAppearance(session: session)))
                 try await NativeViewCaptureSupport.capture(panel, size: NSSize(width: 320, height: 800), to: destination.appendingPathComponent("help-\(field)-\(name).png"))
             }
         }
         let sha = ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local-working-tree"
-        try "Head: \(sha)\nSurface: real native WorkspaceView / WKWebView (1440x1024 points window), separate native field-help panels (320x800 points)\nFixture: synthetic form showcase; all types, repeated text, invalid email draft, switch on; editable and read-only help\nLimits: hosted XCTest component validation, no fresh packaged process claim; owner’s running app untouched\n".write(to: destination.appendingPathComponent("provenance.txt"), atomically: true, encoding: .utf8)
+        try "Head: \(sha)\nSurface: real native WorkspaceView / WKWebView (1440x1024 points window), integrated selected field-help sidebar and separate detail panels (320x800 points)\nFixture: synthetic form showcase; all types, repeated text, invalid email draft, switch on; editable and read-only help\nLimits: hosted XCTest component validation, no fresh packaged process claim; owner’s running app untouched\n".write(to: destination.appendingPathComponent("provenance.txt"), atomically: true, encoding: .utf8)
     }
 
     private func webView(in view: NSView) async throws -> WKWebView {

@@ -23,7 +23,8 @@ cover the shared guarded form updates through MDLZ save/reopen.
 
 With `LEONARDO_VISUAL_EVIDENCE=/absolute/output/path` and `EVIDENCE_SHA=<full-head>`,
 the native test writes `inline-forms/` with real light/dark WebKit document
-captures (upper/lower scroll positions), separate native editable/read-only help
+captures (upper/lower scroll positions), integrated WorkspaceView captures with
+selected editable/required and read-only/optional help, separate native help
 panels, PDF and provenance. CI supplies both variables and uploads the directory
 in its exact-head preview artifact. Compare those captures to the approved mock;
 mock images are design references, never validation evidence. Wait until the actual
@@ -45,7 +46,8 @@ an app. Fresh-process QA, when independently authorized and possible, must use
 3. Consult Correo, then Referencia: the sidebar must switch from editable/required
    to read-only/optional. Close the panel and continue editing.
 4. Enter invalid email, code and out-of-range hours; verify inline diagnostics.
-   Save the draft, reopen it, correct the values and save again.
+   Save drafts such as `1.`, `1.e2`, `1e+` and `-.`, reopen them without losing
+   their text, then correct the values and save again.
 5. Check that both Nombre occurrences agree and that checkbox/switch values
    persist. Preview and PDF must show values without inputs/help chrome.
 6. Repeat with the light and Graphite Glass palettes and narrow the window to

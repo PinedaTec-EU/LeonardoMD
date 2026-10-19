@@ -21,7 +21,7 @@
     if (!text.trim()) return null;
     // Keep incomplete/invalid numeric drafts as text rather than losing keystrokes.
     const number = Number(text);
-    return Number.isFinite(number) && /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(text.trim()) ? number : text;
+    return Number.isFinite(number) && /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?$/i.test(text.trim()) ? number : text;
   }
   function synchronize(fieldID, value, origin) {
     for (const entry of controls.get(fieldID) || []) {
