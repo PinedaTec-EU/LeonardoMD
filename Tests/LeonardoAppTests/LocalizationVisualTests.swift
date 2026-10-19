@@ -10,6 +10,25 @@ import XCTest
 /// single-instance application or touch another running editor.
 @MainActor
 final class LocalizationVisualTests: XCTestCase {
+    func testCaptureTabBarPreferencesInBothLanguages() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_LOCALIZATION_EVIDENCE"] else {
+            throw XCTSkip("Set LEONARDO_LOCALIZATION_EVIDENCE to export native tab bar captures")
+        }
+        let destination = URL(fileURLWithPath: path, isDirectory: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let fixture = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: fixture) }
+        let documents = DocumentTabs(preferencesURL: fixture.appendingPathComponent("preferences.json"))
+        let previous = LanguageSettings.shared.language
+        defer { documents.stop(); LanguageSettings.shared.language = previous }
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let host = NSHostingView(rootView: DocumentTabsView(documents: documents))
+            try await capture(host, size: NSSize(width: 1260, height: 850),
+                              to: destination.appendingPathComponent("tab-bar-preferences-\(language.rawValue).png"))
+        }
+    }
+
     func testCaptureApplicationIdentityInBothLanguages() async throws {
         guard let path = ProcessInfo.processInfo.environment["LEONARDO_LOCALIZATION_EVIDENCE"] else {
             throw XCTSkip("Set LEONARDO_LOCALIZATION_EVIDENCE to export native interface captures")
