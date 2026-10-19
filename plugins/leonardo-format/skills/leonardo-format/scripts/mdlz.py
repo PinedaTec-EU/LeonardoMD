@@ -463,7 +463,7 @@ def _parse_format_front_matter(text: str) -> dict[str, object]:
     if normalized.startswith("\ufeff"):
         normalized = normalized[1:]
     lines = normalized.split("\n")
-    if not lines or lines[0].strip() != "---":
+    if not lines or lines[0] != "---":
         raise ArchiveError("document is missing Leonardo front matter")
     closing_index = next(
         (index for index, line in enumerate(lines[1:], start=1) if line.strip() in {"---", "..."}),

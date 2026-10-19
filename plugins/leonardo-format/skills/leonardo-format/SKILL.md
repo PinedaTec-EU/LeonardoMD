@@ -154,7 +154,7 @@ document = Path("./request-package/request.mdlf")
 source_ref = "images/logo.png"
 package_ref = "assets/logo.png"
 lines = document.read_text(encoding="utf-8").replace("\r\n", "\n").splitlines(keepends=True)
-if not lines or lines[0].strip() != "---":
+if not lines or lines[0] != "---":
     raise SystemExit("document has no JSON front matter")
 closing = next((index for index, line in enumerate(lines[1:], 1) if line.strip() in {"---", "..."}), None)
 if closing is None:
