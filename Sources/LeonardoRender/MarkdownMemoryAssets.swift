@@ -1,4 +1,5 @@
 import Foundation
+import LeonardoCore
 
 /// Immutable corpus assets; lookup never touches disk or network.
 public final class MarkdownMemoryAssets: Sendable, Equatable {
@@ -13,7 +14,7 @@ public final class MarkdownMemoryAssets: Sendable, Equatable {
         let components = path.split(separator: "/", omittingEmptySubsequences: false)
         guard !path.isEmpty, path.utf8.count <= 4_096, !path.contains("\\"), !path.contains(":"),
               components.allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." }),
-              ["gif", "jpeg", "jpg", "png", "svg", "webp"].contains(url.pathExtension.lowercased()) else { return nil }
+              LeonardoLocalImagePolicy.extensions.contains(url.pathExtension.lowercased()) else { return nil }
         return files[path]
     }
 }

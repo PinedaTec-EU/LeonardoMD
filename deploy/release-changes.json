@@ -507,6 +507,16 @@
       "pr": 253,
       "summary": "Release notes follow the active document theme and use the shared application button style.",
       "to_version": "0.1.574"
+    },
+    {
+      "delta": {
+        "build": 21
+      },
+      "from_version": "0.1.574",
+      "merge_sha": "c7b6c39210bf094126bd19de0e4e62cd736b2d4d",
+      "pr": 245,
+      "summary": "Local document images use bounded loading and preview resolution, while PDF export requests higher resolution without modifying original assets.",
+      "to_version": "0.1.595"
     }
   ],
   "initial_version": "0.1.56",
@@ -517,5 +527,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.574"
+  "version": "0.1.595"
 }

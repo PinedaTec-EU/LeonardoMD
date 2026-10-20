@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.595
+
+- #243 Fixed: bound document image loading and raster resolution ([#245](https://github.com/PinedaTec-EU/LeonardoMD/pull/245))
+
+<p>Local document images use bounded loading and preview resolution, while PDF export requests higher resolution without modifying original assets.</p>
+
+Source: `c7b6c39210bf094126bd19de0e4e62cd736b2d4d`. Delta: `{"build": 21}`.
+
 ## 0.1.574
 
 - #252 Fixed: theme release notes with the owning document ([#253](https://github.com/PinedaTec-EU/LeonardoMD/pull/253))
