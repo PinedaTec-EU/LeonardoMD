@@ -10,22 +10,29 @@
             <sparkle:shortVersionString>0.1.476</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">## Formularios editables sobre el documento
+            <description sparkle:format="markdown"># LeonardoMD 0.1.476
 
-- Rellena los ocho tipos de campo directamente en el documento, con controles visibles, validaciones y sincronización de campos repetidos.
-- Consulta la ayuda con (?). El panel lateral muestra al pie si el campo es editable o de solo lectura y obligatorio u opcional.
-- Incluye un ejemplo completo de formulario y respuesta, con casillas, interruptores, valores iniciales y restricciones.
-- Conserva el guardado manual y los borradores incompletos; Preview y PDF muestran los valores sin controles.
-- Incluye la limpieza de metadatos opcionales vacíos integrada desde la beta anterior.
+## Editable forms in the document
 
-Las fórmulas y los campos calculados quedan para una próxima versión (#203).
+- Fill all eight field types directly in the document, with visible controls, validation and synchronization of repeated fields.
+- Open field help with (?). The side panel identifies editable/read-only and required/optional fields.
+- Try the complete form and response example, including checkboxes, switches, initial values and constraints.
+- Save incomplete drafts manually. Preview and PDF show values without editing controls.
+- Includes the optional-empty-metadata cleanup from the previous beta.
 
-Beta para macOS Apple Silicon (arm64), firmada con Developer ID y notarizada por Apple. La publicación no sustituye la instalación de este Mac. La aceptación real de actualización, instalación y relanzamiento queda pendiente.
+Calculated fields and formulas are planned separately and are not included.
 
-Cambio principal: #206 / PR #207. Revisión independiente y validaciones: https://github.com/PinedaTec-EU/LeonardoMD/pull/207#issuecomment-6279354170
+## Installation and updates
 
-Versión: 0.1.476 · build 476 · canal beta.
-Fuente inmutable: `c24315e78495b4107bbdfd5d98f05ee85fde36ea`.
+Beta for Apple Silicon (arm64), macOS 14 or later. Developer ID signed and notarized by Apple.
+
+To receive beta updates, select **Beta** in Preferences → Updates. Stable remains the default subscription.
+
+Update detection and installation are maintainer-confirmed. **Known limitation:** the active instance can remain open when updating from Preferences. Save your work, close Preferences, and quit normally to let the pending update complete. [Termination issue #202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202).
+
+Legacy betas using the former update-signing key require manual installation of a current signed/notarized package. This is separate from normal update installation and does not mean the current feed is unavailable.
+
+[Publication evidence and validation limits](https://github.com/PinedaTec-EU/LeonardoMD/issues/223#issuecomment-6288007726). Notes clarified on 2026-10-20; original archive, version and channel are unchanged.
 </description>
             <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.476/LeonardoMD-0.1.476.zip" length="16321702" type="application/octet-stream" sparkle:edSignature="qXGqKu7LOmf+L+yLLF0xivyqDqUUcb8ifXhxBOdO6d+dbWXZ0T8LbUPR78n/cwyXG16ErWrMPaoKqqJ1cBw9BA==" />
         </item>
@@ -36,17 +43,25 @@ Fuente inmutable: `c24315e78495b4107bbdfd5d98f05ee85fde36ea`.
             <sparkle:shortVersionString>0.1.405</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">## Improvements and fixes
+            <description sparkle:format="markdown"># LeonardoMD 0.1.405
 
-- Home presents recent documents, projects and workspaces in separate tabs alongside persistent favorites.
-- Larger Leonardo lettering sits behind the Home content without reserving a top band, and the background adapts to smaller windows.
-- Recent projects and workspaces no longer appear twice when the same folder is opened through different URL forms. Existing duplicate history is cleaned on load while preserving order and favorite stars.
+## Home improvements and fixes
 
-## Distribution
+- Browse recent documents, projects and workspaces in separate Home tabs alongside persistent favorites.
+- Home artwork adapts to smaller windows and appears behind the content.
+- Avoid duplicate recent projects/workspaces when opening the same folder through different URL forms. Existing duplicates are cleaned while preserving order and favorites.
 
-Stable release for Apple silicon (arm64), macOS 14 or later. Developer ID signed and Apple-notarized, retaining the existing Sparkle update key.
+This stable release predates MDLF, MDLR, MDLZ and Leonardo forms. Choose a beta whose notes include Leonardo document support to try those workflows.
 
-Promotes beta 0.1.404, validated by the owner with confirmation that duplicate entries are resolved. The functional code and dependencies are unchanged; a new higher build is used for stable updates. General updater channel-matrix acceptance remains tracked separately in issues #15 and #84.
+## Installation and updates
+
+Stable for Apple Silicon (arm64), macOS 14 or later. Developer ID signed and notarized by Apple.
+
+Update detection and installation are maintainer-confirmed. **Known limitation:** the active instance can remain open when updating from Preferences. Save your work, close Preferences, and quit normally to let the pending update complete. [Termination issue #202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202).
+
+Legacy betas using the former update-signing key require manual installation of a current signed/notarized package. This is separate from normal update installation and does not mean the current feed is unavailable.
+
+[Publication evidence and validation limits](https://github.com/PinedaTec-EU/LeonardoMD/issues/223#issuecomment-6288007726). Notes clarified on 2026-10-20; original archive, version and channel are unchanged.
 </description>
             <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.405/LeonardoMD-0.1.405.zip" length="15852531" type="application/octet-stream" sparkle:edSignature="n6Twuj0VZZ29gqeCVkuhsmIwYqG7u22OXSofrlZUnTy2LMKBuuZNieXD6X/UP0iyMKVY5iv/pFXQ5fI4nNb/BQ==" />
         </item>
