@@ -27,10 +27,10 @@ About and the footer share `ApplicationUpdates.versionDisplayText`: numeric vers
 
 Installed publication maturity ([#257](https://github.com/PinedaTec-EU/LeonardoMD/issues/257)) is modeled by `InstalledReleaseMaturity`,
 independent of `ApplicationUpdates.channel` and immutable bundle provenance.
-The owner Mac signs a per-tag `release-maturity.json` after stable promotion with
+The owner Mac signs a per-tag `maturity/v<VERSION>.json` on `update-feeds` after stable promotion with
 Sparkle's existing Keychain key. The runtime verifies the raw payload's Ed25519
 signature using CryptoKit, repository/version/build and executable/resource-seal SHA-256,
 reverifies cached evidence on offline startup, and updates all three installed
 maturity displays observably. Network/invalid evidence cannot mutate subscriptions
 or classify a different build. Linux central promotion alone does not create the
-signed proof; see `doc/releases.md` for the mandatory publication completion step.
+signed proof. No release asset is added, preserving exact-inventory replay; see `doc/releases.md` for the mandatory publication completion step.

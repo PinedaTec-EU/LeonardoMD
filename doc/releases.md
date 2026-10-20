@@ -155,26 +155,28 @@ of verified publication maturity. After the central exact-artifact promotion
 succeeds, the maintainer Mac must complete its signed maturity assertion:
 
 ```bash
-python3 scripts/publish-release-maturity.py --tag v<VERSION> --output output/stable-<VERSION>/release-maturity.json --publish
+python3 scripts/publish-release-maturity.py --tag v<VERSION> --output output/stable-<VERSION>/release-maturity.json --issue-number <ACCEPTANCE_ISSUE> --publish
 ```
 
-Use the concrete accepted numeric version. This command requires a public stable
+Use the concrete accepted numeric version and its canonical acceptance issue number. This command requires a public stable
 GitHub release and its stable appcast, downloads the published ZIP, verifies its
 Sparkle signature against the pinned existing Keychain account, and binds the
 assertion to the version, build, archive digest, executable digest and signed resource-seal digest. Sparkle
 signs the raw assertion with the existing key without exporting private material.
-The script uploads `release-maturity.json` without replacing existing assets and
-reads it back byte for byte. It does not rebuild or install the app, change tags,
+The script creates `maturity/v<VERSION>.json` on the existing `update-feeds`
+branch without replacing an existing proof, and reads it back byte for byte.
+It preserves all release assets and other feed files, so the central promoter’s
+exact inventory and replay checks remain valid. It does not rebuild or install the app, change tags,
 select a subscription, or classify a release. Retain this assertion as immutable
-publication evidence. A failed upload can be recovered by downloading the asset
+publication evidence. A failed publication can be recovered by reading that branch file
 and comparing it with the preserved output before retrying; do not overwrite it.
 
 Promotion acceptance is incomplete for this recognition contract until this
-signed asset is publicly available. The Linux central promoter deliberately has
+signed branch file is publicly available. The Linux central promoter deliberately has
 no maintainer Keychain access; central success alone does not sign this proof.
 The beta itself does not publish a stable assertion in advance.
 
-Supporting app versions check their own tag's assertion on updater startup,
+Supporting app versions check `https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/update-feeds/maturity/v<VERSION>.json` for their own version's assertion on updater startup,
 manual checks and completed scheduled checks, even if Sparkle offers no newer
 build. They verify the Ed25519 signature, repository and exact installed identity
 before changing the installed maturity in About, footer and Updates preferences.

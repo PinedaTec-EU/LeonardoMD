@@ -60,11 +60,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tag", required=True)
     parser.add_argument("--account", default="LeonardoMD-stable")
-    parser.add_argument("--publish", action="store_true", help="Upload the verified proof to the already stable release")
+    parser.add_argument("--issue-number", type=int, required=True, help="Canonical acceptance issue for the publication commit")
+    parser.add_argument("--publish", action="store_true", help="Publish verified proof on update-feeds without changing release assets")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if not re.fullmatch(r"v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.[1-9][0-9]*", args.tag):
         parser.error("An exact numeric tag is required")
+    if args.issue_number <= 0:
+        parser.error("A positive canonical issue number is required")
     if args.output.exists():
         parser.error("Output already exists; preserve the previous evidence")
     version = args.tag[1:]
@@ -118,14 +121,18 @@ def main():
             if (current["id"] != release["id"] or current["draft"] or current["prerelease"]
                     or current_assets != expected_assets):
                 raise ValueError("Release changed while preparing proof")
-            asset = directory / "release-maturity.json"
-            asset.write_text(proof)
-            run("gh", "release", "upload", args.tag, str(asset), "--repo", REPOSITORY)
-            verified = directory / "readback"
-            verified.mkdir()
-            run("gh", "release", "download", args.tag, "--repo", REPOSITORY,
-                "--pattern", asset.name, "--dir", str(verified))
-            if (verified / asset.name).read_bytes() != asset.read_bytes():
+            # The promoter owns an exact release asset inventory. Store the signed
+            # assertion alongside feeds, preserving every existing branch entry.
+            contents = f"repos/{REPOSITORY}/contents/maturity/{args.tag}.json"
+            request = directory / "publication-request.json"
+            request.write_text(json.dumps({
+                "message": f"#{args.issue_number} Published: verified stable maturity for {args.tag}",
+                "branch": "update-feeds", "content": base64.b64encode(proof.encode()).decode()}))
+            # No sha: create only. Existing per-version proofs are never replaced.
+            run("gh", "api", "--method", "PUT", contents, "--input", str(request))
+            readback = json.loads(run("gh", "api", contents + "?ref=update-feeds"))
+            if (readback.get("type") != "file" or readback.get("encoding") != "base64"
+                    or base64.b64decode(readback["content"]) != proof.encode()):
                 raise ValueError("Published proof differs from signed proof")
         print(f"Verified stable maturity for {version}; published={args.publish}; output={args.output}")
 

@@ -63,7 +63,7 @@ struct InstalledReleaseIdentity: Sendable {
 /// The fixed HTTPS endpoint and the signature are independent trust boundaries.
 enum ReleaseMaturityTransport {
     static func fetch(version: String) async throws -> Data {
-        let url = URL(string: "https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v\(version)/release-maturity.json")!
+        let url = URL(string: "https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/update-feeds/maturity/v\(version).json")!
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         let (bytes, response) = try await URLSession.shared.bytes(for: request)

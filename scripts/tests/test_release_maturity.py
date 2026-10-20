@@ -37,12 +37,24 @@ class ReleaseMaturityTests(unittest.TestCase):
             output = directory / "proof.json"
             commands = []
             uploads = []
+            requests = []
             release = {"id": 12, "draft": False, "prerelease": prerelease, "tag_name": "v0.1.601", "assets": []}
             api_reads = 0
 
             def command(*args):
                 nonlocal api_reads
                 commands.append(args)
+                if args[:4] == ("gh", "api", "--method", "PUT"):
+                    request = json.loads(Path(args[args.index("--input") + 1]).read_text())
+                    requests.append(request)
+                    uploads.append(base64.b64decode(request["content"]))
+                    self.assertEqual(request["branch"], "update-feeds")
+                    self.assertTrue(request["message"].startswith("#257 Published:"))
+                    self.assertNotIn("sha", request)
+                    self.assertIn("/contents/maturity/v0.1.601.json", args[4])
+                    return "{}"
+                if args[:2] == ("gh", "api") and "/contents/maturity/" in args[2]:
+                    return json.dumps({"type": "file", "encoding": "base64", "content": base64.b64encode(uploads[0]).decode()})
                 if args[:2] == ("gh", "api"):
                     api_reads += 1
                     return json.dumps(dict(release, prerelease=prerelease or (changed and api_reads > 1)))
@@ -57,15 +69,14 @@ class ReleaseMaturityTests(unittest.TestCase):
                         target.write_bytes(uploads[0])
                     return ""
                 if args[:3] == ("gh", "release", "upload"):
-                    uploads.append(Path(args[4]).read_bytes())
-                    return ""
+                    self.fail("Maturity publication must preserve the exact release asset inventory")
                 if str(args[0]).endswith("generate_keys"):
                     return account_key or self.trusted
                 if str(args[0]).endswith("sign_update") and "-p" in args:
                     return base64.b64encode(bytes(64)).decode()
                 return ""
 
-            arguments = ["publish-release-maturity.py", "--tag", "v0.1.601", "--output", str(output), "--publish"]
+            arguments = ["publish-release-maturity.py", "--tag", "v0.1.601", "--output", str(output), "--issue-number", "257", "--publish"]
             with patch.object(sys, "argv", arguments), patch.object(maturity, "run", side_effect=command):
                 if prerelease or account_key or changed:
                     with self.assertRaises(ValueError):
@@ -74,6 +85,7 @@ class ReleaseMaturityTests(unittest.TestCase):
                 else:
                     maturity.main()
                     self.assertEqual(uploads, [output.read_bytes()])
+                    self.assertEqual(len(requests), 1)
                     self.assertFalse(any("--clobber" in args for args in commands))
                     self.assertTrue(any("--verify" in args for args in commands))
                     self.assertEqual(len(json.loads(output.read_text())["signature"]), 88)
