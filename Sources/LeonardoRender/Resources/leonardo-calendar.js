@@ -13,7 +13,10 @@
   };
   window.LeonardoCalendar = {
     attach(input, wrapper) {
-      const locale = input.lang || "en";
+      // Document locale is free text in MDLF; malformed tags must not break controls.
+      let locale = "en";
+      try { locale = Intl.getCanonicalLocales(input.lang || "en")[0] || "en"; }
+      catch { /* Use the same English default as a document without a locale. */ }
       const spanish = locale.toLowerCase().startsWith("es");
       const words = spanish ? ["Abrir calendario", "Mes anterior", "Mes siguiente", "Cerrar calendario"] : ["Open calendar", "Previous month", "Next month", "Close calendar"];
       input.placeholder ||= "YYYY-MM-DD";

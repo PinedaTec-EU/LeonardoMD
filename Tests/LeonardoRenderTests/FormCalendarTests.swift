@@ -43,6 +43,12 @@ final class FormCalendarTests: XCTestCase {
           const themed = getComputedStyle(panel).backgroundColor === 'rgb(20, 30, 40)';
           root.querySelector('.leonardo-calendar-toggle').dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
           const escaped = panel.hidden;
+          LeonardoForms.begin({allowsFormFilling: true, source: 'locale', leonardo: {document: {locale: 'not_a_locale'}}}, root);
+          const malformed = LeonardoForms.field('malformed', {type: 'date'}, '2024-02-29'); root.append(malformed);
+          malformed.querySelector('.leonardo-calendar-toggle').click();
+          const fallbackLocale = malformed.querySelector('.leonardo-calendar-header').textContent.includes('February') && malformed.querySelectorAll('[data-date]').length === 29;
+          malformed.querySelector('[data-date="2024-02-28"]').click();
+          const fallbackSelection = LeonardoForms.snapshot().changes.malformed === '2024-02-28';
           LeonardoForms.setExporting(true);
           const exported = getComputedStyle(root.querySelector('.leonardo-calendar-toggle')).display === 'none';
           LeonardoForms.begin({allowsFormFilling: false}, root);
@@ -51,11 +57,11 @@ final class FormCalendarTests: XCTestCase {
           locked.querySelector('.leonardo-calendar-toggle').click();
           lockedInput.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowDown', altKey: true, bubbles: true}));
           const protectedDate = locked.querySelector('.leonardo-calendar-toggle').disabled && locked.querySelector('.leonardo-calendar').hidden && lockedInput.value === '2024-02-29' && Object.keys(LeonardoForms.snapshot().changes).length === 0;
-          return {leap, keyboard, saved, synchronized, draft, themed, escaped, exported, protectedDate};
+          return {leap, keyboard, saved, synchronized, draft, themed, escaped, exported, protectedDate, fallbackLocale, fallbackSelection};
         })()
         """) as? [String: Bool]
         let checks = try XCTUnwrap(result)
         for (name, passed) in checks { XCTAssertTrue(passed, name) }
-        XCTAssertEqual(checks.count, 9)
+        XCTAssertEqual(checks.count, 11)
     }
 }
