@@ -9,6 +9,11 @@ final class TrashConfirmationTests: XCTestCase {
         _ = NSApplication.shared
         let previous = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = previous }
+        let liveCapture = ProcessInfo.processInfo.environment["LEONARDO_TRASH_LIVE_CAPTURE"] == "1"
+        if liveCapture {
+            NSApp.setActivationPolicy(.regular)
+            NSApp.activate(ignoringOtherApps: true)
+        }
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -21,7 +26,7 @@ final class TrashConfirmationTests: XCTestCase {
             LanguageSettings.shared.language = language
             for project in [false, true] {
                 let name = project ? "project" : "item"
-                let timer = Timer(timeInterval: 0.2, repeats: false) { _ in
+                let timer = Timer(timeInterval: liveCapture ? 20 : 0.2, repeats: false) { _ in
                     MainActor.assumeIsolated {
                         defer { NSApp.stopModal(withCode: .alertFirstButtonReturn) }
                         guard let window = NSApp.modalWindow, let view = window.contentView else {
@@ -37,8 +42,7 @@ final class TrashConfirmationTests: XCTestCase {
                             ? "The entire project folder and its contents will be moved to Trash. You can recover them from Trash."
                             : "The item will be moved to Trash. You can recover it from Trash."
                         XCTAssertTrue(copy.contains(L10n.text(explanation)))
-                        do { try Self.captureIfRequested(view, name: "\(language.rawValue)-\(name)") }
-                        catch { XCTFail("Native capture failed: \(error)") }
+                        print("Native Trash confirmation: \(language.rawValue)-\(name), viewport=\(view.bounds.size)")
                     }
                 }
                 RunLoop.main.add(timer, forMode: .modalPanel)
@@ -55,15 +59,4 @@ final class TrashConfirmationTests: XCTestCase {
         [view] + view.subviews.flatMap { descendants(of: $0) }
     }
 
-    private static func captureIfRequested(_ view: NSView, name: String) throws {
-        guard let destination = ProcessInfo.processInfo.environment["LEONARDO_TRASH_CAPTURE_DIR"] else { return }
-        let directory = URL(fileURLWithPath: destination, isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        view.layoutSubtreeIfNeeded()
-        let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
-        view.cacheDisplay(in: view.bounds, to: bitmap)
-        let data = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
-        try data.write(to: directory.appendingPathComponent(name + ".png"))
-        print("Native Trash confirmation: \(name), viewport=\(view.bounds.size), pixels=\(bitmap.pixelsWide)x\(bitmap.pixelsHigh)")
-    }
 }
