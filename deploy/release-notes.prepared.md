@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.547
+
+- #241 Fixed: move user deletions to Trash ([#242](https://github.com/PinedaTec-EU/LeonardoMD/pull/242))
+
+<p>Deleted files, folders and projects now move to Trash so they can be recovered.</p>
+
+Source: `dd7a3de66b62e6621b7e2c07030a1334948e5cf5`. Delta: `{"build": 12}`.
+
 ## 0.1.535
 
 - #216 Added: export Leonardo reading copies as Markdown ([#217](https://github.com/PinedaTec-EU/LeonardoMD/pull/217))

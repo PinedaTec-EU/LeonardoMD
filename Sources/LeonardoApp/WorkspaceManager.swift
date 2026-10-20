@@ -25,7 +25,7 @@ struct WorkspaceManager: View {
                     Menu {
                         Button(L10n.text("Rename…")) { session.renameProject(project) }
                         Button(L10n.text("Show in Finder")) { NSWorkspace.shared.activateFileViewerSelecting([project.rootURL]) }
-                        Button(L10n.text("Delete…"), role: .destructive) { session.deleteProject(project) }
+                        Button(L10n.text("Move to Trash…"), role: .destructive) { session.deleteProject(project) }
                     } label: { Image(systemName: "ellipsis.circle") }.menuStyle(.borderlessButton)
                 }.padding(.vertical, 6)
             }
@@ -126,10 +126,10 @@ extension AppSession {
     func deleteProject(_ project: ProjectDescriptor) {
         Task {
             let alert = NSAlert()
-            alert.messageText = L10n.format("Delete project %@?", project.name)
-            alert.informativeText = L10n.text("The entire folder and its contents will be deleted from disk.")
+            alert.messageText = L10n.format("Move project %@ to Trash?", project.name)
+            alert.informativeText = L10n.text("The entire project folder and its contents will be moved to Trash. You can recover them from Trash.")
             alert.addButton(withTitle: L10n.text("Cancel"))
-            alert.addButton(withTitle: L10n.text("Delete"))
+            alert.addButton(withTitle: L10n.text("Move to Trash"))
             guard await NativeDialog.present(alert, on: presentationWindow) == .alertSecondButtonReturn, !stopped, !isClosing else { return }
             await deleteConfirmedProject(project)
         }

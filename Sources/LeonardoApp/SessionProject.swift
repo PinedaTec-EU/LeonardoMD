@@ -221,10 +221,10 @@ extension AppSession {
         Task {
             guard let root = projectURL else { return }
             let alert = NSAlert()
-            alert.messageText = L10n.format("Delete %@?", url.lastPathComponent)
-            alert.informativeText = L10n.text("This operation deletes the item from disk.")
+            alert.messageText = L10n.format("Move %@ to Trash?", url.lastPathComponent)
+            alert.informativeText = L10n.text("The item will be moved to Trash. You can recover it from Trash.")
             alert.addButton(withTitle: L10n.text("Cancel"))
-            alert.addButton(withTitle: L10n.text("Delete"))
+            alert.addButton(withTitle: L10n.text("Move to Trash"))
             guard await NativeDialog.present(alert, on: presentationWindow) == .alertSecondButtonReturn else { return }
             guard projectURL == root, !stopped, !isClosing else { return }
             fileOperationCount += 1
