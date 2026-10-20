@@ -25,7 +25,8 @@ public enum LeonardoMarkdownExport {
         case .null: return ""
         case let .string(text):
             if field.type == .select {
-                return field.options.first(where: { $0.value == text })?.label ?? text
+                let label = field.options.first(where: { $0.value == text })?.label
+                return label.flatMap { $0.isEmpty ? nil : $0 } ?? text
             }
             return text
         case let .boolean(flag): return flag ? "true" : "false"

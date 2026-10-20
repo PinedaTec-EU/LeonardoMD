@@ -33,9 +33,52 @@ final class LeonardoMarkdownExportTests: XCTestCase {
         XCTAssertFalse(result.contains("![local]"))
         XCTAssertFalse(result.contains("![inline]"))
         XCTAssertFalse(result.contains("![ref]"))
+        XCTAssertFalse(result.contains("[picture]:"))
+        XCTAssertFalse(result.contains("assets/p.png"))
         XCTAssertFalse(result.contains("src='assets"))
         XCTAssertTrue(result.contains("![remote](https://example.com/a.png)"))
         XCTAssertTrue(result.contains("<img src=\"https://example.com/b.jpg\">"))
+    }
+
+    func testReferenceImagesDropOrphanDefinitionsAndPreserveSharedLinks() {
+        let body = """
+        ![local][picture] ![collapsed][] ![shortcut] ![unsupported][ftp]
+        ![remote][web] ![shared][shared]
+        [ordinary][shared] [collapsedLink][] [shortcutLink]
+        [picture]: assets/p.png
+        [picture]: assets/duplicate.png
+        [collapsed]: assets/c.png
+        [shortcut]: file:///tmp/s.png
+        [ftp]: ftp://example.com/unsupported.png
+        [web]: https://example.com/keep.png
+        [shared]: assets/shared.png
+        ![collapsedLink][] ![shortcutLink]
+        [collapsedLink]: assets/collapsed-shared.png
+        [shortcutLink]: assets/shortcut-shared.png
+        """
+        let result = LeonardoMarkdownExport.markdown(from: .init(body: body))
+        for reference in ["picture", "collapsed", "shortcut", "ftp"] {
+            XCTAssertFalse(result.contains("[\(reference)]:"))
+        }
+        for path in ["assets/p.png", "assets/duplicate.png", "assets/c.png", "file:///tmp/s.png", "ftp://"] {
+            XCTAssertFalse(result.contains(path))
+        }
+        XCTAssertTrue(result.contains("![remote][web]"))
+        XCTAssertTrue(result.contains("[web]: https://example.com/keep.png"))
+        XCTAssertFalse(result.contains("![shared]"))
+        XCTAssertTrue(result.contains("[ordinary][shared]"))
+        XCTAssertTrue(result.contains("[shared]: assets/shared.png"))
+        XCTAssertTrue(result.contains("[collapsedLink]: assets/collapsed-shared.png"))
+        XCTAssertTrue(result.contains("[shortcutLink]: assets/shortcut-shared.png"))
+        XCTAssertFalse(result.contains("![collapsedLink]"))
+        XCTAssertFalse(result.contains("![shortcutLink]"))
+    }
+
+    func testSelectWithEmptyLabelRetainsItsValue() {
+        let document = LeonardoDocument(body: "{{field:a}}", metadata: .init(
+            fields: ["a": .init(type: .select, options: [.init(value: "Answer", label: "")])],
+            values: ["a": .string("Answer")]))
+        XCTAssertEqual(LeonardoMarkdownExport.markdown(from: document), "Answer")
     }
 
     func testCodeExamplesRemainLiteral() {

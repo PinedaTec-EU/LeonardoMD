@@ -83,10 +83,12 @@ public enum LeonardoLocalImagePolicy {
             #"!\[([^\]\n]*)\](?:\[([^\]\n]*)\])?(?!\s*\()"#
         ]
         var removals: [NSRange] = []
+        var removedLabels = Set<String>()
         for (index, pattern) in patterns.enumerated() {
             guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
             for match in regex.matches(in: masked, range: NSRange(masked.startIndex..., in: masked)) {
                 let reference: String?
+                var referenceKey: String?
                 if index == 0 {
                     let range = match.range(at: match.range(at: 1).location == NSNotFound ? 2 : 1)
                     reference = Range(range, in: body).map { String(body[$0]) }
@@ -98,15 +100,19 @@ public enum LeonardoLocalImagePolicy {
                         reference = Range(range, in: tag).map { String(tag[$0]) }
                     } else { reference = nil }
                 } else {
-                    reference = referenceLabel(for: match, in: masked)
-                        .flatMap { definitions[normalizeReferenceLabel($0)]?.value }
+                    referenceKey = referenceLabel(for: match, in: masked).map(normalizeReferenceLabel)
+                    reference = referenceKey.flatMap { definitions[$0]?.value }
                     // Unresolved references are ordinary literal Markdown text.
                     if reference == nil { continue }
                 }
                 let scheme = reference.flatMap { URL(string: $0)?.scheme?.lowercased() }
-                if scheme != "https" && scheme != "http" { removals.append(match.range) }
+                if scheme != "https" && scheme != "http" {
+                    removals.append(match.range)
+                    if let referenceKey { removedLabels.insert(referenceKey) }
+                }
             }
         }
+        removals += unusedImageDefinitions(in: masked, imageRanges: removals, labels: removedLabels)
         let result = NSMutableString(string: body)
         // Reference-style matching may also see the prefix of an inline image.
         var nextStart = result.length
@@ -116,6 +122,27 @@ public enum LeonardoLocalImagePolicy {
             nextStart = range.location
         }
         return result as String
+    }
+
+    /// Remove orphan definitions, including duplicates, without breaking ordinary links.
+    private static func unusedImageDefinitions(
+        in masked: String, imageRanges: [NSRange], labels: Set<String>
+    ) -> [NSRange] {
+        guard !labels.isEmpty else { return [] }
+        let definitions = referenceDefinitionPattern.matches(in: masked, range: NSRange(masked.startIndex..., in: masked))
+        let remaining = NSMutableString(string: masked)
+        for range in imageRanges + definitions.map(\.range) {
+            remaining.replaceCharacters(in: range, with: String(repeating: " ", count: range.length))
+        }
+        let references = try! NSRegularExpression(pattern: #"(?<![!\\])\[([^\]\n]+)\](?:\[([^\]\n]*)\])?(?!\s*\()"#)
+        let source = remaining as String
+        let usedLabels = Set(references.matches(in: source, range: NSRange(source.startIndex..., in: source))
+            .compactMap { referenceLabel(for: $0, in: source).map(normalizeReferenceLabel) })
+        return definitions.compactMap { definition in
+            guard let range = Range(definition.range(at: 1), in: masked) else { return nil }
+            let label = normalizeReferenceLabel(String(masked[range]))
+            return labels.contains(label) && !usedLabels.contains(label) ? definition.range : nil
+        }
     }
 
     fileprivate static func isLocalReference(_ reference: String) -> Bool {
@@ -144,10 +171,12 @@ public enum LeonardoLocalImagePolicy {
         label.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ").lowercased()
     }
 
+    private static let referenceDefinitionPattern = try! NSRegularExpression(
+        pattern: #"(?im)^ {0,3}\[([^\]\n]+)\]:[ \t]*(?:<([^>\n]+)>|([^\s]+))(?:[ \t]+(?:["'][^\n]*?["']|\([^\n]*?\)))?[ \t]*(?:\n|$)"#
+    )
+
     private static func referenceDefinitions(in source: String, masked: String) -> [String: BodyReference] {
-        guard let regex = try? NSRegularExpression(
-            pattern: #"(?im)^ {0,3}\[([^\]\n]+)\]:[ \t]*(?:<([^>\n]+)>|([^\s]+))(?:[ \t]+(?:["'][^\n]*?["']|\([^\n]*?\)))?[ \t]*(?:\n|$)"#
-        ) else { return [:] }
+        let regex = referenceDefinitionPattern
         var definitions: [String: BodyReference] = [:]
         let matches = regex.matches(in: masked, range: NSRange(masked.startIndex..., in: masked))
         for match in matches {

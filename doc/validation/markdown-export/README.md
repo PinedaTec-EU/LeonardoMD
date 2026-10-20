@@ -23,7 +23,10 @@ instance was terminated.
 
 `LeonardoMarkdownExportTests` covers literal values, defaults, explicit nulls,
 repeated fields, GFM table safety, multiline values, image degradation and code
-examples. `MarkdownExportTests` covers source preservation, path authorization,
+examples. Reference-image regressions cover local and unsupported sources,
+remote sources, duplicate definitions, collapsed/shortcut forms and definitions
+shared with ordinary links. Empty select labels retain the stored value.
+`MarkdownExportTests` covers source preservation, path authorization,
 package identity, concurrent content changes and balanced operation state.
 `InlineFormTests.testMarkdownExportFlushesPendingInlineAnswersWithoutSavingOriginal`
 uses real WebKit input events, exports immediately, and checks that the current
