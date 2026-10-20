@@ -19,23 +19,25 @@ do not modify shared merge or version-ledger skills to enforce it elsewhere.
    the public archive and combined beta subscription feed, then record actual
    update, install and relaunch acceptance against its immutable source SHA,
    numeric version/build, tag and archive digest in the canonical issue.
-3. Promote the validated source to stable only after that evidence is present
-   and beta findings are resolved. Publish a new higher-build stable package;
-   retain the common signing key, stable-only feed and refreshed combined beta
-   feed. Never relabel the beta entry or reuse its tag/build.
+3. Promote the exact validated beta artifact to stable only after that evidence
+   is present and beta findings are resolved. Use `promote-beta.yml` with its
+   explicit tag, source SHA, structured owner acceptance URL and request ID.
+   The trusted central promoter retains the numeric version, tag, build and
+   signed/notarized ZIP bytes, stages stable publication metadata and refreshes
+   the combined beta feed before making that release stable/latest.
 
-For a release-only promotion, use an issue-linked PR with a versioned
-`scripts/release-promotions/<PR>.json` input (schema 1, source PR number, beta
-tag/source SHA, archive SHA-256 and canonical hosted acceptance URL). Review
-that evidence against the actual beta. Record successful packaging compilation
-with the existing source-PR recorder, integrate the PR and wait for central
-version materialization before stable preparation. The ledger checks the
-delta, not external beta acceptance; the release operator/judge verifies that
-evidence. Do not manufacture an app change or edit resolved version artifacts.
+Read the shared candidate-promotion convention and the central executable
+contract at `pinedatec-ci/docs/release-candidate-promotion.md`. Do not create a
+promotion-only PR, ledger delta, new build, tag or compilation. Existing
+`scripts/release-promotions/<PR>.json` records document historical publication
+and must remain unchanged. Implementing promotion machinery still uses normal
+issue-linked PR/CI/judge and source compilation-count rules.
 
-Compare the stable candidate with the validated beta source. Version-ledger
-materialization and channel/publication metadata are expected differences;
-functional code or dependency changes require another beta and acceptance.
+The selected beta tag must still resolve to its accepted source and every
+downloaded asset must match owner-accepted hashes. The central Sparkle adapter
+also verifies the ZIP signature, pinned key and packaged version/build. Only
+publication metadata changes; a rebuilt binary, functional or dependency change
+requires another candidate and acceptance.
 A local candidate, green CI or an unvalidated public beta is insufficient
 evidence for normal stable promotion. Keep publication authorization separate
 from PR merge authorization; a request to change this skill publishes nothing.

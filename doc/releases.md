@@ -49,10 +49,29 @@ stable promotion. Use the repository-local
 Record the beta source SHA, version/build, tag, archive digest and actual hosted
 update/install/relaunch evidence in the canonical issue before stable promotion.
 A local candidate or an unvalidated public beta does not satisfy this stage.
-The stable candidate must preserve that validated functional source: ledger
-version materialization and channel metadata may change, but functional code or
-dependency changes return the candidate to beta. Stable uses a new higher build
-and new tag, never a relabeled beta artifact.
+Promote the exact accepted beta through Actions → Request promotion of a concrete
+beta (`promote-beta.yml`). Supply its numeric tag, full source SHA, structured
+owner acceptance issue-comment URL and a unique request ID. The central promoter
+verifies that identity and preserves its version, tag, build and signed/notarized
+ZIP bytes. It changes publication metadata and feeds, then makes that selected
+release stable/latest. No source PR, compilation or ledger delta is needed just
+to promote it. Code, dependencies or binary metadata changes create a different
+candidate requiring beta validation again.
+
+The owner acceptance block binds all original asset SHA-256 hashes and actual
+hosted update/install/relaunch, Developer ID, notarization and Gatekeeper checks.
+See the [central promotion contract](https://github.com/PinedaTec-EU/pinedatec-ci/blob/main/docs/release-candidate-promotion.md)
+for the exact schema, verification, retry and terminal evidence requirements.
+A dispatch acknowledgement or staged receipt is not successful publication.
+Integrate central support before the consumer request workflow can be used.
+
+Example: stable 0.1.4, accepted beta 0.1.15, later beta 0.1.23. Promotion publishes
+stable **0.1.15 / build 15**, retaining the exact source and archive. The later
+beta remains in the combined subscription feed. Installed beta 23 receives no
+downgrade; an installation already on beta 15 needs no replacement. Its embedded
+package-origin metadata still says beta because the signed bytes are unchanged;
+its subscription remains the independently persisted user choice. Stable/latest
+on GitHub and feed publication metadata identify the current hosted channel.
 
 The owner may explicitly authorize direct stable publication for a named
 candidate or bounded publication request. Record the direct instruction,
@@ -70,9 +89,9 @@ Install an older signed app in a writable Applications folder and publish a newe
 
 ## Beta candidates
 
-Set `LEONARDO_CHANNEL=beta` while keeping `LEONARDO_VERSION` equal to the numeric canonical version (for example, `0.1.56`) and `LEONARDO_BUILD` equal to its third segment. Do not append beta, alpha or other maturity suffixes: the visible version is identical across channels. Before publishing a later package, materialize a new ledger build greater than every previously published build. Sparkle orders updates by this numeric build. Channel selection belongs only in bundle/feed metadata and GitHub prerelease status, not in version strings. Both channels must now use the existing `LeonardoMD-stable` signing account and stable public key. The public trust root is recorded in `scripts/Info.plist` as `LeonardoUpdatePublicKey`; distribution packaging rejects another key before metadata is written. No new key is generated. Release preparation defaults to `LeonardoMD-stable` and still compares the embedded key with the actual selected Keychain account.
+Set `LEONARDO_CHANNEL=beta` while keeping `LEONARDO_VERSION` equal to the numeric canonical version (for example, `0.1.56`) and `LEONARDO_BUILD` equal to its third segment. Do not append beta, alpha or other maturity suffixes: the visible version is identical across channels. Before publishing a newly built package, materialize a new ledger build greater than every previously published build. Promoting an existing accepted archive changes no package bytes and retains its version/build. Sparkle orders updates by this numeric build. Channel selection belongs only in bundle/feed metadata and GitHub prerelease status, not in version strings. Both channels must now use the existing `LeonardoMD-stable` signing account and stable public key. The public trust root is recorded in `scripts/Info.plist` as `LeonardoUpdatePublicKey`; distribution packaging rejects another key before metadata is written. No new key is generated. Release preparation defaults to `LeonardoMD-stable` and still compares the embedded key with the actual selected Keychain account.
 
-Bundles embed separate stable and beta endpoints. A fresh subscription always selects stable, including inside a beta package; the user can explicitly select beta in Preferences. Beta subscriptions use `https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/update-feeds/beta/appcast.xml`. For controlled test endpoints use `LEONARDO_STABLE_FEED_URL` and `LEONARDO_BETA_FEED_URL`; `LEONARDO_FEED_URL` overrides only the packaged channel’s endpoint. The runtime delegate selects the endpoint from the user’s persisted choice. `SUFeedURL` remains stable by default. The feed branch is a publication target, not created by preparation. Generated beta-only release appcasts mark every item with `sparkle:channel=beta`; the stable-only appcast never opts into beta. The published beta subscription appcast combines both kinds without relabeling any entry. The verifier rejects prerelease tags in stable feeds. Public beta publication requires a GitHub prerelease (never latest) containing the ZIP, followed by an atomic update of the combined beta subscription feed. Every stable publication also refreshes the stable entries in that combined feed. Never replace the stable appcast with a beta feed.
+Bundles embed separate stable and beta endpoints. A fresh subscription always selects stable, including inside a beta package; the user can explicitly select beta in Preferences. Beta subscriptions use `https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/update-feeds/beta/appcast.xml`. For controlled test endpoints use `LEONARDO_STABLE_FEED_URL` and `LEONARDO_BETA_FEED_URL`; `LEONARDO_FEED_URL` overrides only the packaged channel’s endpoint. The runtime delegate selects the endpoint from the user’s persisted choice. `SUFeedURL` remains stable by default. The feed branch is a publication target, not created by preparation. Generated beta-only release appcasts mark every item with `sparkle:channel=beta`; the stable-only appcast never opts into beta. The published beta subscription appcast combines both kinds without relabeling any entry. The verifier rejects prerelease tags in stable feeds. Initial public beta publication requires a GitHub prerelease (never latest) containing the ZIP, followed by an atomic update of the combined beta subscription feed. A later explicit central promotion may change that exact accepted prerelease to stable/latest. Every stable publication also refreshes the stable entries in that combined feed. Never replace the stable appcast with a beta feed.
 
 `LEONARDO_NOTARIZE=0` permits a **local beta candidate only** when a notarytool profile is unavailable. It remains Developer ID signed and Ed25519 signed; Gatekeeper/notarization acceptance is not claimed. Stable preparation always requires notarization. Preparation verifies archive bytes using Sparkle's `sign_update --verify` after generating the appcast. The scripts do not publish releases, feeds, or tags.
 
@@ -84,7 +103,7 @@ Release preparation compares the bundle public update key against the existing K
 
 Stable [0.1.64](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.64) was published on 2026-10-08 from `3aebf4459edfa45c9c45e6a4ea64ac1ac216180d`, canonical version 0.1.64 / build 64. The arm64 application passed Developer ID signature verification, Apple notarization, stapling and Gatekeeper assessment. The release contains the verified ZIP and signed appcast. This proves signed distribution; hosted update/install/relaunch acceptance remains separately tracked in [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15).
 
-Every newly generated appcast item carries mandatory internal `leonardo:channel` publication metadata in the `https://pinedatec.eu/xml-namespaces/leonardo` namespace. It must agree with the selected publication channel and Sparkle markers: stable omits `sparkle:channel`, while beta has exactly one `beta` marker. Removing either binding or beta marker fails publication validation. Generation refuses to relabel existing bindings. Regenerate legacy appcasts before validating them with the current tooling. These metadata checks supplement the existing signed archive/key verification; they are not a cryptographic signature of the XML feed.
+Every newly generated appcast item carries mandatory internal `leonardo:channel` publication metadata in the `https://pinedatec.eu/xml-namespaces/leonardo` namespace. It must agree with the selected publication channel and Sparkle markers: stable omits `sparkle:channel`, while beta has exactly one `beta` marker. Removing either binding or beta marker fails publication validation. Ordinary generation refuses to relabel existing bindings. The explicit central promotion transaction is the narrowly scoped exception: it retains the original beta appcast backup, verifies acceptance and signed ZIP bytes, and replaces only publication-channel metadata. Regenerate legacy appcasts before validating them with the current tooling. These metadata checks supplement the existing signed archive/key verification; they are not a cryptographic signature of the XML feed.
 
 ## User-selected channels and legacy beta migration
 
@@ -92,7 +111,7 @@ Update controls live in Preferences → Updates. Installed package channel and s
 
 Both new channels retain the stable Ed25519 trust root already embedded in stable 0.1.64. There is no stable-user key rotation. Existing beta packages with the old beta key (including the installation diagnosed in [#84](https://github.com/PinedaTec-EU/LeonardoMD/issues/84)) must install a new Developer ID signed and notarized package manually. Preserve the same bundle identity and user preferences; never remove application data or rewrite the installed bundle’s key/feed. A bridge signed with the old beta key would be a separate migration requiring its own hosted acceptance; this change does not publish one.
 
-Use short-lived issue branches from main for code. Stable and beta are publication channels, not long-lived divergent code branches. Tags identify immutable numeric builds. Promoting tested beta code means publishing a new higher-build stable package from that source lineage; do not reuse the beta tag/build or relabel an existing appcast item.
+Use short-lived issue branches from main for code. Stable and beta are publication channels, not long-lived divergent code branches. Tags identify immutable numeric builds. Promoting a tested beta means publishing the exact accepted artifact as stable with its original tag/version/build. Only the trusted explicit central promotion path may reclassify its appcast item after verifying the source, acceptance and archive; ordinary generation still rejects arbitrary channel relabeling.
 
 ## Combined beta subscription feed
 
@@ -116,6 +135,8 @@ Tracking: [#123](https://github.com/PinedaTec-EU/LeonardoMD/issues/123). Run hos
 | Stable / Beta | Newer beta | Beta offered; install only on user action | Choice/feed/combined metadata tests; signed install and relaunch required |
 | Beta / Beta | Newer beta | Newer beta offered | Shared build ordering and combined-feed tests; signed install and relaunch required |
 | Beta / Beta | Newer stable | Stable offered with beta subscription retained | Stable entries preserved in combined-feed tests; hosted promotion required |
+| Beta / Either | Same candidate promoted to stable | No redundant binary update; numeric version/build unchanged | Exact signed-byte promotion tests; hosted channel acceptance required |
+| Beta / Either | Earlier beta promoted while a later beta is installed | No downgrade offered; retain newer installed build | Intermediate promotion preserves later beta entries/build ordering; hosted no-update acceptance required |
 | Beta / Stable | Stable build ≤ installed beta | No downgrade; Preferences explains waiting | Sparkle comparator, independent subscription/package state and native captures; hosted no-update required |
 | Beta / Stable | Stable build > installed beta | Stable offered; stable subscription retained | Stable delegate feed/channel and comparator tests; signed install and relaunch required |
 | Either / Either | Tampered ZIP or wrong update key | Reject before extraction | Distribution key mismatch and archive-verifier regressions; real tamper test required |
