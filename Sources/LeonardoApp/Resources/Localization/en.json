@@ -470,5 +470,10 @@
   "Inherit global file colors": "Inherit global file colors",
   "Color Leonardo files in wine": "Color Leonardo files in wine",
   "Move to Trash": "Move to Trash",
-  "Move to Trash…": "Move to Trash…"
+  "Move to Trash…": "Move to Trash…",
+  "Export Markdown…": "Export Markdown…",
+  "Export Markdown": "Export Markdown",
+  "Export to Markdown loses Leonardo capabilities": "Export to Markdown loses Leonardo capabilities",
+  "The exported copy loses Leonardo layout and interactive forms. Fields become their current values. Local and unsupported images are removed. Leonardo capabilities cannot be recovered from this Markdown file. The original document is preserved.": "The exported copy loses Leonardo layout and interactive forms. Fields become their current values. Local and unsupported images are removed. Leonardo capabilities cannot be recovered from this Markdown file. The original document is preserved.",
+  "Exported · Markdown": "Exported · Markdown"
 }

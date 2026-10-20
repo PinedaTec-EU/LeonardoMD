@@ -33,43 +33,82 @@ public enum LeonardoLocalImagePolicy {
         let masked = maskCodeAndMetadata(source)
         var references: [BodyReference] = []
 
-        let inlineExpressions = [
-            #"!\[[^\]\n]*\]\(\s*<([^>\n]+)>(?:\s+["'][^\n]*?["'])?\s*\)"#,
-            #"!\[[^\]\n]*\]\(\s*([^<\s)]+)(?:\s+["'][^\n]*?["'])?\s*\)"#,
-            #"(?i)<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']"#
-        ]
-        for expression in inlineExpressions {
-            guard let regex = try? NSRegularExpression(pattern: expression) else { continue }
-            let matches = regex.matches(in: masked, range: NSRange(masked.startIndex..., in: masked))
-            for match in matches {
-                guard match.numberOfRanges > 1,
-                      let valueRange = Range(match.range(at: 1), in: source) else { continue }
-                references.append(BodyReference(range: match.range(at: 1), value: String(source[valueRange])))
+        let images = LeonardoMarkdownImageScanner.images(in: source, masked: masked)
+        let definitions = referenceDefinitions(in: source, masked: masked)
+        var seenDefinitions = Set<String>()
+        for image in images {
+            if let range = image.destinationRange, let destination = image.destination {
+                references.append(BodyReference(range: range, value: destination))
+            } else if let label = image.referenceLabel,
+                      let definition = definitions[normalizeReferenceLabel(label)] {
+                let key = "\(definition.range.location):\(definition.range.length)"
+                if seenDefinitions.insert(key).inserted { references.append(definition) }
             }
         }
-
-        // A reference image points at the destination in its definition. The
-        // destination is the only text that must be rewritten; the image use
-        // itself remains exactly `![alt][label]` (or its collapsed/shortcut
-        // form). The first definition wins, matching Markdown's semantics.
-        let definitions = referenceDefinitions(in: source, masked: masked)
-        if let usageRegex = try? NSRegularExpression(
-            pattern: #"!\[([^\]\n]*)\](?:\[([^\]\n]*)\])?(?!\s*\()"#
-        ) {
-            var seenRanges = Set<String>()
-            let usages = usageRegex.matches(in: masked, range: NSRange(masked.startIndex..., in: masked))
-            for usage in usages {
-                guard let label = referenceLabel(for: usage, in: masked),
-                      let definition = definitions[normalizeReferenceLabel(label)] else { continue }
-                let key = "\(definition.range.location):\(definition.range.length)"
-                guard seenRanges.insert(key).inserted else { continue }
-                references.append(definition)
-            }
+        for image in LeonardoHTMLImageScanner.images(in: source, masked: masked) {
+            guard !images.contains(where: { NSLocationInRange(image.range.location, $0.range) }),
+                  let range = image.destinationRange, let destination = image.destination else { continue }
+            references.append(BodyReference(range: range, value: destination))
         }
 
         return references.sorted { lhs, rhs in
             if lhs.range.location == rhs.range.location { return lhs.range.length < rhs.range.length }
             return lhs.range.location < rhs.range.location
+        }
+    }
+
+    /// A standalone Markdown copy retains only remotely addressable images.
+    static func removingNonportableImages(in body: String) -> String {
+        let masked = maskCodeAndMetadata(body, includesMetadata: false)
+        let definitions = referenceDefinitions(in: body, masked: masked)
+        var removals: [NSRange] = []
+        var removedLabels = Set<String>()
+        let images = LeonardoMarkdownImageScanner.images(in: body, masked: masked)
+        for image in images {
+            let referenceKey = image.referenceLabel.map(normalizeReferenceLabel)
+            let reference = image.destination ?? referenceKey.flatMap { definitions[$0]?.value }
+            guard let reference else { continue }
+            if !isRemoteImage(reference) {
+                removals.append(image.range)
+                if let referenceKey { removedLabels.insert(referenceKey) }
+            }
+        }
+        for image in LeonardoHTMLImageScanner.images(in: body, masked: masked) {
+            guard !images.contains(where: { NSLocationInRange(image.range.location, $0.range) }) else { continue }
+            if !isRemoteImage(image.destination) { removals.append(image.range) }
+        }
+        removals += unusedImageDefinitions(in: masked, imageRanges: removals, labels: removedLabels)
+        let result = NSMutableString(string: body)
+        var merged: [NSRange] = []
+        for range in removals.sorted(by: { $0.location < $1.location }) {
+            if let last = merged.last, NSMaxRange(last) >= range.location {
+                merged[merged.count - 1] = NSUnionRange(last, range)
+            } else { merged.append(range) }
+        }
+        for range in merged.reversed() { result.replaceCharacters(in: range, with: "") }
+        return result as String
+    }
+
+    private static func isRemoteImage(_ reference: String?) -> Bool {
+        let scheme = reference.flatMap { URL(string: $0)?.scheme?.lowercased() }
+        return scheme == "https" || scheme == "http"
+    }
+
+    /// Remove orphan definitions, including duplicates, without breaking ordinary links.
+    private static func unusedImageDefinitions(
+        in masked: String, imageRanges: [NSRange], labels: Set<String>
+    ) -> [NSRange] {
+        guard !labels.isEmpty else { return [] }
+        let definitions = LeonardoMarkdownImageScanner.referenceDefinitions(in: masked, masked: masked)
+        let remaining = NSMutableString(string: masked)
+        for range in imageRanges + definitions.map(\.range) {
+            remaining.replaceCharacters(in: range, with: String(repeating: " ", count: range.length))
+        }
+        let usedLabels = Set(LeonardoMarkdownImageScanner.referenceLabels(in: remaining as String)
+            .map(normalizeReferenceLabel))
+        return definitions.compactMap { definition in
+            let label = normalizeReferenceLabel(definition.label)
+            return labels.contains(label) && !usedLabels.contains(label) ? definition.range : nil
         }
     }
 
@@ -96,50 +135,24 @@ public enum LeonardoLocalImagePolicy {
     }
 
     private static func normalizeReferenceLabel(_ label: String) -> String {
-        label.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ").lowercased()
+        LeonardoMarkdownImageScanner.unescape(label).split(whereSeparator: { $0.isWhitespace }).joined(separator: " ").lowercased()
     }
 
     private static func referenceDefinitions(in source: String, masked: String) -> [String: BodyReference] {
-        guard let regex = try? NSRegularExpression(
-            pattern: #"(?im)^ {0,3}\[([^\]\n]+)\]:[ \t]*(?:<([^>\n]+)>|([^\s]+))(?:[ \t]+(?:["'][^\n]*?["']|\([^\n]*?\)))?[ \t]*(?:\n|$)"#
-        ) else { return [:] }
         var definitions: [String: BodyReference] = [:]
-        let matches = regex.matches(in: masked, range: NSRange(masked.startIndex..., in: masked))
-        for match in matches {
-            guard let labelRange = Range(match.range(at: 1), in: masked),
-                  !labelRange.isEmpty else { continue }
-            let label = String(masked[labelRange])
-            let destinationIndex: Int
-            if match.range(at: 2).location != NSNotFound { destinationIndex = 2 }
-            else if match.range(at: 3).location != NSNotFound { destinationIndex = 3 }
-            else { continue }
-            guard let valueRange = Range(match.range(at: destinationIndex), in: source) else { continue }
-            let key = normalizeReferenceLabel(label)
+        for definition in LeonardoMarkdownImageScanner.referenceDefinitions(in: source, masked: masked) {
+            let key = normalizeReferenceLabel(definition.label)
             guard definitions[key] == nil else { continue }
-            definitions[key] = BodyReference(
-                range: match.range(at: destinationIndex),
-                value: String(source[valueRange])
-            )
+            definitions[key] = BodyReference(range: definition.destinationRange, value: definition.destination)
         }
         return definitions
     }
 
-    private static func referenceLabel(for match: NSTextCheckingResult, in masked: String) -> String? {
-        let explicit = match.range(at: 2)
-        if explicit.location != NSNotFound, explicit.length > 0,
-           let range = Range(explicit, in: masked) {
-            return String(masked[range])
-        }
-        let collapsed = match.range(at: 1)
-        guard let range = Range(collapsed, in: masked) else { return nil }
-        return String(masked[range])
-    }
-
-    private static func maskCodeAndMetadata(_ source: String) -> String {
+    static func maskCodeAndMetadata(_ source: String, includesMetadata: Bool = true) -> String {
         // Replace by UTF-16 units so NSRegularExpression ranges retain their offsets.
         let patterns = [#"(?ms)^ {0,3}(`{3,}|~{3,})[^\n]*\n.*?^ {0,3}\1[^\n]*(?:\n|$)"#, #"`+[^`\n]*`+"#]
         let masked = NSMutableString(string: source)
-        if source.hasPrefix("---\n"), let closing = source.range(of: "\n---", range: source.index(source.startIndex, offsetBy: 4)..<source.endIndex) {
+        if includesMetadata, source.hasPrefix("---\n"), let closing = source.range(of: "\n---", range: source.index(source.startIndex, offsetBy: 4)..<source.endIndex) {
             let range = NSRange(source.startIndex..<closing.upperBound, in: source)
             masked.replaceCharacters(in: range, with: String(repeating: " ", count: range.length))
         }
@@ -194,8 +207,9 @@ enum LeonardoPortableResources {
         var result = try LeonardoFormatParser.serialize(LeonardoFormatParser.parse(content))
         for reference in LeonardoLocalImagePolicy.bodyReferences(in: result).reversed() {
             guard let range = Range(reference.range, in: result) else { continue }
-            let replacement = try portable(String(result[range]))
-            result.replaceSubrange(range, with: replacement)
+            let replacement = try portable(reference.value)
+            // Remote/unsupported references retain their original Markdown escaping.
+            if replacement != reference.value { result.replaceSubrange(range, with: replacement) }
         }
         // Metadata JSON resources use the same vocabulary as the public schema.
         if result.hasPrefix("---\n"), let end = result.range(of: "\n---", range: result.index(result.startIndex, offsetBy: 4)..<result.endIndex) {

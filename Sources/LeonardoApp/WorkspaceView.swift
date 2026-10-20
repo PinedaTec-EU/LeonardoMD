@@ -147,6 +147,11 @@ struct WorkspaceView: View {
                     .accessibilityIdentifier("focus-mode")
                 Button { session.exportPDF() } label: { Image(systemName: "square.and.arrow.up") }.help(L10n.text("Export PDF"))
                 if session.documentKind.isLeonardo {
+                    Button { session.exportMarkdown() } label: { Image(systemName: "doc.text") }
+                        .help(L10n.text("Export Markdown…"))
+                        .accessibilityLabel(L10n.text("Export Markdown…"))
+                        .accessibilityIdentifier("export-markdown")
+                        .disabled(session.busy || session.isSyncSuspended)
                     Button { session.exportLeonardoPackage() } label: { Image(systemName: "archivebox") }
                         .help(L10n.text("Export Leonardo package"))
                         .accessibilityLabel(L10n.text("Export Leonardo package"))

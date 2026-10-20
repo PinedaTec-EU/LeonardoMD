@@ -274,6 +274,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         Task { await activeSession?.redoDocument() }
     }
     @objc private func save() { Task { await activeSession?.save() } }
+    @objc private func exportMarkdown() { activeSession?.exportMarkdown() }
     @objc private func exportPDF() { activeSession?.exportPDF() }
     @objc private func focus() { activeSession?.focus.toggle() }
     @objc private func preview() { Task { await activeSession?.setDocumentMode(.preview) } }
@@ -312,6 +313,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         recentMenus.add(to: file)
         favoritesMenu.add(to: file)
         add(L10n.text("Save"), action: #selector(save), key: "s", to: file)
+        add(L10n.text("Export Markdown…"), action: #selector(exportMarkdown), key: "", to: file)
         add(L10n.text("Export PDF…"), action: #selector(exportPDF), key: "e", modifiers: [.command, .shift], to: file)
         add(L10n.text("Close window"), action: #selector(NSWindow.performClose(_:)), key: "w", modifiers: [.command, .shift], to: file)
         let editMenu = submenu(L10n.text("Edit"), in: menu)

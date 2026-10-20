@@ -9,6 +9,34 @@ import LeonardoCore
 
 @MainActor
 final class InlineFormTests: XCTestCase {
+    func testMarkdownExportFlushesPendingInlineAnswersWithoutSavingOriginal() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().appendingPathComponent("doc/format/examples/form-showcase/service-request.mdlr")
+        let source = directory.appendingPathComponent("request.mdlr")
+        try FileManager.default.copyItem(at: fixture, to: source)
+        let original = try Data(contentsOf: source)
+        let session = AppSession(preferencesURL: directory.appendingPathComponent("preferences.json"))
+        session.authorizePath = { _, _ in }
+        defer { session.stop() }
+        await session.openDocument(source)
+        let host = NSHostingView(rootView: WorkspaceView(session: session))
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1440, height: 1024), styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false; window.contentView = host; window.orderFront(nil)
+        defer { window.close() }
+        let web = try await webView(in: host)
+        try await waitFor("document.querySelector('[data-field-input=\"name\"]') !== null", in: web)
+        _ = try await web.evaluateJavaScript("(() => { const input = document.querySelector('[data-field-input=\"name\"]'); input.value = 'Pending Ada'; input.dispatchEvent(new InputEvent('input', {bubbles:true})); })()")
+        let output = directory.appendingPathComponent("answers.md")
+        await session.exportMarkdown(to: output, documentURL: source)
+        XCTAssertTrue(try String(contentsOf: output, encoding: .utf8).contains("Pending Ada"))
+        XCTAssertEqual(try Data(contentsOf: source), original)
+        XCTAssertTrue(session.isDirty)
+        XCTAssertEqual(session.mode, .fill)
+    }
+
     func testInlineEditingHelpSaveReopenAndExport() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
