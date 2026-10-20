@@ -74,6 +74,18 @@
       allowsLegacyWidths = legacyWidths;
       return parser.parse(markdown);
     },
+    sources(markdown) {
+      const tables = [];
+      function visit(tokens) {
+        for (const token of tokens || []) {
+          if (token.type === "table") tables.push(token.raw);
+          else if (token.tokens) visit(token.tokens);
+          if (token.items) token.items.forEach(item => visit(item.tokens));
+        }
+      }
+      visit(parser.lexer(markdown));
+      return tables;
+    },
     prepare(root) {
       root.querySelectorAll("table").forEach((table) => {
         const viewport = document.createElement("div");

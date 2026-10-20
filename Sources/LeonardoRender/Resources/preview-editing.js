@@ -206,6 +206,7 @@
   window.LeonardoEditing = {
     body: "", begin, annotate, span, prepare, escapeHTML,
     currentSource: () => source,
+    currentBody: () => source.slice(originalSource.length - window.LeonardoEditing.body.length),
     setEditable(root, value) {
       enabled = value === true;
       root.querySelectorAll("[data-leonardo-edit]").forEach((element) => {

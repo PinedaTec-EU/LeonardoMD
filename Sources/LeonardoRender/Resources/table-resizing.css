@@ -1,0 +1,15 @@
+.table-viewport { position: relative; padding: 0 10px 10px 0; }
+.table-resize-overlay { position: absolute; inset: 0; pointer-events: none; display: none; }
+.tables-resizable .table-resize-overlay { display: block; }
+.table-resize-handle {
+  position: absolute; pointer-events: auto; padding: 0; border: 0;
+  border-radius: 2px; margin: 0; background: transparent; touch-action: none;
+}
+.table-resize-column, .table-resize-width { cursor: col-resize; }
+.table-resize-row, .table-resize-height { cursor: row-resize; }
+.table-resize-both { cursor: nwse-resize; border-right: 3px solid var(--ld-accent); border-bottom: 3px solid var(--ld-accent); }
+.table-viewport:hover .table-resize-column,
+.table-viewport:hover .table-resize-row { background: color-mix(in srgb, var(--ld-accent) 18%, transparent); }
+.table-resize-handle:hover, .table-resize-handle:focus-visible { background: color-mix(in srgb, var(--ld-accent) 55%, transparent); outline: 1px solid var(--ld-accent); }
+@media print { .table-resize-overlay { display: none !important; } }
+.leonardo-form-export .table-resize-overlay { display: none !important; }

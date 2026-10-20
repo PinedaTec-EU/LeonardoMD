@@ -351,12 +351,14 @@
     diagramTimers.clear();
     document.querySelectorAll("body > .front-matter, body > .document-tags").forEach((panel) => panel.remove());
     try {
+      window.LeonardoTableResizing.cancel();
       window.LeonardoEditing.begin(payload);
       window.LeonardoEditing.body = payload.markdown || "";
       const rendered = window.LeonardoTables.render(payload.markdown || "", !payload.leonardo);
       root.innerHTML = sanitizeHTML(rendered);
       window.LeonardoTables.prepare(root);
       window.LeonardoLayout?.apply(root, payload);
+      window.LeonardoTableResizing.prepare(root, payload);
       installHeadingAnchors();
       root.querySelectorAll("img").forEach((image) => {
         image.loading = image.closest(".leonardo-document-background") ? "eager" : "lazy";
@@ -381,7 +383,7 @@
 
   window.LeonardoPreview = {
     setAppearance,
-    setEditable(value) { payload.allowsEditing = value; window.LeonardoEditing.setEditable(root, value); },
+    setEditable(value) { payload.allowsEditing = value; window.LeonardoEditing.setEditable(root, value); window.LeonardoTableResizing.setEditable(value); },
     updateContent(nextPayload) {
       if (!nextPayload || typeof nextPayload.markdown !== "string") return;
       payload = Object.assign(payload, nextPayload, { leonardo: nextPayload.leonardo || null });

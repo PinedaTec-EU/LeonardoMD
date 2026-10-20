@@ -8,6 +8,7 @@ public final class MarkdownPreviewController: ObservableObject {
     @Published public private(set) var isReady = false
 
     public var onEdit: ((String, String) -> Bool)?
+    public var onTableResize: ((String, LeonardoTableResize) async -> Bool)?
     public var onFormEdit: ((String, [String: LeonardoJSONValue]) -> String?)?
     public var onFieldHelp: ((String) -> Void)?
     public var onScrollProgress: ((Double) -> Void)?
@@ -56,6 +57,7 @@ public final class MarkdownPreviewController: ObservableObject {
     }
 
     func attach(_ host: MarkdownPreviewHost) {
+        host.onTableResize = onTableResize
         host.onEdit = onEdit
         host.onFormEdit = onFormEdit
         host.onFieldHelp = onFieldHelp

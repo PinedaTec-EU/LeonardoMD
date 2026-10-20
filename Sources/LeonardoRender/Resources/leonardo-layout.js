@@ -67,20 +67,24 @@
     const nodes = root.querySelectorAll("table");
     for (const descriptor of tables || []) {
       const table = nodes[(descriptor.occurrence || 1) - 1];
-      if (!table) continue;
+      if (!table || (descriptor.source && descriptor.source !== window.LeonardoTables.sources(window.LeonardoEditing.body)[descriptor.occurrence - 1])) continue;
       table.querySelector("colgroup")?.remove();
       table.removeAttribute("style");
       table.classList.remove("table-sized");
       const group = document.createElement("colgroup");
       table.style.tableLayout = "fixed";
       table.style.width = dimension(descriptor.width) || "100%";
+      table.classList.add("table-sized");
+      table.style.height = dimension(descriptor.height) || "";
       for (const column of descriptor.columns || []) {
         const col = document.createElement("col");
         col.style.width = dimension(column.width) || "";
         group.append(col);
       }
       table.prepend(group);
-      table.querySelectorAll("tr").forEach(row => {
+      table.querySelectorAll("tr").forEach((row, index) => {
+        const height = descriptor.rowHeights?.[index];
+        row.style.height = Number.isFinite(height) && height > 0 && height <= 10000 ? `${height}pt` : "";
         row.style.breakInside = descriptor.allowRowBreak === false ? "avoid" : "auto";
         Array.from(row.children).forEach((cell, index) => {
           const column = descriptor.columns?.[index];

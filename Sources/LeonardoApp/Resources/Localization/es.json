@@ -441,5 +441,10 @@
   "Select (?) beside a field to see its help and properties.": "Pulsa (?) junto a un campo para ver su ayuda y propiedades.",
   "Help for": "Ayuda de",
   "Yes": "Sí",
-  "No": "No"
+  "No": "No",
+  "Resize column": "Redimensionar columna",
+  "Resize row": "Redimensionar fila",
+  "Resize table width": "Cambiar ancho de tabla",
+  "Resize table height": "Cambiar altura de tabla",
+  "Resize table": "Redimensionar tabla"
 }

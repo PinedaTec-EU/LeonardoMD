@@ -262,6 +262,11 @@ def _validate_layout(layout: object) -> None:
                 _fail(path, "table layout entries must identify unique occurrences")
             occurrences.add(occurrence)
             _validate_dimension(table.get("width"), f"{path}.width", positive=True)
+            _validate_dimension(table.get("height"), f"{path}.height", positive=True)
+            if isinstance(table.get("height"), dict) and table["height"].get("unit") != "points":
+                _fail(f"{path}.height", "table height uses points")
+            for row_index, height in enumerate(table.get("rowHeights", [])):
+                _validate_dimension({"value": height, "unit": "points"}, f"{path}.rowHeights[{row_index}]", positive=True)
             columns = table.get("columns")
             if isinstance(columns, list):
                 for column_index, column in enumerate(columns):
