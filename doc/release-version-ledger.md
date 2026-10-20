@@ -61,14 +61,19 @@ external acceptance. Confirm the app/dependency tree matches the validated
 beta before preparing stable. Documentation-only work remains exempt.
 
 Use an English issue-linked title, e.g. `#38 Added: adopt release version ledger`.
-The title is the release-note summary; the body contains implementation and
-validation detail. The central renderer uses the verified title, not a copied
-or inferred summary of the PR body.
+Every versioned source PR supplies a reviewed `summary` in its own delta entry:
+1–280 characters of single-line plain text describing observable changes. Keep
+implementation and validation details in the PR body, with a matching `Release
+summary` section. The central engine preserves that exact text alongside the PR
+identity and renders it beneath the verified title; it never infers a summary
+from the title or body. PR #210 is the explicit historical adoption boundary;
+trusted validation also requires a summary on revived older source PRs.
+The compilation recorder retains summary metadata while incrementing `build`.
 
 ## Shared engine operation
 
 The engine remains in `PinedaTec-EU/pinedatec-ci`, pinned to integrated commit
-`fdc500c76d3f42f1162cd48ad1997601cce06336`; do not copy it or use a mutable pin.
+`d5bf9cbf0b5a2c92dfb6fafa24e718fa3fcedebe`; do not copy it or use a mutable pin.
 `scripts/release-ledger.sh` is a thin operator entrypoint. Set
 `LEDGER_ENGINE_ROOT` to a clean checkout at that exact revision. It checks the
 revision and engine working tree, passes the workspace to the shared engine,
@@ -199,3 +204,44 @@ Publish the final consumer pin PR head only after the central catalog refresh in
 On 2026-10-09 the owner explicitly confirmed that main must remain unprotected. Read-only GitHub API inspection of all 41 PinedaTec-EU repositories found `main.protected=false` in every repository. All 31 private repositories returned HTTP 403 for protection/rulesets with the provider message requiring a plan upgrade or public visibility; the organization reports the free plan. The 10 public repositories have no active rulesets. Public LeonardoMD can technically enable protection, but the owner chooses the same unprotected-main policy. Absence of native protection is not itself a merge rejection under this local contract. Passing CI, exact-head ledger validation, owner authorization and independent judgment remain mandatory. Without native enforcement, another actor can bypass these process gates; this audit does not claim equivalent provider enforcement.
 
 Tracking: [#81](https://github.com/PinedaTec-EU/LeonardoMD/issues/81).
+
+## Native release notes
+
+CI inspects the real app after packaging with `scripts/qa-bundle.py --verify-only --report`.
+The `release-notes-package-<SHA>` artifact records the checkout, executable,
+dependencies, signature check, canonical bundle/version and byte-identical JSON hash.
+It does not claim a process launch. Native capture evidence includes interval and
+downgrade states in both languages and themes.
+
+`version.changes_output_path` opts into the central `deploy/release-changes.json`
+artifact. It is generated and validated by the pinned shared engine in the same
+materialization as `version.nfo`; consumer code does not calculate or invent
+release history. The optional `export-changes` command seeds this output at the
+current materialized version during adoption. Historical changes retain their
+original provenance and may have no detailed summary.
+
+`scripts/build-app.sh` copies the central JSON into
+`Contents/Resources/ReleaseChanges.json` through `package-release-changes.py`,
+which rejects a different canonical version or repository and preserves bytes.
+Native loading additionally validates the complete version chain, source
+identities, deltas and plain-text summaries. Beta and stable builds both carry
+materialized changes without pretending an accepted publication occurred.
+
+After the first primary-process window and pending Finder opens are ready,
+Leonardo presents a scrollable native notice before the default-application
+startup prompt. Forwarded launches do not reopen it. The application menu’s
+`Release notes…` action always permits manual access. The notice defaults
+`Do not show again for this version` to enabled for each newly presented version.
+Closing by Done or the title-bar button persists that choice; disabling it allows
+repeat presentation on later launches of that version. Suppression is per version,
+not a global opt-out. Newer versions show all accumulated changes since the prior
+presented version. Repeated notices retain that same interval. First use or an
+unknown baseline explicitly shows available recorded history. A downgrade labels
+its earlier history instead of calling removed changes newly added.
+
+Preferences use isolated UserDefaults state under `releaseNotesPresentation.v1`.
+No network request is needed to show notes. A missing/invalid artifact does not
+interrupt startup and manual access explains its unavailability; normal packaging
+rejects identity drift before signing.
+
+Tracking: [#209](https://github.com/PinedaTec-EU/LeonardoMD/issues/209).
