@@ -144,7 +144,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
                     guard let window, window.isVisible else { return }
                     MarkdownAssociations.shared.presentStartupPrompt(on: window)
                 }
-                if !releaseNotes.presentAtStartup(afterClosing: continueStartup) { continueStartup() }
+                if !releaseNotes.presentAtStartup(on: window, afterClosing: continueStartup) { continueStartup() }
             }
         }
     }
@@ -237,8 +237,18 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         if let url { Task { await controller.session.open(url) } }
     }
 
-    @objc private func showAbout() { aboutWindow.present() }
-    @objc private func showReleaseNotes() { releaseNotes.presentManually() }
+    @objc private func showAbout() {
+        guard let parent = informationSheetParent else { return }
+        aboutWindow.present(on: parent)
+    }
+    @objc private func showReleaseNotes() {
+        guard let parent = informationSheetParent else { return }
+        releaseNotes.presentManually(on: parent)
+    }
+
+    private var informationSheetParent: NSWindow? {
+        windows.first { $0.window === NSApp.mainWindow }?.window ?? windows.last?.window
+    }
 
     @objc private func newTab() { activeDocuments?.addTab() }
     @objc private func closeTab() {

@@ -30,7 +30,7 @@ struct ApplicationVersion {
 }
 
 @MainActor
-final class AboutWindow: NSWindowController {
+final class AboutWindow: NSWindowController, NSWindowDelegate {
     init() {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 720, height: 580),
@@ -41,6 +41,7 @@ final class AboutWindow: NSWindowController {
         window.contentView = NSHostingView(rootView: AboutView(version: ApplicationVersion()))
         window.center()
         super.init(window: window)
+        window.delegate = self
         NotificationCenter.default.addObserver(self, selector: #selector(refreshLanguage),
             name: LanguageSettings.didChange, object: nil)
     }
@@ -51,10 +52,14 @@ final class AboutWindow: NSWindowController {
         window?.title = L10n.text("About LeonardoMD")
     }
 
-    func present() {
+    func present(on parent: NSWindow) {
         window?.title = L10n.text("About LeonardoMD")
-        showWindow(nil)
-        window?.makeKeyAndOrderFront(nil)
+        guard let window, window.sheetParent == nil else { return }
+        parent.beginSheet(window)
+    }
+    func windowWillClose(_ notification: Notification) {
+        guard let window else { return }
+        window.sheetParent?.endSheet(window)
     }
 }
 
