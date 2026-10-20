@@ -99,3 +99,59 @@ final class ReleaseNotesPreferencesTests: XCTestCase {
         XCTAssertTrue(preferences.suppressionDefault(for: "0.1.3"))
     }
 }
+
+
+@MainActor
+final class ReleaseNotesControllerTests: XCTestCase {
+    func testPrimaryStartupPresentsOnceCloseSuppressesAndManualAccessStillWorks() async throws {
+        _ = NSApplication.shared
+        let suite = "ReleaseNotesControllerTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = ReleaseNotesPreferences(defaults: defaults)
+        let notes = try releaseNotesFixture()
+        let controller = ReleaseNotesController(notes: notes, preferences: preferences)
+        var continuations = 0
+        let continued = expectation(description: "Startup continues after the release notes close")
+        XCTAssertTrue(controller.presentAtStartup { continuations += 1; continued.fulfill() })
+        let first = try XCTUnwrap(controller.window)
+        XCTAssertTrue(first.isVisible)
+        XCTAssertTrue(controller.presentAtStartup { XCTFail("Forwarded launch replaced the original continuation") })
+        XCTAssertTrue(controller.window === first)
+        first.close()
+        await fulfillment(of: [continued], timeout: 2)
+        XCTAssertEqual(continuations, 1)
+        XCTAssertFalse(preferences.shouldPresent(version: notes.version))
+        XCTAssertFalse(controller.presentAtStartup { XCTFail("Startup ran twice") })
+        controller.presentManually()
+        XCTAssertTrue(controller.window?.isVisible == true)
+        controller.window?.close()
+        let nextProcess = ReleaseNotesController(notes: notes, preferences: preferences)
+        XCTAssertFalse(nextProcess.presentAtStartup { XCTFail("Suppressed version presented") })
+        let newer = ReleaseNotesController(notes: try releaseNotesFixture(count: 4), preferences: preferences)
+        XCTAssertTrue(newer.presentAtStartup {})
+        newer.window?.close()
+    }
+
+    func testManualNoticeOpenedDuringStartupRetainsStartupContinuation() async throws {
+        _ = NSApplication.shared
+        let suite = "ReleaseNotesManualStartupTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let controller = ReleaseNotesController(notes: try releaseNotesFixture(), preferences: ReleaseNotesPreferences(defaults: defaults))
+        controller.presentManually()
+        let continued = expectation(description: "Manual notice continues pending startup")
+        XCTAssertTrue(controller.presentAtStartup { continued.fulfill() })
+        controller.window?.close()
+        await fulfillment(of: [continued], timeout: 2)
+    }
+
+    func testMissingArtifactDoesNotInterruptStartup() throws {
+        let suite = "ReleaseNotesMissingTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let controller = ReleaseNotesController(notes: nil, preferences: ReleaseNotesPreferences(defaults: defaults))
+        XCTAssertFalse(controller.presentAtStartup {})
+        XCTAssertNil(controller.window)
+    }
+}

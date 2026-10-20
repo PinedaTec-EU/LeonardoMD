@@ -7,7 +7,7 @@ final class ReleaseNotesController: NSObject, NSWindowDelegate {
     private let notes: ReleaseChanges?
     private let preferences: ReleaseNotesPreferences
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "release-notes")
-    private var window: NSWindow?
+    private(set) var window: NSWindow?
     private var attemptedStartup = false
     private var suppress = true
     private var baseline: String?
@@ -21,12 +21,21 @@ final class ReleaseNotesController: NSObject, NSWindowDelegate {
         self.notes = notes
         self.preferences = preferences
         super.init()
+        NotificationCenter.default.addObserver(self, selector: #selector(refreshLanguage),
+            name: LanguageSettings.didChange, object: nil)
     }
+
+    deinit { NotificationCenter.default.removeObserver(self) }
+
+    @objc private func refreshLanguage() { window?.title = L10n.text("Release notes") }
 
     /// Called after Finder opens finish. Forwarded launches never create another notice.
     @discardableResult
     func presentAtStartup(afterClosing: @escaping () -> Void) -> Bool {
-        if window?.isVisible == true { return true }
+        if window?.isVisible == true {
+            if !attemptedStartup { attemptedStartup = true; self.afterClosing = afterClosing }
+            return true
+        }
         guard !attemptedStartup else { return false }
         attemptedStartup = true
         guard let notes, preferences.shouldPresent(version: notes.version) else { return false }

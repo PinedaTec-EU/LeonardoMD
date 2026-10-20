@@ -16,7 +16,7 @@ test -z "$(git -C "$engine_root" status --porcelain --untracked-files=all -- "$e
 }
 export GITHUB_WORKSPACE="$PWD"
 export GITHUB_REPOSITORY='PinedaTec-EU/LeonardoMD'
-export LEDGER_COMMAND="${1:?Usage: scripts/release-ledger.sh validate|validate-pr|resolve-order|calculate|materialize|record-notes}"
+export LEDGER_COMMAND="${1:?Usage: scripts/release-ledger.sh validate|validate-pr|resolve-order|calculate|materialize|record-notes|export-changes}"
 export LEDGER_CONFIG_PATH='deploy/version/release-ledger.json'
 ledger_output=$(mktemp)
 trap 'rm -f "$ledger_output"' EXIT
