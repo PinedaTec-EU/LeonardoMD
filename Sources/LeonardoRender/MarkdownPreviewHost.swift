@@ -29,8 +29,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     private var renderWorkItem: DispatchWorkItem?
     private var readinessWaiters: [CheckedContinuation<Void, Error>] = []
     private var pdfDiagramWaiters: [CheckedContinuation<Void, Error>] = []
-    private var pdfExportActive = false
-    private var pdfExportWaiters: [CheckedContinuation<Void, Never>] = []
+    private let pdfExports = MarkdownPDFExportCoordinator()
     private var hasState = false
     private var content = ""
     private var documentURL: URL?
@@ -157,35 +156,43 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     }
 
     func exportPDF() async throws -> Data {
-        await acquirePDFExport()
-        defer { releasePDFExport() }
+        let ticket = try await pdfExports.acquire()
+        defer { pdfExports.release(ticket) }
         try Task.checkCancellation()
         guard let webView else { throw MarkdownRenderError.webViewUnavailable }
-        let timeoutTask = Task { @MainActor [weak self] in
+        let timeoutTask = Task { @MainActor [weak self, weak webView] in
             do {
                 try await Task.sleep(for: .seconds(5))
-                self?.markFailed(with: MarkdownRenderError.renderTimedOut)
+                guard let self, let webView, self.webView === webView,
+                      self.pdfExports.owns(ticket) else { return }
+                self.pdfExports.invalidate(with: MarkdownRenderError.renderTimedOut)
+                self.markFailed(with: MarkdownRenderError.renderTimedOut)
             } catch {
-                // Cancellation is expected after the page becomes ready.
+                // Cancellation is expected after the PDF export finishes.
             }
         }
         defer { timeoutTask.cancel() }
         guard await flushEdits() else { throw MarkdownRenderError.invalidPayload }
+        try validatePDFTurn(ticket, webView: webView)
         try await flushPendingRender()
+        try validatePDFTurn(ticket, webView: webView)
         try await waitUntilReady()
+        try validatePDFTurn(ticket, webView: webView)
         let restorePresentation = "window.LeonardoImages?.restorePreview(); window.LeonardoForms?.setExporting(false); document.querySelector('main')?.classList.remove('leonardo-form-export')"
         do {
             try await renderAllDiagramsForPDF()
+            try validatePDFTurn(ticket, webView: webView)
             _ = try await webView.evaluateJavaScript("window.LeonardoForms?.setExporting(true); document.querySelector('main')?.classList.add('leonardo-form-export')")
-            let data: Data = try await withCheckedThrowingContinuation { continuation in
-                let pdfConfiguration = WKPDFConfiguration()
-                webView.createPDF(configuration: pdfConfiguration) { result in
-                    continuation.resume(with: result)
+            try validatePDFTurn(ticket, webView: webView)
+            let data = try await pdfExports.createPDF(ticket: ticket) { completion in
+                webView.createPDF(configuration: WKPDFConfiguration()) { result in
+                    Task { @MainActor in completion(result) }
                 }
             }
             // Finish restoring this web view before the next export may swap
             // its image sources or form presentation again.
             _ = try await webView.evaluateJavaScript(restorePresentation)
+            try validatePDFTurn(ticket, webView: webView)
             return data
         } catch {
             _ = try? await webView.evaluateJavaScript(restorePresentation)
@@ -193,17 +200,10 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         }
     }
 
-    private func acquirePDFExport() async {
-        if !pdfExportActive {
-            pdfExportActive = true
-            return
+    private func validatePDFTurn(_ ticket: UUID, webView: WKWebView) throws {
+        guard pdfExports.owns(ticket), self.webView === webView else {
+            throw MarkdownRenderError.webViewUnavailable
         }
-        await withCheckedContinuation { pdfExportWaiters.append($0) }
-    }
-
-    private func releasePDFExport() {
-        if pdfExportWaiters.isEmpty { pdfExportActive = false }
-        else { pdfExportWaiters.removeFirst().resume() }
     }
 
     func scroll(to anchor: String) {
@@ -218,6 +218,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     }
 
     func teardown() {
+        pdfExports.invalidate()
         renderWorkItem?.cancel()
         renderWorkItem = nil
         markFailed(with: MarkdownRenderError.webViewUnavailable)
@@ -569,6 +570,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
                 onScrollProgress?(fraction)
             }
         case "leonardoPDFReady":
+            guard message.webView === webView, message.frameInfo.isMainFrame else { return }
             if let body = message.body as? [String: Any],
                let error = body["error"] as? String {
                 failPDFWaiters(with: MarkdownRenderError.pdfAssetFailure(error))

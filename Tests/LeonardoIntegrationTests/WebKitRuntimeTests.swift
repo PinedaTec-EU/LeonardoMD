@@ -382,13 +382,21 @@ final class WebKitRuntimeTests: XCTestCase {
         """)
         let first = Task { try await host.exportPDF() }
         try await waitFor("typeof window.releaseFirstPDF === 'function'", in: web)
-        let cancelled = Task { try await host.exportPDF() }
+        var cancellationReturned = false
+        let cancelled = Task {
+            defer { cancellationReturned = true }
+            return try await host.exportPDF()
+        }
         await Task.yield()
         cancelled.cancel()
         let second = Task { try await host.exportPDF() }
         // Hold the first export after its PDF variant has decoded, giving the
         // second caller time to enter the host while that image swap is active.
-        try await Task.sleep(for: .milliseconds(150))
+        for _ in 0..<100 {
+            if cancellationReturned { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertTrue(cancellationReturned, "Queued cancellation must return while the first export is still held")
         let callsWhileHeld = try await evaluate("window.pdfPrepareCalls", in: web)
         XCTAssertEqual(callsWhileHeld, "1", "The second export must wait for the first image swap to be restored")
         _ = try await web.evaluateJavaScript("void window.releaseFirstPDF()")
@@ -407,6 +415,54 @@ final class WebKitRuntimeTests: XCTestCase {
         let restoredWidth = try await evaluate("document.querySelector('img').naturalWidth", in: web)
         XCTAssertEqual(restoredStyle, originalStyle)
         XCTAssertEqual(restoredWidth, String(previewWidth))
+    }
+
+    func testPDFTeardownAndReplacementFailQueuedRequestsAndAllowNewExport() async throws {
+        let bytes = try largeRasterFixture()
+        let root = URL(fileURLWithPath: "/RetiredPDFFixture", isDirectory: true)
+        for explicitTeardown in [false, true] {
+            let assets = MarkdownMemoryAssets(files: ["large.png": bytes])
+            let config = MarkdownPreviewConfiguration(localAssetRoot: root, memoryAssets: assets)
+            let source = "![Large image](large.png)"
+            let (host, window) = makeHost(content: source, base: root, config: config)
+            defer { host.teardown(); window.close() }
+            let web = try XCTUnwrap(webView(of: host))
+            try await waitFor("document.querySelector('img')?.naturalWidth > 0", in: web)
+            _ = try await web.evaluateJavaScript("""
+            window.LeonardoImages.preparePDF = async () => {
+              window.pdfHeld = true;
+              await new Promise(() => {});
+            };
+            void 0;
+            """)
+            let active = Task { try await host.exportPDF() }
+            try await waitFor("window.pdfHeld === true", in: web)
+            var queuedReturned = false
+            let queued = Task {
+                defer { queuedReturned = true }
+                return try await host.exportPDF()
+            }
+            await Task.yield()
+            if explicitTeardown { host.teardown() }
+            var replacement = config
+            replacement.memoryAssets = MarkdownMemoryAssets(files: ["large.png": bytes])
+            host.apply(content: source, baseURL: root, configuration: replacement,
+                onLinkActivation: nil, onScrollProgress: nil)
+            for _ in 0..<100 {
+                if queuedReturned { break }
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            XCTAssertTrue(queuedReturned, "Retiring a view must fail its queued exports")
+            for task in [active, queued] {
+                do { _ = try await task.value; XCTFail("Retired exports must fail") }
+                catch { XCTAssertTrue(error is MarkdownRenderError) }
+            }
+            let nextWeb = try XCTUnwrap(webView(of: host))
+            XCTAssertFalse(web === nextWeb)
+            try await waitFor("document.querySelector('img')?.naturalWidth > 0", in: nextWeb)
+            let data = try await host.exportPDF()
+            XCTAssertTrue(data.starts(with: Data("%PDF".utf8)))
+        }
     }
 
     func testCanonicalMemoryRasterFormatsReachWebKitAndPDF() async throws {

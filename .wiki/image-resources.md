@@ -34,4 +34,6 @@ real `WebKitRuntimeTests` for raster/PDF quality, restoration and failure behavi
 See [validation and limits](../doc/validation/image-resources.md).
 
 PDF exports are serialized per preview host, including awaited restoration before
-the next export starts; cancelled queued callers do not prepare image variants.
+the next export starts. Queued cancellation returns without waiting for the active
+export; teardown fails queued/native requests and isolates late callbacks from
+a replacement view.

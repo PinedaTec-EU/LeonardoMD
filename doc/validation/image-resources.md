@@ -25,7 +25,9 @@ returns PNG to preserve alpha. Original files and corpus data remain unchanged.
 PDF preparation waits for the selected higher-resolution variants, preserves
 layout dimensions, and restores preview source selection and styles afterward.
 PDF exports are serialized per host; restoration finishes before the next caller
-can prepare image variants. Cancelled queued callers release their place.
+can prepare image variants. Queued cancellation returns independently of the active
+export. The export deadline and teardown/replacement fail queued requests and pending native captures;
+retired completions and releases cannot affect a replacement export.
 A rejected image shows its authored alt text (or an unavailable label); PDF
 export fails instead of silently omitting it.
 
@@ -43,19 +45,21 @@ The loader retains hashes and accounting only, with no additional image cache.
   regular-file enforcement, source-pixel limits, downsampling, independent PDF
   resolution, animation preservation and limits, SVG limits, repeat admission,
   document-generation reset, query-alias accounting, bounded URL metadata and cancellation.
+- `MarkdownPDFExportCoordinatorTests`: immediate queued cancellation, teardown of
+  a stalled native capture, fresh ownership and late-callback isolation.
 - `MarkdownImageSchemeTests`: queue limit, active-load completion across render updates, stop and teardown
   without late callbacks.
 - `WebKitRuntimeTests`: production memory-asset BMP/TIF/TIFF/ICO preview and PDF, real raster preview and PDF resolution, source/style
-  restoration, overlapping exports with queued cancellation, visible rejection fallback, export failure on missing assets,
+  restoration, overlapping exports with immediate queued cancellation and view replacement, visible rejection fallback, export failure on missing assets,
   64 small images in one request burst, and existing offline SVG/background behavior.
 - With `LEONARDO_VISUAL_EVIDENCE` set, WebKit tests capture
   `bounded-raster-preview.png`, `bounded-image-fallback.png` and
   `bounded-memory-formats.png`. The existing CI
   preview evidence artifact binds those captures to the reviewed head.
 
-Local validation on 2026-10-20: full `swift test` passed 497 tests with 14
+Local validation on 2026-10-20: full `swift test` passed 500 tests with 14
 intentional XCTest skips. Script tests ran 32 cases with seven engine-dependent
-skips and no failures. The per-PR ledger records eighteen successful compiler-bearing
+skips and no failures. The per-PR ledger records twenty successful compiler-bearing
 invocations; required exact-head CI and independent judgment are recorded on PR
 [#245](https://github.com/PinedaTec-EU/LeonardoMD/pull/245).
 
