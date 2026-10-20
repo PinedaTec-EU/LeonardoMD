@@ -107,3 +107,5 @@ Async session transitions register operation ownership before their first await,
 Recent project/workspace lists deduplicate by the same standardized file-path identity as favorites on initialization, decoding and mutation, preserving the first URL and its directory hint. Persisting loaded preferences removes stored duplicate rows. Regression: [#160](https://github.com/PinedaTec-EU/LeonardoMD/issues/160).
 
 Stable promotion of beta 0.1.404 retains source `2ad2111de8072f695b93053b3501d3aa16866815` and its functional/dependency tree. Owner acceptance and duplicate-fix confirmation: [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15#issuecomment-6235925865). Promotion uses a new ledger build, signed/notarized stable archive and refreshed combined beta feed; detailed updater matrix acceptance remains separately tracked in #15/#84.
+
+Document format/storage indicators reuse the active heading token on light palettes (Classic wine red); dark palettes retain category colors. Neutral Markdown/local-file indicators remain secondary. Tracking: [#220](https://github.com/PinedaTec-EU/LeonardoMD/issues/220).
