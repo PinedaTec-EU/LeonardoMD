@@ -1,0 +1,51 @@
+import AppKit
+import WebKit
+import XCTest
+@testable import LeonardoRender
+
+@MainActor
+final class FormCalendarTests: XCTestCase {
+    func testCalendarKeepsDraftsSynchronizesDatesAndUsesTheme() async throws {
+        let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 800, height: 700))
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { host.teardown(); window.close() }
+        let ready = expectation(description: "Bundled renderer ready")
+        host.onReady = { if $0 { ready.fulfill() } }
+        host.apply(content: "# Calendar", baseURL: nil, configuration: .default,
+                   onLinkActivation: nil, onScrollProgress: nil)
+        await fulfillment(of: [ready], timeout: 10)
+        let webView = try XCTUnwrap(host.subviews.compactMap { $0 as? WKWebView }.first)
+        let result = try await webView.evaluateJavaScript("""
+        (() => {
+          const root = document.createElement('main'); document.body.append(root);
+          LeonardoForms.begin({allowsFormFilling: true, source: 'calendar', leonardo: {document: {locale: 'es'}}}, root);
+          for (let i = 0; i < 2; i++) root.append(LeonardoForms.field('date', {type: 'date', label: 'Fecha'}, '2024-02-29'));
+          const input = root.querySelector('input');
+          root.querySelector('.leonardo-calendar-toggle').click();
+          const panel = root.querySelector('.leonardo-calendar');
+          const leap = panel.querySelectorAll('[data-date]').length === 29;
+          panel.querySelector('[data-date="2024-02-29"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowRight', bubbles: true}));
+          const keyboard = document.activeElement.dataset.date === '2024-03-01';
+          panel.querySelector('[data-date="2024-03-01"]').click();
+          const saved = LeonardoForms.snapshot().changes.date === '2024-03-01';
+          const synchronized = [...root.querySelectorAll('input')].every(e => e.value === '2024-03-01');
+          input.value = 'incomplete'; input.dispatchEvent(new Event('input'));
+          root.querySelector('.leonardo-calendar-toggle').click();
+          const draft = input.value === 'incomplete';
+          document.documentElement.style.setProperty('--ld-background', 'rgb(20, 30, 40)');
+          const themed = getComputedStyle(panel).backgroundColor === 'rgb(20, 30, 40)';
+          root.querySelector('.leonardo-calendar-toggle').dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+          const escaped = panel.hidden;
+          LeonardoForms.setExporting(true);
+          const exported = getComputedStyle(root.querySelector('.leonardo-calendar-toggle')).display === 'none';
+          return {leap, keyboard, saved, synchronized, draft, themed, escaped, exported};
+        })()
+        """) as? [String: Bool]
+        let checks = try XCTUnwrap(result)
+        for (name, passed) in checks { XCTAssertTrue(passed, name) }
+        XCTAssertEqual(checks.count, 8)
+    }
+}

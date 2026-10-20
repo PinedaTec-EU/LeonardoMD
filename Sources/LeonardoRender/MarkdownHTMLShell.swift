@@ -54,6 +54,7 @@ enum MarkdownHTMLShell {
           <script src="\(resourceURL(.previewEditing))"></script>
           <script src="\(resourceURL(.tableLayout))"></script>
           <script src="\(resourceURL(.tableResizing))"></script>
+          <script src="\(resourceURL(.leonardoCalendar))"></script>
           <script src="\(resourceURL(.leonardoForms))"></script>
           <script src="\(resourceURL(.leonardoLayout))"></script>
           <script src="\(resourceURL(.runtime))"></script>

@@ -7,6 +7,10 @@
     const date = new Date(`${value}T12:00:00`);
     return Number.isFinite(date.getTime()) && iso(date) === value ? date : null;
   };
+  const daysInMonth = month => {
+    const last = new Date(month); last.setMonth(last.getMonth() + 1); last.setDate(0);
+    return last.getDate();
+  };
   window.LeonardoCalendar = {
     attach(input, wrapper) {
       const locale = input.lang || "en";
@@ -36,7 +40,7 @@
         if (closeActive === close) closeActive = undefined;
       }
       function moveMonth(delta) {
-        const next = new Date(shown.getFullYear(), shown.getMonth() + delta, 1, 12);
+        const next = new Date(shown); next.setMonth(next.getMonth() + delta);
         if (next.getFullYear() < 1 || next.getFullYear() > 9999) return;
         shown = next; render();
       }
@@ -49,7 +53,7 @@
           grid.append(day);
         }
         const offset = (shown.getDay() + 6) % 7;
-        const count = new Date(shown.getFullYear(), shown.getMonth() + 1, 0).getDate();
+        const count = daysInMonth(shown);
         for (let index = 0; index < offset; index++) grid.append(document.createElement("span"));
         for (let number = 1; number <= count; number++) {
           const date = new Date(shown); date.setDate(number);
@@ -84,7 +88,7 @@
         if (event.key === "Escape" && !panel.hidden) { event.preventDefault(); close(); toggle.focus(); }
         if (event.altKey && event.key === "ArrowDown" && event.target === input) { event.preventDefault(); open(); }
       });
-      wrapper.addEventListener("focusout", event => { if (!wrapper.contains(event.relatedTarget)) close(); });
+      wrapper.addEventListener("focusout", () => queueMicrotask(() => { if (!wrapper.contains(document.activeElement)) close(); }));
       input.addEventListener("input", () => { if (!panel.hidden) render(); });
     }
   };
