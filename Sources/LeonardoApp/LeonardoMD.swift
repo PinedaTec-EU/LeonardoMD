@@ -45,6 +45,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private let diagnostics: StartupDiagnostics
     private var recordedFirstWindow = false
     private lazy var aboutWindow = AboutWindow()
+    private lazy var releaseNotes = ReleaseNotesController()
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "application")
     private let launchStarted = ContinuousClock.now
     private let instance: SingleInstance
@@ -139,7 +140,11 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
                 bringWindowsToFront()
             }
             if !terminationPending, let window = windows.last?.window {
-                MarkdownAssociations.shared.presentStartupPrompt(on: window)
+                let continueStartup = { [weak window] in
+                    guard let window, window.isVisible else { return }
+                    MarkdownAssociations.shared.presentStartupPrompt(on: window)
+                }
+                if !releaseNotes.presentAtStartup(afterClosing: continueStartup) { continueStartup() }
             }
         }
     }
@@ -233,6 +238,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showAbout() { aboutWindow.present() }
+    @objc private func showReleaseNotes() { releaseNotes.presentManually() }
 
     @objc private func newTab() { activeDocuments?.addTab() }
     @objc private func closeTab() {
@@ -267,6 +273,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         let app = submenu("LeonardoMD", in: menu)
         add(L10n.text("About LeonardoMD"), action: #selector(showAbout), to: app)
+        add(L10n.text("Release notes…"), action: #selector(showReleaseNotes), to: app)
         add(L10n.text("Preferences…"), action: #selector(preferences), key: ",", to: app)
         app.addItem(.separator())
         add(L10n.text("Quit LeonardoMD"), action: #selector(NSApplication.terminate(_:)), key: "q", to: app)

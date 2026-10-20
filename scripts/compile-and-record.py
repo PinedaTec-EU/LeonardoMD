@@ -11,14 +11,20 @@ from pathlib import Path
 SEGMENTS = {"release", "feature", "build"}
 
 
-def read_delta(path: Path) -> dict[str, int]:
+def read_delta(path: Path) -> dict:
     if not path.exists():
         return {}
     delta = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(delta, dict) or set(delta) - SEGMENTS:
-        raise ValueError("Entry must contain only release, feature and build deltas")
-    if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0 for value in delta.values()):
+    if not isinstance(delta, dict) or set(delta) - SEGMENTS - {"summary"}:
+        raise ValueError("Entry must contain only release, feature and build deltas and an optional summary")
+    if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0 for key, value in delta.items() if key in SEGMENTS):
         raise ValueError("Entry deltas must be positive integers")
+    if "summary" in delta:
+        import unicodedata
+        text = delta["summary"]
+        if (not isinstance(text, str) or not text or text != text.strip() or len(text) > 280
+                or any(unicodedata.category(char) in {"Cc", "Zl", "Zp"} for char in text)):
+            raise ValueError("Summary must be 1–280 single-line plain-text characters")
     return delta
 
 

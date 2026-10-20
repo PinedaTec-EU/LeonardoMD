@@ -70,6 +70,19 @@ class CompileAndRecordTests(unittest.TestCase):
         self.assertNotEqual(self.record().returncode, 0)
         self.assertEqual(self.entry.read_text(), '{"build":true}')
 
+    def test_success_preserves_author_summary_and_rejects_malformed_metadata(self):
+        self.entry.parent.mkdir(parents=True)
+        summary = "Documents retain their metadata when saved."
+        self.entry.write_text(json.dumps({"summary": summary, "build": 1}))
+        result = self.record()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(self.entry.read_text()), {"summary": summary, "build": 2})
+        for invalid in ["", "line\nbreak", " leading", "x" * 281]:
+            content = json.dumps({"summary": invalid, "build": 2})
+            self.entry.write_text(content)
+            self.assertNotEqual(self.record().returncode, 0)
+            self.assertEqual(self.entry.read_text(), content)
+
 
 if __name__ == "__main__":
     unittest.main()
