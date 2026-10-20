@@ -1,6 +1,6 @@
 # Little Leonardo
 
-Architecture reevaluation: [ADR 0002](../adr/0002-reevaluate-mobile-git-engine.md) recommends desktop-mediated editable documents as the future direction, with current Git compatibility retained until a separately accepted and validated migration. The checkpoints below describe implemented behavior, not acceptance of that recommendation.
+Architecture direction (owner-selected 2026-10-20): [ADR 0002](../adr/0002-reevaluate-mobile-git-engine.md) sets iOS to read-only with an offline cache and reserves editable synchronization for macOS/Windows desktop peers. Mobile Git retirement, legacy edit recovery and Windows interoperability remain implementation work. The contract/checkpoints below describe historical requirements and existing behavior; their mobile editing/Git scope is superseded for the target product, not yet removed from runtime.
 
 Implementation tracking: [#92](https://github.com/PinedaTec-EU/LeonardoMD/issues/92).
 

@@ -3,8 +3,9 @@
 Date: 2026-10-07
 
 Mobile Git ownership and lighter synchronization alternatives are reevaluated in
-[ADR 0002](0002-reevaluate-mobile-git-engine.md). Its proposed direction does not
-change the current desktop CLI decision or authorize a runtime migration.
+[ADR 0002](0002-reevaluate-mobile-git-engine.md). It records the owner-selected
+iOS read-only and macOS/Windows desktop-sync direction; runtime migration remains
+pending and the desktop CLI decision is retained.
 
 ## Decision
 

@@ -1,19 +1,25 @@
 # ADR 0002: Reevaluate the mobile Git engine and prefer document synchronization
 
 Date: 2026-10-20
-Decision state: Proposed architecture direction; owner acceptance and implementation are separate gates.
+Decision state: Owner-selected product direction on 2026-10-20; runtime migration and Windows delivery remain pending.
 Tracking: [#244](https://github.com/PinedaTec-EU/LeonardoMD/issues/244).
 Evidence baseline: main `88b70a9bea8c5a256b9390c0c3b8f0ec65ed3cf1`.
 
-## Recommendation
+## Decision
 
-**Simplify the product toward desktop-mediated document editing. Do not treat maintaining a custom Git engine as the default long-term architecture.** Keep the existing engine compatible during evaluation and migration; this ADR neither disables it nor authorizes deleting user data or capabilities.
+**Simplify: iOS is a read-only companion; editable document synchronization belongs between LeonardoMD desktop instances on macOS and Windows. Retire the custom mobile Git engine through a separately validated migration.** The owner selected this direction on 2026-10-20 after the first reevaluation draft.
 
-For an editor whose core value is documents and forms, implementing Git transport and object machinery is a substantial secondary responsibility. Its distinctive benefit here is a narrower one: iOS can publish selected document changes directly to a supported Git remote while the desktop is unavailable, across providers, without transferring unrelated file contents. The repository demonstrates that capability technically, but contains no adoption, operating-cost or demand measurements establishing that its incremental value pays for owning the engine.
+The target contract is:
 
-The preferred replacement sends scoped document proposals to the paired desktop, which performs manual reconciliation and uses installed Git when the user chooses to commit or publish. It retains offline editing and durable queued changes. **It sacrifices publication while the desktop is unavailable and requires an authorized LAN/private-overlay path to synchronize.** That is a product concession requiring explicit owner acceptance, not an equivalent implementation of the current contract.
+- **iOS:** read authorized documents/resources, refresh them from a paired desktop, and retain an offline reading cache. No document creation, editing, form-value mutation, deletion, editable proposal submission, Git enrollment or Git publication. Read-only is an authorization boundary as well as a UI constraint; preferences and owned cache maintenance remain possible.
+- **macOS/Windows:** create and edit local documents offline, synchronize explicitly selected documents/folders between desktop peers, and reconcile conflicts manually without discarding unsaved work. Peer synchronization must not require Git or a cloud backend. Git remains an optional independent desktop workflow using an established implementation; synchronization success does not imply a Git commit or push.
+- **Connectivity:** retain authenticated, explicitly authorized LAN/private-overlay synchronization. A peer must be running and reachable to exchange changes; existing local copies remain usable offline. There is no promise of continuous background execution, public Internet relay or always-available cloud synchronization.
 
-If desktop-independent publication remains mandatory, evaluate a provider API adapter first for an explicitly supported provider set. If provider-independent Git transport and strict selective transfer also remain mandatory, retain the current bounded engine until a library proves those requirements. There is no demonstrated drop-in replacement in this reevaluation.
+This replaces the first draft's suggestion of editable iOS proposals. It also deliberately gives up the original mobile requirements for offline editing and publication to a Git host while the desktop is unavailable. Those are accepted product reductions, not implementation equivalence.
+
+For a document/form editor, owning Git framing, packs and remote publication no longer provides a needed mobile capability under this contract. **Long-term maintenance of the custom mobile engine does not compensate for its benefits in the selected product scope.** Keep compatibility temporarily to recover pending work; do not expand it into a general Git client or replace it with a provider API or another mobile Git library.
+
+This ADR records the selected direction and retirement gates. It does not remove current runtime capabilities, implement Windows, or authorize discarding in-flight work. Windows is currently roadmap work under [#227](https://github.com/PinedaTec-EU/LeonardoMD/issues/227); selecting desktop sync does not claim that a Windows edition or a portable sync service exists.
 
 ## Why a new ADR is necessary
 
@@ -21,7 +27,7 @@ If desktop-independent publication remains mandatory, evaluate a provider API ad
 
 The original [issue #92](https://github.com/PinedaTec-EU/LeonardoMD/issues/92) required server-independent Git access beyond LAN, folder selection before file-content transfer, no full-clone fallback, offline mutation, device branches and manual desktop integration. It explicitly excluded editable direct mobile synchronization and sought to avoid a proprietary editable synchronization engine. Those requirements explain why the implemented solution is complicated; they do not establish that this product scope was economical. The desktop-peer implementation now supplies some editable direct-sync machinery, changing the reuse opportunity since the original decision.
 
-This is a present-day reevaluation. It does not invent historical reasons for rejecting libraries or claim that the lighter alternatives were previously prototyped. Acceptance would supplement ADR 0001 for mobile strategy; changes to the product contract remain a separate decision. Until then, #92 and the implemented behavior remain authoritative.
+This is a present-day reevaluation. It does not invent historical reasons for rejecting libraries or claim that the lighter alternatives were previously prototyped. The owner-selected direction supplements ADR 0001 for mobile/desktop synchronization strategy and supersedes the mobile editing/Git requirements in #92 for the future product. #92 and the checkpoints remain evidence of historical requirements and implemented behavior until migration delivers the new contract.
 
 ## What we actually own
 
@@ -39,36 +45,33 @@ We have implemented a restricted Git client, not a complete replacement for Git.
 
 Desktop already uses installed Git through [GitRepository](../../Sources/LeonardoCore/GitRepository.swift) and [DesktopGitCLIAdapter](../../Sources/LeonardoApp/DesktopGitCLIAdapter.swift). The custom module is also imported by desktop integration, so retiring mobile transport does not immediately make the whole target deletable.
 
-## Requirements to preserve and requirements to reconsider
+## Requirements retained and deliberately removed
 
 Preserve selected-content boundaries; explicit authorization; offline add/edit/delete and restart; bounded resource use; durable retries; manual conflict resolution; later-edit preservation; and an exact association between a proposal and its accepted result. Never silently download unrelated blobs, widen grants, discard drafts or claim integration from a moving branch alone.
 
-Reconsider these product choices independently:
+The owner has removed mobile editing, mobile Git publication, provider-independent mobile transport and Git-only discovery of mobile proposals from the target product. Device branches and mobile integration receipts are legacy state to drain, not features to rebuild. iOS refreshes only its approved reading cache; it must not hold an editable desktop-peer grant.
 
-1. Must the mobile device publish while the desktop is off or unreachable?
-2. Must that work with arbitrary supported Git hosts over both SSH and HTTPS, or is a named provider sufficient?
-3. Must published work remain discoverable through Git without the pairing service?
-4. Are Git device branches a user requirement, or an implementation of sending document changes?
+Editable desktop peers retain durable offline work, proposal identity, base/current/incoming comparison and exact receipts. These responsibilities remain even when Git transport disappears. Scope selection governs both document transfer and desktop mutation.
 
 Selection is a client transfer policy, not a Git-server authorization boundary. A repository credential may permit access beyond the selected folder even when the app requests only selected content. Migration must preserve the actual transfer guarantees without overstating their security scope.
 
 ## Alternatives compared
 
-Ratings below are qualitative engineering judgments based on responsibility ownership. They are not measured time, memory, defect rate or financial savings.
+Ratings below are qualitative engineering judgments based on responsibility ownership. They are not measured time, memory, defect rate or financial savings. A–C compare the historical editable-mobile contract; D is the selected reduced mobile/desktop contract.
 
 | Option | Offline editing | Publish with desktop unavailable | Provider-independent remote access | Strict selected-content transfer to mobile | Ongoing responsibility |
 | --- | --- | --- | --- | --- | --- |
 | A. Current custom engine | Implemented | Implemented for supported remotes | Git protocol; requires server capabilities | Implemented with filtering and selected wants; unsupported servers fail | Git subset, transports and product reconciliation |
 | B. Existing embedded Git library | Feasible; migration needed | Feasible | Candidate-specific; unproven here | Not demonstrated for required filtering | Library integration, security updates and product reconciliation |
 | C. Provider Git-object API | Feasible; new adapter needed | Yes for chosen provider, subject to API/auth limits | No | Selected blob reads are feasible; must prove bounds and metadata handling | Provider API/auth plus product reconciliation |
-| D. Desktop-mediated editable documents | Existing desktop-peer logic can inform a mobile implementation | No; queue until desktop reachable | Desktop keeps installed Git support | Granted document snapshots; no mobile Git fetch | Direct service, offline proposals, conflicts and receipts |
-| E. Direct read-only mobile + explicit file export | Existing reading/offline cache; no integrated editable sync | No integrated publication | Git stays on desktop | Existing granted snapshots | Lowest new sync responsibility; much less product capability |
+| D. Read-only iOS + editable macOS/Windows peers | Desktop only; iOS caches reading | No mobile publication; desktops queue sync while peers are offline | Sync is independent of Git providers | Granted reading snapshots; no mobile Git fetch | Direct service and desktop reconciliation; Windows adapters pending |
+| E. Read-only iOS + manual desktop exchange | Desktop local editing only | No integrated mobile publication | Git stays on desktop | Existing granted snapshots | Lowest sync responsibility; loses desktop reconciliation |
 
 ### A. Maintain the current engine
 
 The strongest case is simultaneous demand for desktop independence, provider independence and selected-only transfer. Existing interoperability evidence includes real Git packs, SHA-1/SHA-256 fixtures, generated-key SSH, offline mutation and two publication/integration cycles; see [validation](../validation/little-leonardo/README.md). These are useful migration oracles, not proof of broad host compatibility, physical-device readiness, low maintenance cost or security completeness. No tests were rerun for this documentation change.
 
-Future cost includes hostile-input parsing, protocol/server compatibility, credentials and host keys, dependency updates, resource limits, interrupted pushes and integration recovery. Supporting a protocol subset does not remove these obligations. Keep this option only for a demonstrated product need or as a compatibility bridge, not because it is already built. Immediate removal would also create avoidable migration and data-loss risk.
+Future cost includes hostile-input parsing, protocol/server compatibility, credentials and host keys, dependency updates, resource limits, interrupted pushes and integration recovery. Supporting a protocol subset does not remove these obligations. Under the selected scope keep this option only as a compatibility bridge; a new product decision would be needed to retain mobile Git long term. Immediate removal would also create avoidable migration and data-loss risk.
 
 ### B. Replace the engine with an existing library
 
@@ -76,7 +79,7 @@ A C library such as libgit2 could transfer object/pack/transport maintenance ups
 
 Sparse checkout limits the working tree; [partial clone](https://git-scm.com/docs/partial-clone) limits fetched objects. [Sparse-checkout documentation](https://git-scm.com/docs/git-sparse-checkout) therefore does not establish compliance with the mobile transfer contract. A shallow/full fetch followed by deleting unwanted files fails that contract.
 
-Before selection, a bounded spike must prove iOS packaging, required hashes, authentication/host trust, metadata-first folder selection, no excluded blobs, safe publication and interruption recovery against actual supported servers. Assess licensing, dependency footprint and Swift/C ownership too. No library was built or benchmarked in this task. Recreating filtering or transport in a custom fork risks retaining the difficult work while adding an abstraction. B is a sensible feasibility candidate if current product requirements survive; it is not an approved replacement.
+Before selection, a bounded spike must prove iOS packaging, required hashes, authentication/host trust, metadata-first folder selection, no excluded blobs, safe publication and interruption recovery against actual supported servers. Assess licensing, dependency footprint and Swift/C ownership too. No library was built or benchmarked in this task. Recreating filtering or transport in a custom fork risks retaining the difficult work while adding an abstraction. B would be a feasibility candidate only if the historical editable-mobile requirements were reintroduced. Under the selected read-only scope it is unnecessary.
 
 ### C. Use a provider API
 
@@ -84,49 +87,61 @@ GitHub's [Git database API](https://docs.github.com/en/rest/guides/using-the-res
 
 This removes mobile pack decoding, Git wire protocol and SSH integration. It retains offline state, optimistic concurrency, conflicts, publication journals and exact integration semantics. It introduces provider authentication, token scopes, API limits and provider/version compatibility. A per-file contents upload loop is not equivalent to an atomic multi-file proposal.
 
-Choose C ahead of a custom protocol engine if independent mobile publication is valuable and a limited provider set is acceptable. GitHub illustrates feasibility; GitLab or other adapters would need separate evidence. No provider API prototype, private-repository authentication flow or performance test was performed here.
+C could be preferable to a custom protocol engine if a future decision reintroduced independent mobile publication with a limited provider set. It is unnecessary for the selected read-only scope. GitHub illustrates feasibility; GitLab or other adapters would need separate evidence. No provider API prototype, private-repository authentication flow or performance test was performed here.
 
-### D. Reuse the direct-sync foundation for editable mobile proposals — preferred direction
+### D. Read-only iOS and editable desktop peers — selected direction
 
-Download the authorized corpus, edit locally, and persist a proposal containing its identity, base revision, selected scope and changes. Queue it while disconnected. When the paired desktop is reachable, upload it, review explicitly against current files and drafts, apply through the transaction journal, and return an immutable receipt. Incorporate that receipt without discarding edits made after submission. Desktop Git commit/push remains an explicit desktop workflow with a separate success/failure state.
+iOS receives only authorized document snapshots and resources. It keeps offline reading, manual/foreground refresh and eventual revocation cleanup. Creating or editing documents and filling/saving forms belong to desktop applications. Hiding edit controls is insufficient: the client must not enroll as a desktop peer or invoke mutation routes.
 
-[DesktopPeerCopy](../../Sources/LeonardoSync/DesktopPeerCopy.swift), [DesktopPeerProposal](../../Sources/LeonardoSync/DesktopPeerProposal.swift), [DesktopPeerAcceptance](../../Sources/LeonardoDesktopSync/DesktopPeerAcceptance.swift) and the transaction/receipt stores provide reuse candidates. Mobile direct mode currently remains read-only. The existing desktop-peer path does not prove mobile permission handling, lifecycle recovery, UI or migration readiness. Editable mobile grants, revocation, eventual cache deletion and queued-proposal behavior must be designed and tested explicitly; do not silently grant write permission to existing read-only pairings.
+Desktop instances retain editable scoped copies. A change proposal identifies its base revision and scope; the receiving desktop reviews it against current files and unsaved buffers, applies an approved result through a recoverable transaction, and returns an immutable receipt. Later local edits survive incorporation. Existing [DesktopPeerCopy](../../Sources/LeonardoSync/DesktopPeerCopy.swift), [DesktopPeerProposal](../../Sources/LeonardoSync/DesktopPeerProposal.swift), [DesktopPeerAcceptance](../../Sources/LeonardoDesktopSync/DesktopPeerAcceptance.swift), journals and receipt stores provide a macOS reference implementation. [PairingRegistry](../../Sources/LeonardoSync/PairingRegistry.swift) already distinguishes `readOnly` and `desktopPeer` grants.
 
-This contradicts #92's original exclusion of proprietary editable mobile synchronization. It is preferable now only because a scoped reconciliation foundation already exists for desktop peers and because we recommend relaxing desktop-independent publication. It still owns a synchronization protocol. Building a second parallel conflict engine would defeat the simplification: reuse common state/receipt boundaries and measure the net reduction before removing Git.
+This reuses the existing editable desktop model rather than inventing another reconciliation engine for mobile. It removes the need for mobile Git remote credentials, packs, object publication and Git-only proposal discovery. It still owns a bounded synchronization protocol, secure pairing, retries and conflict handling; simplification is not the elimination of all distributed-state complexity.
 
-No public Internet relay or cloud backend is proposed. The Mac must be running and reachable over the authorized private network/overlay to receive changes. “Saved locally”, “received by desktop”, “applied”, and “published to Git” must remain distinguishable. This option loses Git-only discovery of pending mobile branches; the direct inbox becomes the discovery mechanism. It cannot be sold as equivalent remote availability.
+#### macOS/Windows interoperability contract
 
-### E. Reduce scope to reading and explicit file exchange
+The Windows issue originally excluded synchronization from its initial local-document scope. The owner's new direction adds cross-desktop sync as a future product workstream; it does not silently turn that deferred Windows edition into an immediate implementation commitment or require it to ship with sync on day one.
 
-Keep direct cached reading and let users export edited documents for manual import on desktop, or keep mobile entirely read-only. This removes the most synchronization work, but loses integrated multi-file sends, deletion semantics, durable acknowledgements and conflict continuity. Export is a useful recovery path, not an equivalent editing workflow. Prefer E only if mobile editing is not a product priority; it gives up more value than D.
+Portable contracts and conformance fixtures should be the reuse boundary, not an assumed shared Apple runtime. `LeonardoSync/PairingRegistry.swift` imports Security/CryptoKit; `LeonardoSyncTransport/LANHTTPSListener.swift` uses Network.framework; desktop runtime, identity and filesystem adapters are macOS-gated. Windows needs its own secure credential/certificate storage, TLS/networking, filesystem and application-buffer adapters. Their feasibility has not been proven in this task.
+
+Before implementation, specify and test:
+
+1. A versioned document-snapshot/proposal/receipt protocol, explicit capability negotiation, compatible schema evolution, and fail-closed handling of unsupported clients. Both platforms can serve or consume an explicitly granted project; one designated source owner per shared project coordinates manual acceptance. This is not unrestricted multi-master replication. Changing the source owner requires a separate migration contract.
+2. Identical MDLF/MDLR/MDLZ semantics and byte preservation where appropriate; one proposal must not expose half of a packaged document. Treat package files as atomic transfer units unless a separately agreed package-aware merge exists.
+3. A portable relative-path policy covering case and Unicode aliases, Windows reserved names, separators, symlinks/reparse points and traversal. Reject incompatible/conflicting names before materialization; never silently rename or omit content and call synchronization complete.
+4. Base/current/incoming conflict review for concurrent edits, additions and deletions; stale-review rejection; unsaved-buffer leases; bounded recoverable transactions; exact receipt incorporation; durable retries and duplicate suppression across restart. Do not assume atomic multi-file filesystem operations are equivalent on both operating systems.
+5. Consent-bound read-only versus desktop-peer roles, host identity verification, device-local secret storage, explicit project grants and revocation on both platforms. A read-only iOS credential cannot be upgraded implicitly. A binary claiming to be a desktop is not proof of permission; explicit owner consent authorizes a write-capable peer.
+6. Real macOS↔Windows conformance and end-to-end evidence for pairing, selected-only transfer, offline reconnect, conflicts, interruption recovery, revocation and mixed protocol versions, plus same-platform regression checks. macOS fixtures alone do not establish Windows acceptance.
+
+Retain the existing LAN/private-overlay boundary for the first scope. No new public service, relay or mandatory Git repository is introduced. Show locally saved, submitted, accepted and synchronized as distinct states; any subsequent Git commit/push has its own status.
+
+### E. Read-only mobile with no editable desktop synchronization
+
+Keeping iOS reading while using only explicit document export/manual copy on desktops has the lowest synchronization responsibility. It loses integrated desktop offline reconciliation, deletion continuity and durable acknowledgements. Export remains useful for recovery, but E does not meet the selected desktop synchronization goal. D is therefore preferred even though E would remove more code.
 
 ## Does maintaining the engine pay?
 
-**Long term: the evidence does not justify custom Git as the default investment; prefer D. Short term: retaining compatibility is safer than an immediate rewrite or removal.** C is the fallback direction if independent publication is essential and provider scope can narrow. A remains justified if the owner explicitly retains all three demanding requirements and B cannot satisfy them with lower ownership cost.
+**For the selected scope, no: a read-only iOS reader and document synchronization between desktops do not require a proprietary Git client.** Historical Git interoperability tests remain valuable for safely draining legacy work, not a reason to preserve unnecessary mobile publication indefinitely. A library or provider API would retain an unwanted mobile capability and add migration work without solving a current target requirement.
 
-Past implementation effort is sunk cost. Existing verified behavior matters because replacing it creates future migration and regression work. Both must be considered without confusing them.
+The original engine was motivated by the simultaneous requirements for mobile editing, desktop-independent publication and provider-independent selected-only Git transfer. The owner has now removed those requirements. This is the concrete reason the cost/benefit decision changes; the conclusion does not depend on a fabricated performance or financial estimate.
 
-A cost comparison must include:
+Existing verified behavior matters because replacing it creates future migration and regression work. Do not confuse that transition cost with a reason for indefinite expansion. Retirement still needs a module/dependency usage audit: desktop code imports `LeonardoGit`, and not all NIO/Crypto/zlib usage can be assumed removable. Preserve normal desktop Git CLI integration and unrelated document services.
 
-- **Keep:** expected Git-specific maintenance/security/interoperability work, dependency support and opportunity cost over a stated planning horizon.
-- **Simplify:** implementation and data migration, temporary dual support, direct-sync maintenance, retained conflict/receipt work and the user cost of waiting for the desktop.
-- **Value lost:** how often users actually need direct publication while the desktop is unavailable, and whether provider restrictions are acceptable.
+No measured maintenance hours, adoption data or migration estimate are available in the inspected evidence. Before scheduling implementation, estimate retirement, compatibility support, Windows adapters and ongoing direct-sync ownership over the same planning horizon. Reject a design that keeps both full Git and a second redundant reconciliation engine indefinitely. Do not promise a line-count reduction or delivery date from this ADR alone.
 
-There are no measured values for these terms in the repository evidence inspected. Do not invent person-week estimates or claim quantified savings from line counts. Before a migration commitment, record an owner-reviewed estimate for the same horizon and an explicit account of the lost workflow. If D creates comparable custom machinery without removing Git responsibilities, reject that migration rather than running both indefinitely.
+## Staged implementation and migration gates
 
-## Staged decision and migration gates
+1. **Record the product decision — completed in this ADR.** iOS read-only; editable sync between macOS/Windows; no mobile Git replacement. Track runtime retirement and Windows sync implementation separately with canonical issues and acceptance criteria. Documentation acceptance does not establish runtime delivery.
+2. **Protect legacy edits before disabling writes.** Inventory mobile Git connections, base/current/published snapshots, branches, pending receipts and credentials. Provide recovery/export to a desktop. Drain already published proposals with the compatibility adapter or migrate them with a verified exact baseline. Never relabel pending work as applied, delete unsent content, or publish it automatically as part of an upgrade. The reader-only UI may offer recovery of legacy work without creating new edits.
+3. **Deliver iOS read-only enforcement.** Remove new Git enrollment and document mutation flows; prohibit writable peer enrollment and proposal submission; retain only authorized reading/refresh/cache behavior. Existing paired desktops must explicitly downgrade or revoke obsolete writable grants; already issued credentials cannot be made read-only by hiding controls. Preserve historical Git branches independently of direct-cache revocation.
+4. **Specify and prove desktop interoperability.** Build a bounded macOS/Windows vertical slice using the protocol contract above. Preserve the Windows local-document roadmap as a prerequisite, without claiming portability from shared Swift module names. Test the same fixtures on both platforms and an actual cross-platform exchange before broad rollout.
+5. **Retire only unused Git responsibilities.** Audit app/mobile dependencies and serialized data, retain compatibility needed to drain old proposals, then remove obsolete Git transport/object/publication code in a separately reviewed change. Prove desktop Git commands and desktop sync still work independently. Preserve versioned legacy archives until recovery is verified.
+6. **Validate migration and rollback.** Prove restart at each state transition, repeated receipts, no duplicate publication, later-edit preservation and recovery from a failed upgrade. Test iOS reading online/offline and mutation denial, and desktop edit/create/delete/conflict flows. Rollback must preserve recoverable user work without re-enabling stale credentials or dual-submitting proposals.
 
-1. **Accept or reject the product concession.** Record the owner's choice on desktop availability, supported providers and Git-only discovery. This ADR proposes a direction; it does not amend #92 or authorize a runtime migration by itself.
-2. **Prove one replacement path.** For D, reuse the existing direct proposal/receipt core in a bounded iOS vertical slice. If desktop independence is retained, spike C or B according to the required provider scope. Do not implement all alternatives.
-3. **Compare net ownership.** List modules/dependencies actually removed, logic retained, new code owned, estimated transition effort and ongoing maintenance. Establish acceptance of the user workflow with a reachable and an unavailable desktop. No retirement approval without this comparison.
-4. **Preserve in-flight work.** Inventory Git connections, base/current/published snapshots, device branches, pending receipts and credentials. Provide an export/recovery path. Either complete each pending Git cycle through the old adapter or migrate it with a verified exact baseline; never relabel an unintegrated send as applied. Migration must be idempotent across restart, avoid duplicate sends and preserve later local edits.
-5. **Validate and stage retirement.** Prove add/edit/delete, conflicts with unsaved desktop buffers, scope exclusions, failed delivery, restart before/after acceptance, repeated receipts, revocation and later edits. For any remote replacement, prove no unrelated blob transfer against real servers. Retain a compatibility reader/adapter until pending state is drained; remove only unused code after a separately reviewed migration. Rollback must preserve the original state and exportable edits, without dual-publishing proposals.
-
-Owner acceptance of the direction, prototype success and implementation delivery are distinct events. This documentation-only PR completes the reevaluation, not those events. Runtime/source migration requires its own canonical issue, product-contract update, current-head tests, CI and independent review.
+The documentation PR completes the reevaluation and records owner selection. Runtime/source migration, permission changes and Windows work require their own issue-linked changes, current-head validation, CI and independent review. No runtime behavior changes in this PR.
 
 ## Revisit conditions and evidence limits
 
-Revisit this recommendation when actual usage demonstrates desktop-independent, provider-independent publication is important; a maintained library proves strict selective transfer; or measured transition cost outweighs expected future Git ownership over the chosen horizon. Conversely, recurring Git-only compatibility/security work strengthens the case for simplifying but must be evidenced, not presumed.
+Reopen the decision if the owner reintroduces mobile editing or remote Git publication, or if cross-platform implementation evidence changes the desktop design. New mobile Git demand would require a new alternatives analysis; it must not silently reactivate the retired architecture. Measured maintenance and migration evidence should guide sequencing without changing the selected read-only mobile contract by accident.
 
 Repository evidence was inspected locally at the baseline above; historical validation is linked rather than newly claimed. External sources are official Git, libgit2 and GitHub documentation retrieved through the web tool's HTML/text representation on 2026-10-20. These establish API capabilities and distinctions, not comparative performance or customer demand. No provider benchmark, library spike, physical-device test or migration was performed. Human-versus-agent representations were not compared; no source instructions were used as operational instructions.
 

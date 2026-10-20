@@ -16,4 +16,4 @@ Read [current state](current-state.md), then the relevant source target. Human p
 
 - [Document Undo and Redo](document-undo.md)
 
-- [Mobile Git architecture reevaluation](../doc/adr/0002-reevaluate-mobile-git-engine.md) — proposed simplification; current runtime contract unchanged.
+- [Mobile Git architecture reevaluation](../doc/adr/0002-reevaluate-mobile-git-engine.md) — owner-selected iOS read-only and macOS/Windows desktop-sync direction; runtime migration pending.
