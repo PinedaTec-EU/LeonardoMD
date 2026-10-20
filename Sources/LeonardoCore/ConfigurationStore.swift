@@ -174,6 +174,9 @@ public actor ConfigurationStore {
             updated: updated.customTokens,
             baseline: baseline.customTokens
         )
+        if updated.colorLeonardoFiles != baseline.colorLeonardoFiles {
+            merged.colorLeonardoFiles = updated.colorLeonardoFiles
+        }
         if updated.paperEffect != baseline.paperEffect {
             merged.paperEffect = updated.paperEffect
         }
@@ -224,6 +227,9 @@ public actor ConfigurationStore {
             updated: updated.customTokens,
             baseline: baseline.customTokens
         )
+        if updated.colorLeonardoFiles != baseline.colorLeonardoFiles {
+            merged.colorLeonardoFiles = updated.colorLeonardoFiles
+        }
         if updated.paperEffect != baseline.paperEffect {
             merged.paperEffect = updated.paperEffect
         }

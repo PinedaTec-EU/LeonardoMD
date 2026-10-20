@@ -64,6 +64,10 @@ final class AppSession {
     var showInspector = false
     var showPreferences = false
     var showGit = false
+    var showAllFiles = false
+    var foldersFirst = true
+    var fileSortDescending = false
+    var colorLeonardoFiles: Bool { projectConfiguration.colorLeonardoFiles ?? globalPreferences.colorLeonardoFiles }
     var showHidden = false
     var showFrontmatter = UserDefaults.standard.bool(forKey: "showFrontmatter")
     var confirmExternalLinks = UserDefaults.standard.object(forKey: "confirmExternalLinks") as? Bool ?? true

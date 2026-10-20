@@ -69,6 +69,7 @@ struct PreferencesView: View {
             Form {
                 Section(L10n.text("Appearance")) {
                     appearancePreferences
+                    FileColorPreferences(session: session, projectScope: projectScope)
                     if projectScope {
                         Text(L10n.text("Saved in .leonardomd/project.json. Contains no credentials."))
                             .font(.caption).foregroundStyle(.secondary)

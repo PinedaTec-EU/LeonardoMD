@@ -35,7 +35,7 @@ struct ProjectSidebar: View {
                 Button { session.createItem(directory: false) } label: { Label(L10n.text("Note"), systemImage: "doc.badge.plus") }
                 Button { session.createItem(directory: true) } label: { Image(systemName: "folder.badge.plus") }
                 Spacer()
-                Toggle(L10n.text("Hidden"), isOn: $session.showHidden).toggleStyle(.checkbox).font(.caption)
+                FileListMenu(session: session)
             }
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 2) {
@@ -71,6 +71,9 @@ struct ProjectSidebar: View {
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.regularMaterial)
+        .onChange(of: session.showAllFiles) { _, _ in Task { await session.refreshTree() } }
+        .onChange(of: session.foldersFirst) { _, _ in Task { await session.refreshTree() } }
+        .onChange(of: session.fileSortDescending) { _, _ in Task { await session.refreshTree() } }
         .onChange(of: session.showHidden) { _, _ in Task { await session.refreshTree() } }
     }
 }
@@ -78,6 +81,10 @@ struct ProjectSidebar: View {
 struct FileTreeRow: View {
     let entry: NavigationEntry
     @Bindable var session: AppSession
+    private var isColoredLeonardo: Bool {
+        session.colorLeonardoFiles && !entry.isDirectory &&
+        ["mdlf", "mdlr", "mdlz"].contains(entry.url.pathExtension.lowercased())
+    }
     @State private var expanded = false
     @State private var children: [NavigationEntry] = []
     var body: some View {
@@ -92,8 +99,9 @@ struct FileTreeRow: View {
                     if entry.isDirectory {
                         Image(systemName: expanded ? "chevron.down" : "chevron.right").font(.caption2).frame(width: 10)
                     } else { Color.clear.frame(width: 10, height: 1) }
-                    Image(systemName: entry.symbol).foregroundStyle(.secondary)
+                    Image(systemName: entry.symbol).foregroundStyle(isColoredLeonardo ? LeonardoFileStyle.wine : .secondary)
                     Text(entry.name).lineLimit(1)
+                        .foregroundStyle(isColoredLeonardo ? LeonardoFileStyle.wine : .primary)
                     Spacer(minLength: 0)
                 }.padding(.vertical, 6).padding(.horizontal, 6)
                     .background(session.documentURL == entry.url ? session.accentColor.opacity(0.14) : .clear, in: RoundedRectangle(cornerRadius: 6))
