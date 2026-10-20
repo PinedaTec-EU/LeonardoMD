@@ -74,7 +74,7 @@ The compilation recorder retains summary metadata while incrementing `build`.
 ## Shared engine operation
 
 The engine remains in `PinedaTec-EU/pinedatec-ci`, pinned to integrated commit
-`d5bf9cbf0b5a2c92dfb6fafa24e718fa3fcedebe`; do not copy it or use a mutable pin.
+`6a411f4efed3a695b0fe5888717def24ce624f6e`; do not copy it or use a mutable pin.
 `scripts/release-ledger.sh` is a thin operator entrypoint. Set
 `LEDGER_ENGINE_ROOT` to a clean checkout at that exact revision. It checks the
 revision and engine working tree, passes the workspace to the shared engine,
@@ -131,7 +131,7 @@ Consumer tracking: [#69](https://github.com/PinedaTec-EU/LeonardoMD/issues/69).
 
 ## Accepted publication and notes
 
-The accepted event is a published, non-draft, non-prerelease GitHub Release in
+The accepted event is a published, non-draft GitHub Release (stable or beta) in
 `PinedaTec-EU/LeonardoMD`, tagged `v{version}`, resolving to the source SHA
 carrying that materialized version. A merge, tag, successful build or draft is
 not publication. `require_applied_version: true` rejects seed-only notes.
@@ -145,7 +145,7 @@ locally. Read-only `LEDGER_EVIDENCE_TOKEN` verifies release access and
 release, tag SHA, version and PR provenance, and renders the verified PR title,
 PR link, merge SHA and delta. Retries must not duplicate accepted notes.
 
-The engine creates `deploy/release-notes.md` only after acceptance. Materialized versions without a GitHub Release are intermediate checkpoints, not historical publications. The next accepted release accumulates their verified source changes since the previous accepted event. An earlier matching stable draft remains a pending publication and blocks later notes until it publishes. Do not backfill fictitious Releases; older publication after newer accepted notes remains rejected. Notes group by release/feature and preserve full versions. The automatic
+The engine creates `deploy/release-notes.md` only after acceptance. Materialized versions without a GitHub Release are intermediate checkpoints, not historical publications. The next accepted release accumulates their verified source changes since the previous accepted event. The configured `allow_prerelease: true` includes beta publications. An earlier matching draft remains a pending publication and blocks later notes until it publishes. Do not backfill fictitious Releases. Central batch reconciliation verifies the existing history and every accepted publication before backfilling earlier betas and repartitioning the source-change intervals; accepted publication/source identities and versions cannot change. Single-event `record-notes` remains append-only. Notes group by release/feature and preserve full versions. The automatic
 central writer changes only the configured accepted-notes artifact after
 verification; legacy notes-only PR tooling remains an operator recovery path.
 Do not invent historic release summaries for the initial baseline.
@@ -246,3 +246,22 @@ interrupt startup and manual access explains its unavailability; normal packagin
 rejects identity drift before signing.
 
 Tracking: [#209](https://github.com/PinedaTec-EU/LeonardoMD/issues/209).
+
+
+### Beta history and startup deduplication
+
+Published beta and stable GitHub Releases share the same numeric version domain.
+The central `allow_prerelease` policy affects publication evidence and history,
+not the bundle version or update-channel choice. Changing only this policy needs
+no pending version entry. Historical replay uses `notes`, then `attach`; it never
+materializes state, changes versions, or publishes a new app.
+
+The packaged `ReleaseChanges.json` already contains every applied PR up to the
+bundle version, including beta changes. The native reader validates unique PR
+identities and chooses changes after the previous installed version without a
+channel filter. Skipped beta versions accumulate once. A beta promoted in place
+keeps the same version and per-version acknowledgement, so startup does not
+repeat its notice. A new numeric version retains the default checked “Do not
+show again for this version” option. Startup remains offline; do not add another
+GitHub history reader or repackage existing published apps for this metadata
+change. Tracking: [#239](https://github.com/PinedaTec-EU/LeonardoMD/issues/239).
