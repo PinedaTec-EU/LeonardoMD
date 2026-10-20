@@ -122,6 +122,18 @@ struct WorkspaceView: View {
                 .accessibilityValue(L10n.text(session.isProtected ? "Read only" : "Writable"))
                 .accessibilityIdentifier("document-protection")
                 .disabled(session.isSyncSuspended || session.busy)
+                Button { Task { await session.undoDocument() } } label: {
+                    Label(L10n.text("Undo"), systemImage: "arrow.uturn.backward")
+                }
+                .disabled(!session.canUndoDocument)
+                .help(L10n.text("Undo") + " (⌘Z)")
+                .accessibilityIdentifier("document-undo")
+                Button { Task { await session.redoDocument() } } label: {
+                    Label(L10n.text("Redo"), systemImage: "arrow.uturn.forward")
+                }
+                .disabled(!session.canRedoDocument)
+                .help(L10n.text("Redo") + " (⇧⌘Z)")
+                .accessibilityIdentifier("document-redo")
                 Button { Task { await session.save() } } label: {
                     Label(L10n.text("Save"), systemImage: "square.and.arrow.down")
                 }
@@ -223,7 +235,7 @@ struct WorkspaceView: View {
         }
     }
     private var editor: some View {
-        MarkdownEditor(text: Binding(get: { session.content }, set: { _ = session.editDocument(expected: session.content, replacement: $0) }), scrollFraction: $session.editorScroll, requestedLine: session.requestedLine)
+        MarkdownEditor(text: Binding(get: { session.content }, set: { _ = session.editDocument(expected: session.content, replacement: $0) }), scrollFraction: $session.editorScroll, requestedLine: session.requestedLine, usesDocumentHistory: true)
             .id(session.documentURL)
             .disabled(!session.canEditDocument)
     }

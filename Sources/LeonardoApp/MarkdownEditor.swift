@@ -6,6 +6,7 @@ struct MarkdownEditor: NSViewRepresentable {
     @Binding var text: String
     @Binding var scrollFraction: Double
     var requestedLine: Int?
+    var usesDocumentHistory = false
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -18,7 +19,7 @@ struct MarkdownEditor: NSViewRepresentable {
         editor.isAutomaticDashSubstitutionEnabled = false
         editor.isAutomaticTextReplacementEnabled = false
         editor.isContinuousSpellCheckingEnabled = false
-        editor.allowsUndo = true
+        editor.allowsUndo = !usesDocumentHistory
         editor.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
         editor.textContainerInset = NSSize(width: 24, height: 24)
         editor.autoresizingMask = [.width]
