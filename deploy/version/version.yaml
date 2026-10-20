@@ -427,9 +427,19 @@
       "pr": 231,
       "summary": "Undo and redo document edits from the toolbar or keyboard, with separate history for each document and support for source, preview and form editing.",
       "to_version": "0.1.502"
+    },
+    {
+      "delta": {
+        "build": 5
+      },
+      "from_version": "0.1.502",
+      "merge_sha": "4fa8f5b8244edba348550858c14b428d4cbc3c36",
+      "pr": 235,
+      "summary": "Preview and Split preserve the field presentation shown in Fill form.",
+      "to_version": "0.1.507"
     }
   ],
-  "current_version": "0.1.502",
+  "current_version": "0.1.507",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

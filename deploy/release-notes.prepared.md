@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.507
+
+- #234 Fixed: preserve form presentation in Preview and Split ([#235](https://github.com/PinedaTec-EU/LeonardoMD/pull/235))
+
+<p>Preview and Split preserve the field presentation shown in Fill form.</p>
+
+Source: `4fa8f5b8244edba348550858c14b428d4cbc3c36`. Delta: `{"build": 5}`.
+
 ## 0.1.502
 
 - #230 Added: document undo and redo history ([#231](https://github.com/PinedaTec-EU/LeonardoMD/pull/231))
