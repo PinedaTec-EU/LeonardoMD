@@ -174,12 +174,14 @@ final class PairingUITests: XCTestCase {
         archiveCapture.lifetime = .keepAlways
         add(archiveCapture)
         export.tap()
-        XCTAssertTrue(app.navigationBars["Mover"].waitForExistence(timeout: 5)
-                      || app.buttons["Exportar"].waitForExistence(timeout: 5)
-                      || app.buttons["Cancel"].waitForExistence(timeout: 5)
-                      || app.buttons["Cancelar"].waitForExistence(timeout: 5), "Recovery must open the native file exporter")
-        if app.buttons["Cancelar"].exists { app.buttons["Cancelar"].tap() }
-        else if app.buttons["Cancel"].exists { app.buttons["Cancel"].tap() }
+        let save = app.buttons.matching(NSPredicate(format: "label IN %@", ["Save", "Guardar"])).firstMatch
+        XCTAssertTrue(save.waitForExistence(timeout: 10), "Recovery must open the native file exporter")
+        let exporterCapture = XCTAttachment(screenshot: app.screenshot())
+        exporterCapture.name = "Native recovery JSON export"
+        exporterCapture.lifetime = .keepAlways
+        add(exporterCapture)
+        save.tap()
+        XCTAssertTrue(export.waitForExistence(timeout: 10))
         app.buttons["docs/recovery.md"].firstMatch.tap()
         XCTAssertTrue(app.webViews.firstMatch.staticTexts["Preserved local work"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["Editar"].exists)
