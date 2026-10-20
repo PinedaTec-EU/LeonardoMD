@@ -10,7 +10,7 @@ Saving the same content format preserves history and updates the dirty baseline:
 
 ## Validation
 
-On 2026-10-20 the full local suite passed 523 XCTest cases (18 optional skips) and 26 Swift Testing cases. The final focused rerun passed seven history tests, including the native captures. Three successful compilation commands are recorded in `deploy/version/entries/231.yaml`.
+On 2026-10-20 the full local suite passed 527 XCTest cases (19 optional skips) and 26 Swift Testing cases. The final focused rerun passed seven history tests, including the native captures. Four successful compilation commands are recorded in `deploy/version/entries/231.yaml`.
 
 ![Undo available after editing](document-undo/undo-available.png)
 
