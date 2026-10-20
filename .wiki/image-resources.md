@@ -6,9 +6,9 @@ Tracking: [#243](https://github.com/PinedaTec-EU/LeonardoMD/issues/243).
 assets, then delegates bounded loading to a per-web-view `MarkdownImageLoader`
 actor. Stop/teardown cancels delivery; the actor serializes reads and ImageIO
 work. New render generations retire old requests and reset admission. Repeated
-resource/content/target variants share an admission entry; no image cache is retained.
+full-URL/content/target variants share an admission entry; no image cache is retained.
 
-`MarkdownImagePolicy` holds the limits: 32 MiB input, 2 MiB SVG, 40 million
+`MarkdownImagePolicy` holds the limits: 16 KiB URL metadata, 32 MiB input, 2 MiB SVG, 40 million
 source pixels, 4 million preview pixels, 16 million PDF pixels, animations with
 at most 128 frames and 4 million total canvas pixels, 128 MiB estimated admitted
 cost, 256 variants and 256 pending requests. Cost uses an 8-byte pixel allowance.

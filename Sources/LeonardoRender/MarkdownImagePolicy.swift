@@ -3,6 +3,7 @@ import Foundation
 /// Admission limits, not a claim about WebKit's total process memory.
 struct MarkdownImagePolicy: Sendable {
     static let standard = Self()
+    var maximumURLBytes = 16 * 1_024
     var maximumInputBytes = 32 * 1_024 * 1_024
     var maximumSVGBytes = 2 * 1_024 * 1_024
     var maximumSourcePixels = 40_000_000

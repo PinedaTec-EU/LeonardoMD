@@ -6,14 +6,18 @@ import os.log
 @MainActor
 final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
     private var documentID = 0
-    private let imageLoader = MarkdownImageLoader()
+    private let imageLoader: MarkdownImageLoader
+    private let policy: MarkdownImagePolicy
     private var requests: [ObjectIdentifier: Task<Void, Never>] = [:]
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "images")
     private let baseDirectory: URL?
     private let assetRoot: URL?
     private let memoryAssets: MarkdownMemoryAssets?
 
-    init(baseURL: URL?, assetRootURL: URL? = nil, memoryAssets: MarkdownMemoryAssets? = nil) {
+    init(baseURL: URL?, assetRootURL: URL? = nil, memoryAssets: MarkdownMemoryAssets? = nil,
+         policy: MarkdownImagePolicy = .standard) {
+        self.policy = policy
+        imageLoader = MarkdownImageLoader(policy: policy)
         self.memoryAssets = memoryAssets
         if let baseURL, baseURL.isFileURL {
             let directory = baseURL.standardizedFileURL
@@ -35,6 +39,10 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
             urlSchemeTask.didFailWithError(MarkdownDocumentError.notFound)
             return
         }
+        guard url.absoluteString.utf8.count <= policy.maximumURLBytes else {
+            urlSchemeTask.didFailWithError(MarkdownImageError.inputTooLarge)
+            return
+        }
         let input: MarkdownImageLoader.Input
         if let memoryAssets, let data = memoryAssets.data(for: url) {
             input = .memory(data, extensionName: url.pathExtension.lowercased())
@@ -50,7 +58,7 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
         let started = DispatchTime.now().uptimeNanoseconds
         requests[id] = Task { [weak self] in
             do {
-                let resource = try await loader.load(input, target: target, documentID: generation, identity: url.path)
+                let resource = try await loader.load(input, target: target, documentID: generation, identity: url.absoluteString)
                 guard !Task.isCancelled, let self, self.requests.removeValue(forKey: id) != nil else { return }
                 let milliseconds = Double(DispatchTime.now().uptimeNanoseconds - started) / 1_000_000
                 self.logger.debug("image_load_completed encoded_bytes=\(resource.data.count, privacy: .public) estimated_bytes=\(resource.estimatedBytes, privacy: .public) duration_ms=\(milliseconds, privacy: .public)")
@@ -86,7 +94,7 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
         if query.contains(where: { $0.name == "leonardo-image-purpose" && $0.value == "pdf" }) {
             let width = query.first(where: { $0.name == "leonardo-image-width" })?.value.flatMap(Double.init) ?? 0
             let height = query.first(where: { $0.name == "leonardo-image-height" })?.value.flatMap(Double.init) ?? 0
-            return .pdf(width: width, height: height, policy: .standard)
+            return .pdf(width: width, height: height, policy: policy)
         }
         #if os(macOS)
         let scale = webView.window?.backingScaleFactor ?? 2
@@ -94,7 +102,7 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
         let scale = webView.window?.screen.scale ?? 2
         #endif
         return .preview(width: webView.bounds.width, height: webView.bounds.height,
-                        scale: scale * webView.pageZoom, policy: .standard)
+                        scale: scale * webView.pageZoom, policy: policy)
     }
 
     private func fileURL(for url: URL) -> URL? {

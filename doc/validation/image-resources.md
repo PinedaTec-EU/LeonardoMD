@@ -11,6 +11,7 @@ WebKit requests; native codec calls themselves are not interruptible mid-call.
 
 | Resource | Limit / behavior |
 | --- | --- |
+| URL metadata | 16 KiB per request |
 | Input | 32 MiB per raster; 2 MiB per SVG |
 | Source raster | 40 million pixels, inspected before thumbnail decoding |
 | Static preview | Viewport × display scale × current page zoom, capped at 4096 pixels per side and 4 million pixels |
@@ -27,7 +28,8 @@ A rejected image shows its authored alt text (or an unavailable label); PDF
 export fails instead of silently omitting it.
 
 Admission resets on a new document render. Repeated loads of the same resource,
-content and target share admission; distinct paths or changed bytes count again.
+content and target share admission; distinct URLs (including query parameters)
+or changed bytes count again.
 The loader retains hashes and accounting only, with no additional image cache.
 
 ## Regression coverage and evidence
@@ -35,7 +37,7 @@ The loader retains hashes and accounting only, with no additional image cache.
 - `MarkdownImageLoaderTests`: oversized sparse disk files and memory inputs,
   regular-file enforcement, source-pixel limits, downsampling, independent PDF
   resolution, animation preservation and limits, SVG limits, repeat admission,
-  document-generation reset and cancellation.
+  document-generation reset, query-alias accounting, bounded URL metadata and cancellation.
 - `MarkdownImageSchemeTests`: queue limit, stop and teardown without late callbacks.
 - `WebKitRuntimeTests`: real raster preview and PDF resolution, source/style
   restoration, visible rejection fallback, export failure on missing assets,
@@ -44,9 +46,9 @@ The loader retains hashes and accounting only, with no additional image cache.
   `bounded-raster-preview.png` and `bounded-image-fallback.png`. The existing CI
   preview evidence artifact binds those captures to the reviewed head.
 
-Local validation on 2026-10-20: full `swift test` passed 590 tests with 15
+Local validation on 2026-10-20: full `swift test` passed 592 tests with 15
 intentional XCTest skips. Script tests ran 31 cases with seven engine-dependent
-skips and no failures. The per-PR ledger records seven successful compiler-bearing
+skips and no failures. The per-PR ledger records nine successful compiler-bearing
 invocations; required exact-head CI and independent judgment are recorded on PR
 [#245](https://github.com/PinedaTec-EU/LeonardoMD/pull/245).
 
