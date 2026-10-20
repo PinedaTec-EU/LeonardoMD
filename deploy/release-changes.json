@@ -457,6 +457,16 @@
       "pr": 233,
       "summary": "Form date fields offer a larger calendar in the active theme, with localized labels, keyboard navigation and a safe fallback for malformed locales, while preserving editable drafts.",
       "to_version": "0.1.521"
+    },
+    {
+      "delta": {
+        "build": 14
+      },
+      "from_version": "0.1.521",
+      "merge_sha": "c0bb701166c155c77b9a73aa52659107436a51b3",
+      "pr": 217,
+      "summary": "Export Leonardo documents and form answers as Markdown with a loss warning and portable image handling.",
+      "to_version": "0.1.535"
     }
   ],
   "initial_version": "0.1.56",
@@ -467,5 +477,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.521"
+  "version": "0.1.535"
 }
