@@ -1,5 +1,7 @@
 # Little Leonardo
 
+Architecture direction (owner-selected 2026-10-20): [ADR 0002](../adr/0002-reevaluate-mobile-git-engine.md) sets iOS to read-only with an offline cache and reserves editable synchronization for macOS/Windows desktop peers. Mobile Git retirement, legacy edit recovery and Windows interoperability remain implementation work. The contract/checkpoints below describe historical requirements and existing behavior; their mobile editing/Git scope is superseded for the target product, not yet removed from runtime.
+
 Implementation tracking: [#92](https://github.com/PinedaTec-EU/LeonardoMD/issues/92).
 
 Latest local checkpoint (2026-10-09, PR #93, compile delta189):
