@@ -168,6 +168,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         guard await flushEdits() else { throw MarkdownRenderError.invalidPayload }
         try await flushPendingRender()
         try await waitUntilReady()
+        defer { evaluate("window.LeonardoImages?.restorePreview()") }
         try await renderAllDiagramsForPDF()
         _ = try await webView.evaluateJavaScript("window.LeonardoForms?.setExporting(true); document.querySelector('main')?.classList.add('leonardo-form-export')")
         defer { evaluate("window.LeonardoForms?.setExporting(false); document.querySelector('main')?.classList.remove('leonardo-form-export')") }
@@ -194,6 +195,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         renderWorkItem?.cancel()
         renderWorkItem = nil
         markFailed(with: MarkdownRenderError.webViewUnavailable)
+        documentHandler?.cancelAll()
         if let webView {
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoTableResize")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoForm")

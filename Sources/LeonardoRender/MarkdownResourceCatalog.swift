@@ -17,13 +17,14 @@ enum MarkdownResource: String, CaseIterable {
     case leonardoCalendar = "leonardo-calendar.js"
     case leonardoForms = "leonardo-forms.js"
     case leonardoLayout = "leonardo-layout.js"
+    case imageLoading = "image-loading.js"
     case runtime = "renderer-runtime.js"
 
     var mimeType: String {
         switch self {
         case .katexStyles, .previewStyles, .formStyles, .tableResizeStyles:
             return "text/css"
-        case .marked, .dompurify, .highlight, .mermaid, .katex, .previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .runtime:
+        case .marked, .dompurify, .highlight, .mermaid, .katex, .previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .imageLoading, .runtime:
             return "text/javascript"
         }
     }
@@ -43,7 +44,7 @@ enum MarkdownResourceCatalog {
         if configuration.allowsMermaid {
             resources.append(.mermaid)
         }
-        resources.append(contentsOf: [.previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .runtime])
+        resources.append(contentsOf: [.previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .imageLoading, .runtime])
         return resources
     }
 

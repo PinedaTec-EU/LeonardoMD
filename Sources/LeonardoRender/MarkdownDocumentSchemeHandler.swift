@@ -1,8 +1,13 @@
 import Foundation
 import LeonardoCore
 import WebKit
+import os.log
 
+@MainActor
 final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
+    private let imageLoader = MarkdownImageLoader()
+    private var requests: [ObjectIdentifier: Task<Void, Never>] = [:]
+    private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "images")
     private let baseDirectory: URL?
     private let assetRoot: URL?
     private let memoryAssets: MarkdownMemoryAssets?
@@ -20,37 +25,67 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
     }
 
     func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
-        if let memoryAssets {
-            guard let url = urlSchemeTask.request.url, let data = memoryAssets.data(for: url) else {
-                urlSchemeTask.didFailWithError(MarkdownDocumentError.notFound)
-                return
-            }
-            urlSchemeTask.didReceive(URLResponse(url: url, mimeType: mimeType(for: url), expectedContentLength: data.count,
-                textEncodingName: isText(url) ? "utf-8" : nil))
-            urlSchemeTask.didReceive(data)
-            urlSchemeTask.didFinish()
+        let id = ObjectIdentifier(urlSchemeTask)
+        guard requests.count < MarkdownImagePolicy.maximumPendingRequests else {
+            urlSchemeTask.didFailWithError(MarkdownImageError.queueLimit)
             return
         }
-        guard let url = urlSchemeTask.request.url,
-              let fileURL = fileURL(for: url),
-              isImage(fileURL),
-              let data = try? Data(contentsOf: fileURL) else {
+        guard let url = urlSchemeTask.request.url else {
             urlSchemeTask.didFailWithError(MarkdownDocumentError.notFound)
             return
         }
-
-        let response = URLResponse(
-            url: url,
-            mimeType: mimeType(for: fileURL),
-            expectedContentLength: data.count,
-            textEncodingName: isText(fileURL) ? "utf-8" : nil
-        )
-        urlSchemeTask.didReceive(response)
-        urlSchemeTask.didReceive(data)
-        urlSchemeTask.didFinish()
+        let input: MarkdownImageLoader.Input
+        if let memoryAssets, let data = memoryAssets.data(for: url) {
+            input = .memory(data, extensionName: url.pathExtension.lowercased())
+        } else if memoryAssets == nil, let fileURL = fileURL(for: url), isImage(fileURL) {
+            input = .file(fileURL)
+        } else {
+            urlSchemeTask.didFailWithError(MarkdownDocumentError.notFound)
+            return
+        }
+        let target = imageTarget(url: url, webView: webView)
+        let loader = imageLoader
+        requests[id] = Task { [weak self] in
+            do {
+                let resource = try await loader.load(input, target: target)
+                guard !Task.isCancelled, let self, self.requests.removeValue(forKey: id) != nil else { return }
+                urlSchemeTask.didReceive(URLResponse(url: url, mimeType: resource.mimeType,
+                    expectedContentLength: resource.data.count, textEncodingName: nil))
+                urlSchemeTask.didReceive(resource.data)
+                urlSchemeTask.didFinish()
+            } catch {
+                guard !Task.isCancelled, let self, self.requests.removeValue(forKey: id) != nil else { return }
+                let category = error is MarkdownImageError ? String(describing: error) : "read_failed"
+                self.logger.notice("image_load_rejected category=\(category, privacy: .public)")
+                urlSchemeTask.didFailWithError(error)
+            }
+        }
     }
 
-    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {}
+    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {
+        requests.removeValue(forKey: ObjectIdentifier(urlSchemeTask))?.cancel()
+    }
+
+    func cancelAll() {
+        requests.values.forEach { $0.cancel() }
+        requests.removeAll()
+    }
+
+    private func imageTarget(url: URL, webView: WKWebView) -> MarkdownImagePolicy.Target {
+        let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        if query.contains(where: { $0.name == "leonardo-image-purpose" && $0.value == "pdf" }) {
+            let width = query.first(where: { $0.name == "leonardo-image-width" })?.value.flatMap(Double.init) ?? 0
+            let height = query.first(where: { $0.name == "leonardo-image-height" })?.value.flatMap(Double.init) ?? 0
+            return .pdf(width: width, height: height, policy: .standard)
+        }
+        #if os(macOS)
+        let scale = webView.window?.backingScaleFactor ?? 2
+        #else
+        let scale = webView.window?.screen.scale ?? 2
+        #endif
+        return .preview(width: webView.bounds.width, height: webView.bounds.height,
+                        scale: scale * webView.pageZoom, policy: .standard)
+    }
 
     private func fileURL(for url: URL) -> URL? {
         guard url.scheme == MarkdownHTMLShell.documentScheme,
@@ -123,32 +158,6 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
             .contains(url.pathExtension.lowercased())
     }
 
-    private func mimeType(for url: URL) -> String {
-        switch url.pathExtension.lowercased() {
-        case "css": return "text/css"
-        case "csv": return "text/csv"
-        case "gif": return "image/gif"
-        case "html", "htm": return "text/html"
-        case "jpeg", "jpg": return "image/jpeg"
-        case "js": return "text/javascript"
-        case "json": return "application/json"
-        case "m4a": return "audio/mp4"
-        case "mp3": return "audio/mpeg"
-        case "mp4": return "video/mp4"
-        case "pdf": return "application/pdf"
-        case "png": return "image/png"
-        case "svg": return "image/svg+xml"
-        case "txt", "md": return "text/plain"
-        case "wav": return "audio/wav"
-        case "webm": return "video/webm"
-        case "webp": return "image/webp"
-        default: return "application/octet-stream"
-        }
-    }
-
-    private func isText(_ url: URL) -> Bool {
-        ["css", "csv", "html", "htm", "js", "json", "md", "svg", "txt"].contains(url.pathExtension.lowercased())
-    }
 }
 
 enum MarkdownDocumentError: Error {
