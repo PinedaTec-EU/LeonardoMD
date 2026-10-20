@@ -35,7 +35,7 @@ struct LeonardoMD {
 }
 
 @MainActor
-final class ApplicationDelegate: NSObject, NSApplicationDelegate {
+final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private let updates = ApplicationUpdates.shared
     private lazy var recentMenus = RecentItemsMenu(session: { [weak self] in self?.activeSession }, openDocument: { [weak self] url in
         Task { @MainActor [weak self] in await self?.openExternalDocument(url) }
@@ -247,6 +247,32 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     }
     @objc private func openDocument() { activeSession?.chooseDocument() }
     @objc private func openProject() { activeSession?.chooseProject() }
+    private var focusedTextEditor: NSTextView? {
+        guard let editor = NSApp.keyWindow?.firstResponder as? NSTextView,
+              editor.accessibilityIdentifier() != "markdown-editor" else { return nil }
+        return editor
+    }
+
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(undoDocument) {
+            if let editor = focusedTextEditor { return editor.undoManager?.canUndo == true }
+            return activeSession?.canUndoDocument == true
+        }
+        if menuItem.action == #selector(redoDocument) {
+            if let editor = focusedTextEditor { return editor.undoManager?.canRedo == true }
+            return activeSession?.canRedoDocument == true
+        }
+        return true
+    }
+
+    @objc private func undoDocument() {
+        if let editor = focusedTextEditor { editor.undoManager?.undo(); return }
+        Task { await activeSession?.undoDocument() }
+    }
+    @objc private func redoDocument() {
+        if let editor = focusedTextEditor { editor.undoManager?.redo(); return }
+        Task { await activeSession?.redoDocument() }
+    }
     @objc private func save() { Task { await activeSession?.save() } }
     @objc private func exportPDF() { activeSession?.exportPDF() }
     @objc private func focus() { activeSession?.focus.toggle() }
@@ -289,7 +315,9 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         add(L10n.text("Export PDF…"), action: #selector(exportPDF), key: "e", modifiers: [.command, .shift], to: file)
         add(L10n.text("Close window"), action: #selector(NSWindow.performClose(_:)), key: "w", modifiers: [.command, .shift], to: file)
         let editMenu = submenu(L10n.text("Edit"), in: menu)
-        for (title, selector, key) in [(L10n.text("Undo"), "undo:", "z"), (L10n.text("Redo"), "redo:", "Z"), (L10n.text("Cut"), "cut:", "x"), (L10n.text("Copy"), "copy:", "c"), (L10n.text("Paste"), "paste:", "v"), (L10n.text("Select all"), "selectAll:", "a")] {
+        add(L10n.text("Undo"), action: #selector(undoDocument), key: "z", to: editMenu)
+        add(L10n.text("Redo"), action: #selector(redoDocument), key: "z", modifiers: [.command, .shift], to: editMenu)
+        for (title, selector, key) in [ (L10n.text("Cut"), "cut:", "x"), (L10n.text("Copy"), "copy:", "c"), (L10n.text("Paste"), "paste:", "v"), (L10n.text("Select all"), "selectAll:", "a")] {
             add(title, action: NSSelectorFromString(selector), key: key, to: editMenu)
         }
         let view = submenu(L10n.text("View"), in: menu)

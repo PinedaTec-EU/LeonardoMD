@@ -12,7 +12,7 @@ final class AppSession {
     var workspaceURL: URL?
     var workspaceProjects: [ProjectDescriptor] = []
     var showWorkspace = false
-    var documentURL: URL?
+    var documentURL: URL? { didSet { if documentURL != oldValue { editHistory = DocumentEditHistory() } } }
     /// The logical document format is independent from the bytes currently
     /// loaded into the editor. For an internally opened `.mdlz`, `documentURL`
     /// points at the extracted `.mdlf`/`.mdlr` while `documentSourceURL`
@@ -42,8 +42,10 @@ final class AppSession {
         set {
             guard !isSyncSuspended || syncUpdatingBuffer else { return }
             documentContent = newValue
+            editHistory = DocumentEditHistory()
         }
     }
+    var editHistory = DocumentEditHistory()
     var syncUpdatingBuffer = false
     var isSyncSuspended: Bool { NativeReconciliationLease.shared.holds(documentURL) || NativeReconciliationLease.shared.holds(projectURL) }
     var isClosing = false
