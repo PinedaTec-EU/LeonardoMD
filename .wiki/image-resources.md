@@ -32,3 +32,6 @@ strictly bounded by the cost estimate.
 Regression coverage: `MarkdownImageLoaderTests`, `MarkdownImageSchemeTests` and
 real `WebKitRuntimeTests` for raster/PDF quality, restoration and failure behavior.
 See [validation and limits](../doc/validation/image-resources.md).
+
+PDF exports are serialized per preview host, including awaited restoration before
+the next export starts; cancelled queued callers do not prepare image variants.

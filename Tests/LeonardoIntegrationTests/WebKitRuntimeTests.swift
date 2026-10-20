@@ -329,16 +329,7 @@ final class WebKitRuntimeTests: XCTestCase {
 
     func testBoundedRasterPreviewPDFResolutionAndSourceRestoration() async throws {
         let root = URL(fileURLWithPath: "/BoundedImageFixture", isDirectory: true)
-        let context = try XCTUnwrap(CGContext(data: nil, width: 3_000, height: 1_500,
-            bitsPerComponent: 8, bytesPerRow: 12_000, space: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
-        context.setFillColor(CGColor(red: 0.1, green: 0.3, blue: 0.8, alpha: 1))
-        context.fill(CGRect(x: 0, y: 0, width: 3_000, height: 1_500))
-        let image = try XCTUnwrap(context.makeImage())
-        let bytes = NSMutableData()
-        let destination = try XCTUnwrap(CGImageDestinationCreateWithData(bytes, UTType.png.identifier as CFString, 1, nil))
-        CGImageDestinationAddImage(destination, image, nil)
-        XCTAssertTrue(CGImageDestinationFinalize(destination))
+        let bytes = try largeRasterFixture()
         let assets = MarkdownMemoryAssets(files: ["large.png": bytes as Data])
         let config = MarkdownPreviewConfiguration(localAssetRoot: root, memoryAssets: assets)
         let (host, window) = makeHost(content: "# Bounded images\n\n![Large blue image](large.png)", base: root, config: config)
@@ -363,6 +354,59 @@ final class WebKitRuntimeTests: XCTestCase {
         let restoredStyle = try await evaluate("document.querySelector('img').getAttribute('style') || ''", in: web)
         XCTAssertEqual(source, restoredSource)
         XCTAssertEqual(originalStyle, restoredStyle)
+    }
+
+    func testOverlappingPDFExportsKeepHighResolutionAndRestorePreview() async throws {
+        let root = URL(fileURLWithPath: "/OverlappingPDFFixture", isDirectory: true)
+        let assets = MarkdownMemoryAssets(files: ["large.png": try largeRasterFixture()])
+        let config = MarkdownPreviewConfiguration(localAssetRoot: root, memoryAssets: assets)
+        let (host, window) = makeHost(content: "![Large image](large.png)", base: root, config: config)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelector('img')?.naturalWidth > 0", in: web)
+        _ = try await web.evaluateJavaScript("document.querySelector('img').setAttribute('style', 'border-radius: 4px')")
+        let width = try await evaluate("document.querySelector('img').naturalWidth", in: web)
+        let previewWidth = try XCTUnwrap(Int(width))
+        let originalStyle = try await evaluate("document.querySelector('img').getAttribute('style')", in: web)
+        _ = try await web.evaluateJavaScript("""
+        window.pdfPrepareCalls = 0;
+        window.pdfImageWidths = [];
+        const prepare = window.LeonardoImages.preparePDF;
+        window.LeonardoImages.preparePDF = async root => {
+          const call = ++window.pdfPrepareCalls;
+          await prepare(root);
+          window.pdfImageWidths.push(root.querySelector('img').naturalWidth);
+          if (call === 1) await new Promise(resolve => { window.releaseFirstPDF = resolve; });
+        };
+        void 0;
+        """)
+        let first = Task { try await host.exportPDF() }
+        try await waitFor("typeof window.releaseFirstPDF === 'function'", in: web)
+        let cancelled = Task { try await host.exportPDF() }
+        await Task.yield()
+        cancelled.cancel()
+        let second = Task { try await host.exportPDF() }
+        // Hold the first export after its PDF variant has decoded, giving the
+        // second caller time to enter the host while that image swap is active.
+        try await Task.sleep(for: .milliseconds(150))
+        let callsWhileHeld = try await evaluate("window.pdfPrepareCalls", in: web)
+        XCTAssertEqual(callsWhileHeld, "1", "The second export must wait for the first image swap to be restored")
+        _ = try await web.evaluateJavaScript("void window.releaseFirstPDF()")
+        for task in [first, second] {
+            let data = try await task.value
+            XCTAssertTrue(data.starts(with: Data("%PDF".utf8)))
+        }
+        do {
+            _ = try await cancelled.value
+            XCTFail("A cancelled queued export must release its place without preparing images")
+        } catch { XCTAssertTrue(error is CancellationError) }
+        let highResolution = try await evaluate("window.pdfImageWidths.length === 2 && window.pdfImageWidths.every(width => width > \(previewWidth))", in: web)
+        XCTAssertEqual(highResolution, "1")
+        try await waitFor("document.querySelector('img').complete && !document.querySelector('img').hasAttribute('srcset')", in: web)
+        let restoredStyle = try await evaluate("document.querySelector('img').getAttribute('style')", in: web)
+        let restoredWidth = try await evaluate("document.querySelector('img').naturalWidth", in: web)
+        XCTAssertEqual(restoredStyle, originalStyle)
+        XCTAssertEqual(restoredWidth, String(previewWidth))
     }
 
     func testCanonicalMemoryRasterFormatsReachWebKitAndPDF() async throws {
@@ -439,6 +483,20 @@ final class WebKitRuntimeTests: XCTestCase {
             _ = try await host.exportPDF()
             XCTFail("A failed image must not be silently omitted")
         } catch { /* Expected: the existing PDF asset readiness contract fails. */ }
+    }
+
+    private func largeRasterFixture() throws -> Data {
+        let context = try XCTUnwrap(CGContext(data: nil, width: 3_000, height: 1_500,
+            bitsPerComponent: 8, bytesPerRow: 12_000, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.setFillColor(CGColor(red: 0.1, green: 0.3, blue: 0.8, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 3_000, height: 1_500))
+        let image = try XCTUnwrap(context.makeImage())
+        let bytes = NSMutableData()
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithData(bytes, UTType.png.identifier as CFString, 1, nil))
+        CGImageDestinationAddImage(destination, image, nil)
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+        return bytes as Data
     }
 
     private func evaluate(_ script: String, in web: WKWebView) async throws -> String {

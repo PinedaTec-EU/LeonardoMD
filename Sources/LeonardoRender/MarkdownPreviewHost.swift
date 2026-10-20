@@ -29,6 +29,8 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     private var renderWorkItem: DispatchWorkItem?
     private var readinessWaiters: [CheckedContinuation<Void, Error>] = []
     private var pdfDiagramWaiters: [CheckedContinuation<Void, Error>] = []
+    private var pdfExportActive = false
+    private var pdfExportWaiters: [CheckedContinuation<Void, Never>] = []
     private var hasState = false
     private var content = ""
     private var documentURL: URL?
@@ -155,6 +157,9 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     }
 
     func exportPDF() async throws -> Data {
+        await acquirePDFExport()
+        defer { releasePDFExport() }
+        try Task.checkCancellation()
         guard let webView else { throw MarkdownRenderError.webViewUnavailable }
         let timeoutTask = Task { @MainActor [weak self] in
             do {
@@ -168,16 +173,37 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         guard await flushEdits() else { throw MarkdownRenderError.invalidPayload }
         try await flushPendingRender()
         try await waitUntilReady()
-        defer { evaluate("window.LeonardoImages?.restorePreview()") }
-        try await renderAllDiagramsForPDF()
-        _ = try await webView.evaluateJavaScript("window.LeonardoForms?.setExporting(true); document.querySelector('main')?.classList.add('leonardo-form-export')")
-        defer { evaluate("window.LeonardoForms?.setExporting(false); document.querySelector('main')?.classList.remove('leonardo-form-export')") }
-        return try await withCheckedThrowingContinuation { continuation in
-            let pdfConfiguration = WKPDFConfiguration()
-            webView.createPDF(configuration: pdfConfiguration) { result in
-                continuation.resume(with: result)
+        let restorePresentation = "window.LeonardoImages?.restorePreview(); window.LeonardoForms?.setExporting(false); document.querySelector('main')?.classList.remove('leonardo-form-export')"
+        do {
+            try await renderAllDiagramsForPDF()
+            _ = try await webView.evaluateJavaScript("window.LeonardoForms?.setExporting(true); document.querySelector('main')?.classList.add('leonardo-form-export')")
+            let data: Data = try await withCheckedThrowingContinuation { continuation in
+                let pdfConfiguration = WKPDFConfiguration()
+                webView.createPDF(configuration: pdfConfiguration) { result in
+                    continuation.resume(with: result)
+                }
             }
+            // Finish restoring this web view before the next export may swap
+            // its image sources or form presentation again.
+            _ = try await webView.evaluateJavaScript(restorePresentation)
+            return data
+        } catch {
+            _ = try? await webView.evaluateJavaScript(restorePresentation)
+            throw error
         }
+    }
+
+    private func acquirePDFExport() async {
+        if !pdfExportActive {
+            pdfExportActive = true
+            return
+        }
+        await withCheckedContinuation { pdfExportWaiters.append($0) }
+    }
+
+    private func releasePDFExport() {
+        if pdfExportWaiters.isEmpty { pdfExportActive = false }
+        else { pdfExportWaiters.removeFirst().resume() }
     }
 
     func scroll(to anchor: String) {
