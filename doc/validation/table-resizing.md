@@ -23,7 +23,8 @@ Coverage:
 - `TableResizeRuntimeTests` checks keyboard resizing, native callback rejection
   and DOM rollback, zoom plus a narrower window and horizontal scrolling,
   cancellation through flush, raw HTML table exclusion and occurrence mapping,
-  and source mismatch suppressing stale saved geometry.
+  source mismatch suppressing stale saved geometry, minimum sizing of a 60-row
+  table without cell clipping, and disabled controls in Fill.
 - `LeonardoTableResizeTests` verifies round-trip/body/metadata preservation and
   invalid dimensions. Shared valid/invalid format fixtures exercise the native
   and Python validators, including zero/empty row heights and percentage height.

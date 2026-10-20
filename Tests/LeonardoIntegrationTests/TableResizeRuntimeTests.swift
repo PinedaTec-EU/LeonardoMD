@@ -77,6 +77,43 @@ final class TableResizeRuntimeTests: XCTestCase {
         XCTAssertEqual(styled, "")
     }
 
+    func testMinimumGeometryKeepsLargeTableContentVisibleAndFillDisablesHandles() async throws {
+        let markdown = "| A | B |\n| --- | --- |\n" + String(repeating: "| word | content |\n", count: 60)
+        var config = MarkdownPreviewConfiguration(renderDebounce: .zero); config.allowsEditing = true
+        let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 600, height: 500))
+        let window = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false; window.contentView = host; window.orderFront(nil)
+        defer { host.teardown(); window.close() }
+        host.apply(content: markdown, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
+        let web = try XCTUnwrap(host.subviews.compactMap { $0 as? WKWebView }.first)
+        try await waitFor("document.querySelector('table')?.rows.length === 61", web)
+        let called = expectation(description: "Minimum geometry reaches native bridge")
+        host.onTableResize = { _, resize in
+            XCTAssertEqual(resize.widths.count, 2); XCTAssertEqual(resize.heights.count, 61)
+            XCTAssertTrue(resize.widths.allSatisfy { $0 > 0 })
+            XCTAssertTrue(resize.heights.allSatisfy { $0 > 0 })
+            called.fulfill(); return false
+        }
+        let visible = try await web.evaluateJavaScript("""
+        (() => {
+          const handle = document.querySelector('[data-resize-kind="both"]');
+          const r = handle.getBoundingClientRect();
+          handle.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, pointerId:4, button:0, clientX:r.left, clientY:r.top}));
+          document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, pointerId:4, clientX:r.left-10000, clientY:r.top-10000}));
+          const cells = Array.from(document.querySelectorAll('th,td'));
+          const visible = cells.every(cell => cell.scrollHeight <= cell.getBoundingClientRect().height + 1);
+          document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:4}));
+          return visible && document.querySelector('table').rows.length === 61;
+        })()
+        """) as? Bool
+        XCTAssertEqual(visible, true)
+        await fulfillment(of: [called], timeout: 3)
+        try await waitFor("document.querySelector('main').classList.contains('tables-resizable')", web)
+        config.allowsFormFilling = true
+        host.apply(content: markdown, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
+        try await waitFor("!document.querySelector('main').classList.contains('tables-resizable') && Array.from(document.querySelectorAll('.table-resize-handle')).every(n => n.disabled)", web)
+    }
+
     private func number(_ expression: String, _ web: WKWebView) async throws -> Double {
         let value = try await web.evaluateJavaScript(expression) as? Double
         return try XCTUnwrap(value)

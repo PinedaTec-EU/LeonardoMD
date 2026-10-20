@@ -94,6 +94,7 @@ final class TableResizingTests: XCTestCase {
             // records geometry only; native migration/persistence are tested above.
             var html = try MarkdownHTMLShell.make(content: session.content, baseURL: nil, configuration: session.renderConfiguration)
             html = html.replacingOccurrences(of: "leonardo-resource://bundle/", with: "/Sources/LeonardoRender/Resources/")
+            html = html.replacingOccurrences(of: "leonardo-resource:", with: "'self'")
             html = html.replacingOccurrences(of: "<body>", with: "<body><script>window.webkit = {messageHandlers:{leonardoTableResize:{postMessage(value){window.lastTableResize=value; setTimeout(() => window.LeonardoTableResizing.setEditable(true),0);}}}};</script>")
             try html.write(to: directory.appendingPathComponent("preview.html"), atomically: true, encoding: .utf8)
             try ("Head: \(ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local")\nSurface: native WorkspaceView / WKWebView Preview\nWindow: 1100x850 points\nState: second of two identical tables after column, row, width, height and corner drags, migration, save and reopen; unlocked\n").write(to: directory.appendingPathComponent("provenance.txt"), atomically: true, encoding: .utf8)
