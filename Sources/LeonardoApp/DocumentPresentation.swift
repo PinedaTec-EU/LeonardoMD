@@ -142,7 +142,10 @@ extension AppSession {
     var documentStorageIcon: String { documentStorage.iconName }
 
     var documentStatusColor: Color {
-        switch documentKind {
+        if !darkPalette, documentKind.isLeonardo {
+            return Color(hex: palette.tokens.heading)
+        }
+        return switch documentKind {
         case .markdown: .secondary
         case .leonardoTemplate: .orange
         case .leonardoResponse: .purple
@@ -151,7 +154,10 @@ extension AppSession {
     }
 
     var documentStorageColor: Color {
-        switch documentStorage {
+        if !darkPalette, documentStorage != .localFile {
+            return Color(hex: palette.tokens.heading)
+        }
+        return switch documentStorage {
         case .localFile: .secondary
         case .package: .teal
         case .extracted: .green
