@@ -1,0 +1,4 @@
+{
+  "build": 3,
+  "summary": "Installed betas recognize a verified promotion to stable in About, the footer and Preferences while preserving the selected update subscription, including offline recognition after verification."
+}

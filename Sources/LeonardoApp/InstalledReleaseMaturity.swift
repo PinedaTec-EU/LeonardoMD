@@ -89,7 +89,7 @@ final class InstalledReleaseMaturity {
         self.defaults = defaults
         channel = configuration.installedChannel
         publicKey = configuration.publicKey
-        enabled = configuration.isConfigured && channel == .beta
+        enabled = configuration.isConfigured && configuration.installedChannel == .beta
         let executable = Bundle.main.executableURL
         self.identify = identify ?? {
             try await Task.detached { try InstalledReleaseIdentity.read(configuration: configuration, executable: executable) }.value

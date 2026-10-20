@@ -25,6 +25,9 @@ do not modify shared merge or version-ledger skills to enforce it elsewhere.
    The trusted central promoter retains the numeric version, tag, build and
    signed/notarized ZIP bytes, stages stable publication metadata and refreshes
    the combined beta feed before making that release stable/latest.
+   Then complete the maintainer-Mac signed installed-maturity assertion described
+   in `doc/releases.md` using `scripts/publish-release-maturity.py`; verify its
+   public readback before claiming installed-promotion recognition is available.
 
 Read the shared candidate-promotion convention and the central executable
 contract at `pinedatec-ci/docs/release-candidate-promotion.md`. Do not create a

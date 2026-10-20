@@ -46,7 +46,7 @@ final class AboutWindow: NSWindowController, NSWindowDelegate {
         window.center()
         super.init(window: window)
         window.delegate = self
-        window.contentView = NSHostingView(rootView: AboutView(version: ApplicationVersion(),
+        window.contentView = NSHostingView(rootView: AboutView(
             onClose: { [weak self] in self?.close() },
             onReleaseNotes: { [weak self] in self?.requestReleaseNotes() }))
         NotificationCenter.default.addObserver(self, selector: #selector(refreshLanguage),
@@ -84,7 +84,6 @@ final class AboutWindow: NSWindowController, NSWindowDelegate {
 }
 
 private struct AboutView: View {
-    let version: ApplicationVersion
     let onClose: () -> Void
     let onReleaseNotes: () -> Void
 

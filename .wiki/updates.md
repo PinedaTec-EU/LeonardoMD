@@ -23,3 +23,14 @@ Owner publication policy: accepted PR → published/validated beta → stable wi
 Release-only promotions use `.github/workflows/promote-beta.yml` to dispatch an exact beta tag/SHA, structured owner acceptance URL and request ID to the trusted central promoter. It verifies accepted hashes, pinned Sparkle signature and packaged identity before changing feeds/release metadata; no promotion-only source delta or compilation. Later beta entries survive and keep their higher build, preventing automatic downgrade. Original embedded beta metadata remains package provenance. Historical PR-numbered promotion inputs remain immutable. Tracking: [#236](https://github.com/PinedaTec-EU/LeonardoMD/issues/236); the central implementation must integrate before activation.
 
 About and the footer share `ApplicationVersion.displayText`: numeric version plus installed `LeonardoUpdateChannel` (development fallback), independent of subscription choice. Internal build remains available to update decisions. Tracking: [#142](https://github.com/PinedaTec-EU/LeonardoMD/issues/142).
+
+
+Installed publication maturity (#257) is modeled by `InstalledReleaseMaturity`,
+independent of `ApplicationUpdates.channel` and immutable bundle provenance.
+The owner Mac signs a per-tag `release-maturity.json` after stable promotion with
+Sparkle's existing Keychain key. The runtime verifies the raw payload's Ed25519
+signature using CryptoKit, repository/version/build and executable SHA-256,
+reverifies cached evidence on offline startup, and updates all three installed
+maturity displays observably. Network/invalid evidence cannot mutate subscriptions
+or classify a different build. Linux central promotion alone does not create the
+signed proof; see `doc/releases.md` for the mandatory publication completion step.
