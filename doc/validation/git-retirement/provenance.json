@@ -1,6 +1,7 @@
 {
-  "captureCheckpoint": "989c42a2a2d20b5b907e663c28d7df82b0345eb0",
-  "simulator": "Leonardo 249 Readonly QA / iPhone 17 Pro / iOS 26.5",
+  "captureCheckpoint": "f0eac82599104685bcaf5a008cda4173578068b6",
+  "directAcceptanceCheckpoint": "f0eac82599104685bcaf5a008cda4173578068b6",
+  "simulator": "Leonardo 249 Final Readonly QA / iPhone 17 Pro / iOS 26.5",
   "iosViewportPixels": [
     1206,
     2622
@@ -15,98 +16,20 @@
       620
     ]
   },
-  "fixtures": "Isolated synthetic corpus and local Git repository; no personal data or production credentials",
-  "limits": "Native component captures are not a fresh packaged macOS startup; no physical device, Windows, two-physical-Mac or live VPN acceptance claimed",
-  "iosAttachments": [
-    {
-      "attachments": [
-        {
-          "configurationName": "Test Scheme Action",
-          "deviceId": "62C21FF6-0DEC-4E91-BC6A-47F480A8B3F9",
-          "deviceName": "Leonardo 249 Readonly QA",
-          "exportedFileName": "D0872E53-0432-4B94-B046-E1854AB1C109.png",
-          "isAssociatedWithFailure": false,
-          "suggestedHumanReadableName": "Cached document navigation with missing-link denial_0_1381FD2C-ACB9-41E4-B9FC-5F156FF23E6D.png",
-          "timestamp": 1792512184.476
-        }
-      ],
-      "testIdentifier": "PairingUITests/testCachedDocumentLinksNavigateInsideGrantedCorpusAndRejectMissingFiles()",
-      "testIdentifierURL": "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/PairingUITests/testCachedDocumentLinksNavigateInsideGrantedCorpusAndRejectMissingFiles"
-    },
-    {
-      "attachments": [
-        {
-          "configurationName": "Test Scheme Action",
-          "deviceId": "62C21FF6-0DEC-4E91-BC6A-47F480A8B3F9",
-          "deviceName": "Leonardo 249 Readonly QA",
-          "exportedFileName": "D29DE44F-78FA-405F-9358-68EE85DD7CC7.png",
-          "isAssociatedWithFailure": false,
-          "suggestedHumanReadableName": "Offline Markdown corpus preview_0_332CAE65-5F73-46D9-8FBA-09DCF6F7DC56.png",
-          "timestamp": 1792512193.563
-        }
-      ],
-      "testIdentifier": "PairingUITests/testCachedMarkdownPreviewShowsRenderedHeadingTableAndImage()",
-      "testIdentifierURL": "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/PairingUITests/testCachedMarkdownPreviewShowsRenderedHeadingTableAndImage"
-    },
-    {
-      "attachments": [
-        {
-          "configurationName": "Test Scheme Action",
-          "deviceId": "62C21FF6-0DEC-4E91-BC6A-47F480A8B3F9",
-          "deviceName": "Leonardo 249 Readonly QA",
-          "exportedFileName": "B5AA88EF-3139-4D87-B30E-7F7A45F60ACB.png",
-          "isAssociatedWithFailure": false,
-          "suggestedHumanReadableName": "Read-only legacy document preview_0_DFEF7E67-506A-4897-8973-9F3BD144B221.png",
-          "timestamp": 1792512207.537
-        },
-        {
-          "configurationName": "Test Scheme Action",
-          "deviceId": "62C21FF6-0DEC-4E91-BC6A-47F480A8B3F9",
-          "deviceName": "Leonardo 249 Readonly QA",
-          "exportedFileName": "DE3DA410-A140-4408-AE93-2F87AD7C1CAB.png",
-          "isAssociatedWithFailure": false,
-          "suggestedHumanReadableName": "Native recovery JSON export_0_921BCAD1-9A71-49BC-A8B7-141BD429C59E.png",
-          "timestamp": 1792512203.203
-        },
-        {
-          "configurationName": "Test Scheme Action",
-          "deviceId": "62C21FF6-0DEC-4E91-BC6A-47F480A8B3F9",
-          "deviceName": "Leonardo 249 Readonly QA",
-          "exportedFileName": "DD604F5A-92BD-415D-9DC5-41F132D81ED7.png",
-          "isAssociatedWithFailure": false,
-          "suggestedHumanReadableName": "Legacy corpus recovery export without mobile publication_0_B99F524A-7F73-4131-9FA9-9B1F099D44E6.png",
-          "timestamp": 1792512201.42
-        }
-      ],
-      "testIdentifier": "PairingUITests/testLegacyRecoveryIsReadableAndExportableWithoutEditingOrSending()",
-      "testIdentifierURL": "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/PairingUITests/testLegacyRecoveryIsReadableAndExportableWithoutEditingOrSending"
-    },
-    {
-      "attachments": [
-        {
-          "configurationName": "Test Scheme Action",
-          "deviceId": "62C21FF6-0DEC-4E91-BC6A-47F480A8B3F9",
-          "deviceName": "Leonardo 249 Readonly QA",
-          "exportedFileName": "93C84928-B45B-4A74-A68B-1F12E79E3FC8.png",
-          "isAssociatedWithFailure": false,
-          "suggestedHumanReadableName": "Read-only synchronization settings without Git credentials_0_BADE5534-49D9-4176-801B-2C81697B0F6E.png",
-          "timestamp": 1792512213.135
-        }
-      ],
-      "testIdentifier": "PairingUITests/testLibraryHasNoGitEnrollmentOrAuthorSettings()",
-      "testIdentifierURL": "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/PairingUITests/testLibraryHasNoGitEnrollmentOrAuthorSettings"
-    }
-  ],
-  "directAcceptanceCheckpoint": "81bd866494bea186636617a5c8aa231f20279872",
+  "fixtures": "Only committed synthetic corpus fixtures and generated loopback identities",
+  "limits": "Native macOS component capture is not fresh packaged startup; no Windows, physical device, live VPN or two-physical-Mac claim",
   "runtimeSourceHashes": {
+    "Mobile/LittleLeonardo.xcodeproj/project.pbxproj": "ed4b1577b7c7fdf817facc3c7954a26469f6c410ded665119b77de30aaef8898",
+    "Mobile/LittleLeonardo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved": "739b2f23d73ff2e4f81ed6dd63dd0e5015aa2438a7b305b94d32c3fdac2cd82f",
     "Mobile/LittleLeonardo/LittleLeonardoApp.swift": "52b7372871237be44165372a68aadf7283697970ba3298b1ca03218bf3b0bc1e",
     "Mobile/LittleLeonardo/MobileLibrary.swift": "e1a5058f3e5d1303dd0fa3ddc48fc37337f075395ded1d1e3994533139957fd3",
     "Mobile/LittleLeonardo/MobileLibraryView.swift": "3c71315051388ecac90cc99a4ffcd906a4993dca055e9535f4b846dc51367aa4",
     "Mobile/LittleLeonardo/MobileQRScanner.swift": "cc3381e0c4efea9fa1e73dead1d5b593916d572b00320a2db21a5b0f2ccf8d9c",
     "Mobile/LittleLeonardo/MobileRecoveryDocument.swift": "9849c515b473a3e8501aef943954913c370dfd9dd05dff9d7da736cc9ce3b458",
-    "Mobile/LittleLeonardo.xcodeproj/project.pbxproj": "ed4b1577b7c7fdf817facc3c7954a26469f6c410ded665119b77de30aaef8898",
     "Package.resolved": "29e7e9367811da3c0e0ec618886f40fe3fe435d37078f766d888f073672127fd",
     "Package.swift": "ac9df1e524e03db7f77810a863311c9dbd0fa8c460d6a1592c73686e33119c32",
+    "Sources/CLeonardoZlib/CLeonardoZlib.c": "2d5f39c6725bd0e2d22dc28dd6e626306973817a0689008d1e6147e9255d726d",
+    "Sources/CLeonardoZlib/include/CLeonardoZlib.h": "6974175a164e516a8c47ce55c5d7f767e28fa40952f2443dd0690cd6cd4693af",
     "Sources/LeonardoApp/AboutWindow.swift": "d03301262ac64b34ef70bfe99b12163d52ac0c203c1fb86e1ef89a3145bc1fbb",
     "Sources/LeonardoApp/AppSession.swift": "b67b1b845fd568eae198f2d59f3aa001a7d8310e7aae3878234d0ff6fb582be7",
     "Sources/LeonardoApp/ApplicationUpdates.swift": "9142a0f409fd75e7d8b2dc8d83d7b3b3bfb9c5e21f1f538e56ef361105f3e5be",
@@ -153,6 +76,12 @@
     "Sources/LeonardoApp/ReleaseNotesController.swift": "aff698d5ae49cb621b59d1b79d40f9fc50bad0ca4f197a77e08559f8e7d298d2",
     "Sources/LeonardoApp/ReleaseNotesPreferences.swift": "b86ff93ed76682b28fab94961a0aac824e0f907a939a28839a42d7c8f7df2d8e",
     "Sources/LeonardoApp/ReleaseNotesView.swift": "f86b0ee8ab7185092c5954da3e8abe2a39a338ccd4f83b545b1bbbf5d01f1870",
+    "Sources/LeonardoApp/Resources/AboutBanner.png": "4e18e81ea0efc43f0421bc6187c014b132e5d0864111df04de4d4c0f3524a91a",
+    "Sources/LeonardoApp/Resources/Localization/en.json": "a4a9af8c4eeb0f0b9f4414a193f78bda97f52fc04861c5010ef71aaa658cb02b",
+    "Sources/LeonardoApp/Resources/Localization/es.json": "c4dbc4e81ddeebb9dc5feea2d61b6906b1acff7e8ebd32448e1b5672d6436735",
+    "Sources/LeonardoApp/Resources/WelcomeVitruvian.png": "5aa32f124f7459c28ed452c92a5f66f535feef1a0d1e4c90b2fd4b5955de27db",
+    "Sources/LeonardoApp/Resources/WelcomeWatermark.png": "4f47d027f7ce69b583fcac9dc898788aa4fbdc4036cbd3586d38f987faae4d40",
+    "Sources/LeonardoApp/Resources/WelcomeWings.png": "5b65c975f4ab27631520fb832bc2e7f36d724a5a2933a13c792c3f9de5cd8a15",
     "Sources/LeonardoApp/SavedItemsView.swift": "2b9b0c5865ed2a567c6d7a9109a641666bdb99f4f5244e5f0f69fc0ed80f049e",
     "Sources/LeonardoApp/SessionDocumentAccess.swift": "bafa18809447a983e82fceb44fa2d7ea50e0a901f5fffa20d921ccb5f7e784ac",
     "Sources/LeonardoApp/SessionEditing.swift": "0242df4e2850ee9f7c537de303ccd0d78f100e665284afe484afa62c750d86e2",
@@ -210,6 +139,7 @@
     "Sources/LeonardoCore/PaletteTypes.swift": "85c20b0699680bc9f450b8e06eea27f639551629636402aa928882d8f916cdf0",
     "Sources/LeonardoCore/ProjectSearchQuery.swift": "8433e0875152904a706798211bc89a243f7ae108eb40b7251b4bdae8ef4d4268",
     "Sources/LeonardoCore/RecentPathIdentity.swift": "ed9479cca7380d0d3459d1c1d523a106111b9a9c812d92014f531495f6b62e25",
+    "Sources/LeonardoCore/Resources/mdlf-v1.schema.json": "a8d63caf7c7d8360709d64f54e548b6ba922e41998e20ea322e9f291c1c346f3",
     "Sources/LeonardoDesktopSync/DesktopCertificateGenerator.swift": "113d5a3c9b9a0c2b1b12e3fe1da8a9fc6a002efac6f59b4b5577701576bf67d1",
     "Sources/LeonardoDesktopSync/DesktopDirectRuntime.swift": "6c452ba697d15e9966e7d17903eb2a448eb3f6022b4cf4fd4957117caec219fb",
     "Sources/LeonardoDesktopSync/DesktopIdentityImporter.swift": "9f1a83305bddcaa8d8b02809611606af07312d1236755a1e3e4139b3892c092f",
@@ -241,6 +171,89 @@
     "Sources/LeonardoRender/MarkdownPreviewController.swift": "b2165aff2ef0428c4f1fd94ebd44fa0100970c8ede8621dee25521d1f7d4a7bc",
     "Sources/LeonardoRender/MarkdownPreviewHost.swift": "2141a60588a74fba47d3ded15de45325d652028b1d4ff3e77cffacc51706d289",
     "Sources/LeonardoRender/MarkdownResourceCatalog.swift": "3fc07d5c813a29a6a85cb0709b302fc8684392bf49043d6573f144e365fa05b5",
+    "Sources/LeonardoRender/Resources/THIRD_PARTY_NOTICES.txt": "522252d1f28a72ba60271e3bf4e35fd15299d5e945f8c7e01e5127f965799aeb",
+    "Sources/LeonardoRender/Resources/THIRD_PARTY_SOURCES.json": "2bc6a495e714caa0cbd7dc30c8ef5cc6656f2a7dc645b259947b9f3bf1b364cf",
+    "Sources/LeonardoRender/Resources/dompurify.min.js": "2c90a9b46d6463f26038a29b686e82bc91de01fdac9d5229e7cfe3b360134ea2",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_AMS-Regular.ttf": "68534840bcfdd2bffb6f0e8deb48684dd01e7f04ea2813267577afb906de1d13",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_AMS-Regular.woff": "30da91e84c893f875e252689faebdc590b2871145e8adc7f9a9d4dbd8ce0b251",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_AMS-Regular.woff2": "0cdd387c9590a1a9f9794560022dbb59654a7d86f187aa0c81495ad42d3a7308",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Caligraphic-Bold.ttf": "07d8e303ce4fc12b4bb54f1004170dd190a1f3db45d400fe68060df3e0897268",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Caligraphic-Bold.woff": "1ae6bd7475590e97e7f145a89e09ccde322f7a6bc0b91607b1c8b8ee28290fed",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Caligraphic-Bold.woff2": "de7701e42cf1f4cf0b766c03fb27977207eee2f4fd5d76fa82188406da43ea4c",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Caligraphic-Regular.ttf": "ed0b74372feefcbb9c0666b2e210da37b7e49fa7fbbf3eeb11db5f693dacfbb7",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Caligraphic-Regular.woff": "3398dd02302557a793f2863f88e02d96ce10df2abffa07c8e9fa90775116e65c",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Caligraphic-Regular.woff2": "5d53e70ad607c2352162dec9e0923fb54ecdafaccbf604cd8dcf7d00facb989b",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Fraktur-Bold.ttf": "9163df9c7122432e6495b4229fa9071cf9ae86a758ae5efc4924ec2e1a6dbce1",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Fraktur-Bold.woff": "9be7ceb88004ab8ad124082246fbfcca4091e36385d4ec6ed1df67375dad50fb",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Fraktur-Bold.woff2": "74444efd593c005e3f4573b44524704c0af0a937fe911cca9e94068d0d140d3f",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Fraktur-Regular.ttf": "1e6f9579e90e2cac37f8f60a597c436e075c114385652b7cbeb0dec0421291b3",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Fraktur-Regular.woff": "5e28753be717dac97f559f49bc10be9cf3c124ddcabda6659d11cb68febc6463",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Fraktur-Regular.woff2": "51814d270d06ff0255dba0799994fa4d8c84d11f09951d47595f4abb1f3602dc",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Main-Bold.ttf": "138ac28d1663b3037e9c5f52371fa5c63d8324f4a38d22cd573e6ea3a3fd0cf8",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Main-Bold.woff": "c76c5d696297d51b9cb1639c7da4334f0e7dec81b42b11213b5e25ef671bb822",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Main-Bold.woff2": "0f60d1b897938ec918c8ce073092411baf9438f6739465693ff18b0f9d20b021",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Main-BoldItalic.ttf": "70ee1f64a20f2048c21940ef46d0144fd215baa953ca69afd1e31e98544f708f",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Main-BoldItalic.woff": "a6f7ec0d846ac7ad975adb8959c37ed49b94acbc4ae436db9ce9e20287e4a64c",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Main-BoldItalic.woff2": "99cd42a3c072d918f2f44984a807cf7aa16e13545fd0875fc07c6c65f99e715b",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Main-Italic.ttf": "0d85ae7cc30f23790a7f1a58c4a112fdca8aae769b6ba11429af1d98b1b6cb3a",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Main-Italic.woff": "f1d6ef86f3b11a528bd5185199bd2443ecb2b0dead96d88674b5a2c12be24bdf",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Main-Italic.woff2": "97479ca6cce906abc961ecac96faa5f9ca2e61b8e7670d475826bcdee9a7c267",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Main-Regular.ttf": "d0332f52868370fd83ae7fa46470f90c8f2eab2fcf12bc4f88080b340c95a830",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Main-Regular.woff": "c6368d87e8a1a3a5d337623d83d8dc4b868f242a9ad476237d6f8d1e0f168cdc",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Main-Regular.woff2": "c2342cd8b869e01752a9321dc17213fc40d4d04c79688c1d43f2cf316abd7866",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Math-BoldItalic.ttf": "f9377ab0271cda59af24bcffbd46a4d0c8a3572ffafdbb38de2ad5ea7b0d5ee5",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Math-BoldItalic.woff": "850c0af5c2238497febaf5e461d880bf458c341f42f4f330f1b1ab5698b1998e",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Math-BoldItalic.woff2": "dc47344dbb6cb5b655c8460d561f4df5f501b90c804ad3c6cec65fe322351ab1",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Math-Italic.ttf": "08ce98e51b04d58945a301e639e02b6998af29fdfd61a7b8afdd07bbfc479d4a",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Math-Italic.woff": "8a8d244581371912b8f3f5a23e2437cb2a59cd9bcaebb0346e722c05737a2571",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Math-Italic.woff2": "7af58c5ec8f132a2ddde9027c6d7814decce4d3b822a11192a42a20e2e973264",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_SansSerif-Bold.ttf": "1ece03f79f95277d57dc7f6b435a74e1379b0d46104a8530286b60ff49369ea0",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_SansSerif-Bold.woff": "ece03cfd83e22c212cdef66feb8442d25a083beb988db3f1883f3f9738d750ba",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_SansSerif-Bold.woff2": "e99ae51144bf1232efcc1bfe5add36262c6866b0faab24fa75740e1b98577a62",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_SansSerif-Italic.ttf": "3931dd81faed86ba021bb2bbdc36f5bed9a38d6b4f4077aca59b265aa1b02083",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_SansSerif-Italic.woff": "91ee67500cc0129aa0ace3ac5c61ff1692102f0f31d02b69347fba35dcb75bf2",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_SansSerif-Italic.woff2": "00b26ac825e2095056396e0553b8ac26d3f8ad158c3826e28b4c45b385c4714a",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_SansSerif-Regular.ttf": "f36ea897e19f4a2e571d1e900e4e3710e438deb05a842486045ba0a3e616a4ad",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_SansSerif-Regular.woff": "11e4dc8a6471ff6d6ee561d53d10fde8f7489e798257ff449c5d37c197435605",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_SansSerif-Regular.woff2": "68e8c73ef42afd3ccec58bf0fba302cce448938e7fc020a5e31f8a952eee1342",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Script-Regular.ttf": "1c67f068fea8bb09bf099c088b1cf64bd27516a6e07f4684344873564bb66a67",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Script-Regular.woff": "d96cdf2b3bdd4d64a8fd5f74a4c467f123a8a73931cd435889f08ffaf9bf947a",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Script-Regular.woff2": "036d4e95149b69ff9bcc0cd55771efeb25ffa3947293e69acd78d5ac328c684b",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Size1-Regular.ttf": "95b6d2f1a50173bfedb8c63e1d1c99b10427d0a4df4201cb44513b226951a22b",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Size1-Regular.woff": "c943cc986384f59e86bea5fd7dc50a9c4dfe567a7c05eb40d6790720dead97c9",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Size1-Regular.woff2": "6b47c40166b6dbe21a5dfca7718413f2147fd2399be1ba605d8ad39cedf25dfe",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Size2-Regular.ttf": "a6b2099fb555c60e3a0db3a08842ebf1d732c6eb4e4bf44913613bed4fc4e39b",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Size2-Regular.woff": "2014c523c3210bcc166648c4d4cc57f05b747df07a24277bf71c51e67dc79e3d",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Size2-Regular.woff2": "d04c54219f9eaec6d4d4fd42dfb28785975a4794d6b2fc71e566b9cd6db842dd",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Size3-Regular.ttf": "500e04d54f0d51666332c9d2089aa803be22aa878eca539e59fa53c6e522b082",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Size3-Regular.woff": "6ab6b62e9b62dae2c00dd90f791bd10950be0ecc3490d7d6045f51c2e8fe0949",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Size3-Regular.woff2": "73d591271b1604960cb10bb90fee021670af7297017e0e98480b332d11f51995",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Size4-Regular.ttf": "c647367d1dd4e162468717d020e1fc0f1dc5c26ebfdffbe55261713bf88c5877",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Size4-Regular.woff": "99f9c6750b489c9462bf04900bd3f939df9b829339daaaaa99ef5495cdddea58",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Size4-Regular.woff2": "a4af7d414440a1c1790825cfb700cf9cf43b0f2c4b04f0ebc523011ad9853ec0",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Typewriter-Regular.ttf": "f01f3e87d9c6a61c0c081ceb577abd864eb00a612f7ac1620dd6915fad2ef5aa",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Typewriter-Regular.woff": "e14fed02b1aba7ce9f5afd5844b5d0321b22351febc720e0de8b8723527609f7",
+    "Sources/LeonardoRender/Resources/fonts/KaTeX_Typewriter-Regular.woff2": "71d517d67827787cfabdf186914cc3358eda539e37931941f2b2fd4a21f68c0b",
+    "Sources/LeonardoRender/Resources/highlight.min.js": "8ab71eb09c51f501e5e25157d9cff100e46cc29bcbfc744d0b746d451fca7f53",
+    "Sources/LeonardoRender/Resources/katex.min.css": "7dc91b92608db5f3523cfda520df36307b2b389e1725d71ace6e4ef8dee066c7",
+    "Sources/LeonardoRender/Resources/katex.min.js": "90354db602936d813daadda391a4376d071f5d1241d8cfddf091df4c2e38730d",
+    "Sources/LeonardoRender/Resources/leonardo-calendar.js": "30db3b1f1bf98b2a8a2d7d4f3ae4ba742afdcf15a1aa2bf26f8d19c4b59a14d3",
+    "Sources/LeonardoRender/Resources/leonardo-forms.css": "7ac80a5ee32ac445f2f63b686bae88104b7d40f2f759ee4214a003a882fc8e5b",
+    "Sources/LeonardoRender/Resources/leonardo-forms.js": "dfd5a3645c21279457ba07924a007fd3af0221fae47c27180d96d7c1a1e2b09e",
+    "Sources/LeonardoRender/Resources/leonardo-layout.js": "0e9be6603c81fd9d3e80b8e86f891591fc2a8414e4655df532c598525ad8d96a",
+    "Sources/LeonardoRender/Resources/licenses/dompurify-3.4.16.txt": "ac322411c3fb02bb262e5d223905190f9f7a0a683b095e1e534d8e393052d081",
+    "Sources/LeonardoRender/Resources/licenses/highlight.js-11.12.0.txt": "6c081431591d9df696c82dc598fe1423765b8a299b200ed00b281afd0f64c490",
+    "Sources/LeonardoRender/Resources/licenses/katex-0.18.2.txt": "766ccc1f306c885aa45542a9846bbd0a505b27a0374f146778171c2254ce18e3",
+    "Sources/LeonardoRender/Resources/licenses/marked-15.0.7.txt": "8e3a3f82f59a60958f56ca08f445647c32a4733dc7ca6c2c46f6eb898471ab9c",
+    "Sources/LeonardoRender/Resources/licenses/mermaid-11.16.1.txt": "ec9fb67dcb25eccc416ed56e1aab819222c805a2a4bfe4cb19e7556bf2ffde80",
+    "Sources/LeonardoRender/Resources/marked.umd.js": "ae501969d4c7f1b433d80db12aea7e4228291e18fa8121e46337c73cb09c8683",
+    "Sources/LeonardoRender/Resources/mermaid.min.js": "8ffa273dc08103c033f013a6308a59eb93d452804f3c2656fda0f6619168482c",
+    "Sources/LeonardoRender/Resources/preview-editing.js": "d16ec1bae5cf7c4c971b764a2fe8995d948128c49c8daf7a9fa59b23c9017eda",
+    "Sources/LeonardoRender/Resources/preview.css": "3638341e442775692bc7ca1f1f2a3d578ec2a431d16f4616fca17bdc98e125ab",
+    "Sources/LeonardoRender/Resources/renderer-runtime.js": "b0efd28ca961427e42571e827df761741fe7498e97d47b00dc4fd941bf940675",
+    "Sources/LeonardoRender/Resources/table-layout.js": "b4d4b1c1e725c7cd5e930804dd8a3df06bb0d65f515bb4dde1dc0dc180aa431d",
+    "Sources/LeonardoRender/Resources/table-resizing.css": "3e2ab1c414884ffd47cf0552989996cdc9de63cddf4def9680664f237d9e6eba",
+    "Sources/LeonardoRender/Resources/table-resizing.js": "ba78ce441f42b40bf2ccf81e02d9f2bbe7adc6e6a282822e2ded59d50202369c",
     "Sources/LeonardoSync/CachedDocumentLink.swift": "137e8eb9b97f3223cd315b4714afcb5208820fa250680f812391e1938055e5d1",
     "Sources/LeonardoSync/CorpusRecoveryArchive.swift": "bab8b0a5b2ae99c88c6298c232cf9ff9d97aeab4dcbef75a24505315c7ec0427",
     "Sources/LeonardoSync/CorpusRevision.swift": "90bac825c707719af29d5c3e2614b8bc86ae291a9962d72602525740550c3c42",
@@ -258,7 +271,7 @@
     "Sources/LeonardoSync/DesktopPeerWorkspaceAccess.swift": "ff5ec61323bff739970d191aebcafdc6feb22d611b14356c65dab2d1da0abc1d",
     "Sources/LeonardoSync/DirectSyncAuthority.swift": "9caab71787dd711553099026b99700553edd9a4bea37cb3e224a1a539a35b5cc",
     "Sources/LeonardoSync/ManualReconciliation.swift": "6ec29aefbd0dd18f61694dc4f4f9f7a5b1f0e232756436afd5d153d3367c6880",
-    "Sources/LeonardoSync/OfflineCorpusStore.swift": "83e340572c4c189436093af486e7fab92d016ccc577d711ae73895939ed4abe1",
+    "Sources/LeonardoSync/OfflineCorpusStore.swift": "fada9a876c280fd320c08dc8cf33f9d023aa8a35aafd4ad250abef5582ce69af",
     "Sources/LeonardoSync/PairingComparisonCode.swift": "0ef29d8bdbe96c12bb357a53d2debb8b2c46970bc77c4fa76168d4f6581b8aec",
     "Sources/LeonardoSync/PairingRegistry.swift": "d14d2ebc6edfe5aed31d3159065f96004241d2bd7d243fc8a36a37d8d5b1e0c3",
     "Sources/LeonardoSync/PairingRegistryStore.swift": "e7bf41c45708c9ce1868986638fca889a0968a0d3e5dcce47e67f3c1f8eb8842",
@@ -278,10 +291,98 @@
     "Sources/LeonardoSyncTransport/ServerIdentityProbe.swift": "754f6cba66d624d10c0b84fb2effc8b42a33bb1790d43075ac5862307f2c248e",
     "Sources/LeonardoSyncTransport/TLSServerIdentity.swift": "b107e1f647c5d0710259eeecc6ee80d8b64a562ee1bf85186099599a10fb6d5c"
   },
+  "iosAttachments": [
+    {
+      "attachments": [
+        {
+          "configurationName": "Test Scheme Action",
+          "deviceId": "8FE4F9C1-1B16-4A0D-92EF-D00965926841",
+          "deviceName": "Leonardo 249 Final Readonly QA",
+          "exportedFileName": "FA266AD9-DC53-44A7-8C77-9D1BA9C40BCF.png",
+          "isAssociatedWithFailure": false,
+          "suggestedHumanReadableName": "Cached document navigation with missing-link denial_0_C583C52A-1200-4264-A97B-CC56DF73994F.png",
+          "timestamp": 1792514409.059
+        }
+      ],
+      "testIdentifier": "PairingUITests/testCachedDocumentLinksNavigateInsideGrantedCorpusAndRejectMissingFiles()",
+      "testIdentifierURL": "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/PairingUITests/testCachedDocumentLinksNavigateInsideGrantedCorpusAndRejectMissingFiles"
+    },
+    {
+      "attachments": [
+        {
+          "configurationName": "Test Scheme Action",
+          "deviceId": "8FE4F9C1-1B16-4A0D-92EF-D00965926841",
+          "deviceName": "Leonardo 249 Final Readonly QA",
+          "exportedFileName": "632BC8F8-AB88-4898-B438-29EFECF367EA.png",
+          "isAssociatedWithFailure": false,
+          "suggestedHumanReadableName": "Offline Markdown corpus preview_0_014FD3BC-3DA8-4721-A2EC-7965F7025E7B.png",
+          "timestamp": 1792514418.252
+        }
+      ],
+      "testIdentifier": "PairingUITests/testCachedMarkdownPreviewShowsRenderedHeadingTableAndImage()",
+      "testIdentifierURL": "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/PairingUITests/testCachedMarkdownPreviewShowsRenderedHeadingTableAndImage"
+    },
+    {
+      "attachments": [
+        {
+          "configurationName": "Test Scheme Action",
+          "deviceId": "8FE4F9C1-1B16-4A0D-92EF-D00965926841",
+          "deviceName": "Leonardo 249 Final Readonly QA",
+          "exportedFileName": "DE69337C-96A0-4990-BC5B-C1A38E841CAA.png",
+          "isAssociatedWithFailure": false,
+          "suggestedHumanReadableName": "Read-only legacy document preview_0_271FE027-6475-4CF9-A084-D7E9C27975A0.png",
+          "timestamp": 1792514432.39
+        },
+        {
+          "configurationName": "Test Scheme Action",
+          "deviceId": "8FE4F9C1-1B16-4A0D-92EF-D00965926841",
+          "deviceName": "Leonardo 249 Final Readonly QA",
+          "exportedFileName": "3E85E0E4-A096-423C-8698-EA2EDE694036.png",
+          "isAssociatedWithFailure": false,
+          "suggestedHumanReadableName": "Native recovery JSON export_0_D15D4643-0E4D-4492-9376-BC02ABD37E60.png",
+          "timestamp": 1792514427.968
+        },
+        {
+          "configurationName": "Test Scheme Action",
+          "deviceId": "8FE4F9C1-1B16-4A0D-92EF-D00965926841",
+          "deviceName": "Leonardo 249 Final Readonly QA",
+          "exportedFileName": "39DFFB47-5DEB-4EA2-94EA-9356CE6F76CB.png",
+          "isAssociatedWithFailure": false,
+          "suggestedHumanReadableName": "Legacy corpus recovery export without mobile publication_0_8A0247BA-A30E-415B-9B81-10A420AA0AEC.png",
+          "timestamp": 1792514426.154
+        }
+      ],
+      "testIdentifier": "PairingUITests/testLegacyRecoveryIsReadableAndExportableWithoutEditingOrSending()",
+      "testIdentifierURL": "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/PairingUITests/testLegacyRecoveryIsReadableAndExportableWithoutEditingOrSending"
+    },
+    {
+      "attachments": [
+        {
+          "configurationName": "Test Scheme Action",
+          "deviceId": "8FE4F9C1-1B16-4A0D-92EF-D00965926841",
+          "deviceName": "Leonardo 249 Final Readonly QA",
+          "exportedFileName": "4F82666F-686F-4CB4-A182-0E4A78EF537A.png",
+          "isAssociatedWithFailure": false,
+          "suggestedHumanReadableName": "Read-only synchronization settings without Git credentials_0_2DCAB884-9D79-4542-9AD2-83F88C1A754E.png",
+          "timestamp": 1792514438.096
+        }
+      ],
+      "testIdentifier": "PairingUITests/testLibraryHasNoGitEnrollmentOrAuthorSettings()",
+      "testIdentifierURL": "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/PairingUITests/testLibraryHasNoGitEnrollmentOrAuthorSettings"
+    }
+  ],
   "directAcceptance": {
     "uiExit": 0,
     "serverExit": 0,
     "revokedCorpusAndGrantAbsent": true,
-    "legacyCorpusRetained": true
+    "legacyCorpusRetainedByteForByte": true,
+    "nativeRecoveryExportVerified": true
+  },
+  "localValidation": {
+    "XCTestCases": 432,
+    "optionalXCTestSkips": 20,
+    "SwiftTestingCases": 28,
+    "nativeIOSCases": 6,
+    "compilationBuildDelta": 9
   }
 }
