@@ -407,6 +407,16 @@
       "pr": 221,
       "summary": "Improve document format and storage indicator contrast in light themes using the palette heading color.",
       "to_version": "0.1.494"
+    },
+    {
+      "delta": {
+        "build": 4
+      },
+      "from_version": "0.1.494",
+      "merge_sha": "a572fd54377cc9cb36c2e5837b8053d229684ecb",
+      "pr": 229,
+      "summary": "Distinguish Leonardo files in wine, configure file colors globally or per project, and filter and sort the project file list.",
+      "to_version": "0.1.498"
     }
   ],
   "initial_version": "0.1.56",
@@ -417,5 +427,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.494"
+  "version": "0.1.498"
 }

@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.498
+
+- #228 Added: file list colors filtering and sorting ([#229](https://github.com/PinedaTec-EU/LeonardoMD/pull/229))
+
+<p>Distinguish Leonardo files in wine, configure file colors globally or per project, and filter and sort the project file list.</p>
+
+Source: `a572fd54377cc9cb36c2e5837b8053d229684ecb`. Delta: `{"build": 4}`.
+
 ## 0.1.494
 
 - #220 Fixed: improve light-theme document indicator contrast ([#221](https://github.com/PinedaTec-EU/LeonardoMD/pull/221))
