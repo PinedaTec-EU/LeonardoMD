@@ -133,10 +133,12 @@ extension AppSession {
         }
     }
     func createItem(directory: Bool, parent: URL? = nil) {
+        guard let root = projectURL else { return }
+        let identity = SessionFileOperationIdentity(sourceURL: parent ?? root, session: self)
         Task {
-            guard let root = projectURL,
+            guard identity.isCurrent(in: self),
                   let name = await prompt(title: directory ? L10n.text("New folder") : L10n.text("New Markdown"), initial: directory ? L10n.text("Folder") : L10n.text("New note filename")) else { return }
-            guard projectURL == root, !stopped, !isClosing else { return }
+            guard identity.isCurrent(in: self) else { return }
             let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
             let parentPath = relative(parent ?? root)
             fileOperationCount += 1
@@ -144,7 +146,7 @@ extension AppSession {
             do {
                 let filename = !directory && URL(fileURLWithPath: name).pathExtension.isEmpty ? name + ".md" : name
                 try await authorizePath((parent ?? root).appendingPathComponent(filename), directory ? .directoryMutation : .document)
-                guard !stopped else { return }
+                guard identity.isCurrent(in: self) else { return }
                 if directory { _ = try await files.createFolder(named: name, in: project, at: parentPath) }
                 else {
                     let node = try await files.createMarkdown(named: name, in: project, at: parentPath)
@@ -155,18 +157,23 @@ extension AppSession {
             } catch { report(error) }
         }
     }
-    func rename(_ url: URL) {
-        Task {
-            guard let root = projectURL, let name = await prompt(title: L10n.text("Rename"), initial: url.lastPathComponent) else { return }
-            guard projectURL == root, !stopped, !isClosing else { return }
+    @discardableResult
+    func rename(_ url: URL) -> Task<Void, Never>? {
+        guard let root = projectURL else { return nil }
+        let identity = SessionFileOperationIdentity(sourceURL: url, session: self)
+        return Task {
+            guard identity.isCurrent(in: self), let name = await prompt(title: L10n.text("Rename"), initial: url.lastPathComponent) else { return }
+            guard identity.isCurrent(in: self) else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
-            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
+            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true,
+                  identity.isCurrent(in: self) else { return }
             do {
                 let intent: DesktopPeerPathIntent = (try url.resourceValues(forKeys: [.isDirectoryKey])).isDirectory == true ? .directoryMutation : .document
                 try await authorizePath(url, intent)
+                guard identity.isCurrent(in: self) else { return }
                 try await authorizePath(url.deletingLastPathComponent().appendingPathComponent(name), intent)
-                guard !stopped else { return }
+                guard identity.isCurrent(in: self) else { return }
                 let node = try await files.rename(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root), to: name)
                 await updateMovedDocument(from: url, to: node.url)
                 await relatedPathMoved?(url, node.url)
@@ -175,26 +182,33 @@ extension AppSession {
         }
     }
     func move(_ url: URL) {
+        let identity = SessionFileOperationIdentity(sourceURL: url, session: self)
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.directoryURL = projectURL
         panel.prompt = L10n.text("Move here")
-        presentFilePanel(panel) { [weak self] destination in self?.move(url, into: destination) }
+        presentFilePanel(panel) { [weak self] destination in
+            guard let self, identity.isCurrent(in: self) else { return }
+            self.move(identity.sourceURL, into: destination)
+        }
     }
     @discardableResult
     func move(_ url: URL, into parent: URL) -> Task<Void, Never>? {
         guard let root = projectURL else { return nil }
+        let identity = SessionFileOperationIdentity(sourceURL: url, session: self)
         return Task {
-            guard !stopped, !isClosing else { return }
+            guard identity.isCurrent(in: self) else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
-            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
+            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true,
+                  identity.isCurrent(in: self) else { return }
             do {
                 let intent: DesktopPeerPathIntent = (try url.resourceValues(forKeys: [.isDirectoryKey])).isDirectory == true ? .directoryMutation : .document
                 try await authorizePath(url, intent)
+                guard identity.isCurrent(in: self) else { return }
                 try await authorizePath(parent.appendingPathComponent(url.lastPathComponent), intent)
-                guard !stopped else { return }
+                guard identity.isCurrent(in: self) else { return }
                 let node = try await files.move(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root), to: relative(parent))
                 await updateMovedDocument(from: url, to: node.url)
                 await relatedPathMoved?(url, node.url)
@@ -217,23 +231,27 @@ extension AppSession {
         }
         mode = previousMode
     }
-    func delete(_ url: URL) {
-        Task {
-            guard let root = projectURL else { return }
+    @discardableResult
+    func delete(_ url: URL) -> Task<Void, Never>? {
+        guard let root = projectURL else { return nil }
+        let identity = SessionFileOperationIdentity(sourceURL: url, session: self)
+        return Task {
+            guard identity.isCurrent(in: self) else { return }
             let alert = NSAlert()
             alert.messageText = L10n.format("Move %@ to Trash?", url.lastPathComponent)
             alert.informativeText = L10n.text("The item will be moved to Trash. You can recover it from Trash.")
             alert.addButton(withTitle: L10n.text("Cancel"))
             alert.addButton(withTitle: L10n.text("Move to Trash"))
             guard await NativeDialog.present(alert, on: presentationWindow) == .alertSecondButtonReturn else { return }
-            guard projectURL == root, !stopped, !isClosing else { return }
+            guard identity.isCurrent(in: self) else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
-            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
+            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true,
+                  identity.isCurrent(in: self) else { return }
             do {
                 let intent: DesktopPeerPathIntent = (try url.resourceValues(forKeys: [.isDirectoryKey])).isDirectory == true ? .directoryMutation : .document
                 try await authorizePath(url, intent)
-                guard !stopped else { return }
+                guard identity.isCurrent(in: self) else { return }
                 try await files.delete(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root))
                 clearDeletedDocument(at: url)
                 relatedPathDeleted?(url)

@@ -1,4 +1,4 @@
 {
-  "build": 11,
-  "summary": "About, Release notes, document confirmations and file selection now open as modal sheets attached to their owning window."
+  "build": 13,
+  "summary": "About, Release notes, confirmations and file selection attach as modal sheets; file actions reject changes to the active project or workspace."
 }
