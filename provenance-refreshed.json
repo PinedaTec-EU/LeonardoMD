@@ -1,0 +1,50 @@
+{
+  "reviewed_head": "577f657b83339c6b0b7f7ebe6011a66c89c3c5bd",
+  "runtime_source_matches_head": true,
+  "build_note": "Rebase onto documentation-only main d1bd727. git diff --exit-code 391a080 HEAD -- Sources Tests Package.swift Package.resolved scripts assets deploy/version/entries/221.yaml passes. Runtime source/resources are byte-identical; original packaged executable reused without another compilation.",
+  "screen": "WorkspaceView, standalone contrast.mdlz, protected Preview",
+  "browser": "N/A native macOS SwiftUI/AppKit and WKWebView",
+  "fresh_pid": 4175,
+  "launch": "LEONARDO_SOURCE_PR=221 ./launch.sh --qa /tmp/leonardo-221-evidence/contrast.mdlz",
+  "captures": {
+    "classic-refreshed.png": {
+      "pixels": [
+        4718592,
+        4292935744
+      ],
+      "points": [
+        2359296.0,
+        2146467872.0
+      ],
+      "time_utc": "2026-10-20T09:42:18.479654+00:00",
+      "sha256": "10c15b94484bc47b2b6d3344bf3c8dd2443891950f2012cc0593884a91ee58cd"
+    },
+    "paper-refreshed.png": {
+      "pixels": [
+        4718592,
+        4292935744
+      ],
+      "points": [
+        2359296.0,
+        2146467872.0
+      ],
+      "time_utc": "2026-10-20T09:42:54.225736+00:00",
+      "sha256": "6b7073adef91f9818ea779775655cea29ee8d003fa0dda0160585986f9ccbbf6"
+    },
+    "graphite-refreshed.png": {
+      "pixels": [
+        4718592,
+        4292935744
+      ],
+      "points": [
+        2359296.0,
+        2146467872.0
+      ],
+      "time_utc": "2026-10-20T09:43:07.932564+00:00",
+      "sha256": "4e7a5250e3d8441f3c83a9e66888ff0764c071c3fd7e926884d1f6e87c50ff5e"
+    }
+  },
+  "executable_sha256": "a7b4aed812ba6507996e15737a0aec5ac6606cff873b6c80a62f4c18cc068928",
+  "dependencies": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-m4ghfit6/LeonardoMDQA.app/Contents/MacOS/LeonardoMD:\n\t@rpath/Sparkle.framework/Versions/B/Sparkle (compatibility version 1.6.0, current version 2.9.6)\n\t/usr/lib/libz.1.dylib (compatibility version 1.0.0, current version 1.2.12)\n\t/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation (compatibility version 300.0.0, current version 5027.0.69)\n\t/usr/lib/libobjc.A.dylib (compatibility version 1.0.0, current version 228.0.0)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)\n\t/System/Library/Frameworks/AppKit.framework/Versions/C/AppKit (compatibility version 45.0.0, current version 2775.10.103)\n\t/System/Library/Frameworks/Combine.framework/Versions/A/Combine (compatibility version 1.0.0, current version 3023.0.0)\n\t/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 5027.0.69)\n\t/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics (compatibility version 64.0.0, current version 2050.0.0)\n\t/System/Library/Frameworks/CoreImage.framework/Versions/A/CoreImage (compatibility version 1.0.1, current version 7.0.0)\n\t/System/Library/Frameworks/CryptoKit.framework/Versions/A/CryptoKit (compatibility version 1.0.0, current version 1.0.0)\n\t/System/Library/Frameworks/Network.framework/Versions/A/Network (compatibility version 1.0.0, current version 6681.1.1)\n\t/System/Library/Frameworks/Security.framework/Versions/A/Security (compatibility version 1.0.0, current version 62460.1.2)\n\t/System/Library/Frameworks/SwiftUI.framework/Versions/A/SwiftUI (compatibility version 1.0.0, current version 8.0.84)\n\t/System/Library/Frameworks/WebKit.framework/Versions/A/WebKit (compatibility version 1.0.0, current version 625.1.29)\n\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2200.27.0)\n\t/usr/lib/swift/libswiftCore.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t/usr/lib/swift/libswiftCoreAudio.dylib (compatibility version 1.0.0, current version 482.102.10, weak)\n\t/usr/lib/swift/libswiftCoreFoundation.dylib (compatibility version 1.0.0, current version 120.100.0)\n\t/usr/lib/swift/libswiftCoreImage.dylib (compatibility version 1.0.0, current version 3.0.0, weak)\n\t/usr/lib/swift/libswiftDarwin.dylib (compatibility version 1.0.0, current version 428.0.10)\n\t/usr/lib/swift/libswiftDispatch.dylib (compatibility version 1.0.0, current version 1605.0.2)\n\t/usr/lib/swift/libswiftIOKit.dylib (compatibility version 1.0.0, current version 1.0.0, weak)\n\t/usr/lib/swift/libswiftMetal.dylib (compatibility version 1.0.0, current version 382.5.3, weak)\n\t/usr/lib/swift/libswiftOSLog.dylib (compatibility version 1.0.0, current version 10.0.0, weak)\n\t/usr/lib/swift/libswiftObjectiveC.dylib (compatibility version 1.0.0, current version 973.1.0)\n\t/usr/lib/swift/libswiftObservation.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t/usr/lib/swift/libswiftQuartzCore.dylib (compatibility version 1.0.0, current version 5.0.0, weak)\n\t/usr/lib/swift/libswiftSpatial.dylib (compatibility version 1.0.0, current version 1.0.0, weak)\n\t/usr/lib/swift/libswiftUniformTypeIdentifiers.dylib (compatibility version 1.0.0, current version 917.0.1)\n\t/usr/lib/swift/libswiftXPC.dylib (compatibility version 1.0.0, current version 167.0.2, weak)\n\t/usr/lib/swift/libswift_Concurrency.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t/usr/lib/swift/libswiftos.dylib (compatibility version 1.0.0, current version 1090.0.0)\n\t/usr/lib/swift/libswiftsimd.dylib (compatibility version 1.0.0, current version 25.0.0, weak)\n\t/usr/lib/swift/libswiftCoreGraphics.dylib (compatibility version 1.0.0, current version 1.0.0)\n\t/usr/lib/swift/libswiftWebKit.dylib (compatibility version 1.0.0, current version 625.1.29)\n\t@rpath/libswiftCompatibilitySpan.dylib (compatibility version 0.0.0, current version 0.0.0)\n",
+  "capture_limit": "Refreshed palette-switch captures demonstrate native chrome indicators. WKWebView background pixels can remain from the previous palette in native window capture; document-background rendering is not claimed by these captures. Original complete palette captures remain available."
+}
