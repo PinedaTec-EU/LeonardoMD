@@ -1,4 +1,0 @@
-{
-  "build": 11,
-  "summary": "Little Leonardo becomes read-only, preserves older work against cache overwrites and exports it for recovery; proprietary Git is retired while desktop synchronization and system Git remain available."
-}
