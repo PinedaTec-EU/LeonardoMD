@@ -31,7 +31,10 @@ struct ApplicationVersion {
 
 @MainActor
 final class AboutWindow: NSWindowController, NSWindowDelegate {
-    init() {
+    private let onReleaseNotes: () -> Void
+
+    init(onReleaseNotes: @escaping () -> Void = {}) {
+        self.onReleaseNotes = onReleaseNotes
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 720, height: 620),
             styleMask: [.titled, .closable], backing: .buffered, defer: false
@@ -42,7 +45,8 @@ final class AboutWindow: NSWindowController, NSWindowDelegate {
         super.init(window: window)
         window.delegate = self
         window.contentView = NSHostingView(rootView: AboutView(version: ApplicationVersion(),
-            onClose: { [weak self] in self?.close() }))
+            onClose: { [weak self] in self?.close() },
+            onReleaseNotes: { [weak self] in self?.requestReleaseNotes() }))
         NotificationCenter.default.addObserver(self, selector: #selector(refreshLanguage),
             name: LanguageSettings.didChange, object: nil)
     }
@@ -56,8 +60,21 @@ final class AboutWindow: NSWindowController, NSWindowDelegate {
     func present(on parent: NSWindow) {
         window?.title = L10n.text("About LeonardoMD")
         guard let window, window.sheetParent == nil else { return }
-        parent.beginSheet(window)
+        parent.beginSheet(window) { [weak self] response in
+            guard response == .OK else { return }
+            // AppKit detaches the sheet after its completion handler returns.
+            Task { @MainActor [weak self] in
+                await Task.yield()
+                self?.onReleaseNotes()
+            }
+        }
     }
+    func requestReleaseNotes() {
+        guard let window, let parent = window.sheetParent else { return }
+        parent.endSheet(window, returnCode: .OK)
+        window.orderOut(nil)
+    }
+
     func windowWillClose(_ notification: Notification) {
         guard let window else { return }
         window.sheetParent?.endSheet(window)
@@ -67,6 +84,7 @@ final class AboutWindow: NSWindowController, NSWindowDelegate {
 private struct AboutView: View {
     let version: ApplicationVersion
     let onClose: () -> Void
+    let onReleaseNotes: () -> Void
 
     var body: some View {
         VStack(spacing: 16) {
@@ -80,9 +98,13 @@ private struct AboutView: View {
                 .textSelection(.enabled)
                 .accessibilityIdentifier("about-version")
             Link("PinedaTec.eu", destination: URL(string: "https://pinedatec.eu")!)
-            Button(L10n.text("Close"), action: onClose)
-                .keyboardShortcut(.cancelAction)
-                .padding(.bottom, 20)
+            HStack(spacing: 12) {
+                Button(L10n.text("Release notes…"), action: onReleaseNotes)
+                    .accessibilityIdentifier("about-release-notes")
+                Button(L10n.text("Close"), action: onClose)
+                    .keyboardShortcut(.cancelAction)
+            }
+            .padding(.bottom, 20)
         }
         .frame(width: 720)
     }
