@@ -3,35 +3,38 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.1.494</title>
-            <pubDate>Tue, 20 Oct 2026 12:13:21 +0200</pubDate>
+            <title>0.1.571</title>
+            <pubDate>Tue, 20 Oct 2026 22:30:54 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>494</sparkle:version>
-            <sparkle:shortVersionString>0.1.494</sparkle:shortVersionString>
+            <sparkle:version>571</sparkle:version>
+            <sparkle:shortVersionString>0.1.571</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD 0.1.494
+            <description sparkle:format="markdown"># LeonardoMD 0.1.571
 
 ## What is new
 
-- Resize tables, columns and rows directly in editable Preview. Saved MDLF documents retain their geometry. Resizing an ordinary Markdown document creates a sibling MDLF and preserves the original.
-- See release changes at startup and reopen them from the application menu. Choose whether to show these notes automatically in Preferences.
-- Read document format and storage indicators more clearly in light themes.
-- Includes the editable forms and field help from the previous beta.
+- About, Release notes, confirmations and file selection now attach to their parent window as modal sheets. File actions reject changes to the active project or workspace while a dialog is open.
+- Deleted files, folders and projects move to Trash for recovery.
+- Export Leonardo documents and form answers as Markdown reading copies, with a loss warning and portable images.
+- Form calendars are larger and follow the active theme. Preview and Split preserve form field presentation.
+- Undo and redo document edits with separate history for each document.
+- Configure file colors and filter or sort the project file list.
+- Little Leonardo is now read-only. Earlier mobile work is preserved for recovery/export; proprietary mobile Git is retired. Desktop synchronization and system Git remain available.
 
 ## Compatibility and known limitations
 
 Beta for Apple Silicon (arm64), macOS 14 or later. Developer ID signed and notarized by Apple.
 
-Older strict MDLF readers may reject the new optional table geometry fields. Resize controls are available only in editable Preview; protected documents and Fill mode do not permit geometry changes.
+Native visual acceptance of the new modal sheets remains pending in [#247](https://github.com/PinedaTec-EU/LeonardoMD/issues/247).
 
 To receive beta updates, select **Beta** in Preferences → Updates. Stable remains the default subscription.
 
-Update detection and installation are maintainer-confirmed. The active instance can remain open when updating from Preferences. Save your work, close Preferences, and quit normally to let the pending update complete. [Termination issue #202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202).
+Update detection and installation are maintainer-confirmed for earlier builds. The active instance can remain open when updating from Preferences. Save your work, close Preferences, and quit normally to let the pending update complete. [Termination issue #202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202).
 
 Legacy betas using the former update-signing key require manual installation of a current signed/notarized package.
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.494/LeonardoMD-0.1.494.zip" length="16402421" type="application/octet-stream" sparkle:edSignature="TqVATT7fdNYBnq380BlcKpfhRnko9eJ0xPJl0/WBzuirIHKGys8FX0YgiKHCNTsB+F82wrgrimTMMVQb2ozqAw==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.571/LeonardoMD-0.1.571.zip" length="13242621" type="application/octet-stream" sparkle:edSignature="RA2DRzJyqLTi80lhP1JgruCqOMAQPuTHfRoA9knJ3lsgKtOA8booEfvASJAAYdAfFIoyC2G4aNoy/JbxWnh0CA==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.405</title>
