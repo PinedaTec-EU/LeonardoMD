@@ -42,7 +42,7 @@ public actor OfflineCorpusStore: CorpusStore {
         try validate(project)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let url = try location(project.id)
-        try requireWritableOwnership(at: url, id: project.id)
+        try requireWritableOwnership(id: project.id)
         let encoded = try JSONEncoder().encode(project)
         guard encoded.count <= (try maximumEncodedBytes()) else { throw SyncError.sizeLimitExceeded }
         try encoded.write(to: url, options: .atomic)
@@ -54,20 +54,11 @@ public actor OfflineCorpusStore: CorpusStore {
         if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
     }
 
-    private struct CorpusOwner: Decodable {
-        let id: UUID
-        let mode: SyncMode
-    }
-
-    /// Read ownership without decoding another set of potentially large content arrays.
-    /// A library reload failure must not turn an existing recovery archive into a writable cache.
-    private func requireWritableOwnership(at url: URL, id: UUID) throws {
-        guard FileManager.default.fileExists(atPath: url.path) else { return }
-        let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-        guard size <= (try maximumEncodedBytes()) else { throw SyncError.sizeLimitExceeded }
-        let owner = try JSONDecoder().decode(CorpusOwner.self, from: Data(contentsOf: url))
-        guard owner.id == id else { throw SyncError.invalidSnapshot }
-        guard owner.mode == .direct else { throw SyncError.readOnly }
+    /// Library reload failure must not make existing recovery or malformed data writable.
+    /// Reuse the complete bounded decode and semantic validation used for reads.
+    private func requireWritableOwnership(id: UUID) throws {
+        guard let existing = try load(id: id) else { return }
+        guard existing.mode == .direct else { throw SyncError.readOnly }
     }
 
     private func location(_ id: UUID) throws -> URL {

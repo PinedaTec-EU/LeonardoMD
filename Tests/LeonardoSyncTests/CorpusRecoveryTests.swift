@@ -69,12 +69,29 @@ final class CorpusRecoveryTests: XCTestCase {
         let replacement = try OfflineProject(id: id, name: "Read", mode: .direct,
             scope: CorpusScope(folder: "docs"), snapshot: CorpusSnapshot(revision: "remote", files: []))
         for value in [Data("corrupt".utf8),
-                      try JSONSerialization.data(withJSONObject: ["id": UUID().uuidString, "mode": "direct"])] {
+                      try JSONSerialization.data(withJSONObject: ["id": UUID().uuidString, "mode": "direct"]),
+                      try JSONSerialization.data(withJSONObject: ["id": id.uuidString, "mode": "direct"])] {
             try value.write(to: archive)
             do { try await OfflineCorpusStore(root: root).save(replacement); XCTFail("Unknown owner must not be overwritten") }
             catch { }
             XCTAssertEqual(try Data(contentsOf: archive), value)
         }
+    }
+
+    func testSemanticallyInvalidDirectCacheCannotBeOverwritten() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let id = UUID(), url = root.appendingPathComponent(id.uuidString + ".json")
+        let replacement = try OfflineProject(id: id, name: "Read", mode: .direct,
+            scope: CorpusScope(folder: "docs"), snapshot: CorpusSnapshot(revision: "remote", files: []))
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(replacement)) as? [String: Any])
+        object["base"] = ["revision": "", "files": []]
+        let original = try JSONSerialization.data(withJSONObject: object)
+        try original.write(to: url)
+        do { try await OfflineCorpusStore(root: root).save(replacement); XCTFail("Invalid direct cache must be preserved") }
+        catch { XCTAssertEqual(error as? SyncError, .invalidSnapshot) }
+        XCTAssertEqual(try Data(contentsOf: url), original)
     }
 
     func testOwnedDirectCacheStillRefreshesNormally() async throws {
