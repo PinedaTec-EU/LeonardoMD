@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.521
+
+- #232 Fixed: enlarge form calendars and follow document themes ([#233](https://github.com/PinedaTec-EU/LeonardoMD/pull/233))
+
+<p>Form date fields offer a larger calendar in the active theme, with localized labels, keyboard navigation and a safe fallback for malformed locales, while preserving editable drafts.</p>
+
+Source: `0ba65a49d3777c3aca2ca72df4b461d6b72c6903`. Delta: `{"build": 12}`.
+
 ## 0.1.509
 
 - #236 Added: promote an exact beta without changing its version ([#237](https://github.com/PinedaTec-EU/LeonardoMD/pull/237))

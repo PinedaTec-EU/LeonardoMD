@@ -447,6 +447,16 @@
       "pr": 237,
       "summary": "Promote a chosen validated beta to stable while preserving its version and exact signed artifact, even when newer betas exist.",
       "to_version": "0.1.509"
+    },
+    {
+      "delta": {
+        "build": 12
+      },
+      "from_version": "0.1.509",
+      "merge_sha": "0ba65a49d3777c3aca2ca72df4b461d6b72c6903",
+      "pr": 233,
+      "summary": "Form date fields offer a larger calendar in the active theme, with localized labels, keyboard navigation and a safe fallback for malformed locales, while preserving editable drafts.",
+      "to_version": "0.1.521"
     }
   ],
   "initial_version": "0.1.56",
@@ -457,5 +467,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.509"
+  "version": "0.1.521"
 }
