@@ -56,3 +56,7 @@ plain-copy removal, local-resource detection and portable collection. Balanced
 parentheses, escaped punctuation and angle destinations use the same reader;
 HTML tags use `LeonardoHTMLImageScanner` for quoted attributes and URL entities;
 regression [#222](https://github.com/PinedaTec-EU/LeonardoMD/issues/222).
+
+The native move adapter returns a discardable completion task. Package lifecycle
+acceptance awaits that task instead of assuming a fixed number of `Task.yield`
+iterations completes filesystem I/O ([#226](https://github.com/PinedaTec-EU/LeonardoMD/issues/226)).

@@ -70,7 +70,8 @@ struct LeonardoPackageTests {
         let root = try temporary()
         defer { try? FileManager.default.removeItem(at: root) }
         try Data([4, 5, 6]).write(to: root.appendingPathComponent("a>b.png"))
-        let body = #"<img alt="caption > text" src="a&gt;b.png">"#
+        let remote = #"[remote]: <https://example.com/a\>b.png>"#
+        let body = #"<img alt="caption > text" src="a&gt;b.png">"# + "\n![reference][picture]\n" + #"[picture]: <a\>b.png>"# + "\n![remote][remote]\n" + remote
         let text = try source(body)
         let package = root.appendingPathComponent("html.mdlz")
         try LeonardoPackageTransport.export(documentURL: root.appendingPathComponent("html.mdlf"), content: text, to: package)
@@ -82,6 +83,8 @@ struct LeonardoPackageTests {
         let exported = try String(contentsOf: workspace.documentURL, encoding: .utf8)
         #expect(exported.contains(#"alt="caption > text""#))
         #expect(exported.contains(#"src="assets/"#))
+        #expect(exported.contains("[picture]: <assets/"))
+        #expect(exported.contains(remote))
     }
 
     @Test func extractionLeavesOriginalPackageUntouchedAndNeverOverwrites() throws {

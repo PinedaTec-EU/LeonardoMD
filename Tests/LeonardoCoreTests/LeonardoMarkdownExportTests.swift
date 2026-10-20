@@ -94,6 +94,10 @@ final class LeonardoMarkdownExportTests: XCTestCase {
                 XCTAssertEqual(LeonardoMarkdownExport.markdown(from: .init(body: "Before \(localImage) after")), "Before  after", localImage)
                 let remoteImage = "![nested [alt]](\(remote)\(title))"
                 XCTAssertEqual(LeonardoMarkdownExport.markdown(from: .init(body: remoteImage)), remoteImage, remoteImage)
+                let localReference = "![nested [alt]][picture]\n[picture]: \(local)\(title)\n"
+                XCTAssertEqual(LeonardoMarkdownExport.markdown(from: .init(body: localReference)), "\n", localReference)
+                let remoteReference = "![nested [alt]][picture]\n[picture]: \(remote)\(title)\n"
+                XCTAssertEqual(LeonardoMarkdownExport.markdown(from: .init(body: remoteReference)), remoteReference, remoteReference)
             }
         }
         let reference = "![nested [alt]][picture]\n[picture]: assets/a_(b).png\n"

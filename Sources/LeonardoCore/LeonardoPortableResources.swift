@@ -99,7 +99,7 @@ public enum LeonardoLocalImagePolicy {
         in masked: String, imageRanges: [NSRange], labels: Set<String>
     ) -> [NSRange] {
         guard !labels.isEmpty else { return [] }
-        let definitions = referenceDefinitionPattern.matches(in: masked, range: NSRange(masked.startIndex..., in: masked))
+        let definitions = LeonardoMarkdownImageScanner.referenceDefinitions(in: masked, masked: masked)
         let remaining = NSMutableString(string: masked)
         for range in imageRanges + definitions.map(\.range) {
             remaining.replaceCharacters(in: range, with: String(repeating: " ", count: range.length))
@@ -107,8 +107,7 @@ public enum LeonardoLocalImagePolicy {
         let usedLabels = Set(LeonardoMarkdownImageScanner.referenceLabels(in: remaining as String)
             .map(normalizeReferenceLabel))
         return definitions.compactMap { definition in
-            guard let range = Range(definition.range(at: 1), in: masked) else { return nil }
-            let label = normalizeReferenceLabel(String(masked[range]))
+            let label = normalizeReferenceLabel(definition.label)
             return labels.contains(label) && !usedLabels.contains(label) ? definition.range : nil
         }
     }
@@ -139,29 +138,12 @@ public enum LeonardoLocalImagePolicy {
         LeonardoMarkdownImageScanner.unescape(label).split(whereSeparator: { $0.isWhitespace }).joined(separator: " ").lowercased()
     }
 
-    private static let referenceDefinitionPattern = try! NSRegularExpression(
-        pattern: #"(?im)^ {0,3}\[((?:\\.|[^\]\\\n])+)\]:[ \t]*(?:<([^>\n]+)>|([^\s]+))(?:[ \t]+(?:["'][^\n]*?["']|\([^\n]*?\)))?[ \t]*(?:\n|$)"#
-    )
-
     private static func referenceDefinitions(in source: String, masked: String) -> [String: BodyReference] {
-        let regex = referenceDefinitionPattern
         var definitions: [String: BodyReference] = [:]
-        let matches = regex.matches(in: masked, range: NSRange(masked.startIndex..., in: masked))
-        for match in matches {
-            guard let labelRange = Range(match.range(at: 1), in: masked),
-                  !labelRange.isEmpty else { continue }
-            let label = String(masked[labelRange])
-            let destinationIndex: Int
-            if match.range(at: 2).location != NSNotFound { destinationIndex = 2 }
-            else if match.range(at: 3).location != NSNotFound { destinationIndex = 3 }
-            else { continue }
-            guard let valueRange = Range(match.range(at: destinationIndex), in: source) else { continue }
-            let key = normalizeReferenceLabel(label)
+        for definition in LeonardoMarkdownImageScanner.referenceDefinitions(in: source, masked: masked) {
+            let key = normalizeReferenceLabel(definition.label)
             guard definitions[key] == nil else { continue }
-            definitions[key] = BodyReference(
-                range: match.range(at: destinationIndex),
-                value: LeonardoMarkdownImageScanner.unescape(String(source[valueRange]))
-            )
+            definitions[key] = BodyReference(range: definition.destinationRange, value: definition.destination)
         }
         return definitions
     }

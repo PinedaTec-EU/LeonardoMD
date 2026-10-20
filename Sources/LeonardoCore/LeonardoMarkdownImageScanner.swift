@@ -10,6 +10,21 @@ enum LeonardoMarkdownImageScanner {
         let referenceLabel: String?
     }
 
+    struct ReferenceDefinition {
+        let range: NSRange
+        let label: String
+        let destinationRange: NSRange
+        let destination: String
+    }
+
+    private static let definitionLine = try! NSRegularExpression(
+        pattern: #"(?m)^ {0,3}\[((?:\\.|[^\]\\\r\n])+)\]:[ \t]*([^\r\n]*)(?:\r?\n|$)"#
+    )
+
+    static func referenceDefinitions(in source: String, masked: String) -> [ReferenceDefinition] {
+        Scanner(source: source as NSString, units: Array(masked.utf16)).referenceDefinitions(in: masked)
+    }
+
     static func images(in source: String, masked: String) -> [Image] {
         Scanner(source: source as NSString, units: Array(masked.utf16)).images()
     }
@@ -53,6 +68,16 @@ enum LeonardoMarkdownImageScanner {
             return result
         }
 
+        func referenceDefinitions(in masked: String) -> [ReferenceDefinition] {
+            LeonardoMarkdownImageScanner.definitionLine.matches(in: masked, range: NSRange(masked.startIndex..., in: masked)).compactMap { match in
+                let remainder = match.range(at: 2)
+                guard let value = destination(from: remainder.location, limit: NSMaxRange(remainder), requiresClosingParenthesis: false) else { return nil }
+                return ReferenceDefinition(range: match.range, label: source.substring(with: match.range(at: 1)),
+                                           destinationRange: value.range,
+                                           destination: LeonardoMarkdownImageScanner.unescape(source.substring(with: value.range)))
+            }
+        }
+
         func referenceLabels() -> [String] {
             var result: [String] = []
             var index = 0
@@ -76,7 +101,7 @@ enum LeonardoMarkdownImageScanner {
             guard let close = closingBracket(from: bracket) else { return nil }
             let afterLabel = close + 1
             if afterLabel < units.count, units[afterLabel] == 40,
-               let inline = inlineDestination(from: afterLabel + 1) {
+               let inline = destination(from: afterLabel + 1, limit: units.count, requiresClosingParenthesis: true) {
                 return Image(range: NSRange(location: start, length: inline.end - start),
                              destinationRange: inline.range,
                              destination: LeonardoMarkdownImageScanner.unescape(source.substring(with: inline.range)),
@@ -110,26 +135,26 @@ enum LeonardoMarkdownImageScanner {
             return nil
         }
 
-        private func inlineDestination(from start: Int) -> (range: NSRange, end: Int)? {
-            var index = skipWhitespace(from: start)
-            guard index < units.count else { return nil }
+        private func destination(from start: Int, limit: Int, requiresClosingParenthesis: Bool) -> (range: NSRange, end: Int)? {
+            var index = skipWhitespace(from: start, limit: limit)
+            guard index < limit else { return nil }
             let range: NSRange
             if units[index] == 60 {
                 let begin = index + 1
                 index = begin
-                while index < units.count, units[index] != 62 {
+                while index < limit, units[index] != 62 {
                     if units[index] == 60 || units[index] == 10 || units[index] == 13 { return nil }
-                    if units[index] == 92, index + 1 < units.count { index += 2 } else { index += 1 }
+                    if units[index] == 92, index + 1 < limit { index += 2 } else { index += 1 }
                 }
-                guard index < units.count else { return nil }
+                guard index < limit else { return nil }
                 range = NSRange(location: begin, length: index - begin)
                 index += 1
             } else {
                 let begin = index
                 var depth = 0
-                while index < units.count {
+                while index < limit {
                     let unit = units[index]
-                    if unit == 92, index + 1 < units.count, LeonardoMarkdownImageScanner.isPunctuation(units[index + 1]) {
+                    if unit == 92, index + 1 < limit, LeonardoMarkdownImageScanner.isPunctuation(units[index + 1]) {
                         index += 2; continue
                     }
                     if isWhitespace(unit) || (unit == 41 && depth == 0) { break }
@@ -141,33 +166,40 @@ enum LeonardoMarkdownImageScanner {
                 guard depth == 0 else { return nil }
                 range = NSRange(location: begin, length: index - begin)
             }
-            let afterDestination = index
-            index = skipWhitespace(from: index)
-            guard index < units.count else { return nil }
-            if units[index] != 41 {
-                guard index > afterDestination, let titleEnd = titleEnd(from: index) else { return nil }
-                index = skipWhitespace(from: titleEnd)
-            }
-            guard index < units.count, units[index] == 41 else { return nil }
-            return (range, index + 1)
+            guard let end = destinationEnd(after: index, limit: limit, requiresClosingParenthesis: requiresClosingParenthesis) else { return nil }
+            return (range, end)
         }
 
-        private func titleEnd(from start: Int) -> Int? {
+        private func destinationEnd(after destination: Int, limit: Int, requiresClosingParenthesis: Bool) -> Int? {
+            var index = skipWhitespace(from: destination, limit: limit)
+            if !requiresClosingParenthesis, index == limit { return index }
+            guard index < limit else { return nil }
+            if !requiresClosingParenthesis || units[index] != 41 {
+                guard index > destination, let end = titleEnd(from: index, limit: limit) else { return nil }
+                index = skipWhitespace(from: end, limit: limit)
+            }
+            if requiresClosingParenthesis {
+                return index < limit && units[index] == 41 ? index + 1 : nil
+            }
+            return index == limit ? index : nil
+        }
+
+        private func titleEnd(from start: Int, limit: Int) -> Int? {
             let opening = units[start]
             guard opening == 34 || opening == 39 || opening == 40 else { return nil }
             let closing: UInt16 = opening == 40 ? 41 : opening
             var index = start + 1
-            while index < units.count {
-                if units[index] == 92, index + 1 < units.count { index += 2; continue }
+            while index < limit {
+                if units[index] == 92, index + 1 < limit { index += 2; continue }
                 if units[index] == closing { return index + 1 }
                 index += 1
             }
             return nil
         }
 
-        private func skipWhitespace(from start: Int) -> Int {
+        private func skipWhitespace(from start: Int, limit: Int) -> Int {
             var index = start
-            while index < units.count, isWhitespace(units[index]) { index += 1 }
+            while index < limit, isWhitespace(units[index]) { index += 1 }
             return index
         }
 
