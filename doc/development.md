@@ -20,7 +20,7 @@ To inspect retained startup records, use Console with the subsystem/category abo
 /usr/bin/log show --last 15m --style compact --predicate 'subsystem == "eu.pinedatec.LeonardoMD" AND category == "startup"'
 ```
 
-For GUI QA, use the packaged app through `./launch.sh` from a normal GUI terminal. A directly spawned AppKit executable inside an agent execution sandbox can abort during HIServices registration before creating a window. Compare the same binary outside that sandbox before changing product behavior. PID and launch timestamp distinguish diagnostic attempts from user sessions.
+For ordinary local runs, use `./launch.sh`. For visual or fresh-process QA, use `./launch.sh --qa` from a normal GUI terminal and follow the [native QA launch checks](#native-qa-launches) below. A directly spawned AppKit executable inside an agent execution sandbox can abort during HIServices registration before creating a window. Compare the same binary outside that sandbox before changing product behavior. PID and launch timestamp distinguish diagnostic attempts from user sessions.
 
 ```sh
 swift test
