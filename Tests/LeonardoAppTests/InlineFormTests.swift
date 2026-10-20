@@ -93,8 +93,23 @@ final class InlineFormTests: XCTestCase {
             if previewWeb !== web { break }
             try await Task.sleep(for: .milliseconds(20))
         }
-        try await waitFor("document.querySelectorAll('[data-field-input]').length === 0 && document.body.textContent.includes('Ada 漢字')", in: previewWeb)
+        try await waitFor("document.querySelectorAll('[data-field-input]').length === 11 && Array.from(document.querySelectorAll('[data-field-input]')).every(n => n.disabled)", in: previewWeb)
         XCTAssertFalse(session.updateLeonardoField("name", text: "blocked"))
+        let previewSource = session.content
+        _ = try await previewWeb.evaluateJavaScript("""
+        (() => {
+          const input = document.querySelector('[data-field-input="name"]');
+          input.value = 'Unauthorized';
+          input.dispatchEvent(new InputEvent('input', {bubbles:true, isComposing:true}));
+          input.dispatchEvent(new InputEvent('input', {bubbles:true}));
+        })()
+        """)
+        await session.save()
+        XCTAssertEqual(session.content, previewSource)
+        await session.setDocumentMode(.split)
+        let splitWeb = try await webView(in: host)
+        try await waitFor("document.querySelectorAll('[data-field-input]').length === 11 && Array.from(document.querySelectorAll('[data-field-input]')).every(n => n.disabled)", in: splitWeb)
+        XCTAssertFalse(session.updateLeonardoField("name", text: "blocked in Split"))
         await session.openDocument(url)
         XCTAssertEqual(session.leonardoFieldText("name"), "Ada 漢字")
         XCTAssertEqual(session.leonardoFieldBool("notifications"), true)
