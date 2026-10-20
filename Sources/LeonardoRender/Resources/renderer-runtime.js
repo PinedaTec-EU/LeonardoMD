@@ -313,6 +313,8 @@
       await Promise.all(diagrams.map((element) => renderDiagram(element)));
     }
     await waitForDocumentAssets();
+    await window.LeonardoImages.preparePDF(root);
+    await waitForDocumentAssets();
   }
 
   function emitScrollProgress() {
@@ -364,6 +366,7 @@
         image.loading = image.closest(".leonardo-document-background") ? "eager" : "lazy";
         image.decoding = "async";
       });
+      window.LeonardoImages.prepare(root);
       renderFrontMatter();
       renderTags();
       highlightCode();

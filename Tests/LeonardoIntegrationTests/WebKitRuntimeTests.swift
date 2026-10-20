@@ -1,6 +1,8 @@
 import XCTest
 import AppKit
 import WebKit
+import ImageIO
+import UniformTypeIdentifiers
 import LeonardoCore
 @testable import LeonardoRender
 
@@ -323,6 +325,234 @@ final class WebKitRuntimeTests: XCTestCase {
         """, in: web)
         XCTAssertEqual(word, "1")
         try await captureTagPreview(web, name: "tables-natural-and-fixed-narrow")
+    }
+
+    func testBoundedRasterPreviewPDFResolutionAndSourceRestoration() async throws {
+        let root = URL(fileURLWithPath: "/BoundedImageFixture", isDirectory: true)
+        let bytes = try largeRasterFixture()
+        let assets = MarkdownMemoryAssets(files: ["large.png": bytes as Data])
+        let config = MarkdownPreviewConfiguration(localAssetRoot: root, memoryAssets: assets)
+        let (host, window) = makeHost(content: "# Bounded images\n\n![Large blue image](large.png)", base: root, config: config)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelector('img')?.naturalWidth > 0", in: web)
+        let width = try await evaluate("document.querySelector('img').naturalWidth", in: web)
+        XCTAssertLessThan(try XCTUnwrap(Int(width)), 3_000)
+        let originalStyle = try await evaluate("document.querySelector('img').getAttribute('style') || ''", in: web)
+        let source = try await evaluate("document.querySelector('img').getAttribute('src')", in: web)
+        try await captureTagPreview(web, name: "bounded-raster-preview")
+        _ = try await web.evaluateJavaScript("void window.LeonardoImages.preparePDF(document.querySelector('main'))")
+        try await waitFor("document.querySelector('img').currentSrc.includes('leonardo-image-purpose=pdf') && document.querySelector('img').complete", in: web)
+        let pdfWidth = try await evaluate("document.querySelector('img').naturalWidth", in: web)
+        XCTAssertGreaterThan(try XCTUnwrap(Int(pdfWidth)), try XCTUnwrap(Int(width)))
+        _ = try await web.evaluateJavaScript("window.LeonardoImages.restorePreview()")
+        try await waitFor("document.querySelector('img').complete && !document.querySelector('img').hasAttribute('srcset')", in: web)
+        let pdf = try await host.exportPDF()
+        XCTAssertTrue(pdf.starts(with: Data("%PDF".utf8)))
+        try await waitFor("!document.querySelector('img').hasAttribute('srcset')", in: web)
+        let restoredSource = try await evaluate("document.querySelector('img').getAttribute('src')", in: web)
+        let restoredStyle = try await evaluate("document.querySelector('img').getAttribute('style') || ''", in: web)
+        XCTAssertEqual(source, restoredSource)
+        XCTAssertEqual(originalStyle, restoredStyle)
+    }
+
+    func testOverlappingPDFExportsKeepHighResolutionAndRestorePreview() async throws {
+        let root = URL(fileURLWithPath: "/OverlappingPDFFixture", isDirectory: true)
+        let assets = MarkdownMemoryAssets(files: ["large.png": try largeRasterFixture()])
+        let config = MarkdownPreviewConfiguration(localAssetRoot: root, memoryAssets: assets)
+        let (host, window) = makeHost(content: "![Large image](large.png)", base: root, config: config)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelector('img')?.naturalWidth > 0", in: web)
+        _ = try await web.evaluateJavaScript("document.querySelector('img').setAttribute('style', 'border-radius: 4px')")
+        let width = try await evaluate("document.querySelector('img').naturalWidth", in: web)
+        let previewWidth = try XCTUnwrap(Int(width))
+        let originalStyle = try await evaluate("document.querySelector('img').getAttribute('style')", in: web)
+        _ = try await web.evaluateJavaScript("""
+        window.pdfPrepareCalls = 0;
+        window.pdfImageWidths = [];
+        const prepare = window.LeonardoImages.preparePDF;
+        window.LeonardoImages.preparePDF = async root => {
+          const call = ++window.pdfPrepareCalls;
+          await prepare(root);
+          window.pdfImageWidths.push(root.querySelector('img').naturalWidth);
+          if (call === 1) await new Promise(resolve => { window.releaseFirstPDF = resolve; });
+        };
+        void 0;
+        """)
+        let first = Task { try await host.exportPDF() }
+        try await waitFor("typeof window.releaseFirstPDF === 'function'", in: web)
+        var cancellationReturned = false
+        let cancelled = Task {
+            defer { cancellationReturned = true }
+            return try await host.exportPDF()
+        }
+        await Task.yield()
+        cancelled.cancel()
+        let second = Task { try await host.exportPDF() }
+        // Hold the first export after its PDF variant has decoded, giving the
+        // second caller time to enter the host while that image swap is active.
+        for _ in 0..<100 {
+            if cancellationReturned { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertTrue(cancellationReturned, "Queued cancellation must return while the first export is still held")
+        let callsWhileHeld = try await evaluate("window.pdfPrepareCalls", in: web)
+        XCTAssertEqual(callsWhileHeld, "1", "The second export must wait for the first image swap to be restored")
+        _ = try await web.evaluateJavaScript("void window.releaseFirstPDF()")
+        for task in [first, second] {
+            let data = try await task.value
+            XCTAssertTrue(data.starts(with: Data("%PDF".utf8)))
+        }
+        do {
+            _ = try await cancelled.value
+            XCTFail("A cancelled queued export must release its place without preparing images")
+        } catch { XCTAssertTrue(error is CancellationError) }
+        let highResolution = try await evaluate("window.pdfImageWidths.length === 2 && window.pdfImageWidths.every(width => width > \(previewWidth))", in: web)
+        XCTAssertEqual(highResolution, "1")
+        try await waitFor("document.querySelector('img').complete && !document.querySelector('img').hasAttribute('srcset')", in: web)
+        let restoredStyle = try await evaluate("document.querySelector('img').getAttribute('style')", in: web)
+        let restoredWidth = try await evaluate("document.querySelector('img').naturalWidth", in: web)
+        XCTAssertEqual(restoredStyle, originalStyle)
+        XCTAssertEqual(restoredWidth, String(previewWidth))
+    }
+
+    func testPDFTeardownAndReplacementFailQueuedRequestsAndAllowNewExport() async throws {
+        let bytes = try largeRasterFixture()
+        let root = URL(fileURLWithPath: "/RetiredPDFFixture", isDirectory: true)
+        for explicitTeardown in [false, true] {
+            let assets = MarkdownMemoryAssets(files: ["large.png": bytes])
+            let config = MarkdownPreviewConfiguration(localAssetRoot: root, memoryAssets: assets)
+            let source = "![Large image](large.png)"
+            let (host, window) = makeHost(content: source, base: root, config: config)
+            defer { host.teardown(); window.close() }
+            let web = try XCTUnwrap(webView(of: host))
+            try await waitFor("document.querySelector('img')?.naturalWidth > 0", in: web)
+            _ = try await web.evaluateJavaScript("""
+            window.LeonardoImages.preparePDF = async () => {
+              window.pdfHeld = true;
+              await new Promise(() => {});
+            };
+            void 0;
+            """)
+            let active = Task { try await host.exportPDF() }
+            try await waitFor("window.pdfHeld === true", in: web)
+            var queuedReturned = false
+            let queued = Task {
+                defer { queuedReturned = true }
+                return try await host.exportPDF()
+            }
+            await Task.yield()
+            if explicitTeardown { host.teardown() }
+            var replacement = config
+            replacement.memoryAssets = MarkdownMemoryAssets(files: ["large.png": bytes])
+            host.apply(content: source, baseURL: root, configuration: replacement,
+                onLinkActivation: nil, onScrollProgress: nil)
+            for _ in 0..<100 {
+                if queuedReturned { break }
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            XCTAssertTrue(queuedReturned, "Retiring a view must fail its queued exports")
+            for task in [active, queued] {
+                do { _ = try await task.value; XCTFail("Retired exports must fail") }
+                catch { XCTAssertTrue(error is MarkdownRenderError) }
+            }
+            let nextWeb = try XCTUnwrap(webView(of: host))
+            XCTAssertFalse(web === nextWeb)
+            try await waitFor("document.querySelector('img')?.naturalWidth > 0", in: nextWeb)
+            let data = try await host.exportPDF()
+            XCTAssertTrue(data.starts(with: Data("%PDF".utf8)))
+        }
+    }
+
+    func testCanonicalMemoryRasterFormatsReachWebKitAndPDF() async throws {
+        let root = URL(fileURLWithPath: "/MemoryRasterFixture", isDirectory: true)
+        let context = try XCTUnwrap(CGContext(data: nil, width: 32, height: 16,
+            bitsPerComponent: 8, bytesPerRow: 128, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.setFillColor(CGColor(red: 0.1, green: 0.3, blue: 0.8, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 32, height: 16))
+        let image = try XCTUnwrap(context.makeImage())
+        var files: [String: Data] = [:]
+        for type in [UTType.bmp, .tiff, .png] {
+            let bytes = NSMutableData()
+            let destination = try XCTUnwrap(CGImageDestinationCreateWithData(bytes, type.identifier as CFString, 1, nil))
+            CGImageDestinationAddImage(destination, image, nil)
+            XCTAssertTrue(CGImageDestinationFinalize(destination))
+            files["image." + (try XCTUnwrap(type.preferredFilenameExtension))] = bytes as Data
+        }
+        let png = try XCTUnwrap(files.removeValue(forKey: "image.png"))
+        var icon = Data([0, 0, 1, 0, 1, 0, 32, 16, 0, 0, 1, 0, 32, 0])
+        for value in [UInt32(png.count), UInt32(22)] {
+            var littleEndian = value.littleEndian
+            withUnsafeBytes(of: &littleEndian) { icon.append(contentsOf: $0) }
+        }
+        icon.append(png)
+        files["image.ico"] = icon
+        files["image.tif"] = files["image.tiff"]
+        let sections = files.keys.sorted().map { name in
+            "## \(name)\n\n![\(name)](\(name))"
+        }
+        let source = "# Memory raster formats\n\n" + sections.joined(separator: "\n\n")
+        let config = MarkdownPreviewConfiguration(localAssetRoot: root, memoryAssets: MarkdownMemoryAssets(files: files))
+        let (host, window) = makeHost(content: source, base: root, config: config)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelectorAll('img').length === 4 && Array.from(document.querySelectorAll('img')).every(i => i.complete && i.naturalWidth === 32 && i.naturalHeight === 16)", in: web)
+        let failures = try await evaluate("document.querySelectorAll('.leonardo-image-unavailable').length", in: web)
+        XCTAssertEqual(failures, "0")
+        try await captureTagPreview(web, name: "bounded-memory-formats")
+        let pdf = try await host.exportPDF()
+        XCTAssertTrue(pdf.starts(with: Data("%PDF".utf8)))
+    }
+
+    func testManySmallImagesLoadWithinTheDocumentBudget() async throws {
+        let root = URL(fileURLWithPath: "/ManyImageFixture", isDirectory: true)
+        let svg = Data("<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect width='12' height='12' fill='blue'/></svg>".utf8)
+        let files = Dictionary(uniqueKeysWithValues: (0..<64).map { ("image-\($0).svg", svg) })
+        let source = (0..<64).map { "![Image \($0)](image-\($0).svg)" }.joined(separator: "\n\n")
+        let config = MarkdownPreviewConfiguration(localAssetRoot: root, memoryAssets: MarkdownMemoryAssets(files: files))
+        let (host, window) = makeHost(content: source, base: root, config: config)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelectorAll('img').length === 64", in: web)
+        _ = try await web.evaluateJavaScript("document.querySelectorAll('img').forEach(i => i.loading = 'eager')")
+        try await waitFor("Array.from(document.querySelectorAll('img')).every(i => i.complete)", in: web)
+        let loaded = try await evaluate("Array.from(document.querySelectorAll('img')).filter(i => i.naturalWidth > 0).length", in: web)
+        XCTAssertEqual(loaded, "64", "Small images within the document budget must survive a burst of requests")
+    }
+
+    func testRejectedImageHasFallbackAndPDFDoesNotSilentlyOmitIt() async throws {
+        let root = URL(fileURLWithPath: "/RejectedImageFixture", isDirectory: true)
+        let assets = MarkdownMemoryAssets(files: ["bad.png": Data("invalid raster".utf8)])
+        let config = MarkdownPreviewConfiguration(localAssetRoot: root, memoryAssets: assets)
+        let (host, window) = makeHost(content: "# Rejected image\n\n![Authored fallback](bad.png)", base: root, config: config)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelector('img')?.dataset.leonardoImageFailed === 'true'", in: web)
+        let alt = try await evaluate("document.querySelector('img').alt", in: web)
+        XCTAssertEqual(alt, "Authored fallback")
+        let fallback = try await evaluate("document.querySelector('.leonardo-image-unavailable')?.textContent", in: web)
+        XCTAssertEqual(fallback, "Authored fallback")
+        try await captureTagPreview(web, name: "bounded-image-fallback")
+        do {
+            _ = try await host.exportPDF()
+            XCTFail("A failed image must not be silently omitted")
+        } catch { /* Expected: the existing PDF asset readiness contract fails. */ }
+    }
+
+    private func largeRasterFixture() throws -> Data {
+        let context = try XCTUnwrap(CGContext(data: nil, width: 3_000, height: 1_500,
+            bitsPerComponent: 8, bytesPerRow: 12_000, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.setFillColor(CGColor(red: 0.1, green: 0.3, blue: 0.8, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 3_000, height: 1_500))
+        let image = try XCTUnwrap(context.makeImage())
+        let bytes = NSMutableData()
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithData(bytes, UTType.png.identifier as CFString, 1, nil))
+        CGImageDestinationAddImage(destination, image, nil)
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+        return bytes as Data
     }
 
     private func evaluate(_ script: String, in web: WKWebView) async throws -> String {
