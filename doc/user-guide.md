@@ -48,6 +48,8 @@ Export a form as `.mdlr` to open it in **Fill form** mode. Fill the declared fie
 
 **Export Leonardo package** produces an ordinary `.mdlz` ZIP containing one MDLF/MDLR document and its local resources under `assets/`. Package opening defaults to editing the package itself; preferences can ask or extract to a new folder. When working in an extracted folder, Save updates those ordinary files and **Export Leonardo package** creates a new transport package. The title and status bar distinguish format, storage and mode so the save destination stays visible.
 
+**File → Export Markdown…** (also available in the Leonardo toolbar) creates a `.md` reading copy from MDLF, MDLR or an open MDLZ package. Confirm the warning before choosing the destination. Fields become their current answers, or defaults when no answer is stored. Leonardo layout, backgrounds, form definitions and interactive controls are lost and cannot be recovered from the Markdown copy. HTTP(S) images are retained; local/package and unsupported images are removed. Keep the original Leonardo file or use MDLZ to retain those capabilities. Export leaves the original unchanged.
+
 See the [format specification, schema and examples](format/README.md) and the [Codex/Claude plugin and MDLZ generation guide](plugins/leonardo-format.md). No proprietary binary document representation is required.
 
 ## Undo and Redo

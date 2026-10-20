@@ -468,5 +468,10 @@
   "Z–A": "Z–A",
   "Filter and sort files": "Filtrar y ordenar ficheros",
   "Inherit global file colors": "Heredar colores de fichero globales",
-  "Color Leonardo files in wine": "Mostrar ficheros Leonardo en rojo vino"
+  "Color Leonardo files in wine": "Mostrar ficheros Leonardo en rojo vino",
+  "Export Markdown…": "Exportar Markdown…",
+  "Export Markdown": "Exportar Markdown",
+  "Export to Markdown loses Leonardo capabilities": "Exportar a Markdown pierde capacidades de Leonardo",
+  "The exported copy loses Leonardo layout and interactive forms. Fields become their current values. Local and unsupported images are removed. Leonardo capabilities cannot be recovered from this Markdown file. The original document is preserved.": "La copia exportada pierde la maquetación y los formularios interactivos de Leonardo. Los campos se sustituyen por sus valores actuales. Se eliminan las imágenes locales y las no compatibles. No es posible recuperar las capacidades de Leonardo a partir de este archivo Markdown. El documento original se conserva.",
+  "Exported · Markdown": "Exportado · Markdown"
 }

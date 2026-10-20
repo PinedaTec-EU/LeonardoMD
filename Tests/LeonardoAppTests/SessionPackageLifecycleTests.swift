@@ -108,14 +108,8 @@ final class SessionPackageLifecycleTests: XCTestCase {
         defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
 
         let folder = try await session.files.createFolder(named: "Moved", in: fixture.project)
-        session.move(fixture.package, into: folder.url)
-        for _ in 0..<100 {
-            await Task.yield()
-            if session.documentSourceURL?.lastPathComponent == "request.mdlz",
-               session.documentSourceURL?.deletingLastPathComponent().standardizedFileURL == folder.url.standardizedFileURL {
-                break
-            }
-        }
+        let operation = try XCTUnwrap(session.move(fixture.package, into: folder.url))
+        await operation.value
         let moved = folder.url.appendingPathComponent("request.mdlz")
         XCTAssertEqual(session.documentSourceURL?.standardizedFileURL, moved.standardizedFileURL)
         XCTAssertEqual(session.packageWorkspace?.packageURL?.standardizedFileURL, moved.standardizedFileURL)

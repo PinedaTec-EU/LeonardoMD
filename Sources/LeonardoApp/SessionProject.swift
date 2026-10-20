@@ -182,9 +182,10 @@ extension AppSession {
         panel.prompt = L10n.text("Move here")
         presentFilePanel(panel) { [weak self] destination in self?.move(url, into: destination) }
     }
-    func move(_ url: URL, into parent: URL) {
-        guard let root = projectURL else { return }
-        Task {
+    @discardableResult
+    func move(_ url: URL, into parent: URL) -> Task<Void, Never>? {
+        guard let root = projectURL else { return nil }
+        return Task {
             guard !stopped, !isClosing else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
