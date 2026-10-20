@@ -1,5 +1,7 @@
 # Little Leonardo native validation
 
+Historical Git implementation evidence: proprietary mobile Git is retired by [#249](https://github.com/PinedaTec-EU/LeonardoMD/issues/249). Use [retirement validation](../git-retirement/README.md) for current behavior. Git fixture reproduction below requires its recorded historical source checkpoint; removed targets are not available on the retirement branch.
+
 These are actual native view/Simulator captures from implementation-owned fixtures, not mockups. No personal document or credential appears. Owning delivery: [#92](https://github.com/PinedaTec-EU/LeonardoMD/issues/92), [#101](https://github.com/PinedaTec-EU/LeonardoMD/issues/101), [PR #93](https://github.com/PinedaTec-EU/LeonardoMD/pull/93).
 
 ## Desktop captures

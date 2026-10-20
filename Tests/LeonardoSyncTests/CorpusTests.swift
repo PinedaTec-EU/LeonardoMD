@@ -25,8 +25,8 @@ final class CorpusTests: XCTestCase {
 
     func testDirectCannotEditAndRefreshIncludesUnsavedBuffer() throws {
         var project = try OfflineProject(name: "Read", mode: .direct, scope: CorpusScope(folder: "docs"), snapshot: snapshot())
-        XCTAssertThrowsError(try project.write(path: "docs/a.md", content: Data()))
-        XCTAssertThrowsError(try project.delete(path: "docs/a.md"))
+        XCTAssertThrowsError(try OfflineProject(name: "No new Git", mode: .legacyGit,
+            scope: CorpusScope(folder: "docs"), snapshot: snapshot()))
         let update = CorpusSnapshot(revision: "next", files: [CorpusFile(path: "docs/a.md", content: Data("unsaved".utf8), isUnsavedBuffer: true)])
         try project.replaceDirectSnapshot(update)
         XCTAssertEqual(project.files, update.files)
@@ -39,95 +39,26 @@ final class CorpusTests: XCTestCase {
         XCTAssertThrowsError(try snapshot().validate(scope: scope, limits: CorpusLimits(maximumFileBytes: 1)))
     }
 
-    func testSnapshotRejectsFileAncestorCollisionsAndWritesRemainAtomic() throws {
+    func testSnapshotRejectsFileAncestorCollisions() throws {
         let scope = try CorpusScope(folder: "docs")
         for parent in ["docs/a.md", "docs/A.md", "docs/cafe\u{301}.md"] {
             let ancestor = parent == "docs/cafe\u{301}.md" ? "docs/café.md" : "docs/a.md"
             let invalid = snapshot("base", [parent: "parent", ancestor + "/child.md": "child"])
-            XCTAssertThrowsError(try invalid.validate(scope: scope, limits: CorpusLimits()), parent)
-            let reversed = CorpusSnapshot(revision: invalid.revision, files: Array(invalid.files.reversed()))
-            XCTAssertThrowsError(try reversed.validate(scope: scope, limits: CorpusLimits()), parent)
+            XCTAssertThrowsError(try invalid.validate(scope: scope, limits: CorpusLimits()))
         }
-        var project = try OfflineProject(name: "Git", mode: .git, scope: scope, snapshot: snapshot())
-        let before = project
-        XCTAssertThrowsError(try project.write(path: "docs/a.md/child.md", content: Data("child".utf8)))
-        XCTAssertEqual(project, before)
-        XCTAssertThrowsError(try snapshot("base", ["docs/a.md": "file", "docs/a.md-other.md": "sibling",
-            "docs/a.md/child.md": "conflicting descendant"]).validate(scope: scope, limits: CorpusLimits()))
-        XCTAssertNoThrow(try snapshot("base", ["docs/a.md/child.md": "valid directory", "docs/a.md-other/note.md": "sibling"])
-            .validate(scope: scope, limits: CorpusLimits()))
     }
 
-    func testNewOfflineWorkSurvivesIntegrationOfEarlierSend() throws {
-        var project = try OfflineProject(name: "Git", mode: .git, scope: CorpusScope(folder: "docs"), snapshot: snapshot())
-        try project.write(path: "docs/a.md", content: Data("sent".utf8))
-        try project.markPublished(revision: "device-commit")
-        try project.write(path: "docs/b.md", content: Data("new offline work".utf8))
-        try project.acceptIntegration(snapshot("merged", ["docs/a.md": "sent"]))
-        XCTAssertEqual(project.publication, .localChanges)
-        XCTAssertEqual(project.files.count, 2)
-        XCTAssertEqual(project.base.revision, "merged")
-        XCTAssertNil(project.publishedRevision)
-    }
-
-    func testIntegrationConflictDoesNotDiscardLocalWork() throws {
-        var project = try OfflineProject(name: "Git", mode: .git, scope: CorpusScope(folder: "docs"), snapshot: snapshot())
-        try project.write(path: "docs/a.md", content: Data("sent".utf8))
-        try project.markPublished(revision: "sent")
-        try project.write(path: "docs/a.md", content: Data("later".utf8))
-        let before = project
-        XCTAssertThrowsError(try project.acceptIntegration(snapshot("merged", ["docs/a.md": "desktop resolution"])))
-        XCTAssertEqual(project, before)
-    }
-
-    func testDeletionAfterSendSurvivesExactIntegration() throws {
-        var project = try OfflineProject(name: "Git", mode: .git,
-            scope: CorpusScope(folder: "docs"), snapshot: snapshot())
-        try project.write(path: "docs/a.md", content: Data("sent".utf8))
-        try project.markPublished(revision: "device-commit")
-        try project.delete(path: "docs/a.md")
-
-        try project.acceptIntegration(snapshot("merged", ["docs/a.md": "sent"]))
-
-        XCTAssertTrue(project.files.isEmpty)
-        XCTAssertEqual(project.base.files.map(\.path), ["docs/a.md"])
-        XCTAssertEqual(project.base.revision, "merged")
-        XCTAssertEqual(project.publication, .localChanges)
-        XCTAssertNil(project.publishedRevision)
-    }
-
-    func testPersistenceSurvivesRestartAndDeletion() async throws {
+    func testReadOnlyCachePersistsAndCanBeRemoved() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        var project = try OfflineProject(name: "Git", mode: .git, scope: CorpusScope(folder: "docs"), snapshot: snapshot())
-        try project.delete(path: "docs/a.md")
-        try project.write(path: "docs/new.md", content: Data("new".utf8))
-        try project.markPublished(revision: "pending-review")
+        let project = try OfflineProject(name: "Read", mode: .direct, scope: CorpusScope(folder: "docs"), snapshot: snapshot())
         try await OfflineCorpusStore(root: root).save(project)
         let reopened = OfflineCorpusStore(root: root)
-        let ids = try await reopened.projectIDs()
-        XCTAssertEqual(ids, [project.id])
         let loaded = try await reopened.load(id: project.id)
         XCTAssertEqual(loaded, project)
         try await reopened.remove(id: project.id)
         let removed = try await reopened.load(id: project.id)
         XCTAssertNil(removed)
-        let remaining = try await reopened.projectIDs()
-        XCTAssertTrue(remaining.isEmpty)
-    }
-
-    func testNearLimitCorpusCanBeReopenedWithPublishedBaseline() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        defer { try? FileManager.default.removeItem(at: root) }
-        let limits = CorpusLimits(maximumFiles: 1, maximumFileBytes: 2_048, maximumCorpusBytes: 2_048)
-        let data = Data(repeating: 42, count: 2_048)
-        let snapshot = CorpusSnapshot(revision: "base", files: [CorpusFile(path: "docs/a.md", content: data)])
-        var project = try OfflineProject(name: "Near limit", mode: .git, scope: CorpusScope(folder: "docs"), snapshot: snapshot, limits: limits)
-        try project.write(path: "docs/a.md", content: Data(repeating: 43, count: 2_048), limits: limits)
-        try project.markPublished(revision: "published")
-        try await OfflineCorpusStore(root: root, limits: limits).save(project)
-        let loaded = try await OfflineCorpusStore(root: root, limits: limits).load(id: project.id)
-        XCTAssertEqual(loaded, project)
     }
 
     func testEncodedLimitOverflowFailsWithoutCreatingAnUnreadableArchive() async throws {

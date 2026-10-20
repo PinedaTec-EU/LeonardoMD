@@ -1,6 +1,6 @@
 import Foundation
 
-public enum SyncMode: String, Codable, Sendable { case direct, git }
+public enum SyncMode: String, Codable, Sendable { case direct; case legacyGit = "git" }
 public enum PublicationState: String, Codable, Sendable { case localChanges, sent, integrated }
 
 public struct CorpusFile: Codable, Equatable, Sendable {
@@ -73,6 +73,7 @@ public struct OfflineProject: Codable, Equatable, Sendable {
 
     public init(id: UUID = UUID(), name: String, mode: SyncMode, scope: CorpusScope,
                 snapshot: CorpusSnapshot, limits: CorpusLimits = CorpusLimits()) throws {
+        guard mode == .direct else { throw SyncError.readOnly }
         try snapshot.validate(scope: scope, limits: limits)
         self.id = id
         self.name = name
@@ -83,91 +84,13 @@ public struct OfflineProject: Codable, Equatable, Sendable {
         self.publication = .integrated
     }
 
-    public var hasLocalChanges: Bool { files != base.files }
+    public var isRecoveryArchive: Bool { mode == .legacyGit }
 
-    public mutating func write(path: String, content: Data, limits: CorpusLimits = CorpusLimits()) throws {
-        guard mode == .git else { throw SyncError.readOnly }
-        try scope.validate(path)
-        var updated = files.filter { $0.path != path }
-        updated.append(CorpusFile(path: path, content: content))
-        updated.sort { $0.path < $1.path }
-        try CorpusSnapshot(revision: base.revision, files: updated).validate(scope: scope, limits: limits)
-        files = updated
-        if publication != .sent { publication = .localChanges }
-    }
-
-    public mutating func delete(path: String) throws {
-        guard mode == .git else { throw SyncError.readOnly }
-        try scope.validate(path)
-        files.removeAll { $0.path == path }
-        if publication != .sent { publication = .localChanges }
-    }
-
+    /// Legacy Git corpora are recovery archives and must never be refreshed or edited.
     public mutating func replaceDirectSnapshot(_ snapshot: CorpusSnapshot, limits: CorpusLimits = CorpusLimits()) throws {
-        guard mode == .direct else { throw SyncError.invalidSnapshot }
+        guard mode == .direct else { throw SyncError.readOnly }
         try snapshot.validate(scope: scope, limits: limits)
         base = snapshot
         files = snapshot.files
-    }
-
-    public mutating func replaceGitSnapshot(_ snapshot: CorpusSnapshot, limits: CorpusLimits = CorpusLimits()) throws {
-        guard mode == .git else { throw SyncError.invalidSnapshot }
-        guard !hasLocalChanges, publication != .sent else { throw SyncError.publicationPending }
-        try snapshot.validate(scope: scope, limits: limits)
-        base = snapshot
-        files = snapshot.files
-        publication = .integrated
-    }
-
-    public mutating func replaceLocalFiles(_ updated: [CorpusFile], limits: CorpusLimits = CorpusLimits()) throws {
-        guard mode == .git else { throw SyncError.readOnly }
-        guard publication != .sent else { throw SyncError.publicationPending }
-        try CorpusSnapshot(revision: base.revision, files: updated).validate(scope: scope, limits: limits)
-        files = updated.sorted { $0.path < $1.path }
-        publication = hasLocalChanges ? .localChanges : .integrated
-    }
-
-    public mutating func markPublished(revision: String) throws {
-        try markPublished(CorpusSnapshot(revision: revision, files: files))
-    }
-
-    /// Records the exact accepted capture without replacing edits made after preparation.
-    /// A reconciliation request may intentionally publish an unchanged clean
-    /// snapshot so the desktop can review an overlapping source-branch move.
-    public mutating func markPublished(_ capture: CorpusSnapshot,
-                                       limits: CorpusLimits = CorpusLimits(),
-                                       purpose: GitPublicationPurpose = .normalChanges) throws {
-        guard mode == .git,
-              purpose == .reconciliationRequest || capture.files != base.files else {
-            throw SyncError.invalidSnapshot
-        }
-        guard publication != .sent else { throw SyncError.publicationPending }
-        try capture.validate(scope: scope, limits: limits)
-        publishedFiles = capture.files
-        publishedRevision = capture.revision
-        publication = .sent
-    }
-
-    public mutating func acceptIntegration(_ snapshot: CorpusSnapshot, limits: CorpusLimits = CorpusLimits()) throws {
-        guard mode == .git, publication == .sent else { throw SyncError.invalidSnapshot }
-        try snapshot.validate(scope: scope, limits: limits)
-        guard let publishedFiles else { throw SyncError.invalidSnapshot }
-        let original = Dictionary(uniqueKeysWithValues: publishedFiles.map { ($0.path, $0) })
-        let local = Dictionary(uniqueKeysWithValues: files.map { ($0.path, $0) })
-        var integrated = Dictionary(uniqueKeysWithValues: snapshot.files.map { ($0.path, $0) })
-        for path in Set(original.keys).union(local.keys) where original[path] != local[path] {
-            guard integrated[path] == original[path] || integrated[path] == local[path] else {
-                // The caller sends this three-way conflict to desktop; preserve every local byte.
-                throw SyncError.publicationPending
-            }
-            integrated[path] = local[path]
-        }
-        let updated = integrated.values.sorted { $0.path < $1.path }
-        try CorpusSnapshot(revision: snapshot.revision, files: updated).validate(scope: scope, limits: limits)
-        base = snapshot
-        files = updated
-        publication = hasLocalChanges ? .localChanges : .integrated
-        publishedRevision = nil
-        self.publishedFiles = nil
     }
 }

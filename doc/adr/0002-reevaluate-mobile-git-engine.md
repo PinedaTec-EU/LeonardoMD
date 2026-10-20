@@ -3,6 +3,7 @@
 Date: 2026-10-20
 Decision state: Owner-selected product direction on 2026-10-20; runtime migration and Windows delivery remain pending.
 Tracking: [#244](https://github.com/PinedaTec-EU/LeonardoMD/issues/244).
+Runtime retirement and recovery implementation: [#249](https://github.com/PinedaTec-EU/LeonardoMD/issues/249), [PR #250](https://github.com/PinedaTec-EU/LeonardoMD/pull/250); integration/distribution are tracked there. Windows remains pending.
 Evidence baseline: main `88b70a9bea8c5a256b9390c0c3b8f0ec65ed3cf1`.
 
 ## Decision
@@ -41,9 +42,9 @@ At the baseline, `Sources/LeonardoGit` contains **43 Swift files / 4,092 lines**
 | Durable publication, retry and exact integration baseline | `GitPreparedPublication`, `GitPublicationStore`, `GitIntegrationConsumer` | Representation can change; the protection against losing or resending edits must remain |
 | Corpus boundaries, offline edits, conflicts and receipts | `LeonardoSync`, `LeonardoDesktopSync`, app coordinators | Mostly retained for any editable synchronization solution |
 
-We have implemented a restricted Git client, not a complete replacement for Git. SSH protocol/authentication primitives come from SwiftNIO SSH; compression uses system zlib. We still own their integration, limits, lifecycle and host-key policy. [Package.swift](../../Package.swift) also pins NIO, transport services and Swift Crypto. Dependency removal must follow a usage audit, not an assumption that every dependency belongs exclusively to Git.
+At the evidence baseline we owned a restricted Git client, not a complete replacement for Git. SSH primitives came from SwiftNIO SSH and compression used system zlib; integration, limits, lifecycle and host-key policy remained ours. The baseline package pinned NIO, transport services and Swift Crypto. Retirement in #249 removes those exclusive dependencies after a usage audit, while retaining zlib for document archives.
 
-Desktop already uses installed Git through [GitRepository](../../Sources/LeonardoCore/GitRepository.swift) and [DesktopGitCLIAdapter](../../Sources/LeonardoApp/DesktopGitCLIAdapter.swift). The custom module is also imported by desktop integration, so retiring mobile transport does not immediately make the whole target deletable.
+At the baseline, desktop used installed Git through [GitRepository](../../Sources/LeonardoCore/GitRepository.swift) and the historical [publication adapter](https://github.com/PinedaTec-EU/LeonardoMD/blob/88b70a9bea8c5a256b9390c0c3b8f0ec65ed3cf1/Sources/LeonardoApp/DesktopGitCLIAdapter.swift). Retirement preserves the core system-Git adapter and removes the publication adapter with its custom-module coupling. Removing mobile transport alone would not have removed that desktop dependency.
 
 ## Requirements retained and deliberately removed
 

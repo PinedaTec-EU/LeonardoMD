@@ -1,5 +1,7 @@
 # Changes
 
+- 2026-10-20: [#249](https://github.com/PinedaTec-EU/LeonardoMD/issues/249) retires the proprietary mobile Git implementation and exclusive dependencies. iOS retains direct read-only snapshots and recovery exports of old corpus states; desktop direct synchronization and installed-system-Git tools are preserved. Persistence also rejects overwriting recovery archives independently of library memory ([#251](https://github.com/PinedaTec-EU/LeonardoMD/issues/251)). Native/automated evidence is tracked on the source PR; no Windows implementation or release is claimed.
+
 - 2026-10-20: [#244](https://github.com/PinedaTec-EU/LeonardoMD/issues/244) adds ADR 0002 comparing custom Git, libraries, provider APIs, desktop mediation and reduced scope. Owner selected iOS read-only/offline cache and editable macOS/Windows desktop synchronization, replacing the first draft's editable-mobile proposal. Git retirement, legacy recovery and Windows conformance remain pending; existing runtime and in-flight work are preserved.
 
 - 2026-10-20: [#208](https://github.com/PinedaTec-EU/LeonardoMD/issues/208), [PR #213](https://github.com/PinedaTec-EU/LeonardoMD/pull/213): Preview table drag controls commit point geometry through a scoped native transaction, migrate Markdown safely to MDLF, and persist content-minimum row/table heights. Source-bound geometry and matching Swift/plugin schemas prevent stale layout and silent metadata loss. Native and browser QA details: [table resizing](../doc/validation/table-resizing.md).

@@ -13,9 +13,21 @@
     [
       "swift",
       "run"
+    ],
+    [
+      "xcodebuild",
+      "build"
+    ],
+    [
+      "xcodebuild",
+      "test"
+    ],
+    [
+      "xcodebuild",
+      "archive"
     ]
   ],
   "segment": "build",
   "recorder": "scripts/compile-and-record.py",
-  "notes": "Use the existing Swift recorder with --pr-number; do not double-count through the shared wrapper."
+  "notes": "Use scripts/compile-and-record.py --pr-number for Swift and Xcode build/test commands; no double counting."
 }
