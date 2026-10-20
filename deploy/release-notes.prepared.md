@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.574
+
+- #252 Fixed: theme release notes with the owning document ([#253](https://github.com/PinedaTec-EU/LeonardoMD/pull/253))
+
+<p>Release notes follow the active document theme and use the shared application button style.</p>
+
+Source: `1e083eebf3fa4d22db61818410f67c56b63486d1`. Delta: `{"build": 3}`.
+
 ## 0.1.571
 
 - #247 Fixed: attach auxiliary windows and document dialogs as modal sheets ([#248](https://github.com/PinedaTec-EU/LeonardoMD/pull/248))
