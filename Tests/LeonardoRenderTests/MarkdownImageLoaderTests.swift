@@ -49,6 +49,38 @@ struct MarkdownImageLoaderTests {
         #expect(try Data(contentsOf: url) == bytes)
     }
 
+    @Test func preservesCanonicalBMPAndTIFFAndICOCompatibility() async throws {
+        for type in [UTType.bmp, .tiff, .ico] {
+            let bytes: Data
+            if type == .ico {
+                let png = try fixture(width: 32, height: 16)
+                // Single PNG-backed icon: ICONDIR + ICONDIRENTRY + PNG payload.
+                var icon = Data([0, 0, 1, 0, 1, 0, 32, 16, 0, 0, 1, 0, 32, 0])
+                for value in [UInt32(png.count), UInt32(22)] {
+                    var littleEndian = value.littleEndian
+                    withUnsafeBytes(of: &littleEndian) { icon.append(contentsOf: $0) }
+                }
+                icon.append(png)
+                bytes = icon
+            } else {
+                bytes = try fixture(width: 320, height: 160, type: type)
+            }
+            let extensionName = try #require(type.preferredFilenameExtension)
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + "." + extensionName)
+            defer { try? FileManager.default.removeItem(at: url) }
+            try bytes.write(to: url)
+            let loader = MarkdownImageLoader()
+            for input in [MarkdownImageLoader.Input.file(url), .memory(bytes, extensionName: extensionName)] {
+                let result = try await loader.load(input, target: target)
+                let dimensions = try size(result.data)
+                #expect(dimensions.0 <= target.longestSide)
+                #expect(dimensions.0 == dimensions.1 * 2)
+                #expect(result.mimeType == "image/png")
+            }
+            #expect(try Data(contentsOf: url) == bytes)
+        }
+    }
+
     @Test func pixelBudgetAlsoBoundsSquareThumbnailAndPDFHasSeparateResolution() async throws {
         let bytes = try fixture(width: 1_200, height: 1_200)
         let loader = MarkdownImageLoader()
@@ -147,14 +179,14 @@ struct MarkdownImageLoaderTests {
                 try #require(properties[kCGImagePropertyPixelHeight] as? Int))
     }
 
-    private func fixture(width: Int, height: Int, frames: Int = 1) throws -> Data {
+    private func fixture(width: Int, height: Int, frames: Int = 1, type: UTType = .png) throws -> Data {
         let context = try #require(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
             bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
         context.setFillColor(CGColor(red: 0.1, green: 0.3, blue: 0.8, alpha: 0.5))
         context.fill(CGRect(x: 0, y: 0, width: width, height: height))
         let image = try #require(context.makeImage())
         let data = NSMutableData()
-        let type = frames > 1 ? UTType.gif : UTType.png
+        let type = frames > 1 ? UTType.gif : type
         let destination = try #require(CGImageDestinationCreateWithData(data, type.identifier as CFString, frames, nil))
         for _ in 0..<frames { CGImageDestinationAddImage(destination, image, nil) }
         #expect(CGImageDestinationFinalize(destination))

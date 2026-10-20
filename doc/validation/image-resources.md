@@ -37,7 +37,7 @@ The loader retains hashes and accounting only, with no additional image cache.
 
 ## Regression coverage and evidence
 
-- `MarkdownImageLoaderTests`: oversized sparse disk files and memory inputs,
+- `MarkdownImageLoaderTests`: canonical BMP/TIFF/ICO disk and memory compatibility, oversized sparse disk files and memory inputs,
   regular-file enforcement, source-pixel limits, downsampling, independent PDF
   resolution, animation preservation and limits, SVG limits, repeat admission,
   document-generation reset, query-alias accounting, bounded URL metadata and cancellation.
@@ -50,9 +50,9 @@ The loader retains hashes and accounting only, with no additional image cache.
   `bounded-raster-preview.png` and `bounded-image-fallback.png`. The existing CI
   preview evidence artifact binds those captures to the reviewed head.
 
-Local validation on 2026-10-20: full `swift test` passed 596 tests with 15
+Local validation on 2026-10-20: full `swift test` passed 597 tests with 15
 intentional XCTest skips. Script tests ran 31 cases with seven engine-dependent
-skips and no failures. The per-PR ledger records twelve successful compiler-bearing
+skips and no failures. The per-PR ledger records thirteen successful compiler-bearing
 invocations; required exact-head CI and independent judgment are recorded on PR
 [#245](https://github.com/PinedaTec-EU/LeonardoMD/pull/245).
 

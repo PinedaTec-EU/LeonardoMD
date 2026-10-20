@@ -1,4 +1,5 @@
 import Foundation
+import LeonardoCore
 import Darwin
 import ImageIO
 import CryptoKit
@@ -17,7 +18,9 @@ actor MarkdownImageLoader {
         let estimatedBytes: Int
     }
 
-    private static let allowedSourceTypes = [UTType.jpeg, .png, .gif, .webP].map(\.identifier)
+    private static let allowedSourceTypes = Set(LeonardoLocalImagePolicy.extensions
+        .filter { $0 != "svg" }
+        .compactMap { UTType(filenameExtension: $0)?.identifier })
     private let policy: MarkdownImagePolicy
     private var admittedBytes = 0
     private var admissions: Set<String> = []
