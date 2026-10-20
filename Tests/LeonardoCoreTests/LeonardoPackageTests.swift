@@ -39,6 +39,33 @@ struct LeonardoPackageTests {
         #expect(try Data(contentsOf: images[0]) == Data([1, 2, 3]))
     }
 
+    @Test func balancedAndEscapedImagePathsUseTheSharedPortableScanner() throws {
+        let root = try temporary()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let original = root.appendingPathComponent("form.mdlf")
+        let asset = root.appendingPathComponent("a_(b).png")
+        try Data([1, 2, 3]).write(to: asset)
+        for (index, reference) in ["a_(b).png", #"a_\(b\).png"#, "<a_(b).png>"].enumerated() {
+            let remote = #"![remote](https://example.com/a_\(.png)"#
+            let body = "![nested [logo]](\(reference))\n" + remote
+            let document = LeonardoDocument(body: body)
+            #expect(try LeonardoLocalImagePolicy.hasLocalResources(in: document))
+            let text = try LeonardoFormatParser.serialize(document)
+            let package = root.appendingPathComponent("copy-\(index).mdlz")
+            try LeonardoPackageTransport.export(documentURL: original, content: text, to: package)
+            let workspace = try LeonardoPackageTransport.open(package)
+            defer { LeonardoPackageTransport.discard(workspace) }
+            let assets = try FileManager.default.contentsOfDirectory(at: workspace.directoryURL.appendingPathComponent("assets"), includingPropertiesForKeys: nil)
+            #expect(assets.count == 1)
+            #expect(try Data(contentsOf: assets[0]) == Data([1, 2, 3]))
+            let exported = try String(contentsOf: workspace.documentURL, encoding: .utf8)
+            #expect(exported.contains("![nested [logo]]("))
+            #expect(exported.contains("assets/"))
+            #expect(!exported.contains("a_(b).png"))
+            #expect(exported.contains(remote))
+        }
+    }
+
     @Test func extractionLeavesOriginalPackageUntouchedAndNeverOverwrites() throws {
         let root = try temporary()
         defer { try? FileManager.default.removeItem(at: root) }

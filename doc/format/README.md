@@ -381,6 +381,7 @@ multiline answers use line breaks. Code examples remain literal.
 
 Standalone exports retain HTTP(S) images. Local/package images and unsupported
 image sources are removed because the `.md` file does not transport their assets.
-Unused image reference definitions are removed too; definitions shared with
-ordinary links are retained so those links keep their original destinations.
+Definitions belonging to removed images are deleted when no ordinary link uses
+them. Other Markdown reference definitions remain unchanged. Image destinations
+may contain balanced parentheses, Markdown escapes or angle delimiters.
 Retain the Leonardo original or use MDLZ when those capabilities are needed.

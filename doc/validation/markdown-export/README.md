@@ -25,7 +25,9 @@ instance was terminated.
 repeated fields, GFM table safety, multiline values, image degradation and code
 examples. Reference-image regressions cover local and unsupported sources,
 remote sources, duplicate definitions, collapsed/shortcut forms and definitions
-shared with ordinary links. Empty select labels retain the stored value.
+shared with ordinary links. Balanced/escaped/angle-delimited destinations and
+nested alternative text are tested for local and remote images. Unrelated
+Markdown reference definitions are preserved. Empty select labels retain the stored value.
 `MarkdownExportTests` covers source preservation, path authorization,
 package identity, concurrent content changes and balanced operation state.
 `InlineFormTests.testMarkdownExportFlushesPendingInlineAnswersWithoutSavingOriginal`

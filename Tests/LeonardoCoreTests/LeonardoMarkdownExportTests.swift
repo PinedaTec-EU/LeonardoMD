@@ -81,6 +81,30 @@ final class LeonardoMarkdownExportTests: XCTestCase {
         XCTAssertEqual(LeonardoMarkdownExport.markdown(from: document), "Answer")
     }
 
+    func testBalancedEscapedAndAngleImageDestinationsAreHandledAsWholeImages() {
+        let paths = [
+            "a_(b).png", "a_(b_(c)).png", #"a_\(b\).png"#, #"a_\(.png"#, #"a_\).png"#,
+            "<a (b).png>", #"<a \> b.png>"#
+        ]
+        for path in paths {
+            let local = path.hasPrefix("<") ? "<assets/" + path.dropFirst() : "assets/" + path
+            let remote = path.hasPrefix("<") ? "<https://example.com/" + path.dropFirst() : "https://example.com/" + path
+            for title in ["", " \"Caption\"", " 'Caption'", " (Caption)"] {
+                let localImage = "![nested [alt]](\(local)\(title))"
+                XCTAssertEqual(LeonardoMarkdownExport.markdown(from: .init(body: "Before \(localImage) after")), "Before  after", localImage)
+                let remoteImage = "![nested [alt]](\(remote)\(title))"
+                XCTAssertEqual(LeonardoMarkdownExport.markdown(from: .init(body: remoteImage)), remoteImage, remoteImage)
+            }
+        }
+        let reference = "![nested [alt]][picture]\n[picture]: assets/a_(b).png\n"
+        XCTAssertEqual(LeonardoMarkdownExport.markdown(from: .init(body: reference)), "\n")
+    }
+
+    func testUnrelatedReferenceDefinitionsRemainOrdinaryMarkdown() {
+        let body = "[orphan]: assets/local.png\n"
+        XCTAssertEqual(LeonardoMarkdownExport.markdown(from: .init(body: body)), body)
+    }
+
     func testCodeExamplesRemainLiteral() {
         let body = """
         `{{field:a}} ![local](assets/a.png)`

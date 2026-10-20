@@ -50,3 +50,8 @@ save panel; the adapter flushes DOM values and reuses Leonardo export identity a
 path authorization guards. Output omits metadata/layout, substitutes literal
 answers in place, retains HTTP(S) images and removes nonportable sources through
 the shared Core resource scanner. The original tab/file remains Leonardo.
+
+Markdown image spans and destinations share `LeonardoMarkdownImageScanner` for
+plain-copy removal, local-resource detection and portable collection. Balanced
+parentheses, escaped punctuation and angle destinations use the same reader;
+regression [#222](https://github.com/PinedaTec-EU/LeonardoMD/issues/222).
