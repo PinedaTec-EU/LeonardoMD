@@ -38,9 +38,11 @@ public actor OfflineCorpusStore: CorpusStore {
     }
 
     public func save(_ project: OfflineProject) throws {
+        guard !project.isRecoveryArchive else { throw SyncError.readOnly }
         try validate(project)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let url = try location(project.id)
+        try requireWritableOwnership(id: project.id)
         let encoded = try JSONEncoder().encode(project)
         guard encoded.count <= (try maximumEncodedBytes()) else { throw SyncError.sizeLimitExceeded }
         try encoded.write(to: url, options: .atomic)
@@ -50,6 +52,13 @@ public actor OfflineCorpusStore: CorpusStore {
     public func remove(id: UUID) throws {
         let url = try location(id)
         if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
+    }
+
+    /// Library reload failure must not make existing recovery or malformed data writable.
+    /// Reuse the complete bounded decode and semantic validation used for reads.
+    private func requireWritableOwnership(id: UUID) throws {
+        guard let existing = try load(id: id) else { return }
+        guard existing.mode == .direct else { throw SyncError.readOnly }
     }
 
     private func location(_ id: UUID) throws -> URL {

@@ -477,9 +477,19 @@
       "pr": 242,
       "summary": "Deleted files, folders and projects now move to Trash so they can be recovered.",
       "to_version": "0.1.547"
+    },
+    {
+      "delta": {
+        "build": 11
+      },
+      "from_version": "0.1.547",
+      "merge_sha": "0b366528be0f199facd52eff45a5cd4d5af0d9d7",
+      "pr": 250,
+      "summary": "Little Leonardo becomes read-only, preserves older work against cache overwrites and exports it for recovery; proprietary Git is retired while desktop synchronization and system Git remain available.",
+      "to_version": "0.1.558"
     }
   ],
-  "current_version": "0.1.547",
+  "current_version": "0.1.558",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

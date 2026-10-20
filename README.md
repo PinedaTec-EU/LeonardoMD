@@ -67,9 +67,9 @@ Update detection and installation have been confirmed by the maintainer. **Known
 
 ## Little Leonardo for iPhone and iPad
 
-This repository also contains the native **Little Leonardo** companion in `Mobile/LittleLeonardo.xcodeproj`, targeting iOS 17 or later. It supports authorized desktop document access with offline reading, and a Git workflow for editing selected project content. Direct mobile synchronization is read-only; desktop peer synchronization supports editing with manual reconciliation.
+This repository also contains the native **Little Leonardo** companion in `Mobile/LittleLeonardo.xcodeproj`, targeting iOS 17 or later. It provides authorized desktop document access and an offline reading cache. The iOS app is read-only; editable synchronization belongs to desktop peers with manual reconciliation. The proprietary mobile Git workflow is retired, and old downloaded Git work remains available as a read-only recovery export. Windows desktop interoperability remains future work.
 
-The macOS ZIP does not install the iOS app. See [Little Leonardo](doc/mobile/little-leonardo.md) for build instructions, pairing, synchronization contracts and validation limits.
+The macOS ZIP does not install the iOS app. See [Little Leonardo](doc/mobile/little-leonardo.md) for build instructions, pairing, synchronization contracts and validation limits, and [legacy recovery](doc/mobile/git-retirement.md) for older mobile work.
 
 ## Development and documentation
 

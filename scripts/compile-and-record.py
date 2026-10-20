@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Record one successful Swift compilation command in its source PR delta."""
+"""Record one successful Swift or Xcode compilation command in its source PR delta."""
 import argparse
 import fcntl
 import json
@@ -31,10 +31,16 @@ def read_delta(path: Path) -> dict:
 def compile_and_record(root: Path, pr: int, command: list[str]) -> int:
     if pr <= 0:
         raise ValueError("PR number must be positive")
-    if (len(command) < 2 or Path(command[0]).name != "swift"
-            or command[1] not in {"build", "test", "run"}
-            or {"--show-bin-path", "--skip-build", "--help", "-h", "--version"} & set(command[2:])):
-        raise ValueError("Use a compiling swift build, test or run command")
+    executable = Path(command[0]).name if command else ""
+    swift = (len(command) >= 2 and executable == "swift"
+             and command[1] in {"build", "test", "run"}
+             and not {"--show-bin-path", "--skip-build", "--help", "-h", "--version"} & set(command[2:]))
+    xcode = (executable == "xcodebuild"
+             and bool({"build", "test", "build-for-testing", "archive"} & set(command[1:]))
+             and not {"-list", "-showBuildSettings", "-showdestinations", "-showsdks", "-version", "-help",
+                      "-resolvePackageDependencies", "test-without-building"} & set(command[1:]))
+    if not swift and not xcode:
+        raise ValueError("Use a compiling swift build/test/run or xcodebuild build/test/archive command")
     entry = root / "deploy/version/entries" / f"{pr}.yaml"
     read_delta(entry)  # Reject malformed existing data before compiling.
     result = subprocess.run(command, cwd=root)
@@ -55,7 +61,7 @@ def compile_and_record(root: Path, pr: int, command: list[str]) -> int:
             os.replace(temporary, entry)
         finally:
             temporary.unlink(missing_ok=True)
-    print(f"Recorded successful Swift compilation for PR #{pr}: build delta {delta['build']}")
+    print(f"Recorded successful compilation for PR #{pr}: build delta {delta['build']}")
     return 0
 
 

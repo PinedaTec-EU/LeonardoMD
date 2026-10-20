@@ -1,5 +1,7 @@
 # Current state
 
+Mobile Git retirement under [#249](https://github.com/PinedaTec-EU/LeonardoMD/issues/249): iOS is read-only with authorized direct refresh/offline cache. The proprietary Git target, publication UI and wakeup API are removed; old Git corpus data is preserved as read-only recovery/export state. Desktop direct-sync proposals/receipts and the system Git adapter remain. [Recovery and boundaries](../doc/mobile/git-retirement.md). Older Git checkpoints below are historical. Windows remains deferred under [#227](https://github.com/PinedaTec-EU/LeonardoMD/issues/227).
+
 The initial macOS implementation is being delivered through [issue #1](https://github.com/PinedaTec-EU/LeonardoMD/issues/1). The repository began with 15 product stories and no source code.
 
 Run `./launch.sh`; validate with `swift test`. Generated app bundles are in ignored `output/`. The release ledger uses `version.nfo` with baseline 0.1.56 and PR-owned release.feature.build deltas; build counts successful recorded Swift compilation commands. Packaging derives plist metadata from that source. See [ledger workflow](../doc/release-version-ledger.md); local shared-engine operation is available, trusted CI requests App policy via PINEDATEC_CI_DISPATCH_TOKEN without checking out PR code; central public-target support, App policy access and exact-head check binding are verified. Tracking: [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).

@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.558
+
+- #249 Refactored: retire proprietary mobile Git ([#250](https://github.com/PinedaTec-EU/LeonardoMD/pull/250))
+
+<p>Little Leonardo becomes read-only, preserves older work against cache overwrites and exports it for recovery; proprietary Git is retired while desktop synchronization and system Git remain available.</p>
+
+Source: `0b366528be0f199facd52eff45a5cd4d5af0d9d7`. Delta: `{"build": 11}`.
+
 ## 0.1.547
 
 - #241 Fixed: move user deletions to Trash ([#242](https://github.com/PinedaTec-EU/LeonardoMD/pull/242))

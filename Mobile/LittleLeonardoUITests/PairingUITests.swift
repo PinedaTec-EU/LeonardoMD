@@ -1,208 +1,6 @@
 import XCTest
 
 final class PairingUITests: XCTestCase {
-    @MainActor func testNativeSSHGitScopedImportOfflineMutationRestartAndPublication() throws {
-        let environment = ProcessInfo.processInfo.environment
-        guard environment["LEONARDO_GIT_QA"] == "1",
-              let port = environment["LEONARDO_GIT_QA_PORT"], UInt16(port) != nil,
-              let fingerprint = environment["LEONARDO_GIT_QA_FINGERPRINT"],
-              let projectName = environment["LEONARDO_GIT_QA_NAME"] else {
-            throw XCTSkip("Requires the explicit generated-key native Git acceptance fixture")
-        }
-        let app = XCUIApplication()
-        app.launch()
-        app.buttons["open-git-pairing"].tap()
-        let endpoint = app.textFields["git-endpoint"]
-        XCTAssertTrue(endpoint.waitForExistence(timeout: 5))
-        endpoint.tap()
-        endpoint.typeText("ssh://fixture@127.0.0.1:\(port)/repo.git")
-        app.buttons["Generar clave SSH en este dispositivo"].tap()
-        let publicKey = app.staticTexts["git-public-key"]
-        XCTAssertTrue(publicKey.waitForExistence(timeout: 5))
-        XCTAssertTrue(publicKey.label.hasPrefix("ssh-ed25519 "))
-        // This is the public provider key. The private key stays in the native
-        // enrollment flow and device Keychain throughout the acceptance test.
-        try FileHandle.standardOutput.write(contentsOf:
-            Data("LEONARDO_GIT_PUBLIC_KEY \(publicKey.label)\n".utf8))
-        try advanceGitFixture("authorize")
-        app.buttons["git-discover"].tap()
-        let confirm = app.buttons["git-confirm-host-key"]
-        XCTAssertTrue(confirm.waitForExistence(timeout: 15))
-        XCTAssertTrue(app.staticTexts[fingerprint].exists)
-        confirm.tap()
-        let branch = app.buttons[environment["LEONARDO_GIT_QA_BRANCH"] ?? "main"]
-        XCTAssertTrue(branch.waitForExistence(timeout: 20))
-        branch.tap()
-        let folder = app.buttons["docs"]
-        XCTAssertTrue(folder.waitForExistence(timeout: 20))
-        folder.tap()
-        XCTAssertEqual(app.staticTexts["git-selected-folder"].label, "Carpeta: docs")
-        let name = app.textFields["git-project-name"]
-        name.tap()
-        if let value = name.value as? String, !value.isEmpty {
-            name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
-        }
-        name.typeText(projectName)
-        app.buttons["git-import-folder"].tap()
-        let project = app.staticTexts[projectName].firstMatch
-        XCTAssertTrue(project.waitForExistence(timeout: 25))
-        project.tap()
-        XCTAssertFalse(app.buttons["code/large.bin"].exists)
-        let note = app.buttons["docs/note.md"].firstMatch
-        XCTAssertTrue(note.waitForExistence(timeout: 10))
-        note.tap()
-        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native Git Initial"].waitForExistence(timeout: 10))
-
-        try advanceGitFixture("offline")
-        app.buttons["document-sync"].tap()
-        XCTAssertTrue(app.alerts["No se pudo completar la operación"].waitForExistence(timeout: 15))
-        app.alerts.buttons["Aceptar"].tap()
-        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native Git Initial"].exists)
-        try editNativeGitDocument(app, text: "# Native Git Edited\n")
-        app.navigationBars.buttons[projectName].firstMatch.tap()
-        app.buttons["Nuevo documento"].tap()
-        let create = app.alerts["Nuevo documento"]
-        XCTAssertTrue(create.waitForExistence(timeout: 5))
-        create.textFields.firstMatch.tap()
-        create.textFields.firstMatch.typeText("new.md")
-        create.buttons["Crear"].tap()
-        let newDocument = app.buttons["docs/new.md"].firstMatch
-        XCTAssertTrue(newDocument.waitForExistence(timeout: 10))
-        newDocument.tap()
-        try editNativeGitDocument(app, text: "# Native Git New\n")
-        app.navigationBars.buttons[projectName].firstMatch.tap()
-        let deleted = app.buttons["docs/delete.md"].firstMatch
-        XCTAssertTrue(deleted.waitForExistence(timeout: 5))
-        deleted.swipeLeft()
-        app.buttons["Eliminar"].firstMatch.tap()
-        let deleteConfirmation = app.alerts["Eliminar documento"]
-        XCTAssertTrue(deleteConfirmation.waitForExistence(timeout: 5))
-        deleteConfirmation.buttons["Eliminar"].tap()
-        XCTAssertFalse(deleted.waitForExistence(timeout: 2))
-
-        app.terminate()
-        app.launch()
-        XCTAssertTrue(project.waitForExistence(timeout: 10))
-        project.tap()
-        XCTAssertTrue(app.buttons["docs/new.md"].exists)
-        XCTAssertFalse(app.buttons["docs/delete.md"].exists)
-        app.buttons["docs/note.md"].tap()
-        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native Git Edited"].waitForExistence(timeout: 10))
-        app.navigationBars.buttons[projectName].firstMatch.tap()
-        try advanceGitFixture("online")
-        let send = app.buttons["git-send-changes"]
-        XCTAssertTrue(send.isEnabled)
-        send.tap()
-        let sent = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Reconciliación pendiente")).firstMatch
-        XCTAssertTrue(sent.waitForExistence(timeout: 30))
-        XCTAssertFalse(send.isEnabled)
-        try advanceGitFixture("verify")
-        let capture = XCTAttachment(screenshot: app.screenshot())
-        capture.name = "Native SSH publication after scoped offline edits and restart"
-        capture.lifetime = .keepAlways
-        add(capture)
-        try advanceGitFixture("integrate")
-        // Keep the document view open while the desktop consumes the exact
-        // proposal and removes this path from the accepted snapshot.  The
-        // view must invalidate its captured file before it can offer Edit;
-        // otherwise a later save would recreate the deleted path locally.
-        app.buttons["docs/note.md"].tap()
-        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native Git Edited"].waitForExistence(timeout: 10))
-        let documentSync = app.buttons["document-sync"]
-        guard waitForDocumentSyncToFinish(app, timeout: 10) else {
-            XCTFail("The document sync control did not become ready before the integrated snapshot")
-            return
-        }
-        documentSync.tap()
-        guard app.staticTexts["Documento eliminado"].waitForExistence(timeout: 30) else {
-            XCTFail("The integrated snapshot did not report the document as deleted")
-            return
-        }
-        dismissNativeFailureIfPresent(app)
-        guard waitForDocumentSyncToFinish(app, timeout: 40) else {
-            XCTFail("The document sync did not finish before validating the integrated deletion")
-            return
-        }
-        dismissNativeFailureIfPresent(app)
-        XCTAssertTrue(app.staticTexts["Documento eliminado"].exists,
-                      "The integrated deletion status must remain visible after sync completion")
-        XCTAssertFalse(app.buttons["Editar"].isEnabled,
-                       "A document removed by the integrated snapshot must not offer stale Edit")
-        let deletedDocumentCapture = XCTAttachment(screenshot: app.screenshot())
-        deletedDocumentCapture.name = "Native SSH integrated deletion keeps an open document unavailable"
-        deletedDocumentCapture.lifetime = .keepAlways
-        add(deletedDocumentCapture)
-        app.navigationBars.buttons[projectName].firstMatch.tap()
-        XCTAssertTrue(app.staticTexts["Reconciliación integrada"].waitForExistence(timeout: 30))
-        XCTAssertFalse(send.isEnabled, "The exact integrated proposal must not be sent again")
-        XCTAssertFalse(app.buttons["docs/note.md"].waitForExistence(timeout: 2),
-                       "The integrated deletion must remove the document from the project corpus")
-        let integratedCapture = XCTAttachment(screenshot: app.screenshot())
-        integratedCapture.name = "Native SSH integration consumed without duplicate changes"
-        integratedCapture.lifetime = .keepAlways
-        add(integratedCapture)
-        XCTAssertTrue(app.buttons["docs/new.md"].waitForExistence(timeout: 10))
-        app.buttons["docs/new.md"].tap()
-        try editNativeGitDocument(app, text: "# Native Git Continued\n")
-        app.navigationBars.buttons[projectName].firstMatch.tap()
-        XCTAssertTrue(send.isEnabled)
-        send.tap()
-        XCTAssertTrue(sent.waitForExistence(timeout: 30))
-        XCTAssertFalse(send.isEnabled)
-        try advanceGitFixture("verifysecond")
-        try advanceGitFixture("finish")
-    }
-
-    @MainActor private func editNativeGitDocument(_ app: XCUIApplication, text: String) throws {
-        let editButton = app.buttons["Editar"]
-        let editReadiness = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "exists == true AND isEnabled == true"), object: editButton)
-        guard XCTWaiter().wait(for: [editReadiness], timeout: 40) == .completed else {
-            XCTFail("The UI fixture Edit button did not become enabled before editing")
-            return
-        }
-        editButton.tap()
-        let editor = app.textViews.firstMatch
-        guard editor.waitForExistence(timeout: 5) else {
-            XCTFail("The UI fixture editor did not appear after Edit became enabled")
-            return
-        }
-        let old = editor.value as? String ?? ""
-        // A center tap can put the caret before the first line on iOS. Tap
-        // below the short fixture text to place it at the end before deletion.
-        editor.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.95)).tap()
-        editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count) + text)
-        let valueExpectation = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "value == %@", text), object: editor)
-        guard XCTWaiter().wait(for: [valueExpectation], timeout: 5) == .completed else {
-            XCTFail("The UI fixture editor did not settle to the requested text before saving")
-            return
-        }
-        XCTAssertEqual(editor.value as? String, text, "The UI fixture must replace the entire document before saving")
-        app.buttons["Guardar"].tap()
-        XCTAssertTrue(app.buttons["Editar"].waitForExistence(timeout: 10))
-    }
-
-    @MainActor private func waitForDocumentSyncToFinish(_ app: XCUIApplication, timeout: TimeInterval) -> Bool {
-        let documentSync = app.buttons["document-sync"]
-        let readiness = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "exists == true AND isEnabled == true"), object: documentSync)
-        return XCTWaiter().wait(for: [readiness], timeout: timeout) == .completed
-    }
-
-    @MainActor private func dismissNativeFailureIfPresent(_ app: XCUIApplication) {
-        let failure = app.alerts["No se pudo completar la operación"]
-        guard failure.waitForExistence(timeout: 1) else { return }
-        failure.buttons["Aceptar"].tap()
-        XCTAssertFalse(failure.waitForExistence(timeout: 3),
-                       "The native Git failure alert must be dismissed before capture")
-    }
-
-    private func advanceGitFixture(_ phase: String) throws {
-        try FileHandle.standardOutput.write(contentsOf: Data("LEONARDO_GIT_STAGE_\(phase.uppercased())\n".utf8))
-        Thread.sleep(forTimeInterval: 2)
-    }
-
     @MainActor func testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation() throws {
         let environment = ProcessInfo.processInfo.environment
         guard environment["LEONARDO_DIRECT_QA"] == "1",
@@ -230,9 +28,9 @@ final class PairingUITests: XCTestCase {
         project.tap()
         app.buttons["docs/read.md"].firstMatch.tap()
         XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native direct initial"].waitForExistence(timeout: 15))
-        app.buttons["Editar"].tap()
-        XCTAssertTrue(app.alerts["Este proyecto es de solo lectura"].waitForExistence(timeout: 5))
-        app.alerts.buttons["Aceptar"].tap()
+        XCTAssertFalse(app.buttons["Editar"].exists)
+        XCTAssertFalse(app.textViews.firstMatch.exists)
+        XCTAssertFalse(app.buttons["Enviar cambios"].exists)
 
         try advanceDirectFixture("refresh")
         app.buttons["document-sync"].tap()
@@ -255,7 +53,7 @@ final class PairingUITests: XCTestCase {
         dismissNativeFailureIfPresent(app)
         XCTAssertTrue(app.staticTexts["Acceso retirado"].exists,
                       "The revoked project must remain unavailable after the sync settles")
-        XCTAssertFalse(app.buttons["Editar"].isEnabled,
+        XCTAssertFalse(app.buttons["Editar"].exists,
                        "A revoked project must not leave an enabled Edit action")
         XCTAssertFalse(app.webViews.firstMatch.exists)
         let capture = XCTAttachment(screenshot: app.screenshot())
@@ -263,6 +61,21 @@ final class PairingUITests: XCTestCase {
         capture.lifetime = .keepAlways
         add(capture)
         try advanceDirectFixture("finish")
+    }
+
+    @MainActor private func waitForDocumentSyncToFinish(_ app: XCUIApplication, timeout: TimeInterval) -> Bool {
+        let documentSync = app.buttons["document-sync"]
+        let readiness = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == true AND isEnabled == true"), object: documentSync)
+        return XCTWaiter().wait(for: [readiness], timeout: timeout) == .completed
+    }
+
+    @MainActor private func dismissNativeFailureIfPresent(_ app: XCUIApplication) {
+        let failure = app.alerts["No se pudo completar la operación"]
+        guard failure.waitForExistence(timeout: 1) else { return }
+        failure.buttons["Aceptar"].tap()
+        XCTAssertFalse(failure.waitForExistence(timeout: 3),
+                       "The native failure alert must be dismissed before capture")
     }
 
     private func advanceDirectFixture(_ phase: String) throws {
@@ -330,24 +143,53 @@ final class PairingUITests: XCTestCase {
         XCTAssertTrue(settings.waitForExistence(timeout: 5))
     }
 
-    @MainActor func testGitEnrollmentRequiresEndpointAndCanCancelWithoutConnecting() throws {
+    @MainActor func testLibraryHasNoGitEnrollmentOrAuthorSettings() throws {
         let app = XCUIApplication()
         app.launch()
-        let connect = app.buttons["open-git-pairing"]
-        XCTAssertTrue(connect.waitForExistence(timeout: 10))
-        connect.tap()
-        let endpoint = app.textFields["git-endpoint"]
-        XCTAssertTrue(endpoint.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["git-discover"].isEnabled)
-        endpoint.tap()
-        endpoint.typeText("https://fixture.invalid/project.git")
-        XCTAssertTrue(app.buttons["git-discover"].isEnabled)
-        let attachment = XCTAttachment(screenshot: app.screenshot())
-        attachment.name = "Git endpoint and device Keychain enrollment"
-        attachment.lifetime = .keepAlways
-        add(attachment)
-        app.buttons["Cerrar"].tap()
-        XCTAssertTrue(connect.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["open-pairing"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["open-git-pairing"].exists)
+        app.buttons["open-sync-settings"].tap()
+        XCTAssertFalse(app.staticTexts["Autor de los commits Git"].exists)
+        XCTAssertFalse(app.textFields["Correo"].exists)
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Read-only synchronization settings without Git credentials"
+        capture.lifetime = .keepAlways
+        add(capture)
+    }
+
+    @MainActor func testLegacyRecoveryIsReadableAndExportableWithoutEditingOrSending() throws {
+        let app = XCUIApplication()
+        app.launch()
+        let fixture = app.staticTexts["QA · Recovery"].firstMatch
+        guard fixture.waitForExistence(timeout: 5) else {
+            throw XCTSkip("Requires the isolated legacy recovery archive in the simulator app container")
+        }
+        fixture.tap()
+        let export = app.buttons["export-recovery"]
+        XCTAssertTrue(export.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Nuevo documento"].exists)
+        XCTAssertFalse(app.buttons["Enviar cambios"].exists)
+        let archiveCapture = XCTAttachment(screenshot: app.screenshot())
+        archiveCapture.name = "Legacy corpus recovery export without mobile publication"
+        archiveCapture.lifetime = .keepAlways
+        add(archiveCapture)
+        export.tap()
+        let save = app.buttons.matching(NSPredicate(format: "label IN %@", ["Save", "Guardar"])).firstMatch
+        XCTAssertTrue(save.waitForExistence(timeout: 10), "Recovery must open the native file exporter")
+        let exporterCapture = XCTAttachment(screenshot: app.screenshot())
+        exporterCapture.name = "Native recovery JSON export"
+        exporterCapture.lifetime = .keepAlways
+        add(exporterCapture)
+        save.tap()
+        XCTAssertTrue(export.waitForExistence(timeout: 10))
+        app.buttons["docs/recovery.md"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Preserved local work"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["Editar"].exists)
+        XCTAssertFalse(app.textViews.firstMatch.exists)
+        let readerCapture = XCTAttachment(screenshot: app.screenshot())
+        readerCapture.name = "Read-only legacy document preview"
+        readerCapture.lifetime = .keepAlways
+        add(readerCapture)
     }
 
     @MainActor func testManualPairingFormRequiresAddressAndRetainsQRAlternative() throws {
