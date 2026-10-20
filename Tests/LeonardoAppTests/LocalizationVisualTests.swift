@@ -275,7 +275,7 @@ final class LocalizationVisualTests: XCTestCase {
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         let about = AboutWindow()
-        about.present()
+        about.present(on: window)
         defer { about.close(); window.close() }
         let delegate = ApplicationDelegate(diagnostics: StartupDiagnostics(),
             instance: SingleInstance(name: "LocalizationLiveQA"), role: .primary)

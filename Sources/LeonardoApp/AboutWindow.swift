@@ -33,15 +33,16 @@ struct ApplicationVersion {
 final class AboutWindow: NSWindowController, NSWindowDelegate {
     init() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 720, height: 580),
+            contentRect: NSRect(x: 0, y: 0, width: 720, height: 620),
             styleMask: [.titled, .closable], backing: .buffered, defer: false
         )
         window.title = L10n.text("About LeonardoMD")
         window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: AboutView(version: ApplicationVersion()))
         window.center()
         super.init(window: window)
         window.delegate = self
+        window.contentView = NSHostingView(rootView: AboutView(version: ApplicationVersion(),
+            onClose: { [weak self] in self?.close() }))
         NotificationCenter.default.addObserver(self, selector: #selector(refreshLanguage),
             name: LanguageSettings.didChange, object: nil)
     }
@@ -65,6 +66,7 @@ final class AboutWindow: NSWindowController, NSWindowDelegate {
 
 private struct AboutView: View {
     let version: ApplicationVersion
+    let onClose: () -> Void
 
     var body: some View {
         VStack(spacing: 16) {
@@ -78,6 +80,8 @@ private struct AboutView: View {
                 .textSelection(.enabled)
                 .accessibilityIdentifier("about-version")
             Link("PinedaTec.eu", destination: URL(string: "https://pinedatec.eu")!)
+            Button(L10n.text("Close"), action: onClose)
+                .keyboardShortcut(.cancelAction)
                 .padding(.bottom, 20)
         }
         .frame(width: 720)

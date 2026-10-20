@@ -15,4 +15,4 @@ Tracking: [#209](https://github.com/PinedaTec-EU/LeonardoMD/issues/209).
 
 Integrated engine: `d5bf9cbf0b5a2c92dfb6fafa24e718fa3fcedebe` ([central #324](https://github.com/PinedaTec-EU/pinedatec-ci/pull/324)); central catalog activation: [#327](https://github.com/PinedaTec-EU/pinedatec-ci/pull/327). Source activation is PR #210; actual post-merge materialization remains required.
 
-About and Release notes attach as AppKit modal sheets to the selected document window. Close ends the sheet before startup continuation; menu presentation receives the document parent explicitly. Tracking: [#247](https://github.com/PinedaTec-EU/LeonardoMD/issues/247).
+About and Release notes attach as AppKit modal sheets to the selected document window. About provides a Close button and Escape because sheet presentation does not expose standalone window controls. Close ends the sheet before startup continuation; menu presentation receives the document parent explicitly. Tracking: [#247](https://github.com/PinedaTec-EU/LeonardoMD/issues/247).
