@@ -1,1 +1,4 @@
-{"build": 8, "summary": "Resize columns, rows and whole tables in Preview with the mouse or keyboard. Markdown documents migrate safely to MDLF to preserve table dimensions."}
+{
+  "build": 9,
+  "summary": "Resize columns, rows and whole tables in Preview with the mouse or keyboard. Markdown documents migrate safely to MDLF to preserve table dimensions."
+}
