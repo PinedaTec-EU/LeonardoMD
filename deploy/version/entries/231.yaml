@@ -1,3 +1,4 @@
 {
-  "build": 3
+  "build": 3,
+  "summary": "Undo and redo document edits from the toolbar or keyboard, with separate history for each document and support for source, preview and form editing."
 }
