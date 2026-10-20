@@ -35,3 +35,22 @@ package identity, concurrent content changes and balanced operation state.
 `InlineFormTests.testMarkdownExportFlushesPendingInlineAnswersWithoutSavingOriginal`
 uses real WebKit input events, exports immediately, and checks that the current
 answer reaches Markdown while the original stays unchanged and dirty in memory.
+
+## Refreshed integration evidence
+
+Recaptured after reconciliation with main `161a171` on 2026-10-20 using the
+final production/test sources. The PR evidence comment binds these committed
+captures to its exact immutable head. Reproduce after building with the
+repository recorder:
+
+```sh
+LEONARDO_VISUAL_EVIDENCE=/tmp/leonardo-md-merge-evidence swift test --skip-build --filter 'MarkdownExportTests|InlineFormTests'
+```
+
+Native macOS XCTest/AppKit host, not a browser. Warning captures are 612×820 pixels (English) and 612×916 pixels
+(Spanish); [workspace](workspace.png) is 2880×2048 pixels (1440×1024 points,
+Retina), with synthetic service-request form answers and contextual help open.
+The toolbar includes Export Markdown (`doc.text`, immediately after Share).
+The dedicated real-WebKit export test verifies pending input reaches the output
+without saving the original. These component captures and interaction tests do
+not claim a fresh packaged-app startup or a published release.
