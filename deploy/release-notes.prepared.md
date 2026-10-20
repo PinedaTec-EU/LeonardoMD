@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.571
+
+- #247 Fixed: attach auxiliary windows and document dialogs as modal sheets ([#248](https://github.com/PinedaTec-EU/LeonardoMD/pull/248))
+
+<p>About, Release notes, confirmations and file selection attach as modal sheets; file actions reject changes to the active project or workspace.</p>
+
+Source: `5ba81b9826dccb11ef3ac6ba5ec25c4e382f58cb`. Delta: `{"build": 13}`.
+
 ## 0.1.558
 
 - #249 Refactored: retire proprietary mobile Git ([#250](https://github.com/PinedaTec-EU/LeonardoMD/pull/250))

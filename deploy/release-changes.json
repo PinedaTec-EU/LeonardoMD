@@ -487,6 +487,16 @@
       "pr": 250,
       "summary": "Little Leonardo becomes read-only, preserves older work against cache overwrites and exports it for recovery; proprietary Git is retired while desktop synchronization and system Git remain available.",
       "to_version": "0.1.558"
+    },
+    {
+      "delta": {
+        "build": 13
+      },
+      "from_version": "0.1.558",
+      "merge_sha": "5ba81b9826dccb11ef3ac6ba5ec25c4e382f58cb",
+      "pr": 248,
+      "summary": "About, Release notes, confirmations and file selection attach as modal sheets; file actions reject changes to the active project or workspace.",
+      "to_version": "0.1.571"
     }
   ],
   "initial_version": "0.1.56",
@@ -497,5 +507,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.558"
+  "version": "0.1.571"
 }
