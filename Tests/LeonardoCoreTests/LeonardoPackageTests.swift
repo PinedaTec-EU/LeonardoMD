@@ -66,6 +66,24 @@ struct LeonardoPackageTests {
         }
     }
 
+    @Test func htmlImageQuotesAndEntitiesUseTheSharedPortableScanner() throws {
+        let root = try temporary()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data([4, 5, 6]).write(to: root.appendingPathComponent("a>b.png"))
+        let body = #"<img alt="caption > text" src="a&gt;b.png">"#
+        let text = try source(body)
+        let package = root.appendingPathComponent("html.mdlz")
+        try LeonardoPackageTransport.export(documentURL: root.appendingPathComponent("html.mdlf"), content: text, to: package)
+        let workspace = try LeonardoPackageTransport.open(package)
+        defer { LeonardoPackageTransport.discard(workspace) }
+        let assets = try FileManager.default.contentsOfDirectory(at: workspace.directoryURL.appendingPathComponent("assets"), includingPropertiesForKeys: nil)
+        #expect(assets.count == 1)
+        #expect(try Data(contentsOf: assets[0]) == Data([4, 5, 6]))
+        let exported = try String(contentsOf: workspace.documentURL, encoding: .utf8)
+        #expect(exported.contains(#"alt="caption > text""#))
+        #expect(exported.contains(#"src="assets/"#))
+    }
+
     @Test func extractionLeavesOriginalPackageUntouchedAndNeverOverwrites() throws {
         let root = try temporary()
         defer { try? FileManager.default.removeItem(at: root) }

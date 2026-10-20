@@ -100,6 +100,39 @@ final class LeonardoMarkdownExportTests: XCTestCase {
         XCTAssertEqual(LeonardoMarkdownExport.markdown(from: .init(body: reference)), "\n")
     }
 
+    func testEscapedReferenceLabelsAreRemovedOrPreservedForOrdinaryLinks() {
+        let removed = #"![local][picture\]]"# + "\n" + #"[picture\]]: assets/a_(b).png"# + "\n"
+        XCTAssertEqual(LeonardoMarkdownExport.markdown(from: .init(body: removed)), "\n")
+        let shared = #"![local][picture\]] [ordinary][picture\]]"# + "\n" + #"[picture\]]: assets/a_(b).png"# + "\n"
+        let output = LeonardoMarkdownExport.markdown(from: .init(body: shared))
+        XCTAssertFalse(output.contains("![local]"))
+        XCTAssertTrue(output.contains(#"[ordinary][picture\]]"#))
+        XCTAssertTrue(output.contains(#"[picture\]]: assets/a_(b).png"#))
+    }
+
+    func testHTMLImageQuotesEntitiesAndAlternativeTextAreReadAsWholeTags() {
+        let local = #"<img alt="caption > src='https://example.com'" src="assets/a&gt;b.png">"#
+        XCTAssertEqual(LeonardoMarkdownExport.markdown(from: .init(body: "Before " + local + " after")), "Before  after")
+        let remotes = [
+            #"<img alt="caption > text" src="https://example.com/a>b.png">"#,
+            #"<img src="https&#58;//example.com/a.png">"#,
+            #"<img src="https&#X3A;//example.com/a.png">"#,
+            #"<img alt="![literal](assets/a.png)" src="https://example.com/a.png">"#,
+            #"<img alt="<img src='assets/literal.png'>" src="https://example.com/a.png">"#,
+            #"<img alt="<!--" src="https://example.com/a.png">"#,
+            #"<!-- ![literal](assets/a.png) <img src='assets/a.png'> -->"#,
+            #"![alt <img src='assets/literal.png'>](https://example.com/a.png)"#
+        ]
+        for remote in remotes {
+            XCTAssertEqual(LeonardoMarkdownExport.markdown(from: .init(body: remote)), remote)
+        }
+    }
+
+    func testCommentReferencesDoNotKeepRemovedImageDefinitions() {
+        let body = "![local][picture] <!-- [ordinary][picture] -->\n[picture]: assets/a.png\n"
+        XCTAssertEqual(LeonardoMarkdownExport.markdown(from: .init(body: body)), " <!-- [ordinary][picture] -->\n")
+    }
+
     func testUnrelatedReferenceDefinitionsRemainOrdinaryMarkdown() {
         let body = "[orphan]: assets/local.png\n"
         XCTAssertEqual(LeonardoMarkdownExport.markdown(from: .init(body: body)), body)

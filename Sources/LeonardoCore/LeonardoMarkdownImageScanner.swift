@@ -14,6 +14,10 @@ enum LeonardoMarkdownImageScanner {
         Scanner(source: source as NSString, units: Array(masked.utf16)).images()
     }
 
+    static func referenceLabels(in source: String) -> [String] {
+        Scanner(source: source as NSString, units: Array(source.utf16)).referenceLabels()
+    }
+
     static func unescape(_ text: String) -> String {
         let units = Array(text.utf16)
         var result: [UInt16] = []
@@ -40,6 +44,7 @@ enum LeonardoMarkdownImageScanner {
             var index = 0
             while index + 1 < units.count {
                 if units[index] == 92 { index += 2; continue }
+                if units[index] == 60, let end = htmlTagEnd(from: index) { index = end; continue }
                 guard units[index] == 33, units[index + 1] == 91,
                       let image = image(at: index) else { index += 1; continue }
                 result.append(image)
@@ -48,8 +53,27 @@ enum LeonardoMarkdownImageScanner {
             return result
         }
 
-        private func image(at start: Int) -> Image? {
-            guard let close = closingBracket(from: start + 1) else { return nil }
+        func referenceLabels() -> [String] {
+            var result: [String] = []
+            var index = 0
+            while index < units.count {
+                if units[index] == 92 { index += 2; continue }
+                if units[index] == 60, let end = htmlTagEnd(from: index) { index = end; continue }
+                guard units[index] == 91, let link = syntax(bracket: index, start: index) else { index += 1; continue }
+                if let label = link.referenceLabel { result.append(label) }
+                index = NSMaxRange(link.range)
+            }
+            return result
+        }
+
+        private func htmlTagEnd(from start: Int) -> Int? {
+            LeonardoHTMLImageScanner.tag(at: start, units: units)?.end
+        }
+
+        private func image(at start: Int) -> Image? { syntax(bracket: start + 1, start: start) }
+
+        private func syntax(bracket: Int, start: Int) -> Image? {
+            guard let close = closingBracket(from: bracket) else { return nil }
             let afterLabel = close + 1
             if afterLabel < units.count, units[afterLabel] == 40,
                let inline = inlineDestination(from: afterLabel + 1) {
@@ -59,7 +83,7 @@ enum LeonardoMarkdownImageScanner {
                              referenceLabel: nil)
             }
             var end = afterLabel
-            var labelRange = NSRange(location: start + 2, length: close - start - 2)
+            var labelRange = NSRange(location: bracket + 1, length: close - bracket - 1)
             if afterLabel < units.count, units[afterLabel] == 91,
                let referenceClose = closingBracket(from: afterLabel) {
                 end = referenceClose + 1

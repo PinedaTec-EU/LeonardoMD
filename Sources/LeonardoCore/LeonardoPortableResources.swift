@@ -45,10 +45,10 @@ public enum LeonardoLocalImagePolicy {
                 if seenDefinitions.insert(key).inserted { references.append(definition) }
             }
         }
-        let html = try! NSRegularExpression(pattern: #"(?i)<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']"#)
-        for match in html.matches(in: masked, range: NSRange(masked.startIndex..., in: masked)) {
-            guard let range = Range(match.range(at: 1), in: source) else { continue }
-            references.append(BodyReference(range: match.range(at: 1), value: String(source[range])))
+        for image in LeonardoHTMLImageScanner.images(in: source, masked: masked) {
+            guard !images.contains(where: { NSLocationInRange(image.range.location, $0.range) }),
+                  let range = image.destinationRange, let destination = image.destination else { continue }
+            references.append(BodyReference(range: range, value: destination))
         }
 
         return references.sorted { lhs, rhs in
@@ -63,7 +63,8 @@ public enum LeonardoLocalImagePolicy {
         let definitions = referenceDefinitions(in: body, masked: masked)
         var removals: [NSRange] = []
         var removedLabels = Set<String>()
-        for image in LeonardoMarkdownImageScanner.images(in: body, masked: masked) {
+        let images = LeonardoMarkdownImageScanner.images(in: body, masked: masked)
+        for image in images {
             let referenceKey = image.referenceLabel.map(normalizeReferenceLabel)
             let reference = image.destination ?? referenceKey.flatMap { definitions[$0]?.value }
             guard let reference else { continue }
@@ -72,16 +73,9 @@ public enum LeonardoLocalImagePolicy {
                 if let referenceKey { removedLabels.insert(referenceKey) }
             }
         }
-        let html = try! NSRegularExpression(pattern: #"(?i)<img\b[^>]*>"#)
-        let src = try! NSRegularExpression(pattern: #"(?i)\bsrc\s*=\s*(?:["']([^"']+)["']|([^\s>]+))"#)
-        for match in html.matches(in: masked, range: NSRange(masked.startIndex..., in: masked)) {
-            let tag = (body as NSString).substring(with: match.range)
-            var reference: String?
-            if let source = src.firstMatch(in: tag, range: NSRange(tag.startIndex..., in: tag)) {
-                let range = source.range(at: source.range(at: 1).location == NSNotFound ? 2 : 1)
-                reference = Range(range, in: tag).map { String(tag[$0]) }
-            }
-            if !isRemoteImage(reference) { removals.append(match.range) }
+        for image in LeonardoHTMLImageScanner.images(in: body, masked: masked) {
+            guard !images.contains(where: { NSLocationInRange(image.range.location, $0.range) }) else { continue }
+            if !isRemoteImage(image.destination) { removals.append(image.range) }
         }
         removals += unusedImageDefinitions(in: masked, imageRanges: removals, labels: removedLabels)
         let result = NSMutableString(string: body)
@@ -110,10 +104,8 @@ public enum LeonardoLocalImagePolicy {
         for range in imageRanges + definitions.map(\.range) {
             remaining.replaceCharacters(in: range, with: String(repeating: " ", count: range.length))
         }
-        let references = try! NSRegularExpression(pattern: #"(?<![!\\])\[([^\]\n]+)\](?:\[([^\]\n]*)\])?(?!\s*\()"#)
-        let source = remaining as String
-        let usedLabels = Set(references.matches(in: source, range: NSRange(source.startIndex..., in: source))
-            .compactMap { referenceLabel(for: $0, in: source).map(normalizeReferenceLabel) })
+        let usedLabels = Set(LeonardoMarkdownImageScanner.referenceLabels(in: remaining as String)
+            .map(normalizeReferenceLabel))
         return definitions.compactMap { definition in
             guard let range = Range(definition.range(at: 1), in: masked) else { return nil }
             let label = normalizeReferenceLabel(String(masked[range]))
@@ -144,11 +136,11 @@ public enum LeonardoLocalImagePolicy {
     }
 
     private static func normalizeReferenceLabel(_ label: String) -> String {
-        label.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ").lowercased()
+        LeonardoMarkdownImageScanner.unescape(label).split(whereSeparator: { $0.isWhitespace }).joined(separator: " ").lowercased()
     }
 
     private static let referenceDefinitionPattern = try! NSRegularExpression(
-        pattern: #"(?im)^ {0,3}\[([^\]\n]+)\]:[ \t]*(?:<([^>\n]+)>|([^\s]+))(?:[ \t]+(?:["'][^\n]*?["']|\([^\n]*?\)))?[ \t]*(?:\n|$)"#
+        pattern: #"(?im)^ {0,3}\[((?:\\.|[^\]\\\n])+)\]:[ \t]*(?:<([^>\n]+)>|([^\s]+))(?:[ \t]+(?:["'][^\n]*?["']|\([^\n]*?\)))?[ \t]*(?:\n|$)"#
     )
 
     private static func referenceDefinitions(in source: String, masked: String) -> [String: BodyReference] {
@@ -172,17 +164,6 @@ public enum LeonardoLocalImagePolicy {
             )
         }
         return definitions
-    }
-
-    private static func referenceLabel(for match: NSTextCheckingResult, in masked: String) -> String? {
-        let explicit = match.range(at: 2)
-        if explicit.location != NSNotFound, explicit.length > 0,
-           let range = Range(explicit, in: masked) {
-            return String(masked[range])
-        }
-        let collapsed = match.range(at: 1)
-        guard let range = Range(collapsed, in: masked) else { return nil }
-        return String(masked[range])
     }
 
     static func maskCodeAndMetadata(_ source: String, includesMetadata: Bool = true) -> String {
