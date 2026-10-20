@@ -1,0 +1,73 @@
+name: Request promotion of a concrete beta
+run-name: Request stable promotion of ${{ inputs.beta_tag }} request=${{ inputs.request_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      beta_tag:
+        description: Exact published beta tag, for example v0.1.15
+        type: string
+        required: true
+      source_sha:
+        description: Full source SHA of that beta
+        type: string
+        required: true
+      acceptance_url:
+        description: Owner issue-comment URL containing structured release-acceptance
+        type: string
+        required: true
+      request_id:
+        description: Unique promotion ID; reuse unchanged for recovery
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  request:
+    if: github.repository == 'PinedaTec-EU/LeonardoMD' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Request exact-candidate central promotion
+        env:
+          DISPATCH_TOKEN: ${{ secrets.PINEDATEC_CI_DISPATCH_TOKEN }}
+          BETA_TAG: ${{ inputs.beta_tag }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          ACCEPTANCE_URL: ${{ inputs.acceptance_url }}
+          REQUEST_ID: ${{ inputs.request_id }}
+        run: |
+          python3 -I - <<'PYTHON'
+          import json, os, re, urllib.error, urllib.request
+          repository = 'PinedaTec-EU/LeonardoMD'
+          tag = os.environ['BETA_TAG']
+          if not re.fullmatch(r'v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.[1-9][0-9]*', tag):
+              raise SystemExit('An exact numeric beta tag is required.')
+          if not re.fullmatch(r'[0-9a-f]{40}', os.environ['SOURCE_SHA']):
+              raise SystemExit('A full immutable source SHA is required.')
+          if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,99}', os.environ['REQUEST_ID']):
+              raise SystemExit('A valid stable promotion request ID is required.')
+          if not re.fullmatch(r'https://github\.com/PinedaTec-EU/LeonardoMD/issues/[1-9][0-9]*#issuecomment-[1-9][0-9]*', os.environ['ACCEPTANCE_URL']):
+              raise SystemExit('Acceptance must be a canonical owner issue-comment URL.')
+          token = os.environ.get('DISPATCH_TOKEN', '').strip()
+          if not token:
+              raise SystemExit('PINEDATEC_CI_DISPATCH_TOKEN is required.')
+          payload = {'event_type': 'promote-release-candidate', 'client_payload': {
+              'schema_version': 1, 'repository': repository, 'version': tag[1:],
+              'beta_tag': tag, 'source_sha': os.environ['SOURCE_SHA'],
+              'acceptance_url': os.environ['ACCEPTANCE_URL'], 'request_id': os.environ['REQUEST_ID']}}
+          request = urllib.request.Request('https://api.github.com/repos/PinedaTec-EU/pinedatec-ci/dispatches',
+              data=json.dumps(payload).encode(), method='POST', headers={
+                  'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json',
+                  'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28'})
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  if response.status != 204:
+                      raise SystemExit('Central promotion request was not acknowledged.')
+          except urllib.error.HTTPError as error:
+              raise SystemExit(f'Dispatch failed with HTTP {error.code}.') from None
+          except (urllib.error.URLError, TimeoutError):
+              raise SystemExit('Central dispatch is unavailable.') from None
+          print('Promotion requested. Publication remains pending until the matching central run succeeds.')
+          PYTHON

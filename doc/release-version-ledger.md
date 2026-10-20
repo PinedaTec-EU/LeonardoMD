@@ -48,17 +48,18 @@ the trusted policy job verifies each committed entry. CI does not write deltas
 or infer counts from jobs/retries.
 Main builds without a pending source PR do not allocate a source-PR delta.
 
-Release-only stable promotions use an issue-linked source PR containing
-`scripts/release-promotions/<PR>.json`. This is a versioned publication input,
-not generated release history. Record schema version 1, the source PR number,
-validated beta tag/source SHA, archive SHA-256 and canonical hosted acceptance
-URL. Its successful source-PR packaging compilation allocates the next build
-through the existing recorder and central materialization. Do not invent a
-functional app change or edit `version.nfo` to obtain a promotion build.
-The promotion record is checked during independent review against the public
-beta and its hosted acceptance; the ledger validates its delta, not that
-external acceptance. Confirm the app/dependency tree matches the validated
-beta before preparing stable. Documentation-only work remains exempt.
+Stable promotion is a separate explicit publication event. Use Actions → Request
+promotion of a concrete beta with its exact tag/SHA, structured owner acceptance
+URL and request ID. The central promoter preserves the accepted version/build,
+tag and ZIP; no new source PR, compilation, delta or materialization is needed
+for the channel operation. Main may contain later beta code without affecting
+this selection. Existing `scripts/release-promotions/<PR>.json` files are
+historical inputs from the former higher-build promotion flow; preserve them,
+but do not create new ones. Machinery changes remain ordinary source work.
+
+The [central contract](https://github.com/PinedaTec-EU/pinedatec-ci/blob/main/docs/release-candidate-promotion.md)
+defines the exact request/acceptance schemas, signature and source checks,
+recoverable metadata staging, replay rules and terminal publication evidence.
 
 Use an English issue-linked title, e.g. `#38 Added: adopt release version ledger`.
 Every versioned source PR supplies a reviewed `summary` in its own delta entry:
@@ -189,7 +190,7 @@ Tracking: [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38).
 
 ## Signed update packaging
 
-Sparkle configuration preserves the generated canonical bundle version/build. Explicit release environment values must match them; every channel uses the same numeric version with no beta/alpha/maturity suffixes. Advance the ledger build before publishing another beta or stable package. Feed isolation, signature verification and notarization gates remain in the [signed release workflow](releases.md).
+Sparkle configuration preserves the generated canonical bundle version/build. Explicit release environment values must match them; every channel uses the same numeric version with no beta/alpha/maturity suffixes. Advance the ledger build before publishing a newly built beta or stable package. Promoting the same accepted ZIP retains its canonical version/build and uses the explicit publication event instead. Feed isolation, signature verification and notarization gates remain in the [signed release workflow](releases.md).
 
 ## Pin maintenance
 
