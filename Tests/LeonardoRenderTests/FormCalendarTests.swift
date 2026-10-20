@@ -13,7 +13,11 @@ final class FormCalendarTests: XCTestCase {
         window.orderFront(nil)
         defer { host.teardown(); window.close() }
         let ready = expectation(description: "Bundled renderer ready")
-        host.onReady = { if $0 { ready.fulfill() } }
+        host.onReady = { [weak host] isReady in
+            guard isReady else { return }
+            host?.onReady = nil
+            ready.fulfill()
+        }
         host.apply(content: "# Calendar", baseURL: nil, configuration: .default,
                    onLinkActivation: nil, onScrollProgress: nil)
         await fulfillment(of: [ready], timeout: 10)
