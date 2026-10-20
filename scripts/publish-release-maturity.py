@@ -33,6 +33,9 @@ def publication(archive, version):
         if not isinstance(executable, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", executable):
             raise ValueError("Invalid application executable")
         executable_name = f"LeonardoMD.app/Contents/MacOS/{executable}"
+        seal_name = "LeonardoMD.app/Contents/_CodeSignature/CodeResources"
+        if names.count(seal_name) != 1:
+            raise ValueError("Expected exactly one signed resource seal")
         if names.count(executable_name) != 1:
             raise ValueError("Expected exactly one application executable")
         if (info.get("CFBundleShortVersionString") != version
@@ -44,6 +47,7 @@ def publication(archive, version):
         payload = {"schema": 1, "repository": REPOSITORY, "version": version,
                    "build": info["CFBundleVersion"], "channel": "stable",
                    "archiveSHA256": archive_digest,
+                   "resourceSealSHA256": hashlib.sha256(package.read(seal_name)).hexdigest(),
                    "executableSHA256": hashlib.sha256(package.read(executable_name)).hexdigest()}
     return payload, info
 

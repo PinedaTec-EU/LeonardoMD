@@ -6,7 +6,7 @@ import XCTest
 
 @MainActor
 final class InstalledReleaseMaturityTests: XCTestCase {
-    let identity = InstalledReleaseIdentity(version: "0.1.601", build: "601", executableSHA256: String(repeating: "a", count: 64))
+    let identity = InstalledReleaseIdentity(version: "0.1.601", build: "601", executableSHA256: String(repeating: "a", count: 64), resourceSealSHA256: String(repeating: "d", count: 64))
 
     func configuration(key: Curve25519.Signing.PrivateKey, channel: UpdateChannel = .beta) -> UpdateConfiguration {
         let publicKey = key.publicKey.rawRepresentation.base64EncodedString()
@@ -16,10 +16,11 @@ final class InstalledReleaseMaturityTests: XCTestCase {
     }
 
     func proof(key: Curve25519.Signing.PrivateKey, version: String = "0.1.601", build: String = "601",
-               digest: String = String(repeating: "a", count: 64), channel: String = "stable") throws -> Data {
-        let payload = try JSONEncoder().encode(ReleaseMaturityProof.Publication(schema: 1,
-            repository: "PinedaTec-EU/LeonardoMD", version: version, build: build, executableSHA256: digest,
-            archiveSHA256: String(repeating: "b", count: 64), channel: channel))
+               digest: String = String(repeating: "a", count: 64), seal: String = String(repeating: "d", count: 64), channel: String = "stable",
+               repository: String = "PinedaTec-EU/LeonardoMD", schema: Int = 1) throws -> Data {
+        let payload = try JSONEncoder().encode(ReleaseMaturityProof.Publication(schema: schema,
+            repository: repository, version: version, build: build, executableSHA256: digest,
+            resourceSealSHA256: seal, archiveSHA256: String(repeating: "b", count: 64), channel: channel))
         return try JSONEncoder().encode(ReleaseMaturityProof(payload: payload, signature: key.signature(for: payload)))
     }
 
@@ -28,7 +29,7 @@ final class InstalledReleaseMaturityTests: XCTestCase {
         let proof = try JSONDecoder().decode(ReleaseMaturityProof.self, from: SparkleMaturityFixture.data)
         let publication = try JSONDecoder().decode(ReleaseMaturityProof.Publication.self, from: proof.payload)
         XCTAssertEqual(publication.archiveSHA256, "24f7689973b8cb19473a81fba919bf9593136dcce1980a828245d32f9b77e8b6")
-        let identity = InstalledReleaseIdentity(version: "0.1.571", build: "571", executableSHA256: publication.executableSHA256)
+        let identity = InstalledReleaseIdentity(version: "0.1.571", build: "571", executableSHA256: publication.executableSHA256, resourceSealSHA256: publication.resourceSealSHA256)
         XCTAssertTrue(proof.verifies(identity: identity, publicKey: Data(base64Encoded: "a3GPslwOW8arEKunqgwyZDTsngVAFY8jLjQiR1bzyxI=")!))
     }
 
@@ -108,7 +109,8 @@ final class InstalledReleaseMaturityTests: XCTestCase {
         let tampered = try JSONEncoder().encode(ReleaseMaturityProof(payload: decoded.payload + Data([32]), signature: decoded.signature))
         let cases = try [proof(key: Curve25519.Signing.PrivateKey()), proof(key: key, version: "0.1.600"),
             proof(key: key, build: "600"), proof(key: key, digest: String(repeating: "c", count: 64)),
-            proof(key: key, channel: "beta"), tampered, Data("{}".utf8), Data(repeating: 0, count: 16_385)]
+            proof(key: key, seal: String(repeating: "e", count: 64)), proof(key: key, channel: "beta"), proof(key: key, repository: "other/repo"),
+            proof(key: key, schema: 2), tampered, Data("{}".utf8), Data(repeating: 0, count: 16_385)]
         for data in cases {
             let suite = "ReleaseMaturityTests.\(UUID().uuidString)"
             let defaults = UserDefaults(suiteName: suite)!

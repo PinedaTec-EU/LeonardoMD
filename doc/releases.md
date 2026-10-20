@@ -161,7 +161,7 @@ python3 scripts/publish-release-maturity.py --tag v<VERSION> --output output/sta
 Use the concrete accepted numeric version. This command requires a public stable
 GitHub release and its stable appcast, downloads the published ZIP, verifies its
 Sparkle signature against the pinned existing Keychain account, and binds the
-assertion to the version, build, archive digest and executable digest. Sparkle
+assertion to the version, build, archive digest, executable digest and signed resource-seal digest. Sparkle
 signs the raw assertion with the existing key without exporting private material.
 The script uploads `release-maturity.json` without replacing existing assets and
 reads it back byte for byte. It does not rebuild or install the app, change tags,

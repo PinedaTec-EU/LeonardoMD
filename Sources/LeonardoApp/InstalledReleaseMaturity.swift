@@ -11,6 +11,7 @@ struct ReleaseMaturityProof: Codable, Sendable {
         let version: String
         let build: String
         let executableSHA256: String
+        let resourceSealSHA256: String
         let archiveSHA256: String
         let channel: String
     }
@@ -25,6 +26,7 @@ struct ReleaseMaturityProof: Codable, Sendable {
         return publication.schema == 1 && publication.repository == "PinedaTec-EU/LeonardoMD"
             && publication.channel == "stable" && publication.version == identity.version
             && publication.build == identity.build && publication.executableSHA256 == identity.executableSHA256
+            && publication.resourceSealSHA256 == identity.resourceSealSHA256
             && publication.archiveSHA256.count == 64
             && publication.archiveSHA256.allSatisfy { "0123456789abcdef".contains($0) }
     }
@@ -34,6 +36,7 @@ struct InstalledReleaseIdentity: Sendable {
     let version: String
     let build: String
     let executableSHA256: String
+    let resourceSealSHA256: String
 
     static func read(configuration: UpdateConfiguration, executable: URL?) throws -> Self {
         guard let version = configuration.version.version, let build = configuration.version.build,
@@ -42,12 +45,18 @@ struct InstalledReleaseIdentity: Sendable {
               !build.isEmpty, build.allSatisfy({ $0.isASCII && $0.isNumber }), let executable else {
             throw CocoaError(.fileReadCorruptFile)
         }
-        let file = try FileHandle(forReadingFrom: executable)
+        let seal = executable.deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("_CodeSignature/CodeResources")
+        return Self(version: version, build: build, executableSHA256: try digest(executable),
+                    resourceSealSHA256: try digest(seal))
+    }
+
+    private static func digest(_ url: URL) throws -> String {
+        let file = try FileHandle(forReadingFrom: url)
         defer { try? file.close() }
         var hash = SHA256()
         while let bytes = try file.read(upToCount: 1_048_576), !bytes.isEmpty { hash.update(data: bytes) }
-        return Self(version: version, build: build,
-                    executableSHA256: hash.finalize().map { String(format: "%02x", $0) }.joined())
+        return hash.finalize().map { String(format: "%02x", $0) }.joined()
     }
 }
 

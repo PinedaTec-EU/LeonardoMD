@@ -20,16 +20,16 @@ Follow-up regressions: durable decision recovery [#125](https://github.com/Pined
 
 Owner publication policy: accepted PR → published/validated beta → stable with the exact accepted tag/version/build/SHA and ZIP, selected by the explicit central promotion event. This supersedes the former higher-build promotion rule without rewriting published history; tracking [#236](https://github.com/PinedaTec-EU/LeonardoMD/issues/236). The local [release skill](../.skills/leonardo-release/SKILL.md) permits a candidate-scoped explicit owner exception to beta, recorded with missing evidence and residual risk; other technical gates remain. This policy change grants no current publication or merge authorization.
 
-Release-only promotions use `.github/workflows/promote-beta.yml` to dispatch an exact beta tag/SHA, structured owner acceptance URL and request ID to the trusted central promoter. It verifies accepted hashes, pinned Sparkle signature and packaged identity before changing feeds/release metadata; no promotion-only source delta or compilation. Later beta entries survive and keep their higher build, preventing automatic downgrade. Original embedded beta metadata remains package provenance. Historical PR-numbered promotion inputs remain immutable. Tracking: [#236](https://github.com/PinedaTec-EU/LeonardoMD/issues/236); the central implementation must integrate before activation.
+Release-only promotions use `.github/workflows/promote-beta.yml` to dispatch an exact beta tag/SHA, structured owner acceptance URL and request ID to the trusted central promoter. It verifies accepted hashes, pinned Sparkle signature and packaged identity before changing feeds/release metadata; no promotion-only source delta or compilation. Later beta entries survive and keep their higher build, preventing automatic downgrade. Original embedded beta metadata remains package provenance. Historical PR-numbered promotion inputs remain immutable. Tracking: [#236](https://github.com/PinedaTec-EU/LeonardoMD/issues/236); central exact-artifact promotion is active.
 
-About and the footer share `ApplicationVersion.displayText`: numeric version plus installed `LeonardoUpdateChannel` (development fallback), independent of subscription choice. Internal build remains available to update decisions. Tracking: [#142](https://github.com/PinedaTec-EU/LeonardoMD/issues/142).
+About and the footer share `ApplicationUpdates.versionDisplayText`: numeric version plus verified installed maturity, falling back to embedded `LeonardoUpdateChannel` (development fallback), independent of subscription choice. Internal build remains available to update decisions. Tracking: [#142](https://github.com/PinedaTec-EU/LeonardoMD/issues/142).
 
 
-Installed publication maturity (#257) is modeled by `InstalledReleaseMaturity`,
+Installed publication maturity ([#257](https://github.com/PinedaTec-EU/LeonardoMD/issues/257)) is modeled by `InstalledReleaseMaturity`,
 independent of `ApplicationUpdates.channel` and immutable bundle provenance.
 The owner Mac signs a per-tag `release-maturity.json` after stable promotion with
 Sparkle's existing Keychain key. The runtime verifies the raw payload's Ed25519
-signature using CryptoKit, repository/version/build and executable SHA-256,
+signature using CryptoKit, repository/version/build and executable/resource-seal SHA-256,
 reverifies cached evidence on offline startup, and updates all three installed
 maturity displays observably. Network/invalid evidence cannot mutate subscriptions
 or classify a different build. Linux central promotion alone does not create the

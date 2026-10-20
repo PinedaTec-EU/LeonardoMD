@@ -27,6 +27,7 @@ class ReleaseMaturityTests(unittest.TestCase):
         with zipfile.ZipFile(archive, "w") as package:
             package.writestr("LeonardoMD.app/Contents/Info.plist", plistlib.dumps(info))
             package.writestr("LeonardoMD.app/Contents/MacOS/LeonardoMD", b"signed executable fixture")
+            package.writestr("LeonardoMD.app/Contents/_CodeSignature/CodeResources", b"signed resources fixture")
         return archive
 
     def exercise_entrypoint(self, *, prerelease=False, account_key=None, changed=False):
@@ -94,6 +95,7 @@ class ReleaseMaturityTests(unittest.TestCase):
             self.assertEqual(info["LeonardoUpdateChannel"], "beta")
             self.assertEqual(result["executableSHA256"], hashlib.sha256(b"signed executable fixture").hexdigest())
             self.assertEqual(result["archiveSHA256"], hashlib.sha256(before).hexdigest())
+            self.assertEqual(result["resourceSealSHA256"], hashlib.sha256(b"signed resources fixture").hexdigest())
             self.assertEqual(archive.read_bytes(), before)
 
     def test_rejects_wrong_version_build_executable_and_development_package(self):
