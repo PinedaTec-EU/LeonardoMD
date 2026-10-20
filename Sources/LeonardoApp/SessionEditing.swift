@@ -61,8 +61,7 @@ extension AppSession {
     @discardableResult
     func editDocument(expected: String, replacement: String) -> Bool {
         guard canEditDocument, content == expected else { return false }
-        content = replacement
-        contentChanged()
+        applyDocumentEdit(replacement, form: false)
         return true
     }
 

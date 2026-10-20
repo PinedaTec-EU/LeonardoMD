@@ -80,8 +80,7 @@ extension AppSession {
               let document = current.applyingFormValues(changes) else { return nil }
         guard let replacement = try? LeonardoFormatParser.serialize(document) else { return nil }
         if replacement != content {
-            content = replacement
-            contentChanged()
+            applyDocumentEdit(replacement, form: true)
         }
         return replacement
     }

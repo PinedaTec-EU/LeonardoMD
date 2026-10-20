@@ -247,6 +247,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     }
     @objc private func openDocument() { activeSession?.chooseDocument() }
     @objc private func openProject() { activeSession?.chooseProject() }
+    @objc private func undoDocument() { Task { await activeSession?.undoDocument() } }
+    @objc private func redoDocument() { Task { await activeSession?.redoDocument() } }
     @objc private func save() { Task { await activeSession?.save() } }
     @objc private func exportPDF() { activeSession?.exportPDF() }
     @objc private func focus() { activeSession?.focus.toggle() }
@@ -289,7 +291,9 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         add(L10n.text("Export PDF…"), action: #selector(exportPDF), key: "e", modifiers: [.command, .shift], to: file)
         add(L10n.text("Close window"), action: #selector(NSWindow.performClose(_:)), key: "w", modifiers: [.command, .shift], to: file)
         let editMenu = submenu(L10n.text("Edit"), in: menu)
-        for (title, selector, key) in [(L10n.text("Undo"), "undo:", "z"), (L10n.text("Redo"), "redo:", "Z"), (L10n.text("Cut"), "cut:", "x"), (L10n.text("Copy"), "copy:", "c"), (L10n.text("Paste"), "paste:", "v"), (L10n.text("Select all"), "selectAll:", "a")] {
+        add(L10n.text("Undo"), action: #selector(undoDocument), key: "z", to: editMenu)
+        add(L10n.text("Redo"), action: #selector(redoDocument), key: "z", modifiers: [.command, .shift], to: editMenu)
+        for (title, selector, key) in [ (L10n.text("Cut"), "cut:", "x"), (L10n.text("Copy"), "copy:", "c"), (L10n.text("Paste"), "paste:", "v"), (L10n.text("Select all"), "selectAll:", "a")] {
             add(title, action: NSSelectorFromString(selector), key: key, to: editMenu)
         }
         let view = submenu(L10n.text("View"), in: menu)
