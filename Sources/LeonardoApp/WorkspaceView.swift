@@ -235,7 +235,7 @@ struct WorkspaceView: View {
         }
     }
     private var editor: some View {
-        MarkdownEditor(text: Binding(get: { session.content }, set: { _ = session.editDocument(expected: session.content, replacement: $0) }), scrollFraction: $session.editorScroll, requestedLine: session.requestedLine)
+        MarkdownEditor(text: Binding(get: { session.content }, set: { _ = session.editDocument(expected: session.content, replacement: $0) }), scrollFraction: $session.editorScroll, requestedLine: session.requestedLine, usesDocumentHistory: true)
             .id(session.documentURL)
             .disabled(!session.canEditDocument)
     }

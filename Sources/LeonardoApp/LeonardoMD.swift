@@ -35,7 +35,7 @@ struct LeonardoMD {
 }
 
 @MainActor
-final class ApplicationDelegate: NSObject, NSApplicationDelegate {
+final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private let updates = ApplicationUpdates.shared
     private lazy var recentMenus = RecentItemsMenu(session: { [weak self] in self?.activeSession }, openDocument: { [weak self] url in
         Task { @MainActor [weak self] in await self?.openExternalDocument(url) }
@@ -247,8 +247,32 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     }
     @objc private func openDocument() { activeSession?.chooseDocument() }
     @objc private func openProject() { activeSession?.chooseProject() }
-    @objc private func undoDocument() { Task { await activeSession?.undoDocument() } }
-    @objc private func redoDocument() { Task { await activeSession?.redoDocument() } }
+    private var focusedTextEditor: NSTextView? {
+        guard let editor = NSApp.keyWindow?.firstResponder as? NSTextView,
+              editor.accessibilityIdentifier() != "markdown-editor" else { return nil }
+        return editor
+    }
+
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(undoDocument) {
+            if let editor = focusedTextEditor { return editor.undoManager?.canUndo == true }
+            return activeSession?.canUndoDocument == true
+        }
+        if menuItem.action == #selector(redoDocument) {
+            if let editor = focusedTextEditor { return editor.undoManager?.canRedo == true }
+            return activeSession?.canRedoDocument == true
+        }
+        return true
+    }
+
+    @objc private func undoDocument() {
+        if let editor = focusedTextEditor { editor.undoManager?.undo(); return }
+        Task { await activeSession?.undoDocument() }
+    }
+    @objc private func redoDocument() {
+        if let editor = focusedTextEditor { editor.undoManager?.redo(); return }
+        Task { await activeSession?.redoDocument() }
+    }
     @objc private func save() { Task { await activeSession?.save() } }
     @objc private func exportPDF() { activeSession?.exportPDF() }
     @objc private func focus() { activeSession?.focus.toggle() }

@@ -39,7 +39,8 @@ extension AppSession {
 
     /// Commit pending WebKit edits before choosing the entry to restore.
     func undoDocument() async {
-        guard !isClosing, !stopped, await flushPreviewEdits(), canUndoDocument else { return }
+        let url = documentURL
+        guard !isClosing, !stopped, await flushPreviewEdits(), documentURL == url, canUndoDocument else { return }
         var history = editHistory
         guard let edit = history.undo.popLast(), content == edit.after else { return }
         history.redo.append(edit)
@@ -49,7 +50,8 @@ extension AppSession {
     }
 
     func redoDocument() async {
-        guard !isClosing, !stopped, await flushPreviewEdits(), canRedoDocument else { return }
+        let url = documentURL
+        guard !isClosing, !stopped, await flushPreviewEdits(), documentURL == url, canRedoDocument else { return }
         var history = editHistory
         guard let edit = history.redo.popLast(), content == edit.before else { return }
         history.undo.append(edit)
