@@ -33,4 +33,4 @@ File mutations capture `SessionFileOperationIdentity` before dialogs/panels and 
 
 Release notes receive the owning document AppSession at both presentation entrypoints and apply shared SessionAppearance plus PremiumButtonStyle. Hosting roots do not inherit the parent SwiftUI environment automatically. Tracking: [#252](https://github.com/PinedaTec-EU/LeonardoMD/issues/252).
 
-About also offers Release notes using the same manual presenter as the application menu. It ends its sheet before dispatching the action from the sheet completion, so startup suppression never blocks manual reopening. Tracking: [#254](https://github.com/PinedaTec-EU/LeonardoMD/issues/254).
+About also offers Release notes using the same manual presenter as the application menu. It ends its sheet before dispatching the action on the next main-actor turn after the sheet completion (AppKit has not detached the sheet inside that callback), so startup suppression never blocks manual reopening. Tracking: [#254](https://github.com/PinedaTec-EU/LeonardoMD/issues/254).
