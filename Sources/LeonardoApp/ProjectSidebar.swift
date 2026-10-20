@@ -115,7 +115,7 @@ struct FileTreeRow: View {
                         Button(L10n.text("New folder…")) { session.createItem(directory: true, parent: entry.url) }
                     }
                     Divider()
-                    Button(L10n.text("Delete…"), role: .destructive) { session.delete(entry.url) }
+                    Button(L10n.text("Move to Trash…"), role: .destructive) { session.delete(entry.url) }
                 }
                 // Include the context menu in the plain-style scope so it cannot
                 // inherit the sidebar's stateful PremiumButtonStyle.
