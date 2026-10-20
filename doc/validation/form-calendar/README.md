@@ -23,3 +23,15 @@ The calendar expands in document flow to avoid clipping inside authored tables. 
 ![Dark theme](dark.png)
 
 ![Narrow dark viewport](narrow.png)
+
+## Pointer regression
+
+With the preview server above running and the Playwright CLI/browser installed, run:
+
+```sh
+python3 doc/validation/form-calendar/check-pointer.py --cli "$HOME/.codex/skills/playwright/scripts/playwright_cli.sh" --browser webkit
+```
+
+Repeat with `--browser msedge` to check Edge. The script uses real pointer activation for next/previous month, date selection, repeated-field synchronization, reopening and outside dismissal; it then verifies keyboard navigation and Escape still work. It closes its own browser session and keeps scratch files in a disposable directory. Programmatic DOM `element.click()` alone does not exercise this regression.
+
+The native `testBlurBeforePointerActivationDoesNotDismissInsideControls` covers the preceding blur across separate WebKit tasks and outside focus dismissal. Calendar dismissal tracks actual outside pointer/focus targets rather than the transient active element during blur. The pointer script fails against pre-fix head `628d257` with `Pointer next month failed`, and passes with the correction in both WebKit and Edge.

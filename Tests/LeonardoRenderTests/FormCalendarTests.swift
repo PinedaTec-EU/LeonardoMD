@@ -68,4 +68,49 @@ final class FormCalendarTests: XCTestCase {
         for (name, passed) in checks { XCTAssertTrue(passed, name) }
         XCTAssertEqual(checks.count, 12)
     }
+
+    func testBlurBeforePointerActivationDoesNotDismissInsideControls() async throws {
+        let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 800, height: 700))
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { host.teardown(); window.close() }
+        let ready = expectation(description: "Blur sequence ready")
+        host.onReady = { [weak host] value in
+            guard value else { return }
+            host?.onReady = nil
+            ready.fulfill()
+        }
+        host.apply(content: "# Pointer calendar", baseURL: nil, configuration: .default,
+                   onLinkActivation: nil, onScrollProgress: nil)
+        await fulfillment(of: [ready], timeout: 10)
+        let webView = try XCTUnwrap(host.subviews.compactMap { $0 as? WKWebView }.first)
+        _ = try await webView.evaluateJavaScript("""
+        (() => {
+          const root = document.createElement('main'); root.id = 'blur-calendar'; document.body.append(root);
+          LeonardoForms.begin({allowsFormFilling: true, source: 'blur'}, root);
+          root.append(LeonardoForms.field('date', {type: 'date'}, '2026-10-17'));
+          root.querySelector('.leonardo-calendar-toggle').click();
+          document.activeElement.blur();
+          return true;
+        })()
+        """)
+        // A second WebKit task lets the blur microtask run before pointer activation.
+        let visible = try await webView.evaluateJavaScript("!document.querySelector('#blur-calendar .leonardo-calendar').hidden") as? Bool
+        XCTAssertEqual(visible, true)
+        let result = try await webView.evaluateJavaScript("""
+        (() => {
+          const root = document.querySelector('#blur-calendar');
+          root.querySelector('[aria-label="Next month"]').click();
+          const next = root.querySelector('.leonardo-calendar-header').textContent.includes('November');
+          root.querySelector('[data-date="2026-11-18"]').click();
+          const selected = LeonardoForms.snapshot().changes.date === '2026-11-18';
+          root.querySelector('.leonardo-calendar-toggle').click();
+          const outside = document.createElement('input'); document.body.append(outside); outside.focus();
+          return next && selected && root.querySelector('.leonardo-calendar').hidden;
+        })()
+        """) as? Bool
+        XCTAssertEqual(result, true)
+    }
 }

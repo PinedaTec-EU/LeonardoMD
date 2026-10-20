@@ -1,6 +1,12 @@
 (() => {
   "use strict";
-  let closeActive;
+  let closeActive, activeWrapper;
+  // Dismiss on an actual outside target; blur can precede an inside pointer click.
+  const dismissOutside = event => {
+    if (activeWrapper && !activeWrapper.contains(event.target)) closeActive?.();
+  };
+  document.addEventListener("pointerdown", dismissOutside, true);
+  document.addEventListener("focusin", dismissOutside);
   const iso = date => `${String(date.getFullYear()).padStart(4, "0")}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
   const parse = value => {
     if (!/^\d{4}-\d\d-\d\d$/.test(value)) return null;
@@ -41,7 +47,7 @@
       let shown;
       function close() {
         panel.hidden = true; toggle.setAttribute("aria-expanded", "false");
-        if (closeActive === close) closeActive = undefined;
+        if (closeActive === close) { closeActive = undefined; activeWrapper = undefined; }
       }
       function moveMonth(delta) {
         const next = new Date(shown); next.setMonth(next.getMonth() + delta);
@@ -83,7 +89,7 @@
       }
       function open() {
         if (input.disabled) return;
-        closeActive?.(); closeActive = close;
+        closeActive?.(); closeActive = close; activeWrapper = wrapper;
         const selected = parse(input.value) || new Date();
         shown = new Date(selected); shown.setDate(1);
         panel.hidden = false; toggle.setAttribute("aria-expanded", "true"); render(iso(selected));
@@ -94,7 +100,6 @@
         if (event.key === "Escape" && !panel.hidden) { event.preventDefault(); close(); toggle.focus(); }
         if (event.altKey && event.key === "ArrowDown" && event.target === input) { event.preventDefault(); open(); }
       });
-      wrapper.addEventListener("focusout", () => queueMicrotask(() => { if (!wrapper.contains(document.activeElement)) close(); }));
       input.addEventListener("input", () => { if (!panel.hidden) render(); });
     }
   };
