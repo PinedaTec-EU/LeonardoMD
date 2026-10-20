@@ -43,3 +43,10 @@ Boolean form controls support optional `appearance: checkbox|switch`, defaulting
 Canonical metadata encoding omits default `document` and empty `fields`/`values`; explicit layout and all nested values remain intact. Both sparse and explicit-empty envelopes decode with v1 defaults. Tracking: [#204](https://github.com/PinedaTec-EU/LeonardoMD/issues/204).
 
 Inline form filling ([#206](https://github.com/PinedaTec-EU/LeonardoMD/issues/206)) uses `leonardo-forms.js` after sanitized Markdown substitution. Preview, Split and Fill share field labels, controls and row layout; only Fill enables mutation and contextual help. Export/print retain text values ([#234](https://github.com/PinedaTec-EU/LeonardoMD/issues/234)). `MarkdownFormState` scopes cumulative field snapshots to the last rendered source, and the host acknowledges authorized native changes without redrawing focused controls. `SessionLeonardoFields` shares mode/lifecycle/read-only guards across field APIs and the bridge. Preview callbacks capture file identity and the native preview resets on URL changes, so delayed callbacks cannot mutate a byte-identical sibling file. Flush reads a fresh DOM snapshot before save/navigation. Contextual `LeonardoFieldHelp` replaces duplicate inspector inputs; (?) works for read-only fields and explains editability separately from requiredness. Self-contained full examples live in `doc/format/examples/form-showcase`. Formulas remain deferred in [#203](https://github.com/PinedaTec-EU/LeonardoMD/issues/203).
+
+Plain Markdown export ([#216](https://github.com/PinedaTec-EU/LeonardoMD/issues/216)) uses
+`LeonardoMarkdownExport` and `SessionMarkdownExport`. A native warning precedes the
+save panel; the adapter flushes DOM values and reuses Leonardo export identity and
+path authorization guards. Output omits metadata/layout, substitutes literal
+answers in place, retains HTTP(S) images and removes nonportable sources through
+the shared Core resource scanner. The original tab/file remains Leonardo.

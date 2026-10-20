@@ -4,7 +4,7 @@ import Foundation
 public enum LeonardoMarkdownExport {
     public static func markdown(from document: LeonardoDocument) -> String {
         let body = LeonardoLocalImagePolicy.removingNonportableImages(in: document.body)
-        let masked = LeonardoLocalImagePolicy.maskCodeAndMetadata(body)
+        let masked = LeonardoLocalImagePolicy.maskCodeAndMetadata(body, includesMetadata: false)
         let tokens = try! NSRegularExpression(pattern: #"\{\{\s*field:([A-Za-z][A-Za-z0-9_.-]{0,63})\s*\}\}"#)
         let result = NSMutableString(string: body)
         for match in tokens.matches(in: masked, range: NSRange(masked.startIndex..., in: masked)).reversed() {
@@ -29,8 +29,7 @@ public enum LeonardoMarkdownExport {
             }
             return text
         case let .boolean(flag): return flag ? "true" : "false"
-        case let .number(number): return number.formatted(.number.locale(Locale(identifier: "en_US_POSIX")).grouping(.never).precision(.significantDigits(1...17)))
-        case .array, .object:
+        case .number, .array, .object:
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
             return (try? encoder.encode(value)).flatMap { String(data: $0, encoding: .utf8) } ?? ""

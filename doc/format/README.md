@@ -365,3 +365,20 @@ reader fallback is introduced: earlier strict v1 readers reject documents that
 use these properties rather than silently discarding geometry. Update those
 readers before sharing resized documents. Native and plugin validators use the
 same updated schema.
+
+## Exporting a plain Markdown copy
+
+The macOS **Export Markdown…** action creates a `.md` reading copy from an MDLF,
+MDLR, or open MDLZ document. Confirm the loss warning before choosing a destination.
+The original Leonardo document is preserved. The copy loses Leonardo layout,
+backgrounds, field definitions, validation and interactive controls; these cannot
+be reconstructed from the exported Markdown.
+
+Fields are replaced in place by current answers (or defaults when no answer is
+stored). Empty answers stay empty, select fields use their display labels, and
+boolean answers become `true` or `false`. Answer text is escaped for Markdown;
+multiline answers use line breaks. Code examples remain literal.
+
+Standalone exports retain HTTP(S) images. Local/package images and unsupported
+image sources are removed because the `.md` file does not transport their assets.
+Retain the Leonardo original or use MDLZ when those capabilities are needed.

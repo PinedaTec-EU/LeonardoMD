@@ -75,7 +75,7 @@ public enum LeonardoLocalImagePolicy {
 
     /// A standalone Markdown copy retains only remotely addressable images.
     static func removingNonportableImages(in body: String) -> String {
-        let masked = maskCodeAndMetadata(body)
+        let masked = maskCodeAndMetadata(body, includesMetadata: false)
         let definitions = referenceDefinitions(in: body, masked: masked)
         let patterns = [
             #"!\[[^\]\n]*\]\(\s*(?:<([^>\n]+)>|([^<\s)]+))(?:\s+["'][^\n]*?["'])?\s*\)"#,
@@ -180,11 +180,11 @@ public enum LeonardoLocalImagePolicy {
         return String(masked[range])
     }
 
-    static func maskCodeAndMetadata(_ source: String) -> String {
+    static func maskCodeAndMetadata(_ source: String, includesMetadata: Bool = true) -> String {
         // Replace by UTF-16 units so NSRegularExpression ranges retain their offsets.
         let patterns = [#"(?ms)^ {0,3}(`{3,}|~{3,})[^\n]*\n.*?^ {0,3}\1[^\n]*(?:\n|$)"#, #"`+[^`\n]*`+"#]
         let masked = NSMutableString(string: source)
-        if source.hasPrefix("---\n"), let closing = source.range(of: "\n---", range: source.index(source.startIndex, offsetBy: 4)..<source.endIndex) {
+        if includesMetadata, source.hasPrefix("---\n"), let closing = source.range(of: "\n---", range: source.index(source.startIndex, offsetBy: 4)..<source.endIndex) {
             let range = NSRange(source.startIndex..<closing.upperBound, in: source)
             masked.replaceCharacters(in: range, with: String(repeating: " ", count: range.length))
         }
