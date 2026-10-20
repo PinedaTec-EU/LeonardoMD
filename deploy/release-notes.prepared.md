@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.502
+
+- #230 Added: document undo and redo history ([#231](https://github.com/PinedaTec-EU/LeonardoMD/pull/231))
+
+<p>Undo and redo document edits from the toolbar or keyboard, with separate history for each document and support for source, preview and form editing.</p>
+
+Source: `5572d4b2cb0888e028a9e2b4a5c2b0eec5d86fa5`. Delta: `{"build": 4}`.
+
 ## 0.1.498
 
 - #228 Added: file list colors filtering and sorting ([#229](https://github.com/PinedaTec-EU/LeonardoMD/pull/229))
