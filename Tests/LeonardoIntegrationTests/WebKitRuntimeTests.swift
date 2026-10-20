@@ -53,7 +53,7 @@ final class WebKitRuntimeTests: XCTestCase {
         let (host, window) = makeHost(content: source, config: config)
         defer { host.teardown(); window.close() }
         let web = try XCTUnwrap(webView(of: host))
-        try await waitFor("document.querySelector('.leonardo-field-value')?.textContent === '<b>Ana</b>' && document.querySelectorAll('table col').length === 2", in: web)
+        try await waitFor("document.querySelector('.leonardo-field-output')?.textContent === '<b>Ana</b>' && document.querySelector('[data-field-input=name]')?.disabled === true && document.querySelectorAll('table col').length === 2", in: web)
         let result1 = try await evaluate("document.querySelector('code').textContent", in: web)
         XCTAssertEqual(result1, "{{field:name}}")
         let result2 = try await evaluate("document.querySelectorAll('.leonardo-field-value b').length", in: web)
