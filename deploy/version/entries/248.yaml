@@ -1,4 +1,4 @@
 {
-  "build": 2,
-  "summary": "About and Release notes now open as modal sheets attached to the main window."
+  "build": 5,
+  "summary": "About, Release notes, document confirmations and file selection now open as modal sheets attached to their owning window."
 }

@@ -1,11 +1,7 @@
 import AppKit
 
-/// AppKit presents its modal window while the main actor remains available
-/// for initialization, SwiftUI updates and asynchronous file operations.
+/// Keep file selection attached to the current window without blocking the main actor.
 @MainActor
 func presentFilePanel(_ panel: NSSavePanel, completion: @escaping @MainActor (URL) -> Void) {
-    panel.begin { response in
-        guard response == .OK, let url = panel.url else { return }
-        completion(url)
-    }
+    NativeDialog.present(panel, completion: completion)
 }

@@ -4,15 +4,18 @@ import LeonardoCore
 
 extension AppSession {
     func exportMarkdown() {
-        guard let documentURL, documentKind.isLeonardo, !busy, !isSyncSuspended else { return }
-        let alert = Self.markdownExportWarning()
-        guard alert.runModal() == .alertFirstButtonReturn else { return }
-        let panel = NSSavePanel()
-        panel.title = L10n.text("Export Markdown…")
-        panel.allowedContentTypes = [UTType(filenameExtension: "md") ?? .plainText]
-        panel.nameFieldStringValue = documentURL.deletingPathExtension().lastPathComponent + ".md"
-        presentFilePanel(panel) { [weak self] destination in
-            Task { await self?.exportMarkdown(to: destination, documentURL: documentURL) }
+        Task {
+            guard let documentURL, documentKind.isLeonardo, !busy, !isSyncSuspended else { return }
+            let alert = Self.markdownExportWarning()
+            guard await NativeDialog.present(alert, on: presentationWindow) == .alertFirstButtonReturn, self.documentURL == documentURL,
+                  !stopped, !isClosing else { return }
+            let panel = NSSavePanel()
+            panel.title = L10n.text("Export Markdown…")
+            panel.allowedContentTypes = [UTType(filenameExtension: "md") ?? .plainText]
+            panel.nameFieldStringValue = documentURL.deletingPathExtension().lastPathComponent + ".md"
+            presentFilePanel(panel) { [weak self] destination in
+                Task { await self?.exportMarkdown(to: destination, documentURL: documentURL) }
+            }
         }
     }
 

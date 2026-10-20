@@ -69,8 +69,7 @@ struct SharedProjectSelectionView: View {
         panel.canChooseDirectories = true
         panel.canChooseFiles = true
         panel.allowsMultipleSelection = true
-        panel.begin { response in
-            guard response == .OK else { return }
+        presentFilePanel(panel) { _ in
             do {
                 var nextFolders = folders, nextDocuments = documents
                 for url in panel.urls {

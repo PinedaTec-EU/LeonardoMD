@@ -78,9 +78,9 @@ extension AppSession {
         catch { if showWorkspace { report(error) } }
     }
     func createProject() {
-        guard let root = workspaceURL, let name = prompt(title: L10n.text("New project"), initial: L10n.text("My project")) else { return }
         Task {
-            guard !stopped, !isClosing else { return }
+            guard let root = workspaceURL, let name = await prompt(title: L10n.text("New project"), initial: L10n.text("My project")) else { return }
+            guard workspaceURL == root, !stopped, !isClosing else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
             do {
@@ -94,8 +94,10 @@ extension AppSession {
         }
     }
     func renameProject(_ project: ProjectDescriptor) {
-        guard let name = prompt(title: L10n.text("Rename project"), initial: project.name) else { return }
-        Task { await renameProject(project, to: name) }
+        Task {
+            guard let name = await prompt(title: L10n.text("Rename project"), initial: project.name), !stopped, !isClosing else { return }
+            await renameProject(project, to: name)
+        }
     }
     func renameProject(_ project: ProjectDescriptor, to name: String) async {
         guard let workspace = workspaceURL, await prepareNavigation(), await prepareRelatedFileOperation?(project.rootURL) ?? true else { return }
@@ -122,13 +124,15 @@ extension AppSession {
         } catch { report(error) }
     }
     func deleteProject(_ project: ProjectDescriptor) {
-        let alert = NSAlert()
-        alert.messageText = L10n.format("Delete project %@?", project.name)
-        alert.informativeText = L10n.text("The entire folder and its contents will be deleted from disk.")
-        alert.addButton(withTitle: L10n.text("Cancel"))
-        alert.addButton(withTitle: L10n.text("Delete"))
-        guard alert.runModal() == .alertSecondButtonReturn else { return }
-        Task { await deleteConfirmedProject(project) }
+        Task {
+            let alert = NSAlert()
+            alert.messageText = L10n.format("Delete project %@?", project.name)
+            alert.informativeText = L10n.text("The entire folder and its contents will be deleted from disk.")
+            alert.addButton(withTitle: L10n.text("Cancel"))
+            alert.addButton(withTitle: L10n.text("Delete"))
+            guard await NativeDialog.present(alert, on: presentationWindow) == .alertSecondButtonReturn, !stopped, !isClosing else { return }
+            await deleteConfirmedProject(project)
+        }
     }
     func deleteConfirmedProject(_ project: ProjectDescriptor) async {
         guard await prepareNavigation(), await prepareRelatedFileOperation?(project.rootURL) ?? true else { return }

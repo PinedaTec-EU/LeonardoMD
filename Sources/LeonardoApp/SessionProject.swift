@@ -133,12 +133,12 @@ extension AppSession {
         }
     }
     func createItem(directory: Bool, parent: URL? = nil) {
-        guard let root = projectURL,
-              let name = prompt(title: directory ? L10n.text("New folder") : L10n.text("New Markdown"), initial: directory ? L10n.text("Folder") : L10n.text("New note filename")) else { return }
-        let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
-        let parentPath = relative(parent ?? root)
         Task {
-            guard !stopped, !isClosing else { return }
+            guard let root = projectURL,
+                  let name = await prompt(title: directory ? L10n.text("New folder") : L10n.text("New Markdown"), initial: directory ? L10n.text("Folder") : L10n.text("New note filename")) else { return }
+            guard projectURL == root, !stopped, !isClosing else { return }
+            let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
+            let parentPath = relative(parent ?? root)
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
             do {
@@ -156,9 +156,9 @@ extension AppSession {
         }
     }
     func rename(_ url: URL) {
-        guard let root = projectURL, let name = prompt(title: L10n.text("Rename"), initial: url.lastPathComponent) else { return }
         Task {
-            guard !stopped, !isClosing else { return }
+            guard let root = projectURL, let name = await prompt(title: L10n.text("Rename"), initial: url.lastPathComponent) else { return }
+            guard projectURL == root, !stopped, !isClosing else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
             guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
@@ -218,15 +218,15 @@ extension AppSession {
         mode = previousMode
     }
     func delete(_ url: URL) {
-        guard let root = projectURL else { return }
-        let alert = NSAlert()
-        alert.messageText = L10n.format("Delete %@?", url.lastPathComponent)
-        alert.informativeText = L10n.text("This operation deletes the item from disk.")
-        alert.addButton(withTitle: L10n.text("Cancel"))
-        alert.addButton(withTitle: L10n.text("Delete"))
-        guard alert.runModal() == .alertSecondButtonReturn else { return }
         Task {
-            guard !stopped, !isClosing else { return }
+            guard let root = projectURL else { return }
+            let alert = NSAlert()
+            alert.messageText = L10n.format("Delete %@?", url.lastPathComponent)
+            alert.informativeText = L10n.text("This operation deletes the item from disk.")
+            alert.addButton(withTitle: L10n.text("Cancel"))
+            alert.addButton(withTitle: L10n.text("Delete"))
+            guard await NativeDialog.present(alert, on: presentationWindow) == .alertSecondButtonReturn else { return }
+            guard projectURL == root, !stopped, !isClosing else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
             guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
@@ -261,7 +261,7 @@ extension AppSession {
         guard url.standardizedFileURL.path.hasPrefix(root.standardizedFileURL.path + "/") else { return "../" }
         return String(url.standardizedFileURL.path.dropFirst(root.standardizedFileURL.path.count + 1))
     }
-    func prompt(title: String, initial: String) -> String? {
+    func prompt(title: String, initial: String) async -> String? {
         let alert = NSAlert()
         alert.messageText = title
         let input = NSTextField(string: initial)
@@ -270,6 +270,6 @@ extension AppSession {
         alert.addButton(withTitle: L10n.text("Save"))
         alert.addButton(withTitle: L10n.text("Cancel"))
         alert.window.initialFirstResponder = input
-        return alert.runModal() == .alertFirstButtonReturn ? input.stringValue : nil
+        return await NativeDialog.present(alert, on: presentationWindow) == .alertFirstButtonReturn ? input.stringValue : nil
     }
 }

@@ -378,6 +378,7 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
         window.center()
         super.init(window: window)
         window.delegate = self
+        documents.presentationWindow = window
         window.contentView = NSHostingView(rootView: DocumentTabsView(documents: documents))
         documents.updateWindow = { [weak window] title, url, dirty in
             window?.title = title
