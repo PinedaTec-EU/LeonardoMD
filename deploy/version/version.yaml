@@ -517,9 +517,19 @@
       "pr": 245,
       "summary": "Local document images use bounded loading and preview resolution, while PDF export requests higher resolution without modifying original assets.",
       "to_version": "0.1.595"
+    },
+    {
+      "delta": {
+        "build": 5
+      },
+      "from_version": "0.1.595",
+      "merge_sha": "959dfb3a8ccf52de2f9118979094f516b178f9a2",
+      "pr": 255,
+      "summary": "You can reopen hidden release notes from About, as well as from the macOS application menu.",
+      "to_version": "0.1.600"
     }
   ],
-  "current_version": "0.1.595",
+  "current_version": "0.1.600",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

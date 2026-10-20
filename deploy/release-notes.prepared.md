@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.600
+
+- #254 Added: reopen release notes from About ([#255](https://github.com/PinedaTec-EU/LeonardoMD/pull/255))
+
+<p>You can reopen hidden release notes from About, as well as from the macOS application menu.</p>
+
+Source: `959dfb3a8ccf52de2f9118979094f516b178f9a2`. Delta: `{"build": 5}`.
+
 ## 0.1.595
 
 - #243 Fixed: bound document image loading and raster resolution ([#245](https://github.com/PinedaTec-EU/LeonardoMD/pull/245))
