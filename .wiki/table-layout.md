@@ -12,7 +12,7 @@ and malformed directives fall back to normal tables.
 The shared runtime wraps sanitized tables in keyboard-scrollable viewports.
 Normal tables preserve words; fixed-layout opt-in tables wrap headers and reserve
 explicit content widths plus padding. `auto` columns share spare space with a
-12ch minimum. Full syntax is documented in README.
+12ch minimum. Full syntax is documented in [Markdown table widths](../doc/table-widths.md).
 
 Interactive sizing ([#208](https://github.com/PinedaTec-EU/LeonardoMD/issues/208))
 uses `table-resizing.js`/CSS after sanitization and MDLF layout application.
