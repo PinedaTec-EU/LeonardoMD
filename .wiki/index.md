@@ -11,3 +11,5 @@ Read [current state](current-state.md), then the relevant source target. Human p
 - [Table layout](table-layout.md)
 
 - [Open Leonardo documents and agent plugins](leonardo-format.md)
+
+- [Native release notes](release-notes.md)

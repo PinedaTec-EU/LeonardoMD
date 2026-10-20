@@ -446,5 +446,18 @@
   "Resize row": "Redimensionar fila",
   "Resize table width": "Cambiar ancho de tabla",
   "Resize table height": "Cambiar altura de tabla",
-  "Resize table": "Redimensionar tabla"
+  "Resize table": "Redimensionar tabla",
+  "What's new in LeonardoMD": "Novedades de LeonardoMD",
+  "Version %@": "Versión %@",
+  "PR #%d": "PR #%d",
+  "No detailed summary was recorded for this historical change.": "No se registró un resumen detallado de este cambio histórico.",
+  "No additional changes in this version interval.": "No hay cambios adicionales en este intervalo de versiones.",
+  "Do not show again for this version": "No volver a mostrar para esta versión",
+  "Release notes": "Notas de la versión",
+  "Release notes…": "Notas de la versión…",
+  "Release notes are unavailable": "Las notas de la versión no están disponibles",
+  "This application bundle has no valid release notes for its version.": "Esta aplicación no incluye notas válidas para su versión.",
+  "An earlier version is installed. Showing its recorded history, not changes added by this downgrade.": "Hay una versión anterior instalada. Se muestra su historial registrado; estos cambios no se han añadido al volver a ella.",
+  "Changes since version %@": "Cambios desde la versión %@",
+  "Recorded history since version %@. Earlier changes may not be available.": "Historial registrado desde la versión %@. Es posible que no estén disponibles los cambios anteriores."
 }

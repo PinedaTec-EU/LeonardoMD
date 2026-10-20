@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.482
+
+- #209 Added: per-PR summaries and native startup release notes ([#210](https://github.com/PinedaTec-EU/LeonardoMD/pull/210))
+
+<p>LeonardoMD shows the changes included in each new version at startup. You can hide the notice for that version or reopen it from the application menu.</p>
+
+Source: `45fcdebc654eb7f944dbc734081824d37350b699`. Delta: `{"build": 6}`.
+
 ## 0.1.476
 
 - #206 Added: inline form controls and contextual field help ([#207](https://github.com/PinedaTec-EU/LeonardoMD/pull/207))

@@ -12,6 +12,7 @@ rm -rf "$app_dir"
 mkdir -p "$app_dir/Contents/MacOS" "$app_dir/Contents/Resources"
 cp "$bin_dir/LeonardoMD" "$app_dir/Contents/MacOS/"
 python3 scripts/package-version.py version.nfo scripts/Info.plist "$app_dir/Contents/Info.plist"
+python3 scripts/package-release-changes.py deploy/release-changes.json version.nfo "$app_dir/Contents/Resources/ReleaseChanges.json"
 cp assets/AppIcon/LeonardoMD.icns "$app_dir/Contents/Resources/"
 for resource in "$bin_dir"/*.bundle; do
   [ -e "$resource" ] || continue

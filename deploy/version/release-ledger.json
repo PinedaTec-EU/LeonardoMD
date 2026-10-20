@@ -41,8 +41,10 @@
         "doc/validation/document-tabs.md",
         "doc/releases.md"
       ],
-      "require_issue_title": true
-    }
+      "require_issue_title": true,
+      "require_summary_from_pr": 210
+    },
+    "changes_output_path": "deploy/release-changes.json"
   },
   "release_notes": {
     "path": "deploy/release-notes.md",

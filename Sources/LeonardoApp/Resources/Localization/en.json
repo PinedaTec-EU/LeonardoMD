@@ -446,5 +446,18 @@
   "Resize row": "Resize row",
   "Resize table width": "Resize table width",
   "Resize table height": "Resize table height",
-  "Resize table": "Resize table"
+  "Resize table": "Resize table",
+  "What's new in LeonardoMD": "What's new in LeonardoMD",
+  "Version %@": "Version %@",
+  "PR #%d": "PR #%d",
+  "No detailed summary was recorded for this historical change.": "No detailed summary was recorded for this historical change.",
+  "No additional changes in this version interval.": "No additional changes in this version interval.",
+  "Do not show again for this version": "Do not show again for this version",
+  "Release notes": "Release notes",
+  "Release notes…": "Release notes…",
+  "Release notes are unavailable": "Release notes are unavailable",
+  "This application bundle has no valid release notes for its version.": "This application bundle has no valid release notes for its version.",
+  "An earlier version is installed. Showing its recorded history, not changes added by this downgrade.": "An earlier version is installed. Showing its recorded history, not changes added by this downgrade.",
+  "Changes since version %@": "Changes since version %@",
+  "Recorded history since version %@. Earlier changes may not be available.": "Recorded history since version %@. Earlier changes may not be available."
 }
