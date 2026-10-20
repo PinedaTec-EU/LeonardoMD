@@ -62,7 +62,11 @@ final class AboutWindow: NSWindowController, NSWindowDelegate {
         guard let window, window.sheetParent == nil else { return }
         parent.beginSheet(window) { [weak self] response in
             guard response == .OK else { return }
-            self?.onReleaseNotes()
+            // AppKit detaches the sheet after its completion handler returns.
+            Task { @MainActor [weak self] in
+                await Task.yield()
+                self?.onReleaseNotes()
+            }
         }
     }
     func requestReleaseNotes() {

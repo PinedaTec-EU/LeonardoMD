@@ -19,3 +19,11 @@ Historical pre-ledger validation on 2026-10-07 (the version text below is retain
 For [PR #248](https://github.com/PinedaTec-EU/LeonardoMD/pull/248) only, the owner explicitly instructed on 2026-10-20: “fusiona, validare en el canal beta” (“merge; I will validate in the beta channel”). This direct instruction authorizes deferring the pre-merge native screenshots, packaged About visual verification, pointer interaction and visual acceptance of all sheets/dialogs changed by that PR until beta. It overrides those visual evidence requirements for this candidate only; it establishes no general exception for future changes.
 
 Reason: a prior QA instance retains a detached application-modal alert that automation cannot expose for normal cancellation, preventing an independent product instance. Alternative pre-merge evidence is automated native sheet ownership, nesting, close/reopen, startup continuation, cancellation and stale-operation regression coverage, full tests and exact-head CI/package inspection. Correctness, data safety, current-head CI, release-ledger policy and the fresh strict judge remain mandatory. No visual check is marked passed. Appearance, pointer behavior and packaged first-window interaction remain a residual risk for owner acceptance in beta under [issue #247](https://github.com/PinedaTec-EU/LeonardoMD/issues/247).
+
+
+## Release notes access
+
+Tracking: [#254](https://github.com/PinedaTec-EU/LeonardoMD/issues/254).
+After hiding release notes with startup suppression enabled, open **LeonardoMD → About LeonardoMD → Release notes…**. About must dismiss before the release-notes sheet appears on the document. Close the notes and reopen them directly using **LeonardoMD → Release notes…**. Verify both paths in Spanish and English. Closing About with Close or Escape must not open notes.
+
+`InformationSheetTests` covers dismissal-before-callback, normal close without callback and reopening About. `ReleaseNotesTests` covers manual presentation despite startup suppression. Packaged native pointer/visual acceptance remains separate from those XCTest checks.
