@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ReleaseNotesView: View {
+    @Environment(\.leonardoAccent) private var accent
     let notes: ReleaseChanges
     let baseline: String?
     @State var suppress: Bool = true
@@ -24,6 +25,7 @@ struct ReleaseNotesView: View {
                                 Link(L10n.format("PR #%d", change.pr), destination: URL(
                                     string: "https://github.com/\(notes.repository)/pull/\(change.pr)"
                                 )!)
+                                .foregroundStyle(accent)
                                 Spacer()
                                 Text(change.toVersion).foregroundStyle(.secondary).font(.caption)
                             }
