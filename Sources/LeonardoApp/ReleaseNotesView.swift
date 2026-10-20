@@ -47,12 +47,14 @@ struct ReleaseNotesView: View {
                     .onChange(of: suppress) { _, value in onSuppressionChange(value) }
                     .accessibilityIdentifier("release-notes-suppress")
                 Button(L10n.text("Done"), action: onClose)
+                    .buttonStyle(PremiumButtonStyle(prominent: true))
                     .keyboardShortcut(.defaultAction)
                     .accessibilityIdentifier("release-notes-done")
             }
             .padding(20)
         }
         .frame(minWidth: 620, minHeight: 400)
+        .background(.background)
         .accessibilityIdentifier("release-notes-window")
     }
 

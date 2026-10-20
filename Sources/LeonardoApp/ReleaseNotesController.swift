@@ -31,7 +31,7 @@ final class ReleaseNotesController: NSObject, NSWindowDelegate {
 
     /// Called after Finder opens finish. Forwarded launches never create another notice.
     @discardableResult
-    func presentAtStartup(on parent: NSWindow, afterClosing: @escaping () -> Void) -> Bool {
+    func presentAtStartup(on parent: NSWindow, session: AppSession, afterClosing: @escaping () -> Void) -> Bool {
         if window?.isVisible == true {
             if !attemptedStartup { attemptedStartup = true; self.afterClosing = afterClosing }
             return true
@@ -40,11 +40,11 @@ final class ReleaseNotesController: NSObject, NSWindowDelegate {
         attemptedStartup = true
         guard let notes, preferences.shouldPresent(version: notes.version) else { return false }
         self.afterClosing = afterClosing
-        present(notes, on: parent)
+        present(notes, on: parent, session: session)
         return true
     }
 
-    func presentManually(on parent: NSWindow) {
+    func presentManually(on parent: NSWindow, session: AppSession) {
         if let window, window.isVisible { window.makeKeyAndOrderFront(nil); return }
         guard let notes else {
             let alert = NSAlert()
@@ -53,10 +53,10 @@ final class ReleaseNotesController: NSObject, NSWindowDelegate {
             alert.beginSheetModal(for: parent)
             return
         }
-        present(notes, on: parent)
+        present(notes, on: parent, session: session)
     }
 
-    private func present(_ notes: ReleaseChanges, on parent: NSWindow) {
+    private func present(_ notes: ReleaseChanges, on parent: NSWindow, session: AppSession) {
         baseline = preferences.baseline(for: notes.version)
         suppress = preferences.suppressionDefault(for: notes.version)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 760, height: 580),
@@ -69,7 +69,7 @@ final class ReleaseNotesController: NSObject, NSWindowDelegate {
             notes: notes, baseline: baseline, suppress: suppress,
             onSuppressionChange: { [weak self] value in self?.suppress = value },
             onClose: { [weak self] in self?.window?.close() }
-        ))
+        ).modifier(SessionAppearance(session: session)))
         self.window = window
         parent.beginSheet(window)
         logger.info("release_notes_presented version=\(notes.version, privacy: .public)")
