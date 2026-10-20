@@ -139,12 +139,12 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
                 // Loading can suspend while another application takes focus.
                 bringWindowsToFront()
             }
-            if !terminationPending, let window = windows.last?.window {
+            if !terminationPending, let controller = windows.last, let window = controller.window {
                 let continueStartup = { [weak window] in
                     guard let window, window.isVisible else { return }
                     MarkdownAssociations.shared.presentStartupPrompt(on: window)
                 }
-                if !releaseNotes.presentAtStartup(on: window, afterClosing: continueStartup) { continueStartup() }
+                if !releaseNotes.presentAtStartup(on: window, session: controller.session, afterClosing: continueStartup) { continueStartup() }
             }
         }
     }
@@ -243,7 +243,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     }
     @objc private func showReleaseNotes() {
         guard let parent = informationSheetParent else { return }
-        releaseNotes.presentManually(on: parent)
+        guard let controller = windows.first(where: { $0.window === parent }) else { return }
+        releaseNotes.presentManually(on: parent, session: controller.session)
     }
 
     private var informationSheetParent: NSWindow? {

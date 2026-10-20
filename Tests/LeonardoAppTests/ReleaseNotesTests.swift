@@ -164,26 +164,26 @@ final class ReleaseNotesControllerTests: XCTestCase {
         let controller = ReleaseNotesController(notes: notes, preferences: preferences)
         var continuations = 0
         let continued = expectation(description: "Startup continues after the release notes close")
-        XCTAssertTrue(controller.presentAtStartup(on: parent) { continuations += 1; continued.fulfill() })
+        XCTAssertTrue(controller.presentAtStartup(on: parent, session: AppSession()) { continuations += 1; continued.fulfill() })
         let first = try XCTUnwrap(controller.window)
         XCTAssertTrue(first.isVisible)
         XCTAssertTrue(first.sheetParent === parent)
         XCTAssertTrue(parent.attachedSheet === first)
-        XCTAssertTrue(controller.presentAtStartup(on: parent) { XCTFail("Forwarded launch replaced the original continuation") })
+        XCTAssertTrue(controller.presentAtStartup(on: parent, session: AppSession()) { XCTFail("Forwarded launch replaced the original continuation") })
         XCTAssertTrue(controller.window === first)
         first.close()
         await fulfillment(of: [continued], timeout: 2)
         XCTAssertEqual(continuations, 1)
         XCTAssertNil(parent.attachedSheet)
         XCTAssertFalse(preferences.shouldPresent(version: notes.version))
-        XCTAssertFalse(controller.presentAtStartup(on: parent) { XCTFail("Startup ran twice") })
-        controller.presentManually(on: parent)
+        XCTAssertFalse(controller.presentAtStartup(on: parent, session: AppSession()) { XCTFail("Startup ran twice") })
+        controller.presentManually(on: parent, session: AppSession())
         XCTAssertTrue(controller.window?.isVisible == true)
         controller.window?.close()
         let nextProcess = ReleaseNotesController(notes: notes, preferences: preferences)
-        XCTAssertFalse(nextProcess.presentAtStartup(on: parent) { XCTFail("Suppressed version presented") })
+        XCTAssertFalse(nextProcess.presentAtStartup(on: parent, session: AppSession()) { XCTFail("Suppressed version presented") })
         let newer = ReleaseNotesController(notes: try releaseNotesFixture(count: 4), preferences: preferences)
-        XCTAssertTrue(newer.presentAtStartup(on: parent) {})
+        XCTAssertTrue(newer.presentAtStartup(on: parent, session: AppSession()) {})
         newer.window?.close()
     }
 
@@ -198,9 +198,9 @@ final class ReleaseNotesControllerTests: XCTestCase {
         parent.makeKeyAndOrderFront(nil)
         defer { parent.close() }
         let controller = ReleaseNotesController(notes: try releaseNotesFixture(), preferences: ReleaseNotesPreferences(defaults: defaults))
-        controller.presentManually(on: parent)
+        controller.presentManually(on: parent, session: AppSession())
         let continued = expectation(description: "Manual notice continues pending startup")
-        XCTAssertTrue(controller.presentAtStartup(on: parent) { continued.fulfill() })
+        XCTAssertTrue(controller.presentAtStartup(on: parent, session: AppSession()) { continued.fulfill() })
         controller.window?.close()
         await fulfillment(of: [continued], timeout: 2)
     }
@@ -215,7 +215,7 @@ final class ReleaseNotesControllerTests: XCTestCase {
         parent.makeKeyAndOrderFront(nil)
         defer { parent.close() }
         let controller = ReleaseNotesController(notes: nil, preferences: ReleaseNotesPreferences(defaults: defaults))
-        XCTAssertFalse(controller.presentAtStartup(on: parent) {})
+        XCTAssertFalse(controller.presentAtStartup(on: parent, session: AppSession()) {})
         XCTAssertNil(controller.window)
     }
 }
