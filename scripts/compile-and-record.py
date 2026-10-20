@@ -23,7 +23,7 @@ def read_delta(path: Path) -> dict:
         import unicodedata
         text = delta["summary"]
         if (not isinstance(text, str) or not text or text != text.strip() or len(text) > 280
-                or any(unicodedata.category(char) in {"Cc", "Zl", "Zp"} for char in text)):
+                or any(unicodedata.category(char) in {"Cc", "Cs", "Zl", "Zp"} for char in text)):
             raise ValueError("Summary must be 1–280 single-line plain-text characters")
     return delta
 

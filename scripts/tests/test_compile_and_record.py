@@ -77,7 +77,7 @@ class CompileAndRecordTests(unittest.TestCase):
         result = self.record()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(self.entry.read_text()), {"summary": summary, "build": 2})
-        for invalid in ["", "line\nbreak", " leading", "x" * 281]:
+        for invalid in ["", "line\nbreak", " leading", "bad\ud800text", "x" * 281]:
             content = json.dumps({"summary": invalid, "build": 2})
             self.entry.write_text(content)
             self.assertNotEqual(self.record().returncode, 0)
