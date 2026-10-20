@@ -60,13 +60,9 @@
     } else if (field.type !== "multiline") {
       input.type = ["email", "url"].includes(field.type) ? field.type : "text";
       if (field.type === "number") input.inputMode = "decimal";
-      if (field.type === "date" && value && !/^\d{4}-\d\d-\d\d$/.test(String(value))) input.type = "text";
     }
     if (field.type !== "checkbox") {
       input.value = value === null || value === undefined ? "" : String(value);
-      if (field.type === "date" && value && input.value !== String(value)) {
-        input.type = "text"; input.value = String(value);
-      }
     }
     if (field.placeholder) input.placeholder = field.placeholder;
     input.setAttribute("aria-required", String(!!field.required));

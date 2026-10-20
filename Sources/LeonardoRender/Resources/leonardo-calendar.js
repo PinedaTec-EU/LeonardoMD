@@ -29,6 +29,7 @@
       panel.setAttribute("role", "group");
       panel.setAttribute("aria-label", words[0]);
       const toggle = button("▦", words[0], () => panel.hidden ? open() : close());
+      toggle.disabled = input.disabled;
       toggle.className = "leonardo-calendar-toggle";
       toggle.setAttribute("aria-controls", panel.id); toggle.setAttribute("aria-expanded", "false");
       const header = document.createElement("span"); header.className = "leonardo-calendar-header";
@@ -59,6 +60,7 @@
           const date = new Date(shown); date.setDate(number);
           const value = iso(date);
           const day = button(String(number), new Intl.DateTimeFormat(locale, {dateStyle: "full"}).format(date), () => {
+            if (input.disabled) return;
             input.value = value; input.dispatchEvent(new Event("input", {bubbles: true}));
             close(); input.focus();
           });
@@ -77,6 +79,7 @@
         if (focusDate) grid.querySelector(`[data-date="${focusDate}"]`)?.focus();
       }
       function open() {
+        if (input.disabled) return;
         closeActive?.(); closeActive = close;
         const selected = parse(input.value) || new Date();
         shown = new Date(selected); shown.setDate(1);

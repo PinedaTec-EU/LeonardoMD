@@ -41,11 +41,17 @@ final class FormCalendarTests: XCTestCase {
           const escaped = panel.hidden;
           LeonardoForms.setExporting(true);
           const exported = getComputedStyle(root.querySelector('.leonardo-calendar-toggle')).display === 'none';
-          return {leap, keyboard, saved, synchronized, draft, themed, escaped, exported};
+          LeonardoForms.begin({allowsFormFilling: false}, root);
+          const locked = LeonardoForms.field('locked', {type: 'date'}, '2024-02-29'); root.append(locked);
+          const lockedInput = locked.querySelector('input');
+          locked.querySelector('.leonardo-calendar-toggle').click();
+          lockedInput.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowDown', altKey: true, bubbles: true}));
+          const protectedDate = locked.querySelector('.leonardo-calendar-toggle').disabled && locked.querySelector('.leonardo-calendar').hidden && lockedInput.value === '2024-02-29' && Object.keys(LeonardoForms.snapshot().changes).length === 0;
+          return {leap, keyboard, saved, synchronized, draft, themed, escaped, exported, protectedDate};
         })()
         """) as? [String: Bool]
         let checks = try XCTUnwrap(result)
         for (name, passed) in checks { XCTAssertTrue(passed, name) }
-        XCTAssertEqual(checks.count, 8)
+        XCTAssertEqual(checks.count, 9)
     }
 }

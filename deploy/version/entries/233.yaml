@@ -1,3 +1,4 @@
 {
-  "build": 2
+  "build": 4,
+  "summary": "Form date fields offer a larger calendar that follows the active document theme, with localized month labels and keyboard navigation while preserving editable date drafts."
 }
