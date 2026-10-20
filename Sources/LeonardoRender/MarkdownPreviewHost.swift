@@ -308,6 +308,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             onReady?(false)
             loadStartedAtUptime = DispatchTime.now().uptimeNanoseconds
             formState.baseline = content
+            documentHandler?.beginDocument()
             webView.loadHTMLString(html, baseURL: htmlBaseURL)
         } catch {
             loadStartedAtUptime = nil
@@ -332,6 +333,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
                 configuration: configuration
             )
             formState.baseline = content
+            documentHandler?.beginDocument()
             evaluate("window.LeonardoPreview && window.LeonardoPreview.updateContent(\(payload));")
         } catch {
             scheduleLoad(immediately: true)

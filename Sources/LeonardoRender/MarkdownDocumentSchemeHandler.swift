@@ -5,6 +5,7 @@ import os.log
 
 @MainActor
 final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
+    private var documentID = 0
     private let imageLoader = MarkdownImageLoader()
     private var requests: [ObjectIdentifier: Task<Void, Never>] = [:]
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "images")
@@ -45,10 +46,14 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
         }
         let target = imageTarget(url: url, webView: webView)
         let loader = imageLoader
+        let generation = documentID
+        let started = DispatchTime.now().uptimeNanoseconds
         requests[id] = Task { [weak self] in
             do {
-                let resource = try await loader.load(input, target: target)
+                let resource = try await loader.load(input, target: target, documentID: generation, identity: url.path)
                 guard !Task.isCancelled, let self, self.requests.removeValue(forKey: id) != nil else { return }
+                let milliseconds = Double(DispatchTime.now().uptimeNanoseconds - started) / 1_000_000
+                self.logger.debug("image_load_completed encoded_bytes=\(resource.data.count, privacy: .public) estimated_bytes=\(resource.estimatedBytes, privacy: .public) duration_ms=\(milliseconds, privacy: .public)")
                 urlSchemeTask.didReceive(URLResponse(url: url, mimeType: resource.mimeType,
                     expectedContentLength: resource.data.count, textEncodingName: nil))
                 urlSchemeTask.didReceive(resource.data)
@@ -64,6 +69,11 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
 
     func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {
         requests.removeValue(forKey: ObjectIdentifier(urlSchemeTask))?.cancel()
+    }
+
+    func beginDocument() {
+        cancelAll()
+        documentID += 1
     }
 
     func cancelAll() {

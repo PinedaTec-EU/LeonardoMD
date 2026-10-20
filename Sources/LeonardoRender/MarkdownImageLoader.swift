@@ -1,5 +1,7 @@
 import Foundation
+import Darwin
 import ImageIO
+import CryptoKit
 import UniformTypeIdentifiers
 
 /// One actor per web view serializes reads/decodes. No original or thumbnail cache is retained.
@@ -15,32 +17,47 @@ actor MarkdownImageLoader {
         let estimatedBytes: Int
     }
 
+    private static let allowedSourceTypes = [UTType.jpeg, .png, .gif, .webP].map(\.identifier)
     private let policy: MarkdownImagePolicy
     private var admittedBytes = 0
-    private var admittedRequests = 0
+    private var admissions: Set<String> = []
+    private var documentID = 0
 
     init(policy: MarkdownImagePolicy = .standard) { self.policy = policy }
 
-    func load(_ input: Input, target: MarkdownImagePolicy.Target) throws -> Resource {
+    func load(_ input: Input, target: MarkdownImagePolicy.Target, documentID: Int = 0,
+              identity: String = "") throws -> Resource {
         try Task.checkCancellation()
-        guard admittedRequests < policy.maximumRequests,
-              admittedBytes < policy.maximumDocumentBytes else { throw MarkdownImageError.documentLimit }
+        guard documentID >= self.documentID else { throw CancellationError() }
+        if documentID > self.documentID {
+            self.documentID = documentID
+            admittedBytes = 0
+            admissions.removeAll()
+        }
+        let (data, extensionName) = try read(input)
+        let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        let key = "\(identity)|\(extensionName)|\(target.longestSide)|\(target.pixels)|\(digest)"
+        let isRepeat = admissions.contains(key)
+        guard isRepeat || (admissions.count < policy.maximumRequests && admittedBytes < policy.maximumDocumentBytes) else {
+            throw MarkdownImageError.documentLimit
+        }
         let resource = try autoreleasepool {
-            let (data, extensionName) = try read(input)
             try Task.checkCancellation()
             if extensionName == "svg" {
                 // Keep vector rendering and intrinsic dimensions; do not flatten SVG into a bitmap.
                 guard data.count <= policy.maximumSVGBytes else { throw MarkdownImageError.inputTooLarge }
-                return Resource(data: data, mimeType: "image/svg+xml", estimatedBytes: data.count + target.pixels * MarkdownImagePolicy.bytesPerPixel)
+                return Resource(data: data, mimeType: "image/svg+xml", estimatedBytes: data.count + MarkdownSVGImage.estimatedPixels(data, target: target) * MarkdownImagePolicy.bytesPerPixel)
             }
             return try raster(data, target: target)
         }
         try Task.checkCancellation()
-        guard resource.estimatedBytes <= policy.maximumDocumentBytes - admittedBytes else {
+        guard isRepeat || resource.estimatedBytes <= policy.maximumDocumentBytes - admittedBytes else {
             throw MarkdownImageError.documentLimit
         }
-        admittedBytes += resource.estimatedBytes
-        admittedRequests += 1
+        if !isRepeat {
+            admittedBytes += resource.estimatedBytes
+            admissions.insert(key)
+        }
         return resource
     }
 
@@ -51,8 +68,14 @@ actor MarkdownImageLoader {
             return (data, extensionName)
         case .file(let url):
             let limit = inputLimit(url.pathExtension.lowercased())
-            let handle = try FileHandle(forReadingFrom: url)
+            let descriptor = open(url.path, O_RDONLY | O_NONBLOCK | O_CLOEXEC)
+            guard descriptor >= 0 else { throw MarkdownImageError.invalidImage }
+            let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
             defer { try? handle.close() }
+            var metadata = stat()
+            guard fstat(descriptor, &metadata) == 0, metadata.st_mode & S_IFMT == S_IFREG else {
+                throw MarkdownImageError.invalidImage
+            }
             // Check this open descriptor, then bound every read too (the file may grow).
             guard try handle.seekToEnd() <= UInt64(limit) else { throw MarkdownImageError.inputTooLarge }
             try handle.seek(toOffset: 0)
@@ -78,8 +101,10 @@ actor MarkdownImageLoader {
         guard let source = CGImageSourceCreateWithData(data as CFData, options) else {
             throw MarkdownImageError.invalidImage
         }
+        guard let type = CGImageSourceGetType(source), Self.allowedSourceTypes.contains(type as String),
+              CGImageSourceGetCount(source) > 0 else { throw MarkdownImageError.invalidImage }
         let count = CGImageSourceGetCount(source)
-        guard count > 0, count <= policy.maximumFrames else { throw MarkdownImageError.pixelLimit }
+        guard count <= policy.maximumFrames else { throw MarkdownImageError.pixelLimit }
         let size = try dimensions(source, index: 0)
         guard size.pixels <= policy.maximumSourcePixels else { throw MarkdownImageError.pixelLimit }
         if count > 1 {

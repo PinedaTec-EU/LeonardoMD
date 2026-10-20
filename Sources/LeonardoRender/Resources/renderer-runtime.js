@@ -313,7 +313,7 @@
       await Promise.all(diagrams.map((element) => renderDiagram(element)));
     }
     await waitForDocumentAssets();
-    window.LeonardoImages.preparePDF(root);
+    await window.LeonardoImages.preparePDF(root);
     await waitForDocumentAssets();
   }
 

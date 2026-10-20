@@ -99,6 +99,10 @@ body[data-paper-effect="parchment"] {
   max-width: 100%;
 }
 
+.markdown-body img[data-leonardo-image-failed] {
+  display: none !important;
+}
+
 .markdown-body blockquote {
   border-left: 4px solid var(--ld-accent);
   margin-left: 0;

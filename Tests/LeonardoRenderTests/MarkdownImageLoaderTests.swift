@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 import ImageIO
 import Testing
 import UniformTypeIdentifiers
@@ -20,6 +21,15 @@ struct MarkdownImageLoaderTests {
         await #expect(throws: MarkdownImageError.inputTooLarge) { try await loader.load(.file(url), target: target) }
         await #expect(throws: MarkdownImageError.inputTooLarge) {
             try await loader.load(.memory(Data(count: 101), extensionName: "png"), target: target)
+        }
+    }
+
+    @Test func rejectsNonRegularFilesWithoutBlocking() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
+        defer { try? FileManager.default.removeItem(at: url) }
+        #expect(mkfifo(url.path, S_IRUSR | S_IWUSR) == 0)
+        await #expect(throws: MarkdownImageError.invalidImage) {
+            try await MarkdownImageLoader().load(.file(url), target: target)
         }
     }
 
@@ -94,16 +104,21 @@ struct MarkdownImageLoaderTests {
         }
     }
 
-    @Test func repeatedLoadsCannotBypassLifetimeBudget() async throws {
+    @Test func distinctResourcesRespectBudgetAndRepeatsDoNotExhaustIt() async throws {
         let bytes = try fixture(width: 20, height: 20)
         let input = MarkdownImageLoader.Input.memory(bytes, extensionName: "png")
         let resource = try await MarkdownImageLoader().load(input, target: target)
         var policy = MarkdownImagePolicy.standard
         policy.maximumDocumentBytes = resource.estimatedBytes * 2
         let loader = MarkdownImageLoader(policy: policy)
-        _ = try await loader.load(input, target: target)
-        _ = try await loader.load(input, target: target)
-        await #expect(throws: MarkdownImageError.documentLimit) { try await loader.load(input, target: target) }
+        _ = try await loader.load(input, target: target, identity: "a")
+        for _ in 0..<10 { _ = try await loader.load(input, target: target, identity: "a") }
+        _ = try await loader.load(input, target: target, identity: "b")
+        await #expect(throws: MarkdownImageError.documentLimit) {
+            try await loader.load(input, target: target, identity: "c")
+        }
+        _ = try await loader.load(input, target: target, documentID: 1, identity: "c")
+        await #expect(throws: CancellationError.self) { try await loader.load(input, target: target) }
     }
 
     @Test func cancelledWorkDoesNotConsumeAdmissionBudget() async throws {
@@ -117,7 +132,9 @@ struct MarkdownImageLoaderTests {
         }
         await #expect(throws: CancellationError.self) { try await task.value }
         _ = try await loader.load(input, target: target)
-        await #expect(throws: MarkdownImageError.documentLimit) { try await loader.load(input, target: target) }
+        await #expect(throws: MarkdownImageError.documentLimit) {
+            try await loader.load(input, target: target, identity: "another")
+        }
     }
 
     private func size(_ bytes: Data) throws -> (Int, Int) {
