@@ -13,7 +13,7 @@ signature verification, canonical bundle/version identity and artifact byte/hash
 See [release contract](../doc/release-version-ledger.md#native-release-notes).
 Tracking: [#209](https://github.com/PinedaTec-EU/LeonardoMD/issues/209).
 
-Integrated engine: `d5bf9cbf0b5a2c92dfb6fafa24e718fa3fcedebe` ([central #324](https://github.com/PinedaTec-EU/pinedatec-ci/pull/324)); central catalog activation: [#327](https://github.com/PinedaTec-EU/pinedatec-ci/pull/327). Source activation is PR #210; actual post-merge materialization remains required.
+Integrated beta-history engine: `a127e62249b6cd89935128e5fbd835e1f8c6528a` ([central #334](https://github.com/PinedaTec-EU/pinedatec-ci/pull/334)); catalog activation: [#336](https://github.com/PinedaTec-EU/pinedatec-ci/pull/336). The native notice and source summaries introduced by PR #210 were materialized as 0.1.482. Beta policy activation and live acceptance are tracked in [#239](https://github.com/PinedaTec-EU/LeonardoMD/issues/239).
 
 
 Published betas now opt into the central `allow_prerelease` policy. Historical
@@ -22,3 +22,5 @@ PR windows; notes/attach replay never changes version state. Packaged startup
 changes already include beta PRs and use numeric-version intervals and unique PR
 IDs. Same-version promotion reuses suppression; no parallel channel reader is
 needed. Consumer tracking: [#239](https://github.com/PinedaTec-EU/LeonardoMD/issues/239).
+
+Policy checks bind both the PR head and selected engine SHA. After an engine pin changes, refresh an open consumer head before revalidating; do not reuse or remove a check bound to the former engine.
