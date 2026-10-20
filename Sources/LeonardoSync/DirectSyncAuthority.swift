@@ -1,9 +1,5 @@
 import Foundation
 
-public enum GitWakeupDeliveryError: Error, Sendable {
-    case unavailable
-}
-
 public struct SharedProjectDescriptor: Codable, Equatable, Sendable, Identifiable {
     public let id: UUID
     public let name: String
@@ -42,8 +38,6 @@ public struct DirectDeviceStatus: Codable, Sendable {
 
 public enum DirectAuthorityError: Error, Sendable { case busy }
 
-public typealias GitReconciliationWakeupHandler = @Sendable (UUID, GitReconciliationWakeup) async throws -> Void
-
 /// Single owner for consent state; a persisted mutation becomes visible atomically.
 public actor DirectSyncAuthority {
     private var registry: PairingRegistry
@@ -54,13 +48,11 @@ public actor DirectSyncAuthority {
     private var sourceEpoch = UUID()
     private let uploads: (any DesktopPeerUploadStore)?
     private let receipts: (any DesktopPeerReceiptStore)?
-    private let gitWakeup: GitReconciliationWakeupHandler
 
     public init(registry: PairingRegistry, projects: [SharedProjectSource], serverFingerprint: Data,
                 persist: @escaping @Sendable (PairingRegistry) async throws -> Void,
                 uploads: (any DesktopPeerUploadStore)? = nil,
-                receipts: (any DesktopPeerReceiptStore)? = nil,
-                gitWakeup: GitReconciliationWakeupHandler? = nil) throws {
+                receipts: (any DesktopPeerReceiptStore)? = nil) throws {
         guard serverFingerprint.count == 32, Set(projects.map { $0.descriptor.id }).count == projects.count else {
             throw PairingError.invalidProject
         }
@@ -70,7 +62,6 @@ public actor DirectSyncAuthority {
         self.persist = persist
         self.uploads = uploads
         self.receipts = receipts
-        self.gitWakeup = gitWakeup ?? { _, _ in throw GitWakeupDeliveryError.unavailable }
     }
 
     public func consentState() -> PairingRegistry { registry }
@@ -128,45 +119,6 @@ public actor DirectSyncAuthority {
         return snapshot
     }
 
-    /// Delivers an authenticated prompt for an already-published Git result.
-    ///
-    /// This route has no corpus or Git write authority. The authenticated
-    /// pairing device must hold the exact desktop source-project grant and the
-    /// payload must repeat that source project's scope. The Git project/device
-    /// identifiers are metadata for the desktop consumer only.
-    public func notifyGitReconciliation(deviceID: UUID, credential: String,
-                                        wakeup: GitReconciliationWakeup) async throws {
-        guard !changing else { throw DirectAuthorityError.busy }
-        try registry.authorizeNotification(deviceID: deviceID, credential: credential,
-                                           projectID: wakeup.sourceProjectID)
-        guard let source = projects[wakeup.sourceProjectID] else { throw PairingError.invalidProject }
-        guard source.descriptor.allowsGitScope(wakeup.scope) else { throw SyncError.outsideScope }
-        try await gitWakeup(deviceID, wakeup)
-    }
-
-    private func checkAccess(deviceID: UUID, credential: String, projectID: UUID) throws {
-        guard !changing else { throw DirectAuthorityError.busy }
-        guard try registry.access(deviceID: deviceID, credential: credential, projectID: projectID) == .authorized else {
-            throw SyncError.revoked
-        }
-    }
-
-    private func mutate<Result: Sendable>(_ operation: (inout PairingRegistry) throws -> Result) async throws -> Result {
-        guard !changing else { throw DirectAuthorityError.busy }
-        changing = true
-        defer { changing = false }
-        var updated = registry
-        let result = try operation(&updated)
-        try await persist(updated)
-        registry = updated
-        return result
-    }
-}
-
-
-extension DirectSyncAuthority {
-    /// An authenticated client may close only the exact proposal whose durable result it
-    /// incorporated. Keep consent stable across storage awaits and retain the receipt.
     public func acknowledgeProposal(deviceID: UUID, credential: String, projectID: UUID,
                                     proposalID: UUID, proof: DesktopPeerReceiptAcknowledgement) async throws {
         let selection = try uploadSelection(deviceID: deviceID, credential: credential, projectID: projectID)

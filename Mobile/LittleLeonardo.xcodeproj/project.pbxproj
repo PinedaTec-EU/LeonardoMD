@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		15243E6517E367904B34E1C3 /* PairingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88DCAC3D27E3676EFE8737FB /* PairingUITests.swift */; };
 		22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */; };
-		2975E7C88EF2E456639DF78D /* LeonardoGit in Frameworks */ = {isa = PBXBuildFile; productRef = A72E4C8D0C7EA0F675C95B38 /* LeonardoGit */; };
 		2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7849226B36C61649B125BDDC /* MobileLibraryView.swift */; };
 		3E6C7AD17D9D0EDFB5E779BA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
 		46EBC1E01C1296D54919D7A0 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
@@ -18,11 +17,7 @@
 		852C58BAA8EDEDB67FDE7FB4 /* LeonardoSync in Frameworks */ = {isa = PBXBuildFile; productRef = 7CAAF1CC01593584A9E0A7F9 /* LeonardoSync */; };
 		C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */; };
 		DA52AFC54A29A9980B0601CC /* MobileQRScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */; };
-		674D0F49D2B450080B6C231E /* MobileGitConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95A6ED863D98F79753412C6A /* MobileGitConnectionView.swift */; };
-		E690EC10B778650361B2EF4D /* MobileGitEnrollment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3047F16A76D2E7CF7DC39C63 /* MobileGitEnrollment.swift */; };
-		562AF6F093F6017BC6111959 /* MobileGitSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5766F05ABFB4290C2135DFCB /* MobileGitSender.swift */; };
-		FC0D3FAC5AD74CCF9D75A451 /* MobileGitIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70CAB6D3C2D948039788E971 /* MobileGitIntegration.swift */; };
-		A8F6D0E4C9B741D3B1E6F205 /* MobileGitDirectMappingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4E8C1F9A2D64307A5D0E8C1 /* MobileGitDirectMappingView.swift */; };
+		FC0D3FAC5AD74CCF9D75A451 /* MobileRecoveryDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70CAB6D3C2D948039788E971 /* MobileRecoveryDocument.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,11 +39,7 @@
 		C53CBBB8313118CB2CF6782A /* LittleLeonardoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LittleLeonardoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileLibrary.swift; sourceTree = "<group>"; };
 		EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileQRScanner.swift; sourceTree = "<group>"; };
-		95A6ED863D98F79753412C6A /* MobileGitConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileGitConnectionView.swift; sourceTree = "<group>"; };
-		3047F16A76D2E7CF7DC39C63 /* MobileGitEnrollment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileGitEnrollment.swift; sourceTree = "<group>"; };
-		5766F05ABFB4290C2135DFCB /* MobileGitSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileGitSender.swift; sourceTree = "<group>"; };
-		70CAB6D3C2D948039788E971 /* MobileGitIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileGitIntegration.swift; sourceTree = "<group>"; };
-		B4E8C1F9A2D64307A5D0E8C1 /* MobileGitDirectMappingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileGitDirectMappingView.swift; sourceTree = "<group>"; };
+		70CAB6D3C2D948039788E971 /* MobileRecoveryDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRecoveryDocument.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,7 +59,6 @@
 				852C58BAA8EDEDB67FDE7FB4 /* LeonardoSync in Frameworks */,
 				636F71B3D4E9A41FC1842500 /* LeonardoSyncTransport in Frameworks */,
 				6BF5E353F685869C538746E5 /* LeonardoRender in Frameworks */,
-				2975E7C88EF2E456639DF78D /* LeonardoGit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,11 +115,7 @@
 				0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */,
 				D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */,
 				7849226B36C61649B125BDDC /* MobileLibraryView.swift */,
-				5766F05ABFB4290C2135DFCB /* MobileGitSender.swift */,
-				70CAB6D3C2D948039788E971 /* MobileGitIntegration.swift */,
-				B4E8C1F9A2D64307A5D0E8C1 /* MobileGitDirectMappingView.swift */,
-				3047F16A76D2E7CF7DC39C63 /* MobileGitEnrollment.swift */,
-				95A6ED863D98F79753412C6A /* MobileGitConnectionView.swift */,
+				70CAB6D3C2D948039788E971 /* MobileRecoveryDocument.swift */,
 				EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */,
 			);
 			name = LittleLeonardo;
@@ -156,7 +142,6 @@
 				7CAAF1CC01593584A9E0A7F9 /* LeonardoSync */,
 				00F8AB50590ED36AF1934837 /* LeonardoSyncTransport */,
 				3D12268B64E5D2FC1E9F4E35 /* LeonardoRender */,
-				A72E4C8D0C7EA0F675C95B38 /* LeonardoGit */,
 			);
 			productName = LittleLeonardo;
 			productReference = 5B83DAE858F9656CCDF4D6B1 /* LittleLeonardo.app */;
@@ -238,11 +223,7 @@
 				C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */,
 				22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */,
 				2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */,
-				562AF6F093F6017BC6111959 /* MobileGitSender.swift in Sources */,
-				FC0D3FAC5AD74CCF9D75A451 /* MobileGitIntegration.swift in Sources */,
-				A8F6D0E4C9B741D3B1E6F205 /* MobileGitDirectMappingView.swift in Sources */,
-				E690EC10B778650361B2EF4D /* MobileGitEnrollment.swift in Sources */,
-				674D0F49D2B450080B6C231E /* MobileGitConnectionView.swift in Sources */,
+				FC0D3FAC5AD74CCF9D75A451 /* MobileRecoveryDocument.swift in Sources */,
 				DA52AFC54A29A9980B0601CC /* MobileQRScanner.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -510,11 +491,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = EF04C10B9BAEA910A5BF75DB /* XCLocalSwiftPackageReference ".." */;
 			productName = LeonardoSync;
-		};
-		A72E4C8D0C7EA0F675C95B38 /* LeonardoGit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = EF04C10B9BAEA910A5BF75DB /* XCLocalSwiftPackageReference ".." */;
-			productName = LeonardoGit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
