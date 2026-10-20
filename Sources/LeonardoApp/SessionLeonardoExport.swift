@@ -5,7 +5,7 @@ import LeonardoCore
 
 /// Native save-panel actions and portable export adapters for Leonardo files.
 extension AppSession {
-    private struct LeonardoExportIdentity: Sendable {
+    struct LeonardoExportIdentity: Sendable {
         let documentURL: URL
         let kind: AppDocumentKind
         let storage: AppDocumentStorage
@@ -14,7 +14,7 @@ extension AppSession {
         let assetRoot: URL?
     }
 
-    private func leonardoExportIdentity(for requestedURL: URL) -> LeonardoExportIdentity? {
+    func leonardoExportIdentity(for requestedURL: URL) -> LeonardoExportIdentity? {
         guard let currentURL = documentURL?.standardizedFileURL,
               currentURL == requestedURL.standardizedFileURL else { return nil }
         let workspaceDirectory = packageWorkspace?.directoryURL.standardizedFileURL
@@ -29,7 +29,7 @@ extension AppSession {
         )
     }
 
-    private func leonardoExportIdentityIsCurrent(_ identity: LeonardoExportIdentity) -> Bool {
+    func leonardoExportIdentityIsCurrent(_ identity: LeonardoExportIdentity) -> Bool {
         documentURL?.standardizedFileURL == identity.documentURL &&
         documentKind.rawValue == identity.kind.rawValue &&
         documentStorage.rawValue == identity.storage.rawValue &&
@@ -38,7 +38,7 @@ extension AppSession {
         (packageWorkspace?.directoryURL ?? projectURL)?.standardizedFileURL == identity.assetRoot
     }
 
-    private func leonardoExportMayWrite(
+    func leonardoExportMayWrite(
         identity: LeonardoExportIdentity,
         content draft: String,
         snapshotFingerprint: FileFingerprint?
@@ -49,7 +49,7 @@ extension AppSession {
         snapshot?.fingerprint == snapshotFingerprint
     }
 
-    private func leonardoExportSources(for identity: LeonardoExportIdentity) -> [URL] {
+    func leonardoExportSources(for identity: LeonardoExportIdentity) -> [URL] {
         var sources = [identity.documentURL]
         if identity.storage.rawValue == AppDocumentStorage.package.rawValue,
            let packageURL = identity.sourceURL,
@@ -225,7 +225,7 @@ extension AppSession {
     /// user. A package-backed tab has both a temporary working file and the
     /// original package identity; an explicitly extracted tab owns the
     /// working file and must not silently fall back to the package grant.
-    private func authorizeLeonardoExport(sources: [URL], destinationURL: URL) async throws {
+    func authorizeLeonardoExport(sources: [URL], destinationURL: URL) async throws {
         for source in sources {
             try await authorizePath(source.standardizedFileURL, .document)
         }

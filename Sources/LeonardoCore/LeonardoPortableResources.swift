@@ -73,6 +73,51 @@ public enum LeonardoLocalImagePolicy {
         }
     }
 
+    /// A standalone Markdown copy retains only remotely addressable images.
+    static func removingNonportableImages(in body: String) -> String {
+        let masked = maskCodeAndMetadata(body)
+        let definitions = referenceDefinitions(in: body, masked: masked)
+        let patterns = [
+            #"!\[[^\]\n]*\]\(\s*(?:<([^>\n]+)>|([^<\s)]+))(?:\s+["'][^\n]*?["'])?\s*\)"#,
+            #"(?i)<img\b[^>]*>"#,
+            #"!\[([^\]\n]*)\](?:\[([^\]\n]*)\])?(?!\s*\()"#
+        ]
+        var removals: [NSRange] = []
+        for (index, pattern) in patterns.enumerated() {
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
+            for match in regex.matches(in: masked, range: NSRange(masked.startIndex..., in: masked)) {
+                let reference: String?
+                if index == 0 {
+                    let range = match.range(at: match.range(at: 1).location == NSNotFound ? 2 : 1)
+                    reference = Range(range, in: body).map { String(body[$0]) }
+                } else if index == 1 {
+                    let tag = (body as NSString).substring(with: match.range)
+                    let src = try? NSRegularExpression(pattern: #"(?i)\bsrc\s*=\s*(?:["']([^"']+)["']|([^\s>]+))"#)
+                    if let source = src?.firstMatch(in: tag, range: NSRange(tag.startIndex..., in: tag)) {
+                        let range = source.range(at: source.range(at: 1).location == NSNotFound ? 2 : 1)
+                        reference = Range(range, in: tag).map { String(tag[$0]) }
+                    } else { reference = nil }
+                } else {
+                    reference = referenceLabel(for: match, in: masked)
+                        .flatMap { definitions[normalizeReferenceLabel($0)]?.value }
+                    // Unresolved references are ordinary literal Markdown text.
+                    if reference == nil { continue }
+                }
+                let scheme = reference.flatMap { URL(string: $0)?.scheme?.lowercased() }
+                if scheme != "https" && scheme != "http" { removals.append(match.range) }
+            }
+        }
+        let result = NSMutableString(string: body)
+        // Reference-style matching may also see the prefix of an inline image.
+        var nextStart = result.length
+        for range in removals.sorted(by: { $0.location > $1.location }) {
+            guard NSMaxRange(range) <= nextStart else { continue }
+            result.replaceCharacters(in: range, with: "")
+            nextStart = range.location
+        }
+        return result as String
+    }
+
     fileprivate static func isLocalReference(_ reference: String) -> Bool {
         guard !reference.isEmpty, !reference.hasPrefix("#") else { return false }
         let parsed = URL(string: reference)
@@ -135,7 +180,7 @@ public enum LeonardoLocalImagePolicy {
         return String(masked[range])
     }
 
-    private static func maskCodeAndMetadata(_ source: String) -> String {
+    static func maskCodeAndMetadata(_ source: String) -> String {
         // Replace by UTF-16 units so NSRegularExpression ranges retain their offsets.
         let patterns = [#"(?ms)^ {0,3}(`{3,}|~{3,})[^\n]*\n.*?^ {0,3}\1[^\n]*(?:\n|$)"#, #"`+[^`\n]*`+"#]
         let masked = NSMutableString(string: source)
