@@ -53,9 +53,9 @@ The loader retains hashes and accounting only, with no additional image cache.
   `bounded-memory-formats.png`. The existing CI
   preview evidence artifact binds those captures to the reviewed head.
 
-Local validation on 2026-10-20: full `swift test` passed 488 tests with 14
+Local validation on 2026-10-20: full `swift test` passed 497 tests with 14
 intentional XCTest skips. Script tests ran 32 cases with seven engine-dependent
-skips and no failures. The per-PR ledger records seventeen successful compiler-bearing
+skips and no failures. The per-PR ledger records eighteen successful compiler-bearing
 invocations; required exact-head CI and independent judgment are recorded on PR
 [#245](https://github.com/PinedaTec-EU/LeonardoMD/pull/245).
 
