@@ -43,16 +43,17 @@ The loader retains hashes and accounting only, with no additional image cache.
   document-generation reset, query-alias accounting, bounded URL metadata and cancellation.
 - `MarkdownImageSchemeTests`: queue limit, active-load completion across render updates, stop and teardown
   without late callbacks.
-- `WebKitRuntimeTests`: real raster preview and PDF resolution, source/style
+- `WebKitRuntimeTests`: production memory-asset BMP/TIF/TIFF/ICO preview and PDF, real raster preview and PDF resolution, source/style
   restoration, visible rejection fallback, export failure on missing assets,
   64 small images in one request burst, and existing offline SVG/background behavior.
 - With `LEONARDO_VISUAL_EVIDENCE` set, WebKit tests capture
-  `bounded-raster-preview.png` and `bounded-image-fallback.png`. The existing CI
+  `bounded-raster-preview.png`, `bounded-image-fallback.png` and
+  `bounded-memory-formats.png`. The existing CI
   preview evidence artifact binds those captures to the reviewed head.
 
-Local validation on 2026-10-20: full `swift test` passed 486 tests with 14
+Local validation on 2026-10-20: full `swift test` passed 487 tests with 14
 intentional XCTest skips. Script tests ran 32 cases with seven engine-dependent
-skips and no failures. The per-PR ledger records fourteen successful compiler-bearing
+skips and no failures. The per-PR ledger records fifteen successful compiler-bearing
 invocations; required exact-head CI and independent judgment are recorded on PR
 [#245](https://github.com/PinedaTec-EU/LeonardoMD/pull/245).
 

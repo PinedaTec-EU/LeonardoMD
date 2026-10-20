@@ -365,6 +365,46 @@ final class WebKitRuntimeTests: XCTestCase {
         XCTAssertEqual(originalStyle, restoredStyle)
     }
 
+    func testCanonicalMemoryRasterFormatsReachWebKitAndPDF() async throws {
+        let root = URL(fileURLWithPath: "/MemoryRasterFixture", isDirectory: true)
+        let context = try XCTUnwrap(CGContext(data: nil, width: 32, height: 16,
+            bitsPerComponent: 8, bytesPerRow: 128, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.setFillColor(CGColor(red: 0.1, green: 0.3, blue: 0.8, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 32, height: 16))
+        let image = try XCTUnwrap(context.makeImage())
+        var files: [String: Data] = [:]
+        for type in [UTType.bmp, .tiff, .png] {
+            let bytes = NSMutableData()
+            let destination = try XCTUnwrap(CGImageDestinationCreateWithData(bytes, type.identifier as CFString, 1, nil))
+            CGImageDestinationAddImage(destination, image, nil)
+            XCTAssertTrue(CGImageDestinationFinalize(destination))
+            files["image." + (try XCTUnwrap(type.preferredFilenameExtension))] = bytes as Data
+        }
+        let png = try XCTUnwrap(files.removeValue(forKey: "image.png"))
+        var icon = Data([0, 0, 1, 0, 1, 0, 32, 16, 0, 0, 1, 0, 32, 0])
+        for value in [UInt32(png.count), UInt32(22)] {
+            var littleEndian = value.littleEndian
+            withUnsafeBytes(of: &littleEndian) { icon.append(contentsOf: $0) }
+        }
+        icon.append(png)
+        files["image.ico"] = icon
+        files["image.tif"] = files["image.tiff"]
+        let source = "# Memory raster formats\n\n" + files.keys.sorted().map {
+            "## " + $0 + "\n\n![" + $0 + "](" + $0 + ")"
+        }.joined(separator: "\n\n")
+        let config = MarkdownPreviewConfiguration(localAssetRoot: root, memoryAssets: MarkdownMemoryAssets(files: files))
+        let (host, window) = makeHost(content: source, base: root, config: config)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelectorAll('img').length === 4 && Array.from(document.querySelectorAll('img')).every(i => i.complete && i.naturalWidth === 32 && i.naturalHeight === 16)", in: web)
+        let failures = try await evaluate("document.querySelectorAll('.leonardo-image-unavailable').length", in: web)
+        XCTAssertEqual(failures, "0")
+        try await captureTagPreview(web, name: "bounded-memory-formats")
+        let pdf = try await host.exportPDF()
+        XCTAssertTrue(pdf.starts(with: Data("%PDF".utf8)))
+    }
+
     func testManySmallImagesLoadWithinTheDocumentBudget() async throws {
         let root = URL(fileURLWithPath: "/ManyImageFixture", isDirectory: true)
         let svg = Data("<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect width='12' height='12' fill='blue'/></svg>".utf8)
