@@ -38,13 +38,13 @@ answer reaches Markdown while the original stays unchanged and dirty in memory.
 
 ## Refreshed integration evidence
 
-Recaptured after reconciliation with main `161a171` on 2026-10-20 using the
+Recaptured after reconciliation with main `88b70a9` on 2026-10-20 using the
 final production/test sources. The PR evidence comment binds these committed
 captures to its exact immutable head. Reproduce after building with the
 repository recorder:
 
 ```sh
-LEONARDO_VISUAL_EVIDENCE=/tmp/leonardo-md-merge-evidence swift test --skip-build --filter 'MarkdownExportTests|InlineFormTests'
+LEONARDO_VISUAL_EVIDENCE=/tmp/leonardo-md-calendar-evidence swift test --skip-build --filter 'MarkdownExportTests|InlineFormTests'
 ```
 
 Native macOS XCTest/AppKit host, not a browser. Warning captures are 612×820 pixels (English) and 612×916 pixels

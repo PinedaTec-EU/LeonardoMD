@@ -1,4 +1,4 @@
 {
-  "build": 13,
+  "build": 14,
   "summary": "Export Leonardo documents and form answers as Markdown with a loss warning and portable image handling."
 }
