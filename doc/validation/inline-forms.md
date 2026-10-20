@@ -51,7 +51,9 @@ an app. Fresh-process QA, when independently authorized and possible, must use
    Save drafts such as `1.`, `1.e2`, `1e+` and `-.`, reopen them without losing
    their text, then correct the values and save again.
 5. Check that both Nombre occurrences agree and that checkbox/switch values
-   persist. Preview and PDF must show values without inputs/help chrome.
+   persist. Preview and Split must retain the same labels, controls and
+   responsive rows as Fill, with inputs and help disabled. PDF and print must
+   show values without generated inputs, labels or help chrome.
 6. Repeat with the light and Graphite Glass palettes and narrow the window to
    verify form-only paragraphs reflow without clipping controls.
 

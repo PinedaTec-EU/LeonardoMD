@@ -2,6 +2,30 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.507
+
+- #234 Fixed: preserve form presentation in Preview and Split ([#235](https://github.com/PinedaTec-EU/LeonardoMD/pull/235))
+
+<p>Preview and Split preserve the field presentation shown in Fill form.</p>
+
+Source: `4fa8f5b8244edba348550858c14b428d4cbc3c36`. Delta: `{"build": 5}`.
+
+## 0.1.502
+
+- #230 Added: document undo and redo history ([#231](https://github.com/PinedaTec-EU/LeonardoMD/pull/231))
+
+<p>Undo and redo document edits from the toolbar or keyboard, with separate history for each document and support for source, preview and form editing.</p>
+
+Source: `5572d4b2cb0888e028a9e2b4a5c2b0eec5d86fa5`. Delta: `{"build": 4}`.
+
+## 0.1.498
+
+- #228 Added: file list colors filtering and sorting ([#229](https://github.com/PinedaTec-EU/LeonardoMD/pull/229))
+
+<p>Distinguish Leonardo files in wine, configure file colors globally or per project, and filter and sort the project file list.</p>
+
+Source: `a572fd54377cc9cb36c2e5837b8053d229684ecb`. Delta: `{"build": 4}`.
+
 ## 0.1.494
 
 - #220 Fixed: improve light-theme document indicator contrast ([#221](https://github.com/PinedaTec-EU/LeonardoMD/pull/221))

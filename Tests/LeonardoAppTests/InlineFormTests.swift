@@ -93,16 +93,39 @@ final class InlineFormTests: XCTestCase {
             if previewWeb !== web { break }
             try await Task.sleep(for: .milliseconds(20))
         }
-        try await waitFor("document.querySelectorAll('[data-field-input]').length === 0 && document.body.textContent.includes('Ada 漢字')", in: previewWeb)
+        try await waitFor("document.querySelectorAll('[data-field-input]').length === 11 && Array.from(document.querySelectorAll('[data-field-input]')).every(n => n.disabled)", in: previewWeb)
+        try await captureMode(previewWeb, name: "preview")
         XCTAssertFalse(session.updateLeonardoField("name", text: "blocked"))
+        let previewSource = session.content
+        _ = try await previewWeb.evaluateJavaScript("""
+        (() => {
+          const input = document.querySelector('[data-field-input="name"]');
+          input.value = 'Unauthorized';
+          input.dispatchEvent(new InputEvent('input', {bubbles:true, isComposing:true}));
+          input.dispatchEvent(new InputEvent('input', {bubbles:true}));
+        })()
+        """)
+        await session.save()
+        XCTAssertEqual(session.content, previewSource)
+        await session.setDocumentMode(.split)
+        var splitWeb = previewWeb
+        for _ in 0..<100 {
+            splitWeb = try await webView(in: host)
+            if splitWeb !== previewWeb { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertFalse(splitWeb === previewWeb, "Split must attach its own preview pane")
+        try await waitFor("document.querySelectorAll('[data-field-input]').length === 11 && Array.from(document.querySelectorAll('[data-field-input]')).every(n => n.disabled)", in: splitWeb)
+        try await captureMode(splitWeb, name: "split")
+        XCTAssertFalse(session.updateLeonardoField("name", text: "blocked in Split"))
         await session.openDocument(url)
         XCTAssertEqual(session.leonardoFieldText("name"), "Ada 漢字")
         XCTAssertEqual(session.leonardoFieldBool("notifications"), true)
         await session.setDocumentMode(.fill)
-        var numericWeb = previewWeb
+        var numericWeb = splitWeb
         for _ in 0..<100 {
             numericWeb = try await webView(in: host)
-            if numericWeb !== previewWeb { break }
+            if (try? await numericWeb.evaluateJavaScript("document.querySelector('[data-field-input=hours]')?.disabled === false")) as? Bool == true { break }
             try await Task.sleep(for: .milliseconds(20))
         }
         try await waitFor("document.querySelector('[data-field-input=\"hours\"]') !== null", in: numericWeb)
@@ -133,6 +156,16 @@ final class InlineFormTests: XCTestCase {
         session.showInspector = false
         staleHelp("email")
         XCTAssertFalse(session.showInspector)
+    }
+
+    private func captureMode(_ web: WKWebView, name: String) async throws {
+        guard let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] else { return }
+        let destination = URL(fileURLWithPath: output).appendingPathComponent("inline-forms")
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        _ = try await web.evaluateJavaScript("window.scrollTo(0, 0)")
+        let image = try await web.takeSnapshot(configuration: nil)
+        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
+        try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: destination.appendingPathComponent("\(name).png"))
     }
 
     private func capture(web: WKWebView, host: NSView, session: AppSession, output: String, pdf: Data) async throws {

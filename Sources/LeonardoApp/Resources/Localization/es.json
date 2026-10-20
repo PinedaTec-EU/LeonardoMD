@@ -459,5 +459,14 @@
   "This application bundle has no valid release notes for its version.": "Esta aplicación no incluye notas válidas para su versión.",
   "An earlier version is installed. Showing its recorded history, not changes added by this downgrade.": "Hay una versión anterior instalada. Se muestra su historial registrado; estos cambios no se han añadido al volver a ella.",
   "Changes since version %@": "Cambios desde la versión %@",
-  "Recorded history since version %@. Earlier changes may not be available.": "Historial registrado desde la versión %@. Es posible que no estén disponibles los cambios anteriores."
+  "Recorded history since version %@. Earlier changes may not be available.": "Historial registrado desde la versión %@. Es posible que no estén disponibles los cambios anteriores.",
+  "Show all files": "Mostrar todos los ficheros",
+  "Sort": "Ordenar",
+  "Folders first": "Carpetas siempre arriba",
+  "Name": "Nombre",
+  "A–Z": "A–Z",
+  "Z–A": "Z–A",
+  "Filter and sort files": "Filtrar y ordenar ficheros",
+  "Inherit global file colors": "Heredar colores de fichero globales",
+  "Color Leonardo files in wine": "Mostrar ficheros Leonardo en rojo vino"
 }

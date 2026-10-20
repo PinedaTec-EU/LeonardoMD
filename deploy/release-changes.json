@@ -407,6 +407,36 @@
       "pr": 221,
       "summary": "Improve document format and storage indicator contrast in light themes using the palette heading color.",
       "to_version": "0.1.494"
+    },
+    {
+      "delta": {
+        "build": 4
+      },
+      "from_version": "0.1.494",
+      "merge_sha": "a572fd54377cc9cb36c2e5837b8053d229684ecb",
+      "pr": 229,
+      "summary": "Distinguish Leonardo files in wine, configure file colors globally or per project, and filter and sort the project file list.",
+      "to_version": "0.1.498"
+    },
+    {
+      "delta": {
+        "build": 4
+      },
+      "from_version": "0.1.498",
+      "merge_sha": "5572d4b2cb0888e028a9e2b4a5c2b0eec5d86fa5",
+      "pr": 231,
+      "summary": "Undo and redo document edits from the toolbar or keyboard, with separate history for each document and support for source, preview and form editing.",
+      "to_version": "0.1.502"
+    },
+    {
+      "delta": {
+        "build": 5
+      },
+      "from_version": "0.1.502",
+      "merge_sha": "4fa8f5b8244edba348550858c14b428d4cbc3c36",
+      "pr": 235,
+      "summary": "Preview and Split preserve the field presentation shown in Fill form.",
+      "to_version": "0.1.507"
     }
   ],
   "initial_version": "0.1.56",
@@ -417,5 +447,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.494"
+  "version": "0.1.507"
 }

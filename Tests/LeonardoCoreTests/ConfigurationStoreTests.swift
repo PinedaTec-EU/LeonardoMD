@@ -3,6 +3,34 @@ import XCTest
 @testable import LeonardoCore
 
 final class ConfigurationStoreTests: XCTestCase {
+    func testFileColorMergesPreserveOtherWindowsAndProjectInheritance() async throws {
+        let directory = try TemporaryDirectory()
+        let store = ConfigurationStore()
+        let url = directory.url.appendingPathComponent("preferences.json")
+        let baseline = GlobalPreferences()
+        var colors = baseline
+        colors.colorLeonardoFiles = false
+        _ = try await store.mergeGlobalPreferences(updated: colors, baseline: baseline, at: url)
+        var otherWindow = baseline
+        otherWindow.showHiddenFiles = true
+        let merged = try await store.mergeGlobalPreferences(updated: otherWindow, baseline: baseline, at: url)
+        XCTAssertFalse(merged.colorLeonardoFiles)
+        XCTAssertTrue(merged.showHiddenFiles)
+        let projectBaseline = ProjectConfiguration()
+        var projectColors = projectBaseline
+        projectColors.colorLeonardoFiles = false
+        _ = try await store.mergeProjectConfiguration(updated: projectColors, baseline: projectBaseline, for: directory.url)
+        var projectOther = projectBaseline
+        projectOther.paperEffect = .grid
+        let project = try await store.mergeProjectConfiguration(updated: projectOther, baseline: projectBaseline, for: directory.url)
+        XCTAssertEqual(project.colorLeonardoFiles, false)
+        XCTAssertEqual(project.paperEffect, .grid)
+        var inherited = project
+        inherited.colorLeonardoFiles = nil
+        let reset = try await store.mergeProjectConfiguration(updated: inherited, baseline: project, for: directory.url)
+        XCTAssertNil(reset.colorLeonardoFiles)
+    }
+
     func testProjectConfigurationRoundTripsAndIgnoresUnknownFields() async throws {
         let directory = try TemporaryDirectory()
         let projectRoot = directory.url.appendingPathComponent("Project", isDirectory: true)

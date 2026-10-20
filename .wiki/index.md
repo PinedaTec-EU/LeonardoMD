@@ -13,3 +13,5 @@ Read [current state](current-state.md), then the relevant source target. Human p
 - [Open Leonardo documents and agent plugins](leonardo-format.md)
 
 - [Native release notes](release-notes.md)
+
+- [Document Undo and Redo](document-undo.md)

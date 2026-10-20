@@ -13,7 +13,7 @@ Open documents from the app or Finder’s **Open With** menu. Distribution build
 - **Workspace:** select or create a root folder, discover its projects, and create, rename or delete project folders from the workspace manager.
 - **Recent items:** File provides separate document, project and workspace histories. Entries show their parent path; unavailable targets are disabled. Each submenu can clear its own history.
 - **Focus:** hides project navigation and the inspector while preserving the document and project. Toggle it again to restore those panels.
-- **Reading / Editing / Split:** protected-by-default source and rendered-text editing, native undo and an approximately synchronized preview. Unlock the toolbar padlock to edit; use Save or ⌘S to persist changes. Unsaved drafts are marked explicitly and closing or navigating away offers Save, Discard or Cancel. Preview editing preserves untouched Markdown; raw HTML, rendered math and diagrams are edited through the raw Edit view. External file changes reload clean documents; conflicting edits stay protected until you reload or save a copy.
+- **Reading / Editing / Split:** protected-by-default source and rendered-text editing, shared document undo and an approximately synchronized preview. Unlock the toolbar padlock to edit; use Save or ⌘S to persist changes. Unsaved drafts are marked explicitly and closing or navigating away offers Save, Discard or Cancel. Preview editing preserves untouched Markdown; raw HTML, rendered math and diagrams are edited through the raw Edit view. External file changes reload clean documents; conflicting edits stay protected until you reload or save a copy.
 
 | Shortcut | Action |
 | --- | --- |
@@ -23,6 +23,7 @@ Open documents from the app or Finder’s **Open With** menu. Distribution build
 | ⇧⌘F | Focus |
 | ⌥⌘I | Document outline |
 | ⌘S | Save |
+| ⌘Z / ⇧⌘Z | Undo / Redo document edits |
 | ⇧⌘E | Export PDF |
 
 ## Rendering and extensions
@@ -49,6 +50,12 @@ Export a form as `.mdlr` to open it in **Fill form** mode. Fill the declared fie
 
 See the [format specification, schema and examples](format/README.md) and the [Codex/Claude plugin and MDLZ generation guide](plugins/leonardo-format.md). No proprietary binary document representation is required.
 
+## Undo and Redo
+
+Use **Undo** and **Redo** beside Save, or **Edit → Undo / Redo** (⌘Z / ⇧⌘Z), to restore source, preview and form edits. Each document session keeps its own history of up to 200 changes. Source edits require the padlock to be unlocked; form edits can be restored in Fill mode while the source remains protected. A new edit clears Redo.
+
+Ordinary saves preserve history. Undoing a saved edit changes the draft without changing the file until you save again. Loading, reloading, discarding changes, converting formats or closing the session clears history. In particular, saving with automatic Markdown-to-MDLF migration starts a new history for the converted document. Search and other native text controls keep their own text undo when focused.
+
 ## Document tags
 
 Tags in YAML frontmatter appear as clickable pills above the preview, even when the metadata table is hidden. In a project, clicking a pill fills the sidebar search and reveals navigation if focus mode was active. Standalone documents show their tags without creating a project.
@@ -64,6 +71,8 @@ Enable Git tools in the project's preferences. The app can detect or initialize 
 Interface language defaults to English. **Preferences → General → On this Mac → Language** offers English and Español. Language and Markdown file association apply to the whole Mac. Palette and extension settings can apply globally or to the current project.
 
 The document inspector contains heading navigation. Drag the divider beside the project sidebar to change its width.
+
+The sidebar filter button opens file visibility and sorting controls. **Show all files** starts off; the default list contains folders and supported Markdown, text and Leonardo documents. **Show hidden files** remains independent. The **Sort** submenu offers **Folders first** (initially on) and **A–Z** or **Z–A**, including expanded subfolders. These controls belong to the current document session. Leonardo filenames and icons use wine coloring by default; General → Appearance can disable it globally or override it per project, with an option to inherit global file colors. Markdown colors stay unchanged.
 
 ## Updates
 
