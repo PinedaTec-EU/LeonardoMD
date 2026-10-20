@@ -44,7 +44,9 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     private var windows: [DocumentWindow] = []
     private let diagnostics: StartupDiagnostics
     private var recordedFirstWindow = false
-    private lazy var aboutWindow = AboutWindow()
+    private lazy var aboutWindow = AboutWindow(onReleaseNotes: { [weak self] in
+        self?.showReleaseNotes()
+    })
     private lazy var releaseNotes = ReleaseNotesController()
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "application")
     private let launchStarted = ContinuousClock.now
