@@ -48,6 +48,7 @@ final class ApplicationUpdates {
 
     func start() {
         guard !isStarted else { return }
+        Task { await maturity.refresh() }
         guard let driver else {
             logger.info("update_channel_unconfigured")
             return
@@ -58,7 +59,6 @@ final class ApplicationUpdates {
         do {
             try driver.start()
             isStarted = true
-            Task { await maturity.refresh() }
             refreshState()
             logger.info("update_controller_started channel=\(self.channel.rawValue, privacy: .public)")
         } catch {

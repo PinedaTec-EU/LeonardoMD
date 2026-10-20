@@ -1,3 +1,4 @@
+import Observation
 import AppKit
 import SwiftUI
 import CryptoKit
@@ -98,6 +99,31 @@ final class InstalledReleaseMaturityTests: XCTestCase {
             await offline.refresh()
             XCTAssertEqual(offline.channel, .stable)
         }
+    }
+
+    func testCachedPromotionLoadsEvenIfUpdaterCannotStart() async throws {
+        let key = Curve25519.Signing.PrivateKey()
+        let config = configuration(key: key)
+        let identity = self.identity
+        let suite = "ReleaseMaturityStartupTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set("beta", forKey: ApplicationUpdates.channelPreferenceKey)
+        defaults.set(try proof(key: key), forKey: InstalledReleaseMaturity.cacheKey)
+        let maturity = InstalledReleaseMaturity(configuration: config, defaults: defaults,
+            identify: { identity }, fetch: { _ in throw URLError(.notConnectedToInternet) })
+        let driver = FakeUpdateDriver()
+        driver.startError = NSError(domain: "UpdaterUnavailableFixture", code: 1)
+        let updates = ApplicationUpdates(defaults: defaults, configuration: config, driver: driver, maturity: maturity)
+        let recognized = expectation(description: "cached maturity recognized independently of updater startup")
+        withObservationTracking { _ = updates.installedChannel } onChange: { recognized.fulfill() }
+        updates.start()
+        await fulfillment(of: [recognized], timeout: 2)
+        XCTAssertEqual(updates.installedChannel, .stable)
+        XCTAssertEqual(updates.channel, .beta)
+        XCTAssertFalse(updates.isStarted)
+        XCTAssertNotNil(updates.startupError)
+        XCTAssertEqual(defaults.string(forKey: ApplicationUpdates.channelPreferenceKey), "beta")
     }
 
     func testRejectsWrongKeyIdentityChannelAndTamperedPayload() async throws {
