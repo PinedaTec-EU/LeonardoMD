@@ -365,6 +365,22 @@ final class WebKitRuntimeTests: XCTestCase {
         XCTAssertEqual(originalStyle, restoredStyle)
     }
 
+    func testManySmallImagesLoadWithinTheDocumentBudget() async throws {
+        let root = URL(fileURLWithPath: "/ManyImageFixture", isDirectory: true)
+        let svg = Data("<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect width='12' height='12' fill='blue'/></svg>".utf8)
+        let files = Dictionary(uniqueKeysWithValues: (0..<64).map { ("image-\($0).svg", svg) })
+        let source = (0..<64).map { "![Image \($0)](image-\($0).svg)" }.joined(separator: "\n\n")
+        let config = MarkdownPreviewConfiguration(localAssetRoot: root, memoryAssets: MarkdownMemoryAssets(files: files))
+        let (host, window) = makeHost(content: source, base: root, config: config)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelectorAll('img').length === 64", in: web)
+        _ = try await web.evaluateJavaScript("document.querySelectorAll('img').forEach(i => i.loading = 'eager')")
+        try await waitFor("Array.from(document.querySelectorAll('img')).every(i => i.complete)", in: web)
+        let loaded = try await evaluate("Array.from(document.querySelectorAll('img')).filter(i => i.naturalWidth > 0).length", in: web)
+        XCTAssertEqual(loaded, "64", "Small images within the document budget must survive a burst of requests")
+    }
+
     func testRejectedImageHasFallbackAndPDFDoesNotSilentlyOmitIt() async throws {
         let root = URL(fileURLWithPath: "/RejectedImageFixture", isDirectory: true)
         let assets = MarkdownMemoryAssets(files: ["bad.png": Data("invalid raster".utf8)])

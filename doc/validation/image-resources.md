@@ -17,7 +17,7 @@ WebKit requests; native codec calls themselves are not interruptible mid-call.
 | PDF raster | Displayed CSS bounds × 300/96, capped at 8192 pixels per side and 16 million pixels |
 | Animation | Original bytes; up to 128 frames and 4 million total logical-canvas pixels |
 | Document render | 128 MiB estimated admitted cost and 256 distinct resource/content/target variants |
-| Pending work | 32 requests per view; one loader operation at a time |
+| Pending work | 256 requests per view; one loader operation at a time |
 
 ImageIO creates static thumbnails without caching the full source image, and
 returns PNG to preserve alpha. Original files and corpus data remain unchanged.
@@ -39,14 +39,14 @@ The loader retains hashes and accounting only, with no additional image cache.
 - `MarkdownImageSchemeTests`: queue limit, stop and teardown without late callbacks.
 - `WebKitRuntimeTests`: real raster preview and PDF resolution, source/style
   restoration, visible rejection fallback, export failure on missing assets,
-  and existing offline SVG/background behavior.
+  64 small images in one request burst, and existing offline SVG/background behavior.
 - With `LEONARDO_VISUAL_EVIDENCE` set, WebKit tests capture
   `bounded-raster-preview.png` and `bounded-image-fallback.png`. The existing CI
   preview evidence artifact binds those captures to the reviewed head.
 
-Local validation on 2026-10-20: full `swift test` passed 589 tests with 15
+Local validation on 2026-10-20: full `swift test` passed 590 tests with 15
 intentional XCTest skips. Script tests ran 31 cases with seven engine-dependent
-skips and no failures. The per-PR ledger records five successful compiler-bearing
+skips and no failures. The per-PR ledger records seven successful compiler-bearing
 invocations; required exact-head CI and independent judgment are recorded on PR
 [#245](https://github.com/PinedaTec-EU/LeonardoMD/pull/245).
 

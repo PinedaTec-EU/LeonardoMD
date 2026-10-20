@@ -13,7 +13,7 @@ struct MarkdownImagePolicy: Sendable {
     var maximumDocumentBytes = 128 * 1_024 * 1_024
     var maximumRequests = 256
     static let bytesPerPixel = 8 // Conservative allowance for 16-bit RGBA.
-    static let maximumPendingRequests = 32
+    static let maximumPendingRequests = 256
     static let pdfScale = 300.0 / 96.0
 
     struct Target: Sendable {

@@ -1,4 +1,4 @@
 {
   "summary": "Local document images use bounded loading and preview resolution, while PDF export requests higher resolution without modifying original assets.",
-  "build": 5
+  "build": 7
 }

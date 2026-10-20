@@ -11,7 +11,7 @@ resource/content/target variants share an admission entry; no image cache is ret
 `MarkdownImagePolicy` holds the limits: 32 MiB input, 2 MiB SVG, 40 million
 source pixels, 4 million preview pixels, 16 million PDF pixels, animations with
 at most 128 frames and 4 million total canvas pixels, 128 MiB estimated admitted
-cost, 256 variants and 32 pending requests. Cost uses an 8-byte pixel allowance.
+cost, 256 variants and 256 pending requests. Cost uses an 8-byte pixel allowance.
 These are admission/work limits, not total process resident-memory bounds.
 
 Static rasters use ImageIO thumbnail creation with source caching disabled.
