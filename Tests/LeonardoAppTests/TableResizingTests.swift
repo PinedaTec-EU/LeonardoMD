@@ -111,6 +111,56 @@ final class TableResizingTests: XCTestCase {
         XCTAssertEqual(session.content, before)
     }
 
+    func testCRLFLeadingTableMigratesPreservesBytesAndReopens() async throws {
+        for prefix in ["", "---\r\ntitle: CRLF table\r\n---\r\n"] {
+            let root = try directory()
+            defer { try? FileManager.default.removeItem(at: root) }
+            let url = root.appendingPathComponent("crlf.md")
+            let body = table.replacingOccurrences(of: "\n", with: "\r\n")
+            let source = prefix + body
+            try source.write(to: url, atomically: true, encoding: .utf8)
+            let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
+            session.authorizePath = { _, _ in }
+            defer { session.stop() }
+            await session.openDocument(url); session.mode = .preview; session.isProtected = false
+            let host = NSHostingView(rootView: WorkspaceView(session: session))
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 700), styleMask: [.titled], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false; window.contentView = host; window.orderFront(nil)
+            defer { window.close() }
+            var web = try await currentWebView(in: host, session: session)
+            try await gesture(web, tableIndex: 0, kind: "column", index: 0, dx: 60, dy: 0)
+            let destination = url.deletingPathExtension().appendingPathExtension("mdlf")
+            for _ in 0..<200 {
+                if session.documentURL == destination { break }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            XCTAssertEqual(session.documentURL, destination, session.errorMessage ?? "CRLF resize did not migrate")
+            var document = try LeonardoFormatParser.parse(session.content)
+            XCTAssertEqual(document.body, body)
+            XCTAssertEqual(document.metadata.layout?.tables.first?.source, table)
+            XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), source)
+            web = try await currentWebView(in: host, session: session)
+            for (kind, dx, dy) in [("row", 0.0, 30.0), ("both", 30.0, 20.0)] {
+                let before = session.content
+                try await gesture(web, tableIndex: 0, kind: kind, index: kind == "row" ? 0 : -1, dx: dx, dy: dy)
+                for _ in 0..<100 {
+                    if session.content != before { break }
+                    try await Task.sleep(for: .milliseconds(20))
+                }
+                XCTAssertNotEqual(session.content, before)
+                web = try await currentWebView(in: host, session: session)
+            }
+            await session.save()
+            XCTAssertFalse(session.isDirty)
+            document = try LeonardoFormatParser.parse(session.content)
+            XCTAssertEqual(document.body, body)
+            await session.openDocument(destination); session.isProtected = false
+            web = try await currentWebView(in: host, session: session)
+            XCTAssertEqual(try LeonardoFormatParser.parse(session.content), document)
+            try await waitFor("document.querySelector('table').style.height !== ''", in: web)
+        }
+    }
+
     func testCollisionProtectionStalenessAndMigrationFailureAreAtomic() async throws {
         let root = try directory()
         defer { try? FileManager.default.removeItem(at: root) }
