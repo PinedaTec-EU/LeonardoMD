@@ -24,3 +24,9 @@ IDs. Same-version promotion reuses suppression; no parallel channel reader is
 needed. Consumer tracking: [#239](https://github.com/PinedaTec-EU/LeonardoMD/issues/239).
 
 Policy checks bind both the PR head and selected engine SHA. After an engine pin changes, refresh an open consumer head before revalidating; do not reuse or remove a check bound to the former engine.
+
+About and Release notes attach as AppKit modal sheets to the selected document window. About provides a Close button and Escape because sheet presentation does not expose standalone window controls. Close ends the sheet before startup continuation; menu presentation receives the document parent explicitly. Tracking: [#247](https://github.com/PinedaTec-EU/LeonardoMD/issues/247).
+
+Document alerts and open/save panels share `NativeDialog`: the owning document window is propagated through DocumentTabs to every AppSession, and nested dialogs attach above the existing sheet. Confirmation decisions suspend asynchronously and cancellation preserves the operation. Naming, file/project deletion, unsaved changes/reload, package open/extraction and export confirmation use that path. The secondary-process forwarding failure remains application-modal because it has no document window. Extended scope: [#247](https://github.com/PinedaTec-EU/LeonardoMD/issues/247).
+
+File mutations capture `SessionFileOperationIdentity` before dialogs/panels and revalidate the project/workspace after suspended preparation/authorization and immediately before filesystem calls. PR #248 has an owner-authorized, candidate-only exception deferring native visual acceptance to beta; see [About validation contract](../doc/validation/about.md#pr-248-scoped-owner-exception). Automated safety gates remain mandatory, and [#247](https://github.com/PinedaTec-EU/LeonardoMD/issues/247) remains open for that acceptance.

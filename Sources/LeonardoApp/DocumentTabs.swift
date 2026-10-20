@@ -15,6 +15,9 @@ final class DocumentTabs {
     private(set) var tabs: [DocumentTab] = []
     private(set) var activeID: UUID?
     private(set) var closing = false
+    weak var presentationWindow: NSWindow? {
+        didSet { tabs.forEach { $0.session.presentationWindow = presentationWindow } }
+    }
     var updateWindow: ((String, URL?, Bool) -> Void)?
     private var stopped = false
     private var preparedForClose = false
@@ -34,6 +37,7 @@ final class DocumentTabs {
         guard !closing, !stopped else { return nil }
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         let session = AppSession(preferencesURL: preferencesURL)
+        session.presentationWindow = presentationWindow
         let tab = DocumentTab(session: session)
         configureLeonardoTransport(for: session)
         session.activateExistingDocument = { [weak self] url, line in

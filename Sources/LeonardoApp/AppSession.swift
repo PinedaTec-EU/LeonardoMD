@@ -52,14 +52,10 @@ final class AppSession {
     var isCapturingPreview = false
     var isProtected = true
     var canEditDocument: Bool { documentURL != nil && !isProtected && !isClosing && !isCapturingPreview && !isSyncSuspended && !busy && !stopped }
-    var unsavedChangesDecision: @MainActor (String) -> UnsavedChangesDecision = UnsavedChangesPrompt.show
-    var confirmDiscardForReload: @MainActor () -> Bool = {
-        let alert = NSAlert()
-        alert.messageText = L10n.text("Discard your edits and reload the file?")
-        alert.addButton(withTitle: L10n.text("Reload"))
-        alert.addButton(withTitle: L10n.text("Cancel"))
-        return alert.runModal() == .alertFirstButtonReturn
-    }
+    @ObservationIgnored weak var presentationWindow: NSWindow?
+    var unsavedChangesDecision: @MainActor (String) async -> UnsavedChangesDecision = { _ in .cancel }
+    var confirmDiscardForReload: @MainActor () async -> Bool = { false }
+
     var mode: DocumentMode = .preview
     var focus = false
     var selectedLeonardoFieldID: String?
@@ -153,6 +149,12 @@ final class AppSession {
     ) {
         globalPreferencesURL = preferencesURL
         self.openSystemURL = openSystemURL
+        unsavedChangesDecision = { [weak self] filename in
+            await UnsavedChangesPrompt.show(filename, on: self?.presentationWindow)
+        }
+        confirmDiscardForReload = { [weak self] in
+            await NativeDialog.confirmReload(on: self?.presentationWindow)
+        }
     }
 
     let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "session")

@@ -143,7 +143,7 @@ extension AppSession {
         busy = true
         defer { busy = false }
         if isDirty {
-            guard confirmDiscardForReload() else { return }
+            guard await confirmDiscardForReload() else { return }
         }
         let previousContent = content
         if let identity = packageReloadIdentity() {

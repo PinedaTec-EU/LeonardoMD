@@ -4,7 +4,7 @@ import AppKit
 enum UnsavedChangesDecision { case save, discard, cancel }
 
 enum UnsavedChangesPrompt {
-    @MainActor static func show(_ filename: String) -> UnsavedChangesDecision {
+    @MainActor static func show(_ filename: String, on window: NSWindow? = nil) async -> UnsavedChangesDecision {
         let alert = NSAlert()
         alert.alertStyle = .warning
         alert.messageText = L10n.format("Save changes to %@?", filename)
@@ -12,7 +12,7 @@ enum UnsavedChangesPrompt {
         alert.addButton(withTitle: L10n.text("Save"))
         alert.addButton(withTitle: L10n.text("Cancel"))
         alert.addButton(withTitle: L10n.text("Discard changes"))
-        switch alert.runModal() {
+        switch await NativeDialog.present(alert, on: window) {
         case .alertFirstButtonReturn: return .save
         case .alertThirdButtonReturn: return .discard
         default: return .cancel
@@ -67,7 +67,7 @@ extension AppSession {
 
     func resolveUnsavedChanges() async -> Bool {
         guard isDirty else { return true }
-        switch unsavedChangesDecision(documentURL?.lastPathComponent ?? "LeonardoMD") {
+        switch await unsavedChangesDecision(documentURL?.lastPathComponent ?? "LeonardoMD") {
         case .cancel: return false
         case .save:
             await save(allowClosing: true)

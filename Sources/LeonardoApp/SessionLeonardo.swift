@@ -63,14 +63,14 @@ extension AppSession {
         case .package:
             extraction = nil
         case .extracted:
-            guard let destination = choosePackageExtractionDestination(for: packageURL) else { return false }
+            guard let destination = await choosePackageExtractionDestination(for: packageURL) else { return false }
             extraction = destination
         case .ask:
-            guard let choice = choosePackageOpenMode(for: packageURL) else { return false }
+            guard let choice = await choosePackageOpenMode(for: packageURL) else { return false }
             if choice == .package {
                 extraction = nil
             } else {
-                guard let destination = choosePackageExtractionDestination(for: packageURL) else { return false }
+                guard let destination = await choosePackageExtractionDestination(for: packageURL) else { return false }
                 extraction = destination
             }
         }
@@ -163,14 +163,14 @@ extension AppSession {
         }
     }
 
-    private func choosePackageOpenMode(for packageURL: URL) -> LeonardoPackageOpenPreference? {
+    private func choosePackageOpenMode(for packageURL: URL) async -> LeonardoPackageOpenPreference? {
         let alert = NSAlert()
         alert.messageText = L10n.text("Open Leonardo package")
         alert.informativeText = packageURL.lastPathComponent
         alert.addButton(withTitle: LeonardoPackageOpenPreference.package.title)
         alert.addButton(withTitle: LeonardoPackageOpenPreference.extracted.title)
         alert.addButton(withTitle: L10n.text("Cancel"))
-        switch alert.runModal() {
+        switch await NativeDialog.present(alert, on: presentationWindow) {
         case .alertFirstButtonReturn: return .package
         case .alertSecondButtonReturn: return .extracted
         default: return nil
@@ -180,14 +180,14 @@ extension AppSession {
     /// Selects a new folder path without creating it.  The Core transport
     /// deliberately rejects existing destinations so an extraction cannot
     /// overwrite an unrelated folder.
-    private func choosePackageExtractionDestination(for packageURL: URL) -> URL? {
+    private func choosePackageExtractionDestination(for packageURL: URL) async -> URL? {
         let panel = NSSavePanel()
         panel.title = L10n.text("Extract Leonardo package")
         panel.message = L10n.text("Choose a new folder for the package contents.")
         panel.nameFieldStringValue = packageURL.deletingPathExtension().lastPathComponent
         panel.directoryURL = packageURL.deletingLastPathComponent()
         panel.canCreateDirectories = false
-        return panel.runModal() == .OK ? panel.url : nil
+        return await NativeDialog.destination(panel, on: presentationWindow)
     }
 
     func migrateMarkdownToLeonardo(

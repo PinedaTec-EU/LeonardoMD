@@ -78,14 +78,16 @@ extension AppSession {
         catch { if showWorkspace { report(error) } }
     }
     func createProject() {
-        guard let root = workspaceURL, let name = prompt(title: L10n.text("New project"), initial: L10n.text("My project")) else { return }
+        guard let root = workspaceURL else { return }
+        let identity = SessionFileOperationIdentity(sourceURL: root, session: self)
         Task {
-            guard !stopped, !isClosing else { return }
+            guard identity.isCurrent(in: self), let name = await prompt(title: L10n.text("New project"), initial: L10n.text("My project")) else { return }
+            guard identity.isCurrent(in: self) else { return }
             fileOperationCount += 1
             defer { fileOperationCount -= 1 }
             do {
                 try await authorizePath(root.appendingPathComponent(name), .directoryMutation)
-                guard !stopped else { return }
+                guard identity.isCurrent(in: self) else { return }
                 let project = try await files.createProject(named: name, in: root)
                 await refreshWorkspace()
                 await openProject(project.rootURL)
@@ -93,19 +95,28 @@ extension AppSession {
             } catch { report(error) }
         }
     }
-    func renameProject(_ project: ProjectDescriptor) {
-        guard let name = prompt(title: L10n.text("Rename project"), initial: project.name) else { return }
-        Task { await renameProject(project, to: name) }
+    @discardableResult
+    func renameProject(_ project: ProjectDescriptor) -> Task<Void, Never> {
+        let identity = SessionFileOperationIdentity(sourceURL: project.rootURL, session: self)
+        return Task {
+            guard identity.isCurrent(in: self),
+                  let name = await prompt(title: L10n.text("Rename project"), initial: project.name),
+                  identity.isCurrent(in: self) else { return }
+            await renameProject(project, to: name)
+        }
     }
     func renameProject(_ project: ProjectDescriptor, to name: String) async {
-        guard let workspace = workspaceURL, await prepareNavigation(), await prepareRelatedFileOperation?(project.rootURL) ?? true else { return }
-        guard !isClosing else { return }
+        let identity = SessionFileOperationIdentity(sourceURL: project.rootURL, session: self)
+        guard let workspace = workspaceURL, identity.isCurrent(in: self),
+              await prepareNavigation(), await prepareRelatedFileOperation?(project.rootURL) ?? true,
+              identity.isCurrent(in: self) else { return }
         fileOperationCount += 1
         defer { fileOperationCount -= 1 }
         do {
             try await authorizePath(project.rootURL, .directoryMutation)
+            guard identity.isCurrent(in: self) else { return }
             try await authorizePath(workspace.appendingPathComponent(name), .directoryMutation)
-            guard !stopped else { return }
+            guard identity.isCurrent(in: self) else { return }
             let renamed = try await files.renameProject(project, to: name, in: workspace)
             if projectURL == project.rootURL {
                 projectURL = renamed.rootURL
@@ -121,23 +132,31 @@ extension AppSession {
             await refreshWorkspace()
         } catch { report(error) }
     }
-    func deleteProject(_ project: ProjectDescriptor) {
-        let alert = NSAlert()
-        alert.messageText = L10n.format("Move project %@ to Trash?", project.name)
-        alert.informativeText = L10n.text("The entire project folder and its contents will be moved to Trash. You can recover them from Trash.")
-        alert.addButton(withTitle: L10n.text("Cancel"))
-        alert.addButton(withTitle: L10n.text("Move to Trash"))
-        guard alert.runModal() == .alertSecondButtonReturn else { return }
-        Task { await deleteConfirmedProject(project) }
+    @discardableResult
+    func deleteProject(_ project: ProjectDescriptor) -> Task<Void, Never> {
+        let identity = SessionFileOperationIdentity(sourceURL: project.rootURL, session: self)
+        return Task {
+            guard identity.isCurrent(in: self) else { return }
+            let alert = NSAlert()
+            alert.messageText = L10n.format("Move project %@ to Trash?", project.name)
+            alert.informativeText = L10n.text("The entire project folder and its contents will be moved to Trash. You can recover them from Trash.")
+            alert.addButton(withTitle: L10n.text("Cancel"))
+            alert.addButton(withTitle: L10n.text("Move to Trash"))
+            guard await NativeDialog.present(alert, on: presentationWindow) == .alertSecondButtonReturn,
+                  identity.isCurrent(in: self) else { return }
+            await deleteConfirmedProject(project)
+        }
     }
     func deleteConfirmedProject(_ project: ProjectDescriptor) async {
-        guard await prepareNavigation(), await prepareRelatedFileOperation?(project.rootURL) ?? true else { return }
-        guard !isClosing else { return }
+        let identity = SessionFileOperationIdentity(sourceURL: project.rootURL, session: self)
+        guard identity.isCurrent(in: self), await prepareNavigation(),
+              await prepareRelatedFileOperation?(project.rootURL) ?? true,
+              identity.isCurrent(in: self) else { return }
         fileOperationCount += 1
         defer { fileOperationCount -= 1 }
         do {
             try await authorizePath(project.rootURL, .directoryMutation)
-            guard !stopped else { return }
+            guard identity.isCurrent(in: self) else { return }
             try await files.deleteProject(project)
             if projectURL == project.rootURL {
                 projectURL = nil

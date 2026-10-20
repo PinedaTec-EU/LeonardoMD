@@ -112,7 +112,12 @@ final class LocalizationTests: XCTestCase {
         LanguageSettings.shared.language = .english
         let controller = AboutWindow()
         defer { controller.close() }
-        controller.present()
+        let parent = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1000, height: 800),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        parent.isReleasedWhenClosed = false
+        parent.makeKeyAndOrderFront(nil)
+        defer { parent.close() }
+        controller.present(on: parent)
         XCTAssertTrue(controller.window?.isVisible == true)
         LanguageSettings.shared.language = .spanish
         XCTAssertEqual(controller.window?.title, "Acerca de LeonardoMD")

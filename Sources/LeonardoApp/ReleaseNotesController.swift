@@ -31,7 +31,7 @@ final class ReleaseNotesController: NSObject, NSWindowDelegate {
 
     /// Called after Finder opens finish. Forwarded launches never create another notice.
     @discardableResult
-    func presentAtStartup(afterClosing: @escaping () -> Void) -> Bool {
+    func presentAtStartup(on parent: NSWindow, afterClosing: @escaping () -> Void) -> Bool {
         if window?.isVisible == true {
             if !attemptedStartup { attemptedStartup = true; self.afterClosing = afterClosing }
             return true
@@ -40,23 +40,23 @@ final class ReleaseNotesController: NSObject, NSWindowDelegate {
         attemptedStartup = true
         guard let notes, preferences.shouldPresent(version: notes.version) else { return false }
         self.afterClosing = afterClosing
-        present(notes)
+        present(notes, on: parent)
         return true
     }
 
-    func presentManually() {
+    func presentManually(on parent: NSWindow) {
         if let window, window.isVisible { window.makeKeyAndOrderFront(nil); return }
         guard let notes else {
             let alert = NSAlert()
             alert.messageText = L10n.text("Release notes are unavailable")
             alert.informativeText = L10n.text("This application bundle has no valid release notes for its version.")
-            if let parent = NSApp.keyWindow { alert.beginSheetModal(for: parent) }
+            alert.beginSheetModal(for: parent)
             return
         }
-        present(notes)
+        present(notes, on: parent)
     }
 
-    private func present(_ notes: ReleaseChanges) {
+    private func present(_ notes: ReleaseChanges, on parent: NSWindow) {
         baseline = preferences.baseline(for: notes.version)
         suppress = preferences.suppressionDefault(for: notes.version)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 760, height: 580),
@@ -71,12 +71,12 @@ final class ReleaseNotesController: NSObject, NSWindowDelegate {
             onClose: { [weak self] in self?.window?.close() }
         ))
         self.window = window
-        window.center()
-        window.makeKeyAndOrderFront(nil)
+        parent.beginSheet(window)
         logger.info("release_notes_presented version=\(notes.version, privacy: .public)")
     }
 
     func windowWillClose(_ notification: Notification) {
+        if let window { window.sheetParent?.endSheet(window) }
         guard let notes else { return }
         do { try preferences.acknowledge(version: notes.version, baseline: baseline, suppress: suppress) }
         catch { logger.error("release_notes_preference_failed") }
