@@ -1,4 +1,4 @@
 {
   "summary": "Promote a chosen validated beta to stable while preserving its version and exact signed artifact, even when newer betas exist.",
-  "build": 1
+  "build": 2
 }
