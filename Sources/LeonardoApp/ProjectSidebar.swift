@@ -83,7 +83,7 @@ struct FileTreeRow: View {
     @Bindable var session: AppSession
     private var isColoredLeonardo: Bool {
         session.colorLeonardoFiles && !entry.isDirectory &&
-        ["mdlf", "mdlr", "mdlz"].contains(entry.url.pathExtension.lowercased())
+        AppDocumentKind.classify(entry.url).isLeonardo
     }
     @State private var expanded = false
     @State private var children: [NavigationEntry] = []
