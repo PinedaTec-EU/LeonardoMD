@@ -18,16 +18,18 @@ final class ReleaseNotesVisualTests: XCTestCase {
         for language in AppLanguage.allCases {
             LanguageSettings.shared.language = language
             for dark in [false, true] {
-                let host = NSHostingView(rootView: ReleaseNotesView(
-                    notes: notes, baseline: "0.1.1", suppress: true,
-                    onSuppressionChange: { _ in }, onClose: {}
-                ).preferredColorScheme(dark ? .dark : .light)
-                    .background(Color(nsColor: .windowBackgroundColor)))
-                try await NativeViewCaptureSupport.capture(host, size: NSSize(width: 760, height: 580),
-                    to: root.appendingPathComponent("notes-\(language.rawValue)-\(dark ? "dark" : "light").png"))
+                for (suffix, baseline) in [("", "0.1.1"), ("-downgrade", "0.1.99")] {
+                    let host = NSHostingView(rootView: ReleaseNotesView(
+                        notes: notes, baseline: baseline, suppress: true,
+                        onSuppressionChange: { _ in }, onClose: {}
+                    ).preferredColorScheme(dark ? .dark : .light)
+                        .background(Color(nsColor: .windowBackgroundColor)))
+                    try await NativeViewCaptureSupport.capture(host, size: NSSize(width: 760, height: 580),
+                        to: root.appendingPathComponent("notes-\(language.rawValue)-\(dark ? "dark" : "light")\(suffix).png"))
+                }
             }
         }
-        try "Native SwiftUI ReleaseNotesView; 760x580 points; en/es; light/dark; synthetic 18-PR history; suppression on. Rendered by XCTest, not a standalone XCTest GUI app. Component evidence does not establish fresh packaged-process startup.\n".write(
+        try "Native SwiftUI ReleaseNotesView; 760x580 points; en/es; light/dark; interval and downgrade coverage; synthetic 18-PR history; suppression on. Rendered by XCTest, not a standalone XCTest GUI app. Component evidence does not establish fresh packaged-process startup.\n".write(
             to: root.appendingPathComponent("capture-context.txt"), atomically: true, encoding: .utf8)
     }
 }

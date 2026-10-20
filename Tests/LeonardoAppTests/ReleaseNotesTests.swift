@@ -16,6 +16,29 @@ func releaseNotesFixture(count: Int = 3) throws -> ReleaseChanges {
 }
 
 final class ReleaseChangesTests: XCTestCase {
+    func testCheckedInArtifactMatchesCanonicalVersionAndAppliedHistory() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+        let version = try String(contentsOf: root.appendingPathComponent("version.nfo"), encoding: .utf8)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let notes = try ReleaseChanges.load(
+            data: Data(contentsOf: root.appendingPathComponent("deploy/release-changes.json")),
+            packagedVersion: version
+        )
+        let state = try XCTUnwrap(JSONSerialization.jsonObject(
+            with: Data(contentsOf: root.appendingPathComponent("deploy/version/version.yaml"))
+        ) as? [String: Any])
+        let applied = try XCTUnwrap(state["applied"] as? [[String: Any]])
+        XCTAssertEqual(notes.version, state["current_version"] as? String)
+        XCTAssertEqual(notes.changes.map(\.pr), applied.compactMap { $0["pr"] as? Int })
+        for (change, source) in zip(notes.changes, applied) {
+            XCTAssertEqual(change.mergeSHA, source["merge_sha"] as? String)
+            XCTAssertEqual(change.summary, source["summary"] as? String)
+            XCTAssertEqual(change.fromVersion, source["from_version"] as? String)
+            XCTAssertEqual(change.toVersion, source["to_version"] as? String)
+        }
+    }
+
     func testSkippedVersionsAccumulateAndRepeatedLaunchRetainsInterval() throws {
         let notes = try releaseNotesFixture()
         XCTAssertEqual(notes.changes(after: "0.1.1").map(\.pr), [3, 2])
@@ -54,6 +77,29 @@ final class ReleaseChangesTests: XCTestCase {
         rows[0]["delta"] = ["build": 3]; rows[0].removeValue(forKey: "summary")
         changed["changes"] = rows
         try load(changed) // Historical text is never invented.
+    }
+}
+
+@MainActor
+final class ReleaseNotesPresentationTests: XCTestCase {
+    func testHistoricalCoverageForDowngradeAndUnknownBaselineInBothLanguages() throws {
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        let notes = try releaseNotesFixture()
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let view = ReleaseNotesView(notes: notes, baseline: "0.1.99",
+                                        onSuppressionChange: { _ in }, onClose: {})
+            XCTAssertEqual(view.coverageText, L10n.text(
+                "An earlier version is installed. Showing its recorded history, not changes added by this downgrade."
+            ))
+            XCTAssertEqual(notes.changes(after: "0.1.99").map(\.pr), [3, 2, 1])
+            let unknown = ReleaseNotesView(notes: notes, baseline: "0.0.99",
+                                           onSuppressionChange: { _ in }, onClose: {})
+            XCTAssertEqual(unknown.coverageText, L10n.format(
+                "Recorded history since version %@. Earlier changes may not be available.", notes.initialVersion
+            ))
+        }
     }
 }
 

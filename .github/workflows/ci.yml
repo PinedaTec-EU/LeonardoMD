@@ -40,7 +40,7 @@ jobs:
         env:
           EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          printf 'Head: %s\nSurface: native NSHostingView Release Notes\nViewport: 760x580 points\nLanguages: en, es\nStates: light, dark; suppression on\nFixture: synthetic 18-PR history\nLimits: component rendering; no fresh packaged-process startup claim\n' "$EVIDENCE_SHA" > visual-evidence/release-notes/provenance.txt
+          printf 'Head: %s\nSurface: native NSHostingView Release Notes\nViewport: 760x580 points\nLanguages: en, es\nStates: light, dark; interval and downgrade; suppression on\nFixture: synthetic 18-PR history\nLimits: component rendering; no fresh packaged-process startup claim\n' "$EVIDENCE_SHA" > visual-evidence/release-notes/provenance.txt
       - name: Upload preview evidence
         uses: actions/upload-artifact@v4
         with:
@@ -49,3 +49,13 @@ jobs:
           if-no-files-found: error
       - name: Package app
         run: ./scripts/build-app.sh
+      - name: Verify packaged release changes
+        env:
+          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/qa-bundle.py output/LeonardoMD.app --verify-only --report release-notes-package.json
+      - name: Upload package inspection evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes-package-${{ github.event.pull_request.head.sha || github.sha }}
+          path: release-notes-package.json
+          if-no-files-found: error

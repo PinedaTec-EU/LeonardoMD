@@ -56,7 +56,7 @@ struct ReleaseNotesView: View {
         .accessibilityIdentifier("release-notes-window")
     }
 
-    private var coverageText: String {
+    var coverageText: String {
         if let baseline, let previous = ReleaseChanges.parts(baseline), let current = ReleaseChanges.parts(notes.version),
            current.lexicographicallyPrecedes(previous) {
             return L10n.text("An earlier version is installed. Showing its recorded history, not changes added by this downgrade.")

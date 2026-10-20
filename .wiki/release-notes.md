@@ -7,7 +7,9 @@ then continues default-app prompting after dismissal. The per-version suppressio
 switch defaults on; manual app-menu access bypasses automatic suppression.
 Preferences preserve the interval for repeated notices and label unknown/earlier
 version history. Tests cover offline identity/history rejection, preferences,
-startup continuation/manual reopening and native en/es light/dark captures.
+startup continuation/manual reopening, the checked-in artifact, and native en/es light/dark interval/downgrade captures.
+CI publishes `release-notes-package-<SHA>` with executable/dependency inspection,
+signature verification, canonical bundle/version identity and artifact byte/hash comparison.
 See [release contract](../doc/release-version-ledger.md#native-release-notes).
 Tracking: [#209](https://github.com/PinedaTec-EU/LeonardoMD/issues/209).
 

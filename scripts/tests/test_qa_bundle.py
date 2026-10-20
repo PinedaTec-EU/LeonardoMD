@@ -1,10 +1,12 @@
 import importlib.util
+import json
 from pathlib import Path
 import plistlib
 import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location('qa_bundle', Path(__file__).parents[1] / 'qa-bundle.py')
 qa_bundle = importlib.util.module_from_spec(SPEC)
@@ -39,6 +41,31 @@ class QABundleTests(unittest.TestCase):
         self.write_metadata('LeonardoMD')
         with self.assertRaises(subprocess.CalledProcessError):
             qa_bundle.verify_bundle(self.bundle)
+
+    def test_package_report_binds_version_and_exact_artifact_bytes(self):
+        root = Path(self.directory.name)
+        (root / 'deploy').mkdir()
+        (root / 'version.nfo').write_text('0.1.3\n')
+        content = json.dumps({'schema_version': 1, 'repository': 'PinedaTec-EU/LeonardoMD',
+                              'version': '0.1.3', 'changes': []}).encode()
+        (root / 'deploy/release-changes.json').write_bytes(content)
+        resources = self.bundle / 'Contents/Resources'
+        resources.mkdir()
+        packaged = resources / 'ReleaseChanges.json'
+        packaged.write_bytes(content)
+        metadata = {'CFBundleExecutable': 'LeonardoMD', 'CFBundleIdentifier': 'eu.pinedatec.LeonardoMD',
+                    'CFBundleShortVersionString': '0.1.3', 'CFBundleVersion': '3'}
+        with patch.object(qa_bundle, 'inspect_bundle', return_value=(metadata, 'system dependencies')):
+            report = qa_bundle.release_changes_report(self.bundle, root, 'a' * 40)
+            self.assertTrue(report['changes_bytes_identical'])
+            self.assertFalse(report['fresh_process_launched'])
+            packaged.write_bytes(content + b'\n')
+            with self.assertRaisesRegex(ValueError, 'canonical source'):
+                qa_bundle.release_changes_report(self.bundle, root, 'a' * 40)
+            packaged.write_bytes(content)
+            metadata['CFBundleShortVersionString'] = '0.1.4'
+            with self.assertRaisesRegex(ValueError, 'canonical source'):
+                qa_bundle.release_changes_report(self.bundle, root, 'a' * 40)
 
 
 if __name__ == '__main__':

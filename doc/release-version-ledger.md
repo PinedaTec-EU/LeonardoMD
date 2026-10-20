@@ -207,6 +207,12 @@ Tracking: [#81](https://github.com/PinedaTec-EU/LeonardoMD/issues/81).
 
 ## Native release notes
 
+CI inspects the real app after packaging with `scripts/qa-bundle.py --verify-only --report`.
+The `release-notes-package-<SHA>` artifact records the checkout, executable,
+dependencies, signature check, canonical bundle/version and byte-identical JSON hash.
+It does not claim a process launch. Native capture evidence includes interval and
+downgrade states in both languages and themes.
+
 `version.changes_output_path` opts into the central `deploy/release-changes.json`
 artifact. It is generated and validated by the pinned shared engine in the same
 materialization as `version.nfo`; consumer code does not calculate or invent
