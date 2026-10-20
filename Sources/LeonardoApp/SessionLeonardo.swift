@@ -192,7 +192,8 @@ extension AppSession {
 
     func migrateMarkdownToLeonardo(
         allowSaveReentry: Bool = false,
-        allowClosing: Bool = false
+        allowClosing: Bool = false,
+        tableResize: LeonardoTableResize? = nil
     ) async -> Bool {
         guard documentKind == .markdown, let sourceURL = documentURL,
               !stopped, (!isClosing || allowClosing), !isSyncSuspended,
@@ -213,8 +214,14 @@ extension AppSession {
             if ownsOperation { fileOperationCount -= 1 }
         }
 
+        let originalContent = content
+        let originalProtection = isProtected
+        let originalMode = mode
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
-        guard await flushPreviewEdits(),
+        // Resize messages already follow the inline edit messages. Re-entering
+        // the renderer flush here would wait on this migration's own task.
+        if tableResize == nil, !(await flushPreviewEdits()) { return false }
+        guard
               documentKind == .markdown,
               documentURL == sourceURL,
               !stopped, (!isClosing || allowClosing), !isSyncSuspended,
@@ -231,7 +238,7 @@ extension AppSession {
         // authorization or attempting the exclusive destination create. A
         // Markdown suffix can still contain a complete MDLF document; wrapping
         // that source again would hide its fields, values, and document kind.
-        let serialized: String
+        var serialized: String
         do {
             switch LeonardoFormatParser.detect(content) {
             case .markdown:
@@ -260,6 +267,12 @@ extension AppSession {
             return false
         }
 
+        if let tableResize {
+            do {
+                serialized = try LeonardoFormatParser.serialize(tableResize.applying(to: LeonardoFormatParser.parse(serialized)))
+            } catch { report(error); return false }
+        }
+        let migratedContent = content
         let destination = sourceURL.deletingPathExtension().appendingPathExtension("mdlf")
         if FileManager.default.fileExists(atPath: destination.path) {
             errorMessage = L10n.text("The MDLF destination already exists. Choose another name before migrating.")
@@ -275,7 +288,8 @@ extension AppSession {
                   documentURL == sourceURL,
                   snapshot?.fingerprint == sourceSnapshot.fingerprint,
                   !stopped, (!isClosing || allowClosing), !isSyncSuspended,
-                  !externalConflict, ownsBusy else { return false }
+                  !externalConflict, ownsBusy, content == migratedContent,
+                  tableResize == nil || (content == originalContent && isProtected == originalProtection && mode == originalMode) else { return false }
 
             let saved = try await documents.createNew(serialized, to: destination, preserving: sourceSnapshot)
             documentURL = destination
@@ -287,8 +301,8 @@ extension AppSession {
             content = serialized
             externalConflict = false
             leonardoFormatWarning = false
-            isProtected = true
-            mode = .preview
+            isProtected = tableResize == nil
+            mode = tableResize == nil ? .preview : originalMode
             saveStatus = "Saved · local file"
             NSDocumentController.shared.noteNewRecentDocumentURL(destination)
             updateTitle()

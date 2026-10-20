@@ -320,3 +320,46 @@ See [the complete form demonstration](examples/form-showcase/README.md) for all
 current field types, defaults, constraints, repeated values and contextual help.
 Calculated fields and formulas are not supported yet; they are tracked for a
 future version in [#203](https://github.com/PinedaTec-EU/LeonardoMD/issues/203).
+
+## Interactive table dimensions
+
+In unlocked Preview (or the preview half of Split), drag a column's right edge
+in the header, a row's bottom edge, the table's right/bottom edge, or its lower
+right corner. Column drags change that column and the overall width; other
+columns keep their widths. Whole-table drags scale columns/rows proportionally,
+subject to column bounds and content minimums. Column/row handles sit on cell
+boundaries; whole-table width/height handles sit just outside the right/bottom
+edges so they remain reachable on header-only and very narrow tables.
+Resize handles also accept arrow keys (Shift for a larger step). Escape,
+pointer cancellation, loss of window focus, and saving/navigation during an
+unfinished gesture restore the committed geometry. Protected documents and Fill
+mode have no active resize controls.
+
+The first effective committed drag of `.md` creates a sibling `.mdlf` using the
+safe migration path, preserving the original file, front matter and relative
+resource locations. No-op/cancelled drags do not migrate. A pre-existing MDLF
+name or denied write leaves the Markdown document unchanged and reports the
+failure. The created MDLF includes the committed geometry and remains unlocked;
+subsequent resizes are ordinary unsaved edits until Save.
+
+Table descriptors optionally add `height` (a positive points dimension),
+`rowHeights` (positive point numbers in DOM row order, including header rows),
+and `source` (the exact Marked-normalized GFM table source). Height is a content
+minimum, never a clipping box. Point dimensions are bounded to 10000; resize
+commits also bound the total on each axis. `columns[].width` and table `width`
+store the measured dimensions in points, converting CSS pixels at 72/96.
+Existing repeat-header/row-break policies and column bounds are preserved.
+
+`source`-bound geometry applies only if both the one-based table occurrence and
+its exact source match. Editing, inserting or moving a different table/row can
+therefore disable stale geometry until another resize. Identical source tables
+are distinguished by occurrence; swapping identical occurrences is not a stable
+identity operation. Hand-authored descriptors without `source` retain explicit
+occurrence matching. Resize handles are excluded from print and PDF.
+
+These optional properties extend the current v1 schema, following the same
+contract evolution as checkbox appearance. No format-version bump or tolerant
+reader fallback is introduced: earlier strict v1 readers reject documents that
+use these properties rather than silently discarding geometry. Update those
+readers before sharing resized documents. Native and plugin validators use the
+same updated schema.

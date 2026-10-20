@@ -13,6 +13,8 @@ import WebKit
 @MainActor
 final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKNavigationDelegate {
     var onEdit: ((String, String) -> Bool)?
+    var onTableResize: ((String, LeonardoTableResize) async -> Bool)?
+    private var tableResizeTask: Task<Bool, Never>?
     var onFormEdit: ((String, [String: LeonardoJSONValue]) -> String?)?
     var onFieldHelp: ((String) -> Void)?
     private var formState = MarkdownFormState()
@@ -123,7 +125,11 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     }
 
     func flushEdits() async -> Bool {
+        if let task = tableResizeTask, !(await task.value) { return false }
         guard ready, let webView else { return true }
+        _ = try? await webView.evaluateJavaScript("window.LeonardoTableResizing?.cancel()")
+        if let task = tableResizeTask, !(await task.value) { return false }
+        guard self.webView === webView else { return true }
         if configuration.allowsFormFilling {
             guard renderWorkItem == nil else { return true }
             do {
@@ -163,8 +169,8 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         try await flushPendingRender()
         try await waitUntilReady()
         try await renderAllDiagramsForPDF()
-        _ = try await webView.evaluateJavaScript("window.LeonardoForms?.setExporting(true)")
-        defer { evaluate("window.LeonardoForms?.setExporting(false)") }
+        _ = try await webView.evaluateJavaScript("window.LeonardoForms?.setExporting(true); document.querySelector('main')?.classList.add('leonardo-form-export')")
+        defer { evaluate("window.LeonardoForms?.setExporting(false); document.querySelector('main')?.classList.remove('leonardo-form-export')") }
         return try await withCheckedThrowingContinuation { continuation in
             let pdfConfiguration = WKPDFConfiguration()
             webView.createPDF(configuration: pdfConfiguration) { result in
@@ -189,6 +195,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         renderWorkItem = nil
         markFailed(with: MarkdownRenderError.webViewUnavailable)
         if let webView {
+            webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoTableResize")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoForm")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoFieldHelp")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoEdit")
@@ -226,6 +233,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             webConfiguration.setURLSchemeHandler(documentHandler, forURLScheme: MarkdownHTMLShell.documentScheme)
         }
         let userContentController = webConfiguration.userContentController
+        userContentController.add(self, name: "leonardoTableResize")
         userContentController.add(self, name: "leonardoForm")
         userContentController.add(self, name: "leonardoFieldHelp")
         userContentController.add(self, name: "leonardoEdit")
@@ -450,6 +458,28 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         didReceive message: WKScriptMessage
     ) {
         switch message.name {
+        case "leonardoTableResize":
+            guard message.webView === webView, message.frameInfo.isMainFrame,
+                  configuration.allowsEditing, !configuration.allowsFormFilling,
+                  tableResizeTask == nil, renderWorkItem == nil,
+                  let body = message.body as? [String: Any],
+                  let expected = body["expected"] as? String, expected == content,
+                  let raw = body["resize"], JSONSerialization.isValidJSONObject(raw),
+                  let data = try? JSONSerialization.data(withJSONObject: raw),
+                  let resize = try? JSONDecoder().decode(LeonardoTableResize.self, from: data) else {
+                scheduleContentUpdate(immediately: true)
+                return
+            }
+            let callback = onTableResize
+            tableResizeTask = Task { @MainActor [weak self] in
+                let success = await callback?(expected, resize) == true
+                guard let self else { return success }
+                self.tableResizeTask = nil
+                // Native migration can replace the view entirely. Never redraw
+                // a replacement view on behalf of a retired document bridge.
+                if message.webView === self.webView { self.scheduleContentUpdate(immediately: true) }
+                return success
+            }
         case "leonardoForm":
             guard message.webView === webView, message.frameInfo.isMainFrame,
                   applyFormSnapshot(message.body) else {

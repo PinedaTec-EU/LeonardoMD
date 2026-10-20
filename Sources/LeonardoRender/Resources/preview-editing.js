@@ -206,6 +206,16 @@
   window.LeonardoEditing = {
     body: "", begin, annotate, span, prepare, escapeHTML,
     currentSource: () => source,
+    currentBody() {
+      // Markdown display bodies may use LF while the authoritative source
+      // retains CRLF. Locate the boundary in one coordinate system, then
+      // return normalized current prose for the same Marked lexer.
+      const original = originalSource.replace(/\r\n/g, "\n");
+      const body = window.LeonardoEditing.body.replace(/\r\n/g, "\n");
+      const offset = original.length - body.length;
+      if (offset < 0 || original.slice(offset) !== body) return "";
+      return source.replace(/\r\n/g, "\n").slice(offset);
+    },
     setEditable(root, value) {
       enabled = value === true;
       root.querySelectorAll("[data-leonardo-edit]").forEach((element) => {

@@ -40,6 +40,7 @@ enum MarkdownHTMLShell {
           \(documentBase)
           <link rel="stylesheet" href="\(resourceURL(.previewStyles))">
           <link rel="stylesheet" href="\(resourceURL(.formStyles))">
+          <link rel="stylesheet" href="\(resourceURL(.tableResizeStyles))">
           \(mathStylesheet)
           <script src="\(resourceURL(.marked))"></script>
           <script src="\(resourceURL(.dompurify))"></script>
@@ -52,6 +53,7 @@ enum MarkdownHTMLShell {
           <script id="leonardo-payload" type="application/json">\(encodedPayload)</script>
           <script src="\(resourceURL(.previewEditing))"></script>
           <script src="\(resourceURL(.tableLayout))"></script>
+          <script src="\(resourceURL(.tableResizing))"></script>
           <script src="\(resourceURL(.leonardoForms))"></script>
           <script src="\(resourceURL(.leonardoLayout))"></script>
           <script src="\(resourceURL(.runtime))"></script>

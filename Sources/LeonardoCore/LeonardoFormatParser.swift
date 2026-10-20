@@ -413,6 +413,16 @@ public enum LeonardoFormatValidator {
                 diagnostics.append(LeonardoDiagnostic(severity: .error, code: "layout.tableDuplicate", message: "Table layout entries must identify unique occurrences."))
             }
             validateDimension(table.width, code: "layout.tableWidth", into: &diagnostics)
+            validateDimension(table.height, code: "layout.tableHeight", into: &diagnostics)
+            if table.height?.unit == .percent {
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "layout.tableHeight", message: "Table height uses points."))
+            }
+            if table.rowHeights?.isEmpty == true {
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "layout.rowHeight", message: "Row heights cannot be empty."))
+            }
+            for height in table.rowHeights ?? [] {
+                validateDimension(LeonardoDimension(value: height, unit: .points), code: "layout.rowHeight", into: &diagnostics)
+            }
             for column in table.columns {
                 validateDimension(column.width, code: "layout.columnWidth", into: &diagnostics)
                 validateDimension(column.minimumWidth, code: "layout.columnMinimum", into: &diagnostics)

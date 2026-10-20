@@ -6,6 +6,10 @@ import LeonardoRender
 extension AppSession {
     var preview: some View {
         let previewDocumentURL = documentURL
+        renderer.onTableResize = { [weak self] expected, resize in
+            guard let self, self.documentURL == previewDocumentURL else { return false }
+            return await self.resizePreviewTable(expected: expected, resize: resize)
+        }
         renderer.onEdit = { [weak self] expected, replacement in
             guard let self, self.documentURL == previewDocumentURL else { return false }
             return self.editDocument(expected: expected, replacement: replacement)

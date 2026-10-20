@@ -264,6 +264,10 @@ public struct LeonardoTableLayout: Codable, Equatable, Sendable {
     /// comments and remains deterministic for any Markdown parser.
     public var occurrence: Int
     public var width: LeonardoDimension?
+    public var height: LeonardoDimension?
+    public var rowHeights: [Double]?
+    /// Exact normalized GFM table source; mismatches disable stale geometry.
+    public var source: String?
     public var columns: [LeonardoTableColumnLayout]
     public var repeatHeader: Bool
     public var allowRowBreak: Bool
@@ -272,22 +276,31 @@ public struct LeonardoTableLayout: Codable, Equatable, Sendable {
         occurrence: Int,
         width: LeonardoDimension? = nil,
         columns: [LeonardoTableColumnLayout] = [],
+        height: LeonardoDimension? = nil,
+        rowHeights: [Double]? = nil,
+        source: String? = nil,
         repeatHeader: Bool = true,
         allowRowBreak: Bool = true
     ) {
         self.occurrence = occurrence
         self.width = width
         self.columns = columns
+        self.height = height
+        self.rowHeights = rowHeights
+        self.source = source
         self.repeatHeader = repeatHeader
         self.allowRowBreak = allowRowBreak
     }
 
-    private enum CodingKeys: String, CodingKey { case occurrence, width, columns, repeatHeader, allowRowBreak }
+    private enum CodingKeys: String, CodingKey { case occurrence, width, columns, height, rowHeights, source, repeatHeader, allowRowBreak }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         occurrence = try container.decodeIfPresent(Int.self, forKey: .occurrence) ?? 1
         width = try container.decodeIfPresent(LeonardoDimension.self, forKey: .width)
+        height = try container.decodeIfPresent(LeonardoDimension.self, forKey: .height)
+        rowHeights = try container.decodeIfPresent([Double].self, forKey: .rowHeights)
+        source = try container.decodeIfPresent(String.self, forKey: .source)
         columns = try container.decodeIfPresent([LeonardoTableColumnLayout].self, forKey: .columns) ?? []
         repeatHeader = try container.decodeIfPresent(Bool.self, forKey: .repeatHeader) ?? true
         allowRowBreak = try container.decodeIfPresent(Bool.self, forKey: .allowRowBreak) ?? true
