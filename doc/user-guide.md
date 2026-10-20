@@ -13,7 +13,7 @@ Open documents from the app or Finder’s **Open With** menu. Distribution build
 - **Workspace:** select or create a root folder, discover its projects, and create, rename or delete project folders from the workspace manager.
 - **Recent items:** File provides separate document, project and workspace histories. Entries show their parent path; unavailable targets are disabled. Each submenu can clear its own history.
 - **Focus:** hides project navigation and the inspector while preserving the document and project. Toggle it again to restore those panels.
-- **Reading / Editing / Split:** protected-by-default source and rendered-text editing, native undo and an approximately synchronized preview. Unlock the toolbar padlock to edit; use Save or ⌘S to persist changes. Unsaved drafts are marked explicitly and closing or navigating away offers Save, Discard or Cancel. Preview editing preserves untouched Markdown; raw HTML, rendered math and diagrams are edited through the raw Edit view. External file changes reload clean documents; conflicting edits stay protected until you reload or save a copy.
+- **Reading / Editing / Split:** protected-by-default source and rendered-text editing, shared document undo and an approximately synchronized preview. Unlock the toolbar padlock to edit; use Save or ⌘S to persist changes. Unsaved drafts are marked explicitly and closing or navigating away offers Save, Discard or Cancel. Preview editing preserves untouched Markdown; raw HTML, rendered math and diagrams are edited through the raw Edit view. External file changes reload clean documents; conflicting edits stay protected until you reload or save a copy.
 
 | Shortcut | Action |
 | --- | --- |
@@ -23,6 +23,7 @@ Open documents from the app or Finder’s **Open With** menu. Distribution build
 | ⇧⌘F | Focus |
 | ⌥⌘I | Document outline |
 | ⌘S | Save |
+| ⌘Z / ⇧⌘Z | Undo / Redo document edits |
 | ⇧⌘E | Export PDF |
 
 ## Rendering and extensions
@@ -48,6 +49,12 @@ Export a form as `.mdlr` to open it in **Fill form** mode. Fill the declared fie
 **Export Leonardo package** produces an ordinary `.mdlz` ZIP containing one MDLF/MDLR document and its local resources under `assets/`. Package opening defaults to editing the package itself; preferences can ask or extract to a new folder. When working in an extracted folder, Save updates those ordinary files and **Export Leonardo package** creates a new transport package. The title and status bar distinguish format, storage and mode so the save destination stays visible.
 
 See the [format specification, schema and examples](format/README.md) and the [Codex/Claude plugin and MDLZ generation guide](plugins/leonardo-format.md). No proprietary binary document representation is required.
+
+## Undo and Redo
+
+Use **Undo** and **Redo** beside Save, or **Edit → Undo / Redo** (⌘Z / ⇧⌘Z), to restore source, preview and form edits. Each document session keeps its own history of up to 200 changes. Source edits require the padlock to be unlocked; form edits can be restored in Fill mode while the source remains protected. A new edit clears Redo.
+
+Ordinary saves preserve history. Undoing a saved edit changes the draft without changing the file until you save again. Loading, reloading, discarding changes, converting formats or closing the session clears history. In particular, saving with automatic Markdown-to-MDLF migration starts a new history for the converted document. Search and other native text controls keep their own text undo when focused.
 
 ## Document tags
 
