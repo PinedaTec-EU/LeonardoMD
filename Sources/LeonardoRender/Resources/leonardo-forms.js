@@ -58,15 +58,11 @@
       if (field.appearance === "switch") { input.setAttribute("role", "switch"); input.classList.add("leonardo-form-switch"); }
       input.checked = value === true;
     } else if (field.type !== "multiline") {
-      input.type = ["date", "email", "url"].includes(field.type) ? field.type : "text";
+      input.type = ["email", "url"].includes(field.type) ? field.type : "text";
       if (field.type === "number") input.inputMode = "decimal";
-      if (field.type === "date" && value && !/^\d{4}-\d\d-\d\d$/.test(String(value))) input.type = "text";
     }
     if (field.type !== "checkbox") {
       input.value = value === null || value === undefined ? "" : String(value);
-      if (field.type === "date" && value && input.value !== String(value)) {
-        input.type = "text"; input.value = String(value);
-      }
     }
     if (field.placeholder) input.placeholder = field.placeholder;
     input.setAttribute("aria-required", String(!!field.required));
@@ -121,6 +117,7 @@
         input = makeInput(fieldID, field, value, id);
         input.disabled = !payload.allowsFormFilling;
         wrapper.append(input, output);
+        if (field.type === "date") window.LeonardoCalendar.attach(input, wrapper);
       }
       const diagnostic = document.createElement("span"); diagnostic.id = `${id}-diagnostic`;
       diagnostic.className = "leonardo-field-diagnostic"; diagnostic.setAttribute("aria-live", "polite");
