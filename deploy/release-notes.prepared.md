@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.494
+
+- #220 Fixed: improve light-theme document indicator contrast ([#221](https://github.com/PinedaTec-EU/LeonardoMD/pull/221))
+
+<p>Improve document format and storage indicator contrast in light themes using the palette heading color.</p>
+
+Source: `4ece950ef7c3c181340450074ab27ef18c2437c5`. Delta: `{"build": 3}`.
+
 ## 0.1.491
 
 - #208 Added: resize preview tables with persisted MDLF geometry ([#213](https://github.com/PinedaTec-EU/LeonardoMD/pull/213))

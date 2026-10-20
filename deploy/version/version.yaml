@@ -397,9 +397,19 @@
       "pr": 213,
       "summary": "Resize columns, rows and whole tables in Preview with the mouse or keyboard. Markdown documents migrate safely to MDLF to preserve table dimensions.",
       "to_version": "0.1.491"
+    },
+    {
+      "delta": {
+        "build": 3
+      },
+      "from_version": "0.1.491",
+      "merge_sha": "4ece950ef7c3c181340450074ab27ef18c2437c5",
+      "pr": 221,
+      "summary": "Improve document format and storage indicator contrast in light themes using the palette heading color.",
+      "to_version": "0.1.494"
     }
   ],
-  "current_version": "0.1.491",
+  "current_version": "0.1.494",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
