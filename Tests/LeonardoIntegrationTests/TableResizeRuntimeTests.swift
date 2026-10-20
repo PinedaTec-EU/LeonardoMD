@@ -129,6 +129,25 @@ final class TableResizeRuntimeTests: XCTestCase {
         try await waitFor("!document.querySelector('main').classList.contains('tables-resizable') && Array.from(document.querySelectorAll('.table-resize-handle')).every(n => n.disabled)", web)
     }
 
+    func testHeaderOnlyNarrowTableKeepsAllOuterHandlesReachable() async throws {
+        var config = MarkdownPreviewConfiguration(); config.allowsEditing = true
+        let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 600, height: 500))
+        let window = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false; window.contentView = host; window.orderFront(nil)
+        defer { host.teardown(); window.close() }
+        host.apply(content: "| A |\n| --- |\n", baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
+        let web = try XCTUnwrap(host.subviews.compactMap { $0 as? WKWebView }.first)
+        try await waitFor("document.querySelectorAll('.table-resize-handle').length === 5", web)
+        let reachable = try await web.evaluateJavaScript("""
+        ['width', 'height', 'both'].every(kind => {
+          const handle = document.querySelector('[data-resize-kind="' + kind + '"]');
+          const r = handle.getBoundingClientRect();
+          return r.width >= 8 && r.height >= 8 && document.elementFromPoint(r.left+r.width/2, r.top+r.height/2) === handle;
+        })
+        """) as? Bool
+        XCTAssertEqual(reachable, true)
+    }
+
     private func number(_ expression: String, _ web: WKWebView) async throws -> Double {
         let value = try await web.evaluateJavaScript(expression) as? Double
         return try XCTUnwrap(value)

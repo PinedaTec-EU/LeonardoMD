@@ -142,11 +142,11 @@
           width = 8; height = headerHeight;
         } else if (kind === "row") {
           y += table.rows[index].getBoundingClientRect().bottom - rect.top - 4;
-          width = index === table.rows.length - 1 ? 44 : Math.max(44, rect.width - 14);
+          width = index === table.rows.length - 1 ? Math.min(44, Math.max(8, rect.width - 14)) : Math.max(8, rect.width - 14);
         } else if (kind === "width") {
-          x += rect.width - 4; y += headerHeight; width = 8; height = Math.max(0, rect.height - headerHeight - 8);
+          x += rect.width + 4; width = 8; height = Math.max(12, rect.height - 8);
         } else if (kind === "height") {
-          x += 48; y += rect.height - 4; width = Math.max(0, rect.width - 60);
+          y += rect.height + 4; width = Math.max(8, rect.width - 8);
         } else { x += rect.width - 8; y += rect.height - 8; width = height = 16; }
         Object.assign(node.style, { left: `${x}px`, top: `${y}px`, width: `${width}px`, height: `${height}px` });
         node.disabled = !enabled;

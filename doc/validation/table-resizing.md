@@ -10,6 +10,10 @@ handles and native message handler, then validate the session and disk.
 
 Coverage:
 
+- LF and CRLF inputs include a table at the very start of the body, with and
+  without front matter. Native migration preserves the original CRLF bytes,
+  then column/row/corner changes survive save and reopen.
+- Header-only narrow tables retain positive, hit-testable outer controls.
 - Protected Preview disables controls. Click/no movement and Escape do not
   migrate. Column, row, table width, table height and corner drags commit.
 - The second of identical tables receives geometry; the first remains normal.

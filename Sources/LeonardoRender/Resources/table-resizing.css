@@ -1,4 +1,4 @@
-.table-viewport { position: relative; padding: 0 10px 10px 0; }
+.table-viewport { position: relative; padding: 0 16px 16px 0; }
 .table-resize-overlay { position: absolute; inset: 0; pointer-events: none; display: none; }
 .tables-resizable .table-resize-overlay { display: block; }
 .table-resize-handle {

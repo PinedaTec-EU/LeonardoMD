@@ -32,3 +32,9 @@ geometry. See the canonical format README for interaction and identity limits.
 `TableResizingTests` exercises native WebKit gestures, migration, save/reopen,
 PDF, cancellation and rejection paths. This is component/runtime evidence, not
 fresh packaged startup acceptance.
+
+The editing bridge normalizes both source and original body before calculating
+the body boundary for resize lookup; mixing raw CRLF length with normalized LF
+length truncates leading tables. The native resize matrix covers CRLF both
+with and without front matter. Outer handles reserve separate viewport padding
+so even header-only/narrow tables keep hit-testable width/height controls.

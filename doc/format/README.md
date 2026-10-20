@@ -327,8 +327,9 @@ In unlocked Preview (or the preview half of Split), drag a column's right edge
 in the header, a row's bottom edge, the table's right/bottom edge, or its lower
 right corner. Column drags change that column and the overall width; other
 columns keep their widths. Whole-table drags scale columns/rows proportionally,
-subject to column bounds and content minimums. The bottom edge's leftmost
-44 pixels controls the final row; the remainder controls the whole table.
+subject to column bounds and content minimums. Column/row handles sit on cell
+boundaries; whole-table width/height handles sit just outside the right/bottom
+edges so they remain reachable on header-only and very narrow tables.
 Resize handles also accept arrow keys (Shift for a larger step). Escape,
 pointer cancellation, loss of window focus, and saving/navigation during an
 unfinished gesture restore the committed geometry. Protected documents and Fill
