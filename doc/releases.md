@@ -24,6 +24,14 @@ GitHub beta is a public prerelease plus its subscription feed. Apple notarizatio
 
 Keep credentials in the Keychain, never in this document or tracked environment files. Tracking: [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15).
 
+## Public release notes
+
+Write GitHub release descriptions, downloadable Markdown notes and embedded Sparkle notes in **English only**, starting with user-visible changes and actionable known limitations. Keep these three public surfaces aligned. Keep hashes, notarization submission IDs, source SHAs, CI/judge transcripts and publication-time acceptance evidence in the canonical issue or a separate linked operator record. Do not delete that evidence when shortening public notes.
+
+Use permanent latest-stable/all-release links in the README and an automatically refreshed stable-version badge. Do not copy the latest version number into README prose. Identify beta-only capabilities when they differ from stable; reassess that distinction when a feature is promoted, rather than editing the README for every release.
+
+The owner's [2026-10-20 confirmation](https://github.com/PinedaTec-EU/LeonardoMD/issues/15#issuecomment-6287996933) establishes working update detection and installation, with an active-instance termination limitation tracked in [#202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202). Its recorded 445 → 461 transition completed after closing Preferences and quitting normally. Do not describe all installation as unvalidated. Keep untested channel-matrix rows and legacy-key recovery separate; this report does not validate every candidate or prove that termination/relaunch is fixed.
+
 ## Prepare and inspect
 
 Run `./scripts/prepare-release.sh` from the repository. It builds the app, embeds Sparkle including symlinks and executable helpers, signs nested components inside out with hardened runtime, verifies signatures, notarizes, staples, assesses Gatekeeper, then generates the archive and EdDSA-signed appcast. It stops on failure. Release notes are embedded in the appcast. Output is under `output/release-<version>/`. No tag or release is published by this script.

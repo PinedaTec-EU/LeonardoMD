@@ -39,6 +39,8 @@ Custom palette colors can be edited and imported/exported as JSON. The app valid
 
 ## Open Leonardo documents and forms
 
+These workflows are currently available in beta releases, ahead of stable. Choose a release whose notes include Leonardo document support; the [stable download](https://github.com/PinedaTec-EU/LeonardoMD/releases/latest) follows GitHub's stable channel, not the newest beta.
+
 Leonardo documents use `.mdlf`, an open UTF-8 Markdown body with versioned JSON metadata for fields, answers and layout. Standard `.md` files retain normal Markdown behavior. **Preferences → General** can opt into saving Markdown edits as MDLF while preserving the original file. A file carrying an explicit Leonardo declaration with a Markdown extension shows a conversion notice.
 
 Export a form as `.mdlr` to open it in **Fill form** mode. Fill the declared fields in the inspector; validation messages do not prevent saving an unfinished draft. Structural source editing remains available through the document mode and protection controls. Background images, image dimensions/placement and table column widths are declared in the public metadata contract.
@@ -66,6 +68,8 @@ The document inspector contains heading navigation. Drag the divider beside the 
 ## Updates
 
 Open **LeonardoMD → Preferences… → Updates** (Spanish: **Preferencias… → Actualizaciones**) to choose Stable or Beta, check now or enable periodic checks. Stable is selected initially, including in beta packages. Automatic checking is initially off; installation requires user action.
+
+The maintainer confirms that updates are detected and install successfully. A remaining [Preferences-sheet termination issue (#202)](https://github.com/PinedaTec-EU/LeonardoMD/issues/202) can leave the old instance running after Install and Relaunch. Save your work, close Preferences, and quit normally so the pending update can complete. This confirmation does not establish every channel transition or quit-cancellation acceptance scenario.
 
 The installed package channel and the selected update subscription are separate. Beta subscriptions include newer stable releases. Switching to Stable never downgrades an installed beta: it waits for a newer stable build. Finish or cancel an active update before changing channel. Unsaved-document and Git-operation guards apply when an update requests termination.
 
