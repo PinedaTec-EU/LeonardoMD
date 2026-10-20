@@ -18,7 +18,7 @@ public struct LeonardoTableResize: Codable, Sendable {
         guard occurrence > 0, !source.isEmpty, !widths.isEmpty, !heights.isEmpty,
               dimensions.allSatisfy({ $0.isFinite && $0 > 0 && $0 <= 10_000 }),
               widths.reduce(0, +) <= 10_000, heights.reduce(0, +) <= 10_000 else {
-            throw CocoaError(.validationMissingMandatoryProperty)
+            throw LeonardoTableResizeError.invalidGeometry
         }
         var document = original
         var layout = document.metadata.layout ?? LeonardoLayout()
@@ -39,4 +39,9 @@ public struct LeonardoTableResize: Codable, Sendable {
         _ = try LeonardoFormatParser.serialize(document)
         return document
     }
+}
+
+public enum LeonardoTableResizeError: LocalizedError {
+    case invalidGeometry
+    public var errorDescription: String? { "Table dimensions must be positive and total at most 10000 points per axis." }
 }

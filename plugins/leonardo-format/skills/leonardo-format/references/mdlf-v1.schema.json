@@ -132,7 +132,7 @@
         "width": { "$ref": "#/$defs/dimension" },
         "columns": { "type": "array", "items": { "$ref": "#/$defs/column" } },
         "height": { "$ref": "#/$defs/dimension" },
-        "rowHeights": { "type": "array", "minItems": 1, "items": { "type": "number", "exclusiveMinimum": 0, "maximum": 10000 } },
+        "rowHeights": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 10000 } },
         "source": { "type": "string", "minLength": 1 },
         "repeatHeader": { "type": "boolean" },
         "allowRowBreak": { "type": "boolean" }

@@ -67,7 +67,7 @@
     const nodes = root.querySelectorAll("table");
     for (const descriptor of tables || []) {
       const table = nodes[(descriptor.occurrence || 1) - 1];
-      if (!table || (descriptor.source && descriptor.source !== window.LeonardoTables.sources(window.LeonardoEditing.body)[descriptor.occurrence - 1])) continue;
+      if (!table || (descriptor.source && descriptor.source !== window.LeonardoTables.sourceFor(table, root, window.LeonardoEditing.body))) continue;
       table.querySelector("colgroup")?.remove();
       table.removeAttribute("style");
       table.classList.remove("table-sized");

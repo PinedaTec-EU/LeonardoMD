@@ -265,6 +265,8 @@ def _validate_layout(layout: object) -> None:
             _validate_dimension(table.get("height"), f"{path}.height", positive=True)
             if isinstance(table.get("height"), dict) and table["height"].get("unit") != "points":
                 _fail(f"{path}.height", "table height uses points")
+            if table.get("rowHeights") == []:
+                _fail(f"{path}.rowHeights", "row heights cannot be empty")
             for row_index, height in enumerate(table.get("rowHeights", [])):
                 _validate_dimension({"value": height, "unit": "points"}, f"{path}.rowHeights[{row_index}]", positive=True)
             columns = table.get("columns")

@@ -417,6 +417,9 @@ public enum LeonardoFormatValidator {
             if table.height?.unit == .percent {
                 diagnostics.append(LeonardoDiagnostic(severity: .error, code: "layout.tableHeight", message: "Table height uses points."))
             }
+            if table.rowHeights?.isEmpty == true {
+                diagnostics.append(LeonardoDiagnostic(severity: .error, code: "layout.rowHeight", message: "Row heights cannot be empty."))
+            }
             for height in table.rowHeights ?? [] {
                 validateDimension(LeonardoDimension(value: height, unit: .points), code: "layout.rowHeight", into: &diagnostics)
             }

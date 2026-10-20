@@ -80,6 +80,7 @@
     if (!changed || !enabled) { restore(drag); return; }
     const handler = window.webkit?.messageHandlers?.leonardoTableResize;
     if (!handler) { restore(drag); return; }
+    window.LeonardoTableResizing.setEditable(false);
     handler.postMessage({ expected: window.LeonardoEditing.currentSource(), resize: {
       occurrence: drag.occurrence, source: drag.source,
       widths: next.widths.map(v => v * pointsPerPixel), heights: next.heights.map(v => v * pointsPerPixel)
@@ -91,7 +92,7 @@
     document.activeElement?.blur();
     const table = state.table;
     const occurrence = state.occurrence;
-    const source = window.LeonardoTables.sources(window.LeonardoEditing.currentBody())[occurrence - 1];
+    const source = window.LeonardoTables.sourceFor(table, document.querySelector("main"), window.LeonardoEditing.currentBody());
     if (!source) return;
     const descriptor = payload.leonardo?.layout?.tables?.find(t => t.occurrence === occurrence && (!t.source || t.source === source));
     active = { ...state, kind, index, source, descriptor, pointer: event.pointerId, x: event.clientX, y: event.clientY,
@@ -101,7 +102,7 @@
     event.preventDefault(); event.stopPropagation();
   }
   function prepareTable(table, occurrence) {
-    if (!table.rows.length || !table.rows[0].cells.length || table.querySelector("[colspan], [rowspan]")) return;
+    if (!window.LeonardoTables.isMarkdownTable(table) || !table.rows.length || !table.rows[0].cells.length || table.querySelector("[colspan], [rowspan]")) return;
     const viewport = table.parentElement;
     const overlay = document.createElement("div"); overlay.className = "table-resize-overlay";
     const handles = [];
@@ -113,7 +114,17 @@
       node.title = (payload.formLabels?.[label] || label) + (index >= 0 ? ` ${index + 1}` : "");
       node.setAttribute("aria-label", node.title);
       node.addEventListener("pointerdown", event => start(event, state, kind, index));
-      node.addEventListener("keydown", event => { if (event.key === "Escape") cancel(); });
+      node.addEventListener("keydown", event => {
+        if (event.key === "Escape") { cancel(); return; }
+        const directions = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+        const direction = directions[event.key];
+        if (!direction || !enabled) return;
+        const step = event.shiftKey ? 24 : 8;
+        const pointer = { pointerId: -1, button: 0, clientX: 0, clientY: 0, currentTarget: node, preventDefault() {}, stopPropagation() {} };
+        start(pointer, state, kind, index);
+        move({ ...pointer, clientX: direction[0] * step, clientY: direction[1] * step });
+        finish(pointer); event.preventDefault();
+      });
       overlay.append(node); handles.push({ node, kind, index });
     }
     Array.from(table.rows[0].cells).forEach((_, i) => handle("column", i, "Resize column"));

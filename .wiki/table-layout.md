@@ -13,3 +13,22 @@ The shared runtime wraps sanitized tables in keyboard-scrollable viewports.
 Normal tables preserve words; fixed-layout opt-in tables wrap headers and reserve
 explicit content widths plus padding. `auto` columns share spare space with a
 12ch minimum. Full syntax is documented in README.
+
+Interactive sizing ([#208](https://github.com/PinedaTec-EU/LeonardoMD/issues/208))
+uses `table-resizing.js`/CSS after sanitization and MDLF layout application.
+Controls live outside cells in the scroll viewport; transient geometry never
+changes source until pointer-up. `LeonardoTableResize` owns validated point
+geometry. `SessionTableResizing` guards identity/protection/mode and reuses
+`migrateMarkdownToLeonardo(tableResize:)` for exclusive sibling creation with
+geometry already serialized. The host tracks the async transaction; flush
+cancels unfinished gestures and joins commits. Resize migration skips recursive
+flush to avoid awaiting its own transaction. Save/export/navigation settle the
+bridge; retired document callbacks cannot target byte-identical siblings.
+
+V1 table metadata now includes optional `height`, `rowHeights` and `source`.
+All schema copies and the plugin semantics match; earlier strict readers reject
+the new properties. `source` mismatch at the recorded occurrence disables stale
+geometry. See the canonical format README for interaction and identity limits.
+`TableResizingTests` exercises native WebKit gestures, migration, save/reopen,
+PDF, cancellation and rejection paths. This is component/runtime evidence, not
+fresh packaged startup acceptance.
