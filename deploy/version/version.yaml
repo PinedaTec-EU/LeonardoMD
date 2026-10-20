@@ -387,9 +387,19 @@
       "pr": 210,
       "summary": "LeonardoMD shows the changes included in each new version at startup. You can hide the notice for that version or reopen it from the application menu.",
       "to_version": "0.1.482"
+    },
+    {
+      "delta": {
+        "build": 9
+      },
+      "from_version": "0.1.482",
+      "merge_sha": "ca0e3686c45ad580a5a399562501142aec7cbddf",
+      "pr": 213,
+      "summary": "Resize columns, rows and whole tables in Preview with the mouse or keyboard. Markdown documents migrate safely to MDLF to preserve table dimensions.",
+      "to_version": "0.1.491"
     }
   ],
-  "current_version": "0.1.482",
+  "current_version": "0.1.491",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

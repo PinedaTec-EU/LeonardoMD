@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.491
+
+- #208 Added: resize preview tables with persisted MDLF geometry ([#213](https://github.com/PinedaTec-EU/LeonardoMD/pull/213))
+
+<p>Resize columns, rows and whole tables in Preview with the mouse or keyboard. Markdown documents migrate safely to MDLF to preserve table dimensions.</p>
+
+Source: `ca0e3686c45ad580a5a399562501142aec7cbddf`. Delta: `{"build": 9}`.
+
 ## 0.1.482
 
 - #209 Added: per-PR summaries and native startup release notes ([#210](https://github.com/PinedaTec-EU/LeonardoMD/pull/210))
