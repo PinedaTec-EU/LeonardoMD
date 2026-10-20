@@ -3,38 +3,35 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.1.476</title>
-            <pubDate>Tue, 20 Oct 2026 01:52:26 +0200</pubDate>
+            <title>0.1.494</title>
+            <pubDate>Tue, 20 Oct 2026 12:13:21 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>476</sparkle:version>
-            <sparkle:shortVersionString>0.1.476</sparkle:shortVersionString>
+            <sparkle:version>494</sparkle:version>
+            <sparkle:shortVersionString>0.1.494</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD 0.1.476
+            <description sparkle:format="markdown"># LeonardoMD 0.1.494
 
-## Editable forms in the document
+## What is new
 
-- Fill all eight field types directly in the document, with visible controls, validation and synchronization of repeated fields.
-- Open field help with (?). The side panel identifies editable/read-only and required/optional fields.
-- Try the complete form and response example, including checkboxes, switches, initial values and constraints.
-- Save incomplete drafts manually. Preview and PDF show values without editing controls.
-- Includes the optional-empty-metadata cleanup from the previous beta.
+- Resize tables, columns and rows directly in editable Preview. Saved MDLF documents retain their geometry. Resizing an ordinary Markdown document creates a sibling MDLF and preserves the original.
+- See release changes at startup and reopen them from the application menu. Choose whether to show these notes automatically in Preferences.
+- Read document format and storage indicators more clearly in light themes.
+- Includes the editable forms and field help from the previous beta.
 
-Calculated fields and formulas are planned separately and are not included.
-
-## Installation and updates
+## Compatibility and known limitations
 
 Beta for Apple Silicon (arm64), macOS 14 or later. Developer ID signed and notarized by Apple.
 
+Older strict MDLF readers may reject the new optional table geometry fields. Resize controls are available only in editable Preview; protected documents and Fill mode do not permit geometry changes.
+
 To receive beta updates, select **Beta** in Preferences → Updates. Stable remains the default subscription.
 
-Update detection and installation are maintainer-confirmed. **Known limitation:** the active instance can remain open when updating from Preferences. Save your work, close Preferences, and quit normally to let the pending update complete. [Termination issue #202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202).
+Update detection and installation are maintainer-confirmed. The active instance can remain open when updating from Preferences. Save your work, close Preferences, and quit normally to let the pending update complete. [Termination issue #202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202).
 
-Legacy betas using the former update-signing key require manual installation of a current signed/notarized package. This is separate from normal update installation and does not mean the current feed is unavailable.
-
-[Publication evidence and validation limits](https://github.com/PinedaTec-EU/LeonardoMD/issues/223#issuecomment-6288007726). Notes clarified on 2026-10-20; original archive, version and channel are unchanged.
+Legacy betas using the former update-signing key require manual installation of a current signed/notarized package.
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.476/LeonardoMD-0.1.476.zip" length="16321702" type="application/octet-stream" sparkle:edSignature="qXGqKu7LOmf+L+yLLF0xivyqDqUUcb8ifXhxBOdO6d+dbWXZ0T8LbUPR78n/cwyXG16ErWrMPaoKqqJ1cBw9BA==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.494/LeonardoMD-0.1.494.zip" length="16402421" type="application/octet-stream" sparkle:edSignature="TqVATT7fdNYBnq380BlcKpfhRnko9eJ0xPJl0/WBzuirIHKGys8FX0YgiKHCNTsB+F82wrgrimTMMVQb2ozqAw==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.405</title>
