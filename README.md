@@ -6,9 +6,13 @@ Native macOS Markdown reading and editing, backed by real local files. Open a si
 
 ## Download and install
 
+[![Latest stable version](https://img.shields.io/github/v/release/PinedaTec-EU/LeonardoMD?label=stable)](https://github.com/PinedaTec-EU/LeonardoMD/releases/latest)
+
 [**Download the latest stable release**](https://github.com/PinedaTec-EU/LeonardoMD/releases/latest) · [All releases and betas](https://github.com/PinedaTec-EU/LeonardoMD/releases)
 
 Published macOS packages support **Apple Silicon (arm64), macOS 14 or later**, and are **Developer ID signed and notarized by Apple**. Download the `LeonardoMD-<version>.zip` asset, extract it and move `LeonardoMD.app` to Applications. Building from source is optional; no Xcode installation is needed to use the published app.
+
+The stable link and version badge follow GitHub's latest stable release automatically. Beta releases appear separately in [Releases](https://github.com/PinedaTec-EU/LeonardoMD/releases); choose **Beta** in Preferences → Updates to receive them. This README also describes newer development features: check the selected release's notes for availability. **MDLF, MDLR, MDLZ and forms are currently available in beta releases, ahead of stable.**
 
 No account, API key or network connection is needed to read local documents. The interface is available in English and Español.
 
@@ -37,6 +41,8 @@ See the [user guide](doc/user-guide.md) for document modes, preferences, tags, G
 
 ## Open Leonardo documents and forms
 
+**Beta feature preview.** Use a beta whose release notes include Leonardo document support. The latest stable download currently predates these formats.
+
 Standard Markdown files keep their normal behavior. Leonardo adds an open document format with a Markdown body and versioned JSON metadata:
 
 | Format | Purpose |
@@ -54,6 +60,8 @@ Explore the [format specification, schema and examples](doc/format/README.md), o
 ## Updates
 
 Published macOS builds include an updater. In **Preferences → Updates**, choose Stable or Beta, check manually or enable periodic checks. Stable is selected initially; beta participation is explicit. Installation requires user action, and switching to Stable never downgrades an installed beta.
+
+Update detection and installation have been confirmed by the maintainer. **Known limitation:** the active app can remain open when updating from Preferences. Close Preferences and quit LeonardoMD normally to let the pending update complete; save your work first. See [the tracked termination issue](https://github.com/PinedaTec-EU/LeonardoMD/issues/202).
 
 [Release notes and downloads](https://github.com/PinedaTec-EU/LeonardoMD/releases) identify each published package. See the [user guide](doc/user-guide.md#updates) for channel behavior and legacy beta recovery.
 
