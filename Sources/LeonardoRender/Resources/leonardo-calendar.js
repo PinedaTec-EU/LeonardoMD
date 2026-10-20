@@ -49,11 +49,11 @@
         shown = next; render();
       }
       function render(focusDate) {
-        title.textContent = new Intl.DateTimeFormat(locale, {month: "long", year: "numeric"}).format(shown);
+        title.textContent = new Intl.DateTimeFormat(locale, {calendar: "gregory", month: "long", year: "numeric"}).format(shown);
         grid.replaceChildren();
         for (let index = 0; index < 7; index++) {
           const day = document.createElement("span"); day.className = "leonardo-calendar-weekday";
-          day.textContent = new Intl.DateTimeFormat(locale, {weekday: "short"}).format(new Date(2024, 0, 1 + index));
+          day.textContent = new Intl.DateTimeFormat(locale, {calendar: "gregory", weekday: "short"}).format(new Date(2024, 0, 1 + index));
           grid.append(day);
         }
         const offset = (shown.getDay() + 6) % 7;
@@ -62,7 +62,7 @@
         for (let number = 1; number <= count; number++) {
           const date = new Date(shown); date.setDate(number);
           const value = iso(date);
-          const day = button(String(number), new Intl.DateTimeFormat(locale, {dateStyle: "full"}).format(date), () => {
+          const day = button(String(number), new Intl.DateTimeFormat(locale, {calendar: "gregory", dateStyle: "full"}).format(date), () => {
             if (input.disabled) return;
             input.value = value; input.dispatchEvent(new Event("input", {bubbles: true}));
             close(); input.focus();

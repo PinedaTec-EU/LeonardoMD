@@ -16,7 +16,7 @@ These are actual renderer fixture captures, not packaged macOS application captu
 
 The calendar expands in document flow to avoid clipping inside authored tables. It uses a 26em preferred width constrained by available space; day targets scale with document text. ISO date text remains editable so incomplete drafts are preserved.
 
-`FormCalendarTests` loads the actual bundled shell in a real WKWebView. It verifies leap-year month length, arrow navigation across months, date selection and snapshot, duplicate-field synchronization, incomplete draft preservation, active theme background, Escape dismissal, export suppression disabled Preview controls and safe English fallback/selection for malformed document locale tags. The existing `InlineFormTests` covers save, reopen and export through the app controller.
+`FormCalendarTests` loads the actual bundled shell in a real WKWebView. It verifies leap-year month length, arrow navigation across months, date selection and snapshot, duplicate-field synchronization, incomplete draft preservation, active theme background, Escape dismissal, export suppression disabled Preview controls and safe English fallback/selection for malformed document locale tags, plus Gregorian month/day labels even when a locale requests another calendar. The existing `InlineFormTests` covers save, reopen and export through the app controller.
 
 ![Warm theme](light.png)
 

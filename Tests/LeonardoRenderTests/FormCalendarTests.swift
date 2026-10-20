@@ -49,6 +49,10 @@ final class FormCalendarTests: XCTestCase {
           const fallbackLocale = malformed.querySelector('.leonardo-calendar-header').textContent.includes('February') && malformed.querySelectorAll('[data-date]').length === 29;
           malformed.querySelector('[data-date="2024-02-28"]').click();
           const fallbackSelection = LeonardoForms.snapshot().changes.malformed === '2024-02-28';
+          LeonardoForms.begin({allowsFormFilling: true, source: 'gregorian', leonardo: {document: {locale: 'en-u-ca-islamic'}}}, root);
+          const gregorian = LeonardoForms.field('gregorian', {type: 'date'}, '2024-02-29'); root.append(gregorian);
+          gregorian.querySelector('.leonardo-calendar-toggle').click();
+          const gregorianLocale = gregorian.querySelector('.leonardo-calendar-header').textContent.includes('February 2024') && gregorian.querySelector('[data-date="2024-02-29"]').getAttribute('aria-label').includes('February 29, 2024');
           LeonardoForms.setExporting(true);
           const exported = getComputedStyle(root.querySelector('.leonardo-calendar-toggle')).display === 'none';
           LeonardoForms.begin({allowsFormFilling: false}, root);
@@ -57,11 +61,11 @@ final class FormCalendarTests: XCTestCase {
           locked.querySelector('.leonardo-calendar-toggle').click();
           lockedInput.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowDown', altKey: true, bubbles: true}));
           const protectedDate = locked.querySelector('.leonardo-calendar-toggle').disabled && locked.querySelector('.leonardo-calendar').hidden && lockedInput.value === '2024-02-29' && Object.keys(LeonardoForms.snapshot().changes).length === 0;
-          return {leap, keyboard, saved, synchronized, draft, themed, escaped, exported, protectedDate, fallbackLocale, fallbackSelection};
+          return {leap, keyboard, saved, synchronized, draft, themed, escaped, exported, protectedDate, fallbackLocale, fallbackSelection, gregorianLocale};
         })()
         """) as? [String: Bool]
         let checks = try XCTUnwrap(result)
         for (name, passed) in checks { XCTAssertTrue(passed, name) }
-        XCTAssertEqual(checks.count, 11)
+        XCTAssertEqual(checks.count, 12)
     }
 }
