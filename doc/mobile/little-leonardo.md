@@ -1,5 +1,7 @@
 # Little Leonardo
 
+Architecture reevaluation: [ADR 0002](../adr/0002-reevaluate-mobile-git-engine.md) recommends desktop-mediated editable documents as the future direction, with current Git compatibility retained until a separately accepted and validated migration. The checkpoints below describe implemented behavior, not acceptance of that recommendation.
+
 Implementation tracking: [#92](https://github.com/PinedaTec-EU/LeonardoMD/issues/92).
 
 Latest local checkpoint (2026-10-09, PR #93, compile delta189):

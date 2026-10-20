@@ -15,3 +15,5 @@ Read [current state](current-state.md), then the relevant source target. Human p
 - [Native release notes](release-notes.md)
 
 - [Document Undo and Redo](document-undo.md)
+
+- [Mobile Git architecture reevaluation](../doc/adr/0002-reevaluate-mobile-git-engine.md) — proposed simplification; current runtime contract unchanged.

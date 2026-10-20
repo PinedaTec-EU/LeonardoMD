@@ -2,6 +2,10 @@
 
 Date: 2026-10-07
 
+Mobile Git ownership and lighter synchronization alternatives are reevaluated in
+[ADR 0002](0002-reevaluate-mobile-git-engine.md). Its proposed direction does not
+change the current desktop CLI decision or authorize a runtime migration.
+
 ## Decision
 
 LeonardoMD uses Swift 6, SwiftUI and AppKit on macOS 14 or later. The native text editor preserves standard undo, selection and keyboard shortcuts. Foundation services handle files, portable JSON preferences and asynchronous Git commands. A separate renderer target owns WebKit and bundled, offline JavaScript libraries.
