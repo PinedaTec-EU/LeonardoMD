@@ -74,6 +74,7 @@
     input.addEventListener(event, e => {
       // Keep IME input available to a synchronous save flush, but do not
       // publish/rewrite the composing control until composition completes.
+      if (!payload.allowsFormFilling) return;
       if (e.isComposing) changes[fieldID] = inputValue(input, field);
       else commit(fieldID, field, input);
     });
@@ -91,7 +92,7 @@
       const output = document.createElement("span");
       output.className = "leonardo-field-output";
       output.textContent = valueText(value, field) || "________";
-      if (!payload.allowsFormFilling) { wrapper.append(output); return wrapper; }
+      // Presentation is shared by Preview, Split and Fill; authorization is separate.
       wrapper.classList.add("leonardo-form-field");
       if (field.type === "checkbox" && !field.readOnly) wrapper.classList.add("leonardo-form-boolean");
       const id = `leonardo-input-${++sequence}`;
@@ -100,6 +101,7 @@
       caption.textContent = (field.label || fieldID) + (field.required ? " *" : "");
       header.append(caption);
       const help = document.createElement("button"); help.type = "button"; help.className = "leonardo-field-help";
+      help.disabled = !payload.allowsFormFilling;
       help.textContent = "?"; help.setAttribute("aria-label", `${label("Help for")} ${field.label || fieldID}`);
       help.addEventListener("click", () => {
         root.querySelectorAll(".leonardo-field-help[aria-pressed]").forEach(button => button.removeAttribute("aria-pressed"));
@@ -117,6 +119,7 @@
         header.append(badge); wrapper.append(output);
       } else {
         input = makeInput(fieldID, field, value, id);
+        input.disabled = !payload.allowsFormFilling;
         wrapper.append(input, output);
       }
       const diagnostic = document.createElement("span"); diagnostic.id = `${id}-diagnostic`;

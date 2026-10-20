@@ -24,8 +24,10 @@ They do not depend on the background resource tracked in
 
 Check that repeated names update together, help remains available on Referencia,
 and the sidebar distinguishes editability from requiredness. Save a draft,
-reopen it and export PDF: values should remain, while editing chrome should not
-appear in Preview/PDF. Invalid answers may be saved as drafts.
+reopen it and export PDF: values should remain. Preview and Split retain the
+same labels, controls and responsive rows as Fill form, with inputs and help
+disabled. PDF and print omit generated form chrome. Invalid answers may be
+saved as drafts.
 
 There are no calculations in this example. A fixed read-only reference is not a
 calculated value. Numeric and text formulas are deferred to
