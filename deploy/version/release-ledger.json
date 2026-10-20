@@ -54,7 +54,7 @@
       "kind": "github_release",
       "repository": "PinedaTec-EU/LeonardoMD",
       "tag_pattern": "v{version}",
-      "allow_prerelease": false
+      "allow_prerelease": true
     }
   }
 }

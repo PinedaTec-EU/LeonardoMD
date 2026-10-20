@@ -14,3 +14,11 @@ See [release contract](../doc/release-version-ledger.md#native-release-notes).
 Tracking: [#209](https://github.com/PinedaTec-EU/LeonardoMD/issues/209).
 
 Integrated engine: `d5bf9cbf0b5a2c92dfb6fafa24e718fa3fcedebe` ([central #324](https://github.com/PinedaTec-EU/pinedatec-ci/pull/324)); central catalog activation: [#327](https://github.com/PinedaTec-EU/pinedatec-ci/pull/327). Source activation is PR #210; actual post-merge materialization remains required.
+
+
+Published betas now opt into the central `allow_prerelease` policy. Historical
+reconciliation verifies publication identities and repartitions disjoint source
+PR windows; notes/attach replay never changes version state. Packaged startup
+changes already include beta PRs and use numeric-version intervals and unique PR
+IDs. Same-version promotion reuses suppression; no parallel channel reader is
+needed. Consumer tracking: [#239](https://github.com/PinedaTec-EU/LeonardoMD/issues/239).
