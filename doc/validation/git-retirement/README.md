@@ -6,7 +6,7 @@ The captures use synthetic documents and generated local identities. They show t
 
 ## Verified behavior
 
-- Full Swift suite: 428 XCTest cases, 19 optional fixture/capture skips, zero failures. Focused corpus recovery, removed route, desktop copy and system Git checks also pass.
+- Final full-suite confirmation: 429 XCTest cases (20 optional fixture/capture skips) and 28 Swift Testing cases, zero failures. The initial compiler-bearing full run had 428 XCTest cases and 19 optional skips; the added component-capture case was then compiled and passed separately. Focused corpus recovery, removed route, desktop copy and system Git checks also pass.
 - The compilation recorder suite passes 7 tests; the complete scripts suite passes 32 tests with 7 environment-dependent ledger skips. Successful compiler invocations are accumulated in the source PR's ledger entry; failures and test-without-building commands are excluded.
 - Signed iOS Simulator build-for-testing succeeds. Five native UI tests pass: cached links, rendered Markdown/image/table, legacy JSON export and read-only preview, Git-free settings, and manual pairing controls. The exported file was opened from the task-owned simulator filesystem and its distinct base/current/published content verified.
 - Native component capture of system Git and direct-sync settings passes in English and Spanish. Core Git tests exercise actual local bare-remote fetch/pull/push, staged state and conflict handling. Native desktop peer tests exercise actual pinned HTTPS, offline editing and manual receipt-based reconciliation.
