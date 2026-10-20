@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-struct ApplicationVersion {
+struct ApplicationVersion: Sendable {
     let version: String?
     let build: String?
     let channel: String
@@ -16,7 +16,9 @@ struct ApplicationVersion {
         channel = Self.nonEmpty(info["LeonardoUpdateChannel"]) ?? "development"
     }
 
-    @MainActor var displayText: String {
+    @MainActor var displayText: String { displayText(channel: channel) }
+
+    @MainActor func displayText(channel: String) -> String {
         let channelTitle = L10n.text(channel)
         guard let version else { return L10n.format("Version unavailable · %@", channelTitle) }
         return L10n.format("Version %@ · %@", version, channelTitle)
@@ -93,7 +95,7 @@ private struct AboutView: View {
                 .scaledToFit()
                 .frame(width: 720, height: 480)
                 .accessibilityLabel(L10n.text("Leonardo MarkDown, by PinedaTec.eu"))
-            Text(version.displayText)
+            Text(ApplicationUpdates.shared.versionDisplayText)
                 .font(.headline)
                 .textSelection(.enabled)
                 .accessibilityIdentifier("about-version")

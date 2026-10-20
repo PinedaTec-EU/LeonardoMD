@@ -1,7 +1,7 @@
 import Foundation
 
 /// Subscription choice is independent of the installed package's maturity.
-enum UpdateChannel: String, CaseIterable, Identifiable {
+enum UpdateChannel: String, CaseIterable, Identifiable, Sendable {
     case stable
     case beta
 
@@ -10,7 +10,8 @@ enum UpdateChannel: String, CaseIterable, Identifiable {
     @MainActor var title: String { L10n.text(self == .stable ? "Stable" : "Beta") }
 }
 
-struct UpdateConfiguration {
+struct UpdateConfiguration: Sendable {
+    let publicKey: Data?
     let version: ApplicationVersion
     let installedChannel: UpdateChannel?
     let stableFeed: URL?
@@ -23,6 +24,7 @@ struct UpdateConfiguration {
         stableFeed = Self.feed(info["LeonardoStableFeedURL"])
         betaFeed = Self.feed(info["LeonardoBetaFeedURL"])
         let key = info["SUPublicEDKey"] as? String
+        publicKey = Data(base64Encoded: key ?? "")
         isConfigured = key != nil && key == info["LeonardoUpdatePublicKey"] as? String
             && Data(base64Encoded: key ?? "")?.count == 32
             && stableFeed != nil && betaFeed != nil && stableFeed != betaFeed

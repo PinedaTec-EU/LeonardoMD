@@ -224,7 +224,7 @@ struct WorkspaceView: View {
     }
     private var statusBar: some View {
         HStack {
-            Text(ApplicationVersion().displayText)
+            Text(ApplicationUpdates.shared.versionDisplayText)
                 .accessibilityIdentifier("status-version")
             Divider().frame(height: 12)
             if session.busy { ProgressView().controlSize(.mini) }
