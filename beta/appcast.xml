@@ -2,10 +2,9 @@
 <rss xmlns:leonardo="https://pinedatec.eu/xml-namespaces/leonardo" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>LeonardoMD</title>
-        <item leonardo:channel="beta">
+        <item leonardo:channel="stable">
             <title>0.1.571</title>
             <pubDate>Tue, 20 Oct 2026 22:30:54 +0200</pubDate>
-            <sparkle:channel>beta</sparkle:channel>
             <sparkle:version>571</sparkle:version>
             <sparkle:shortVersionString>0.1.571</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
