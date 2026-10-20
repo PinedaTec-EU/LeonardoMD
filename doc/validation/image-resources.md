@@ -53,7 +53,7 @@ The loader retains hashes and accounting only, with no additional image cache.
 
 Local validation on 2026-10-20: full `swift test` passed 487 tests with 14
 intentional XCTest skips. Script tests ran 32 cases with seven engine-dependent
-skips and no failures. The per-PR ledger records fifteen successful compiler-bearing
+skips and no failures. The per-PR ledger records sixteen successful compiler-bearing
 invocations; required exact-head CI and independent judgment are recorded on PR
 [#245](https://github.com/PinedaTec-EU/LeonardoMD/pull/245).
 

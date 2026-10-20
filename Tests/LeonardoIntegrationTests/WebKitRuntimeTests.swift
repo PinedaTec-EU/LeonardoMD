@@ -390,9 +390,10 @@ final class WebKitRuntimeTests: XCTestCase {
         icon.append(png)
         files["image.ico"] = icon
         files["image.tif"] = files["image.tiff"]
-        let source = "# Memory raster formats\n\n" + files.keys.sorted().map {
-            "## " + $0 + "\n\n![" + $0 + "](" + $0 + ")"
-        }.joined(separator: "\n\n")
+        let sections = files.keys.sorted().map { name in
+            "## \(name)\n\n![\(name)](\(name))"
+        }
+        let source = "# Memory raster formats\n\n" + sections.joined(separator: "\n\n")
         let config = MarkdownPreviewConfiguration(localAssetRoot: root, memoryAssets: MarkdownMemoryAssets(files: files))
         let (host, window) = makeHost(content: source, base: root, config: config)
         defer { host.teardown(); window.close() }
