@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.535
+
+- #216 Added: export Leonardo reading copies as Markdown ([#217](https://github.com/PinedaTec-EU/LeonardoMD/pull/217))
+
+<p>Export Leonardo documents and form answers as Markdown with a loss warning and portable image handling.</p>
+
+Source: `c0bb701166c155c77b9a73aa52659107436a51b3`. Delta: `{"build": 14}`.
+
 ## 0.1.521
 
 - #232 Fixed: enlarge form calendars and follow document themes ([#233](https://github.com/PinedaTec-EU/LeonardoMD/pull/233))
