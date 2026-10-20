@@ -25,7 +25,7 @@ struct WorkspaceManager: View {
                     Menu {
                         Button(L10n.text("Rename…")) { session.renameProject(project) }
                         Button(L10n.text("Show in Finder")) { NSWorkspace.shared.activateFileViewerSelecting([project.rootURL]) }
-                        Button(L10n.text("Delete…"), role: .destructive) { session.deleteProject(project) }
+                        Button(L10n.text("Move to Trash…"), role: .destructive) { session.deleteProject(project) }
                     } label: { Image(systemName: "ellipsis.circle") }.menuStyle(.borderlessButton)
                 }.padding(.vertical, 6)
             }

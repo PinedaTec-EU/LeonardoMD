@@ -469,5 +469,6 @@
   "Filter and sort files": "Filtrar y ordenar ficheros",
   "Inherit global file colors": "Heredar colores de fichero globales",
   "Color Leonardo files in wine": "Mostrar ficheros Leonardo en rojo vino",
-  "Move to Trash": "Mover a la Papelera"
+  "Move to Trash": "Mover a la Papelera",
+  "Move to Trash…": "Mover a la Papelera…"
 }
