@@ -74,7 +74,7 @@ The compilation recorder retains summary metadata while incrementing `build`.
 ## Shared engine operation
 
 The engine remains in `PinedaTec-EU/pinedatec-ci`, pinned to integrated commit
-`d5bf9cbf0b5a2c92dfb6fafa24e718fa3fcedebe`; do not copy it or use a mutable pin.
+`6a411f4efed3a695b0fe5888717def24ce624f6e`; do not copy it or use a mutable pin.
 `scripts/release-ledger.sh` is a thin operator entrypoint. Set
 `LEDGER_ENGINE_ROOT` to a clean checkout at that exact revision. It checks the
 revision and engine working tree, passes the workspace to the shared engine,

@@ -13,7 +13,7 @@ signature verification, canonical bundle/version identity and artifact byte/hash
 See [release contract](../doc/release-version-ledger.md#native-release-notes).
 Tracking: [#209](https://github.com/PinedaTec-EU/LeonardoMD/issues/209).
 
-Integrated beta-history engine: `a127e62249b6cd89935128e5fbd835e1f8c6528a` ([central #334](https://github.com/PinedaTec-EU/pinedatec-ci/pull/334)); catalog activation: [#336](https://github.com/PinedaTec-EU/pinedatec-ci/pull/336). The native notice and source summaries introduced by PR #210 were materialized as 0.1.482. Beta policy activation and live acceptance are tracked in [#239](https://github.com/PinedaTec-EU/LeonardoMD/issues/239).
+Integrated beta-history engine: `6a411f4efed3a695b0fe5888717def24ce624f6e` ([central #338](https://github.com/PinedaTec-EU/pinedatec-ci/pull/338), including beta history from [#334](https://github.com/PinedaTec-EU/pinedatec-ci/pull/334)); catalog activation: [#340](https://github.com/PinedaTec-EU/pinedatec-ci/pull/340). The native notice and source summaries introduced by PR #210 were materialized as 0.1.482. Beta policy activation and live acceptance are tracked in [#239](https://github.com/PinedaTec-EU/LeonardoMD/issues/239).
 
 
 Published betas now opt into the central `allow_prerelease` policy. Historical
