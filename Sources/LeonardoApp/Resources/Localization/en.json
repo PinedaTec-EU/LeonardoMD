@@ -55,9 +55,9 @@
   "Cut": "Cut",
   "Decision selected": "Decision selected",
   "Delete": "Delete",
-  "Delete %@?": "Delete %@?",
+  "Move %@ to Trash?": "Move %@ to Trash?",
   "Delete file": "Delete file",
-  "Delete project %@?": "Delete project %@?",
+  "Move project %@ to Trash?": "Move project %@ to Trash?",
   "Deleted": "Deleted",
   "Delete…": "Delete…",
   "Desktop Mac · changes require review": "Desktop Mac · changes require review",
@@ -274,7 +274,7 @@
   "The code matches Little Leonardo": "The code matches Little Leonardo",
   "The codes match on both devices": "The codes match on both devices",
   "The copy was saved. Later changes remain in the original document.": "The copy was saved. Later changes remain in the original document.",
-  "The entire folder and its contents will be deleted from disk.": "The entire folder and its contents will be deleted from disk.",
+  "The entire project folder and its contents will be moved to Trash. You can recover them from Trash.": "The entire project folder and its contents will be moved to Trash. You can recover them from Trash.",
   "The file changed outside LeonardoMD. Your edits are protected.": "The file changed outside LeonardoMD. Your edits are protected.",
   "The imported palette has insufficient contrast.": "The imported palette has insufficient contrast.",
   "The request was not delivered. Try again when the application responds.": "The request was not delivered. Try again when the application responds.",
@@ -282,7 +282,7 @@
   "This Mac": "This Mac",
   "This development build has no signed update channel. Install a distribution version to receive updates.": "This development build has no signed update channel. Install a distribution version to receive updates.",
   "This item is outside the content selected on the source Mac.": "This item is outside the content selected on the source Mac.",
-  "This operation deletes the item from disk.": "This operation deletes the item from disk.",
+  "The item will be moved to Trash. You can recover it from Trash.": "The item will be moved to Trash. You can recover it from Trash.",
   "This project": "This project",
   "This project does not have a Git repository yet.": "This project does not have a Git repository yet.",
   "Too many selected folders or documents.": "Too many selected folders or documents.",
@@ -468,5 +468,6 @@
   "Z–A": "Z–A",
   "Filter and sort files": "Filter and sort files",
   "Inherit global file colors": "Inherit global file colors",
-  "Color Leonardo files in wine": "Color Leonardo files in wine"
+  "Color Leonardo files in wine": "Color Leonardo files in wine",
+  "Move to Trash": "Move to Trash"
 }

@@ -123,10 +123,10 @@ extension AppSession {
     }
     func deleteProject(_ project: ProjectDescriptor) {
         let alert = NSAlert()
-        alert.messageText = L10n.format("Delete project %@?", project.name)
-        alert.informativeText = L10n.text("The entire folder and its contents will be deleted from disk.")
+        alert.messageText = L10n.format("Move project %@ to Trash?", project.name)
+        alert.informativeText = L10n.text("The entire project folder and its contents will be moved to Trash. You can recover them from Trash.")
         alert.addButton(withTitle: L10n.text("Cancel"))
-        alert.addButton(withTitle: L10n.text("Delete"))
+        alert.addButton(withTitle: L10n.text("Move to Trash"))
         guard alert.runModal() == .alertSecondButtonReturn else { return }
         Task { await deleteConfirmedProject(project) }
     }

@@ -97,7 +97,7 @@ public actor LocalProjectRepository {
 
     public func deleteProject(_ project: ProjectDescriptor) throws {
         let root = try validateProjectRoot(project.rootURL)
-        try fileManager.removeItem(at: root)
+        try moveToTrash(root)
     }
 
     public func children(
@@ -273,7 +273,16 @@ public actor LocalProjectRepository {
         guard fileManager.fileExists(atPath: target.path) else {
             throw FileSystemRepositoryError.projectDoesNotExist(target)
         }
-        try fileManager.removeItem(at: target)
+        try moveToTrash(target)
+    }
+
+    private func moveToTrash(_ url: URL) throws {
+        #if os(macOS)
+        try fileManager.trashItem(at: url, resultingItemURL: nil)
+        #else
+        // Platforms without Trash must never silently destroy user files.
+        throw CocoaError(.featureUnsupported)
+        #endif
     }
 
     public func search(
