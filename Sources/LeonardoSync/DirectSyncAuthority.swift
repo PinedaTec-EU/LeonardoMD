@@ -119,6 +119,29 @@ public actor DirectSyncAuthority {
         return snapshot
     }
 
+    private func checkAccess(deviceID: UUID, credential: String, projectID: UUID) throws {
+        guard !changing else { throw DirectAuthorityError.busy }
+        guard try registry.access(deviceID: deviceID, credential: credential, projectID: projectID) == .authorized else {
+            throw SyncError.revoked
+        }
+    }
+
+    private func mutate<Result: Sendable>(_ operation: (inout PairingRegistry) throws -> Result) async throws -> Result {
+        guard !changing else { throw DirectAuthorityError.busy }
+        changing = true
+        defer { changing = false }
+        var updated = registry
+        let result = try operation(&updated)
+        try await persist(updated)
+        registry = updated
+        return result
+    }
+}
+
+
+extension DirectSyncAuthority {
+    /// An authenticated client may close only the exact proposal whose durable result it
+    /// incorporated. Keep consent stable across storage awaits and retain the receipt.
     public func acknowledgeProposal(deviceID: UUID, credential: String, projectID: UUID,
                                     proposalID: UUID, proof: DesktopPeerReceiptAcknowledgement) async throws {
         let selection = try uploadSelection(deviceID: deviceID, credential: credential, projectID: projectID)

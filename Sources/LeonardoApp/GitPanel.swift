@@ -27,7 +27,6 @@ struct GitPanel: View {
                     .buttonStyle(PremiumButtonStyle(prominent: true))
             } else {
                 localGitControls
-
             }
         }
         .buttonStyle(PremiumButtonStyle(compact: true))
@@ -94,5 +93,68 @@ struct GitPanel: View {
         }
     }
 
+}
+enum GitAction {
+    case initialize, fetch, pull, push, stage([String]), stageAll, commit(String)
+    var name: String {
+        switch self {
+        case .initialize: "initialize"
+        case .fetch: "fetch"
+        case .pull: "pull"
+        case .push: "push"
+        case .stage, .stageAll: "stage"
+        case .commit: "commit"
+        }
+    }
+}
+
+extension AppSession {
+    var gitSummary: String {
+        guard gitEnabled else { return L10n.text("Git disabled") }
+        guard let status = gitStatus else { return "Git" }
+        if status.state == .noRepository { return L10n.text("Initialize Git") }
+        let summary = L10n.format("%@ · %d changes · ↑%d ↓%d", status.branch ?? "HEAD", status.changes.count, status.ahead, status.behind)
+        return summary + (status.hasConflicts ? L10n.text(" · Conflict") : "")
+    }
+
+    func refreshGit() async {
+        guard gitEnabled, let git else { return }
+        do {
+            let status = try await git.status()
+            gitStatus = status
+            if status.state == .noRepository { gitHistory = []; return }
+            gitHistory = (try? await git.history(limit: 20)) ?? []
+        } catch { report(error) }
+    }
+
+    func performGit(_ action: GitAction) {
+        guard !isClosing, !isSyncSuspended, !gitBusy, let git else { return }
+        gitBusy = true
+        logger.info("git_operation_started operation=\(action.name, privacy: .public)")
+        Task {
+            defer { gitBusy = false }
+            guard await prepareNavigation(allowGitOperation: true) else { return }
+            do {
+                switch action {
+                case .initialize: _ = try await git.initialize()
+                case .fetch: _ = try await git.fetch()
+                case .pull: _ = try await git.pull()
+                case .push: _ = try await git.push()
+                case .stage(let paths): _ = try await git.stage(paths: paths)
+                case .stageAll: _ = try await git.stageAll()
+                case .commit(let message): _ = try await git.commit(message: message)
+                }
+                logger.info("git_operation_completed operation=\(action.name, privacy: .public)")
+                await refreshGit()
+                await refreshTree()
+                await checkExternalChanges()
+            } catch GitError.workingTreeDirty {
+                errorMessage = L10n.text("Git has local changes. Commit or resolve them in Git before syncing.")
+            } catch GitError.mergeConflict(let paths) {
+                errorMessage = L10n.text("Conflicts in: ") + paths.joined(separator: ", ")
+                await refreshGit()
+            } catch { report(error) }
+        }
+    }
 }
 #endif

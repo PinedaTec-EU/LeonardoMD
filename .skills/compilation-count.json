@@ -13,6 +13,18 @@
     [
       "swift",
       "run"
+    ],
+    [
+      "xcodebuild",
+      "build"
+    ],
+    [
+      "xcodebuild",
+      "test"
+    ],
+    [
+      "xcodebuild",
+      "archive"
     ]
   ],
   "segment": "build",

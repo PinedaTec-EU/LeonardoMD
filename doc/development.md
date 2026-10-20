@@ -47,3 +47,5 @@ For preparation without launch, run `python3 scripts/qa-bundle.py output/Leonard
 Local development signing does not establish public distribution acceptance. Follow [signed release preparation](releases.md) for Developer ID signing, Apple notarization, archive verification and publication gates. The [release ledger workflow](release-version-ledger.md) defines version allocation and compilation accounting; its historical baseline is not the latest published version. See [GitHub Releases](https://github.com/PinedaTec-EU/LeonardoMD/releases) for published packages.
 
 For translations and resource maintenance, see [localization](localization.md).
+
+The mobile companion is read-only. Desktop direct synchronization and system Git remain separate; the former proprietary mobile Git target is retired. See [legacy corpus recovery](mobile/git-retirement.md).

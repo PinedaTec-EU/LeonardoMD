@@ -61,7 +61,7 @@ def compile_and_record(root: Path, pr: int, command: list[str]) -> int:
             os.replace(temporary, entry)
         finally:
             temporary.unlink(missing_ok=True)
-    print(f"Recorded successful Swift compilation for PR #{pr}: build delta {delta['build']}")
+    print(f"Recorded successful compilation for PR #{pr}: build delta {delta['build']}")
     return 0
 
 

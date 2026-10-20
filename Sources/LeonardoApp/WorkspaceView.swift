@@ -4,7 +4,7 @@ import AppKit
 struct WorkspaceView: View {
     @Bindable var session: AppSession
 
-    init(session: AppSession, desktopSync: DesktopSyncController = .shared) {
+    init(session: AppSession) {
         self.session = session
     }
 

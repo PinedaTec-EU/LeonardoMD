@@ -63,6 +63,21 @@ final class PairingUITests: XCTestCase {
         try advanceDirectFixture("finish")
     }
 
+    @MainActor private func waitForDocumentSyncToFinish(_ app: XCUIApplication, timeout: TimeInterval) -> Bool {
+        let documentSync = app.buttons["document-sync"]
+        let readiness = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == true AND isEnabled == true"), object: documentSync)
+        return XCTWaiter().wait(for: [readiness], timeout: timeout) == .completed
+    }
+
+    @MainActor private func dismissNativeFailureIfPresent(_ app: XCUIApplication) {
+        let failure = app.alerts["No se pudo completar la operación"]
+        guard failure.waitForExistence(timeout: 1) else { return }
+        failure.buttons["Aceptar"].tap()
+        XCTAssertFalse(failure.waitForExistence(timeout: 3),
+                       "The native failure alert must be dismissed before capture")
+    }
+
     private func advanceDirectFixture(_ phase: String) throws {
         try FileHandle.standardOutput.write(contentsOf: Data("LEONARDO_DIRECT_STAGE_\(phase.uppercased())\n".utf8))
         // The host controller applies the phase to the real loopback service. This short
@@ -140,6 +155,39 @@ final class PairingUITests: XCTestCase {
         capture.name = "Read-only synchronization settings without Git credentials"
         capture.lifetime = .keepAlways
         add(capture)
+    }
+
+    @MainActor func testLegacyRecoveryIsReadableAndExportableWithoutEditingOrSending() throws {
+        let app = XCUIApplication()
+        app.launch()
+        let fixture = app.staticTexts["QA · Recovery"].firstMatch
+        guard fixture.waitForExistence(timeout: 5) else {
+            throw XCTSkip("Requires the isolated legacy recovery archive in the simulator app container")
+        }
+        fixture.tap()
+        let export = app.buttons["export-recovery"]
+        XCTAssertTrue(export.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Nuevo documento"].exists)
+        XCTAssertFalse(app.buttons["Enviar cambios"].exists)
+        let archiveCapture = XCTAttachment(screenshot: app.screenshot())
+        archiveCapture.name = "Legacy corpus recovery export without mobile publication"
+        archiveCapture.lifetime = .keepAlways
+        add(archiveCapture)
+        export.tap()
+        XCTAssertTrue(app.navigationBars["Mover"].waitForExistence(timeout: 5)
+                      || app.buttons["Exportar"].waitForExistence(timeout: 5)
+                      || app.buttons["Cancel"].waitForExistence(timeout: 5)
+                      || app.buttons["Cancelar"].waitForExistence(timeout: 5), "Recovery must open the native file exporter")
+        if app.buttons["Cancelar"].exists { app.buttons["Cancelar"].tap() }
+        else if app.buttons["Cancel"].exists { app.buttons["Cancel"].tap() }
+        app.buttons["docs/recovery.md"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Preserved local work"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["Editar"].exists)
+        XCTAssertFalse(app.textViews.firstMatch.exists)
+        let readerCapture = XCTAttachment(screenshot: app.screenshot())
+        readerCapture.name = "Read-only legacy document preview"
+        readerCapture.lifetime = .keepAlways
+        add(readerCapture)
     }
 
     @MainActor func testManualPairingFormRequiresAddressAndRetainsQRAlternative() throws {
