@@ -467,6 +467,16 @@
       "pr": 217,
       "summary": "Export Leonardo documents and form answers as Markdown with a loss warning and portable image handling.",
       "to_version": "0.1.535"
+    },
+    {
+      "delta": {
+        "build": 12
+      },
+      "from_version": "0.1.535",
+      "merge_sha": "dd7a3de66b62e6621b7e2c07030a1334948e5cf5",
+      "pr": 242,
+      "summary": "Deleted files, folders and projects now move to Trash so they can be recovered.",
+      "to_version": "0.1.547"
     }
   ],
   "initial_version": "0.1.56",
@@ -477,5 +487,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.535"
+  "version": "0.1.547"
 }
