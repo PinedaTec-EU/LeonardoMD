@@ -459,5 +459,14 @@
   "This application bundle has no valid release notes for its version.": "This application bundle has no valid release notes for its version.",
   "An earlier version is installed. Showing its recorded history, not changes added by this downgrade.": "An earlier version is installed. Showing its recorded history, not changes added by this downgrade.",
   "Changes since version %@": "Changes since version %@",
-  "Recorded history since version %@. Earlier changes may not be available.": "Recorded history since version %@. Earlier changes may not be available."
+  "Recorded history since version %@. Earlier changes may not be available.": "Recorded history since version %@. Earlier changes may not be available.",
+  "Show all files": "Show all files",
+  "Sort": "Sort",
+  "Folders first": "Folders first",
+  "Name": "Name",
+  "A–Z": "A–Z",
+  "Z–A": "Z–A",
+  "Filter and sort files": "Filter and sort files",
+  "Inherit global file colors": "Inherit global file colors",
+  "Color Leonardo files in wine": "Color Leonardo files in wine"
 }
