@@ -65,6 +65,8 @@ Interface language defaults to English. **Preferences → General → On this Ma
 
 The document inspector contains heading navigation. Drag the divider beside the project sidebar to change its width.
 
+The sidebar filter button opens file visibility and sorting controls. **Show all files** starts off; the default list contains folders and supported Markdown, text and Leonardo documents. **Show hidden files** remains independent. The **Sort** submenu offers **Folders first** (initially on) and **A–Z** or **Z–A**, including expanded subfolders. These controls belong to the current document session. Leonardo filenames and icons use wine coloring by default; General → Appearance can disable it globally or override it per project, with an option to inherit global file colors. Markdown colors stay unchanged.
+
 ## Updates
 
 Open **LeonardoMD → Preferences… → Updates** (Spanish: **Preferencias… → Actualizaciones**) to choose Stable or Beta, check now or enable periodic checks. Stable is selected initially, including in beta packages. Automatic checking is initially off; installation requires user action.
