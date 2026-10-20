@@ -39,7 +39,16 @@ final class TableResizeRuntimeTests: XCTestCase {
         web.pageZoom = 1.25
         window.setContentSize(NSSize(width: 420, height: 500))
         try await waitFor("document.querySelector('[data-resize-kind=both]').getBoundingClientRect().width > 0", web)
-        let zoomWidth = try await number("document.querySelectorAll('table')[1].getBoundingClientRect().width", web)
+        // Natural width may continue responding to AppKit/WebKit viewport
+        // layout after zoom. Cancellation restores authored geometry, not a
+        // pixel width sampled while that independent layout was in progress.
+        let geometrySnapshot = try await web.evaluateJavaScript("""
+        (() => {
+          const t = document.querySelectorAll('table')[1];
+          return JSON.stringify([t.style.cssText, t.className,
+            Array.from(t.rows, row => row.style.cssText), t.querySelector('colgroup')?.outerHTML || null]);
+        })()
+        """) as? String
         _ = try await web.evaluateJavaScript("""
         (() => {
           const handle = document.querySelector('[data-resize-kind="both"]');
@@ -53,8 +62,14 @@ final class TableResizeRuntimeTests: XCTestCase {
         XCTAssertTrue(flushed)
         let source = try await web.evaluateJavaScript("window.LeonardoEditing.currentSource()") as? String
         XCTAssertEqual(source, markdown)
-        let afterFlush = try await number("document.querySelectorAll('table')[1].getBoundingClientRect().width", web)
-        XCTAssertEqual(afterFlush, zoomWidth, accuracy: 1)
+        let restoredGeometry = try await web.evaluateJavaScript("""
+        (() => {
+          const t = document.querySelectorAll('table')[1];
+          return JSON.stringify([t.style.cssText, t.className,
+            Array.from(t.rows, row => row.style.cssText), t.querySelector('colgroup')?.outerHTML || null]);
+        })()
+        """) as? String
+        XCTAssertEqual(restoredGeometry, geometrySnapshot)
         config.allowsEditing = false
         host.apply(content: markdown, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
         try await waitFor("!document.querySelector('main').classList.contains('tables-resizable')", web)
