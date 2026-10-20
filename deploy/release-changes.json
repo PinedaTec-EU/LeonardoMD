@@ -497,6 +497,16 @@
       "pr": 248,
       "summary": "About, Release notes, confirmations and file selection attach as modal sheets; file actions reject changes to the active project or workspace.",
       "to_version": "0.1.571"
+    },
+    {
+      "delta": {
+        "build": 3
+      },
+      "from_version": "0.1.571",
+      "merge_sha": "1e083eebf3fa4d22db61818410f67c56b63486d1",
+      "pr": 253,
+      "summary": "Release notes follow the active document theme and use the shared application button style.",
+      "to_version": "0.1.574"
     }
   ],
   "initial_version": "0.1.56",
@@ -507,5 +517,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.571"
+  "version": "0.1.574"
 }
