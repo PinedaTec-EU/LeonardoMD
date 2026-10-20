@@ -28,7 +28,8 @@ actor MarkdownImageLoader {
     func load(_ input: Input, target: MarkdownImagePolicy.Target, documentID: Int = 0,
               identity: String = "") throws -> Resource {
         try Task.checkCancellation()
-        guard documentID >= self.documentID else { throw CancellationError() }
+        // An older pending request can still serve the new DOM. Charge it to
+        // the current budget without moving that budget back to its generation.
         if documentID > self.documentID {
             self.documentID = documentID
             admittedBytes = 0

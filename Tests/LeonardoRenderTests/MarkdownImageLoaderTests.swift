@@ -118,7 +118,10 @@ struct MarkdownImageLoaderTests {
             try await loader.load(input, target: target, identity: "c")
         }
         _ = try await loader.load(input, target: target, documentID: 1, identity: "c")
-        await #expect(throws: CancellationError.self) { try await loader.load(input, target: target) }
+        _ = try await loader.load(input, target: target, documentID: 0, identity: "a")
+        await #expect(throws: MarkdownImageError.documentLimit) {
+            try await loader.load(input, target: target, documentID: 0, identity: "b")
+        }
     }
 
     @Test func cancelledWorkDoesNotConsumeAdmissionBudget() async throws {

@@ -80,7 +80,8 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
     }
 
     func beginDocument() {
-        cancelAll()
+        // WebKit may reuse an in-flight image during an incremental DOM update.
+        // Only its stop callback (or teardown) retires the corresponding task.
         documentID += 1
     }
 

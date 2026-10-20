@@ -27,7 +27,10 @@ layout dimensions, and restores preview source selection and styles afterward.
 A rejected image shows its authored alt text (or an unavailable label); PDF
 export fails instead of silently omitting it.
 
-Admission resets on a new document render. Repeated loads of the same resource,
+Admission resets on a new document render. Pending image loads may be reused
+by WebKit across incremental DOM updates; they complete normally unless WebKit
+stops them or the view is torn down. Older pending requests use the current
+admission budget without rolling its generation backward. Repeated loads of the same resource,
 content and target share admission; distinct URLs (including query parameters)
 or changed bytes count again.
 The loader retains hashes and accounting only, with no additional image cache.
@@ -38,7 +41,8 @@ The loader retains hashes and accounting only, with no additional image cache.
   regular-file enforcement, source-pixel limits, downsampling, independent PDF
   resolution, animation preservation and limits, SVG limits, repeat admission,
   document-generation reset, query-alias accounting, bounded URL metadata and cancellation.
-- `MarkdownImageSchemeTests`: queue limit, stop and teardown without late callbacks.
+- `MarkdownImageSchemeTests`: queue limit, active-load completion across render updates, stop and teardown
+  without late callbacks.
 - `WebKitRuntimeTests`: real raster preview and PDF resolution, source/style
   restoration, visible rejection fallback, export failure on missing assets,
   64 small images in one request burst, and existing offline SVG/background behavior.
@@ -46,9 +50,9 @@ The loader retains hashes and accounting only, with no additional image cache.
   `bounded-raster-preview.png` and `bounded-image-fallback.png`. The existing CI
   preview evidence artifact binds those captures to the reviewed head.
 
-Local validation on 2026-10-20: full `swift test` passed 592 tests with 15
+Local validation on 2026-10-20: full `swift test` passed 593 tests with 15
 intentional XCTest skips. Script tests ran 31 cases with seven engine-dependent
-skips and no failures. The per-PR ledger records nine successful compiler-bearing
+skips and no failures. The per-PR ledger records eleven successful compiler-bearing
 invocations; required exact-head CI and independent judgment are recorded on PR
 [#245](https://github.com/PinedaTec-EU/LeonardoMD/pull/245).
 

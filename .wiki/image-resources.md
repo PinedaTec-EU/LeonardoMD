@@ -5,7 +5,8 @@ Tracking: [#243](https://github.com/PinedaTec-EU/LeonardoMD/issues/243).
 `MarkdownDocumentSchemeHandler` resolves allowed local paths or immutable corpus
 assets, then delegates bounded loading to a per-web-view `MarkdownImageLoader`
 actor. Stop/teardown cancels delivery; the actor serializes reads and ImageIO
-work. New render generations retire old requests and reset admission. Repeated
+work. New render generations reset admission; WebKit stop/teardown retires requests.
+A pending image can be reused across a DOM update and must still complete. Repeated
 full-URL/content/target variants share an admission entry; no image cache is retained.
 
 `MarkdownImagePolicy` holds the limits: 16 KiB URL metadata, 32 MiB input, 2 MiB SVG, 40 million
