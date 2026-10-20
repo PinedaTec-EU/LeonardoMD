@@ -53,7 +53,7 @@ final class PairingUITests: XCTestCase {
         dismissNativeFailureIfPresent(app)
         XCTAssertTrue(app.staticTexts["Acceso retirado"].exists,
                       "The revoked project must remain unavailable after the sync settles")
-        XCTAssertFalse(app.buttons["Editar"].isEnabled,
+        XCTAssertFalse(app.buttons["Editar"].exists,
                        "A revoked project must not leave an enabled Edit action")
         XCTAssertFalse(app.webViews.firstMatch.exists)
         let capture = XCTAttachment(screenshot: app.screenshot())
