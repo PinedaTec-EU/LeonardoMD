@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.509
+
+- #236 Added: promote an exact beta without changing its version ([#237](https://github.com/PinedaTec-EU/LeonardoMD/pull/237))
+
+<p>Promote a chosen validated beta to stable while preserving its version and exact signed artifact, even when newer betas exist.</p>
+
+Source: `5bfd788e6efba9c28f344fbf9011898eaff7e659`. Delta: `{"build": 2}`.
+
 ## 0.1.507
 
 - #234 Fixed: preserve form presentation in Preview and Split ([#235](https://github.com/PinedaTec-EU/LeonardoMD/pull/235))

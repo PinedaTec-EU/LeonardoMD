@@ -437,6 +437,16 @@
       "pr": 235,
       "summary": "Preview and Split preserve the field presentation shown in Fill form.",
       "to_version": "0.1.507"
+    },
+    {
+      "delta": {
+        "build": 2
+      },
+      "from_version": "0.1.507",
+      "merge_sha": "5bfd788e6efba9c28f344fbf9011898eaff7e659",
+      "pr": 237,
+      "summary": "Promote a chosen validated beta to stable while preserving its version and exact signed artifact, even when newer betas exist.",
+      "to_version": "0.1.509"
     }
   ],
   "initial_version": "0.1.56",
@@ -447,5 +457,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.507"
+  "version": "0.1.509"
 }
