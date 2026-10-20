@@ -1,7 +1,7 @@
 {
-  "captureCheckpoint": "f0eac82599104685bcaf5a008cda4173578068b6",
-  "directAcceptanceCheckpoint": "f0eac82599104685bcaf5a008cda4173578068b6",
-  "simulator": "Leonardo 249 Final Readonly QA / iPhone 17 Pro / iOS 26.5",
+  "captureCheckpoint": "68c21dc1489150eba55e4e411feddeffa9f7ee08",
+  "directAcceptanceCheckpoint": "68c21dc1489150eba55e4e411feddeffa9f7ee08",
+  "simulator": "Leonardo 249 Strict QA / iPhone 17 Pro / iOS 26.5",
   "iosViewportPixels": [
     1206,
     2622
@@ -70,15 +70,15 @@
     "Sources/LeonardoApp/PremiumSelection.swift": "079755563dab2f710c524ea1f293af1b5d77293944ee9e4e3faad3e39e877cd2",
     "Sources/LeonardoApp/PremiumSwitchStyle.swift": "7555b729cf9e9c375751e12796b5e613722aad67ff265968343aacfec72554db",
     "Sources/LeonardoApp/PresentationMode.swift": "8afb34376bb16a78e2c5e52fe2d5ffdc13e5b404efecd98064b099eae0c6f0f8",
-    "Sources/LeonardoApp/ProjectSidebar.swift": "41ab1aa806a8730854281d5b7bd022e9093bb55c0f9cb3db8f84257764b1781e",
+    "Sources/LeonardoApp/ProjectSidebar.swift": "3c66f3e6cca6040ee59ebc7a04597105f0f527971c657b4ab5a1263b8895f0d5",
     "Sources/LeonardoApp/RecentItemsMenu.swift": "b537790f24ea24582c290b75bba0dffd943d581f4ff8c8364df833f98280e4e7",
     "Sources/LeonardoApp/ReleaseChanges.swift": "4424400c4d1bfc4867db89d8bef4421b820960ae462a2a2abfce3a34eb3048b9",
     "Sources/LeonardoApp/ReleaseNotesController.swift": "aff698d5ae49cb621b59d1b79d40f9fc50bad0ca4f197a77e08559f8e7d298d2",
     "Sources/LeonardoApp/ReleaseNotesPreferences.swift": "b86ff93ed76682b28fab94961a0aac824e0f907a939a28839a42d7c8f7df2d8e",
     "Sources/LeonardoApp/ReleaseNotesView.swift": "f86b0ee8ab7185092c5954da3e8abe2a39a338ccd4f83b545b1bbbf5d01f1870",
     "Sources/LeonardoApp/Resources/AboutBanner.png": "4e18e81ea0efc43f0421bc6187c014b132e5d0864111df04de4d4c0f3524a91a",
-    "Sources/LeonardoApp/Resources/Localization/en.json": "a4a9af8c4eeb0f0b9f4414a193f78bda97f52fc04861c5010ef71aaa658cb02b",
-    "Sources/LeonardoApp/Resources/Localization/es.json": "c4dbc4e81ddeebb9dc5feea2d61b6906b1acff7e8ebd32448e1b5672d6436735",
+    "Sources/LeonardoApp/Resources/Localization/en.json": "364531388b879e6e2c5058cb0cbd5f7b49e42f82be4949d4b8eaf5ec18f140bc",
+    "Sources/LeonardoApp/Resources/Localization/es.json": "dd1d08a3eeac8daa6915ac53e1d4560eff33fa3f768bcee157cf1fe4917e899f",
     "Sources/LeonardoApp/Resources/WelcomeVitruvian.png": "5aa32f124f7459c28ed452c92a5f66f535feef1a0d1e4c90b2fd4b5955de27db",
     "Sources/LeonardoApp/Resources/WelcomeWatermark.png": "4f47d027f7ce69b583fcac9dc898788aa4fbdc4036cbd3586d38f987faae4d40",
     "Sources/LeonardoApp/Resources/WelcomeWings.png": "5b65c975f4ab27631520fb832bc2e7f36d724a5a2933a13c792c3f9de5cd8a15",
@@ -92,7 +92,7 @@
     "Sources/LeonardoApp/SessionMarkdownExport.swift": "15481b2b5392e220a7ca0a3c7cca7de7b766419c35167bac9311ac17cb00651e",
     "Sources/LeonardoApp/SessionPackageWorkspace.swift": "3df5a9d4727e22ce8888e7dfe8074c89b2e68a466ea7952fdb8c19d1c1a600f6",
     "Sources/LeonardoApp/SessionPreferences.swift": "b37e518edb4afe218155c1024a4b98e17fe808944e4e0da003bfe84e47e2cde6",
-    "Sources/LeonardoApp/SessionProject.swift": "25a09a96afb6b8978380f269de0d71182312be880785b59d274312210e35a5f2",
+    "Sources/LeonardoApp/SessionProject.swift": "e27d01cfe33af59d4f5bd81471244e4067c47d97756445f1745d2d6695bb47c9",
     "Sources/LeonardoApp/SessionReloading.swift": "1a5939ea556ec1214254caa03b9135fe44fd48c243e9e96f6afdbddadb026142",
     "Sources/LeonardoApp/SessionRendering.swift": "680e838090776de2c8c920fae0df82666ecec17f4cf78ec9a8e5b7ee69fdc7d4",
     "Sources/LeonardoApp/SessionRevocation.swift": "0b46a2e73eea1c9dcc8a8ea0e58b0dac52a1ce4fde9761ffab9ff6b9df0f4748",
@@ -107,7 +107,7 @@
     "Sources/LeonardoApp/UpdatePreferencesView.swift": "13b55627e754dd1b47350b52bf732df5d1f35a29a619defccd56f88d36fd85fd",
     "Sources/LeonardoApp/WelcomeView.swift": "cfdb59cfdd5d98dc6c0e929b582f15fa3e32fb4b40651594cb8c54586974c427",
     "Sources/LeonardoApp/WelcomeWatermark.swift": "187274d9701f5f0426eb3f8247d8e0e7bdcc778c42025d5e9d9aed213ed5a155",
-    "Sources/LeonardoApp/WorkspaceManager.swift": "947c3cd72a19fb52dbdd3e4d925d51289091952bc3236037f1df7dd3b1be78cf",
+    "Sources/LeonardoApp/WorkspaceManager.swift": "8d28376c4823d9a02d08382099b9f9b101a85f86cc0d16d8598784da993c8bfc",
     "Sources/LeonardoApp/WorkspaceView.swift": "b1be718031b69e065ade8142d515e25a1f5fe85247e06fe5fd89cfa68cd6ed10",
     "Sources/LeonardoCore/ConfigurationStore.swift": "4b2be2ab0e4ec19dd7ae32d6aeff39667d3060ed1ad7ae9536e4acc8b05b6007",
     "Sources/LeonardoCore/CoreTypes.swift": "9ccef5508bcff59a22cf668eadc9622d878d90246acdff87db4694c881fe99d5",
@@ -133,7 +133,7 @@
     "Sources/LeonardoCore/LeonardoSecureExtraction.swift": "6698849389c9952966558a5392b3943dfb44ad9ce29b265bf21e5b2aaf0ffbb0",
     "Sources/LeonardoCore/LeonardoTableResize.swift": "830bdc9cbde6d3c0d9deb8ac61c5d0e5a1a68ab2cb8e5e465d36bed5ce4fd62e",
     "Sources/LeonardoCore/LeonardoZIPArchive.swift": "53fed70d046625d12af965a506df09a508917e79df7dc5aaad9f65e07b510d3b",
-    "Sources/LeonardoCore/LocalProjectRepository.swift": "7afa4b0c1ee3a9d80a3c9961bc7add3bf8370c5cef9f3c8f44168a8965169a12",
+    "Sources/LeonardoCore/LocalProjectRepository.swift": "539d460744aeed9eb66a63220d23e06d9dd825cd6cc503df7c22fea83ce2d866",
     "Sources/LeonardoCore/MarkdownDocument.swift": "d09fd9efbc060a1a99b784ac89c11bfe451f5bb5aa53441749aa0f59faed4933",
     "Sources/LeonardoCore/MobileSyncPreferences.swift": "83cc7ef7591dedef8e31b2b549efb7d006b2e3c91481bcb2ed59075f2f1b994c",
     "Sources/LeonardoCore/PaletteTypes.swift": "85c20b0699680bc9f450b8e06eea27f639551629636402aa928882d8f916cdf0",
@@ -271,7 +271,7 @@
     "Sources/LeonardoSync/DesktopPeerWorkspaceAccess.swift": "ff5ec61323bff739970d191aebcafdc6feb22d611b14356c65dab2d1da0abc1d",
     "Sources/LeonardoSync/DirectSyncAuthority.swift": "9caab71787dd711553099026b99700553edd9a4bea37cb3e224a1a539a35b5cc",
     "Sources/LeonardoSync/ManualReconciliation.swift": "6ec29aefbd0dd18f61694dc4f4f9f7a5b1f0e232756436afd5d153d3367c6880",
-    "Sources/LeonardoSync/OfflineCorpusStore.swift": "fada9a876c280fd320c08dc8cf33f9d023aa8a35aafd4ad250abef5582ce69af",
+    "Sources/LeonardoSync/OfflineCorpusStore.swift": "3073267bb62333204fd0cc801c9131edca45e8506896dc311b37daafc7fc1877",
     "Sources/LeonardoSync/PairingComparisonCode.swift": "0ef29d8bdbe96c12bb357a53d2debb8b2c46970bc77c4fa76168d4f6581b8aec",
     "Sources/LeonardoSync/PairingRegistry.swift": "d14d2ebc6edfe5aed31d3159065f96004241d2bd7d243fc8a36a37d8d5b1e0c3",
     "Sources/LeonardoSync/PairingRegistryStore.swift": "e7bf41c45708c9ce1868986638fca889a0968a0d3e5dcce47e67f3c1f8eb8842",
@@ -296,12 +296,12 @@
       "attachments": [
         {
           "configurationName": "Test Scheme Action",
-          "deviceId": "8FE4F9C1-1B16-4A0D-92EF-D00965926841",
-          "deviceName": "Leonardo 249 Final Readonly QA",
-          "exportedFileName": "FA266AD9-DC53-44A7-8C77-9D1BA9C40BCF.png",
+          "deviceId": "2CB64C65-EF29-4B71-BC25-7703722EB1DB",
+          "deviceName": "Leonardo 249 Strict QA",
+          "exportedFileName": "5A117E04-B925-4C5C-B1EA-5203A7D0AF35.png",
           "isAssociatedWithFailure": false,
-          "suggestedHumanReadableName": "Cached document navigation with missing-link denial_0_C583C52A-1200-4264-A97B-CC56DF73994F.png",
-          "timestamp": 1792514409.059
+          "suggestedHumanReadableName": "Cached document navigation with missing-link denial_0_164B7A20-57CB-4EFA-8F4C-DA46768E12FF.png",
+          "timestamp": 1792515466.121
         }
       ],
       "testIdentifier": "PairingUITests/testCachedDocumentLinksNavigateInsideGrantedCorpusAndRejectMissingFiles()",
@@ -311,12 +311,12 @@
       "attachments": [
         {
           "configurationName": "Test Scheme Action",
-          "deviceId": "8FE4F9C1-1B16-4A0D-92EF-D00965926841",
-          "deviceName": "Leonardo 249 Final Readonly QA",
-          "exportedFileName": "632BC8F8-AB88-4898-B438-29EFECF367EA.png",
+          "deviceId": "2CB64C65-EF29-4B71-BC25-7703722EB1DB",
+          "deviceName": "Leonardo 249 Strict QA",
+          "exportedFileName": "F357A057-C47A-4073-9883-3ADD81EA1E04.png",
           "isAssociatedWithFailure": false,
-          "suggestedHumanReadableName": "Offline Markdown corpus preview_0_014FD3BC-3DA8-4721-A2EC-7965F7025E7B.png",
-          "timestamp": 1792514418.252
+          "suggestedHumanReadableName": "Offline Markdown corpus preview_0_B4AC7708-D6FF-4CF0-A0D9-9A2183F07EFE.png",
+          "timestamp": 1792515475.229
         }
       ],
       "testIdentifier": "PairingUITests/testCachedMarkdownPreviewShowsRenderedHeadingTableAndImage()",
@@ -326,30 +326,30 @@
       "attachments": [
         {
           "configurationName": "Test Scheme Action",
-          "deviceId": "8FE4F9C1-1B16-4A0D-92EF-D00965926841",
-          "deviceName": "Leonardo 249 Final Readonly QA",
-          "exportedFileName": "DE69337C-96A0-4990-BC5B-C1A38E841CAA.png",
+          "deviceId": "2CB64C65-EF29-4B71-BC25-7703722EB1DB",
+          "deviceName": "Leonardo 249 Strict QA",
+          "exportedFileName": "CF2A7293-CE98-47E6-8A5C-531C8079EFDA.png",
           "isAssociatedWithFailure": false,
-          "suggestedHumanReadableName": "Read-only legacy document preview_0_271FE027-6475-4CF9-A084-D7E9C27975A0.png",
-          "timestamp": 1792514432.39
+          "suggestedHumanReadableName": "Read-only legacy document preview_0_4D03CBB7-D5E5-4142-A958-D733CB24F633.png",
+          "timestamp": 1792515489.212
         },
         {
           "configurationName": "Test Scheme Action",
-          "deviceId": "8FE4F9C1-1B16-4A0D-92EF-D00965926841",
-          "deviceName": "Leonardo 249 Final Readonly QA",
-          "exportedFileName": "3E85E0E4-A096-423C-8698-EA2EDE694036.png",
+          "deviceId": "2CB64C65-EF29-4B71-BC25-7703722EB1DB",
+          "deviceName": "Leonardo 249 Strict QA",
+          "exportedFileName": "A2BB42EE-F0FD-43D9-B1B4-CCE583937079.png",
           "isAssociatedWithFailure": false,
-          "suggestedHumanReadableName": "Native recovery JSON export_0_D15D4643-0E4D-4492-9376-BC02ABD37E60.png",
-          "timestamp": 1792514427.968
+          "suggestedHumanReadableName": "Native recovery JSON export_0_0D704B62-4870-4EBA-A96C-22D5A1E17723.png",
+          "timestamp": 1792515484.922
         },
         {
           "configurationName": "Test Scheme Action",
-          "deviceId": "8FE4F9C1-1B16-4A0D-92EF-D00965926841",
-          "deviceName": "Leonardo 249 Final Readonly QA",
-          "exportedFileName": "39DFFB47-5DEB-4EA2-94EA-9356CE6F76CB.png",
+          "deviceId": "2CB64C65-EF29-4B71-BC25-7703722EB1DB",
+          "deviceName": "Leonardo 249 Strict QA",
+          "exportedFileName": "2EA9B5B2-DD90-4422-BDBC-797198406D3E.png",
           "isAssociatedWithFailure": false,
-          "suggestedHumanReadableName": "Legacy corpus recovery export without mobile publication_0_8A0247BA-A30E-415B-9B81-10A420AA0AEC.png",
-          "timestamp": 1792514426.154
+          "suggestedHumanReadableName": "Legacy corpus recovery export without mobile publication_0_E740C256-1549-4350-B706-68696395F9B8.png",
+          "timestamp": 1792515483.003
         }
       ],
       "testIdentifier": "PairingUITests/testLegacyRecoveryIsReadableAndExportableWithoutEditingOrSending()",
@@ -359,16 +359,31 @@
       "attachments": [
         {
           "configurationName": "Test Scheme Action",
-          "deviceId": "8FE4F9C1-1B16-4A0D-92EF-D00965926841",
-          "deviceName": "Leonardo 249 Final Readonly QA",
-          "exportedFileName": "4F82666F-686F-4CB4-A182-0E4A78EF537A.png",
+          "deviceId": "2CB64C65-EF29-4B71-BC25-7703722EB1DB",
+          "deviceName": "Leonardo 249 Strict QA",
+          "exportedFileName": "236F18A3-3352-4AA6-9020-4302BCBF45B5.png",
           "isAssociatedWithFailure": false,
-          "suggestedHumanReadableName": "Read-only synchronization settings without Git credentials_0_2DCAB884-9D79-4542-9AD2-83F88C1A754E.png",
-          "timestamp": 1792514438.096
+          "suggestedHumanReadableName": "Read-only synchronization settings without Git credentials_0_F396E580-A964-4E64-8BAC-8C0786E181C4.png",
+          "timestamp": 1792515494.996
         }
       ],
       "testIdentifier": "PairingUITests/testLibraryHasNoGitEnrollmentOrAuthorSettings()",
       "testIdentifierURL": "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/PairingUITests/testLibraryHasNoGitEnrollmentOrAuthorSettings"
+    },
+    {
+      "attachments": [
+        {
+          "configurationName": "Test Scheme Action",
+          "deviceId": "2CB64C65-EF29-4B71-BC25-7703722EB1DB",
+          "deviceName": "Leonardo 249 Strict QA",
+          "exportedFileName": "108C6FE0-90AA-402C-A0B5-04E391156994.png",
+          "isAssociatedWithFailure": false,
+          "suggestedHumanReadableName": "Enrolled direct project purged after confirmed revocation_0_0C2943E0-87F6-4E82-95D5-23CBE37CD534.png",
+          "timestamp": 1792515557.05
+        }
+      ],
+      "testIdentifier": "PairingUITests/testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation()",
+      "testIdentifierURL": "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/PairingUITests/testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation"
     }
   ],
   "directAcceptance": {
@@ -379,10 +394,10 @@
     "nativeRecoveryExportVerified": true
   },
   "localValidation": {
-    "XCTestCases": 432,
+    "XCTestCases": 436,
     "optionalXCTestSkips": 20,
-    "SwiftTestingCases": 28,
+    "SwiftTestingCases": 46,
     "nativeIOSCases": 6,
-    "compilationBuildDelta": 9
+    "compilationBuildDelta": 11
   }
 }
