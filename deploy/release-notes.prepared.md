@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.606
+
+- #257 Fixed: recognize stable promotion without changing subscription ([#258](https://github.com/PinedaTec-EU/LeonardoMD/pull/258))
+
+<p>Installed betas recognize a verified promotion to stable in About, the footer and Preferences while preserving the selected update subscription, including offline recognition after verification.</p>
+
+Source: `f4af1cbd8932a49c204e202f389fd7e5196e35d4`. Delta: `{"build": 6}`.
+
 ## 0.1.600
 
 - #254 Added: reopen release notes from About ([#255](https://github.com/PinedaTec-EU/LeonardoMD/pull/255))

@@ -527,9 +527,19 @@
       "pr": 255,
       "summary": "You can reopen hidden release notes from About, as well as from the macOS application menu.",
       "to_version": "0.1.600"
+    },
+    {
+      "delta": {
+        "build": 6
+      },
+      "from_version": "0.1.600",
+      "merge_sha": "f4af1cbd8932a49c204e202f389fd7e5196e35d4",
+      "pr": 258,
+      "summary": "Installed betas recognize a verified promotion to stable in About, the footer and Preferences while preserving the selected update subscription, including offline recognition after verification.",
+      "to_version": "0.1.606"
     }
   ],
-  "current_version": "0.1.600",
+  "current_version": "0.1.606",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
