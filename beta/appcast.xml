@@ -3,6 +3,27 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.1.625</title>
+            <pubDate>Thu, 22 Oct 2026 00:34:52 +0200</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>625</sparkle:version>
+            <sparkle:shortVersionString>0.1.625</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">## What's new
+
+- Optionally run independent LeonardoMD instances. Single-instance mode remains the default; enable multiple instances in Preferences, then choose File → New instance. Finder opens continue to use the principal instance. Document reservations and coordinated preference writes protect shared data.
+- File and folder rows highlight with the active accent color on hover in the project navigator, search results, and welcome favorites and recents.
+
+## Known limitations
+
+- A document or project reserved by another LeonardoMD instance remains reserved until that instance exits.
+- This beta supports Apple silicon Macs (arm64).
+- If an update waits for the active app to quit, save your documents, close Preferences and quit LeonardoMD normally to allow installation to continue.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.625/LeonardoMD-0.1.625.zip" length="13360030" type="application/octet-stream" sparkle:edSignature="zBzVCiDKqUj3o2IZ5ChEyQwWv6Gsx1MjP34BTQ/41h2i8aB432tlUe5cGvuwkbduEZqf6DK0HxIDX7dTSSqDAw==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.1.612</title>
             <pubDate>Wed, 21 Oct 2026 19:31:34 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
