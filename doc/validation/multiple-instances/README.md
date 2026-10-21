@@ -34,3 +34,35 @@ The process exercise uses only synthetic Markdown documents. Check disabled
 New instance, opt-in → New instance, Finder delivery to an additional process,
 rejection of a reserved document, opening a distinct document, and election after
 principal exit. Preserve the normal preference value after the exercise.
+
+### Recorded packaged run (2026-10-21)
+
+Product source: `3b83d2bef1d8bda4f8ce2b433f5e297b95b1da4a` (subsequent
+validation-document edits do not change the executable). Packaged version/build:
+0.1.612 / 612, pending PR-owned compilation deltas not yet materialized.
+`qa-bundle.py --verify-only` verified the real LeonardoMD executable, no XCTest
+linkage, the bundle signature and byte-identical packaged release changes.
+
+- Principal PID 18338 reached a real window. New instance was disabled by default.
+- Enabling the preference and choosing File → New instance created PID 19931 with
+  `--new-instance`, while PID 18338 stayed alive. The blank temporary additional
+  process was terminated as a process-exit recovery exercise.
+- A second disposable bundle identity started additional PID 20386. Opening
+  `principal.md` through its own native Open panel showed the ownership conflict
+  sheet; `additional.md` opened successfully. The Updates tab explained principal
+  ownership instead of showing update controls.
+- Disabling the preference left both processes alive; a new explicit launch
+  forwarded and exited, leaving the same two PIDs.
+- A Finder-style open delivered to the additional bundle opened `recovery.md` in
+  the principal (its native window and selected tab were inspected).
+- After normal termination of PID 18338, the same request to PID 20386 elected it
+  principal and opened `recovery.md`, retaining `additional.md`. This also proved
+  release of the former principal's document/cache reservations.
+- Preference restored off; disposable processes closed; original fixture files
+  remained unchanged. Existing app closure used the owner's explicit permission.
+
+Native window/panel/alert content was inspected through macOS accessibility.
+Committed PNGs are the separately described component evidence; no unsupported
+claim of full-window screenshot capture is made.
+
+Packaged executable SHA-256: `1b062c70759a731c074114a65db279adc94a3890d1e867f912ef927da9081b49`.
