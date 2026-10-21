@@ -378,7 +378,7 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
         window.title = "LeonardoMD"
         window.titlebarAppearsTransparent = true
         window.minSize = NSSize(width: 960, height: 560)
-        window.center()
+        WindowFramePersistence.restore(window)
         super.init(window: window)
         window.delegate = self
         documents.presentationWindow = window
