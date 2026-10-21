@@ -12,7 +12,7 @@ final class PendingUpdateDecisionStore {
 
     init(defaults: UserDefaults, installedBuild: String?) {
         self.defaults = defaults
-        if let targetBuild, let target = Int(targetBuild),
+        if !InstanceRuntime.isAdditional, let targetBuild, let target = Int(targetBuild),
            let installedBuild, let installed = Int(installedBuild), target > 0, installed > 0, target <= installed {
             clear() // The actual installed bundle has completed or superseded this update.
         }

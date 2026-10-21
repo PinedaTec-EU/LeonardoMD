@@ -124,6 +124,7 @@ extension AppSession {
                 }
                 renderer.update(content: content, baseURL: documentURL.deletingLastPathComponent(), configuration: renderConfiguration)
                 let data = try await renderer.exportPDF()
+                try await authorizePath(destination, .document)
                 try data.write(to: destination, options: [.atomic])
             } catch { report(error) }
         }

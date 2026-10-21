@@ -81,12 +81,7 @@ struct PreferencesView: View {
                     }
                 }
                 Section(L10n.text("On this Mac")) {
-                    Toggle(L10n.text("Allow multiple instances"), isOn: Binding(
-                        get: { InstancePreferences.shared.allowsMultipleInstances },
-                        set: { InstancePreferences.shared.allowsMultipleInstances = $0 }))
-                        .accessibilityIdentifier("allow-multiple-instances")
-                    Text(L10n.text("Use File > New instance to open an independent process. Finder opens go to the principal instance. Turning this off keeps existing instances open."))
-                        .font(.caption).foregroundStyle(.secondary)
+                    InstancePreferencesView()
                     @Bindable var languages = LanguageSettings.shared
                     Picker(L10n.text("Language"), selection: $languages.language) {
                         ForEach(AppLanguage.allCases) { language in

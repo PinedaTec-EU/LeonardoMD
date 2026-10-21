@@ -16,8 +16,20 @@ public final class ProcessFileLock: @unchecked Sendable {
             .appendingPathComponent("LeonardoMD/Coordination", isDirectory: true)
     }
 
+    /// Foundation does not resolve aliased ancestors when the final file does
+    /// not exist yet. Resolve the existing prefix before adding the new suffix.
+    public static func canonicalURL(_ url: URL) -> URL {
+        var prefix = url.standardizedFileURL
+        var suffix: [String] = []
+        while prefix.path != "/" && !FileManager.default.fileExists(atPath: prefix.path) {
+            suffix.append(prefix.lastPathComponent)
+            prefix.deleteLastPathComponent()
+        }
+        return suffix.reversed().reduce(prefix.resolvingSymlinksInPath()) { $0.appendingPathComponent($1) }
+    }
+
     public static func key(for url: URL) -> String {
-        SHA256.hash(data: Data(url.standardizedFileURL.resolvingSymlinksInPath().path.utf8))
+        SHA256.hash(data: Data(canonicalURL(url).path.utf8))
             .map { String(format: "%02x", $0) }.joined()
     }
 

@@ -7,11 +7,17 @@ final class InstancePreferences {
     static let preferenceKey = "allowMultipleInstances"
     static let launchArgument = "--new-instance"
     private let defaults: UserDefaults
+    private var revision = 0
     var allowsMultipleInstances: Bool {
-        get { defaults.bool(forKey: Self.preferenceKey) }
+        get {
+            _ = revision
+            defaults.synchronize()
+            return defaults.bool(forKey: Self.preferenceKey)
+        }
         set {
             defaults.set(newValue, forKey: Self.preferenceKey)
             defaults.synchronize()
+            revision += 1
         }
     }
 
@@ -23,6 +29,7 @@ final class InstancePreferences {
         guard allowsMultipleInstances else { return }
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.createsNewApplicationInstance = true
+        configuration.allowsRunningApplicationSubstitution = false
         configuration.arguments = [Self.launchArgument]
         _ = try await NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration)
     }

@@ -21,6 +21,7 @@ final class DesktopSyncController {
     private let configurations: ConfigurationStore
     private let preferencesURL: URL
     private let runtime: DesktopDirectRuntime
+    private let storageRoot: URL
     private var initialized = false
 
     init(preferencesURL: URL = AppSession.preferencesURL, configurations: ConfigurationStore = .shared,
@@ -28,6 +29,7 @@ final class DesktopSyncController {
         self.preferencesURL = preferencesURL
         self.configurations = configurations
         let root = preferencesURL.deletingLastPathComponent().appendingPathComponent("MobileSync", isDirectory: true)
+        storageRoot = root
         self.runtime = runtime ?? DesktopDirectRuntime(root: root,
             credentials: SecureCredentialStore(service: "eu.pinedatec.LeonardoMD.sync.tls"), now: { Date() })
     }
@@ -43,6 +45,7 @@ final class DesktopSyncController {
         busy = true
         defer { busy = false }
         do {
+            try InstancePathOwnership.shared.claim(storageRoot)
             settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
             if settings.enabled { try await start() }
             consent = try await runtime.consentState()
@@ -55,6 +58,7 @@ final class DesktopSyncController {
         busy = true
         defer { busy = false }
         do {
+            try InstancePathOwnership.shared.claim(storageRoot)
             var updated = updated
             if !updated.privateOverlayEnabled,
                let host = updated.host,

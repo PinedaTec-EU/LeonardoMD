@@ -23,7 +23,7 @@ struct LeonardoMD {
             NSLog("LeonardoMD could not establish single-instance ownership: %@", String(describing: error))
             exit(EXIT_FAILURE)
         }
-        InstanceRuntime.isAdditional = role == .additional
+        InstanceRuntime.isAdditional = role != .primary
         let delegate = ApplicationDelegate(diagnostics: diagnostics, instance: instance, role: role)
         application.delegate = delegate
         diagnostics.record(.delegateInstalled)
@@ -118,7 +118,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     func applicationWillTerminate(_ notification: Notification) {
         NotificationCenter.default.removeObserver(self)
         diagnostics.record(.applicationWillTerminate)
-        DesktopPeerController.shared.stop()
+        if role == .primary { DesktopPeerController.shared.stop() }
     }
 
     func application(_ sender: NSApplication, open urls: [URL]) {
@@ -234,7 +234,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
                 if await !window.documents.prepareClose() { canTerminate = false; break }
             }
             if canTerminate {
-                await DesktopSyncController.shared.stop()
+                if role == .primary { await DesktopSyncController.shared.stop() }
                 for window in windows { await window.documents.finishPreparedClose() }
             }
             else { windows.forEach { $0.documents.cancelPreparedClose() } }

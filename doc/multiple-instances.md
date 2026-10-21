@@ -18,7 +18,8 @@ process owns them. Close the owning **instance**, not just its tab, to release t
 reservation. Reservations deliberately survive navigation/tab closure to protect
 in-flight file operations and package cleanup. The kernel releases them on process
 exit or crash; abandoned metadata does not retain ownership. Separate projects and
-documents can be opened independently. This coordination protects cooperating
+documents can be opened independently, including sibling projects in one workspace.
+Browsing a workspace does not reserve its entire tree; project/file mutations do. This coordination protects cooperating
 LeonardoMD processes on this Mac; external editors still use the existing conflict
 checks and other Macs do not share the local ownership registry.
 

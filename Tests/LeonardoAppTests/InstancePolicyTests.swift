@@ -31,6 +31,32 @@ final class InstancePolicyTests: XCTestCase {
         XCTAssertFalse(first.allowsMultipleInstances)
     }
 
+    func testAdditionalDoesNotStartSharedServicesOrClearUpdateState() async throws {
+        let previous = InstanceRuntime.isAdditional
+        InstanceRuntime.isAdditional = true
+        let suite = "InstanceServiceTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer {
+            InstanceRuntime.isAdditional = previous
+            defaults.removePersistentDomain(forName: suite)
+        }
+        defaults.set("42", forKey: PendingUpdateDecisionStore.preferenceKey)
+        let decision = PendingUpdateDecisionStore(defaults: defaults, installedBuild: "43")
+        XCTAssertEqual(decision.targetBuild, "42")
+        let updates = ApplicationUpdates(defaults: defaults)
+        updates.start()
+        XCTAssertFalse(updates.isStarted)
+        XCTAssertFalse(updates.canChangeChannel)
+        let original = updates.channel
+        updates.selectChannel(original == .stable ? .beta : .stable)
+        XCTAssertEqual(updates.channel, original)
+        let peers = DesktopPeerController(defaults: defaults)
+        await peers.initialize()
+        let enrolled = await peers.enroll(address: "invalid", name: "test")
+        XCTAssertFalse(enrolled)
+        XCTAssertTrue(peers.connections.isEmpty)
+    }
+
     func testOverlappingPathsRejectOtherOwnersAndRecoverAfterExit() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

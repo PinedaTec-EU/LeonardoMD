@@ -29,13 +29,13 @@ final class ProcessFileLockTests: XCTestCase {
         let a = ConfigurationStore(), b = ConfigurationStore()
         let baseline = GlobalPreferences.default
         var left = baseline, right = baseline
-        left.palette = .classic
         left.markdown.mermaidEnabled = true
         left.recentProjectPaths = [root.appendingPathComponent("A")]
         right.markdown.mathEnabled = true
         right.recentProjectPaths = [root.appendingPathComponent("B")]
-        async let first = a.mergeGlobalPreferences(updated: left, baseline: baseline, at: url)
-        async let second = b.mergeGlobalPreferences(updated: right, baseline: baseline, at: url)
+        let leftUpdate = left, rightUpdate = right
+        async let first = a.mergeGlobalPreferences(updated: leftUpdate, baseline: baseline, at: url)
+        async let second = b.mergeGlobalPreferences(updated: rightUpdate, baseline: baseline, at: url)
         _ = try await (first, second)
         let result = try await a.loadGlobalPreferences(at: url)
         XCTAssertTrue(result.markdown.mermaidEnabled)

@@ -32,7 +32,10 @@ extension AppSession {
         guard !isClosing, !stopped else { return false }
         fileOperationCount += 1
         defer { fileOperationCount -= 1 }
-        do { try await authorizePath(url, .directory) } catch { report(error); return false }
+        do {
+            try InstancePathOwnership.shared.claim(url)
+            try await authorizePath(url, .directory)
+        } catch { report(error); return false }
         guard !stopped, !isClosing else { return false }
         await initialize()
         guard await prepareNavigation() else { return false }

@@ -23,7 +23,7 @@ final class InstancePathOwnership {
     }
 
     func claim(_ url: URL) throws {
-        let canonical = url.standardizedFileURL.resolvingSymlinksInPath()
+        let canonical = ProcessFileLock.canonicalURL(url)
         if claims.values.contains(where: { Self.contains($0.url, canonical) }) { return }
         let registry = try ProcessFileLock(at: directory.appendingPathComponent("registry"), wait: true)
         try withExtendedLifetime(registry) {

@@ -148,12 +148,14 @@ final class AppSession {
         openSystemURL: @escaping @MainActor (URL) -> Void = { NSWorkspace.shared.open($0) }
     ) {
         globalPreferencesURL = preferencesURL
+        self.openSystemURL = openSystemURL
         let existingAuthorization = authorizePath
         authorizePath = { url, intent in
-            try InstancePathOwnership.shared.claim(url)
+            // Browsing a workspace does not reserve all its projects. Editing
+            // a project reserves its root explicitly in openProject.
+            if intent != .directory { try InstancePathOwnership.shared.claim(url) }
             try await existingAuthorization(url, intent)
         }
-        self.openSystemURL = openSystemURL
         unsavedChangesDecision = { [weak self] filename in
             await UnsavedChangesPrompt.show(filename, on: self?.presentationWindow)
         }
