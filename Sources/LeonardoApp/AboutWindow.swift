@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-struct ApplicationVersion {
+struct ApplicationVersion: Sendable {
     let version: String?
     let build: String?
     let channel: String
@@ -16,7 +16,9 @@ struct ApplicationVersion {
         channel = Self.nonEmpty(info["LeonardoUpdateChannel"]) ?? "development"
     }
 
-    @MainActor var displayText: String {
+    @MainActor var displayText: String { displayText(channel: channel) }
+
+    @MainActor func displayText(channel: String) -> String {
         let channelTitle = L10n.text(channel)
         guard let version else { return L10n.format("Version unavailable · %@", channelTitle) }
         return L10n.format("Version %@ · %@", version, channelTitle)
@@ -44,7 +46,7 @@ final class AboutWindow: NSWindowController, NSWindowDelegate {
         window.center()
         super.init(window: window)
         window.delegate = self
-        window.contentView = NSHostingView(rootView: AboutView(version: ApplicationVersion(),
+        window.contentView = NSHostingView(rootView: AboutView(
             onClose: { [weak self] in self?.close() },
             onReleaseNotes: { [weak self] in self?.requestReleaseNotes() }))
         NotificationCenter.default.addObserver(self, selector: #selector(refreshLanguage),
@@ -82,7 +84,6 @@ final class AboutWindow: NSWindowController, NSWindowDelegate {
 }
 
 private struct AboutView: View {
-    let version: ApplicationVersion
     let onClose: () -> Void
     let onReleaseNotes: () -> Void
 
@@ -93,7 +94,7 @@ private struct AboutView: View {
                 .scaledToFit()
                 .frame(width: 720, height: 480)
                 .accessibilityLabel(L10n.text("Leonardo MarkDown, by PinedaTec.eu"))
-            Text(version.displayText)
+            Text(ApplicationUpdates.shared.versionDisplayText)
                 .font(.headline)
                 .textSelection(.enabled)
                 .accessibilityIdentifier("about-version")

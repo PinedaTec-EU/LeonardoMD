@@ -23,7 +23,7 @@ struct UpdatePreferencesView: View {
                         .textSelection(.enabled)
                 }
                 LabeledContent(L10n.text("Installed channel")) {
-                    Text(updates.configuration.installedChannel?.title ?? L10n.text("Development build"))
+                    Text(updates.installedChannel?.title ?? L10n.text("Development build"))
                 }
             }
             Section {
@@ -37,7 +37,7 @@ struct UpdatePreferencesView: View {
                     ? "Beta includes stable releases and experimental versions. You may encounter unfinished features or errors."
                     : "Receive stable releases only."))
                     .font(.caption).foregroundStyle(.secondary)
-                if updates.configuration.installedChannel == .beta && updates.channel == .stable {
+                if updates.installedChannel == .beta && updates.channel == .stable {
                     Text(L10n.text("Your beta stays installed until a newer stable version is available. Changing channel does not downgrade the app."))
                         .font(.caption).foregroundStyle(.secondary)
                 }

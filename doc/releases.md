@@ -147,3 +147,49 @@ Tracking: [#123](https://github.com/PinedaTec-EU/LeonardoMD/issues/123). Run hos
 | Legacy beta / Either | Different old beta trust root | Manual signed/notarized replacement; preserve data | Documented recovery; not an automatic key migration |
 
 Publication operators must record URLs, source/build, installed and target channels, signature/notarization checks, selected subscription, check mode, result and relaunch/document evidence for each hosted transition. [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15) and [#84](https://github.com/PinedaTec-EU/LeonardoMD/issues/84) remain separate hosted acceptance/publication work; local tests do not close them.
+
+## Recognizing installed stable promotions
+
+Installed package provenance and the user's update subscription are independent
+of verified publication maturity. After the central exact-artifact promotion
+succeeds, the maintainer Mac must complete its signed maturity assertion:
+
+```bash
+python3 scripts/publish-release-maturity.py --tag v<VERSION> --output output/stable-<VERSION>/release-maturity.json --issue-number <ACCEPTANCE_ISSUE> --publish
+```
+
+Use the concrete accepted numeric version and its canonical acceptance issue number. This command requires a public stable
+GitHub release and its stable appcast, downloads the published ZIP, verifies its
+Sparkle signature against the pinned existing Keychain account, and binds the
+assertion to the version, build, archive digest, executable digest and signed resource-seal digest. Sparkle
+signs the raw assertion with the existing key without exporting private material.
+The script creates `maturity/v<VERSION>.json` on the existing `update-feeds`
+branch without replacing an existing proof, and reads it back byte for byte.
+It preserves all release assets and other feed files, so the central promoter’s
+exact inventory and replay checks remain valid. It does not rebuild or install the app, change tags,
+select a subscription, or classify a release. Retain this assertion as immutable
+publication evidence. A failed publication can be recovered by reading that branch file
+and comparing it with the preserved output before retrying; do not overwrite it.
+
+Promotion acceptance is incomplete for this recognition contract until this
+signed branch file is publicly available. The Linux central promoter deliberately has
+no maintainer Keychain access; central success alone does not sign this proof.
+The beta itself does not publish a stable assertion in advance.
+
+Supporting app versions check `https://raw.githubusercontent.com/PinedaTec-EU/LeonardoMD/update-feeds/maturity/v<VERSION>.json` for their own version's assertion on updater startup,
+manual checks and completed scheduled checks, even if Sparkle offers no newer
+build. They verify the Ed25519 signature, repository and exact installed identity
+before changing the installed maturity in About, footer and Updates preferences.
+The signed proof is cached and reverified for offline startup. Missing, corrupt,
+wrong-key or mismatched proofs leave package maturity unchanged; a verified
+stable installation stays stable offline. A later beta cannot inherit an older
+candidate's cached promotion. The `updateChannel` preference is never written by
+recognition. Existing 0.1.571 binaries predate this support and cannot gain it
+without a normal newer binary update.
+
+Validation: first install the new beta with either subscription and confirm beta
+maturity; after owner acceptance, promote those exact bytes and publish the signed
+assertion. Check for updates and confirm stable maturity in all three displays,
+unchanged subscription and version/build, no redundant installation, and stable
+maturity after an offline relaunch. Repeat with the other subscription. Device
+pairing/sync acceptance remains separate.
