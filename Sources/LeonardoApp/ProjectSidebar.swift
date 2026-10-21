@@ -54,6 +54,7 @@ struct ProjectSidebar: View {
                                     Text(match.snippet).font(.caption).lineLimit(2).foregroundStyle(.secondary)
                                 }.frame(maxWidth: .infinity, alignment: .leading).padding(7)
                             }.buttonStyle(.plain)
+                                .modifier(FileRowHighlight(accent: session.accentColor))
                         }
                         if session.searching { ProgressView().controlSize(.small) }
                     }
@@ -104,7 +105,7 @@ struct FileTreeRow: View {
                         .foregroundStyle(isColoredLeonardo ? LeonardoFileStyle.wine : .primary)
                     Spacer(minLength: 0)
                 }.padding(.vertical, 6).padding(.horizontal, 6)
-                    .background(session.documentURL == entry.url ? session.accentColor.opacity(0.14) : .clear, in: RoundedRectangle(cornerRadius: 6))
+                    .modifier(FileRowHighlight(accent: session.accentColor, selected: session.documentURL == entry.url))
             }
                 .contextMenu {
                     Button(L10n.text("Show in Finder")) { NSWorkspace.shared.activateFileViewerSelecting([entry.url]) }

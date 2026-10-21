@@ -1,0 +1,4 @@
+{
+  "build": 2,
+  "summary": "File and folder rows now highlight with the active accent color on hover in the project navigator, search results, and welcome favorites and recents."
+}
