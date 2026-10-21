@@ -378,7 +378,7 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
         window.title = "LeonardoMD"
         window.titlebarAppearsTransparent = true
         window.minSize = NSSize(width: 960, height: 560)
-        window.center()
+        WindowFramePersistence.restore(window)
         super.init(window: window)
         window.delegate = self
         documents.presentationWindow = window
@@ -400,7 +400,16 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
         }
         return false
     }
+    func windowDidMove(_ notification: Notification) { persistWindowFrame() }
+    func windowDidResize(_ notification: Notification) { persistWindowFrame() }
+
+    private func persistWindowFrame() {
+        guard let window, !window.styleMask.contains(.fullScreen), !window.isMiniaturized else { return }
+        WindowFramePersistence.save(window)
+    }
+
     func windowWillClose(_ notification: Notification) {
+        persistWindowFrame()
         documents.stop()
         onClose?()
     }
