@@ -12,7 +12,8 @@ the same kernel-backed election and becomes principal if it wins. The explicit
 `--new-instance` argument still requires the preference; without a running principal,
 a launch becomes principal rather than an orphaned additional process.
 
-Documents and project trees belong exclusively to one process. A file, its aliases,
+Documents and project trees belong exclusively to one process. Case variants on
+case-insensitive volumes share the same reservation, including future files. A file, its aliases,
 or overlapping project folders cannot be opened in another instance while that
 process owns them. Close the owning **instance**, not just its tab, to release the
 reservation. Reservations deliberately survive navigation/tab closure to protect

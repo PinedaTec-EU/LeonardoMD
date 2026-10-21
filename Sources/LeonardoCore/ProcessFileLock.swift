@@ -25,7 +25,17 @@ public final class ProcessFileLock: @unchecked Sendable {
             suffix.append(prefix.lastPathComponent)
             prefix.deleteLastPathComponent()
         }
-        return suffix.reversed().reduce(prefix.resolvingSymlinksInPath()) { $0.appendingPathComponent($1) }
+        let resolved = suffix.reversed().reduce(prefix.resolvingSymlinksInPath()) { $0.appendingPathComponent($1) }
+        #if canImport(Darwin)
+        let caseSensitive = (try? prefix.resourceValues(forKeys: [.volumeSupportsCaseSensitiveNamesKey]))?
+            .volumeSupportsCaseSensitiveNames ?? false
+        if !caseSensitive {
+            // Coordination identity only: never use this folded URL for file I/O.
+            let path = resolved.path.folding(options: [.caseInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+            return URL(fileURLWithPath: path.precomposedStringWithCanonicalMapping)
+        }
+        #endif
+        return resolved
     }
 
     public static func key(for url: URL) -> String {

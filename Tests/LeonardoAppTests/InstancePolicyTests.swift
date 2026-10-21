@@ -1,4 +1,5 @@
 import XCTest
+import LeonardoCore
 @testable import LeonardoApp
 
 @MainActor
@@ -72,6 +73,23 @@ final class InstancePolicyTests: XCTestCase {
         let abandoned = registry.appendingPathComponent("abandoned.claim")
         try Data(root.appendingPathComponent("Unused").path.utf8).write(to: abandoned)
         try second.claim(root.appendingPathComponent("Unused"))
+    }
+
+    func testCaseAliasesReserveTheSameExistingAndFuturePaths() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let sensitive = try root.resourceValues(forKeys: [.volumeSupportsCaseSensitiveNamesKey]).volumeSupportsCaseSensitiveNames
+        guard sensitive == false else { throw XCTSkip("Requires a case-insensitive volume") }
+        let file = root.appendingPathComponent("Document.md")
+        try Data("draft".utf8).write(to: file)
+        let first = InstancePathOwnership(directory: root.appendingPathComponent("Registry"))
+        let second = InstancePathOwnership(directory: root.appendingPathComponent("Registry"))
+        try first.claim(file)
+        XCTAssertThrowsError(try second.claim(root.appendingPathComponent("DOCUMENT.MD")))
+        try first.claim(root.appendingPathComponent("Future.md"))
+        XCTAssertThrowsError(try second.claim(root.appendingPathComponent("FUTURE.MD")))
+        XCTAssertEqual(ProcessFileLock.key(for: file), ProcessFileLock.key(for: root.appendingPathComponent("DOCUMENT.MD")))
     }
 
     func testSymlinkAliasesAndDirectoryDescendantsShareOwnership() throws {
