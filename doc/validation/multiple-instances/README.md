@@ -10,8 +10,9 @@ principal election and forwarding, overlapping trees, aliases including new
 files, abandoned claim recovery, a separate OS process holding/releasing a lock,
 independent preference/recents merges and additional-instance service guards.
 
-The full local suite passed: 471 XCTest cases (14 optional skips) plus 63 Swift
-Testing cases, zero failures. Native component capture was enabled. The source
+The final full local suite passed: 472 XCTest cases (22 optional skips) plus 63
+Swift Testing cases, zero failures. The preceding capture-enabled run covered 471
+XCTest cases (14 optional skips) plus the same 63 Swift Testing cases. The source
 PR's current-head CI is the authoritative reproducible record; captures are in
 its `preview-tags-<SHA>` artifact under `instances/` with their own provenance.
 
@@ -68,3 +69,5 @@ claim of full-window screenshot capture is made.
 Packaged executable SHA-256: `1b062c70759a731c074114a65db279adc94a3890d1e867f912ef927da9081b49`.
 
 After refreshing onto main `785cf1a`, the full suite passed again (471 XCTest cases, 22 optional skips without capture mode, plus 63 Swift Testing cases). A rebuilt real QA bundle from product-source commit `7e4d4d9592d0ad177b3ee900708583ced70f7652` reached its first window and closed normally. Its executable SHA-256 is `6bb1a83b3b56c1ded41c85f2729e25086b1315ad4d72fbf082f581002c7f270c`. This refresh adds the independent hover-row change from main; no multi-instance behavior changed.
+
+Final case-alias regression: `InstancePolicyTests.testCaseAliasesReserveTheSameExistingAndFuturePaths` passed on the case-insensitive local volume. The final release executable built from product source `7f278ab74236353aec20d0c123f3148f7e0e70b3` reached a fresh native first window and closed normally. Its SHA-256 is `cbf63d3de73cd9538f43c972890ac700f86dd29f6d000938b4234c5eb03de052`.
