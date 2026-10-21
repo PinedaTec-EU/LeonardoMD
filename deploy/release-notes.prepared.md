@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.612
+
+- #259 Fixed: restore document window geometry ([#260](https://github.com/PinedaTec-EU/LeonardoMD/pull/260))
+
+<p>Reopened document windows keep their size, position and monitor, and remain reachable when a display is disconnected.</p>
+
+Source: `3c46fc7efd5be799068188d8dc6565038630847c`. Delta: `{"build": 6}`.
+
 ## 0.1.606
 
 - #257 Fixed: recognize stable promotion without changing subscription ([#258](https://github.com/PinedaTec-EU/LeonardoMD/pull/258))
