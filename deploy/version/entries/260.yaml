@@ -1,4 +1,4 @@
 {
-  "build": 5,
-  "summary": "LeonardoMD remembers the document window size and position when reopened."
+  "build": 6,
+  "summary": "Reopened document windows keep their size, position and monitor, and remain reachable when a display is disconnected."
 }
