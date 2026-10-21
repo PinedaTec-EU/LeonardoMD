@@ -557,6 +557,16 @@
       "pr": 262,
       "summary": "File and folder rows now highlight with the active accent color on hover in the project navigator, search results, and welcome favorites and recents.",
       "to_version": "0.1.614"
+    },
+    {
+      "delta": {
+        "build": 11
+      },
+      "from_version": "0.1.614",
+      "merge_sha": "db4e98628100f17ea4e71d2b54d4b29d2af6d8de",
+      "pr": 264,
+      "summary": "Opt into independent editor instances while Finder opens stay with the principal; document reservations and coordinated preference writes protect shared data.",
+      "to_version": "0.1.625"
     }
   ],
   "initial_version": "0.1.56",
@@ -567,5 +577,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.614"
+  "version": "0.1.625"
 }

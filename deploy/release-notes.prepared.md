@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.625
+
+- #263 Added: configurable explicit application instances ([#264](https://github.com/PinedaTec-EU/LeonardoMD/pull/264))
+
+<p>Opt into independent editor instances while Finder opens stay with the principal; document reservations and coordinated preference writes protect shared data.</p>
+
+Source: `db4e98628100f17ea4e71d2b54d4b29d2af6d8de`. Delta: `{"build": 11}`.
+
 ## 0.1.614
 
 - #261 Added: highlight file and folder rows on hover ([#262](https://github.com/PinedaTec-EU/LeonardoMD/pull/262))
