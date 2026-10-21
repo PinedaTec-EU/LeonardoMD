@@ -547,9 +547,19 @@
       "pr": 260,
       "summary": "Reopened document windows keep their size, position and monitor, and remain reachable when a display is disconnected.",
       "to_version": "0.1.612"
+    },
+    {
+      "delta": {
+        "build": 2
+      },
+      "from_version": "0.1.612",
+      "merge_sha": "785cf1a5917b8a78851a4af2802a24809020d766",
+      "pr": 262,
+      "summary": "File and folder rows now highlight with the active accent color on hover in the project navigator, search results, and welcome favorites and recents.",
+      "to_version": "0.1.614"
     }
   ],
-  "current_version": "0.1.612",
+  "current_version": "0.1.614",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

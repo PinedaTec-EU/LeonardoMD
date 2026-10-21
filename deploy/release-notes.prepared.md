@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.614
+
+- #261 Added: highlight file and folder rows on hover ([#262](https://github.com/PinedaTec-EU/LeonardoMD/pull/262))
+
+<p>File and folder rows now highlight with the active accent color on hover in the project navigator, search results, and welcome favorites and recents.</p>
+
+Source: `785cf1a5917b8a78851a4af2802a24809020d766`. Delta: `{"build": 2}`.
+
 ## 0.1.612
 
 - #259 Fixed: restore document window geometry ([#260](https://github.com/PinedaTec-EU/LeonardoMD/pull/260))
