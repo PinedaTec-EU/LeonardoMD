@@ -66,3 +66,5 @@ Committed PNGs are the separately described component evidence; no unsupported
 claim of full-window screenshot capture is made.
 
 Packaged executable SHA-256: `1b062c70759a731c074114a65db279adc94a3890d1e867f912ef927da9081b49`.
+
+After refreshing onto main `785cf1a`, the full suite passed again (471 XCTest cases, 22 optional skips without capture mode, plus 63 Swift Testing cases). A rebuilt real QA bundle from product-source commit `7e4d4d9592d0ad177b3ee900708583ced70f7652` reached its first window and closed normally. Its executable SHA-256 is `6bb1a83b3b56c1ded41c85f2729e25086b1315ad4d72fbf082f581002c7f270c`. This refresh adds the independent hover-row change from main; no multi-instance behavior changed.
