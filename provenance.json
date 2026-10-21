@@ -1,0 +1,31 @@
+{
+  "head": "877f7df5ddab895db818087c51bbd94065493d75",
+  "captured_at": "2026-10-21T18:13:43.131823+00:00",
+  "platform": "macOS 27.0.1; native SwiftUI/AppKit; browser not applicable",
+  "viewport_points": [
+    1200,
+    850
+  ],
+  "image_pixels": [
+    2400,
+    1700
+  ],
+  "bundle": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-qghmrcqh/LeonardoMDQA.app",
+  "pid": 80205,
+  "fresh_startup": "application_ready in unified startup log; executable LeonardoMD, verified no XCTest dependency",
+  "binary_sha256": "0ebeef2b67fc967ec03ea189b7dc3256db1199e54e2226fe4006127e5ad9564c",
+  "source_tree": "04804fa170591287e49f21ec437f9e7732aaf865",
+  "scope": "Actual packaged app using synthetic /tmp/leonardo-pr262/Hover Demo fixtures. System preferences backed up and restored after QA. Build completed before ledger-only commit 877f7df; product source tree is identical.",
+  "files": {
+    "central-idle.png": "ad66d328130a7aaa631b3e7440a99f47582b7e112d408b96cd4e622e676caaa0",
+    "central-hover.png": "c8fe35da45d5a715017d0b9d83cd8ef53a7db1f3a0601ef12fc166ffa35729f2",
+    "central-project-hover.png": "adf51c0e4a6808031d25cfb30070cd79b59d55dda5f14e76c5774e677fae455c",
+    "central-recent-hover.png": "b2401c3c4591b87eaf925aaf6cdf6006f9ca596362a033287f9558f1f5528070",
+    "central-scrolled-idle.png": "adf51c0e4a6808031d25cfb30070cd79b59d55dda5f14e76c5774e677fae455c",
+    "sidebar-idle.png": "22599c8a8d09fdda10fcb42966ef2017093fe90ae5b2a682b659eb506e8574ff",
+    "sidebar-folder-hover.png": "4dbd5578ec40c74ece88fc30f16d1c3fce7d4a1e6d4d8258fbe2103539d8f1bf",
+    "sidebar-selected.png": "e39f89b8aaeb181077c04af93817b2dc2ecaadfa7ac35812e3b091a8848d99f7",
+    "sidebar-selected-hover.png": "9cc912e4acc5ce789805b6369dbc45cea539cedfbfe222f0a42b1698c21bb7f6",
+    "search-hover.png": "8daa2fdf9993935c80ef2cc1fb2daac34c484a8ab0f6effcf5d75b2e33f31adc"
+  }
+}
