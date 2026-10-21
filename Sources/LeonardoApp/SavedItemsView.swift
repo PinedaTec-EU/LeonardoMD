@@ -79,5 +79,7 @@ struct SavedItemsView: View {
             .accessibilityValue(L10n.text(favorite ? "Favorite" : "Not favorite"))
         }
         .padding(.vertical, 4)
+        .padding(.horizontal, 6)
+        .modifier(FileRowHighlight(accent: session.accentColor, enabled: available))
     }
 }
