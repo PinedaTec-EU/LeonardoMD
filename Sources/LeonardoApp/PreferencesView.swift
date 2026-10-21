@@ -53,7 +53,12 @@ struct PreferencesView: View {
 
     private func macPreferences<Content: View>(_ explanation: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            content().frame(maxWidth: .infinity, maxHeight: .infinity)
+            if InstanceRuntime.isAdditional {
+                Text(L10n.text("Synchronization and updates are managed by the principal instance. Open these preferences there."))
+                    .foregroundStyle(.secondary).padding().frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                content().frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
             Text(L10n.text(explanation)).font(.caption).foregroundStyle(.secondary)
                 .padding(.horizontal, 16).padding(.bottom, 12)
         }
@@ -76,6 +81,12 @@ struct PreferencesView: View {
                     }
                 }
                 Section(L10n.text("On this Mac")) {
+                    Toggle(L10n.text("Allow multiple instances"), isOn: Binding(
+                        get: { InstancePreferences.shared.allowsMultipleInstances },
+                        set: { InstancePreferences.shared.allowsMultipleInstances = $0 }))
+                        .accessibilityIdentifier("allow-multiple-instances")
+                    Text(L10n.text("Use File > New instance to open an independent process. Finder opens go to the principal instance. Turning this off keeps existing instances open."))
+                        .font(.caption).foregroundStyle(.secondary)
                     @Bindable var languages = LanguageSettings.shared
                     Picker(L10n.text("Language"), selection: $languages.language) {
                         ForEach(AppLanguage.allCases) { language in

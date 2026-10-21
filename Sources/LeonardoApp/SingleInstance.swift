@@ -6,7 +6,7 @@ import OSLog
 /// releases it when the process exits, including crashes; no stale lock survives.
 @MainActor
 final class SingleInstance {
-    enum Role { case primary, secondary }
+    enum Role { case primary, secondary, additional }
     enum LaunchError: Error { case unavailable, forwardingFailed(Int32), invalidRequest }
     // Product identity must not vary with a QA bundle identifier or app location.
     nonisolated static let serviceName = "eu.pinedatec.LeonardoMD.launch"
@@ -22,9 +22,10 @@ final class SingleInstance {
 
     init(name: String = SingleInstance.serviceName) { self.name = name }
 
-    func claim() throws -> Role {
+    func claim(additionalRequested: Bool = false, allowsMultipleInstances: Bool = false) throws -> Role {
+        let follower: Role = additionalRequested && allowsMultipleInstances ? .additional : .secondary
         if port != nil { return .primary }
-        if CFMessagePortCreateRemote(nil, name as CFString) != nil { return .secondary }
+        if CFMessagePortCreateRemote(nil, name as CFString) != nil { return follower }
         var context = CFMessagePortContext(version: 0, info: Unmanaged.passUnretained(self).toOpaque(), retain: nil, release: nil, copyDescription: nil)
         var unused = DarwinBoolean(false)
         guard let local = CFMessagePortCreateLocal(nil, name as CFString, { _, messageID, data, info in
@@ -39,7 +40,7 @@ final class SingleInstance {
         }, &context, &unused) else {
             // Another process can win between the remote lookup and registration.
             guard CFMessagePortCreateRemote(nil, name as CFString) != nil else { throw LaunchError.unavailable }
-            return .secondary
+            return follower
         }
         guard let runLoopSource = CFMessagePortCreateRunLoopSource(nil, local, 0) else {
             CFMessagePortInvalidate(local)

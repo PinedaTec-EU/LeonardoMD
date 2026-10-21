@@ -58,13 +58,17 @@ final class DesktopPeerController {
     }
 
     func initialize() async {
-        guard !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true; defer { busy = false }
-        do { try await reload(); startAutomaticSync() } catch { self.error = error.localizedDescription }
+        do {
+            try InstancePathOwnership.shared.claim(workingRoot.deletingLastPathComponent())
+            try await reload()
+            startAutomaticSync()
+        } catch { self.error = error.localizedDescription }
     }
 
     func updateInterval(_ minutes: Int) {
-        guard Self.intervals.contains(minutes) else { return }
+        guard !InstanceRuntime.isAdditional, Self.intervals.contains(minutes) else { return }
         syncIntervalMinutes = minutes
         defaults.set(minutes, forKey: "desktopPeerSyncMinutes")
         startAutomaticSync()
@@ -97,7 +101,7 @@ final class DesktopPeerController {
 
     /// The bool belongs to this attempt; old comparison codes never close a failed form.
     func enroll(address: String, name: String) async -> Bool {
-        guard !busy else { return false }
+        guard !InstanceRuntime.isAdditional, !busy else { return false }
         busy = true; defer { busy = false }
         error = nil
         do {
@@ -116,7 +120,7 @@ final class DesktopPeerController {
     }
 
     func refresh(_ id: UUID) async {
-        guard !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true; defer { busy = false }
         error = nil
         do {
@@ -127,7 +131,7 @@ final class DesktopPeerController {
     }
 
     func importProject(connectionID: UUID, projectID: UUID) async {
-        guard !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true; defer { busy = false }
         error = nil
         do {
@@ -137,14 +141,14 @@ final class DesktopPeerController {
     }
 
     func open(_ id: UUID) async -> URL? {
-        guard !busy else { return nil }
+        guard !InstanceRuntime.isAdditional, !busy else { return nil }
         busy = true; defer { busy = false }
         do { return try await library.open(copyID: id) }
         catch { self.error = error.localizedDescription; return nil }
     }
 
     func send(_ id: UUID) async {
-        guard !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true; defer { busy = false }
         error = nil; submitted.remove(id); unchanged.remove(id)
         do {
@@ -165,7 +169,7 @@ final class DesktopPeerController {
     }
 
     func compare(_ id: UUID) async {
-        guard !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true; defer { busy = false }
         error = nil
         comparisons[id] = nil

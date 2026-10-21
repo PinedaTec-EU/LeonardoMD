@@ -29,7 +29,7 @@ final class ApplicationUpdates {
     @ObservationIgnored private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "updates")
 
     var canChangeChannel: Bool {
-        !sessionInProgress && !pendingDecision.hasPendingDecision
+        !InstanceRuntime.isAdditional && !sessionInProgress && !pendingDecision.hasPendingDecision
             && driver?.sessionInProgress != true && driver?.hasDeferredUpdate != true
     }
 
@@ -47,7 +47,7 @@ final class ApplicationUpdates {
     }
 
     func start() {
-        guard !isStarted else { return }
+        guard !InstanceRuntime.isAdditional, !isStarted else { return }
         Task { await maturity.refresh() }
         guard let driver else {
             logger.info("update_channel_unconfigured")
