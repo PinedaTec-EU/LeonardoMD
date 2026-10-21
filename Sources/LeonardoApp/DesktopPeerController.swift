@@ -58,13 +58,17 @@ final class DesktopPeerController {
     }
 
     func initialize() async {
-        guard !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true; defer { busy = false }
-        do { try await reload(); startAutomaticSync() } catch { self.error = error.localizedDescription }
+        do {
+            try authorizeStorage()
+            try await reload()
+            startAutomaticSync()
+        } catch { self.error = error.localizedDescription }
     }
 
     func updateInterval(_ minutes: Int) {
-        guard Self.intervals.contains(minutes) else { return }
+        guard !InstanceRuntime.isAdditional, Self.intervals.contains(minutes) else { return }
         syncIntervalMinutes = minutes
         defaults.set(minutes, forKey: "desktopPeerSyncMinutes")
         startAutomaticSync()
@@ -97,10 +101,11 @@ final class DesktopPeerController {
 
     /// The bool belongs to this attempt; old comparison codes never close a failed form.
     func enroll(address: String, name: String) async -> Bool {
-        guard !busy else { return false }
+        guard !InstanceRuntime.isAdditional, !busy else { return false }
         busy = true; defer { busy = false }
         error = nil
         do {
+            try authorizeStorage()
             let input = address.trimmingCharacters(in: .whitespacesAndNewlines)
             let normalized = input.contains("://") ? input : "https://" + input
             guard let url = URL(string: normalized) else { throw TransportError.invalidEndpoint }
@@ -116,10 +121,11 @@ final class DesktopPeerController {
     }
 
     func refresh(_ id: UUID) async {
-        guard !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true; defer { busy = false }
         error = nil
         do {
+            try authorizeStorage()
             let status = try await library.refresh(connectionID: id)
             available[id] = status.projects
             try await reload()
@@ -127,27 +133,29 @@ final class DesktopPeerController {
     }
 
     func importProject(connectionID: UUID, projectID: UUID) async {
-        guard !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true; defer { busy = false }
         error = nil
         do {
+            try authorizeStorage()
             _ = try await library.importProject(connectionID: connectionID, projectID: projectID)
             try await reload()
         } catch { self.error = error.localizedDescription; try? await reload() }
     }
 
     func open(_ id: UUID) async -> URL? {
-        guard !busy else { return nil }
+        guard !InstanceRuntime.isAdditional, !busy else { return nil }
         busy = true; defer { busy = false }
-        do { return try await library.open(copyID: id) }
+        do { try authorizeStorage(); return try await library.open(copyID: id) }
         catch { self.error = error.localizedDescription; return nil }
     }
 
     func send(_ id: UUID) async {
-        guard !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true; defer { busy = false }
         error = nil; submitted.remove(id); unchanged.remove(id)
         do {
+            try authorizeStorage()
             let root = workingRoot.appendingPathComponent(id.uuidString, isDirectory: true)
             let selection = copies.first { $0.id == id }?.selection
             if let copy = copies.first(where: { $0.id == id }),
@@ -165,11 +173,12 @@ final class DesktopPeerController {
     }
 
     func compare(_ id: UUID) async {
-        guard !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true; defer { busy = false }
         error = nil
         comparisons[id] = nil
         do {
+            try authorizeStorage()
             let root = workingRoot.appendingPathComponent(id.uuidString, isDirectory: true)
             let selection = copies.first { $0.id == id }?.selection
             let selectedBuffers = try await buffers(root).filter { selection?.contains($0.path) == true }
@@ -178,7 +187,14 @@ final class DesktopPeerController {
         } catch { self.error = error.localizedDescription; try? await reload() }
     }
 
+    private func authorizePeerPath(_ url: URL) throws {
+        let root = workingRoot.standardizedFileURL.resolvingSymlinksInPath().path
+        let path = url.standardizedFileURL.resolvingSymlinksInPath().path
+        if path == root || path.hasPrefix(root + "/") { try authorizeStorage() }
+    }
+
     func entryFilter(in url: URL) async throws -> @Sendable (URL, Bool) -> Bool {
+        try authorizePeerPath(url)
         let policy = DesktopPeerPathPolicy(root: workingRoot) { [library] id in
             guard let copy = try await library.copies().first(where: { $0.id == id }) else { throw SyncError.revoked }
             _ = try await library.open(copyID: id)
@@ -188,6 +204,7 @@ final class DesktopPeerController {
     }
 
     func authorize(_ url: URL, intent: DesktopPeerPathIntent) async throws {
+        try authorizePeerPath(url)
         let policy = DesktopPeerPathPolicy(root: workingRoot) { [library] id in
             guard let copy = try await library.copies().first(where: { $0.id == id }) else { throw SyncError.revoked }
             _ = try await library.open(copyID: id)
@@ -196,7 +213,13 @@ final class DesktopPeerController {
         try await policy.authorize(url, intent: intent)
     }
 
+    private func authorizeStorage() throws {
+        guard !InstanceRuntime.isAdditional else { throw InstancePathOwnership.InUse() }
+        try InstancePathOwnership.shared.claim(workingRoot.deletingLastPathComponent())
+    }
+
     private func reload() async throws {
+        try authorizeStorage()
         connections = try await library.connections()
         copies = try await library.copies()
         var pending: [UUID: UUID] = [:]

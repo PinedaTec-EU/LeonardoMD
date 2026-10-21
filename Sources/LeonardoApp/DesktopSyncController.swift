@@ -21,6 +21,7 @@ final class DesktopSyncController {
     private let configurations: ConfigurationStore
     private let preferencesURL: URL
     private let runtime: DesktopDirectRuntime
+    private let storageRoot: URL
     private var initialized = false
 
     init(preferencesURL: URL = AppSession.preferencesURL, configurations: ConfigurationStore = .shared,
@@ -28,6 +29,7 @@ final class DesktopSyncController {
         self.preferencesURL = preferencesURL
         self.configurations = configurations
         let root = preferencesURL.deletingLastPathComponent().appendingPathComponent("MobileSync", isDirectory: true)
+        storageRoot = root
         self.runtime = runtime ?? DesktopDirectRuntime(root: root,
             credentials: SecureCredentialStore(service: "eu.pinedatec.LeonardoMD.sync.tls"), now: { Date() })
     }
@@ -39,10 +41,11 @@ final class DesktopSyncController {
     }
 
     func initialize() async {
-        guard !initialized, !busy else { return }
+        guard !InstanceRuntime.isAdditional, !initialized, !busy else { return }
         busy = true
         defer { busy = false }
         do {
+            try InstancePathOwnership.shared.claim(storageRoot)
             settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
             if settings.enabled { try await start() }
             consent = try await runtime.consentState()
@@ -51,17 +54,21 @@ final class DesktopSyncController {
     }
 
     func update(_ updated: MobileSyncPreferences) async {
-        guard !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true
         defer { busy = false }
         do {
+            try InstancePathOwnership.shared.claim(storageRoot)
             var updated = updated
             if !updated.privateOverlayEnabled,
                let host = updated.host,
                LocalNetworkAddress.isPrivateOverlay(host) {
                 updated.host = nil
             }
-            for project in updated.projects { _ = try CorpusSelection(folders: project.folders, documents: project.documents) }
+            for project in updated.projects {
+                _ = try CorpusSelection(folders: project.folders, documents: project.documents)
+                try InstancePathOwnership.shared.claim(project.rootURL)
+            }
             let previous = try await configurations.loadGlobalPreferences(at: preferencesURL)
             var next = previous
             next.mobileSync = updated
@@ -85,7 +92,10 @@ final class DesktopSyncController {
             guard let automatic = addresses.first else { throw TransportError.invalidEndpoint }
             host = automatic
         }
-        let sources = try settings.projects.map { try DesktopSharedCorpus(buffers: buffers).source($0) }
+        let sources = try settings.projects.map {
+            try InstancePathOwnership.shared.claim($0.rootURL)
+            return try DesktopSharedCorpus(buffers: buffers).source($0)
+        }
         running = try await runtime.start(host: host, port: settings.port, projects: sources,
             allowPrivateOverlay: settings.privateOverlayEnabled)
     }
@@ -106,7 +116,7 @@ final class DesktopSyncController {
     }
 
     func refreshConsent() async {
-        guard !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
         do {
             consent = try await runtime.consentState()
             incoming = running == nil ? [] : try await runtime.incomingProposals()
@@ -114,7 +124,7 @@ final class DesktopSyncController {
     }
 
     func reviewProposal(_ item: DesktopPeerIncomingProposal) async {
-        guard !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true; error = nil
         defer { busy = false }
         do { reviewing = DesktopSourceReview(item: item, review: try await runtime.reviewIncomingProposal(deviceID: item.deviceID, upload: item.upload)) }
@@ -168,7 +178,7 @@ final class DesktopSyncController {
     func revoke(_ id: UUID) async { await consentAction { try await runtime.revoke(deviceID: id) } }
 
     private func consentAction(_ action: () async throws -> Void) async {
-        guard !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true
         defer { busy = false }
         do {

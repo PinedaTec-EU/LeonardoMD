@@ -475,5 +475,10 @@
   "Export Markdown": "Export Markdown",
   "Export to Markdown loses Leonardo capabilities": "Export to Markdown loses Leonardo capabilities",
   "The exported copy loses Leonardo layout and interactive forms. Fields become their current values. Local and unsupported images are removed. Leonardo capabilities cannot be recovered from this Markdown file. The original document is preserved.": "The exported copy loses Leonardo layout and interactive forms. Fields become their current values. Local and unsupported images are removed. Leonardo capabilities cannot be recovered from this Markdown file. The original document is preserved.",
-  "Exported · Markdown": "Exported · Markdown"
+  "Exported · Markdown": "Exported · Markdown",
+  "New instance": "New instance",
+  "Allow multiple instances": "Allow multiple instances",
+  "Use File > New instance to open an independent process. Finder opens go to the principal instance. Turning this off keeps existing instances open.": "Use File > New instance to open an independent process. Finder opens go to the principal instance. Turning this off keeps existing instances open.",
+  "Synchronization and updates are managed by the principal instance. Open these preferences there.": "Synchronization and updates are managed by the principal instance. Open these preferences there.",
+  "This document or project is in use by another LeonardoMD instance. Close that instance before opening it here.": "This document or project is in use by another LeonardoMD instance. Close that instance before opening it here."
 }

@@ -14,15 +14,20 @@ struct LeonardoMD {
         diagnostics.record(.applicationInitialized)
         let instance = SingleInstance()
         let role: SingleInstance.Role
-        do { role = try instance.claim() }
+        do {
+            role = try instance.claim(
+                additionalRequested: CommandLine.arguments.contains(InstancePreferences.launchArgument),
+                allowsMultipleInstances: InstancePreferences.shared.allowsMultipleInstances)
+        }
         catch {
             NSLog("LeonardoMD could not establish single-instance ownership: %@", String(describing: error))
             exit(EXIT_FAILURE)
         }
+        InstanceRuntime.isAdditional = role != .primary
         let delegate = ApplicationDelegate(diagnostics: diagnostics, instance: instance, role: role)
         application.delegate = delegate
         diagnostics.record(.delegateInstalled)
-        let activationConfigured = application.setActivationPolicy(role == .primary ? .regular : .prohibited)
+        let activationConfigured = application.setActivationPolicy(role != .secondary ? .regular : .prohibited)
         diagnostics.record(.activationPolicyRequested, activationPolicy: .init(
             switchSucceeded: activationConfigured, actualPolicy: application.activationPolicy().rawValue
         ))
@@ -51,7 +56,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "application")
     private let launchStarted = ContinuousClock.now
     private let instance: SingleInstance
-    private let role: SingleInstance.Role
+    private var role: SingleInstance.Role
     private var pendingLaunches: [[URL]] = []
     private var processingLaunches = false
     private var launched = false
@@ -75,10 +80,22 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         launched = true
         let arguments = CommandLine.arguments.dropFirst().filter { !$0.hasPrefix("-") }.map { URL(fileURLWithPath: $0) }
         if !arguments.isEmpty { pendingLaunches.append(arguments) }
-        guard role == .primary else { forwardPendingLaunches(); return }
+        guard role != .secondary else { forwardPendingLaunches(); return }
         diagnostics.record(.menuConfiguring)
         NotificationCenter.default.addObserver(self, selector: #selector(languageChanged), name: LanguageSettings.didChange, object: nil)
         configureMenu()
+        if role == .primary { startPrincipalServices() }
+        diagnostics.record(.menuConfigured)
+        if windows.isEmpty { newEmptyWindow() }
+        processPendingLaunches()
+        NSApp.activate(ignoringOtherApps: true)
+        diagnostics.record(.applicationReady)
+        let elapsed = launchStarted.duration(to: .now).components
+        let milliseconds = Double(elapsed.seconds) * 1000 + Double(elapsed.attoseconds) / 1e15
+        logger.info("application_window_ready duration_ms=\(milliseconds, privacy: .public)")
+    }
+
+    private func startPrincipalServices() {
         updates.start()
         DesktopSyncController.shared.buffers = { [weak self] root in
             try await NativeReconciliationLease.shared.captureBuffers(in: root,
@@ -96,35 +113,45 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         }
         Task { await DesktopPeerController.shared.initialize() }
         Task { await DesktopSyncController.shared.initialize() }
-        diagnostics.record(.menuConfigured)
-        if windows.isEmpty { newEmptyWindow() }
-        processPendingLaunches()
-        NSApp.activate(ignoringOtherApps: true)
-        diagnostics.record(.applicationReady)
-        let elapsed = launchStarted.duration(to: .now).components
-        let milliseconds = Double(elapsed.seconds) * 1000 + Double(elapsed.attoseconds) / 1e15
-        logger.info("application_window_ready duration_ms=\(milliseconds, privacy: .public)")
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         NotificationCenter.default.removeObserver(self)
         diagnostics.record(.applicationWillTerminate)
-        DesktopPeerController.shared.stop()
+        if role == .primary { DesktopPeerController.shared.stop() }
     }
 
     func application(_ sender: NSApplication, open urls: [URL]) {
-        enqueueLaunch(urls)
+        if role == .additional {
+            routeAdditionalExternalOpen(urls)
+        } else { enqueueLaunch(urls) }
+    }
+
+    private func routeAdditionalExternalOpen(_ urls: [URL]) {
+        Task {
+            do {
+                if try instance.claim() == .primary {
+                    role = .primary
+                    InstanceRuntime.isAdditional = false
+                    startPrincipalServices()
+                    enqueueLaunch(urls)
+                } else {
+                    try await SingleInstance.forward(urls)
+                }
+            } catch { activeSession?.report(error) }
+        }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        enqueueLaunch([])
+        if role == .additional { routeAdditionalExternalOpen([]) }
+        else { enqueueLaunch([]) }
         return false
     }
 
     private func enqueueLaunch(_ urls: [URL]) {
         pendingLaunches.append(urls)
         guard launched, !terminationPending else { return }
-        if role == .primary { processPendingLaunches() }
+        if role != .secondary { processPendingLaunches() }
         else { forwardPendingLaunches() }
     }
 
@@ -141,7 +168,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
                 // Loading can suspend while another application takes focus.
                 bringWindowsToFront()
             }
-            if !terminationPending, let controller = windows.last, let window = controller.window {
+            if role == .primary, !terminationPending, let controller = windows.last, let window = controller.window {
                 let continueStartup = { [weak window] in
                     guard let window, window.isVisible else { return }
                     MarkdownAssociations.shared.presentStartupPrompt(on: window)
@@ -207,7 +234,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
                 if await !window.documents.prepareClose() { canTerminate = false; break }
             }
             if canTerminate {
-                await DesktopSyncController.shared.stop()
+                if role == .primary { await DesktopSyncController.shared.stop() }
                 for window in windows { await window.documents.finishPreparedClose() }
             }
             else { windows.forEach { $0.documents.cancelPreparedClose() } }
@@ -219,6 +246,13 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+
+    @objc private func newInstance() {
+        Task {
+            do { try await InstancePreferences.shared.launch() }
+            catch { activeSession?.report(error) }
+        }
+    }
 
     @objc func newEmptyWindow() { newWindow(url: nil) }
 
@@ -267,6 +301,9 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     }
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(newInstance) {
+            return !terminationPending && InstancePreferences.shared.allowsMultipleInstances
+        }
         if menuItem.action == #selector(undoDocument) {
             if let editor = focusedTextEditor { return editor.undoManager?.canUndo == true }
             return activeSession?.canUndoDocument == true
@@ -319,6 +356,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         add(L10n.text("Quit LeonardoMD"), action: #selector(NSApplication.terminate(_:)), key: "q", to: app)
         let file = submenu(L10n.text("File"), in: menu)
         add(L10n.text("New window"), action: #selector(newEmptyWindow), key: "n", to: file)
+        add(L10n.text("New instance"), action: #selector(newInstance), to: file)
         add(L10n.text("New tab"), action: #selector(newTab), key: "t", to: file)
         add(L10n.text("Close tab"), action: #selector(closeTab), key: "w", to: file)
         add(L10n.text("Open document…"), action: #selector(openDocument), key: "o", to: file)

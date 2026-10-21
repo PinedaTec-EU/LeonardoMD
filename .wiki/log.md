@@ -151,3 +151,5 @@ General and Extensions now own their Global / This project header inside the tab
 - 2026-10-20: README now leads with signed/notarized macOS downloads and product usage; detailed usage, table syntax and contributor diagnostics/QA move to `doc/user-guide.md`, `doc/table-widths.md` and `doc/development.md`. Keep current package versions in GitHub Releases rather than historical baseline text. [#218](https://github.com/PinedaTec-EU/LeonardoMD/issues/218).
 
 - 2026-10-20: [#223](https://github.com/PinedaTec-EU/LeonardoMD/issues/223) separates dynamic latest-stable discovery from beta-only forms, records owner-confirmed update installation with #202 termination limits, and standardizes recent release notes in English with separate publication evidence.
+
+- 2026-10-21: [#263](https://github.com/PinedaTec-EU/LeonardoMD/issues/263) adds opt-in explicit macOS processes, principal Finder routing/re-election, process-lifetime hierarchical path ownership, shared-service guards and cross-process settings merges. Reuse ProcessFileLock.canonicalURL for newly created paths under aliased ancestors. [Validation](../doc/validation/multiple-instances/README.md).

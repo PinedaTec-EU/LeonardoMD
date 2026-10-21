@@ -53,7 +53,12 @@ struct PreferencesView: View {
 
     private func macPreferences<Content: View>(_ explanation: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            content().frame(maxWidth: .infinity, maxHeight: .infinity)
+            if InstanceRuntime.isAdditional {
+                Text(L10n.text("Synchronization and updates are managed by the principal instance. Open these preferences there."))
+                    .foregroundStyle(.secondary).padding().frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                content().frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
             Text(L10n.text(explanation)).font(.caption).foregroundStyle(.secondary)
                 .padding(.horizontal, 16).padding(.bottom, 12)
         }
@@ -76,6 +81,7 @@ struct PreferencesView: View {
                     }
                 }
                 Section(L10n.text("On this Mac")) {
+                    InstancePreferencesView()
                     @Bindable var languages = LanguageSettings.shared
                     Picker(L10n.text("Language"), selection: $languages.language) {
                         ForEach(AppLanguage.allCases) { language in

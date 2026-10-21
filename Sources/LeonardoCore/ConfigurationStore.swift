@@ -83,10 +83,12 @@ public actor ConfigurationStore {
         baseline: GlobalPreferences,
         at fileURL: URL
     ) throws -> GlobalPreferences {
-        let current = try loadGlobalPreferences(at: fileURL)
-        let merged = mergeGlobalPreferences(current: current, updated: updated, baseline: baseline)
-        try saveGlobalPreferences(merged, at: fileURL)
-        return merged
+        return try ProcessFileLock.transaction(for: fileURL) {
+            let current = try loadGlobalPreferences(at: fileURL)
+            let merged = mergeGlobalPreferences(current: current, updated: updated, baseline: baseline)
+            try saveGlobalPreferences(merged, at: fileURL)
+            return merged
+        }
     }
 
     /// Merges a session snapshot into the latest project configuration and persists it once.
@@ -99,10 +101,12 @@ public actor ConfigurationStore {
         baseline: ProjectConfiguration,
         for projectRoot: URL
     ) throws -> ProjectConfiguration {
-        let current = try loadProjectConfiguration(for: projectRoot)
-        let merged = mergeProjectConfiguration(current: current, updated: updated, baseline: baseline)
-        try saveProjectConfiguration(merged, for: projectRoot)
-        return merged
+        return try ProcessFileLock.transaction(for: Self.projectConfigurationURL(for: projectRoot)) {
+            let current = try loadProjectConfiguration(for: projectRoot)
+            let merged = mergeProjectConfiguration(current: current, updated: updated, baseline: baseline)
+            try saveProjectConfiguration(merged, for: projectRoot)
+            return merged
+        }
     }
 
     public func loadLocalPreferences<T: Decodable>(
@@ -193,10 +197,10 @@ public actor ConfigurationStore {
         if updated.mobileSync.port != baseline.mobileSync.port { merged.mobileSync.port = updated.mobileSync.port }
         if updated.mobileSync.projects != baseline.mobileSync.projects { merged.mobileSync.projects = updated.mobileSync.projects }
         if updated.recentWorkspacePaths != baseline.recentWorkspacePaths {
-            merged.recentWorkspacePaths = updated.recentWorkspacePaths
+            merged.recentWorkspacePaths = mergeRecents(current: current.recentWorkspacePaths, updated: updated.recentWorkspacePaths, baseline: baseline.recentWorkspacePaths)
         }
         if updated.recentProjectPaths != baseline.recentProjectPaths {
-            merged.recentProjectPaths = updated.recentProjectPaths
+            merged.recentProjectPaths = mergeRecents(current: current.recentProjectPaths, updated: updated.recentProjectPaths, baseline: baseline.recentProjectPaths)
         }
         // Apply only membership changes so independent windows preserve each other's stars.
         let removed = Set(baseline.favorites).subtracting(updated.favorites)
@@ -245,6 +249,11 @@ public actor ConfigurationStore {
             baseline: baseline.markdown
         )
         return merged
+    }
+
+    private func mergeRecents(current: [URL], updated: [URL], baseline: [URL]) -> [URL] {
+        let removed = Set(baseline).subtracting(updated)
+        return Array((updated + current.filter { !removed.contains($0) && !updated.contains($0) }).prefix(12))
     }
 
     private func mergeMarkdownFeatures(

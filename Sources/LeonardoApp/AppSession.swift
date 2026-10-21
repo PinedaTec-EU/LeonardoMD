@@ -149,6 +149,13 @@ final class AppSession {
     ) {
         globalPreferencesURL = preferencesURL
         self.openSystemURL = openSystemURL
+        let existingAuthorization = authorizePath
+        authorizePath = { url, intent in
+            // Browsing a workspace does not reserve all its projects. Editing
+            // a project reserves its root explicitly in openProject.
+            if intent != .directory { try InstancePathOwnership.shared.claim(url) }
+            try await existingAuthorization(url, intent)
+        }
         unsavedChangesDecision = { [weak self] filename in
             await UnsavedChangesPrompt.show(filename, on: self?.presentationWindow)
         }
@@ -380,7 +387,9 @@ final class AppSession {
         monitorTask?.cancel()
     }
     func report(_ error: Error) {
-        if case DesktopRuntimeError.busy = error {
+        if error is InstancePathOwnership.InUse {
+            errorMessage = L10n.text("This document or project is in use by another LeonardoMD instance. Close that instance before opening it here.")
+        } else if case DesktopRuntimeError.busy = error {
             errorMessage = L10n.text("Synchronization is applying changes. Try again when it finishes.")
         } else if let syncError = error as? SyncError, syncError == .outsideScope {
             errorMessage = L10n.text("This item is outside the content selected on the source Mac.")
