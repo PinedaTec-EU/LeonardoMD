@@ -1,0 +1,19 @@
+{
+  "head": "877f7df5ddab895db818087c51bbd94065493d75",
+  "captured_at": "2026-10-21T18:18:30.130683+00:00",
+  "viewport_points": [
+    1200,
+    850
+  ],
+  "image_pixels": [
+    2400,
+    1700
+  ],
+  "same_packaged_executable_as_original": true,
+  "technique": "CoreGraphics interpolated pointer movement and native window capture in the same activation, avoiding Stage Manager focus races",
+  "files": {
+    "sidebar-selected-v2.png": "9842c1912f3919ef20080aa9c90a987be7e59da4994a8756e6e9e637e9bd3b8f",
+    "sidebar-selected-hover-v2.png": "f09855f46af31e9e2f9cc8e7bb984c6c008c2310ee9879e6ea4c76d7435dd80c",
+    "central-project-hover-v2.png": "278abe521ebfb7dc531a848af0b37ac256967cae0dca4d089c551d66d6cd3054"
+  }
+}
