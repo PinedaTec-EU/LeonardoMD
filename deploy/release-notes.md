@@ -175,4 +175,10 @@
 - [#258](https://github.com/PinedaTec-EU/LeonardoMD/pull/258) — #257 Fixed: recognize stable promotion without changing subscription — build +6
   <p>Installed betas recognize a verified promotion to stable in About, the footer and Preferences while preserving the selected update subscription, including offline recognition after verification.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.606)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTAtMjFUMTc6MzM6MjJaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjZ9LCJmcm9tX3ZlcnNpb24iOiIwLjEuNjA2Iiwia2luZCI6InB1bGxfcmVxdWVzdCIsIm1lcmdlX3NoYSI6IjNjNDZmYzdlZmQ1YmU3OTkwNjgxODhkOGRjNjU2NTAzODYzMDg0N2MiLCJudW1iZXIiOjI2MCwic3VtbWFyeSI6IlJlb3BlbmVkIGRvY3VtZW50IHdpbmRvd3Mga2VlcCB0aGVpciBzaXplLCBwb3NpdGlvbiBhbmQgbW9uaXRvciwgYW5kIHJlbWFpbiByZWFjaGFibGUgd2hlbiBhIGRpc3BsYXkgaXMgZGlzY29ubmVjdGVkLiIsInRpdGxlIjoiIzI1OSBGaXhlZDogcmVzdG9yZSBkb2N1bWVudCB3aW5kb3cgZ2VvbWV0cnkiLCJ0b192ZXJzaW9uIjoiMC4xLjYxMiJ9XSwiZW52aXJvbm1lbnQiOiJyZWxlYXNlIiwiZXZlbnRfaWQiOiJnaXRodWJfcmVsZWFzZTo0MTk4NTQ4NzIiLCJldmVudF9raW5kIjoiZ2l0aHViX3JlbGVhc2UiLCJldmlkZW5jZV91cmwiOiJodHRwczovL2dpdGh1Yi5jb20vUGluZWRhVGVjLUVVL0xlb25hcmRvTUQvcmVsZWFzZXMvdGFnL3YwLjEuNjEyIiwicmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwic291cmNlX3JlZiI6InYwLjEuNjEyIiwic291cmNlX3NoYSI6IjkyZTkxMzY0MjUwOTUwZWM3NjQxODc4NGRiMWMxMTk1ODQ2M2QwYTYiLCJ0YXJnZXQiOiJQaW5lZGFUZWMtRVUvTGVvbmFyZG9NRCIsInZlcnNpb24iOiIwLjEuNjEyIn0 -->
+### 0.1.612
+- [#260](https://github.com/PinedaTec-EU/LeonardoMD/pull/260) — #259 Fixed: restore document window geometry — build +6
+  <p>Reopened document windows keep their size, position and monitor, and remain reachable when a display is disconnected.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.612)
 <!-- release-ledger:end -->
