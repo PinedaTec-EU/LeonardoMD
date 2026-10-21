@@ -405,7 +405,7 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
 
     private func persistWindowFrame() {
         guard let window, !window.styleMask.contains(.fullScreen), !window.isMiniaturized else { return }
-        window.saveFrame(usingName: WindowFramePersistence.documentFrameName)
+        WindowFramePersistence.save(window)
     }
 
     func windowWillClose(_ notification: Notification) {
