@@ -19,10 +19,23 @@ final class TrashUnavailableConfirmationTests: XCTestCase {
                 XCTAssertTrue(controls.compactMap { ($0 as? NSButton)?.title }.contains(L10n.text("Delete Permanently")))
                 let copy = controls.compactMap { ($0 as? NSTextField)?.stringValue }.joined(separator: " ")
                 XCTAssertTrue(copy.contains(L10n.text("Trash is unavailable in this location. The item and its contents will be permanently deleted. This cannot be undone.")))
+                if !confirm, let directory = ProcessInfo.processInfo.environment["LEONARDO_TRASH_CAPTURE_DIR"] {
+                    let destination = URL(fileURLWithPath: directory)
+                    try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+                    try await Task.sleep(for: .milliseconds(200))
+                    let capture = Process()
+                    capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+                    capture.arguments = ["-x", "-o", "-l", String(sheet.windowNumber),
+                        destination.appendingPathComponent("trash-unavailable-\(language.rawValue).png").path]
+                    try capture.run()
+                    capture.waitUntilExit()
+                    XCTAssertEqual(capture.terminationStatus, 0)
+                    print("Trash warning capture: language=\(language.rawValue), viewport=\(sheet.frame.size)")
+                }
                 fixture.window.endSheet(sheet, returnCode: confirm ? .alertSecondButtonReturn : .alertFirstButtonReturn)
                 await operation.value
                 XCTAssertEqual(FileManager.default.fileExists(atPath: fixture.document.path), !confirm)
-                XCTAssertEqual(fixture.manager.trashAttempts, 0)
+                XCTAssertEqual(fixture.observation.trashAttempts, 0)
             }
         }
     }
@@ -43,7 +56,7 @@ final class TrashUnavailableConfirmationTests: XCTestCase {
             fixture.window.endSheet(second, returnCode: outcome == "cancel" ? .alertFirstButtonReturn : .alertSecondButtonReturn)
             await operation.value
             XCTAssertEqual(FileManager.default.fileExists(atPath: fixture.document.path), outcome != "confirm")
-            XCTAssertEqual(fixture.manager.trashAttempts, 1)
+            XCTAssertEqual(fixture.observation.trashAttempts, 1)
             XCTAssertEqual(fixture.session.fileOperationCount, 0)
         }
     }
@@ -82,7 +95,7 @@ private final class DeletionFixture {
     let root: URL
     let document: URL
     let session: AppSession
-    let manager: ConfirmationTrashManager
+    let observation = TrashAttemptObservation()
     let window: NSWindow
 
     init(preflightError: NSError? = nil, trashError: NSError = CocoaError(.featureUnsupported) as NSError) throws {
@@ -91,9 +104,9 @@ private final class DeletionFixture {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         document = root.appendingPathComponent("notes.md")
         try "Preserve this document".write(to: document, atomically: true, encoding: .utf8)
-        manager = ConfirmationTrashManager(preflightError: preflightError, trashError: trashError)
         session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"),
-                             files: LocalProjectRepository(fileManager: manager))
+                             files: LocalProjectRepository(fileManager: ConfirmationTrashManager(
+                                preflightError: preflightError, trashError: trashError, observation: observation)))
         session.projectURL = root
         session.authorizePath = { _, _ in }
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1000, height: 800),
@@ -111,14 +124,20 @@ private final class DeletionFixture {
     }
 }
 
-private final class ConfirmationTrashManager: FileManager, @unchecked Sendable {
-    let preflightError: NSError?
-    let trashError: NSError
+private final class TrashAttemptObservation: @unchecked Sendable {
     private let lock = NSLock()
     private var attempts = 0
     var trashAttempts: Int { lock.withLock { attempts } }
+    func attempted() { lock.withLock { attempts += 1 } }
+}
 
-    init(preflightError: NSError?, trashError: NSError) {
+private final class ConfirmationTrashManager: FileManager {
+    let preflightError: NSError?
+    let trashError: NSError
+    let observation: TrashAttemptObservation
+
+    init(preflightError: NSError?, trashError: NSError, observation: TrashAttemptObservation) {
+        self.observation = observation
         self.preflightError = preflightError
         self.trashError = trashError
         super.init()
@@ -132,7 +151,7 @@ private final class ConfirmationTrashManager: FileManager, @unchecked Sendable {
         return try super.url(for: directory, in: domain, appropriateFor: url, create: shouldCreate)
     }
     override func trashItem(at url: URL, resultingItemURL: AutoreleasingUnsafeMutablePointer<NSURL?>?) throws {
-        lock.withLock { attempts += 1 }
+        observation.attempted()
         throw trashError
     }
 }
