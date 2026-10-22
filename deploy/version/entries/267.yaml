@@ -1,4 +1,0 @@
-{
-  "build": 3,
-  "summary": "Fix a crash before the first window when macOS cannot open the instance preferences suite."
-}

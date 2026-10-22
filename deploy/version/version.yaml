@@ -567,9 +567,19 @@
       "pr": 264,
       "summary": "Opt into independent editor instances while Finder opens stay with the principal; document reservations and coordinated preference writes protect shared data.",
       "to_version": "0.1.625"
+    },
+    {
+      "delta": {
+        "build": 3
+      },
+      "from_version": "0.1.625",
+      "merge_sha": "cd7ae22a3fe461f65d825cc09af772d5e3bc8475",
+      "pr": 267,
+      "summary": "Fix a crash before the first window when macOS cannot open the instance preferences suite.",
+      "to_version": "0.1.628"
     }
   ],
-  "current_version": "0.1.625",
+  "current_version": "0.1.628",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.628
+
+- #266 Fixed: prevent startup crash when preferences suite is unavailable ([#267](https://github.com/PinedaTec-EU/LeonardoMD/pull/267))
+
+<p>Fix a crash before the first window when macOS cannot open the instance preferences suite.</p>
+
+Source: `cd7ae22a3fe461f65d825cc09af772d5e3bc8475`. Delta: `{"build": 3}`.
+
 ## 0.1.625
 
 - #263 Added: configurable explicit application instances ([#264](https://github.com/PinedaTec-EU/LeonardoMD/pull/264))
