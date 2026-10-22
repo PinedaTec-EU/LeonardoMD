@@ -3,6 +3,27 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.1.628</title>
+            <pubDate>Thu, 22 Oct 2026 09:17:51 +0200</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>628</sparkle:version>
+            <sparkle:shortVersionString>0.1.628</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">## What’s new
+
+- Fix a crash that could close LeonardoMD before its first window when loading the local instance preference.
+
+## Known limitations
+
+- If beta 0.1.625 closes immediately, download this beta’s ZIP and replace the application manually; the app cannot check for updates while it cannot start.
+- This beta supports Apple silicon Macs (arm64).
+- A document or project reserved by another LeonardoMD instance remains reserved until that instance exits.
+- If an update waits for the active app to quit, save your documents, close Preferences and quit LeonardoMD normally to allow installation to continue.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.628/LeonardoMD-0.1.628.zip" length="13350448" type="application/octet-stream" sparkle:edSignature="piaSjqL1TwD2MD85FXYRdoUt59JVaaS65TyXLhwZ+7VWV6fCrfJqL/LwEMqcXUL+uoeghk68P5pHKpsKTQZVBw==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.1.625</title>
             <pubDate>Thu, 22 Oct 2026 00:34:52 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
