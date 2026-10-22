@@ -480,5 +480,8 @@
   "Allow multiple instances": "Allow multiple instances",
   "Use File > New instance to open an independent process. Finder opens go to the principal instance. Turning this off keeps existing instances open.": "Use File > New instance to open an independent process. Finder opens go to the principal instance. Turning this off keeps existing instances open.",
   "Synchronization and updates are managed by the principal instance. Open these preferences there.": "Synchronization and updates are managed by the principal instance. Open these preferences there.",
-  "This document or project is in use by another LeonardoMD instance. Close that instance before opening it here.": "This document or project is in use by another LeonardoMD instance. Close that instance before opening it here."
+  "This document or project is in use by another LeonardoMD instance. Close that instance before opening it here.": "This document or project is in use by another LeonardoMD instance. Close that instance before opening it here.",
+  "Permanently delete %@?": "Permanently delete %@?",
+  "Trash is unavailable in this location. The item and its contents will be permanently deleted. This cannot be undone.": "Trash is unavailable in this location. The item and its contents will be permanently deleted. This cannot be undone.",
+  "Delete Permanently": "Delete Permanently"
 }

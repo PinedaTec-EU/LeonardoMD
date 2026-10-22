@@ -266,19 +266,38 @@ public actor LocalProjectRepository {
         return makeNode(url: destination, projectRoot: root)
     }
 
-    public func delete(_ relativePath: String, in project: ProjectDescriptor) throws {
+    public func trashAvailability(_ relativePath: String, in project: ProjectDescriptor) throws -> TrashAvailability {
+        let target = try deletionTarget(relativePath, in: project)
+        return TrashSupport.availability(at: target, fileManager: fileManager)
+    }
+
+    public func delete(_ relativePath: String, in project: ProjectDescriptor,
+                       mode: FileDeletionMode = .trash) throws {
+        let target = try deletionTarget(relativePath, in: project)
+        switch mode {
+        case .trash: try moveToTrash(target)
+        case .permanentlyConfirmed: try fileManager.removeItem(at: target)
+        }
+    }
+
+    private func deletionTarget(_ relativePath: String, in project: ProjectDescriptor) throws -> URL {
         let root = try validateProjectRoot(project.rootURL)
         let target = try resolve(relativePath, under: root)
         guard target != root else { throw FileSystemRepositoryError.cannotDeleteProjectRoot }
         guard fileManager.fileExists(atPath: target.path) else {
             throw FileSystemRepositoryError.projectDoesNotExist(target)
         }
-        try moveToTrash(target)
+        return target
     }
 
     private func moveToTrash(_ url: URL) throws {
         #if os(macOS)
-        try fileManager.trashItem(at: url, resultingItemURL: nil)
+        do {
+            try fileManager.trashItem(at: url, resultingItemURL: nil)
+        } catch {
+            if TrashSupport.isUnavailable(error) { throw FileDeletionError.trashUnavailable }
+            throw error
+        }
         #else
         // Platforms without Trash must never silently destroy user files.
         throw CocoaError(.featureUnsupported)
