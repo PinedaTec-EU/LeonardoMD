@@ -189,4 +189,10 @@
 - [#264](https://github.com/PinedaTec-EU/LeonardoMD/pull/264) — #263 Added: configurable explicit application instances — build +11
   <p>Opt into independent editor instances while Finder opens stay with the principal; document reservations and coordinated preference writes protect shared data.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.625)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTAtMjJUMDc6MjA6MzFaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjN9LCJmcm9tX3ZlcnNpb24iOiIwLjEuNjI1Iiwia2luZCI6InB1bGxfcmVxdWVzdCIsIm1lcmdlX3NoYSI6ImNkN2FlMjJhM2ZlNDYxZjY1ZDgyNWNjMDlhZjc3MmQ1ZTNiYzg0NzUiLCJudW1iZXIiOjI2Nywic3VtbWFyeSI6IkZpeCBhIGNyYXNoIGJlZm9yZSB0aGUgZmlyc3Qgd2luZG93IHdoZW4gbWFjT1MgY2Fubm90IG9wZW4gdGhlIGluc3RhbmNlIHByZWZlcmVuY2VzIHN1aXRlLiIsInRpdGxlIjoiIzI2NiBGaXhlZDogcHJldmVudCBzdGFydHVwIGNyYXNoIHdoZW4gcHJlZmVyZW5jZXMgc3VpdGUgaXMgdW5hdmFpbGFibGUiLCJ0b192ZXJzaW9uIjoiMC4xLjYyOCJ9XSwiZW52aXJvbm1lbnQiOiJyZWxlYXNlIiwiZXZlbnRfaWQiOiJnaXRodWJfcmVsZWFzZTo0MjA0MTI4MzYiLCJldmVudF9raW5kIjoiZ2l0aHViX3JlbGVhc2UiLCJldmlkZW5jZV91cmwiOiJodHRwczovL2dpdGh1Yi5jb20vUGluZWRhVGVjLUVVL0xlb25hcmRvTUQvcmVsZWFzZXMvdGFnL3YwLjEuNjI4IiwicmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwic291cmNlX3JlZiI6InYwLjEuNjI4Iiwic291cmNlX3NoYSI6IjdlYWMwZGMwMTQyMmNkYmFmN2ZkNGFiNjVjMzU3NTVkZGEzMGFiMTAiLCJ0YXJnZXQiOiJQaW5lZGFUZWMtRVUvTGVvbmFyZG9NRCIsInZlcnNpb24iOiIwLjEuNjI4In0 -->
+### 0.1.628
+- [#267](https://github.com/PinedaTec-EU/LeonardoMD/pull/267) — #266 Fixed: prevent startup crash when preferences suite is unavailable — build +3
+  <p>Fix a crash before the first window when macOS cannot open the instance preferences suite.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.628)
 <!-- release-ledger:end -->
