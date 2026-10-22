@@ -21,8 +21,10 @@ final class InstancePreferences {
         }
     }
 
-    init(defaults: UserDefaults = UserDefaults(suiteName: "eu.pinedatec.LeonardoMD")!) {
-        self.defaults = defaults
+    init(defaults: UserDefaults? = UserDefaults(suiteName: "eu.pinedatec.LeonardoMD")) {
+        // Foundation can reject the named suite during packaged application startup.
+        // Standard defaults retain the application domain without making launch failable.
+        self.defaults = defaults ?? .standard
     }
 
     func launch() async throws {

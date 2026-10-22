@@ -32,6 +32,29 @@ final class InstancePolicyTests: XCTestCase {
         XCTAssertFalse(first.allowsMultipleInstances)
     }
 
+    func testUnavailableSuiteUsesStandardApplicationPreferences() {
+        let defaults = UserDefaults.standard
+        let key = InstancePreferences.preferenceKey
+        let original = defaults.object(forKey: key)
+        defer {
+            if let original { defaults.set(original, forKey: key) }
+            else { defaults.removeObject(forKey: key) }
+            defaults.synchronize()
+        }
+        defaults.set(false, forKey: key)
+        let preferences = InstancePreferences(defaults: nil)
+        XCTAssertFalse(preferences.allowsMultipleInstances)
+        preferences.allowsMultipleInstances = true
+        XCTAssertTrue(defaults.bool(forKey: key))
+        defaults.set(false, forKey: key)
+        XCTAssertFalse(preferences.allowsMultipleInstances)
+    }
+
+    func testProductionPreferenceInitializerDoesNotRequireAnAvailableSuite() {
+        let preferences = InstancePreferences()
+        _ = preferences.allowsMultipleInstances
+    }
+
     func testAdditionalDoesNotStartSharedServicesOrClearUpdateState() async throws {
         let previous = InstanceRuntime.isAdditional
         InstanceRuntime.isAdditional = true
