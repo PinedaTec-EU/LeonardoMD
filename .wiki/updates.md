@@ -46,5 +46,7 @@ reports cancellation; legacy processes use NSRunningApplication.terminate.
 peer waiting at 60 seconds. Failed attempts release local prepared documents
 and the launch gate; Sparkle retains ownership of downloaded-update retries.
 Unit/native-sheet tests cover coordination, IPC, cancellation, Git/draft safety
-and selective Preferences dismissal. This is not signed hosted install/relaunch
+and selective Preferences dismissal. Nested palette/file-chooser sheets retain
+the entire Preferences presentation, and IPC Quit can be retried after a modal
+block before the termination delegate. This is not signed hosted install/relaunch
 acceptance, and cannot retrofit launch exclusion into already published builds.

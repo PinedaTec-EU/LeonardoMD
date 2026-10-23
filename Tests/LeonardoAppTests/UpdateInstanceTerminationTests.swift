@@ -28,7 +28,7 @@ final class UpdateInstanceTerminationTests: XCTestCase {
         var checked = false
         let closer = UpdateInstanceCloser(peers: { [first.adapter, second.adapter] })
         let closing = Task { try await closer.close(); checked = true }
-        while second.requests == 0 { await Task.yield() }
+        try await waitUntil { second.requests > 0 }
         XCTAssertFalse(checked, "Accepted Quit is not evidence of process exit")
         second.running = false
         try await closing.value
@@ -98,11 +98,11 @@ final class UpdateInstanceTerminationTests: XCTestCase {
         XCTAssertEqual(before, .idle)
         let accepted = await UpdateQuitEndpoint.send(.quit, pid: pid)
         XCTAssertEqual(accepted, .closing)
-        while requests == 0 { await Task.yield() }
+        try await waitUntil { requests > 0 }
         let cancelled = await UpdateQuitEndpoint.send(.status, pid: pid)
         XCTAssertEqual(cancelled, .cancelled)
         _ = await UpdateQuitEndpoint.send(.quit, pid: pid)
-        while requests < 2 { await Task.yield() }
+        try await waitUntil { requests >= 2 }
         XCTAssertEqual(requests, 2)
     }
 
@@ -147,6 +147,52 @@ final class UpdateInstanceTerminationTests: XCTestCase {
         sheet.identifier = UpdatePreferencesDismissal.identifier
         UpdatePreferencesDismissal.dismiss(sessions: [], parent: parent)
         XCTAssertNil(parent.attachedSheet)
+    }
+
+    func testNestedPreferencesDecisionPreservesPresentationAndUnappliedChanges() {
+        _ = NSApplication.shared
+        let rect = NSRect(x: 0, y: 0, width: 400, height: 200)
+        let parent = NSWindow(contentRect: rect, styleMask: [.titled], backing: .buffered, defer: false)
+        let preferences = NSWindow(contentRect: rect, styleMask: [.titled], backing: .buffered, defer: false)
+        let palette = NSWindow(contentRect: rect, styleMask: [.titled], backing: .buffered, defer: false)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let session = AppSession(preferencesURL: root.appendingPathComponent("prefs.json"))
+        defer {
+            preferences.endSheet(palette); parent.endSheet(preferences)
+            [palette, preferences, parent].forEach { $0.orderOut(nil) }
+            session.stop(); try? FileManager.default.removeItem(at: root)
+        }
+        session.showPreferences = true
+        preferences.identifier = UpdatePreferencesDismissal.identifier
+        parent.beginSheet(preferences)
+        preferences.beginSheet(palette)
+        UpdatePreferencesDismissal.dismiss(sessions: [session], parent: parent)
+        XCTAssertTrue(session.showPreferences)
+        XCTAssertTrue(parent.attachedSheet === preferences)
+        XCTAssertTrue(preferences.attachedSheet === palette)
+    }
+
+    func testQuitEndpointRetriesWhenAModalSheetBlockedTheDelegate() async throws {
+        let pid: pid_t = 1_900_000_002
+        let endpoint = UpdateQuitEndpoint()
+        try endpoint.start(pid: pid)
+        defer { endpoint.stop() }
+        var requests = 0
+        endpoint.quit = { requests += 1 }
+        _ = await UpdateQuitEndpoint.send(.quit, pid: pid)
+        try await waitUntil { requests > 0 }
+        XCTAssertEqual(endpoint.state, .closing)
+        _ = await UpdateQuitEndpoint.send(.quit, pid: pid)
+        try await waitUntil { requests >= 2 }
+        XCTAssertEqual(requests, 2)
+    }
+
+    private func waitUntil(_ condition: () -> Bool) async throws {
+        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while !condition() {
+            guard ContinuousClock.now < deadline else { throw CocoaError(.coderValueNotFound) }
+            try await Task.sleep(for: .milliseconds(5))
+        }
     }
 
     private func assertRefused(_ closer: UpdateInstanceCloser, id: pid_t) async {

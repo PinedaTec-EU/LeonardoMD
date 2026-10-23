@@ -23,7 +23,9 @@ final class UpdateQuitEndpoint {
             guard let info, let command = Command(rawValue: id) else { return nil }
             let reply: Data = MainActor.assumeIsolated {
                 let endpoint = Unmanaged<UpdateQuitEndpoint>.fromOpaque(info).takeUnretainedValue()
-                if command == .quit, endpoint.state != .closing {
+                if command == .quit {
+                    // AppKit may refuse before the delegate runs (an unrelated
+                    // modal sheet). A later installation attempt must retry Quit.
                     endpoint.state = .closing
                     // Return the acknowledgement before asking AppKit to terminate.
                     Task { @MainActor in endpoint.quit?() }

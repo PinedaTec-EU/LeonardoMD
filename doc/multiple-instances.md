@@ -47,7 +47,9 @@ closed instances remain closed. Pending quit requests in other processes can
 still complete; cancellation never forces a process to exit.
 
 The installer dismisses only identified Preferences sheets. Document decisions,
-Git sheets and file choosers retain their normal behavior. Updated processes
+Git sheets and file choosers retain their normal behavior. If Preferences has
+a nested sheet (such as a palette with unapplied changes), the entire
+presentation stays open and blocks termination until the user resolves it. Updated processes
 report a cancelled quit through per-process IPC; older processes receive ordinary
 AppKit Quit and can require manual Preferences dismissal. Their refusal or lack
 of exit also prevents installation. A downloaded update may remain pending in
