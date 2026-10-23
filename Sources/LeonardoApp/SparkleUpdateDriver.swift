@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import Sparkle
 
 @MainActor
@@ -64,6 +64,17 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
 
     func resetUpdateCycle() { controller.updater.resetUpdateCycleAfterShortDelay() }
     func checkForUpdates() { controller.checkForUpdates(nil) }
+
+    func updater(_ updater: SPUUpdater, willInstallUpdate item: SUAppcastItem) {
+        UpdateInstanceTermination.shared.installationPending = true
+        (NSApp.delegate as? ApplicationDelegate)?.dismissUpdatePreferences()
+    }
+
+    func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem,
+                 immediateInstallationBlock: @escaping () -> Void) -> Bool {
+        UpdateInstanceTermination.shared.installationPending = true
+        return false // Sparkle retains its installer scheduling and retry behavior.
+    }
 
     func updater(_ updater: SPUUpdater, userDidMake choice: SPUUserUpdateChoice,
                  forUpdate updateItem: SUAppcastItem, state: SPUUserUpdateState) {
