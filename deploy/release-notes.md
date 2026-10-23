@@ -195,4 +195,10 @@
 - [#267](https://github.com/PinedaTec-EU/LeonardoMD/pull/267) — #266 Fixed: prevent startup crash when preferences suite is unavailable — build +3
   <p>Fix a crash before the first window when macOS cannot open the instance preferences suite.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.628)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTAtMjNUMDc6NDM6MDhaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjJ9LCJmcm9tX3ZlcnNpb24iOiIwLjEuNjI4Iiwia2luZCI6InB1bGxfcmVxdWVzdCIsIm1lcmdlX3NoYSI6ImVkNDJiOWQxMWIyMTViNDJkMWY3NDMyMDFhOTliM2JiZTFjYzFjMDciLCJudW1iZXIiOjI2OSwic3VtbWFyeSI6IkZpbGVzIGFuZCBmb2xkZXJzIG9uIGxvY2F0aW9ucyB3aXRob3V0IFRyYXNoIGNhbiBiZSBwZXJtYW5lbnRseSBkZWxldGVkIGFmdGVyIGFuIGV4cGxpY2l0IHdhcm5pbmcsIHdoaWxlIG9yZGluYXJ5IFRyYXNoIGVycm9ycyBjb250aW51ZSB0byBwcmVzZXJ2ZSB0aGUgb3JpZ2luYWwgaXRlbS4iLCJ0aXRsZSI6IiMyNjggRml4ZWQ6IGNvbmZpcm0gcGVybWFuZW50IGRlbGV0aW9uIHdoZW4gVHJhc2ggaXMgdW5hdmFpbGFibGUiLCJ0b192ZXJzaW9uIjoiMC4xLjYzMCJ9XSwiZW52aXJvbm1lbnQiOiJyZWxlYXNlIiwiZXZlbnRfaWQiOiJnaXRodWJfcmVsZWFzZTo0MjE1Njc2NzAiLCJldmVudF9raW5kIjoiZ2l0aHViX3JlbGVhc2UiLCJldmlkZW5jZV91cmwiOiJodHRwczovL2dpdGh1Yi5jb20vUGluZWRhVGVjLUVVL0xlb25hcmRvTUQvcmVsZWFzZXMvdGFnL3YwLjEuNjMwIiwicmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwic291cmNlX3JlZiI6InYwLjEuNjMwIiwic291cmNlX3NoYSI6Ijk4ZGNiMWZmNzYxNzdlYzlhMWIyMjUzOTExYjgwNjY0Y2I0NTRkNzciLCJ0YXJnZXQiOiJQaW5lZGFUZWMtRVUvTGVvbmFyZG9NRCIsInZlcnNpb24iOiIwLjEuNjMwIn0 -->
+### 0.1.630
+- [#269](https://github.com/PinedaTec-EU/LeonardoMD/pull/269) — #268 Fixed: confirm permanent deletion when Trash is unavailable — build +2
+  <p>Files and folders on locations without Trash can be permanently deleted after an explicit warning, while ordinary Trash errors continue to preserve the original item.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.630)
 <!-- release-ledger:end -->
