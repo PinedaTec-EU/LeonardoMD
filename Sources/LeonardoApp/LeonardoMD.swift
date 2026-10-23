@@ -40,6 +40,8 @@ struct LeonardoMD {
             switchSucceeded: activationConfigured, actualPolicy: application.activationPolicy().rawValue
         ))
         diagnostics.record(.eventLoopStarting)
+        // ARC may otherwise shorten an unread local's lifetime in optimized builds.
+        withExtendedLifetime(startupGate) { }
         startupGate = nil
         application.run()
         diagnostics.record(.eventLoopReturned)
