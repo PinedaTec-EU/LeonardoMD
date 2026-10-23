@@ -34,3 +34,17 @@ reverifies cached evidence on offline startup, and updates all three installed
 maturity displays observably. Network/invalid evidence cannot mutate subscriptions
 or classify a different build. Linux central promotion alone does not create the
 signed proof. No release asset is added, preserving exact-inventory replay; see `doc/releases.md` for the mandatory publication completion step.
+
+#202 candidate: Sparkle's `willInstallUpdate` dismisses only Preferences sheets
+identified by `UpdatePreferencesWindowIdentity`; `willInstallUpdateOnQuit` also
+marks queued installation. Application termination prepares its own tabs through
+the existing close guards, then `UpdateInstanceTermination` acquires the same
+process lock used briefly at startup and closes other executable-identity
+LeonardoMD processes. `UpdateQuitEndpoint` requests ordinary local Quit and
+reports cancellation; legacy processes use NSRunningApplication.terminate.
+`UpdateInstanceCloser` requires observed exit, rejects late processes and caps
+peer waiting at 60 seconds. Failed attempts release local prepared documents
+and the launch gate; Sparkle retains ownership of downloaded-update retries.
+Unit/native-sheet tests cover coordination, IPC, cancellation, Git/draft safety
+and selective Preferences dismissal. This is not signed hosted install/relaunch
+acceptance, and cannot retrofit launch exclusion into already published builds.

@@ -254,6 +254,9 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
             }
             if canTerminate, role == .primary {
                 canTerminate = await UpdateInstanceTermination.shared.closeOtherInstances()
+                if !canTerminate {
+                    activeSession?.errorMessage = L10n.text("Installation cancelled because another LeonardoMD instance did not close. Finish or cancel its pending work, then retry the update.")
+                }
             }
             if canTerminate {
                 if role == .primary { await DesktopSyncController.shared.stop() }
@@ -274,12 +277,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     /// Dismiss only Preferences; unsaved-document and Git sheets own their decisions.
     func dismissUpdatePreferences() {
         for controller in windows {
-            let sessions = controller.documents.tabs.map(\.session)
-            guard sessions.contains(where: { $0.showPreferences }) else { continue }
-            sessions.forEach { $0.showPreferences = false }
-            if let parent = controller.window, let sheet = parent.attachedSheet {
-                parent.endSheet(sheet)
-            }
+            UpdatePreferencesDismissal.dismiss(sessions: controller.documents.tabs.map(\.session),
+                parent: controller.window)
         }
     }
 

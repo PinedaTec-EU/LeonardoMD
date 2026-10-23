@@ -21,15 +21,16 @@ final class UpdateQuitEndpoint {
         var unused = DarwinBoolean(false)
         guard let local = CFMessagePortCreateLocal(nil, Self.name(pid) as CFString, { _, id, _, info in
             guard let info, let command = Command(rawValue: id) else { return nil }
-            return MainActor.assumeIsolated {
+            let reply: Data = MainActor.assumeIsolated {
                 let endpoint = Unmanaged<UpdateQuitEndpoint>.fromOpaque(info).takeUnretainedValue()
                 if command == .quit, endpoint.state != .closing {
                     endpoint.state = .closing
                     // Return the acknowledgement before asking AppKit to terminate.
                     Task { @MainActor in endpoint.quit?() }
                 }
-                return Unmanaged.passRetained(Data([endpoint.state.rawValue]) as CFData)
+                return Data([endpoint.state.rawValue])
             }
+            return Unmanaged.passRetained(reply as CFData)
         }, &context, &unused), let runLoopSource = CFMessagePortCreateRunLoopSource(nil, local, 0) else {
             throw CocoaError(.featureUnsupported)
         }

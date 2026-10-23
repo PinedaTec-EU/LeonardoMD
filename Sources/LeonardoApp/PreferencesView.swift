@@ -44,6 +44,7 @@ struct PreferencesView: View {
                     .tag("updates").tabItem { Label(L10n.text("Updates"), systemImage: "arrow.triangle.2.circlepath") }
             }
         }.buttonStyle(PremiumButtonStyle()).padding(24).frame(width: 580, height: 620)
+        .background(UpdatePreferencesWindowIdentity())
         .onAppear { projectScope = session.projectURL != nil }
         .onChange(of: session.projectURL) { _, root in
             if root == nil { projectScope = false }

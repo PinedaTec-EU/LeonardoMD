@@ -33,3 +33,30 @@ serialize the complete read/merge/write transaction across processes. Recents me
 independent additions; simultaneous changes to the same setting use the last writer.
 
 Tracking: [#263](https://github.com/PinedaTec-EU/LeonardoMD/issues/263).
+
+## Installing updates
+
+The principal process owns Sparkle. Before an installation can terminate it,
+all of its document windows complete the ordinary close preparation (including
+preview flush, Git/file operations, and Save/Discard/Cancel). It then requests
+ordinary Quit in every other running LeonardoMD application, across bundle
+copies, and waits for observed process exit. A peer's cancellation, rejected
+quit request, a new process, or a 60-second peer timeout cancels the current
+installation attempt and releases the principal's prepared documents. Already
+closed instances remain closed. Pending quit requests in other processes can
+still complete; cancellation never forces a process to exit.
+
+The installer dismisses only identified Preferences sheets. Document decisions,
+Git sheets and file choosers retain their normal behavior. Updated processes
+report a cancelled quit through per-process IPC; older processes receive ordinary
+AppKit Quit and can require manual Preferences dismissal. Their refusal or lack
+of exit also prevents installation. A downloaded update may remain pending in
+Sparkle for a later retry or ordinary Quit; every such attempt repeats the
+all-instance guard.
+
+A product-wide advisory lock excludes new launches while the principal waits
+for other processes and until it exits. Startup briefly holds the same lock
+while registering its quit endpoint. Legacy builds predating this protocol do
+not honor the launch gate; a newly observed process cancels the attempt. Hosted
+signed update/relaunch acceptance remains tracked in
+[issue #202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202).
