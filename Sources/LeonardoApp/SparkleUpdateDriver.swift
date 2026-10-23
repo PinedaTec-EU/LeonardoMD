@@ -90,6 +90,7 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
         } else {
             // Skip, or dismissal of a fresh non-downloaded candidate, resolves a stale guard.
             pendingDecision.clear()
+            UpdateInstanceTermination.shared.resolveInstallation()
         }
         stateDidChange?()
     }
@@ -103,6 +104,7 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
         if failure.domain == SUSparkleErrorDomain && failure.code == Int(SUError.noUpdateError.rawValue) {
             // A successful fresh check with no update proves no resumable update was used.
             pendingDecision.clear()
+            UpdateInstanceTermination.shared.resolveInstallation()
         }
         // Transport/installer errors do not prove a pending artifact has been removed.
         stateDidChange?()

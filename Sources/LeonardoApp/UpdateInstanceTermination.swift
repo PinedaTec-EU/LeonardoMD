@@ -29,6 +29,11 @@ final class UpdateInstanceTermination {
 
     func cancel() { gate = nil }
 
+    func resolveInstallation() {
+        installationPending = false
+        cancel()
+    }
+
     private static func runningPeers() -> [UpdateTerminationPeer] {
         NSWorkspace.shared.runningApplications.compactMap { app in
             guard app.processIdentifier != ProcessInfo.processInfo.processIdentifier,

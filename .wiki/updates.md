@@ -45,6 +45,8 @@ reports cancellation; legacy processes use NSRunningApplication.terminate.
 `UpdateInstanceCloser` requires observed exit, rejects late processes and caps
 peer waiting at 60 seconds. Failed attempts release local prepared documents
 and the launch gate; Sparkle retains ownership of downloaded-update retries.
+Skip or a confirmed no-update result clears the cross-process installation guard
+as well as the pending decision, so later ordinary Quit does not close peers.
 Unit/native-sheet tests cover coordination, IPC, cancellation, Git/draft safety
 and selective Preferences dismissal. Nested palette/file-chooser sheets retain
 the entire Preferences presentation, and IPC Quit can be retried after a modal

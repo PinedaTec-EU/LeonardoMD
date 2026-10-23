@@ -136,6 +136,25 @@ final class ApplicationUpdatesTests: XCTestCase {
         XCTAssertTrue(adapter.hasDeferredUpdate)
     }
 
+    func testSkippingAnUpdateClearsTheAllInstanceQuitGuard() {
+        let (defaults, suite) = isolatedDefaults()
+        let termination = UpdateInstanceTermination.shared
+        let previous = termination.installationPending
+        defer {
+            defaults.removePersistentDomain(forName: suite)
+            termination.installationPending = previous
+        }
+        let driver = SparkleUpdateDriver(configuration: configuration(), defaults: defaults)
+        termination.installationPending = true
+        driver.recordChoice(.dismiss, stage: .downloaded, targetBuild: "410")
+        XCTAssertTrue(termination.installationPending, "A deferred installer still owns Quit")
+        driver.recordChoice(.skip, stage: .downloaded, targetBuild: "410")
+        XCTAssertFalse(termination.installationPending, "Ordinary Quit must not close peers after Skip")
+        termination.installationPending = true
+        driver.resolveCheck(NSError(domain: SUSparkleErrorDomain, code: Int(SUError.noUpdateError.rawValue)))
+        XCTAssertFalse(termination.installationPending)
+    }
+
     func testPendingDecisionSurvivesAnExternalProcessAndDriverRelaunch() async throws {
         let (defaults, suite) = isolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suite) }
