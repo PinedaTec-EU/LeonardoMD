@@ -577,9 +577,19 @@
       "pr": 267,
       "summary": "Fix a crash before the first window when macOS cannot open the instance preferences suite.",
       "to_version": "0.1.628"
+    },
+    {
+      "delta": {
+        "build": 2
+      },
+      "from_version": "0.1.628",
+      "merge_sha": "ed42b9d11b215b42d1f743201a99b3bbe1cc1c07",
+      "pr": 269,
+      "summary": "Files and folders on locations without Trash can be permanently deleted after an explicit warning, while ordinary Trash errors continue to preserve the original item.",
+      "to_version": "0.1.630"
     }
   ],
-  "current_version": "0.1.628",
+  "current_version": "0.1.630",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

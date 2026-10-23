@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.630
+
+- #268 Fixed: confirm permanent deletion when Trash is unavailable ([#269](https://github.com/PinedaTec-EU/LeonardoMD/pull/269))
+
+<p>Files and folders on locations without Trash can be permanently deleted after an explicit warning, while ordinary Trash errors continue to preserve the original item.</p>
+
+Source: `ed42b9d11b215b42d1f743201a99b3bbe1cc1c07`. Delta: `{"build": 2}`.
+
 ## 0.1.628
 
 - #266 Fixed: prevent startup crash when preferences suite is unavailable ([#267](https://github.com/PinedaTec-EU/LeonardoMD/pull/267))
