@@ -480,5 +480,8 @@
   "Allow multiple instances": "Permitir varias instancias",
   "Use File > New instance to open an independent process. Finder opens go to the principal instance. Turning this off keeps existing instances open.": "Usa Archivo > Nueva instancia para abrir un proceso independiente. Las aperturas desde Finder van a la instancia principal. Desactivar esta opción mantiene abiertas las instancias existentes.",
   "Synchronization and updates are managed by the principal instance. Open these preferences there.": "La sincronización y las actualizaciones se gestionan en la instancia principal. Abre estas preferencias allí.",
-  "This document or project is in use by another LeonardoMD instance. Close that instance before opening it here.": "Otra instancia de LeonardoMD está usando este documento o proyecto. Cierra esa instancia antes de abrirlo aquí."
+  "This document or project is in use by another LeonardoMD instance. Close that instance before opening it here.": "Otra instancia de LeonardoMD está usando este documento o proyecto. Cierra esa instancia antes de abrirlo aquí.",
+  "Permanently delete %@?": "¿Eliminar %@ permanentemente?",
+  "Trash is unavailable in this location. The item and its contents will be permanently deleted. This cannot be undone.": "La Papelera no está disponible en esta ubicación. El elemento y su contenido se eliminarán permanentemente. Esta acción no se puede deshacer.",
+  "Delete Permanently": "Eliminar permanentemente"
 }

@@ -234,34 +234,6 @@ extension AppSession {
         }
         mode = previousMode
     }
-    @discardableResult
-    func delete(_ url: URL) -> Task<Void, Never>? {
-        guard let root = projectURL else { return nil }
-        let identity = SessionFileOperationIdentity(sourceURL: url, session: self)
-        return Task {
-            guard identity.isCurrent(in: self) else { return }
-            let alert = NSAlert()
-            alert.messageText = L10n.format("Move %@ to Trash?", url.lastPathComponent)
-            alert.informativeText = L10n.text("The item will be moved to Trash. You can recover it from Trash.")
-            alert.addButton(withTitle: L10n.text("Cancel"))
-            alert.addButton(withTitle: L10n.text("Move to Trash"))
-            guard await NativeDialog.present(alert, on: presentationWindow) == .alertSecondButtonReturn else { return }
-            guard identity.isCurrent(in: self) else { return }
-            fileOperationCount += 1
-            defer { fileOperationCount -= 1 }
-            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true,
-                  identity.isCurrent(in: self) else { return }
-            do {
-                let intent: DesktopPeerPathIntent = (try url.resourceValues(forKeys: [.isDirectoryKey])).isDirectory == true ? .directoryMutation : .document
-                try await authorizePath(url, intent)
-                guard identity.isCurrent(in: self) else { return }
-                try await files.delete(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root))
-                clearDeletedDocument(at: url)
-                relatedPathDeleted?(url)
-                await refreshTree()
-            } catch { report(error) }
-        }
-    }
     func acceptDrop(_ providers: [NSItemProvider], into parent: URL) -> Bool {
         guard DocumentDropProviders.canLoad(providers) else { return false }
         Task {

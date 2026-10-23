@@ -108,7 +108,7 @@ final class AppSession {
         try await DesktopPeerController.shared.entryFilter(in: url)
     }
     let documents = DocumentStore()
-    let files = LocalProjectRepository()
+    let files: LocalProjectRepository
     let configurations = ConfigurationStore.shared
     var globalBaseline = GlobalPreferences.default
     var projectBaseline = ProjectConfiguration.default
@@ -145,8 +145,10 @@ final class AppSession {
 
     init(
         preferencesURL: URL = AppSession.preferencesURL,
+        files: LocalProjectRepository = LocalProjectRepository(),
         openSystemURL: @escaping @MainActor (URL) -> Void = { NSWorkspace.shared.open($0) }
     ) {
+        self.files = files
         globalPreferencesURL = preferencesURL
         self.openSystemURL = openSystemURL
         let existingAuthorization = authorizePath
