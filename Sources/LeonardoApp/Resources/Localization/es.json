@@ -1,4 +1,5 @@
 {
+  "Installation cancelled because another LeonardoMD instance did not close. Finish or cancel its pending work, then retry the update.": "Instalación cancelada porque otra instancia de LeonardoMD no se cerró. Finaliza o cancela su trabajo pendiente y vuelve a intentar la actualización.",
   "Appearance": "Apariencia",
   "Project: %@": "Proyecto: %@",
   "On this Mac": "En este Mac",

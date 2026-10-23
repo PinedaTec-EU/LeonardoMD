@@ -148,6 +148,17 @@ Tracking: [#123](https://github.com/PinedaTec-EU/LeonardoMD/issues/123). Run hos
 
 Publication operators must record URLs, source/build, installed and target channels, signature/notarization checks, selected subscription, check mode, result and relaunch/document evidence for each hosted transition. [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15) and [#84](https://github.com/PinedaTec-EU/LeonardoMD/issues/84) remain separate hosted acceptance/publication work; local tests do not close them.
 
+## Multi-instance update safety candidate
+
+[PR #270](https://github.com/PinedaTec-EU/LeonardoMD/pull/270), tracked in
+[issue #202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202), requires
+user-approved downloads and closes additional instances before Sparkle can arm
+its single-process installer monitor. Automatic checks remain enabled by the
+existing preference. Validate primary Save/Git refusal, additional-instance
+refusal, cancelled downloads, deferred updates and subsequent retry with signed
+hosted archives before claiming install/relaunch acceptance. See the
+[multiple-instance update contract](multiple-instances.md#installing-updates).
+
 ## Recognizing installed stable promotions
 
 Installed package provenance and the user's update subscription are independent

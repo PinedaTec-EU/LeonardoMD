@@ -34,3 +34,24 @@ reverifies cached evidence on offline startup, and updates all three installed
 maturity displays observably. Network/invalid evidence cannot mutate subscriptions
 or classify a different build. Linux central promotion alone does not create the
 signed proof. No release asset is added, preserving exact-inventory replay; see `doc/releases.md` for the mandatory publication completion step.
+
+#202 candidate: `CoordinatedUpdateUserDriver` awaits normal peer exit before
+returning Install for the initial download, so Sparkle's single monitored target
+can only be the principal. Automatic downloads are disabled in runtime and bundle
+policy; automatic checks retain their normal scheduling. The exclusive launch gate
+stays held through download/deferred installation until explicit candidate
+resolution or process exit. Cancelling only Quit retains that gate. Concurrent
+startup registration uses shared locks. `UpdateInstanceTermination` rejects stale
+preflight results if a concurrent cancellation invalidated their gate.
+
+`UpdateQuitEndpoint` requests ordinary local Quit and reports cancellation.
+`UpdateProcessIdentity` binds discovery/IPC to PID plus launch date, rejecting
+same-PID replacement and missing metadata. The principal's final termination still
+uses all document/Git guards and checks for late legacy copies. Preferences window
+identity permits selective dismissal while nested decisions remain intact. An
+unbound restored installer is skipped without closing peers. Tests cover Sparkle's
+first-process monitoring hazard at the user-driver boundary, primary refusal,
+startup exclusion, gate lifetime, cancellation, IPC and document/Git safety.
+Signed hosted update/relaunch remains pending. See
+[issue #202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202) and
+[multiple-instance operations](../doc/multiple-instances.md).

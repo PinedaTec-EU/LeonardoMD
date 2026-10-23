@@ -153,3 +153,8 @@ General and Extensions now own their Global / This project header inside the tab
 - 2026-10-20: [#223](https://github.com/PinedaTec-EU/LeonardoMD/issues/223) separates dynamic latest-stable discovery from beta-only forms, records owner-confirmed update installation with #202 termination limits, and standardizes recent release notes in English with separate publication evidence.
 
 - 2026-10-21: [#263](https://github.com/PinedaTec-EU/LeonardoMD/issues/263) adds opt-in explicit macOS processes, principal Finder routing/re-election, process-lifetime hierarchical path ownership, shared-service guards and cross-process settings merges. Reuse ProcessFileLock.canonicalURL for newly created paths under aliased ancestors. [Validation](../doc/validation/multiple-instances/README.md).
+
+- 2026-10-23 — [#202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202): coordinate normal termination of all app instances before
+  Sparkle installation, retain document/Git safety checks and exclude new
+  launches during coordination. Selectively identify Preferences sheets rather
+  than ending arbitrary modal decisions. Hosted update/relaunch remains pending.

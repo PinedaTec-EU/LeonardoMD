@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import OSLog
 import LeonardoSync
+import LeonardoCore
 
 @main
 @MainActor
@@ -12,6 +13,13 @@ struct LeonardoMD {
         diagnostics.record(.applicationInitializing)
         let application = NSApplication.shared
         diagnostics.record(.applicationInitialized)
+        // Register the process endpoint before an installer can discover us.
+        var startupGate: ProcessFileLock?
+        do { startupGate = try ProcessFileLock(at: UpdateInstanceTermination.gateURL, mode: .shared) }
+        catch {
+            NSLog("LeonardoMD launch deferred while update/startup coordination is active")
+            exit(EXIT_FAILURE)
+        }
         let instance = SingleInstance()
         let role: SingleInstance.Role
         do {
@@ -32,6 +40,9 @@ struct LeonardoMD {
             switchSucceeded: activationConfigured, actualPolicy: application.activationPolicy().rawValue
         ))
         diagnostics.record(.eventLoopStarting)
+        // ARC may otherwise shorten an unread local's lifetime in optimized builds.
+        withExtendedLifetime(startupGate) { }
+        startupGate = nil
         application.run()
         diagnostics.record(.eventLoopReturned)
         instance.stop()
@@ -61,6 +72,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     private var processingLaunches = false
     private var launched = false
     private var terminationPending = false
+    private let updateQuitEndpoint = UpdateQuitEndpoint()
     private static let closeCheckInterval: Duration = .milliseconds(50)
 
     init(diagnostics: StartupDiagnostics, instance: SingleInstance, role: SingleInstance.Role) {
@@ -69,6 +81,14 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         self.role = role
         super.init()
         instance.receive = { [weak self] urls in self?.enqueueLaunch(urls) }
+        if role != .secondary {
+            updateQuitEndpoint.quit = { [weak self] in
+                self?.dismissUpdatePreferences()
+                NSApp.terminate(nil)
+            }
+            do { try updateQuitEndpoint.start() }
+            catch { logger.error("update_quit_endpoint_unavailable") }
+        }
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -116,6 +136,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        updateQuitEndpoint.stop()
         NotificationCenter.default.removeObserver(self)
         diagnostics.record(.applicationWillTerminate)
         if role == .primary { DesktopPeerController.shared.stop() }
@@ -227,22 +248,45 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard !terminationPending else { return .terminateLater }
+        let reportingSession = activeSession
         terminationPending = true
         Task {
             var canTerminate = true
             for window in windows {
                 if await !window.documents.prepareClose() { canTerminate = false; break }
             }
+            if canTerminate, role == .primary {
+                canTerminate = await UpdateInstanceTermination.shared.closeOtherInstances()
+                if !canTerminate {
+                    reportInstallationCancellation(on: reportingSession)
+                }
+            }
             if canTerminate {
                 if role == .primary { await DesktopSyncController.shared.stop() }
                 for window in windows { await window.documents.finishPreparedClose() }
             }
-            else { windows.forEach { $0.documents.cancelPreparedClose() } }
+            else {
+                windows.forEach { $0.documents.cancelPreparedClose() }
+                updateQuitEndpoint.cancelled()
+                UpdateInstanceTermination.shared.cancelTermination()
+            }
             terminationPending = canTerminate
             if !canTerminate, role == .primary { processPendingLaunches() }
             sender.reply(toApplicationShouldTerminate: canTerminate)
         }
         return .terminateLater
+    }
+
+    func reportInstallationCancellation(on session: AppSession? = nil) {
+        (session ?? activeSession)?.errorMessage = L10n.text("Installation cancelled because another LeonardoMD instance did not close. Finish or cancel its pending work, then retry the update.")
+    }
+
+    /// Dismiss only Preferences; unsaved-document and Git sheets own their decisions.
+    func dismissUpdatePreferences() {
+        for controller in windows {
+            UpdatePreferencesDismissal.dismiss(sessions: controller.documents.tabs.map(\.session),
+                parent: controller.window)
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
@@ -302,7 +346,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(newInstance) {
-            return !terminationPending && InstancePreferences.shared.allowsMultipleInstances
+            return !terminationPending && !UpdateInstanceTermination.shared.installationPending
+                && InstancePreferences.shared.allowsMultipleInstances
         }
         if menuItem.action == #selector(undoDocument) {
             if let editor = focusedTextEditor { return editor.undoManager?.canUndo == true }
