@@ -346,7 +346,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(newInstance) {
-            return !terminationPending && InstancePreferences.shared.allowsMultipleInstances
+            return !terminationPending && !UpdateInstanceTermination.shared.installationPending
+                && InstancePreferences.shared.allowsMultipleInstances
         }
         if menuItem.action == #selector(undoDocument) {
             if let editor = focusedTextEditor { return editor.undoManager?.canUndo == true }
