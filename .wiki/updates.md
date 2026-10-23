@@ -35,23 +35,23 @@ maturity displays observably. Network/invalid evidence cannot mutate subscriptio
 or classify a different build. Linux central promotion alone does not create the
 signed proof. No release asset is added, preserving exact-inventory replay; see `doc/releases.md` for the mandatory publication completion step.
 
-#202 candidate: Sparkle's `willInstallUpdate` dismisses only Preferences sheets
-identified by `UpdatePreferencesWindowIdentity`; `willInstallUpdateOnQuit` also
-marks queued installation. Application termination prepares its own tabs through
-the existing close guards, then `UpdateInstanceTermination` acquires the same
-exclusive process lock shared briefly by concurrent startups and closes other executable-identity
-LeonardoMD processes. `UpdateQuitEndpoint` requests ordinary local Quit and
-reports cancellation; legacy processes use NSRunningApplication.terminate.
-`UpdateProcessIdentity` binds discovery and each IPC endpoint to PID plus launch
-date; unavailable launch metadata fails closed. Same-PID replacement cannot
-reuse an exited target's approval or receive its quit request.
-`UpdateInstanceCloser` requires observed exit, rejects late processes and caps
-peer waiting at 60 seconds. Failed attempts release local prepared documents
-and the launch gate; Sparkle retains ownership of downloaded-update retries.
-Skip or a confirmed no-update result clears the cross-process installation guard
-as well as the pending decision, so later ordinary Quit does not close peers.
-Unit/native-sheet tests cover coordination, IPC, cancellation, Git/draft safety
-and selective Preferences dismissal. Nested palette/file-chooser sheets retain
-the entire Preferences presentation, and IPC Quit can be retried after a modal
-block before the termination delegate. This is not signed hosted install/relaunch
-acceptance, and cannot retrofit launch exclusion into already published builds.
+#202 candidate: `CoordinatedUpdateUserDriver` awaits normal peer exit before
+returning Install for the initial download, so Sparkle's single monitored target
+can only be the principal. Automatic downloads are disabled in runtime and bundle
+policy; automatic checks retain their normal scheduling. The exclusive launch gate
+stays held through download/deferred installation until explicit candidate
+resolution or process exit. Cancelling only Quit retains that gate. Concurrent
+startup registration uses shared locks. `UpdateInstanceTermination` rejects stale
+preflight results if a concurrent cancellation invalidated their gate.
+
+`UpdateQuitEndpoint` requests ordinary local Quit and reports cancellation.
+`UpdateProcessIdentity` binds discovery/IPC to PID plus launch date, rejecting
+same-PID replacement and missing metadata. The principal's final termination still
+uses all document/Git guards and checks for late legacy copies. Preferences window
+identity permits selective dismissal while nested decisions remain intact. An
+unbound restored installer is skipped without closing peers. Tests cover Sparkle's
+first-process monitoring hazard at the user-driver boundary, primary refusal,
+startup exclusion, gate lifetime, cancellation, IPC and document/Git safety.
+Signed hosted update/relaunch remains pending. See
+[issue #202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202) and
+[multiple-instance operations](../doc/multiple-instances.md).

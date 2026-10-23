@@ -1,4 +1,5 @@
 import AppKit
+import Sparkle
 import LeonardoCore
 import XCTest
 @testable import LeonardoApp
@@ -238,6 +239,117 @@ final class UpdateInstanceTerminationTests: XCTestCase {
         do { try await closer.close(); XCTFail("Unknown process identity must fail closed") }
         catch UpdateProcessIdentity.Failure.unavailable(42) { }
         catch { XCTFail("Unexpected error: \(error)") }
+    }
+
+    func testInstallerArmsOnlyAfterAdditionalExitAndCannotFinishWhenPrimaryRefuses() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let primary = Peer(100)
+        primary.acceptsQuit = false
+        let additional = Peer(101)
+        let termination = UpdateInstanceTermination(peers: {
+            additional.running ? [additional.adapter] : []
+        }, lockURL: root.appendingPathComponent("gate"))
+        defer { termination.resolveInstallation() }
+        let userDriver = CoordinatedUpdateUserDriver(termination: termination)
+        // Model Sparkle's documented first-process monitor at its user-driver
+        // boundary. This order would monitor the additional process if armed early.
+        var monitored: Peer?
+        let approval = Task {
+            let choice = await userDriver.preparedChoice(.install, stage: .notDownloaded)
+            if choice == .install { monitored = [additional, primary].first { $0.running } }
+            return choice
+        }
+        try await waitUntil { additional.requests > 0 }
+        XCTAssertNil(monitored, "Sparkle must not be armed while a peer can exit first")
+        additional.running = false
+        let choice = await approval.value
+        XCTAssertEqual(choice, .install)
+        XCTAssertTrue(monitored === primary)
+        let primaryAcceptedQuit = await primary.adapter.requestQuit()
+        XCTAssertFalse(primaryAcceptedQuit)
+        XCTAssertTrue(primary.running)
+        XCTAssertFalse(monitored?.running == false, "An exited additional process cannot finalize the update")
+    }
+
+    func testPreDownloadRefusalNeverApprovesInstallerAndReleasesLaunchGate() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let peer = Peer(102)
+        peer.acceptsQuit = false
+        let gate = root.appendingPathComponent("gate")
+        let termination = UpdateInstanceTermination(peers: { [peer.adapter] }, lockURL: gate)
+        let driver = CoordinatedUpdateUserDriver(termination: termination)
+        let choice = await driver.preparedChoice(.install, stage: .notDownloaded)
+        XCTAssertEqual(choice, .dismiss)
+        XCTAssertFalse(termination.installerBoundToPrimary)
+        XCTAssertFalse(termination.installationPending)
+        XCTAssertNoThrow(try ProcessFileLock(at: gate, mode: .shared))
+    }
+
+    func testPreflightRetainsGateThroughDownloadAndReusesItForInstall() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let gate = root.appendingPathComponent("gate")
+        let termination = UpdateInstanceTermination(peers: { [] }, lockURL: gate)
+        defer { termination.resolveInstallation() }
+        let driver = CoordinatedUpdateUserDriver(termination: termination)
+        let download = await driver.preparedChoice(.install, stage: .notDownloaded)
+        XCTAssertEqual(download, .install)
+        XCTAssertThrowsError(try ProcessFileLock(at: gate, mode: .shared))
+        let install = await driver.preparedChoice(.install, stage: .installing)
+        XCTAssertEqual(install, .install)
+        termination.resolveInstallation()
+        XCTAssertNoThrow(try ProcessFileLock(at: gate, mode: .shared))
+    }
+
+    func testUnboundRestoredInstallerIsCancelledWithoutQuittingPeers() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let peer = Peer(103)
+        let termination = UpdateInstanceTermination(peers: { [peer.adapter] },
+            lockURL: root.appendingPathComponent("gate"))
+        let driver = CoordinatedUpdateUserDriver(termination: termination)
+        for stage in [SPUUserUpdateStage.downloaded, .installing] {
+            let choice = await driver.preparedChoice(.install, stage: stage)
+            XCTAssertEqual(choice, .skip)
+        }
+        termination.installationPending = true
+        let canQuit = await termination.closeOtherInstances()
+        XCTAssertFalse(canQuit)
+        XCTAssertEqual(peer.requests, 0)
+        XCTAssertTrue(peer.running)
+    }
+
+    func testCancelledQuitKeepsLaunchesExcludedWhileCandidateMayArmHelper() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let gate = root.appendingPathComponent("gate")
+        let termination = UpdateInstanceTermination(peers: { [] }, lockURL: gate)
+        defer { termination.resolveInstallation() }
+        let ready = await termination.prepareInstaller()
+        XCTAssertTrue(ready)
+        termination.cancelTermination()
+        XCTAssertThrowsError(try ProcessFileLock(at: gate, mode: .shared))
+        termination.resolveInstallation()
+        XCTAssertNoThrow(try ProcessFileLock(at: gate, mode: .shared))
+    }
+
+    func testQuitCancellationDuringPreflightCannotApproveAStaleBarrier() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let peer = Peer(104)
+        let gate = root.appendingPathComponent("gate")
+        let termination = UpdateInstanceTermination(peers: { peer.running ? [peer.adapter] : [] }, lockURL: gate)
+        let driver = CoordinatedUpdateUserDriver(termination: termination)
+        let approval = Task { await driver.preparedChoice(.install, stage: .notDownloaded) }
+        try await waitUntil { peer.requests > 0 }
+        termination.cancelTermination()
+        peer.running = false
+        let choice = await approval.value
+        XCTAssertEqual(choice, .dismiss)
+        XCTAssertFalse(termination.installerBoundToPrimary)
+        XCTAssertNoThrow(try ProcessFileLock(at: gate, mode: .shared))
     }
 
     private func waitUntil(_ condition: () -> Bool) async throws {

@@ -1,4 +1,4 @@
 {
-  "build": 10,
-  "summary": "Updates request normal closure of all LeonardoMD instances and wait for their exit, preserving document and Git safety checks and stopping installation when an instance stays open."
+  "build": 15,
+  "summary": "Updates close additional instances before downloading, preserve document and Git checks on Quit, and stop when an instance stays open. Automatic checks remain available; downloads require approval."
 }

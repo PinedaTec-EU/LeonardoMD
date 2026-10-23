@@ -10,31 +10,65 @@ final class UpdateInstanceTermination {
     static var gateURL: URL { ProcessFileLock.coordinationDirectory.appendingPathComponent("update-installation.lock") }
     var installationPending = false
     private var gate: ProcessFileLock?
+    private(set) var installerBoundToPrimary = false
+    private var preparingInstaller = false
+    private let peers: @MainActor () throws -> [UpdateTerminationPeer]
+    private let lockURL: URL
+
+    init(peers: @escaping @MainActor () throws -> [UpdateTerminationPeer] = UpdateInstanceTermination.runningPeers,
+         lockURL: URL = UpdateInstanceTermination.gateURL) {
+        self.peers = peers
+        self.lockURL = lockURL
+    }
+
+    func prepareInstaller() async -> Bool {
+        guard !preparingInstaller else { return false }
+        preparingInstaller = true
+        defer { preparingInstaller = false }
+        installationPending = true
+        guard await closeOtherInstances() else {
+            if !installerBoundToPrimary { installationPending = false }
+            return false
+        }
+        installerBoundToPrimary = true
+        return true
+    }
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "update-termination")
 
     func closeOtherInstances() async -> Bool {
         guard installationPending else { return true }
+        // A restored helper may be watching an additional process. Do not make
+        // any peer exit under that helper; only a fresh pre-download barrier is safe.
+        guard preparingInstaller || installerBoundToPrimary else { return false }
         do {
-            gate = try ProcessFileLock(at: Self.gateURL)
-            let closer = UpdateInstanceCloser(peers: Self.runningPeers)
+            if gate == nil { gate = try ProcessFileLock(at: lockURL) }
+            let operationGate = gate
+            defer { withExtendedLifetime(operationGate) { } }
+            let closer = UpdateInstanceCloser(peers: peers)
             try await closer.close()
+            guard gate === operationGate else { throw CancellationError() }
             logger.info("update_instances_closed")
             return true
         } catch {
-            gate = nil
+            cancelTermination()
             logger.error("update_instance_close_cancelled error=\(String(describing: error), privacy: .public)")
             return false
         }
     }
 
-    func cancel() { gate = nil }
+    func cancelTermination() {
+        // The helper may not have chosen its process yet (download in flight).
+        // Keep launches excluded until the candidate itself is resolved.
+        if !installerBoundToPrimary { gate = nil }
+    }
 
     func resolveInstallation() {
         installationPending = false
-        cancel()
+        installerBoundToPrimary = false
+        cancelTermination()
     }
 
-    private static func runningPeers() throws -> [UpdateTerminationPeer] {
+    static func runningPeers() throws -> [UpdateTerminationPeer] {
         try NSWorkspace.shared.runningApplications.compactMap { app in
             guard app.processIdentifier != ProcessInfo.processInfo.processIdentifier,
                   app.executableURL?.lastPathComponent == "LeonardoMD", !app.isTerminated else { return nil }
@@ -72,7 +106,7 @@ struct UpdateTerminationPeer {
 @MainActor
 struct UpdateInstanceCloser {
     enum Failure: Error { case refused(pid_t), timedOut, newInstance }
-    let peers: () throws -> [UpdateTerminationPeer]
+    let peers: @MainActor () throws -> [UpdateTerminationPeer]
     var timeout: Duration = .seconds(60)
     var pollInterval: Duration = .milliseconds(100)
 

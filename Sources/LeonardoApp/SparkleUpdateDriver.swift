@@ -24,8 +24,10 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
     private let configuration: UpdateConfiguration
     private let pendingDecision: PendingUpdateDecisionStore
     private var observations: [NSKeyValueObservation] = []
-    private lazy var controller = SPUStandardUpdaterController(
-        startingUpdater: false, updaterDelegate: self, userDriverDelegate: nil)
+    private var installerPreparationStarted = false
+    private lazy var userDriver = CoordinatedUpdateUserDriver()
+    private lazy var updater = SPUUpdater(hostBundle: .main, applicationBundle: .main,
+        userDriver: userDriver, delegate: self)
 
     init(configuration: UpdateConfiguration, pendingDecision: PendingUpdateDecisionStore) {
         self.configuration = configuration
@@ -37,22 +39,23 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
             pendingDecision: PendingUpdateDecisionStore(defaults: defaults, installedBuild: configuration.version.build))
     }
 
-    var canCheckForUpdates: Bool { controller.updater.canCheckForUpdates }
-    var sessionInProgress: Bool { controller.updater.sessionInProgress }
-    var lastUpdateCheckDate: Date? { controller.updater.lastUpdateCheckDate }
+    var canCheckForUpdates: Bool { updater.canCheckForUpdates }
+    var sessionInProgress: Bool { updater.sessionInProgress }
+    var lastUpdateCheckDate: Date? { updater.lastUpdateCheckDate }
     var automaticallyChecksForUpdates: Bool {
-        get { controller.updater.automaticallyChecksForUpdates }
-        set { controller.updater.automaticallyChecksForUpdates = newValue }
+        get { updater.automaticallyChecksForUpdates }
+        set { updater.automaticallyChecksForUpdates = newValue }
     }
 
     func start() throws {
-        let updater = controller.updater
         observations = [
             observe(updater, \.canCheckForUpdates),
             observe(updater, \.sessionInProgress),
             observe(updater, \.automaticallyChecksForUpdates),
             observe(updater, \.lastUpdateCheckDate)
         ]
+        // An automatic download could arm Sparkle before the all-instance barrier.
+        updater.automaticallyDownloadsUpdates = false
         try updater.start()
     }
 
@@ -62,8 +65,8 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
         }
     }
 
-    func resetUpdateCycle() { controller.updater.resetUpdateCycleAfterShortDelay() }
-    func checkForUpdates() { controller.checkForUpdates(nil) }
+    func resetUpdateCycle() { updater.resetUpdateCycleAfterShortDelay() }
+    func checkForUpdates() { updater.checkForUpdates() }
 
     func updater(_ updater: SPUUpdater, willInstallUpdate item: SUAppcastItem) {
         UpdateInstanceTermination.shared.installationPending = true
@@ -73,7 +76,20 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
     func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem,
                  immediateInstallationBlock: @escaping () -> Void) -> Bool {
         UpdateInstanceTermination.shared.installationPending = true
+        (NSApp.delegate as? ApplicationDelegate)?.dismissUpdatePreferences()
         return false // Sparkle retains its installer scheduling and retry behavior.
+    }
+
+    func updaterShouldRelaunchApplication(_ updater: SPUUpdater) -> Bool {
+        UpdateInstanceTermination.shared.installerBoundToPrimary
+    }
+
+    func updater(_ updater: SPUUpdater, willExtractUpdate item: SUAppcastItem) {
+        installerPreparationStarted = true
+    }
+
+    func userDidCancelDownload(_ updater: SPUUpdater) {
+        UpdateInstanceTermination.shared.resolveInstallation()
     }
 
     func updater(_ updater: SPUUpdater, userDidMake choice: SPUUserUpdateChoice,
@@ -84,6 +100,7 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
     // Sparkle can resume a downloaded update without reading the new feed.
     // Keep the subscription fixed until the user resolves that pending update.
     func recordChoice(_ choice: SPUUserUpdateChoice, stage: SPUUserUpdateStage, targetBuild: String) {
+        if choice == .install, stage != .installing { installerPreparationStarted = false }
         if choice == .install || (choice == .dismiss && stage != .notDownloaded) {
             // Persist before the download/installer begins, including interrupted processes.
             pendingDecision.retain(targetBuild: targetBuild)
@@ -96,6 +113,7 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
     }
 
     func updater(_ updater: SPUUpdater, didAbortWithError error: Error) {
+        if !installerPreparationStarted { UpdateInstanceTermination.shared.resolveInstallation() }
         resolveCheck(error)
     }
 

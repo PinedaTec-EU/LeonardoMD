@@ -248,6 +248,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard !terminationPending else { return .terminateLater }
+        let reportingSession = activeSession
         terminationPending = true
         Task {
             var canTerminate = true
@@ -257,7 +258,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
             if canTerminate, role == .primary {
                 canTerminate = await UpdateInstanceTermination.shared.closeOtherInstances()
                 if !canTerminate {
-                    activeSession?.errorMessage = L10n.text("Installation cancelled because another LeonardoMD instance did not close. Finish or cancel its pending work, then retry the update.")
+                    reportInstallationCancellation(on: reportingSession)
                 }
             }
             if canTerminate {
@@ -267,13 +268,17 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
             else {
                 windows.forEach { $0.documents.cancelPreparedClose() }
                 updateQuitEndpoint.cancelled()
-                UpdateInstanceTermination.shared.cancel()
+                UpdateInstanceTermination.shared.cancelTermination()
             }
             terminationPending = canTerminate
             if !canTerminate, role == .primary { processPendingLaunches() }
             sender.reply(toApplicationShouldTerminate: canTerminate)
         }
         return .terminateLater
+    }
+
+    func reportInstallationCancellation(on session: AppSession? = nil) {
+        (session ?? activeSession)?.errorMessage = L10n.text("Installation cancelled because another LeonardoMD instance did not close. Finish or cancel its pending work, then retry the update.")
     }
 
     /// Dismiss only Preferences; unsaved-document and Git sheets own their decisions.

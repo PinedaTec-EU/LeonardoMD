@@ -36,31 +36,37 @@ Tracking: [#263](https://github.com/PinedaTec-EU/LeonardoMD/issues/263).
 
 ## Installing updates
 
-The principal process owns Sparkle. Before an installation can terminate it,
-all of its document windows complete the ordinary close preparation (including
-preview flush, Git/file operations, and Save/Discard/Cancel). It then requests
-ordinary Quit in every other running LeonardoMD application, across bundle
-copies, and waits for observed process exit. Discovery and quit/status IPC use
-PID plus launch date, so a replacement that reuses a PID cannot impersonate an
-exited target. Missing launch metadata vetoes installation. A peer's cancellation, rejected
-quit request, a new process, or a 60-second peer timeout cancels the current
-installation attempt and releases the principal's prepared documents. Already
-closed instances remain closed. Pending quit requests in other processes can
-still complete; cancellation never forces a process to exit.
+The principal process owns Sparkle. Automatic checks remain available, while
+downloads require user approval. Before approving a download, LeonardoMD requests
+ordinary Quit in every other LeonardoMD application in the user's login session,
+across bundle copies, and waits for observed process exit. This happens before
+Sparkle creates its installer: Sparkle 2.9.6 monitors only one process, so leaving
+an additional process alive when it chooses that target would be unsafe.
 
-The installer dismisses only identified Preferences sheets. Document decisions,
-Git sheets and file choosers retain their normal behavior. If Preferences has
-a nested sheet (such as a palette with unapplied changes), the entire
-presentation stays open and blocks termination until the user resolves it. Updated processes
-report a cancelled quit through per-process IPC; older processes receive ordinary
-AppKit Quit and can require manual Preferences dismissal. Their refusal or lack
-of exit also prevents installation. A downloaded update may remain pending in
-Sparkle for a later retry or ordinary Quit; every such attempt repeats the
-all-instance guard.
+The principal remains editable during download. Its ordinary close preparation
+still flushes previews, waits for Git/file operations and offers Save/Discard/Cancel
+when installation requests Quit. A cancelled primary quit leaves that process
+alive, so Sparkle cannot finalize by observing an additional instance exit first.
+The final termination guard also checks for late processes from legacy copies.
 
-A product-wide advisory lock excludes new launches while the principal waits
-for other processes and until it exits. Concurrent startups briefly share the same lock
-while registering its quit endpoint. Legacy builds predating this protocol do
-not honor the launch gate; a newly observed process cancels the attempt. Hosted
-signed update/relaunch acceptance remains tracked in
+Discovery and quit/status IPC use PID plus launch date. Missing identity,
+replacement processes, rejected quit requests, cancellation and a 60-second peer
+timeout prevent approval. Identified Preferences sheets can be dismissed; unrelated
+modal decisions remain open. A nested palette editor or file chooser preserves
+the entire Preferences presentation and its unapplied changes. Quit can be retried
+after resolving a modal block. Older processes receive ordinary AppKit Quit.
+
+An exclusive process lock prevents new participating processes from launching
+while the approved candidate can create or retain an installer, including a
+deferred update or cancelled primary Quit. Concurrent ordinary startups share the
+same lock briefly during registration. Failed initial preflight releases it;
+Skip, download cancellation before extraction or a confirmed no-update result
+resolves the candidate and releases it. Process exit also releases kernel ownership. Already closed instances
+remain closed; an outstanding ordinary quit request can still finish later.
+
+A restored staged update with no verified single-process preflight is cancelled with
+Sparkle's Skip response before peer closure; a fresh check can start a protected
+download. Already armed helpers from legacy builds cannot be retrofitted by new
+application code. Legacy copies do not honor the launch lock. Signed hosted
+update/relaunch acceptance remains tracked in
 [issue #202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202).
