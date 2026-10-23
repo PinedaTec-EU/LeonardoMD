@@ -3,6 +3,31 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.1.630</title>
+            <pubDate>Fri, 23 Oct 2026 09:41:08 +0200</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>630</sparkle:version>
+            <sparkle:shortVersionString>0.1.630</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"># LeonardoMD beta
+
+## Changes
+
+- Files and folders in locations that do not support Trash can now be permanently deleted after an explicit warning.
+- When Trash is known to be unavailable, the first confirmation explains that deletion cannot be undone. If this is discovered only while moving the item, a second confirmation is required.
+- Cancelling preserves the item. Permission errors and other unrelated filesystem failures continue to report an error without falling back to permanent deletion.
+
+## Known limitations
+
+- Whole-project deletion still requires Trash.
+- Detection depends on the filesystem reporting that Trash is unsupported; ambiguous errors remain errors to protect your files.
+
+For Apple Silicon Macs running macOS 14 or later. This is a beta release.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.630/LeonardoMD-0.1.630.zip" length="13361608" type="application/octet-stream" sparkle:edSignature="AAlojpq/eJHZ9OMnDyAyHi1pEdYGaEUvYnBGPpf9F2il90lTJU30fiPznghUwK8Tbd0oOGyScFKp1PUrEVbfDg==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.1.628</title>
             <pubDate>Thu, 22 Oct 2026 09:17:51 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
