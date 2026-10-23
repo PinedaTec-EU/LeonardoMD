@@ -13,7 +13,6 @@
 <key>SUEnableAutomaticChecks</key><false/>
 <key>SUAutomaticallyUpdate</key><false/>
 <key>SUAllowsAutomaticUpdates</key><false/>
-<key>SUAllowsAutomaticUpdates</key><false/>
 <key>SUVerifyUpdateBeforeExtraction</key><true/>
 <key>NSHighResolutionCapable</key><true/>
 <key>LSMinimumSystemVersion</key><string>14.0</string>

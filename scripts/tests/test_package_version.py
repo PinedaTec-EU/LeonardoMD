@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class PackageVersionTests(unittest.TestCase):
-    def run_generator(self, version, template=None):
+    def run_generator(self, version, template=None, raw_template=None):
         scratch = tempfile.TemporaryDirectory()
         self.addCleanup(scratch.cleanup)
         root = Path(scratch.name)
@@ -18,13 +18,15 @@ class PackageVersionTests(unittest.TestCase):
         metadata = {"CFBundleIdentifier": "test.example", "Other": ["untouched", 7]}
         if template:
             metadata.update(template)
-        (root / "Info.plist").write_bytes(plistlib.dumps(metadata))
+        source = raw_template if raw_template is not None else plistlib.dumps(metadata)
+        (root / "Info.plist").write_bytes(source)
         output = root / "generated.plist"
         result = subprocess.run(
             [sys.executable, str(ROOT / "scripts/package-version.py"),
              str(root / "version.nfo"), str(root / "Info.plist"), str(output)],
             text=True, capture_output=True,
         )
+        self.assertEqual((root / "Info.plist").read_bytes(), source)
         return result, output
 
     def test_canonical_version_and_unrelated_metadata(self):
@@ -46,8 +48,8 @@ class PackageVersionTests(unittest.TestCase):
                 self.assertFalse(output.exists())
 
     def test_update_configuration_preserves_canonical_version_and_rejects_override(self):
-        template = plistlib.loads((ROOT / "scripts/Info.plist").read_bytes())
-        result, output = self.run_generator("0.1.56", template)
+        result, output = self.run_generator(
+            "0.1.56", raw_template=(ROOT / "scripts/Info.plist").read_bytes())
         self.assertEqual(result.returncode, 0, result.stderr)
         import importlib.util
         spec = importlib.util.spec_from_file_location("updates", ROOT / "scripts/configure-update-bundle.py")
@@ -70,6 +72,20 @@ class PackageVersionTests(unittest.TestCase):
         self.assertEqual(metadata["LeonardoUpdateChannel"], "beta")
         with self.assertRaises(ValueError):
             module.configure(output, {"LEONARDO_CHANNEL": "beta", "LEONARDO_VERSION": "0.1.56-beta.1"})
+
+    def test_duplicate_keys_are_rejected_before_output(self):
+        for value in ("<false/>", "<true/>"):
+            for nested in (False, True):
+                with self.subTest(value=value, nested=nested):
+                    content = ("<key>SUAllowsAutomaticUpdates</key><false/>"
+                               f"<key>SUAllowsAutomaticUpdates</key>{value}")
+                    if nested:
+                        content = f"<key>Nested</key><dict>{content}</dict>"
+                    source = f'<plist version="1.0"><dict>{content}</dict></plist>'.encode()
+                    result, output = self.run_generator("0.1.56", raw_template=source)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn("Duplicate plist key: SUAllowsAutomaticUpdates", result.stderr)
+                    self.assertFalse(output.exists())
 
     def test_template_cannot_hide_a_second_version_source(self):
         result, output = self.run_generator("0.1.56", {"CFBundleVersion": "1"})
