@@ -12,9 +12,13 @@ final class UpdateInstanceTerminationTests: XCTestCase {
         var acceptsQuit = true
         var exitsOnQuit = false
         var requests = 0
-        init(_ id: pid_t) { self.id = id }
+        let launchDate: Date
+        init(_ id: pid_t, launchedAt: TimeInterval = 1) {
+            self.id = id
+            self.launchDate = Date(timeIntervalSince1970: launchedAt)
+        }
         var adapter: UpdateTerminationPeer {
-            UpdateTerminationPeer(id: id, isRunning: { self.running }, requestQuit: {
+            UpdateTerminationPeer(identity: .init(pid: id, launchDate: launchDate), isRunning: { self.running }, requestQuit: {
                 self.requests += 1
                 if self.exitsOnQuit { self.running = false }
                 return self.acceptsQuit
@@ -98,19 +102,20 @@ final class UpdateInstanceTerminationTests: XCTestCase {
     func testQuitEndpointAcknowledgesNormalQuitAndReportsCancellationWithRetry() async throws {
         // Separate PID-shaped identity never requests termination of a real app.
         let pid: pid_t = 1_900_000_001
+        let identity = UpdateProcessIdentity(pid: pid, launchDate: Date(timeIntervalSince1970: 1))
         let endpoint = UpdateQuitEndpoint()
-        try endpoint.start(pid: pid)
+        try endpoint.start(identity: identity)
         defer { endpoint.stop() }
         var requests = 0
         endpoint.quit = { requests += 1; endpoint.cancelled() }
-        let before = await UpdateQuitEndpoint.send(.status, pid: pid)
+        let before = await UpdateQuitEndpoint.send(.status, identity: identity)
         XCTAssertEqual(before, .idle)
-        let accepted = await UpdateQuitEndpoint.send(.quit, pid: pid)
+        let accepted = await UpdateQuitEndpoint.send(.quit, identity: identity)
         XCTAssertEqual(accepted, .closing)
         try await waitUntil { requests > 0 }
-        let cancelled = await UpdateQuitEndpoint.send(.status, pid: pid)
+        let cancelled = await UpdateQuitEndpoint.send(.status, identity: identity)
         XCTAssertEqual(cancelled, .cancelled)
-        _ = await UpdateQuitEndpoint.send(.quit, pid: pid)
+        _ = await UpdateQuitEndpoint.send(.quit, identity: identity)
         try await waitUntil { requests >= 2 }
         XCTAssertEqual(requests, 2)
     }
@@ -183,17 +188,56 @@ final class UpdateInstanceTerminationTests: XCTestCase {
 
     func testQuitEndpointRetriesWhenAModalSheetBlockedTheDelegate() async throws {
         let pid: pid_t = 1_900_000_002
+        let identity = UpdateProcessIdentity(pid: pid, launchDate: Date(timeIntervalSince1970: 1))
         let endpoint = UpdateQuitEndpoint()
-        try endpoint.start(pid: pid)
+        try endpoint.start(identity: identity)
         defer { endpoint.stop() }
         var requests = 0
         endpoint.quit = { requests += 1 }
-        _ = await UpdateQuitEndpoint.send(.quit, pid: pid)
+        _ = await UpdateQuitEndpoint.send(.quit, identity: identity)
         try await waitUntil { requests > 0 }
         XCTAssertEqual(endpoint.state, .closing)
-        _ = await UpdateQuitEndpoint.send(.quit, pid: pid)
+        _ = await UpdateQuitEndpoint.send(.quit, identity: identity)
         try await waitUntil { requests >= 2 }
         XCTAssertEqual(requests, 2)
+    }
+
+    func testSamePIDReplacementVetoesInstallation() async {
+        let original = Peer(10, launchedAt: 1)
+        let replacement = Peer(10, launchedAt: 2)
+        original.exitsOnQuit = true
+        let closer = UpdateInstanceCloser(peers: {
+            original.requests == 0 ? [original.adapter] : [replacement.adapter]
+        })
+        do { try await closer.close(); XCTFail("PID reuse must not authorize installation") }
+        catch UpdateInstanceCloser.Failure.newInstance { }
+        catch { XCTFail("Unexpected error: \(error)") }
+        XCTAssertTrue(replacement.running)
+        XCTAssertEqual(replacement.requests, 0)
+    }
+
+    func testQuitIPCDoesNotReachAReplacementWithTheSamePID() async throws {
+        let pid: pid_t = 1_900_000_003
+        let original = UpdateProcessIdentity(pid: pid, launchDate: Date(timeIntervalSince1970: 1))
+        let replacement = UpdateProcessIdentity(pid: pid, launchDate: Date(timeIntervalSince1970: 2))
+        let endpoint = UpdateQuitEndpoint()
+        try endpoint.start(identity: replacement)
+        defer { endpoint.stop() }
+        var requests = 0
+        endpoint.quit = { requests += 1 }
+        let oldReply = await UpdateQuitEndpoint.send(.quit, identity: original)
+        XCTAssertNil(oldReply)
+        XCTAssertEqual(requests, 0)
+        let newReply = await UpdateQuitEndpoint.send(.quit, identity: replacement)
+        XCTAssertEqual(newReply, .closing)
+        try await waitUntil { requests == 1 }
+    }
+
+    func testMissingProcessIdentityVetoesDiscovery() async {
+        let closer = UpdateInstanceCloser(peers: { throw UpdateProcessIdentity.Failure.unavailable(42) })
+        do { try await closer.close(); XCTFail("Unknown process identity must fail closed") }
+        catch UpdateProcessIdentity.Failure.unavailable(42) { }
+        catch { XCTFail("Unexpected error: \(error)") }
     }
 
     private func waitUntil(_ condition: () -> Bool) async throws {

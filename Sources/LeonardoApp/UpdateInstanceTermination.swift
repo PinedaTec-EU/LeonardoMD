@@ -34,28 +34,35 @@ final class UpdateInstanceTermination {
         cancel()
     }
 
-    private static func runningPeers() -> [UpdateTerminationPeer] {
-        NSWorkspace.shared.runningApplications.compactMap { app in
+    private static func runningPeers() throws -> [UpdateTerminationPeer] {
+        try NSWorkspace.shared.runningApplications.compactMap { app in
             guard app.processIdentifier != ProcessInfo.processInfo.processIdentifier,
                   app.executableURL?.lastPathComponent == "LeonardoMD", !app.isTerminated else { return nil }
-            return UpdateTerminationPeer(id: app.processIdentifier,
+            let identity = try UpdateProcessIdentity.identify(app)
+            return UpdateTerminationPeer(identity: identity,
                 isRunning: { !app.isTerminated },
                 requestQuit: {
                     // Older installations have no endpoint. Ordinary AppKit quit is
                     // still safe; a refusal or modal block times out without install.
-                    if await UpdateQuitEndpoint.send(.quit, pid: app.processIdentifier) == nil {
+                    guard let current = NSRunningApplication(processIdentifier: identity.pid),
+                          (try? UpdateProcessIdentity.identify(current)) == identity else { return false }
+                    if await UpdateQuitEndpoint.send(.quit, identity: identity) == nil {
+                        guard !app.isTerminated,
+                              let current = NSRunningApplication(processIdentifier: identity.pid),
+                              (try? UpdateProcessIdentity.identify(current)) == identity else { return false }
                         return app.terminate()
                     }
                     return true
                 },
-                wasCancelled: { await UpdateQuitEndpoint.send(.status, pid: app.processIdentifier) == .cancelled })
+                wasCancelled: { await UpdateQuitEndpoint.send(.status, identity: identity) == .cancelled })
         }
     }
 }
 
 @MainActor
 struct UpdateTerminationPeer {
-    let id: pid_t
+    let identity: UpdateProcessIdentity
+    var id: pid_t { identity.pid }
     let isRunning: () -> Bool
     let requestQuit: () async -> Bool
     let wasCancelled: () async -> Bool
@@ -65,20 +72,20 @@ struct UpdateTerminationPeer {
 @MainActor
 struct UpdateInstanceCloser {
     enum Failure: Error { case refused(pid_t), timedOut, newInstance }
-    let peers: () -> [UpdateTerminationPeer]
+    let peers: () throws -> [UpdateTerminationPeer]
     var timeout: Duration = .seconds(60)
     var pollInterval: Duration = .milliseconds(100)
 
     func close() async throws {
-        let targets = peers()
-        let identities = Set(targets.map(\.id))
+        let targets = try peers()
+        let identities = Set(targets.map(\.identity))
         let deadline = ContinuousClock.now.advanced(by: timeout)
         for peer in targets where peer.isRunning() {
             guard await peer.requestQuit() else { throw Failure.refused(peer.id) }
         }
         while true {
             try Task.checkCancellation()
-            guard peers().allSatisfy({ identities.contains($0.id) }) else { throw Failure.newInstance }
+            guard try peers().allSatisfy({ identities.contains($0.identity) }) else { throw Failure.newInstance }
             let remaining = targets.filter { $0.isRunning() }
             if remaining.isEmpty { return }
             for peer in remaining {

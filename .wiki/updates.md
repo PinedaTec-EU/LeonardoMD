@@ -42,6 +42,9 @@ the existing close guards, then `UpdateInstanceTermination` acquires the same
 exclusive process lock shared briefly by concurrent startups and closes other executable-identity
 LeonardoMD processes. `UpdateQuitEndpoint` requests ordinary local Quit and
 reports cancellation; legacy processes use NSRunningApplication.terminate.
+`UpdateProcessIdentity` binds discovery and each IPC endpoint to PID plus launch
+date; unavailable launch metadata fails closed. Same-PID replacement cannot
+reuse an exited target's approval or receive its quit request.
 `UpdateInstanceCloser` requires observed exit, rejects late processes and caps
 peer waiting at 60 seconds. Failed attempts release local prepared documents
 and the launch gate; Sparkle retains ownership of downloaded-update retries.

@@ -13,13 +13,12 @@ final class UpdateQuitEndpoint {
     private(set) var state = State.idle
     var quit: (() -> Void)?
 
-    nonisolated private static func name(_ pid: pid_t) -> String { "eu.pinedatec.LeonardoMD.quit.\(pid)" }
-
-    func start(pid: pid_t = ProcessInfo.processInfo.processIdentifier) throws {
+    func start(identity suppliedIdentity: UpdateProcessIdentity? = nil) throws {
+        let identity = try suppliedIdentity ?? UpdateProcessIdentity.identify(.current)
         var context = CFMessagePortContext(version: 0, info: Unmanaged.passUnretained(self).toOpaque(),
             retain: nil, release: nil, copyDescription: nil)
         var unused = DarwinBoolean(false)
-        guard let local = CFMessagePortCreateLocal(nil, Self.name(pid) as CFString, { _, id, _, info in
+        guard let local = CFMessagePortCreateLocal(nil, identity.endpointName as CFString, { _, id, _, info in
             guard let info, let command = Command(rawValue: id) else { return nil }
             let reply: Data = MainActor.assumeIsolated {
                 let endpoint = Unmanaged<UpdateQuitEndpoint>.fromOpaque(info).takeUnretainedValue()
@@ -51,10 +50,10 @@ final class UpdateQuitEndpoint {
         quit = nil
     }
 
-    nonisolated static func send(_ command: Command, pid: pid_t) async -> State? {
+    nonisolated static func send(_ command: Command, identity: UpdateProcessIdentity) async -> State? {
         await withCheckedContinuation { continuation in
             queue.async {
-                guard let remote = CFMessagePortCreateRemote(nil, name(pid) as CFString) else {
+                guard let remote = CFMessagePortCreateRemote(nil, identity.endpointName as CFString) else {
                     continuation.resume(returning: nil)
                     return
                 }

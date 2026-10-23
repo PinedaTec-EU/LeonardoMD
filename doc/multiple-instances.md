@@ -40,7 +40,9 @@ The principal process owns Sparkle. Before an installation can terminate it,
 all of its document windows complete the ordinary close preparation (including
 preview flush, Git/file operations, and Save/Discard/Cancel). It then requests
 ordinary Quit in every other running LeonardoMD application, across bundle
-copies, and waits for observed process exit. A peer's cancellation, rejected
+copies, and waits for observed process exit. Discovery and quit/status IPC use
+PID plus launch date, so a replacement that reuses a PID cannot impersonate an
+exited target. Missing launch metadata vetoes installation. A peer's cancellation, rejected
 quit request, a new process, or a 60-second peer timeout cancels the current
 installation attempt and releases the principal's prepared documents. Already
 closed instances remain closed. Pending quit requests in other processes can

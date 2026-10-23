@@ -1,4 +1,4 @@
 {
-  "build": 8,
+  "build": 10,
   "summary": "Updates request normal closure of all LeonardoMD instances and wait for their exit, preserving document and Git safety checks and stopping installation when an instance stays open."
 }
