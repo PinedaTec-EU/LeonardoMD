@@ -1,4 +1,0 @@
-{
-  "build": 16,
-  "summary": "Updates close additional instances before downloading, preserve document and Git checks on Quit, and stop when an instance stays open. Automatic checks remain available; downloads require approval."
-}

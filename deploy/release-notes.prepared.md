@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.646
+
+- #202 Fixed: coordinate normal instance closure before updates ([#270](https://github.com/PinedaTec-EU/LeonardoMD/pull/270))
+
+<p>Updates close additional instances before downloading, preserve document and Git checks on Quit, and stop when an instance stays open. Automatic checks remain available; downloads require approval.</p>
+
+Source: `1d6dc51ca4430bb4826a94eedea0ae2579ccfac0`. Delta: `{"build": 16}`.
+
 ## 0.1.630
 
 - #268 Fixed: confirm permanent deletion when Trash is unavailable ([#269](https://github.com/PinedaTec-EU/LeonardoMD/pull/269))

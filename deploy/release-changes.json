@@ -587,6 +587,16 @@
       "pr": 269,
       "summary": "Files and folders on locations without Trash can be permanently deleted after an explicit warning, while ordinary Trash errors continue to preserve the original item.",
       "to_version": "0.1.630"
+    },
+    {
+      "delta": {
+        "build": 16
+      },
+      "from_version": "0.1.630",
+      "merge_sha": "1d6dc51ca4430bb4826a94eedea0ae2579ccfac0",
+      "pr": 270,
+      "summary": "Updates close additional instances before downloading, preserve document and Git checks on Quit, and stop when an instance stays open. Automatic checks remain available; downloads require approval.",
+      "to_version": "0.1.646"
     }
   ],
   "initial_version": "0.1.56",
@@ -597,5 +607,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.630"
+  "version": "0.1.646"
 }
