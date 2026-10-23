@@ -201,4 +201,10 @@
 - [#269](https://github.com/PinedaTec-EU/LeonardoMD/pull/269) — #268 Fixed: confirm permanent deletion when Trash is unavailable — build +2
   <p>Files and folders on locations without Trash can be permanently deleted after an explicit warning, while ordinary Trash errors continue to preserve the original item.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.630)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTAtMjNUMTA6MTU6NDBaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjE2fSwiZnJvbV92ZXJzaW9uIjoiMC4xLjYzMCIsImtpbmQiOiJwdWxsX3JlcXVlc3QiLCJtZXJnZV9zaGEiOiIxZDZkYzUxY2E0NDMwYmI0ODI2YTk0ZWVkZWEwYWUyNTc5Y2NmYWMwIiwibnVtYmVyIjoyNzAsInN1bW1hcnkiOiJVcGRhdGVzIGNsb3NlIGFkZGl0aW9uYWwgaW5zdGFuY2VzIGJlZm9yZSBkb3dubG9hZGluZywgcHJlc2VydmUgZG9jdW1lbnQgYW5kIEdpdCBjaGVja3Mgb24gUXVpdCwgYW5kIHN0b3Agd2hlbiBhbiBpbnN0YW5jZSBzdGF5cyBvcGVuLiBBdXRvbWF0aWMgY2hlY2tzIHJlbWFpbiBhdmFpbGFibGU7IGRvd25sb2FkcyByZXF1aXJlIGFwcHJvdmFsLiIsInRpdGxlIjoiIzIwMiBGaXhlZDogY29vcmRpbmF0ZSBub3JtYWwgaW5zdGFuY2UgY2xvc3VyZSBiZWZvcmUgdXBkYXRlcyIsInRvX3ZlcnNpb24iOiIwLjEuNjQ2In1dLCJlbnZpcm9ubWVudCI6InJlbGVhc2UiLCJldmVudF9pZCI6ImdpdGh1Yl9yZWxlYXNlOjQyMTcwMDUxMSIsImV2ZW50X2tpbmQiOiJnaXRodWJfcmVsZWFzZSIsImV2aWRlbmNlX3VybCI6Imh0dHBzOi8vZ2l0aHViLmNvbS9QaW5lZGFUZWMtRVUvTGVvbmFyZG9NRC9yZWxlYXNlcy90YWcvdjAuMS42NDYiLCJyZXBvc2l0b3J5IjoiUGluZWRhVGVjLUVVL0xlb25hcmRvTUQiLCJzb3VyY2VfcmVmIjoidjAuMS42NDYiLCJzb3VyY2Vfc2hhIjoiYTY1YTY5ZTJmMjk4ODNhYTA2Mzc5OWI3Nzk2YTc4MDRlNDZkNThmYyIsInRhcmdldCI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwidmVyc2lvbiI6IjAuMS42NDYifQ -->
+### 0.1.646
+- [#270](https://github.com/PinedaTec-EU/LeonardoMD/pull/270) — #202 Fixed: coordinate normal instance closure before updates — build +16
+  <p>Updates close additional instances before downloading, preserve document and Git checks on Quit, and stop when an instance stays open. Automatic checks remain available; downloads require approval.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.646)
 <!-- release-ledger:end -->
