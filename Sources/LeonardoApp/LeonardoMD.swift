@@ -15,7 +15,7 @@ struct LeonardoMD {
         diagnostics.record(.applicationInitialized)
         // Register the process endpoint before an installer can discover us.
         var startupGate: ProcessFileLock?
-        do { startupGate = try ProcessFileLock(at: UpdateInstanceTermination.gateURL) }
+        do { startupGate = try ProcessFileLock(at: UpdateInstanceTermination.gateURL, mode: .shared) }
         catch {
             NSLog("LeonardoMD launch deferred while update/startup coordination is active")
             exit(EXIT_FAILURE)

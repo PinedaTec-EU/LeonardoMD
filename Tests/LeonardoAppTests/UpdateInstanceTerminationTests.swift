@@ -75,14 +75,23 @@ final class UpdateInstanceTerminationTests: XCTestCase {
         try await UpdateInstanceCloser(peers: { [] }).close()
     }
 
-    func testStartupAndInstallationUseSameExclusiveGate() throws {
+    func testConcurrentStartupRegistrationsShareGateAndExcludeInstallation() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let path = root.appendingPathComponent("gate")
-        var gate: ProcessFileLock? = try ProcessFileLock(at: path)
-        XCTAssertNotNil(gate)
+        var firstStartup: ProcessFileLock? = try ProcessFileLock(at: path, mode: .shared)
+        var secondStartup: ProcessFileLock? = try ProcessFileLock(at: path, mode: .shared)
+        XCTAssertNotNil(firstStartup)
+        XCTAssertNotNil(secondStartup)
         XCTAssertThrowsError(try ProcessFileLock(at: path))
-        gate = nil
+        firstStartup = nil
+        XCTAssertThrowsError(try ProcessFileLock(at: path))
+        secondStartup = nil
+        var installation: ProcessFileLock? = try ProcessFileLock(at: path)
+        try withExtendedLifetime(installation) {
+            XCTAssertThrowsError(try ProcessFileLock(at: path, mode: .shared))
+        }
+        installation = nil
         XCTAssertNoThrow(try ProcessFileLock(at: path))
     }
 

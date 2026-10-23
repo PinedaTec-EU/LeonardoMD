@@ -39,7 +39,7 @@ signed proof. No release asset is added, preserving exact-inventory replay; see 
 identified by `UpdatePreferencesWindowIdentity`; `willInstallUpdateOnQuit` also
 marks queued installation. Application termination prepares its own tabs through
 the existing close guards, then `UpdateInstanceTermination` acquires the same
-process lock used briefly at startup and closes other executable-identity
+exclusive process lock shared briefly by concurrent startups and closes other executable-identity
 LeonardoMD processes. `UpdateQuitEndpoint` requests ordinary local Quit and
 reports cancellation; legacy processes use NSRunningApplication.terminate.
 `UpdateInstanceCloser` requires observed exit, rejects late processes and caps

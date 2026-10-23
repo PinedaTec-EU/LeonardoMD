@@ -9,6 +9,7 @@ import Glibc
 /// Advisory locks use a stable sidecar inode, never the atomically replaced data file.
 /// Closing the descriptor (including process death) releases ownership.
 public final class ProcessFileLock: @unchecked Sendable {
+    public enum Mode { case exclusive, shared }
     private let descriptor: Int32
 
     public static var coordinationDirectory: URL {
@@ -43,11 +44,12 @@ public final class ProcessFileLock: @unchecked Sendable {
             .map { String(format: "%02x", $0) }.joined()
     }
 
-    public init(at url: URL, wait: Bool = false) throws {
+    public init(at url: URL, wait: Bool = false, mode: Mode = .exclusive) throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         let fd = open(url.path, O_CREAT | O_RDWR | O_CLOEXEC, S_IRUSR | S_IWUSR)
         guard fd >= 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
-        guard flock(fd, LOCK_EX | (wait ? 0 : LOCK_NB)) == 0 else {
+        let operation = mode == .exclusive ? LOCK_EX : LOCK_SH
+        guard flock(fd, operation | (wait ? 0 : LOCK_NB)) == 0 else {
             let code = errno
             close(fd)
             throw POSIXError(POSIXErrorCode(rawValue: code) ?? .EIO)

@@ -57,7 +57,7 @@ Sparkle for a later retry or ordinary Quit; every such attempt repeats the
 all-instance guard.
 
 A product-wide advisory lock excludes new launches while the principal waits
-for other processes and until it exits. Startup briefly holds the same lock
+for other processes and until it exits. Concurrent startups briefly share the same lock
 while registering its quit endpoint. Legacy builds predating this protocol do
 not honor the launch gate; a newly observed process cancels the attempt. Hosted
 signed update/relaunch acceptance remains tracked in
