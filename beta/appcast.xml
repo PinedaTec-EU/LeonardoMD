@@ -3,6 +3,29 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.1.646</title>
+            <pubDate>Fri, 23 Oct 2026 12:14:46 +0200</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>646</sparkle:version>
+            <sparkle:shortVersionString>0.1.646</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">## Updates
+
+- Additional app instances now receive normal Quit requests before an update downloads. Unsaved documents and active Git operations retain their usual close checks.
+- An update stops if an instance refuses to close or remains open. New instances are blocked while the installer is pending.
+- The update flow dismisses its Preferences sheet while preserving unrelated dialogs and pending decisions.
+- Automatic update checks remain available; downloads require your approval.
+
+## Known limitations
+
+- Updating from an older version still uses that version's close behavior. If it remains open, finish any save or Git operation, close Preferences, and quit normally.
+- Instances that have already closed remain closed if another instance cancels.
+- Install and relaunch testing of this beta is pending.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.646/LeonardoMD-0.1.646.zip" length="13397803" type="application/octet-stream" sparkle:edSignature="BaUCzyva66Nojnx60KLL07+oWGu+a312DZ2sBBQjKlLcmU6oRJhVAAQEsW+upFs7dQ1LIySocX59NEZzjEt3Bw==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.1.630</title>
             <pubDate>Fri, 23 Oct 2026 09:41:08 +0200</pubDate>
             <sparkle:channel>beta</sparkle:channel>
