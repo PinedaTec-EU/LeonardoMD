@@ -28,7 +28,8 @@ final class PDFModeTransitionTests: XCTestCase {
         let session = tabs.activeSession
         session.authorizePath = { _, _ in }
         await session.initialize()
-        session.globalPreferences.markdown.mermaidEnabled = true
+        session.setMermaid(true, project: false)
+        while let pending = session.settingsTask { await pending.value }
         await session.openDocument(document)
         let loadedSource = session.content
         session.mode = .preview
@@ -40,6 +41,7 @@ final class PDFModeTransitionTests: XCTestCase {
         defer { window.close() }
         var previousWeb: WKWebView?
         for mode: DocumentMode in [.preview, .split, .preview, .split, .preview] {
+            XCTAssertTrue(session.features.mermaidEnabled)
             await session.setDocumentMode(mode)
             let web = try await replacementPreview(in: view, replacing: previousWeb, session: session)
             previousWeb = web
