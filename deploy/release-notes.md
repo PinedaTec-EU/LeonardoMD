@@ -207,4 +207,10 @@
 - [#270](https://github.com/PinedaTec-EU/LeonardoMD/pull/270) — #202 Fixed: coordinate normal instance closure before updates — build +16
   <p>Updates close additional instances before downloading, preserve document and Git checks on Quit, and stop when an instance stays open. Automatic checks remain available; downloads require approval.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.646)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTAtMjZUMTQ6MjI6NDRaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjZ9LCJmcm9tX3ZlcnNpb24iOiIwLjEuNjQ2Iiwia2luZCI6InB1bGxfcmVxdWVzdCIsIm1lcmdlX3NoYSI6ImJhYjA4ZWRlZDc0MmQ1MGQzZjQ4NmYxZmRjYWMwOGY5ZjQ3ZmQxOTAiLCJudW1iZXIiOjI3MSwic3VtbWFyeSI6IlBERiBleHBvcnQga2VlcHMgd29ya2luZyBhZnRlciBzd2l0Y2hpbmcgYmV0d2VlbiBQcmV2aWV3IGFuZCBTcGxpdCwgaW5jbHVkaW5nIHBvcnRhYmxlIGRvY3VtZW50cyB3aXRoIGxvY2FsIGltYWdlcyBhbmQgTWVybWFpZCBkaWFncmFtcy4iLCJ0aXRsZSI6IiMyMTIgRml4ZWQ6IHByZXNlcnZlIFBERiBleHBvcnQgYWNyb3NzIHByZXZpZXcgbW9kZSB0cmFuc2l0aW9ucyIsInRvX3ZlcnNpb24iOiIwLjEuNjUyIn1dLCJlbnZpcm9ubWVudCI6InJlbGVhc2UiLCJldmVudF9pZCI6ImdpdGh1Yl9yZWxlYXNlOjQyNDM0NTUwMSIsImV2ZW50X2tpbmQiOiJnaXRodWJfcmVsZWFzZSIsImV2aWRlbmNlX3VybCI6Imh0dHBzOi8vZ2l0aHViLmNvbS9QaW5lZGFUZWMtRVUvTGVvbmFyZG9NRC9yZWxlYXNlcy90YWcvdjAuMS42NTIiLCJyZXBvc2l0b3J5IjoiUGluZWRhVGVjLUVVL0xlb25hcmRvTUQiLCJzb3VyY2VfcmVmIjoidjAuMS42NTIiLCJzb3VyY2Vfc2hhIjoiZTY2OGVkOTZlNGRkY2QyODNlOWU3YmNlNDM4YzBiMDJhODQzMjAwNyIsInRhcmdldCI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwidmVyc2lvbiI6IjAuMS42NTIifQ -->
+### 0.1.652
+- [#271](https://github.com/PinedaTec-EU/LeonardoMD/pull/271) — #212 Fixed: preserve PDF export across preview mode transitions — build +6
+  <p>PDF export keeps working after switching between Preview and Split, including portable documents with local images and Mermaid diagrams.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.652)
 <!-- release-ledger:end -->
