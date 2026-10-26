@@ -1,4 +1,0 @@
-{
-  "build": 6,
-  "summary": "PDF export keeps working after switching between Preview and Split, including portable documents with local images and Mermaid diagrams."
-}

@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.652
+
+- #212 Fixed: preserve PDF export across preview mode transitions ([#271](https://github.com/PinedaTec-EU/LeonardoMD/pull/271))
+
+<p>PDF export keeps working after switching between Preview and Split, including portable documents with local images and Mermaid diagrams.</p>
+
+Source: `bab08eded742d50d3f486f1fdcac08f9f47fd190`. Delta: `{"build": 6}`.
+
 ## 0.1.646
 
 - #202 Fixed: coordinate normal instance closure before updates ([#270](https://github.com/PinedaTec-EU/LeonardoMD/pull/270))

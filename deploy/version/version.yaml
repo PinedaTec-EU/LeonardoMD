@@ -597,9 +597,19 @@
       "pr": 270,
       "summary": "Updates close additional instances before downloading, preserve document and Git checks on Quit, and stop when an instance stays open. Automatic checks remain available; downloads require approval.",
       "to_version": "0.1.646"
+    },
+    {
+      "delta": {
+        "build": 6
+      },
+      "from_version": "0.1.646",
+      "merge_sha": "bab08eded742d50d3f486f1fdcac08f9f47fd190",
+      "pr": 271,
+      "summary": "PDF export keeps working after switching between Preview and Split, including portable documents with local images and Mermaid diagrams.",
+      "to_version": "0.1.652"
     }
   ],
-  "current_version": "0.1.646",
+  "current_version": "0.1.652",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
