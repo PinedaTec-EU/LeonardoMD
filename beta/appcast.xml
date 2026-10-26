@@ -2,7 +2,23 @@
 <rss xmlns:leonardo="https://pinedatec.eu/xml-namespaces/leonardo" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>LeonardoMD</title>
-        <item leonardo:channel="stable">
+        <item leonardo:channel="beta">
+            <title>0.1.652</title>
+            <pubDate>Mon, 26 Oct 2026 15:21:40 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>652</sparkle:version>
+            <sparkle:shortVersionString>0.1.652</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">PDF export now keeps working after switching between Preview and Split. Portable Leonardo documents retain their local images and rendered Mermaid diagrams in the exported PDF.
+
+This beta includes a regression check for repeated mode changes and preserves the document source without marking it as edited.
+
+Install the macOS Apple Silicon package or select the Beta subscription in Preferences → Updates. This prerelease does not change your selected update subscription.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.652/LeonardoMD-0.1.652.zip" length="13399060" type="application/octet-stream" sparkle:edSignature="9T9CRc7I5CyV7ahM0/SYUz/ZUESOZv3KSJSN1dCZMSH5ZfttmZKtrb/3GXs4HalW6AqVylNfB23SzogISuRoDg==" />
+        </item>
+    <item leonardo:channel="stable">
             <title>0.1.646</title>
             <pubDate>Fri, 23 Oct 2026 12:14:46 +0200</pubDate>
             <sparkle:version>646</sparkle:version>
