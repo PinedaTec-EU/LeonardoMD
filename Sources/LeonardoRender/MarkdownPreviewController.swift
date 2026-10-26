@@ -20,7 +20,7 @@ public final class MarkdownPreviewController: ObservableObject {
 
     private struct PendingReadyPublication {
         let generation: UInt64
-        let hostID: ObjectIdentifier
+        let hostID: ObjectIdentifier?
         let value: Bool
     }
 
@@ -57,14 +57,8 @@ public final class MarkdownPreviewController: ObservableObject {
     }
 
     func attach(_ host: MarkdownPreviewHost) {
-        host.onTableResize = onTableResize
-        host.onEdit = onEdit
-        host.onFormEdit = onFormEdit
-        host.onFieldHelp = onFieldHelp
-        if self.host === host {
-            host.onScrollProgress = onScrollProgress
-            return
-        }
+        refreshCallbacks(on: host)
+        if self.host === host { return }
 
         hostGeneration &+= 1
         let generation = hostGeneration
@@ -83,12 +77,28 @@ public final class MarkdownPreviewController: ObservableObject {
         deferReadyPublication(false, from: host, generation: generation)
     }
 
+    func refreshCallbacks(on host: MarkdownPreviewHost) {
+        host.onTableResize = onTableResize
+        host.onEdit = onEdit
+        host.onFormEdit = onFormEdit
+        host.onFieldHelp = onFieldHelp
+        host.onScrollProgress = onScrollProgress
+    }
+
+    func detach(_ host: MarkdownPreviewHost) {
+        guard self.host === host else { return }
+        host.onReady = nil
+        self.host = nil
+        hostGeneration &+= 1
+        deferReadyPublication(false, from: nil, generation: hostGeneration)
+    }
+
     private func deferReadyPublication(
         _ value: Bool,
-        from host: MarkdownPreviewHost,
+        from host: MarkdownPreviewHost?,
         generation: UInt64
     ) {
-        let hostID = ObjectIdentifier(host)
+        let hostID = host.map(ObjectIdentifier.init)
         guard generation == hostGeneration, self.host === host else { return }
 
         if isReady == value,
@@ -114,8 +124,7 @@ public final class MarkdownPreviewController: ObservableObject {
                   pendingReady.hostID == hostID,
                   pendingReady.value == value,
                   self.hostGeneration == generation,
-                  let currentHost = self.host,
-                  ObjectIdentifier(currentHost) == hostID,
+                  self.host.map(ObjectIdentifier.init) == hostID,
                   !Task.isCancelled else {
                 return
             }

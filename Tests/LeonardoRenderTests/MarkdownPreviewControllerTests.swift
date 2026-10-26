@@ -71,6 +71,52 @@ final class MarkdownPreviewControllerTests: XCTestCase {
         XCTAssertTrue(controller.isReady)
     }
 
+    func testOutgoingCoordinatorCannotReclaimReplacementAndDetachResetsReady() async throws {
+        let controller = MarkdownPreviewController()
+        let outgoing = MarkdownPreviewCoordinator()
+        let incoming = MarkdownPreviewCoordinator()
+        let oldHost = MarkdownPreviewHost(frame: .zero)
+        let newHost = MarkdownPreviewHost(frame: .zero)
+        outgoing.bind(controller, to: oldHost)
+        incoming.bind(controller, to: newHost)
+        let newReady = try XCTUnwrap(newHost.onReady)
+        await waitForPublication(controller, value: true) { newReady(true) }
+
+        await assertNoPublication(controller) {
+            outgoing.bind(controller, to: oldHost)
+            outgoing.unbind(oldHost)
+            oldHost.teardown()
+        }
+        XCTAssertTrue(controller.isReady, "Outgoing updates and teardown must not detach the replacement")
+        await waitForPublication(controller, value: false) {
+            newReady(false)
+        }
+        await waitForPublication(controller, value: true) { newReady(true) }
+        await waitForPublication(controller, value: false) { incoming.unbind(newHost) }
+        await assertNoPublication(controller) { newReady(true) }
+    }
+
+    func testCoordinatorRefreshesCallbacksAndRebindsChangedController() async throws {
+        let first = MarkdownPreviewController()
+        let second = MarkdownPreviewController()
+        let coordinator = MarkdownPreviewCoordinator()
+        let host = MarkdownPreviewHost(frame: .zero)
+        coordinator.bind(first, to: host)
+        let ready = try XCTUnwrap(host.onReady)
+        await waitForPublication(first, value: true) { ready(true) }
+        first.onEdit = { _, _ in false }
+        coordinator.bind(first, to: host)
+        XCTAssertEqual(host.onEdit?("before", "after"), false)
+        first.onEdit = { _, _ in true }
+        coordinator.bind(first, to: host)
+        XCTAssertEqual(host.onEdit?("before", "after"), true)
+        await waitForPublication(first, value: false) { coordinator.bind(second, to: host) }
+        let secondReady = try XCTUnwrap(host.onReady)
+        await waitForPublication(second, value: true) { secondReady(true) }
+        await assertNoPublication(first) { ready(true) }
+        await waitForPublication(second, value: false) { coordinator.bind(nil, to: host) }
+    }
+
     private func waitForPublication(
         _ controller: MarkdownPreviewController,
         value: Bool,

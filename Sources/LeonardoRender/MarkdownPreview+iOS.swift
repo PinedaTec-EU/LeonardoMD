@@ -31,9 +31,11 @@ public struct MarkdownPreview: UIViewRepresentable {
         self.onScrollProgress = onScrollProgress
     }
 
+    public func makeCoordinator() -> MarkdownPreviewCoordinator { MarkdownPreviewCoordinator() }
+
     public func makeUIView(context: Context) -> UIView {
         let host = MarkdownPreviewHost(frame: .zero)
-        controller?.attach(host)
+        context.coordinator.bind(controller, to: host)
         host.apply(
             content: content,
             baseURL: baseURL,
@@ -47,7 +49,7 @@ public struct MarkdownPreview: UIViewRepresentable {
 
     public func updateUIView(_ uiView: UIView, context: Context) {
         guard let uiView = uiView as? MarkdownPreviewHost else { return }
-        controller?.attach(uiView)
+        context.coordinator.bind(controller, to: uiView)
         uiView.apply(
             content: content,
             baseURL: baseURL,
@@ -58,7 +60,8 @@ public struct MarkdownPreview: UIViewRepresentable {
         )
     }
 
-    public static func dismantleUIView(_ uiView: UIView, coordinator: ()) {
+    public static func dismantleUIView(_ uiView: UIView, coordinator: MarkdownPreviewCoordinator) {
+        coordinator.unbind(uiView as? MarkdownPreviewHost)
         (uiView as? MarkdownPreviewHost)?.teardown()
         uiView.removeFromSuperview()
     }
