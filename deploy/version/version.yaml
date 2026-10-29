@@ -607,9 +607,19 @@
       "pr": 271,
       "summary": "PDF export keeps working after switching between Preview and Split, including portable documents with local images and Mermaid diagrams.",
       "to_version": "0.1.652"
+    },
+    {
+      "delta": {
+        "build": 9
+      },
+      "from_version": "0.1.652",
+      "merge_sha": "484f6ce0d011b9a67aeebfe5148eb25c613836d6",
+      "pr": 276,
+      "summary": "Open MDLZ documents refresh after external changes; unsaved edits are protected with a choice to reload the disk version or save a copy.",
+      "to_version": "0.1.661"
     }
   ],
-  "current_version": "0.1.652",
+  "current_version": "0.1.661",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

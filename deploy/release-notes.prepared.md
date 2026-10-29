@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.661
+
+- #275 Fixed: monitor external MDLZ source changes ([#276](https://github.com/PinedaTec-EU/LeonardoMD/pull/276))
+
+<p>Open MDLZ documents refresh after external changes; unsaved edits are protected with a choice to reload the disk version or save a copy.</p>
+
+Source: `484f6ce0d011b9a67aeebfe5148eb25c613836d6`. Delta: `{"build": 9}`.
+
 ## 0.1.652
 
 - #212 Fixed: preserve PDF export across preview mode transitions ([#271](https://github.com/PinedaTec-EU/LeonardoMD/pull/271))
