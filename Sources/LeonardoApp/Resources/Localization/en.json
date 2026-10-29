@@ -276,7 +276,7 @@
   "The codes match on both devices": "The codes match on both devices",
   "The copy was saved. Later changes remain in the original document.": "The copy was saved. Later changes remain in the original document.",
   "The entire project folder and its contents will be moved to Trash. You can recover them from Trash.": "The entire project folder and its contents will be moved to Trash. You can recover them from Trash.",
-  "The file changed outside LeonardoMD. Your edits are protected.": "The file changed outside LeonardoMD. Your edits are protected.",
+  "The file changed outside LeonardoMD. Reload it or save your edits as a copy?": "The file changed outside LeonardoMD. Reload it or save your edits as a copy?",
   "The imported palette has insufficient contrast.": "The imported palette has insufficient contrast.",
   "The request was not delivered. Try again when the application responds.": "The request was not delivered. Try again when the application responds.",
   "The source changed. Reopen the review before applying decisions.": "The source changed. Reopen the review before applying decisions.",

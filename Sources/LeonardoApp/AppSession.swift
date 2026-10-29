@@ -349,36 +349,6 @@ final class AppSession {
         return true
     }
 
-    func checkExternalChanges() async {
-        guard !isSyncSuspended else { return }
-        if settingsTask == nil { do {
-            let preferences = try await configurations.loadGlobalPreferences(at: globalPreferencesURL)
-            if settingsTask == nil {
-                globalPreferences = preferences
-                globalBaseline = preferences
-                showHidden = preferences.showHiddenFiles
-            }
-            if let root = projectURL {
-                let project = try await configurations.loadProjectConfiguration(for: root)
-                if settingsTask == nil, projectURL == root { projectConfiguration = project; projectBaseline = project }
-            }
-        } catch { logger.error("preferences_refresh_failed") } }
-        if workspaceURL != nil { await refreshWorkspace() }
-        guard !saving, let snapshot else {
-            if projectURL != nil { await refreshTree() }
-            return
-        }
-        var changed = false
-        if !externalConflict { changed = await documents.hasChanged(snapshot) }
-        guard self.snapshot?.url == snapshot.url, self.snapshot?.fingerprint == snapshot.fingerprint else { return }
-        if changed {
-            guard await flushPreviewEdits(), !isSyncSuspended, !isClosing,
-                  self.snapshot == snapshot else { return }
-            if isDirty { externalConflict = true; saveStatus = "External conflict · edits protected" }
-            else { await reloadFromDisk() }
-        }
-        if projectURL != nil { await refreshTree() }
-    }
 
     func stop() {
         stopped = true

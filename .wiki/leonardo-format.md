@@ -60,3 +60,5 @@ regression [#222](https://github.com/PinedaTec-EU/LeonardoMD/issues/222).
 The native move adapter returns a discardable completion task. Package lifecycle
 acceptance awaits that task instead of assuming a fixed number of `Task.yield`
 iterations completes filesystem I/O ([#226](https://github.com/PinedaTec-EU/LeonardoMD/issues/226)).
+
+External package monitoring compares the source MDLZ digest off the main actor, rather than its extracted document. Clean sessions reload through the existing package workspace replacement; dirty sessions retain both versions behind the Reload/Save copy conflict choice. Tracking: [#275](https://github.com/PinedaTec-EU/LeonardoMD/issues/275).

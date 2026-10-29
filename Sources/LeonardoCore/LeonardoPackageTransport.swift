@@ -41,6 +41,17 @@ public struct LeonardoPackageWorkspace: Sendable {
         self.extractionOwnership = extractionOwnership
     }
 
+    /// Compares the original archive, including changes to assets or metadata.
+    /// An unreadable or removed source also requires conflict/reload handling.
+    public func hasSourceChanged() -> Bool {
+        do {
+            try verifySource()
+            return false
+        } catch {
+            return true
+        }
+    }
+
     fileprivate func verifySource() throws {
         guard let packageURL, let sourceDigest else { return }
         guard try LeonardoPackageTransport.digest(packageURL) == sourceDigest else { throw LeonardoPackageError.changedOnDisk }
