@@ -3,20 +3,24 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.1.652</title>
-            <pubDate>Mon, 26 Oct 2026 15:21:40 +0100</pubDate>
+            <title>0.1.671</title>
+            <pubDate>Thu, 29 Oct 2026 23:00:06 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>652</sparkle:version>
-            <sparkle:shortVersionString>0.1.652</sparkle:shortVersionString>
+            <sparkle:version>671</sparkle:version>
+            <sparkle:shortVersionString>0.1.671</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">PDF export now keeps working after switching between Preview and Split. Portable Leonardo documents retain their local images and rendered Mermaid diagrams in the exported PDF.
+            <description sparkle:format="markdown">LeonardoMD 0.1.671 (beta)
 
-This beta includes a regression check for repeated mode changes and preserves the document source without marking it as edited.
+- Open MDLZ documents refresh after external changes. Unsaved edits remain protected with a choice to reload the disk version or save a copy.
+- Optional offline charts, citations, footnotes and callouts are available through global and project preferences. New options are disabled by default.
+- PDF export retains the fix for switching between Preview and Split, including local images and Mermaid diagrams.
 
-Install the macOS Apple Silicon package or select the Beta subscription in Preferences → Updates. This prerelease does not change your selected update subscription.
+Charts support bounded inline data and static SVG. Citations use local BibTeX or CSL-JSON with APA formatting; online lookup is unavailable. Existing math-rendering limitations remain unchanged.
+
+This beta also includes internal validation improvements for development evidence. Install the signed and notarized macOS Apple Silicon package, or select Beta in Preferences → Updates. Publishing this beta does not change your selected update subscription. Hosted update, installation and relaunch acceptance for this candidate is pending.
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.652/LeonardoMD-0.1.652.zip" length="13399060" type="application/octet-stream" sparkle:edSignature="9T9CRc7I5CyV7ahM0/SYUz/ZUESOZv3KSJSN1dCZMSH5ZfttmZKtrb/3GXs4HalW6AqVylNfB23SzogISuRoDg==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.671/LeonardoMD-0.1.671.zip" length="14096880" type="application/octet-stream" sparkle:edSignature="7y0T6Osz8soRbPIR9UkPq8gjHpLTmsquq+5Ig/KZM8CXCHGVhm239qn1SdeSs/mQF4HBjOJchmyiwxofWB7qDQ==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.646</title>
@@ -39,176 +43,6 @@ Install the macOS Apple Silicon package or select the Beta subscription in Prefe
 - Install and relaunch testing of this beta is pending.
 </description>
             <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.646/LeonardoMD-0.1.646.zip" length="13397803" type="application/octet-stream" sparkle:edSignature="BaUCzyva66Nojnx60KLL07+oWGu+a312DZ2sBBQjKlLcmU6oRJhVAAQEsW+upFs7dQ1LIySocX59NEZzjEt3Bw==" />
-        </item>
-    <item leonardo:channel="beta">
-            <title>0.1.630</title>
-            <pubDate>Fri, 23 Oct 2026 09:41:08 +0200</pubDate>
-            <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>630</sparkle:version>
-            <sparkle:shortVersionString>0.1.630</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD beta
-
-## Changes
-
-- Files and folders in locations that do not support Trash can now be permanently deleted after an explicit warning.
-- When Trash is known to be unavailable, the first confirmation explains that deletion cannot be undone. If this is discovered only while moving the item, a second confirmation is required.
-- Cancelling preserves the item. Permission errors and other unrelated filesystem failures continue to report an error without falling back to permanent deletion.
-
-## Known limitations
-
-- Whole-project deletion still requires Trash.
-- Detection depends on the filesystem reporting that Trash is unsupported; ambiguous errors remain errors to protect your files.
-
-For Apple Silicon Macs running macOS 14 or later. This is a beta release.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.630/LeonardoMD-0.1.630.zip" length="13361608" type="application/octet-stream" sparkle:edSignature="AAlojpq/eJHZ9OMnDyAyHi1pEdYGaEUvYnBGPpf9F2il90lTJU30fiPznghUwK8Tbd0oOGyScFKp1PUrEVbfDg==" />
-        </item>
-    <item leonardo:channel="beta">
-            <title>0.1.628</title>
-            <pubDate>Thu, 22 Oct 2026 09:17:51 +0200</pubDate>
-            <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>628</sparkle:version>
-            <sparkle:shortVersionString>0.1.628</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">## What’s new
-
-- Fix a crash that could close LeonardoMD before its first window when loading the local instance preference.
-
-## Known limitations
-
-- If beta 0.1.625 closes immediately, download this beta’s ZIP and replace the application manually; the app cannot check for updates while it cannot start.
-- This beta supports Apple silicon Macs (arm64).
-- A document or project reserved by another LeonardoMD instance remains reserved until that instance exits.
-- If an update waits for the active app to quit, save your documents, close Preferences and quit LeonardoMD normally to allow installation to continue.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.628/LeonardoMD-0.1.628.zip" length="13350448" type="application/octet-stream" sparkle:edSignature="piaSjqL1TwD2MD85FXYRdoUt59JVaaS65TyXLhwZ+7VWV6fCrfJqL/LwEMqcXUL+uoeghk68P5pHKpsKTQZVBw==" />
-        </item>
-    <item leonardo:channel="beta">
-            <title>0.1.625</title>
-            <pubDate>Thu, 22 Oct 2026 00:34:52 +0200</pubDate>
-            <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>625</sparkle:version>
-            <sparkle:shortVersionString>0.1.625</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">## What's new
-
-- Optionally run independent LeonardoMD instances. Single-instance mode remains the default; enable multiple instances in Preferences, then choose File → New instance. Finder opens continue to use the principal instance. Document reservations and coordinated preference writes protect shared data.
-- File and folder rows highlight with the active accent color on hover in the project navigator, search results, and welcome favorites and recents.
-
-## Known limitations
-
-- A document or project reserved by another LeonardoMD instance remains reserved until that instance exits.
-- This beta supports Apple silicon Macs (arm64).
-- If an update waits for the active app to quit, save your documents, close Preferences and quit LeonardoMD normally to allow installation to continue.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.625/LeonardoMD-0.1.625.zip" length="13360030" type="application/octet-stream" sparkle:edSignature="zBzVCiDKqUj3o2IZ5ChEyQwWv6Gsx1MjP34BTQ/41h2i8aB432tlUe5cGvuwkbduEZqf6DK0HxIDX7dTSSqDAw==" />
-        </item>
-    <item leonardo:channel="beta">
-            <title>0.1.612</title>
-            <pubDate>Wed, 21 Oct 2026 19:31:34 +0200</pubDate>
-            <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>612</sparkle:version>
-            <sparkle:shortVersionString>0.1.612</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD 0.1.612
-
-- Document windows now remember their size and position when reopened.
-- Restored windows remain within an available display, including when the previous monitor is disconnected.
-
-## Known limitations
-
-If an update cannot finish while Preferences is open, close Preferences and quit LeonardoMD normally before retrying.
-
-Requires macOS 14 or later on Apple silicon (arm64).
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.612/LeonardoMD-0.1.612.zip" length="13317904" type="application/octet-stream" sparkle:edSignature="C9ev4Rj9mU8vIEFl2aRzV+a22tKbRXL5ltTYTAr6ugnL4KtaBu63xPIrifL63f+zDDv/KIwZkbyXsNohWGwbDg==" />
-        </item>
-    <item leonardo:channel="stable">
-            <title>0.1.606</title>
-            <pubDate>Wed, 21 Oct 2026 09:19:18 +0200</pubDate>
-            <sparkle:version>606</sparkle:version>
-            <sparkle:shortVersionString>0.1.606</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD 0.1.606 beta
-
-- Recognizes when the exact installed beta is promoted to stable, with verified publication metadata. About, the footer and Updates preferences show the published maturity while preserving your selected update subscription.
-- Remembers verified stable maturity when offline and rejects promotion metadata for a different installed package.
-- Reopens hidden release notes from About and follows the active document theme in the release notes window.
-- Bounds local document image loading and preview resolution; PDF export requests higher resolution without modifying original images.
-
-Promotion recognition requires this beta or a later supporting build. It becomes observable after this exact candidate is accepted, promoted and its signed publication proof is available. Existing 0.1.571 installations gain this support through a normal update to a newer build.
-
-Cross-device validation remains pending. If an update leaves the previous application instance open, close Preferences and quit LeonardoMD normally before retrying.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.606/LeonardoMD-0.1.606.zip" length="13317418" type="application/octet-stream" sparkle:edSignature="8xONDAV6CPx4PnHypGy2X4aItZISh+wFHzaghvBQSxANM+ZQBSyY2uYfvGpYduyTwDSfKDpHijSne0xlxBOUDA==" />
-        </item>
-    <item leonardo:channel="stable">
-            <title>0.1.571</title>
-            <pubDate>Tue, 20 Oct 2026 22:30:54 +0200</pubDate>
-            <sparkle:version>571</sparkle:version>
-            <sparkle:shortVersionString>0.1.571</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD 0.1.571
-
-## What is new
-
-- About, Release notes, confirmations and file selection now attach to their parent window as modal sheets. File actions reject changes to the active project or workspace while a dialog is open.
-- Deleted files, folders and projects move to Trash for recovery.
-- Export Leonardo documents and form answers as Markdown reading copies, with a loss warning and portable images.
-- Form calendars are larger and follow the active theme. Preview and Split preserve form field presentation.
-- Undo and redo document edits with separate history for each document.
-- Configure file colors and filter or sort the project file list.
-- Little Leonardo is now read-only. Earlier mobile work is preserved for recovery/export; proprietary mobile Git is retired. Desktop synchronization and system Git remain available.
-
-## Compatibility and known limitations
-
-Beta for Apple Silicon (arm64), macOS 14 or later. Developer ID signed and notarized by Apple.
-
-Native visual acceptance of the new modal sheets remains pending in [#247](https://github.com/PinedaTec-EU/LeonardoMD/issues/247).
-
-To receive beta updates, select **Beta** in Preferences → Updates. Stable remains the default subscription.
-
-Update detection and installation are maintainer-confirmed for earlier builds. The active instance can remain open when updating from Preferences. Save your work, close Preferences, and quit normally to let the pending update complete. [Termination issue #202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202).
-
-Legacy betas using the former update-signing key require manual installation of a current signed/notarized package.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.571/LeonardoMD-0.1.571.zip" length="13242621" type="application/octet-stream" sparkle:edSignature="RA2DRzJyqLTi80lhP1JgruCqOMAQPuTHfRoA9knJ3lsgKtOA8booEfvASJAAYdAfFIoyC2G4aNoy/JbxWnh0CA==" />
-        </item>
-    <item leonardo:channel="stable">
-            <title>0.1.405</title>
-            <pubDate>Sat, 17 Oct 2026 18:11:11 +0200</pubDate>
-            <sparkle:version>405</sparkle:version>
-            <sparkle:shortVersionString>0.1.405</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD 0.1.405
-
-## Home improvements and fixes
-
-- Browse recent documents, projects and workspaces in separate Home tabs alongside persistent favorites.
-- Home artwork adapts to smaller windows and appears behind the content.
-- Avoid duplicate recent projects/workspaces when opening the same folder through different URL forms. Existing duplicates are cleaned while preserving order and favorites.
-
-This stable release predates MDLF, MDLR, MDLZ and Leonardo forms. Choose a beta whose notes include Leonardo document support to try those workflows.
-
-## Installation and updates
-
-Stable for Apple Silicon (arm64), macOS 14 or later. Developer ID signed and notarized by Apple.
-
-Update detection and installation are maintainer-confirmed. **Known limitation:** the active instance can remain open when updating from Preferences. Save your work, close Preferences, and quit normally to let the pending update complete. [Termination issue #202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202).
-
-Legacy betas using the former update-signing key require manual installation of a current signed/notarized package. This is separate from normal update installation and does not mean the current feed is unavailable.
-
-[Publication evidence and validation limits](https://github.com/PinedaTec-EU/LeonardoMD/issues/223#issuecomment-6288007726). Notes clarified on 2026-10-20; original archive, version and channel are unchanged.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.405/LeonardoMD-0.1.405.zip" length="15852531" type="application/octet-stream" sparkle:edSignature="n6Twuj0VZZ29gqeCVkuhsmIwYqG7u22OXSofrlZUnTy2LMKBuuZNieXD6X/UP0iyMKVY5iv/pFXQ5fI4nNb/BQ==" />
         </item>
     </channel>
 </rss>
