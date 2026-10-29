@@ -318,7 +318,7 @@
       window.LeonardoTableResizing.cancel();
       window.LeonardoEditing.begin(payload);
       window.LeonardoEditing.body = payload.markdown || "";
-      window.LeonardoMath.setEnabled(features.math);
+      window.LeonardoMath?.setEnabled(features.math);
       const rendered = window.LeonardoTables.render(payload.markdown || "", !payload.leonardo);
       root.innerHTML = sanitizeHTML(rendered);
       window.LeonardoTables.prepare(root);

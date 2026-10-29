@@ -27,6 +27,9 @@ enum MarkdownHTMLShell {
         let mathScript = configuration.allowsMath
             ? "<script src=\"\(resourceURL(.katex))\"></script>"
             : ""
+        let mathParserScript = configuration.allowsMath
+            ? "<script src=\"\(resourceURL(.markdownMath))\"></script>"
+            : ""
         let documentBase = documentBaseHref(baseURL: baseURL, configuration: configuration)
             .map { "<base href=\"\($0)\">" } ?? ""
 
@@ -52,7 +55,7 @@ enum MarkdownHTMLShell {
           <main id="leonardo-markdown" class="markdown-body" aria-live="polite"></main>
           <script id="leonardo-payload" type="application/json">\(encodedPayload)</script>
           <script src="\(resourceURL(.previewEditing))"></script>
-          <script src="\(resourceURL(.markdownMath))"></script>
+          \(mathParserScript)
           <script src="\(resourceURL(.tableLayout))"></script>
           <script src="\(resourceURL(.tableResizing))"></script>
           <script src="\(resourceURL(.leonardoCalendar))"></script>

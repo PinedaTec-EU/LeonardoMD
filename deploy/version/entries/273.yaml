@@ -1,4 +1,4 @@
 {
   "summary": "Math formulas preserve TeX in display and inline delimiters and render extensible braces, roots and arrows without losing SVG geometry.",
-  "build": 5
+  "build": 7
 }

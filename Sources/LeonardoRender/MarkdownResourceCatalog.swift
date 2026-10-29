@@ -40,12 +40,12 @@ enum MarkdownResourceCatalog {
             .previewStyles, .formStyles, .tableResizeStyles
         ]
         if configuration.allowsMath {
-            resources.append(contentsOf: [.katex, .katexStyles])
+            resources.append(contentsOf: [.katex, .katexStyles, .markdownMath])
         }
         if configuration.allowsMermaid {
             resources.append(.mermaid)
         }
-        resources.append(contentsOf: [.previewEditing, .markdownMath, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .imageLoading, .runtime])
+        resources.append(contentsOf: [.previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .imageLoading, .runtime])
         return resources
     }
 

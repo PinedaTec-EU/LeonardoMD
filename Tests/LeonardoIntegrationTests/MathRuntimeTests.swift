@@ -115,7 +115,7 @@ extension WebKitRuntimeTests {
         XCTAssertFalse(web === disabled)
         try await waitFor("Boolean(window.LeonardoPreview)", in: disabled)
         let disabledResult = try await evaluate("""
-        typeof window.katex === 'undefined' && document.querySelectorAll('.math-rendered, .math-source').length === 0 &&
+        typeof window.katex === 'undefined' && typeof window.LeonardoMath === 'undefined' && document.querySelectorAll('.math-rendered, .math-source').length === 0 &&
         document.querySelector('#leonardo-markdown').textContent.includes('$$')
         """, in: disabled)
         XCTAssertEqual(disabledResult, "1")
