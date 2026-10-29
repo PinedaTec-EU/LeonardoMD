@@ -107,6 +107,40 @@ final class AppSessionTests: XCTestCase {
         XCTAssertTrue(project.markdown?.mathEnabled == true)
     }
 
+    func testAdditionalExtensionTogglesPersistAndRespectProjectInheritance() async throws {
+        let (root, session) = try fixture()
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        await session.openProject(root)
+
+        session.setVegaLite(true)
+        session.setCitations(true)
+        session.setMarkdownExtensions(true)
+        await session.settingsTask?.value
+
+        XCTAssertTrue(session.features.vegaLiteEnabled)
+        XCTAssertTrue(session.features.citationsEnabled)
+        XCTAssertTrue(session.features.markdownExtensionsEnabled)
+        let project = try await session.configurations.loadProjectConfiguration(for: root)
+        XCTAssertTrue(project.markdown?.vegaLiteEnabled == true)
+        XCTAssertTrue(project.markdown?.citationsEnabled == true)
+        XCTAssertTrue(project.markdown?.markdownExtensionsEnabled == true)
+
+        session.inheritFeatures(true)
+        await session.settingsTask?.value
+        XCTAssertNil(session.projectConfiguration.markdown)
+        XCTAssertFalse(session.features.vegaLiteEnabled)
+        XCTAssertFalse(session.features.citationsEnabled)
+        XCTAssertFalse(session.features.markdownExtensionsEnabled)
+
+        session.setVegaLite(true, project: false)
+        session.setCitations(true, project: false)
+        session.setMarkdownExtensions(true, project: false)
+        await session.settingsTask?.value
+        XCTAssertTrue(session.features.vegaLiteEnabled)
+        XCTAssertTrue(session.features.citationsEnabled)
+        XCTAssertTrue(session.features.markdownExtensionsEnabled)
+    }
+
     func testOpeningStandaloneAfterProjectDetachesFolderAndUsesGlobalFeatures() async throws {
         let (root, session) = try fixture()
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }

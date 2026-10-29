@@ -75,7 +75,13 @@
     render(markdown, legacyWidths = true) {
       allowsLegacyWidths = legacyWidths;
       tableRenderKey = Array.from(crypto.getRandomValues(new Uint32Array(4))).join("-");
-      return parser.parse(markdown);
+      const extras = window.LeonardoMarkdownExtras;
+      if (extras) {
+        extras.install(parser);
+        extras.beginDocument(markdown);
+      }
+      const html = parser.parse(markdown);
+      return extras ? extras.finish(html) : html;
     },
     isMarkdownTable: table => table.dataset.leonardoGfm === tableRenderKey,
     sourceFor(table, root, markdown) {

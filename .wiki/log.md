@@ -158,3 +158,12 @@ General and Extensions now own their Global / This project header inside the tab
   Sparkle installation, retain document/Git safety checks and exclude new
   launches during coordination. Selectively identify Preferences sheets rather
   than ending arbitrary modal decisions. Hosted update/relaunch remains pending.
+
+## 2026-10-29 — Optional document engines
+
+Added opt-in Vega-Lite charts, Citation.js APA references and Markdown extras
+(footnotes/callouts), with global/project preferences, lazy local engine loading,
+PDF readiness and a shared preference-merge path. Dependency manifests retain
+source/license provenance, including bundled citeproc CPAL source. See
+[#277](https://github.com/PinedaTec-EU/LeonardoMD/issues/277) and
+[extension contract](document-extensions.md).

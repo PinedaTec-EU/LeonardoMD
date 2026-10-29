@@ -8,6 +8,7 @@
   let originalSource = "";
   let groups = [];
   let enabled = false;
+  let generatedCodeLanguages = new Set();
   let renderID = "";
   const escapeHTML = (text) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const escapeMarkdown = (text) => text.replace(/&/g, "&amp;").replace(/([\\`*_[\]{}<>#!|~.+()=\-])/g, "\\$1");
@@ -15,6 +16,9 @@
   function begin(payload) {
     source = payload.source || "";
     enabled = payload.allowsEditing === true;
+    generatedCodeLanguages = new Set(["mermaid"]);
+    if (payload.allowsVegaLite) generatedCodeLanguages.add("vega-lite");
+    if (payload.allowsCitations) ["bibtex", "csl-json"].forEach(language => generatedCodeLanguages.add(language));
     ranges = [];
     groups = [];
     originalSource = source;
@@ -83,7 +87,7 @@
           }
           // Generated math/diagram output and raw HTML remain immutable in
           // preview. Their source stays available in the raw editor.
-          if (token.type === "code" && token.lang === "mermaid") continue;
+          if (token.type === "code" && generatedCodeLanguages.has(token.lang)) continue;
           token.leonardoEditID = ranges.length;
           ranges.push({
             start: originalOffsets[token.type === "code" || token.type === "codespan" ? start : textStart],

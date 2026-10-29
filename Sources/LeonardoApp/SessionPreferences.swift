@@ -13,6 +13,21 @@ extension AppSession {
         updated.mathEnabled = value
         setFeatures(updated, project: project)
     }
+    func setVegaLite(_ value: Bool, project: Bool? = nil) {
+        var updated = (project ?? (projectURL != nil)) ? features : globalPreferences.markdown
+        updated.vegaLiteEnabled = value
+        setFeatures(updated, project: project)
+    }
+    func setCitations(_ value: Bool, project: Bool? = nil) {
+        var updated = (project ?? (projectURL != nil)) ? features : globalPreferences.markdown
+        updated.citationsEnabled = value
+        setFeatures(updated, project: project)
+    }
+    func setMarkdownExtensions(_ value: Bool, project: Bool? = nil) {
+        var updated = (project ?? (projectURL != nil)) ? features : globalPreferences.markdown
+        updated.markdownExtensionsEnabled = value
+        setFeatures(updated, project: project)
+    }
     func setFeatures(_ features: MarkdownFeatures, project: Bool? = nil) {
         if !(project ?? (projectURL != nil)) || projectURL == nil { globalPreferences.markdown = features }
         else {

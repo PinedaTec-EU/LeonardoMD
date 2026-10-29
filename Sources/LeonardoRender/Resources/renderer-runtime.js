@@ -26,6 +26,8 @@
   let scrollScheduled = false;
   let interactionsInstalled = false;
   let diagramSequence = 0;
+  let renderGeneration = 0;
+  let extensionWork = Promise.resolve();
 
   function postMessage(name, body) {
     const handler = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[name];
@@ -308,6 +310,7 @@
   }
 
   async function renderAllDiagrams() {
+    await extensionWork;
     if (features.mermaid && window.mermaid) {
       const diagrams = Array.from(root.querySelectorAll(".mermaid-placeholder"));
       await Promise.all(diagrams.map((element) => renderDiagram(element)));
@@ -347,6 +350,7 @@
 
   function renderDocument() {
     const renderStart = performance.now();
+    const generation = ++renderGeneration;
     setAppearance(payload.appearance);
     if (diagramObserver) diagramObserver.disconnect();
     diagramTimers.forEach((timer) => window.clearTimeout(timer));
@@ -372,12 +376,33 @@
       highlightCode();
       renderMath();
       prepareMermaid();
-      window.LeonardoEditing.prepare(root);
-      installInteractions();
-      postMessage("leonardoReady", {
-        mermaid: features.mermaid,
-        math: features.math,
-        durationMs: performance.now() - renderStart
+      const work = [];
+      const engineLoader = window.LeonardoExtensionEngines;
+      if (payload.allowsVegaLite && window.LeonardoCharts) {
+        work.push(window.LeonardoCharts.render(root, payload, { loadEngine: () => engineLoader.load("charts") }));
+      }
+      if (payload.allowsCitations && window.LeonardoCitations) {
+        work.push(window.LeonardoCitations.render(root, payload, { loadEngine: () => engineLoader.load("citations") }));
+      }
+      extensionWork = Promise.all(work).then(() => {
+        if (generation !== renderGeneration) return;
+        installHeadingAnchors();
+        window.LeonardoEditing.prepare(root);
+        installInteractions();
+        postMessage("leonardoReady", {
+          mermaid: features.mermaid,
+          math: features.math,
+          durationMs: performance.now() - renderStart
+        });
+      }).catch(() => {
+        if (generation !== renderGeneration) return;
+        const error = document.createElement("aside");
+        error.setAttribute("role", "note");
+        error.textContent = "A document extension could not be rendered. The source is available in the editor.";
+        root.appendChild(error);
+        window.LeonardoEditing.prepare(root);
+        installInteractions();
+        postMessage("leonardoReady", { mermaid: features.mermaid, math: features.math });
       });
     } catch (_) {
       root.textContent = "The Markdown preview could not be rendered.";

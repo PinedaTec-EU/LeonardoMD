@@ -16,7 +16,7 @@ Two entry paths share one document editing/rendering implementation:
 - **Standalone viewer:** opens a file without attaching a project or showing the folder tree. Relative assets resolve from that file's directory. Global preferences apply. Editing and opening its directory as a project are explicit actions.
 - **Project:** opens a folder with lazy navigation, search, file operations and optional Git. **Focus mode** hides the folder sidebar and inspector while retaining the project and document. Leaving focus restores the requested panels.
 
-Mermaid and math are opt-in. Their code is distributed with the app but excluded from the renderer when disabled. Changing enabled engines rebuilds the WebKit execution context and releases the old one. Deferred rendering of visible diagrams is an additional optimization, independent of plugin activation.
+Mermaid, math, Vega-Lite charts, Citation.js references and Markdown extras are opt-in. Their code is distributed with the app but excluded from the renderer when disabled. Changing enabled engines rebuilds the WebKit execution context and releases the old one. Deferred rendering of visible Mermaid diagrams is an additional optimization, independent of plugin activation. Charts and citation engines are loaded from bundled resources only when the enabled document contains their syntax. Charts retain the existing no-network/no-eval content security policy.
 
 ## Consequences
 

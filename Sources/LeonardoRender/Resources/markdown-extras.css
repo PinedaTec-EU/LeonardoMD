@@ -1,0 +1,88 @@
+.markdown-body {
+  --ld-callout-note-border: var(--ld-accent);
+  --ld-callout-tip-border: color-mix(in srgb, var(--ld-accent) 78%, var(--ld-heading));
+  --ld-callout-important-border: color-mix(in srgb, var(--ld-accent) 62%, var(--ld-heading));
+  --ld-callout-warning-border: color-mix(in srgb, var(--ld-accent) 50%, var(--ld-text));
+  --ld-callout-caution-border: color-mix(in srgb, var(--ld-accent) 38%, var(--ld-text));
+}
+
+.markdown-body .markdown-footnote-ref {
+  font-size: 0.78em;
+  line-height: 0;
+  margin-left: 0.12em;
+  vertical-align: super;
+}
+
+.markdown-body .markdown-footnote-ref a,
+.markdown-body .markdown-footnote-backref {
+  color: var(--ld-accent);
+}
+
+.markdown-body .markdown-footnotes {
+  border-top: 1px solid color-mix(in srgb, var(--ld-accent) 35%, transparent);
+  color: color-mix(in srgb, var(--ld-text) 86%, transparent);
+  font-size: 0.9em;
+  margin-top: 3.2em;
+  padding-top: 1em;
+}
+
+.markdown-body .markdown-footnotes h2 {
+  border: 0;
+  font-size: 1.15em;
+  margin: 0 0 0.5em;
+  padding: 0;
+}
+
+.markdown-body .markdown-footnotes ol {
+  margin: 0;
+  padding-left: 1.6em;
+}
+
+.markdown-body .markdown-footnotes li {
+  padding-left: 0.2em;
+}
+
+.markdown-body .markdown-footnotes li p {
+  margin: 0.35em 0;
+}
+
+.markdown-body .markdown-callout {
+  background: color-mix(in srgb, var(--ld-accent) 8%, var(--ld-background));
+  border-left: 4px solid var(--ld-callout-note-border);
+  border-radius: 0 8px 8px 0;
+  margin: 1.1em 0;
+  padding: 0.75em 1.1em;
+}
+
+.markdown-body .markdown-callout-title {
+  color: var(--ld-heading);
+  font-weight: 700;
+  margin: 0 0 0.35em;
+}
+
+.markdown-body .markdown-callout > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body .markdown-callout-warning,
+.markdown-body .markdown-callout-caution {
+  border-left-color: var(--ld-callout-warning-border);
+}
+
+.markdown-body .markdown-callout-important {
+  border-left-color: var(--ld-callout-important-border);
+}
+
+.markdown-body .markdown-callout-tip {
+  border-left-color: var(--ld-callout-tip-border);
+}
+
+.markdown-body .markdown-callout-caution {
+  border-left-color: var(--ld-callout-caution-border);
+}
+
+@media print {
+  .markdown-body .markdown-footnotes {
+    break-inside: avoid;
+  }
+}

@@ -65,6 +65,9 @@ extension AppSession {
         var configuration = MarkdownPreviewConfiguration(
             allowsMermaid: features.mermaidEnabled,
             allowsMath: features.mathEnabled,
+            allowsVegaLite: features.vegaLiteEnabled,
+            allowsCitations: features.citationsEnabled,
+            allowsMarkdownExtensions: features.markdownExtensionsEnabled,
             frontMatter: showFrontmatter ? .metadata : .hidden,
             externalLinkPolicy: .callbackOnly,
             appearance: MarkdownAppearance(backgroundHex: background, textHex: tokens.text, headingHex: tokens.heading, accentHex: tokens.accent, codeBackgroundHex: tokens.codeBackground, paperEffect: effect),

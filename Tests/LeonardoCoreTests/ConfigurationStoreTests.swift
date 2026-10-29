@@ -103,6 +103,7 @@ final class ConfigurationStoreTests: XCTestCase {
         firstUpdate.palette = .leonardoClassic
         firstUpdate.customTokens?.accent = "#8C3F22"
         firstUpdate.markdown.mermaidEnabled = true
+        firstUpdate.markdown.vegaLiteEnabled = true
         _ = try await store.mergeGlobalPreferences(
             updated: firstUpdate,
             baseline: baseline,
@@ -113,6 +114,8 @@ final class ConfigurationStoreTests: XCTestCase {
         secondUpdate.showHiddenFiles = true
         secondUpdate.customTokens?.heading = "#550000"
         secondUpdate.markdown.mathEnabled = true
+        secondUpdate.markdown.citationsEnabled = true
+        secondUpdate.markdown.markdownExtensionsEnabled = true
         secondUpdate.markdown.defaultMode = .split
         let merged = try await store.mergeGlobalPreferences(
             updated: secondUpdate,
@@ -126,6 +129,9 @@ final class ConfigurationStoreTests: XCTestCase {
         XCTAssertEqual(merged.customTokens?.heading, "#550000")
         XCTAssertTrue(merged.markdown.mermaidEnabled)
         XCTAssertTrue(merged.markdown.mathEnabled)
+        XCTAssertTrue(merged.markdown.vegaLiteEnabled)
+        XCTAssertTrue(merged.markdown.citationsEnabled)
+        XCTAssertTrue(merged.markdown.markdownExtensionsEnabled)
         XCTAssertEqual(merged.markdown.defaultMode, .split)
     }
 
@@ -195,6 +201,7 @@ final class ConfigurationStoreTests: XCTestCase {
         firstUpdate.git.enabled = true
         var firstMarkdown = try XCTUnwrap(firstUpdate.markdown)
         firstMarkdown.mermaidEnabled = true
+        firstMarkdown.vegaLiteEnabled = true
         firstUpdate.markdown = firstMarkdown
         _ = try await store.mergeProjectConfiguration(
             updated: firstUpdate,
@@ -207,6 +214,8 @@ final class ConfigurationStoreTests: XCTestCase {
         secondUpdate.palette = .leonardoClassic
         var secondMarkdown = try XCTUnwrap(secondUpdate.markdown)
         secondMarkdown.mathEnabled = true
+        secondMarkdown.citationsEnabled = true
+        secondMarkdown.markdownExtensionsEnabled = true
         secondMarkdown.defaultMode = .split
         secondUpdate.markdown = secondMarkdown
         let merged = try await store.mergeProjectConfiguration(
@@ -220,6 +229,9 @@ final class ConfigurationStoreTests: XCTestCase {
         XCTAssertTrue(merged.git.enabled)
         XCTAssertTrue(merged.markdown?.mermaidEnabled == true)
         XCTAssertTrue(merged.markdown?.mathEnabled == true)
+        XCTAssertTrue(merged.markdown?.vegaLiteEnabled == true)
+        XCTAssertTrue(merged.markdown?.citationsEnabled == true)
+        XCTAssertTrue(merged.markdown?.markdownExtensionsEnabled == true)
         XCTAssertEqual(merged.markdown?.defaultMode, .split)
     }
 }

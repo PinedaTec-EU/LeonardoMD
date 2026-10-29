@@ -27,6 +27,10 @@ enum MarkdownHTMLShell {
         let mathScript = configuration.allowsMath
             ? "<script src=\"\(resourceURL(.katex))\"></script>"
             : ""
+        let extensionScripts = extensionScripts(configuration: configuration, resourceURL: resourceURL)
+        let extraStylesheet = configuration.allowsMarkdownExtensions
+            ? "<link rel=\"stylesheet\" href=\"\(resourceURL(.markdownExtraStyles))\">"
+            : ""
         let documentBase = documentBaseHref(baseURL: baseURL, configuration: configuration)
             .map { "<base href=\"\($0)\">" } ?? ""
 
@@ -42,6 +46,7 @@ enum MarkdownHTMLShell {
           <link rel="stylesheet" href="\(resourceURL(.formStyles))">
           <link rel="stylesheet" href="\(resourceURL(.tableResizeStyles))">
           \(mathStylesheet)
+          \(extraStylesheet)
           <script src="\(resourceURL(.marked))"></script>
           <script src="\(resourceURL(.dompurify))"></script>
           <script src="\(resourceURL(.highlight))"></script>
@@ -58,10 +63,23 @@ enum MarkdownHTMLShell {
           <script src="\(resourceURL(.leonardoForms))"></script>
           <script src="\(resourceURL(.leonardoLayout))"></script>
           <script src="\(resourceURL(.imageLoading))"></script>
+          \(extensionScripts)
           <script src="\(resourceURL(.runtime))"></script>
         </body>
         </html>
         """
+    }
+
+    private static func extensionScripts(
+        configuration: MarkdownPreviewConfiguration,
+        resourceURL: (MarkdownResource) -> String
+    ) -> String {
+        var modules: [MarkdownResource] = []
+        if configuration.allowsVegaLite || configuration.allowsCitations { modules.append(.extensionEngines) }
+        if configuration.allowsVegaLite { modules.append(.vegaCharts) }
+        if configuration.allowsCitations { modules.append(.citations) }
+        if configuration.allowsMarkdownExtensions { modules.append(.markdownExtras) }
+        return modules.map { "<script src=\"\(resourceURL($0))\"></script>" }.joined(separator: "\n")
     }
 
     static func payloadJSON(
@@ -88,6 +106,9 @@ enum MarkdownHTMLShell {
             showFrontMatter: configuration.frontMatter == .metadata,
             allowsMermaid: configuration.allowsMermaid,
             allowsMath: configuration.allowsMath,
+            allowsVegaLite: configuration.allowsVegaLite,
+            allowsCitations: configuration.allowsCitations,
+            allowsMarkdownExtensions: configuration.allowsMarkdownExtensions,
             debounceMilliseconds: configuration.renderDebounce.milliseconds,
             appearance: configuration.appearance.sanitizedPayload,
             baseURL: baseURL?.absoluteString
@@ -131,6 +152,9 @@ private struct MarkdownRenderPayload: Encodable {
     let showFrontMatter: Bool
     let allowsMermaid: Bool
     let allowsMath: Bool
+    let allowsVegaLite: Bool
+    let allowsCitations: Bool
+    let allowsMarkdownExtensions: Bool
     let debounceMilliseconds: Int
     let appearance: MarkdownAppearancePayload
     let baseURL: String?
