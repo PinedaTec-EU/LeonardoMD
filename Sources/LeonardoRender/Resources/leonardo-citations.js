@@ -266,6 +266,7 @@
   }
 
   async function render(root, payload, options = {}) {
+    const generation = root ? beginRender(root) : undefined;
     if (!root || !payload || payload.allowsCitations !== true) {
       return { rendered: false, reason: "disabled", sourceBlocks: 0, citationReferences: 0 };
     }
@@ -273,7 +274,6 @@
     if (blocks.length === 0) {
       return { rendered: false, reason: "no-source", sourceBlocks: 0, citationReferences: citationReferences(root).length };
     }
-    const generation = beginRender(root);
     const loadEngine = options.loadEngine;
     if (typeof loadEngine !== "function") {
       showDiagnostic(root, blocks, "Citations could not be rendered because the Citation.js loader is unavailable.");

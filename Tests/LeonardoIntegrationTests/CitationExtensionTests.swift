@@ -121,6 +121,45 @@ final class CitationExtensionTests: XCTestCase {
         XCTAssertTrue(result.contains("\"bibliography\":1"))
     }
 
+    func testPendingCitationRenderIsCancelledByEarlyReturn() async throws {
+        for disabled in [false, true] {
+            for rejects in [false, true] {
+                let configuration = MarkdownPreviewConfiguration(allowsCitations: true)
+                let (host, window) = makeHost(content: "# Empty", config: configuration)
+                defer { host.teardown(); window.close() }
+                let web = try XCTUnwrap(webView(of: host))
+                try await waitFor("window.LeonardoCitations ? '1' : '0'", in: web)
+                _ = try await evaluate("""
+                (() => {
+                  class FakeCite {
+                    constructor() { this.data = [{ id: 'old', title: 'Old' }]; }
+                    format() { return '<div class="csl-entry">Old bibliography</div>'; }
+                  }
+                  const root = document.createElement('div');
+                  root.innerHTML = '<pre><code class="language-bibtex">@article{old, title={Old}}</code></pre>';
+                  document.body.append(root);
+                  let resolveEngine, rejectEngine;
+                  const pending = new Promise((resolve, reject) => { resolveEngine = resolve; rejectEngine = reject; });
+                  const first = window.LeonardoCitations.render(root, { allowsCitations: true }, { loadEngine: () => pending });
+                  root.innerHTML = '<p>Replacement without sources</p>';
+                  const second = window.LeonardoCitations.render(root, { allowsCitations: \(disabled ? "false" : "true") });
+                  if (\(rejects ? "true" : "false")) rejectEngine(new Error('Old loader failed'));
+                  else resolveEngine({ Cite: FakeCite });
+                  Promise.all([first, second]).then(values => {
+                    window.cancelledCitationResult = JSON.stringify({
+                      reasons: values.map(value => value.reason), html: root.innerHTML
+                    });
+                  });
+                })()
+                """, in: web)
+                try await waitFor("window.cancelledCitationResult ? '1' : '0'", in: web)
+                let result = try await evaluate("window.cancelledCitationResult", in: web)
+                let reason = disabled ? "disabled" : "no-source"
+                XCTAssertEqual(result, "{\"reasons\":[\"stale\",\"\(reason)\"],\"html\":\"<p>Replacement without sources</p>\"}")
+            }
+        }
+    }
+
     func testBibliographyInputsNeverSelectURLResolvers() async throws {
         for (language, value) in [("bibtex", "https://example.invalid/remote.bib"),
                                   ("csl-json", "\"https://example.invalid/remote.json\"")] {
