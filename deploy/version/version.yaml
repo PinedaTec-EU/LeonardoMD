@@ -637,9 +637,19 @@
       "pr": 283,
       "summary": "PR evidence compilation counts are generated from the ledger and automatically checked for stale or inconsistent declarations.",
       "to_version": "0.1.671"
+    },
+    {
+      "delta": {
+        "build": 1
+      },
+      "from_version": "0.1.671",
+      "merge_sha": "721e134721c4d4fd4594688c9e137c03a617ddae",
+      "pr": 286,
+      "summary": "Extension preferences show their state through the switch without a redundant caption.",
+      "to_version": "0.1.672"
     }
   ],
-  "current_version": "0.1.671",
+  "current_version": "0.1.672",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

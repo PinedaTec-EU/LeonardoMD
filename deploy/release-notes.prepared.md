@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.672
+
+- #285 Removed: redundant extension state captions ([#286](https://github.com/PinedaTec-EU/LeonardoMD/pull/286))
+
+<p>Extension preferences show their state through the switch without a redundant caption.</p>
+
+Source: `721e134721c4d4fd4594688c9e137c03a617ddae`. Delta: `{"build": 1}`.
+
 ## 0.1.671
 
 - #282 Added: validate evidence compilation counts ([#283](https://github.com/PinedaTec-EU/LeonardoMD/pull/283))
