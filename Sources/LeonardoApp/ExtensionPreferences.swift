@@ -47,8 +47,6 @@ struct ExtensionPreferences: View {
             Toggle(isOn: enabled) { Label(title, systemImage: symbol).font(.headline) }
                 .accessibilityIdentifier(identifier + "-toggle")
             Text(description).font(.caption).foregroundStyle(.secondary)
-            Text(enabled.wrappedValue ? L10n.text("Enabled") : L10n.text("Disabled"))
-                .font(.caption).foregroundStyle(enabled.wrappedValue ? session.accentColor : Color.secondary)
         }.padding(14)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(enabled.wrappedValue ? session.accentColor.opacity(0.40) : .primary.opacity(0.08)))
