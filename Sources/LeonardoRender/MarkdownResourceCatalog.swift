@@ -11,6 +11,7 @@ enum MarkdownResource: String, CaseIterable {
     case formStyles = "leonardo-forms.css"
     case previewStyles = "preview.css"
     case previewEditing = "preview-editing.js"
+    case markdownMath = "markdown-math.js"
     case tableLayout = "table-layout.js"
     case tableResizing = "table-resizing.js"
     case tableResizeStyles = "table-resizing.css"
@@ -24,7 +25,7 @@ enum MarkdownResource: String, CaseIterable {
         switch self {
         case .katexStyles, .previewStyles, .formStyles, .tableResizeStyles:
             return "text/css"
-        case .marked, .dompurify, .highlight, .mermaid, .katex, .previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .imageLoading, .runtime:
+        case .marked, .dompurify, .highlight, .mermaid, .katex, .previewEditing, .markdownMath, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .imageLoading, .runtime:
             return "text/javascript"
         }
     }
@@ -44,7 +45,7 @@ enum MarkdownResourceCatalog {
         if configuration.allowsMermaid {
             resources.append(.mermaid)
         }
-        resources.append(contentsOf: [.previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .imageLoading, .runtime])
+        resources.append(contentsOf: [.previewEditing, .markdownMath, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .imageLoading, .runtime])
         return resources
     }
 

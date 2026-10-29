@@ -51,6 +51,7 @@
 
   const parser = new window.marked.Marked({
     gfm: true,
+    extensions: window.LeonardoMath.extensions,
     breaks: false,
     hooks: { processAllTokens: (tokens) => window.LeonardoEditing.annotate(allowsLegacyWidths ? annotateTables(tokens) : tokens) },
     renderer: {

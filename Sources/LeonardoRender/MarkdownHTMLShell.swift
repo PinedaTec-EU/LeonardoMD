@@ -52,6 +52,7 @@ enum MarkdownHTMLShell {
           <main id="leonardo-markdown" class="markdown-body" aria-live="polite"></main>
           <script id="leonardo-payload" type="application/json">\(encodedPayload)</script>
           <script src="\(resourceURL(.previewEditing))"></script>
+          <script src="\(resourceURL(.markdownMath))"></script>
           <script src="\(resourceURL(.tableLayout))"></script>
           <script src="\(resourceURL(.tableResizing))"></script>
           <script src="\(resourceURL(.leonardoCalendar))"></script>
