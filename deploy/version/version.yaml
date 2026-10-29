@@ -627,9 +627,19 @@
       "pr": 278,
       "summary": "Documents gain optional offline charts, citations and richer Markdown structures, with controls for global and project preferences.",
       "to_version": "0.1.670"
+    },
+    {
+      "delta": {
+        "build": 1
+      },
+      "from_version": "0.1.670",
+      "merge_sha": "9fc34be8a2516ce171baa259f4d341c20315ed01",
+      "pr": 283,
+      "summary": "PR evidence compilation counts are generated from the ledger and automatically checked for stale or inconsistent declarations.",
+      "to_version": "0.1.671"
     }
   ],
-  "current_version": "0.1.670",
+  "current_version": "0.1.671",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

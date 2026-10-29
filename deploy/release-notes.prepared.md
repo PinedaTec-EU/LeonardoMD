@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.671
+
+- #282 Added: validate evidence compilation counts ([#283](https://github.com/PinedaTec-EU/LeonardoMD/pull/283))
+
+<p>PR evidence compilation counts are generated from the ledger and automatically checked for stale or inconsistent declarations.</p>
+
+Source: `9fc34be8a2516ce171baa259f4d341c20315ed01`. Delta: `{"build": 1}`.
+
 ## 0.1.670
 
 - #277 Added: extend document rendering and scoped preferences ([#278](https://github.com/PinedaTec-EU/LeonardoMD/pull/278))

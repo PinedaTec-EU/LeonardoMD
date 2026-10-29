@@ -1,4 +1,0 @@
-{
-  "build": 1,
-  "summary": "PR evidence compilation counts are generated from the ledger and automatically checked for stale or inconsistent declarations."
-}
