@@ -555,7 +555,7 @@ final class WebKitRuntimeTests: XCTestCase {
         return bytes as Data
     }
 
-    private func evaluate(_ script: String, in web: WKWebView) async throws -> String {
+    func evaluate(_ script: String, in web: WKWebView) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             web.evaluateJavaScript(script) { result, error in
                 if let error { continuation.resume(throwing: error) }
@@ -563,14 +563,14 @@ final class WebKitRuntimeTests: XCTestCase {
             }
         }
     }
-    private func waitFor(_ script: String, in web: WKWebView) async throws {
+    func waitFor(_ script: String, in web: WKWebView) async throws {
         for _ in 0..<100 {
             if (try? await evaluate(script, in: web)) == "1" { return }
             try await Task.sleep(for: .milliseconds(100))
         }
         XCTFail("WebKit condition timed out: \(script)")
     }
-    private func makeHost(content: String, base: URL? = nil, config: MarkdownPreviewConfiguration = .default) -> (MarkdownPreviewHost, NSWindow) {
+    func makeHost(content: String, base: URL? = nil, config: MarkdownPreviewConfiguration = .default) -> (MarkdownPreviewHost, NSWindow) {
         _ = NSApplication.shared
         let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 1000, height: 800))
         let window = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: false)
@@ -579,7 +579,7 @@ final class WebKitRuntimeTests: XCTestCase {
         host.apply(content: content, baseURL: base, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
         return (host, window)
     }
-    private func webView(of host: MarkdownPreviewHost) -> WKWebView? { host.subviews.compactMap { $0 as? WKWebView }.first }
+    func webView(of host: MarkdownPreviewHost) -> WKWebView? { host.subviews.compactMap { $0 as? WKWebView }.first }
 
     func testTagPillsActivateSafelyAndDisappearAfterUpdate() async throws {
         let source = "---\ntags: [Swift, 'Design Systems', swift, '<img src=x onerror=alert(1)>']\n---\n# Tagged document\n\nChoose a tag to find related project documents."
@@ -619,7 +619,7 @@ final class WebKitRuntimeTests: XCTestCase {
         XCTAssertEqual(remaining, "0")
     }
 
-    private func captureTagPreview(_ web: WKWebView, name: String) async throws {
+    func captureTagPreview(_ web: WKWebView, name: String) async throws {
         guard let directory = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] else { return }
         let png: Data = try await withCheckedThrowingContinuation { continuation in
             web.takeSnapshot(with: nil) { image, error in

@@ -149,8 +149,10 @@ struct MarkdownRenderTests {
         #expect(!html.contains("mermaid.min.js"))
         #expect(!html.contains("katex.min.js"))
         #expect(!html.contains("katex.min.css"))
+        #expect(!html.contains("markdown-math.js"))
         #expect(!disabledResources.contains(.mermaid))
         #expect(!disabledResources.contains(.katex))
+        #expect(!disabledResources.contains(.markdownMath))
         #expect(html.contains("\"allowsMermaid\":false"))
         #expect(html.contains("\"allowsMath\":false"))
     }
@@ -170,8 +172,11 @@ struct MarkdownRenderTests {
 
         #expect(mermaid.contains("mermaid.min.js"))
         #expect(!mermaid.contains("katex.min.js"))
+        #expect(!mermaid.contains("markdown-math.js"))
         #expect(math.contains("katex.min.js"))
         #expect(math.contains("katex.min.css"))
+        #expect(math.contains("markdown-math.js"))
+        #expect(MarkdownResourceCatalog.resources(for: .init(allowsMath: true)).contains(.markdownMath))
         #expect(!math.contains("mermaid.min.js"))
 
         let runtime = String(data: MarkdownResourceCatalog.data(for: .runtime) ?? Data(), encoding: .utf8) ?? ""

@@ -125,60 +125,22 @@
     });
   }
 
-  function splitMath(value) {
-    const expression = /(\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\$[^$\n]+\$)/g;
-    const pieces = [];
-    let cursor = 0;
-    let match;
-    while ((match = expression.exec(value)) !== null) {
-      if (match.index > cursor) pieces.push({ text: value.slice(cursor, match.index) });
-      const token = match[0];
-      const displayMode = token.startsWith("$$") || token.startsWith("\\[");
-      const delimiterLength = token.startsWith("$$") || token.startsWith("\\[") || token.startsWith("\\(") ? 2 : 1;
-      pieces.push({ math: token.slice(delimiterLength, -delimiterLength), displayMode });
-      cursor = match.index + token.length;
-    }
-    if (cursor < value.length) pieces.push({ text: value.slice(cursor) });
-    return pieces;
-  }
-
   function renderMath() {
     if (!features.math || !window.katex) return;
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    const textNodes = [];
-    let node;
-    while ((node = walker.nextNode())) {
-      if (node.parentElement && !node.parentElement.closest("pre, code, .katex")) {
-        textNodes.push(node);
-      }
-    }
-    textNodes.forEach((textNode) => {
-      const pieces = splitMath(textNode.nodeValue || "");
-      if (!pieces.some((piece) => piece.math !== undefined)) return;
-      const fragment = document.createDocumentFragment();
-      pieces.forEach((piece) => {
-        if (piece.math === undefined) {
-          fragment.appendChild(document.createTextNode(piece.text));
-          return;
-        }
-        const span = document.createElement("span");
-        span.className = "math-rendered";
-        try {
-          const rendered = window.katex.renderToString(piece.math, {
-            displayMode: piece.displayMode,
-            throwOnError: false,
-            trust: false
-          });
-          span.innerHTML = window.DOMPurify.sanitize(rendered, {
-            USE_PROFILES: { html: true, mathMl: true },
-            ADD_TAGS: ["math", "semantics", "mrow", "annotation"]
-          });
-        } catch (_) {
-          span.textContent = piece.text || "Math rendering failed";
-        }
-        fragment.appendChild(span);
+    root.querySelectorAll(".math-source").forEach((element) => {
+      const math = element.textContent;
+      const rendered = window.katex.renderToString(math, {
+        displayMode: element.dataset.mathDisplay === "true",
+        throwOnError: false,
+        trust: false
       });
-      textNode.parentNode.replaceChild(fragment, textNode);
+      element.innerHTML = window.DOMPurify.sanitize(rendered, {
+        // KaTeX uses SVG paths/lines for extensible notation. This profile
+        // applies only to generated math; active SVG content stays sanitized.
+        USE_PROFILES: { html: true, mathMl: true, svg: true },
+        ADD_TAGS: ["math", "semantics", "mrow", "annotation"]
+      });
+      element.className = "math-rendered";
     });
   }
 
@@ -356,6 +318,7 @@
       window.LeonardoTableResizing.cancel();
       window.LeonardoEditing.begin(payload);
       window.LeonardoEditing.body = payload.markdown || "";
+      window.LeonardoMath?.setEnabled(features.math);
       const rendered = window.LeonardoTables.render(payload.markdown || "", !payload.leonardo);
       root.innerHTML = sanitizeHTML(rendered);
       window.LeonardoTables.prepare(root);
