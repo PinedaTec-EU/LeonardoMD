@@ -30,3 +30,8 @@ Human syntax/examples: [document extensions](../doc/document-extensions.md).
 Vendoring: resource `THIRD_PARTY_SOURCES.json`, license files and pinned build
 manifests/locks in `doc/validation/`. Do not overwrite the existing Mermaid/KaTeX
 choices or load chart/citation engines eagerly when adding new flags.
+
+Extension preference cards use the switch as their state indicator, without a
+redundant Enabled/Disabled caption. The shared card covers global and project
+settings; `PremiumSwitchStyle` retains its accessible state value. Tracking:
+[#285](https://github.com/PinedaTec-EU/LeonardoMD/issues/285).
