@@ -269,7 +269,8 @@ change. Tracking: [#239](https://github.com/PinedaTec-EU/LeonardoMD/issues/239).
 ## Compilation counts in PR evidence
 
 Use one machine-readable declaration in every author-owned comment headed
-`## Implementation-owned visual evidence`. Generate it from the committed PR
+`## Implementation-owned validation evidence` (the existing visual-evidence
+heading is also recognized). Generate it from the committed PR
 head rather than copying a count into prose:
 
 ```sh
@@ -277,7 +278,8 @@ python3 scripts/evidence_compilation.py emit --pr-number <PR>
 ```
 
 The output includes the full reviewed SHA and numeric compilation build delta.
-Append capture links and provenance below those lines. Do not repeat the build delta elsewhere in that comment.
+Append capture links and provenance below those lines. Do not repeat the build
+delta elsewhere in that comment.
 The generator reads the entry from Git HEAD, preserving dirty and unrelated
 files. Commit the recorder's final entry before generating evidence. A missing
 build allocation is zero; this check never allocates or infers compilations.

@@ -5,7 +5,8 @@ from pathlib import Path
 import re
 import subprocess
 
-HEADING = '## Implementation-owned visual evidence'
+HEADING = '## Implementation-owned validation evidence'
+HEADINGS = {HEADING, '## Implementation-owned visual evidence'}
 HEAD = re.compile(r'^Reviewed candidate: `([0-9a-f]{40})`\.$', re.MULTILINE)
 COUNT = re.compile(r'^Compilation build delta: `(0|[1-9][0-9]*)`\.$', re.MULTILINE)
 COUNT_MENTION = re.compile(r'build[\s-]+delta', re.IGNORECASE)
@@ -36,7 +37,7 @@ def validate(snapshot):
     failures = []
     for comment in snapshot['comments']:
         body = comment['body'] or ''
-        if comment['user']['login'] != author or HEADING not in body.splitlines():
+        if comment['user']['login'] != author or not HEADINGS.intersection(body.splitlines()):
             continue
         heads = HEAD.findall(body)
         label = f"Evidence comment {comment['id']}"

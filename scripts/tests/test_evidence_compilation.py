@@ -98,7 +98,7 @@ class EvidenceCompilationTests(unittest.TestCase):
         result = subprocess.run([sys.executable, str(SCRIPT), 'emit', '--pr-number', '42',
                                  '--root', str(self.root)], text=True, capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout, f'{HEADING}\n\nReviewed candidate: `{head}`.\nCompilation build delta: `9`.\n')
+        self.assertEqual(result.stdout, f'## Implementation-owned validation evidence\n\nReviewed candidate: `{head}`.\nCompilation build delta: `9`.\n')
         self.assertEqual(entry.read_text(), '{"build":10}')
         self.assertEqual(other.read_text(), '{"build":15}')
 
