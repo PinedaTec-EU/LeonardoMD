@@ -37,6 +37,7 @@ extension WebKitRuntimeTests {
           const root = document.querySelector('#leonardo-markdown');
           const annotations = [...root.querySelectorAll('.katex annotation')].map(e => e.textContent);
           return root.querySelectorAll('.katex-display').length === 4 &&
+            root.querySelectorAll('.katex svg path').length > 0 &&
             root.querySelectorAll('.katex-error, em, .math-source').length === 0 &&
             annotations[0].includes('\\\\underbrace{a}_{x}') &&
             annotations[1].includes('\\\\tag{1}') &&
@@ -168,4 +169,54 @@ extension WebKitRuntimeTests {
         """, in: web)
         XCTAssertEqual(actual, "1")
     }
+    func testMathSVGExtensibleNotationRetainsGeometry() async throws {
+        let source = #"""
+        $$\underbrace{a+b}_{sum} + \overbrace{c+d}^{sum}$$
+
+        $$\sqrt{x+1} \xrightarrow{n\to\infty} \cancel{x}$$
+        """#
+        let (host, window) = makeHost(content: source, config: .init(allowsMath: true))
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("Boolean(window.LeonardoPreview)", in: web)
+        let actual = try await evaluate("""
+        (() => {
+          const root = document.querySelector('#leonardo-markdown');
+          const svgs = [...root.querySelectorAll('.katex svg')];
+          return svgs.length >= 5 && root.querySelectorAll('.katex-error').length === 0 &&
+            root.querySelectorAll('.katex svg path[d]').length >= 4 &&
+            root.querySelectorAll('.katex svg line[x1][y1][x2][y2]').length === 1 &&
+            svgs.every(svg => svg.namespaceURI === 'http://www.w3.org/2000/svg' &&
+              svg.getBoundingClientRect().width > 0 && svg.getBoundingClientRect().height > 0) &&
+            svgs.filter(svg => svg.querySelector('path')).every(svg => svg.hasAttribute('viewBox'));
+        })()
+        """, in: web)
+        XCTAssertEqual(actual, "1")
+    }
+
+    func testMathSVGSanitizationRejectsActiveContent() async throws {
+        let (host, window) = makeHost(content: "$$x$$", config: .init(allowsMath: true))
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("Boolean(window.LeonardoPreview)", in: web)
+        // Substitute hostile engine output to exercise the production sanitizer
+        // boundary itself, independently of KaTeX's trust:false protection.
+        let actual = try await evaluate("""
+        (() => {
+          const original = window.katex.renderToString;
+          window.katex.renderToString = () => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" onload="window.mathInjected=true"><script>window.mathInjected=true</script><foreignObject><iframe src="https://example.com"></iframe></foreignObject><a href="javascript:alert(1)"><path d="M0 0L10 10" onclick="window.mathInjected=true"/></a></svg>';
+          try {
+            window.LeonardoPreview.updateContent({markdown: '$$x$$', source: '$$x$$'});
+            const root = document.querySelector('#leonardo-markdown');
+            return root.querySelectorAll('.math-rendered svg path[d]').length === 1 &&
+              root.querySelectorAll('script, foreignObject, iframe, [onload], [onclick], [href^="javascript:"]').length === 0 &&
+              typeof window.mathInjected === 'undefined';
+          } finally {
+            window.katex.renderToString = original;
+          }
+        })()
+        """, in: web)
+        XCTAssertEqual(actual, "1")
+    }
+
 }

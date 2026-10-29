@@ -1,4 +1,4 @@
 {
-  "summary": "Math formulas preserve TeX notation inside display and inline delimiters, including subscripts, equation tags and multiline expressions.",
-  "build": 3
+  "summary": "Math formulas preserve TeX in display and inline delimiters and render extensible braces, roots and arrows without losing SVG geometry.",
+  "build": 5
 }

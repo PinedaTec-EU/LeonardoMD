@@ -135,7 +135,9 @@
         trust: false
       });
       element.innerHTML = window.DOMPurify.sanitize(rendered, {
-        USE_PROFILES: { html: true, mathMl: true },
+        // KaTeX uses SVG paths/lines for extensible notation. This profile
+        // applies only to generated math; active SVG content stays sanitized.
+        USE_PROFILES: { html: true, mathMl: true, svg: true },
         ADD_TAGS: ["math", "semantics", "mrow", "annotation"]
       });
       element.className = "math-rendered";
