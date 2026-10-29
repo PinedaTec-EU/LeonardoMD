@@ -545,4 +545,48 @@ final class SessionPackageSaveTests: XCTestCase {
         XCTAssertEqual(session.content, draft)
     }
 
+    func testMonitorWaitsForFileOperationInAnotherTab() async throws {
+        let fixture = try await packageFixture()
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let reached = expectation(description: "Source digest suspended")
+        let gate = PackageArchiveCommitGate(reached: reached)
+        let monitor = Task {
+            await session.checkExternalChanges { workspace in
+                await Task.detached {
+                    gate.pause()
+                    return workspace.hasSourceChanged()
+                }.value
+            }
+        }
+        await fulfillment(of: [reached], timeout: 5)
+        guard let otherID = fixture.tabs.addTab(),
+              let other = fixture.tabs.tabs.first(where: { $0.id == otherID })?.session else {
+            gate.open()
+            await monitor.value
+            return XCTFail("Expected another tab")
+        }
+        let moved = fixture.root.appendingPathComponent("other-tab-move.mdlz")
+        other.fileOperationCount += 1
+        do {
+            try FileManager.default.moveItem(at: fixture.package, to: moved)
+        } catch {
+            gate.open()
+            await monitor.value
+            other.fileOperationCount -= 1
+            throw error
+        }
+        gate.open()
+        await monitor.value
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertNil(session.errorMessage)
+        XCTAssertEqual(session.content, fixture.source)
+        await fixture.tabs.pathMoved(fixture.package, to: moved, excluding: other)
+        other.fileOperationCount -= 1
+        await session.checkExternalChanges()
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertNil(session.errorMessage)
+        XCTAssertEqual(session.documentSourceURL, moved)
+    }
+
 }

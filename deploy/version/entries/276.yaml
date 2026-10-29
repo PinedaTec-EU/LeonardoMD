@@ -1,4 +1,4 @@
 {
   "summary": "Open MDLZ documents refresh after external changes; unsaved edits are protected with a choice to reload the disk version or save a copy.",
-  "build": 5
+  "build": 8
 }

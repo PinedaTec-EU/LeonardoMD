@@ -55,6 +55,7 @@ final class AppSession {
     @ObservationIgnored weak var presentationWindow: NSWindow?
     var unsavedChangesDecision: @MainActor (String) async -> UnsavedChangesDecision = { _ in .cancel }
     var confirmDiscardForReload: @MainActor () async -> Bool = { false }
+    var hasRelatedFileOperation: @MainActor () -> Bool = { false }
 
     var mode: DocumentMode = .preview
     var focus = false

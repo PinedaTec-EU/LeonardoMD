@@ -24,7 +24,7 @@ extension AppSession {
     }
 
     private var canCheckExternalChanges: Bool {
-        !stopped && !busy && !saving && !isClosing && !isSyncSuspended && fileOperationCount == 0
+        !stopped && !busy && !saving && !isClosing && !isSyncSuspended && fileOperationCount == 0 && !hasRelatedFileOperation()
     }
 
     func checkExternalChanges(
