@@ -1,0 +1,42 @@
+{
+  "reviewed_head": "ce60ba3fba7bce006da2dbd2e8ca5252596300aa",
+  "build_input_head": "96cfab477e3dd057abb1d510c4a8e6fe0c1350ca",
+  "provenance": "LEONARDO_SOURCE_PR=276 ./launch.sh --qa; only ledger compilation count changed after this build. All product source, resources and packaging scripts match reviewed head.",
+  "capture_time": "2026-10-29T15:18:51.475590+00:00",
+  "platform": "macOS native AppKit/SwiftUI; browser and CSS viewport not applicable",
+  "route": "Standalone external-change.mdlz in Edit mode",
+  "capture_mode": "CUA native window screenshot, synthetic fixture only",
+  "pid": 93902,
+  "bundle": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-atm4zv1t/LeonardoMDQA.app",
+  "version": "0.1.652 baseline; pending source PR not materialized",
+  "images": {
+    "reload-accepted.png": {
+      "sha256": "b67e71ee69969c197030eeecb1001c97966e44991612ac4d073a0e13a25a985a",
+      "pixels": [
+        "  pixelWidth: 2520",
+        "  pixelHeight: 1700"
+      ]
+    },
+    "reload-confirmation.png": {
+      "sha256": "4757b12adba008e16c23c0e29034d0175cef9f098e8522be6ceebbe5d9ef5b88",
+      "pixels": [
+        "  pixelWidth: 520",
+        "  pixelHeight: 224"
+      ]
+    },
+    "clean-reload.png": {
+      "sha256": "cd9c749e9cdeb2f9e4dc2f5978433842d05f0894fc4e449cc55b240f22728654",
+      "pixels": [
+        "  pixelWidth: 2520",
+        "  pixelHeight: 1700"
+      ]
+    },
+    "conflict.png": {
+      "sha256": "08a4541593b669e50159e8fb00c1f39ce29365ded53d44d6df9d75a8dc823754",
+      "pixels": [
+        "  pixelWidth: 2520",
+        "  pixelHeight: 1700"
+      ]
+    }
+  }
+}
