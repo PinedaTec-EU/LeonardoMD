@@ -30,7 +30,11 @@ Open documents from the app or Finder’s **Open With** menu. Distribution build
 
 The preview supports CommonMark/GFM headings, lists, quotes, tables, tasks, highlighted code, relative images and links, and optional frontmatter metadata. Engines and fonts are bundled for offline use; library licenses are included alongside the renderer resources.
 
-**Mermaid and mathematics are disabled by default.** Enable them in Extensions globally for the standalone viewer or override them for a project. Disabled engines are excluded from the WebKit resource allowlist and are neither loaded nor executed. Changing the active engines tears down the old execution context. Mermaid also renders visible diagrams lazily. Disabling an engine leaves its source readable.
+**All optional extensions are disabled by default.** Preferences → Extensions offers Mermaid, mathematics (KaTeX), charts (Vega-Lite), citations (Citation.js) and Markdown extras (footnotes and GitHub-style callouts). Enable them globally for standalone documents or override them for a project; projects can inherit the global selection. Existing preferences retain their current Mermaid/math choices.
+
+Disabled engines are excluded from the WebKit resource allowlist and are neither loaded nor executed. Changing the active engines tears down the old execution context. Vega-Lite and Citation.js load their bundled engine only when the enabled document uses their syntax; Mermaid renders visible diagrams lazily. Disabling changes interpretation in the preview while preserving the document source. It saves engine memory/processing and can keep unfamiliar syntax visible as ordinary Markdown or code.
+
+See [document extensions](document-extensions.md) for syntax, examples and limitations. KaTeX supports a subset of LaTeX mathematical notation; it does not compile complete `.tex` documents or arbitrary LaTeX packages.
 
 Preferences keep their tab navigation fixed. General and Extensions each contain their own Global / This project selector. In General, palette and paper effect follow that scope; language, viewing behavior and Markdown file association are grouped separately as Mac-wide settings.
 

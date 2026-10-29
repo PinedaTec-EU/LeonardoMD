@@ -9,6 +9,9 @@ public struct MarkdownPreviewConfiguration: Equatable, Sendable {
     public var allowsLeonardoFormat: Bool = false
     public var allowsMermaid: Bool
     public var allowsMath: Bool
+    public var allowsVegaLite: Bool
+    public var allowsCitations: Bool
+    public var allowsMarkdownExtensions: Bool
     public var frontMatter: FrontMatterVisibility
     public var externalLinkPolicy: ExternalLinkPolicy
     public var appearance: MarkdownAppearance
@@ -21,6 +24,9 @@ public struct MarkdownPreviewConfiguration: Equatable, Sendable {
     public init(
         allowsMermaid: Bool = false,
         allowsMath: Bool = false,
+        allowsVegaLite: Bool = false,
+        allowsCitations: Bool = false,
+        allowsMarkdownExtensions: Bool = false,
         frontMatter: FrontMatterVisibility = .hidden,
         externalLinkPolicy: ExternalLinkPolicy = .systemBrowser,
         appearance: MarkdownAppearance = .default,
@@ -31,6 +37,9 @@ public struct MarkdownPreviewConfiguration: Equatable, Sendable {
     ) {
         self.allowsMermaid = allowsMermaid
         self.allowsMath = allowsMath
+        self.allowsVegaLite = allowsVegaLite
+        self.allowsCitations = allowsCitations
+        self.allowsMarkdownExtensions = allowsMarkdownExtensions
         self.frontMatter = frontMatter
         self.externalLinkPolicy = externalLinkPolicy
         self.appearance = appearance

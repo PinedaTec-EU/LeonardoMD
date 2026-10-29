@@ -235,7 +235,8 @@ body[data-paper-effect="parchment"] {
   margin: 0;
 }
 
-.mermaid-placeholder {
+.mermaid-placeholder,
+.vega-lite-placeholder {
   align-items: center;
   background: color-mix(in srgb, var(--ld-code-background) 70%, transparent);
   border: 1px solid color-mix(in srgb, var(--ld-accent) 20%, transparent);
@@ -247,8 +248,13 @@ body[data-paper-effect="parchment"] {
   padding: 16px;
 }
 
-.mermaid-placeholder svg {
+.mermaid-placeholder svg,
+.vega-lite-placeholder svg {
   max-width: 100%;
+}
+
+.vega-lite-placeholder svg {
+  height: auto;
 }
 
 .diagram-error {

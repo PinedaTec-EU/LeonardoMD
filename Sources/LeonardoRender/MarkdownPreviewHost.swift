@@ -76,6 +76,9 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         let featureSetChanged = !hasState
             || previousConfiguration.allowsMermaid != configuration.allowsMermaid
             || previousConfiguration.allowsMath != configuration.allowsMath
+            || previousConfiguration.allowsVegaLite != configuration.allowsVegaLite
+            || previousConfiguration.allowsCitations != configuration.allowsCitations
+            || previousConfiguration.allowsMarkdownExtensions != configuration.allowsMarkdownExtensions
         let assetRootChanged = previousConfiguration.localAssetRoot != configuration.localAssetRoot
             || previousConfiguration.memoryAssets != configuration.memoryAssets
             || previousConfiguration.allowsRemoteImages != configuration.allowsRemoteImages

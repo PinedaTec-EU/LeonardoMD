@@ -1,0 +1,23 @@
+{
+  "name": "leonardomd-vega-runtime",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "vega": "6.4.0",
+    "vega-interpreter": "2.3.2",
+    "vega-lite": "6.5.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  },
+  "entrySource": "import * as vega from \"vega\"; import * as vegaLite from \"vega-lite\"; import { expressionInterpreter } from \"vega-interpreter\"; globalThis.LeonardoVegaEngine = Object.freeze({ vega, vegaLite, expressionInterpreter });",
+  "compiler": "esbuild 0.25.12",
+  "options": [
+    "--bundle",
+    "--format=iife",
+    "--platform=browser",
+    "--target=safari17",
+    "--minify",
+    "--legal-comments=eof"
+  ]
+}

@@ -268,6 +268,15 @@ public actor ConfigurationStore {
         if updated.mathEnabled != baseline.mathEnabled {
             merged.mathEnabled = updated.mathEnabled
         }
+        if updated.vegaLiteEnabled != baseline.vegaLiteEnabled {
+            merged.vegaLiteEnabled = updated.vegaLiteEnabled
+        }
+        if updated.citationsEnabled != baseline.citationsEnabled {
+            merged.citationsEnabled = updated.citationsEnabled
+        }
+        if updated.markdownExtensionsEnabled != baseline.markdownExtensionsEnabled {
+            merged.markdownExtensionsEnabled = updated.markdownExtensionsEnabled
+        }
         if updated.defaultMode != baseline.defaultMode {
             merged.defaultMode = updated.defaultMode
         }
@@ -289,17 +298,7 @@ public actor ConfigurationStore {
             // Creating an override from no override is an intentional complete value.
             return updated
         }
-        var merged = current ?? baseline
-        if updated.mermaidEnabled != baseline.mermaidEnabled {
-            merged.mermaidEnabled = updated.mermaidEnabled
-        }
-        if updated.mathEnabled != baseline.mathEnabled {
-            merged.mathEnabled = updated.mathEnabled
-        }
-        if updated.defaultMode != baseline.defaultMode {
-            merged.defaultMode = updated.defaultMode
-        }
-        return merged
+        return mergeMarkdownFeatures(current: current ?? baseline, updated: updated, baseline: baseline)
     }
 
     private func mergePaletteTokenOverrides(

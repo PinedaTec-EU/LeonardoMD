@@ -77,21 +77,33 @@ public struct SearchMatch: Codable, Hashable, Identifiable, Sendable {
 public struct MarkdownFeatures: Codable, Hashable, Sendable {
     public var mermaidEnabled: Bool
     public var mathEnabled: Bool
+    public var vegaLiteEnabled: Bool
+    public var citationsEnabled: Bool
+    public var markdownExtensionsEnabled: Bool
     public var defaultMode: MarkdownMode
 
     public init(
         mermaidEnabled: Bool = false,
         mathEnabled: Bool = false,
+        vegaLiteEnabled: Bool = false,
+        citationsEnabled: Bool = false,
+        markdownExtensionsEnabled: Bool = false,
         defaultMode: MarkdownMode = .preview
     ) {
         self.mermaidEnabled = mermaidEnabled
         self.mathEnabled = mathEnabled
+        self.vegaLiteEnabled = vegaLiteEnabled
+        self.citationsEnabled = citationsEnabled
+        self.markdownExtensionsEnabled = markdownExtensionsEnabled
         self.defaultMode = defaultMode
     }
 
     enum CodingKeys: String, CodingKey {
         case mermaidEnabled
         case mathEnabled
+        case vegaLiteEnabled
+        case citationsEnabled
+        case markdownExtensionsEnabled
         case defaultMode
     }
 
@@ -99,6 +111,9 @@ public struct MarkdownFeatures: Codable, Hashable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         mermaidEnabled = try container.decodeIfPresent(Bool.self, forKey: .mermaidEnabled) ?? false
         mathEnabled = try container.decodeIfPresent(Bool.self, forKey: .mathEnabled) ?? false
+        vegaLiteEnabled = try container.decodeIfPresent(Bool.self, forKey: .vegaLiteEnabled) ?? false
+        citationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .citationsEnabled) ?? false
+        markdownExtensionsEnabled = try container.decodeIfPresent(Bool.self, forKey: .markdownExtensionsEnabled) ?? false
         defaultMode = try container.decodeIfPresent(MarkdownMode.self, forKey: .defaultMode) ?? .preview
     }
 }

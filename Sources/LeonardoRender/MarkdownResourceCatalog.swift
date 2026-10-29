@@ -18,13 +18,20 @@ enum MarkdownResource: String, CaseIterable {
     case leonardoForms = "leonardo-forms.js"
     case leonardoLayout = "leonardo-layout.js"
     case imageLoading = "image-loading.js"
+    case extensionEngines = "extension-engines.js"
+    case vegaEngine = "vega-engine.min.js"
+    case vegaCharts = "vega-charts.js"
+    case citationEngine = "citation-engine.min.js"
+    case citations = "leonardo-citations.js"
+    case markdownExtras = "markdown-extras.js"
+    case markdownExtraStyles = "markdown-extras.css"
     case runtime = "renderer-runtime.js"
 
     var mimeType: String {
         switch self {
-        case .katexStyles, .previewStyles, .formStyles, .tableResizeStyles:
+        case .katexStyles, .previewStyles, .formStyles, .tableResizeStyles, .markdownExtraStyles:
             return "text/css"
-        case .marked, .dompurify, .highlight, .mermaid, .katex, .previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .imageLoading, .runtime:
+        case .extensionEngines, .vegaEngine, .vegaCharts, .citationEngine, .citations, .markdownExtras, .marked, .dompurify, .highlight, .mermaid, .katex, .previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .imageLoading, .runtime:
             return "text/javascript"
         }
     }
@@ -43,6 +50,18 @@ enum MarkdownResourceCatalog {
         }
         if configuration.allowsMermaid {
             resources.append(.mermaid)
+        }
+        if configuration.allowsVegaLite || configuration.allowsCitations {
+            resources.append(.extensionEngines)
+        }
+        if configuration.allowsVegaLite {
+            resources.append(contentsOf: [.vegaEngine, .vegaCharts])
+        }
+        if configuration.allowsCitations {
+            resources.append(contentsOf: [.citationEngine, .citations])
+        }
+        if configuration.allowsMarkdownExtensions {
+            resources.append(contentsOf: [.markdownExtras, .markdownExtraStyles])
         }
         resources.append(contentsOf: [.previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .imageLoading, .runtime])
         return resources
