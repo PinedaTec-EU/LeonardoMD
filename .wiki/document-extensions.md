@@ -12,7 +12,10 @@ Changing any engine flag rebuilds the WebKit context and its resource allowlist.
   source fences; enabling empty documents loads only the small adapters.
 - `vega-charts.js` owns `vega-lite` JSON → static sanitized SVG with an AST
   interpreter, inline data and complexity limits. Do not add unsafe-eval or remote
-  loaders. `LeonardoCharts.render` returns its current readiness promise.
+  loaders. CSS paint-resource functions are rejected before compilation; final
+  SVG accepts only generated local fragment references and a safe root background
+  color. Regression: [#280](https://github.com/PinedaTec-EU/LeonardoMD/issues/280).
+  `LeonardoCharts.render` returns its current readiness promise.
 - `leonardo-citations.js` owns local BibTeX/CSL-JSON and `[@key]` → sanitized APA.
   It must guard asynchronous replacement and remove edit mappings from generated
   citation text. It deliberately has no DOI resolver.

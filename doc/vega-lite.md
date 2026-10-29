@@ -32,6 +32,9 @@ does not fetch CSV, JSON, images or other URLs, and it does not run interactive
 selections, event handlers or generated links. A fenced block remains visible
 as source when the extension is disabled. Invalid or out-of-policy
 specifications stay in the document and show a bounded error in the preview.
+CSS resource functions such as `url(...)`, including escaped spellings, are
+rejected in authored values. The final SVG is inspected as an inert fragment;
+only local fragment references generated for gradients and clipping are retained.
 
 Specifications are bounded to 256 KiB, 10,000 inline rows, 20,000 JSON nodes,
 four composition levels, sixteen views per composition and 32 total leaf views,

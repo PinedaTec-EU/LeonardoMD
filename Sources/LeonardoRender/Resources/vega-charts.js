@@ -15,6 +15,9 @@
   const maximumStep = 256;
   const maximumSVGBytes = 4 * 1024 * 1024;
   const renderTimeoutMilliseconds = 15_000;
+  const paintReferenceAttributes = new Set([
+    "fill", "stroke", "filter", "clip-path", "mask", "cursor"
+  ]);
   const disallowedKeys = new Set([
     "__proto__", "constructor", "prototype",
     "events", "facet", "flatten", "generate", "href", "lookup", "on", "params",
@@ -40,12 +43,38 @@
     return new TextEncoder().encode(value).byteLength;
   }
 
+  function decodeCSSEscapes(value) {
+    return value
+      .replace(/\\([0-9a-fA-F]{1,6})(?:[ \t\r\n\f])?/g, (_, hexadecimal) => {
+        const codePoint = Number.parseInt(hexadecimal, 16);
+        return codePoint > 0 && codePoint <= 0x10FFFF
+          ? String.fromCodePoint(codePoint)
+          : "�";
+      })
+      .replace(/\\([\s\S])/g, "$1")
+      .replace(/\/\*[\s\S]*?\*\//g, "");
+  }
+
+  function containsCSSURL(value) {
+    return /(?:^|[^a-z0-9_-])url\s*\(/i.test(decodeCSSEscapes(value));
+  }
+
+  function isLocalURL(value) {
+    return /^url\(\s*#[A-Za-z_][A-Za-z0-9_.:-]*\s*\)$/i.test(decodeCSSEscapes(value).trim());
+  }
+
   function validateSpec(value, path = "$", depth = 0, counters = { nodes: 0 }, compositionDepth = 0) {
     if (++counters.nodes > maximumNodes) {
       throw new Error("Chart specification is too complex.");
     }
     if (depth > maximumDepth) {
       throw new Error("Chart specification is too deeply nested.");
+    }
+    if (typeof value === "string") {
+      if (containsCSSURL(value)) {
+        throw new Error("Chart values containing CSS url(...) are not allowed.");
+      }
+      return;
     }
     if (Array.isArray(value)) {
       if (path.endsWith(".values") && value.length > maximumRows) {
@@ -122,12 +151,72 @@
     holder.textContent = message;
   }
 
-  function sanitizeSVG(value) {
-    return window.DOMPurify.sanitize(value, {
-      USE_PROFILES: { svg: true },
-      FORBID_TAGS: ["script", "foreignObject"],
-      FORBID_ATTR: ["href", "xlink:href", "onload", "onclick", "onerror"]
+  function safeBackgroundColor(value) {
+    const normalized = decodeCSSEscapes(value).trim();
+    return /^(?:transparent|currentcolor|[a-z]+|#[0-9a-f]{3,8}|(?:rgb|hsl)a?\([0-9a-z%.,\s()+\/-]+\))$/i.test(normalized);
+  }
+
+  function safeBackgroundColorFromStyle(value) {
+    const style = document.createElement("div").style;
+    style.cssText = value;
+    const backgroundColor = style.backgroundColor;
+    return backgroundColor && safeBackgroundColor(backgroundColor) ? backgroundColor : "";
+  }
+
+  function inspectSVG(fragment) {
+    const root = fragment.firstElementChild;
+    if (!root || root.localName.toLowerCase() !== "svg" || fragment.childElementCount !== 1) {
+      throw new Error("Rendered chart SVG is invalid.");
+    }
+    const elements = [root, ...root.querySelectorAll("*")];
+    elements.forEach((element) => {
+      const tagName = element.localName.toLowerCase();
+      if (["script", "style", "foreignobject"].includes(tagName)) {
+        throw new Error("Rendered chart contains a forbidden SVG element.");
+      }
+      Array.from(element.attributes).forEach((attribute) => {
+        const name = attribute.name.toLowerCase();
+        const attributeValue = attribute.value;
+        if (name === "style") {
+          if (containsCSSURL(attributeValue)) {
+            const references = decodeCSSEscapes(attributeValue).match(/url\s*\([^)]*\)/ig) || [];
+            if (references.some((reference) => !isLocalURL(reference))) {
+              throw new Error("Rendered chart contains a non-local style reference.");
+            }
+          }
+          if (element === root) {
+            const backgroundColor = safeBackgroundColorFromStyle(attributeValue);
+            if (backgroundColor) {
+              root.setAttribute("style", `background-color: ${backgroundColor};`);
+            } else {
+              root.removeAttribute(attribute.name);
+            }
+          } else {
+            element.removeAttribute(attribute.name);
+          }
+          return;
+        }
+        if (name === "href" || name === "xlink:href" || name === "src" || name === "srcset") {
+          throw new Error("Rendered chart contains a forbidden external reference.");
+        }
+        if (paintReferenceAttributes.has(name) || name.startsWith("marker-")) {
+          if (containsCSSURL(attributeValue) && !isLocalURL(attributeValue)) {
+            throw new Error("Rendered chart contains a non-local paint reference.");
+          }
+        }
+      });
     });
+    return fragment;
+  }
+
+  function sanitizeSVG(value) {
+    const fragment = window.DOMPurify.sanitize(value, {
+      USE_PROFILES: { svg: true },
+      FORBID_TAGS: ["script", "style", "foreignObject"],
+      RETURN_DOM_FRAGMENT: true,
+      FORBID_ATTR: ["href", "xlink:href", "src", "srcset", "onload", "onclick", "onerror"]
+    });
+    return inspectSVG(fragment);
   }
 
   function placeholders(root) {
@@ -189,7 +278,7 @@
         throw new Error("Rendered chart exceeds the 4 MiB limit.");
       }
       if (!isActive()) return;
-      holder.innerHTML = sanitizeSVG(svg);
+      holder.replaceChildren(sanitizeSVG(svg));
       holder.dataset.state = "rendered";
       holder.setAttribute("aria-label", typeof spec.description === "string" ? spec.description :
         (typeof spec.title === "string" ? spec.title : "Vega-Lite chart"));

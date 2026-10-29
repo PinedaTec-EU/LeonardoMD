@@ -53,6 +53,10 @@ final class VegaLiteRuntimeTests: XCTestCase {
             "document.querySelector('meta[http-equiv=\"Content-Security-Policy\"]')?.content.includes(\"connect-src 'none'\") ? '1' : '0'",
             in: web
         )
+        let backgroundColor = try await evaluate(
+            "document.querySelector('.vega-lite-placeholder svg')?.style.backgroundColor || document.querySelector('.vega-lite-placeholder svg > rect')?.getAttribute('fill') || ''",
+            in: web
+        )
         let evalStatus = try await evaluate(
             "(() => { try { new Function('return 1')(); return 'allowed'; } catch (_) { return 'blocked'; } })()",
             in: web
@@ -61,11 +65,109 @@ final class VegaLiteRuntimeTests: XCTestCase {
         XCTAssertEqual(barCount, "3")
         XCTAssertEqual(sourceCount, "0")
         XCTAssertEqual(csp, "1")
+        XCTAssertFalse(backgroundColor.isEmpty)
         XCTAssertEqual(evalStatus, "blocked")
 
         let pdf = try await host.exportPDF()
         XCTAssertTrue(pdf.starts(with: Data("%PDF".utf8)))
         try await captureEvidenceIfRequested(web, name: "vega-lite-bar")
+    }
+
+    func testExternalPaintReferencesAreRejectedBeforeSVGInsertion() async throws {
+        let source = """
+        ```vega-lite
+        {"data":{"values":[{"category":"A","value":1}]},"mark":"bar","encoding":{
+          "x":{"field":"category","type":"nominal"},"y":{"field":"value","type":"quantitative"},
+          "color":{"value":"url(https://example.invalid/paint.svg#external)"}
+        }}
+        ```
+        """
+        let (host, window) = makeHost(content: source, config: MarkdownPreviewConfiguration(allowsVegaLite: true))
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("['rendered', 'error'].includes(document.querySelector('.vega-lite-placeholder')?.dataset.state) ? '1' : '0'", in: web)
+        let state = try await evaluate("document.querySelector('.vega-lite-placeholder').dataset.state", in: web)
+        let paint = try await evaluate("document.querySelector('.vega-lite-placeholder svg')?.outerHTML || ''", in: web)
+        XCTAssertEqual(state, "error")
+        XCTAssertFalse(paint.contains("https://example.invalid"))
+    }
+
+    func testComputedExternalPaintIsRejectedByTheOutputBoundary() async throws {
+        let source = """
+        ```vega-lite
+        {"data":{"values":[{"category":"A","value":1}]},"mark":"bar",
+         "transform":[{"calculate":"'u' + 'rl(https://example.invalid/paint.svg#external)'","as":"paint"}],
+         "encoding":{"x":{"field":"category","type":"nominal"},
+         "y":{"field":"value","type":"quantitative"},
+         "color":{"field":"paint","type":"nominal","scale":null}}}
+        ```
+        """
+        let (host, window) = makeHost(content: source, config: MarkdownPreviewConfiguration(allowsVegaLite: true))
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("['rendered', 'error'].includes(document.querySelector('.vega-lite-placeholder')?.dataset.state) ? '1' : '0'", in: web)
+        let state = try await evaluate("document.querySelector('.vega-lite-placeholder').dataset.state", in: web)
+        let diagnostic = try await evaluate("document.querySelector('.vega-lite-placeholder').textContent", in: web)
+        let svgCount = try await evaluate("document.querySelectorAll('.vega-lite-placeholder svg').length", in: web)
+        XCTAssertEqual(state, "error")
+        XCTAssertTrue(diagnostic.contains("non-local paint reference"))
+        XCTAssertEqual(svgCount, "0")
+    }
+
+    func testEscapedExternalPaintReferencesAreRejectedBeforeSVGInsertion() async throws {
+        let escapedValue = #"u\\72l(https://example.invalid/paint.svg#escaped)"#
+        let source = """
+        ```vega-lite
+        {"data":{"values":[{"category":"A","value":1}]},"mark":"bar","encoding":{"x":{"field":"category","type":"nominal"},"y":{"field":"value","type":"quantitative"},"color":{"value":"ESCAPED_PAINT"}}}
+        ```
+        """.replacingOccurrences(of: "ESCAPED_PAINT", with: escapedValue)
+        let (host, window) = makeHost(content: source, config: MarkdownPreviewConfiguration(allowsVegaLite: true))
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("['rendered', 'error'].includes(document.querySelector('.vega-lite-placeholder')?.dataset.state) ? '1' : '0'", in: web)
+        let state = try await evaluate("document.querySelector('.vega-lite-placeholder').dataset.state", in: web)
+        let svg = try await evaluate("document.querySelector('.vega-lite-placeholder svg')?.outerHTML || ''", in: web)
+        XCTAssertEqual(state, "error")
+        XCTAssertFalse(svg.contains("example.invalid"))
+    }
+
+    func testLocalGradientAndClipReferencesSurviveSVGSanitization() async throws {
+        let source = """
+        ```vega-lite
+        {
+          "width": 320,
+          "height": 220,
+          "data": {"values": [
+            {"category": "A", "value": 28},
+            {"category": "B", "value": 55},
+            {"category": "C", "value": 43}
+          ]},
+          "mark": {"type": "bar", "clip": true},
+          "encoding": {
+            "x": {"field": "category", "type": "nominal"},
+            "y": {"field": "value", "type": "quantitative"},
+            "color": {"value": {"gradient": "linear", "stops": [
+              {"offset": 0, "color": "red"},
+              {"offset": 1, "color": "blue"}
+            ]}}
+          }
+        }
+        ```
+        """
+        let (host, window) = makeHost(content: source, config: MarkdownPreviewConfiguration(allowsVegaLite: true))
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelector('.vega-lite-placeholder')?.dataset.state === 'rendered' ? '1' : '0'", in: web)
+        let gradients = try await evaluate("document.querySelectorAll('.vega-lite-placeholder svg linearGradient').length", in: web)
+        let clips = try await evaluate("document.querySelectorAll('.vega-lite-placeholder svg clipPath').length", in: web)
+        let backgroundColor = try await evaluate("document.querySelector('.vega-lite-placeholder svg')?.style.backgroundColor || document.querySelector('.vega-lite-placeholder svg > rect')?.getAttribute('fill') || ''", in: web)
+        let localReferences = try await evaluate("Array.from(document.querySelectorAll('.vega-lite-placeholder svg [fill], .vega-lite-placeholder svg [clip-path], .vega-lite-placeholder svg [stroke], .vega-lite-placeholder svg [filter], .vega-lite-placeholder svg [mask], .vega-lite-placeholder svg [marker-start], .vega-lite-placeholder svg [marker-mid], .vega-lite-placeholder svg [marker-end]')).flatMap(node => Array.from(node.attributes).map(attribute => attribute.value)).filter(value => /url\\(\\s*#[A-Za-z_]/i.test(value)).length", in: web)
+        let remoteReferences = try await evaluate("Array.from(document.querySelectorAll('.vega-lite-placeholder svg [fill], .vega-lite-placeholder svg [clip-path], .vega-lite-placeholder svg [stroke], .vega-lite-placeholder svg [filter], .vega-lite-placeholder svg [mask], .vega-lite-placeholder svg [marker-start], .vega-lite-placeholder svg [marker-mid], .vega-lite-placeholder svg [marker-end]')).flatMap(node => Array.from(node.attributes).map(attribute => attribute.value)).some(value => /url\\(\\s*#[A-Za-z_][A-Za-z0-9_.:-]*\\s*\\)/i.test(value) === false && /url\\(/i.test(value)) ? '1' : '0'", in: web)
+        XCTAssertGreaterThan(Int(gradients) ?? 0, 0)
+        XCTAssertGreaterThan(Int(clips) ?? 0, 0)
+        XCTAssertFalse(backgroundColor.isEmpty)
+        XCTAssertNotEqual(localReferences, "0")
+        XCTAssertEqual(remoteReferences, "0")
     }
 
     func testRemoteAndOversizedSpecificationsShowBoundedDiagnostics() async throws {
