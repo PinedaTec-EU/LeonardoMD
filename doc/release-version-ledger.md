@@ -265,3 +265,36 @@ repeat its notice. A new numeric version retains the default checked “Do not
 show again for this version” option. Startup remains offline; do not add another
 GitHub history reader or repackage existing published apps for this metadata
 change. Tracking: [#239](https://github.com/PinedaTec-EU/LeonardoMD/issues/239).
+
+## Compilation counts in PR evidence
+
+Use one machine-readable declaration in every author-owned comment headed
+`## Implementation-owned visual evidence`. Generate it from the committed PR
+head rather than copying a count into prose:
+
+```sh
+python3 scripts/evidence_compilation.py emit --pr-number <PR>
+```
+
+The output includes the full reviewed SHA and numeric compilation build delta.
+Append capture links and provenance below those lines. Do not repeat the build delta elsewhere in that comment.
+The generator reads the entry from Git HEAD, preserving dirty and unrelated
+files. Commit the recorder's final entry before generating evidence. A missing
+build allocation is zero; this check never allocates or infers compilations.
+
+`Validate evidence compilation counts` reevaluates open same-repository PRs
+into `main` on PR updates and evidence-comment creation, edits and deletion.
+It publishes `evidence-compilation-count` on the inspected head. Current-head
+author evidence must contain exactly one canonical SHA and numeric count,
+matching `deploy/version/entries/<PR>.yaml`. Historical heads and other authors
+cannot substitute for current evidence; historical comments are retained.
+Malformed author evidence fails rather than silently skipping it.
+
+The check verifies counts in recognized evidence comments; it does not require
+screenshots or replace the independent judge or central ledger policy. With no
+current evidence comments, its successful result explicitly says zero comments
+were checked. The trusted default-branch validator reads candidate entries and
+comments as data, never executes candidate code, and fails on API errors other
+than a missing entry. Its workflow first becomes available after integration;
+Actions → Validate evidence compilation counts can recheck an open PR manually.
+No branch-protection configuration is changed by adding this check.

@@ -167,3 +167,5 @@ PDF readiness and a shared preference-merge path. Dependency manifests retain
 source/license provenance, including bundled citeproc CPAL source. See
 [#277](https://github.com/PinedaTec-EU/LeonardoMD/issues/277) and
 [extension contract](document-extensions.md).
+
+- Evidence compilation validation ([#282](https://github.com/PinedaTec-EU/LeonardoMD/issues/282)): canonical author declarations are generated from committed HEAD and compared with the PR ledger on PR/comment events; trusted default-branch automation reads candidate data only. See `scripts/evidence_compilation.py` and `doc/release-version-ledger.md`.
