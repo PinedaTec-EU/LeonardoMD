@@ -464,4 +464,85 @@ final class SessionPackageSaveTests: XCTestCase {
         XCTAssertFalse(session.isDirty)
     }
 
+    func testMonitorDiscardsOldSourceResultAfterPackageMove() async throws {
+        let fixture = try await packageFixture()
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let draft = try documentSource(body: "Local: {{field:name}}")
+        session.content = draft
+        session.contentChanged()
+        let extraction = session.packageWorkspace?.directoryURL
+        let reached = expectation(description: "Source digest suspended")
+        let gate = PackageArchiveCommitGate(reached: reached)
+        let monitor = Task {
+            await session.checkExternalChanges { workspace in
+                await Task.detached {
+                    gate.pause()
+                    return workspace.hasSourceChanged()
+                }.value
+            }
+        }
+        await fulfillment(of: [reached], timeout: 5)
+        let moved = fixture.root.appendingPathComponent("moved.mdlz")
+        do {
+            try FileManager.default.moveItem(at: fixture.package, to: moved)
+        } catch {
+            gate.open()
+            await monitor.value
+            throw error
+        }
+        await session.updateMovedDocument(from: fixture.package, to: moved)
+        gate.open()
+        await monitor.value
+
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertEqual(session.content, draft)
+        XCTAssertEqual(session.documentSourceURL, moved)
+        XCTAssertEqual(session.packageWorkspace?.directoryURL, extraction)
+        await session.save()
+        XCTAssertFalse(session.isDirty)
+        XCTAssertFalse(session.externalConflict)
+        let reopened = try LeonardoPackageTransport.open(moved)
+        defer { LeonardoPackageTransport.discard(reopened) }
+        XCTAssertEqual(try String(contentsOf: reopened.documentURL, encoding: .utf8), draft)
+    }
+
+    func testMonitorDiscardsSourceResultWhileFileOperationIsInProgress() async throws {
+        let fixture = try await packageFixture()
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        session.content = try documentSource(body: "Local draft: {{field:name}}")
+        session.contentChanged()
+        let draft = session.content
+        let reached = expectation(description: "Source digest suspended")
+        let gate = PackageArchiveCommitGate(reached: reached)
+        let monitor = Task {
+            await session.checkExternalChanges { workspace in
+                await Task.detached {
+                    gate.pause()
+                    return workspace.hasSourceChanged()
+                }.value
+            }
+        }
+        await fulfillment(of: [reached], timeout: 5)
+        let moved = fixture.root.appendingPathComponent("moving.mdlz")
+        do {
+            try FileManager.default.moveItem(at: fixture.package, to: moved)
+        } catch {
+            gate.open()
+            await monitor.value
+            throw error
+        }
+        session.fileOperationCount += 1
+        gate.open()
+        await monitor.value
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertEqual(session.content, draft)
+        await session.updateMovedDocument(from: fixture.package, to: moved)
+        session.fileOperationCount -= 1
+        await session.checkExternalChanges()
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertEqual(session.content, draft)
+    }
+
 }
