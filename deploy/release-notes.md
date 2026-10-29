@@ -223,4 +223,10 @@
 - [#283](https://github.com/PinedaTec-EU/LeonardoMD/pull/283) — #282 Added: validate evidence compilation counts — build +1
   <p>PR evidence compilation counts are generated from the ledger and automatically checked for stale or inconsistent declarations.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.671)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTAtMjlUMjI6Mzg6MjBaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjF9LCJmcm9tX3ZlcnNpb24iOiIwLjEuNjcxIiwia2luZCI6InB1bGxfcmVxdWVzdCIsIm1lcmdlX3NoYSI6IjcyMWUxMzQ3MjFjNGQ0ZmQ0NTk0Njg4YzllMTM3YzAzYTYxN2RkYWUiLCJudW1iZXIiOjI4Niwic3VtbWFyeSI6IkV4dGVuc2lvbiBwcmVmZXJlbmNlcyBzaG93IHRoZWlyIHN0YXRlIHRocm91Z2ggdGhlIHN3aXRjaCB3aXRob3V0IGEgcmVkdW5kYW50IGNhcHRpb24uIiwidGl0bGUiOiIjMjg1IFJlbW92ZWQ6IHJlZHVuZGFudCBleHRlbnNpb24gc3RhdGUgY2FwdGlvbnMiLCJ0b192ZXJzaW9uIjoiMC4xLjY3MiJ9XSwiZW52aXJvbm1lbnQiOiJyZWxlYXNlIiwiZXZlbnRfaWQiOiJnaXRodWJfcmVsZWFzZTo0Mjg0NjUwNzMiLCJldmVudF9raW5kIjoiZ2l0aHViX3JlbGVhc2UiLCJldmlkZW5jZV91cmwiOiJodHRwczovL2dpdGh1Yi5jb20vUGluZWRhVGVjLUVVL0xlb25hcmRvTUQvcmVsZWFzZXMvdGFnL3YwLjEuNjcyIiwicmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwic291cmNlX3JlZiI6InYwLjEuNjcyIiwic291cmNlX3NoYSI6IjhlMTY1N2I2YWQzYmI0M2U4MzQ1ZmFjNDYyYjk4OTMwZGM5MDg1ODAiLCJ0YXJnZXQiOiJQaW5lZGFUZWMtRVUvTGVvbmFyZG9NRCIsInZlcnNpb24iOiIwLjEuNjcyIn0 -->
+### 0.1.672
+- [#286](https://github.com/PinedaTec-EU/LeonardoMD/pull/286) — #285 Removed: redundant extension state captions — build +1
+  <p>Extension preferences show their state through the switch without a redundant caption.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.672)
 <!-- release-ledger:end -->
