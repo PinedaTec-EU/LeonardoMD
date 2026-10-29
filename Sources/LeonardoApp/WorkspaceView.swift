@@ -184,7 +184,7 @@ struct WorkspaceView: View {
             VStack(spacing: 0) {
                 if session.externalConflict {
                     HStack {
-                        Label(L10n.text("The file changed outside LeonardoMD. Your edits are protected."), systemImage: "exclamationmark.triangle")
+                        Label(L10n.text("The file changed outside LeonardoMD. Reload it or save your edits as a copy?"), systemImage: "exclamationmark.triangle")
                         Spacer()
                         Button(L10n.text("Reload")) { Task { await session.reloadFromDisk() } }
                         Button(L10n.text("Save copy…")) { session.saveCopy() }

@@ -47,6 +47,9 @@ final class DocumentTabs {
             guard let self else { return true }
             return await self.prepareFileOperation(source, excluding: session)
         }
+        session.hasRelatedFileOperation = { [weak self] in
+            self?.tabs.contains { $0.session.fileOperationCount > 0 } ?? false
+        }
         session.relatedPathMoved = { [weak self, weak session] source, destination in
             await self?.pathMoved(source, to: destination, excluding: session)
         }

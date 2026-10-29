@@ -384,4 +384,209 @@ final class SessionPackageSaveTests: XCTestCase {
         let reopenedSource = try String(contentsOf: reopened.documentURL, encoding: .utf8)
         XCTAssertEqual(try LeonardoFormatParser.parse(reopenedSource).body, "Saved: {{field:name}}")
     }
+    func testMonitorReloadsExternallyReplacedPackageWithoutSwitchingDocuments() async throws {
+        let fixture = try await packageFixture()
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let oldWorkspace = try XCTUnwrap(session.packageWorkspace)
+        let latest = try documentSource(body: "External: {{field:name}}")
+        try LeonardoPackageTransport.export(documentURL: fixture.template, content: latest, to: fixture.package)
+
+        await session.checkExternalChanges()
+
+        XCTAssertEqual(session.content, latest)
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertFalse(session.isDirty)
+        XCTAssertNotEqual(session.packageWorkspace?.directoryURL, oldWorkspace.directoryURL)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: oldWorkspace.directoryURL.path))
+        XCTAssertFalse(try XCTUnwrap(session.packageWorkspace).hasSourceChanged())
+        let refreshedDirectory = session.packageWorkspace?.directoryURL
+        await session.checkExternalChanges()
+        XCTAssertEqual(session.packageWorkspace?.directoryURL, refreshedDirectory)
+    }
+
+    func testMonitorProtectsLocalDraftUntilUserChoosesReload() async throws {
+        let fixture = try await packageFixture()
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let draft = try documentSource(body: "Local: {{field:name}}")
+        session.content = draft
+        session.contentChanged()
+        let latest = try documentSource(body: "External: {{field:name}}")
+        try LeonardoPackageTransport.export(documentURL: fixture.template, content: latest, to: fixture.package)
+        let diskBytes = try Data(contentsOf: fixture.package)
+
+        await session.checkExternalChanges()
+        XCTAssertTrue(session.externalConflict)
+        XCTAssertEqual(session.content, draft)
+        await session.save()
+        XCTAssertEqual(try Data(contentsOf: fixture.package), diskBytes)
+        session.confirmDiscardForReload = { false }
+        await session.reloadFromDisk()
+        XCTAssertEqual(session.content, draft)
+        XCTAssertTrue(session.externalConflict)
+        session.confirmDiscardForReload = { true }
+        await session.reloadFromDisk()
+        XCTAssertEqual(session.content, latest)
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertFalse(session.isDirty)
+    }
+
+    func testMonitorProtectsContentWhenPackageIsDeleted() async throws {
+        let fixture = try await packageFixture()
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        try FileManager.default.removeItem(at: fixture.package)
+
+        await session.checkExternalChanges()
+
+        XCTAssertTrue(session.externalConflict)
+        XCTAssertEqual(session.content, fixture.source)
+        XCTAssertNotNil(session.errorMessage)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(session.documentURL).path))
+    }
+
+    func testMonitorDoesNotFlagOwnPackageSave() async throws {
+        let fixture = try await packageFixture()
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        session.content = try documentSource(body: "Saved locally: {{field:name}}")
+        session.contentChanged()
+        await session.save()
+        let saved = session.content
+        let directory = session.packageWorkspace?.directoryURL
+
+        await session.checkExternalChanges()
+
+        XCTAssertEqual(session.content, saved)
+        XCTAssertEqual(session.packageWorkspace?.directoryURL, directory)
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertFalse(session.isDirty)
+    }
+
+    func testMonitorDiscardsOldSourceResultAfterPackageMove() async throws {
+        let fixture = try await packageFixture()
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let draft = try documentSource(body: "Local: {{field:name}}")
+        session.content = draft
+        session.contentChanged()
+        let extraction = session.packageWorkspace?.directoryURL
+        let reached = expectation(description: "Source digest suspended")
+        let gate = PackageArchiveCommitGate(reached: reached)
+        let monitor = Task {
+            await session.checkExternalChanges { workspace in
+                await Task.detached {
+                    gate.pause()
+                    return workspace.hasSourceChanged()
+                }.value
+            }
+        }
+        await fulfillment(of: [reached], timeout: 5)
+        let moved = fixture.root.appendingPathComponent("moved.mdlz")
+        do {
+            try FileManager.default.moveItem(at: fixture.package, to: moved)
+        } catch {
+            gate.open()
+            await monitor.value
+            throw error
+        }
+        await session.updateMovedDocument(from: fixture.package, to: moved)
+        gate.open()
+        await monitor.value
+
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertEqual(session.content, draft)
+        XCTAssertEqual(session.documentSourceURL, moved)
+        XCTAssertEqual(session.packageWorkspace?.directoryURL, extraction)
+        await session.save()
+        XCTAssertFalse(session.isDirty)
+        XCTAssertFalse(session.externalConflict)
+        let reopened = try LeonardoPackageTransport.open(moved)
+        defer { LeonardoPackageTransport.discard(reopened) }
+        XCTAssertEqual(try String(contentsOf: reopened.documentURL, encoding: .utf8), draft)
+    }
+
+    func testMonitorDiscardsSourceResultWhileFileOperationIsInProgress() async throws {
+        let fixture = try await packageFixture()
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        session.content = try documentSource(body: "Local draft: {{field:name}}")
+        session.contentChanged()
+        let draft = session.content
+        let reached = expectation(description: "Source digest suspended")
+        let gate = PackageArchiveCommitGate(reached: reached)
+        let monitor = Task {
+            await session.checkExternalChanges { workspace in
+                await Task.detached {
+                    gate.pause()
+                    return workspace.hasSourceChanged()
+                }.value
+            }
+        }
+        await fulfillment(of: [reached], timeout: 5)
+        let moved = fixture.root.appendingPathComponent("moving.mdlz")
+        do {
+            try FileManager.default.moveItem(at: fixture.package, to: moved)
+        } catch {
+            gate.open()
+            await monitor.value
+            throw error
+        }
+        session.fileOperationCount += 1
+        gate.open()
+        await monitor.value
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertEqual(session.content, draft)
+        await session.updateMovedDocument(from: fixture.package, to: moved)
+        session.fileOperationCount -= 1
+        await session.checkExternalChanges()
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertEqual(session.content, draft)
+    }
+
+    func testMonitorWaitsForFileOperationInAnotherTab() async throws {
+        let fixture = try await packageFixture()
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let reached = expectation(description: "Source digest suspended")
+        let gate = PackageArchiveCommitGate(reached: reached)
+        let monitor = Task {
+            await session.checkExternalChanges { workspace in
+                await Task.detached {
+                    gate.pause()
+                    return workspace.hasSourceChanged()
+                }.value
+            }
+        }
+        await fulfillment(of: [reached], timeout: 5)
+        guard let otherID = fixture.tabs.addTab(),
+              let other = fixture.tabs.tabs.first(where: { $0.id == otherID })?.session else {
+            gate.open()
+            await monitor.value
+            return XCTFail("Expected another tab")
+        }
+        let moved = fixture.root.appendingPathComponent("other-tab-move.mdlz")
+        other.fileOperationCount += 1
+        do {
+            try FileManager.default.moveItem(at: fixture.package, to: moved)
+        } catch {
+            gate.open()
+            await monitor.value
+            other.fileOperationCount -= 1
+            throw error
+        }
+        gate.open()
+        await monitor.value
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertNil(session.errorMessage)
+        XCTAssertEqual(session.content, fixture.source)
+        await fixture.tabs.pathMoved(fixture.package, to: moved, excluding: other)
+        other.fileOperationCount -= 1
+        await session.checkExternalChanges()
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertNil(session.errorMessage)
+        XCTAssertEqual(session.documentSourceURL, moved)
+    }
+
 }
