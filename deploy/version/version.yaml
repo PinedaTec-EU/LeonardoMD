@@ -617,9 +617,19 @@
       "pr": 276,
       "summary": "Open MDLZ documents refresh after external changes; unsaved edits are protected with a choice to reload the disk version or save a copy.",
       "to_version": "0.1.661"
+    },
+    {
+      "delta": {
+        "build": 9
+      },
+      "from_version": "0.1.661",
+      "merge_sha": "b6efccf1c322003772f287d3ebbbb63ed80278c5",
+      "pr": 278,
+      "summary": "Documents gain optional offline charts, citations and richer Markdown structures, with controls for global and project preferences.",
+      "to_version": "0.1.670"
     }
   ],
-  "current_version": "0.1.661",
+  "current_version": "0.1.670",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

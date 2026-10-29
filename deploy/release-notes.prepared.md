@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.670
+
+- #277 Added: extend document rendering and scoped preferences ([#278](https://github.com/PinedaTec-EU/LeonardoMD/pull/278))
+
+<p>Documents gain optional offline charts, citations and richer Markdown structures, with controls for global and project preferences.</p>
+
+Source: `b6efccf1c322003772f287d3ebbbb63ed80278c5`. Delta: `{"build": 9}`.
+
 ## 0.1.661
 
 - #275 Fixed: monitor external MDLZ source changes ([#276](https://github.com/PinedaTec-EU/LeonardoMD/pull/276))
