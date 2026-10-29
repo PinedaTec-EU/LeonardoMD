@@ -1,0 +1,4 @@
+{
+  "summary": "Math formulas preserve TeX notation inside display and inline delimiters, including subscripts, equation tags and multiline expressions.",
+  "build": 3
+}

@@ -30,7 +30,7 @@ Open documents from the app or Finder’s **Open With** menu. Distribution build
 
 The preview supports CommonMark/GFM headings, lists, quotes, tables, tasks, highlighted code, relative images and links, and optional frontmatter metadata. Engines and fonts are bundled for offline use; library licenses are included alongside the renderer resources.
 
-**Mermaid and mathematics are disabled by default.** Enable them in Extensions globally for the standalone viewer or override them for a project. Disabled engines are excluded from the WebKit resource allowlist and are neither loaded nor executed. Changing the active engines tears down the old execution context. Mermaid also renders visible diagrams lazily. Disabling an engine leaves its source readable.
+**Mermaid and mathematics are disabled by default.** Enable them in Extensions globally for the standalone viewer or override them for a project. Disabled engines are excluded from the WebKit resource allowlist and are neither loaded nor executed. Changing the active engines tears down the old execution context. Mermaid also renders visible diagrams lazily. Disabling an engine leaves its source readable. With mathematics enabled, use `$$…$$` or `\[…\]` for display equations and `$…$` or `\(…\)` for inline equations. Display equations can span multiple lines; TeX notation is preserved without Markdown formatting inside the delimiters. Equations remain editable through the raw Edit view.
 
 Preferences keep their tab navigation fixed. General and Extensions each contain their own Global / This project selector. In General, palette and paper effect follow that scope; language, viewing behavior and Markdown file association are grouped separately as Mac-wide settings.
 

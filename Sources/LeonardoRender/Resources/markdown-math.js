@@ -15,7 +15,7 @@
     if (!delimiter) return;
     let depth = 0;
     for (let index = delimiter.left.length; index < source.length; index += 1) {
-      if (!delimiter.display && source[index] === "\n") return;
+      if (delimiter.left === "$" && source[index] === "\n") return;
       if (depth === 0 && source.startsWith(delimiter.right, index)) {
         const text = source.slice(delimiter.left.length, index);
         if (!text.trim()) return;
@@ -55,6 +55,7 @@
         name: "leonardoMathInline", level: "inline",
         start(source) { return enabled ? source.search(/\$|\\[[(]/) : -1; },
         tokenizer(source) {
+          if (this.lexer.state.inRawBlock) return;
           const token = matchMath(source);
           if (token) return { ...token, type: "leonardoMathInline" };
         },

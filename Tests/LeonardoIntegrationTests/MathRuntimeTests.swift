@@ -3,6 +3,12 @@ import WebKit
 @testable import LeonardoRender
 
 extension WebKitRuntimeTests {
+    private func mathConfiguration(editing: Bool) -> MarkdownPreviewConfiguration {
+        var configuration = MarkdownPreviewConfiguration(allowsMath: true)
+        configuration.allowsEditing = editing
+        return configuration
+    }
+
     func testMathDisplayPreservesMarkdownSensitiveTeXAndReporterEquation() async throws {
         let source = #"""
         # Display math
@@ -22,7 +28,7 @@ extension WebKitRuntimeTests {
 
         Before $$a_{x} + b_{y}$$ after.
         """#
-        let (host, window) = makeHost(content: source, config: .init(allowsMath: true, allowsEditing: true))
+        let (host, window) = makeHost(content: source, config: mathConfiguration(editing: true))
         defer { host.teardown(); window.close() }
         let web = try XCTUnwrap(webView(of: host))
         try await waitFor("Boolean(window.LeonardoPreview)", in: web)
@@ -39,7 +45,21 @@ extension WebKitRuntimeTests {
         })()
         """, in: web)
         XCTAssertEqual(result, "1")
-        try await captureTagPreview(web, name: "math-display-regression")
+        if let directory = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
+            let context = try await evaluate("""
+            JSON.stringify({
+              captured_at: new Date().toISOString(), route: "/native/markdown-preview",
+              screen: "LeonardoMD WKWebView math regression",
+              browser_name: "Native WKWebView (User-Agent compatibility version)",
+              browser_version: navigator.userAgent,
+              viewport_css: {width: innerWidth, height: innerHeight},
+              capture_mode: "viewport", state: "Light theme; Math and preview editing enabled",
+              data_provenance: "synthetic"
+            })
+            """, in: web)
+            try await captureTagPreview(web, name: "math-display-regression")
+            try context.write(to: URL(fileURLWithPath: directory).appendingPathComponent("math-display-regression.context.json"), atomically: true, encoding: .utf8)
+        }
     }
 
     func testMathInlineDelimitersCodeExclusionAndDisabledExtension() async throws {
@@ -50,7 +70,14 @@ extension WebKitRuntimeTests {
 
         \[\underbrace{a}_{x} + \underbrace{b}_{y}\]
 
+        Multiline inline \(x_1 +
+        y_2\).
+
         `$$x_1$$` and `\(x_2\)`
+
+        <code>$$raw_1$$</code>
+
+        <pre>$$raw_2$$</pre>
 
         ```tex
         $$ \underbrace{a}_{x} + \underbrace{b}_{y} $$
@@ -70,10 +97,12 @@ extension WebKitRuntimeTests {
         let result = try await evaluate("""
         (() => {
           const root = document.querySelector('#leonardo-markdown');
-          return root.querySelectorAll('.katex').length === 3 &&
+          return root.querySelectorAll('.katex').length === 4 &&
             root.querySelectorAll('.katex-display').length === 1 &&
             root.querySelectorAll('code .katex, .katex-error').length === 0 &&
-            root.querySelectorAll('code').length === 4 &&
+            root.querySelectorAll('code').length === 5 &&
+            root.querySelector('pre:not(:has(code))').textContent === '$$raw_2$$' &&
+            [...root.querySelectorAll('code')].some(e => e.textContent === '$$raw_1$$') &&
             root.textContent.includes('$literal$') && root.textContent.includes('unclosed $$') &&
             root.querySelector('strong').textContent === 'Ordinary emphasis' &&
             root.querySelector('em').textContent === 'text';
@@ -93,7 +122,7 @@ extension WebKitRuntimeTests {
 
     func testMathEditingAdjacentTextPreservesTeXAndSourceOffsets() async throws {
         let source = "---\r\ntitle: Math\r\n---\r\nBefore $x_1 + y_2$ after.\r\n\r\n$$\\underbrace{a}_{x} + \\underbrace{b}_{y}$$\r\n"
-        let (host, window) = makeHost(content: source, config: .init(allowsMath: true, allowsEditing: true))
+        let (host, window) = makeHost(content: source, config: mathConfiguration(editing: true))
         defer { host.teardown(); window.close() }
         let web = try XCTUnwrap(webView(of: host))
         try await waitFor("Boolean(window.LeonardoPreview)", in: web)
@@ -117,7 +146,7 @@ extension WebKitRuntimeTests {
         XCTAssertEqual(actual, expected)
         let mathCount = try await evaluate("document.querySelectorAll('.katex').length", in: web)
         XCTAssertEqual(mathCount, "2")
-        host.apply(content: "Updated $$z_3$$", baseURL: nil, configuration: .init(allowsMath: true, allowsEditing: true), onLinkActivation: nil, onScrollProgress: nil)
+        host.apply(content: "Updated $$z_3$$", baseURL: nil, configuration: mathConfiguration(editing: true), onLinkActivation: nil, onScrollProgress: nil)
         try await waitFor("document.querySelector('.katex annotation')?.textContent === 'z_3'", in: web)
         XCTAssertTrue(web === webView(of: host))
     }
