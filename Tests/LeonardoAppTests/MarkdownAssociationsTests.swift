@@ -1,5 +1,6 @@
 import AppKit
 import XCTest
+import UniformTypeIdentifiers
 @testable import LeonardoApp
 
 @MainActor
@@ -23,7 +24,30 @@ final class MarkdownAssociationsTests: XCTestCase {
         XCTAssertEqual(next.status, .unavailable)
         XCTAssertEqual(driver.changes, 0)
         XCTAssertFalse(WorkspaceMarkdownAssociationDriver().isAvailable, "XCTest must never modify Launch Services")
-        XCTAssertEqual(WorkspaceMarkdownAssociationDriver.extensions, ["md", "markdown"])
+        XCTAssertEqual(WorkspaceMarkdownAssociationDriver.extensions, ["md", "markdown", "mdlf", "mdlr", "mdlz"])
+    }
+
+    func testAssociationTypesCoverEveryDeclaredFormatWithoutParentFallback() throws {
+        var requested: [String] = []
+        let identifiers = Dictionary(uniqueKeysWithValues:
+            WorkspaceMarkdownAssociationDriver.documentTypes.map { ($0.fileExtension, $0.identifier) })
+        let types = try WorkspaceMarkdownAssociationDriver.contentTypes { ext in
+            requested.append(ext)
+            return UTType(importedAs: identifiers[ext]!)
+        }
+        XCTAssertEqual(requested, ["md", "markdown", "mdlf", "mdlr", "mdlz"])
+        XCTAssertEqual(types.map(\.identifier), [
+            "net.daringfireball.markdown", "eu.pinedatec.leonardomd.mdlf",
+            "eu.pinedatec.leonardomd.mdlr", "eu.pinedatec.leonardomd.mdlz"
+        ])
+        for missing in requested {
+            XCTAssertThrowsError(try WorkspaceMarkdownAssociationDriver.contentTypes { ext in
+                ext == missing ? nil : UTType(importedAs: identifiers[ext]!)
+            })
+            XCTAssertThrowsError(try WorkspaceMarkdownAssociationDriver.contentTypes { ext in
+                ext == missing ? .plainText : UTType(importedAs: identifiers[ext]!)
+            })
+        }
     }
 
     func testAskNextTimeIsOncePerLaunchAndNeverPersistsAcrossModels() async {
