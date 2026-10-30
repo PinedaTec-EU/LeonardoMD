@@ -3,57 +3,24 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.1.692</title>
-            <pubDate>Fri, 30 Oct 2026 13:32:24 +0100</pubDate>
+            <title>0.1.701</title>
+            <pubDate>Fri, 30 Oct 2026 13:51:08 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>692</sparkle:version>
-            <sparkle:shortVersionString>0.1.692</sparkle:shortVersionString>
+            <sparkle:version>701</sparkle:version>
+            <sparkle:shortVersionString>0.1.701</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">## What's new
+            <description sparkle:format="markdown"># Leonardo document associations
 
-- Open embedded document images in a native window and save their original bytes from the image context menu.
-- The sidebar follows the active document, expands its folders and highlights its row. A new preference enables or disables this behavior and is on by default.
+- Default-application setup now covers `.md`, `.markdown`, `.mdlf`, `.mdlr` and `.mdlz`.
+- MDLZ packages now declare a physical ZIP-based document type so Finder can recognize them.
+- Startup consent, General preferences and the user guide now describe the complete format scope in English and Spanish.
 
-Active-file following can be changed in Preferences → General → On this Mac. Search and visibility filters remain respected, and background refreshes preserve manual navigation.
+After updating, review **Preferences → General → Default document application** and choose **Use LeonardoMD** if needed to apply the associations. macOS may ask for confirmation. Individual Finder “Open With” overrides may remain in effect.
 
-This beta package is for Apple silicon Macs running macOS 14 or newer.
+This beta is for Apple Silicon Macs running macOS 14 or later. Text-file (`.txt`) associations are unchanged.
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.692/LeonardoMD-0.1.692.zip" length="14142989" type="application/octet-stream" sparkle:edSignature="XqD58zfR5rGZwKHHBPmUVADfF86HkR0ndmkKuxH0PO97AhDis9t8z7c/ubdY4vE4tw6bPS9W/bz+jc4chFlLBA==" />
-        </item>
-    <item leonardo:channel="beta">
-            <title>0.1.672</title>
-            <pubDate>Thu, 29 Oct 2026 23:37:45 +0100</pubDate>
-            <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>672</sparkle:version>
-            <sparkle:shortVersionString>0.1.672</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">Extension preferences are more compact: each card shows its state through the switch without a duplicate Enabled/Disabled caption. This applies to global and project settings; accessible switch state remains available.
-
-This beta is for Apple silicon Macs. Please report any problems before stable promotion.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.672/LeonardoMD-0.1.672.zip" length="14099007" type="application/octet-stream" sparkle:edSignature="bX2MjtzvQWm0IODlhJqWwRKjBVXo40EyLX+dw/7R6dgFcWVsT6MsbnWU8+N9OsKNSRF17GRlPoxPRbT/nZlHAg==" />
-        </item>
-    <item leonardo:channel="beta">
-            <title>0.1.671</title>
-            <pubDate>Thu, 29 Oct 2026 23:00:06 +0100</pubDate>
-            <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>671</sparkle:version>
-            <sparkle:shortVersionString>0.1.671</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">LeonardoMD 0.1.671 (beta)
-
-- Open MDLZ documents refresh after external changes. Unsaved edits remain protected with a choice to reload the disk version or save a copy.
-- Optional offline charts, citations, footnotes and callouts are available through global and project preferences. New options are disabled by default.
-- PDF export retains the fix for switching between Preview and Split, including local images and Mermaid diagrams.
-
-Charts support bounded inline data and static SVG. Citations use local BibTeX or CSL-JSON with APA formatting; online lookup is unavailable. Existing math-rendering limitations remain unchanged.
-
-This beta also includes internal validation improvements for development evidence. Install the signed and notarized macOS Apple Silicon package, or select Beta in Preferences → Updates. Publishing this beta does not change your selected update subscription. Hosted update, installation and relaunch acceptance for this candidate is pending.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.671/LeonardoMD-0.1.671.zip" length="14096880" type="application/octet-stream" sparkle:edSignature="7y0T6Osz8soRbPIR9UkPq8gjHpLTmsquq+5Ig/KZM8CXCHGVhm239qn1SdeSs/mQF4HBjOJchmyiwxofWB7qDQ==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.701/LeonardoMD-0.1.701.zip" length="14143708" type="application/octet-stream" sparkle:edSignature="7WjRwtUOIYM6UIgGjTxW/45bFDXanq6UxfM3b9EOL5fwik6+JSgd8zrAH1TllNSib4RaECdImfMGx9u3hf1QCg==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.646</title>
