@@ -18,7 +18,7 @@ Como usuario quiero buscar contenido dentro de un proyecto para encontrar notas,
 | Por contenido Markdown | Sí |
 | Por encabezados | Deseable |
 | Filtros por carpeta | Deseable |
-| Búsqueda global multi-workspace | No |
+| Búsqueda global multiproyecto | No |
 | Búsqueda semántica/IA | No |
 
 ## Criterios de Aceptación
