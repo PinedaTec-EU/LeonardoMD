@@ -28,7 +28,7 @@ extension AppSession {
         presentFilePanel(panel) { [weak self] url in Task { await self?.openProject(url) } }
     }
     @discardableResult
-    func openProject(_ url: URL) async -> Bool {
+    func openProject(_ url: URL, retainingCurrentDocument: Bool = false) async -> Bool {
         guard !isClosing, !stopped else { return false }
         fileOperationCount += 1
         defer { fileOperationCount -= 1 }
@@ -38,7 +38,13 @@ extension AppSession {
         } catch { report(error); return false }
         guard !stopped, !isClosing else { return false }
         await initialize()
-        guard await prepareNavigation() else { return false }
+        let rootPath = url.standardizedFileURL.resolvingSymlinksInPath().path
+        let retainsDocument = retainingCurrentDocument && displayDocumentURL.map {
+            $0.standardizedFileURL.resolvingSymlinksInPath().path.hasPrefix(rootPath == "/" ? "/" : rootPath + "/")
+        } == true
+        if !retainsDocument {
+            guard await prepareNavigation() else { return false }
+        }
         guard !busy, !isClosing, !stopped else { return false }
         busy = true
         defer { busy = false }
@@ -55,7 +61,7 @@ extension AppSession {
             resetSearch()
             focus = false
             if let currentDocument = displayDocumentURL,
-               !currentDocument.standardizedFileURL.path.hasPrefix(url.standardizedFileURL.path + "/") {
+               !currentDocument.standardizedFileURL.resolvingSymlinksInPath().path.hasPrefix(rootPath == "/" ? "/" : rootPath + "/") {
                 discardPackageWorkspace()
                 self.documentURL = nil; documentSourceURL = nil; snapshot = nil; content = ""
                 documentKind = .markdown; documentStorage = .localFile; leonardoFormatWarning = false

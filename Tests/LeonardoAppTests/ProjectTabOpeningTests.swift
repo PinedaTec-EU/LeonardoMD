@@ -49,6 +49,31 @@ final class ProjectTabOpeningTests: XCTestCase {
         XCTAssertTrue(tabs.activeSession === target)
     }
 
+    func testExistingStandaloneDraftAdoptsProjectWithoutDuplicationOrSaving() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("note.md")
+        try "note".write(to: file, atomically: true, encoding: .utf8)
+        let tabs = DocumentTabs(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { tabs.stop() }
+        let existing = tabs.activeSession
+        await existing.open(file)
+        existing.content = "unsaved standalone draft"
+        existing.unsavedChangesDecision = { _ in XCTFail("Attaching the same document must retain its draft"); return .cancel }
+        tabs.addTab()
+        let source = tabs.activeSession
+        _ = await source.openProject(root)
+        await source.openProjectDocumentInTab?(file, nil)
+        XCTAssertEqual(tabs.tabs.count, 2)
+        XCTAssertTrue(tabs.activeSession === existing)
+        XCTAssertEqual(existing.projectURL, root)
+        XCTAssertTrue(existing.presentation.showsSidebar)
+        XCTAssertEqual(existing.content, "unsaved standalone draft")
+        XCTAssertTrue(existing.isDirty)
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "note")
+    }
+
     func testWorkspaceMetadataRemainsReadableButHasNoNavigationEntry() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let preferences = root.appendingPathComponent("preferences.json")
