@@ -48,6 +48,7 @@ extension AppSession {
             guard !isClosing, !stopped else { return false }
             await refreshFavoriteAssociations()
             guard !isClosing, !stopped else { return false }
+            showWorkspace = false
             projectURL = url
             git = GitRepository(rootURL: url)
             projectConfiguration = configuration

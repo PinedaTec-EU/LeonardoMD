@@ -1,0 +1,18 @@
+{
+  "browser" : "N\/A; AppKit\/SwiftUI",
+  "capture_mode" : "native component bitmap",
+  "captured_at" : "2026-10-30T10:59:47Z",
+  "head" : "unavailable; local source manifest required",
+  "language" : "en",
+  "limitations" : "Component evidence; no packaged startup or new-process claim",
+  "palette" : "paper-white",
+  "pixel_dimensions" : [
+    1800,
+    1240
+  ],
+  "surface" : "Native NSHostingView SavedItemsView; synthetic project\/workspace favorites and starred recent project",
+  "viewport_points" : [
+    900,
+    620
+  ]
+}

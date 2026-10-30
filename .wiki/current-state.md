@@ -135,3 +135,11 @@ Sidebar tree ownership resets with project identity, refreshes only reachable ex
 Background sidebar refresh observes the interaction revision and stops applying/pruning its snapshot when the user navigates during awaited loads, preserving the user’s expansions and caches. Deterministic suspended-load regression: [#297](https://github.com/PinedaTec-EU/LeonardoMD/issues/297).
 
 `ProjectFileTree.swift` owns project/interaction contexts and per-folder load generations. Only the exact current folder load may publish children; collapse invalidates descendant loads. Reveal returns unavailable (retry after listing changes) or superseded (honor manual navigation until the next active-document/tab change), and scroll stamps are revalidated before scrolling. Deferred-load tests cover out-of-order reopen completions and manual collapse during reveal.
+
+Favorite themes ([#300](https://github.com/PinedaTec-EU/LeonardoMD/issues/300)):
+project/workspace favorites carry optional palette metadata. `FavoriteThemePicker`
+is shared by favorites/starred recents; `SessionFavoriteAppearance` resolves local
+session appearance and refreshes associations on opening. Workspace themes take
+precedence for contained projects and while showing the workspace manager;
+project opening closes that manager. Core `FavoriteItemMerge` preserves membership
+and independent theme writes by kind/path. See [favorites validation](../doc/validation/favorites/README.md).

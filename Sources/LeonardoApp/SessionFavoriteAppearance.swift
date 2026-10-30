@@ -17,15 +17,17 @@ extension AppSession {
     /// Refresh associations on every opening route, including native Recents and another process.
     func refreshFavoriteAssociations() async {
         await settingsTask?.value
+        let revision = settingsRevision
         do {
             let saved = try await configurations.loadGlobalPreferences(at: globalPreferencesURL)
+            guard !stopped, settingsRevision == revision, settingsTask == nil else { return }
             globalPreferences.favorites = saved.favorites
             globalBaseline.favorites = saved.favorites
         } catch { report(error) }
     }
 
     var favoritePalette: PaletteID? {
-        if let workspaceURL, projectURL == nil || projectIsInWorkspace,
+        if let workspaceURL, showWorkspace || projectURL == nil || projectIsInWorkspace,
            let palette = favorite(workspaceURL, kind: .workspace)?.palette {
             return palette
         }

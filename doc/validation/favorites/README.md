@@ -14,6 +14,23 @@ recent limits. Configuration merges apply membership changes, preserving
 independent changes from other windows. Existing preference files default to
 an empty favorites collection. Existing session polling refreshes other windows.
 
+Project/workspace favorites also store an optional palette. Their Theme dropdown
+appears beside favorite rows and matching starred Recents rows; Inherit restores
+portable project/global appearance. Opening through either list or the native
+Recents menu refreshes the association from local preferences. Document favorites
+have no theme selector. Palette overrides use the catalog tokens without changing
+global or project settings. The selected workspace manager uses its theme; outside
+that manager, a workspace theme applies only to its contained projects (or a
+workspace session without a project), ahead of the project's favorite theme.
+Opening a project closes the workspace manager and recalculates appearance.
+Membership merges key on kind/path; independent metadata changes survive stale
+writers without duplicating or resurrecting removed favorites.
+
+Tracking: [#300](https://github.com/PinedaTec-EU/LeonardoMD/issues/300).
+`FavoriteThemeTests` and `FavoriteAppearancePersistenceTests` cover persistence,
+Recents opening, workspace precedence, context switching, custom-token inheritance,
+session isolation and concurrent metadata/membership writes.
+
 `FavoritesTests` covers restart persistence/removal, concurrent window changes,
 clearing recents, native menu targets/checkmarks, path identity and availability.
 The opt-in `LEONARDO_FAVORITES_CAPTURE` test renders the real SwiftUI welcome view
