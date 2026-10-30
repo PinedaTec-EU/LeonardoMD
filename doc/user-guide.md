@@ -4,7 +4,7 @@ See the [README](../README.md) for installation and the product overview.
 
 ## Opening files and default application
 
-Open documents from the app or Finder’s **Open With** menu. Distribution builds can offer to become the default for `.md` and `.markdown`. Choose **Use LeonardoMD**, **Ask next time** or **Never ask again**. **Preferences → General → Default Markdown application** shows the current status and lets you change it or re-enable the prompt. This Mac-wide setting does not change `.txt` or individual file overrides; macOS may request consent.
+Open documents from the app or Finder’s **Open With** menu. Distribution builds can offer to become the default for `.md`, `.markdown`, `.mdlf`, `.mdlr` and `.mdlz`. Choose **Use LeonardoMD**, **Ask next time** or **Never ask again**. **Preferences → General → Default document application** shows the current status and lets you change it or re-enable the prompt. This Mac-wide setting does not change `.txt` or individual file overrides; macOS may request consent.
 
 ## Document and project modes
 
@@ -74,7 +74,7 @@ Enable Git tools in the project's preferences. The app can detect or initialize 
 
 ## Preferences and language
 
-Interface language defaults to English. **Preferences → General → On this Mac → Language** offers English and Español. Language and Markdown file association apply to the whole Mac. Palette and extension settings can apply globally or to the current project.
+Interface language defaults to English. **Preferences → General → On this Mac → Language** offers English and Español. Language and document file associations apply to the whole Mac. Palette and extension settings can apply globally or to the current project.
 
 The document inspector contains heading navigation. Drag the divider beside the project sidebar to change its width.
 

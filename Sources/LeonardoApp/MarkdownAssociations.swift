@@ -57,7 +57,7 @@ final class MarkdownAssociations {
                 if self?.changeFailed == true, choice == .useLeonardo,
                    let window, window.isVisible {
                     let failure = NSAlert()
-                    failure.messageText = L10n.text("Markdown default was not fully changed")
+                    failure.messageText = L10n.text("Document associations were not fully changed")
                     failure.informativeText = L10n.text("The change was cancelled or could not be completed. Check General preferences to see the current association and try again.")
                     await failure.beginSheetModal(for: window)
                 }
@@ -67,8 +67,8 @@ final class MarkdownAssociations {
 
     static func startupAlert() -> NSAlert {
         let alert = NSAlert()
-        alert.messageText = L10n.text("Open Markdown files with LeonardoMD by default?")
-        alert.informativeText = L10n.text("This applies to .md and .markdown files on this Mac. Text files (.txt) are unchanged. You can change this in General preferences.")
+        alert.messageText = L10n.text("Open Markdown and Leonardo files with LeonardoMD by default?")
+        alert.informativeText = L10n.text("This applies to .md, .markdown, .mdlf, .mdlr and .mdlz files on this Mac. Text files (.txt) are unchanged. You can change this in General preferences.")
         alert.addButton(withTitle: L10n.text("Use LeonardoMD"))
         alert.addButton(withTitle: L10n.text("Ask next time")).keyEquivalent = "\u{1b}"
         alert.addButton(withTitle: L10n.text("Never ask again"))
