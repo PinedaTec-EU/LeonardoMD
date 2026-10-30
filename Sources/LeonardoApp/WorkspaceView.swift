@@ -3,9 +3,11 @@ import AppKit
 
 struct WorkspaceView: View {
     @Bindable var session: AppSession
+    let isActiveTab: Bool
 
-    init(session: AppSession) {
+    init(session: AppSession, isActiveTab: Bool = true) {
         self.session = session
+        self.isActiveTab = isActiveTab
     }
 
     var body: some View {
@@ -14,7 +16,7 @@ struct WorkspaceView: View {
             Divider()
             if session.presentation.showsSidebar {
                 HSplitView {
-                    ProjectSidebar(session: session)
+                    ProjectSidebar(session: session, isActiveTab: isActiveTab)
                         .frame(minWidth: 220, idealWidth: 250, maxWidth: 600)
                     workspaceDocument.frame(minWidth: 440)
                 }

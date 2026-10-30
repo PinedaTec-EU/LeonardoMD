@@ -3,6 +3,24 @@ import XCTest
 @testable import LeonardoCore
 
 final class ConfigurationStoreTests: XCTestCase {
+    func testFollowActiveFileDefaultsAndMergesAcrossWindows() async throws {
+        let defaults = try JSONDecoder().decode(GlobalPreferences.self, from: Data("{}".utf8))
+        XCTAssertTrue(defaults.followActiveFile)
+        let directory = try TemporaryDirectory()
+        let store = ConfigurationStore()
+        let url = directory.url.appendingPathComponent("preferences.json")
+        var changed = defaults
+        changed.followActiveFile = false
+        _ = try await store.mergeGlobalPreferences(updated: changed, baseline: defaults, at: url)
+        var other = defaults
+        other.showHiddenFiles = true
+        let merged = try await store.mergeGlobalPreferences(updated: other, baseline: defaults, at: url)
+        XCTAssertFalse(merged.followActiveFile)
+        XCTAssertTrue(merged.showHiddenFiles)
+        let loaded = try await store.loadGlobalPreferences(at: url)
+        XCTAssertFalse(loaded.followActiveFile)
+    }
+
     func testFileColorMergesPreserveOtherWindowsAndProjectInheritance() async throws {
         let directory = try TemporaryDirectory()
         let store = ConfigurationStore()

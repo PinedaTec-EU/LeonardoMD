@@ -1,5 +1,6 @@
 import AppKit
 import XCTest
+import UniformTypeIdentifiers
 @testable import LeonardoApp
 
 @MainActor
@@ -23,7 +24,55 @@ final class MarkdownAssociationsTests: XCTestCase {
         XCTAssertEqual(next.status, .unavailable)
         XCTAssertEqual(driver.changes, 0)
         XCTAssertFalse(WorkspaceMarkdownAssociationDriver().isAvailable, "XCTest must never modify Launch Services")
-        XCTAssertEqual(WorkspaceMarkdownAssociationDriver.extensions, ["md", "markdown"])
+        XCTAssertEqual(WorkspaceMarkdownAssociationDriver.extensions, ["md", "markdown", "mdlf", "mdlr", "mdlz"])
+    }
+
+    func testAssociationTypesCoverEveryDeclaredFormatWithoutParentFallback() throws {
+        var requested: [String] = []
+        let identifiers = Dictionary(uniqueKeysWithValues:
+            WorkspaceMarkdownAssociationDriver.documentTypes.map { ($0.fileExtension, $0.identifier) })
+        let types = try WorkspaceMarkdownAssociationDriver.contentTypes { ext in
+            requested.append(ext)
+            return UTType(importedAs: identifiers[ext]!)
+        }
+        XCTAssertEqual(requested, ["md", "markdown", "mdlf", "mdlr", "mdlz"])
+        XCTAssertEqual(types.map(\.identifier), [
+            "net.daringfireball.markdown", "eu.pinedatec.leonardomd.mdlf",
+            "eu.pinedatec.leonardomd.mdlr", "eu.pinedatec.leonardomd.mdlz"
+        ])
+        for missing in requested {
+            XCTAssertThrowsError(try WorkspaceMarkdownAssociationDriver.contentTypes { ext in
+                ext == missing ? nil : UTType(importedAs: identifiers[ext]!)
+            })
+            XCTAssertThrowsError(try WorkspaceMarkdownAssociationDriver.contentTypes { ext in
+                ext == missing ? .plainText : UTType(importedAs: identifiers[ext]!)
+            })
+        }
+    }
+
+    func testAssociationScopeMatchesPackagedTypesAndConsent() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let data = try Data(contentsOf: root.appendingPathComponent("scripts/Info.plist"))
+        let plist = try XCTUnwrap(PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any])
+        let declarations = try XCTUnwrap(plist["UTExportedTypeDeclarations"] as? [[String: Any]])
+            + (try XCTUnwrap(plist["UTImportedTypeDeclarations"] as? [[String: Any]]))
+        let handlers = try XCTUnwrap(plist["CFBundleDocumentTypes"] as? [[String: Any]])
+            .flatMap { $0["LSItemContentTypes"] as? [String] ?? [] }
+        for documentType in WorkspaceMarkdownAssociationDriver.documentTypes {
+            let declaration = try XCTUnwrap(declarations.first {
+                $0["UTTypeIdentifier"] as? String == documentType.identifier
+            })
+            let parents = try XCTUnwrap(declaration["UTTypeConformsTo"] as? [String])
+            XCTAssertTrue(parents.contains { UTType($0)?.conforms(to: .data) == true },
+                          "Finder requires a physical file type; public.archive alone is insufficient")
+            XCTAssertTrue(parents.contains { UTType($0)?.conforms(to: .content) == true })
+            let tags = try XCTUnwrap(declaration["UTTypeTagSpecification"] as? [String: Any])
+            XCTAssertTrue((tags["public.filename-extension"] as? [String] ?? []).contains(documentType.fileExtension))
+            XCTAssertTrue(handlers.contains(documentType.identifier))
+            XCTAssertTrue(MarkdownAssociations.startupAlert().informativeText.contains("." + documentType.fileExtension))
+        }
+        XCTAssertFalse(WorkspaceMarkdownAssociationDriver.extensions.contains("txt"))
     }
 
     func testAskNextTimeIsOncePerLaunchAndNeverPersistsAcrossModels() async {

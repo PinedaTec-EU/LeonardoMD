@@ -169,3 +169,7 @@ source/license provenance, including bundled citeproc CPAL source. See
 [extension contract](document-extensions.md).
 
 - Evidence compilation validation ([#282](https://github.com/PinedaTec-EU/LeonardoMD/issues/282)): canonical author declarations are generated from committed HEAD and compared with the PR ledger on PR/comment events; trusted default-branch automation reads candidate data only. See `scripts/evidence_compilation.py` and `doc/release-version-ledger.md`.
+
+- 2026-10-30: Association setup now checks/configures Markdown plus MDLF, MDLR and MDLZ with exact UTI validation and no parent-type fallback. The prompt and General preferences describe all five extensions. Native Finder acceptance remains separate from automated coverage. Tracking: [#293](https://github.com/PinedaTec-EU/LeonardoMD/issues/293).
+
+- Native acceptance for [#293](https://github.com/PinedaTec-EU/LeonardoMD/issues/293) reproduced Finder rejecting MDLZ: `public.archive` alone is a functional UTI without `public.data` conformance. MDLZ now inherits `public.zip-archive` and `public.content`; the declaration regression checks physical file and content conformance for every supported extension.

@@ -647,6 +647,46 @@
       "pr": 286,
       "summary": "Extension preferences show their state through the switch without a redundant caption.",
       "to_version": "0.1.672"
+    },
+    {
+      "delta": {
+        "build": 6
+      },
+      "from_version": "0.1.672",
+      "merge_sha": "57bd457033d982ec0c389a9bdf5991f7f69a0d68",
+      "pr": 296,
+      "summary": "Open embedded document images in a native window and save their original bytes from the image context menu.",
+      "to_version": "0.1.678"
+    },
+    {
+      "delta": {
+        "build": 14
+      },
+      "from_version": "0.1.678",
+      "merge_sha": "651cfc3d9158a126893c942d83da93db482a9412",
+      "pr": 289,
+      "summary": "The sidebar follows the active document, expands its folders and highlights its row. A new preference enables or disables this behavior and is on by default.",
+      "to_version": "0.1.692"
+    },
+    {
+      "delta": {
+        "build": 9
+      },
+      "from_version": "0.1.692",
+      "merge_sha": "9266a030cbad95cee8930a2d4a3049afd0049630",
+      "pr": 294,
+      "summary": "Recognize MDLZ packages in Finder and configure default opening for all Markdown and Leonardo formats.",
+      "to_version": "0.1.701"
+    },
+    {
+      "delta": {
+        "build": 5
+      },
+      "from_version": "0.1.701",
+      "merge_sha": "f1ba28c36a498662e5744911c1072eae6dc19adb",
+      "pr": 299,
+      "summary": "Browse welcome favorites by category with horizontal tabs and scroll lists that show up to five items at once.",
+      "to_version": "0.1.706"
     }
   ],
   "initial_version": "0.1.56",
@@ -657,5 +697,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.672"
+  "version": "0.1.706"
 }

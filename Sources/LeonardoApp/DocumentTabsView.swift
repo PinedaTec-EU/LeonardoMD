@@ -18,7 +18,7 @@ struct DocumentTabsView: View {
             Divider()
             ZStack {
                 ForEach(documents.tabs) { tab in
-                    WorkspaceView(session: tab.session)
+                    WorkspaceView(session: tab.session, isActiveTab: tab.id == documents.activeID)
                         .opacity(tab.id == documents.activeID ? 1 : 0)
                         .allowsHitTesting(tab.id == documents.activeID && !documents.closing)
                         .disabled(tab.id != documents.activeID || documents.closing)
