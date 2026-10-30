@@ -45,16 +45,22 @@ final class SessionPackageSaveTests: XCTestCase {
         )
     }
 
-    private func packageFixture() async throws -> PackageFixture {
+    private func packageFixture(withImage: Bool = false, baseName: String = "request") async throws -> PackageFixture {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("LeonardoPackageSave-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let tabs = DocumentTabs(preferencesURL: root.appendingPathComponent("preferences.json"))
         let session = tabs.activeSession
         session.authorizePath = { _, _ in }
-        let template = root.appendingPathComponent("request.mdlf")
-        let package = root.appendingPathComponent("request.mdlz")
-        let source = try documentSource(body: "Name: {{field:name}}")
+        let template = root.appendingPathComponent(baseName + ".mdlf")
+        let package = root.appendingPathComponent(baseName + ".mdlz")
+        let source = try documentSource(body: "Name: {{field:name}}" + (withImage ? "\n\n![Blue](assets/blue.svg)" : ""))
+        if withImage {
+            let assets = root.appendingPathComponent("assets", isDirectory: true)
+            try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
+            try Data("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\"><rect width=\"10\" height=\"10\" fill=\"blue\"/></svg>".utf8)
+                .write(to: assets.appendingPathComponent("blue.svg"))
+        }
         try source.write(to: template, atomically: true, encoding: .utf8)
         try LeonardoPackageTransport.export(documentURL: template, content: source, to: package)
         let opened = await session.openLeonardoPackage(package, extractingTo: nil)
@@ -587,6 +593,212 @@ final class SessionPackageSaveTests: XCTestCase {
         XCTAssertFalse(session.externalConflict)
         XCTAssertNil(session.errorMessage)
         XCTAssertEqual(session.documentSourceURL, moved)
+    }
+
+    private func packageImage(in workspace: LeonardoPackageWorkspace) throws -> URL {
+        let files = FileManager.default.enumerator(at: workspace.directoryURL, includingPropertiesForKeys: nil)?.allObjects as? [URL]
+        return try XCTUnwrap(files?.first { $0.pathExtension == "svg" })
+    }
+
+    func testConflictCopyPreservesPackageAnswersAndOriginalImageBytes() async throws {
+        let fixture = try await packageFixture(withImage: true)
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let originalURL = try XCTUnwrap(session.documentURL)
+        let oldWorkspace = try XCTUnwrap(session.packageWorkspace)
+        let image = try Data(contentsOf: try packageImage(in: oldWorkspace))
+        var draft = try LeonardoFormatParser.parse(session.content)
+        draft.metadata.values["name"] = .string("Pending answer 308")
+        session.content = try LeonardoFormatParser.serialize(draft)
+        session.contentChanged()
+        session.mode = .fill
+        // The source archive now belongs to an external writer; it must survive recovery.
+        let external = try documentSource(body: "External version")
+        try LeonardoPackageTransport.export(documentURL: fixture.template, content: external, to: fixture.package)
+        let sourceBytes = try Data(contentsOf: fixture.package)
+        await session.checkExternalChanges()
+        XCTAssertTrue(session.externalConflict)
+        let destination = fixture.root.appendingPathComponent("recovered.mdlz")
+
+        await session.saveCopyAndOpen(to: destination, sourceURL: originalURL)
+
+        XCTAssertEqual(session.documentStorage, .package)
+        XCTAssertEqual(session.documentSourceURL, destination)
+        XCTAssertEqual(session.mode, .fill)
+        XCTAssertFalse(session.externalConflict)
+        XCTAssertFalse(session.isDirty)
+        XCTAssertEqual(try Data(contentsOf: fixture.package), sourceBytes)
+        let reopened = try LeonardoPackageTransport.open(destination)
+        defer { LeonardoPackageTransport.discard(reopened) }
+        let recovered = try LeonardoFormatParser.parse(String(contentsOf: reopened.documentURL, encoding: .utf8))
+        XCTAssertEqual(recovered.metadata.values["name"], .string("Pending answer 308"))
+        XCTAssertEqual(try Data(contentsOf: try packageImage(in: reopened)), image)
+        await session.waitForPackageWorkspaceDisposal()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: oldWorkspace.directoryURL.path))
+    }
+
+    func testPackageConflictCopyRejectsTextOrOriginalArchiveDestination() async throws {
+        let fixture = try await packageFixture(withImage: true)
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let originalURL = try XCTUnwrap(session.documentURL)
+        let workspace = try XCTUnwrap(session.packageWorkspace)
+        session.content += "\nPending draft"
+        session.contentChanged()
+        session.externalConflict = true
+        let draft = session.content
+        let originalBytes = try Data(contentsOf: fixture.package)
+        let destinations = [fixture.root.appendingPathComponent("unsafe.mdlf"), fixture.package,
+                            workspace.directoryURL.appendingPathComponent("temporary-copy.mdlz")]
+        for destination in destinations {
+            await session.saveCopyAndOpen(to: destination, sourceURL: originalURL)
+            XCTAssertEqual(session.documentURL, originalURL)
+            XCTAssertEqual(session.content, draft)
+            XCTAssertTrue(session.externalConflict)
+            XCTAssertTrue(session.isDirty)
+            XCTAssertNotNil(session.errorMessage)
+            XCTAssertEqual(session.packageWorkspace?.directoryURL, workspace.directoryURL)
+        }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.root.appendingPathComponent("unsafe.mdlf").path))
+        XCTAssertEqual(try Data(contentsOf: fixture.package), originalBytes)
+    }
+
+    func testFailedPackageConflictCopyRetainsOriginalWorkspaceAndDraft() async throws {
+        let fixture = try await packageFixture(withImage: true)
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let originalURL = try XCTUnwrap(session.documentURL)
+        let workspace = try XCTUnwrap(session.packageWorkspace)
+        session.content += "\nPending draft"
+        session.contentChanged()
+        session.externalConflict = true
+        let draft = session.content
+        await session.saveCopyAndOpen(to: fixture.root.appendingPathComponent("missing/copy.mdlz"), sourceURL: originalURL)
+        XCTAssertEqual(session.documentURL, originalURL)
+        XCTAssertEqual(session.content, draft)
+        XCTAssertTrue(session.externalConflict)
+        XCTAssertTrue(session.isDirty)
+        XCTAssertEqual(session.packageWorkspace?.directoryURL, workspace.directoryURL)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: workspace.documentURL.path))
+        XCTAssertNotNil(session.errorMessage)
+    }
+
+    func testPackageConflictCopyAuthorizesSourceAndRejectsDeniedDestination() async throws {
+        let fixture = try await packageFixture(withImage: true)
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let originalURL = try XCTUnwrap(session.documentURL)
+        let workspace = try XCTUnwrap(session.packageWorkspace)
+        let destination = fixture.root.appendingPathComponent("denied.mdlz")
+        session.content += "\nPending draft"
+        session.contentChanged()
+        session.externalConflict = true
+        let draft = session.content
+        var authorized: [URL] = []
+        session.authorizePath = { url, _ in
+            authorized.append(url.standardizedFileURL)
+            XCTAssertFalse(session.editDocument(expected: draft, replacement: "Late input"))
+            if url.standardizedFileURL == destination.standardizedFileURL { throw CocoaError(.fileWriteNoPermission) }
+        }
+        await session.saveCopyAndOpen(to: destination, sourceURL: originalURL)
+        XCTAssertEqual(authorized, [originalURL.standardizedFileURL, fixture.package.standardizedFileURL, destination.standardizedFileURL])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path))
+        XCTAssertEqual(session.documentURL, originalURL)
+        XCTAssertEqual(session.content, draft)
+        XCTAssertEqual(session.packageWorkspace?.directoryURL, workspace.directoryURL)
+        XCTAssertTrue(session.externalConflict)
+        XCTAssertTrue(session.isDirty)
+    }
+
+    func testPackageConflictCopyDoesNotWriteAfterAuthorizationInvalidatesSession() async throws {
+        let fixture = try await packageFixture(withImage: true)
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let originalURL = try XCTUnwrap(session.documentURL)
+        let destination = fixture.root.appendingPathComponent("stale.mdlz")
+        session.authorizePath = { _, _ in session.isClosing = true }
+        await session.saveCopyAndOpen(to: destination, sourceURL: originalURL)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path))
+        XCTAssertEqual(session.documentURL, originalURL)
+        XCTAssertNotNil(session.packageWorkspace)
+        session.isClosing = false
+    }
+
+    func testPackageConflictCopyMissingResourceRetainsDraftWithoutPartialArchive() async throws {
+        let fixture = try await packageFixture(withImage: true)
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let originalURL = try XCTUnwrap(session.documentURL)
+        let workspace = try XCTUnwrap(session.packageWorkspace)
+        let destination = fixture.root.appendingPathComponent("missing-resource.mdlz")
+        session.content += "\nPending draft"
+        session.contentChanged()
+        session.externalConflict = true
+        let draft = session.content
+        try FileManager.default.removeItem(at: packageImage(in: workspace))
+        await session.saveCopyAndOpen(to: destination, sourceURL: originalURL)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path))
+        XCTAssertEqual(session.documentURL, originalURL)
+        XCTAssertEqual(session.content, draft)
+        XCTAssertEqual(session.packageWorkspace?.directoryURL, workspace.directoryURL)
+        XCTAssertTrue(session.externalConflict)
+        XCTAssertTrue(session.isDirty)
+        XCTAssertNotNil(session.errorMessage)
+    }
+
+    func testPackageConflictCopyRejectsCaseAndUnicodeAliasesOfOriginalArchive() async throws {
+        let fixture = try await packageFixture(withImage: true, baseName: "Réquest")
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let sensitive = try fixture.root.resourceValues(forKeys: [.volumeSupportsCaseSensitiveNamesKey]).volumeSupportsCaseSensitiveNames
+        try XCTSkipIf(sensitive == true, "Case aliases require a case-insensitive filesystem")
+        let originalURL = try XCTUnwrap(session.documentURL)
+        let originalBytes = try Data(contentsOf: fixture.package)
+        session.content += "\nPending alias recovery"
+        session.contentChanged()
+        session.externalConflict = true
+        let draft = session.content
+        let aliases = ["RÉQUEST.MDLZ", "Réquest.mdlz".decomposedStringWithCanonicalMapping]
+        for name in aliases {
+            let destination = fixture.root.appendingPathComponent(name)
+            XCTAssertEqual(ProcessFileLock.canonicalURL(destination), ProcessFileLock.canonicalURL(fixture.package))
+            await session.saveCopyAndOpen(to: destination, sourceURL: originalURL)
+            XCTAssertEqual(try Data(contentsOf: fixture.package), originalBytes)
+            XCTAssertEqual(session.documentURL, originalURL)
+            XCTAssertEqual(session.content, draft)
+            XCTAssertTrue(session.externalConflict)
+            XCTAssertTrue(session.isDirty)
+            XCTAssertNotNil(session.errorMessage)
+        }
+    }
+
+    func testPackageConflictCopyRejectsCaseAndUnicodeAliasesOfTemporaryWorkspace() async throws {
+        let fixture = try await packageFixture(withImage: true)
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let sensitive = try fixture.root.resourceValues(forKeys: [.volumeSupportsCaseSensitiveNamesKey]).volumeSupportsCaseSensitiveNames
+        try XCTSkipIf(sensitive == true, "Case aliases require a case-insensitive filesystem")
+        let originalURL = try XCTUnwrap(session.documentURL)
+        let workspace = try XCTUnwrap(session.packageWorkspace)
+        let link = fixture.root.appendingPathComponent("Récupération")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: workspace.directoryURL)
+        session.content += "\nPending alias recovery"
+        session.contentChanged()
+        session.externalConflict = true
+        let draft = session.content
+        let aliases = ["RÉCUPÉRATION", "Récupération".decomposedStringWithCanonicalMapping]
+        for name in aliases {
+            let destination = fixture.root.appendingPathComponent(name).appendingPathComponent("copy.mdlz")
+            XCTAssertEqual(ProcessFileLock.canonicalURL(destination.deletingLastPathComponent()), ProcessFileLock.canonicalURL(workspace.directoryURL))
+            await session.saveCopyAndOpen(to: destination, sourceURL: originalURL)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: workspace.directoryURL.appendingPathComponent("copy.mdlz").path))
+            XCTAssertEqual(session.documentURL, originalURL)
+            XCTAssertEqual(session.content, draft)
+            XCTAssertEqual(session.packageWorkspace?.directoryURL, workspace.directoryURL)
+            XCTAssertTrue(session.externalConflict)
+            XCTAssertTrue(session.isDirty)
+            XCTAssertNotNil(session.errorMessage)
+        }
     }
 
 }
