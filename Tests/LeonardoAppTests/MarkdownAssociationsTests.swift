@@ -50,6 +50,27 @@ final class MarkdownAssociationsTests: XCTestCase {
         }
     }
 
+    func testAssociationScopeMatchesPackagedTypesAndConsent() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let data = try Data(contentsOf: root.appendingPathComponent("scripts/Info.plist"))
+        let plist = try XCTUnwrap(PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any])
+        let declarations = try XCTUnwrap(plist["UTExportedTypeDeclarations"] as? [[String: Any]])
+            + (try XCTUnwrap(plist["UTImportedTypeDeclarations"] as? [[String: Any]]))
+        let handlers = try XCTUnwrap(plist["CFBundleDocumentTypes"] as? [[String: Any]])
+            .flatMap { $0["LSItemContentTypes"] as? [String] ?? [] }
+        for documentType in WorkspaceMarkdownAssociationDriver.documentTypes {
+            let declaration = try XCTUnwrap(declarations.first {
+                $0["UTTypeIdentifier"] as? String == documentType.identifier
+            })
+            let tags = try XCTUnwrap(declaration["UTTypeTagSpecification"] as? [String: Any])
+            XCTAssertTrue((tags["public.filename-extension"] as? [String] ?? []).contains(documentType.fileExtension))
+            XCTAssertTrue(handlers.contains(documentType.identifier))
+            XCTAssertTrue(MarkdownAssociations.startupAlert().informativeText.contains("." + documentType.fileExtension))
+        }
+        XCTAssertFalse(WorkspaceMarkdownAssociationDriver.extensions.contains("txt"))
+    }
+
     func testAskNextTimeIsOncePerLaunchAndNeverPersistsAcrossModels() async {
         let (model, driver, defaults, suite) = fixture()
         defer { defaults.removePersistentDomain(forName: suite) }
