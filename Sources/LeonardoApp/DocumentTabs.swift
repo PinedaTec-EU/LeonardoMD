@@ -56,6 +56,10 @@ final class DocumentTabs {
         session.relatedPathDeleted = { [weak self, weak session] source in
             self?.pathDeleted(source, excluding: session)
         }
+        session.openProjectDocumentInTab = { [weak self, weak session] url, line in
+            guard let self, let session else { return }
+            await self.openProjectDocument(url, line: line, from: session)
+        }
         session.openDroppedDocuments = { [weak self] urls in await self?.openDroppedDocuments(urls) }
         session.updateWindow = { [weak self] _, _, _ in self?.updateTitle() }
         tabs.append(tab)

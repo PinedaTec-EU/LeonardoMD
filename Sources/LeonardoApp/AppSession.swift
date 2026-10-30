@@ -36,6 +36,8 @@ final class AppSession {
         set { formatPreferences.migrateMarkdownOnSave = newValue }
     }
     var projectURL: URL?
+    var projectFileTree = ProjectFileTree()
+    var openProjectDocumentInTab: ((URL, Int?) async -> Void)?
     private var documentContent = ""
     var content: String {
         get { documentContent }
