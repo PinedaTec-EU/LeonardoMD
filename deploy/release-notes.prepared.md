@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.678
+
+- #295 Fixed: wire local image context actions ([#296](https://github.com/PinedaTec-EU/LeonardoMD/pull/296))
+
+<p>Open embedded document images in a native window and save their original bytes from the image context menu.</p>
+
+Source: `57bd457033d982ec0c389a9bdf5991f7f69a0d68`. Delta: `{"build": 6}`.
+
 ## 0.1.672
 
 - #285 Removed: redundant extension state captions ([#286](https://github.com/PinedaTec-EU/LeonardoMD/pull/286))

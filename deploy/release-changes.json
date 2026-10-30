@@ -647,6 +647,16 @@
       "pr": 286,
       "summary": "Extension preferences show their state through the switch without a redundant caption.",
       "to_version": "0.1.672"
+    },
+    {
+      "delta": {
+        "build": 6
+      },
+      "from_version": "0.1.672",
+      "merge_sha": "57bd457033d982ec0c389a9bdf5991f7f69a0d68",
+      "pr": 296,
+      "summary": "Open embedded document images in a native window and save their original bytes from the image context menu.",
+      "to_version": "0.1.678"
     }
   ],
   "initial_version": "0.1.56",
@@ -657,5 +667,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.672"
+  "version": "0.1.678"
 }
