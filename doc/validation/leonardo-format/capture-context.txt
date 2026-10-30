@@ -1,6 +1,0 @@
-Surface: WorkspaceView with the native Leonardo form inspector
-States: local MDLF, MDLZ package workspace, explicitly extracted MDLZ workspace
-View size: 1260x850 points
-Languages: en, es
-Fixture: synthetic form with text and multiline fields; package transport creates the MDLZ
-Limit: opt-in NSHostingView bitmap evidence, no claim about a fresh packaged process

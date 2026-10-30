@@ -1,0 +1,196 @@
+{
+  "reviewed_sha": "da5f2feace37be508dd96a162505b8c1bc7a5e85",
+  "all_passed": true,
+  "checks": [
+    {
+      "file": "association-en-default.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-en-failed.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-en-other.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-en-suppressed.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-en-unavailable.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-es-default.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-es-failed.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-es-other.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-es-suppressed.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-es-unavailable.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "general-project-en.png",
+      "format": "png",
+      "dimensions": [
+        1160,
+        1240
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "general-project-es.png",
+      "format": "png",
+      "dimensions": [
+        1160,
+        1240
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "prompt-en.png",
+      "format": "png",
+      "dimensions": [
+        520,
+        732
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "prompt-es.png",
+      "format": "png",
+      "dimensions": [
+        520,
+        764
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "runtime-markdown.jpg",
+      "format": "jpeg",
+      "dimensions": [
+        2520,
+        1700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "runtime-md.jpg",
+      "format": "jpeg",
+      "dimensions": [
+        2520,
+        1700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "runtime-mdlf.jpg",
+      "format": "jpeg",
+      "dimensions": [
+        2520,
+        1700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "runtime-mdlr.jpg",
+      "format": "jpeg",
+      "dimensions": [
+        2520,
+        1700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "runtime-mdlz.jpg",
+      "format": "jpeg",
+      "dimensions": [
+        2520,
+        1700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    }
+  ]
+}
