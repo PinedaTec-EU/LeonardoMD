@@ -11,6 +11,13 @@ struct SavedItemsView: View {
     private static let rowHeight: CGFloat = 48
     private static let rowSpacing: CGFloat = 4
 
+    init(session: AppSession, favoriteKind: FavoriteItem.Kind = .project,
+         recentKind: FavoriteItem.Kind = .project) {
+        self.session = session
+        _favoriteKind = State(initialValue: favoriteKind)
+        _recentKind = State(initialValue: recentKind)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             favorites

@@ -65,7 +65,7 @@ final class FavoritesTests: XCTestCase {
         }
         let originalFavorites = session.globalPreferences.favorites
         session.globalPreferences.favorites += (1...8).map {
-            FavoriteItem(kind: .document, url: root.appendingPathComponent("Notes-\($0).md"))
+            FavoriteItem(kind: .project, url: root.appendingPathComponent("Project-\($0)"))
         }
         session.persistSettings()
         await session.settingsTask?.value
@@ -107,6 +107,61 @@ final class FavoritesTests: XCTestCase {
                 to: directory.appendingPathComponent("welcome-\(Int(size.width))x\(Int(size.height))-es.png"), title: "Leonardo Home QA")
         }
         await session.settingsTask?.value
+    }
+
+    func testSavedItemTabsBoundLongListsAndScrollToLastItem() async throws {
+        guard let destination = ProcessInfo.processInfo.environment["LEONARDO_TABS_CAPTURE"] else {
+            throw XCTSkip("Opt-in native saved-item tabs capture")
+        }
+        let directory = URL(fileURLWithPath: destination, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let root = directory.appendingPathComponent("fixture")
+        let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        await session.initialize()
+        let language = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = language }
+        for kind in FavoriteItem.Kind.allCases {
+            for index in 1...8 {
+                let url = root.appendingPathComponent("\(kind.rawValue)-\(index)")
+                try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+                session.globalPreferences.favorites.append(FavoriteItem(kind: kind, url: url))
+            }
+        }
+        session.globalPreferences.recentProjectPaths = (1...8).map { root.appendingPathComponent("project-\($0)") }
+        session.globalPreferences.recentWorkspacePaths = (1...8).map { root.appendingPathComponent("workspace-\($0)") }
+        session.persistSettings()
+        await session.settingsTask?.value
+        func scrollViews(_ view: NSView) -> [NSScrollView] {
+            (view as? NSScrollView).map { [$0] } ?? view.subviews.flatMap(scrollViews)
+        }
+        for locale in [AppLanguage.english, .spanish] {
+            LanguageSettings.shared.language = locale
+            for kind in FavoriteItem.Kind.allCases {
+                let view = NSHostingView(rootView: SavedItemsView(session: session, favoriteKind: kind, recentKind: kind == .document ? .project : kind)
+                    .padding(20).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
+                let name = "tabs-\(kind.rawValue)-\(locale.rawValue)"
+                try await NativeViewCaptureSupport.capture(view, size: NSSize(width: 760, height: 720),
+                    to: directory.appendingPathComponent(name + ".png")) { host in
+                        let lists = scrollViews(host)
+                        XCTAssertEqual(lists.count, 2)
+                        for scroll in lists {
+                            XCTAssertEqual(scroll.contentView.bounds.height, 256, accuracy: 1)
+                            XCTAssertGreaterThan(try XCTUnwrap(scroll.documentView).bounds.height, 256)
+                        }
+                    }
+                try await NativeViewCaptureSupport.capture(view, size: NSSize(width: 760, height: 720),
+                    to: directory.appendingPathComponent(name + "-scrolled.png")) { host in
+                        for scroll in scrollViews(host) {
+                            let document = try XCTUnwrap(scroll.documentView)
+                            let offset = document.bounds.height - scroll.contentView.bounds.height
+                            scroll.contentView.scroll(to: NSPoint(x: 0, y: offset))
+                            scroll.reflectScrolledClipView(scroll.contentView)
+                            XCTAssertEqual(scroll.contentView.bounds.maxY, document.bounds.maxY, accuracy: 1)
+                        }
+                    }
+            }
+        }
     }
 
     func testFavoritesPersistIndependentlyOfRecentsAndCanBeRemoved() async throws {
