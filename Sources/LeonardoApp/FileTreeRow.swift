@@ -35,7 +35,31 @@ struct FileTreeRow: View {
                     .background(selected ? Color(nsColor: .selectedTextBackgroundColor) : .clear,
                                 in: RoundedRectangle(cornerRadius: 6))
             }
+                .highPriorityGesture(
+                    TapGesture(count: 2).exclusively(before: TapGesture())
+                        .onEnded { value in
+                            switch value {
+                            case .first:
+                                if !entry.isDirectory {
+                                    Task {
+                                        if AppSession.supportedDocumentExtensions.contains(entry.url.pathExtension.lowercased()) {
+                                            await session.openProjectDocumentInTab?(entry.url, nil)
+                                        } else { await session.openDocument(entry.url) }
+                                    }
+                                } else { toggle() }
+                            case .second:
+                                if entry.isDirectory { toggle() }
+                                else { Task { await session.openDocument(entry.url) } }
+                            }
+                        }
+                )
                 .contextMenu {
+                    if !entry.isDirectory && AppSession.supportedDocumentExtensions.contains(entry.url.pathExtension.lowercased()) {
+                        Button(L10n.text("Open in new tab")) {
+                            Task { await session.openProjectDocumentInTab?(entry.url, nil) }
+                        }
+                        Divider()
+                    }
                     Button(L10n.text("Show in Finder")) { NSWorkspace.shared.activateFileViewerSelecting([entry.url]) }
                     Button(L10n.text("Rename…")) { session.rename(entry.url) }
                     Button(L10n.text("Move…")) { session.move(entry.url) }

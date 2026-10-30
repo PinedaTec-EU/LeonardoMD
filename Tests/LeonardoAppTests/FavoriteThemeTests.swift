@@ -53,97 +53,46 @@ final class FavoriteThemeTests: XCTestCase {
         XCTAssertNil(reader.errorMessage)
     }
 
-    func testWorkspaceWinsOnlyForItsOwnProjectsAndRecomputesOnSwitch() async throws {
-        let workspace = try folder("Workspace")
-        let project = try folder("Workspace/Project")
-        let outside = try folder("WorkspaceOther/Project")
+    func testRetiredWorkspaceThemeCannotOverrideProjectOrStandaloneAppearance() async throws {
+        let parent = try folder("Parent")
+        let project = try folder("Parent/Project")
         let session = await session()
-        session.toggleFavorite(workspace, kind: .workspace)
-        session.setFavoritePalette(.graphiteGlass, for: workspace, kind: .workspace)
-        session.toggleFavorite(project, kind: .project)
-        session.setFavoritePalette(.leonardoClassic, for: project, kind: .project)
+        session.globalPreferences.favorites = [
+            FavoriteItem(kind: .workspace, url: parent, palette: .graphiteGlass),
+            FavoriteItem(kind: .project, url: project, palette: .leonardoClassic)
+        ]
+        session.persistSettings()
         await session.settingsTask?.value
-        await session.openSavedItem(workspace, kind: .workspace)
-        XCTAssertEqual(session.resolved.palette, .graphiteGlass)
-        let opened3 = await session.openProject(project)
-        XCTAssertTrue(opened3)
-        session.projectConfiguration.palette = .paperWhite
-        XCTAssertEqual(session.resolved.palette, .graphiteGlass)
-        session.setFavoritePalette(nil, for: workspace, kind: .workspace)
+        _ = await session.openProject(project)
         XCTAssertEqual(session.resolved.palette, .leonardoClassic)
-        session.setFavoritePalette(.graphiteGlass, for: workspace, kind: .workspace)
-        let opened4 = await session.openProject(outside)
-        XCTAssertTrue(opened4)
-        XCTAssertEqual(session.resolved.palette, .paperWhite)
-    }
-
-    func testWorkspaceManagerUsesSelectedWorkspaceThemeWithoutLeakingToExternalProject() async throws {
-        let workspace = try folder("Workspace")
-        let outside = try folder("External")
-        let session = await session()
-        session.toggleFavorite(workspace, kind: .workspace)
-        session.setFavoritePalette(.graphiteGlass, for: workspace, kind: .workspace)
-        await session.settingsTask?.value
-        let opened = await session.openProject(outside)
-        XCTAssertTrue(opened)
-        await session.openWorkspace(workspace)
-        XCTAssertTrue(session.showWorkspace)
-        XCTAssertEqual(session.resolved.palette, .graphiteGlass)
-        session.showWorkspace = false
-        XCTAssertEqual(session.resolved.palette, .paperWhite)
-    }
-
-    func testDismissedWorkspaceWithoutProjectRestoresGlobalAppearance() async throws {
-        let workspace = try folder("Workspace")
-        let session = await session()
-        session.toggleFavorite(workspace, kind: .workspace)
-        session.setFavoritePalette(.graphiteGlass, for: workspace, kind: .workspace)
-        await session.settingsTask?.value
-        await session.openWorkspace(workspace)
-        XCTAssertEqual(session.resolved.palette, .graphiteGlass)
-        session.showWorkspace = false
-        XCTAssertNotNil(session.workspaceURL, "The remembered workspace is not the active appearance context")
-        XCTAssertEqual(session.resolved.palette, .paperWhite)
-        session.showWorkspace = true
-        XCTAssertEqual(session.resolved.palette, .graphiteGlass)
-    }
-
-    func testDetachingWorkspaceProjectRestoresGlobalAppearance() async throws {
-        let workspace = try folder("Workspace")
-        let project = try folder("Workspace/Project")
-        let session = await session()
-        session.toggleFavorite(workspace, kind: .workspace)
-        session.setFavoritePalette(.graphiteGlass, for: workspace, kind: .workspace)
-        await session.settingsTask?.value
-        await session.openWorkspace(workspace)
-        let opened = await session.openProject(project)
-        XCTAssertTrue(opened)
-        XCTAssertEqual(session.resolved.palette, .graphiteGlass)
         await session.detachProject()
         XCTAssertNil(session.projectURL)
-        XCTAssertFalse(session.showWorkspace)
+        XCTAssertEqual(session.resolved.palette, .paperWhite)
+        await session.openSavedItem(parent, kind: .workspace)
+        XCTAssertNil(session.projectURL)
         XCTAssertEqual(session.resolved.palette, .paperWhite)
     }
 
-    func testStandaloneOpeningAndSaveCopyLeaveWorkspaceAppearance() async throws {
-        let workspace = try folder("Workspace")
-        let file = workspace.appendingPathComponent("Note.md")
+    func testStandaloneOpeningAndSaveCopyLeaveProjectAppearance() async throws {
+        let project = try folder("Project")
+        let file = project.appendingPathComponent("Note.md")
         try "# Standalone".write(to: file, atomically: true, encoding: .utf8)
         let session = await session()
-        session.toggleFavorite(workspace, kind: .workspace)
-        session.setFavoritePalette(.graphiteGlass, for: workspace, kind: .workspace)
+        session.toggleFavorite(project, kind: .project)
+        session.setFavoritePalette(.graphiteGlass, for: project, kind: .project)
         await session.settingsTask?.value
-        await session.openWorkspace(workspace)
+        _ = await session.openProject(project)
+        XCTAssertEqual(session.resolved.palette, .graphiteGlass)
         await session.open(file)
         XCTAssertEqual(session.documentURL, file)
         XCTAssertNil(session.projectURL)
-        XCTAssertFalse(session.showWorkspace)
         XCTAssertEqual(session.resolved.palette, .paperWhite)
-        session.showWorkspace = true
+        _ = await session.openProject(project)
+        XCTAssertEqual(session.resolved.palette, .graphiteGlass)
         let copy = root.appendingPathComponent("Copy.md")
         await session.saveCopyAndOpen(to: copy, sourceURL: file)
         XCTAssertEqual(session.documentURL, copy)
-        XCTAssertFalse(session.showWorkspace)
+        XCTAssertNil(session.projectURL)
         XCTAssertEqual(session.resolved.palette, .paperWhite)
         XCTAssertNil(session.errorMessage)
     }
@@ -248,8 +197,7 @@ final class FavoriteThemeTests: XCTestCase {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         for (locale, width, palette, kind) in [
             (AppLanguage.english, 900, PaletteID.paperWhite, FavoriteItem.Kind.project),
-            (.spanish, 900, .paperWhite, .project), (.spanish, 600, .graphiteGlass, .project),
-            (.english, 900, .paperWhite, .workspace), (.spanish, 600, .graphiteGlass, .workspace)
+            (.spanish, 900, .paperWhite, .project), (.spanish, 600, .graphiteGlass, .project)
         ] {
             LanguageSettings.shared.language = locale
             session.globalPreferences.palette = palette

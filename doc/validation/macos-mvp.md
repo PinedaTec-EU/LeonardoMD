@@ -2,7 +2,7 @@
 
 Run `swift test` for Core, App, static render and real WKWebView integration checks. Run `./scripts/build-app.sh` for the optimized, locally signed native bundle; `./launch.sh` opens it. Tests use disposable local folders and bare Git remotes, never a production remote.
 
-Coverage includes workspace/file operations, path and symlink boundaries, streamed search/cancellation, schema and stale-window settings merges, external-change protection, navigation isolation, Git dirty/conflict handling, Unicode/newline paths, multi-megabyte process output, and fetch/pull/push against a local bare remote. Real WebKit checks verify sanitization, disabled engine globals, retained content-update context, Mermaid labels, KaTeX, parent-relative images, PDF data and engine context replacement.
+Coverage includes project/file operations, path and symlink boundaries, streamed search/cancellation, schema and stale-window settings merges, external-change protection, navigation isolation, Git dirty/conflict handling, Unicode/newline paths, multi-megabyte process output, and fetch/pull/push against a local bare remote. Real WebKit checks verify sanitization, disabled engine globals, retained content-update context, Mermaid labels, KaTeX, parent-relative images, PDF data and engine context replacement.
 
 Project browsing and both search APIs omit symbolic links. File operations reject symbolic link components and destinations, including dangling links, instead of resolving an alias and mutating its target. This is a preflight boundary, not protection against another process swapping paths concurrently; the correction is tracked in [#25](https://github.com/PinedaTec-EU/LeonardoMD/issues/25).
 

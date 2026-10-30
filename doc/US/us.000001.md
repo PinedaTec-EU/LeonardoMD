@@ -1,5 +1,7 @@
 # US.000001 - Workspace local de proyectos
 
+> Retirada por decisión del propietario el 2026-10-30: LeonardoMD abre carpetas directamente como proyectos. Se elimina la agrupación en workspaces de la interfaz; esta historia se conserva como contexto histórico. Seguimiento: [#305](https://github.com/PinedaTec-EU/LeonardoMD/issues/305).
+
 ## Resumen
 
 Como usuario quiero abrir LeonardoMD en un workspace local orientado a proyectos para organizar mis notas, documentos y recursos como carpetas reales del sistema de archivos.

@@ -13,13 +13,13 @@ extension AppSession {
         // retired.
         documentURL = nil; documentSourceURL = nil; snapshot = nil; content = ""
         documentKind = .markdown; documentStorage = .localFile; leonardoFormatWarning = false
-        projectURL = nil; workspaceURL = nil; workspaceProjects = []
+        projectURL = nil
         rootEntries = []; resetSearch()
         git = nil; gitStatus = nil; gitHistory = []
         projectConfiguration = .default; projectBaseline = .default
         externalConflict = false; errorMessage = nil; pendingExternalURL = nil
         requestedLine = nil; editorScroll = 0
-        showGit = false; showWorkspace = false; showPreferences = false
+        showGit = false; showPreferences = false
         saveStatus = "Local file"
         renderer.update(content: "", baseURL: nil)
     }

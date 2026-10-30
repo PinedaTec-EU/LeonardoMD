@@ -14,7 +14,6 @@ struct WelcomeView: View {
                     Button(L10n.text("Open document…")) { session.chooseDocument() }.buttonStyle(PremiumButtonStyle(prominent: true))
                     Button(L10n.text("Open project…")) { session.chooseProject() }.buttonStyle(PremiumButtonStyle())
                 }
-                Button(L10n.text("Manage workspaces…")) { session.showWorkspace = true }.buttonStyle(PremiumButtonStyle())
                 Text(L10n.text("Local · No account · Optional extensions")).font(.caption).foregroundStyle(.secondary)
                 SavedItemsView(session: session)
             }

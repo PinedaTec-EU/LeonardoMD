@@ -28,7 +28,9 @@ final class FavoritesTests: XCTestCase {
     }
 
     func testNativeWelcomeCapture() async throws {
-        guard let destination = ProcessInfo.processInfo.environment["LEONARDO_FAVORITES_CAPTURE"] else {
+        let environment = ProcessInfo.processInfo.environment
+        guard let destination = environment["LEONARDO_FAVORITES_CAPTURE"]
+            ?? environment["LEONARDO_VISUAL_EVIDENCE"].map({ $0 + "/home-projects" }) else {
             throw XCTSkip("Opt-in native welcome capture")
         }
         _ = NSApplication.shared
@@ -56,8 +58,11 @@ final class FavoritesTests: XCTestCase {
             let view = NSHostingView(rootView: WelcomeView(session: session).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
             try await NativeViewCaptureSupport.capture(view, size: NSSize(width: 1100, height: 1150),
                 to: directory.appendingPathComponent("welcome-\(locale.rawValue).png"), title: "Leonardo Favorites QA")
+            try NativeViewCaptureSupport.writeProvenance(for: directory.appendingPathComponent("welcome-\(locale.rawValue).png"),
+                screen: "Home; Favorites and Recents show Projects and Documents only",
+                size: NSSize(width: 1100, height: 1150), language: locale.rawValue)
         }
-        for kind in FavoriteItem.Kind.allCases {
+        for kind in FavoriteItem.Kind.navigationKinds {
             let view = NSHostingView(rootView: SavedItemsView(session: session, recentKind: kind)
                 .padding(20).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
             try await NativeViewCaptureSupport.capture(view, size: NSSize(width: 760, height: 650),
@@ -121,7 +126,7 @@ final class FavoritesTests: XCTestCase {
         await session.initialize()
         let language = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = language }
-        for kind in FavoriteItem.Kind.allCases {
+        for kind in FavoriteItem.Kind.navigationKinds {
             for index in 1...8 {
                 let url = root.appendingPathComponent("\(kind.rawValue)-\(index)")
                 try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
@@ -137,7 +142,7 @@ final class FavoritesTests: XCTestCase {
         }
         for locale in [AppLanguage.english, .spanish] {
             LanguageSettings.shared.language = locale
-            for kind in FavoriteItem.Kind.allCases {
+            for kind in FavoriteItem.Kind.navigationKinds {
                 let view = NSHostingView(rootView: SavedItemsView(session: session, favoriteKind: kind, recentKind: kind == .document ? .project : kind)
                     .padding(20).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
                 let name = "tabs-\(kind.rawValue)-\(locale.rawValue)"
@@ -225,7 +230,6 @@ final class FavoritesTests: XCTestCase {
         XCTAssertTrue(menu.items.allSatisfy { !$0.isEnabled })
         session.documentURL = root.appendingPathComponent("document.md")
         session.projectURL = root.appendingPathComponent("project")
-        session.workspaceURL = root.appendingPathComponent("workspace")
         controller.menuNeedsUpdate(menu)
         XCTAssertTrue(menu.items.allSatisfy(\.isEnabled))
         for item in menu.items {
@@ -234,7 +238,7 @@ final class FavoritesTests: XCTestCase {
         await session.settingsTask?.value
         controller.menuNeedsUpdate(menu)
         XCTAssertTrue(menu.items.allSatisfy { $0.state == .on })
-        XCTAssertEqual(session.globalPreferences.favorites.count, 3)
+        XCTAssertEqual(session.globalPreferences.favorites.count, 2)
         session.documentURL = root.appendingPathComponent("another.md")
         controller.menuNeedsUpdate(menu)
         XCTAssertEqual(menu.items[0].state, .off)
@@ -282,8 +286,7 @@ final class FavoritesTests: XCTestCase {
         await session.openSavedItem(project, kind: .project)
         XCTAssertEqual(session.projectURL?.path, project.path)
         await session.openSavedItem(root, kind: .workspace)
-        XCTAssertEqual(session.workspaceURL?.path, root.path)
-        XCTAssertTrue(session.showWorkspace)
+        XCTAssertEqual(session.projectURL?.path, project.path)
         XCTAssertNil(session.errorMessage)
         await session.settingsTask?.value
     }

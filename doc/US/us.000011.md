@@ -24,7 +24,7 @@ Como usuario quiero que LeonardoMD abra rápido y renderice Markdown de forma in
 
 ## Criterios de Aceptación
 
-1. La app muestra ventana usable antes de cargar todo el workspace.
+1. La app muestra ventana usable antes de cargar todo el proyecto.
 2. La carga de proyectos grandes es incremental.
 3. El render Markdown no bloquea la interacción principal.
 4. Mermaid se procesa bajo demanda o en background.
@@ -39,7 +39,7 @@ Como usuario quiero que LeonardoMD abra rápido y renderice Markdown de forma in
 flowchart LR
     A["Arranque app"] --> B["Ventana usable"]
     B --> C["Cargar preferencias"]
-    C --> D["Abrir último workspace"]
+    C --> D["Abrir último proyecto"]
     D --> E["Cargar árbol raíz"]
     E --> F["Indexar bajo demanda"]
     F --> G["Render documento seleccionado"]
@@ -47,7 +47,7 @@ flowchart LR
 
 ## Principios Técnicos
 
-- No indexar todo el workspace en arranque.
+- No indexar todo el proyecto en arranque.
 - No renderizar Mermaid hasta que sea visible o necesario.
 - Cachear resultados costosos por hash de contenido.
 - Separar IO, parseo y render para poder medirlos.

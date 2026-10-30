@@ -23,7 +23,7 @@ Como equipo de producto quiero que LeonardoMD nazca en macOS pero con arquitectu
 
 ## Criterios de Aceptación
 
-1. El dominio de workspace, proyecto, documento, paleta y configuración no depende de UI.
+1. El dominio de proyecto, documento, paleta y configuración no depende de UI.
 2. La integración Git se consume mediante interfaz.
 3. El render Markdown se consume mediante interfaz o módulo aislado.
 4. Las preferencias se guardan en formatos portables.

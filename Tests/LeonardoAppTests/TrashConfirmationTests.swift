@@ -5,7 +5,7 @@ import LeonardoCore
 
 @MainActor
 final class TrashConfirmationTests: XCTestCase {
-    func testCancelPreservesItemAndProjectInBothLanguages() async throws {
+    func testCancelPreservesItemInBothLanguages() async throws {
         _ = NSApplication.shared
         let previous = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = previous }
@@ -14,6 +14,8 @@ final class TrashConfirmationTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: root) }
         let document = root.appendingPathComponent("notes.md")
         try "Preserve this document".write(to: document, atomically: true, encoding: .utf8)
+        let folder = root.appendingPathComponent("Folder")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
         session.projectURL = root
         let owner = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1000, height: 800),
@@ -28,10 +30,9 @@ final class TrashConfirmationTests: XCTestCase {
         defer { session.stop() }
         for language in AppLanguage.allCases {
             LanguageSettings.shared.language = language
-            for project in [false, true] {
-                let name = project ? "project" : "item"
-                if project { session.deleteProject(ProjectDescriptor(name: "Notes", rootURL: root)) }
-                else { session.delete(document) }
+            for item in [document, folder] {
+                let name = item.lastPathComponent
+                session.delete(item)
                 for _ in 0..<100 where owner.attachedSheet == nil {
                     try await Task.sleep(for: .milliseconds(20))
                 }
@@ -43,9 +44,7 @@ final class TrashConfirmationTests: XCTestCase {
                 XCTAssertTrue(buttons.contains(L10n.text("Cancel")))
                 XCTAssertTrue(buttons.contains(L10n.text("Move to Trash")))
                 let copy = controls.compactMap { ($0 as? NSTextField)?.stringValue }.joined(separator: "\n")
-                let explanation = project
-                    ? "The entire project folder and its contents will be moved to Trash. You can recover them from Trash."
-                    : "The item will be moved to Trash. You can recover it from Trash."
+                let explanation = "The item will be moved to Trash. You can recover it from Trash."
                 XCTAssertTrue(copy.contains(L10n.text(explanation)))
                 print("Native Trash sheet: \(language.rawValue)-\(name), viewport=\(view.bounds.size)")
                 owner.endSheet(sheet, returnCode: .alertFirstButtonReturn)

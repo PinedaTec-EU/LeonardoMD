@@ -28,7 +28,6 @@ struct WorkspaceView: View {
         }
         .modifier(SessionAppearance(session: session))
         .background(session.surfaceColor)
-        .sheet(isPresented: $session.showWorkspace) { WorkspaceManager(session: session).modifier(SessionAppearance(session: session)) }
         .sheet(isPresented: $session.showPreferences) { PreferencesView(session: session).modifier(SessionAppearance(session: session)) }
         .sheet(isPresented: $session.showGit) { GitPanel(session: session).modifier(SessionAppearance(session: session)) }
         .alert("LeonardoMD", isPresented: Binding(get: { session.errorMessage != nil }, set: { if !$0 { session.errorMessage = nil } })) {
@@ -71,7 +70,6 @@ struct WorkspaceView: View {
             Menu {
                 Button(L10n.text("Open document…")) { session.chooseDocument() }
                 Button(L10n.text("Open project…")) { session.chooseProject() }
-                Button(L10n.text("Workspaces…")) { session.showWorkspace = true }
                 if session.projectURL == nil, let url = session.documentURL {
                     Button(L10n.text("Open folder as project")) { Task { await session.openProject(url.deletingLastPathComponent()) } }
                 }

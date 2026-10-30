@@ -59,7 +59,7 @@ final class RecentItemsMenuTests: XCTestCase {
         let menus = RecentItemsMenu(session: { session }, openDocument: { _ in })
         let parent = NSMenu()
         menus.add(to: parent)
-        XCTAssertEqual(parent.items.count, 4)
+        XCTAssertEqual(parent.items.count, 3)
         let projects = try XCTUnwrap(parent.items[1].submenu)
         XCTAssertEqual(projects.items[0].representedObject as? URL, root)
         XCTAssertTrue(projects.items[0].isEnabled)
