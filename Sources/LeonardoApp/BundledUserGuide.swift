@@ -31,7 +31,7 @@ extension DocumentTabs {
                 .appendingPathComponent("LeonardoMD", isDirectory: true)
             let copy = try BundledUserGuide.workingCopy(language: LanguageSettings.shared.language,
                                                       supportDirectory: support)
-            await openExternalDocuments([copy])
+            await openExternalDocuments([copy], packagePreference: .package)
         } catch {
             activeSession.report(error)
         }

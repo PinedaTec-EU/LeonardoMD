@@ -228,7 +228,7 @@ final class AppSession {
         }
     }
 
-    func open(_ url: URL) async {
+    func open(_ url: URL, packagePreference: LeonardoPackageOpenPreference? = nil) async {
         guard !isClosing, !stopped else { return }
         fileOperationCount += 1
         defer { fileOperationCount -= 1 }
@@ -249,11 +249,11 @@ final class AppSession {
             rootEntries = []
             resetSearch()
             focus = false
-            await openDocument(url)
+            await openDocument(url, packagePreference: packagePreference)
         }
     }
 
-    func openDocument(_ url: URL, line: Int? = nil) async {
+    func openDocument(_ url: URL, line: Int? = nil, packagePreference: LeonardoPackageOpenPreference? = nil) async {
         guard !isClosing, !stopped, !isSyncSuspended else { return }
         let access = beginDocumentAccess(to: url)
         defer { finishDocumentAccess(access) }
@@ -278,7 +278,7 @@ final class AppSession {
         if kind == .leonardoPackage {
             busy = true
             defer { busy = false }
-            guard await openPackageDocument(url, packageOpenPreference) else {
+            guard await openPackageDocument(url, packagePreference ?? packageOpenPreference) else {
                 // The package adapter returns false for both cancellation and
                 // a reported transport error. Do not turn a cancelled panel
                 // into a new alert; the adapter has already reported errors.

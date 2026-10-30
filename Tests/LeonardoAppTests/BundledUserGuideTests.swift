@@ -36,6 +36,25 @@ final class BundledUserGuideTests: XCTestCase {
         }
     }
 
+    func testGuidePackageOverrideDoesNotChangeOrdinaryOpeningPreference() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let tabs = DocumentTabs(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { tabs.stop() }
+        let session = tabs.activeSession
+        session.authorizePath = { _, _ in }
+        let previous = session.packageOpenPreference
+        defer { session.packageOpenPreference = previous }
+        session.packageOpenPreference = .ask
+        var requested: [LeonardoPackageOpenPreference] = []
+        session.openPackageDocument = { _, preference in requested.append(preference); return false }
+        let copy = try BundledUserGuide.workingCopy(language: .english, supportDirectory: root)
+        await session.open(copy, packagePreference: .package)
+        await session.open(copy)
+        XCTAssertEqual(requested, [.package, .ask])
+        XCTAssertEqual(session.packageOpenPreference, .ask)
+    }
+
     func testHelpMenuExposesLocalizedGuideAction() {
         _ = NSApplication.shared
         let previousLanguage = LanguageSettings.shared.language
@@ -72,7 +91,7 @@ final class BundledUserGuideTests: XCTestCase {
             let session = tabs.activeSession
             session.authorizePath = { _, _ in }
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
-            await session.open(copy)
+            await session.open(copy, packagePreference: .package)
             XCTAssertEqual(session.documentStorage, .package)
             XCTAssertNil(session.errorMessage)
             session.mode = .fill

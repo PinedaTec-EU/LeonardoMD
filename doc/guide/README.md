@@ -3,7 +3,8 @@
 The macOS app ships `Guide-v1-en.mdlz` and `Guide-v1-es.mdlz` in its SwiftPM
 resource bundle. Help and Welcome open a user-owned copy in
 `~/Library/Application Support/LeonardoMD/User Guides/v1/<language>/` through
-ordinary document tabs. Existing copies and practice answers are preserved.
+ordinary document tabs in package mode, without changing the user’s general
+package-opening preference. Existing copies and practice answers are preserved.
 
 `en/body.md` and `es/body.md` are the editorial sources. The package builder
 owns the shared practice-field metadata and three SVG illustrations per locale.
