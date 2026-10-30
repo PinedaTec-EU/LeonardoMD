@@ -151,5 +151,7 @@
       "height_px": 1700,
       "capture_file_time": "2026-10-30T11:52:09.624796+01:00"
     }
-  }
+  },
+  "qa_executable_sha256": "ebe3efaaf5e94baaefd5f3a0e03e897b9b18675bf62b17f709bae3f018776e1a",
+  "executable_identity_proof": "executable-identity.json"
 }
