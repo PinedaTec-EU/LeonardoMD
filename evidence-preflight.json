@@ -1,0 +1,156 @@
+{
+  "reviewed_sha": "9c02198ed2388cdf9da90689dc16a29a9e87e93f",
+  "all_passed": true,
+  "checks": [
+    {
+      "file": "association-en-default.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-en-failed.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-en-other.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-en-suppressed.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-en-unavailable.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-es-default.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-es-failed.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-es-other.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-es-suppressed.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "association-es-unavailable.png",
+      "format": "png",
+      "dimensions": [
+        1064,
+        700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "general-project-en.png",
+      "format": "png",
+      "dimensions": [
+        1160,
+        1240
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "general-project-es.png",
+      "format": "png",
+      "dimensions": [
+        1160,
+        1240
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "prompt-en.png",
+      "format": "png",
+      "dimensions": [
+        520,
+        732
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "prompt-es.png",
+      "format": "png",
+      "dimensions": [
+        520,
+        764
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    },
+    {
+      "file": "runtime-mdlz.jpg",
+      "format": "jpeg",
+      "dimensions": [
+        2520,
+        1700
+      ],
+      "extension_matches": true,
+      "decoded_by": "macOS sips"
+    }
+  ]
+}

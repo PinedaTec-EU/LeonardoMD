@@ -32,79 +32,124 @@
   ],
   "images": {
     "association-en-default.png": {
+      "format": "png",
+      "mime_type": "image/png",
       "sha256": "780cc89b44cce2ac860e6f858e67fa18813d1d77ade55c8b55b9b740605c4f8d",
       "width_px": 1064,
-      "height_px": 700
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T11:51:46.197781+01:00"
     },
     "association-en-failed.png": {
+      "format": "png",
+      "mime_type": "image/png",
       "sha256": "ddd59de52e4eff76ec2d68098f4693782f20d6e14e574991ed46a734c88c0f42",
       "width_px": 1064,
-      "height_px": 700
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T11:51:46.768723+01:00"
     },
     "association-en-other.png": {
+      "format": "png",
+      "mime_type": "image/png",
       "sha256": "7c7d6b004fe4af2bc502d78b0683dc9f5db7e8409f27cc2d1ad2a9c8d29101a6",
       "width_px": 1064,
-      "height_px": 700
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T11:51:46.009032+01:00"
     },
     "association-en-suppressed.png": {
+      "format": "png",
+      "mime_type": "image/png",
       "sha256": "1e3c9a27e85a210e57dc71bf062d924e2094c7a969046c4f67be7461ff0c0e91",
       "width_px": 1064,
-      "height_px": 700
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T11:51:46.383304+01:00"
     },
     "association-en-unavailable.png": {
+      "format": "png",
+      "mime_type": "image/png",
       "sha256": "94f0a7033afadf3abe788253ba55878ea02c64f48c8083b718613c922957ca04",
       "width_px": 1064,
-      "height_px": 700
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T11:51:46.570189+01:00"
     },
     "association-es-default.png": {
+      "format": "png",
+      "mime_type": "image/png",
       "sha256": "c07cc2990b98065dce00198f36316783b77a8e753fa405c1d9a0c4a9a8905f9c",
       "width_px": 1064,
-      "height_px": 700
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T11:51:47.965861+01:00"
     },
     "association-es-failed.png": {
+      "format": "png",
+      "mime_type": "image/png",
       "sha256": "b951d0fa2c5a3c94198c24cc20581b58fbaa9d55ee632e7c7c3046de4bf9487e",
       "width_px": 1064,
-      "height_px": 700
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T11:51:48.571186+01:00"
     },
     "association-es-other.png": {
+      "format": "png",
+      "mime_type": "image/png",
       "sha256": "fc6d7cb930b30d4d7560d2c4921e797ff6c9db1ddeb8f09c61858c5768dd6d1a",
       "width_px": 1064,
-      "height_px": 700
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T11:51:47.764255+01:00"
     },
     "association-es-suppressed.png": {
+      "format": "png",
+      "mime_type": "image/png",
       "sha256": "0b661a1193209d78776b0b80f2fb3cc5ba228eddbb5a0fdfcc888decf5c58b9b",
       "width_px": 1064,
-      "height_px": 700
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T11:51:48.169845+01:00"
     },
     "association-es-unavailable.png": {
+      "format": "png",
+      "mime_type": "image/png",
       "sha256": "b96c76b32e8e2630682eb4f8082a12d26c93154bb6594298ced2d315edaa2607",
       "width_px": 1064,
-      "height_px": 700
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T11:51:48.372470+01:00"
     },
     "general-project-en.png": {
+      "format": "png",
+      "mime_type": "image/png",
       "sha256": "5cbe78dccc9a4b6324f9469bc7f02d2df282d45f884e1e8f282114832b95cc75",
       "width_px": 1160,
-      "height_px": 1240
+      "height_px": 1240,
+      "capture_file_time": "2026-10-30T11:51:47.340628+01:00"
     },
     "general-project-es.png": {
+      "format": "png",
+      "mime_type": "image/png",
       "sha256": "8bf9f28df2a683d2b7b68d91beba9a103a0857fe84d73e2726600e2c60ac0ab9",
       "width_px": 1160,
-      "height_px": 1240
+      "height_px": 1240,
+      "capture_file_time": "2026-10-30T11:51:48.883002+01:00"
     },
     "prompt-en.png": {
+      "format": "png",
+      "mime_type": "image/png",
       "sha256": "d1c954c270de56adffca4d33cdd0f9343403d274475f75f472bbb106d04ac5df",
       "width_px": 520,
-      "height_px": 732
+      "height_px": 732,
+      "capture_file_time": "2026-10-30T11:51:47.553037+01:00"
     },
     "prompt-es.png": {
+      "format": "png",
+      "mime_type": "image/png",
       "sha256": "f9be03b4853174a6be542c2bd2c7bf4c7842e9c9559ad7441b507cdf25e85044",
       "width_px": 520,
-      "height_px": 764
+      "height_px": 764,
+      "capture_file_time": "2026-10-30T11:51:49.069169+01:00"
     },
-    "runtime-mdlz.png": {
+    "runtime-mdlz.jpg": {
+      "format": "jpeg",
+      "mime_type": "image/jpeg",
       "sha256": "783cb3c42a95ec3f08c950469b419f89dfdf461de552ad42fb6604e1a7ee9890",
-      "width_px": 4718592,
-      "height_px": 4292935744
+      "width_px": 2520,
+      "height_px": 1700,
+      "capture_file_time": "2026-10-30T11:52:09.624796+01:00"
     }
   }
 }
