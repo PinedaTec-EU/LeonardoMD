@@ -657,6 +657,16 @@
       "pr": 296,
       "summary": "Open embedded document images in a native window and save their original bytes from the image context menu.",
       "to_version": "0.1.678"
+    },
+    {
+      "delta": {
+        "build": 14
+      },
+      "from_version": "0.1.678",
+      "merge_sha": "651cfc3d9158a126893c942d83da93db482a9412",
+      "pr": 289,
+      "summary": "The sidebar follows the active document, expands its folders and highlights its row. A new preference enables or disables this behavior and is on by default.",
+      "to_version": "0.1.692"
     }
   ],
   "initial_version": "0.1.56",
@@ -667,5 +677,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.678"
+  "version": "0.1.692"
 }

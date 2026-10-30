@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.692
+
+- #288 Added: follow active document in project sidebar ([#289](https://github.com/PinedaTec-EU/LeonardoMD/pull/289))
+
+<p>The sidebar follows the active document, expands its folders and highlights its row. A new preference enables or disables this behavior and is on by default.</p>
+
+Source: `651cfc3d9158a126893c942d83da93db482a9412`. Delta: `{"build": 14}`.
+
 ## 0.1.678
 
 - #295 Fixed: wire local image context actions ([#296](https://github.com/PinedaTec-EU/LeonardoMD/pull/296))
