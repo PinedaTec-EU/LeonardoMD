@@ -43,12 +43,7 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
             urlSchemeTask.didFailWithError(MarkdownImageError.inputTooLarge)
             return
         }
-        let input: MarkdownImageLoader.Input
-        if let memoryAssets, let data = memoryAssets.data(for: url) {
-            input = .memory(data, extensionName: url.pathExtension.lowercased())
-        } else if memoryAssets == nil, let fileURL = fileURL(for: url), isImage(fileURL) {
-            input = .file(fileURL)
-        } else {
+        guard let input = imageInput(for: url) else {
             urlSchemeTask.didFailWithError(MarkdownDocumentError.notFound)
             return
         }
@@ -88,6 +83,23 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
     func cancelAll() {
         requests.values.forEach { $0.cancel() }
         requests.removeAll()
+    }
+
+    /// Export the original bytes, never the viewport-sized preview raster.
+    func originalImageData(for url: URL) async throws -> Data {
+        guard url.absoluteString.utf8.count <= policy.maximumURLBytes,
+              let input = imageInput(for: url) else { throw MarkdownDocumentError.notFound }
+        return try await imageLoader.originalData(input)
+    }
+
+    private func imageInput(for url: URL) -> MarkdownImageLoader.Input? {
+        if let memoryAssets, let data = memoryAssets.data(for: url) {
+            return .memory(data, extensionName: url.pathExtension.lowercased())
+        }
+        if memoryAssets == nil, let fileURL = fileURL(for: url), isImage(fileURL) {
+            return .file(fileURL)
+        }
+        return nil
     }
 
     private func imageTarget(url: URL, webView: WKWebView) -> MarkdownImagePolicy.Target {

@@ -275,7 +275,15 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         userContentController.add(self, name: "leonardoScroll")
         userContentController.add(self, name: "leonardoPDFReady")
 
+        #if os(macOS)
+        let newWebView = MarkdownImageWebView(frame: bounds, configuration: webConfiguration)
+        newWebView.originalImageData = { [weak documentHandler] url in
+            guard let documentHandler else { throw MarkdownDocumentError.notFound }
+            return try await documentHandler.originalImageData(for: url)
+        }
+        #else
         let newWebView = WKWebView(frame: bounds, configuration: webConfiguration)
+        #endif
         #if os(macOS)
         newWebView.autoresizingMask = [.width, .height]
         newWebView.setValue(false, forKey: "drawsBackground")
