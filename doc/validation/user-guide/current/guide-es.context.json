@@ -1,0 +1,21 @@
+{
+  "browser_name" : "Native WKWebView; User-Agent reports engine compatibility versions",
+  "browser_version" : "Mozilla\/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit\/605.1.15 (KHTML, like Gecko)",
+  "capture_mode" : "element",
+  "captured_at" : "2026-10-30T15:53:48.775Z",
+  "data_provenance" : "synthetic",
+  "device_pixel_ratio" : 2,
+  "native_viewport_points" : {
+    "height" : 491,
+    "width" : 1100
+  },
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "route" : "\/native\/user-guide\/es",
+  "screen" : "Leonardo guide: Guide preview; all local images loaded",
+  "source_sha" : "30c589c30413a1f5c6174c235656fbe47a211668",
+  "state" : "Guide preview; all local images loaded; language es",
+  "viewport_css" : {
+    "height" : 491,
+    "width" : 1100
+  }
+}
