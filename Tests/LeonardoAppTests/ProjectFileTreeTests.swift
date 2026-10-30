@@ -3,6 +3,39 @@ import XCTest
 
 @MainActor
 final class ProjectFileTreeTests: XCTestCase {
+    func testBackgroundRefreshPreservesFoldersExpandedWhileItLoads() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let first = root.appendingPathComponent("A-new", isDirectory: true)
+        let last = root.appendingPathComponent("Z-existing", isDirectory: true)
+        try FileManager.default.createDirectory(at: first, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: last, withIntermediateDirectories: true)
+        let note = first.appendingPathComponent("Note.md")
+        try "# Note".write(to: note, atomically: true, encoding: .utf8)
+        let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        await session.openProject(root)
+        session.monitorTask?.cancel()
+        let tree = ProjectFileTree()
+        let firstEntry = try XCTUnwrap(session.rootEntries.first(where: { $0.url == first }))
+        let lastEntry = try XCTUnwrap(session.rootEntries.first(where: { $0.url == last }))
+        await tree.toggle(lastEntry, session: session)
+        var resume: CheckedContinuation<Void, Never>?
+        let loading = expectation(description: "Existing folder refresh suspended")
+        session.entryFilter = { url in
+            if url == last {
+                await withCheckedContinuation { resume = $0; loading.fulfill() }
+            }
+            return { _, _ in true }
+        }
+        let refresh = Task { await tree.refreshAndReveal(nil, session: session) }
+        await fulfillment(of: [loading], timeout: 2)
+        await tree.toggle(firstEntry, session: session)
+        resume?.resume()
+        _ = await refresh.value
+        XCTAssertTrue(tree.expanded.contains(first))
+        XCTAssertTrue(tree.rows(roots: session.rootEntries).contains(where: { $0.id == note }))
+    }
+
     func testRevealIgnoresPreviousRootEntriesWhileNestedProjectLoads() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let project = root.appendingPathComponent("Ancestor/New project", isDirectory: true)

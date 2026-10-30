@@ -54,6 +54,7 @@ final class ProjectFileTree {
     }
 
     private func refreshExpandedFolders(session: AppSession, root: URL) async -> Bool {
+        let previousExpansion = expanded
         var pending = session.rootEntries
         var retained: Set<URL> = []
         var index = 0
@@ -68,8 +69,10 @@ final class ProjectFileTree {
             retained.insert(entry.url)
             pending.append(contentsOf: loaded)
         }
-        expanded.formIntersection(retained)
-        children = children.filter { retained.contains($0.key) }
+        // Prune only state that belonged to this refresh. A user may have
+        // expanded another folder while an earlier child load was suspended.
+        expanded.subtract(previousExpansion.subtracting(retained))
+        children = children.filter { expanded.contains($0.key) }
         return true
     }
 
