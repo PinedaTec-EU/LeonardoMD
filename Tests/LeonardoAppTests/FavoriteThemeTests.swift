@@ -255,13 +255,20 @@ final class FavoriteThemeTests: XCTestCase {
                 .background(session.surfaceColor).modifier(SessionAppearance(session: session)))
             let name = "favorite-themes-\(locale.rawValue)-\(width)"
             try await NativeViewCaptureSupport.capture(view, size: NSSize(width: width, height: 620),
-                to: directory.appendingPathComponent(name + ".png"), title: "Favorite themes QA")
+                to: directory.appendingPathComponent(name + ".png"), title: "Favorite themes QA") { view in
+                    // Keep native host appearance light while the session can be dark.
+                    // This reproduces mixed-appearance rendering from the macOS CI host.
+                    view.appearance = NSAppearance(named: .aqua)
+                    view.window?.appearance = NSAppearance(named: .aqua)
+                    view.layoutSubtreeIfNeeded()
+                }
             let metadata: [String: Any] = [
                 "head": environment["EVIDENCE_SHA"] ?? "unavailable; local source manifest required",
                 "captured_at": ISO8601DateFormatter().string(from: Date()),
                 "surface": "Native NSHostingView SavedItemsView; synthetic project/workspace favorites and starred recent project",
                 "viewport_points": [width, 620], "pixel_dimensions": try NSBitmapImageRep(data: Data(contentsOf: directory.appendingPathComponent(name + ".png"))).map { [$0.pixelsWide, $0.pixelsHigh] } ?? [],
                 "language": locale.rawValue, "palette": palette.rawValue,
+                "native_host_appearance": "Aqua (including the dark session fixture)",
                 "capture_mode": "native component bitmap", "browser": "N/A; AppKit/SwiftUI",
                 "limitations": "Component evidence; no packaged startup or new-process claim"
             ]

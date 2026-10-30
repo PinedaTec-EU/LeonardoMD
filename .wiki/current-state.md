@@ -148,3 +148,8 @@ Workspace context-exit regression [#303](https://github.com/PinedaTec-EU/Leonard
 a remembered `workspaceURL` alone never activates its favorite palette. Only an
 open workspace manager or a contained project does. Standalone opening, detach
 and Save Copy close the manager; regression tests cover each exit.
+
+Favorite menu contrast [#304](https://github.com/PinedaTec-EU/LeonardoMD/issues/304):
+closed theme menus use session text tokens for both tint and native accent color.
+Native capture fixtures force Aqua hosting even in the graphite session to cover
+mixed AppKit/SwiftUI appearance; local and CI image provenance are distinct.

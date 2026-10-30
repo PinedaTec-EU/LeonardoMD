@@ -1,6 +1,6 @@
 # Favorite appearance
 
-Tracking: [#300](https://github.com/PinedaTec-EU/LeonardoMD/issues/300) and [#303](https://github.com/PinedaTec-EU/LeonardoMD/issues/303).
+Tracking: [#300](https://github.com/PinedaTec-EU/LeonardoMD/issues/300) [#303](https://github.com/PinedaTec-EU/LeonardoMD/issues/303) and [#304](https://github.com/PinedaTec-EU/LeonardoMD/issues/304).
 
 The implementation-owned captures render the actual `SavedItemsView` and
 `FavoriteThemePicker` through the existing XCTest `NativeViewCaptureSupport`
@@ -33,3 +33,10 @@ roundtrips, stable kind/path identity and merging independent appearance changes
 Context-exit regressions additionally cover dismissing the workspace manager
 without a project, detaching a contained project, standalone document opening
 and Save Copy. A retained workspace location alone does not activate its palette.
+
+The favorite dropdown uses a borderless native Menu with a Picker for its checked
+options. The closed label and disclosure inherit the active palette's text color
+through SwiftUI tint and native accent color. Capture fixtures explicitly force
+an Aqua host even for the dark session, covering the mixed-appearance case that
+made the prior popup's selected text and arrows unreadable on CI. Original local
+2× popup captures were readable; the 1× CI artifact is the defect evidence.

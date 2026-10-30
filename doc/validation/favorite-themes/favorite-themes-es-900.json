@@ -1,10 +1,11 @@
 {
   "browser" : "N\/A; AppKit\/SwiftUI",
   "capture_mode" : "native component bitmap",
-  "captured_at" : "2026-10-30T13:12:21Z",
+  "captured_at" : "2026-10-30T13:33:42Z",
   "head" : "unavailable; local source manifest required",
   "language" : "es",
   "limitations" : "Component evidence; no packaged startup or new-process claim",
+  "native_host_appearance" : "Aqua (including the dark session fixture)",
   "palette" : "paper-white",
   "pixel_dimensions" : [
     1800,
