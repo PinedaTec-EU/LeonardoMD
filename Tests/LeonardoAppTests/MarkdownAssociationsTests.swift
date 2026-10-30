@@ -63,6 +63,10 @@ final class MarkdownAssociationsTests: XCTestCase {
             let declaration = try XCTUnwrap(declarations.first {
                 $0["UTTypeIdentifier"] as? String == documentType.identifier
             })
+            let parents = try XCTUnwrap(declaration["UTTypeConformsTo"] as? [String])
+            XCTAssertTrue(parents.contains { UTType($0)?.conforms(to: .data) == true },
+                          "Finder requires a physical file type; public.archive alone is insufficient")
+            XCTAssertTrue(parents.contains { UTType($0)?.conforms(to: .content) == true })
             let tags = try XCTUnwrap(declaration["UTTypeTagSpecification"] as? [String: Any])
             XCTAssertTrue((tags["public.filename-extension"] as? [String] ?? []).contains(documentType.fileExtension))
             XCTAssertTrue(handlers.contains(documentType.identifier))
