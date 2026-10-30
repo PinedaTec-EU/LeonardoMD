@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.735
+
+- #290 Added: bundle illustrated user guide and fix sync suspension ([#291](https://github.com/PinedaTec-EU/LeonardoMD/pull/291))
+
+<p>Open an illustrated offline Leonardo guide in the interface language from Help or Welcome, with practice fields and agent setup. Synchronization now rejects suspended path operations before acquiring instance ownership.</p>
+
+Source: `14aa14b5f68a386fa47f04d6c06d33ac2f2a0ac7`. Delta: `{"build": 9}`.
+
 ## 0.1.726
 
 - #305 Updated: simplify project navigation and open files in tabs ([#306](https://github.com/PinedaTec-EU/LeonardoMD/pull/306))

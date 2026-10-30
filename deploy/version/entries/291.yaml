@@ -1,4 +1,0 @@
-{
-  "build": 9,
-  "summary": "Open an illustrated offline Leonardo guide in the interface language from Help or Welcome, with practice fields and agent setup. Synchronization now rejects suspended path operations before acquiring instance ownership."
-}

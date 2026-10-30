@@ -707,6 +707,16 @@
       "pr": 306,
       "summary": "Open project files in another tab from their context menu or with a double-click, retaining the project sidebar, and simplify navigation by removing workspace grouping.",
       "to_version": "0.1.726"
+    },
+    {
+      "delta": {
+        "build": 9
+      },
+      "from_version": "0.1.726",
+      "merge_sha": "14aa14b5f68a386fa47f04d6c06d33ac2f2a0ac7",
+      "pr": 291,
+      "summary": "Open an illustrated offline Leonardo guide in the interface language from Help or Welcome, with practice fields and agent setup. Synchronization now rejects suspended path operations before acquiring instance ownership.",
+      "to_version": "0.1.735"
     }
   ],
   "initial_version": "0.1.56",
@@ -717,5 +727,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.726"
+  "version": "0.1.735"
 }
