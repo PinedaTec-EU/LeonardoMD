@@ -3,6 +3,29 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.1.735</title>
+            <pubDate>Fri, 30 Oct 2026 17:42:09 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>735</sparkle:version>
+            <sparkle:shortVersionString>0.1.735</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">## What's new
+
+- Open an illustrated offline user guide from Help or Welcome, in English or Spanish, with practice fields and agent setup instructions.
+- Open project files in another tab from the context menu or with a double-click while retaining the project sidebar.
+- Simplify navigation around projects and documents by removing workspace grouping. Existing legacy preference data is preserved.
+- Fix synchronization suspension checks so blocked path operations are rejected before acquiring instance ownership.
+
+## Beta limitations
+
+- This release supports Apple silicon Macs running macOS 14 or later.
+- Hosted update, installation and relaunch acceptance for this candidate remains pending.
+- The user guide toolbar may wrap in narrow layouts; this remains tracked in issue #302.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.735/LeonardoMD-0.1.735.zip" length="14164830" type="application/octet-stream" sparkle:edSignature="kes0KD1SIGO7DUt0qDg/7bqta8bqO5b14yFULwm3oZb0utHpi1BJBKQHLeagwuxpyMYrKC48J32PwTvWq9zLCQ==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.1.717</title>
             <pubDate>Fri, 30 Oct 2026 15:17:56 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
