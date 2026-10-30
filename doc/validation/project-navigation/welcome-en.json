@@ -1,8 +1,8 @@
 {
   "browser" : "N\/A",
   "capture_mode" : "native AppKit\/SwiftUI component bitmap",
-  "captured_at" : "2026-10-30T14:10:04Z",
-  "head" : "b84095e4d1ac68f5579cd16ce82c4580949c45fb",
+  "captured_at" : "2026-10-30T14:17:27Z",
+  "head" : "a712d2c927ebc39efa91a31338e75e612682f485",
   "language" : "en",
   "limitations" : "Synthetic fixture; no fresh packaged-process startup or installation claim",
   "os" : "Version 27.0.1 (Build 26A434)",

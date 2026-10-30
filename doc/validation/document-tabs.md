@@ -19,7 +19,7 @@ Tabs are window-local and are not restored across restarts. Split tab groups and
 
 ## Automated validation
 
-Run `swift test`. `DocumentTabsTests` covers empty/replace/reuse navigation, multiple drops through actual `NSItemProvider` URL loading, mixed/unsupported/non-file provider rejection, alias deduplication, invalid-drop rejection, sidebar relocation boundaries, inactive drafts and conflicts, mode/scroll/project restoration, closing all sessions and cross-tab file/folder operations. The existing real WebKit suite remains part of full validation.
+Run `swift test`. `DocumentTabsTests` covers empty/replace/reuse navigation, multiple drops through actual `NSItemProvider` URL loading, mixed/unsupported/non-file provider rejection, alias deduplication, invalid-drop rejection, sidebar relocation boundaries, inactive drafts and conflicts, mode/scroll/project restoration, closing all sessions. The existing real WebKit suite remains part of full validation.
 
 Native captures and the exact reviewed SHA are recorded in the PR. CI and visual evidence do not replace the independent review required before merge.
 
