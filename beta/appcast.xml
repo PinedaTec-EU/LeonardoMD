@@ -3,6 +3,28 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.1.739</title>
+            <pubDate>Fri, 30 Oct 2026 19:11:15 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>739</sparkle:version>
+            <sparkle:shortVersionString>0.1.739</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">## What's fixed
+
+- Saving a copy of an MDLZ with an external conflict now creates a complete MDLZ package, preserving pending form answers and local images.
+- The recovered copy opens only after verification. The externally changed original remains intact, and failed recovery keeps the pending draft available.
+- Package recovery rejects text-only destinations and locations inside temporary package storage.
+
+## Beta limitations
+
+- This release supports Apple silicon Macs running macOS 14 or later.
+- The document toolbar may wrap in narrow layouts; this remains tracked in issue #302.
+- Hosted update, installation and relaunch acceptance for this new candidate remains pending.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.739/LeonardoMD-0.1.739.zip" length="14172117" type="application/octet-stream" sparkle:edSignature="pF9u6lUm5oGxE6q1e6jtfjTp6VrFIRc8XDRj+CUpSP44A02h7Dwq54CC2eDYu94x8QeTpa8iUkiC1g+26+seDw==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.1.735</title>
             <pubDate>Fri, 30 Oct 2026 17:42:09 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
