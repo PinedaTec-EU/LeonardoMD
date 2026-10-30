@@ -1,8 +1,0 @@
----
-{
-  "format": "mdlf",
-  "formatVersion": 1,
-  "layout": { "background": { "opacity": 1.1 } }
-}
----
-Invalid opacity

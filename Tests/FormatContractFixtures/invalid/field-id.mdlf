@@ -1,8 +1,0 @@
----
-{
-  "format": "mdlf",
-  "formatVersion": 1,
-  "fields": { "1bad": { "type": "text" } }
-}
----
-Invalid field identifier
