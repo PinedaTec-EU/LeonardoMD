@@ -242,6 +242,7 @@ final class AppSession {
             await openProject(url)
         } else {
             guard await prepareNavigation() else { return }
+            showWorkspace = false
             projectURL = nil
             projectConfiguration = .default
             projectBaseline = .default

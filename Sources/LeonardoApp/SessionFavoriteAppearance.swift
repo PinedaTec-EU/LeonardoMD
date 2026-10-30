@@ -27,7 +27,7 @@ extension AppSession {
     }
 
     var favoritePalette: PaletteID? {
-        if let workspaceURL, showWorkspace || projectURL == nil || projectIsInWorkspace,
+        if let workspaceURL, showWorkspace || projectIsInWorkspace,
            let palette = favorite(workspaceURL, kind: .workspace)?.palette {
             return palette
         }

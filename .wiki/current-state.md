@@ -143,3 +143,8 @@ session appearance and refreshes associations on opening. Workspace themes take
 precedence for contained projects and while showing the workspace manager;
 project opening closes that manager. Core `FavoriteItemMerge` preserves membership
 and independent theme writes by kind/path. See [favorites validation](../doc/validation/favorites/README.md).
+
+Workspace context-exit regression [#303](https://github.com/PinedaTec-EU/LeonardoMD/issues/303):
+a remembered `workspaceURL` alone never activates its favorite palette. Only an
+open workspace manager or a contained project does. Standalone opening, detach
+and Save Copy close the manager; regression tests cover each exit.

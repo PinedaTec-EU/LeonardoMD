@@ -76,6 +76,7 @@ extension AppSession {
         fileOperationCount += 1
         defer { fileOperationCount -= 1 }
         guard await prepareNavigation(), !isClosing, !stopped else { return }
+        showWorkspace = false
         projectURL = nil
         projectConfiguration = .default
         projectBaseline = .default

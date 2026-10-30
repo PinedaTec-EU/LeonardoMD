@@ -93,6 +93,61 @@ final class FavoriteThemeTests: XCTestCase {
         XCTAssertEqual(session.resolved.palette, .paperWhite)
     }
 
+    func testDismissedWorkspaceWithoutProjectRestoresGlobalAppearance() async throws {
+        let workspace = try folder("Workspace")
+        let session = await session()
+        session.toggleFavorite(workspace, kind: .workspace)
+        session.setFavoritePalette(.graphiteGlass, for: workspace, kind: .workspace)
+        await session.settingsTask?.value
+        await session.openWorkspace(workspace)
+        XCTAssertEqual(session.resolved.palette, .graphiteGlass)
+        session.showWorkspace = false
+        XCTAssertNotNil(session.workspaceURL, "The remembered workspace is not the active appearance context")
+        XCTAssertEqual(session.resolved.palette, .paperWhite)
+        session.showWorkspace = true
+        XCTAssertEqual(session.resolved.palette, .graphiteGlass)
+    }
+
+    func testDetachingWorkspaceProjectRestoresGlobalAppearance() async throws {
+        let workspace = try folder("Workspace")
+        let project = try folder("Workspace/Project")
+        let session = await session()
+        session.toggleFavorite(workspace, kind: .workspace)
+        session.setFavoritePalette(.graphiteGlass, for: workspace, kind: .workspace)
+        await session.settingsTask?.value
+        await session.openWorkspace(workspace)
+        let opened = await session.openProject(project)
+        XCTAssertTrue(opened)
+        XCTAssertEqual(session.resolved.palette, .graphiteGlass)
+        await session.detachProject()
+        XCTAssertNil(session.projectURL)
+        XCTAssertFalse(session.showWorkspace)
+        XCTAssertEqual(session.resolved.palette, .paperWhite)
+    }
+
+    func testStandaloneOpeningAndSaveCopyLeaveWorkspaceAppearance() async throws {
+        let workspace = try folder("Workspace")
+        let file = workspace.appendingPathComponent("Note.md")
+        try "# Standalone".write(to: file, atomically: true, encoding: .utf8)
+        let session = await session()
+        session.toggleFavorite(workspace, kind: .workspace)
+        session.setFavoritePalette(.graphiteGlass, for: workspace, kind: .workspace)
+        await session.settingsTask?.value
+        await session.openWorkspace(workspace)
+        await session.open(file)
+        XCTAssertEqual(session.documentURL, file)
+        XCTAssertNil(session.projectURL)
+        XCTAssertFalse(session.showWorkspace)
+        XCTAssertEqual(session.resolved.palette, .paperWhite)
+        session.showWorkspace = true
+        let copy = root.appendingPathComponent("Copy.md")
+        await session.saveCopyAndOpen(to: copy, sourceURL: file)
+        XCTAssertEqual(session.documentURL, copy)
+        XCTAssertFalse(session.showWorkspace)
+        XCTAssertEqual(session.resolved.palette, .paperWhite)
+        XCTAssertNil(session.errorMessage)
+    }
+
     func testSessionIsolationAndInheritRestoreCustomTokens() async throws {
         let project = try folder("Project")
         let first = await session()

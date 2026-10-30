@@ -20,8 +20,10 @@ portable project/global appearance. Opening through either list or the native
 Recents menu refreshes the association from local preferences. Document favorites
 have no theme selector. Palette overrides use the catalog tokens without changing
 global or project settings. The selected workspace manager uses its theme; outside
-that manager, a workspace theme applies only to its contained projects (or a
-workspace session without a project), ahead of the project's favorite theme.
+that manager, a workspace theme applies only to its contained projects, ahead
+of the project's favorite theme. Dismissing the manager without a project,
+detaching a project, opening a standalone document or saving a standalone copy
+removes the workspace appearance override; the remembered workspace is retained.
 Opening a project closes the workspace manager and recalculates appearance.
 Membership merges key on kind/path; independent metadata changes survive stale
 writers without duplicating or resurrecting removed favorites.

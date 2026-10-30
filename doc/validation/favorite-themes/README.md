@@ -1,6 +1,6 @@
 # Favorite appearance
 
-Tracking: [#300](https://github.com/PinedaTec-EU/LeonardoMD/issues/300).
+Tracking: [#300](https://github.com/PinedaTec-EU/LeonardoMD/issues/300) and [#303](https://github.com/PinedaTec-EU/LeonardoMD/issues/303).
 
 The implementation-owned captures render the actual `SavedItemsView` and
 `FavoriteThemePicker` through the existing XCTest `NativeViewCaptureSupport`
@@ -29,3 +29,7 @@ session, independent session appearance, workspace containment/manager precedenc
 project switching, inheritance/custom tokens, document exclusion and concurrent
 membership/metadata writes. `FavoriteAppearancePersistenceTests` verifies Codable
 roundtrips, stable kind/path identity and merging independent appearance changes.
+
+Context-exit regressions additionally cover dismissing the workspace manager
+without a project, detaching a contained project, standalone document opening
+and Save Copy. A retained workspace location alone does not activate its palette.
