@@ -238,6 +238,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
     public var palette: PaletteID
     public var customTokens: PaletteTokenOverrides?
     public var colorLeonardoFiles: Bool
+    public var followActiveFile: Bool
     public var paperEffect: PaperEffect
     public var markdown: MarkdownFeatures
     public var showHiddenFiles: Bool
@@ -255,6 +256,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         palette: PaletteID = .paperWhite,
         customTokens: PaletteTokenOverrides? = nil,
         colorLeonardoFiles: Bool = true,
+        followActiveFile: Bool = true,
         paperEffect: PaperEffect = .white,
         markdown: MarkdownFeatures = MarkdownFeatures(),
         showHiddenFiles: Bool = false,
@@ -267,6 +269,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         self.palette = palette
         self.customTokens = customTokens
         self.colorLeonardoFiles = colorLeonardoFiles
+        self.followActiveFile = followActiveFile
         self.paperEffect = paperEffect
         self.markdown = markdown
         self.showHiddenFiles = showHiddenFiles
@@ -283,6 +286,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         case palette
         case customTokens
         case colorLeonardoFiles
+        case followActiveFile
         case paperEffect
         case markdown
         case showHiddenFiles
@@ -302,6 +306,7 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         palette = try container.decodeIfPresent(PaletteID.self, forKey: .palette) ?? .paperWhite
         customTokens = try container.decodeIfPresent(PaletteTokenOverrides.self, forKey: .customTokens)
         colorLeonardoFiles = try container.decodeIfPresent(Bool.self, forKey: .colorLeonardoFiles) ?? true
+        followActiveFile = try container.decodeIfPresent(Bool.self, forKey: .followActiveFile) ?? true
         paperEffect = try container.decodeIfPresent(PaperEffect.self, forKey: .paperEffect) ?? .white
         markdown = try container.decodeIfPresent(MarkdownFeatures.self, forKey: .markdown) ?? MarkdownFeatures()
         showHiddenFiles = try container.decodeIfPresent(Bool.self, forKey: .showHiddenFiles) ?? false
