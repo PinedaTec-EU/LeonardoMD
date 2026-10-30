@@ -12,7 +12,14 @@ protocol MarkdownAssociationDriver {
 @MainActor
 struct WorkspaceMarkdownAssociationDriver: MarkdownAssociationDriver {
     static let bundleIdentifier = "eu.pinedatec.LeonardoMD"
-    static let extensions = ["md", "markdown"]
+    static let documentTypes = [
+        (fileExtension: "md", identifier: "net.daringfireball.markdown"),
+        (fileExtension: "markdown", identifier: "net.daringfireball.markdown"),
+        (fileExtension: "mdlf", identifier: "eu.pinedatec.leonardomd.mdlf"),
+        (fileExtension: "mdlr", identifier: "eu.pinedatec.leonardomd.mdlr"),
+        (fileExtension: "mdlz", identifier: "eu.pinedatec.leonardomd.mdlz")
+    ]
+    static var extensions: [String] { documentTypes.map(\.fileExtension) }
     let bundle: Bundle
     let workspace: NSWorkspace
 
@@ -28,31 +35,33 @@ struct WorkspaceMarkdownAssociationDriver: MarkdownAssociationDriver {
     }
 
     func isDefault() throws -> Bool {
-        try contentTypes().allSatisfy { type in
+        try Self.contentTypes().allSatisfy { type in
             guard let url = workspace.urlForApplication(toOpen: type) else { return false }
             return Bundle(url: url)?.bundleIdentifier == Self.bundleIdentifier
         }
     }
 
     func makeDefault() async throws {
-        for type in try contentTypes() {
+        for type in try Self.contentTypes() {
             // A failed/cancelled type leaves the actual state to the subsequent refresh.
             try await workspace.setDefaultApplication(at: bundle.bundleURL, toOpen: type)
         }
     }
 
-    private func contentTypes() throws -> [UTType] {
+    static func contentTypes(
+        resolve: (String) -> UTType? = { UTType(filenameExtension: $0) }
+    ) throws -> [UTType] {
         var types: [UTType] = []
-        for ext in Self.extensions {
-            guard let type = UTType(filenameExtension: ext),
-                  type.identifier == "net.daringfireball.markdown" else {
-                // Never substitute public.plain-text when registration is unavailable.
-                throw AssociationError.markdownTypeUnavailable
+        for documentType in documentTypes {
+            guard let type = resolve(documentType.fileExtension),
+                  type.identifier == documentType.identifier else {
+                // Never change a broad parent type when an exact registration is missing.
+                throw AssociationError.documentTypeUnavailable(documentType.fileExtension)
             }
             if !types.contains(type) { types.append(type) }
         }
         return types
     }
 
-    enum AssociationError: Error { case markdownTypeUnavailable }
+    enum AssociationError: Error { case documentTypeUnavailable(String) }
 }
