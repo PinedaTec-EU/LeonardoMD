@@ -1,5 +1,5 @@
 {
-  "captured_source_head": "a712d2c927ebc39efa91a31338e75e612682f485",
+  "captured_source_head": "30f00049ca22ea88b1faef94cc45e2eb98635579",
   "sha256": {
     "Package.swift": "ac9df1e524e03db7f77810a863311c9dbd0fa8c460d6a1592c73686e33119c32",
     "Sources/LeonardoApp/AboutWindow.swift": "b875ee98e3e1a00dde9047f3c0c86d4da7946808a388a2e189235be44e337558",
@@ -26,7 +26,7 @@
     "Sources/LeonardoApp/FileColorPreferences.swift": "1b00485ceee306c0770bcb699db96e73551c935dc4bb5896d604be65263fa0e5",
     "Sources/LeonardoApp/FileListMenu.swift": "fb71cae70efbfc1d4eefc40c046e1c771320421a7dc1e3357b1347d099a5ba29",
     "Sources/LeonardoApp/FileRowHighlight.swift": "0e041d0287cea8424fcf17799c5ed9ba5b4ebb6b0dd4ad36031e1b85529838c0",
-    "Sources/LeonardoApp/FileTreeRow.swift": "f84bced401606b550d33a9e6f207e4a4ea7c6e1a5134119a4ac81b70c637e24a",
+    "Sources/LeonardoApp/FileTreeRow.swift": "53f74d235ef39c52c17a7572460ebb4efb823a82021898881c0f01ab367fca33",
     "Sources/LeonardoApp/GitPanel.swift": "c4d907e549f7bc80e2e514670ad4839e371f4ff549b2318c9d87605231453bca",
     "Sources/LeonardoApp/InstalledReleaseMaturity.swift": "d65e398ac720611fba466ec57a0a8417bce6d36c735f90a13cd58cb462d713c8",
     "Sources/LeonardoApp/InstancePathOwnership.swift": "02038c6012e5e770afe6c70dab47af7fd05b8ae32397b88bc24cd602f561b876",
