@@ -1,5 +1,7 @@
 # Favorite appearance
 
+Workspace removal under [#305](https://github.com/PinedaTec-EU/LeonardoMD/issues/305) supersedes the workspace behavior described below. Current runtime themes apply to project favorites only; project/standalone transitions and inert legacy workspace metadata are covered by the updated tests. The committed images on this page are historical #301 evidence; current navigation evidence is in [project navigation](../project-navigation/README.md).
+
 Tracking: [#300](https://github.com/PinedaTec-EU/LeonardoMD/issues/300) [#303](https://github.com/PinedaTec-EU/LeonardoMD/issues/303) and [#304](https://github.com/PinedaTec-EU/LeonardoMD/issues/304).
 
 The implementation-owned captures render the actual `SavedItemsView` and

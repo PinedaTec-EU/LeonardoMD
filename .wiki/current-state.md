@@ -136,18 +136,14 @@ Background sidebar refresh observes the interaction revision and stops applying/
 
 `ProjectFileTree.swift` owns project/interaction contexts and per-folder load generations. Only the exact current folder load may publish children; collapse invalidates descendant loads. Reveal returns unavailable (retry after listing changes) or superseded (honor manual navigation until the next active-document/tab change), and scroll stamps are revalidated before scrolling. Deferred-load tests cover out-of-order reopen completions and manual collapse during reveal.
 
-Favorite themes ([#300](https://github.com/PinedaTec-EU/LeonardoMD/issues/300)):
-project/workspace favorites carry optional palette metadata. `FavoriteThemePicker`
-is shared by favorites/starred recents; `SessionFavoriteAppearance` resolves local
-session appearance and refreshes associations on opening. Workspace themes take
-precedence for contained projects and while showing the workspace manager;
-project opening closes that manager. Core `FavoriteItemMerge` preserves membership
-and independent theme writes by kind/path. See [favorites validation](../doc/validation/favorites/README.md).
-
-Workspace context-exit regression [#303](https://github.com/PinedaTec-EU/LeonardoMD/issues/303):
-a remembered `workspaceURL` alone never activates its favorite palette. Only an
-open workspace manager or a contained project does. Standalone opening, detach
-and Save Copy close the manager; regression tests cover each exit.
+Favorite project themes ([#300](https://github.com/PinedaTec-EU/LeonardoMD/issues/300)):
+project favorites carry optional palette metadata. `FavoriteThemePicker` is shared
+by favorites/starred recents; `SessionFavoriteAppearance` resolves only the active
+project association. Core `FavoriteItemMerge` preserves membership and independent
+theme writes by kind/path. Legacy workspace metadata no longer affects appearance.
+The workspace-exit regression [#303](https://github.com/PinedaTec-EU/LeonardoMD/issues/303)
+is superseded by workspace removal; project detach, standalone opening and Save Copy
+still restore normal appearance. See [favorites validation](../doc/validation/favorites/README.md).
 
 Favorite menu contrast [#304](https://github.com/PinedaTec-EU/LeonardoMD/issues/304):
 closed theme menus use session text tokens for both tint and native accent color.

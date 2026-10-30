@@ -23,6 +23,9 @@ final class ProjectTabOpeningTests: XCTestCase {
         await source.toggleProtection()
         XCTAssertTrue(source.editDocument(expected: "first", replacement: "draft"))
         source.unsavedChangesDecision = { _ in XCTFail("New tab must not navigate the source draft"); return .cancel }
+        source.toggleFavorite(root, kind: .project)
+        source.setFavoritePalette(.graphiteGlass, for: root, kind: .project)
+        await source.settingsTask?.value
         source.showAllFiles = true
         source.foldersFirst = false
         let folder = NavigationEntry(url: root.appendingPathComponent("Notes"), isDirectory: true)
@@ -32,6 +35,7 @@ final class ProjectTabOpeningTests: XCTestCase {
         let target = tabs.activeSession
         XCTAssertTrue(target !== source)
         XCTAssertEqual(target.projectURL, root)
+        XCTAssertEqual(target.resolved.palette, .graphiteGlass)
         XCTAssertTrue(target.presentation.showsSidebar)
         XCTAssertEqual(target.documentURL, second)
         XCTAssertTrue(target.projectFileTree.expanded.contains(folder.url))
@@ -119,7 +123,9 @@ final class ProjectTabOpeningTests: XCTestCase {
     }
 
     func testNativeProjectTabCapture() async throws {
-        guard let destination = ProcessInfo.processInfo.environment["LEONARDO_PROJECT_TABS_CAPTURE"] else {
+        let environment = ProcessInfo.processInfo.environment
+        guard let destination = environment["LEONARDO_PROJECT_TABS_CAPTURE"]
+            ?? environment["LEONARDO_VISUAL_EVIDENCE"].map({ $0 + "/project-tabs" }) else {
             throw XCTSkip("Opt-in native project tab evidence")
         }
         let directory = URL(fileURLWithPath: destination, isDirectory: true)
@@ -144,8 +150,11 @@ final class ProjectTabOpeningTests: XCTestCase {
         for locale in [AppLanguage.english, .spanish] {
             LanguageSettings.shared.language = locale
             let host = NSHostingView(rootView: DocumentTabsView(documents: tabs))
+            let image = directory.appendingPathComponent("project-tabs-\(locale.rawValue).png")
             try await NativeViewCaptureSupport.capture(host, size: NSSize(width: 1260, height: 850),
-                to: directory.appendingPathComponent("project-tabs-\(locale.rawValue).png"))
+                to: image)
+            try NativeViewCaptureSupport.writeProvenance(for: image, screen: "Project document tabs; Notes expanded; Decisions selected",
+                size: NSSize(width: 1260, height: 850), language: locale.rawValue)
         }
     }
 

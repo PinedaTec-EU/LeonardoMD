@@ -8,7 +8,7 @@ extension AppSession {
     }
 
     func setFavoritePalette(_ palette: PaletteID?, for url: URL, kind: FavoriteItem.Kind) {
-        guard kind != .document,
+        guard kind == .project,
               let index = globalPreferences.favorites.firstIndex(where: { $0.matches(FavoriteItem(kind: kind, url: url)) }) else { return }
         globalPreferences.favorites[index].palette = palette
         persistSettings()
@@ -27,18 +27,7 @@ extension AppSession {
     }
 
     var favoritePalette: PaletteID? {
-        if let workspaceURL, showWorkspace || projectIsInWorkspace,
-           let palette = favorite(workspaceURL, kind: .workspace)?.palette {
-            return palette
-        }
-        return projectURL.flatMap { favorite($0, kind: .project)?.palette }
-    }
-
-    private var projectIsInWorkspace: Bool {
-        guard let projectURL, let workspaceURL else { return false }
-        let project = projectURL.standardizedFileURL.resolvingSymlinksInPath().path
-        let workspace = workspaceURL.standardizedFileURL.resolvingSymlinksInPath().path
-        return project == workspace || project.hasPrefix(workspace == "/" ? workspace : workspace + "/")
+        projectURL.flatMap { favorite($0, kind: .project)?.palette }
     }
 
     var resolvedSessionPreferences: ResolvedPreferences {

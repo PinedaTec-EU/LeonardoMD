@@ -25,7 +25,7 @@ No account, API key or network connection is needed to read local documents. The
 - **Organize and share:** search frontmatter tags with `tag:swift`, export rendered documents to PDF, and choose global or project palettes and paper effects.
 - **Use Git optionally:** enable project Git tools to inspect changes, stage, commit and manually fetch, pull or push with existing system credentials. Pull is fast-forward only and protects dirty worktrees.
 
-![LeonardoMD Home with recent documents and projects](doc/validation/home-tabs/welcome-en.png)
+![LeonardoMD Home with recent documents and projects](doc/validation/project-navigation/welcome-en.png)
 
 | Shortcut | Action |
 | --- | --- |

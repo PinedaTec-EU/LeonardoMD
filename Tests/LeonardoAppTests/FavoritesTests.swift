@@ -28,7 +28,9 @@ final class FavoritesTests: XCTestCase {
     }
 
     func testNativeWelcomeCapture() async throws {
-        guard let destination = ProcessInfo.processInfo.environment["LEONARDO_FAVORITES_CAPTURE"] else {
+        let environment = ProcessInfo.processInfo.environment
+        guard let destination = environment["LEONARDO_FAVORITES_CAPTURE"]
+            ?? environment["LEONARDO_VISUAL_EVIDENCE"].map({ $0 + "/home-projects" }) else {
             throw XCTSkip("Opt-in native welcome capture")
         }
         _ = NSApplication.shared
@@ -56,6 +58,9 @@ final class FavoritesTests: XCTestCase {
             let view = NSHostingView(rootView: WelcomeView(session: session).background(session.surfaceColor).modifier(SessionAppearance(session: session)))
             try await NativeViewCaptureSupport.capture(view, size: NSSize(width: 1100, height: 1150),
                 to: directory.appendingPathComponent("welcome-\(locale.rawValue).png"), title: "Leonardo Favorites QA")
+            try NativeViewCaptureSupport.writeProvenance(for: directory.appendingPathComponent("welcome-\(locale.rawValue).png"),
+                screen: "Home; Favorites and Recents show Projects and Documents only",
+                size: NSSize(width: 1100, height: 1150), language: locale.rawValue)
         }
         for kind in FavoriteItem.Kind.navigationKinds {
             let view = NSHostingView(rootView: SavedItemsView(session: session, recentKind: kind)
