@@ -10,6 +10,21 @@ import XCTest
 /// settling interval so the bitmap represents the requested capture bounds.
 @MainActor
 enum NativeViewCaptureSupport {
+    static func writeProvenance(for image: URL, screen: String, size: NSSize, language: String) throws {
+        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: image)))
+        let metadata: [String: Any] = [
+            "head": ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local; source manifest required",
+            "captured_at": ISO8601DateFormatter().string(from: Date()),
+            "surface": screen, "viewport_points": [size.width, size.height],
+            "pixel_dimensions": [bitmap.pixelsWide, bitmap.pixelsHigh], "language": language,
+            "capture_mode": "native AppKit/SwiftUI component bitmap", "browser": "N/A",
+            "os": ProcessInfo.processInfo.operatingSystemVersionString,
+            "limitations": "Synthetic fixture; no fresh packaged-process startup or installation claim"
+        ]
+        try JSONSerialization.data(withJSONObject: metadata, options: [.prettyPrinted, .sortedKeys])
+            .write(to: image.deletingPathExtension().appendingPathExtension("json"))
+    }
+
     static func capture(_ view: NSView,
                         size: NSSize,
                         to url: URL,

@@ -15,9 +15,9 @@ Open documents from the app or Finder’s **Open With** menu. Distribution build
 
 - **Standalone viewer:** open a `.md`, `.markdown`, `.txt`, `.mdlf`, `.mdlr` or `.mdlz` without creating a project or showing its folder. Global preferences apply. Choose **Open folder as project** when you want navigation.
 - **Project:** open a folder, navigate its files, search names and content, and create, rename, move or delete items. Folders load children on expansion. Recent projects appear in the toolbar menu.
-- **Workspace:** select or create a root folder, discover its projects, and create, rename or delete project folders from the workspace manager.
-- **Recent items:** File provides separate document, project and workspace histories. Entries show their parent path; unavailable targets are disabled. Each submenu can clear its own history.
-- **Favorites:** use the stars on Home or File → Favorites to keep documents, projects and workspaces available independently of recent history. Favorite projects and workspaces have a Theme dropdown, also shown on their starred Recent items rows. Opening the same item from Recents uses that association. Inherit restores project/global appearance; a workspace theme takes priority for its contained projects. Leaving the workspace or project context removes its theme override without changing shared project settings.
+- **Recent items:** File provides separate document and project histories. Entries show their parent path; unavailable targets are disabled. Each submenu can clear its own history.
+- **Favorites:** use the stars on Home or File → Favorites to keep documents and projects available independently of recent history. Favorite projects have a Theme dropdown, also shown on their starred Recent items rows. Opening the same project from Recents uses that association. Inherit restores project/global appearance. Leaving the project context restores normal standalone appearance without changing shared project settings.
+- **Document tabs:** in the project tree, double-click a supported file or choose **Open in new tab** from its context menu. The new tab keeps the project sidebar, expanded folders and file filters while the original tab retains its document and draft. Search results also offer the context action. Files already open select their existing tab; a standalone tab adopts the project without saving or discarding its draft. A single click still opens normally in the active tab.
 - **Focus:** hides project navigation and the inspector while preserving the document and project. Toggle it again to restore those panels.
 - **Reading / Editing / Split:** protected-by-default source and rendered-text editing, shared document undo and an approximately synchronized preview. Unlock the toolbar padlock to edit; use Save or ⌘S to persist changes. Unsaved drafts are marked explicitly and closing or navigating away offers Save, Discard or Cancel. Preview editing preserves untouched Markdown; raw HTML, rendered math and diagrams are edited through the raw Edit view. External file changes reload clean documents; conflicting edits stay protected until you reload or save a copy.
 
@@ -25,6 +25,8 @@ Open documents from the app or Finder’s **Open With** menu. Distribution build
 | --- | --- |
 | ⌘O | Open document |
 | ⇧⌘O | Open project |
+| ⌘T | New empty tab |
+| ⌘W / ⇧⌘W | Close active tab / window |
 | ⌘1 / ⌘2 / ⌘3 | Reading / Editing / Split |
 | ⇧⌘F | Focus |
 | ⌥⌘I | Document outline |

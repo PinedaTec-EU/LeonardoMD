@@ -3,7 +3,7 @@ import SwiftUI
 struct ProjectFileList: View {
     @Bindable var session: AppSession
     var isActiveTab = true
-    @State private var tree = ProjectFileTree()
+    private var tree: ProjectFileTree { session.projectFileTree }
     @State private var revealed: ProjectFileTree.Reveal?
     @State private var retryReveal = true
     @State private var revealRevision = 0
@@ -92,6 +92,11 @@ struct ProjectFileList: View {
                         Text(match.snippet).font(.caption).lineLimit(2).foregroundStyle(.secondary)
                     }.frame(maxWidth: .infinity, alignment: .leading).padding(7)
                 }.buttonStyle(.plain)
+                    .contextMenu {
+                        Button(L10n.text("Open in new tab")) {
+                            Task { await session.openProjectDocumentInTab?(match.url, match.line) }
+                        }
+                    }
                     .modifier(FileRowHighlight(accent: session.accentColor))
             }
             if session.searching { ProgressView().controlSize(.small) }

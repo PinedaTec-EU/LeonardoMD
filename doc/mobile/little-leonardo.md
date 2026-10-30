@@ -1,5 +1,7 @@
 # Little Leonardo
 
+Workspace grouping was removed from the macOS interface under [#305](https://github.com/PinedaTec-EU/LeonardoMD/issues/305). References to workspace-manager actions in the implementation checkpoints below are historical; package extraction and sync working-directory workspaces remain internal storage concepts.
+
 Architecture direction (owner-selected 2026-10-20): [ADR 0002](../adr/0002-reevaluate-mobile-git-engine.md) sets iOS to read-only with an offline cache and reserves editable synchronization for macOS/Windows desktop peers. Windows interoperability remains separate implementation work.
 
 Current implementation: [Git retirement and legacy recovery](git-retirement.md), tracked in [#249](https://github.com/PinedaTec-EU/LeonardoMD/issues/249). iOS is read-only; editable direct synchronization is retained for desktops. The original Git implementation/checkpoints below are historical and do not describe currently available mobile editing or publication.

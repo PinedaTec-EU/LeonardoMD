@@ -505,42 +505,4 @@ final class DocumentTabsTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: first, encoding: .utf8), "first draft")
         XCTAssertEqual(try String(contentsOf: second, encoding: .utf8), "second draft")
     }
-    func testProjectRenameUpdatesInactiveTabAndDeleteProtectsItsDraft() async throws {
-        let (root, tabs) = try fixture()
-        defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }
-        let projectURL = root.appendingPathComponent("Project")
-        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
-        let file = try document("note.md", in: projectURL)
-        let owner = tabs.activeSession
-        await owner.openWorkspace(root)
-        await owner.openProject(projectURL)
-        tabs.addTab()
-        let reader = tabs.activeSession
-        await reader.open(file)
-        reader.mode = .edit
-        reader.editorScroll = 0.4
-        reader.unsavedChangesDecision = { _ in .save }
-        reader.content = "draft"
-        let project = try XCTUnwrap(owner.workspaceProjects.first)
-        await owner.renameProject(project, to: "Renamed")
-        let renamed = root.appendingPathComponent("Renamed")
-        XCTAssertEqual(reader.documentURL, renamed.appendingPathComponent("note.md"))
-        XCTAssertEqual(reader.content, "draft")
-        XCTAssertEqual(reader.mode, .edit)
-        XCTAssertEqual(reader.editorScroll, 0.4)
-        reader.content = "protected"
-        try "external".write(to: renamed.appendingPathComponent("note.md"), atomically: true, encoding: .utf8)
-        await owner.deleteConfirmedProject(try XCTUnwrap(owner.workspaceProjects.first))
-        XCTAssertTrue(FileManager.default.fileExists(atPath: renamed.path))
-        XCTAssertTrue(reader.externalConflict)
-        XCTAssertEqual(reader.content, "protected")
-        // Resolve without invoking the interactive discard alert.
-        reader.content = reader.snapshot?.content ?? ""
-        await reader.reloadFromDisk()
-        await owner.deleteConfirmedProject(try XCTUnwrap(owner.workspaceProjects.first))
-        XCTAssertNil(reader.documentURL)
-        XCTAssertEqual(reader.content, "")
-        XCTAssertFalse(FileManager.default.fileExists(atPath: renamed.path))
-    }
-
 }

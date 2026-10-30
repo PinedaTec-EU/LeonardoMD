@@ -173,3 +173,5 @@ source/license provenance, including bundled citeproc CPAL source. See
 - 2026-10-30: Association setup now checks/configures Markdown plus MDLF, MDLR and MDLZ with exact UTI validation and no parent-type fallback. The prompt and General preferences describe all five extensions. Native Finder acceptance remains separate from automated coverage. Tracking: [#293](https://github.com/PinedaTec-EU/LeonardoMD/issues/293).
 
 - Native acceptance for [#293](https://github.com/PinedaTec-EU/LeonardoMD/issues/293) reproduced Finder rejecting MDLZ: `public.archive` alone is a functional UTI without `public.data` conformance. MDLZ now inherits `public.zip-archive` and `public.content`; the declaration regression checks physical file and content conformance for every supported extension.
+
+- 2026-10-30: Remove workspace grouping UI/session lifecycle and add project-context new-tab navigation; legacy stored metadata and package/sync work directories remain intact. [#305](https://github.com/PinedaTec-EU/LeonardoMD/issues/305).

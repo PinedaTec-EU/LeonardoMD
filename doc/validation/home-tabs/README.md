@@ -1,5 +1,7 @@
 # Home recent tabs and background
 
+These are historical captures from before workspace grouping was removed in [#305](https://github.com/PinedaTec-EU/LeonardoMD/issues/305). Current Home offers Projects and Documents only; see [current navigation evidence](../project-navigation/README.md).
+
 Historical evidence for beta 0.1.399 / PR #157. Its reserved lettering header is superseded by [#158](https://github.com/PinedaTec-EU/LeonardoMD/issues/158); current layering evidence lives in `../home-background/`.
 
 Tracking: [#156](https://github.com/PinedaTec-EU/LeonardoMD/issues/156). Related visibility bug: [#85](https://github.com/PinedaTec-EU/LeonardoMD/issues/85).

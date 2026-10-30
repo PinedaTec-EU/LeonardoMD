@@ -6,7 +6,7 @@ struct SavedItemsView: View {
     @State private var favoriteKind: FavoriteItem.Kind = .project
     @State private var recentKind: FavoriteItem.Kind = .project
 
-    private static let categoryOrder: [FavoriteItem.Kind] = [.project, .workspace, .document]
+    private static let categoryOrder: [FavoriteItem.Kind] = [.project, .document]
     private static let visibleRowLimit = 5
     private static let rowHeight: CGFloat = 48
     private static let rowSpacing: CGFloat = 4

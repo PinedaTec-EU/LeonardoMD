@@ -33,7 +33,6 @@ final class SessionPackageLifecycleTests: XCTestCase {
         let source = try LeonardoFormatParser.serialize(document)
         try source.write(to: template, atomically: true, encoding: .utf8)
         try LeonardoPackageTransport.export(documentURL: template, content: source, to: package)
-        session.workspaceURL = root
         await session.openProject(project.rootURL)
         let opened = await session.openLeonardoPackage(package, extractingTo: nil)
         XCTAssertTrue(opened)
@@ -117,38 +116,6 @@ final class SessionPackageLifecycleTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.package.path))
         let value = try await readValue(from: moved, using: session)
         XCTAssertEqual(value, "Grace")
-    }
-
-    func testOwnerPackageProjectRenameRemapsArchiveAndSurvivesSaveAndReopen() async throws {
-        let fixture = try await fixture()
-        let session = fixture.session
-        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
-
-        await session.renameProject(fixture.project, to: "Renamed")
-        let renamedProject = fixture.root.appendingPathComponent("Renamed", isDirectory: true)
-        let renamed = renamedProject.appendingPathComponent("request.mdlz")
-        XCTAssertEqual(session.projectURL?.standardizedFileURL, renamedProject.standardizedFileURL)
-        XCTAssertEqual(session.documentSourceURL?.standardizedFileURL, renamed.standardizedFileURL)
-        XCTAssertEqual(session.packageWorkspace?.packageURL?.standardizedFileURL, renamed.standardizedFileURL)
-        try await saveValue("Lin", in: session)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.package.path))
-        let value = try await readValue(from: renamed, using: session)
-        XCTAssertEqual(value, "Lin")
-    }
-
-    func testDeletingOwnerProjectDiscardsPackageWorkspaceAndClearsIdentity() async throws {
-        let fixture = try await fixture()
-        let session = fixture.session
-        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
-
-        await session.deleteConfirmedProject(fixture.project)
-        XCTAssertNil(session.packageWorkspace)
-        XCTAssertNil(session.documentURL)
-        XCTAssertNil(session.documentSourceURL)
-        XCTAssertEqual(session.documentStorage, .localFile)
-        XCTAssertEqual(session.documentKind, .markdown)
-        XCTAssertTrue(session.content.isEmpty)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.project.rootURL.path))
     }
 
     func testDeletingOwnerPackageClearsOnlyPackageTabAndPreservesExtractedTab() async throws {

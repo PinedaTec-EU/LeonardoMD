@@ -38,6 +38,15 @@ final class ProjectFileTree {
     private var nextLoadGeneration = 0
     private var loadGenerations: [URL: Int] = [:]
 
+    /// Copy settled navigation only; pending loads remain owned by their source tab.
+    func copyNavigation() -> ProjectFileTree {
+        let copy = ProjectFileTree()
+        copy.projectRoot = projectRoot
+        copy.expanded = expanded
+        copy.children = children
+        return copy
+    }
+
     private func context(for session: AppSession) -> Context? {
         let root = session.projectURL?.standardizedFileURL
         if root != projectRoot {

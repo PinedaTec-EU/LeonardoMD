@@ -1,48 +1,27 @@
-# Favorite appearance
+# Favorite project appearance
 
-Tracking: [#300](https://github.com/PinedaTec-EU/LeonardoMD/issues/300) [#303](https://github.com/PinedaTec-EU/LeonardoMD/issues/303) and [#304](https://github.com/PinedaTec-EU/LeonardoMD/issues/304).
+Tracking: [#300](https://github.com/PinedaTec-EU/LeonardoMD/issues/300), [#303](https://github.com/PinedaTec-EU/LeonardoMD/issues/303), [#304](https://github.com/PinedaTec-EU/LeonardoMD/issues/304) and [workspace removal #305](https://github.com/PinedaTec-EU/LeonardoMD/issues/305).
 
-The implementation-owned captures render the actual `SavedItemsView` and
-`FavoriteThemePicker` through the existing XCTest `NativeViewCaptureSupport`
-harness, with synthetic folders and isolated preferences. No XCTest executable
-was packaged or launched as a standalone GUI app.
+## Current behavior
 
-- `favorite-themes-en-900.png`: English, light, 900×620 points.
-- `favorite-themes-es-900.png`: Spanish, light, 900×620 points.
-- `favorite-themes-es-600.png`: Spanish, dark, 600×620 points.
+Project favorites can select a theme. The same association appears beside matching starred project rows in Recents and applies when that project opens through either route. Inherit restores portable project/global appearance. Document favorites have no theme selector.
 
-Each capture shows the selected project or workspace category in Favorites and
-Recents, with matching dropdown selections for the same association. The narrower capture keeps the
-controls visible while truncating long paths. Native bitmap pixel dimensions and
-capture times are recorded in the JSON sidecars. Browser metadata is inapplicable.
-The source manifest identifies the exact product/test source captured locally;
-local captures preceded the evidence commit. CI captures the same states under
-its exact `EVIDENCE_SHA` in the existing visual-evidence artifact.
+Workspace grouping and its manager are removed. Previously stored workspace favorite metadata is readable but absent from navigation and cannot affect project or standalone appearance. Detaching a project, opening a standalone document and Save Copy restore normal standalone appearance.
 
-These are native component captures, not packaged-process startup evidence.
-The owner's installed LeonardoMD process was running and was preserved; no
-fresh packaged-process or multi-process GUI validation is claimed. Session
-isolation and cross-writer persistence are exercised through application tests.
+`FavoriteThemeTests` covers project/standalone transitions, inert workspace metadata, session isolation, Recents refresh, custom-token inheritance and concurrent membership/theme writes. `FavoriteAppearancePersistenceTests` retains serialization and merge coverage. `ProjectTabOpeningTests` also verifies the theme of a new project document tab.
 
-`FavoriteThemeTests` verifies Recents opening and refresh in an already initialized
-session, independent session appearance, workspace containment/manager precedence,
-project switching, inheritance/custom tokens, document exclusion and concurrent
-membership/metadata writes. `FavoriteAppearancePersistenceTests` verifies Codable
-roundtrips, stable kind/path identity and merging independent appearance changes.
+`FavoriteThemePicker` uses a borderless native Menu with a checked Picker. Label and disclosure use the active session text tokens through SwiftUI tint and native accent color. Current capture fixtures include an Aqua host with a graphite session and generate project states only.
 
-Context-exit regressions additionally cover dismissing the workspace manager
-without a project, detaching a contained project, standalone document opening
-and Save Copy. A retained workspace location alone does not activate its palette.
+See [current project navigation evidence](../project-navigation/README.md) for the current Home and tabs. CI renders actual `SavedItemsView` / `FavoriteThemePicker` states in `favorite-themes/` under its exact `EVIDENCE_SHA`.
 
-The favorite dropdown uses a borderless native Menu with a Picker for its checked
-options. The closed label and disclosure inherit the active palette's text color
-through SwiftUI tint and native accent color. Capture fixtures explicitly force
-an Aqua host even for the dark session, covering the mixed-appearance case that
-made the prior popup's selected text and arrows unreadable on CI. Original local
-2× popup captures were readable; the 1× CI artifact is the defect evidence.
+## Historical #301 captures
 
-After integration of Home's category tabs, the fixture selects matching Favorites
-and Recent tabs explicitly. The original three filenames show Projects;
-`favorite-themes-en-900-workspace.png` and
-`favorite-themes-es-600-workspace.png` show Workspaces, including the dark
-mixed-appearance case. Every capture records its selected category.
+The image files and source manifest stored in this directory are historical evidence from #301, before workspace removal. They are not screenshots of the current workspace-free interface:
+
+- `favorite-themes-en-900.png` and `favorite-themes-es-900.png`: project Favorites/Recents, light, 900×620 points.
+- `favorite-themes-es-600.png`: project Favorites/Recents, graphite session with Aqua hosting, 600×620 points.
+- Files ending in `-workspace.png`: the former workspace category, retained only as historical evidence for #303/#304.
+
+Their JSON sidecars record original capture times, dimensions, categories and native host appearance; `source-hashes.json` binds those original product/test inputs. The narrower historical capture demonstrated readable selected palette names and disclosure arrows with truncated paths.
+
+All captures use native AppKit/SwiftUI component rendering through XCTest, with synthetic folders and isolated preferences. No XCTest executable was packaged or launched as a GUI app. Component rendering does not prove fresh packaged-process startup or multi-process acceptance; the owner's installed app was preserved.

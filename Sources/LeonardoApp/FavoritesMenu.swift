@@ -21,7 +21,7 @@ final class FavoritesMenu: NSObject, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
         let active = session()
-        for (index, kind) in FavoriteItem.Kind.allCases.enumerated() {
+        for (index, kind) in FavoriteItem.Kind.navigationKinds.enumerated() {
             let item = NSMenuItem(title: L10n.text(kind.favoriteAction), action: #selector(toggle(_:)), keyEquivalent: "")
             item.target = self
             item.tag = index
@@ -35,8 +35,8 @@ final class FavoritesMenu: NSObject, NSMenuDelegate {
     }
 
     @objc private func toggle(_ item: NSMenuItem) {
-        guard FavoriteItem.Kind.allCases.indices.contains(item.tag), let active = session() else { return }
-        let kind = FavoriteItem.Kind.allCases[item.tag]
+        guard FavoriteItem.Kind.navigationKinds.indices.contains(item.tag), let active = session() else { return }
+        let kind = FavoriteItem.Kind.navigationKinds[item.tag]
         guard let url = active.currentItem(kind) else { return }
         active.toggleFavorite(url, kind: kind)
     }

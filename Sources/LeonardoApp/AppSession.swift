@@ -9,9 +9,6 @@ import OSLog
 
 @MainActor @Observable
 final class AppSession {
-    var workspaceURL: URL?
-    var workspaceProjects: [ProjectDescriptor] = []
-    var showWorkspace = false
     var documentURL: URL? { didSet { if documentURL != oldValue { editHistory = DocumentEditHistory() } } }
     /// The logical document format is independent from the bytes currently
     /// loaded into the editor. For an internally opened `.mdlz`, `documentURL`
@@ -36,6 +33,8 @@ final class AppSession {
         set { formatPreferences.migrateMarkdownOnSave = newValue }
     }
     var projectURL: URL?
+    var projectFileTree = ProjectFileTree()
+    var openProjectDocumentInTab: ((URL, Int?) async -> Void)?
     private var documentContent = ""
     var content: String {
         get { documentContent }
@@ -243,7 +242,6 @@ final class AppSession {
             await openProject(url)
         } else {
             guard await prepareNavigation() else { return }
-            showWorkspace = false
             projectURL = nil
             projectConfiguration = .default
             projectBaseline = .default
