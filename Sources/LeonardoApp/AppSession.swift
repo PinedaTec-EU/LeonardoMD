@@ -95,6 +95,7 @@ final class AppSession {
     /// boundary as a session closure prevents AppSession from knowing whether
     /// the bytes came from a ZIP implementation, a future document provider,
     /// or a user-selected extraction directory.
+    var openUserGuide: @MainActor () async -> Void = {}
     var openPackageDocument: @MainActor (URL, LeonardoPackageOpenPreference) async -> Bool = { _, _ in false }
     /// The format owner supplies the canonical MD -> MDLF migration. The app
     /// owns the preference and prompt, but never invents a second serializer.
@@ -153,6 +154,8 @@ final class AppSession {
         self.openSystemURL = openSystemURL
         let existingAuthorization = authorizePath
         authorizePath = { url, intent in
+            // Suspended operations must not acquire path ownership as a side effect.
+            try NativeReconciliationLease.shared.check(url, intent: intent)
             // Browsing a workspace does not reserve all its projects. Editing
             // a project reserves its root explicitly in openProject.
             if intent != .directory { try InstancePathOwnership.shared.claim(url) }
@@ -226,7 +229,7 @@ final class AppSession {
         }
     }
 
-    func open(_ url: URL) async {
+    func open(_ url: URL, packagePreference: LeonardoPackageOpenPreference? = nil) async {
         guard !isClosing, !stopped else { return }
         fileOperationCount += 1
         defer { fileOperationCount -= 1 }
@@ -247,11 +250,11 @@ final class AppSession {
             rootEntries = []
             resetSearch()
             focus = false
-            await openDocument(url)
+            await openDocument(url, packagePreference: packagePreference)
         }
     }
 
-    func openDocument(_ url: URL, line: Int? = nil) async {
+    func openDocument(_ url: URL, line: Int? = nil, packagePreference: LeonardoPackageOpenPreference? = nil) async {
         guard !isClosing, !stopped, !isSyncSuspended else { return }
         let access = beginDocumentAccess(to: url)
         defer { finishDocumentAccess(access) }
@@ -276,7 +279,7 @@ final class AppSession {
         if kind == .leonardoPackage {
             busy = true
             defer { busy = false }
-            guard await openPackageDocument(url, packageOpenPreference) else {
+            guard await openPackageDocument(url, packagePreference ?? packageOpenPreference) else {
                 // The package adapter returns false for both cancellation and
                 // a reported transport error. Do not turn a cancelled panel
                 // into a new alert; the adapter has already reported errors.

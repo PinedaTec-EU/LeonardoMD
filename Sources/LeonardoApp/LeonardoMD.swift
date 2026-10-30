@@ -337,6 +337,11 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         Task { await documents.close(id) }
     }
     @objc private func openDocument() { activeSession?.chooseDocument() }
+    @objc private func openUserGuide() {
+        guard !terminationPending else { return }
+        if windows.isEmpty { newEmptyWindow() }
+        Task { await activeDocuments?.openUserGuide() }
+    }
     @objc private func openProject() { activeSession?.chooseProject() }
     private var focusedTextEditor: NSTextView? {
         guard let editor = NSApp.keyWindow?.firstResponder as? NSTextView,
@@ -429,6 +434,9 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         add(L10n.text("Minimize"), action: #selector(NSWindow.performMiniaturize(_:)), key: "m", to: window)
         add(L10n.text("Zoom"), action: #selector(NSWindow.performZoom(_:)), to: window)
         add(L10n.text("Bring all to front"), action: #selector(bringWindowsToFront), to: window)
+        let help = submenu(L10n.text("Help"), in: menu)
+        add(L10n.text("Leonardo user guide…"), action: #selector(openUserGuide), to: help)
+        NSApp.helpMenu = help
         NSApp.windowsMenu = window
         NSApp.mainMenu = menu
     }

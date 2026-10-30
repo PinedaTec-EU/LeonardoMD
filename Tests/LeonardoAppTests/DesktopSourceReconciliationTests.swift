@@ -143,14 +143,20 @@ final class DesktopSourceReconciliationTests: XCTestCase {
     }
 
     func testLeaseBlocksEditingOpeningAndNavigationAndReleasesAfterFailure() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        defer { try? FileManager.default.removeItem(at: root) }
+        let parent = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let root = parent.appendingPathComponent("Project")
+        defer { try? FileManager.default.removeItem(at: parent) }
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let note = root.appendingPathComponent("a.md")
         try Data("disk".utf8).write(to: note)
         let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
         defer { session.stop() }
         await session.openDocument(note)
+        // A separate owner reserves a sibling, making ancestor authorization
+        // conflict deterministically without touching any user-owned path.
+        let competingOwner = InstancePathOwnership()
+        try competingOwner.claim(parent.appendingPathComponent("Sibling/document.md"))
+        defer { withExtendedLifetime(competingOwner) {} }
         session.content = "draft"
         let lease = NativeReconciliationLease.shared, oldSessions = lease.sessions
         lease.sessions = { [session] }
@@ -163,13 +169,18 @@ final class DesktopSourceReconciliationTests: XCTestCase {
                 let navigation = await session.prepareNavigation()
                 XCTAssertFalse(navigation)
                 do { try await session.authorizePath(note, .document); XCTFail("Root access was not frozen") }
-                catch { XCTAssertEqual(error as? DesktopRuntimeError, .busy) }
+                catch { XCTAssertEqual(error as? DesktopRuntimeError, .busy, "Unexpected authorization error: \(String(reflecting: error))") }
                 do { try await session.authorizePath(root.deletingLastPathComponent(), .directoryMutation); XCTFail("Ancestor mutation was not frozen") }
-                catch { XCTAssertEqual(error as? DesktopRuntimeError, .busy) }
+                catch { XCTAssertEqual(error as? DesktopRuntimeError, .busy, "Unexpected authorization error: \(String(reflecting: error))") }
                 throw SourceFixtureFailure.interrupted
             }
             XCTFail("Interruption ignored")
         } catch { XCTAssertEqual(error as? SourceFixtureFailure, .interrupted) }
+        // Releasing the reconciliation lease must not waive path ownership.
+        do {
+            try await session.authorizePath(parent, .directoryMutation)
+            XCTFail("Competing path ownership was bypassed")
+        } catch { XCTAssertTrue(error is InstancePathOwnership.InUse, "Unexpected error: \(error)") }
         XCTAssertNil(lease.root)
         XCTAssertFalse(session.isSyncSuspended)
         XCTAssertEqual(session.content, "draft")

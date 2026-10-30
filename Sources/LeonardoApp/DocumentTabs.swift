@@ -40,6 +40,7 @@ final class DocumentTabs {
         let session = AppSession(preferencesURL: preferencesURL)
         session.presentationWindow = presentationWindow
         let tab = DocumentTab(session: session)
+        session.openUserGuide = { [weak self] in await self?.openUserGuide() }
         configureLeonardoTransport(for: session)
         session.activateExistingDocument = { [weak self] url, line in
             self?.activateDocument(url, line: line) ?? false
@@ -118,7 +119,7 @@ final class DocumentTabs {
         await openExternalDocuments(urls)
     }
 
-    func openExternalDocuments(_ urls: [URL]) async {
+    func openExternalDocuments(_ urls: [URL], packagePreference: LeonardoPackageOpenPreference? = nil) async {
         guard !closing, !stopped else { return }
         for url in urls where url.isFileURL {
             if activateDocument(url) {
@@ -126,7 +127,7 @@ final class DocumentTabs {
                 continue
             }
             guard let id = addTab(), let tab = tabs.first(where: { $0.id == id }) else { return }
-            await tab.session.open(url)
+            await tab.session.open(url, packagePreference: packagePreference)
         }
     }
 
