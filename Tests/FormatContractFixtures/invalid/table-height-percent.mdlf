@@ -1,4 +1,0 @@
----
-{"format": "mdlf", "formatVersion": 1, "layout": {"tables": [{"occurrence": 1, "width": {"value": 300, "unit": "points"}, "height": {"value": 20, "unit": "percent"}, "rowHeights": [30, 60], "source": "| A | B |\n| --- | --- |\n| One | Two |\n", "columns": [{"width": {"value": 100, "unit": "points"}}, {"width": {"value": 200, "unit": "points"}}]}]}}
----
-Table

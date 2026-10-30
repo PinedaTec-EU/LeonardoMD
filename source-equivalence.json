@@ -1,0 +1,20 @@
+{
+  "compiled_code_head": "da5f2feace37be508dd96a162505b8c1bc7a5e85",
+  "reviewed_head": "a35f290d2f4d2daf51458a1e7bc539f4d11c87ea",
+  "identical_compiled_source_test_script_and_package_trees": true,
+  "trees": [
+    "100644 blob b67272e588be3d1079b56d556cf662ddfa9a656b\tPackage.resolved",
+    "100644 blob 2fddd621bbbf958ce53c451d58e8ecb78dcf648d\tPackage.swift",
+    "040000 tree cfa45ebb1e1dd3da4e93fa6638b4ae4cdcc4ea79\tSources",
+    "040000 tree bf88da0da0dd49b0acf354121487a3bcbc2199f1\tTests",
+    "040000 tree 90873bcaf7cecccaf294344c9bbb0db9f57a87bb\tscripts"
+  ],
+  "changed_paths": [
+    "deploy/release-changes.json",
+    "deploy/release-notes.prepared.md",
+    "deploy/version/entries/289.yaml",
+    "deploy/version/entries/296.yaml",
+    "deploy/version/version.yaml",
+    "version.nfo"
+  ]
+}

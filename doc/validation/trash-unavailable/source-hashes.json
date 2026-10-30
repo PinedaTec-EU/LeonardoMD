@@ -1,7 +1,0 @@
-{
-  "Sources/LeonardoApp/SessionDeletion.swift": "a4c7cf6a4dde075167d51a308526c65676d89c42a6f6662e1e37c7dbcf7b72be",
-  "Sources/LeonardoApp/AppSession.swift": "23bf2dcd7613fa840b2647c3e52df46b553a17ea992daa4fd1ddde3424b29ce6",
-  "Sources/LeonardoCore/LocalProjectRepository.swift": "37a79cedb0bdd90930936e0697896c84be3f501a7264c5e9af1549187833a3b0",
-  "Sources/LeonardoCore/TrashSupport.swift": "8740cb928ade1bb04e49964b03c676072912690f1d50ed65953c43de8143bebe",
-  "Tests/LeonardoAppTests/TrashUnavailableConfirmationTests.swift": "f3a3e31a8b69909eddc5ddd2cdd18cefe7b03c6c1c19f7bfbf07897003dbabe3"
-}

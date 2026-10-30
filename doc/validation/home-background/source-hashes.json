@@ -1,7 +1,0 @@
-{
-  "Sources/LeonardoApp/WelcomeView.swift": "cfdb59cfdd5d98dc6c0e929b582f15fa3e32fb4b40651594cb8c54586974c427",
-  "Sources/LeonardoApp/WelcomeWatermark.swift": "187274d9701f5f0426eb3f8247d8e0e7bdcc778c42025d5e9d9aed213ed5a155",
-  "Sources/LeonardoApp/SavedItemsView.swift": "2b9b0c5865ed2a567c6d7a9109a641666bdb99f4f5244e5f0f69fc0ed80f049e",
-  "Tests/LeonardoAppTests/FavoritesTests.swift": "ebd017c00a97f7f8705065765188ad8a57274a3bdc7f22c18eb570aff59b5f44",
-  "Tests/LeonardoAppTests/NativeViewCaptureSupport.swift": "2d7decc015fb2c5a11c50efc5b9f755adca595a2fe488bd7e15dbe61bf58e719"
-}

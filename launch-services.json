@@ -1,0 +1,32 @@
+[
+  {
+    "extension": ".markdown",
+    "uti": "net.daringfireball.markdown",
+    "default_bundle_id": "eu.pinedatec.LeonardoMD",
+    "default_application": "/Volumes/MSM4Ext/XcodeData/Projects/PinedaTec.eu/LeonardoMD/output/beta-0.1.1-beta.4/LeonardoMD.app"
+  },
+  {
+    "extension": ".md",
+    "uti": "net.daringfireball.markdown",
+    "default_bundle_id": "eu.pinedatec.LeonardoMD",
+    "default_application": "/Volumes/MSM4Ext/XcodeData/Projects/PinedaTec.eu/LeonardoMD/output/beta-0.1.1-beta.4/LeonardoMD.app"
+  },
+  {
+    "extension": ".mdlf",
+    "uti": "eu.pinedatec.leonardomd.mdlf",
+    "default_bundle_id": "eu.pinedatec.LeonardoMD",
+    "default_application": "/Applications/LeonardoMD.app"
+  },
+  {
+    "extension": ".mdlr",
+    "uti": "eu.pinedatec.leonardomd.mdlr",
+    "default_bundle_id": "eu.pinedatec.LeonardoMD",
+    "default_application": "/Applications/LeonardoMD.app"
+  },
+  {
+    "extension": ".mdlz",
+    "uti": "eu.pinedatec.leonardomd.mdlz",
+    "default_bundle_id": "eu.pinedatec.LeonardoMD",
+    "default_application": null
+  }
+]
