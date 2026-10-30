@@ -38,7 +38,7 @@ struct ProjectSidebar: View {
                 Spacer()
                 FileListMenu(session: session)
             }
-            ProjectFileList(session: session, isActiveTab: isActiveTab)
+            ProjectFileList(session: session, isActiveTab: isActiveTab).id(session.projectURL)
             Spacer(minLength: 0)
             if session.gitEnabled {
                 Button { session.showGit = true } label: {

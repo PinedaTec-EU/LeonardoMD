@@ -127,3 +127,5 @@ Optional additional macOS processes retain the principal Mach-service election f
 Packaged beta 0.1.625 startup crash [#266](https://github.com/PinedaTec-EU/LeonardoMD/issues/266): `InstancePreferences` must accept a nil named UserDefaults suite and use `.standard` for the application domain. Regression coverage exercises unavailable-suite reads/writes and the production initializer; isolated named suites alone do not cover this startup path.
 
 Active-file sidebar following is a Mac-wide `GlobalPreferences.followActiveFile` setting (default true). `ProjectFileTree` flattens expanded folders so lazy rows remain addressable for scroll reveal; `ProjectFileList` follows document identity and explicit tab activation while respecting searches and filters. Selection uses paired system text/background colors. Tracking: [#288](https://github.com/PinedaTec-EU/LeonardoMD/issues/288).
+
+Sidebar tree ownership resets with project identity, rejects stale row actions and discards loads completed after a project switch. Regression: [#292](https://github.com/PinedaTec-EU/LeonardoMD/issues/292), delivered with [#288](https://github.com/PinedaTec-EU/LeonardoMD/issues/288).

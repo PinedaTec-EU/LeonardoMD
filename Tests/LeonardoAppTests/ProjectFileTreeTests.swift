@@ -3,6 +3,33 @@ import XCTest
 
 @MainActor
 final class ProjectFileTreeTests: XCTestCase {
+    func testChangingProjectClearsExpandedFoldersAndRejectsStaleRowActions() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let first = root.appendingPathComponent("First", isDirectory: true)
+        let second = root.appendingPathComponent("Second", isDirectory: true)
+        try FileManager.default.createDirectory(at: first.appendingPathComponent("Old folder"), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: second, withIntermediateDirectories: true)
+        let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let openedFirst = await session.openProject(first)
+        XCTAssertTrue(openedFirst)
+        let tree = ProjectFileTree()
+        let oldFolder = try XCTUnwrap(session.rootEntries.first(where: { $0.isDirectory }))
+        await tree.toggle(oldFolder, session: session)
+        XCTAssertTrue(tree.expanded.contains(oldFolder.url))
+        let openedSecond = await session.openProject(second)
+        XCTAssertTrue(openedSecond)
+        session.errorMessage = nil
+        _ = await tree.refreshAndReveal(nil, session: session)
+        await tree.toggle(oldFolder, session: session)
+        XCTAssertNil(session.errorMessage)
+        XCTAssertTrue(tree.expanded.isEmpty)
+        XCTAssertTrue(tree.rows(roots: session.rootEntries).isEmpty)
+        await session.detachProject()
+        _ = await tree.refreshAndReveal(nil, session: session)
+        XCTAssertTrue(tree.expanded.isEmpty)
+    }
+
     func testRevealExpandsAncestorsAndRespectsManualCollapseAndFilters() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let folder = root.appendingPathComponent("Nested/Deep", isDirectory: true)

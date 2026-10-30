@@ -61,7 +61,12 @@ final class SidebarFollowVisualTests: XCTestCase {
         try await capture("sidebar-tab-reactivated", revealed: true)
         let preferences = NSHostingView(rootView: PreferencesView(session: session))
         try await NativeViewCaptureSupport.capture(preferences, size: NSSize(width: 580, height: 620),
-            to: output.appendingPathComponent("preferences-follow-active-file.png"), settlingMilliseconds: 400)
+            to: output.appendingPathComponent("preferences-follow-active-file.png"), settlingMilliseconds: 400,
+            beforeCapture: { host in
+                let scroll = try XCTUnwrap(self.findScroll(in: host))
+                scroll.documentView?.scroll(NSPoint(x: 0, y: 450))
+                host.layoutSubtreeIfNeeded()
+            })
 
 
     }
