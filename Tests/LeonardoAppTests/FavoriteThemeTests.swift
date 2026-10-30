@@ -239,21 +239,26 @@ final class FavoriteThemeTests: XCTestCase {
         session.setFavoritePalette(.graphiteGlass, for: project, kind: .project)
         session.setFavoritePalette(.leonardoClassic, for: workspace, kind: .workspace)
         session.globalPreferences.recentProjectPaths = [project]
+        session.globalPreferences.recentWorkspacePaths = [workspace]
         session.persistSettings()
         await session.settingsTask?.value
         let language = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = language }
         let directory = URL(fileURLWithPath: destination, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        for (locale, width, palette) in [(AppLanguage.english, 900, PaletteID.paperWhite),
-                                         (.spanish, 900, .paperWhite), (.spanish, 600, .graphiteGlass)] {
+        for (locale, width, palette, kind) in [
+            (AppLanguage.english, 900, PaletteID.paperWhite, FavoriteItem.Kind.project),
+            (.spanish, 900, .paperWhite, .project), (.spanish, 600, .graphiteGlass, .project),
+            (.english, 900, .paperWhite, .workspace), (.spanish, 600, .graphiteGlass, .workspace)
+        ] {
             LanguageSettings.shared.language = locale
             session.globalPreferences.palette = palette
             session.persistSettings()
             await session.settingsTask?.value
-            let view = NSHostingView(rootView: SavedItemsView(session: session, recentKind: .project)
+            let view = NSHostingView(rootView: SavedItemsView(session: session, favoriteKind: kind, recentKind: kind)
                 .background(session.surfaceColor).modifier(SessionAppearance(session: session)))
-            let name = "favorite-themes-\(locale.rawValue)-\(width)"
+            let suffix = kind == .project ? "" : "-workspace"
+            let name = "favorite-themes-\(locale.rawValue)-\(width)" + suffix
             try await NativeViewCaptureSupport.capture(view, size: NSSize(width: width, height: 620),
                 to: directory.appendingPathComponent(name + ".png"), title: "Favorite themes QA") { view in
                     // Keep native host appearance light while the session can be dark.
@@ -265,7 +270,8 @@ final class FavoriteThemeTests: XCTestCase {
             let metadata: [String: Any] = [
                 "head": environment["EVIDENCE_SHA"] ?? "unavailable; local source manifest required",
                 "captured_at": ISO8601DateFormatter().string(from: Date()),
-                "surface": "Native NSHostingView SavedItemsView; synthetic project/workspace favorites and starred recent project",
+                "surface": "Native NSHostingView SavedItemsView; synthetic \(kind.rawValue) favorites and starred recent items",
+                "favorite_category": kind.rawValue,
                 "viewport_points": [width, 620], "pixel_dimensions": try NSBitmapImageRep(data: Data(contentsOf: directory.appendingPathComponent(name + ".png"))).map { [$0.pixelsWide, $0.pixelsHigh] } ?? [],
                 "language": locale.rawValue, "palette": palette.rawValue,
                 "native_host_appearance": "Aqua (including the dark session fixture)",

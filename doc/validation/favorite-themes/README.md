@@ -11,8 +11,8 @@ was packaged or launched as a standalone GUI app.
 - `favorite-themes-es-900.png`: Spanish, light, 900×620 points.
 - `favorite-themes-es-600.png`: Spanish, dark, 600×620 points.
 
-Each capture shows project/workspace favorites with their dropdowns and a starred
-recent project sharing the same association. The narrower capture keeps the
+Each capture shows the selected project or workspace category in Favorites and
+Recents, with matching dropdown selections for the same association. The narrower capture keeps the
 controls visible while truncating long paths. Native bitmap pixel dimensions and
 capture times are recorded in the JSON sidecars. Browser metadata is inapplicable.
 The source manifest identifies the exact product/test source captured locally;
@@ -40,3 +40,9 @@ through SwiftUI tint and native accent color. Capture fixtures explicitly force
 an Aqua host even for the dark session, covering the mixed-appearance case that
 made the prior popup's selected text and arrows unreadable on CI. Original local
 2× popup captures were readable; the 1× CI artifact is the defect evidence.
+
+After integration of Home's category tabs, the fixture selects matching Favorites
+and Recent tabs explicitly. The original three filenames show Projects;
+`favorite-themes-en-900-workspace.png` and
+`favorite-themes-es-600-workspace.png` show Workspaces, including the dark
+mixed-appearance case. Every capture records its selected category.

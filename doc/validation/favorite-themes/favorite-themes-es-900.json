@@ -1,7 +1,8 @@
 {
   "browser" : "N\/A; AppKit\/SwiftUI",
   "capture_mode" : "native component bitmap",
-  "captured_at" : "2026-10-30T13:33:42Z",
+  "captured_at" : "2026-10-30T13:46:01Z",
+  "favorite_category" : "project",
   "head" : "unavailable; local source manifest required",
   "language" : "es",
   "limitations" : "Component evidence; no packaged startup or new-process claim",
@@ -11,7 +12,7 @@
     1800,
     1240
   ],
-  "surface" : "Native NSHostingView SavedItemsView; synthetic project\/workspace favorites and starred recent project",
+  "surface" : "Native NSHostingView SavedItemsView; synthetic project favorites and starred recent items",
   "viewport_points" : [
     900,
     620
