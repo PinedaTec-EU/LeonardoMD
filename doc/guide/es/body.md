@@ -106,10 +106,10 @@ El código y las instrucciones están en el [repositorio de LeonardoMD](https://
 
 1. En los ajustes de Claude, activa **Code execution and file creation** o **Create and edit files**, según su interfaz.
 2. En el repositorio descargado, comprime la carpeta `plugins/leonardo-format/skills/leonardo-format`. El ZIP debe contener esa carpeta con su `SKILL.md`, `references/` y `scripts/`.
-3. En Claude, abre **Customize → Skills → Add → Upload skill** y selecciona el ZIP. Activa `leonardo-format` y comprueba que aparecen sus ocho archivos. Las cuentas de organización pueden requerir habilitación por un administrador.
+3. En Claude, abre **Customize → Skills → + → Create skill → Upload a skill** y selecciona el ZIP. Activa `leonardo-format` y comprueba que aparecen sus ocho archivos. Las cuentas de organización pueden requerir habilitación por un administrador.
 4. Adjunta una copia de prueba del documento y pide que lo inspeccione con esa skill.
 
-En una prueba con Claude para macOS el 30 de octubre de 2026, adjuntar mediante copiar y pegar desde Finder permitió validar MDLR y MDLZ y leer sus campos con la skill. **El arrastre directo no quedó verificado.** Si drag and drop no funciona, prueba copiar el archivo en Finder y pegarlo en el editor de Claude o el selector de adjuntos. Comprueba que aparece el adjunto y que Claude realmente ha leído sus valores; la presencia del nombre de archivo no prueba la lectura.
+La lista publicada de tipos de archivo admitidos por Claude no incluye las extensiones MDLR ni MDLZ. La aceptación puede variar según la versión y la interfaz: **el arrastre directo y la lectura del adjunto no están garantizados**. Prueba primero con un archivo ficticio, mediante el selector de adjuntos o copiar y pegar desde Finder. Comprueba que Claude lee sus campos y valores; mostrar el nombre del archivo no prueba que pueda acceder a él. Algunas versiones ofrecen **Add → Upload skill** directamente, sin el paso intermedio Create skill indicado arriba.
 
 Si Claude rechaza la extensión, la skill no puede anular ese filtro. Para MDLR, puedes entregar una copia con extensión `.txt`, indicando que su contenido es MDLF v1 y que el original era MDLR. Para MDLZ, una copia `.zip` conserva el transporte; pide que la inspeccione con el helper. Mantén el original y solicita la extensión Leonardo correcta para cualquier resultado. Si la interfaz tampoco acepta ZIP, utiliza un agente con acceso a archivos locales.
 

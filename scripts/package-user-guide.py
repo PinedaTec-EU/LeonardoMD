@@ -46,7 +46,7 @@ def metadata(language):
     spanish = language == "es"
     return {
         "format": "mdlf", "formatVersion": 1,
-        "document": {"id": "leonardo-user-guide-" + language, "kind": "form", "revision": 1},
+        "document": {"id": "leonardo-user-guide-" + language, "kind": "form", "revision": 2},
         "fields": {
             "practiceName": {"type": "text", "maxLength": 80, "label": "Nombre de prueba" if spanish else "Practice name"},
             "practiceGoal": {"type": "multiline", "maxLength": 1000, "label": "Tu objetivo" if spanish else "Your goal"},
@@ -75,7 +75,7 @@ def main():
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     for language in ILLUSTRATIONS:
-        destination = args.output / f"Guide-v1-{language}.mdlz"
+        destination = args.output / f"Guide-v2-{language}.mdlz"
         # The canonical packer deliberately refuses overwrites. Replace only our generated artifact.
         with tempfile.TemporaryDirectory(prefix="leonardo-guide-output-") as temporary:
             result = Path(temporary) / destination.name

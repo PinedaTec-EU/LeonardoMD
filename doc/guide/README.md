@@ -1,8 +1,8 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v1-en.mdlz` and `Guide-v1-es.mdlz` in its SwiftPM
+The macOS app ships `Guide-v2-en.mdlz` and `Guide-v2-es.mdlz` in its SwiftPM
 resource bundle. Help and Welcome open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v1/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v2/<language>/` through
 ordinary document tabs in package mode, without changing the user’s general
 package-opening preference. Existing copies and practice answers are preserved.
 

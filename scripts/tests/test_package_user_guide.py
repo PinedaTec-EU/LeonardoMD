@@ -17,7 +17,7 @@ class PackageUserGuideTests(unittest.TestCase):
             unrelated.write_bytes(b'preserve this file')
             subprocess.run([sys.executable, str(ROOT / 'scripts/package-user-guide.py'), '--output', str(output)], check=True)
             for language in ('en', 'es'):
-                name = f'Guide-v1-{language}.mdlz'
+                name = f'Guide-v2-{language}.mdlz'
                 self.assertEqual((output / name).read_bytes(), (ROOT / 'Sources/LeonardoApp/Resources' / name).read_bytes())
                 with zipfile.ZipFile(output / name) as archive:
                     self.assertEqual(len(archive.namelist()), 4)

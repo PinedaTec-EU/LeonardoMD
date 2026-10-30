@@ -106,10 +106,10 @@ Download the [LeonardoMD repository](https://github.com/PinedaTec-EU/LeonardoMD/
 
 1. Enable **Code execution and file creation**, or **Create and edit files**, in Claude's settings.
 2. Compress the downloaded `plugins/leonardo-format/skills/leonardo-format` folder. The ZIP must contain that folder with `SKILL.md`, `references/` and `scripts/`.
-3. In Claude, use **Customize → Skills → Add → Upload skill**, select the ZIP, enable `leonardo-format` and verify its eight files. Organization accounts may need an administrator to enable skills.
+3. In Claude, use **Customize → Skills → + → Create skill → Upload a skill**, select the ZIP, enable `leonardo-format` and verify its eight files. Organization accounts may need an administrator to enable skills.
 4. Attach a fictional test document and ask Claude to inspect it with the skill.
 
-A Claude for macOS test on 30 October 2026 successfully validated MDLR and MDLZ attachments and read their fields after copying files in Finder and pasting into Claude. **Direct drag and drop was not verified.** If dragging fails, try Finder copy/paste or the attachment picker. Verify the attachment appears and Claude reads its actual values: displaying a filename alone does not prove access.
+Claude’s published supported-file list does not list MDLR or MDLZ as supported suffixes. Acceptance can vary by app version and surface, so **direct drag and drop and attachment reading are not guaranteed**. Try a fictional test file first, using the attachment picker or Finder copy/paste. Check that Claude reads its actual fields and values; displaying a filename alone does not prove access. Some Claude versions offer **Add → Upload skill** directly instead of the intermediate Create skill step above.
 
 If Claude rejects a suffix, the skill cannot override that filter. For MDLR, supply a copy named `.txt`, explain that it contains MDLF v1 and originally used MDLR. For MDLZ, a `.zip` copy preserves its transport: ask for inspection with the helper. Keep originals and request the correct Leonardo extension for outputs. If ZIP is also rejected, use an agent with local filesystem access.
 
