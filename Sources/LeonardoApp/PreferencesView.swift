@@ -83,6 +83,10 @@ struct PreferencesView: View {
                 }
                 Section(L10n.text("On this Mac")) {
                     InstancePreferencesView()
+                    Toggle(L10n.text("Follow active file in sidebar"), isOn: Binding(
+                        get: { session.globalPreferences.followActiveFile },
+                        set: { session.globalPreferences.followActiveFile = $0; session.persistSettings() }
+                    )).accessibilityIdentifier("preferences-follow-active-file")
                     @Bindable var languages = LanguageSettings.shared
                     Picker(L10n.text("Language"), selection: $languages.language) {
                         ForEach(AppLanguage.allCases) { language in
