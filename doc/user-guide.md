@@ -8,7 +8,7 @@ Open documents from the app or Finder’s **Open With** menu. Distribution build
 
 ## Document and project modes
 
-- **Standalone viewer:** open a `.md`, `.markdown` or `.txt` without creating a project or showing its folder. Global preferences apply. Choose **Open folder as project** when you want navigation.
+- **Standalone viewer:** open a `.md`, `.markdown`, `.txt`, `.mdlf`, `.mdlr` or `.mdlz` without creating a project or showing its folder. Global preferences apply. Choose **Open folder as project** when you want navigation.
 - **Project:** open a folder, navigate its files, search names and content, and create, rename, move or delete items. Folders load children on expansion. Recent projects appear in the toolbar menu.
 - **Workspace:** select or create a root folder, discover its projects, and create, rename or delete project folders from the workspace manager.
 - **Recent items:** File provides separate document, project and workspace histories. Entries show their parent path; unavailable targets are disabled. Each submenu can clear its own history.
@@ -36,7 +36,7 @@ Disabled engines are excluded from the WebKit resource allowlist and are neither
 
 See [document extensions](document-extensions.md) for syntax, examples and limitations. KaTeX supports a subset of LaTeX mathematical notation; it does not compile complete `.tex` documents or arbitrary LaTeX packages.
 
-Preferences keep their tab navigation fixed. General and Extensions each contain their own Global / This project selector. In General, palette and paper effect follow that scope; language, viewing behavior and Markdown file association are grouped separately as Mac-wide settings.
+Preferences keep their tab navigation fixed. General and Extensions each contain their own Global / This project selector. In General, palette and paper effect follow that scope; language, viewing behavior and document file associations are grouped separately as Mac-wide settings.
 
 PDF export uses the rendered document. Palettes and lightweight ruled/grid/parchment effects are configurable globally or per project. Project settings are portable JSON in `.leonardomd/project.json`; unknown schema versions are rejected. User preferences are stored separately in `~/Library/Application Support/LeonardoMD/preferences.json`.
 
