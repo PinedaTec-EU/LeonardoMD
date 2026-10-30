@@ -24,7 +24,7 @@ final class ProjectFileTree {
     }
 
     private func belongsToProject(_ url: URL, root: URL) -> Bool {
-        url.standardizedFileURL.path.hasPrefix(root.path + "/")
+        url.standardizedFileURL.path.hasPrefix(root.path == "/" ? "/" : root.path + "/")
     }
 
     private func isCurrent(_ root: URL, session: AppSession) -> Bool {
@@ -46,21 +46,36 @@ final class ProjectFileTree {
               belongsToProject(entry.url, root: root) else { return }
         if expanded.contains(entry.url) { expanded.remove(entry.url) }
         else {
-            let loaded = await session.children(of: entry.url)
-            guard isCurrent(root, session: session) else { return }
-            children[entry.url] = loaded
             expanded.insert(entry.url)
+            let loaded = await session.children(of: entry.url)
+            guard isCurrent(root, session: session), expanded.contains(entry.url) else { return }
+            children[entry.url] = loaded
         }
+    }
+
+    private func refreshExpandedFolders(session: AppSession, root: URL) async -> Bool {
+        var pending = session.rootEntries
+        var retained: Set<URL> = []
+        var index = 0
+        while index < pending.count {
+            let entry = pending[index]
+            index += 1
+            guard entry.isDirectory, expanded.contains(entry.url) else { continue }
+            guard isCurrent(root, session: session), belongsToProject(entry.url, root: root) else { return false }
+            let loaded = await session.children(of: entry.url)
+            guard isCurrent(root, session: session) else { return false }
+            children[entry.url] = loaded
+            retained.insert(entry.url)
+            pending.append(contentsOf: loaded)
+        }
+        expanded.formIntersection(retained)
+        children = children.filter { retained.contains($0.key) }
+        return true
     }
 
     func refreshAndReveal(_ target: URL?, session: AppSession) async -> URL? {
         guard let root = synchronizeProject(session) else { return nil }
-        for folder in expanded {
-            guard isCurrent(root, session: session), belongsToProject(folder, root: root) else { return nil }
-            let entries = await session.children(of: folder)
-            guard isCurrent(root, session: session) else { return nil }
-            children[folder] = entries
-        }
+        guard await refreshExpandedFolders(session: session, root: root) else { return nil }
         guard let target, belongsToProject(target, root: root) else { return nil }
         var entries = session.rootEntries
         while let ancestor = entries.first(where: {

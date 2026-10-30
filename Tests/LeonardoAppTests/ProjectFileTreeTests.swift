@@ -3,6 +3,49 @@ import XCTest
 
 @MainActor
 final class ProjectFileTreeTests: XCTestCase {
+    func testCollapsingDuringFolderLoadDoesNotReopenIt() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("Folder"), withIntermediateDirectories: true)
+        let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        await session.openProject(root)
+        let folder = try XCTUnwrap(session.rootEntries.first(where: { $0.isDirectory }))
+        let tree = ProjectFileTree()
+        var resume: CheckedContinuation<Void, Never>?
+        let loading = expectation(description: "Folder load suspended")
+        session.entryFilter = { _ in
+            await withCheckedContinuation { resume = $0; loading.fulfill() }
+            return { _, _ in true }
+        }
+        let expanding = Task { await tree.toggle(folder, session: session) }
+        await fulfillment(of: [loading], timeout: 2)
+        await tree.toggle(folder, session: session)
+        resume?.resume()
+        await expanding.value
+        XCTAssertFalse(tree.expanded.contains(folder.url))
+    }
+
+    func testRefreshDiscardsDeletedExpandedFoldersBeforeLoadingTheirChildren() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let folder = root.appendingPathComponent("Parent/Removed", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let target = folder.appendingPathComponent("Active.md")
+        try "# Active".write(to: target, atomically: true, encoding: .utf8)
+        let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        await session.openProject(root)
+        let tree = ProjectFileTree()
+        _ = await tree.refreshAndReveal(target, session: session)
+        XCTAssertTrue(tree.expanded.contains(folder))
+        try FileManager.default.removeItem(at: folder)
+        await session.refreshTree()
+        session.errorMessage = nil
+        _ = await tree.refreshAndReveal(nil, session: session)
+        XCTAssertNil(session.errorMessage)
+        XCTAssertFalse(tree.expanded.contains(folder))
+        XCTAssertFalse(tree.rows(roots: session.rootEntries).contains(where: { $0.id == target }))
+    }
+
     func testChangingProjectClearsExpandedFoldersAndRejectsStaleRowActions() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let first = root.appendingPathComponent("First", isDirectory: true)
