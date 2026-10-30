@@ -687,9 +687,19 @@
       "pr": 299,
       "summary": "Browse welcome favorites by category with horizontal tabs and scroll lists that show up to five items at once.",
       "to_version": "0.1.706"
+    },
+    {
+      "delta": {
+        "build": 11
+      },
+      "from_version": "0.1.706",
+      "merge_sha": "9374098fa7c5cb9c07eea7a8773d1b8aefeb4166",
+      "pr": 301,
+      "summary": "Project and workspace favorites can select their own theme, also applied when opening the same item from Recents, without changing other sessions or shared project settings.",
+      "to_version": "0.1.717"
     }
   ],
-  "current_version": "0.1.706",
+  "current_version": "0.1.717",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

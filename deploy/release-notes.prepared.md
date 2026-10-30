@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.717
+
+- #300 Added: favorite themes with isolated appearance (#303, #304) ([#301](https://github.com/PinedaTec-EU/LeonardoMD/pull/301))
+
+<p>Project and workspace favorites can select their own theme, also applied when opening the same item from Recents, without changing other sessions or shared project settings.</p>
+
+Source: `9374098fa7c5cb9c07eea7a8773d1b8aefeb4166`. Delta: `{"build": 11}`.
+
 ## 0.1.706
 
 - #298 Updated: organize welcome favorites with horizontal tabs ([#299](https://github.com/PinedaTec-EU/LeonardoMD/pull/299))
