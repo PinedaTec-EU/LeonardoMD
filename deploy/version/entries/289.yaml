@@ -1,4 +1,4 @@
 {
-  "build": 11,
+  "build": 12,
   "summary": "The sidebar follows the active document, expands its folders and highlights its row. A new preference enables or disables this behavior and is on by default."
 }

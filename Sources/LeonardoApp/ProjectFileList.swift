@@ -12,6 +12,7 @@ final class ProjectFileTree {
     private(set) var expanded: Set<URL> = []
     private var children: [URL: [NavigationEntry]] = [:]
     private var projectRoot: URL?
+    private var interactionRevision = 0
 
     private func synchronizeProject(_ session: AppSession) -> URL? {
         let root = session.projectURL?.standardizedFileURL
@@ -44,6 +45,7 @@ final class ProjectFileTree {
     func toggle(_ entry: NavigationEntry, session: AppSession) async {
         guard let root = synchronizeProject(session), entry.isDirectory,
               belongsToProject(entry.url, root: root) else { return }
+        interactionRevision += 1
         if expanded.contains(entry.url) { expanded.remove(entry.url) }
         else {
             expanded.insert(entry.url)
@@ -54,7 +56,7 @@ final class ProjectFileTree {
     }
 
     private func refreshExpandedFolders(session: AppSession, root: URL) async -> Bool {
-        let previousExpansion = expanded
+        let revision = interactionRevision
         var pending = session.rootEntries
         var retained: Set<URL> = []
         var index = 0
@@ -65,13 +67,13 @@ final class ProjectFileTree {
             guard isCurrent(root, session: session), belongsToProject(entry.url, root: root) else { return false }
             let loaded = await session.children(of: entry.url)
             guard isCurrent(root, session: session) else { return false }
+            // User navigation takes precedence over this background refresh.
+            guard interactionRevision == revision else { return true }
             children[entry.url] = loaded
             retained.insert(entry.url)
             pending.append(contentsOf: loaded)
         }
-        // Prune only state that belonged to this refresh. A user may have
-        // expanded another folder while an earlier child load was suspended.
-        expanded.subtract(previousExpansion.subtracting(retained))
+        if interactionRevision == revision { expanded.formIntersection(retained) }
         children = children.filter { expanded.contains($0.key) }
         return true
     }

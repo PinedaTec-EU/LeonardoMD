@@ -130,4 +130,4 @@ Active-file sidebar following is a Mac-wide `GlobalPreferences.followActiveFile`
 
 Sidebar tree ownership resets with project identity, refreshes only reachable expanded folders, rejects stale row actions and old-root entries while a new listing loads, and discards loads completed after a project switch or manual collapse. Regression: [#292](https://github.com/PinedaTec-EU/LeonardoMD/issues/292), delivered with [#288](https://github.com/PinedaTec-EU/LeonardoMD/issues/288).
 
-Background sidebar pruning removes only expansion state present when that refresh began, preserving user expansions and caches created during awaited loads. Deterministic suspended-load regression: [#297](https://github.com/PinedaTec-EU/LeonardoMD/issues/297).
+Background sidebar refresh observes the interaction revision and stops applying/pruning its snapshot when the user navigates during awaited loads, preserving the user’s expansions and caches. Deterministic suspended-load regression: [#297](https://github.com/PinedaTec-EU/LeonardoMD/issues/297).
