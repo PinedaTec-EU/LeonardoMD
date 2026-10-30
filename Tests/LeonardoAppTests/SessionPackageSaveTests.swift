@@ -45,15 +45,15 @@ final class SessionPackageSaveTests: XCTestCase {
         )
     }
 
-    private func packageFixture(withImage: Bool = false) async throws -> PackageFixture {
+    private func packageFixture(withImage: Bool = false, baseName: String = "request") async throws -> PackageFixture {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("LeonardoPackageSave-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let tabs = DocumentTabs(preferencesURL: root.appendingPathComponent("preferences.json"))
         let session = tabs.activeSession
         session.authorizePath = { _, _ in }
-        let template = root.appendingPathComponent("request.mdlf")
-        let package = root.appendingPathComponent("request.mdlz")
+        let template = root.appendingPathComponent(baseName + ".mdlf")
+        let package = root.appendingPathComponent(baseName + ".mdlz")
         let source = try documentSource(body: "Name: {{field:name}}" + (withImage ? "\n\n![Blue](assets/blue.svg)" : ""))
         if withImage {
             let assets = root.appendingPathComponent("assets", isDirectory: true)
@@ -744,6 +744,61 @@ final class SessionPackageSaveTests: XCTestCase {
         XCTAssertTrue(session.externalConflict)
         XCTAssertTrue(session.isDirty)
         XCTAssertNotNil(session.errorMessage)
+    }
+
+    func testPackageConflictCopyRejectsCaseAndUnicodeAliasesOfOriginalArchive() async throws {
+        let fixture = try await packageFixture(withImage: true, baseName: "Réquest")
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let sensitive = try fixture.root.resourceValues(forKeys: [.volumeSupportsCaseSensitiveNamesKey]).volumeSupportsCaseSensitiveNames
+        try XCTSkipIf(sensitive == true, "Case aliases require a case-insensitive filesystem")
+        let originalURL = try XCTUnwrap(session.documentURL)
+        let originalBytes = try Data(contentsOf: fixture.package)
+        session.content += "\nPending alias recovery"
+        session.contentChanged()
+        session.externalConflict = true
+        let draft = session.content
+        let aliases = ["RÉQUEST.MDLZ", "Réquest.mdlz".decomposedStringWithCanonicalMapping]
+        for name in aliases {
+            let destination = fixture.root.appendingPathComponent(name)
+            XCTAssertEqual(ProcessFileLock.canonicalURL(destination), ProcessFileLock.canonicalURL(fixture.package))
+            await session.saveCopyAndOpen(to: destination, sourceURL: originalURL)
+            XCTAssertEqual(try Data(contentsOf: fixture.package), originalBytes)
+            XCTAssertEqual(session.documentURL, originalURL)
+            XCTAssertEqual(session.content, draft)
+            XCTAssertTrue(session.externalConflict)
+            XCTAssertTrue(session.isDirty)
+            XCTAssertNotNil(session.errorMessage)
+        }
+    }
+
+    func testPackageConflictCopyRejectsCaseAndUnicodeAliasesOfTemporaryWorkspace() async throws {
+        let fixture = try await packageFixture(withImage: true)
+        let session = fixture.session
+        defer { fixture.tabs.stop(); try? FileManager.default.removeItem(at: fixture.root) }
+        let sensitive = try fixture.root.resourceValues(forKeys: [.volumeSupportsCaseSensitiveNamesKey]).volumeSupportsCaseSensitiveNames
+        try XCTSkipIf(sensitive == true, "Case aliases require a case-insensitive filesystem")
+        let originalURL = try XCTUnwrap(session.documentURL)
+        let workspace = try XCTUnwrap(session.packageWorkspace)
+        let link = fixture.root.appendingPathComponent("Récupération")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: workspace.directoryURL)
+        session.content += "\nPending alias recovery"
+        session.contentChanged()
+        session.externalConflict = true
+        let draft = session.content
+        let aliases = ["RÉCUPÉRATION", "Récupération".decomposedStringWithCanonicalMapping]
+        for name in aliases {
+            let destination = fixture.root.appendingPathComponent(name).appendingPathComponent("copy.mdlz")
+            XCTAssertEqual(ProcessFileLock.canonicalURL(destination.deletingLastPathComponent()), ProcessFileLock.canonicalURL(workspace.directoryURL))
+            await session.saveCopyAndOpen(to: destination, sourceURL: originalURL)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: workspace.directoryURL.appendingPathComponent("copy.mdlz").path))
+            XCTAssertEqual(session.documentURL, originalURL)
+            XCTAssertEqual(session.content, draft)
+            XCTAssertEqual(session.packageWorkspace?.directoryURL, workspace.directoryURL)
+            XCTAssertTrue(session.externalConflict)
+            XCTAssertTrue(session.isDirty)
+            XCTAssertNotNil(session.errorMessage)
+        }
     }
 
 }

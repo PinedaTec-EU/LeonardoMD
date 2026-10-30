@@ -70,4 +70,6 @@ lives in `SessionConflictCopy.swift`. A package Save copy requires MDLZ, uses
 the existing portable-resource transport and original export authorization
 identity, then opens and verifies a replacement workspace before committing
 the session. Preserve answers, image bytes, source archive and failure state;
-text-only saving is reserved for local-document copies.
+text-only saving is reserved for local-document copies. Destination/source and
+workspace containment checks use `ProcessFileLock.canonicalURL` for filesystem-aware
+case/Unicode identity; folded coordination URLs must never be used for I/O.

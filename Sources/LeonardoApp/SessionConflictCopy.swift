@@ -29,15 +29,16 @@ extension AppSession {
         guard let identity = leonardoExportIdentity(for: sourceURL),
               !stopped, !busy, !saving, !isClosing, !isSyncSuspended,
               !isCapturingPreview, fileOperationCount == 0 else { return }
-        let canonicalDestination = destination.standardizedFileURL.resolvingSymlinksInPath()
+        let canonicalDestination = ProcessFileLock.canonicalURL(destination)
         guard !leonardoExportSources(for: identity).contains(where: {
-            $0.standardizedFileURL.resolvingSymlinksInPath() == canonicalDestination
+            ProcessFileLock.canonicalURL($0) == canonicalDestination
         }) else {
             errorMessage = L10n.text("Choose another file to keep both versions.")
             return
         }
         if identity.storage == .package,
-           let workspace = identity.workspaceDirectory?.resolvingSymlinksInPath(),
+           let directory = identity.workspaceDirectory,
+           case let workspace = ProcessFileLock.canonicalURL(directory),
            canonicalDestination.path.hasPrefix(workspace.path + "/") {
             errorMessage = L10n.text("Choose another file to keep both versions.")
             return
