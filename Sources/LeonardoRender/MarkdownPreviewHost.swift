@@ -281,6 +281,10 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             guard let documentHandler else { throw MarkdownDocumentError.notFound }
             return try await documentHandler.originalImageData(for: url)
         }
+        newWebView.imageWindowData = { [weak documentHandler] url in
+            guard let documentHandler else { throw MarkdownDocumentError.notFound }
+            return try await documentHandler.imageWindowData(for: url)
+        }
         #else
         let newWebView = WKWebView(frame: bounds, configuration: webConfiguration)
         #endif

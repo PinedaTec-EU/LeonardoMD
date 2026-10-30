@@ -92,6 +92,14 @@ final class MarkdownDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
         return try await imageLoader.originalData(input)
     }
 
+    func imageWindowData(for url: URL) async throws -> Data {
+        guard url.absoluteString.utf8.count <= policy.maximumURLBytes,
+              let input = imageInput(for: url) else { throw MarkdownDocumentError.notFound }
+        let target = MarkdownImagePolicy.Target.preview(width: 800, height: 600, scale: 2, policy: policy)
+        return try await imageLoader.load(input, target: target, documentID: documentID,
+                                          identity: url.absoluteString).data
+    }
+
     private func imageInput(for url: URL) -> MarkdownImageLoader.Input? {
         if let memoryAssets, let data = memoryAssets.data(for: url) {
             return .memory(data, extensionName: url.pathExtension.lowercased())

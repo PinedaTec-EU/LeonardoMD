@@ -37,3 +37,11 @@ PDF exports are serialized per preview host, including awaited restoration befor
 the next export starts. Queued cancellation returns without waiting for the active
 export; teardown fails queued/native requests and isolates late callbacks from
 a replacement view.
+
+macOS image menus preserve WebKit copy/subject/share items. `MarkdownImageWebView`
+replaces open/save actions by their WebKit tags, capturing the selected image URL
+in an isolated content world. Local image windows use the existing bounded image
+loader; save sheets export original bytes through its bounded reader. Both reuse
+the document scheme handler’s memory/path confinement, never temporary package
+URLs handed to another application. Errors appear as native alerts.
+Tracking: [#295](https://github.com/PinedaTec-EU/LeonardoMD/issues/295).

@@ -6,6 +6,7 @@ import WebKit
 @MainActor
 final class MarkdownImageWebView: WKWebView {
     var originalImageData: ((URL) async throws -> Data)?
+    var imageWindowData: ((URL) async throws -> Data)?
     private static let imageWorld = WKContentWorld.world(name: "LeonardoImageContext")
     private var imageWindows: [NSWindow] = []
 
@@ -47,23 +48,37 @@ final class MarkdownImageWebView: WKWebView {
         let parent = window
         Task { @MainActor in
             do {
-                let value = try await evaluateJavaScript("window.leonardoContextImage", in: nil,
-                                                       in: Self.imageWorld)
-                guard let raw = value as? String, let url = URL(string: raw) else {
-                    throw MarkdownDocumentError.notFound
-                }
+                let url = try await contextImageURL()
                 guard url.scheme == MarkdownHTMLShell.documentScheme else {
                     if let original = sender.representedObject as? NSMenuItem, let action = original.action {
                         NSApp.sendAction(action, to: original.target, from: original)
                     }
                     return
                 }
-                guard let originalImageData else { throw MarkdownDocumentError.notFound }
-                let data = try await originalImageData(url)
+                guard let load = save ? originalImageData : imageWindowData else {
+                    throw MarkdownDocumentError.notFound
+                }
+                let data = try await load(url)
                 if save { saveImageData(data, url: url, parent: parent) }
                 else { try showImageData(data, url: url) }
             } catch {
                 showError(error, parent: parent)
+            }
+        }
+    }
+
+    func contextImageURL() async throws -> URL {
+        try await withCheckedThrowingContinuation { continuation in
+            evaluateJavaScript("window.leonardoContextImage", in: nil, in: Self.imageWorld) { result in
+                switch result {
+                case .success(let value):
+                    guard let raw = value as? String, let url = URL(string: raw) else {
+                        continuation.resume(throwing: MarkdownDocumentError.notFound)
+                        return
+                    }
+                    continuation.resume(returning: url)
+                case .failure(let error): continuation.resume(throwing: error)
+                }
             }
         }
     }
