@@ -45,3 +45,11 @@ loader; save sheets export original bytes through its bounded reader. Both reuse
 the document scheme handler’s memory/path confinement, never temporary package
 URLs handed to another application. Errors appear as native alerts.
 Tracking: [#295](https://github.com/PinedaTec-EU/LeonardoMD/issues/295).
+
+Opt-in native action QA: `LEONARDO_IMAGE_EVIDENCE=/tmp/image-actions swift test
+--skip-build --filter MarkdownImageContextVisualTests` after a recorded compilation.
+It opens a real MDLZ in `MarkdownPreviewHost`, presents the image/save windows,
+finishes the sheet through AppKit and checks original bytes plus cancellation.
+Set the disposable save directory before presenting the panel; the remote panel
+ignores later setters. `NSSavePanel.ok` is unimplemented. Native/XPC window
+evidence uses window capture rather than `cacheDisplay`, which omits the remote UI.

@@ -7,6 +7,7 @@ import WebKit
 final class MarkdownImageWebView: WKWebView {
     var originalImageData: ((URL) async throws -> Data)?
     var imageWindowData: ((URL) async throws -> Data)?
+    var makeSavePanel: () -> NSSavePanel = { NSSavePanel() }
     private static let imageWorld = WKContentWorld.world(name: "LeonardoImageContext")
     private var imageWindows: [NSWindow] = []
 
@@ -100,7 +101,7 @@ final class MarkdownImageWebView: WKWebView {
     }
 
     private func saveImageData(_ data: Data, url: URL, parent: NSWindow?) {
-        let panel = NSSavePanel()
+        let panel = makeSavePanel()
         panel.nameFieldStringValue = url.lastPathComponent
         panel.canCreateDirectories = true
         let completion: (NSApplication.ModalResponse) -> Void = { [weak self] response in
