@@ -41,7 +41,11 @@ struct FileTreeRow: View {
                             switch value {
                             case .first:
                                 if !entry.isDirectory {
-                                    Task { await session.openProjectDocumentInTab?(entry.url, nil) }
+                                    Task {
+                                        if AppSession.supportedDocumentExtensions.contains(entry.url.pathExtension.lowercased()) {
+                                            await session.openProjectDocumentInTab?(entry.url, nil)
+                                        } else { await session.openDocument(entry.url) }
+                                    }
                                 } else { toggle() }
                             case .second:
                                 if entry.isDirectory { toggle() }
