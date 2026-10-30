@@ -58,6 +58,8 @@ extension AppSession {
             try await authorizePath(url, .directory)
             let opened = try await files.openWorkspace(at: url)
             guard !stopped else { return }
+            await refreshFavoriteAssociations()
+            guard !stopped, !isClosing else { return }
             workspaceURL = opened
             globalPreferences.recentWorkspacePaths.removeAll { $0 == url }
             globalPreferences.recentWorkspacePaths.insert(url, at: 0)

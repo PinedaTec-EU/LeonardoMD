@@ -493,5 +493,8 @@
   "This document or project is in use by another LeonardoMD instance. Close that instance before opening it here.": "Otra instancia de LeonardoMD está usando este documento o proyecto. Cierra esa instancia antes de abrirlo aquí.",
   "Permanently delete %@?": "¿Eliminar %@ permanentemente?",
   "Trash is unavailable in this location. The item and its contents will be permanently deleted. This cannot be undone.": "La Papelera no está disponible en esta ubicación. El elemento y su contenido se eliminarán permanentemente. Esta acción no se puede deshacer.",
-  "Delete Permanently": "Eliminar permanentemente"
+  "Delete Permanently": "Eliminar permanentemente",
+  "Theme": "Tema",
+  "Theme for this favorite": "Tema de este favorito",
+  "Inherit": "Heredar"
 }

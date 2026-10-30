@@ -115,6 +115,7 @@ extension AppSession {
             }
             // save returns a verified, readable snapshot. Commit it synchronously;
             // failures above retain every part of the original conflict session.
+            showWorkspace = false
             projectURL = nil
             projectConfiguration = .default
             projectBaseline = .default

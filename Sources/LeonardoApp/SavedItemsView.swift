@@ -99,6 +99,9 @@ struct SavedItemsView: View {
             .buttonStyle(.plain)
             .disabled(!available)
             .help(available ? url.path : L10n.text("Item unavailable"))
+            if favorite, kind != .document {
+                FavoriteThemePicker(session: session, url: url, kind: kind)
+            }
             if !available { Image(systemName: "exclamationmark.triangle").help(L10n.text("Item unavailable")) }
             Button { session.toggleFavorite(url, kind: kind) } label: {
                 Image(systemName: favorite ? "star.fill" : "star")
