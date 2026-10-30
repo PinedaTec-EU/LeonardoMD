@@ -2,6 +2,11 @@
 
 See the [README](../README.md) for installation and the product overview.
 
+The offline illustrated guide is available from **Help → Leonardo user guide…**
+and Welcome. It opens a personal MDLZ copy in a new tab, with a practice form
+and sections on formats, conversion, export and agent plugins. See the
+[bundled guide sources](guide/README.md).
+
 ## Opening files and default application
 
 Open documents from the app or Finder’s **Open With** menu. Distribution builds can offer to become the default for `.md` and `.markdown`. Choose **Use LeonardoMD**, **Ask next time** or **Never ask again**. **Preferences → General → Default Markdown application** shows the current status and lets you change it or re-enable the prompt. This Mac-wide setting does not change `.txt` or individual file overrides; macOS may request consent.

@@ -96,6 +96,7 @@ final class AppSession {
     /// boundary as a session closure prevents AppSession from knowing whether
     /// the bytes came from a ZIP implementation, a future document provider,
     /// or a user-selected extraction directory.
+    var openUserGuide: @MainActor () async -> Void = {}
     var openPackageDocument: @MainActor (URL, LeonardoPackageOpenPreference) async -> Bool = { _, _ in false }
     /// The format owner supplies the canonical MD -> MDLF migration. The app
     /// owns the preference and prompt, but never invents a second serializer.

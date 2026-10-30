@@ -39,6 +39,7 @@ final class DocumentTabs {
         let session = AppSession(preferencesURL: preferencesURL)
         session.presentationWindow = presentationWindow
         let tab = DocumentTab(session: session)
+        session.openUserGuide = { [weak self] in await self?.openUserGuide() }
         configureLeonardoTransport(for: session)
         session.activateExistingDocument = { [weak self] url, line in
             self?.activateDocument(url, line: line) ?? false

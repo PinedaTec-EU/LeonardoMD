@@ -492,5 +492,7 @@
   "This document or project is in use by another LeonardoMD instance. Close that instance before opening it here.": "This document or project is in use by another LeonardoMD instance. Close that instance before opening it here.",
   "Permanently delete %@?": "Permanently delete %@?",
   "Trash is unavailable in this location. The item and its contents will be permanently deleted. This cannot be undone.": "Trash is unavailable in this location. The item and its contents will be permanently deleted. This cannot be undone.",
-  "Delete Permanently": "Delete Permanently"
+  "Delete Permanently": "Delete Permanently",
+  "Help": "Help",
+  "Leonardo user guide…": "Leonardo user guide…"
 }
