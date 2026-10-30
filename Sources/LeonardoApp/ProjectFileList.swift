@@ -54,21 +54,30 @@ final class ProjectFileTree {
 
 struct ProjectFileList: View {
     @Bindable var session: AppSession
+    var isActiveTab = true
     @State private var tree = ProjectFileTree()
     @State private var revealed: URL?
     @State private var revealRevision = 0
+    @State private var lastFollow: FollowIdentity?
+
+    private struct FollowIdentity: Equatable {
+        let target: URL?
+        let active: Bool
+        let searching: Bool
+    }
 
     private struct Request: Equatable {
         let target: URL?
         let roots: [NavigationEntry]
         let treeRevision: Int
         let searching: Bool
+        let active: Bool
     }
     private var request: Request {
         Request(target: session.globalPreferences.followActiveFile
                     ? (session.documentSourceURL ?? session.documentURL)?.standardizedFileURL : nil,
                 roots: session.rootEntries, treeRevision: session.treeRevision,
-                searching: !session.searchQuery.isEmpty)
+                searching: !session.searchQuery.isEmpty, active: isActiveTab)
     }
 
     var body: some View {
@@ -89,10 +98,17 @@ struct ProjectFileList: View {
             }
             .task(id: request) {
                 let current = request
-                guard !current.searching else { return }
-                revealed = await tree.refreshAndReveal(current.target, session: session)
+                let follow = FollowIdentity(target: current.target, active: current.active, searching: current.searching)
+                let needsReveal = follow != lastFollow || revealed == nil
+                guard current.active, !current.searching else { lastFollow = follow; return }
+                let target = needsReveal ? current.target : nil
+                let result = await tree.refreshAndReveal(target, session: session)
                 guard !Task.isCancelled else { return }
-                revealRevision += 1
+                lastFollow = follow
+                if needsReveal {
+                    revealed = result
+                    revealRevision += 1
+                }
             }
             .onChange(of: revealRevision) { _, _ in
                 if let revealed { proxy.scrollTo(revealed, anchor: .center) }

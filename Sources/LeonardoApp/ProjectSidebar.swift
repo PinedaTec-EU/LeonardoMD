@@ -18,6 +18,7 @@ struct NavigationEntry: Identifiable, Hashable {
 
 struct ProjectSidebar: View {
     @Bindable var session: AppSession
+    var isActiveTab = true
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
@@ -37,7 +38,7 @@ struct ProjectSidebar: View {
                 Spacer()
                 FileListMenu(session: session)
             }
-            ProjectFileList(session: session)
+            ProjectFileList(session: session, isActiveTab: isActiveTab)
             Spacer(minLength: 0)
             if session.gitEnabled {
                 Button { session.showGit = true } label: {
