@@ -18,7 +18,7 @@ No account, API key or network connection is needed to read local documents. The
 
 ## Reading and editing
 
-- **Read a document:** open `.md`, `.markdown` or `.txt` directly, including through Finder’s **Open With** menu. No project is required.
+- **Read a document:** open `.md`, `.markdown`, `.txt`, `.mdlf`, `.mdlr` or `.mdlz` directly, including through Finder’s **Open With** menu. No project is required.
 - **Work with a folder:** browse and search a project, manage files and folders, or group projects under a workspace.
 - **Edit deliberately:** unlock the toolbar padlock, choose Editing or Split, and save with ⌘S. Unsaved changes are marked; closing or navigating away offers Save, Discard or Cancel. Preview synchronization is approximate.
 - **Render offline:** bundled resources support code highlighting, relative images and links, tables and tasks. Mermaid, mathematics, Vega-Lite charts, Citation.js references and Markdown extras (footnotes/callouts) are disabled by default and can be enabled globally or per project in **Preferences → Extensions**. See [extension syntax and examples](doc/document-extensions.md).
