@@ -3,14 +3,15 @@ import Foundation
 extension DocumentTabs {
     /// Opens without navigating the source session, so its draft and editor stay intact.
     func openProjectDocument(_ url: URL, line: Int? = nil, from source: AppSession) async {
+        let documentIdentity = url.standardizedFileURL.resolvingSymlinksInPath()
         let identity = SessionFileOperationIdentity(sourceURL: url, session: source)
-        guard acceptsExternalDrops, !openingProjectDocument, identity.isCurrent(in: source),
+        guard acceptsExternalDrops, !openingProjectDocuments.contains(documentIdentity), identity.isCurrent(in: source),
               tabs.contains(where: { $0.session === source }),
               let root = source.projectURL,
               url.standardizedFileURL.path.hasPrefix(root.path == "/" ? "/" : root.standardizedFileURL.path + "/"),
               AppSession.supportedDocumentExtensions.contains(url.pathExtension.lowercased()) else { return }
-        openingProjectDocument = true
-        defer { openingProjectDocument = false }
+        openingProjectDocuments.insert(documentIdentity)
+        defer { openingProjectDocuments.remove(documentIdentity) }
         source.fileOperationCount += 1
         defer { source.fileOperationCount -= 1 }
         do { try await source.authorizePath(url, .document) }

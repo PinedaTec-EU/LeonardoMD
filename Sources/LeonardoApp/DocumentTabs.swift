@@ -19,7 +19,7 @@ final class DocumentTabs {
         didSet { tabs.forEach { $0.session.presentationWindow = presentationWindow } }
     }
     var updateWindow: ((String, URL?, Bool) -> Void)?
-    var openingProjectDocument = false
+    var openingProjectDocuments: Set<URL> = []
     private var stopped = false
     private var preparedForClose = false
     private let preferencesURL: URL

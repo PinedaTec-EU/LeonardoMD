@@ -49,6 +49,35 @@ final class ProjectTabOpeningTests: XCTestCase {
         XCTAssertTrue(tabs.activeSession === target)
     }
 
+    func testConcurrentDifferentFilesOpenAndPendingDuplicateIsCoalesced() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let first = root.appendingPathComponent("first.md")
+        let second = root.appendingPathComponent("second.md")
+        try "first".write(to: first, atomically: true, encoding: .utf8)
+        try "second".write(to: second, atomically: true, encoding: .utf8)
+        let tabs = DocumentTabs(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { tabs.stop() }
+        let source = tabs.activeSession
+        _ = await source.openProject(root)
+        var authorization: CheckedContinuation<Void, Never>?
+        source.authorizePath = { url, _ in
+            if url == first { await withCheckedContinuation { authorization = $0 } }
+        }
+        let pending = Task { await tabs.openProjectDocument(first, from: source) }
+        for _ in 0..<100 where authorization == nil { await Task.yield() }
+        let gate = try XCTUnwrap(authorization)
+        await tabs.openProjectDocument(first, from: source)
+        await tabs.openProjectDocument(second, from: source)
+        XCTAssertEqual(tabs.tabs.count, 2)
+        XCTAssertEqual(tabs.activeSession.documentURL, second)
+        gate.resume()
+        await pending.value
+        XCTAssertEqual(tabs.tabs.count, 3)
+        XCTAssertEqual(tabs.tabs.compactMap { $0.session.documentURL }.filter { $0 == first }.count, 1)
+    }
+
     func testExistingStandaloneDraftAdoptsProjectWithoutDuplicationOrSaving() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
