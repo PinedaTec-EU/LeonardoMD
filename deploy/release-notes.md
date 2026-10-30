@@ -259,4 +259,10 @@
 - [#291](https://github.com/PinedaTec-EU/LeonardoMD/pull/291) — #290 Added: bundle illustrated user guide and fix sync suspension — build +9
   <p>Open an illustrated offline Leonardo guide in the interface language from Help or Welcome, with practice fields and agent setup. Synchronization now rejects suspended path operations before acquiring instance ownership.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.735)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTAtMzBUMTg6MTM6MDdaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjR9LCJmcm9tX3ZlcnNpb24iOiIwLjEuNzM1Iiwia2luZCI6InB1bGxfcmVxdWVzdCIsIm1lcmdlX3NoYSI6IjJiZWIyY2QxYzQyN2I3MmQxNTY1NjdiOTNjNWQzOTQ3M2IzZGQ2OTQiLCJudW1iZXIiOjMwOSwic3VtbWFyeSI6IlNhdmluZyBhIGNvcHkgb2YgYSBjb25mbGljdGVkIE1ETFogcHJlc2VydmVzIGl0cyBmb3JtIGFuc3dlcnMgYW5kIGxvY2FsIHJlc291cmNlcyBpbiBhIGNvbXBsZXRlIHBhY2thZ2UuIiwidGl0bGUiOiIjMzA4IEZpeGVkOiBwcmVzZXJ2ZSByZXNvdXJjZXMgaW4gTURMWiBjb25mbGljdCBjb3BpZXMiLCJ0b192ZXJzaW9uIjoiMC4xLjczOSJ9XSwiZW52aXJvbm1lbnQiOiJyZWxlYXNlIiwiZXZlbnRfaWQiOiJnaXRodWJfcmVsZWFzZTo0MjkzNDQ4MDEiLCJldmVudF9raW5kIjoiZ2l0aHViX3JlbGVhc2UiLCJldmlkZW5jZV91cmwiOiJodHRwczovL2dpdGh1Yi5jb20vUGluZWRhVGVjLUVVL0xlb25hcmRvTUQvcmVsZWFzZXMvdGFnL3YwLjEuNzM5IiwicmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwic291cmNlX3JlZiI6InYwLjEuNzM5Iiwic291cmNlX3NoYSI6IjZjYTVlM2QzMDZkZjEzZGVlZGE4NGIzYTMyMTM1YjIzNmZiZTMyMTUiLCJ0YXJnZXQiOiJQaW5lZGFUZWMtRVUvTGVvbmFyZG9NRCIsInZlcnNpb24iOiIwLjEuNzM5In0 -->
+### 0.1.739
+- [#309](https://github.com/PinedaTec-EU/LeonardoMD/pull/309) — #308 Fixed: preserve resources in MDLZ conflict copies — build +4
+  <p>Saving a copy of a conflicted MDLZ preserves its form answers and local resources in a complete package.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.739)
 <!-- release-ledger:end -->
