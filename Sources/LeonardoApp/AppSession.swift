@@ -154,6 +154,8 @@ final class AppSession {
         self.openSystemURL = openSystemURL
         let existingAuthorization = authorizePath
         authorizePath = { url, intent in
+            // Suspended operations must not acquire path ownership as a side effect.
+            try NativeReconciliationLease.shared.check(url, intent: intent)
             // Browsing a workspace does not reserve all its projects. Editing
             // a project reserves its root explicitly in openProject.
             if intent != .directory { try InstancePathOwnership.shared.claim(url) }
