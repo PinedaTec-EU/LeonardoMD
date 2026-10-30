@@ -1,107 +1,11 @@
 import SwiftUI
 
-/// A flat list keeps every expanded row addressable by ScrollViewReader,
-/// including descendants whose ancestors started outside the viewport.
-@MainActor @Observable
-final class ProjectFileTree {
-    struct Row: Identifiable {
-        let entry: NavigationEntry
-        let depth: Int
-        var id: URL { entry.id }
-    }
-    private(set) var expanded: Set<URL> = []
-    private var children: [URL: [NavigationEntry]] = [:]
-    private var projectRoot: URL?
-    private var interactionRevision = 0
-
-    private func synchronizeProject(_ session: AppSession) -> URL? {
-        let root = session.projectURL?.standardizedFileURL
-        if root != projectRoot {
-            expanded.removeAll()
-            children.removeAll()
-            projectRoot = root
-        }
-        return root
-    }
-
-    private func belongsToProject(_ url: URL, root: URL) -> Bool {
-        url.standardizedFileURL.path.hasPrefix(root.path == "/" ? "/" : root.path + "/")
-    }
-
-    private func isCurrent(_ root: URL, session: AppSession) -> Bool {
-        !Task.isCancelled && projectRoot == root && session.projectURL?.standardizedFileURL == root
-    }
-
-    func rows(roots: [NavigationEntry]) -> [Row] {
-        func flatten(_ entries: [NavigationEntry], depth: Int) -> [Row] {
-            entries.flatMap { entry in
-                [Row(entry: entry, depth: depth)] + (expanded.contains(entry.url)
-                    ? flatten(children[entry.url] ?? [], depth: depth + 1) : [])
-            }
-        }
-        return flatten(roots, depth: 0)
-    }
-
-    func toggle(_ entry: NavigationEntry, session: AppSession) async {
-        guard let root = synchronizeProject(session), entry.isDirectory,
-              belongsToProject(entry.url, root: root) else { return }
-        interactionRevision += 1
-        if expanded.contains(entry.url) { expanded.remove(entry.url) }
-        else {
-            expanded.insert(entry.url)
-            let loaded = await session.children(of: entry.url)
-            guard isCurrent(root, session: session), expanded.contains(entry.url) else { return }
-            children[entry.url] = loaded
-        }
-    }
-
-    private func refreshExpandedFolders(session: AppSession, root: URL) async -> Bool {
-        let revision = interactionRevision
-        var pending = session.rootEntries
-        var retained: Set<URL> = []
-        var index = 0
-        while index < pending.count {
-            let entry = pending[index]
-            index += 1
-            guard entry.isDirectory, expanded.contains(entry.url) else { continue }
-            guard isCurrent(root, session: session), belongsToProject(entry.url, root: root) else { return false }
-            let loaded = await session.children(of: entry.url)
-            guard isCurrent(root, session: session) else { return false }
-            // User navigation takes precedence over this background refresh.
-            guard interactionRevision == revision else { return true }
-            children[entry.url] = loaded
-            retained.insert(entry.url)
-            pending.append(contentsOf: loaded)
-        }
-        if interactionRevision == revision { expanded.formIntersection(retained) }
-        children = children.filter { expanded.contains($0.key) }
-        return true
-    }
-
-    func refreshAndReveal(_ target: URL?, session: AppSession) async -> URL? {
-        guard let root = synchronizeProject(session) else { return nil }
-        guard await refreshExpandedFolders(session: session, root: root) else { return nil }
-        guard let target, belongsToProject(target, root: root) else { return nil }
-        var entries = session.rootEntries
-        while let ancestor = entries.first(where: {
-            $0.isDirectory && target.path.hasPrefix($0.url.standardizedFileURL.path + "/")
-        }) {
-            guard isCurrent(root, session: session), belongsToProject(ancestor.url, root: root) else { return nil }
-            let loaded = await session.children(of: ancestor.url)
-            guard isCurrent(root, session: session) else { return nil }
-            children[ancestor.url] = loaded
-            expanded.insert(ancestor.url)
-            entries = loaded
-        }
-        return entries.first(where: { !$0.isDirectory && $0.url.standardizedFileURL == target })?.url
-    }
-}
-
 struct ProjectFileList: View {
     @Bindable var session: AppSession
     var isActiveTab = true
     @State private var tree = ProjectFileTree()
-    @State private var revealed: URL?
+    @State private var revealed: ProjectFileTree.Reveal?
+    @State private var retryReveal = true
     @State private var revealRevision = 0
     @State private var lastFollow: FollowIdentity?
 
@@ -144,19 +48,33 @@ struct ProjectFileList: View {
             .task(id: request) {
                 let current = request
                 let follow = FollowIdentity(target: current.target, active: current.active, searching: current.searching)
-                let needsReveal = follow != lastFollow || revealed == nil
+                let needsReveal = follow != lastFollow || retryReveal
                 guard current.active, !current.searching else { lastFollow = follow; return }
                 let target = needsReveal ? current.target : nil
                 let result = await tree.refreshAndReveal(target, session: session)
                 guard !Task.isCancelled else { return }
                 lastFollow = follow
-                if needsReveal {
-                    revealed = result
+                guard needsReveal else { return }
+                switch result {
+                case .revealed(let file):
+                    revealed = file
+                    retryReveal = false
                     revealRevision += 1
+                case .unavailable:
+                    revealed = nil
+                    retryReveal = current.target != nil
+                case .superseded:
+                    revealed = nil
+                    retryReveal = false
                 }
             }
             .onChange(of: revealRevision) { _, _ in
-                if let revealed { proxy.scrollTo(revealed, anchor: .center) }
+                if let revealed, isActiveTab, session.searchQuery.isEmpty,
+                   session.globalPreferences.followActiveFile,
+                   tree.canReveal(revealed, session: session),
+                   revealed.url.standardizedFileURL == (session.documentSourceURL ?? session.documentURL)?.standardizedFileURL {
+                    proxy.scrollTo(revealed.url, anchor: .center)
+                }
             }
         }
     }

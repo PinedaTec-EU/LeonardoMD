@@ -3,6 +3,62 @@ import XCTest
 
 @MainActor
 final class ProjectFileTreeTests: XCTestCase {
+    func testOlderExpansionCannotOverwriteReopenedFoldersNewerLoad() async throws {
+        let fixture = try await folderFixture(files: ["Old.md", "New.md"])
+        let (root, folder, session, entry) = fixture
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let tree = ProjectFileTree()
+        var resumeFirst: CheckedContinuation<Void, Never>?
+        let firstLoading = expectation(description: "First expansion suspended")
+        var calls = 0
+        session.entryFilter = { _ in
+            calls += 1
+            if calls == 1 {
+                await withCheckedContinuation { resumeFirst = $0; firstLoading.fulfill() }
+                return { url, directory in directory || url.lastPathComponent == "Old.md" }
+            }
+            return { url, directory in directory || url.lastPathComponent == "New.md" }
+        }
+        let first = Task { await tree.toggle(entry, session: session) }
+        await fulfillment(of: [firstLoading], timeout: 2)
+        await tree.toggle(entry, session: session)
+        await tree.toggle(entry, session: session)
+        XCTAssertTrue(tree.rows(roots: session.rootEntries).contains(where: { $0.id == folder.appendingPathComponent("New.md") }))
+        resumeFirst?.resume()
+        await first.value
+        let rows = tree.rows(roots: session.rootEntries)
+        XCTAssertTrue(rows.contains(where: { $0.id == folder.appendingPathComponent("New.md") }))
+        XCTAssertFalse(rows.contains(where: { $0.id == folder.appendingPathComponent("Old.md") }))
+    }
+
+    func testManualCollapseSupersedesPendingRevealAndInvalidatesScrollStamp() async throws {
+        let (root, folder, session, entry) = try await folderFixture(files: ["Note.md"])
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        let target = folder.appendingPathComponent("Note.md")
+        let tree = ProjectFileTree()
+        guard case .revealed(let stamp) = await tree.refreshAndReveal(target, session: session) else {
+            return XCTFail("Initial active file should be revealed")
+        }
+        var resume: CheckedContinuation<Void, Never>?
+        var calls = 0
+        let loading = expectation(description: "Active file refresh suspended")
+        session.entryFilter = { _ in
+            calls += 1
+            if calls == 1 { await withCheckedContinuation { resume = $0; loading.fulfill() } }
+            return { _, _ in true }
+        }
+        let revealing = Task { await tree.refreshAndReveal(target, session: session) }
+        await fulfillment(of: [loading], timeout: 2)
+        await tree.toggle(entry, session: session)
+        resume?.resume()
+        let outcome = await revealing.value
+        XCTAssertEqual(outcome, .superseded)
+        XCTAssertFalse(tree.expanded.contains(folder))
+        XCTAssertFalse(tree.canReveal(stamp, session: session))
+        _ = await tree.refreshAndReveal(nil, session: session)
+        XCTAssertFalse(tree.expanded.contains(folder))
+    }
+
     func testBackgroundRefreshPreservesFoldersExpandedWhileItLoads() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let first = root.appendingPathComponent("A-new", isDirectory: true)
@@ -49,11 +105,11 @@ final class ProjectFileTreeTests: XCTestCase {
         session.projectURL = project
         let tree = ProjectFileTree()
         let pending = await tree.refreshAndReveal(target, session: session)
-        XCTAssertNil(pending)
+        XCTAssertNil(pending.url)
         XCTAssertNil(session.errorMessage)
         await session.refreshTree()
         let revealed = await tree.refreshAndReveal(target, session: session)
-        XCTAssertEqual(revealed, target)
+        XCTAssertEqual(revealed.url, target)
         XCTAssertNil(session.errorMessage)
     }
 
@@ -140,7 +196,7 @@ final class ProjectFileTreeTests: XCTestCase {
         await session.openProject(root)
         let tree = ProjectFileTree()
         let result = await tree.refreshAndReveal(target, session: session)
-        XCTAssertEqual(result, target)
+        XCTAssertEqual(result.url, target)
         XCTAssertEqual(tree.rows(roots: session.rootEntries).first(where: { $0.id == target })?.depth, 2)
         let ancestor = try XCTUnwrap(session.rootEntries.first(where: { $0.name == "Nested" }))
         await tree.toggle(ancestor, session: session)
@@ -150,8 +206,22 @@ final class ProjectFileTreeTests: XCTestCase {
         _ = await tree.refreshAndReveal(target, session: session)
         XCTAssertTrue(tree.expanded.contains(ancestor.url))
         let excluded = await tree.refreshAndReveal(hidden, session: session)
-        XCTAssertNil(excluded)
+        XCTAssertNil(excluded.url)
         let outside = await tree.refreshAndReveal(root.appendingPathComponent("../Other/Active.md").standardizedFileURL, session: session)
-        XCTAssertNil(outside)
+        XCTAssertNil(outside.url)
     }
+    private func folderFixture(files: [String]) async throws -> (URL, URL, AppSession, NavigationEntry) {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let folder = root.appendingPathComponent("Folder", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        for file in files {
+            try "# Note".write(to: folder.appendingPathComponent(file), atomically: true, encoding: .utf8)
+        }
+        let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
+        await session.openProject(root)
+        session.monitorTask?.cancel()
+        let entry = try XCTUnwrap(session.rootEntries.first(where: { $0.url == folder }))
+        return (root, folder, session, entry)
+    }
+
 }
