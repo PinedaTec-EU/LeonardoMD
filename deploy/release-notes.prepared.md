@@ -2,6 +2,30 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.701
+
+- #293 Fixed: include Leonardo formats in document associations ([#294](https://github.com/PinedaTec-EU/LeonardoMD/pull/294))
+
+<p>Recognize MDLZ packages in Finder and configure default opening for all Markdown and Leonardo formats.</p>
+
+Source: `9266a030cbad95cee8930a2d4a3049afd0049630`. Delta: `{"build": 9}`.
+
+## 0.1.692
+
+- #288 Added: follow active document in project sidebar ([#289](https://github.com/PinedaTec-EU/LeonardoMD/pull/289))
+
+<p>The sidebar follows the active document, expands its folders and highlights its row. A new preference enables or disables this behavior and is on by default.</p>
+
+Source: `651cfc3d9158a126893c942d83da93db482a9412`. Delta: `{"build": 14}`.
+
+## 0.1.678
+
+- #295 Fixed: wire local image context actions ([#296](https://github.com/PinedaTec-EU/LeonardoMD/pull/296))
+
+<p>Open embedded document images in a native window and save their original bytes from the image context menu.</p>
+
+Source: `57bd457033d982ec0c389a9bdf5991f7f69a0d68`. Delta: `{"build": 6}`.
+
 ## 0.1.672
 
 - #285 Removed: redundant extension state captions ([#286](https://github.com/PinedaTec-EU/LeonardoMD/pull/286))

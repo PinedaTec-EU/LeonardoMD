@@ -65,6 +65,11 @@ actor MarkdownImageLoader {
         return resource
     }
 
+    func originalData(_ input: Input) throws -> Data {
+        try Task.checkCancellation()
+        return try read(input).0
+    }
+
     private func read(_ input: Input) throws -> (Data, String) {
         switch input {
         case .memory(let data, let extensionName):

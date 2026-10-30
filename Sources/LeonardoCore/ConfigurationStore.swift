@@ -181,6 +181,9 @@ public actor ConfigurationStore {
         if updated.colorLeonardoFiles != baseline.colorLeonardoFiles {
             merged.colorLeonardoFiles = updated.colorLeonardoFiles
         }
+        if updated.followActiveFile != baseline.followActiveFile {
+            merged.followActiveFile = updated.followActiveFile
+        }
         if updated.paperEffect != baseline.paperEffect {
             merged.paperEffect = updated.paperEffect
         }
