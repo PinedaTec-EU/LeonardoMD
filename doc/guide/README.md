@@ -20,3 +20,9 @@ Keep locale content aligned and recheck vendor setup instructions and dates.
 Do not claim agent control of the running app or unverified attachment gestures.
 
 Tracking: [#290](https://github.com/PinedaTec-EU/LeonardoMD/issues/290).
+
+Every language in `AppLanguage.allCases` must have a matching guide resource.
+`BundledUserGuideTests` checks all supported languages; Help and Welcome resolve
+the current `LanguageSettings.shared.language` on every opening. Native process
+acceptance covers changing the preference between Spanish and English; see
+[packaged guide acceptance](../validation/user-guide/README.md).

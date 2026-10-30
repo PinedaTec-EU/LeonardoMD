@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "build_source_commit": "b4a71f315a638b34fd171edbdb4ef341d6e60810",
+  "fresh_process_launched": true,
+  "principal_cold_start": false,
+  "process_role": "additional; supported --new-instance workflow; product Mach service unchanged",
+  "qa_pid": 80822,
+  "owner_pids": [
+    9012
+  ],
+  "owner_processes_alive_after": true,
+  "qa_exited_normally": true,
+  "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.02ede1eb269848b99a29c9e85883d1b1",
+  "bundle_executable": "LeonardoMD",
+  "version": "0.1.672",
+  "build": "672",
+  "executable_sha256": "9497d95fe4b18ef24dfa6c1776bf9fe5b0565f2bd77c94e12365e91564481a68",
+  "codesign_verified": true,
+  "xctest_dependency": false,
+  "launch_arguments": [
+    "--new-instance",
+    "-allowMultipleInstances",
+    "YES",
+    "-interfaceLanguage",
+    "es"
+  ],
+  "multiple_instance_opt_in": "process-local UserDefaults argument domain; stored Mac setting unchanged",
+  "stored_multiple_instance_before": false,
+  "stored_multiple_instance_after": false,
+  "resources": [
+    {
+      "file": "Guide-v2-en.mdlz",
+      "sha256": "99a7fcc68e3c6230eac349492b8290bfab42816ae5cd0296b1163e4dec611314",
+      "packaged_bytes_match_source": true
+    },
+    {
+      "file": "Guide-v2-es.mdlz",
+      "sha256": "a4dc41b42c5043ea08c16c43bb2482b589aaef2cfd56906e789608b73c30281d",
+      "packaged_bytes_match_source": true
+    }
+  ],
+  "ui_actions": [
+    {
+      "action": "Welcome button",
+      "language": "es",
+      "opened": "User Guides/v2/es/Guide-v2-es.mdlz",
+      "heading": "Tu gu\u00eda de Leonardo"
+    },
+    {
+      "action": "Help menu",
+      "language": "es",
+      "opened": "User Guides/v2/es/Guide-v2-es.mdlz",
+      "heading": "Tu gu\u00eda de Leonardo"
+    },
+    {
+      "action": "Fill, Save, Close, reopen through Help",
+      "language": "es",
+      "synthetic_value": "QA Ada",
+      "observed_after_reopen": true,
+      "synthetic_value_cleared_and_saved_after_capture": true
+    },
+    {
+      "action": "Preferences Language \u2192 English, Welcome button",
+      "language": "en",
+      "opened": "User Guides/v2/en/Guide-v2-en.mdlz",
+      "heading": "Your Leonardo guide",
+      "evidence": "Observed via live accessibility state; thumbnail-only capture omitted"
+    },
+    {
+      "action": "Help menu",
+      "language": "en",
+      "opened": "User Guides/v2/en/Guide-v2-en.mdlz",
+      "heading": "Your Leonardo guide"
+    }
+  ],
+  "captures": [
+    {
+      "captured_at": "2026-10-30T11:07:31.936Z",
+      "capture_completed_at": "2026-10-30T11:07:32.079Z",
+      "screen": "Guide-v2-es.mdlz opened by Welcome button in fresh packaged QA process; initial window size; existing document toolbar wraps labels",
+      "application": "LeonardoMD QA",
+      "process_id": 80822,
+      "capture_mode": "native window",
+      "logical_viewport": "not exposed by capture API",
+      "browser_engine": "system WKWebView / AppKit; engine version not exposed by native capture API",
+      "file": "guide-from-welcome-es.jpg",
+      "encoding": "jpeg",
+      "width_px": 2520,
+      "height_px": 1700,
+      "sha256": "b140a78b1ffe19a39f85986ffc1a49bed47e46df6960e4c73a1e5927ffa8d12d",
+      "pixel_transform": "none; original capture bytes, correctly suffixed as JPEG"
+    },
+    {
+      "captured_at": "2026-10-30T11:08:25.818Z",
+      "capture_completed_at": "2026-10-30T11:08:25.958Z",
+      "screen": "Guide reopened from Help menu in fresh packaged QA process; initial window size; toolbar wrapping is separately tracked",
+      "application": "LeonardoMD QA",
+      "process_id": 80822,
+      "capture_mode": "native window",
+      "logical_viewport": "not exposed by capture API",
+      "browser_engine": "system WKWebView / AppKit; engine version not exposed by native capture API",
+      "file": "guide-from-help-es.jpg",
+      "encoding": "jpeg",
+      "width_px": 2520,
+      "height_px": 1700,
+      "sha256": "dd0a7b7593a2960616bfabf70543371c7ea5ff0824d208a3339767016279313e",
+      "pixel_transform": "none; original capture bytes, correctly suffixed as JPEG"
+    },
+    {
+      "captured_at": "2026-10-30T11:09:59.724Z",
+      "capture_completed_at": "2026-10-30T11:09:59.851Z",
+      "screen": "Guide opened through Help, window Zoom applied; actual packaged process",
+      "application": "LeonardoMD QA",
+      "process_id": 80822,
+      "capture_mode": "native window",
+      "logical_viewport": "not exposed by capture API",
+      "browser_engine": "system WKWebView / AppKit; engine version not exposed by native capture API",
+      "file": "guide-zoomed-es.jpg",
+      "encoding": "jpeg",
+      "width_px": 5120,
+      "height_px": 2818,
+      "sha256": "f2b69f75b5e5989b42dff1fe204e326480153df8579b08880e74086b80fa14b2",
+      "pixel_transform": "none; original capture bytes, correctly suffixed as JPEG"
+    },
+    {
+      "captured_at": "2026-10-30T11:10:43.505Z",
+      "capture_completed_at": "2026-10-30T11:10:43.690Z",
+      "screen": "Fill form in actual packaged QA process, synthetic practiceName QA Ada saved with Command-S",
+      "application": "LeonardoMD QA",
+      "process_id": 80822,
+      "capture_mode": "native window",
+      "logical_viewport": "not exposed by capture API",
+      "browser_engine": "system WKWebView / AppKit; engine version not exposed by native capture API",
+      "file": "practice-saved-es.jpg",
+      "encoding": "jpeg",
+      "width_px": 5120,
+      "height_px": 2818,
+      "sha256": "2dac255a20829068da940b843124cf83c2c11e8da415551f90ac05350bc46470",
+      "pixel_transform": "none; original capture bytes, correctly suffixed as JPEG"
+    },
+    {
+      "captured_at": "2026-10-30T11:13:27.983Z",
+      "capture_completed_at": "2026-10-30T11:13:28.097Z",
+      "screen": "Actual packaged QA process: Help reopened personal guide and retained synthetic practiceName QA Ada",
+      "application": "LeonardoMD QA",
+      "process_id": 80822,
+      "capture_mode": "native window",
+      "logical_viewport": "not exposed by capture API",
+      "browser_engine": "system WKWebView / AppKit; engine version not exposed by native capture API",
+      "file": "practice-reopened-es.jpg",
+      "encoding": "jpeg",
+      "width_px": 3282,
+      "height_px": 2818,
+      "sha256": "9f6d042324d21b027411bf7f86a15d1494f1301ba834e291e9f0ac46bc1f237a",
+      "pixel_transform": "none; original capture bytes, correctly suffixed as JPEG"
+    },
+    {
+      "captured_at": "2026-10-30T11:17:10.095Z",
+      "capture_completed_at": "2026-10-30T11:17:10.214Z",
+      "screen": "Actual Help action selected Guide-v2-en.mdlz after interface preference changed to English",
+      "application": "LeonardoMD QA",
+      "process_id": 80822,
+      "capture_mode": "native window",
+      "logical_viewport": "not exposed by capture API",
+      "browser_engine": "system WKWebView / AppKit; engine version not exposed by native capture API",
+      "file": "guide-from-help-en.jpg",
+      "encoding": "jpeg",
+      "width_px": 3282,
+      "height_px": 2818,
+      "sha256": "9c44d767514acd42f1a74bd853470d616a6c83500a026b64f716bc8b225344af",
+      "pixel_transform": "none; original capture bytes, correctly suffixed as JPEG"
+    },
+    {
+      "captured_at": "2026-10-30T11:06:01.203Z",
+      "capture_completed_at": "2026-10-30T11:06:01.319Z",
+      "screen": "Fresh packaged QA process, Spanish Welcome with guide button; saved-items region excluded from public crop",
+      "application": "LeonardoMD QA",
+      "process_id": 80822,
+      "capture_mode": "native window",
+      "logical_viewport": "not exposed by capture API",
+      "browser_engine": "system WKWebView / AppKit; engine version not exposed by native capture API",
+      "file": "welcome-es.png",
+      "encoding": "png",
+      "width_px": 2520,
+      "height_px": 1050,
+      "sha256": "a8b5dccc9fb138c8eb7d9a88d5979318138dc68383193ad46d7f6966227b43de",
+      "pixel_transform": "top-left crop (0,0,2520,1050), lossless PNG encoding of decoded JPEG pixels; excludes unrelated saved items",
+      "original_capture_width_px": 2520,
+      "original_capture_height_px": 1700,
+      "original_sha256": "74a770bcdac8bec4ab15a6ea276630b2e91e56a2e32118899fa3d29130ad3950"
+    }
+  ],
+  "limits": [
+    "Native capture API does not expose logical viewport or engine version; actual image pixel dimensions recorded.",
+    "English Welcome and first English-guide capture attempts returned Stage Manager thumbnails; omitted from public evidence.",
+    "Initial-width toolbar wrapping observed and tracked separately in https://github.com/PinedaTec-EU/LeonardoMD/issues/302; toolbar source is unchanged by this PR.",
+    "No release publication or fresh principal-process cold start claimed."
+  ]
+}
