@@ -237,4 +237,10 @@
 - [#289](https://github.com/PinedaTec-EU/LeonardoMD/pull/289) — #288 Added: follow active document in project sidebar — build +14
   <p>The sidebar follows the active document, expands its folders and highlights its row. A new preference enables or disables this behavior and is on by default.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.692)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTAtMzBUMTI6NTU6MzFaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjl9LCJmcm9tX3ZlcnNpb24iOiIwLjEuNjkyIiwia2luZCI6InB1bGxfcmVxdWVzdCIsIm1lcmdlX3NoYSI6IjkyNjZhMDMwY2JhZDk1Y2VlODkzMGEyZDRhMzA0OWFmZDAwNDk2MzAiLCJudW1iZXIiOjI5NCwic3VtbWFyeSI6IlJlY29nbml6ZSBNRExaIHBhY2thZ2VzIGluIEZpbmRlciBhbmQgY29uZmlndXJlIGRlZmF1bHQgb3BlbmluZyBmb3IgYWxsIE1hcmtkb3duIGFuZCBMZW9uYXJkbyBmb3JtYXRzLiIsInRpdGxlIjoiIzI5MyBGaXhlZDogaW5jbHVkZSBMZW9uYXJkbyBmb3JtYXRzIGluIGRvY3VtZW50IGFzc29jaWF0aW9ucyIsInRvX3ZlcnNpb24iOiIwLjEuNzAxIn1dLCJlbnZpcm9ubWVudCI6InJlbGVhc2UiLCJldmVudF9pZCI6ImdpdGh1Yl9yZWxlYXNlOjQyOTAzMDMyMCIsImV2ZW50X2tpbmQiOiJnaXRodWJfcmVsZWFzZSIsImV2aWRlbmNlX3VybCI6Imh0dHBzOi8vZ2l0aHViLmNvbS9QaW5lZGFUZWMtRVUvTGVvbmFyZG9NRC9yZWxlYXNlcy90YWcvdjAuMS43MDEiLCJyZXBvc2l0b3J5IjoiUGluZWRhVGVjLUVVL0xlb25hcmRvTUQiLCJzb3VyY2VfcmVmIjoidjAuMS43MDEiLCJzb3VyY2Vfc2hhIjoiZjI1OGY3M2U5ODhhZGJiNDViYzQ3ZmEyOTNiYmY1YmZkNWM0NWM4MiIsInRhcmdldCI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwidmVyc2lvbiI6IjAuMS43MDEifQ -->
+### 0.1.701
+- [#294](https://github.com/PinedaTec-EU/LeonardoMD/pull/294) — #293 Fixed: include Leonardo formats in document associations — build +9
+  <p>Recognize MDLZ packages in Finder and configure default opening for all Markdown and Leonardo formats.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.701)
 <!-- release-ledger:end -->
