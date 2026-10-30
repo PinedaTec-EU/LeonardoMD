@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.701
+
+- #293 Fixed: include Leonardo formats in document associations ([#294](https://github.com/PinedaTec-EU/LeonardoMD/pull/294))
+
+<p>Recognize MDLZ packages in Finder and configure default opening for all Markdown and Leonardo formats.</p>
+
+Source: `9266a030cbad95cee8930a2d4a3049afd0049630`. Delta: `{"build": 9}`.
+
 ## 0.1.692
 
 - #288 Added: follow active document in project sidebar ([#289](https://github.com/PinedaTec-EU/LeonardoMD/pull/289))

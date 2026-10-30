@@ -667,9 +667,19 @@
       "pr": 289,
       "summary": "The sidebar follows the active document, expands its folders and highlights its row. A new preference enables or disables this behavior and is on by default.",
       "to_version": "0.1.692"
+    },
+    {
+      "delta": {
+        "build": 9
+      },
+      "from_version": "0.1.692",
+      "merge_sha": "9266a030cbad95cee8930a2d4a3049afd0049630",
+      "pr": 294,
+      "summary": "Recognize MDLZ packages in Finder and configure default opening for all Markdown and Leonardo formats.",
+      "to_version": "0.1.701"
     }
   ],
-  "current_version": "0.1.692",
+  "current_version": "0.1.701",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
