@@ -1,0 +1,11 @@
+# Native acceptance after main refresh
+
+Reviewed head: `4286a8e6faa45f2ce8373c81d0c317153b05da29`.
+
+- Rebased on integrated main `57bd457033d982ec0c389a9bdf5991f7f69a0d68` (PR #296). Full local swift test passed: 539 XCTest cases, 24 optional skips, plus 70 Swift Testing cases; zero failures.
+- Built using `LEONARDO_SOURCE_PR=294 ./launch.sh --qa --args --new-instance -allowMultipleInstances YES -suppressMarkdownDefaultPrompt YES`. Seven successful source-PR compiler commands are allocated. Canonical package report verifies the real executable/resources, no XCTest dependency, and signature.
+- A fresh disposable QA app at `leonardo-native-qa-vrjrp39g/LeonardoMDQA.app` reached a real first window. The owner app remained running and was not replaced or terminated. Multiple-instance/suppression arguments are process-only; persistent preferences were not changed.
+- CUA opened all five independent synthetic files in this refreshed packaged runtime: MD/Markdown showed ordinary Markdown, MDLF showed Leonardo document, MDLR selected Fill form, MDLZ showed Package storage and its rendered synthetic field. Five runtime captures and filtered readiness states are attached. The task-owned QA process was quit normally.
+- Compiled UUID and all file-backed sections match between canonical and QA executables; signature-related complete-file digests differ as expected. See executable-identity.json.
+- Component captures were rerun with --skip-build at this exact committed head, using isolated defaults and a fake association driver, without changing user associations. No compilation was allocated for captures.
+- Earlier real Finder MDLZ testing reproduced the old installed type declaration failure. This source fixes physical ZIP/data/content conformance. Old installed/historical exporters still govern the owner Mac; actual newly-installed-beta Finder opening, hosted update/install/relaunch remain POST-MERGE acceptance, not a claimed pre-merge success. doc/releases.md excludes installation from publication authorization; the operational-blocker convention prohibits making deployment of the enabling change a pre-merge gate without an independent available path. Issue #293 stays open for installed-beta acceptance.

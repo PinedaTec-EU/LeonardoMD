@@ -1,0 +1,38 @@
+[
+  {
+    "extension": "mdlr",
+    "readiness": [
+      "0 standard window Association-mdlr.mdlr, URL: file:///private/tmp/leonardo-294-qa-files/Association-mdlr.mdlr, Secondary Actions: Raise",
+      "\t\t15 text Leonardo form response ·",
+      "\t\t\t26 button (selected) Fill form",
+      "\t\t37 text Leonardo form response Local file",
+      "The focused UI element is 0 standard window Association-mdlr.mdlr, URL: file:///private/tmp/leonardo-294-qa-files/Association-mdlr.mdlr, Secondary Actions: Raise"
+    ]
+  },
+  {
+    "extension": "mdlf",
+    "readiness": [
+      "0 standard window Association-mdlf.mdlf, URL: file:///private/tmp/leonardo-294-qa-files/Association-mdlf.mdlf, Secondary Actions: Raise",
+      "\t\t15 text Leonardo document ·",
+      "\t\t\t26 button Fill form",
+      "\t\t37 text Leonardo document Local file",
+      "The focused UI element is 0 standard window Association-mdlf.mdlf, URL: file:///private/tmp/leonardo-294-qa-files/Association-mdlf.mdlf, Secondary Actions: Raise"
+    ]
+  },
+  {
+    "extension": "md",
+    "readiness": [
+      "0 standard window Association-md.md, URL: file:///private/tmp/leonardo-294-qa-files/Association-md.md, Secondary Actions: Raise",
+      "\t\t15 text Markdown ·",
+      "The focused UI element is 0 standard window Association-md.md, URL: file:///private/tmp/leonardo-294-qa-files/Association-md.md, Secondary Actions: Raise"
+    ]
+  },
+  {
+    "extension": "markdown",
+    "readiness": [
+      "0 standard window Association-markdown.markdown, URL: file:///private/tmp/leonardo-294-qa-files/Association-markdown.markdown, Secondary Actions: Raise",
+      "\t\t15 text Markdown ·",
+      "The focused UI element is 0 standard window Association-markdown.markdown, URL: file:///private/tmp/leonardo-294-qa-files/Association-markdown.markdown, Secondary Actions: Raise"
+    ]
+  }
+]

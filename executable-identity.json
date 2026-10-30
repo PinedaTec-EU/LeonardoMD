@@ -1,0 +1,276 @@
+{
+  "reviewed_sha": "4286a8e6faa45f2ce8373c81d0c317153b05da29",
+  "canonical_executable_sha256": "01a47f97753809f83cf45acc7cad2f1ddec53cdc592c04d0d9a6ebaabde840b7",
+  "qa_executable_sha256": "eca085e7b13eac271febecfb844e4b34b0d771ec7bcce05bf19280d20ded56c8",
+  "mach_o_uuid": "C0B12043-77F8-3C59-B61A-97F929F4E9B3",
+  "all_file_backed_sections_identical": true,
+  "sections": [
+    {
+      "segment": "__TEXT",
+      "section": "__text",
+      "address": 4294974360,
+      "size": 3827220,
+      "sha256": "acfde1dbb7f8615b60f0f8485f5e59efe0be3953eb5aefec345a95c8e0dd2ccc"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__stubs",
+      "address": 4298801580,
+      "size": 13128,
+      "sha256": "0c16b06a0f97f3c5c43c35e2021cea4a2cf808f5cbead539b712f337ad4a03f4"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__objc_stubs",
+      "address": 4298814720,
+      "size": 10976,
+      "sha256": "2173388cc9e24b4f9ecbf27c02266b0c74dbcac5e83935cab9e03e4543037e50"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__objc_methlist",
+      "address": 4298825696,
+      "size": 5328,
+      "sha256": "64f531e90abbac060ac63c03773b34ceb1440278db5d73ff08c9de57f9b2ca88"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__const",
+      "address": 4298831024,
+      "size": 130792,
+      "sha256": "5c01e1794d7565b759a81a3ac4fa7a2880b0da1acea48baa40b2d0340325ecec"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__constg_swiftt",
+      "address": 4298961816,
+      "size": 23784,
+      "sha256": "0ee2e662922b65fe30a8ac3aaa534660808c0f4dd31e8eaa16d61c257c29d695"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__swift5_typeref",
+      "address": 4298985600,
+      "size": 172328,
+      "sha256": "5eb108432323728a442b5fe9ccdde43ea1ea432339328b3ca9bd47af55ec608d"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__objc_classname",
+      "address": 4299157936,
+      "size": 4260,
+      "sha256": "791ffc93a924e8f72db33982e4edeebd03cd029ac4c05623277d750a3c2531b6"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__swift5_fieldmd",
+      "address": 4299162196,
+      "size": 30520,
+      "sha256": "f31083d5517a2e600a05365041a43dd73abe45df42c286d71f7b5b722d325d3d"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__cstring",
+      "address": 4299192720,
+      "size": 35102,
+      "sha256": "4442e380dac931e522f66af933ecfafe4775c329db7d687d71bf3c7c69bd8eea"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__swift5_builtin",
+      "address": 4299227824,
+      "size": 500,
+      "sha256": "096d5e8a3f9dbad46108986987f47a4580b7db3a7e3c5dd1d7364edae18b94fa"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__swift5_reflstr",
+      "address": 4299228336,
+      "size": 19349,
+      "sha256": "14075d7a9106357ca957ef9d92f34f96e28a9bea7ed3585a063fcaa7906e1cdc"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__swift5_assocty",
+      "address": 4299247688,
+      "size": 4568,
+      "sha256": "4acfa4eeb57b702b65de47107ef2656df5e783dc9119aadefcfe23f18a756c22"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__swift5_proto",
+      "address": 4299252256,
+      "size": 4600,
+      "sha256": "9f4a03ce3995cec702b9298cbb4283488c99582c0dbfe24cf46fd6f30c36d128"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__swift5_types",
+      "address": 4299256856,
+      "size": 1880,
+      "sha256": "95ed80240c91958dc277b059d47827b01360cf065c865daafe0ec5dcbeb7ca90"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__objc_methname",
+      "address": 4299258736,
+      "size": 24325,
+      "sha256": "50025918c5c9f2006d873fe29b08e9e329758f815f8f6e4d64b9001dbd8e382d"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__objc_methtype",
+      "address": 4299283072,
+      "size": 8918,
+      "sha256": "8d46e299c853cba3fdd17afa3b2141a42f175053fd371f3e8de78dad583ce6ac"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__swift5_capture",
+      "address": 4299291992,
+      "size": 14316,
+      "sha256": "4ebaaf6598fd28723ab273dc8baafecf95c0fbf96e8884c82e4c1341fea4c57c"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__swift_as_entry",
+      "address": 4299306308,
+      "size": 1912,
+      "sha256": "2f5809808e04dacb7209cc1fee39d3900da323de533f7a26c5c2eeb847612a8e"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__swift_as_ret",
+      "address": 4299308220,
+      "size": 2868,
+      "sha256": "30f5272849e2a0d191f708d9500677035e8249fdf4b170595cd2b5eb440f5453"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__swift_as_cont",
+      "address": 4299311088,
+      "size": 6744,
+      "sha256": "1ea92df4b12caa8b6ce2fc2a9ababb78cce257fcd2cf4fde47a99424c93f6ace"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__oslogstring",
+      "address": 4299317840,
+      "size": 2103,
+      "sha256": "eaa518dd3536aacfbf487caf0d3e9269314ad6db7651fef0b966d10309883d4c"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__swift5_mpenum",
+      "address": 4299319944,
+      "size": 48,
+      "sha256": "d524c9857c6754bc71311ee8071b5cb39596c94dd6d4e663e31e89a7889b6548"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__swift5_entry",
+      "address": 4299319992,
+      "size": 8,
+      "sha256": "9a18b8442ffcb3adab4d4fb21f48f8bf25d8c2820225449923f303a8ba5a2bb8"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__swift5_protos",
+      "address": 4299320000,
+      "size": 64,
+      "sha256": "36e6f63fffd31c8504756d256b158442c447f2d1646fba7893b549c02588312a"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__unwind_info",
+      "address": 4299320064,
+      "size": 65104,
+      "sha256": "7ddaf5db2501db0645b1aa2c6c84046582213db1a3378289342c5c56cd0d4635"
+    },
+    {
+      "segment": "__TEXT",
+      "section": "__eh_frame",
+      "address": 4299385168,
+      "size": 160840,
+      "sha256": "73644e4e5022cb6bf207b3ef045704e59ab2444f0e1df4fc65c84c6649e2affa"
+    },
+    {
+      "segment": "__DATA_CONST",
+      "section": "__const",
+      "address": 4299554816,
+      "size": 83672,
+      "sha256": "9a04e4c65a3f0f4b8d54b297afc0e95e5fd89d437ca9c566c03c57835e77095d"
+    },
+    {
+      "segment": "__DATA_CONST",
+      "section": "__objc_classlist",
+      "address": 4299638488,
+      "size": 584,
+      "sha256": "d5af691f6564fb5c7030a7dbcb2fe975b315e46e83a9cebbede20c84c81e1f80"
+    },
+    {
+      "segment": "__DATA_CONST",
+      "section": "__objc_protolist",
+      "address": 4299639072,
+      "size": 272,
+      "sha256": "99c74751aebd3823a7d77741b48e4eb6e5070a0689f3667be5782737e7b4d603"
+    },
+    {
+      "segment": "__DATA_CONST",
+      "section": "__objc_imageinfo",
+      "address": 4299639344,
+      "size": 8,
+      "sha256": "7408fcdda372aaed9b8d62d262bd8e7ad4da66abeb61efb31e7c98020b1321ce"
+    },
+    {
+      "segment": "__DATA_CONST",
+      "section": "__got",
+      "address": 4299639352,
+      "size": 15728,
+      "sha256": "e42ade3794c1be14067f3760914c9115f4c7d096fbe909a023aaaf0a51393c41"
+    },
+    {
+      "segment": "__DATA",
+      "section": "__objc_const",
+      "address": 4299669504,
+      "size": 24328,
+      "sha256": "67ebd38d5adc2fbeae9a85021aed34c861a8dd136d3cfc75a12286ebdb462ab4"
+    },
+    {
+      "segment": "__DATA",
+      "section": "__objc_selrefs",
+      "address": 4299693832,
+      "size": 5088,
+      "sha256": "77e06104c1976dd4dc0250ddadf6c196fc98147b17d042aa9f0473be1740ec82"
+    },
+    {
+      "segment": "__DATA",
+      "section": "__objc_protorefs",
+      "address": 4299698920,
+      "size": 136,
+      "sha256": "c45f7953db73df48a20efe4214814e0756596a4546beebd321c85cae52387ba3"
+    },
+    {
+      "segment": "__DATA",
+      "section": "__objc_classrefs",
+      "address": 4299699056,
+      "size": 496,
+      "sha256": "1e01edac5a6cc5233adbacfc8c49d49b06d5027d5876a90f3d07eb60eb1e66f6"
+    },
+    {
+      "segment": "__DATA",
+      "section": "__objc_data",
+      "address": 4299699552,
+      "size": 6648,
+      "sha256": "0edc9e3d0858d157ca50431be1351622f85784249159a2d4a225929212d0f12a"
+    },
+    {
+      "segment": "__DATA",
+      "section": "__data",
+      "address": 4299706208,
+      "size": 80864,
+      "sha256": "0f50fc5307185c2221f8f78153b1759bd59369d08e44f38ea3293cd814dab528"
+    }
+  ],
+  "explanation": "Bundle identity and re-signing change full-file digests. Compiled UUID and every file-backed section match."
+}

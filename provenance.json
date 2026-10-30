@@ -1,0 +1,189 @@
+{
+  "reviewed_sha": "4286a8e6faa45f2ce8373c81d0c317153b05da29",
+  "capture_time": "2026-10-30T12:38:03.278687+01:00",
+  "capture_method": "native component harness plus CUA real packaged app window capture",
+  "browser": "N/A native macOS",
+  "route": "General associations; startup prompt; five standalone document formats",
+  "component_viewport_points": [
+    532,
+    350
+  ],
+  "general_viewport_points": [
+    580,
+    620
+  ],
+  "languages": [
+    "en",
+    "es"
+  ],
+  "states": [
+    "other",
+    "default",
+    "suppressed",
+    "unavailable",
+    "failed"
+  ],
+  "executable_sha256": "01a47f97753809f83cf45acc7cad2f1ddec53cdc592c04d0d9a6ebaabde840b7",
+  "qa_executable_sha256": "eca085e7b13eac271febecfb844e4b34b0d771ec7bcce05bf19280d20ded56c8",
+  "executable_identity_proof": "executable-identity.json",
+  "source_blobs": [
+    "100644 blob 58265d6ddc1ece712b9004aa6f73f52047c98b66\tSources/LeonardoApp/MarkdownAssociationDriver.swift",
+    "100644 blob 3df9e96dabf65891e4d66d4de004a4b72c9c4107\tSources/LeonardoApp/MarkdownAssociationPreferences.swift",
+    "100644 blob 82a3ed1f1957da87bdb3c157d49f8ce2564ea7eb\tSources/LeonardoApp/MarkdownAssociations.swift",
+    "100644 blob cda900259916bcdcfb1da3548c4b648968005e3e\tscripts/Info.plist"
+  ],
+  "images": {
+    "association-en-default.png": {
+      "format": "png",
+      "mime_type": "image/png",
+      "sha256": "780cc89b44cce2ac860e6f858e67fa18813d1d77ade55c8b55b9b740605c4f8d",
+      "width_px": 1064,
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T12:36:07.195080+01:00"
+    },
+    "association-en-failed.png": {
+      "format": "png",
+      "mime_type": "image/png",
+      "sha256": "ddd59de52e4eff76ec2d68098f4693782f20d6e14e574991ed46a734c88c0f42",
+      "width_px": 1064,
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T12:36:07.758597+01:00"
+    },
+    "association-en-other.png": {
+      "format": "png",
+      "mime_type": "image/png",
+      "sha256": "7c7d6b004fe4af2bc502d78b0683dc9f5db7e8409f27cc2d1ad2a9c8d29101a6",
+      "width_px": 1064,
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T12:36:07.001950+01:00"
+    },
+    "association-en-suppressed.png": {
+      "format": "png",
+      "mime_type": "image/png",
+      "sha256": "1e3c9a27e85a210e57dc71bf062d924e2094c7a969046c4f67be7461ff0c0e91",
+      "width_px": 1064,
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T12:36:07.384020+01:00"
+    },
+    "association-en-unavailable.png": {
+      "format": "png",
+      "mime_type": "image/png",
+      "sha256": "94f0a7033afadf3abe788253ba55878ea02c64f48c8083b718613c922957ca04",
+      "width_px": 1064,
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T12:36:07.570832+01:00"
+    },
+    "association-es-default.png": {
+      "format": "png",
+      "mime_type": "image/png",
+      "sha256": "c07cc2990b98065dce00198f36316783b77a8e753fa405c1d9a0c4a9a8905f9c",
+      "width_px": 1064,
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T12:36:08.957591+01:00"
+    },
+    "association-es-failed.png": {
+      "format": "png",
+      "mime_type": "image/png",
+      "sha256": "b951d0fa2c5a3c94198c24cc20581b58fbaa9d55ee632e7c7c3046de4bf9487e",
+      "width_px": 1064,
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T12:36:09.575419+01:00"
+    },
+    "association-es-other.png": {
+      "format": "png",
+      "mime_type": "image/png",
+      "sha256": "fc6d7cb930b30d4d7560d2c4921e797ff6c9db1ddeb8f09c61858c5768dd6d1a",
+      "width_px": 1064,
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T12:36:08.762127+01:00"
+    },
+    "association-es-suppressed.png": {
+      "format": "png",
+      "mime_type": "image/png",
+      "sha256": "0b661a1193209d78776b0b80f2fb3cc5ba228eddbb5a0fdfcc888decf5c58b9b",
+      "width_px": 1064,
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T12:36:09.144298+01:00"
+    },
+    "association-es-unavailable.png": {
+      "format": "png",
+      "mime_type": "image/png",
+      "sha256": "b96c76b32e8e2630682eb4f8082a12d26c93154bb6594298ced2d315edaa2607",
+      "width_px": 1064,
+      "height_px": 700,
+      "capture_file_time": "2026-10-30T12:36:09.342054+01:00"
+    },
+    "general-project-en.png": {
+      "format": "png",
+      "mime_type": "image/png",
+      "sha256": "5cbe78dccc9a4b6324f9469bc7f02d2df282d45f884e1e8f282114832b95cc75",
+      "width_px": 1160,
+      "height_px": 1240,
+      "capture_file_time": "2026-10-30T12:36:08.347001+01:00"
+    },
+    "general-project-es.png": {
+      "format": "png",
+      "mime_type": "image/png",
+      "sha256": "8bf9f28df2a683d2b7b68d91beba9a103a0857fe84d73e2726600e2c60ac0ab9",
+      "width_px": 1160,
+      "height_px": 1240,
+      "capture_file_time": "2026-10-30T12:36:09.940208+01:00"
+    },
+    "prompt-en.png": {
+      "format": "png",
+      "mime_type": "image/png",
+      "sha256": "d1c954c270de56adffca4d33cdd0f9343403d274475f75f472bbb106d04ac5df",
+      "width_px": 520,
+      "height_px": 732,
+      "capture_file_time": "2026-10-30T12:36:08.572250+01:00"
+    },
+    "prompt-es.png": {
+      "format": "png",
+      "mime_type": "image/png",
+      "sha256": "f9be03b4853174a6be542c2bd2c7bf4c7842e9c9559ad7441b507cdf25e85044",
+      "width_px": 520,
+      "height_px": 764,
+      "capture_file_time": "2026-10-30T12:36:10.116646+01:00"
+    },
+    "runtime-markdown.jpg": {
+      "format": "jpeg",
+      "mime_type": "image/jpeg",
+      "sha256": "a89763651d95f9ed44f4d164ac8d95903806dd69cee8446e9ba158d151f1875f",
+      "width_px": 2520,
+      "height_px": 1700,
+      "capture_file_time": "2026-10-30T12:37:05.574302+01:00"
+    },
+    "runtime-md.jpg": {
+      "format": "jpeg",
+      "mime_type": "image/jpeg",
+      "sha256": "1e6e9af58e5305acdba4a7ff7ef6f63fb97f0b824752d8e0f951087b4ea20f1c",
+      "width_px": 2520,
+      "height_px": 1700,
+      "capture_file_time": "2026-10-30T12:37:02.361856+01:00"
+    },
+    "runtime-mdlf.jpg": {
+      "format": "jpeg",
+      "mime_type": "image/jpeg",
+      "sha256": "d582ebc925794e1ead86124daa9878d358892930ce12dddc723f058f34fb7dcc",
+      "width_px": 2520,
+      "height_px": 1700,
+      "capture_file_time": "2026-10-30T12:36:59.064726+01:00"
+    },
+    "runtime-mdlr.jpg": {
+      "format": "jpeg",
+      "mime_type": "image/jpeg",
+      "sha256": "76a6a282584133991361dea63ffd67a103591dd0ba3a4f955779a9ea0b9be2d7",
+      "width_px": 2520,
+      "height_px": 1700,
+      "capture_file_time": "2026-10-30T12:36:55.827333+01:00"
+    },
+    "runtime-mdlz.jpg": {
+      "format": "jpeg",
+      "mime_type": "image/jpeg",
+      "sha256": "e12d7d32ec3e527ac18c8f52f7058bf85057e1b92ca9a51de71d9dc5a53d3525",
+      "width_px": 2520,
+      "height_px": 1700,
+      "capture_file_time": "2026-10-30T12:36:52.601862+01:00"
+    }
+  }
+}

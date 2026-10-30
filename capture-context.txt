@@ -1,0 +1,6 @@
+Surface: native AppKit NSAlert and SwiftUI General association section
+Association viewport: 532x350 points; prompt: AppKit intrinsic geometry
+Languages: en, es
+States: other default app, Leonardo default, suppressed, development, cancelled/failed
+Fixtures: isolated UserDefaults and fake Launch Services driver; no actual defaults changed
+Limits: native component capture, not a fresh packaged process or macOS consent dialog; bitmap prompt button compositor pixels may be absent, titles asserted separately; optional prompt-screen captures include compositor pixels
