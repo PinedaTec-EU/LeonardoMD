@@ -36,6 +36,12 @@ extension AppSession {
             errorMessage = L10n.text("Choose another file to keep both versions.")
             return
         }
+        if identity.storage == .package,
+           let workspace = identity.workspaceDirectory?.resolvingSymlinksInPath(),
+           canonicalDestination.path.hasPrefix(workspace.path + "/") {
+            errorMessage = L10n.text("Choose another file to keep both versions.")
+            return
+        }
         guard identity.storage != .package || destination.pathExtension.lowercased() == "mdlz" else {
             errorMessage = L10n.text("Save a package conflict copy as MDLZ to preserve its resources.")
             return

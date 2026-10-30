@@ -648,7 +648,9 @@ final class SessionPackageSaveTests: XCTestCase {
         session.externalConflict = true
         let draft = session.content
         let originalBytes = try Data(contentsOf: fixture.package)
-        for destination in [fixture.root.appendingPathComponent("unsafe.mdlf"), fixture.package] {
+        let destinations = [fixture.root.appendingPathComponent("unsafe.mdlf"), fixture.package,
+                            workspace.directoryURL.appendingPathComponent("temporary-copy.mdlz")]
+        for destination in destinations {
             await session.saveCopyAndOpen(to: destination, sourceURL: originalURL)
             XCTAssertEqual(session.documentURL, originalURL)
             XCTAssertEqual(session.content, draft)
