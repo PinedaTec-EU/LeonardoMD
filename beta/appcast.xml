@@ -3,6 +3,31 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.1.717</title>
+            <pubDate>Fri, 30 Oct 2026 15:17:56 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>717</sparkle:version>
+            <sparkle:shortVersionString>0.1.717</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">## What's new
+
+- Choose a theme for each favorite project or workspace from the Favorites list.
+- Favorite items opened from Recents use the same theme association.
+- Themes apply to the relevant session without changing global appearance or shared project settings. Choose Inherit to restore the existing appearance settings.
+- A workspace theme takes precedence for its projects. Switching to an unrelated project restores that project's appearance.
+
+- Browse favorites by category with horizontal tabs and scroll lists that show up to five items at once.
+
+## Beta notes
+
+This is a beta release for Apple silicon Macs running macOS 14 or later. Select the beta update channel in Preferences to receive beta updates.
+
+Hosted update, installation and relaunch testing for this beta remains pending.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.717/LeonardoMD-0.1.717.zip" length="14162433" type="application/octet-stream" sparkle:edSignature="lgOMWM+9cI8keCeFKGVKsUKo63afVvKw1pdULaUmZtYRvb87wcu+dcxEeuVgpMpRXhO3WKrC9ZRkyjCVABezCA==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.1.701</title>
             <pubDate>Fri, 30 Oct 2026 13:51:08 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
