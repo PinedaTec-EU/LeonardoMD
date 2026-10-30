@@ -5,44 +5,6 @@ import LeonardoCore
 
 @MainActor
 final class StaleFileOperationTests: XCTestCase {
-    func testProjectDeletionRejectsWorkspaceChangedDuringConfirmation() async throws {
-        let fixture = try MutationFixture()
-        defer { fixture.close() }
-        let operation = fixture.session.deleteProject(fixture.project)
-        let sheet = try await confirmation(on: fixture.window)
-        fixture.session.workspaceURL = fixture.otherWorkspace
-        fixture.window.endSheet(sheet, returnCode: .alertSecondButtonReturn)
-        await operation.value
-        try assertOriginalPreserved(fixture)
-    }
-
-    func testProjectDeletionRejectsWorkspaceChangedDuringAuthorization() async throws {
-        let fixture = try MutationFixture()
-        defer { fixture.close() }
-        fixture.session.authorizePath = { _, _ in
-            await Task.yield()
-            fixture.session.workspaceURL = fixture.otherWorkspace
-        }
-        await fixture.session.deleteConfirmedProject(fixture.project)
-        try assertOriginalPreserved(fixture)
-    }
-
-    func testProjectRenameRejectsWorkspaceChangedDuringNamePrompt() async throws {
-        let fixture = try MutationFixture()
-        defer { fixture.close() }
-        let operation = fixture.session.renameProject(fixture.project)
-        let sheet = try await confirmation(on: fixture.window)
-        let view = try XCTUnwrap(sheet.contentView)
-        let input = try XCTUnwrap(descendants(of: view).compactMap { $0 as? NSTextField }.first { $0.isEditable })
-        input.stringValue = "Renamed"
-        fixture.session.workspaceURL = fixture.otherWorkspace
-        fixture.window.endSheet(sheet, returnCode: .alertFirstButtonReturn)
-        await operation.value
-        try assertOriginalPreserved(fixture)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.workspace.appendingPathComponent("Renamed").path))
-        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.otherWorkspace.appendingPathComponent("Renamed").path))
-    }
-
     func testMoveRejectsProjectChangedDuringPreparation() async throws {
         let fixture = try MutationFixture()
         defer { fixture.close() }
@@ -129,7 +91,6 @@ private final class MutationFixture {
         try FileManager.default.createDirectory(at: otherWorkspace, withIntermediateDirectories: true)
         try "Original document".write(to: document, atomically: true, encoding: .utf8)
         session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
-        session.workspaceURL = workspace
         session.projectURL = projectRoot
         session.authorizePath = { _, _ in }
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1000, height: 800),

@@ -45,7 +45,6 @@ extension AppSession {
                 if settingsTask == nil, projectURL == root { projectConfiguration = project; projectBaseline = project }
             }
         } catch { logger.error("preferences_refresh_failed") } }
-        if workspaceURL != nil { await refreshWorkspace() }
         guard canCheckExternalChanges, let snapshot else {
             if projectURL != nil { await refreshTree() }
             return

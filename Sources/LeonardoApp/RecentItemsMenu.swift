@@ -4,12 +4,11 @@ import AppKit
 @MainActor
 final class RecentItemsMenu: NSObject, NSMenuDelegate {
     enum Category: Int, CaseIterable {
-        case documents, projects, workspaces
+        case documents, projects
         var title: String {
             switch self {
             case .documents: "Recent documents"
             case .projects: "Recent projects"
-            case .workspaces: "Recent workspaces"
             }
         }
     }
@@ -46,7 +45,6 @@ final class RecentItemsMenu: NSObject, NSMenuDelegate {
         switch category {
         case .documents: NSDocumentController.shared.recentDocumentURLs
         case .projects: session()?.globalPreferences.recentProjectPaths ?? []
-        case .workspaces: session()?.globalPreferences.recentWorkspacePaths ?? []
         }
     }
 
@@ -85,9 +83,6 @@ final class RecentItemsMenu: NSObject, NSMenuDelegate {
         case .projects:
             let active = session()
             Task { await active?.openProject(url) }
-        case .workspaces:
-            let active = session()
-            Task { await active?.openWorkspace(url) }
         }
     }
 
@@ -97,9 +92,6 @@ final class RecentItemsMenu: NSObject, NSMenuDelegate {
         case .documents: NSDocumentController.shared.clearRecentDocuments(nil)
         case .projects:
             session()?.globalPreferences.recentProjectPaths = []
-            session()?.persistSettings()
-        case .workspaces:
-            session()?.globalPreferences.recentWorkspacePaths = []
             session()?.persistSettings()
         }
     }

@@ -9,9 +9,6 @@ import OSLog
 
 @MainActor @Observable
 final class AppSession {
-    var workspaceURL: URL?
-    var workspaceProjects: [ProjectDescriptor] = []
-    var showWorkspace = false
     var documentURL: URL? { didSet { if documentURL != oldValue { editHistory = DocumentEditHistory() } } }
     /// The logical document format is independent from the bytes currently
     /// loaded into the editor. For an internally opened `.mdlz`, `documentURL`

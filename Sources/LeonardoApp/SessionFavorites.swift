@@ -2,6 +2,10 @@ import AppKit
 import LeonardoCore
 
 extension FavoriteItem.Kind {
+    /// Workspace remains a stored kind so existing settings decode without loss.
+    /// Only projects and documents are offered by the application.
+    static let navigationKinds: [FavoriteItem.Kind] = [.document, .project]
+
     var title: String {
         switch self {
         case .document: "Documents"
@@ -32,7 +36,7 @@ extension AppSession {
         switch kind {
         case .document: documentURL
         case .project: projectURL
-        case .workspace: workspaceURL
+        case .workspace: nil
         }
     }
 
@@ -40,7 +44,7 @@ extension AppSession {
         switch kind {
         case .document: NSDocumentController.shared.recentDocumentURLs
         case .project: globalPreferences.recentProjectPaths
-        case .workspace: globalPreferences.recentWorkspacePaths
+        case .workspace: []
         }
     }
 
@@ -62,7 +66,7 @@ extension AppSession {
         switch kind {
         case .document: await open(url)
         case .project: await openProject(url)
-        case .workspace: await openWorkspace(url)
+        case .workspace: break
         }
     }
 }

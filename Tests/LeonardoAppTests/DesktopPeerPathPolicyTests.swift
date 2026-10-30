@@ -55,10 +55,7 @@ final class DesktopPeerPathPolicyTests: XCTestCase {
         var matches: [SearchMatch] = []
         for try await batch in stream { matches += batch }
         XCTAssertEqual(matches.map(\.relativePath), ["notes/selected.md"])
-        session.workspaceURL = root
-        await session.renameProject(ProjectDescriptor(name: id.uuidString, rootURL: copy), to: "moved")
-        XCTAssertTrue(FileManager.default.fileExists(atPath: copy.path))
-        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("moved").path))
+
     }
 
     func testWholeProjectFilterStillExcludesGeneratedAndHiddenDirectories() async throws {

@@ -4,11 +4,13 @@ extension DocumentTabs {
     /// Opens without navigating the source session, so its draft and editor stay intact.
     func openProjectDocument(_ url: URL, line: Int? = nil, from source: AppSession) async {
         let identity = SessionFileOperationIdentity(sourceURL: url, session: source)
-        guard acceptsExternalDrops, identity.isCurrent(in: source),
+        guard acceptsExternalDrops, !openingProjectDocument, identity.isCurrent(in: source),
               tabs.contains(where: { $0.session === source }),
               let root = source.projectURL,
               url.standardizedFileURL.path.hasPrefix(root.standardizedFileURL.path + "/"),
               AppSession.supportedDocumentExtensions.contains(url.pathExtension.lowercased()) else { return }
+        openingProjectDocument = true
+        defer { openingProjectDocument = false }
         source.fileOperationCount += 1
         defer { source.fileOperationCount -= 1 }
         do { try await source.authorizePath(url, .document) }
@@ -19,6 +21,7 @@ extension DocumentTabs {
         guard let id = addTab(), let tab = tabs.first(where: { $0.id == id }) else { return }
         let target = tab.session
         guard await target.openProject(root), identity.isCurrent(in: source) else {
+            source.errorMessage = target.errorMessage
             await discardFailedProjectTab(id, previousID: previousID)
             return
         }
@@ -36,10 +39,8 @@ extension DocumentTabs {
     }
 
     private func discardFailedProjectTab(_ id: UUID, previousID: UUID?) async {
-        guard let tab = tabs.first(where: { $0.id == id }) else { return }
+        guard tabs.contains(where: { $0.id == id }) else { return }
         await close(id)
         if let previousID { select(previousID) }
-        // Closing waits for package cleanup and cannot discard another tab's draft.
-        if !tab.session.stopped { tab.session.errorMessage = tab.session.errorMessage ?? L10n.text("Unable to open document") }
     }
 }
