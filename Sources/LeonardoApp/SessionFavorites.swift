@@ -45,13 +45,13 @@ extension AppSession {
     }
 
     func isFavorite(_ url: URL, kind: FavoriteItem.Kind) -> Bool {
-        globalPreferences.favorites.contains(FavoriteItem(kind: kind, url: url))
+        favorite(url, kind: kind) != nil
     }
 
     func toggleFavorite(_ url: URL, kind: FavoriteItem.Kind) {
         let item = FavoriteItem(kind: kind, url: url)
-        if globalPreferences.favorites.contains(item) {
-            globalPreferences.favorites.removeAll { $0 == item }
+        if globalPreferences.favorites.contains(where: { $0.matches(item) }) {
+            globalPreferences.favorites.removeAll { $0.matches(item) }
         } else {
             globalPreferences.favorites.append(item)
         }

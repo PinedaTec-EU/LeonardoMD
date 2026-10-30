@@ -174,7 +174,7 @@ final class AppSession {
     var isDirty: Bool { snapshot != nil && content != snapshot?.content }
     var wordCount: Int { content.split { $0.isWhitespace }.count }
     var recentProjects: [URL] { globalPreferences.recentProjectPaths }
-    var resolved: ResolvedPreferences { projectURL == nil ? ProjectConfiguration.default.resolved(using: globalPreferences) : projectConfiguration.resolved(using: globalPreferences) }
+    var resolved: ResolvedPreferences { resolvedSessionPreferences }
     var features: MarkdownFeatures { resolved.markdown }
     var gitEnabled: Bool { projectURL != nil && projectConfiguration.git.enabled }
     var palette: PaletteDefinition {
@@ -243,6 +243,7 @@ final class AppSession {
             await openProject(url)
         } else {
             guard await prepareNavigation() else { return }
+            showWorkspace = false
             projectURL = nil
             projectConfiguration = .default
             projectBaseline = .default

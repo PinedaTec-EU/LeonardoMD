@@ -495,5 +495,8 @@
   "Trash is unavailable in this location. The item and its contents will be permanently deleted. This cannot be undone.": "La Papelera no está disponible en esta ubicación. El elemento y su contenido se eliminarán permanentemente. Esta acción no se puede deshacer.",
   "Delete Permanently": "Eliminar permanentemente",
   "Help": "Ayuda",
-  "Leonardo user guide…": "Guía de Leonardo…"
+  "Leonardo user guide…": "Guía de Leonardo…",
+  "Theme": "Tema",
+  "Theme for this favorite": "Tema de este favorito",
+  "Inherit": "Heredar"
 }

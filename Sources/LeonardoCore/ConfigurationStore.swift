@@ -205,12 +205,8 @@ public actor ConfigurationStore {
         if updated.recentProjectPaths != baseline.recentProjectPaths {
             merged.recentProjectPaths = mergeRecents(current: current.recentProjectPaths, updated: updated.recentProjectPaths, baseline: baseline.recentProjectPaths)
         }
-        // Apply only membership changes so independent windows preserve each other's stars.
-        let removed = Set(baseline.favorites).subtracting(updated.favorites)
-        merged.favorites.removeAll { removed.contains($0) }
-        for item in updated.favorites where !baseline.favorites.contains(item) && !merged.favorites.contains(item) {
-            merged.favorites.append(item)
-        }
+        merged.favorites = FavoriteItem.merging(current: current.favorites,
+                                               updated: updated.favorites, baseline: baseline.favorites)
         return merged
     }
 

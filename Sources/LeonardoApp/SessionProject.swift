@@ -46,6 +46,9 @@ extension AppSession {
             _ = try await files.project(at: url)
             let configuration = try await configurations.loadProjectConfiguration(for: url)
             guard !isClosing, !stopped else { return false }
+            await refreshFavoriteAssociations()
+            guard !isClosing, !stopped else { return false }
+            showWorkspace = false
             projectURL = url
             git = GitRepository(rootURL: url)
             projectConfiguration = configuration
@@ -73,6 +76,7 @@ extension AppSession {
         fileOperationCount += 1
         defer { fileOperationCount -= 1 }
         guard await prepareNavigation(), !isClosing, !stopped else { return }
+        showWorkspace = false
         projectURL = nil
         projectConfiguration = .default
         projectBaseline = .default
