@@ -64,6 +64,16 @@ Export a form as `.mdlr` to open it in **Fill form** mode. Fill the declared fie
 
 See the [format specification, schema and examples](format/README.md) and the [Codex/Claude plugin and MDLZ generation guide](plugins/leonardo-format.md). No proprietary binary document representation is required.
 
+### Recovering a conflicted package
+
+If an MDLZ changes outside Leonardo while you have unsaved edits, choose
+**Reload** to read the external version, or **Save copy** to retain your edits.
+Save copy requires an `.mdlz` destination and includes the current form answers
+and local resources. It opens the recovered package after verifying the copy;
+the externally changed original remains unchanged. If a required resource
+cannot be read or the copy cannot be saved, the original draft and conflict
+remain available for recovery.
+
 ## Undo and Redo
 
 Use **Undo** and **Redo** beside Save, or **Edit → Undo / Redo** (⌘Z / ⇧⌘Z), to restore source, preview and form edits. Each document session keeps its own history of up to 200 changes. Source edits require the padlock to be unlocked; form edits can be restored in Fill mode while the source remains protected. A new edit clears Redo.
