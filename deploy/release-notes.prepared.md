@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.739
+
+- #308 Fixed: preserve resources in MDLZ conflict copies ([#309](https://github.com/PinedaTec-EU/LeonardoMD/pull/309))
+
+<p>Saving a copy of a conflicted MDLZ preserves its form answers and local resources in a complete package.</p>
+
+Source: `2beb2cd1c427b72d156567b93c5d39473b3dd694`. Delta: `{"build": 4}`.
+
 ## 0.1.735
 
 - #290 Added: bundle illustrated user guide and fix sync suspension ([#291](https://github.com/PinedaTec-EU/LeonardoMD/pull/291))

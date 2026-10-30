@@ -717,9 +717,19 @@
       "pr": 291,
       "summary": "Open an illustrated offline Leonardo guide in the interface language from Help or Welcome, with practice fields and agent setup. Synchronization now rejects suspended path operations before acquiring instance ownership.",
       "to_version": "0.1.735"
+    },
+    {
+      "delta": {
+        "build": 4
+      },
+      "from_version": "0.1.735",
+      "merge_sha": "2beb2cd1c427b72d156567b93c5d39473b3dd694",
+      "pr": 309,
+      "summary": "Saving a copy of a conflicted MDLZ preserves its form answers and local resources in a complete package.",
+      "to_version": "0.1.739"
     }
   ],
-  "current_version": "0.1.735",
+  "current_version": "0.1.739",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
