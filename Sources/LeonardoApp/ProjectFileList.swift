@@ -81,6 +81,7 @@ final class ProjectFileTree {
         while let ancestor = entries.first(where: {
             $0.isDirectory && target.path.hasPrefix($0.url.standardizedFileURL.path + "/")
         }) {
+            guard isCurrent(root, session: session), belongsToProject(ancestor.url, root: root) else { return nil }
             let loaded = await session.children(of: ancestor.url)
             guard isCurrent(root, session: session) else { return nil }
             children[ancestor.url] = loaded

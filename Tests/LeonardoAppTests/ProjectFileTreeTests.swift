@@ -3,6 +3,27 @@ import XCTest
 
 @MainActor
 final class ProjectFileTreeTests: XCTestCase {
+    func testRevealIgnoresPreviousRootEntriesWhileNestedProjectLoads() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let project = root.appendingPathComponent("Ancestor/New project", isDirectory: true)
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        let target = project.appendingPathComponent("Active.md")
+        try "# Active".write(to: target, atomically: true, encoding: .utf8)
+        let session = AppSession(preferencesURL: root.appendingPathComponent("preferences.json"))
+        defer { session.stop(); try? FileManager.default.removeItem(at: root) }
+        await session.openProject(root)
+        // openProject changes identity before its asynchronous root listing completes.
+        session.projectURL = project
+        let tree = ProjectFileTree()
+        let pending = await tree.refreshAndReveal(target, session: session)
+        XCTAssertNil(pending)
+        XCTAssertNil(session.errorMessage)
+        await session.refreshTree()
+        let revealed = await tree.refreshAndReveal(target, session: session)
+        XCTAssertEqual(revealed, target)
+        XCTAssertNil(session.errorMessage)
+    }
+
     func testCollapsingDuringFolderLoadDoesNotReopenIt() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root.appendingPathComponent("Folder"), withIntermediateDirectories: true)
