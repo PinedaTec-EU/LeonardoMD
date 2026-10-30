@@ -63,7 +63,7 @@
 </dict>
 <dict>
 <key>UTTypeIdentifier</key><string>eu.pinedatec.leonardomd.mdlz</string>
-<key>UTTypeConformsTo</key><array><string>public.archive</string></array>
+<key>UTTypeConformsTo</key><array><string>public.zip-archive</string><string>public.content</string></array>
 <key>UTTypeDescription</key><string>Leonardo package</string>
 <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>mdlz</string></array></dict>
 </dict>
