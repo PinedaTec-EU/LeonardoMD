@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.706
+
+- #298 Updated: organize welcome favorites with horizontal tabs ([#299](https://github.com/PinedaTec-EU/LeonardoMD/pull/299))
+
+<p>Browse welcome favorites by category with horizontal tabs and scroll lists that show up to five items at once.</p>
+
+Source: `f1ba28c36a498662e5744911c1072eae6dc19adb`. Delta: `{"build": 5}`.
+
 ## 0.1.701
 
 - #293 Fixed: include Leonardo formats in document associations ([#294](https://github.com/PinedaTec-EU/LeonardoMD/pull/294))

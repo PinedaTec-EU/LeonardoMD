@@ -677,6 +677,16 @@
       "pr": 294,
       "summary": "Recognize MDLZ packages in Finder and configure default opening for all Markdown and Leonardo formats.",
       "to_version": "0.1.701"
+    },
+    {
+      "delta": {
+        "build": 5
+      },
+      "from_version": "0.1.701",
+      "merge_sha": "f1ba28c36a498662e5744911c1072eae6dc19adb",
+      "pr": 299,
+      "summary": "Browse welcome favorites by category with horizontal tabs and scroll lists that show up to five items at once.",
+      "to_version": "0.1.706"
     }
   ],
   "initial_version": "0.1.56",
@@ -687,5 +697,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.701"
+  "version": "0.1.706"
 }
