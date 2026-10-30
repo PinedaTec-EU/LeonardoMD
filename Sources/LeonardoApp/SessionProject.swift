@@ -46,6 +46,8 @@ extension AppSession {
             _ = try await files.project(at: url)
             let configuration = try await configurations.loadProjectConfiguration(for: url)
             guard !isClosing, !stopped else { return false }
+            await refreshFavoriteAssociations()
+            guard !isClosing, !stopped else { return false }
             projectURL = url
             git = GitRepository(rootURL: url)
             projectConfiguration = configuration
