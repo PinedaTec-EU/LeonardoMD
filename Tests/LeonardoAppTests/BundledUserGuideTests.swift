@@ -112,22 +112,18 @@ final class BundledUserGuideTests: XCTestCase {
             if let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
                 let directory = URL(fileURLWithPath: output).appendingPathComponent("user-guide")
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-                try await capture(web, to: directory.appendingPathComponent("guide-\(language.rawValue).png"))
+                try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("guide-\(language.rawValue).png"),
+                    language: language.rawValue, state: "Guide preview; all local images loaded")
                 _ = try await web.evaluateJavaScript("document.querySelector('input,textarea').scrollIntoView({block:'center'})")
-                try await capture(web, to: directory.appendingPathComponent("practice-\(language.rawValue).png"))
+                try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("practice-\(language.rawValue).png"),
+                    language: language.rawValue, state: "Practice fields scrolled into view; synthetic answers")
                 let welcome = NSHostingView(rootView: WelcomeView(session: session))
-                try await NativeViewCaptureSupport.capture(welcome, size: NSSize(width: 1100, height: 850),
-                    to: directory.appendingPathComponent("welcome-\(language.rawValue).png"))
+                try await GuideCaptureSupport.captureWelcome(welcome, size: NSSize(width: 1100, height: 850),
+                    to: directory.appendingPathComponent("welcome-\(language.rawValue).png"), language: language.rawValue)
                 let provenance = "Head: \(ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local")\nNative NSHostingView / WKWebView, 1100x850 points; synthetic practice data; language \(language.rawValue). Component test, not a fresh product process.\n"
                 try provenance.write(to: directory.appendingPathComponent("provenance-\(language.rawValue).txt"), atomically: true, encoding: .utf8)
             }
         }
-    }
-
-    private func capture(_ web: WKWebView, to url: URL) async throws {
-        let image = try await web.takeSnapshot(configuration: nil)
-        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: XCTUnwrap(image.tiffRepresentation)))
-        try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: url)
     }
 
     private func findWebView(in view: NSView) async throws -> WKWebView {
