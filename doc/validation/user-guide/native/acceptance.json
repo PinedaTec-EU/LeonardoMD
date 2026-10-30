@@ -169,31 +169,13 @@
       "height_px": 2818,
       "sha256": "9c44d767514acd42f1a74bd853470d616a6c83500a026b64f716bc8b225344af",
       "pixel_transform": "none; original capture bytes, correctly suffixed as JPEG"
-    },
-    {
-      "captured_at": "2026-10-30T11:06:01.203Z",
-      "capture_completed_at": "2026-10-30T11:06:01.319Z",
-      "screen": "Fresh packaged QA process, Spanish Welcome with guide button; saved-items region excluded from public crop",
-      "application": "LeonardoMD QA",
-      "process_id": 80822,
-      "capture_mode": "native window",
-      "logical_viewport": "not exposed by capture API",
-      "browser_engine": "system WKWebView / AppKit; engine version not exposed by native capture API",
-      "file": "welcome-es.png",
-      "encoding": "png",
-      "width_px": 2520,
-      "height_px": 1050,
-      "sha256": "a8b5dccc9fb138c8eb7d9a88d5979318138dc68383193ad46d7f6966227b43de",
-      "pixel_transform": "top-left crop (0,0,2520,1050), lossless PNG encoding of decoded JPEG pixels; excludes unrelated saved items",
-      "original_capture_width_px": 2520,
-      "original_capture_height_px": 1700,
-      "original_sha256": "74a770bcdac8bec4ab15a6ea276630b2e91e56a2e32118899fa3d29130ad3950"
     }
   ],
   "limits": [
     "Native capture API does not expose logical viewport or engine version; actual image pixel dimensions recorded.",
     "English Welcome and first English-guide capture attempts returned Stage Manager thumbnails; omitted from public evidence.",
     "Initial-width toolbar wrapping observed and tracked separately in https://github.com/PinedaTec-EU/LeonardoMD/issues/302; toolbar source is unchanged by this PR.",
-    "No release publication or fresh principal-process cold start claimed."
+    "No release publication or fresh principal-process cold start claimed.",
+    "Historical Spanish Welcome screenshot withdrawn: its crop retained unrelated saved-item information. Use the current-head synthetic CI Welcome captures instead. Historical capture objects may remain accessible in Git history; withdrawal does not claim history erasure."
   ]
 }

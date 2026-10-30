@@ -14,14 +14,15 @@ running. The product-wide Mach service identity is unchanged. Launch arguments:
 `startup.jsonl` records a new PID reaching `first_window_shown` and
 `application_ready`. `acceptance.json` records bundle/executable identity,
 resource hashes, original-process preservation, UI actions and screenshot
-metadata. The Welcome image is explicitly cropped above the saved-items list to
-exclude unrelated user data; its pixels are otherwise unchanged. Guide screenshots
-contain only the bundled guide and synthetic practice data.
+metadata. The historical Spanish Welcome screenshot has been withdrawn because its crop
+retained unrelated saved-item information. Use the synthetic Welcome captures in
+the current-head CI artifact instead. Withdrawal does not erase historical Git
+objects. Retained guide screenshots contain the guide and synthetic practice data.
 
-The build/capture source commit is recorded in the report. The final review head
-adds the compilation allocation and this evidence; the PR evidence comment proves
-that application sources/resources and build inputs are identical between those
-commits. No fresh primary-process cold start or release publication is claimed.
+The build/capture source commit is recorded in the report. The original evidence head added only allocation and evidence to that build.
+The branch subsequently refreshed main; its current-head CI component captures
+cover the updated renderer and Welcome. The historical packaged launch is
+supplemental and is not relabeled as a launch of the refreshed main tree. No fresh primary-process cold start or release publication is claimed.
 
 The initial-width toolbar wrapping observed in the real process is tracked
 separately in [#302](https://github.com/PinedaTec-EU/LeonardoMD/issues/302).
