@@ -697,6 +697,16 @@
       "pr": 301,
       "summary": "Project and workspace favorites can select their own theme, also applied when opening the same item from Recents, without changing other sessions or shared project settings.",
       "to_version": "0.1.717"
+    },
+    {
+      "delta": {
+        "build": 9
+      },
+      "from_version": "0.1.717",
+      "merge_sha": "e1e40c920ff4e0ea68001f235daa6978b156b488",
+      "pr": 306,
+      "summary": "Open project files in another tab from their context menu or with a double-click, retaining the project sidebar, and simplify navigation by removing workspace grouping.",
+      "to_version": "0.1.726"
     }
   ],
   "initial_version": "0.1.56",
@@ -707,5 +717,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.717"
+  "version": "0.1.726"
 }

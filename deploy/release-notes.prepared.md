@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.726
+
+- #305 Updated: simplify project navigation and open files in tabs ([#306](https://github.com/PinedaTec-EU/LeonardoMD/pull/306))
+
+<p>Open project files in another tab from their context menu or with a double-click, retaining the project sidebar, and simplify navigation by removing workspace grouping.</p>
+
+Source: `e1e40c920ff4e0ea68001f235daa6978b156b488`. Delta: `{"build": 9}`.
+
 ## 0.1.717
 
 - #300 Added: favorite themes with isolated appearance (#303, #304) ([#301](https://github.com/PinedaTec-EU/LeonardoMD/pull/301))
