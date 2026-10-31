@@ -15,7 +15,10 @@ final class ExtensionRecommendationVisualTests: XCTestCase {
         defer { LanguageSettings.shared.language = previous }
         let session = AppSession(preferencesURL: directory.appendingPathComponent("preferences-fixture.json"))
         defer { session.stop() }
-        for language in AppLanguage.allCases {
+        let requestedLanguage = ProcessInfo.processInfo.environment["LEONARDO_NATIVE_CAPTURE_LANGUAGE"]
+        let languages = AppLanguage.allCases.filter { requestedLanguage == nil || requestedLanguage == $0.rawValue }
+        XCTAssertFalse(languages.isEmpty, "Native capture language must be en or es")
+        for language in languages {
             LanguageSettings.shared.language = language
             for project in [false, true] {
                 let request = ExtensionRecommendation(document: URL(fileURLWithPath: "/tmp/guide.mdlf"),
