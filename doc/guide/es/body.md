@@ -1,4 +1,4 @@
-![Leonardo: un taller de ideas, documentos y conocimiento](assets/cover.png)
+<img src="assets/cover.png" alt="Leonardo: un taller de ideas, documentos y conocimiento" style="width:100%;height:240px;object-fit:cover;object-position:center 40%;border-radius:12px">
 
 # Tu guía de Leonardo
 Lee, practica y comparte tus documentos.

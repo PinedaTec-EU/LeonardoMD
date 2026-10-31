@@ -1,4 +1,4 @@
-![Leonardo: a workshop for ideas, documents and knowledge](assets/cover.png)
+<img src="assets/cover.png" alt="Leonardo: a workshop for ideas, documents and knowledge" style="width:100%;height:240px;object-fit:cover;object-position:center 40%;border-radius:12px">
 
 # Your Leonardo guide
 Read, practise and share your documents.

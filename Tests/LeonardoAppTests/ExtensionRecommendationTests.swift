@@ -1,4 +1,6 @@
 import Foundation
+import AppKit
+import SwiftUI
 import XCTest
 import LeonardoCore
 @testable import LeonardoApp
@@ -88,6 +90,24 @@ final class ExtensionRecommendationTests: XCTestCase {
         XCTAssertNil(state.prompt)
     }
 
+    func testPendingConsentIsInvalidatedWhenSettingsChangeAndStaleSourceCannotActivate() throws {
+        let (session, state, preferences, _) = fixture()
+        defer { session.stop() }
+        state.prepare(for: session, eligible: true)
+        session.globalPreferences.markdown.mermaidEnabled = true
+        state.prepare(for: session, eligible: true)
+        XCTAssertNil(state.prompt)
+        state.resetOpening()
+        state.detectedSource = session.content
+        state.detected = [.charts]
+        state.prepare(for: session, eligible: true)
+        let request = try XCTUnwrap(state.prompt)
+        session.content = "different source"
+        state.respond(to: request, activate: true, suppress: [.charts], session: session)
+        XCTAssertFalse(session.features.vegaLiteEnabled)
+        XCTAssertTrue(preferences.suppressed.isEmpty)
+    }
+
     func testStandaloneActivationAndNewOpening() throws {
         let (session, state, _, _) = fixture()
         defer { session.stop() }
@@ -99,4 +119,46 @@ final class ExtensionRecommendationTests: XCTestCase {
         XCTAssertNil(state.prompt)
         XCTAssertTrue(state.detected.isEmpty)
     }
+    func testNativeSheetWaitsForActiveTabAndPreferencesThenOffersDetectedContent() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("diagram.md")
+        try "```mermaid\ngraph LR\nA-->B\n```".write(to: file, atomically: true, encoding: .utf8)
+        let suiteName = "ExtensionSheet-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let session = AppSession(preferencesURL: directory.appendingPathComponent("preferences.json"),
+                                 extensionWarningPreferences: ExtensionWarningPreferences(defaults: defaults))
+        defer { session.stop() }
+        session.authorizePath = { _, _ in }
+        await session.initialize()
+        await session.open(file)
+        let view = NSHostingView(rootView: WorkspaceView(session: session, isActiveTab: false))
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 850),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = view
+        window.orderFront(nil)
+        defer { window.close() }
+        for _ in 0..<150 {
+            if session.extensionRecommendations.detected.contains(.mermaid) { break }
+            try await Task.sleep(for: .milliseconds(30))
+        }
+        XCTAssertTrue(session.extensionRecommendations.detected.contains(.mermaid))
+        XCTAssertNil(session.extensionRecommendations.prompt)
+        session.showPreferences = true
+        view.rootView = WorkspaceView(session: session, isActiveTab: true)
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertNil(session.extensionRecommendations.prompt)
+        session.showPreferences = false
+        for _ in 0..<150 {
+            if session.extensionRecommendations.prompt != nil && !window.sheets.isEmpty { break }
+            try await Task.sleep(for: .milliseconds(30))
+        }
+        let request = try XCTUnwrap(session.extensionRecommendations.prompt)
+        XCTAssertFalse(window.sheets.isEmpty, "Consent is a native attached sheet")
+        session.extensionRecommendations.respond(to: request, activate: false, suppress: [], session: session)
+    }
+
 }

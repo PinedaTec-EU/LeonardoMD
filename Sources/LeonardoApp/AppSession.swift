@@ -22,7 +22,7 @@ final class AppSession {
     /// an explicitly extracted workspace has a nil package URL and belongs to
     /// the user, so it is left in place.
     var packageWorkspace: LeonardoPackageWorkspace?
-    let extensionRecommendations = ExtensionRecommendations()
+    let extensionRecommendations: ExtensionRecommendations
     var leonardoFormatWarning = false
     private let formatPreferences = LeonardoFormatPreferences.shared
     var packageOpenPreference: LeonardoPackageOpenPreference {
@@ -148,8 +148,10 @@ final class AppSession {
     init(
         preferencesURL: URL = AppSession.preferencesURL,
         files: LocalProjectRepository = LocalProjectRepository(),
+        extensionWarningPreferences: ExtensionWarningPreferences = .shared,
         openSystemURL: @escaping @MainActor (URL) -> Void = { NSWorkspace.shared.open($0) }
     ) {
+        self.extensionRecommendations = ExtensionRecommendations(preferences: extensionWarningPreferences)
         self.files = files
         globalPreferencesURL = preferencesURL
         self.openSystemURL = openSystemURL

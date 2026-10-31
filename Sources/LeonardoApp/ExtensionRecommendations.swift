@@ -57,7 +57,10 @@ final class ExtensionRecommendations {
             offered = []
             resetRevision = preferences.resetRevision
         }
-        if let prompt, !matches(prompt, session: session) || !eligible {
+        if let prompt, !matches(prompt, session: session) || !eligible
+            || prompt.extensions.contains(where: {
+                session.features[keyPath: $0.flag] || preferences.suppressed.contains($0)
+            }) {
             self.prompt = nil
         }
         guard eligible, detectedSource == session.content, prompt == nil, let document = session.documentURL else { return }

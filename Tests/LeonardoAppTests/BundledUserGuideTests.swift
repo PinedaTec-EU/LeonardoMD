@@ -10,11 +10,17 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
+        let oldCopy = root.appendingPathComponent("User Guides/v2/en/Guide-v2-en.mdlz")
+        try FileManager.default.createDirectory(at: oldCopy.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let oldAnswers = Data("previous guide and saved answers".utf8)
+        try oldAnswers.write(to: oldCopy)
+        defer { XCTAssertEqual(try? Data(contentsOf: oldCopy), oldAnswers) }
         for language in AppLanguage.allCases {
             let original = try BundledUserGuide.resourceURL(language: language)
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
+            XCTAssertTrue(copy.path.contains("User Guides/v3/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
             var workspace = try LeonardoPackageTransport.open(copy)
             defer { LeonardoPackageTransport.discard(workspace) }
@@ -120,6 +126,12 @@ final class BundledUserGuideTests: XCTestCase {
             if let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
                 let directory = URL(fileURLWithPath: output).appendingPathComponent("user-guide")
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                for (name, selector) in [("diagram", ".mermaid-placeholder"), ("math", ".katex"), ("chart", ".vega-lite-placeholder")] {
+                    _ = try await web.evaluateJavaScript("document.querySelector('\(selector)').scrollIntoView({block:'center'})")
+                    try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("\(name)-\(language.rawValue).png"),
+                        language: language.rawValue, state: "Live \(name) example; built-in extension enabled")
+                }
+                _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
                 try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("guide-\(language.rawValue).png"),
                     language: language.rawValue, state: "Guide preview; all local images loaded")
                 _ = try await web.evaluateJavaScript("document.querySelector('input,textarea').scrollIntoView({block:'center'})")
