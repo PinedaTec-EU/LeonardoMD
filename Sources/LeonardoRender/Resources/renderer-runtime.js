@@ -362,7 +362,7 @@
       window.LeonardoEditing.body = payload.markdown || "";
       const rendered = window.LeonardoTables.render(payload.markdown || "", !payload.leonardo);
       root.innerHTML = sanitizeHTML(rendered);
-      const usedExtensions = window.LeonardoExtensionDetection.used(root, splitMath);
+      const usedExtensions = window.LeonardoExtensionDetection.used(root, splitMath, window.LeonardoTables.documentTokens);
       const renderedSource = payload.source;
       window.LeonardoTables.prepare(root);
       window.LeonardoLayout?.apply(root, payload);

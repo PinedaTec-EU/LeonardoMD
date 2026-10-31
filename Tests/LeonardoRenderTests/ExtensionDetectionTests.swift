@@ -57,8 +57,11 @@ final class ExtensionDetectionTests: XCTestCase {
         ```
         $x^2$ [@example] [^note]
         > [!NOTE]
+        [^note]: This definition is literal fenced code.
         ````
         Inline `$x^2$`, `[@example]`, `[^note]`, `> [!NOTE]`.
+        > `[!NOTE]`
+        > This is a quoted code example, not a callout.
         """#
         let ignored = expectation(description: "Ignore literal syntax")
         host.onDetectedExtensions = { returnedSource, used in
@@ -69,5 +72,19 @@ final class ExtensionDetectionTests: XCTestCase {
         host.apply(content: literal, baseURL: nil, configuration: .default,
                    onLinkActivation: nil, onScrollProgress: nil)
         await fulfillment(of: [ignored], timeout: 15)
+
+        let footnote = "A note[^one].\n\n[^one]: Footnote"
+        let footnoteDetected = expectation(description: "Consumed Markdown reference still recommends footnotes")
+        host.onDetectedExtensions = { returnedSource, used in
+            XCTAssertEqual(returnedSource, footnote)
+            XCTAssertEqual(used, ["markdown-extensions"])
+            footnoteDetected.fulfill()
+        }
+        host.apply(content: footnote, baseURL: nil, configuration: .default,
+                   onLinkActivation: nil, onScrollProgress: nil)
+        await fulfillment(of: [footnoteDetected], timeout: 15)
+        let consumed = try await web.evaluateJavaScript("document.querySelector('#leonardo-markdown a')?.textContent === '^one' && !document.querySelector('#leonardo-markdown').textContent.includes('[^one]')") as? Bool
+        XCTAssertEqual(consumed, true, "The ordinary parser consumed the footnote as a reference link")
+
     }
 }
