@@ -30,7 +30,7 @@ class PackageUserGuideTests(unittest.TestCase):
                 for sample in re.findall(r'^```text\n(.*?)^```$', body, re.M | re.S):
                     self.assertIn(sample, web_source)
                 self.assertIn('`assets/`', web_source)
-                name = f'Guide-v4-{language}.mdlz' 
+                name = f'Guide-v4-{language}.mdlz'
                 self.assertEqual((output / name).read_bytes(), (ROOT / 'Sources/LeonardoApp/Resources' / name).read_bytes())
                 with zipfile.ZipFile(output / name) as archive:
                     self.assertEqual(len(archive.namelist()), 12)
