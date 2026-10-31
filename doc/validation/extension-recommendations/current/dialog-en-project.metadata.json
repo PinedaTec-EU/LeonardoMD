@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-10-31T09:28:01.073136+00:00",
+  "capture": {
+    "captured_at": "2026-10-31T09:27:27.993000+00:00",
+    "route": "/native/extensions/dialog-en-project",
+    "screen": "Extension consent, project scope",
+    "browser_name": "Native AppKit / SwiftUI NSHostingView",
+    "browser_version": "Not applicable: native view, no browser engine",
+    "state": "Extension consent, project scope; language en; synthetic fixture; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "viewport_css": {
+      "width": 538,
+      "height": 600
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1076,
+    "height_px": 1200,
+    "sha256": "b66fc05aaa6dbcc9a0dc30b137cca55705d5659495f985a7cc76491ebcad0aaf"
+  },
+  "source": {
+    "revision_at_collection": "17164e6c952174784cf7436ba0510873c218acf7",
+    "tracked_changes_present": false,
+    "untracked_files_present": false
+  }
+}

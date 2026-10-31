@@ -10,7 +10,16 @@ Implementation and exact-head CI evidence: [PR #311](https://github.com/PinedaTe
 - `BundledUserGuideTests`: English/Spanish package opening, independent v3 working-copy paths, preserved v2 sentinel and saved v3 practice answers, four local images, real Mermaid SVG, KaTeX and Vega-Lite SVG.
 - `scripts/tests/test_package_user_guide.py`: deterministic packages, local PNG header and SVG assets, revision 3 metadata, required live syntax, unrelated output preservation.
 
-## Visual evidence
+## Canonical author evidence
+
+The [canonical capture bundle](current/README.md) contains original English/Spanish
+header, diagram/formula/chart, both consent scopes and reset screenshots with
+capture-time contexts and canonical image-hash/source-binding sidecars. It was
+captured from clean source `17164e6c952174784cf7436ba0510873c218acf7`; the following
+evidence-only commit changes no product code, tests, resources or build inputs.
+The PR records and verifies that source-to-reviewed-head mapping.
+
+## Supplemental CI visual evidence
 
 CI's `preview-tags-<head SHA>` artifact includes:
 
