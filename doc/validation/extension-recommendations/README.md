@@ -29,6 +29,11 @@ limitation tracked in [#187](https://github.com/PinedaTec-EU/LeonardoMD/issues/1
 those black captures are not accepted validation evidence. This does not claim a
 general fix for #187.
 
+Guide captures also wait for the post-save source acknowledgement and each
+visible generated output before snapshotting. Saving practice answers can rebuild
+the preview and reset Mermaid's lazy placeholder; a pre-save rendering assertion
+does not prove the later capture contains a diagram.
+
 The guide reuses the approved application About artwork as a locally packaged,
 compact header; no remote image dependency or generated mock validation is used.
 Existing complex-math issues [#272](https://github.com/PinedaTec-EU/LeonardoMD/issues/272)

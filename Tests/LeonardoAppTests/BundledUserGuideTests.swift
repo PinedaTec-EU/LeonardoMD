@@ -103,6 +103,7 @@ final class BundledUserGuideTests: XCTestCase {
             session.setMermaid(true, project: false)
             session.setMath(true, project: false)
             session.setVegaLite(true, project: false)
+            await session.settingsTask?.value
             session.mode = .fill
             let hosting = NSHostingView(rootView: WorkspaceView(session: session))
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 850),
@@ -126,8 +127,12 @@ final class BundledUserGuideTests: XCTestCase {
             if let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
                 let directory = URL(fileURLWithPath: output).appendingPathComponent("user-guide")
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                let encodedSource = try XCTUnwrap(String(data: JSONEncoder().encode(session.content), encoding: .utf8))
+                try await waitFor("window.LeonardoEditing.currentSource() === \(encodedSource)", in: web)
                 for (name, selector) in [("diagram", ".mermaid-placeholder"), ("math", ".katex"), ("chart", ".vega-lite-placeholder")] {
                     _ = try await web.evaluateJavaScript("document.querySelector('\(selector)').scrollIntoView({block:'center'})")
+                    let readySelector = name == "math" ? selector : selector + " svg"
+                    try await waitFor("document.querySelector('\(readySelector)') !== null", in: web)
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Live \(name) example; built-in extension enabled")
                 }
