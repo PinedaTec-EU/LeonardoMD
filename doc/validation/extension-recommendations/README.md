@@ -5,7 +5,7 @@ Implementation and exact-head CI evidence: [PR #311](https://github.com/PinedaTe
 
 ## Coverage
 
-- `ExtensionDetectionTests`: real WKWebView, all five extensions detected with their engines disabled; fenced/inline/quoted literal examples ignored; consumed footnote definitions detected; incremental source identity retained.
+- `ExtensionDetectionTests`: real WKWebView, all five extensions detected with their engines disabled; fenced/inline/quoted/indented literal examples ignored; consumed footnote definitions detected; incremental source identity retained.
 - `ExtensionRecommendationTests`: grouped disabled-only selection, inactive/preferences deferral and actual attached native sheet, per-opening deferral, per-extension persistence, reset without flag changes, project/global activation, preserved unrelated flags and stale consent rejection.
 - `BundledUserGuideTests`: English/Spanish package opening, independent v3 working-copy paths, preserved v2 sentinel and saved v3 practice answers, four local images, real Mermaid SVG, KaTeX and Vega-Lite SVG.
 - `scripts/tests/test_package_user_guide.py`: deterministic packages, local PNG header and SVG assets, revision 3 metadata, required live syntax, unrelated output preservation.

@@ -26,26 +26,43 @@ final class ExtensionRecommendationVisualTests: XCTestCase {
                     .background(session.surfaceColor).modifier(SessionAppearance(session: session)))
                 let size = NSSize(width: 538, height: 600)
                 let name = "dialog-\(language.rawValue)-\(project ? "project" : "global").png"
-                try await NativeViewCaptureSupport.capture(view, size: size,
-                    to: directory.appendingPathComponent(name), title: "Built-in extension recommendation", beforeCapture: { captured in
-                        captured.appearance = NSAppearance(named: .aqua)
-                        captured.window?.appearance = NSAppearance(named: .aqua)
-                    })
-                try NativeViewCaptureSupport.writeProvenance(for: directory.appendingPathComponent(name),
-                    screen: "Extension consent, \(project ? "project" : "global") scope", size: size, language: language.rawValue)
+                try await capture(view, size: size, to: directory.appendingPathComponent(name),
+                                  language: language.rawValue, screen: "Extension consent, \(project ? "project" : "global") scope")
             }
             let view = NSHostingView(rootView: ExtensionPreferences(session: session, projectScope: false)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(session.surfaceColor).modifier(SessionAppearance(session: session)))
-            try await NativeViewCaptureSupport.capture(view, size: NSSize(width: 560, height: 820),
-                to: directory.appendingPathComponent("reset-\(language.rawValue).png"), title: "Extension warnings reset", beforeCapture: { captured in
-                    captured.appearance = NSAppearance(named: .aqua)
-                    captured.window?.appearance = NSAppearance(named: .aqua)
-                })
-            try NativeViewCaptureSupport.writeProvenance(for: directory.appendingPathComponent("reset-\(language.rawValue).png"),
-                screen: "Extension preferences and warning reset", size: NSSize(width: 560, height: 820), language: language.rawValue)
+            try await capture(view, size: NSSize(width: 560, height: 820),
+                              to: directory.appendingPathComponent("reset-\(language.rawValue).png"),
+                              language: language.rawValue, screen: "Extension preferences and warning reset")
         }
         try "Native SwiftUI component captures, en/es; dialog both preference scopes; five built-in extensions; isolated fixture; no fresh-process startup claim. Head: \(ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "working tree")\n".write(
             to: directory.appendingPathComponent("provenance.txt"), atomically: true, encoding: .utf8)
     }
+
+    private func capture(_ view: NSView, size: NSSize, to url: URL, language: String, screen: String) async throws {
+        var context: [String: Any] = [
+            "route": "/native/extensions/\(url.deletingPathExtension().lastPathComponent)",
+            "screen": screen,
+            "state": "\(screen); language \(language); synthetic fixture; viewport_css is the measured native-point equivalent; CSS is not applicable",
+            "capture_mode": "element", "data_provenance": "synthetic",
+            "browser_name": "Native AppKit / SwiftUI NSHostingView",
+            "browser_version": "Not applicable: native view, no browser engine",
+            "os": ProcessInfo.processInfo.operatingSystemVersionString,
+            "source_sha": ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local"
+        ]
+        try await NativeViewCaptureSupport.capture(view, size: size, to: url, title: screen, beforeCapture: { captured in
+            captured.appearance = NSAppearance(named: .aqua)
+            captured.window?.appearance = NSAppearance(named: .aqua)
+            let bounds = captured.bounds.size
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            context["captured_at"] = formatter.string(from: Date())
+            context["native_viewport_points"] = ["width": bounds.width, "height": bounds.height]
+            context["viewport_css"] = ["width": Int(bounds.width), "height": Int(bounds.height)]
+        })
+        try JSONSerialization.data(withJSONObject: context, options: [.prettyPrinted, .sortedKeys])
+            .write(to: url.deletingPathExtension().appendingPathExtension("context.json"))
+    }
+
 }

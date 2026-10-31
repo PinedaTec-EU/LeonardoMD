@@ -4,7 +4,9 @@
     if (Object.keys(tokens?.links || {}).some(label => /^\^[^\]\s]+$/.test(label))) return true;
     for (const token of tokens || []) {
       if (["code", "codespan", "html", "escape"].includes(token.type)) continue;
-      if (token.type === "blockquote" && /^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]/i.test(token.text || "")) return true;
+      const first = token.type === "blockquote" ? token.tokens?.[0] : null;
+      const quoteText = first?.type === "paragraph" ? String(first.text || "") : "";
+      if (/^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*/i.test(quoteText)) return true;
       if (token.type === "link" && /^\[\^[^\]\s]+\]$/.test(token.raw || "")) return true;
       if (token.type === "text" && !token.tokens && /\[\^[^\]\s]+\]/.test(token.raw || "")) return true;
       const children = [...(token.tokens || []), ...(token.items || []).flatMap(item => item.tokens || []),

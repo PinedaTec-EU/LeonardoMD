@@ -62,6 +62,9 @@ final class ExtensionDetectionTests: XCTestCase {
         Inline `$x^2$`, `[@example]`, `[^note]`, `> [!NOTE]`.
         > `[!NOTE]`
         > This is a quoted code example, not a callout.
+
+        >     [!NOTE]
+        >     This is indented literal code inside a quote.
         """#
         let ignored = expectation(description: "Ignore literal syntax")
         host.onDetectedExtensions = { returnedSource, used in
