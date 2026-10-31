@@ -37,7 +37,7 @@ struct ExtensionPreferences: View {
                               enabled: Binding(get: { features.markdownExtensionsEnabled },
                                                set: { session.setMarkdownExtensions($0, project: projectScope) }))
                 VStack(alignment: .leading, spacing: 6) {
-                    Button(L10n.text("Reset extension warnings")) { ExtensionWarningPreferences.shared.reset() }
+                    Button(L10n.text("Reset extension warnings")) { session.extensionRecommendations.preferences.reset() }
                         .accessibilityIdentifier("reset-extension-warnings")
                     Text(L10n.text("Ask again about disabled extensions in documents. This does not change enabled extensions."))
                         .font(.caption).foregroundStyle(.secondary)

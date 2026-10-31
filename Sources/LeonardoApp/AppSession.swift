@@ -9,7 +9,14 @@ import OSLog
 
 @MainActor @Observable
 final class AppSession {
-    var documentURL: URL? { didSet { if documentURL != oldValue { editHistory = DocumentEditHistory(); extensionRecommendations.resetOpening() } } }
+    var documentURL: URL? {
+        didSet {
+            if documentURL != oldValue {
+                editHistory = DocumentEditHistory()
+                extensionRecommendations.resetOpening()
+            }
+        }
+    }
     /// The logical document format is independent from the bytes currently
     /// loaded into the editor. For an internally opened `.mdlz`, `documentURL`
     /// points at the extracted `.mdlf`/`.mdlr` while `documentSourceURL`

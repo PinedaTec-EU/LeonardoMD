@@ -7,13 +7,21 @@ import LeonardoCore
 
 @MainActor
 final class ExtensionRecommendationTests: XCTestCase {
-    private func fixture() -> (AppSession, ExtensionRecommendations, ExtensionWarningPreferences, UserDefaults) {
-        let defaults = UserDefaults(suiteName: "ExtensionRecommendations-\(UUID().uuidString)")!
+    private func fixture() throws -> (AppSession, ExtensionRecommendations, ExtensionWarningPreferences, UserDefaults) {
+        let suite = "ExtensionRecommendations-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let preferences = ExtensionWarningPreferences(defaults: defaults)
         let state = ExtensionRecommendations(preferences: preferences)
-        let session = AppSession(preferencesURL: FileManager.default.temporaryDirectory
-            .appendingPathComponent("ExtensionRecommendations-\(UUID().uuidString).json"))
-        session.documentURL = URL(fileURLWithPath: "/tmp/extension-example.md")
+        let session = AppSession(preferencesURL: directory.appendingPathComponent("preferences.json"),
+                                 extensionWarningPreferences: preferences)
+        addTeardownBlock { @MainActor in
+            await session.settingsTask?.value
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        session.documentURL = directory.appendingPathComponent("example.md")
         session.content = "diagram"
         session.globalPreferences.markdown = MarkdownFeatures()
         state.detectedSource = session.content
@@ -22,7 +30,7 @@ final class ExtensionRecommendationTests: XCTestCase {
     }
 
     func testGroupedDisabledOnlyAndNotNowDoesNotRepeat() throws {
-        let (session, state, _, _) = fixture()
+        let (session, state, _, _) = try fixture()
         defer { session.stop() }
         session.globalPreferences.markdown.mathEnabled = true
         state.prepare(for: session, eligible: false)
@@ -37,7 +45,7 @@ final class ExtensionRecommendationTests: XCTestCase {
     }
 
     func testSuppressionPersistsPerExtensionAndResetReoffersWithoutChangingFlags() throws {
-        let (session, state, preferences, defaults) = fixture()
+        let (session, state, preferences, defaults) = try fixture()
         defer { session.stop() }
         state.prepare(for: session, eligible: true)
         let request = try XCTUnwrap(state.prompt)
@@ -58,9 +66,9 @@ final class ExtensionRecommendationTests: XCTestCase {
     }
 
     func testProjectActivationPreservesGlobalAndUnrelatedFlags() throws {
-        let (session, state, _, _) = fixture()
+        let (session, state, _, _) = try fixture()
         defer { session.stop() }
-        session.projectURL = URL(fileURLWithPath: "/tmp/example-project")
+        session.projectURL = session.globalPreferencesURL.deletingLastPathComponent().appendingPathComponent("project")
         session.globalPreferences.markdown.citationsEnabled = true
         state.prepare(for: session, eligible: true)
         let request = try XCTUnwrap(state.prompt)
@@ -75,11 +83,11 @@ final class ExtensionRecommendationTests: XCTestCase {
     }
 
     func testStaleConsentCannotChangeNewDocumentOrProject() throws {
-        let (session, state, preferences, _) = fixture()
+        let (session, state, preferences, _) = try fixture()
         defer { session.stop() }
         state.prepare(for: session, eligible: true)
         let request = try XCTUnwrap(state.prompt)
-        session.projectURL = URL(fileURLWithPath: "/tmp/different-project")
+        session.projectURL = session.globalPreferencesURL.deletingLastPathComponent().appendingPathComponent("different-project")
         state.respond(to: request, activate: true, suppress: [.mermaid], session: session)
         XCTAssertFalse(session.features.mermaidEnabled)
         XCTAssertTrue(preferences.suppressed.isEmpty)
@@ -91,7 +99,7 @@ final class ExtensionRecommendationTests: XCTestCase {
     }
 
     func testPendingConsentIsInvalidatedWhenSettingsChangeAndStaleSourceCannotActivate() throws {
-        let (session, state, preferences, _) = fixture()
+        let (session, state, preferences, _) = try fixture()
         defer { session.stop() }
         state.prepare(for: session, eligible: true)
         session.globalPreferences.markdown.mermaidEnabled = true
@@ -109,7 +117,7 @@ final class ExtensionRecommendationTests: XCTestCase {
     }
 
     func testStandaloneActivationAndNewOpening() throws {
-        let (session, state, _, _) = fixture()
+        let (session, state, _, _) = try fixture()
         defer { session.stop() }
         state.prepare(for: session, eligible: true)
         state.respond(to: try XCTUnwrap(state.prompt), activate: true, suppress: [], session: session)

@@ -23,7 +23,7 @@ Tracking: [#290](https://github.com/PinedaTec-EU/LeonardoMD/issues/290).
 
 Every language in `AppLanguage.allCases` must have a matching guide resource.
 `BundledUserGuideTests` checks all supported languages; Help and Welcome resolve
-the current `LanguageSettings.shared.language` on every opening. Native process
+the current `LanguageSettings.shared.language` on every opening. Historical v2 native process
 acceptance covers changing the preference between Spanish and English; see
 [packaged guide acceptance](../validation/user-guide/README.md).
 
@@ -32,3 +32,5 @@ per-example extension requirements and consent/reset instructions in both langua
 The app opens a separate v3 copy; existing v2 copies and practice answers stay intact.
 Native WebKit tests verify all four images and the three generated outputs.
 Tracking: [#310](https://github.com/PinedaTec-EU/LeonardoMD/issues/310).
+
+Revision 3 component rendering and recommendation evidence: [validation](../validation/extension-recommendations/README.md). Fresh packaged-process acceptance for this revision is not claimed.
