@@ -10,11 +10,19 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
+        let oldCopies = [2, 3].map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
+        let oldAnswers = Data("previous guide and saved answers".utf8)
+        for oldCopy in oldCopies {
+            try FileManager.default.createDirectory(at: oldCopy.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try oldAnswers.write(to: oldCopy)
+        }
+        defer { for oldCopy in oldCopies { XCTAssertEqual(try? Data(contentsOf: oldCopy), oldAnswers) } }
         for language in AppLanguage.allCases {
             let original = try BundledUserGuide.resourceURL(language: language)
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
+            XCTAssertTrue(copy.path.contains("User Guides/v4/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
             var workspace = try LeonardoPackageTransport.open(copy)
             defer { LeonardoPackageTransport.discard(workspace) }
@@ -23,7 +31,7 @@ final class BundledUserGuideTests: XCTestCase {
             XCTAssertTrue(document.isForm)
             XCTAssertEqual(document.metadata.fields.count, 3)
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:
-                workspace.directoryURL.appendingPathComponent("assets").path).count, 3)
+                workspace.directoryURL.appendingPathComponent("assets").path).count, 11)
             document.metadata.values["practiceName"] = .string("Ada")
             try LeonardoFormatParser.serialize(document).write(to: workspace.documentURL, atomically: true, encoding: .utf8)
             workspace = try LeonardoPackageTransport.save(workspace)
@@ -94,6 +102,10 @@ final class BundledUserGuideTests: XCTestCase {
             await session.open(copy, packagePreference: .package)
             XCTAssertEqual(session.documentStorage, .package)
             XCTAssertNil(session.errorMessage)
+            session.setMermaid(true, project: false)
+            session.setMath(true, project: false)
+            session.setVegaLite(true, project: false)
+            await session.settingsTask?.value
             session.mode = .fill
             let hosting = NSHostingView(rootView: WorkspaceView(session: session))
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 850),
@@ -103,8 +115,14 @@ final class BundledUserGuideTests: XCTestCase {
             window.orderFront(nil)
             defer { window.close() }
             let web = try await findWebView(in: hosting)
-            try await waitFor("document.images.length === 3 && Array.from(document.images).every(i => i.naturalWidth > 0)", in: web)
+            _ = try await web.evaluateJavaScript("document.querySelectorAll('img').forEach(i => i.loading = 'eager')")
+            try await waitFor("document.images.length === 11 && Array.from(document.images).every(i => i.naturalWidth > 0)", in: web)
             try await waitFor("document.querySelectorAll('input,textarea').length >= 3", in: web)
+            try await waitFor("document.querySelector('.katex') !== null && document.querySelector('.katex-error') === null", in: web)
+            try await waitFor("document.querySelector('.vega-lite-placeholder svg') !== null", in: web)
+            _ = try await web.evaluateJavaScript("document.querySelector('.mermaid-placeholder').scrollIntoView({block:'center'})")
+            try await waitFor("document.querySelector('.mermaid-placeholder svg') !== null", in: web)
+            _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
             XCTAssertTrue(session.updateLeonardoField("practiceName", text: "Ada"))
             await session.save()
             XCTAssertNil(session.errorMessage)
@@ -112,6 +130,21 @@ final class BundledUserGuideTests: XCTestCase {
             if let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
                 let directory = URL(fileURLWithPath: output).appendingPathComponent("user-guide")
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                let encodedSource = try XCTUnwrap(String(data: JSONEncoder().encode(session.content), encoding: .utf8))
+                try await waitFor("window.LeonardoEditing.currentSource() === \(encodedSource)", in: web)
+                for (name, selector) in [("diagram", ".mermaid-placeholder"), ("math", ".katex"), ("chart", ".vega-lite-placeholder")] {
+                    _ = try await web.evaluateJavaScript("document.querySelector('\(selector)').scrollIntoView({block:'center'})")
+                    let readySelector = name == "math" ? selector : selector + " svg"
+                    try await waitFor("document.querySelector('\(readySelector)') !== null", in: web)
+                    try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("\(name)-\(language.rawValue).png"),
+                        language: language.rawValue, state: "Live \(name) example; built-in extension enabled")
+                }
+                for name in ["palette", "activation", "mobile"] {
+                    _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
+                    try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("section-\(name)-\(language.rawValue).png"),
+                        language: language.rawValue, state: "Detailed chapter with original \(name) screenshot; all images loaded")
+                }
+                _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
                 try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("guide-\(language.rawValue).png"),
                     language: language.rawValue, state: "Guide preview; all local images loaded")
                 _ = try await web.evaluateJavaScript("document.querySelector('input,textarea').scrollIntoView({block:'center'})")

@@ -362,6 +362,8 @@
       window.LeonardoEditing.body = payload.markdown || "";
       const rendered = window.LeonardoTables.render(payload.markdown || "", !payload.leonardo);
       root.innerHTML = sanitizeHTML(rendered);
+      const usedExtensions = window.LeonardoExtensionDetection.used(root, splitMath, window.LeonardoTables.documentTokens);
+      const renderedSource = payload.source;
       window.LeonardoTables.prepare(root);
       window.LeonardoLayout?.apply(root, payload);
       window.LeonardoTableResizing.prepare(root, payload);
@@ -392,7 +394,8 @@
         postMessage("leonardoReady", {
           mermaid: features.mermaid,
           math: features.math,
-          durationMs: performance.now() - renderStart
+          durationMs: performance.now() - renderStart,
+          source: renderedSource, usedExtensions
         });
       }).catch(() => {
         if (generation !== renderGeneration) return;
@@ -402,7 +405,7 @@
         root.appendChild(error);
         window.LeonardoEditing.prepare(root);
         installInteractions();
-        postMessage("leonardoReady", { mermaid: features.mermaid, math: features.math });
+        postMessage("leonardoReady", { mermaid: features.mermaid, math: features.math, source: renderedSource, usedExtensions });
       });
     } catch (_) {
       root.textContent = "The Markdown preview could not be rendered.";

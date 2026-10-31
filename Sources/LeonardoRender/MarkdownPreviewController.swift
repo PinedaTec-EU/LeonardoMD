@@ -7,6 +7,7 @@ import WebKit
 public final class MarkdownPreviewController: ObservableObject {
     @Published public private(set) var isReady = false
 
+    public var onDetectedExtensions: ((String, [String]) -> Void)?
     public var onEdit: ((String, String) -> Bool)?
     public var onTableResize: ((String, LeonardoTableResize) async -> Bool)?
     public var onFormEdit: ((String, [String: LeonardoJSONValue]) -> String?)?
@@ -78,6 +79,7 @@ public final class MarkdownPreviewController: ObservableObject {
     }
 
     func refreshCallbacks(on host: MarkdownPreviewHost) {
+        host.onDetectedExtensions = onDetectedExtensions
         host.onTableResize = onTableResize
         host.onEdit = onEdit
         host.onFormEdit = onFormEdit

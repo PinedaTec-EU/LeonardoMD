@@ -63,7 +63,7 @@ iterations completes filesystem I/O ([#226](https://github.com/PinedaTec-EU/Leon
 
 External package monitoring compares the source MDLZ digest off the main actor, rather than its extracted document. Results are applied only while the complete source/extraction identity remains unchanged and no file operation is in progress, including after flushing preview edits. Clean sessions reload through the existing package workspace replacement; dirty sessions retain both versions behind the Reload/Save copy conflict choice. Tracking: [#275](https://github.com/PinedaTec-EU/LeonardoMD/issues/275).
 
-Bundled guide (#290): `BundledUserGuide` copies localized `Guide-v2-en/es.mdlz` from Bundle.module to Application Support/LeonardoMD/User Guides/v2/<locale>, preserving existing practice answers. Help and Welcome share DocumentTabs.openUserGuide and normal external-document tab opening. Editorial sources and deterministic SVG/package generator: `doc/guide`, `scripts/package-user-guide.py`; native tests cover transport, saved-copy isolation, images and form controls. Tracking: [#290](https://github.com/PinedaTec-EU/LeonardoMD/issues/290).
+Bundled guide (#290): `BundledUserGuide` copies localized `Guide-v4-en/es.mdlz` from Bundle.module to Application Support/LeonardoMD/User Guides/v4/<locale>, preserving existing practice answers. Help and Welcome share DocumentTabs.openUserGuide and normal external-document tab opening. Editorial sources and deterministic SVG/package generator: `doc/guide`, `scripts/package-user-guide.py`; native tests cover transport, saved-copy isolation, images and form controls. Tracking: [#290](https://github.com/PinedaTec-EU/LeonardoMD/issues/290).
 
 Package conflict recovery ([#308](https://github.com/PinedaTec-EU/LeonardoMD/issues/308))
 lives in `SessionConflictCopy.swift`. A package Save copy requires MDLZ, uses
@@ -73,3 +73,13 @@ the session. Preserve answers, image bytes, source archive and failure state;
 text-only saving is reserved for local-document copies. Destination/source and
 workspace containment checks use `ProcessFileLock.canonicalURL` for filesystem-aware
 case/Unicode identity; folded coordination URLs must never be used for I/O.
+
+Guide maintenance (#310): `doc/guide/feature-coverage.md` maps current surfaces to
+19 bilingual chapters. `.skills/leonardo-user-guide/SKILL.md`, AGENTS and the PR
+template require help updates with visible feature changes (or an internal-only
+rationale). Locale PNGs are packaged; provenance JSON remains repository-only.
+Original UI screenshots and fresh guide-render validation serve different roles.
+
+The web manuals (English/Spanish) are generated reading editions of the bundled
+guide sources via `package-user-guide.py --web-output doc`; this also corrects
+the obsolete inspector filling instructions tracked by [#225](https://github.com/PinedaTec-EU/LeonardoMD/issues/225).

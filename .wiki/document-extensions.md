@@ -35,3 +35,15 @@ Extension preference cards use the switch as their state indicator, without a
 redundant Enabled/Disabled caption. The shared card covers global and project
 settings; `PremiumSwitchStyle` retains its accessible state value. Tracking:
 [#285](https://github.com/PinedaTec-EU/LeonardoMD/issues/285).
+
+Recommendations ([#310](https://github.com/PinedaTec-EU/LeonardoMD/issues/310)):
+`extension-detection.js` inspects the sanitized ordinary Markdown DOM before engines
+transform it and reuses `LeonardoTables.documentTokens` from the existing parser
+for footnotes/callouts (including consumed reference definitions); no disabled engine loads. Ready messages carry the exact source and
+allowlisted IDs, checked against the current host/frame/buffer. The app's
+`BuiltInExtension` maps these IDs to existing preference flags.
+`ExtensionRecommendations` owns grouped consent, per-opening offered IDs and stale
+context checks; `ExtensionWarningPreferences` owns global per-extension suppression
+and reset revision. The presenter waits for active-tab/dialog eligibility. Reset in
+Extensions re-arms recommendations without changing flags. Guide v4 is a separate
+personal copy and packages the approved About banner plus real engine examples.

@@ -500,5 +500,14 @@
   "Leonardo user guide…": "Leonardo user guide…",
   "Theme": "Theme",
   "Theme for this favorite": "Theme for this favorite",
-  "Inherit": "Inherit"
+  "Inherit": "Inherit",
+  "Reset extension warnings": "Reset extension warnings",
+  "Ask again about disabled extensions in documents. This does not change enabled extensions.": "Ask again about disabled extensions in documents. This does not change enabled extensions.",
+  "Enable document extensions?": "Enable document extensions?",
+  "This document uses disabled built-in extensions. Enable them to view its content correctly.": "This document uses disabled built-in extensions. Enable them to view its content correctly.",
+  "Activation changes your global extension preferences.": "Activation changes your global extension preferences.",
+  "Activation creates or updates this project's extension preferences.": "Activation creates or updates this project's extension preferences.",
+  "Do not ask again for this extension": "Do not ask again for this extension",
+  "Not now": "Not now",
+  "Enable extensions": "Enable extensions"
 }

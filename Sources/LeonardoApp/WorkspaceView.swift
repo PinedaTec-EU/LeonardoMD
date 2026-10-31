@@ -26,6 +26,7 @@ struct WorkspaceView: View {
             Divider()
             statusBar
         }
+        .modifier(ExtensionRecommendationPresenter(session: session, isActiveTab: isActiveTab))
         .modifier(SessionAppearance(session: session))
         .background(session.surfaceColor)
         .sheet(isPresented: $session.showPreferences) { PreferencesView(session: session).modifier(SessionAppearance(session: session)) }

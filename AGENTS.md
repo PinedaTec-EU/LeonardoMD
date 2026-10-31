@@ -27,3 +27,12 @@ Prevent the temporary QA startup failure tracked in [issue #80](https://github.c
 - If launch fails, retain the crash signature, bundle identity, available version/build, executable identity, launch method and startup logs in the canonical GitHub issue. Distinguish temporary QA failures from crashes of the packaged product and group recurrences by failure signature.
 
 This is a preventive agent workflow rule; documenting it alone does not resolve issue #80 or establish that the original QA generator has been repaired.
+
+## User help maintenance
+
+PRs that add, remove or change a user-visible feature must update the Spanish
+and English bundled help in the same PR. Apply the repository-local
+[leonardo-user-guide skill](.skills/leonardo-user-guide/SKILL.md) for those
+changes and when reviewing their help impact. Include relevant images/examples,
+regenerate the packaged guides, and record validation in the PR. Internal changes
+with no user-visible help impact must explain that conclusion in the PR.

@@ -8,6 +8,10 @@ import XCTest
 @MainActor
 enum GuideCaptureSupport {
     static func capture(_ web: WKWebView, to url: URL, language: String, state: String) async throws {
+        // A source acknowledgement/image load does not imply that a large
+        // scroll has been composited. Use a bounded settling interval: WebKit
+        // can pause requestAnimationFrame for an occluded test window.
+        try await Task.sleep(for: .milliseconds(200))
         let result = try await web.evaluateJavaScript("""
             ({width: innerWidth, height: innerHeight, userAgent: navigator.userAgent,
               devicePixelRatio: devicePixelRatio})
@@ -28,7 +32,14 @@ enum GuideCaptureSupport {
     }
 
     static func captureWelcome(_ view: NSView, size: NSSize, to url: URL, language: String) async throws {
-        var context = baseContext(language: language, state: "Welcome; empty isolated saved items")
+        try await captureNative(view, size: size, to: url, language: language,
+                                state: "Welcome; synthetic empty saved items")
+    }
+
+    static func captureNative(_ view: NSView, size: NSSize, to url: URL,
+                              language: String, state: String) async throws {
+        view.appearance = NSAppearance(named: .aqua)
+        var context = baseContext(language: language, state: state)
         try await NativeViewCaptureSupport.capture(view, size: size, to: url, beforeCapture: { capturedView in
             let bounds = capturedView.bounds.size
             context["captured_at"] = timestamp()
@@ -38,7 +49,7 @@ enum GuideCaptureSupport {
             // The shared browser-oriented schema requires this field. For a
             // native view use its measured point equivalent, explicitly labeled.
             context["viewport_css"] = ["width": Int(bounds.width), "height": Int(bounds.height)]
-            context["state"] = "Welcome; synthetic empty saved items; viewport_css is the measured native-point equivalent; CSS is not applicable"
+            context["state"] = state + "; viewport_css is the measured native-point equivalent; CSS is not applicable"
         })
         try write(context, beside: url)
     }

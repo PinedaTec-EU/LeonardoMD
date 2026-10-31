@@ -6,6 +6,11 @@ import LeonardoRender
 extension AppSession {
     var preview: some View {
         let previewDocumentURL = documentURL
+        renderer.onDetectedExtensions = { [weak self] source, used in
+            guard let self, self.documentURL == previewDocumentURL, self.content == source, !self.stopped else { return }
+            self.extensionRecommendations.detectedSource = source
+            self.extensionRecommendations.detected = Set(used.compactMap(BuiltInExtension.init(rawValue:)))
+        }
         renderer.onTableResize = { [weak self] expected, resize in
             guard let self, self.documentURL == previewDocumentURL else { return false }
             return await self.resizePreviewTable(expected: expected, resize: resize)

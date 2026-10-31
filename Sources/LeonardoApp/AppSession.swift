@@ -9,7 +9,14 @@ import OSLog
 
 @MainActor @Observable
 final class AppSession {
-    var documentURL: URL? { didSet { if documentURL != oldValue { editHistory = DocumentEditHistory() } } }
+    var documentURL: URL? {
+        didSet {
+            if documentURL != oldValue {
+                editHistory = DocumentEditHistory()
+                extensionRecommendations.resetOpening()
+            }
+        }
+    }
     /// The logical document format is independent from the bytes currently
     /// loaded into the editor. For an internally opened `.mdlz`, `documentURL`
     /// points at the extracted `.mdlf`/`.mdlr` while `documentSourceURL`
@@ -22,6 +29,7 @@ final class AppSession {
     /// an explicitly extracted workspace has a nil package URL and belongs to
     /// the user, so it is left in place.
     var packageWorkspace: LeonardoPackageWorkspace?
+    let extensionRecommendations: ExtensionRecommendations
     var leonardoFormatWarning = false
     private let formatPreferences = LeonardoFormatPreferences.shared
     var packageOpenPreference: LeonardoPackageOpenPreference {
@@ -147,8 +155,10 @@ final class AppSession {
     init(
         preferencesURL: URL = AppSession.preferencesURL,
         files: LocalProjectRepository = LocalProjectRepository(),
+        extensionWarningPreferences: ExtensionWarningPreferences = .shared,
         openSystemURL: @escaping @MainActor (URL) -> Void = { NSWorkspace.shared.open($0) }
     ) {
+        self.extensionRecommendations = ExtensionRecommendations(preferences: extensionWarningPreferences)
         self.files = files
         globalPreferencesURL = preferencesURL
         self.openSystemURL = openSystemURL

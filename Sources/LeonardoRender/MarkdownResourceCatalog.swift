@@ -25,13 +25,14 @@ enum MarkdownResource: String, CaseIterable {
     case citations = "leonardo-citations.js"
     case markdownExtras = "markdown-extras.js"
     case markdownExtraStyles = "markdown-extras.css"
+    case extensionDetection = "extension-detection.js"
     case runtime = "renderer-runtime.js"
 
     var mimeType: String {
         switch self {
         case .katexStyles, .previewStyles, .formStyles, .tableResizeStyles, .markdownExtraStyles:
             return "text/css"
-        case .extensionEngines, .vegaEngine, .vegaCharts, .citationEngine, .citations, .markdownExtras, .marked, .dompurify, .highlight, .mermaid, .katex, .previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .imageLoading, .runtime:
+        case .extensionDetection, .extensionEngines, .vegaEngine, .vegaCharts, .citationEngine, .citations, .markdownExtras, .marked, .dompurify, .highlight, .mermaid, .katex, .previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .imageLoading, .runtime:
             return "text/javascript"
         }
     }
@@ -63,7 +64,7 @@ enum MarkdownResourceCatalog {
         if configuration.allowsMarkdownExtensions {
             resources.append(contentsOf: [.markdownExtras, .markdownExtraStyles])
         }
-        resources.append(contentsOf: [.previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .imageLoading, .runtime])
+        resources.append(contentsOf: [.previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .imageLoading, .extensionDetection, .runtime])
         return resources
     }
 

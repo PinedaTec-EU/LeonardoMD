@@ -40,3 +40,23 @@ PDF export waits for charts and bibliography rendering before capture.
 Footnote and citation output and chart graphics are derived from source. Edit
 their source through the raw Markdown editor. Existing HTML `details`/`summary`
 blocks need no additional plugin; custom tabs are outside this extension set.
+
+## Recommendations and warning preferences
+
+When the active document preview contains syntax for a disabled built-in extension,
+Leonardo offers one grouped dialog. Literal fenced and inline code examples are
+excluded. No disabled engine is loaded for detection. The dialog states whether
+activation changes global preferences (standalone document) or creates/updates the
+current project's override. Activation requires consent and preserves other flags.
+
+Each extension has its own **Do not ask again for this extension** checkbox, stored
+on this Mac. **Not now** defers the offered extensions for this document opening.
+Dismissal also avoids repeatedly prompting while editing. Recommendations wait for
+other document dialogs and inactive tabs. Changing the document, source or project
+invalidates pending consent.
+
+**Preferences → Extensions → Reset extension warnings** clears only these extension
+suppressions and allows recommendations again, including for the current document
+after leaving preferences. It does not reset enabled extensions or other app warnings.
+The bundled guide demonstrates Mermaid, Math and Charts with local assets and data.
+Tracking: [#310](https://github.com/PinedaTec-EU/LeonardoMD/issues/310).

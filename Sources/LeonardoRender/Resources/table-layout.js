@@ -5,6 +5,7 @@
   const directive = /^<!--\s*leonardo:table\s+widths="([^"]+)"\s*-->\s*$/;
   let allowsLegacyWidths = true;
   let tableRenderKey = "";
+  let documentTokens = [];
   const maximumCharacters = 200;
   const automaticMinimumCharacters = 12;
   const horizontalCellPadding = 1.5;
@@ -52,7 +53,11 @@
   const parser = new window.marked.Marked({
     gfm: true,
     breaks: false,
-    hooks: { processAllTokens: (tokens) => window.LeonardoEditing.annotate(allowsLegacyWidths ? annotateTables(tokens) : tokens) },
+    hooks: { processAllTokens: (tokens) => {
+      // Share the existing parse with feature detection, including consumed reference definitions.
+      documentTokens = tokens;
+      return window.LeonardoEditing.annotate(allowsLegacyWidths ? annotateTables(tokens) : tokens);
+    } },
     renderer: {
       table: sizedTable,
       text(token) {
@@ -72,6 +77,7 @@
   });
 
   window.LeonardoTables = {
+    get documentTokens() { return documentTokens; },
     render(markdown, legacyWidths = true) {
       allowsLegacyWidths = legacyWidths;
       tableRenderKey = Array.from(crypto.getRandomValues(new Uint32Array(4))).join("-");
