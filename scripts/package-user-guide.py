@@ -2,7 +2,6 @@
 """Build deterministic offline guide packages with the canonical MDLZ validator."""
 import argparse
 import json
-import re
 import shutil
 from pathlib import Path
 import sys
@@ -95,7 +94,8 @@ def write_web_guide(language, directory):
     # The source stays authoritative; web only adapts transport paths and controls.
     body = cover.replace("assets/cover.png", "../Sources/LeonardoApp/Resources/AboutBanner.png")
     body += f"\n\n# {title}\n\n{switch}\n\n{notice}\n" + rest
-    body = re.sub(r"\{\{field:([A-Za-z0-9_]+)\}\}", r"`{{field:\1}}`", body)
+    # Ordinary web Markdown displays these placeholders literally. Leave all
+    # source bytes intact, including copyable MDLF examples inside code fences.
     body = body.replace("assets/", f"guide/{language}/assets/")
     for name, (title, labels) in ILLUSTRATIONS[language].items():
         folder = directory / "guide" / "illustrations"

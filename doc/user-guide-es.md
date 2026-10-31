@@ -124,7 +124,7 @@ Ejemplo mínimo de fuente Leonardo, para estudiar o copiar en un archivo nuevo `
 }
 ---
 # Solicitud
-Nombre: `{{field:nombre}}`
+Nombre: {{field:nombre}}
 ```
 
 Las definiciones van en `fields`, las respuestas en `values` y la presentación en el cuerpo y `layout`. Mantén los identificadores de campo aunque cambies sus etiquetas. No pegues respuestas en el cuerpo sustituyendo los marcadores si necesitas conservar un formulario interactivo.
@@ -133,13 +133,13 @@ Las definiciones van en `fields`, las respuestas en `values` y la presentación 
 
 Esta guía también es un formulario. Selecciona **Rellenar formulario** en el control de modo de la barra. Rellena estos campos dentro de la página; no necesitas desbloquear la estructura.
 
-Tu nombre de prueba: `{{field:practiceName}}`
+Tu nombre de prueba: {{field:practiceName}}
 
 ¿Qué quieres crear con Leonardo?
 
-`{{field:practiceGoal}}`
+{{field:practiceGoal}}
 
-He comprobado el formato y el destino antes de compartir: `{{field:practiceReady}}`
+He comprobado el formato y el destino antes de compartir: {{field:practiceReady}}
 
 Guarda (⌘S), cierra la pestaña y vuelve a abrir la guía desde Ayuda: tus respuestas seguirán en la copia personal. Para obtener una respuesta destinada a otro usuario, usa **Exportar respuesta Leonardo** en la barra (icono de documento con flecha). Como esta guía contiene imágenes, la respuesta se exporta como MDLZ con un MDLR dentro.
 

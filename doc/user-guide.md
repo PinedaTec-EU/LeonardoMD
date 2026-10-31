@@ -124,7 +124,7 @@ A minimal source example to study or copy into a new `.mdlf` file:
 }
 ---
 # Request
-Name: `{{field:name}}`
+Name: {{field:name}}
 ```
 
 Definitions belong in `fields`, answers in `values`, and presentation in the body and `layout`. Keep field identifiers stable when changing labels. Replacing placeholders with answers in the source body loses the interactive form structure.
@@ -133,13 +133,13 @@ Definitions belong in `fields`, answers in `values`, and presentation in the bod
 
 This guide is also a form. Select **Fill form** in the toolbar's mode control and fill these controls inside the page. Structural unlocking is unnecessary.
 
-Your practice name: `{{field:practiceName}}`
+Your practice name: {{field:practiceName}}
 
 What would you like to create with Leonardo?
 
-`{{field:practiceGoal}}`
+{{field:practiceGoal}}
 
-I checked the format and destination before sharing: `{{field:practiceReady}}`
+I checked the format and destination before sharing: {{field:practiceReady}}
 
 Save (⌘S), close the tab and reopen the guide from Help: your answers remain in the personal copy. Use **Export Leonardo response** in the toolbar (document with an arrow) to create a recipient copy. Because this guide includes local images, its response exports as MDLZ containing an MDLR.
 
