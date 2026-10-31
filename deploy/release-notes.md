@@ -265,4 +265,10 @@
 - [#309](https://github.com/PinedaTec-EU/LeonardoMD/pull/309) — #308 Fixed: preserve resources in MDLZ conflict copies — build +4
   <p>Saving a copy of a conflicted MDLZ preserves its form answers and local resources in a complete package.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.739)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTAtMzFUMTA6NTc6MjBaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjIwfSwiZnJvbV92ZXJzaW9uIjoiMC4xLjczOSIsImtpbmQiOiJwdWxsX3JlcXVlc3QiLCJtZXJnZV9zaGEiOiI1OTY5Yjg5ZTViOTkxN2Y1NmFjYWFlNzRjZDcyZjZjM2M1YjQ5MmRkIiwibnVtYmVyIjozMTEsInN1bW1hcnkiOiJBZGRzIGRldGFpbGVkIGlsbHVzdHJhdGVkIEVuZ2xpc2ggYW5kIFNwYW5pc2ggaGVscCB3aXRoIGEgZmVhdHVyZSBjb3ZlcmFnZSBpbnZlbnRvcnkgYW5kIGEgZmVhdHVyZS1QUiBoZWxwIG1haW50ZW5hbmNlIGNvbnZlbnRpb24sIHBsdXMgY29uc2VudC1iYXNlZCByZWNvbW1lbmRhdGlvbnMgZm9yIGRpc2FibGVkIGJ1aWx0LWluIGV4dGVuc2lvbnMgYW5kIHJlc2V0dGFibGUgd2FybmluZ3MuIiwidGl0bGUiOiIjMzEwIFVwZGF0ZWQ6IGlsbHVzdHJhdGVkIGJpbGluZ3VhbCBoZWxwIGFuZCBleHRlbnNpb24gcmVjb21tZW5kYXRpb25zIiwidG9fdmVyc2lvbiI6IjAuMS43NTkifV0sImVudmlyb25tZW50IjoicmVsZWFzZSIsImV2ZW50X2lkIjoiZ2l0aHViX3JlbGVhc2U6NDI5ODc4NjM0IiwiZXZlbnRfa2luZCI6ImdpdGh1Yl9yZWxlYXNlIiwiZXZpZGVuY2VfdXJsIjoiaHR0cHM6Ly9naXRodWIuY29tL1BpbmVkYVRlYy1FVS9MZW9uYXJkb01EL3JlbGVhc2VzL3RhZy92MC4xLjc1OSIsInJlcG9zaXRvcnkiOiJQaW5lZGFUZWMtRVUvTGVvbmFyZG9NRCIsInNvdXJjZV9yZWYiOiJ2MC4xLjc1OSIsInNvdXJjZV9zaGEiOiJjYmE0NWZlMzYwYWNkNjM4MzVlOGYxNzExYjg3MmZiYTM1MjEyZTYzIiwidGFyZ2V0IjoiUGluZWRhVGVjLUVVL0xlb25hcmRvTUQiLCJ2ZXJzaW9uIjoiMC4xLjc1OSJ9 -->
+### 0.1.759
+- [#311](https://github.com/PinedaTec-EU/LeonardoMD/pull/311) — #310 Updated: illustrated bilingual help and extension recommendations — build +20
+  <p>Adds detailed illustrated English and Spanish help with a feature coverage inventory and a feature-PR help maintenance convention, plus consent-based recommendations for disabled built-in extensions and resettable warnings.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.759)
 <!-- release-ledger:end -->
