@@ -96,7 +96,7 @@ Usa **Guardar** (⌘S) para persistir cambios. Deshacer y Rehacer actúan sobre 
 | `.md` | Markdown estándar | Texto portable entre editores |
 | `.mdlf` | Markdown y metadatos Leonardo v1 | Documento editable, diseño o definición de formulario |
 | `.mdlr` | La misma estructura, con respuestas | Formulario destinado a rellenarse; abre en modo Rellenar |
-| `.mdlz` | ZIP con un único MDLF o MDLR y recursos en `guide/es/assets/` | Compartir un documento con sus imágenes locales |
+| `.mdlz` | ZIP con un único MDLF o MDLR y recursos en `assets/` | Compartir un documento con sus imágenes locales |
 
 ![Qué hay dentro de un paquete MDLZ](guide/illustrations/es-paquete.svg)
 

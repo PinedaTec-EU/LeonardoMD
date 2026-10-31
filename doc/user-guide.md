@@ -96,7 +96,7 @@ Use **Save** (⌘S) to persist changes. Undo and Redo apply to document edits. C
 | `.md` | Standard Markdown | Text shared between ordinary editors |
 | `.mdlf` | Markdown plus Leonardo v1 metadata | Editable documents, layout or form definitions |
 | `.mdlr` | The same structure with current answers | Forms intended for filling; opens in Fill mode |
-| `.mdlz` | ZIP with one MDLF or MDLR and resources under `guide/en/assets/` | Sharing documents with their local images |
+| `.mdlz` | ZIP with one MDLF or MDLR and resources under `assets/` | Sharing documents with their local images |
 
 ![Inside an MDLZ package](guide/illustrations/en-package.svg)
 

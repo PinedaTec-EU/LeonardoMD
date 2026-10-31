@@ -9,11 +9,9 @@ import XCTest
 enum GuideCaptureSupport {
     static func capture(_ web: WKWebView, to url: URL, language: String, state: String) async throws {
         // A source acknowledgement/image load does not imply that a large
-        // scroll has been composited. Wait for browser paint opportunities.
-        _ = try await web.callAsyncJavaScript(
-            "await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))",
-            arguments: [:], in: nil, contentWorld: .page)
-        try await Task.sleep(for: .milliseconds(150))
+        // scroll has been composited. Use a bounded settling interval: WebKit
+        // can pause requestAnimationFrame for an occluded test window.
+        try await Task.sleep(for: .milliseconds(200))
         let result = try await web.evaluateJavaScript("""
             ({width: innerWidth, height: innerHeight, userAgent: navigator.userAgent,
               devicePixelRatio: devicePixelRatio})

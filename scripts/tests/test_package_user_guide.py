@@ -23,7 +23,14 @@ class PackageUserGuideTests(unittest.TestCase):
                 self.assertEqual((output / web_name).read_bytes(), (ROOT / 'doc' / web_name).read_bytes())
                 for diagram in (output / 'guide/illustrations').glob(language + '-*.svg'):
                     self.assertEqual(diagram.read_bytes(), (ROOT / 'doc/guide/illustrations' / diagram.name).read_bytes())
-                name = f'Guide-v4-{language}.mdlz'
+                web_source = (output / web_name).read_text()
+                body = (ROOT / 'doc/guide' / language / 'body.md').read_text()
+                # Copyable MDLF source and its package-path vocabulary must
+                # survive adapting the web edition's illustration links.
+                for sample in re.findall(r'^```text\n(.*?)^```$', body, re.M | re.S):
+                    self.assertIn(sample, web_source)
+                self.assertIn('`assets/`', web_source)
+                name = f'Guide-v4-{language}.mdlz' 
                 self.assertEqual((output / name).read_bytes(), (ROOT / 'Sources/LeonardoApp/Resources' / name).read_bytes())
                 with zipfile.ZipFile(output / name) as archive:
                     self.assertEqual(len(archive.namelist()), 12)
