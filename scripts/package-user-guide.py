@@ -47,7 +47,7 @@ def metadata(language):
     spanish = language == "es"
     return {
         "format": "mdlf", "formatVersion": 1,
-        "document": {"id": "leonardo-user-guide-" + language, "kind": "form", "revision": 3},
+        "document": {"id": "leonardo-user-guide-" + language, "kind": "form", "revision": 4},
         "fields": {
             "practiceName": {"type": "text", "maxLength": 80, "label": "Nombre de prueba" if spanish else "Practice name"},
             "practiceGoal": {"type": "multiline", "maxLength": 1000, "label": "Tu objetivo" if spanish else "Your goal"},
@@ -65,6 +65,11 @@ def build(language, destination):
         for name, (title, labels) in ILLUSTRATIONS[language].items():
             (assets / (name + ".svg")).write_text(illustration(title, labels), encoding="utf-8")
         shutil.copyfile(ROOT / "Sources/LeonardoApp/Resources/AboutBanner.png", assets / "cover.png")
+        # Only original PNG content assets belong in the package, not QA sidecars.
+        for image in sorted((ROOT / "doc/guide" / language / "assets").glob("*.png")):
+            if image.is_symlink() or not image.is_file():
+                raise ValueError(f"Guide image must be a regular file: {image.name}")
+            shutil.copyfile(image, assets / image.name)
         body = (ROOT / "doc/guide" / language / "body.md").read_text(encoding="utf-8")
         (staging / "guide.mdlf").write_text('---\n' + json.dumps(metadata(language), ensure_ascii=False, indent=2)
                                             + '\n---\n' + body, encoding="utf-8")
@@ -77,7 +82,7 @@ def main():
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     for language in ILLUSTRATIONS:
-        destination = args.output / f"Guide-v3-{language}.mdlz"
+        destination = args.output / f"Guide-v4-{language}.mdlz"
         # The canonical packer deliberately refuses overwrites. Replace only our generated artifact.
         with tempfile.TemporaryDirectory(prefix="leonardo-guide-output-") as temporary:
             result = Path(temporary) / destination.name

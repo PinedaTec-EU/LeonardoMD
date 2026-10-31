@@ -45,5 +45,5 @@ allowlisted IDs, checked against the current host/frame/buffer. The app's
 `ExtensionRecommendations` owns grouped consent, per-opening offered IDs and stale
 context checks; `ExtensionWarningPreferences` owns global per-extension suppression
 and reset revision. The presenter waits for active-tab/dialog eligibility. Reset in
-Extensions re-arms recommendations without changing flags. Guide v3 is a separate
+Extensions re-arms recommendations without changing flags. Guide v4 is a separate
 personal copy and packages the approved About banner plus real engine examples.

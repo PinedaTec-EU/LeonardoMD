@@ -10,7 +10,7 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let oldCopy = root.appendingPathComponent("User Guides/v2/en/Guide-v2-en.mdlz")
+        let oldCopy = root.appendingPathComponent("User Guides/v3/en/Guide-v3-en.mdlz")
         try FileManager.default.createDirectory(at: oldCopy.deletingLastPathComponent(), withIntermediateDirectories: true)
         let oldAnswers = Data("previous guide and saved answers".utf8)
         try oldAnswers.write(to: oldCopy)
@@ -20,7 +20,7 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v3/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v4/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
             var workspace = try LeonardoPackageTransport.open(copy)
             defer { LeonardoPackageTransport.discard(workspace) }
@@ -29,7 +29,7 @@ final class BundledUserGuideTests: XCTestCase {
             XCTAssertTrue(document.isForm)
             XCTAssertEqual(document.metadata.fields.count, 3)
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:
-                workspace.directoryURL.appendingPathComponent("assets").path).count, 4)
+                workspace.directoryURL.appendingPathComponent("assets").path).count, 6)
             document.metadata.values["practiceName"] = .string("Ada")
             try LeonardoFormatParser.serialize(document).write(to: workspace.documentURL, atomically: true, encoding: .utf8)
             workspace = try LeonardoPackageTransport.save(workspace)
@@ -113,7 +113,8 @@ final class BundledUserGuideTests: XCTestCase {
             window.orderFront(nil)
             defer { window.close() }
             let web = try await findWebView(in: hosting)
-            try await waitFor("document.images.length === 4 && Array.from(document.images).every(i => i.naturalWidth > 0)", in: web)
+            _ = try await web.evaluateJavaScript("document.querySelectorAll('img').forEach(i => i.loading = 'eager')")
+            try await waitFor("document.images.length === 6 && Array.from(document.images).every(i => i.naturalWidth > 0)", in: web)
             try await waitFor("document.querySelectorAll('input,textarea').length >= 3", in: web)
             try await waitFor("document.querySelector('.katex') !== null && document.querySelector('.katex-error') === null", in: web)
             try await waitFor("document.querySelector('.vega-lite-placeholder svg') !== null", in: web)
