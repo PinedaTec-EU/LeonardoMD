@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.759
+
+- #310 Updated: illustrated bilingual help and extension recommendations ([#311](https://github.com/PinedaTec-EU/LeonardoMD/pull/311))
+
+<p>Adds detailed illustrated English and Spanish help with a feature coverage inventory and a feature-PR help maintenance convention, plus consent-based recommendations for disabled built-in extensions and resettable warnings.</p>
+
+Source: `5969b89e5b9917f56acaae74cd72f6c3c5b492dd`. Delta: `{"build": 20}`.
+
 ## 0.1.739
 
 - #308 Fixed: preserve resources in MDLZ conflict copies ([#309](https://github.com/PinedaTec-EU/LeonardoMD/pull/309))

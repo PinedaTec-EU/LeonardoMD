@@ -727,6 +727,16 @@
       "pr": 309,
       "summary": "Saving a copy of a conflicted MDLZ preserves its form answers and local resources in a complete package.",
       "to_version": "0.1.739"
+    },
+    {
+      "delta": {
+        "build": 20
+      },
+      "from_version": "0.1.739",
+      "merge_sha": "5969b89e5b9917f56acaae74cd72f6c3c5b492dd",
+      "pr": 311,
+      "summary": "Adds detailed illustrated English and Spanish help with a feature coverage inventory and a feature-PR help maintenance convention, plus consent-based recommendations for disabled built-in extensions and resettable warnings.",
+      "to_version": "0.1.759"
     }
   ],
   "initial_version": "0.1.56",
@@ -737,5 +747,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.739"
+  "version": "0.1.759"
 }
