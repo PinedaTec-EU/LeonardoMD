@@ -16,12 +16,17 @@ class PackageUserGuideTests(unittest.TestCase):
             output = Path(temporary)
             unrelated = output / 'unrelated.mdlz'
             unrelated.write_bytes(b'preserve this file')
-            subprocess.run([sys.executable, str(ROOT / 'scripts/package-user-guide.py'), '--output', str(output)], check=True)
+            (output / 'other.md').write_text('Keep this documentation')
+            subprocess.run([sys.executable, str(ROOT / 'scripts/package-user-guide.py'), '--output', str(output), '--web-output', str(output)], check=True)
             for language in ('en', 'es'):
+                web_name = 'user-guide-es.md' if language == 'es' else 'user-guide.md'
+                self.assertEqual((output / web_name).read_bytes(), (ROOT / 'doc' / web_name).read_bytes())
+                for diagram in (output / 'guide/illustrations').glob(language + '-*.svg'):
+                    self.assertEqual(diagram.read_bytes(), (ROOT / 'doc/guide/illustrations' / diagram.name).read_bytes())
                 name = f'Guide-v4-{language}.mdlz'
                 self.assertEqual((output / name).read_bytes(), (ROOT / 'Sources/LeonardoApp/Resources' / name).read_bytes())
                 with zipfile.ZipFile(output / name) as archive:
-                    self.assertEqual(len(archive.namelist()), 7)
+                    self.assertEqual(len(archive.namelist()), 12)
                     source = archive.read('guide.mdlf').decode('utf-8')
                     metadata = json.loads(source.split('---\n')[1])
                     self.assertEqual(metadata['formatVersion'], 1)
@@ -41,3 +46,4 @@ class PackageUserGuideTests(unittest.TestCase):
                             self.assertIn(asset, source)
                             self.assertIn(b'<svg ', archive.read(asset))
             self.assertEqual(unrelated.read_bytes(), b'preserve this file')
+            self.assertEqual((output / 'other.md').read_text(), 'Keep this documentation')

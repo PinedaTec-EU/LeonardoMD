@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-10-31T10:23:06.018680+00:00",
+  "capture": {
+    "captured_at": "2026-10-31T10:22:33.520000+00:00",
+    "route": "/native/user-guide/en",
+    "screen": "Leonardo guide: Linked Macs; no connections or imported copies",
+    "browser_name": "Native AppKit / SwiftUI NSHostingView",
+    "browser_version": "Not applicable: native view, no browser engine",
+    "state": "Linked Macs; no connections or imported copies; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "viewport_css": {
+      "width": 560,
+      "height": 430
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1120,
+    "height_px": 860,
+    "sha256": "7846724f3b507e855a6c19b1388701e9f4e4eece9f238636e6e80a84dfad8ac0"
+  },
+  "source": {
+    "revision_at_collection": "e457e86eccade662825253d4f94dc3a20999edf9",
+    "tracked_changes_present": false,
+    "untracked_files_present": false
+  }
+}

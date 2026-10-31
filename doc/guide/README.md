@@ -17,11 +17,14 @@ and PR template require feature-changing PRs to update both locales in the same
 PR, including relevant images/examples and regenerated packages. Internal-only
 changes explain their lack of help impact.
 
-Run `python3 scripts/package-user-guide.py` after content or asset edits. The
+Run `python3 scripts/package-user-guide.py --web-output doc` after content or asset edits. The
 canonical plugin helper validates and deterministically packages one `guide.mdlf`
 plus local assets. Only PNGs from locale `assets/` folders are copied; capture
 contexts/metadata stay in Git for provenance and never enter the user package.
 The approved banner and three SVG diagrams are supplied by the builder.
+The optional `--web-output doc` also regenerates both web manuals and their
+SVG illustrations from the same sources, adapting image paths and showing
+field placeholders as literal source rather than nonfunctional form controls.
 
 For a published guide revision, advance metadata revision, resource names and
 personal-copy directory together. Remove superseded application resources;
@@ -31,7 +34,7 @@ all packaged images, live outputs and practice/save behavior. Python tests
 verify deterministic bytes, complete image references and exclusion of QA files.
 
 Instructional screenshots are original production-component captures with
-synthetic data. Their sidecars identify their capture source and time; they
+synthetic data. See [instructional image provenance](screenshots.md). Their sidecars identify their capture source and time; they
 are content assets, not a claim of device sharing, update installation or fresh
 packaged-process acceptance. New review captures must use the current source
 and be recorded separately under `doc/validation/`.

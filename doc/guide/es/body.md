@@ -153,8 +153,8 @@ Guarda (⌘S), cierra la pestaña y vuelve a abrir la guía desde Ayuda: tus res
 | Campo | Uso / restricciones que revisar |
 | --- | --- |
 | Texto / multilínea | Texto corto o largo; límites de longitud y patrón |
-| Número | Respuesta numérica; límites y paso cuando estén definidos |
-| Fecha | Valor de fecha; límites cuando estén definidos |
+| Número | Respuesta numérica; límites numéricos cuando estén definidos |
+| Fecha | Valor de fecha; revisa el formato esperado |
 | Casilla | Respuesta booleana; puede presentarse como interruptor |
 | Selección | Una opción declarada; conserva su identificador almacenado |
 | Email / URL | Texto con la validación correspondiente |
@@ -239,6 +239,10 @@ Revisa el resultado en Leonardo antes de usarlo. Un archivo válido puede conten
 
 ## 7. Inicio, recientes y favoritos
 
+![Inicio: estado inicial aislado, sin favoritos ni documentos recientes.](assets/home.png)
+
+*Inicio: estado inicial aislado, sin favoritos ni documentos recientes.*
+
 Inicio separa **Proyectos** de **Documentos**, con Favoritos y Recientes para cada grupo. Usa Abrir documento para un archivo y Abrir proyecto para una carpeta de trabajo. Un archivo independiente usa las preferencias globales y no muestra sus vecinos. **Abrir carpeta como proyecto** añade la navegación de esa carpeta cuando la necesites.
 
 - Marca la estrella para conservar un elemento fuera del historial reciente. Archivo → Favoritos ofrece otra forma de abrirlo.
@@ -256,12 +260,12 @@ El menú de filtros de la barra lateral controla la visibilidad y el orden:
 
 | Control | Efecto |
 | --- | --- |
-| Mostrar todos los archivos | Incluye archivos fuera de los documentos compatibles; inicialmente desactivado |
+| Mostrar todos los ficheros | Incluye archivos fuera de los documentos compatibles; inicialmente desactivado |
 | Mostrar archivos ocultos | Ajuste de visibilidad independiente |
-| Carpetas primero | Agrupa las carpetas antes de los archivos; inicialmente activado |
+| Carpetas siempre arriba | Agrupa las carpetas antes de los archivos; inicialmente activado |
 | A–Z / Z–A | Ordena nombres, también en subcarpetas expandidas |
 
-Arrastra el separador para ajustar el ancho. **Seguir archivo activo en la barra lateral**, en General, alinea la navegación con el documento actual. El modo Enfoque oculta navegación e inspector sin cerrar el proyecto; pulsa ⇧⌘F otra vez para recuperarlos.
+Arrastra el separador para ajustar el ancho. **Seguir el archivo activo en la barra lateral**, en General, alinea la navegación con el documento actual. El modo foco oculta navegación e inspector sin cerrar el proyecto; pulsa ⇧⌘F otra vez para recuperarlos.
 
 ## 9. Búsqueda, etiquetas y esquema
 
@@ -277,7 +281,7 @@ tags: [Swift, "Design Systems"]
 
 Busca `tag:swift` o `tag:"Design Systems"` para coincidencias exactas sin distinguir mayúsculas. Una palabra parcial o una mención en el cuerpo no es una etiqueta. El analizador ligero acepta una cadena, una lista en línea o una lista en bloque, pero no todas las construcciones YAML. Omite etiquetas vacías y agrupa duplicados sin distinguir mayúsculas.
 
-Las etiquetas pulsables siguen visibles aunque ocultes la tabla de metadatos. En un proyecto, pulsarlas rellena la búsqueda y revela la navegación si estaba activo Enfoque. En un archivo independiente no crean un proyecto. **Ver → Esquema del documento** (⌥⌘I) abre la navegación por encabezados; elige uno para saltar dentro del documento. El inspector sirve para navegar; las respuestas del formulario se escriben en la página.
+Las etiquetas pulsables siguen visibles aunque ocultes la tabla de metadatos. En un proyecto, pulsarlas rellena la búsqueda y revela la navegación si estaba activo el modo foco. En un archivo independiente no crean un proyecto. **Vista → Índice del documento** (⌥⌘I) abre la navegación por encabezados; elige uno para saltar dentro del documento. El inspector sirve para navegar; las respuestas del formulario se escriben en la página.
 
 ## 10. Edición, tablas y recuperación
 
@@ -293,6 +297,10 @@ Si otro programa modifica un documento sin cambios locales, Leonardo lo recarga.
 
 ## 11. Preferencias: elige el ámbito correcto
 
+![Personalizar paleta: cuatro colores editables, vista previa del contraste y Aplicar.](assets/palette.png)
+
+*Personalizar paleta: cuatro colores editables, vista previa del contraste y Aplicar.*
+
 Abre **LeonardoMD → Preferencias…** (⌘,). Las pestañas permanecen fijas; General y Extensiones tienen cada una su selector **Global / Este proyecto**. Comprueba ese selector antes de cambiar un ajuste.
 
 | Ámbito | Ejemplos | Dónde se aplica |
@@ -303,7 +311,7 @@ Abre **LeonardoMD → Preferencias…** (⌘,). Las pestañas permanecen fijas; 
 
 Elige English o Español en **General → En este Mac → Idioma**. General también controla apertura de paquetes, guardado Markdown como MDLF, frontmatter, confirmación de enlaces, archivos ocultos y seguimiento del archivo activo. Lee cada descripción: abrir un proyecto no convierte todos los ajustes en preferencias de proyecto.
 
-Apariencia ofrece paletas, efectos de papel y colores de archivos Leonardo. **Personalizar** modifica Papel, Texto, Encabezados y Acento; la vista previa y los controles de contraste ayudan a mantener la legibilidad. Aplica al ámbito elegido, restablece la paleta base o importa/exporta JSON de paleta. Si se rechaza una combinación, ajústala antes de Aplicar. Importar una paleta cambia apariencia, no contenido.
+Apariencia ofrece paletas, efectos de papel y colores de archivos Leonardo. **Personalizar** modifica Hoja, Texto, Titulares y Acento; la vista previa y los controles de contraste ayudan a mantener la legibilidad. Aplica al ámbito elegido, restablece la paleta base o importa/exporta JSON de paleta. Si se rechaza una combinación, ajústala antes de Aplicar. Importar una paleta cambia apariencia, no contenido.
 
 **Aplicación predeterminada para documentos** muestra las asociaciones de `.md`, `.markdown`, `.mdlf`, `.mdlr` y `.mdlz`. Elige Usar LeonardoMD, Preguntar la próxima vez o No volver a preguntar y restablece ese aviso aquí. No cambia `.txt` ni excepciones del Finder; macOS puede solicitar consentimiento.
 
@@ -373,7 +381,7 @@ Los marcadores compatibles son NOTE, TIP, IMPORTANT, WARNING y CAUTION. Las nota
 Activa **Herramientas Git** para el proyecto en General. Leonardo usa `/usr/bin/git` y tus credenciales existentes del sistema. Detecta repositorios o propone Inicializar Git si la carpeta aún no lo es. Inicializar crea metadatos de repositorio; no crea un repositorio alojado ni configura un remoto.
 
 1. Revisa rama, rutas modificadas e indicadores de commits por delante/detrás en el panel Git.
-2. Revisa los cambios antes de seleccionar archivos y **Preparar seleccionados** o todos. Preparar elige qué entra en el siguiente commit; no respalda automáticamente ediciones futuras.
+2. Revisa los cambios antes de seleccionar archivos y **Stage seleccionados** o **Stage todos**. Preparar elige qué entra en el siguiente commit; no respalda automáticamente ediciones futuras.
 3. Escribe un mensaje útil y crea el **Commit**. Comprueba el historial reciente al terminar.
 4. Usa **Fetch** para consultar el remoto, **Pull** para avanzar localmente y **Push** para publicar commits cuando haya un remoto configurado.
 
@@ -381,24 +389,36 @@ Las operaciones son manuales. Pull solo permite avance rápido y protege árbole
 
 ## 14. Little Leonardo: leer en iPhone o iPad
 
+![Little Leonardo: servicio directo desactivado; este ejemplo no comparte proyectos ni dispositivos.](assets/mobile.png)
+
+*Little Leonardo: servicio directo desactivado; este ejemplo no comparte proyectos ni dispositivos.*
+
 Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Little Leonardo** de la instancia principal del Mac.
 
 1. Activa el servicio de sincronización directa en una red que quieras utilizar. Revisa la dirección local; Automática puede seleccionar una disponible.
-2. Elige **Compartir proyecto actual** y selecciona carpetas/documentos o todo el proyecto. Confirma la selección; el resto del contenido no se comparte implícitamente.
+2. Elige **Compartir el proyecto actual** y selecciona carpetas/documentos o todo el proyecto. Confirma la selección; el resto del contenido no se comparte implícitamente.
 3. Crea un QR de emparejamiento o copia el enlace. Ábrelo en Little Leonardo, compara los códigos de verificación y aprueba el dispositivo pendiente en el Mac.
 4. Importa el contenido compartido en el compañero y compruébalo antes de depender de una copia sin conexión. Usa Revocar en el Mac para retirar acceso futuro a un dispositivo.
 
 El Mac debe estar accesible para transferir. Una VPN privada superpuesta requiere su ajuste explícito y una dirección compatible accesible; no convierte el sistema en un servicio público en la nube. No presupongas conectividad entre redes cualesquiera. Revocar impide acceso autorizado futuro; no borra copias ya descargadas. El compañero iOS no ofrece edición Git ni devuelve ediciones de documentos al Mac. La revisión de propuestas del escritorio no es edición móvil.
 
-## 15. Macs vinculados y copias sin conexión
+## 15. Macs enlazados y copias sin conexión
 
-Usa **Preferencias → Macs vinculados** en la instancia principal. En el Mac de origen, activa sincronización directa y comparte primero el contenido previsto. En el segundo Mac, vincula otro Mac mediante su dirección HTTPS o enlace de emparejamiento y un nombre de dispositivo. Compara los códigos en ambos y aprueba la conexión antes de importar proyectos.
+![Macs enlazados antes de emparejar o importar un proyecto.](assets/macs.png)
+
+*Macs enlazados antes de emparejar o importar un proyecto.*
+
+Usa **Preferencias → Macs enlazados** en la instancia principal. En el Mac de origen, activa sincronización directa y comparte primero el contenido previsto. En el segundo Mac, vincula otro Mac mediante su dirección HTTPS o enlace de emparejamiento y un nombre de dispositivo. Compara los códigos en ambos y aprueba la conexión antes de importar proyectos.
 
 Importa un proyecto disponible para crear una copia sin conexión. Ábrela localmente y usa sincronización manual o elige un intervalo. Las transferencias siguen necesitando conectividad. Una copia desconectada es trabajo local; no demuestra que el origen tenga tus últimos cambios.
 
-Para devolver ediciones, **Comparar cambios**, revisa las versiones Base / Este Mac / Otro Mac y después **Enviar cambios para revisión**. Reintenta propuestas pendientes al recuperar conexión. Las ediciones posteriores al envío siguen locales hasta otra propuesta. El Mac de origen revisa las propuestas entrantes; enviar no significa aceptación automática. Resuelve marcadores de conflicto deliberadamente y verifica el resultado antes de aceptar. Conserva el trabajo local hasta confirmar el resultado esperado en origen.
+Para devolver ediciones, **Comparar cambios**, revisa las versiones Base / Este Mac / Otro Mac y después **Enviar cambios para revisar**. Reintenta propuestas pendientes al recuperar conexión. Las ediciones posteriores al envío siguen locales hasta otra propuesta. El Mac de origen revisa las propuestas entrantes; enviar no significa aceptación automática. Resuelve marcadores de conflicto deliberadamente y verifica el resultado antes de aceptar. Conserva el trabajo local hasta confirmar el resultado esperado en origen.
 
 ## 16. Actualizaciones y notas de versión
+
+![Suscripción estable y comprobaciones manuales; versión instalada ficticia, sin realizar instalaciones.](assets/updates.png)
+
+*Suscripción estable y comprobaciones manuales; versión instalada ficticia, sin realizar instalaciones.*
 
 Abre **Preferencias → Actualizaciones** en la instancia principal. Elige Estable o Beta y **Comprobar ahora**, o activa comprobaciones periódicas. Estable está seleccionado inicialmente incluso en un paquete beta; las comprobaciones automáticas empiezan desactivadas. Instalar requiere tu acción. **LeonardoMD → Notas de versión…** abre las notas de la aplicación.
 
@@ -413,9 +433,9 @@ Si Instalar y reiniciar deja abierta la instancia anterior, guarda, cierra Prefe
 | ⌘O / ⇧⌘O | Abrir documento / proyecto |
 | ⌘T / ⌘W | Nueva pestaña / cerrar activa |
 | ⇧⌘W | Cerrar ventana |
-| ⌘1 / ⌘2 / ⌘3 | Vista previa / Editar / Dividir |
+| ⌘1 / ⌘2 / ⌘3 | Lectura / Editar / Dividida |
 | ⌘4 | Rellenar formulario cuando esté disponible |
-| ⇧⌘F / ⌥⌘I | Enfoque / esquema |
+| ⇧⌘F / ⌥⌘I | Foco / índice |
 | ⌘S | Guardar |
 | ⌘Z / ⇧⌘Z | Deshacer / Rehacer |
 | ⇧⌘E | Exportar PDF |

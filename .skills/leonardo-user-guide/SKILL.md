@@ -13,9 +13,8 @@ the affected chapter and source. Update that inventory when scope changes.
 Update `doc/guide/en/body.md` and `doc/guide/es/body.md` together. Explain the
 purpose, prerequisites, steps, settings scope, persistence/save destination,
 limits and recovery that matter to the user. Remove obsolete instructions when
-behavior changes. Review the web manual `doc/user-guide.md` for overlapping
-instructions; repair affected copy within the authorized scope or identify its
-canonical outstanding issue. An internal change with no visible help impact
+behavior changes. The web manuals `doc/user-guide.md` and `doc/user-guide-es.md` are generated
+from those same bodies; do not edit the generated reading editions directly. An internal change with no visible help impact
 needs a specific rationale in the PR's Help impact section, not a token doc edit.
 
 Add or refresh images when they explain the changed flow. Use real production
@@ -33,7 +32,7 @@ the example and explain the disabled fallback. Recommendations are limited to
 our built-ins and explicit consent; document suppression and reset separately
 from activation. Do not confuse renderer extensions with external AI skills.
 
-Run `python3 scripts/package-user-guide.py` after editing help or assets. Do not
+Run `python3 scripts/package-user-guide.py --web-output doc` after editing help or assets. Do not
 hand-edit MDLZ archives. For an updated published guide, advance document revision,
 resource names and `BundledUserGuide` personal-copy directory together so existing
 practice answers remain intact; update affected tests. Remove superseded bundle

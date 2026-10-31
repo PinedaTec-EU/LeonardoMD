@@ -2,6 +2,7 @@
 """Build deterministic offline guide packages with the canonical MDLZ validator."""
 import argparse
 import json
+import re
 import shutil
 from pathlib import Path
 import sys
@@ -76,10 +77,45 @@ def build(language, destination):
         mdlz.pack_directory(staging, destination)
 
 
+def write_web_guide(language, directory):
+    """Generate the reading edition without pretending GitHub has form controls."""
+    body = (ROOT / "doc/guide" / language / "body.md").read_text(encoding="utf-8")
+    cover, rest = body.split("\n", 1)
+    rest = rest[rest.index("\n## "):]
+    spanish = language == "es"
+    title = "Guía de Leonardo" if spanish else "Leonardo user guide"
+    notice = ("Edición web de lectura. Abre Ayuda → Guía de Leonardo en la app para usar "
+              "los controles del formulario y los ejemplos renderizados con las extensiones "
+              "correspondientes. Este lector web puede no interpretar Mermaid, KaTeX o Vega-Lite."
+              if spanish else
+              "Web reading edition. Open Help → Leonardo user guide in the app to use "
+              "the form controls and examples rendered with their required extensions. "
+              "This web reader may not interpret Mermaid, KaTeX or Vega-Lite.")
+    switch = "[English](user-guide.md) · [Español](user-guide-es.md)"
+    # The source stays authoritative; web only adapts transport paths and controls.
+    body = cover.replace("assets/cover.png", "../Sources/LeonardoApp/Resources/AboutBanner.png")
+    body += f"\n\n# {title}\n\n{switch}\n\n{notice}\n" + rest
+    body = re.sub(r"\{\{field:([A-Za-z0-9_]+)\}\}", r"`{{field:\1}}`", body)
+    body = body.replace("assets/", f"guide/{language}/assets/")
+    for name, (title, labels) in ILLUSTRATIONS[language].items():
+        folder = directory / "guide" / "illustrations"
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / f"{language}-{name}.svg").write_text(illustration(title, labels), encoding="utf-8")
+        body = body.replace(f"guide/{language}/assets/{name}.svg", f"guide/illustrations/{language}-{name}.svg")
+    name = "user-guide-es.md" if spanish else "user-guide.md"
+    (directory / name).write_text("<!-- Generated from doc/guide; edit bilingual body.md sources. -->\n" + body, encoding="utf-8")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "Sources/LeonardoApp/Resources")
+    parser.add_argument("--web-output", type=Path,
+                        help="Also regenerate the English/Spanish web manuals in this documentation directory")
     args = parser.parse_args()
+    if args.web_output is not None:
+        args.web_output.mkdir(parents=True, exist_ok=True)
+        for language in ILLUSTRATIONS:
+            write_web_guide(language, args.web_output)
     args.output.mkdir(parents=True, exist_ok=True)
     for language in ILLUSTRATIONS:
         destination = args.output / f"Guide-v4-{language}.mdlz"

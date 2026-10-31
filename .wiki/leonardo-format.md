@@ -79,3 +79,7 @@ Guide maintenance (#310): `doc/guide/feature-coverage.md` maps current surfaces 
 template require help updates with visible feature changes (or an internal-only
 rationale). Locale PNGs are packaged; provenance JSON remains repository-only.
 Original UI screenshots and fresh guide-render validation serve different roles.
+
+The web manuals (English/Spanish) are generated reading editions of the bundled
+guide sources via `package-user-guide.py --web-output doc`; this also corrects
+the obsolete inspector filling instructions tracked by [#225](https://github.com/PinedaTec-EU/LeonardoMD/issues/225).

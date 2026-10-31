@@ -10,11 +10,13 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let oldCopy = root.appendingPathComponent("User Guides/v3/en/Guide-v3-en.mdlz")
-        try FileManager.default.createDirectory(at: oldCopy.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let oldCopies = [2, 3].map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
         let oldAnswers = Data("previous guide and saved answers".utf8)
-        try oldAnswers.write(to: oldCopy)
-        defer { XCTAssertEqual(try? Data(contentsOf: oldCopy), oldAnswers) }
+        for oldCopy in oldCopies {
+            try FileManager.default.createDirectory(at: oldCopy.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try oldAnswers.write(to: oldCopy)
+        }
+        defer { for oldCopy in oldCopies { XCTAssertEqual(try? Data(contentsOf: oldCopy), oldAnswers) } }
         for language in AppLanguage.allCases {
             let original = try BundledUserGuide.resourceURL(language: language)
             let originalBytes = try Data(contentsOf: original)
@@ -29,7 +31,7 @@ final class BundledUserGuideTests: XCTestCase {
             XCTAssertTrue(document.isForm)
             XCTAssertEqual(document.metadata.fields.count, 3)
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:
-                workspace.directoryURL.appendingPathComponent("assets").path).count, 6)
+                workspace.directoryURL.appendingPathComponent("assets").path).count, 11)
             document.metadata.values["practiceName"] = .string("Ada")
             try LeonardoFormatParser.serialize(document).write(to: workspace.documentURL, atomically: true, encoding: .utf8)
             workspace = try LeonardoPackageTransport.save(workspace)
@@ -114,7 +116,7 @@ final class BundledUserGuideTests: XCTestCase {
             defer { window.close() }
             let web = try await findWebView(in: hosting)
             _ = try await web.evaluateJavaScript("document.querySelectorAll('img').forEach(i => i.loading = 'eager')")
-            try await waitFor("document.images.length === 6 && Array.from(document.images).every(i => i.naturalWidth > 0)", in: web)
+            try await waitFor("document.images.length === 11 && Array.from(document.images).every(i => i.naturalWidth > 0)", in: web)
             try await waitFor("document.querySelectorAll('input,textarea').length >= 3", in: web)
             try await waitFor("document.querySelector('.katex') !== null && document.querySelector('.katex-error') === null", in: web)
             try await waitFor("document.querySelector('.vega-lite-placeholder svg') !== null", in: web)
@@ -136,6 +138,11 @@ final class BundledUserGuideTests: XCTestCase {
                     try await waitFor("document.querySelector('\(readySelector)') !== null", in: web)
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Live \(name) example; built-in extension enabled")
+                }
+                for name in ["palette", "activation", "mobile"] {
+                    _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
+                    try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("section-\(name)-\(language.rawValue).png"),
+                        language: language.rawValue, state: "Detailed chapter with original \(name) screenshot; all images loaded")
                 }
                 _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
                 try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("guide-\(language.rawValue).png"),

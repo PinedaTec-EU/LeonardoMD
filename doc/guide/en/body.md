@@ -153,8 +153,8 @@ Save (⌘S), close the tab and reopen the guide from Help: your answers remain i
 | Field | Use / constraints to check |
 | --- | --- |
 | Text / multiline | Short or long text; length and pattern constraints |
-| Number | Numeric answer; bounds and step when defined |
-| Date | Date value; limits when defined |
+| Number | Numeric answer; numeric bounds when defined |
+| Date | Date value; review the expected date format |
 | Checkbox | Boolean answer; may be presented as a switch |
 | Select | One declared option; preserve its stored identifier |
 | Email / URL | Typed text with the corresponding validation |
@@ -238,6 +238,10 @@ Review the output in Leonardo. A valid file can still contain wrong answers. Ins
 
 ## 7. Home, recent items and favorites
 
+![Home: isolated initial state; no favorites or recent documents.](assets/home.png)
+
+*Home: isolated initial state; no favorites or recent documents.*
+
 Home separates **Projects** from **Documents**, with Favorites and Recents for each. Use Open document for one file; Open project for a working folder. A standalone file uses global preferences and does not expose its neighboring files. **Open folder as project** adds that folder's navigation when you need it.
 
 - Star an item to keep it independently of recent history. File → Favorites provides another way to open it.
@@ -291,6 +295,10 @@ For a table, unlock and drag a column edge in the preview to adjust widths. Leon
 If another program changes a clean document, Leonardo reloads it. When both have edits, stop and choose deliberately: **Reload** accepts the external file; **Save copy** preserves your draft separately. For a conflicted MDLZ, Save copy requires an MDLZ destination and includes current answers and readable local resources. A failed copy leaves the draft/conflict available. Keep the externally changed original until you have compared both versions.
 
 ## 11. Preferences: choose the right scope
+
+![Customize palette: the four editable colors, contrast preview and Apply.](assets/palette.png)
+
+*Customize palette: the four editable colors, contrast preview and Apply.*
 
 Open **LeonardoMD → Preferences…** (⌘,). Tab navigation stays fixed; General and Extensions each have their own **Global / This project** selector. Read that selector before changing a setting.
 
@@ -380,6 +388,10 @@ These operations are manual. Pull is fast-forward only and protects dirty worktr
 
 ## 14. Little Leonardo: read on iPhone or iPad
 
+![Little Leonardo: direct service disabled; no project or device is shared in this example.](assets/mobile.png)
+
+*Little Leonardo: direct service disabled; no project or device is shared in this example.*
+
 Little Leonardo is a **read-only companion**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Little Leonardo**.
 
 1. Enable the direct synchronization service on a network you intend to use. Review the selected local address; Automatic can choose an available address.
@@ -391,6 +403,10 @@ The Mac must be reachable for transfers. A private overlay VPN requires the expl
 
 ## 15. Linked Macs and offline copies
 
+![Linked Macs before pairing or importing a project.](assets/macs.png)
+
+*Linked Macs before pairing or importing a project.*
+
 Use **Preferences → Linked Macs** in the principal instance. On the source Mac, enable direct synchronization and share the intended content first. On the second Mac, Link another Mac using its HTTPS address or pairing link and a device name. Compare verification codes on both devices and approve the connection before importing projects.
 
 Import an available project to create an offline copy. Open it locally, then use manual synchronization or select a synchronization interval. Network reachability is still required for transfers. A disconnected copy remains a local working copy; it is not evidence that the source has your latest edits.
@@ -398,6 +414,10 @@ Import an available project to create an offline copy. Open it locally, then use
 To return edits, **Compare changes**, inspect Base / This Mac / Other Mac versions, then **Send changes for review**. Retry pending proposals when connectivity returns. Edits made after submission remain local until another submission. The source Mac reviews incoming proposals; sending is not automatic acceptance. Resolve conflict markers deliberately and verify the result before accepting. Keep local work until the source confirms the expected outcome.
 
 ## 16. Updates and release notes
+
+![Stable subscription and manual checks; synthetic installed version, no installation performed.](assets/updates.png)
+
+*Stable subscription and manual checks; synthetic installed version, no installation performed.*
 
 Open **Preferences → Updates** in the principal instance. Choose Stable or Beta, then **Check now**, or opt into periodic checking. Stable is initially selected even in a beta package; automatic checking starts off. Installation requires your action. **LeonardoMD → Release notes…** opens the application's notes.
 

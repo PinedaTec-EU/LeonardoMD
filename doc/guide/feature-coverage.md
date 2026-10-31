@@ -38,5 +38,5 @@ Their original capture contexts/metadata live beside the PNGs in each locale's
 - Field formulas/calculated values are deferred in [#203](https://github.com/PinedaTec-EU/LeonardoMD/issues/203); a KaTeX equation is presentation only.
 - Windows availability must not be inferred from desktop architecture; [#227](https://github.com/PinedaTec-EU/LeonardoMD/issues/227) remains separate.
 - The iOS companion is read-only; desktop incoming proposals do not imply mobile editing.
-- The bundled help's inline filling instructions supersede the obsolete web-manual inspector instruction tracked in [#225](https://github.com/PinedaTec-EU/LeonardoMD/issues/225). That issue remains separately scoped until the owner includes the web manual.
+- The bundled help's inline filling instructions supersede the obsolete web-manual inspector instruction tracked in [#225](https://github.com/PinedaTec-EU/LeonardoMD/issues/225). The owner included #225 in this PR; the web manuals are generated from the same bilingual editorial sources.
 - The updater Preferences-sheet workaround stays explicit under [#202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202); screenshots do not prove every channel/install transition.
