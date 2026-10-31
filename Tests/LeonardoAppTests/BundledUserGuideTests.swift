@@ -23,7 +23,7 @@ final class BundledUserGuideTests: XCTestCase {
             XCTAssertTrue(document.isForm)
             XCTAssertEqual(document.metadata.fields.count, 3)
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:
-                workspace.directoryURL.appendingPathComponent("assets").path).count, 3)
+                workspace.directoryURL.appendingPathComponent("assets").path).count, 4)
             document.metadata.values["practiceName"] = .string("Ada")
             try LeonardoFormatParser.serialize(document).write(to: workspace.documentURL, atomically: true, encoding: .utf8)
             workspace = try LeonardoPackageTransport.save(workspace)
@@ -94,6 +94,9 @@ final class BundledUserGuideTests: XCTestCase {
             await session.open(copy, packagePreference: .package)
             XCTAssertEqual(session.documentStorage, .package)
             XCTAssertNil(session.errorMessage)
+            session.setMermaid(true, project: false)
+            session.setMath(true, project: false)
+            session.setVegaLite(true, project: false)
             session.mode = .fill
             let hosting = NSHostingView(rootView: WorkspaceView(session: session))
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 850),
@@ -103,8 +106,13 @@ final class BundledUserGuideTests: XCTestCase {
             window.orderFront(nil)
             defer { window.close() }
             let web = try await findWebView(in: hosting)
-            try await waitFor("document.images.length === 3 && Array.from(document.images).every(i => i.naturalWidth > 0)", in: web)
+            try await waitFor("document.images.length === 4 && Array.from(document.images).every(i => i.naturalWidth > 0)", in: web)
             try await waitFor("document.querySelectorAll('input,textarea').length >= 3", in: web)
+            try await waitFor("document.querySelector('.katex') !== null && document.querySelector('.katex-error') === null", in: web)
+            try await waitFor("document.querySelector('.vega-lite-placeholder svg') !== null", in: web)
+            _ = try await web.evaluateJavaScript("document.querySelector('.mermaid-placeholder').scrollIntoView({block:'center'})")
+            try await waitFor("document.querySelector('.mermaid-placeholder svg') !== null", in: web)
+            _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
             XCTAssertTrue(session.updateLeonardoField("practiceName", text: "Ada"))
             await session.save()
             XCTAssertNil(session.errorMessage)

@@ -1,5 +1,6 @@
-# Tu guía de Leonardo
+![Leonardo: un taller de ideas, documentos y conocimiento](assets/cover.png)
 
+# Tu guía de Leonardo
 Lee, practica y comparte tus documentos.
 
 Esta guía es un documento Leonardo real, incluido en un paquete **MDLZ** con sus imágenes. Funciona sin conexión; los enlaces de instalación y documentación externa requieren Internet. Usa el índice del inspector para saltar entre capítulos.
@@ -7,6 +8,76 @@ Esta guía es un documento Leonardo real, incluido en un paquete **MDLZ** con su
 **Estás trabajando en una copia personal.** Ayuda → Guía de Leonardo y el botón de bienvenida abren esa misma copia en una pestaña nueva o activan su pestaña existente. Guardar conserva tus ejercicios. El original de la aplicación permanece intacto. Una nueva revisión de la guía tendrá una copia independiente.
 
 ![El recorrido de un documento: escribir, rellenar y compartir](assets/recorrido.svg)
+
+
+## Un documento que también se puede ver
+
+Un diagrama para explicar, una fórmula para precisar y un gráfico para comparar. Estos ejemplos son contenido real: puedes estudiar su fuente en **Editar** o **Dividida**.
+
+**Extensiones necesarias:** Mermaid, Matemáticas (KaTeX) y Gráficos (Vega-Lite). Si alguna está deshabilitada, el ejemplo correspondiente no se visualizará correctamente: verás código o notación sin interpretar. Puedes activarlas en **Preferencias → Extensiones** o aceptar la recomendación de Leonardo. No se activan sin tu consentimiento.
+
+### Explica un recorrido · Mermaid
+
+**Requiere Mermaid activado.** Este diagrama conecta los tres pasos de un documento compartido.
+
+```mermaid
+flowchart LR
+    A[Escribir una idea] --> B[Rellenar y revisar]
+    B --> C[Compartir el resultado]
+```
+
+<details>
+<summary>Ver la fuente del diagrama</summary>
+
+````text
+```mermaid
+flowchart LR
+    A[Escribir una idea] --> B[Rellenar y revisar]
+    B --> C[Compartir el resultado]
+```
+````
+
+</details>
+
+### Da precisión a una idea · Matemáticas
+
+**Requiere Matemáticas activado.** Una media expresa en una línea cómo resumir varias observaciones:
+
+$$\bar{x}=\frac{x_1+x_2+x_3}{3}$$
+
+Para 2, 4 y 6, la media es 4. Fuente: `$$\bar{x}=\frac{x_1+x_2+x_3}{3}$$`. Es una fórmula de presentación; no calcula campos del formulario.
+
+### Compara de un vistazo · Gráficos
+
+**Requiere Gráficos (Vega-Lite) activado.** Datos ficticios de avance de un documento; todos los datos están dentro del paquete.
+
+```vega-lite
+{"width":520,"height":180,"description":"Ejemplo ficticio: avance de un documento","data":{"values":[{"etapa":"Borrador","avance":30},{"etapa":"Revisión","avance":65},{"etapa":"Listo","avance":100}]},"mark":{"type":"bar","color":"#9b6b39","cornerRadiusEnd":5},"encoding":{"y":{"field":"etapa","type":"nominal","sort":null,"title":null},"x":{"field":"avance","type":"quantitative","title":"Avance (%)","scale":{"domain":[0,100]}}}}
+```
+
+<details>
+<summary>Ver la fuente del gráfico</summary>
+
+````text
+```vega-lite
+{
+  "data": {"values": [
+    {"etapa": "Borrador", "avance": 30},
+    {"etapa": "Revisión", "avance": 65},
+    {"etapa": "Listo", "avance": 100}
+  ]},
+  "mark": "bar",
+  "encoding": {
+    "y": {"field": "etapa", "type": "nominal"},
+    "x": {"field": "avance", "type": "quantitative"}
+  }
+}
+```
+````
+
+</details>
+
+**Tú decides cuándo activar.** Leonardo reúne en un diálogo las extensiones integradas que detecta deshabilitadas. **Ahora no** evita repetir esa recomendación durante la apertura actual. Marca **No volver a preguntar por esta extensión** para guardar tu elección en este Mac. **Preferencias → Extensiones → Restablecer avisos de extensiones** permite volver a preguntar, sin cambiar las extensiones activadas. El diálogo indica si la activación afecta al proyecto o a tus preferencias globales.
 
 ## 1. Abrir, leer y editar
 

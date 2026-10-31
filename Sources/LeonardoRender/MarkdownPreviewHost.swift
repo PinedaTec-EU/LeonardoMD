@@ -12,6 +12,7 @@ import WebKit
 
 @MainActor
 final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKNavigationDelegate {
+    var onDetectedExtensions: ((String, [String]) -> Void)?
     var onEdit: ((String, String) -> Bool)?
     var onTableResize: ((String, LeonardoTableResize) async -> Bool)?
     private var tableResizeTask: Task<Bool, Never>?
@@ -555,6 +556,12 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             // DOM and move the caret after every keystroke.
             content = replacement
         case "leonardoReady":
+            guard message.webView === webView, message.frameInfo.isMainFrame else { return }
+            if let body = message.body as? [String: Any],
+               let source = body["source"] as? String, source == content,
+               let used = body["usedExtensions"] as? [String] {
+                onDetectedExtensions?(source, used)
+            }
             if let body = message.body as? [String: Any],
                let durationNumber = body["durationMs"] as? NSNumber {
                 let duration = durationNumber.doubleValue

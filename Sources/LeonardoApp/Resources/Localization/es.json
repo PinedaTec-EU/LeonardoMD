@@ -500,5 +500,14 @@
   "Leonardo user guide…": "Guía de Leonardo…",
   "Theme": "Tema",
   "Theme for this favorite": "Tema de este favorito",
-  "Inherit": "Heredar"
+  "Inherit": "Heredar",
+  "Reset extension warnings": "Restablecer avisos de extensiones",
+  "Ask again about disabled extensions in documents. This does not change enabled extensions.": "Vuelve a preguntar por las extensiones deshabilitadas de los documentos. No cambia las extensiones activadas.",
+  "Enable document extensions?": "¿Activar las extensiones del documento?",
+  "This document uses disabled built-in extensions. Enable them to view its content correctly.": "Este documento utiliza extensiones integradas deshabilitadas. Actívalas para visualizar su contenido correctamente.",
+  "Activation changes your global extension preferences.": "La activación cambia tus preferencias globales de extensiones.",
+  "Activation creates or updates this project's extension preferences.": "La activación crea o actualiza las preferencias de extensiones de este proyecto.",
+  "Do not ask again for this extension": "No volver a preguntar por esta extensión",
+  "Not now": "Ahora no",
+  "Enable extensions": "Activar extensiones"
 }

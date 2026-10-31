@@ -17,17 +17,23 @@ class PackageUserGuideTests(unittest.TestCase):
             unrelated.write_bytes(b'preserve this file')
             subprocess.run([sys.executable, str(ROOT / 'scripts/package-user-guide.py'), '--output', str(output)], check=True)
             for language in ('en', 'es'):
-                name = f'Guide-v2-{language}.mdlz'
+                name = f'Guide-v3-{language}.mdlz'
                 self.assertEqual((output / name).read_bytes(), (ROOT / 'Sources/LeonardoApp/Resources' / name).read_bytes())
                 with zipfile.ZipFile(output / name) as archive:
-                    self.assertEqual(len(archive.namelist()), 4)
+                    self.assertEqual(len(archive.namelist()), 5)
                     source = archive.read('guide.mdlf').decode('utf-8')
                     metadata = json.loads(source.split('---\n')[1])
                     self.assertEqual(metadata['formatVersion'], 1)
+                    self.assertEqual(metadata['document']['revision'], 3)
+                    self.assertIn('assets/cover.png', source)
+                    self.assertTrue(archive.read('assets/cover.png').startswith(b'\x89PNG'))
+                    self.assertIn('```mermaid\n', source)
+                    self.assertIn('```vega-lite\n', source)
+                    self.assertIn('$$\\bar{x}', source)
                     self.assertEqual(metadata['document']['kind'], 'form')
                     self.assertEqual(set(metadata['fields']), set(metadata['values']))
                     for asset in archive.namelist():
-                        if asset.startswith('assets/'):
+                        if asset.startswith('assets/') and asset.endswith('.svg'):
                             self.assertIn(asset, source)
                             self.assertIn(b'<svg ', archive.read(asset))
             self.assertEqual(unrelated.read_bytes(), b'preserve this file')

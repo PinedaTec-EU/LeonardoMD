@@ -36,6 +36,12 @@ struct ExtensionPreferences: View {
                 extensionCard(L10n.text("Markdown extras"), identifier: "markdown-extensions", description: L10n.text("Footnotes and GitHub-style callouts"), symbol: "text.badge.plus",
                               enabled: Binding(get: { features.markdownExtensionsEnabled },
                                                set: { session.setMarkdownExtensions($0, project: projectScope) }))
+                VStack(alignment: .leading, spacing: 6) {
+                    Button(L10n.text("Reset extension warnings")) { ExtensionWarningPreferences.shared.reset() }
+                        .accessibilityIdentifier("reset-extension-warnings")
+                    Text(L10n.text("Ask again about disabled extensions in documents. This does not change enabled extensions."))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 Text(L10n.text("Charts and bibliography engines load only when used. Disabling an extension preserves the document source."))
                     .font(.caption).foregroundStyle(.secondary)
             }.padding(16).frame(maxWidth: .infinity, alignment: .leading)

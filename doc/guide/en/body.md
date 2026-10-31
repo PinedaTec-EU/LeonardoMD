@@ -1,5 +1,6 @@
-# Your Leonardo guide
+![Leonardo: a workshop for ideas, documents and knowledge](assets/cover.png)
 
+# Your Leonardo guide
 Read, practise and share your documents.
 
 This guide is a real Leonardo document inside an **MDLZ** package with local images. Reading and practice work offline; external installation and documentation links require Internet access. Use the inspector's document outline to jump between chapters.
@@ -7,6 +8,76 @@ This guide is a real Leonardo document inside an **MDLZ** package with local ima
 **This is your personal working copy.** Help → Leonardo user guide and the Welcome button open this same copy in a new tab or activate its existing tab. Saving preserves your exercises. The application's bundled original stays untouched. A new guide revision gets a separate copy.
 
 ![A document journey: write, fill and share](assets/journey.svg)
+
+
+## A document you can see
+
+A diagram to explain, a formula to be precise and a chart to compare. These are live examples: explore their source in **Edit** or **Split** mode.
+
+**Required extensions:** Mermaid, Math (KaTeX) and Charts (Vega-Lite). If an extension is disabled, its example will not display correctly: you will see code or uninterpreted notation. Enable it in **Preferences → Extensions** or accept Leonardo's recommendation. Extensions are never enabled without your consent.
+
+### Explain a journey · Mermaid
+
+**Requires Mermaid to be enabled.** This diagram connects the three steps of a shared document.
+
+```mermaid
+flowchart LR
+    A[Write an idea] --> B[Fill and review]
+    B --> C[Share the result]
+```
+
+<details>
+<summary>View the diagram source</summary>
+
+````text
+```mermaid
+flowchart LR
+    A[Write an idea] --> B[Fill and review]
+    B --> C[Share the result]
+```
+````
+
+</details>
+
+### Make an idea precise · Math
+
+**Requires Math to be enabled.** A mean expresses how to summarize observations in one line:
+
+$$\bar{x}=\frac{x_1+x_2+x_3}{3}$$
+
+For 2, 4 and 6, the mean is 4. Source: `$$\bar{x}=\frac{x_1+x_2+x_3}{3}$$`. This is a presentation formula; it does not calculate form fields.
+
+### Compare at a glance · Charts
+
+**Requires Charts (Vega-Lite) to be enabled.** Fictional document progress data; all data is included in the package.
+
+```vega-lite
+{"width":520,"height":180,"description":"Fictional example: document progress","data":{"values":[{"stage":"Draft","progress":30},{"stage":"Review","progress":65},{"stage":"Ready","progress":100}]},"mark":{"type":"bar","color":"#9b6b39","cornerRadiusEnd":5},"encoding":{"y":{"field":"stage","type":"nominal","sort":null,"title":null},"x":{"field":"progress","type":"quantitative","title":"Progress (%)","scale":{"domain":[0,100]}}}}
+```
+
+<details>
+<summary>View the chart source</summary>
+
+````text
+```vega-lite
+{
+  "data": {"values": [
+    {"stage": "Draft", "progress": 30},
+    {"stage": "Review", "progress": 65},
+    {"stage": "Ready", "progress": 100}
+  ]},
+  "mark": "bar",
+  "encoding": {
+    "y": {"field": "stage", "type": "nominal"},
+    "x": {"field": "progress", "type": "quantitative"}
+  }
+}
+```
+````
+
+</details>
+
+**You choose when to enable.** Leonardo groups detected disabled built-in extensions into one dialog. **Not now** avoids repeating that recommendation during the current opening. Select **Do not ask again for this extension** to remember your choice on this Mac. **Preferences → Extensions → Reset extension warnings** allows recommendations again without changing enabled extensions. The dialog states whether activation affects the project or your global preferences.
 
 ## 1. Open, read and edit
 

@@ -64,6 +64,7 @@ enum MarkdownHTMLShell {
           <script src="\(resourceURL(.leonardoLayout))"></script>
           <script src="\(resourceURL(.imageLoading))"></script>
           \(extensionScripts)
+          <script src="\(resourceURL(.extensionDetection))"></script>
           <script src="\(resourceURL(.runtime))"></script>
         </body>
         </html>
