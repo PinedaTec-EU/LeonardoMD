@@ -51,9 +51,8 @@ final class ExtensionRecommendationVisualTests: XCTestCase {
             "os": ProcessInfo.processInfo.operatingSystemVersionString,
             "source_sha": ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local"
         ]
+        view.appearance = NSAppearance(named: .aqua)
         try await NativeViewCaptureSupport.capture(view, size: size, to: url, title: screen, beforeCapture: { captured in
-            captured.appearance = NSAppearance(named: .aqua)
-            captured.window?.appearance = NSAppearance(named: .aqua)
             let bounds = captured.bounds.size
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
