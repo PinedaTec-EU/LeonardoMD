@@ -15,7 +15,7 @@ Implementation and exact-head CI evidence: [PR #311](https://github.com/PinedaTe
 The [canonical capture bundle](current/README.md) contains original English/Spanish
 header, diagram/formula/chart, both consent scopes and reset screenshots with
 capture-time contexts and canonical image-hash/source-binding sidecars. It was
-captured from clean source `17164e6c952174784cf7436ba0510873c218acf7`; the following
+captured from clean source `b8900bf14f17aba18e4e89cb141c392048a5314f`; the following
 evidence-only commit changes no product code, tests, resources or build inputs.
 The PR records and verifies that source-to-reviewed-head mapping.
 
