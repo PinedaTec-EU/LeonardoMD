@@ -737,6 +737,16 @@
       "pr": 311,
       "summary": "Adds detailed illustrated English and Spanish help with a feature coverage inventory and a feature-PR help maintenance convention, plus consent-based recommendations for disabled built-in extensions and resettable warnings.",
       "to_version": "0.1.759"
+    },
+    {
+      "delta": {
+        "build": 3
+      },
+      "from_version": "0.1.759",
+      "merge_sha": "df93afdc7d096d706bf9a5f1ee20e553348c01ee",
+      "pr": 313,
+      "summary": "Open a separate practice form from the English or Spanish user guide, ready to fill and save, while keeping help readable and previous answers intact.",
+      "to_version": "0.1.762"
     }
   ],
   "initial_version": "0.1.56",
@@ -747,5 +757,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.759"
+  "version": "0.1.762"
 }

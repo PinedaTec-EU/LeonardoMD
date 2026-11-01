@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.762
+
+- #312 Added: open a separate ready-to-fill practice form from help ([#313](https://github.com/PinedaTec-EU/LeonardoMD/pull/313))
+
+<p>Open a separate practice form from the English or Spanish user guide, ready to fill and save, while keeping help readable and previous answers intact.</p>
+
+Source: `df93afdc7d096d706bf9a5f1ee20e553348c01ee`. Delta: `{"build": 3}`.
+
 ## 0.1.759
 
 - #310 Updated: illustrated bilingual help and extension recommendations ([#311](https://github.com/PinedaTec-EU/LeonardoMD/pull/311))
