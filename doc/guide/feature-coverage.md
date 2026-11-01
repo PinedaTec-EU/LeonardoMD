@@ -8,9 +8,9 @@ both locales under `.skills/leonardo-user-guide/SKILL.md`.
 
 | Capability / behavior checked | Implementation reference | Chapters | Illustration / exercise |
 | --- | --- | --- | --- |
-| Personal guide copy; Help/Welcome; language; preserve saved answers across revisions | `BundledUserGuide.swift`, `DocumentTabs.swift`, `LeonardoMD.swift` | Introduction, 4 | Header, live practice fields, Home capture |
+| Personal guide copy; Help/Welcome; language; separate practice copy; preserve saved answers across revisions | `BundledUserGuide.swift`, `DocumentTabs.swift`, `LeonardoMD.swift` | Introduction, 4 | Header, separate practice form, Home capture |
 | Supported standalone files vs project folders; protection; save decisions | `AppSession.swift`, `WorkspaceView.swift`, `ProjectSidebar.swift` | 1–2, 8, 10 | Document journey diagram |
-| MDLF/MDLR metadata, field definitions/values and inline fill/help | `../LeonardoCore/LeonardoFormatTypes.swift`, `SessionLeonardoFields.swift`, `DocumentInspector.swift` | 2–4 | Minimal valid source, practice form |
+| MDLF/MDLR metadata, field definitions/values and inline fill/help | `../LeonardoCore/LeonardoFormatTypes.swift`, `SessionLeonardoFields.swift`, `DocumentInspector.swift` | 2–4 | Minimal valid source, separate practice form |
 | Markdown migration keeps original; package vs extracted-folder saving | `LeonardoFormatPreferences.swift`, `SessionLeonardo.swift` | 3, 5 | Package contents diagram |
 | Package, response, Markdown and PDF export; loss/remote resource limits | `SessionMarkdownExport.swift`, `SessionLeonardoExport.swift`, `../LeonardoRender/MarkdownPDFExportCoordinator.swift` | 5, 10, 18–19 | Export decision diagram |
 | External agent skill installation vs runtime app control; attachment limitations | `plugins/leonardo-format/skills/leonardo-format/SKILL.md`, `doc/plugins/leonardo-format.md` | 6 | Copyable prompts; provider instructions retain their explicit check date |
@@ -40,3 +40,9 @@ Their original capture contexts/metadata live beside the PNGs in each locale's
 - The iOS companion is read-only; desktop incoming proposals do not imply mobile editing.
 - The bundled help's inline filling instructions supersede the obsolete web-manual inspector instruction tracked in [#225](https://github.com/PinedaTec-EU/LeonardoMD/issues/225). The owner included #225 in this PR; the web manuals are generated from the same bilingual editorial sources.
 - The updater Preferences-sheet workaround stays explicit under [#202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202); screenshots do not prove every channel/install transition.
+
+Practice navigation ([#312](https://github.com/PinedaTec-EU/LeonardoMD/issues/312)):
+`GuidePracticeNavigation.swift` binds the fixed localized resource destination to
+the live guide/session/source and active tab. Guide v5 is read-only content;
+practice v1 is a separate MDLR. Reopening selects the existing practice tab in
+Fill mode. Cmd-4 fills, the padlock edits structure, and Cmd-S saves answers.

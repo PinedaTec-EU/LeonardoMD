@@ -3,9 +3,9 @@
 # Your Leonardo guide
 Read, practise and share your documents.
 
-This guide is a real Leonardo document inside an **MDLZ** package with local images. Reading and practice work offline; external installation and documentation links require Internet access. Use the inspector's document outline to jump between chapters.
+This guide is a reading document in the Leonardo format inside an **MDLZ** package with local images. Reading and practice work offline; external installation and documentation links require Internet access. Use the inspector's document outline to jump between chapters.
 
-**This is your personal working copy.** Help → Leonardo user guide and the Welcome button open this same copy in a new tab or activate its existing tab. Saving preserves your exercises. The application's bundled original stays untouched. A new guide revision gets a separate copy.
+**This is your personal working copy.** Help → Leonardo user guide and the Welcome button open this same copy in a new tab or activate its existing tab. Practice answers are saved in a separate form. The application's bundled original stays untouched. A new guide revision gets a separate copy.
 
 ![A document journey: write, fill and share](assets/journey.svg)
 
@@ -132,21 +132,17 @@ Name: {{field:name}}
 
 Definitions belong in `fields`, answers in `values`, and presentation in the body and `layout`. Keep field identifiers stable when changing labels. Replacing placeholders with answers in the source body loses the interactive form structure.
 
-## 4. Practise here
+## 4. Practise with a form
 
-This guide is also a form. Select **Fill form** in the toolbar's mode control and fill these controls inside the page. Structural unlocking is unnecessary.
+The guide stays in reading mode. Use this button to open your practice form in another tab, **ready to type into its fields**, without unlocking the padlock:
 
-Your practice name: {{field:practiceName}}
+<a href="https://github.com/PinedaTec-EU/LeonardoMD/blob/main/doc/guide/en/practice.mdlr" style="display:inline-block;padding:0.75em 1.1em;border:1px solid currentColor;border-radius:0.6em;font-weight:600;text-decoration:none">Open practice form →</a>
 
-What would you like to create with Leonardo?
+If already open, the button selects its tab and activates **Fill form**. Your answers are saved separately from the guide: enter fictional data, save with **⌘S**, close the form and reopen it with this button to check that they remain.
 
-{{field:practiceGoal}}
+**Each control has a purpose:** **⌘4** activates Fill form; the **padlock** permits structural editing and is unnecessary for filling; **⌘S** saves answers. If you change modes, return to Fill form before typing.
 
-I checked the format and destination before sharing: {{field:practiceReady}}
-
-Save (⌘S), close the tab and reopen the guide from Help: your answers remain in the personal copy. Use **Export Leonardo response** in the toolbar (document with an arrow) to create a recipient copy. Because this guide includes local images, its response exports as MDLZ containing an MDLR.
-
-**Exercise:** fill → save → export a response to a location you choose → reopen that export. Check the answers and Fill mode. Use fictional data if you later send the document to an AI service.
+**Exercise:** open the form → fill → save → use Export Leonardo response to create an MDLR → reopen the response and check its values. In the web edition, download the linked file and open it in Leonardo; the browser does not provide interactive controls.
 
 ### Field types and validation
 

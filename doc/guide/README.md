@@ -1,14 +1,14 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v4-en.mdlz` and `Guide-v4-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v5-en.mdlz` and `Guide-v5-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v4/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v5/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
-remain unchanged. Existing v2/v3 copies and practice answers are never overwritten.
+remain unchanged. Existing v2/v3/v4 copies and practice answers are never overwritten.
 
 `en/body.md` and `es/body.md` are the editorial sources. The 19 chapters cover
 current macOS workflows, with live Mermaid/KaTeX/Vega examples, literal citation
-and Markdown-extras examples, a practice form, three generated diagrams, the
+and Markdown-extras examples, a separate practice form, three generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
@@ -46,3 +46,11 @@ Revision 2's packaged-process acceptance remains historical at
 
 Tracking: [#290](https://github.com/PinedaTec-EU/LeonardoMD/issues/290),
 [#310](https://github.com/PinedaTec-EU/LeonardoMD/issues/310).
+
+Revision 5 is a reading document with no exercise fields. Chapter 4's fixed
+practice link is recognized only in the guide opened through Help/Welcome.
+`Practice-v1-en/es.mdlr` provides a separate user-owned form under
+`Practice Forms/v1/<locale>/`, opening in Fill mode and retaining saved answers.
+The linked web copies are generated at `doc/guide/<locale>/practice.mdlr`.
+No system URL protocol or general document-command facility is introduced.
+Tracking: [#312](https://github.com/PinedaTec-EU/LeonardoMD/issues/312).
