@@ -36,9 +36,11 @@ extension DocumentTabs {
                 .appendingPathComponent("LeonardoMD", isDirectory: true)
             let copy = try BundledUserGuide.workingCopy(language: language,
                                                       supportDirectory: support)
+            let alreadyOpen = tabs.contains { $0.session.displayDocumentURL == copy }
             await openExternalDocuments([copy], packagePreference: .package)
             guard acceptsExternalDrops,
                   let session = tabs.first(where: { $0.session.displayDocumentURL == copy })?.session else { return }
+            if !alreadyOpen { session.mode = .preview }
             configureGuidePractice(for: session, guide: copy, language: language, supportDirectory: support)
         } catch {
             activeSession.report(error)

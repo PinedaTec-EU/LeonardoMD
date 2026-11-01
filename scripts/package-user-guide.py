@@ -94,11 +94,11 @@ def write_web_guide(language, directory):
     spanish = language == "es"
     title = "Guía de Leonardo" if spanish else "Leonardo user guide"
     notice = ("Edición web de lectura. Abre Ayuda → Guía de Leonardo en la app para usar "
-              "los controles del formulario y los ejemplos renderizados con las extensiones "
+              "el formulario de práctica independiente y los ejemplos renderizados con las extensiones "
               "correspondientes. Este lector web puede no interpretar Mermaid, KaTeX o Vega-Lite."
               if spanish else
               "Web reading edition. Open Help → Leonardo user guide in the app to use "
-              "the form controls and examples rendered with their required extensions. "
+              "the separate practice form and examples rendered with their required extensions. "
               "This web reader may not interpret Mermaid, KaTeX or Vega-Lite.")
     switch = "[English](user-guide.md) · [Español](user-guide-es.md)"
     # The source stays authoritative; web only adapts transport paths and controls.

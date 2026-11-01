@@ -5,7 +5,7 @@
 
 [English](user-guide.md) · [Español](user-guide-es.md)
 
-Edición web de lectura. Abre Ayuda → Guía de Leonardo en la app para usar los controles del formulario y los ejemplos renderizados con las extensiones correspondientes. Este lector web puede no interpretar Mermaid, KaTeX o Vega-Lite.
+Edición web de lectura. Abre Ayuda → Guía de Leonardo en la app para usar el formulario de práctica independiente y los ejemplos renderizados con las extensiones correspondientes. Este lector web puede no interpretar Mermaid, KaTeX o Vega-Lite.
 
 ## Un documento que también se puede ver
 

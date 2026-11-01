@@ -5,7 +5,7 @@
 
 [English](user-guide.md) · [Español](user-guide-es.md)
 
-Web reading edition. Open Help → Leonardo user guide in the app to use the form controls and examples rendered with their required extensions. This web reader may not interpret Mermaid, KaTeX or Vega-Lite.
+Web reading edition. Open Help → Leonardo user guide in the app to use the separate practice form and examples rendered with their required extensions. This web reader may not interpret Mermaid, KaTeX or Vega-Lite.
 
 ## A document you can see
 
