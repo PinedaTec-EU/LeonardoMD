@@ -2,7 +2,7 @@
   "browser_name" : "Native WKWebView; User-Agent reports engine compatibility versions",
   "browser_version" : "Mozilla\/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit\/605.1.15 (KHTML, like Gecko)",
   "capture_mode" : "element",
-  "captured_at" : "2026-11-01T07:29:19.922Z",
+  "captured_at" : "2026-11-01T07:41:45.068Z",
   "data_provenance" : "synthetic",
   "device_pixel_ratio" : 2,
   "native_viewport_points" : {
@@ -12,7 +12,7 @@
   "os" : "Version 27.0.1 (Build 26A434)",
   "route" : "\/native\/user-guide\/es",
   "screen" : "Leonardo guide: Guide chapter 4; reading mode; fixed practice link; no form fields",
-  "source_sha" : "ead1cd92b0de4c70b65363ba65c6abf200919c6d",
+  "source_sha" : "2b94b7be476307fb66361ccb9c23d36313571f6e",
   "state" : "Guide chapter 4; reading mode; fixed practice link; no form fields; language es",
   "viewport_css" : {
     "height" : 571,

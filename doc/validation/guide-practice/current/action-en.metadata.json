@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "collected_at": "2026-11-01T07:29:29.379990+00:00",
+  "collected_at": "2026-11-01T07:42:40.389673+00:00",
   "capture": {
-    "captured_at": "2026-11-01T07:29:18.222000+00:00",
+    "captured_at": "2026-11-01T07:41:43.252000+00:00",
     "route": "/native/user-guide/en",
     "screen": "Leonardo guide: Guide chapter 4; reading mode; fixed practice link; no form fields",
     "browser_name": "Native WKWebView; User-Agent reports engine compatibility versions",
@@ -22,7 +22,7 @@
     "sha256": "1e10a31e4b048a977962a930a5c760709e610e42a9e840710a3236f3b22342a6"
   },
   "source": {
-    "revision_at_collection": "ead1cd92b0de4c70b65363ba65c6abf200919c6d",
+    "revision_at_collection": "2b94b7be476307fb66361ccb9c23d36313571f6e",
     "tracked_changes_present": false,
     "untracked_files_present": false
   }
