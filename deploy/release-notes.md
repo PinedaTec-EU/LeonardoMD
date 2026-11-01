@@ -271,4 +271,10 @@
 - [#311](https://github.com/PinedaTec-EU/LeonardoMD/pull/311) — #310 Updated: illustrated bilingual help and extension recommendations — build +20
   <p>Adds detailed illustrated English and Spanish help with a feature coverage inventory and a feature-PR help maintenance convention, plus consent-based recommendations for disabled built-in extensions and resettable warnings.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.759)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTEtMDFUMDk6Mjg6MjBaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjN9LCJmcm9tX3ZlcnNpb24iOiIwLjEuNzU5Iiwia2luZCI6InB1bGxfcmVxdWVzdCIsIm1lcmdlX3NoYSI6ImRmOTNhZmRjN2QwOTZkNzA2YmY5YTVmMWVlMjBlNTUzMzQ4YzAxZWUiLCJudW1iZXIiOjMxMywic3VtbWFyeSI6Ik9wZW4gYSBzZXBhcmF0ZSBwcmFjdGljZSBmb3JtIGZyb20gdGhlIEVuZ2xpc2ggb3IgU3BhbmlzaCB1c2VyIGd1aWRlLCByZWFkeSB0byBmaWxsIGFuZCBzYXZlLCB3aGlsZSBrZWVwaW5nIGhlbHAgcmVhZGFibGUgYW5kIHByZXZpb3VzIGFuc3dlcnMgaW50YWN0LiIsInRpdGxlIjoiIzMxMiBBZGRlZDogb3BlbiBhIHNlcGFyYXRlIHJlYWR5LXRvLWZpbGwgcHJhY3RpY2UgZm9ybSBmcm9tIGhlbHAiLCJ0b192ZXJzaW9uIjoiMC4xLjc2MiJ9XSwiZW52aXJvbm1lbnQiOiJyZWxlYXNlIiwiZXZlbnRfaWQiOiJnaXRodWJfcmVsZWFzZTo0MzA0NTA0NzgiLCJldmVudF9raW5kIjoiZ2l0aHViX3JlbGVhc2UiLCJldmlkZW5jZV91cmwiOiJodHRwczovL2dpdGh1Yi5jb20vUGluZWRhVGVjLUVVL0xlb25hcmRvTUQvcmVsZWFzZXMvdGFnL3YwLjEuNzYyIiwicmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwic291cmNlX3JlZiI6InYwLjEuNzYyIiwic291cmNlX3NoYSI6ImRhNTA4ZmZjNDM2Y2QyMjkzMzA5ZGM4NmYzODcxYmFkN2FiNGM4MDIiLCJ0YXJnZXQiOiJQaW5lZGFUZWMtRVUvTGVvbmFyZG9NRCIsInZlcnNpb24iOiIwLjEuNzYyIn0 -->
+### 0.1.762
+- [#313](https://github.com/PinedaTec-EU/LeonardoMD/pull/313) — #312 Added: open a separate ready-to-fill practice form from help — build +3
+  <p>Open a separate practice form from the English or Spanish user guide, ready to fill and save, while keeping help readable and previous answers intact.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.762)
 <!-- release-ledger:end -->
