@@ -3,6 +3,24 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.1.762</title>
+            <pubDate>Sun, 01 Nov 2026 09:27:18 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>762</sparkle:version>
+            <sparkle:shortVersionString>0.1.762</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">## Practice forms from the user guide
+
+The English and Spanish guides now open a separate practice form, ready to fill and save. Help stays readable while your practice answers are saved independently.
+
+Existing guide copies and saved answers are preserved. Answers from older guides are not migrated automatically into the new practice form.
+
+This beta is for Apple silicon Macs running macOS 14 or later. Candidate-specific installed update and relaunch acceptance remains pending.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.762/LeonardoMD-0.1.762.zip" length="21354847" type="application/octet-stream" sparkle:edSignature="6XytJsXrn0DS8bz4MF8YcLJ0A/r4tEAZj2wl+EVVZyR3G6XlBJZCGDYipVV7celHySrap7kDVWVoMAmpYRDYCg==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.1.759</title>
             <pubDate>Sat, 31 Oct 2026 11:55:12 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
