@@ -103,6 +103,7 @@ final class AppSession {
     /// boundary as a session closure prevents AppSession from knowing whether
     /// the bytes came from a ZIP implementation, a future document provider,
     /// or a user-selected extraction directory.
+    var openGuidePractice: @MainActor (GuidePracticeRequest) async -> GuidePracticeResult = { _ in .notApplicable }
     var openUserGuide: @MainActor () async -> Void = {}
     var openPackageDocument: @MainActor (URL, LeonardoPackageOpenPreference) async -> Bool = { _, _ in false }
     /// The format owner supplies the canonical MD -> MDLF migration. The app

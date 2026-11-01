@@ -5,7 +5,7 @@
 
 [English](user-guide.md) · [Español](user-guide-es.md)
 
-Edición web de lectura. Abre Ayuda → Guía de Leonardo en la app para usar los controles del formulario y los ejemplos renderizados con las extensiones correspondientes. Este lector web puede no interpretar Mermaid, KaTeX o Vega-Lite.
+Edición web de lectura. Abre Ayuda → Guía de Leonardo en la app para usar el formulario de práctica independiente y los ejemplos renderizados con las extensiones correspondientes. Este lector web puede no interpretar Mermaid, KaTeX o Vega-Lite.
 
 ## Un documento que también se puede ver
 
@@ -129,21 +129,17 @@ Nombre: {{field:nombre}}
 
 Las definiciones van en `fields`, las respuestas en `values` y la presentación en el cuerpo y `layout`. Mantén los identificadores de campo aunque cambies sus etiquetas. No pegues respuestas en el cuerpo sustituyendo los marcadores si necesitas conservar un formulario interactivo.
 
-## 4. Practica aquí
+## 4. Practica con un formulario
 
-Esta guía también es un formulario. Selecciona **Rellenar formulario** en el control de modo de la barra. Rellena estos campos dentro de la página; no necesitas desbloquear la estructura.
+La ayuda permanece en modo Lectura. Usa este botón para abrir tu formulario de práctica en otra pestaña, **listo para escribir en los campos**, sin desbloquear el candado:
 
-Tu nombre de prueba: {{field:practiceName}}
+<a href="https://github.com/PinedaTec-EU/LeonardoMD/blob/main/doc/guide/es/practice.mdlr" style="display:inline-block;padding:0.75em 1.1em;border:1px solid currentColor;border-radius:0.6em;font-weight:600;text-decoration:none">Abrir formulario de práctica →</a>
 
-¿Qué quieres crear con Leonardo?
+Si ya está abierto, el botón selecciona su pestaña y activa **Rellenar formulario**. Tus respuestas se guardan aparte de la ayuda: escribe datos ficticios, guarda con **⌘S**, cierra el formulario y vuelve a abrirlo con el botón para comprobar que se conservan.
 
-{{field:practiceGoal}}
+**Cada control tiene su función:** **⌘4** activa Rellenar formulario; el **candado** permite cambiar la estructura del documento y no es necesario para rellenar; **⌘S** guarda las respuestas. Si has cambiado de modo, vuelve a Rellenar formulario antes de escribir.
 
-He comprobado el formato y el destino antes de compartir: {{field:practiceReady}}
-
-Guarda (⌘S), cierra la pestaña y vuelve a abrir la guía desde Ayuda: tus respuestas seguirán en la copia personal. Para obtener una respuesta destinada a otro usuario, usa **Exportar respuesta Leonardo** en la barra (icono de documento con flecha). Como esta guía contiene imágenes, la respuesta se exporta como MDLZ con un MDLR dentro.
-
-**Ejercicio:** rellena → guarda → exporta una respuesta a una ubicación que elijas → abre la exportación. Comprueba los valores y el modo Rellenar. Usa datos ficticios si después vas a enviarla a un servicio de IA.
+**Ejercicio:** abre el formulario → rellena → guarda → usa Exportar respuesta Leonardo para crear un MDLR → abre la respuesta y comprueba sus valores. En la edición web, descarga el archivo enlazado y ábrelo en Leonardo; el navegador no ofrece los controles interactivos.
 
 ### Tipos de campo y validación
 

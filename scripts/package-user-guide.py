@@ -43,11 +43,11 @@ def illustration(title, labels):
             + ''.join(cards) + '</g></svg>\n')
 
 
-def metadata(language):
+def practice_metadata(language):
     spanish = language == "es"
     return {
         "format": "mdlf", "formatVersion": 1,
-        "document": {"id": "leonardo-user-guide-" + language, "kind": "form", "revision": 4},
+        "document": {"id": "leonardo-practice-" + language, "kind": "form", "revision": 1},
         "fields": {
             "practiceName": {"type": "text", "maxLength": 80, "label": "Nombre de prueba" if spanish else "Practice name"},
             "practiceGoal": {"type": "multiline", "maxLength": 1000, "label": "Tu objetivo" if spanish else "Your goal"},
@@ -55,6 +55,16 @@ def metadata(language):
         },
         "values": {"practiceName": None, "practiceGoal": None, "practiceReady": False},
     }
+
+
+def metadata(language):
+    return {"format": "mdlf", "formatVersion": 1,
+            "document": {"id": "leonardo-user-guide-" + language, "kind": "document", "revision": 5}}
+
+
+def practice_source(language):
+    body = (ROOT / "doc/guide" / language / "practice.md").read_text(encoding="utf-8")
+    return '---\n' + json.dumps(practice_metadata(language), ensure_ascii=False, indent=2) + '\n---\n' + body
 
 
 def build(language, destination):
@@ -84,11 +94,11 @@ def write_web_guide(language, directory):
     spanish = language == "es"
     title = "Guía de Leonardo" if spanish else "Leonardo user guide"
     notice = ("Edición web de lectura. Abre Ayuda → Guía de Leonardo en la app para usar "
-              "los controles del formulario y los ejemplos renderizados con las extensiones "
+              "el formulario de práctica independiente y los ejemplos renderizados con las extensiones "
               "correspondientes. Este lector web puede no interpretar Mermaid, KaTeX o Vega-Lite."
               if spanish else
               "Web reading edition. Open Help → Leonardo user guide in the app to use "
-              "the form controls and examples rendered with their required extensions. "
+              "the separate practice form and examples rendered with their required extensions. "
               "This web reader may not interpret Mermaid, KaTeX or Vega-Lite.")
     switch = "[English](user-guide.md) · [Español](user-guide-es.md)"
     # The source stays authoritative; web only adapts transport paths and controls.
@@ -102,6 +112,9 @@ def write_web_guide(language, directory):
         folder.mkdir(parents=True, exist_ok=True)
         (folder / f"{language}-{name}.svg").write_text(illustration(title, labels), encoding="utf-8")
         body = body.replace(f"guide/{language}/assets/{name}.svg", f"guide/illustrations/{language}-{name}.svg")
+    practice = directory / "guide" / language / "practice.mdlr"
+    practice.parent.mkdir(parents=True, exist_ok=True)
+    practice.write_text(practice_source(language), encoding="utf-8")
     name = "user-guide-es.md" if spanish else "user-guide.md"
     (directory / name).write_text("<!-- Generated from doc/guide; edit bilingual body.md sources. -->\n" + body, encoding="utf-8")
 
@@ -118,13 +131,15 @@ def main():
             write_web_guide(language, args.web_output)
     args.output.mkdir(parents=True, exist_ok=True)
     for language in ILLUSTRATIONS:
-        destination = args.output / f"Guide-v4-{language}.mdlz"
+        destination = args.output / f"Guide-v5-{language}.mdlz"
         # The canonical packer deliberately refuses overwrites. Replace only our generated artifact.
         with tempfile.TemporaryDirectory(prefix="leonardo-guide-output-") as temporary:
             result = Path(temporary) / destination.name
             build(language, result)
             destination.write_bytes(result.read_bytes())
         print(destination)
+        practice = args.output / f"Practice-v1-{language}.mdlr"
+        practice.write_text(practice_source(language), encoding="utf-8")
 
 
 if __name__ == "__main__":

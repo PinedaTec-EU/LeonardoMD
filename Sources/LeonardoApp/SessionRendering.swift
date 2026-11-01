@@ -6,6 +6,7 @@ import LeonardoRender
 extension AppSession {
     var preview: some View {
         let previewDocumentURL = documentURL
+        let previewSource = content
         renderer.onDetectedExtensions = { [weak self] source, used in
             guard let self, self.documentURL == previewDocumentURL, self.content == source, !self.stopped else { return }
             self.extensionRecommendations.detectedSource = source
@@ -32,7 +33,7 @@ extension AppSession {
             baseURL: documentURL?.deletingLastPathComponent(),
             configuration: renderConfiguration,
             controller: renderer,
-            onLinkActivation: { url in Task { await self.followLink(url) } },
+            onLinkActivation: { url in Task { await self.followPreviewLink(GuidePracticeRequest(destination: url, document: previewDocumentURL, source: previewSource)) } },
             onScrollProgress: { fraction in
                 if self.mode == .split { self.editorScroll = fraction }
             },
