@@ -60,6 +60,14 @@ final class GuidePracticeNavigationTests: XCTestCase {
             practice.mode = .preview
             tabs.select(guideID)
             let request = GuidePracticeRequest(destination: BundledGuidePractice.link(language: language), document: guide.documentURL, source: source)
+            // An existing tab may still be busy; the link must not bypass the
+            // canonical mode transition or claim an editable form in that state.
+            practice.busy = true
+            let blocked = await guide.openGuidePractice(request)
+            XCTAssertEqual(blocked, .rejected)
+            XCTAssertEqual(practice.mode, .preview)
+            practice.busy = false
+            tabs.select(guideID)
             await guide.followPreviewLink(request)
             XCTAssertTrue(tabs.activeSession === practice)
             XCTAssertEqual(tabs.tabs.count, count)

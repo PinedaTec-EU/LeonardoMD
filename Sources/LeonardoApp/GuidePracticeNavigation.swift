@@ -46,7 +46,8 @@ extension DocumentTabs {
                 guard self.acceptsExternalDrops,
                       let practice = self.tabs.first(where: { $0.session.displayDocumentURL == copy })?.session,
                       !practice.stopped, !practice.isClosing, practice.leonardoDocument?.isForm == true else { return .rejected }
-                practice.mode = .fill
+                await practice.setDocumentMode(.fill)
+                guard practice.displayDocumentURL == copy, practice.canFillLeonardoForm else { return .rejected }
                 return .opened
             } catch {
                 session.report(error)
