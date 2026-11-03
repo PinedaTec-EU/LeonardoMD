@@ -3,6 +3,24 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.1.765</title>
+            <pubDate>Tue, 03 Nov 2026 23:44:12 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>765</sparkle:version>
+            <sparkle:shortVersionString>0.1.765</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">## Clearer file selection and readable Leonardo filenames
+
+The active file stays highlighted in the project explorer, including MDLF, MDLR and MDLZ, even when automatic following is turned off. Selection uses the system highlight with readable text and icons.
+
+Leonardo filenames retain their wine color in light appearance and use a brighter tint in dark appearance. The English and Spanish guides explain selection and automatic following separately; existing personal guide copies remain intact.
+
+This beta is for Apple silicon Macs running macOS 14 or later. Candidate-specific installed update and relaunch acceptance remains pending.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.765/LeonardoMD-0.1.765.zip" length="21355559" type="application/octet-stream" sparkle:edSignature="xcDAxbMu7Q7xJfZWHLcP6fpFYaUB/1CWfKKT7Q2Q3ICL5TSXSgthINc/jenqJJb8+hknzZytZ0S2iP65YkSZCg==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.1.762</title>
             <pubDate>Sun, 01 Nov 2026 09:27:18 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
