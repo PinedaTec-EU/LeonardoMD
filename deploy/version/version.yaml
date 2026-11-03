@@ -747,9 +747,19 @@
       "pr": 313,
       "summary": "Open a separate practice form from the English or Spanish user guide, ready to fill and save, while keeping help readable and previous answers intact.",
       "to_version": "0.1.762"
+    },
+    {
+      "delta": {
+        "build": 3
+      },
+      "from_version": "0.1.762",
+      "merge_sha": "5cdebd372ffa784dfde07981ade079192dd478f4",
+      "pr": 315,
+      "summary": "Keep the active Leonardo file visibly selected and improve filename readability in dark appearance.",
+      "to_version": "0.1.765"
     }
   ],
-  "current_version": "0.1.762",
+  "current_version": "0.1.765",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

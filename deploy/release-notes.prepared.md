@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.765
+
+- #314 Fixed: persist Leonardo file selection and improve dark contrast ([#315](https://github.com/PinedaTec-EU/LeonardoMD/pull/315))
+
+<p>Keep the active Leonardo file visibly selected and improve filename readability in dark appearance.</p>
+
+Source: `5cdebd372ffa784dfde07981ade079192dd478f4`. Delta: `{"build": 3}`.
+
 ## 0.1.762
 
 - #312 Added: open a separate ready-to-fill practice form from help ([#313](https://github.com/PinedaTec-EU/LeonardoMD/pull/313))
