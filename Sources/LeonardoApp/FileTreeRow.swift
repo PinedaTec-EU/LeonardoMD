@@ -7,9 +7,10 @@ struct FileTreeRow: View {
     let depth: Int
     let expanded: Bool
     let toggle: () -> Void
-    private var selected: Bool {
-        session.globalPreferences.followActiveFile && !entry.isDirectory &&
-        (session.documentSourceURL ?? session.documentURL)?.standardizedFileURL == entry.url.standardizedFileURL
+    @Environment(\.colorScheme) private var colorScheme
+    var selected: Bool {
+        !entry.isDirectory && session.displayDocumentURL?.resolvingSymlinksInPath().path ==
+            entry.url.resolvingSymlinksInPath().path
     }
     private var isColoredLeonardo: Bool {
         session.colorLeonardoFiles && !entry.isDirectory &&
@@ -26,13 +27,13 @@ struct FileTreeRow: View {
                     if entry.isDirectory {
                         Image(systemName: expanded ? "chevron.down" : "chevron.right").font(.caption2).frame(width: 10)
                     } else { Color.clear.frame(width: 10, height: 1) }
-                    Image(systemName: entry.symbol).foregroundStyle(selected ? Color(nsColor: .selectedTextColor) : isColoredLeonardo ? LeonardoFileStyle.wine : .secondary)
+                    Image(systemName: entry.symbol).foregroundStyle(selected ? Color(nsColor: .alternateSelectedControlTextColor) : isColoredLeonardo ? LeonardoFileStyle.foreground(for: colorScheme) : .secondary)
                     Text(entry.name).lineLimit(1)
-                        .foregroundStyle(selected ? Color(nsColor: .selectedTextColor) : isColoredLeonardo ? LeonardoFileStyle.wine : .primary)
+                        .foregroundStyle(selected ? Color(nsColor: .alternateSelectedControlTextColor) : isColoredLeonardo ? LeonardoFileStyle.foreground(for: colorScheme) : .primary)
                     Spacer(minLength: 0)
                 }.padding(.vertical, 6).padding(.horizontal, 6)
                     .modifier(FileRowHighlight(accent: session.accentColor))
-                    .background(selected ? Color(nsColor: .selectedTextBackgroundColor) : .clear,
+                    .background(selected ? Color(nsColor: .selectedContentBackgroundColor) : .clear,
                                 in: RoundedRectangle(cornerRadius: 6))
             }
                 .highPriorityGesture(

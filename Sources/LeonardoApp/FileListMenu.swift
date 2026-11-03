@@ -28,5 +28,9 @@ struct FileListMenu: View {
 }
 
 enum LeonardoFileStyle {
-    static let wine = Color(red: 0.56, green: 0.16, blue: 0.26)
+    static func foreground(for appearance: ColorScheme) -> Color {
+        appearance == .dark
+            ? Color(red: 1.0, green: 0.62, blue: 0.72)
+            : Color(red: 0.56, green: 0.16, blue: 0.26)
+    }
 }

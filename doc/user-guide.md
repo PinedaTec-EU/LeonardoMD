@@ -303,6 +303,8 @@ Open **LeonardoMD → Preferences…** (⌘,). Tab navigation stays fixed; Gener
 
 Choose English or Español under **General → On this Mac → Language**. General also controls package opening, Markdown-to-MDLF saves, frontmatter visibility, external-link confirmation, hidden files and following the active file. Read each description: these controls do not all become project settings because a project is open.
 
+The active file stays highlighted in the project explorer in light and dark appearance, including MDLF, MDLR and MDLZ. Turning off **Follow active file** stops automatic expansion and scrolling; it keeps the visible active row highlighted. Leonardo file colors adapt to the appearance, and the selection color takes precedence.
+
 Appearance offers palettes, paper effects and Leonardo file colors. **Customize** edits Paper, Text, Headings and Accent; the preview and contrast checks help keep the document readable. Apply to the selected scope, reset to the base palette, or import/export a palette JSON. A rejected color combination needs adjustment before Apply. An imported palette changes appearance, not document content.
 
 **Default document application** reports associations for `.md`, `.markdown`, `.mdlf`, `.mdlr` and `.mdlz`. Choose Use LeonardoMD, Ask next time or Never ask again; reset the prompt here. This does not change `.txt` or Finder overrides, and macOS may request consent.

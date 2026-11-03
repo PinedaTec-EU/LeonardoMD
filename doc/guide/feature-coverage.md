@@ -10,6 +10,7 @@ both locales under `.skills/leonardo-user-guide/SKILL.md`.
 | --- | --- | --- | --- |
 | Personal guide copy; Help/Welcome; language; separate practice copy; preserve saved answers across revisions | `BundledUserGuide.swift`, `DocumentTabs.swift`, `LeonardoMD.swift` | Introduction, 4 | Header, separate practice form, Home capture |
 | Supported standalone files vs project folders; protection; save decisions | `AppSession.swift`, `WorkspaceView.swift`, `ProjectSidebar.swift` | 1–2, 8, 10 | Document journey diagram |
+| Persistent active-file selection independent of automatic following; appearance-aware Leonardo filename colors | `FileTreeRow.swift`, `FileListMenu.swift` | 11 | Text explanation; opt-in native light/dark row captures in `SidebarSelectionTests` |
 | MDLF/MDLR metadata, field definitions/values and inline fill/help | `../LeonardoCore/LeonardoFormatTypes.swift`, `SessionLeonardoFields.swift`, `DocumentInspector.swift` | 2–4 | Minimal valid source, separate practice form |
 | Markdown migration keeps original; package vs extracted-folder saving | `LeonardoFormatPreferences.swift`, `SessionLeonardo.swift` | 3, 5 | Package contents diagram |
 | Package, response, Markdown and PDF export; loss/remote resource limits | `SessionMarkdownExport.swift`, `SessionLeonardoExport.swift`, `../LeonardoRender/MarkdownPDFExportCoordinator.swift` | 5, 10, 18–19 | Export decision diagram |
@@ -43,6 +44,6 @@ Their original capture contexts/metadata live beside the PNGs in each locale's
 
 Practice navigation ([#312](https://github.com/PinedaTec-EU/LeonardoMD/issues/312)):
 `GuidePracticeNavigation.swift` binds the fixed localized resource destination to
-the live guide/session/source and active tab. Guide v5 is read-only content;
+the live guide/session/source and active tab. Guide v6 is read-only content;
 practice v1 is a separate MDLR. Reopening selects the existing practice tab in
 Fill mode. Cmd-4 fills, the padlock edits structure, and Cmd-S saves answers.
