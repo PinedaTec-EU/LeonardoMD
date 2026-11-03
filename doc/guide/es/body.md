@@ -307,6 +307,8 @@ Abre **LeonardoMD → Preferencias…** (⌘,). Las pestañas permanecen fijas; 
 
 Elige English o Español en **General → En este Mac → Idioma**. General también controla apertura de paquetes, guardado Markdown como MDLF, frontmatter, confirmación de enlaces, archivos ocultos y seguimiento del archivo activo. Lee cada descripción: abrir un proyecto no convierte todos los ajustes en preferencias de proyecto.
 
+El archivo activo queda resaltado en el explorador del proyecto tanto en claro como en oscuro, incluidos MDLF, MDLR y MDLZ. Desactivar **Seguir archivo activo** detiene la expansión y el desplazamiento automáticos; la fila activa visible mantiene el resaltado. Los colores de los archivos Leonardo se adaptan a la apariencia y el color de selección tiene prioridad.
+
 Apariencia ofrece paletas, efectos de papel y colores de archivos Leonardo. **Personalizar** modifica Hoja, Texto, Titulares y Acento; la vista previa y los controles de contraste ayudan a mantener la legibilidad. Aplica al ámbito elegido, restablece la paleta base o importa/exporta JSON de paleta. Si se rechaza una combinación, ajústala antes de Aplicar. Importar una paleta cambia apariencia, no contenido.
 
 **Aplicación predeterminada para documentos** muestra las asociaciones de `.md`, `.markdown`, `.mdlf`, `.mdlr` y `.mdlz`. Elige Usar LeonardoMD, Preguntar la próxima vez o No volver a preguntar y restablece ese aviso aquí. No cambia `.txt` ni excepciones del Finder; macOS puede solicitar consentimiento.

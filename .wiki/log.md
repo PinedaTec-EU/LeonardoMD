@@ -175,3 +175,5 @@ source/license provenance, including bundled citeproc CPAL source. See
 - Native acceptance for [#293](https://github.com/PinedaTec-EU/LeonardoMD/issues/293) reproduced Finder rejecting MDLZ: `public.archive` alone is a functional UTI without `public.data` conformance. MDLZ now inherits `public.zip-archive` and `public.content`; the declaration regression checks physical file and content conformance for every supported extension.
 
 - 2026-10-30: Remove workspace grouping UI/session lifecycle and add project-context new-tab navigation; legacy stored metadata and package/sync work directories remain intact. [#305](https://github.com/PinedaTec-EU/LeonardoMD/issues/305).
+
+- 2026-11-03 — [#314](https://github.com/PinedaTec-EU/LeonardoMD/issues/314): explorer selection is independent of automatic following, compares display-file identity (original MDLZ for packages), and uses system selection colors. Leonardo filename tint adapts to light/dark appearance. Guide revision 6 documents the distinction.

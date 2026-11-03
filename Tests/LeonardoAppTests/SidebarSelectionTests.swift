@@ -47,6 +47,37 @@ final class SidebarSelectionTests: XCTestCase {
         XCTAssertFalse(entry.selected)
     }
 
+    func testNativeSelectionAppearances() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] else {
+            throw XCTSkip("Set LEONARDO_VISUAL_EVIDENCE for native appearance captures")
+        }
+        let output = URL(fileURLWithPath: path)
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        let session = AppSession(preferencesURL: output.appendingPathComponent("preferences.json"))
+        defer { session.stop() }
+        session.globalPreferences.followActiveFile = false
+        session.globalPreferences.colorLeonardoFiles = true
+        session.documentStorage = .package
+        session.documentSourceURL = URL(fileURLWithPath: "/project/Selected-package.mdlz")
+        session.documentURL = URL(fileURLWithPath: "/temporary/content.mdlf")
+        for appearance in [ColorScheme.light, .dark] {
+            let view = VStack(alignment: .leading, spacing: 4) {
+                ForEach(["Plain-markdown.md", "Leonardo-document.mdlf", "Leonardo-response.mdlr",
+                         "Other-package.mdlz", "Selected-package.mdlz"], id: \.self) { name in
+                    self.row(URL(fileURLWithPath: "/project/" + name), session: session)
+                }
+            }.padding(16).frame(width: 440, height: 240)
+                .background(appearance == .dark ? Color(white: 0.15) : Color(red: 0.94, green: 0.91, blue: 0.78))
+                .environment(\.colorScheme, appearance)
+            let host = NSHostingView(rootView: view)
+            host.appearance = NSAppearance(named: appearance == .dark ? .darkAqua : .aqua)
+            let file = output.appendingPathComponent("sidebar-selection-\(appearance).png")
+            try await NativeViewCaptureSupport.capture(host, size: NSSize(width: 440, height: 240), to: file)
+            try NativeViewCaptureSupport.writeProvenance(for: file, screen: "Project file rows, automatic following disabled",
+                size: NSSize(width: 440, height: 240), language: "en")
+        }
+    }
+
     private func row(_ url: URL, session: AppSession, directory: Bool = false) -> FileTreeRow {
         FileTreeRow(entry: NavigationEntry(url: url, isDirectory: directory), session: session,
                     depth: 0, expanded: false, toggle: {})

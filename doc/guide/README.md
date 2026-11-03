@@ -1,8 +1,8 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v5-en.mdlz` and `Guide-v5-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v6-en.mdlz` and `Guide-v6-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v5/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v6/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing v2/v3/v4 copies and practice answers are never overwritten.
 
