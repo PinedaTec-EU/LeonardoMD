@@ -277,4 +277,10 @@
 - [#313](https://github.com/PinedaTec-EU/LeonardoMD/pull/313) — #312 Added: open a separate ready-to-fill practice form from help — build +3
   <p>Open a separate practice form from the English or Spanish user guide, ready to fill and save, while keeping help readable and previous answers intact.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.762)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTEtMDNUMjI6NDU6MzlaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjN9LCJmcm9tX3ZlcnNpb24iOiIwLjEuNzYyIiwia2luZCI6InB1bGxfcmVxdWVzdCIsIm1lcmdlX3NoYSI6IjVjZGViZDM3MmZmYTc4NGRmZGUwNzk4MWFkZTA3OTE5MmRkNDc4ZjQiLCJudW1iZXIiOjMxNSwic3VtbWFyeSI6IktlZXAgdGhlIGFjdGl2ZSBMZW9uYXJkbyBmaWxlIHZpc2libHkgc2VsZWN0ZWQgYW5kIGltcHJvdmUgZmlsZW5hbWUgcmVhZGFiaWxpdHkgaW4gZGFyayBhcHBlYXJhbmNlLiIsInRpdGxlIjoiIzMxNCBGaXhlZDogcGVyc2lzdCBMZW9uYXJkbyBmaWxlIHNlbGVjdGlvbiBhbmQgaW1wcm92ZSBkYXJrIGNvbnRyYXN0IiwidG9fdmVyc2lvbiI6IjAuMS43NjUifV0sImVudmlyb25tZW50IjoicmVsZWFzZSIsImV2ZW50X2lkIjoiZ2l0aHViX3JlbGVhc2U6NDMzMjk5NDg4IiwiZXZlbnRfa2luZCI6ImdpdGh1Yl9yZWxlYXNlIiwiZXZpZGVuY2VfdXJsIjoiaHR0cHM6Ly9naXRodWIuY29tL1BpbmVkYVRlYy1FVS9MZW9uYXJkb01EL3JlbGVhc2VzL3RhZy92MC4xLjc2NSIsInJlcG9zaXRvcnkiOiJQaW5lZGFUZWMtRVUvTGVvbmFyZG9NRCIsInNvdXJjZV9yZWYiOiJ2MC4xLjc2NSIsInNvdXJjZV9zaGEiOiI5NGZlYzg0ZWQyZTUzMDRhM2E5Y2RhZmZjMmMxNGUxMzZkMTcwZWQ2IiwidGFyZ2V0IjoiUGluZWRhVGVjLUVVL0xlb25hcmRvTUQiLCJ2ZXJzaW9uIjoiMC4xLjc2NSJ9 -->
+### 0.1.765
+- [#315](https://github.com/PinedaTec-EU/LeonardoMD/pull/315) — #314 Fixed: persist Leonardo file selection and improve dark contrast — build +3
+  <p>Keep the active Leonardo file visibly selected and improve filename readability in dark appearance.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.765)
 <!-- release-ledger:end -->
