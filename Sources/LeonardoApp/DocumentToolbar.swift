@@ -77,9 +77,9 @@ struct DocumentToolbar: View {
                 .help(L10n.text("Save (⌘S)"))
                 Menu {
                     ForEach(session.availableDocumentModes, id: \.self) { mode in
-                        Button(mode.title) { Task { await session.setDocumentMode(mode) } }
+                        Button(modeLabel(mode)) { Task { await session.setDocumentMode(mode) } }
                     }
-                } label: { Text(session.mode.title).lineLimit(1) }
+                } label: { menuTitle(modeLabel(session.mode)) }
                 .accessibilityLabel(L10n.text("Mode"))
                 .accessibilityIdentifier("document-mode")
                 .fixedSize()
@@ -88,7 +88,12 @@ struct DocumentToolbar: View {
                 Menu {
                     Button(L10n.text(session.focus ? "Exit focus mode" : "Focus mode")) { session.focus.toggle() }
                     Button(L10n.text("Outline")) { session.showInspector.toggle() }
-                } label: { Text(L10n.text("More")) }
+                    Menu(L10n.text("Objects")) {
+                        ForEach(session.leonardoDocument?.metadata.layout?.objects ?? []) { object in
+                            Button(object.label) { session.renderer.selectObject(object.id) }
+                        }
+                    }.disabled(!session.canEditGraphics || session.mode == .edit)
+                } label: { menuTitle(L10n.text("More")) }
                 .fixedSize()
             }
         }
@@ -98,12 +103,25 @@ struct DocumentToolbar: View {
     }
 
 
+    private func menuTitle(_ title: String) -> some View {
+        HStack(spacing: 5) { Text(title).lineLimit(1); Image(systemName: "chevron.down").font(.caption2) }
+    }
+
+    private func modeLabel(_ mode: DocumentMode) -> String {
+        switch mode {
+        case .preview: return L10n.text("Previsualize")
+        case .edit: return L10n.text("Edit source")
+        case .split: return L10n.text("Split view")
+        case .fill: return L10n.text("Fill")
+        }
+    }
+
     private var insertionMenu: some View {
         Menu {
             if session.documentKind.isLeonardo {
                 Button(L10n.text("Image…")) { session.chooseGraphicImage() }.disabled(!session.canEditGraphics)
                 Divider()
-                ForEach(RubricLibrary.shared.entries) { entry in
+                ForEach(session.rubricLibrary.entries) { entry in
                     Button { _ = session.insertGraphic(.init(label: entry.label, rubric: entry.rubric)) } label: {
                         Label { Text(entry.label) } icon: { Image(nsImage: RubricDrawing.thumbnail(entry.rubric)) }
                     }.disabled(!session.canEditGraphics)
@@ -114,7 +132,7 @@ struct DocumentToolbar: View {
                 Button(L10n.text("Save as MDLF…")) { Task { _ = await session.migrateMarkdownNow() } }
                     .disabled(!session.canEditGraphics)
             }
-        } label: { Text(L10n.text("Insert")) }
+        } label: { menuTitle(L10n.text("Insert")) }
         .fixedSize().accessibilityIdentifier("document-insert")
     }
 
@@ -131,7 +149,7 @@ struct DocumentToolbar: View {
             if session.leonardoDocument?.isForm == true {
                 Button(L10n.text("Export Leonardo response")) { session.exportLeonardoResponse() }
             }
-        } label: { Text(L10n.text("Export")) }
+        } label: { menuTitle(L10n.text("Export")) }
         .fixedSize().disabled(session.busy || session.isSyncSuspended)
         .accessibilityIdentifier("document-export")
     }

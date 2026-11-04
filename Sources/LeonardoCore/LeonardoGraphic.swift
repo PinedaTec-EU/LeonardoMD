@@ -21,7 +21,7 @@ public struct LeonardoGraphic: Codable, Equatable, Sendable, Identifiable {
     }
 
     public var isValid: Bool {
-        !id.isEmpty && id.count <= 128 && label.count <= 120
+        !id.isEmpty && id.count <= 128 && !label.isEmpty && label.count <= 120
         && (1...999).contains(page) && (-10000...10000).contains(z)
         && [x, y, width, height].allSatisfy { $0.isFinite && abs($0) <= 10000 }
         && width > 0 && height > 0

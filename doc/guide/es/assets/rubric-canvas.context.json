@@ -1,0 +1,20 @@
+{
+  "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
+  "browser_version" : "Not applicable: native view, no browser engine",
+  "capture_mode" : "element",
+  "captured_at" : "2026-11-04T22:46:34.173Z",
+  "data_provenance" : "synthetic",
+  "native_viewport_points" : {
+    "height" : 580,
+    "width" : 696
+  },
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "route" : "\/native\/user-guide\/es",
+  "screen" : "Leonardo guide: Production rubric editor; isolated synthetic library; empty new canvas; no device or legal signing",
+  "source_sha" : "local",
+  "state" : "Production rubric editor; isolated synthetic library; empty new canvas; no device or legal signing; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "viewport_css" : {
+    "height" : 580,
+    "width" : 696
+  }
+}

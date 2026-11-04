@@ -2,6 +2,7 @@ import AppKit
 import Foundation
 import LeonardoCore
 import Observation
+import OSLog
 
 struct SavedRubric: Codable, Identifiable {
     let id: String
@@ -15,6 +16,7 @@ final class RubricLibrary {
     private(set) var entries: [SavedRubric] = []
     private(set) var loadError: String?
     private let url: URL
+    private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "rubric-library")
 
     init(url: URL = URL.applicationSupportDirectory.appendingPathComponent("LeonardoMD/Rubrics/library.json")) {
         self.url = url
@@ -48,6 +50,7 @@ final class RubricLibrary {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try data.write(to: url, options: .atomic)
         entries = updated
+        logger.info("Persisted rubric library entries=\(updated.count, privacy: .public)")
     }
 }
 
@@ -63,8 +66,7 @@ struct RubricRequest: Identifiable {
 enum RubricDrawing {
     static func draw(_ rubric: LeonardoRubric, in rect: CGRect) {
         NSGraphicsContext.saveGraphicsState()
-        let transform = AffineTransform(scaleByX: rect.width / 600, byY: rect.height / 200)
-        transform.concat()
+        NSGraphicsContext.current?.cgContext.scaleBy(x: rect.width / 600, y: rect.height / 200)
         for stroke in rubric.strokes {
             let rgb = UInt32(stroke.color.dropFirst(), radix: 16) ?? 0
             NSColor(srgbRed: Double((rgb >> 16) & 255) / 255, green: Double((rgb >> 8) & 255) / 255,

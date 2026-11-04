@@ -50,6 +50,8 @@ public final class MarkdownPreviewController: ObservableObject {
         return try await host.exportPDF()
     }
 
+    public func selectObject(_ id: String) { host?.selectObject(id) }
+
     public func scroll(to anchor: String) {
         host?.scroll(to: anchor)
     }

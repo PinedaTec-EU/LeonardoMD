@@ -316,6 +316,8 @@
       await Promise.all(diagrams.map((element) => renderDiagram(element)));
     }
     await waitForDocumentAssets();
+    window.LeonardoObjects?.refresh();
+    await waitForDocumentAssets();
     await window.LeonardoImages.preparePDF(root);
     await waitForDocumentAssets();
   }
@@ -389,6 +391,7 @@
       }
       extensionWork = Promise.all(work).then(() => {
         if (generation !== renderGeneration) return;
+        window.LeonardoObjects?.refresh();
         installHeadingAnchors();
         window.LeonardoEditing.prepare(root);
         installInteractions();
@@ -415,7 +418,7 @@
 
   window.LeonardoPreview = {
     setAppearance,
-    setEditable(value) { payload.allowsEditing = value; window.LeonardoEditing.setEditable(root, value); window.LeonardoTableResizing.setEditable(value); },
+    setEditable(value) { payload.allowsEditing = value; window.LeonardoEditing.setEditable(root, value); window.LeonardoTableResizing.setEditable(value); window.LeonardoObjects?.setEditable(value); },
     updateContent(nextPayload) {
       if (!nextPayload || typeof nextPayload.markdown !== "string") return;
       payload = Object.assign(payload, nextPayload, { leonardo: nextPayload.leonardo || null });

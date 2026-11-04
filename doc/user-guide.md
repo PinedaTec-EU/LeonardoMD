@@ -165,8 +165,8 @@ not silently change its field identifier or invalidate previous answers.
 
 | Need | Action | Result and limits |
 | --- | --- | --- |
-| Preserve fields, layout and local images | **Export Leonardo package**, archive box icon | Portable MDLZ with resources |
-| Send a form to fill | **Export Leonardo response**, document with arrow | MDLR, or MDLZ containing MDLR when local resources are present |
+| Preserve fields, layout and local images | **Export → Export Leonardo package** | Portable MDLZ with resources |
+| Send a form to fill | **Export → Export Leonardo response** | MDLR, or MDLZ containing MDLR when local resources are present |
 | Share Markdown for reading | **File → Export Markdown…** | MD with current answers or defaults; loses interactive fields and Leonardo layout |
 | Deliver a fixed presentation | **File → Export PDF…** | Rendered PDF; keep the editable original |
 
@@ -286,6 +286,63 @@ For a table, unlock and drag a column edge in the preview to adjust widths. Leon
 **Undo / Redo** (⌘Z / ⇧⌘Z) shares document history across source, preview and form edits, up to 200 changes per session. A new edit clears Redo. Ordinary Save keeps history, but reloading, discarding, closing or converting formats clears it. Undo changes the draft; the saved file changes only after another Save. Focused search controls have their own text undo.
 
 If another program changes a clean document, Leonardo reloads it. When both have edits, stop and choose deliberately: **Reload** accepts the external file; **Save copy** preserves your draft separately. For a conflicted MDLZ, Save copy requires an MDLZ destination and includes current answers and readable local resources. A failed copy leaves the draft/conflict available. Keep the externally changed original until you have compared both versions.
+
+
+### Images, rubrics and page placement
+
+![Compact document header](guide/en/assets/document-toolbar.png)
+
+*Production toolbar component, synthetic document.*
+
+The header now has one **Preview / Edit / Split** mode dropdown. **Insert**
+groups images, saved rubrics and creation; **Export** groups PDF, Markdown,
+package, response and extraction commands; **More** contains Focus, Outline and
+an object list. Existing keyboard shortcuts still work.
+
+For an ordinary Markdown file, choose **Insert → Save as MDLF…** first. Unlock
+the document, then **Insert → Image…** to import a local PNG/JPEG/TIFF/GIF/BMP,
+or choose a saved rubric. Imported images are stored beside the working file;
+export an MDLZ to include them. Keep the editable original when exporting PDF.
+
+Select the image/rubric to move it, drag its corner to resize proportionally,
+or change X/Y and Z in the floating block; **Size and page…** opens the page and linked size controls. X/Y are points from the
+physical top-left of the selected page; text is Z=0. Negative Z puts the object
+behind text; positive Z puts it in front. At equal Z, the first defined object
+is behind. **More → Objects** selects covered items. Arrow keys move one point,
+Shift+arrow ten. Undo/Redo includes these changes. Save to persist them. The
+background is a separate facility, not an image's behind-text setting.
+
+![Rubric canvas and local library](guide/en/assets/rubric-canvas.png)
+
+*Production drawing-dialog component with synthetic saved ink; not a signed document.*
+
+**Insert → New rubric…** opens a drawing canvas: enter a label, choose color,
+stroke width and Solid/Brush, draw, Undo or Clear. New rubrics created here are
+always saved in your local library. Pick a saved thumbnail to insert another
+copy. The dialog's Delete removes only the library entry, never ink already
+inserted in documents. The library holds up to 100 entries on this Mac; it is
+not yet synchronized with Little Leonardo. Brush ends taper without requiring
+a pressure-sensitive pencil. These are visual rubrics, not digital certificates.
+
+For a rubric form field, use **Fill** and click its area. The expanded dialog
+lets you choose saved ink or draw new ink; **Save in my rubrics** controls whether
+new form ink also enters the library. **Remove rubric** clears the current field answer. The answer stays inside the author's
+field area and is saved with the response. A source padlock does not prevent
+filling a writable field. Read-only fields remain read-only.
+
+Page objects use physical pages. **Insert → Page break** appends a page break;
+move the exact token below in Edit to put it between the desired paragraphs:
+
+```markdown
+<!-- leonardo:page-break -->
+```
+
+Text flows at block boundaries. Split an over-height block in source if its
+page has a dashed outline; PDF export rejects that overflow. Recheck page
+placement after changing content or fonts: Leonardo does not move rubrics with
+text. Objects outside page edges are cropped in PDF. Plain Markdown export
+loses page objects and rubric ink. Deleting/undoing an imported object retains
+its local image file; remove unused files deliberately after checking references.
 
 ## 11. Preferences: choose the right scope
 

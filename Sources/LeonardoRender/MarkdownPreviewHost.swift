@@ -183,12 +183,13 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         try validatePDFTurn(ticket, webView: webView)
         try await waitUntilReady()
         try validatePDFTurn(ticket, webView: webView)
-        let restorePresentation = "window.LeonardoImages?.restorePreview(); window.LeonardoForms?.setExporting(false); document.querySelector('main')?.classList.remove('leonardo-form-export')"
+        let restorePresentation = "window.LeonardoImages?.restorePreview(); window.LeonardoForms?.setExporting(false); document.querySelector('main')?.classList.remove('leonardo-form-export'); window.LeonardoObjects?.refresh()"
         do {
+            _ = try await webView.evaluateJavaScript("window.LeonardoForms?.setExporting(true); document.querySelector('main')?.classList.add('leonardo-form-export')")
             try await renderAllDiagramsForPDF()
             try validatePDFTurn(ticket, webView: webView)
-            _ = try await webView.evaluateJavaScript("window.LeonardoForms?.setExporting(true); document.querySelector('main')?.classList.add('leonardo-form-export')")
             try validatePDFTurn(ticket, webView: webView)
+            let pageGeometryJSON = try await webView.evaluateJavaScript("window.LeonardoObjects?.pdfGeometry() || null") as? String
             let data = try await pdfExports.createPDF(ticket: ticket) { completion in
                 webView.createPDF(configuration: WKPDFConfiguration()) { result in
                     Task { @MainActor in completion(result) }
@@ -198,6 +199,12 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             // its image sources or form presentation again.
             _ = try await webView.evaluateJavaScript(restorePresentation)
             try validatePDFTurn(ticket, webView: webView)
+            if let json = pageGeometryJSON,
+               let bytes = json.data(using: .utf8) {
+                let geometry = try JSONDecoder().decode(MarkdownPagePDF.Geometry.self, from: bytes)
+                try validatePDFTurn(ticket, webView: webView)
+                return try MarkdownPagePDF.paginate(data, geometry: geometry)
+            }
             return data
         } catch {
             _ = try? await webView.evaluateJavaScript(restorePresentation)
@@ -209,6 +216,12 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         guard pdfExports.owns(ticket), self.webView === webView else {
             throw MarkdownRenderError.webViewUnavailable
         }
+    }
+
+    func selectObject(_ id: String) {
+        guard configuration.allowsEditing, !configuration.allowsFormFilling,
+              let data = try? JSONEncoder().encode(id), let json = String(data: data, encoding: .utf8) else { return }
+        evaluate("window.LeonardoObjects?.selectObject(\(json));")
     }
 
     func scroll(to anchor: String) {
@@ -511,8 +524,13 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         case "leonardoObject":
             guard message.webView === webView, message.frameInfo.isMainFrame, renderWorkItem == nil,
                   configuration.allowsLeonardoFormat,
-                  let body = message.body as? [String: Any], let expected = body["source"] as? String,
-                  expected == content else { return }
+                  let body = message.body as? [String: Any], let expected = body["source"] as? String else { return }
+            if let fieldID = body["fieldID"] as? String {
+                guard configuration.allowsFormFilling, expected == formState.baseline else { return }
+                _ = onObjectAction?(content, nil, nil, fieldID)
+                return
+            }
+            guard configuration.allowsEditing, !configuration.allowsFormFilling, expected == content else { return }
             var object: LeonardoGraphic?
             if let raw = body["object"], JSONSerialization.isValidJSONObject(raw),
                let data = try? JSONSerialization.data(withJSONObject: raw) {

@@ -1,6 +1,6 @@
 # User-help feature coverage
 
-Source audit: 31 October 2026. This maps the implemented macOS surfaces to the
+Source audit: 4 November 2026. This maps the implemented macOS surfaces to the
 same numbered chapters in `en/body.md` and `es/body.md`. It is a maintenance map,
 not a promise that every feature is in the current stable distribution. Check
 release notes for the installed build. Future feature PRs maintain this map and
@@ -47,3 +47,5 @@ Practice navigation ([#312](https://github.com/PinedaTec-EU/LeonardoMD/issues/31
 the live guide/session/source and active tab. Guide v6 is read-only content;
 practice v1 is a separate MDLR. Reopening selects the existing practice tab in
 Fill mode. Cmd-4 fills, the padlock edits structure, and Cmd-S saves answers.
+
+Page objects/rubrics (#193): `DocumentToolbar.swift`, `SessionGraphics.swift`, `RubricEditor.swift`, `RubricLibrary.swift`, `LeonardoGraphic.swift`, `leonardo-objects.js`, `MarkdownPagePDF.swift`; chapters 4, 5, 10. Covers geometry/Z, menu drawing, local library, protected fields, overflow and Markdown/PDF limits.

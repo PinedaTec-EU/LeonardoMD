@@ -21,6 +21,7 @@ public enum LeonardoMarkdownExport {
     }
 
     private static func display(_ value: LeonardoJSONValue, field: LeonardoFieldDefinition) -> String {
+        if field.type == .rubric { return "" } // Ink cannot survive a plain-text reading export.
         switch value {
         case .null: return ""
         case let .string(text):

@@ -1,13 +1,23 @@
 (() => {
   "use strict";
   const svgNS = "http://www.w3.org/2000/svg", pt = value => `${value}pt`;
-  let payload = {}, root, selected, toolbar;
+  let payload = {}, root, selected, toolbar, logicalNodes = [], legacyImages = [], backgroundTemplate;
   const label = key => payload.formLabels?.[key] || key;
   const post = body => window.webkit?.messageHandlers?.leonardoObject?.postMessage({source: payload.source, ...body});
+  function validRubric(value) {
+    if (!Array.isArray(value?.strokes) || !value.strokes.length || value.strokes.length > 256) return false;
+    let count = 0;
+    return value.strokes.every(stroke => {
+      if (!stroke || !/^#[0-9a-f]{6}$/i.test(stroke.color) || !["solid", "brush"].includes(stroke.style)
+          || !Number.isFinite(stroke.width) || stroke.width < .5 || stroke.width > 24 || !Array.isArray(stroke.points)
+          || !stroke.points.length || (count += stroke.points.length) > 20000) return false;
+      return stroke.points.every(point => Number.isFinite(point?.x) && point.x >= 0 && point.x <= 600 && Number.isFinite(point?.y) && point.y >= 0 && point.y <= 200);
+    });
+  }
   function rubric(value) {
     const svg = document.createElementNS(svgNS, "svg");
     svg.setAttribute("viewBox", "0 0 600 200"); svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-    for (const stroke of value?.strokes || []) {
+    for (const stroke of validRubric(value) ? value.strokes : []) {
       const points = stroke.points || [];
       points.forEach((point, index) => {
         const width = stroke.width * (stroke.style === "brush" ? Math.max(.08, Math.sin(Math.PI * index / Math.max(1, points.length - 1))) : 1);
@@ -25,7 +35,9 @@
     return {width, height, margins: ["top", "right", "bottom", "left"].map(side => margins[side] ?? 36)};
   }
   function paginate() {
-    const nodes = Array.from(root.childNodes).filter(node => !node.classList?.contains("leonardo-document-background"));
+    const nodes = logicalNodes;
+    legacyImages.forEach(image => image.remove());
+    root.querySelectorAll(":scope > .leonardo-page").forEach(page => page.remove());
     const size = pageSize();
     root.classList.add("leonardo-paginated"); root.style.maxWidth = "none"; root.style.padding = "0";
     let page, content;
@@ -34,8 +46,10 @@
       page.style.width = pt(size.width); page.style.height = pt(size.height);
       page.style.padding = size.margins.map(pt).join(" ");
       page.dataset.page = String(root.querySelectorAll(":scope > .leonardo-page").length + 1);
+      if (background) { const copy = background.cloneNode(true); copy.style.zIndex = "-10001"; page.append(copy); }
       content = document.createElement("div"); content.className = "leonardo-page-text"; page.append(content); root.append(page);
     }
+    const background = backgroundTemplate;
     next();
     for (const node of nodes) {
       if (node.nodeType === Node.TEXT_NODE && !node.textContent.trim()) { node.remove(); continue; }
@@ -52,17 +66,28 @@
     }
     const last = Math.max(1, ...(payload.leonardo?.layout?.objects || []).map(item => item.page));
     while (root.querySelectorAll(":scope > .leonardo-page").length < last) next();
+    background?.remove();
   }
   function geometry(element, item) {
     Object.assign(element.style, {left: pt(item.x), top: pt(item.y), width: pt(item.width), height: pt(item.height), zIndex: String(item.z)});
+    const page = element.parentElement;
+    if (page) {
+      const right = Math.max(0, item.x + item.width - page.clientWidth * .75);
+      const bottom = Math.max(0, item.y + item.height - page.clientHeight * .75);
+      element.style.clipPath = `inset(${pt(Math.max(0, -item.y))} ${pt(right)} ${pt(bottom)} ${pt(Math.max(0, -item.x))})`;
+    }
   }
   function clear() { selected?.classList.remove("leonardo-object-selected"); selected = null; toolbar?.remove(); toolbar = null; }
   function commit(item) { post({object: item}); }
   function select(element, item) {
+    if (!payload.allowsEditing || payload.allowsFormFilling) return;
     clear(); selected = element; element.classList.add("leonardo-object-selected");
     toolbar = document.createElement("div"); toolbar.className = "leonardo-object-toolbar"; toolbar.setAttribute("role", "toolbar");
     toolbar.setAttribute("aria-label", label("Position and size"));
-    for (const [key, title] of [["page", "Page"], ["x", "X"], ["y", "Y"], ["width", "Width"], ["height", "Height"], ["z", "Z"]]) {
+    const details = document.createElement("details"), summary = document.createElement("summary");
+    summary.textContent = label("Size and page…"); details.append(summary);
+    const extra = document.createElement("div"); extra.className = "leonardo-object-extra"; details.append(extra);
+    for (const [key, title] of [["x", "X"], ["y", "Y"], ["z", "Z"], ["page", "Page"], ["width", "Width"], ["height", "Height"]]) {
       const caption = document.createElement("label"); caption.textContent = label(title);
       const input = document.createElement("input"); input.type = "number"; input.value = item[key]; input.setAttribute("aria-label", label(title));
       input.step = ["page", "z"].includes(key) ? "1" : "0.5";
@@ -73,18 +98,25 @@
         if (key === "height" && value > 0) changed.width = item.width * value / item.height;
         commit(changed);
       });
-      caption.append(input); toolbar.append(caption);
+      caption.append(input); (["page", "width", "height"].includes(key) ? extra : toolbar).append(caption);
     }
     for (const [title, action] of [["Bring forward", () => commit({...item, z: Math.min(10000, item.z + 1)})], ["Send backward", () => commit({...item, z: Math.max(-10000, item.z - 1)})], ["Delete", () => post({remove: item.id})]]) {
-      const button = document.createElement("button"); button.textContent = label(title); button.onclick = action; toolbar.append(button);
+      const button = document.createElement("button");
+      button.textContent = title === "Bring forward" ? "+Z" : title === "Send backward" ? "−Z" : "×";
+      button.title = label(title); button.setAttribute("aria-label", label(title)); button.onclick = action; toolbar.append(button);
     }
+    toolbar.append(details);
     element.parentElement.append(toolbar);
-    toolbar.style.left = "8pt"; toolbar.style.top = pt(Math.max(4, item.y - 48));
+    const pageWidth = element.parentElement.clientWidth * .75;
+    toolbar.style.left = pt(Math.max(4, Math.min(item.x, pageWidth - 320)));
+    toolbar.style.top = pt(Math.max(4, Math.min(element.parentElement.clientHeight * .75 - 34, item.y >= 34 ? item.y - 30 : item.y + item.height + 8)));
   }
   function interactive(element, item) {
-    element.tabIndex = 0; element.setAttribute("role", "button"); element.setAttribute("aria-label", item.label);
+    element.leonardoGraphic = item;
+    element.tabIndex = payload.allowsEditing && !payload.allowsFormFilling ? 0 : -1; element.setAttribute("role", "button"); element.setAttribute("aria-label", item.label);
     element.addEventListener("click", e => { e.stopPropagation(); select(element, item); });
     element.addEventListener("keydown", e => {
+      if (!payload.allowsEditing || payload.allowsFormFilling) return;
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(element, item); }
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
         e.preventDefault(); const delta = e.shiftKey ? 10 : 1;
@@ -93,7 +125,7 @@
     });
     const handle = document.createElement("button"); handle.className = "leonardo-object-resize"; handle.setAttribute("aria-label", label("Resize")); element.append(handle);
     element.addEventListener("pointerdown", event => {
-      if (event.button !== 0) return;
+      if (event.button !== 0 || !payload.allowsEditing || payload.allowsFormFilling) return;
       event.preventDefault(); event.stopPropagation(); select(element, item);
       const resize = event.target === handle, start = {x: event.clientX, y: event.clientY};
       let changed = {...item}; element.setPointerCapture(event.pointerId);
@@ -106,7 +138,7 @@
         element.removeEventListener("pointermove", move); element.removeEventListener("pointerup", end); element.removeEventListener("pointercancel", cancel);
         if (JSON.stringify(changed) !== JSON.stringify(item)) commit(changed);
       };
-      const cancel = () => { geometry(element, item); end(); };
+      const cancel = () => { changed = {...item}; geometry(element, item); end(); };
       element.addEventListener("pointermove", move); element.addEventListener("pointerup", end, {once:true}); element.addEventListener("pointercancel", cancel, {once:true});
     });
   }
@@ -116,16 +148,61 @@
     if (!payload.leonardo) return;
     const objects = payload.leonardo.layout?.objects || [];
     if (!objects.length && !root.querySelector('[data-leonardo-page-break="true"]')) return;
+    legacyImages = Array.from(root.querySelectorAll("img")).filter(image => image.style.position === "absolute");
+    logicalNodes = Array.from(root.childNodes).filter(node => !node.classList?.contains("leonardo-document-background"));
+    backgroundTemplate = root.querySelector(":scope > .leonardo-document-background");
+    for (const image of root.querySelectorAll("img")) {
+      if (!image.closest(".leonardo-document-background")) image.addEventListener("load", refresh);
+    }
     paginate();
+    renderLegacyImages();
+    renderObjects(objects);
+  }
+  function renderLegacyImages() {
+    const page = root.querySelector(":scope > .leonardo-page");
+    if (!page || !legacyImages.length) return;
+    const layer = document.createElement("div"); layer.className = "leonardo-legacy-images";
+    page.append(layer);
+    legacyImages.forEach(image => layer.append(image));
+  }
+  function renderObjects(objects) {
     for (const item of objects) {
       const page = root.querySelector(`:scope > .leonardo-page[data-page="${item.page}"]`);
       if (!page) continue;
       const element = document.createElement("div"); element.className = "leonardo-object"; element.dataset.object = item.id;
       if (item.rubric) element.append(rubric(item.rubric));
       else { const image = document.createElement("img"); image.alt = item.label; image.loading = "eager"; image.src = item.source; element.append(image); }
-      geometry(element, item); page.append(element);
-      if (payload.allowsEditing && !payload.allowsFormFilling) interactive(element, item);
+      page.append(element); geometry(element, item);
+      interactive(element, item);
     }
   }
-  window.LeonardoObjects = {apply, rubric, clear};
+  function refresh() {
+    if (!root?.classList.contains("leonardo-paginated")) return;
+    const selectedID = selected?.dataset.object;
+    clear();
+    for (const child of Array.from(root.childNodes)) {
+      if (!child.classList?.contains("leonardo-page") && !child.classList?.contains("leonardo-document-background") && !logicalNodes.includes(child)) logicalNodes.push(child);
+    }
+    paginate(); renderLegacyImages(); renderObjects(payload.leonardo?.layout?.objects || []);
+    if (selectedID && payload.allowsEditing && !root.classList.contains("leonardo-form-export")) {
+      const element = Array.from(root.querySelectorAll(".leonardo-object")).find(node => node.dataset.object === selectedID);
+      if (element) select(element, element.leonardoGraphic);
+    }
+  }
+  function pdfGeometry() {
+    if (!root?.classList.contains("leonardo-paginated")) return null;
+    return JSON.stringify({documentWidth: document.documentElement.scrollWidth, pages: Array.from(root.querySelectorAll(":scope > .leonardo-page")).map(page => {
+      const rect = page.getBoundingClientRect();
+      return {x: rect.left + window.scrollX, y: rect.top + window.scrollY, width: rect.width, height: rect.height, overflow: page.dataset.overflow === "true"};
+    })});
+  }
+  window.LeonardoObjects = {apply, rubric, clear, refresh, validRubric, pdfGeometry, setEditable(value) {
+    payload.allowsEditing = value;
+    if (!value) clear();
+    root?.querySelectorAll(".leonardo-object").forEach(element => { element.tabIndex = value && !payload.allowsFormFilling ? 0 : -1; });
+  }, selectObject(id) {
+    if (!payload.allowsEditing || payload.allowsFormFilling) return;
+    const element = Array.from(root.querySelectorAll(".leonardo-object")).find(node => node.dataset.object === id);
+    if (element) { select(element, element.leonardoGraphic); element.scrollIntoView({block: "nearest"}); element.focus(); }
+  }};
 })();

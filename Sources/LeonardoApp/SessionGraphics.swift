@@ -1,5 +1,4 @@
 import AppKit
-import CryptoKit
 import Foundation
 import LeonardoCore
 import UniformTypeIdentifiers
@@ -20,13 +19,13 @@ extension AppSession {
             guard canFillLeonardoForm, let value = rubric.jsonValue,
                   let definition = leonardoFieldDefinition(field), !definition.readOnly, definition.type == .rubric else { return false }
             do {
-                if saveToLibrary { try RubricLibrary.shared.add(label: label, rubric: rubric) }
+                if saveToLibrary { try rubricLibrary.add(label: label, rubric: rubric) }
                 return updateLeonardoFields(expected: request.source, changes: [field: value]) != nil
             } catch { report(error); return false }
         }
         guard canEditGraphics else { return false }
         do {
-            if saveToLibrary { try RubricLibrary.shared.add(label: label, rubric: rubric) }
+            if saveToLibrary { try rubricLibrary.add(label: label, rubric: rubric) }
             return insertGraphic(.init(label: label, rubric: rubric))
         } catch { report(error); return false }
     }
@@ -80,21 +79,14 @@ extension AppSession {
         guard canEditGraphics, let documentURL else { return }
         let expected = content
         do {
-            guard let size = try source.resourceValues(forKeys: [.fileSizeKey]).fileSize, size <= 32 * 1024 * 1024 else { throw CocoaError(.fileReadTooLarge) }
-            let data = try Data(contentsOf: source)
-            guard let bitmap = NSBitmapImageRep(data: data), bitmap.pixelsWide > 0, bitmap.pixelsHigh > 0,
-                  bitmap.pixelsWide <= 16000, bitmap.pixelsHigh <= 16000,
-                  let png = bitmap.representation(using: .png, properties: [:]), png.count <= 32 * 1024 * 1024 else { throw CocoaError(.fileReadCorruptFile) }
-            let hash = SHA256.hash(data: png).prefix(12).map { String(format: "%02x", $0) }.joined()
-            let name = "leonardo-image-" + hash + ".png"
-            let destination = documentURL.deletingLastPathComponent().appendingPathComponent(name)
+            let image = try await GraphicImageImport.prepare(source)
+            let name = "image-" + UUID().uuidString + ".png"
+            let destination = documentURL.deletingLastPathComponent().appendingPathComponent("assets/" + name)
             try await authorizePath(destination, .document)
             guard canEditGraphics, self.documentURL == documentURL, content == expected else { return }
-            if FileManager.default.fileExists(atPath: destination.path) {
-                guard try Data(contentsOf: destination) == png else { throw CocoaError(.fileWriteFileExists) }
-            } else { try png.write(to: destination, options: .withoutOverwriting) }
+            try GraphicAssetStore.create(image.data, name: name, beside: documentURL)
             _ = insertGraphic(.init(label: source.deletingPathExtension().lastPathComponent.prefix(120).description,
-                                    source: name, width: 180, height: 180 * Double(bitmap.pixelsHigh) / Double(bitmap.pixelsWide)))
+                                    source: "assets/" + name, width: 180, height: min(10000, 180 * Double(image.height) / Double(image.width))))
         } catch { report(error) }
     }
 }

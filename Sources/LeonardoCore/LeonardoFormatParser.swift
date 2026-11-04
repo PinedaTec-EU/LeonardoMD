@@ -266,6 +266,9 @@ public enum LeonardoFormatValidator {
             if definition.appearance != nil && definition.type != .checkbox {
                 diagnostics.append(LeonardoDiagnostic(severity: .error, code: "field.appearance", message: "Appearance is only supported for checkbox fields.", fieldID: fieldID))
             }
+            if let size = definition.rubricSize, definition.type != .rubric || ![size.width, size.height].allSatisfy({ $0.isFinite && $0 > 0 && $0 <= 10000 }) {
+                diagnostics.append(.init(severity: .error, code: "field.rubricSize", message: "Rubric size requires a rubric field and positive bounded dimensions.", fieldID: fieldID))
+            }
             validateOptions(definition, fieldID: fieldID, into: &diagnostics)
             let value = metadata.values[fieldID] ?? definition.defaultValue
             if value == nil || value?.isNullOrEmpty == true {

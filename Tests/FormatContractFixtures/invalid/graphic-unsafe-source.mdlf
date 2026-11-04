@@ -1,0 +1,39 @@
+---
+{
+  "format": "mdlf",
+  "formatVersion": 1,
+  "document": {
+    "title": "Fictional inspection",
+    "revision": 1
+  },
+  "layout": {
+    "page": {
+      "size": "a4"
+    },
+    "objects": [
+      {
+        "id": "inspection-rubric",
+        "label": "Fictional inspection rubric",
+        "rubric": null,
+        "page": 2,
+        "x": 300,
+        "y": 640,
+        "width": 240,
+        "height": 80,
+        "z": 1,
+        "source": "../secret.png"
+      }
+    ]
+  },
+  "fields": {
+    "signed": {
+      "type": "rubric",
+      "rubricSize": {
+        "width": 180,
+        "height": 60
+      }
+    }
+  }
+}
+---
+Synthetic document

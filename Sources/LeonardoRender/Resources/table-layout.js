@@ -61,7 +61,7 @@
     renderer: {
       table: sizedTable,
       html(token) {
-        if (!allowsLegacyWidths && token.raw.trim() === "<!-- leonardo:page-break -->") return '<hr data-leonardo-page-break="true">';
+        if (!allowsLegacyWidths && token.block === true && token.raw.trim() === "<!-- leonardo:page-break -->") return '<hr data-leonardo-page-break="true">';
         return window.marked.Renderer.prototype.html.call(this, token);
       },
       text(token) {

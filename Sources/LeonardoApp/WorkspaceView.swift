@@ -30,7 +30,9 @@ struct WorkspaceView: View {
         .modifier(SessionAppearance(session: session))
         .background(session.surfaceColor)
         .sheet(item: $session.rubricRequest) { request in
-            RubricEditor(request: request) { label, rubric, save in
+            RubricEditor(request: request, library: session.rubricLibrary, clearField: request.fieldID.map { field in
+                { session.documentURL == request.documentURL && session.updateLeonardoFields(expected: request.source, changes: [field: .null]) != nil }
+            }) { label, rubric, save in
                 session.finishRubric(request, label: label, rubric: rubric, saveToLibrary: save)
             }.modifier(SessionAppearance(session: session))
         }

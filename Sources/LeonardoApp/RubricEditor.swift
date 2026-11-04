@@ -4,6 +4,7 @@ import LeonardoCore
 
 struct RubricEditor: View {
     let request: RubricRequest
+    let clearField: (() -> Bool)?
     let complete: (String, LeonardoRubric, Bool) -> Bool
     @Environment(\.dismiss) private var dismiss
     @State private var rubric = LeonardoRubric()
@@ -12,8 +13,14 @@ struct RubricEditor: View {
     @State private var width = 3.0
     @State private var style = LeonardoInkStyle.solid
     @State private var saveToLibrary = true
-    @State private var library = RubricLibrary.shared
+    @State private var library: RubricLibrary
     @State private var error: String?
+
+    init(request: RubricRequest, library: RubricLibrary, clearField: (() -> Bool)? = nil,
+         complete: @escaping (String, LeonardoRubric, Bool) -> Bool) {
+        self.request = request; self.complete = complete; self.clearField = clearField
+        _library = State(initialValue: library)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -39,19 +46,32 @@ struct RubricEditor: View {
             }
             TextField(L10n.text("Rubric label"), text: $label).textFieldStyle(.roundedBorder)
                 .accessibilityIdentifier("rubric-label")
-            HStack {
-                ColorPicker(L10n.text("Color"), selection: $color, supportsOpacity: false)
-                Text(L10n.text("Stroke width"))
-                Slider(value: $width, in: 0.5...24).frame(width: 100)
-                Text(width, format: .number.precision(.fractionLength(1))).monospacedDigit()
-                Picker(L10n.text("Stroke style"), selection: $style) {
-                    Text(L10n.text("Solid")).tag(LeonardoInkStyle.solid)
-                    Text(L10n.text("Brush")).tag(LeonardoInkStyle.brush)
-                }.frame(width: 150)
+            HStack(alignment: .top, spacing: 24) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(L10n.text("Color")).font(.caption)
+                    ColorPicker(L10n.text("Color"), selection: $color, supportsOpacity: false).labelsHidden()
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(L10n.text("Stroke width")).font(.caption)
+                    HStack {
+                        Slider(value: $width, in: 0.5...24).frame(width: 160)
+                            .accessibilityLabel(L10n.text("Stroke width"))
+                        Text(width, format: .number.precision(.fractionLength(1))).monospacedDigit().frame(width: 42)
+                    }
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(L10n.text("Stroke style")).font(.caption)
+                    Picker(L10n.text("Stroke style"), selection: $style) {
+                        Text(L10n.text("Solid")).tag(LeonardoInkStyle.solid)
+                        Text(L10n.text("Brush")).tag(LeonardoInkStyle.brush)
+                    }.labelsHidden().frame(width: 160)
+                }
+                Spacer(minLength: 0)
             }
             RubricCanvas(rubric: $rubric, color: inkColor, width: width, style: style)
                 .frame(width: 600, height: 200).background(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.secondary.opacity(0.3)))
                 .accessibilityLabel(L10n.text("Draw your rubric"))
             HStack {
                 Button(L10n.text("Undo")) { if !rubric.strokes.isEmpty { rubric.strokes.removeLast() } }.disabled(rubric.strokes.isEmpty)
@@ -62,6 +82,9 @@ struct RubricEditor: View {
             }
             if let error { Text(error).foregroundStyle(.red) }
             HStack {
+                if let clearField {
+                    Button(L10n.text("Remove rubric")) { if clearField() { dismiss() } }
+                }
                 Spacer()
                 Button(L10n.text("Cancel")) { dismiss() }.keyboardShortcut(.cancelAction)
                 Button(L10n.text("Insert rubric")) {
