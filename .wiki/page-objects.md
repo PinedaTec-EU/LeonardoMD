@@ -33,3 +33,5 @@ pressure requirement, Preview private-store access or cryptographic signing.
 live beside selection, with extra size/page controls collapsed. More → Objects
 selects obscured images. Bilingual help is Guide v7; generated references and
 native component evidence must not be confused with packaged-process acceptance.
+
+The local rubric library serializes read-latest mutations with a nonblocking stable sidecar lock across app instances; a busy or corrupt library is never overwritten. Opening the editor refreshes its list. Regression tracked in [#318](https://github.com/PinedaTec-EU/LeonardoMD/issues/318).

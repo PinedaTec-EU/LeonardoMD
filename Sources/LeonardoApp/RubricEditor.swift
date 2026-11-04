@@ -93,6 +93,7 @@ struct RubricEditor: View {
                 }.disabled(!rubric.isValid || label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || label.count > 120)
             }
         }.padding(24).frame(width: 648)
+            .onAppear { library.refresh() }
     }
     private var inkColor: String {
         let c = NSColor(color).usingColorSpace(.sRGB) ?? .black

@@ -19,6 +19,28 @@ final class RubricSessionTests: XCTestCase {
         XCTAssertTrue(RubricLibrary(url: url).entries.isEmpty)
         XCTAssertEqual(inserted.rubric, ink)
     }
+    func testIndependentLibrariesMergeWritesAndFailClosedOnCorruption() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("library.json")
+        let first = RubricLibrary(url: url), second = RubricLibrary(url: url)
+        try first.add(label: "First", rubric: ink)
+        let firstID = try XCTUnwrap(first.entries.first?.id)
+        try second.add(label: "Second", rubric: ink)
+        XCTAssertEqual(second.entries.map(\.label), ["First", "Second"])
+        try first.remove(id: firstID)
+        second.refresh()
+        XCTAssertEqual(second.entries.map(\.label), ["Second"])
+        let lock = try ProcessFileLock(at: ProcessFileLock.coordinationDirectory
+            .appendingPathComponent(ProcessFileLock.key(for: url) + ".rubrics"))
+        try withExtendedLifetime(lock) {
+            XCTAssertThrowsError(try first.add(label: "Busy", rubric: ink))
+        }
+        XCTAssertEqual(RubricLibrary(url: url).entries.map(\.label), ["Second"])
+        try Data("invalid".utf8).write(to: url, options: .atomic)
+        XCTAssertThrowsError(try first.remove(id: firstID))
+        XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), "invalid")
+    }
     func testProtectionIdentityGeometryAndUndoShareDocumentHistory() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

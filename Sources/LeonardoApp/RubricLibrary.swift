@@ -20,36 +20,57 @@ final class RubricLibrary {
 
     init(url: URL = URL.applicationSupportDirectory.appendingPathComponent("LeonardoMD/Rubrics/library.json")) {
         self.url = url
-        guard FileManager.default.fileExists(atPath: url.path) else { return }
-        do {
-            let data = try Data(contentsOf: url)
-            guard data.count <= 16 * 1024 * 1024 else { throw CocoaError(.fileReadTooLarge) }
-            let decoded = try JSONDecoder().decode([SavedRubric].self, from: data)
-            guard decoded.count <= 100, Set(decoded.map(\.id)).count == decoded.count,
-                  decoded.allSatisfy({ $0.rubric.isValid && !$0.label.isEmpty && $0.label.count <= 120 }) else {
-                throw CocoaError(.fileReadCorruptFile)
-            }
-            entries = decoded
-        } catch { loadError = error.localizedDescription }
+        refresh()
+    }
+
+    func refresh() {
+        do { entries = try readCurrent(); loadError = nil }
+        catch { loadError = error.localizedDescription }
+    }
+
+    private func readCurrent() throws -> [SavedRubric] {
+        guard FileManager.default.fileExists(atPath: url.path) else { return [] }
+        let data = try Data(contentsOf: url)
+        guard data.count <= 16 * 1024 * 1024 else { throw CocoaError(.fileReadTooLarge) }
+        let decoded = try JSONDecoder().decode([SavedRubric].self, from: data)
+        guard decoded.count <= 100, Set(decoded.map(\.id)).count == decoded.count,
+              decoded.allSatisfy({ $0.rubric.isValid && !$0.label.isEmpty && $0.label.count <= 120 }) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        return decoded
     }
 
     func add(label: String, rubric: LeonardoRubric) throws {
         let label = label.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard loadError == nil, entries.count < 100, rubric.isValid, !label.isEmpty, label.count <= 120 else {
+        guard rubric.isValid, !label.isEmpty, label.count <= 120 else {
             throw CocoaError(.validationMissingMandatoryProperty)
         }
-        try persist(entries + [SavedRubric(id: UUID().uuidString, label: label, rubric: rubric)])
+        try update { current in
+            guard current.count < 100 else { throw CocoaError(.fileWriteOutOfSpace) }
+            return current + [SavedRubric(id: UUID().uuidString, label: label, rubric: rubric)]
+        }
     }
 
-    func remove(id: String) throws { try persist(entries.filter { $0.id != id }) }
+    func remove(id: String) throws { try update { $0.filter { $0.id != id } } }
+
+    private func update(_ change: ([SavedRubric]) throws -> [SavedRubric]) throws {
+        // A stable, nonblocking sidecar lock coordinates atomically replaced JSON
+        // across app instances without waiting on the main actor.
+        let lock = try ProcessFileLock(at: ProcessFileLock.coordinationDirectory
+            .appendingPathComponent(ProcessFileLock.key(for: url) + ".rubrics"))
+        try withExtendedLifetime(lock) {
+            let updated = try change(readCurrent())
+            try persist(updated)
+        }
+    }
 
     private func persist(_ updated: [SavedRubric]) throws {
-        guard loadError == nil else { throw CocoaError(.fileReadCorruptFile) }
         let data = try JSONEncoder().encode(updated)
         guard data.count <= 16 * 1024 * 1024 else { throw CocoaError(.fileWriteOutOfSpace) }
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try data.write(to: url, options: .atomic)
         entries = updated
+        loadError = nil
         logger.info("Persisted rubric library entries=\(updated.count, privacy: .public)")
     }
 }
