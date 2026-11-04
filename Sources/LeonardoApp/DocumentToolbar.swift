@@ -82,6 +82,7 @@ struct DocumentToolbar: View {
                 } label: { menuTitle(modeLabel(session.mode)) }
                 .accessibilityLabel(L10n.text("Mode"))
                 .accessibilityIdentifier("document-mode")
+                .accessibilityValue(modeLabel(session.mode))
                 .fixedSize()
                 insertionMenu
                 exportMenu
@@ -104,7 +105,8 @@ struct DocumentToolbar: View {
 
 
     private func menuTitle(_ title: String) -> some View {
-        HStack(spacing: 5) { Text(title).lineLimit(1); Image(systemName: "chevron.down").font(.caption2) }
+        HStack(spacing: 5) { Text(title).lineLimit(1); Image(systemName: "chevron.down").font(.caption2).accessibilityHidden(true) }
+            .accessibilityElement(children: .combine)
     }
 
     private func modeLabel(_ mode: DocumentMode) -> String {
