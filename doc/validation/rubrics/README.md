@@ -9,8 +9,13 @@ It is a design reference, not product evidence.
 ## Real packaged-process evidence
 
 Built source: `59b6b148fdae5b0f6789e119c0d6c965462846d7`.
-The later validation commit changes only evidence and the compilation entry;
-compare its runtime paths against `source-and-bundle.json`. The bundle remains
+These captures precede a storage-only hardening change. The final runtime source is
+`35cec6d3a6d2008735dd8b70cc4b85ac8bfe53f1`; `final-source-and-bundle.json` records its hashes.
+Only RubricLibrary read-latest locking and editor on-appear refresh changed after
+the earlier captures; the rendering, geometry, toolbar and field behavior are unchanged.
+A fresh final executable (PID 76850) opened the synthetic document and the menu canvas;
+see [final canvas](native/final-library-canvas.jpg) and `final-startup.json`.
+The later evidence commit changes no runtime source. The bundle remains
 numeric version 0.1.765 during development; this does not claim publication.
 
 `./launch.sh --qa --args --new-instance -allowMultipleInstances YES` produced a
@@ -49,6 +54,7 @@ All documents and ink were synthetic; no personal signature or legal signing.
 | Criterion | Direct checks |
 | --- | --- |
 | Coordinates, order, portable strokes | `LeonardoGraphicTests` round trip, malformed geometry/source/ID and ink budgets |
+| Library concurrency | `testIndependentLibrariesMergeWritesAndFailClosedOnCorruption`: two independent stores preserve add/delete, busy lock rejects, corrupt bytes preserved; all five RubricSessionTests passed on final source |
 | Protected fields and history | `RubricSessionTests`: source protection, stale request, bounded field mutation, undo/redo and save |
 | Imported images and packages | transparent image normalization, relocated MDLZ with original source removed, package save, symlink rejection |
 | Page token and rendering | `GraphicRuntimeTests`: standalone page token, inline/code exclusion, malformed draft ink, legacy absolute-image origin, Z/definition order and floating selection |
