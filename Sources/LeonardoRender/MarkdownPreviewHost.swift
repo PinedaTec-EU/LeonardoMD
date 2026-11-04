@@ -17,6 +17,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     var onTableResize: ((String, LeonardoTableResize) async -> Bool)?
     private var tableResizeTask: Task<Bool, Never>?
     var onFormEdit: ((String, [String: LeonardoJSONValue]) -> String?)?
+    var onObjectAction: ((String, LeonardoGraphic?, String?, String?) -> Bool)?
     var onFieldHelp: ((String) -> Void)?
     private var formState = MarkdownFormState()
     var onReady: ((Bool) -> Void)?
@@ -230,6 +231,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         if let webView {
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoTableResize")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoForm")
+            webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoObject")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoFieldHelp")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoEdit")
             webView.configuration.userContentController.removeScriptMessageHandler(forName: "leonardoTag")
@@ -268,6 +270,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         let userContentController = webConfiguration.userContentController
         userContentController.add(self, name: "leonardoTableResize")
         userContentController.add(self, name: "leonardoForm")
+        userContentController.add(self, name: "leonardoObject")
         userContentController.add(self, name: "leonardoFieldHelp")
         userContentController.add(self, name: "leonardoEdit")
         userContentController.add(self, name: "leonardoTag")
@@ -505,6 +508,18 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         didReceive message: WKScriptMessage
     ) {
         switch message.name {
+        case "leonardoObject":
+            guard message.webView === webView, message.frameInfo.isMainFrame, renderWorkItem == nil,
+                  configuration.allowsLeonardoFormat,
+                  let body = message.body as? [String: Any], let expected = body["source"] as? String,
+                  expected == content else { return }
+            var object: LeonardoGraphic?
+            if let raw = body["object"], JSONSerialization.isValidJSONObject(raw),
+               let data = try? JSONSerialization.data(withJSONObject: raw) {
+                object = try? JSONDecoder().decode(LeonardoGraphic.self, from: data)
+            }
+            _ = onObjectAction?(expected, object, body["remove"] as? String, body["fieldID"] as? String)
+            scheduleContentUpdate(immediately: true)
         case "leonardoTableResize":
             guard message.webView === webView, message.frameInfo.isMainFrame,
                   configuration.allowsEditing, !configuration.allowsFormFilling,

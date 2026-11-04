@@ -24,6 +24,10 @@ extension AppSession {
             guard let self, self.documentURL == previewDocumentURL else { return nil }
             return self.updateLeonardoFields(expected: expected, changes: changes)
         }
+        renderer.onObjectAction = { [weak self] expected, object, remove, fieldID in
+            guard let self, self.documentURL == previewDocumentURL else { return false }
+            return self.handleGraphicAction(expected: expected, object: object, remove: remove, fieldID: fieldID)
+        }
         renderer.onFieldHelp = { [weak self] fieldID in
             guard let self, self.documentURL == previewDocumentURL else { return }
             self.showLeonardoFieldHelp(fieldID)

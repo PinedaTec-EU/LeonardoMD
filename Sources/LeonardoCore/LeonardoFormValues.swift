@@ -7,6 +7,10 @@ extension LeonardoDocument {
         guard isForm else { return nil }
         for (fieldID, value) in changes {
             guard let field = metadata.fields[fieldID], !field.readOnly else { return nil }
+            if field.type == .rubric {
+                guard value == .null || LeonardoRubric.decode(value) != nil else { return nil }
+                continue
+            }
             switch (field.type, value) {
             case (.checkbox, .boolean), (.number, .null): break
             case (.number, .number(let number)):

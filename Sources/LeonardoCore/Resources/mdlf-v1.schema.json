@@ -3,170 +3,547 @@
   "$id": "https://pinedatec.eu/leonardo/mdlf/v1.schema.json",
   "title": "Leonardo MDLF v1 metadata",
   "type": "object",
-  "required": ["format", "formatVersion"],
+  "required": [
+    "format",
+    "formatVersion"
+  ],
   "properties": {
-    "format": { "const": "mdlf" },
-    "formatVersion": { "const": 1 },
-    "document": { "$ref": "#/$defs/document" },
+    "format": {
+      "const": "mdlf"
+    },
+    "formatVersion": {
+      "const": 1
+    },
+    "document": {
+      "$ref": "#/$defs/document"
+    },
     "fields": {
       "type": "object",
-      "propertyNames": { "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$" },
-      "additionalProperties": { "$ref": "#/$defs/field" }
+      "propertyNames": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/field"
+      }
     },
     "values": {
       "type": "object",
       "additionalProperties": {}
     },
-    "layout": { "$ref": "#/$defs/layout" }
+    "layout": {
+      "$ref": "#/$defs/layout"
+    }
   },
   "additionalProperties": false,
   "$defs": {
     "document": {
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "kind": { "enum": ["document", "form"] },
-        "revision": { "type": "integer", "minimum": 1 },
-        "locale": { "type": "string" }
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "document",
+            "form"
+          ]
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "locale": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
     "option": {
       "type": "object",
-      "required": ["value"],
+      "required": [
+        "value"
+      ],
       "properties": {
-        "value": { "type": "string", "minLength": 1 },
-        "label": { "type": "string" }
+        "value": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
     "field": {
       "type": "object",
-      "required": ["type"],
+      "required": [
+        "type"
+      ],
       "properties": {
-        "type": { "enum": ["text", "multiline", "number", "date", "checkbox", "select", "email", "url"] },
-        "appearance": { "enum": ["checkbox", "switch"] },
-        "label": { "type": "string" },
-        "required": { "type": "boolean" },
-        "readOnly": { "type": "boolean" },
-        "minLength": { "type": "integer", "minimum": 0 },
-        "maxLength": { "type": "integer", "minimum": 0 },
-        "pattern": { "type": "string", "maxLength": 512 },
-        "minimum": { "type": "number" },
-        "maximum": { "type": "number" },
-        "options": { "type": "array", "items": { "$ref": "#/$defs/option" } },
-        "placeholder": { "type": "string" },
-        "helpText": { "type": "string" },
-        "validationMessage": { "type": "string" },
+        "type": {
+          "enum": [
+            "text",
+            "multiline",
+            "number",
+            "date",
+            "checkbox",
+            "select",
+            "email",
+            "url",
+            "rubric"
+          ]
+        },
+        "appearance": {
+          "enum": [
+            "checkbox",
+            "switch"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "minLength": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pattern": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "minimum": {
+          "type": "number"
+        },
+        "maximum": {
+          "type": "number"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/option"
+          }
+        },
+        "placeholder": {
+          "type": "string"
+        },
+        "helpText": {
+          "type": "string"
+        },
+        "validationMessage": {
+          "type": "string"
+        },
         "defaultValue": {}
       },
       "additionalProperties": false
     },
     "dimension": {
       "type": "object",
-      "required": ["value", "unit"],
+      "required": [
+        "value",
+        "unit"
+      ],
       "properties": {
-        "value": { "type": "number" },
-        "unit": { "enum": ["points", "percent"] }
+        "value": {
+          "type": "number"
+        },
+        "unit": {
+          "enum": [
+            "points",
+            "percent"
+          ]
+        }
       },
       "additionalProperties": false
     },
     "position": {
       "type": "object",
       "properties": {
-        "placement": { "enum": ["flow", "relative", "absolute"] },
-        "x": { "$ref": "#/$defs/dimension" },
-        "y": { "$ref": "#/$defs/dimension" },
-        "anchor": { "enum": ["topLeading", "top", "topTrailing", "leading", "center", "trailing", "bottomLeading", "bottom", "bottomTrailing"] }
+        "placement": {
+          "enum": [
+            "flow",
+            "relative",
+            "absolute"
+          ]
+        },
+        "x": {
+          "$ref": "#/$defs/dimension"
+        },
+        "y": {
+          "$ref": "#/$defs/dimension"
+        },
+        "anchor": {
+          "enum": [
+            "topLeading",
+            "top",
+            "topTrailing",
+            "leading",
+            "center",
+            "trailing",
+            "bottomLeading",
+            "bottom",
+            "bottomTrailing"
+          ]
+        }
       },
       "additionalProperties": false
     },
     "size": {
       "type": "object",
       "properties": {
-        "width": { "$ref": "#/$defs/dimension" },
-        "height": { "$ref": "#/$defs/dimension" },
-        "preserveAspectRatio": { "type": "boolean" }
+        "width": {
+          "$ref": "#/$defs/dimension"
+        },
+        "height": {
+          "$ref": "#/$defs/dimension"
+        },
+        "preserveAspectRatio": {
+          "type": "boolean"
+        }
       },
       "additionalProperties": false
     },
     "background": {
       "type": "object",
       "properties": {
-        "color": { "type": "string" },
-        "image": { "type": "string" },
-        "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
-        "fit": { "enum": ["contain", "cover", "fill", "none"] },
-        "position": { "$ref": "#/$defs/position" }
+        "color": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "fit": {
+          "enum": [
+            "contain",
+            "cover",
+            "fill",
+            "none"
+          ]
+        },
+        "position": {
+          "$ref": "#/$defs/position"
+        }
       },
       "additionalProperties": false
     },
     "image": {
       "type": "object",
-      "required": ["source"],
+      "required": [
+        "source"
+      ],
       "properties": {
-        "source": { "type": "string", "minLength": 1 },
-        "occurrence": { "type": "integer", "minimum": 1 },
-        "size": { "$ref": "#/$defs/size" },
-        "position": { "$ref": "#/$defs/position" },
-        "fit": { "enum": ["contain", "cover", "fill", "none"] },
-        "opacity": { "type": "number", "minimum": 0, "maximum": 1 }
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "occurrence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "size": {
+          "$ref": "#/$defs/size"
+        },
+        "position": {
+          "$ref": "#/$defs/position"
+        },
+        "fit": {
+          "enum": [
+            "contain",
+            "cover",
+            "fill",
+            "none"
+          ]
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
       },
       "additionalProperties": false
     },
     "column": {
       "type": "object",
       "properties": {
-        "width": { "$ref": "#/$defs/dimension" },
-        "minimumWidth": { "$ref": "#/$defs/dimension" },
-        "maximumWidth": { "$ref": "#/$defs/dimension" }
+        "width": {
+          "$ref": "#/$defs/dimension"
+        },
+        "minimumWidth": {
+          "$ref": "#/$defs/dimension"
+        },
+        "maximumWidth": {
+          "$ref": "#/$defs/dimension"
+        }
       },
       "additionalProperties": false
     },
     "table": {
       "type": "object",
-      "required": ["occurrence"],
+      "required": [
+        "occurrence"
+      ],
       "properties": {
-        "occurrence": { "type": "integer", "minimum": 1 },
-        "width": { "$ref": "#/$defs/dimension" },
-        "columns": { "type": "array", "items": { "$ref": "#/$defs/column" } },
-        "height": { "$ref": "#/$defs/dimension" },
-        "rowHeights": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 10000 } },
-        "source": { "type": "string", "minLength": 1 },
-        "repeatHeader": { "type": "boolean" },
-        "allowRowBreak": { "type": "boolean" }
+        "occurrence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "width": {
+          "$ref": "#/$defs/dimension"
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/column"
+          }
+        },
+        "height": {
+          "$ref": "#/$defs/dimension"
+        },
+        "rowHeights": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10000
+          }
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repeatHeader": {
+          "type": "boolean"
+        },
+        "allowRowBreak": {
+          "type": "boolean"
+        }
       },
       "additionalProperties": false
     },
     "layout": {
       "type": "object",
       "properties": {
-        "page": { "$ref": "#/$defs/page" },
-        "background": { "$ref": "#/$defs/background" },
-        "images": { "type": "array", "items": { "$ref": "#/$defs/image" } },
-        "tables": { "type": "array", "items": { "$ref": "#/$defs/table" } }
+        "page": {
+          "$ref": "#/$defs/page"
+        },
+        "background": {
+          "$ref": "#/$defs/background"
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/image"
+          }
+        },
+        "tables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/table"
+          }
+        },
+        "objects": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "$ref": "#/$defs/graphic"
+          }
+        }
       },
       "additionalProperties": false
     },
     "page": {
       "type": "object",
       "properties": {
-        "size": { "enum": ["a4", "letter", "custom"] },
-        "orientation": { "enum": ["portrait", "landscape"] },
-        "widthPoints": { "type": "number" },
-        "heightPoints": { "type": "number" },
-        "margins": { "$ref": "#/$defs/margins" }
+        "size": {
+          "enum": [
+            "a4",
+            "letter",
+            "custom"
+          ]
+        },
+        "orientation": {
+          "enum": [
+            "portrait",
+            "landscape"
+          ]
+        },
+        "widthPoints": {
+          "type": "number"
+        },
+        "heightPoints": {
+          "type": "number"
+        },
+        "margins": {
+          "$ref": "#/$defs/margins"
+        }
       },
       "additionalProperties": false
     },
     "margins": {
       "type": "object",
       "properties": {
-        "top": { "type": "number" },
-        "right": { "type": "number" },
-        "bottom": { "type": "number" },
-        "left": { "type": "number" }
+        "top": {
+          "type": "number"
+        },
+        "right": {
+          "type": "number"
+        },
+        "bottom": {
+          "type": "number"
+        },
+        "left": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "inkPoint": {
+      "type": "object",
+      "required": [
+        "x",
+        "y"
+      ],
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 600
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 200
+        }
+      },
+      "additionalProperties": false
+    },
+    "inkStroke": {
+      "type": "object",
+      "required": [
+        "color",
+        "width",
+        "style",
+        "points"
+      ],
+      "properties": {
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 24
+        },
+        "style": {
+          "enum": [
+            "solid",
+            "brush"
+          ]
+        },
+        "points": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20000,
+          "items": {
+            "$ref": "#/$defs/inkPoint"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "rubric": {
+      "type": "object",
+      "required": [
+        "strokes"
+      ],
+      "properties": {
+        "strokes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {
+            "$ref": "#/$defs/inkStroke"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "graphic": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "page",
+        "x",
+        "y",
+        "width",
+        "height",
+        "z"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rubric": {
+          "$ref": "#/$defs/rubric"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 999
+        },
+        "x": {
+          "type": "number",
+          "minimum": -10000,
+          "maximum": 10000
+        },
+        "y": {
+          "type": "number",
+          "minimum": -10000,
+          "maximum": 10000
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 10000
+        },
+        "height": {
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 10000
+        },
+        "z": {
+          "type": "integer",
+          "minimum": -10000,
+          "maximum": 10000
+        }
       },
       "additionalProperties": false
     }

@@ -60,6 +60,7 @@ public enum LeonardoFieldType: String, Codable, CaseIterable, Sendable {
     case select
     case email
     case url
+    case rubric
 }
 
 public struct LeonardoFieldOption: Codable, Equatable, Sendable {

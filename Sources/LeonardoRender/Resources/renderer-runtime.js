@@ -366,10 +366,11 @@
       const renderedSource = payload.source;
       window.LeonardoTables.prepare(root);
       window.LeonardoLayout?.apply(root, payload);
+      window.LeonardoObjects?.apply(root, payload);
       window.LeonardoTableResizing.prepare(root, payload);
       installHeadingAnchors();
       root.querySelectorAll("img").forEach((image) => {
-        image.loading = image.closest(".leonardo-document-background") ? "eager" : "lazy";
+        image.loading = image.closest(".leonardo-document-background, .leonardo-object") ? "eager" : "lazy";
         image.decoding = "async";
       });
       window.LeonardoImages.prepare(root);

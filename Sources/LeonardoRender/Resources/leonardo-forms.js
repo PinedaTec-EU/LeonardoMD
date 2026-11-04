@@ -77,6 +77,20 @@
     input.addEventListener("compositionend", () => commit(fieldID, field, input));
     return input;
   }
+  function rubricField(wrapper, fieldID, field, value) {
+    wrapper.classList.add("leonardo-form-field");
+    const caption = document.createElement("span"); caption.className = "leonardo-field-label";
+    caption.textContent = (field.label || fieldID) + (field.required ? " *" : ""); wrapper.append(caption);
+    const button = document.createElement("button"); button.type = "button"; button.className = "leonardo-rubric-field";
+    button.disabled = !payload.allowsFormFilling || field.readOnly;
+    button.setAttribute("aria-label", `${label("Insert rubric")} ${field.label || fieldID}`);
+    if (value?.strokes) button.append(window.LeonardoObjects.rubric(value)); else button.textContent = label("Insert rubric");
+    button.addEventListener("click", () => post("leonardoObject", {source: payload.source, fieldID}));
+    const output = document.createElement("span"); output.className = "leonardo-field-output leonardo-rubric-field";
+    if (value?.strokes) output.append(window.LeonardoObjects.rubric(value));
+    wrapper.append(button, output);
+    return wrapper;
+  }
   window.LeonardoForms = {
     begin(nextPayload, nextRoot) {
       payload = nextPayload; root = nextRoot; changes = Object.create(null); controls.clear(); sequence = 0;
@@ -85,6 +99,7 @@
       const wrapper = document.createElement("span");
       wrapper.className = "leonardo-field-value";
       wrapper.dataset.field = fieldID;
+      if (field.type === "rubric") return rubricField(wrapper, fieldID, field, value);
       const output = document.createElement("span");
       output.className = "leonardo-field-output";
       output.textContent = valueText(value, field) || "________";

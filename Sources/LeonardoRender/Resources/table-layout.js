@@ -60,6 +60,10 @@
     } },
     renderer: {
       table: sizedTable,
+      html(token) {
+        if (!allowsLegacyWidths && token.raw.trim() === "<!-- leonardo:page-break -->") return '<hr data-leonardo-page-break="true">';
+        return window.marked.Renderer.prototype.html.call(this, token);
+      },
       text(token) {
         const html = window.marked.Renderer.prototype.text.call(this, token);
         return window.LeonardoEditing.span(token, html);
