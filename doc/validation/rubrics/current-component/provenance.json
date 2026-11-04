@@ -1,0 +1,12 @@
+{
+  "source_commit": "59b6b148fdae5b0f6789e119c0d6c965462846d7",
+  "test": "GraphicRuntimeTests.testPagesLayerOrderSelectionProtectedFieldAndVectorPDF",
+  "capture": "native XCTest-hosted MarkdownPreviewHost, not a packaged startup claim",
+  "host_frame_points": {
+    "width": 1100,
+    "height": 900
+  },
+  "export": "WKWebView vector PDF cropped to two A4 pages",
+  "inspection": "PDFKit asserted page count, physical width and isolated text; Poppler rendered both pages; inspected PNGs. Includes synthetic legacy image, overlap and rubric field.",
+  "data": "synthetic"
+}
