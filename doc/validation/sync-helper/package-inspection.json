@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "checkout_sha": "3cc49a36180d7bc981c1c70a5fb9b1dfafc7f61e",
+  "checkout_sha": "0c46b98e85092f5ef169fa6823935f04db200c2c",
   "bundle_identifier": "eu.pinedatec.LeonardoMD",
   "executable": "LeonardoMD",
   "version": "0.1.783",
