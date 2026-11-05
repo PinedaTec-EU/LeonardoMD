@@ -55,6 +55,38 @@ class DependencyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unresolved bundled dependency'):
             deps.inspect_dependencies(self.bundle, self.executable)
 
+    def test_existing_external_rpath_cannot_be_hidden_by_a_bundled_fallback(self):
+        outside = Path(self.temp.name) / 'external'
+        library = outside / 'Sparkle.framework/Versions/B/Sparkle'
+        macho(library, ['/usr/lib/libSystem.B.dylib'], filetype=6)
+        macho(self.executable, [self.name], [str(outside), '@executable_path/../Frameworks'])
+        with self.assertRaisesRegex(ValueError, 'first existing candidate escapes'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_earlier_rpath_symlink_escape_cannot_be_hidden_by_a_fallback(self):
+        outside = Path(self.temp.name) / 'external.dylib'
+        macho(outside, ['/usr/lib/libSystem.B.dylib'], filetype=6)
+        alias = self.bundle / 'Contents/MacOS/shim/Sparkle.framework/Versions/B/Sparkle'
+        alias.parent.mkdir(parents=True)
+        alias.symlink_to(outside)
+        macho(self.executable, [self.name], ['@executable_path/shim', '@executable_path/../Frameworks'])
+        with self.assertRaisesRegex(ValueError, 'first existing candidate escapes'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_nonexistent_external_rpath_allows_a_bundled_fallback(self):
+        macho(self.executable, [self.name], [str(Path(self.temp.name) / 'absent'),
+                                             '@executable_path/../Frameworks'])
+        deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_relative_rpath_cannot_be_silently_skipped_for_a_fallback(self):
+        macho(self.executable, [self.name], ['relative-first', '@executable_path/../Frameworks'])
+        with self.assertRaisesRegex(ValueError, 'relative or unsupported runpath'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_system_shared_cache_candidate_is_recognized_before_a_fallback(self):
+        macho(self.executable, ['@rpath/libswiftCore.dylib'], ['/usr/lib/swift', '@loader_path/absent'])
+        deps.inspect_dependencies(self.bundle, self.executable)
+
     def test_framework_symlink_escaping_bundle_is_rejected(self):
         outside = Path(self.temp.name) / 'outside'
         self.sparkle.rename(outside)
@@ -114,6 +146,39 @@ class DependencyTests(unittest.TestCase):
             deps.inspect_dependencies(self.bundle, self.executable)
         self.sparkle.unlink()
         with self.assertRaisesRegex(ValueError, 'Sparkle'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_standalone_helper_missing_dependency_is_rejected(self):
+        helper = self.bundle / 'Contents/MacOS/Helper'
+        macho(helper, ['@loader_path/missing.dylib'])
+        with self.assertRaisesRegex(ValueError, 'missing.dylib'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_xpc_graph_uses_its_own_executable_context(self):
+        helper = self.bundle / 'Contents/XPCServices/Helper.xpc/Contents/MacOS/Helper'
+        library = helper.parent.parent / 'Frameworks/Private.dylib'
+        macho(helper, ['@executable_path/../Frameworks/Private.dylib'])
+        macho(library, ['/usr/lib/libSystem.B.dylib'], filetype=6)
+        deps.inspect_dependencies(self.bundle, self.executable)
+        library.unlink()
+        with self.assertRaisesRegex(ValueError, 'Private.dylib'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_shared_library_is_rechecked_under_each_launcher_context(self):
+        common = self.bundle / 'Contents/Frameworks/Common.dylib'
+        macho(self.executable, ['@rpath/Common.dylib'], ['@executable_path/../Frameworks'])
+        macho(common, ['@executable_path/local.dylib'], filetype=6)
+        macho(self.executable.parent / 'local.dylib', filetype=6)
+        helper = self.bundle / 'Contents/XPCServices/Helper.xpc/Contents/MacOS/Helper'
+        macho(helper, ['@rpath/Common.dylib'], ['@executable_path/../../../../Frameworks'])
+        with self.assertRaisesRegex(ValueError, 'local.dylib'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+        macho(helper.parent / 'local.dylib', filetype=6)
+        deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_main_binary_must_have_executable_macho_type(self):
+        macho(self.executable, filetype=6)
+        with self.assertRaisesRegex(ValueError, 'Mach-O executable'):
             deps.inspect_dependencies(self.bundle, self.executable)
 
     def test_cli_rejects_missing_dependency_before_signing_or_launch(self):

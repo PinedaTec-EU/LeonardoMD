@@ -1,7 +1,8 @@
 # Application updates
 
 Prelaunch packaging inspection under [#324](https://github.com/PinedaTec-EU/LeonardoMD/issues/324)
-resolves non-system dependencies within the bundle and checks deep signatures plus
+resolves each embedded executable's dependency graph within the bundle, honoring
+ordered runpaths and each helper's executable context, and checks deep signatures plus
 embedded signing teams. `launch.sh` rechecks the final app before `open`.
 `scripts/bundle-dependencies.py` owns the shared inside-out signer used by QA
 (`LEONARDO_QA_SIGN_IDENTITY` with `--qa`) and distribution. The 2026-11-05

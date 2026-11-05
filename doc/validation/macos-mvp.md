@@ -6,10 +6,16 @@ Run `swift test` for Core, App, static render and real WKWebView integration che
 
 `launch.sh` validates the final selected bundle immediately before `open`, including
 the disposable copy produced by `--qa`. `scripts/qa-bundle.py --verify-only <app>`
-checks the real executable, non-system Mach-O dependency resolution inside the
-bundle (including transitive libraries), deep strict signatures, and consistent
+checks the real executable and every embedded Mach-O executable (including
+helpers, XPC services and updater apps), resolving each executable's transitive
+libraries with its own loader/executable context. It checks deep strict signatures and consistent
 embedded signing teams for team-signed apps. System framework/library paths may
-be supplied by Apple's dyld shared cache. This static gate does not prove a fresh
+be supplied by Apple's dyld shared cache. Search order is preserved: an existing
+external candidate or an escaping symlink blocks validation even when a bundled
+fallback exists later. Relative or unsupported runpath expressions fail closed;
+ordinary loader/executable anchors are expanded. Shared-cache candidates are
+queried through the native dyld API. This inspection covers Mach-O load commands,
+not computed runtime `dlopen` paths or environment-driven injection. This static gate does not prove a fresh
 process or first-window readiness and does not claim to eliminate concurrent
 modification after inspection.
 

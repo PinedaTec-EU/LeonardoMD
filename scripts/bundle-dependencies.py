@@ -2,6 +2,8 @@
 """Inspect bundled Mach-O load paths and apply one inside-out signing policy."""
 from pathlib import Path
 import argparse
+import ctypes
+import functools
 import os
 import re
 import subprocess
@@ -81,15 +83,35 @@ def expand_path(value, image, executable):
     return value
 
 
+def system_path(name):
+    return (Path(name).is_absolute() and os.path.normpath(name).startswith(SYSTEM_ROOTS)
+            and str(Path(name).resolve()).startswith(SYSTEM_ROOTS))
+
+
+@functools.cache
+def shared_cache_lookup():
+    lookup = ctypes.CDLL('/usr/lib/system/libdyld.dylib')._dyld_shared_cache_contains_path
+    lookup.argtypes = [ctypes.c_char_p]
+    lookup.restype = ctypes.c_bool
+    return lookup
+
+
 def resolve_dependency(name, image, executable, runpaths, bundle):
-    if (Path(name).is_absolute() and os.path.normpath(name).startswith(SYSTEM_ROOTS)
-            and str(Path(name).resolve()).startswith(SYSTEM_ROOTS)):
+    if system_path(name):
         return None  # Apple libraries may exist only in the dyld shared cache.
     candidates = ([str(Path(path) / name[len('@rpath/'):]) for path in runpaths]
                   if name.startswith('@rpath/') else [expand_path(name, image, executable)])
     for candidate in candidates:
         path = Path(candidate)
-        if path.is_absolute() and path.is_file() and path.resolve().is_relative_to(bundle):
+        if not path.is_absolute():
+            raise ValueError(f'Unresolved bundled dependency {name}: relative or unsupported '
+                             f'runpath cannot be validated: {candidate}')
+        if system_path(candidate) and (path.is_file() or shared_cache_lookup()(os.fsencode(candidate))):
+            return None
+        if path.is_file():
+            if not path.resolve().is_relative_to(bundle):
+                raise ValueError(f'Unresolved bundled dependency {name}: first existing candidate '
+                                 f'escapes the bundle: {candidate}')
             return path.resolve()
     raise ValueError(f'Unresolved bundled dependency {name} from {image.relative_to(bundle)}; '
                      f'searched: {", ".join(candidates)}')
@@ -101,19 +123,27 @@ def inspect_dependencies(bundle, executable):
         raise ValueError('App executable resolves outside its bundle')
     inspected = set()
 
-    def visit(image, inherited):
-        key = (image, tuple(inherited))
+    def visit(image, launcher, inherited):
+        key = (launcher, image, tuple(inherited))
         if key in inspected:
             return
         inspected.add(key)
         paths, names = load_commands(image)
-        runpaths = list(dict.fromkeys([*(expand_path(p, image, executable) for p in paths), *inherited]))
+        runpaths = list(dict.fromkeys([*(expand_path(p, image, launcher) for p in paths), *inherited]))
         for name in names:
-            dependency = resolve_dependency(name, image, executable, runpaths, bundle)
+            dependency = resolve_dependency(name, image, launcher, runpaths, bundle)
             if dependency is not None and dependency != image:
-                visit(dependency, runpaths)
+                visit(dependency, launcher, runpaths)
 
-    visit(executable, [])
+    launchers = []
+    for image in macho_files(bundle):
+        header = subprocess.check_output(['/usr/bin/otool', '-hv', str(image)], text=True)
+        if re.search(r'\bEXECUTE\b', header):
+            launchers.append(image.resolve())
+    if executable not in launchers:
+        raise ValueError('The main application binary must be a Mach-O executable')
+    for launcher in dict.fromkeys([executable, *launchers]):
+        visit(launcher, launcher, [])
 
 
 if __name__ == '__main__':
