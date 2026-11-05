@@ -30,8 +30,17 @@ copied. Library and session are injectable for isolated tests/captures. No sync,
 pressure requirement, Preview private-store access or cryptographic signing.
 
 `DocumentToolbar` groups commands and uses a mode dropdown. Floating controls
-live beside selection, with extra size/page controls collapsed. More → Objects
-selects obscured images. Bilingual help is Guide v7; generated references and
+live beside selection as a read-only X/Y/Z summary with Inspect. `GraphicInspector`
+uses the existing workspace right-hand slot for geometry, Z, color and deletion.
+`SessionGraphicInspection` validates the current object snapshot before mutation;
+recoloring preserves library ink and all other stroke properties. Native selection
+state is carried through render payloads; document capture listeners clear it on
+outside pointer, text selection and Escape. Clear notifications remain safe during
+a pending render and must never be dropped or resurrect selection. Native inspector
+focus is outside the DOM and retains selection. Mode/protection/document switches
+clear it. Tracking: [#323](https://github.com/PinedaTec-EU/LeonardoMD/issues/323),
+[#322](https://github.com/PinedaTec-EU/LeonardoMD/issues/322). More → Objects
+selects obscured images. Bilingual help is Guide v8; generated references and
 native component evidence must not be confused with packaged-process acceptance.
 
 The local rubric library serializes read-latest mutations with a nonblocking stable sidecar lock across app instances; a busy or corrupt library is never overwritten. Opening the editor refreshes its list. Regression tracked in [#318](https://github.com/PinedaTec-EU/LeonardoMD/issues/318).

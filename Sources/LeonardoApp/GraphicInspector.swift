@@ -63,6 +63,7 @@ struct GraphicInspector: View {
             }
         }
         .frame(width: 320).frame(maxHeight: .infinity, alignment: .top).background(.regularMaterial)
+        .buttonStyle(PremiumButtonStyle(compact: true))
         .accessibilityIdentifier("graphic-inspector")
         .onExitCommand { session.clearGraphicSelection() }
         .onChange(of: graphic.id) { _, _ in invalidValue = false }

@@ -44,6 +44,7 @@ final class GraphicRuntimeTests: XCTestCase {
         XCTAssertEqual(outputDisplay, "inline-block")
         _ = try await web.evaluateJavaScript("window.LeonardoForms.setExporting(false)")
         let pdf = try await host.exportPDF()
+        try await wait("document.querySelector('.leonardo-object-selected')?.dataset.object === 'behind'", web)
         let parsed = try XCTUnwrap(PDFDocument(data: pdf))
         XCTAssertEqual(parsed.pageCount, 2)
         XCTAssertTrue(parsed.page(at: 0)?.string?.contains("FIRST PAGE") == true)

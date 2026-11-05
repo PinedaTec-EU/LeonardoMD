@@ -16,11 +16,12 @@ final class GraphicSelectionRuntimeTests: XCTestCase {
         window.isReleasedWhenClosed = false; window.contentView = host; window.orderFront(nil)
         defer { host.teardown(); window.close() }
         var inspected = false
+        var currentSource = source
         host.onGraphicSelection = { expected, id, inspect in
-            XCTAssertEqual(expected, source)
+            XCTAssertEqual(expected, currentSource)
             config.selectedGraphicID = id
             if inspect { inspected = true }
-            host.apply(content: source, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
+            host.apply(content: currentSource, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
         }
         host.apply(content: source, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
         let web = try XCTUnwrap(host.subviews.first as? WKWebView)
@@ -42,6 +43,20 @@ final class GraphicSelectionRuntimeTests: XCTestCase {
         _ = try await web.evaluateJavaScript("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true})); window.LeonardoObjects.refresh()")
         try await wait("!document.querySelector('.leonardo-object-selected') && !document.querySelector('.leonardo-object-toolbar')", web)
         XCTAssertNil(config.selectedGraphicID)
+
+        host.selectObject("graphic"); try await wait("!!document.querySelector('.leonardo-object-selected')", web)
+        currentSource = source + "\n\nAFTER UPDATE"
+        config.renderDebounce = .milliseconds(200)
+        host.apply(content: currentSource, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
+        _ = try await web.evaluateJavaScript("document.querySelector('p').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}))")
+        try await wait("document.querySelector('main').textContent.includes('AFTER UPDATE')", web)
+        try await wait("!document.querySelector('.leonardo-object-selected') && !document.querySelector('.leonardo-object-toolbar')", web)
+        XCTAssertNil(config.selectedGraphicID, "A clear from the previous DOM must survive a queued render")
+        inspected = false
+        let oldSourceJSON = String(data: try JSONEncoder().encode(source), encoding: .utf8)!
+        _ = try await web.evaluateJavaScript("window.webkit.messageHandlers.leonardoObject.postMessage({source: \(oldSourceJSON), selection:'graphic', inspect:true}); void 0")
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertFalse(inspected, "Stale inspection requests cannot open an inspector")
     }
 
     private func wait(_ expression: String, _ web: WKWebView) async throws {

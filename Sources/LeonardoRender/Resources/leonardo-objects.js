@@ -104,11 +104,11 @@
   function positionToolbar(element, item) {
     if (!toolbar) return;
     const page = element.parentElement, rect = page.getBoundingClientRect();
-    const width = toolbar.getBoundingClientRect().width * .75;
+    const bounds = toolbar.getBoundingClientRect(), width = bounds.width * .75, height = bounds.height * .75;
     const minimum = Math.max(4, -rect.left * .75 + 4);
     const maximum = Math.min(page.clientWidth * .75 - width - 4, (window.innerWidth - rect.left) * .75 - width - 8);
     toolbar.style.left = pt(Math.max(minimum, Math.min(item.x, Math.max(minimum, maximum))));
-    toolbar.style.top = pt(Math.max(4, Math.min(page.clientHeight * .75 - 34, item.y >= 34 ? item.y - 30 : item.y + item.height + 8)));
+    toolbar.style.top = pt(Math.max(4, Math.min(page.clientHeight * .75 - height - 4, item.y >= height + 4 ? item.y - height - 4 : item.y + item.height + 8)));
   }
   window.addEventListener("resize", () => { if (selected) positionToolbar(selected, selected.leonardoGraphic); });
   // Capture before lexical text editors can stop propagation. Native inspector
@@ -197,15 +197,18 @@
   }
   function refresh() {
     if (!root?.classList.contains("leonardo-paginated")) return;
-    const selectedID = selected?.dataset.object;
+    const selectedID = selected?.dataset.object || payload.selectedGraphicID;
     clear(false);
     for (const child of Array.from(root.childNodes)) {
       if (!child.classList?.contains("leonardo-page") && !child.classList?.contains("leonardo-document-background") && !logicalNodes.includes(child)) logicalNodes.push(child);
     }
     paginate(); renderLegacyImages(); renderObjects(payload.leonardo?.layout?.objects || []);
-    if (selectedID && payload.allowsEditing && !root.classList.contains("leonardo-form-export")) {
+    if (selectedID && payload.allowsEditing && !payload.allowsFormFilling) {
       const element = Array.from(root.querySelectorAll(".leonardo-object")).find(node => node.dataset.object === selectedID);
-      if (element) select(element, element.leonardoGraphic, false);
+      if (element) {
+        if (root.classList.contains("leonardo-form-export")) payload.selectedGraphicID = selectedID;
+        else select(element, element.leonardoGraphic, false);
+      }
     }
   }
   function pdfGeometry() {

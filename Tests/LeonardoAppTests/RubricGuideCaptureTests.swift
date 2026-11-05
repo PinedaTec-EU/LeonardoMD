@@ -45,7 +45,7 @@ final class RubricGuideCaptureTests: XCTestCase {
                 .modifier(SessionAppearance(session: session)).frame(width: 320, height: 850).background(Color(nsColor: .windowBackgroundColor)))
             try await GuideCaptureSupport.captureNative(inspector, size: NSSize(width: 320, height: 850),
                 to: folder.appendingPathComponent("graphic-inspector.png"), language: code,
-                state: "Production object inspector; isolated inserted synthetic rubric; no personal ink; editable geometry, Z and color")
+                state: "Production object inspector; isolated inserted synthetic rubric; no personal ink; editable geometry, Z and color; original 1x bitmap for guide memory budget", pixelScale: 1)
             session.stop()
         }
     }

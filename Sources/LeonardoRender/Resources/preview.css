@@ -317,7 +317,7 @@ body[data-paper-effect="parchment"] {
 .leonardo-object-selected { box-shadow: inset 0 0 0 1px var(--ld-accent); }
 .leonardo-object-resize { display: none; position: absolute; right: 0; bottom: 0; width: 10px; height: 10px; padding: 0; background: var(--ld-accent); cursor: nwse-resize; }
 .leonardo-object-selected .leonardo-object-resize { display: block; }
-.leonardo-object-toolbar { position: absolute; z-index: 20001; display: flex; gap: 5px; flex-wrap: wrap; max-width: calc(100% - 16pt); padding: 8px; border-radius: 10px; background: var(--ld-code-background); color: var(--ld-text); box-shadow: 0 4px 16px #0004; font: 12px system-ui; }
+.leonardo-object-toolbar { position: absolute; z-index: 20001; display: flex; gap: 5px; flex-wrap: wrap; max-width: min(calc(100% - 16pt), calc(100vw - 16px)); padding: 8px; border-radius: 10px; background: var(--ld-code-background); color: var(--ld-text); box-shadow: 0 4px 16px #0004; font: 12px system-ui; }
 .leonardo-object-toolbar span { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .leonardo-object-toolbar { align-items: center; gap: 10px; }
 .leonardo-object-toolbar button { padding: 3px 7px; border-radius: 5px; outline-offset: 2px; }
