@@ -283,4 +283,10 @@
 - [#315](https://github.com/PinedaTec-EU/LeonardoMD/pull/315) — #314 Fixed: persist Leonardo file selection and improve dark contrast — build +3
   <p>Keep the active Leonardo file visibly selected and improve filename readability in dark appearance.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.765)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTEtMDVUMDA6NTM6MzZaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjE4fSwiZnJvbV92ZXJzaW9uIjoiMC4xLjc2NSIsImtpbmQiOiJwdWxsX3JlcXVlc3QiLCJtZXJnZV9zaGEiOiIwMGZkZjA1ZjlhNWJiYWY5MTEzYjUxZjE4MDllMzJjNTk4NWZmYzE2IiwibnVtYmVyIjozMTYsInN1bW1hcnkiOiJJbnNlcnQgaW1hZ2VzIGFuZCByZXVzYWJsZSBkcmF3biBydWJyaWNzIHdpdGggcGFnZSBwbGFjZW1lbnQsIGxheWVyIGNvbnRyb2xzIGFuZCBhIGNvbXBhY3QgZG9jdW1lbnQgdG9vbGJhci4iLCJ0aXRsZSI6IiMxOTMgQWRkZWQ6IGltYWdlcyBhbmQgcmV1c2FibGUgZHJhd24gcnVicmljcyIsInRvX3ZlcnNpb24iOiIwLjEuNzgzIn1dLCJlbnZpcm9ubWVudCI6InJlbGVhc2UiLCJldmVudF9pZCI6ImdpdGh1Yl9yZWxlYXNlOjQzNDYzNjU3OCIsImV2ZW50X2tpbmQiOiJnaXRodWJfcmVsZWFzZSIsImV2aWRlbmNlX3VybCI6Imh0dHBzOi8vZ2l0aHViLmNvbS9QaW5lZGFUZWMtRVUvTGVvbmFyZG9NRC9yZWxlYXNlcy90YWcvdjAuMS43ODMiLCJyZXBvc2l0b3J5IjoiUGluZWRhVGVjLUVVL0xlb25hcmRvTUQiLCJzb3VyY2VfcmVmIjoidjAuMS43ODMiLCJzb3VyY2Vfc2hhIjoiYTJlNzUyMTMyNGVkODc5MjBjYTVkYWFjM2M3NjBjZGQ4ZjlkZmU4YiIsInRhcmdldCI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwidmVyc2lvbiI6IjAuMS43ODMifQ -->
+### 0.1.783
+- [#316](https://github.com/PinedaTec-EU/LeonardoMD/pull/316) — #193 Added: images and reusable drawn rubrics — build +18
+  <p>Insert images and reusable drawn rubrics with page placement, layer controls and a compact document toolbar.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.783)
 <!-- release-ledger:end -->
