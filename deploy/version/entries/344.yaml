@@ -1,3 +1,4 @@
 {
+  "summary": "Linked iOS readers can securely receive and answer a Mac rubric request without document editing. Requests target one device, expire, and preserve exact responses across retries and restarts.",
   "build": 5
 }
