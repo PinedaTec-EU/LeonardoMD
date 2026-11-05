@@ -90,3 +90,12 @@ localized repository practice link from a Help/Welcome-authorized live guide,
 validating source, file, active tab and lifecycle. Other links keep ordinary
 navigation. Practice-v1 MDLR copies retain answers under Practice Forms/v1 and
 open/select a separate Fill tab. No custom URL protocol or renderer action API.
+
+Agent-assisted import ([#329](https://github.com/PinedaTec-EU/LeonardoMD/issues/329)):
+File → Import with your agent opens `AgentImport-v1-<locale>.mdlz` through the
+existing bundled-guide/session flow, using a separate personal-copy directory.
+There is no native PDF/OCR conversion, upload, provider setup or MCP service.
+The standalone guide is derived from marked chapter 6 content in bilingual
+`doc/guide/*/body.md`; the same packager emits main Guide v9 and web editions.
+Keep the chapter as the single editorial source, including capability-based
+agent requirements, the native-editable output prompt and review boundaries.

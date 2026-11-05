@@ -18,11 +18,13 @@ ILLUSTRATIONS = {
     "en": {
         "journey": ("Your document journey", ["Write · MDLF", "Fill · MDLR", "Share · MDLZ"]),
         "package": ("One portable package · MDLZ", ["guide.mdlf", "assets/ · images", "Definitions + answers"]),
+        "import": ("Import with your agent · illustrative diagram", ["Original PDF", "Your agent + skill", "Editable Leonardo"]),
         "export": ("Choose what the recipient needs", ["Edit / fill → MDLZ", "Read → Markdown", "Fixed pages → PDF"]),
     },
     "es": {
         "recorrido": ("El recorrido de tu documento", ["Escribir · MDLF", "Rellenar · MDLR", "Compartir · MDLZ"]),
         "paquete": ("Un paquete portable · MDLZ", ["guia.mdlf", "assets/ · imágenes", "Definición + respuestas"]),
+        "importar": ("Importar con tu agente · diagrama ilustrativo", ["PDF original", "Tu agente + skill", "Leonardo editable"]),
         "exportar": ("Elige según el destinatario", ["Editar / rellenar → MDLZ", "Leer → Markdown", "Páginas fijas → PDF"]),
     },
 }
@@ -36,7 +38,9 @@ def illustration(title, labels):
         cards.append(f'<text x="{x + 160}" y="158" text-anchor="middle" fill="#432333" font-size="21">{escape(label)}</text>')
         if index < 2:
             cards.append(f'<text x="{x + 325}" y="160" fill="#432333" font-size="25">→</text>')
-    return ('<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="240" viewBox="0 0 1080 240">'
+    # Bounded intrinsic size keeps the combined guide within the preview image
+    # admission budget; the original viewBox preserves full vector fidelity.
+    return ('<svg xmlns="http://www.w3.org/2000/svg" width="720" height="160" viewBox="0 0 1080 240">'
             '<rect width="1080" height="240" rx="20" fill="#f1e8dd"/>'
             '<g font-family="Helvetica,Arial,sans-serif">'
             f'<text x="30" y="58" fill="#432333" font-size="30" font-weight="bold">{escape(title)}</text>'
@@ -59,7 +63,7 @@ def practice_metadata(language):
 
 def metadata(language):
     return {"format": "mdlf", "formatVersion": 1,
-            "document": {"id": "leonardo-user-guide-" + language, "kind": "document", "revision": 9},
+            "document": {"id": "leonardo-user-guide-" + language, "kind": "document", "revision": 10},
             "layout": {"images": [{"source": "assets/graphic-inspector.png", "size": {"width": {"value": 240, "unit": "points"}}}]}}
 
 
@@ -84,6 +88,24 @@ def build(language, destination):
         body = (ROOT / "doc/guide" / language / "body.md").read_text(encoding="utf-8")
         (staging / "guide.mdlf").write_text('---\n' + json.dumps(metadata(language), ensure_ascii=False, indent=2)
                                             + '\n---\n' + body, encoding="utf-8")
+        mdlz.pack_directory(staging, destination)
+
+
+def build_agent_import(language, destination):
+    """Derive the standalone guide from the same main-help chapter."""
+    body = (ROOT / "doc/guide" / language / "body.md").read_text(encoding="utf-8")
+    section = body.split("<!-- agent-import:begin -->\n", 1)[1].split("<!-- agent-import:end -->", 1)[0]
+    section = section.replace("### ", "# ", 1).replace("\n#### ", "\n## ")
+    name = "importar" if language == "es" else "import"
+    title, labels = ILLUSTRATIONS[language][name]
+    header = {"format": "mdlf", "formatVersion": 1,
+              "document": {"id": "leonardo-agent-import-" + language, "kind": "document", "revision": 1}}
+    with tempfile.TemporaryDirectory(prefix="leonardo-agent-import-") as temporary:
+        staging = Path(temporary)
+        (staging / "assets").mkdir()
+        (staging / "assets" / (name + ".svg")).write_text(illustration(title, labels), encoding="utf-8")
+        (staging / "guide.mdlf").write_text('---\n' + json.dumps(header, ensure_ascii=False, indent=2)
+                                            + '\n---\n' + section, encoding="utf-8")
         mdlz.pack_directory(staging, destination)
 
 
@@ -132,13 +154,19 @@ def main():
             write_web_guide(language, args.web_output)
     args.output.mkdir(parents=True, exist_ok=True)
     for language in ILLUSTRATIONS:
-        destination = args.output / f"Guide-v9-{language}.mdlz"
+        destination = args.output / f"Guide-v10-{language}.mdlz"
         # The canonical packer deliberately refuses overwrites. Replace only our generated artifact.
         with tempfile.TemporaryDirectory(prefix="leonardo-guide-output-") as temporary:
             result = Path(temporary) / destination.name
             build(language, result)
             destination.write_bytes(result.read_bytes())
         print(destination)
+        agent_import = args.output / f"AgentImport-v1-{language}.mdlz"
+        with tempfile.TemporaryDirectory(prefix="leonardo-import-output-") as temporary:
+            result = Path(temporary) / agent_import.name
+            build_agent_import(language, result)
+            agent_import.write_bytes(result.read_bytes())
+        print(agent_import)
         practice = args.output / f"Practice-v1-{language}.mdlr"
         practice.write_text(practice_source(language), encoding="utf-8")
 

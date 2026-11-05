@@ -1,6 +1,6 @@
 # User-help feature coverage
 
-Source audit: 4 November 2026. This maps the implemented macOS surfaces to the
+Source audit: 5 November 2026. This maps the implemented macOS surfaces to the
 same numbered chapters in `en/body.md` and `es/body.md`. It is a maintenance map,
 not a promise that every feature is in the current stable distribution. Check
 release notes for the installed build. Future feature PRs maintain this map and
@@ -15,6 +15,7 @@ both locales under `.skills/leonardo-user-guide/SKILL.md`.
 | Markdown migration keeps original; package vs extracted-folder saving | `LeonardoFormatPreferences.swift`, `SessionLeonardo.swift` | 3, 5 | Package contents diagram |
 | Package, response, Markdown and PDF export; loss/remote resource limits | `SessionMarkdownExport.swift`, `SessionLeonardoExport.swift`, `../LeonardoRender/MarkdownPDFExportCoordinator.swift` | 5, 10, 18–19 | Export decision diagram |
 | External agent skill installation vs runtime app control; attachment limitations | `plugins/leonardo-format/skills/leonardo-format/SKILL.md`, `doc/plugins/leonardo-format.md` | 6 | Copyable prompts; provider instructions retain their explicit check date |
+| File → Import with your agent opens a localized standalone Leonardo guide; PDF conversion is performed by the user’s external agent | `BundledUserGuide.swift`, `LeonardoMD.swift`, `scripts/package-user-guide.py` | 6 | Shared bilingual chapter; illustrative PDF → agent/skill → editable document diagram and copyable request |
 | Recents, favorites, project theme association and unavailable paths | `SavedItemsView.swift` | 7 | Home capture (empty initial state) |
 | Tree, CRUD, tab identity, filters, sort, follow-active and Focus | `ProjectSidebar.swift`, `DocumentTabs.swift`, `SessionPreferences.swift` | 8 | Stepwise instructions; keyboard table |
 | Filename/content search, exact tag filter and heading outline | `ProjectSidebar.swift`, `DocumentInspector.swift`, `../LeonardoCore/FrontMatterTags.swift` | 9 | YAML and search examples |
@@ -50,4 +51,4 @@ Fill mode. Cmd-4 fills, the padlock edits structure, and Cmd-S saves answers.
 
 Page objects/rubrics (#193): `DocumentToolbar.swift`, `SessionGraphics.swift`, `RubricEditor.swift`, `RubricLibrary.swift`, `LeonardoGraphic.swift`, `leonardo-objects.js`, `MarkdownPagePDF.swift`; chapters 4, 5, 10. Covers geometry/Z, menu drawing, local library, protected fields, overflow and Markdown/PDF limits. Follow-up #323/#322 adds `GraphicInspector.swift`/`SessionGraphicInspection.swift`, read-only floating summary, copied-ink color, reliable deselection and v8 inspector illustrations.
 
-Sync helper (#319): chapters 14–15 cover per-user installation/approval, the required master switch in both directions, saved-file snapshots, offline status with the editor open, after-login recovery, editor-independent sharing and manual incoming review. Guide v9 uses a separate personal copy.
+Sync helper (#319): chapters 14–15 cover per-user installation/approval, the required master switch in both directions, saved-file snapshots, offline status with the editor open, after-login recovery, editor-independent sharing and manual incoming review. Guide v10 uses a separate personal copy.

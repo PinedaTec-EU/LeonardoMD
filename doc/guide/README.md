@@ -1,16 +1,24 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v9-en.mdlz` and `Guide-v9-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v10-en.mdlz` and `Guide-v10-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v9/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v10/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
-remain unchanged. Existing v2/v3/v4 copies and practice answers are never overwritten.
+remain unchanged. Existing guide copies and practice answers are never overwritten.
 
 `en/body.md` and `es/body.md` are the editorial sources. The 19 chapters cover
 current macOS workflows, with live Mermaid/KaTeX/Vega examples, literal citation
-and Markdown-extras examples, a separate practice form, three generated diagrams, the
+and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
+
+File → Import with your agent opens `AgentImport-v1-en.mdlz` or
+`AgentImport-v1-es.mdlz` in the same tab/package flow, with personal copies under
+`~/Library/Application Support/LeonardoMD/Agent Import Guides/v1/<language>/`.
+The standalone guide is generated from the marked agent-import section of
+chapter 6 in the same bilingual body sources. Its illustrative SVG requires no
+optional extension. This help entry does not select, send or convert a PDF;
+the user supplies a copy to their external agent using the Leonardo Format skill.
 
 The repository's [help maintenance skill](../../.skills/leonardo-user-guide/SKILL.md)
 and PR template require feature-changing PRs to update both locales in the same
@@ -21,7 +29,7 @@ Run `python3 scripts/package-user-guide.py --web-output doc` after content or as
 canonical plugin helper validates and deterministically packages one `guide.mdlf`
 plus local assets. Only PNGs from locale `assets/` folders are copied; capture
 contexts/metadata stay in Git for provenance and never enter the user package.
-The approved banner and three SVG diagrams are supplied by the builder.
+The approved banner and SVG diagrams are supplied by the builder.
 The optional `--web-output doc` also regenerates both web manuals and their
 SVG illustrations from the same sources, adapting image paths and showing
 field placeholders as literal source rather than nonfunctional form controls.

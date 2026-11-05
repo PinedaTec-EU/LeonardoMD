@@ -342,6 +342,11 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         if windows.isEmpty { newEmptyWindow() }
         Task { await activeDocuments?.openUserGuide() }
     }
+    @objc private func openAgentImportGuide() {
+        guard !terminationPending else { return }
+        if windows.isEmpty { newEmptyWindow() }
+        Task { await activeDocuments?.openUserGuide(topic: .agentImport) }
+    }
     @objc private func openProject() { activeSession?.chooseProject() }
     private var focusedTextEditor: NSTextView? {
         guard let editor = NSApp.keyWindow?.firstResponder as? NSTextView,
@@ -410,6 +415,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         add(L10n.text("New tab"), action: #selector(newTab), key: "t", to: file)
         add(L10n.text("Close tab"), action: #selector(closeTab), key: "w", to: file)
         add(L10n.text("Open document…"), action: #selector(openDocument), key: "o", to: file)
+        add(L10n.text("Import with your agent…"), action: #selector(openAgentImportGuide), to: file)
         add(L10n.text("Open project…"), action: #selector(openProject), key: "o", modifiers: [.command, .shift], to: file)
         recentMenus.add(to: file)
         favoritesMenu.add(to: file)

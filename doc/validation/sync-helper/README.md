@@ -64,7 +64,7 @@ later changes concern startup/registration/shutdown and QA verification.
 
 `prior-component-capture` retains the preceding originals; `previous-guide`
 retains superseded guide screenshots. No original was transformed or edited.
-Guide v9 packages the new production-control captures alongside the integrated inspector help. Live native AX inspection
+Guide v10 packages the new production-control captures alongside the integrated inspector help. Live native AX inspection
 established running, consent and disabled states; component captures do not
 pretend to be fresh packaged startup screenshots.
 
@@ -117,3 +117,34 @@ with listener readiness and status-generation guards. The historical registered
 service run is not presented as an exact-head physical failure test; fresh full
 and focused tests exercise these corrections, including real loopback TLS
 readiness before startup, after startup and after stop.
+
+## Integration refresh after agent import PR #330 (issue #329)
+
+Main's standalone agent-import guide and File menu entry are retained. The main
+help combines both source bodies, inspector image layout and sync instructions,
+then advances to Guide v10 and a separate personal-copy directory preserving
+v9 annotations. Helper production code is unchanged from `001fa216a49030deee4853f6b0add58e0ecc3762`.
+The historical 618-case record above describes the earlier native acceptance
+checkpoint; subsequent full-suite counts are recorded separately.
+
+### Compilation accounting reconciliation
+
+A read-only review at `001fa216a49030deee4853f6b0add58e0ecc3762` actually ran four
+successful compiler-bearing commands via `compile-and-record.py`, restoring
+the tracked delta after each command. The allocations must not be discarded:
+four build counts are restored here (22 → 26) before subsequent successful
+compilations. The commands were `swift test --filter` for the uncertain-stop
+case, `SyncHelperControllerTests`, `SyncHelperHostTests`, and full `swift test`.
+Later review replays use `--skip-build`; any needed compiler-bearing validation
+must be run by the owner of the branch through the recorder and preserved.
+
+### Combined guide image budget (#333)
+
+The first combined guide failed twice on `document.images[14].naturalWidth > 0`;
+the native image subsystem reported `image_load_rejected category=documentLimit`.
+All referenced assets were present. Generated diagrams now declare 720×160
+intrinsic dimensions with the original 1080×240 viewBox, preserving vector
+fidelity and original PNG captures while respecting the existing preview budget.
+All five `BundledUserGuideTests` then pass, including complete native image
+loading in both locales and the standalone agent-import guide. No renderer
+limit was raised.
