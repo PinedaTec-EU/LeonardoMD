@@ -606,7 +606,7 @@
   "Paste the invitation from Share from this Mac on the other computer. Your own sharing can stay off.": "Paste the invitation from Share from this Mac on the other computer. Your own sharing can stay off.",
   "A linked Little Leonardo is ready.": "A linked Little Leonardo is ready.",
   "Leonardo Sync helper is offline. Enable it in Preferences and try again.": "Leonardo Sync helper is offline. Enable it in Preferences and try again.",
-  "Restart LeonardoMD to update the Leonardo Sync helper before requesting a rubric.": "Restart LeonardoMD to update the Leonardo Sync helper before requesting a rubric.",
+  "Disable and re-enable Leonardo Sync in Preferences to update its helper before requesting a rubric.": "Disable and re-enable Leonardo Sync in Preferences to update its helper before requesting a rubric.",
   "The linked-device service is offline. Start sharing in Preferences and try again.": "The linked-device service is offline. Start sharing in Preferences and try again.",
   "No linked read-only Little Leonardo supports rubric capture yet.": "No linked read-only Little Leonardo supports rubric capture yet.",
   "The saved rubric request is no longer available.": "The saved rubric request is no longer available.",

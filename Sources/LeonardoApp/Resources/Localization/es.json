@@ -606,7 +606,7 @@
   "Paste the invitation from Share from this Mac on the other computer. Your own sharing can stay off.": "Pega la invitación de Compartir desde este Mac del otro equipo. Puedes mantener desactivado compartir tu contenido.",
   "A linked Little Leonardo is ready.": "Hay un Little Leonardo enlazado listo.",
   "Leonardo Sync helper is offline. Enable it in Preferences and try again.": "El asistente de Leonardo Sync está desconectado. Actívalo en Preferencias e inténtalo de nuevo.",
-  "Restart LeonardoMD to update the Leonardo Sync helper before requesting a rubric.": "Reinicia LeonardoMD para actualizar el asistente de Leonardo Sync antes de pedir una rúbrica.",
+  "Disable and re-enable Leonardo Sync in Preferences to update its helper before requesting a rubric.": "Desactiva y vuelve a activar Leonardo Sync en Preferencias para actualizar su asistente antes de pedir una rúbrica.",
   "The linked-device service is offline. Start sharing in Preferences and try again.": "El servicio de dispositivos enlazados está desconectado. Activa el uso compartido en Preferencias e inténtalo de nuevo.",
   "No linked read-only Little Leonardo supports rubric capture yet.": "Todavía no hay un Little Leonardo enlazado de solo lectura compatible con la captura de rúbricas.",
   "The saved rubric request is no longer available.": "La petición de rúbrica guardada ya no está disponible.",

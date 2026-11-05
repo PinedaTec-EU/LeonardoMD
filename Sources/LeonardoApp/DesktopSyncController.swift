@@ -16,7 +16,7 @@ enum RubricCaptureAvailability: Equatable {
         switch self {
         case .ready: "A linked Little Leonardo is ready."
         case .helperOffline: "Leonardo Sync helper is offline. Enable it in Preferences and try again."
-        case .helperUnsupported: "Restart LeonardoMD to update the Leonardo Sync helper before requesting a rubric."
+        case .helperUnsupported: "Disable and re-enable Leonardo Sync in Preferences to update its helper before requesting a rubric."
         case .serviceOffline: "The linked-device service is offline. Start sharing in Preferences and try again."
         case .noSupportedDevice: "No linked read-only Little Leonardo supports rubric capture yet."
         }
