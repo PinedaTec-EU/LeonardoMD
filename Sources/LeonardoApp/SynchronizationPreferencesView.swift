@@ -21,7 +21,7 @@ struct SynchronizationPreferencesView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            GroupBox("Leonardo Sync") {
+            GroupBox {
                 SyncHelperPreferencesSection(controller: source.helper)
                     .toggleStyle(PremiumSwitchStyle())
                     .padding(8)
