@@ -41,6 +41,29 @@ final class RubricExchangeTests: XCTestCase {
         catch { XCTAssertEqual(error as? RubricExchangeError, .conflict) }
     }
 
+    func testPersistenceFailureDoesNotMutateInMemoryStateAndCanRetry() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data("not a directory".utf8).write(to: root)
+        let store = FileRubricExchangeStore(url: root.appendingPathComponent("requests.json"))
+        let target = UUID(), requester = UUID()
+        let request = try RubricRequest(targetDeviceID: target, requesterID: requester,
+                                        requesterName: "Mac", createdAt: now)
+
+        do {
+            try await store.create(request)
+            XCTFail("A non-directory parent must fail before mutating the actor state")
+        } catch {
+            XCTAssertEqual(error as? RubricExchangeError, .storageFailure)
+        }
+
+        try FileManager.default.removeItem(at: root)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        try await store.create(request)
+        let retried = try await store.requests(for: target, now: now)
+        XCTAssertEqual(retried, [request])
+    }
+
     func testExpiryCancellationAndTargetIsolation() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
