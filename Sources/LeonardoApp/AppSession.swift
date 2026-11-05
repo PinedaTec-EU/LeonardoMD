@@ -12,6 +12,7 @@ final class AppSession {
     var documentURL: URL? {
         didSet {
             if documentURL != oldValue {
+                clearGraphicSelection()
                 editHistory = DocumentEditHistory()
                 extensionRecommendations.resetOpening()
             }
@@ -57,17 +58,19 @@ final class AppSession {
     var isSyncSuspended: Bool { NativeReconciliationLease.shared.holds(documentURL) || NativeReconciliationLease.shared.holds(projectURL) }
     var isClosing = false
     var isCapturingPreview = false
-    var isProtected = true
+    var isProtected = true { didSet { if isProtected { clearGraphicSelection() } } }
     var canEditDocument: Bool { documentURL != nil && !isProtected && !isClosing && !isCapturingPreview && !isSyncSuspended && !busy && !stopped }
     @ObservationIgnored weak var presentationWindow: NSWindow?
     var unsavedChangesDecision: @MainActor (String) async -> UnsavedChangesDecision = { _ in .cancel }
     var confirmDiscardForReload: @MainActor () async -> Bool = { false }
     var hasRelatedFileOperation: @MainActor () -> Bool = { false }
 
-    var mode: DocumentMode = .preview
+    var mode: DocumentMode = .preview { didSet { if oldValue != mode { clearGraphicSelection() } } }
     var focus = false
     var rubricLibrary = RubricLibrary.shared
     var rubricRequest: RubricRequest?
+    var selectedGraphicID: String?
+    var showsGraphicInspector = false
     var selectedLeonardoFieldID: String?
     var showInspector = false
     var showPreferences = false
@@ -81,7 +84,7 @@ final class AppSession {
     var confirmExternalLinks = UserDefaults.standard.object(forKey: "confirmExternalLinks") as? Bool ?? true
     var pendingExternalURL: URL?
     var errorMessage: String?
-    var externalConflict = false
+    var externalConflict = false { didSet { if externalConflict { clearGraphicSelection() } } }
     var busy = false
     var saving = false
     var fileOperationCount = 0

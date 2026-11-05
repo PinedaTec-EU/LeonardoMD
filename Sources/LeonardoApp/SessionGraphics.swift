@@ -54,10 +54,12 @@ extension AppSession {
             layout.objects.remove(at: index)
         } else { return false }
         document.metadata.layout = layout
-        return commitGraphics(document)
+        let committed = commitGraphics(document)
+        if committed, let remove, remove == selectedGraphicID { clearGraphicSelection() }
+        return committed
     }
 
-    private func commitGraphics(_ document: LeonardoDocument) -> Bool {
+    func commitGraphics(_ document: LeonardoDocument) -> Bool {
         do { return editDocument(expected: content, replacement: try LeonardoFormatParser.serialize(document)) }
         catch { report(error); return false }
     }

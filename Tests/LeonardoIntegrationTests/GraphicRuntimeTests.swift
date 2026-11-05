@@ -36,7 +36,7 @@ final class GraphicRuntimeTests: XCTestCase {
         host.selectObject("behind")
         try await wait("document.querySelector('.leonardo-object-selected')?.dataset.object === 'behind'", web)
         let inputs = try await web.evaluateJavaScript("document.querySelectorAll('.leonardo-object-toolbar input').length") as? Int
-        XCTAssertEqual(inputs, 6)
+        XCTAssertEqual(inputs, 0)
         _ = try await web.evaluateJavaScript("window.LeonardoForms.setExporting(true)")
         let hidden = try await web.evaluateJavaScript("getComputedStyle(document.querySelector('button.leonardo-rubric-field')).display") as? String
         XCTAssertEqual(hidden, "none")

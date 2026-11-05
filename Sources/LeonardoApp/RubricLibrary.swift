@@ -89,9 +89,7 @@ enum RubricDrawing {
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current?.cgContext.scaleBy(x: rect.width / 600, y: rect.height / 200)
         for stroke in rubric.strokes {
-            let rgb = UInt32(stroke.color.dropFirst(), radix: 16) ?? 0
-            NSColor(srgbRed: Double((rgb >> 16) & 255) / 255, green: Double((rgb >> 8) & 255) / 255,
-                    blue: Double(rgb & 255) / 255, alpha: 1).setStroke()
+            color(stroke.color).setStroke()
             for (index, point) in stroke.points.enumerated() {
                 let previous = stroke.points[max(0, index - 1)]
                 let path = NSBezierPath(); path.lineWidth = stroke.segmentWidth(at: index); path.lineCapStyle = .round
@@ -100,6 +98,26 @@ enum RubricDrawing {
             }
         }
         NSGraphicsContext.restoreGraphicsState()
+    }
+    static func color(_ hex: String) -> NSColor {
+        let rgb = UInt32(hex.dropFirst(), radix: 16) ?? 0
+        return NSColor(srgbRed: Double((rgb >> 16) & 255) / 255, green: Double((rgb >> 8) & 255) / 255,
+                       blue: Double(rgb & 255) / 255, alpha: 1)
+    }
+    static func hex(_ color: NSColor) -> String {
+        let c = color.usingColorSpace(.sRGB) ?? .black
+        return String(format: "#%02X%02X%02X", Int((c.redComponent * 255).rounded()), Int((c.greenComponent * 255).rounded()), Int((c.blueComponent * 255).rounded()))
+    }
+    static func inspectorPreview(_ rubric: LeonardoRubric) -> NSImage {
+        NSImage(size: NSSize(width: 600, height: 200), flipped: true) { rect in
+            for y in stride(from: 0, to: 200, by: 20) {
+                for x in stride(from: 0, to: 600, by: 20) {
+                    NSColor(white: (x + y) % 40 == 0 ? 0.65 : 0.85, alpha: 1).setFill()
+                    NSRect(x: x, y: y, width: 20, height: 20).fill()
+                }
+            }
+            draw(rubric, in: rect); return true
+        }
     }
     static func thumbnail(_ rubric: LeonardoRubric) -> NSImage {
         NSImage(size: NSSize(width: 90, height: 30), flipped: true) { rect in

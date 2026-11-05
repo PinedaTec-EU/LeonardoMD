@@ -318,8 +318,10 @@ body[data-paper-effect="parchment"] {
 .leonardo-object-resize { display: none; position: absolute; right: 0; bottom: 0; width: 10px; height: 10px; padding: 0; background: var(--ld-accent); cursor: nwse-resize; }
 .leonardo-object-selected .leonardo-object-resize { display: block; }
 .leonardo-object-toolbar { position: absolute; z-index: 20001; display: flex; gap: 5px; flex-wrap: wrap; max-width: calc(100% - 16pt); padding: 8px; border-radius: 10px; background: var(--ld-code-background); color: var(--ld-text); box-shadow: 0 4px 16px #0004; font: 12px system-ui; }
-.leonardo-object-toolbar label { display: flex; align-items: center; gap: 3px; }
-.leonardo-object-toolbar input { width: 52px; color: inherit; background: transparent; border: 1px solid var(--ld-accent); }
+.leonardo-object-toolbar span { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.leonardo-object-toolbar { align-items: center; gap: 10px; }
+.leonardo-object-toolbar button { padding: 3px 7px; border-radius: 5px; outline-offset: 2px; }
+.leonardo-object-toolbar button:hover { background: color-mix(in srgb, var(--ld-accent) 16%, transparent); }
 .leonardo-object-toolbar button { color: inherit; background: transparent; border: 0; cursor: pointer; }
 .leonardo-form-export .leonardo-object-toolbar, .leonardo-form-export .leonardo-object-resize { display: none !important; }
 .leonardo-form-export .leonardo-object-selected { box-shadow: none; }
@@ -327,10 +329,6 @@ body[data-paper-effect="parchment"] {
 .leonardo-rubric-field svg { width: 100%; height: 100%; }
 @media print { .leonardo-object-toolbar, .leonardo-object-resize { display: none !important; } .leonardo-page { break-after: page; } }
 
-.leonardo-object-toolbar details { position: relative; }
-.leonardo-object-toolbar summary { cursor: pointer; list-style: none; }
-.leonardo-object-extra { position: absolute; right: 0; top: 24px; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 8px; background: var(--ld-code-background); box-shadow: 0 4px 16px #0004; }
-.leonardo-object-extra label { justify-content: space-between; }
 
 .leonardo-form-export .leonardo-form-field > .leonardo-field-output.leonardo-rubric-field { display: inline-block; vertical-align: middle; }
 @media print { .leonardo-field-output.leonardo-rubric-field { display: inline-block !important; vertical-align: middle; } }

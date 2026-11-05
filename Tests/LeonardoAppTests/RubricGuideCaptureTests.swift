@@ -37,6 +37,15 @@ final class RubricGuideCaptureTests: XCTestCase {
             try await GuideCaptureSupport.captureNative(header, size: NSSize(width: 1260, height: 74),
                 to: folder.appendingPathComponent("document-toolbar.png"), language: code,
                 state: "Production document toolbar; dropdown mode and grouped menus; synthetic document")
+            let graphic = LeonardoGraphic(label: code == "es" ? "Rúbrica de ejemplo" : "Example rubric", rubric: ink,
+                                          x: 72, y: 688, width: 236, height: 236 / 3, z: 1)
+            session.content = try LeonardoFormatParser.serialize(.init(body: "# Synthetic inspection", metadata: .init(layout: .init(objects: [graphic]))))
+            session.receiveGraphicSelection(expected: session.content, id: graphic.id, inspect: true)
+            let inspector = NSHostingView(rootView: GraphicInspector(session: session, graphic: graphic)
+                .modifier(SessionAppearance(session: session)).frame(width: 320, height: 850).background(Color(nsColor: .windowBackgroundColor)))
+            try await GuideCaptureSupport.captureNative(inspector, size: NSSize(width: 320, height: 850),
+                to: folder.appendingPathComponent("graphic-inspector.png"), language: code,
+                state: "Production object inspector; isolated inserted synthetic rubric; no personal ink; editable geometry, Z and color")
             session.stop()
         }
     }
