@@ -3,6 +3,25 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.1.795</title>
+            <pubDate>Thu, 05 Nov 2026 10:29:07 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>795</sparkle:version>
+            <sparkle:shortVersionString>0.1.795</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"># LeonardoMD 0.1.795 beta
+
+- Inspect placed images and rubrics in a native side panel. Adjust page, position, linked size and stacking order while keeping the floating toolbar compact and read-only.
+- Change the ink color of an inserted rubric without changing its saved library copy.
+- Clear graphic selection when selecting document text, clicking outside the object or pressing Escape.
+- Updated the illustrated Spanish and English in-app help.
+
+This macOS package supports Apple silicon. Device synchronization with Little Leonardo remains outside this update.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.795/LeonardoMD-0.1.795.zip" length="21911812" type="application/octet-stream" sparkle:edSignature="W0N1F1D4Xod8LtaWVdHbfClWojoGeKD/SImXcn7qKQzbnpf1C28VW8JwMLB2qqzZT9+bL+lfrDQpNaFfnJSGCA==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.1.783</title>
             <pubDate>Thu, 05 Nov 2026 01:50:48 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
