@@ -10,7 +10,7 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let oldCopies = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
+        let oldCopies = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
         let oldAnswers = Data("previous guide and saved answers".utf8)
         for oldCopy in oldCopies {
             try FileManager.default.createDirectory(at: oldCopy.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -37,7 +37,7 @@ final class BundledUserGuideTests: XCTestCase {
             XCTAssertFalse(document.isForm)
             XCTAssertEqual(document.metadata.fields.count, 0)
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:
-                workspace.directoryURL.appendingPathComponent("assets").path).count, 15)
+                workspace.directoryURL.appendingPathComponent("assets").path).count, 16)
             // Personal annotations remain independent of the bundled template.
             try (source + "\nPersonal note: Ada\n").write(to: workspace.documentURL, atomically: true, encoding: .utf8)
             workspace = try LeonardoPackageTransport.save(workspace)
@@ -126,8 +126,8 @@ final class BundledUserGuideTests: XCTestCase {
             window.orderFront(nil)
             defer { window.close() }
             let web = try await findWebView(in: hosting)
-            try await waitFor("document.images.length === 15", in: web)
-            for index in 0..<15 {
+            try await waitFor("document.images.length === 16", in: web)
+            for index in 0..<16 {
                 _ = try await web.evaluateJavaScript("document.images[\(index)].scrollIntoView({block:'center'})")
                 try await waitFor("document.images[\(index)].naturalWidth > 0", in: web)
             }
@@ -158,7 +158,7 @@ final class BundledUserGuideTests: XCTestCase {
                 for name in illustrations {
                     _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("premium-\(name)-\(language.rawValue).png"),
-                        language: language.rawValue, state: "Main guide; generated premium \(name) illustration; all 15 images admitted under standard limits")
+                        language: language.rawValue, state: "Main guide; generated premium \(name) illustration; all 16 images admitted under standard limits")
                 }
                 _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
                 try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("guide-\(language.rawValue).png"),

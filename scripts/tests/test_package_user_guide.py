@@ -75,7 +75,7 @@ class PackageUserGuideTests(unittest.TestCase):
                 name = f'Guide-v13-{language}.mdlz'
                 self.assertEqual((output / name).read_bytes(), (ROOT / 'Sources/LeonardoApp/Resources' / name).read_bytes())
                 with zipfile.ZipFile(output / name) as archive:
-                    self.assertEqual(len(archive.namelist()), 16)
+                    self.assertEqual(len(archive.namelist()), 17)
                     # Conservative 16-bit RGBA source envelope catches image
                     # budget regressions before the native all-images check.
                     image_bytes = 0

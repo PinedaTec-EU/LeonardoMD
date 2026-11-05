@@ -55,3 +55,26 @@ remain required. User-facing iOS/Mac screens are follow-up work in
 [#342](https://github.com/PinedaTec-EU/LeonardoMD/issues/342); #342 owns the
 request/draw/send UI and production enrollment wiring. TestFlight is
 [#343](https://github.com/PinedaTec-EU/LeonardoMD/issues/343).
+
+## Mac owner capture flow (#341)
+
+The macOS editor keeps this exchange behind the existing helper-owned runtime;
+it does not start a second in-process listener or create a second rubric store.
+When the helper and service are available, the New rubric dialog lists exactly
+one enrolled read-only device at a time and names the requesting Mac with its
+bounded local computer name. The owner creates a caller-generated request ID,
+persists a local intent, sends the request through XPC, polls the durable status,
+and can cancel it. A lost XPC reply is recovered with the same ID rather than
+creating a duplicate request.
+
+The returned drawing is previewed and must be explicitly saved to the existing
+Mac library or saved-and-inserted. Library writes carry the request ID and are
+idempotent across retries and restarts. Insertion rechecks the original
+document URL and source bytes; if either changed, insertion is refused while a
+library-only save remains available. Local capture records contain a SHA-256
+source digest, not the document text, are atomically written with the existing
+process lock, and keep unsaved completed responses until the user saves them.
+Saved/terminal records are bounded and pruned only when safe. The owner UI
+shows helper-offline, service-offline and unsupported-peer states. This is a
+Mac-side protocol/UI foundation: it does not claim that the current mobile
+build advertises or renders rubric requests until #342 is delivered.

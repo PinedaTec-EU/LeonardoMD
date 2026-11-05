@@ -414,9 +414,30 @@ grosor y estilo Uniforme/Pincel, dibuja y usa Deshacer o Borrar trazos.
 Las nuevas rúbricas creadas aquí siempre se guardan en tu biblioteca local.
 Elige una miniatura guardada para insertar otra copia. Eliminar en el diálogo
 borra solo la entrada de biblioteca, nunca rúbricas ya insertadas. La biblioteca
-admite hasta 100 entradas en este Mac; aún no se sincroniza con Little Leonardo.
-El pincel afina los extremos sin exigir presión real. Son rúbricas visuales,
-no certificados ni firmas criptográficas.
+admite hasta 100 entradas en este Mac. Un Mac con el asistente actual de
+Leonardo Sync también puede elegir **Usar un Little Leonardo enlazado** y dirigir
+una petición a un único dispositivo explícitamente compatible y de solo lectura.
+No se difunde al grupo enlazado ni concede edición de documentos. Se muestran
+los estados pendiente, aceptada, rechazada, cancelada y caducada; cuando el
+dispositivo devuelve el dibujo, revisa la vista previa y la etiqueta y elige
+**Guardar en la biblioteca** o **Guardar e insertar**. La petición y el dibujo
+devuelto sobreviven al reinicio de la app o del asistente para recuperar una
+respuesta perdida. Si el documento abierto cambió mientras el dispositivo
+dibujaba, la inserción se rechaza pero el dibujo queda disponible para guardarlo
+en la biblioteca. Después de guardar, usa **Pedir otra rúbrica** para capturar
+otra respuesta; las guardadas permanecen en la biblioteca local y no bloquean
+una nueva petición. Usa **Actualizar dispositivos enlazados** si un compañero
+recién actualizado aún no aparece. Los compañeros antiguos que no anuncian captura de rúbricas
+siguen sin estar disponibles hasta actualizar el compañero. Si Leonardo Sync
+indica que el asistente está desactualizado, desactiva y vuelve a activar
+**Leonardo Sync** en Preferencias para registrar de nuevo el asistente incluido
+y vuelve a pedir la rúbrica. El pincel afina los
+extremos sin exigir presión real. Son rúbricas visuales, no certificados ni
+firmas criptográficas.
+
+![Petición de rúbrica enlazada con el asistente desconectado](guide/es/assets/rubric-linked-offline.png)
+
+*Sección real de rúbricas enlazadas con el asistente desconectado; no hay ningún dispositivo emparejado en esta ilustración.*
 
 En un campo de rúbrica, elige **Rellenar** y pulsa su área. El diálogo ampliado
 permite elegir una guardada o dibujar una nueva; **Guardar en mis rúbricas**
@@ -546,6 +567,14 @@ Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dis
 3. Elige **Compartir el proyecto actual** y selecciona carpetas/documentos o todo el proyecto. Confirma la selección; el resto del contenido no se comparte implícitamente.
 4. Crea una invitación. Su QR y el enlace copiado permiten abrir la misma invitación: escanea el QR en Little Leonardo o pega el enlace en **Conectarme a otros equipos** en otro Mac. Compara los códigos y aprueba el dispositivo pendiente en este Mac de origen. Las filas indican **solo lectura** (Little Leonardo o clientes compatibles) o **LeonardoMD en Mac · cambios sujetos a revisión**. La etiqueta depende del permiso concedido, no del nombre del equipo.
 5. Importa el contenido compartido en el compañero y compruébalo antes de depender de una copia sin conexión. Usa Revocar en el Mac para retirar acceso futuro a un dispositivo.
+
+La captura de rúbricas es una acción separada y explícita del Mac. Cuando un
+compañero anuncia compatibilidad, **Insertar → Nueva rúbrica… → Usar un Little
+Leonardo enlazado** muestra ese dispositivo. El compañero solo dibuja y
+devuelve la rúbrica; no puede editar el documento. Si falla el asistente, el
+servicio o la capacidad, se muestra un estado de desconexión o incompatibilidad
+con una acción clara. La versión actual del compañero todavía no anuncia esta
+capacidad; el flujo móvil de pedir, dibujar y enviar se entrega por separado.
 
 **Leonardo Sync es necesario en ambas direcciones.** Si está deshabilitado, detenido, pendiente de autorización de macOS o no disponible, el Mac queda sin conexión para sincronizar entre dispositivos aunque LeonardoMD esté abierto. Actívalo desde estas preferencias en cada Mac. El servicio se inicia al entrar en tu cuenta después de reiniciar y sigue compartiendo cuando cierras el editor; no sirve documentos antes de iniciar sesión ni despierta un Mac en reposo. Si no está disponible, revisa la autorización en segundo plano, la red, el disco compartido y los permisos de archivos, y vuelve a intentarlo.
 
