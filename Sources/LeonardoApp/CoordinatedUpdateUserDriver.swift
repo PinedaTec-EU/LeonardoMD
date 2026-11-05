@@ -6,9 +6,14 @@ import Sparkle
 @MainActor
 final class CoordinatedUpdateUserDriver: SPUStandardUserDriver {
     private let termination: UpdateInstanceTermination
+    private let dismissPreferences: @MainActor () -> Bool
 
-    init(termination: UpdateInstanceTermination = .shared) {
+    init(termination: UpdateInstanceTermination = .shared,
+         dismissPreferences: @escaping @MainActor () -> Bool = {
+             (NSApp.delegate as? ApplicationDelegate)?.dismissUpdatePreferences() ?? false
+         }) {
         self.termination = termination
+        self.dismissPreferences = dismissPreferences
         super.init(hostBundle: .main, delegate: nil)
     }
 
@@ -33,6 +38,23 @@ final class CoordinatedUpdateUserDriver: SPUStandardUserDriver {
         })
     }
 
+    override func showInstallingUpdate(withApplicationTerminated applicationTerminated: Bool,
+                                       retryTerminatingApplication: @escaping () -> Void) {
+        // After a cancelled document close, Sparkle retries termination directly;
+        // it does not ask showReadyToInstallAndRelaunch for another install reply.
+        super.showInstallingUpdate(withApplicationTerminated: applicationTerminated,
+            retryTerminatingApplication: { [weak self] in
+                Task { @MainActor in
+                    await self?.retryInstallation(retryTerminatingApplication)
+                }
+            })
+    }
+
+    func retryInstallation(_ retry: () -> Void) async {
+        guard await preparedChoice(.install, stage: .installing) == .install else { return }
+        retry()
+    }
+
     func preparedChoice(_ choice: SPUUserUpdateChoice, stage: SPUUserUpdateStage) async -> SPUUserUpdateChoice {
         guard choice == .install else { return choice }
         // Never close peers under a restored installer whose chosen process is
@@ -42,6 +64,9 @@ final class CoordinatedUpdateUserDriver: SPUStandardUserDriver {
             (NSApp.delegate as? ApplicationDelegate)?.reportInstallationCancellation()
             return .dismiss
         }
+        // Sparkle may request termination as soon as this reply is delivered.
+        // willInstallUpdate is a later notification and cannot unblock AppKit.
+        if stage != .notDownloaded, !dismissPreferences() { return .dismiss }
         return .install
     }
 }

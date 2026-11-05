@@ -83,7 +83,10 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         instance.receive = { [weak self] urls in self?.enqueueLaunch(urls) }
         if role != .secondary {
             updateQuitEndpoint.quit = { [weak self] in
-                self?.dismissUpdatePreferences()
+                guard let self, self.dismissUpdatePreferences() else {
+                    self?.updateQuitEndpoint.cancelled()
+                    return
+                }
                 NSApp.terminate(nil)
             }
             do { try updateQuitEndpoint.start() }
@@ -282,8 +285,11 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     }
 
     /// Dismiss only Preferences; unsaved-document and Git sheets own their decisions.
-    func dismissUpdatePreferences() {
-        for controller in windows {
+    @discardableResult
+    func dismissUpdatePreferences() -> Bool {
+        // Check every window before changing any presentation binding.
+        guard windows.allSatisfy({ UpdatePreferencesDismissal.canDismiss(parent: $0.window) }) else { return false }
+        return windows.allSatisfy { controller in
             UpdatePreferencesDismissal.dismiss(sessions: controller.documents.tabs.map(\.session),
                 parent: controller.window)
         }

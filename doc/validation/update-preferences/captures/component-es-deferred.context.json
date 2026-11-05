@@ -1,0 +1,20 @@
+{
+  "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
+  "browser_version" : "Not applicable: native view, no browser engine",
+  "capture_mode" : "element",
+  "captured_at" : "2026-11-05T13:32:57.503Z",
+  "data_provenance" : "synthetic",
+  "native_viewport_points" : {
+    "height" : 550,
+    "width" : 532
+  },
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "route" : "\/native\/preferences\/updates",
+  "screen" : "Preferences → Updates",
+  "source_sha" : "9be0db786a14b247e787585e917ede2dbe278d18",
+  "state" : "Production Updates component; synthetic deferred; isolated defaults and fake updater; no network\/install claim; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "viewport_css" : {
+    "height" : 550,
+    "width" : 532
+  }
+}

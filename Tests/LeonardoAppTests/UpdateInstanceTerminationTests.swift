@@ -293,7 +293,7 @@ final class UpdateInstanceTerminationTests: XCTestCase {
         let gate = root.appendingPathComponent("gate")
         let termination = UpdateInstanceTermination(peers: { [] }, lockURL: gate)
         defer { termination.resolveInstallation() }
-        let driver = CoordinatedUpdateUserDriver(termination: termination)
+        let driver = CoordinatedUpdateUserDriver(termination: termination, dismissPreferences: { true })
         let download = await driver.preparedChoice(.install, stage: .notDownloaded)
         XCTAssertEqual(download, .install)
         XCTAssertThrowsError(try ProcessFileLock(at: gate, mode: .shared))
