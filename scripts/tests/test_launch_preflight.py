@@ -40,7 +40,7 @@ class LaunchPreflightTests(unittest.TestCase):
             opener.chmod(0o755)
             environment = dict(os.environ, PATH=str(fake_bin) + ':' + os.environ['PATH'], LAUNCH_MARKER=str(marker))
             environment.pop('LEONARDO_QA_SIGN_IDENTITY', None)
-            result = subprocess.run(['bash', str(root / 'launch.sh'), '--qa'],
+            result = subprocess.run(['/bin/bash', str(root / 'launch.sh'), '--qa'],
                                     capture_output=True, text=True, env=environment)
             self.assertEqual(result.returncode, 0, result.stderr)
             selected = Path(marker.read_text())
@@ -68,7 +68,7 @@ class LaunchPreflightTests(unittest.TestCase):
             opener.write_text('#!/bin/bash\ntouch "$LAUNCH_MARKER"\n')
             opener.chmod(0o755)
             environment = dict(os.environ, PATH=str(fake_bin) + ':' + os.environ['PATH'], LAUNCH_MARKER=str(marker))
-            result = subprocess.run(['bash', str(root / 'launch.sh')], capture_output=True, text=True, env=environment)
+            result = subprocess.run(['/bin/bash', str(root / 'launch.sh')], capture_output=True, text=True, env=environment)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn('QA bundle rejected', result.stderr)
             self.assertFalse(marker.exists(), 'open must not run after final preflight rejects the app')
