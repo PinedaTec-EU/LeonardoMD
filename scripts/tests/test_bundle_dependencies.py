@@ -181,6 +181,12 @@ class DependencyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Mach-O executable'):
             deps.inspect_dependencies(self.bundle, self.executable)
 
+    def test_executable_type_is_not_inferred_from_a_filename(self):
+        impostor = self.bundle / 'Contents/MacOS/EXECUTE/LeonardoMD'
+        macho(impostor, filetype=6)
+        with self.assertRaisesRegex(ValueError, 'Mach-O executable'):
+            deps.inspect_dependencies(self.bundle, impostor)
+
     def test_cli_rejects_missing_dependency_before_signing_or_launch(self):
         self.sparkle.unlink()
         (self.bundle / 'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleExecutable': 'LeonardoMD'}))

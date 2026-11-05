@@ -96,6 +96,16 @@ def shared_cache_lookup():
     return lookup
 
 
+def executable_image(image):
+    header = subprocess.check_output(['/usr/bin/otool', '-hv', str(image)], text=True)
+    rows = [line.split() for line in header.splitlines()]
+    types = {row[4] for row in rows if len(row) > 4
+             and row[0] in {'MH_MAGIC', 'MH_MAGIC_64', 'MH_CIGAM', 'MH_CIGAM_64'}}
+    if 'EXECUTE' in types and len(types) > 1:
+        raise ValueError(f'Mixed executable/library image types: {image}')
+    return types == {'EXECUTE'}
+
+
 def resolve_dependency(name, image, executable, runpaths, bundle):
     if system_path(name):
         return None  # Apple libraries may exist only in the dyld shared cache.
@@ -137,8 +147,7 @@ def inspect_dependencies(bundle, executable):
 
     launchers = []
     for image in macho_files(bundle):
-        header = subprocess.check_output(['/usr/bin/otool', '-hv', str(image)], text=True)
-        if re.search(r'\bEXECUTE\b', header):
+        if executable_image(image):
             launchers.append(image.resolve())
     if executable not in launchers:
         raise ValueError('The main application binary must be a Mach-O executable')
