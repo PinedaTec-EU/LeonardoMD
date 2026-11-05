@@ -108,6 +108,7 @@ struct RubricEditor: View {
         }.padding(24).frame(width: 648)
             .onAppear {
                 library.refresh()
+                Task { await syncController?.refreshConsent() }
                 guard let syncController,
                       let existing = syncController.rubricCapture(for: request.documentURL, source: request.source) else { return }
                 remoteCapture = existing
@@ -140,6 +141,10 @@ struct RubricEditor: View {
                 .disabled(controller.rubricCaptureAvailability != .ready)
                 Text(L10n.text(controller.rubricCaptureAvailability.messageKey))
                     .font(.caption).foregroundStyle(.secondary)
+                Button(L10n.text("Refresh linked devices")) {
+                    Task { await controller.refreshConsent() }
+                }
+                .font(.caption)
             }
             if let remoteError { Text(remoteError).font(.caption).foregroundStyle(.red) }
         }
@@ -162,8 +167,16 @@ struct RubricEditor: View {
                         Button(L10n.text("Save and insert")) { insertReceived(controller, capture, response) }
                     }
                     if capture.savedLibraryEntryID != nil {
-                        Label(L10n.text("Saved in library"), systemImage: "checkmark.circle")
-                            .font(.caption).foregroundStyle(.secondary)
+                        HStack(spacing: 10) {
+                            Label(L10n.text("Saved in library"), systemImage: "checkmark.circle")
+                                .font(.caption).foregroundStyle(.secondary)
+                            Button(L10n.text("Request another rubric")) {
+                                remoteCapture = nil
+                                remoteLabel = ""
+                                remoteError = nil
+                            }
+                            .font(.caption)
+                        }
                     }
                 }
             }

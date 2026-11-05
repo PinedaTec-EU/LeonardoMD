@@ -338,16 +338,14 @@ final class DesktopSyncController {
         // A returned drawing must remain reachable even after the user edits
         // the document and creates a newer cancelled request for that digest.
         // Prefer an unsaved response before matching the current source.
-        return sameDocument
-            .filter { $0.response != nil && $0.savedLibraryEntryID == nil }
-            .sorted { $0.updatedAt > $1.updatedAt }
-            .first ?? sameDocument
+        let recoverable = sameDocument.filter {
+            $0.savedLibraryEntryID == nil &&
+            ($0.response != nil || $0.request?.state == .pending || $0.request?.state == .accepted)
+        }
+        return recoverable
             .filter { $0.sourceDigest == digest }
             .sorted { $0.updatedAt > $1.updatedAt }
-            .first ?? sameDocument
-                .filter { $0.response != nil || $0.request?.state == .pending || $0.request?.state == .accepted }
-                .sorted { $0.updatedAt > $1.updatedAt }
-                .first
+            .first ?? recoverable.sorted { $0.updatedAt > $1.updatedAt }.first
     }
 
     private func recoverRubricCaptures() async {

@@ -628,5 +628,7 @@
   "The document changed while the rubric was away. Save it to the library instead.": "The document changed while the rubric was away. Save it to the library instead.",
   "Request again": "Request again",
   "Retry": "Retry",
-  "Saved in library": "Saved in library"
+  "Saved in library": "Saved in library",
+  "Request another rubric": "Request another rubric",
+  "Refresh linked devices": "Refresh linked devices"
 }

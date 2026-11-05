@@ -118,6 +118,12 @@ final class RubricCaptureTests: XCTestCase {
         let controller = DesktopSyncController(preferencesURL: root.appendingPathComponent("preferences.json"),
             runtime: DesktopDirectRuntime(root: root.appendingPathComponent("Service"), credentials: CaptureTestCredentials(), now: { Date() }))
         XCTAssertEqual(controller.rubricCapture(for: document, source: "edited source")?.id, firstID)
+
+        try store.markSaved(id: firstID, libraryEntryID: "saved-entry")
+        let reopened = DesktopSyncController(preferencesURL: root.appendingPathComponent("preferences.json"),
+            runtime: DesktopDirectRuntime(root: root.appendingPathComponent("Service"), credentials: CaptureTestCredentials(), now: { Date() }))
+        XCTAssertNil(reopened.rubricCapture(for: document, source: "edited source"),
+                     "saved results belong to the library; a reopened editor must offer a new request")
     }
 }
 
