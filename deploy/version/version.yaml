@@ -787,9 +787,20 @@
       "pr": 330,
       "summary": "Open a bilingual guide from File \u2192 Import with your agent to convert PDFs into editable Leonardo documents with your own agent, with the same workflow included in the main help.",
       "to_version": "0.1.797"
+    },
+    {
+      "delta": {
+        "build": 29,
+        "feature": 1
+      },
+      "from_version": "0.1.797",
+      "merge_sha": "739fc27885b2766b8ea0dfcc1ba9dcd1df56774f",
+      "pr": 320,
+      "summary": "Keep selected saved documents available after closing LeonardoMD; manage the required background sync service from either device-sharing preferences screen.",
+      "to_version": "0.2.826"
     }
   ],
-  "current_version": "0.1.797",
+  "current_version": "0.2.826",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
