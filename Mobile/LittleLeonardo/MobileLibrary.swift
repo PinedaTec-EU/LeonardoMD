@@ -261,6 +261,10 @@ final class MobileLibrary {
                 _ = try await refreshCapabilities(status, connection: &connection,
                                                   client: client, credential: credential)
                 connections[index] = connection
+                // Persist the attempted refresh even when an older Mac returns
+                // 404, so foreground polling keeps the existing reader fallback
+                // without repeatedly issuing the unsupported capability call.
+                try persistConnections()
                 if connection.capabilities.isEmpty { continue }
                 let requests = try await client.rubricRequests(deviceID: connection.deviceID, credential: credential)
                 let verifiedRequester = DirectSyncAuthority.requesterID(for: connection.fingerprint)
