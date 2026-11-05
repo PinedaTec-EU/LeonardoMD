@@ -2,16 +2,22 @@ import Foundation
 
 /// The signed bundle is a template. Saving the guide only changes this user's copy.
 enum BundledUserGuide {
-    static func resourceURL(language: AppLanguage) throws -> URL {
-        guard let url = Bundle.module.url(forResource: "Guide-v8-" + language.rawValue, withExtension: "mdlz") else {
+    enum Topic {
+        case userGuide, agentImport
+
+        var resourcePrefix: String { self == .userGuide ? "Guide-v9-" : "AgentImport-v1-" }
+        var copyDirectory: String { self == .userGuide ? "User Guides/v9/" : "Agent Import Guides/v1/" }
+    }
+    static func resourceURL(language: AppLanguage, topic: Topic = .userGuide) throws -> URL {
+        guard let url = Bundle.module.url(forResource: topic.resourcePrefix + language.rawValue, withExtension: "mdlz") else {
             throw CocoaError(.fileNoSuchFile)
         }
         return url
     }
 
-    static func workingCopy(language: AppLanguage, supportDirectory: URL) throws -> URL {
-        let source = try resourceURL(language: language)
-        let directory = supportDirectory.appendingPathComponent("User Guides/v8/" + language.rawValue, isDirectory: true)
+    static func workingCopy(language: AppLanguage, supportDirectory: URL, topic: Topic = .userGuide) throws -> URL {
+        let source = try resourceURL(language: language, topic: topic)
+        let directory = supportDirectory.appendingPathComponent(topic.copyDirectory + language.rawValue, isDirectory: true)
         return try copyIfAbsent(source, to: directory)
     }
 
@@ -27,7 +33,8 @@ enum BundledUserGuide {
 }
 
 extension DocumentTabs {
-    func openUserGuide(language: AppLanguage? = nil, supportDirectory: URL? = nil) async {
+    func openUserGuide(language: AppLanguage? = nil, supportDirectory: URL? = nil,
+                       topic: BundledUserGuide.Topic = .userGuide) async {
         guard acceptsExternalDrops else { return }
         do {
             let language = language ?? LanguageSettings.shared.language
@@ -35,13 +42,15 @@ extension DocumentTabs {
                                                      appropriateFor: nil, create: true)
                 .appendingPathComponent("LeonardoMD", isDirectory: true)
             let copy = try BundledUserGuide.workingCopy(language: language,
-                                                      supportDirectory: support)
+                                                      supportDirectory: support, topic: topic)
             let alreadyOpen = tabs.contains { $0.session.displayDocumentURL == copy }
             await openExternalDocuments([copy], packagePreference: .package)
             guard acceptsExternalDrops,
                   let session = tabs.first(where: { $0.session.displayDocumentURL == copy })?.session else { return }
             if !alreadyOpen { session.mode = .preview }
-            configureGuidePractice(for: session, guide: copy, language: language, supportDirectory: support)
+            if topic == .userGuide {
+                configureGuidePractice(for: session, guide: copy, language: language, supportDirectory: support)
+            }
         } catch {
             activeSession.report(error)
         }

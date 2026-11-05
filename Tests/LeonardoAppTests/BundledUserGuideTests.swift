@@ -10,7 +10,7 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let oldCopies = [2, 3, 4, 5].map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
+        let oldCopies = [2, 3, 4, 5, 6, 7, 8].map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
         let oldAnswers = Data("previous guide and saved answers".utf8)
         for oldCopy in oldCopies {
             try FileManager.default.createDirectory(at: oldCopy.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -22,7 +22,7 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v8/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v9/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
             var workspace = try LeonardoPackageTransport.open(copy)
             defer { LeonardoPackageTransport.discard(workspace) }
@@ -31,7 +31,7 @@ final class BundledUserGuideTests: XCTestCase {
             XCTAssertFalse(document.isForm)
             XCTAssertEqual(document.metadata.fields.count, 0)
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:
-                workspace.directoryURL.appendingPathComponent("assets").path).count, 14)
+                workspace.directoryURL.appendingPathComponent("assets").path).count, 15)
             // Personal annotations remain independent of the bundled template.
             try (source + "\nPersonal note: Ada\n").write(to: workspace.documentURL, atomically: true, encoding: .utf8)
             workspace = try LeonardoPackageTransport.save(workspace)
@@ -82,6 +82,11 @@ final class BundledUserGuideTests: XCTestCase {
             XCTAssertEqual(NSApp.helpMenu?.items.first?.title,
                            language == .english ? "Leonardo user guide…" : "Guía de Leonardo…")
             XCTAssertEqual(NSApp.helpMenu?.items.first?.action, NSSelectorFromString("openUserGuide"))
+            let file = NSApp.mainMenu?.items.compactMap(\.submenu).first {
+                $0.title == (language == .english ? "File" : "Archivo")
+            }
+            let item = file?.items.first { $0.action == NSSelectorFromString("openAgentImportGuide") }
+            XCTAssertEqual(item?.title, language == .english ? "Import with your agent…" : "Importar con tu agente…")
         }
     }
 
@@ -115,8 +120,8 @@ final class BundledUserGuideTests: XCTestCase {
             window.orderFront(nil)
             defer { window.close() }
             let web = try await findWebView(in: hosting)
-            try await waitFor("document.images.length === 14", in: web)
-            for index in 0..<14 {
+            try await waitFor("document.images.length === 15", in: web)
+            for index in 0..<15 {
                 _ = try await web.evaluateJavaScript("document.images[\(index)].scrollIntoView({block:'center'})")
                 try await waitFor("document.images[\(index)].naturalWidth > 0", in: web)
             }
@@ -154,6 +159,62 @@ final class BundledUserGuideTests: XCTestCase {
                     to: directory.appendingPathComponent("welcome-\(language.rawValue).png"), language: language.rawValue)
                 let provenance = "Head: \(ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local")\nNative NSHostingView / WKWebView, 1100x850 points; synthetic practice data; language \(language.rawValue). Component test, not a fresh product process.\n"
                 try provenance.write(to: directory.appendingPathComponent("provenance-\(language.rawValue).txt"), atomically: true, encoding: .utf8)
+            }
+        }
+    }
+
+    func testAgentImportGuideOpensAndRendersBothLocalesWithoutReplacingDocuments() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let previousLanguage = LanguageSettings.shared.language
+        defer {
+            LanguageSettings.shared.language = previousLanguage
+            try? FileManager.default.removeItem(at: root)
+        }
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let tabs = DocumentTabs(preferencesURL: root.appendingPathComponent("preferences-\(language.rawValue).json"))
+            defer { tabs.stop() }
+            let original = tabs.activeSession
+            original.authorizePath = { _, _ in }
+            await tabs.openUserGuide(language: language, supportDirectory: root, topic: .agentImport)
+            let session = tabs.activeSession
+            XCTAssertFalse(session === original)
+            XCTAssertNil(session.errorMessage)
+            XCTAssertEqual(session.mode, .preview)
+            XCTAssertEqual(session.displayDocumentURL?.lastPathComponent, "AgentImport-v1-\(language.rawValue).mdlz")
+            XCTAssertTrue(session.displayDocumentURL?.path.contains("Agent Import Guides/v1/") == true)
+            XCTAssertFalse(session.leonardoDocument?.isForm ?? true)
+            let copy = try XCTUnwrap(session.displayDocumentURL)
+            let bytes = try Data(contentsOf: copy)
+            let tabCount = tabs.tabs.count
+            await tabs.openUserGuide(language: language, supportDirectory: root, topic: .agentImport)
+            XCTAssertEqual(tabs.tabs.count, tabCount)
+            XCTAssertTrue(tabs.activeSession === session)
+            XCTAssertEqual(try Data(contentsOf: copy), bytes)
+            XCTAssertTrue(tabs.tabs.contains { $0.session === original })
+
+            let hosting = NSHostingView(rootView: WorkspaceView(session: session))
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 850),
+                                  styleMask: [.titled], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.contentView = hosting
+            window.orderFront(nil)
+            defer { window.close() }
+            let web = try await findWebView(in: hosting)
+            try await waitFor("document.querySelector('h1') !== null && document.images.length === 1 && document.images[0].naturalWidth > 0", in: web)
+            let renderedText = try await web.evaluateJavaScript("document.body.innerText")
+            let text = try XCTUnwrap(renderedText as? String)
+            XCTAssertTrue(text.contains(language == .english ? "Import with your agent" : "Importar con tu agente"))
+            XCTAssertTrue(text.contains("leonardo-format"))
+            XCTAssertTrue(text.contains(language == .english ? "Request to copy" : "Encargo que puedes copiar"))
+            if let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
+                let directory = URL(fileURLWithPath: output).appendingPathComponent("agent-import")
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("overview-\(language.rawValue).png"),
+                    language: language.rawValue, state: "Agent import guide; original illustrative SVG loaded; no PDF selected or sent")
+                _ = try await web.evaluateJavaScript("document.querySelector('pre').scrollIntoView({block:'start'})")
+                try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("prompt-\(language.rawValue).png"),
+                    language: language.rawValue, state: "Agent import guide; copyable conversion request")
             }
         }
     }
