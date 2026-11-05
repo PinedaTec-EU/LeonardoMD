@@ -28,7 +28,7 @@ struct SynchronizationPreferencesView: View {
             }.padding(.horizontal, 16)
             Picker(L10n.text("Synchronization role"), selection: $page) {
                 ForEach(Page.allCases) { Text($0.title).tag($0) }
-            }.pickerStyle(.segmented).padding(.horizontal, 16)
+            }.pickerStyle(.segmented).labelsHidden().padding(.horizontal, 16)
                 .accessibilityIdentifier("synchronization-role")
             switch page {
             case .sharing:
@@ -36,7 +36,7 @@ struct SynchronizationPreferencesView: View {
             case .connections:
                 DesktopPeerPreferencesView(session: session, controller: client)
             }
-        }
+        }.padding(.top, 4)
         .task {
             while !Task.isCancelled {
                 await source.helper.refresh()

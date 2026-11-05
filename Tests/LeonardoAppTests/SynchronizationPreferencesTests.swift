@@ -47,6 +47,19 @@ final class SynchronizationPreferencesTests: XCTestCase {
                                "Viewing either role must not publish or rewrite preferences")
             }
         }
+        if let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_ROLES_EVIDENCE"] {
+            for language in AppLanguage.allCases {
+                LanguageSettings.shared.language = language
+                let host = NSHostingView(rootView: VStack(alignment: .leading, spacing: 18) {
+                    SyncDeviceIdentity(name: "Reading tablet", kind: .readOnly)
+                    SyncDeviceIdentity(name: "Studio Mac", kind: .desktopPeer)
+                }.padding(20).frame(width: 532, height: 150, alignment: .topLeading)
+                    .background(Color(nsColor: .windowBackgroundColor)))
+                try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 150),
+                    to: URL(fileURLWithPath: output).appendingPathComponent("device-roles-\(language.rawValue).png"),
+                    language: language.rawValue, state: "Production device identity rows; synthetic capability examples, not paired devices")
+            }
+        }
         await source.stop()
     }
 }
