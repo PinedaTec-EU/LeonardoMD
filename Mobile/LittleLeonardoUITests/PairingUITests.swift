@@ -63,6 +63,67 @@ final class PairingUITests: XCTestCase {
         try advanceDirectFixture("finish")
     }
 
+    @MainActor func testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["LEONARDO_DIRECT_RUBRIC_QA"] == "1",
+              let port = environment["LEONARDO_DIRECT_QA_PORT"], UInt16(port) != nil,
+              environment["LEONARDO_DIRECT_QA_PHASE_FILE"] != nil else {
+            throw XCTSkip("Requires the explicit loopback native rubric acceptance fixture")
+        }
+        let app = XCUIApplication()
+        app.launch()
+        app.buttons["open-pairing"].tap()
+        app.segmentedControls["pairing-method"].buttons["IP y puerto"].tap()
+        let host = app.textFields["pairing-host"], portField = app.textFields["pairing-port"]
+        host.tap(); host.typeText("127.0.0.1")
+        portField.tap()
+        if let value = portField.value as? String {
+            portField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+        }
+        portField.typeText(port)
+        app.buttons["Solicitar conexión"].tap()
+        let code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
+        XCTAssertTrue(code.waitForExistence(timeout: 15))
+
+        try advanceDirectFixture("approve")
+        app.buttons["Sincronizar"].firstMatch.tap()
+        let sheet = app.otherElements["rubric-request-sheet"]
+        XCTAssertTrue(sheet.waitForExistence(timeout: 30), "The Mac request must reach the mobile foreground poll")
+        XCTAssertTrue(app.staticTexts["Solicitud de Mac QA"].waitForExistence(timeout: 5))
+        app.buttons["rubric-accept"].tap()
+        let canvas = app.otherElements["rubric-canvas"]
+        XCTAssertTrue(canvas.waitForExistence(timeout: 10))
+
+        drawLine(in: canvas, from: CGVector(dx: 0.15, dy: 0.55), to: CGVector(dx: 0.85, dy: 0.55))
+        app.buttons["rubric-undo"].tap()
+        drawLine(in: canvas, from: CGVector(dx: 0.2, dy: 0.45), to: CGVector(dx: 0.8, dy: 0.65))
+        app.buttons["rubric-clear"].tap()
+        drawLine(in: canvas, from: CGVector(dx: 0.15, dy: 0.65), to: CGVector(dx: 0.85, dy: 0.4))
+        app.buttons["rubric-preview-toggle"].tap()
+        XCTAssertTrue(app.otherElements["rubric-preview"].waitForExistence(timeout: 5))
+        app.buttons["rubric-preview-toggle"].tap()
+        XCTAssertTrue(canvas.waitForExistence(timeout: 5))
+
+        // The accepted draft is durable before Send. Relaunching proves the
+        // mobile app restores the editable drawing without inventing a
+        // submittedAt or sending network bytes.
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.otherElements["rubric-request-sheet"].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.buttons["rubric-undo"].isEnabled,
+                      "The unsent drawing must be restored after an app restart")
+        app.buttons["rubric-preview-toggle"].tap()
+        XCTAssertTrue(app.otherElements["rubric-preview"].waitForExistence(timeout: 5))
+        app.buttons["rubric-preview-toggle"].tap()
+        app.buttons["rubric-send"].tap()
+        XCTAssertTrue(app.buttons["rubric-done"].waitForExistence(timeout: 30))
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Native iOS Mac-requested rubric sent over pinned HTTPS"
+        capture.lifetime = .keepAlways
+        add(capture)
+        try advanceDirectFixture("finish")
+    }
+
     @MainActor private func waitForDocumentSyncToFinish(_ app: XCUIApplication, timeout: TimeInterval) -> Bool {
         let documentSync = app.buttons["document-sync"]
         let readiness = XCTNSPredicateExpectation(
@@ -79,10 +140,29 @@ final class PairingUITests: XCTestCase {
     }
 
     private func advanceDirectFixture(_ phase: String) throws {
+        let environment = ProcessInfo.processInfo.environment
+        if let path = environment["LEONARDO_DIRECT_QA_PHASE_FILE"] {
+            let phaseURL = URL(fileURLWithPath: path)
+            let appliedURL = phaseURL.deletingLastPathComponent().appendingPathComponent("phase-applied.txt")
+            try Data(phase.utf8).write(to: phaseURL, options: .atomic)
+            let deadline = Date().addingTimeInterval(20)
+            while Date() < deadline {
+                if (try? String(contentsOf: appliedURL, encoding: .utf8)) == phase { return }
+                Thread.sleep(forTimeInterval: 0.1)
+            }
+            XCTFail("The native fixture did not apply phase \(phase)")
+            return
+        }
         try FileHandle.standardOutput.write(contentsOf: Data("LEONARDO_DIRECT_STAGE_\(phase.uppercased())\n".utf8))
         // The host controller applies the phase to the real loopback service. This short
         // delay precedes an actual UI/network assertion; it does not manufacture a result.
         Thread.sleep(forTimeInterval: 2)
+    }
+
+    @MainActor private func drawLine(in canvas: XCUIElement, from: CGVector, to: CGVector) {
+        let start = canvas.coordinate(withNormalizedOffset: from)
+        let end = canvas.coordinate(withNormalizedOffset: to)
+        start.press(forDuration: 0.1, thenDragTo: end, withVelocity: .default, thenHoldForDuration: 0.1)
     }
 
     @MainActor func testCachedDocumentLinksNavigateInsideGrantedCorpusAndRejectMissingFiles() throws {
