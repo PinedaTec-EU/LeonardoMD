@@ -14,6 +14,7 @@ final class DesktopPeerEditorRevoker: DesktopPeerAccessRevoker {
 @MainActor @Observable
 final class DesktopPeerController {
     static let shared = DesktopPeerController()
+    let helper: SyncHelperController
     private(set) var connections: [DesktopPeerConnection] = []
     private(set) var copies: [DesktopPeerCopy] = []
     private(set) var available: [UUID: [SharedProjectDescriptor]] = [:]
@@ -35,8 +36,9 @@ final class DesktopPeerController {
     init(preferencesURL: URL = AppSession.preferencesURL,
          library: (any DesktopPeerLibraryAccess)? = nil,
          revoker: DesktopPeerEditorRevoker = DesktopPeerEditorRevoker(),
-         defaults: UserDefaults = .standard) {
+         defaults: UserDefaults = .standard, helper: SyncHelperController? = nil) {
         self.defaults = defaults
+        self.helper = helper ?? SyncHelperController(preferencesURL: preferencesURL)
         let savedInterval = defaults.integer(forKey: "desktopPeerSyncMinutes")
         syncIntervalMinutes = Self.intervals.contains(savedInterval) ? savedInterval : 0
         let root = preferencesURL.deletingLastPathComponent().appendingPathComponent("DesktopPeers", isDirectory: true)
@@ -50,7 +52,7 @@ final class DesktopPeerController {
                 connections: FileDesktopPeerConnectionStore(root: root.appendingPathComponent("Connections", isDirectory: true)),
                 copies: copies, workspace: DesktopPeerWorkspace(root: workingRoot, copies: copies),
                 credentials: SecureCredentialStore(service: "eu.pinedatec.LeonardoMD.desktop-peers"),
-                remote: DesktopPeerHTTPSRemote(), revoker: revoker,
+                remote: HelperGatedPeerRemote(), revoker: revoker,
                 outbox: FileDesktopPeerOutboxStore(root: root.appendingPathComponent("Outbox", isDirectory: true)),
                 receiptApplier: DesktopPeerReceiptApplier(workingRoot: workingRoot, copies: copies,
                     intents: receiptIntents))

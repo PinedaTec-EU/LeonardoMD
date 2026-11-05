@@ -1,5 +1,7 @@
 # Little Leonardo
 
+> macOS helper extraction: [#319](https://github.com/PinedaTec-EU/LeonardoMD/issues/319) moves current source sharing to an optional per-user service. The master helper switch is required for device synchronization even with the editor open; snapshots use saved files. See [current helper ownership and validation boundaries](../sync-helper.md). Historical implementation checkpoints below retain their original unsaved-buffer and in-process-runtime evidence.
+
 Workspace grouping was removed from the macOS interface under [#305](https://github.com/PinedaTec-EU/LeonardoMD/issues/305). References to workspace-manager actions in the implementation checkpoints below are historical; package extraction and sync working-directory workspaces remain internal storage concepts.
 
 Architecture direction (owner-selected 2026-10-20): [ADR 0002](../adr/0002-reevaluate-mobile-git-engine.md) sets iOS to read-only with an offline cache and reserves editable synchronization for macOS/Windows desktop peers. Windows interoperability remains separate implementation work.

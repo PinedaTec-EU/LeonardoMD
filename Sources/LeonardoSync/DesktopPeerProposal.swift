@@ -67,7 +67,7 @@ public struct DesktopPeerProposalReview: Sendable {
 
 
 /// Local owner outcome, never a wire receipt. Recovery must not replace later editor buffers.
-public struct DesktopPeerAcceptanceResult: Sendable {
+public struct DesktopPeerAcceptanceResult: Codable, Sendable {
     public let receipt: DesktopPeerProposalReceipt
     public let appliedNow: Bool
     public let appliedSnapshot: CorpusSnapshot

@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "source_sha": "5858c47a9762ba6567a7589721bfba71afbbfdb1",
+  "scope": "Owner-authorized immutable Developer ID signed local QA copy; installed app not replaced",
+  "project_scope": {
+    "host": "127.0.0.1",
+    "documents": [
+      "note.md"
+    ],
+    "device": "Native QA synthetic reader"
+  },
+  "fresh_owner_process_pid": 97372,
+  "helper_initial_pid": 97630,
+  "helper_restarted_pid": 3108,
+  "owner_process_closed_before_second_read": true,
+  "same_pinned_identity_and_grant_after_helper_restart": true,
+  "signed_app_helper_and_frameworks_validated": true,
+  "smappservice_registration_from_visible_app": true,
+  "native_independent_code_comparison_and_explicit_project_approval": true,
+  "read_with_editor_open": true,
+  "read_after_owner_editor_exit": true,
+  "read_after_automatic_helper_restart_without_owner_editor": true,
+  "disable_from_visible_app_while_editor_open": true,
+  "disabled_listener_rejects_transfer": true,
+  "linked_macs_offline_and_link_action_disabled": true,
+  "launchd_keep_alive_and_run_at_load": true,
+  "physical_logout_or_reboot_performed": false,
+  "registered_consumer_test_seconds": 194.719,
+  "cleanup": {
+    "mobile_preferences_restored": true,
+    "other_current_preferences_preserved": true,
+    "original_mobile_store_restored": true,
+    "installed_app_unchanged": true,
+    "test_owned_tls_keychain_item_removed": true,
+    "test_phase": "finished",
+    "source_editor_pid": 97372,
+    "helper_before_restart": 97630,
+    "helper_after_restart": 3108,
+    "reader_acceptance_seconds": 194.719,
+    "service_unregistered": true
+  },
+  "app_executable_sha256": "a51eb7539f5493e011fd70d8992f5cc4b644f0d59991872e0591b036612fac40",
+  "helper_executable_sha256": "f1a059faa289fd82edad18bb2ef6c21fdf423a8be1c9217498c769897e372330"
+}

@@ -9,7 +9,8 @@ struct MobileSyncPreferencesView: View {
     @State private var selectingContent = false
     var body: some View {
         Form {
-            Toggle(L10n.text("Enable direct synchronization service"), isOn: Binding(
+            SyncHelperPreferencesSection(controller: controller.helper)
+            Toggle(L10n.text("Share saved files from this Mac"), isOn: Binding(
                 get: { controller.settings.enabled }, set: { value in
                     var updated = controller.settings; updated.enabled = value
                     Task { await controller.update(updated) }

@@ -8,6 +8,7 @@ import LeonardoDesktopSync
 @MainActor @Observable
 final class DesktopSyncController {
     static let shared = DesktopSyncController()
+    let helper: SyncHelperController
     private(set) var settings = MobileSyncPreferences()
     private(set) var running: RunningDirectService?
     private(set) var consent = PairingRegistry()
@@ -20,18 +21,20 @@ final class DesktopSyncController {
     var buffers: @MainActor (URL) async throws -> [OpenDocumentBuffer] = { _ in [] }
     private let configurations: ConfigurationStore
     private let preferencesURL: URL
-    private let runtime: DesktopDirectRuntime
+    private let runtime: any DesktopSyncRuntimeAccess
+    private let usesHelper: Bool
     private let storageRoot: URL
     private var initialized = false
 
     init(preferencesURL: URL = AppSession.preferencesURL, configurations: ConfigurationStore = .shared,
-         runtime: DesktopDirectRuntime? = nil) {
+         runtime: DesktopDirectRuntime? = nil, helper: SyncHelperController? = nil) {
         self.preferencesURL = preferencesURL
+        self.helper = helper ?? SyncHelperController(preferencesURL: preferencesURL)
         self.configurations = configurations
         let root = preferencesURL.deletingLastPathComponent().appendingPathComponent("MobileSync", isDirectory: true)
         storageRoot = root
-        self.runtime = runtime ?? DesktopDirectRuntime(root: root,
-            credentials: SecureCredentialStore(service: "eu.pinedatec.LeonardoMD.sync.tls"), now: { Date() })
+        self.runtime = runtime ?? SyncHelperClient()
+        usesHelper = runtime == nil
     }
 
     /// LAN addresses are listed first. Overlay addresses appear only after the
@@ -47,8 +50,9 @@ final class DesktopSyncController {
         do {
             try InstancePathOwnership.shared.claim(storageRoot)
             settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
-            if settings.enabled { try await start() }
-            consent = try await runtime.consentState()
+            if usesHelper { await helper.refresh() }
+            if settings.enabled && (!usesHelper || helper.online) { try await start() }
+            if !usesHelper || helper.online { consent = try await runtime.consentState() }
             initialized = true
         } catch { self.error = error.localizedDescription }
     }
@@ -70,13 +74,18 @@ final class DesktopSyncController {
                 try InstancePathOwnership.shared.claim(project.rootURL)
             }
             let previous = try await configurations.loadGlobalPreferences(at: preferencesURL)
+            // The helper switch is owned by its lifecycle controller, not a stale sharing form.
+            updated.helperEnabled = previous.mobileSync.helperEnabled
             var next = previous
             next.mobileSync = updated
             settings = try await configurations.mergeGlobalPreferences(updated: next, baseline: previous, at: preferencesURL).mobileSync
-            try await runtime.stop()
             running = nil; invitationURL = nil
-            if settings.enabled { try await start() }
-            consent = try await runtime.consentState()
+            if usesHelper { await helper.refresh() }
+            if !usesHelper || helper.online {
+                try await runtime.stop()
+                if settings.enabled { try await start() }
+                consent = try await runtime.consentState()
+            }
         } catch { self.error = error.localizedDescription }
     }
 
@@ -117,6 +126,13 @@ final class DesktopSyncController {
 
     func refreshConsent() async {
         guard !InstanceRuntime.isAdditional, !busy else { return }
+        if usesHelper {
+            await helper.refresh()
+            running = helper.sharing
+            guard helper.online else {
+                running = nil; invitationURL = nil; incoming = []; consent = PairingRegistry(); return
+            }
+        }
         do {
             consent = try await runtime.consentState()
             incoming = running == nil ? [] : try await runtime.incomingProposals()
@@ -127,7 +143,14 @@ final class DesktopSyncController {
         guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true; error = nil
         defer { busy = false }
-        do { reviewing = DesktopSourceReview(item: item, review: try await runtime.reviewIncomingProposal(deviceID: item.deviceID, upload: item.upload)) }
+        do {
+            let review = try await runtime.reviewIncomingProposal(deviceID: item.deviceID, upload: item.upload)
+            guard let project = settings.projects.first(where: { $0.id == item.upload.projectID }) else { throw SyncError.outsideScope }
+            let drafts = try await buffers(project.rootURL)
+            let source = try await ProjectCorpusReader().snapshot(root: project.rootURL,
+                selection: review.proposal.selection, buffers: drafts)
+            reviewing = DesktopSourceReview(item: item, review: try DesktopPeerProposalReview(proposal: review.proposal, source: source))
+        }
         catch { self.error = error.localizedDescription }
     }
 
@@ -189,6 +212,7 @@ final class DesktopSyncController {
     }
 
     func stop() async {
+        guard !usesHelper else { return } // Editor exit must leave the registered helper running.
         do { try await runtime.stop(); running = nil }
         catch { self.error = error.localizedDescription }
 
