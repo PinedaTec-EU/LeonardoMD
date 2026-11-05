@@ -83,6 +83,15 @@ final class RubricCaptureTests: XCTestCase {
             documentURL: root.appendingPathComponent("note.md"), sourceDigest: RubricCaptureRecord.digest(source: "source"),
             fieldID: nil, labelHint: nil, request: request, response: response, updatedAt: now)
         XCTAssertEqual(try store.upsert(record).response, response)
+        var staleMissingSnapshot = record
+        staleMissingSnapshot.request = nil
+        staleMissingSnapshot.response = nil
+        staleMissingSnapshot.missingAt = now.addingTimeInterval(1)
+        staleMissingSnapshot.updatedAt = now.addingTimeInterval(1)
+        let preserved = try store.upsert(staleMissingSnapshot)
+        XCTAssertEqual(preserved.response, response,
+                       "A delayed missing snapshot must not hide a response already received locally")
+        XCTAssertNil(preserved.missingAt)
 
         let library = RubricLibrary(url: root.appendingPathComponent("library.json"))
         let first = try library.add(label: response.label, rubric: response.rubric, sourceRequestID: requestID)
@@ -122,6 +131,28 @@ final class RubricCaptureTests: XCTestCase {
             XCTAssertEqual(error as? RubricCaptureStoreError, .limitReached)
         }
         XCTAssertEqual(store.records.count, 64)
+    }
+
+    func testUnknownLocalIntentIsNotDiscardedForCapacity() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let fixed = Date(timeIntervalSince1970: 1_700_050_000)
+        let store = RubricCaptureStore(url: root.appendingPathComponent("captures.json"), now: { fixed })
+        for index in 0..<64 {
+            _ = try store.upsert(RubricCaptureRecord(id: UUID(), targetDeviceID: UUID(), targetDeviceName: "Little",
+                documentURL: nil, sourceDigest: RubricCaptureRecord.digest(source: "unknown-\(index)"),
+                fieldID: nil, labelHint: nil, updatedAt: fixed))
+        }
+        let requestID = UUID(), target = UUID(), owner = UUID()
+        let request = try LeonardoSync.RubricRequest(id: requestID, targetDeviceID: target, requesterID: owner,
+            requesterName: "Mac", createdAt: fixed)
+        let candidate = RubricCaptureRecord(id: requestID, targetDeviceID: target, targetDeviceName: "Little",
+            documentURL: nil, sourceDigest: RubricCaptureRecord.digest(source: "candidate"), fieldID: nil,
+            labelHint: nil, request: request, updatedAt: fixed)
+        XCTAssertThrowsError(try store.upsert(candidate)) { error in
+            XCTAssertEqual(error as? RubricCaptureStoreError, .limitReached)
+        }
+        XCTAssertEqual(store.records.count, 64,
+                       "An unresolved local intent may be bounded by capacity, but not silently discarded")
     }
 
     func testCaptureStoreUsesInjectedClockForRetentionAndSaveOrdering() throws {
@@ -332,6 +363,157 @@ final class RubricCaptureTests: XCTestCase {
         XCTAssertEqual(metrics.durableRequestCount, 1,
             "The helper must see one durable source request even after a lost create acknowledgement")
     }
+
+    func testExpiredLostAcknowledgementBecomesTombstoneAndFreshIDCreatesNewRequest() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let fixed = Date(timeIntervalSince1970: 1_701_000_000)
+        let clock = FixedRubricClock(fixed)
+        let (registry, pairing) = try makeCapturePairing(now: fixed)
+        let runtime = PrunableRubricRuntime(registry: registry, requesterID: UUID(), now: { clock.value },
+                                            lostCreateReplies: 1, lostStatusReplies: 1)
+        let controller = DesktopSyncController(preferencesURL: root.appendingPathComponent("preferences.json"),
+            runtime: runtime, now: { clock.value })
+        await controller.update(MobileSyncPreferences(enabled: true, host: "127.0.0.1", port: 0))
+        XCTAssertEqual(controller.rubricCaptureAvailability, .ready, controller.error ?? "Runtime did not start")
+
+        let oldID = UUID()
+        do {
+            _ = try await controller.beginRubricCapture(requestID: oldID, targetDeviceID: pairing.id,
+                targetDeviceName: "Little Leonardo", documentURL: root.appendingPathComponent("note.md"),
+                source: "original", fieldID: nil)
+            XCTFail("The first create acknowledgement is intentionally lost")
+        } catch { }
+        XCTAssertNil(controller.rubricCapture(id: oldID)?.request)
+
+        // The helper had a durable request, but it was pruned before the Mac
+        // recovered the lost create/status replies. The old UUID is now a
+        // tombstone, never a license to create another prompt.
+        await runtime.prune(requestID: oldID)
+        clock.value = fixed.addingTimeInterval(RubricCaptureRecord.lostAcknowledgementWindow + 1)
+        let missing = try await controller.refreshRubricCapture(requestID: oldID)
+        XCTAssertTrue(missing.isMissing)
+        XCTAssertNil(missing.request, "An unacknowledged local tombstone has no remote lifecycle to label")
+
+        do {
+            _ = try await controller.beginRubricCapture(requestID: oldID, targetDeviceID: pairing.id,
+                targetDeviceName: "Little Leonardo", documentURL: root.appendingPathComponent("note.md"),
+                source: "edited", fieldID: nil)
+            XCTFail("A pruned old intent must require a fresh request ID")
+        } catch let error as RubricCaptureError {
+            if case .requestRequiresNewID = error {} else { XCTFail("Unexpected error: \(error)") }
+        }
+
+        let freshID = UUID()
+        let fresh = try await controller.beginRubricCapture(requestID: freshID, targetDeviceID: pairing.id,
+            targetDeviceName: "Little Leonardo", documentURL: root.appendingPathComponent("note.md"),
+            source: "edited", fieldID: nil)
+        XCTAssertNotEqual(fresh.id, oldID)
+        XCTAssertEqual(fresh.request?.state, .pending)
+        let metrics = await runtime.metrics()
+        XCTAssertEqual(metrics.createCalls, 2, "Only the explicit fresh request may create after pruning")
+    }
+
+    func testAcknowledgedMissingRequestNeverRecreatesOldID() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let fixed = Date(timeIntervalSince1970: 1_701_100_000)
+        let clock = FixedRubricClock(fixed)
+        let (registry, pairing) = try makeCapturePairing(now: fixed)
+        let runtime = PrunableRubricRuntime(registry: registry, requesterID: UUID(), now: { clock.value })
+        let controller = DesktopSyncController(preferencesURL: root.appendingPathComponent("preferences.json"),
+            runtime: runtime, now: { clock.value })
+        await controller.update(MobileSyncPreferences(enabled: true, host: "127.0.0.1", port: 0))
+        XCTAssertEqual(controller.rubricCaptureAvailability, .ready, controller.error ?? "Runtime did not start")
+
+        let oldID = UUID()
+        let acknowledged = try await controller.beginRubricCapture(requestID: oldID, targetDeviceID: pairing.id,
+            targetDeviceName: "Little Leonardo", documentURL: nil, source: "source", fieldID: nil)
+        XCTAssertNotNil(acknowledged.request)
+        await runtime.prune(requestID: oldID)
+
+        let missing = try await controller.refreshRubricCapture(requestID: oldID)
+        XCTAssertTrue(missing.isMissing)
+        XCTAssertEqual(missing.request?.state, .expired)
+        do {
+            _ = try await controller.beginRubricCapture(requestID: oldID, targetDeviceID: pairing.id,
+                targetDeviceName: "Little Leonardo", documentURL: nil, source: "source", fieldID: nil)
+            XCTFail("Known missing request must not call create with its old ID")
+        } catch let error as RubricCaptureError {
+            if case .requestRequiresNewID = error {} else { XCTFail("Unexpected error: \(error)") }
+        }
+
+        let fresh = try await controller.beginRubricCapture(requestID: UUID(), targetDeviceID: pairing.id,
+            targetDeviceName: "Little Leonardo", documentURL: nil, source: "source", fieldID: nil)
+        XCTAssertNotEqual(fresh.id, oldID)
+        let metrics = await runtime.metrics()
+        XCTAssertEqual(metrics.createCalls, 2)
+    }
+
+    func testLateCompletedResponseIsRecoveredAfterLostWindowBeforeDeclaringMissing() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let fixed = Date(timeIntervalSince1970: 1_701_200_000)
+        let clock = FixedRubricClock(fixed)
+        let (registry, pairing) = try makeCapturePairing(now: fixed)
+        let runtime = PrunableRubricRuntime(registry: registry, requesterID: UUID(), now: { clock.value },
+                                            lostCreateReplies: 1, lostStatusReplies: 1)
+        let controller = DesktopSyncController(preferencesURL: root.appendingPathComponent("preferences.json"),
+            runtime: runtime, now: { clock.value })
+        await controller.update(MobileSyncPreferences(enabled: true, host: "127.0.0.1", port: 0))
+        XCTAssertEqual(controller.rubricCaptureAvailability, .ready, controller.error ?? "Runtime did not start")
+
+        let requestID = UUID()
+        do {
+            _ = try await controller.beginRubricCapture(requestID: requestID, targetDeviceID: pairing.id,
+                targetDeviceName: "Little Leonardo", documentURL: nil, source: "source", fieldID: nil)
+            XCTFail("The create and immediate status replies are intentionally lost")
+        } catch { }
+        let remoteValue = await runtime.request(id: requestID)
+        let remote = try XCTUnwrap(remoteValue)
+        var completed = remote
+        completed.state = .completed
+        let response = try LeonardoSync.RubricResponse(requestID: requestID, targetDeviceID: pairing.id,
+            requesterID: remote.requesterID, label: "Late", rubric: rubric(), submittedAt: fixed)
+        await runtime.complete(requestID: requestID, request: completed, response: response)
+
+        // The local acknowledgement window has passed, but the helper still
+        // retains the completed response. Querying is allowed; recreating is
+        // not. This protects a valid drawing from a late/restarted Mac.
+        clock.value = fixed.addingTimeInterval(RubricCaptureRecord.lostAcknowledgementWindow + 1)
+        let recovered = try await controller.refreshRubricCapture(requestID: requestID)
+        XCTAssertEqual(recovered.response, response)
+        XCTAssertEqual(recovered.request?.state, .completed)
+        XCTAssertFalse(recovered.isMissing)
+    }
+
+    func testCancelOfUnknownIntentCreatesLocalTombstoneWithoutOldIDCreate() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let fixed = Date(timeIntervalSince1970: 1_701_300_000)
+        let clock = FixedRubricClock(fixed)
+        let (registry, pairing) = try makeCapturePairing(now: fixed)
+        let runtime = PrunableRubricRuntime(registry: registry, requesterID: UUID(), now: { clock.value })
+        let controller = DesktopSyncController(preferencesURL: root.appendingPathComponent("preferences.json"),
+            runtime: runtime, now: { clock.value })
+        await controller.update(MobileSyncPreferences(enabled: true, host: "127.0.0.1", port: 0))
+        XCTAssertEqual(controller.rubricCaptureAvailability, .ready, controller.error ?? "Runtime did not start")
+
+        let oldID = UUID()
+        _ = try controller.prepareRubricCapture(requestID: oldID, targetDeviceID: pairing.id,
+            targetDeviceName: "Little Leonardo", documentURL: nil, source: "source", fieldID: nil)
+        let cancelled = try await controller.cancelRubricCapture(requestID: oldID)
+        XCTAssertTrue(cancelled.isMissing)
+        do {
+            _ = try await controller.beginRubricCapture(requestID: oldID, targetDeviceID: pairing.id,
+                targetDeviceName: "Little Leonardo", documentURL: nil, source: "source", fieldID: nil)
+            XCTFail("A locally cancelled unknown intent must not create with its old ID")
+        } catch let error as RubricCaptureError {
+            if case .requestRequiresNewID = error {} else { XCTFail("Unexpected error: \(error)") }
+        }
+        let metrics = await runtime.metrics()
+        XCTAssertEqual(metrics.createCalls, 0)
+    }
 }
 
 private final class FixedRubricClock: @unchecked Sendable {
@@ -346,7 +528,92 @@ private actor CaptureTestCredentials: DeviceCredentialStore {
     func remove(deviceID: UUID) {}
 }
 
+private extension RubricCaptureTests {
+    func makeCapturePairing(now: Date) throws -> (PairingRegistry, PairedDevice) {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let credential = try PairingRegistry.makeCredential()
+        let pairing = try registry.requestPairing(deviceName: "Little Leonardo", credential: credential,
+            serverFingerprint: Data(repeating: 4, count: 32), now: now, kind: .readOnly,
+            capabilities: [.rubricExchangeV1])
+        let project = SharedProjectDescriptor(id: UUID(), name: "Docs", scope: try CorpusScope(folder: ""))
+        let paired = try registry.approve(requestID: pairing.id, comparisonCode: pairing.comparisonCode,
+            projects: [project.id], now: now)
+        return (registry, paired)
+    }
+}
+
 private struct LostCreateReplyError: Error {}
+
+private actor PrunableRubricRuntime: DesktopSyncRuntimeAccess {
+    let registry: PairingRegistry
+    let requesterID: UUID
+    let now: @Sendable () -> Date
+    private var requests: [UUID: LeonardoSync.RubricRequest] = [:]
+    private var createCalls = 0
+    private var lostCreateReplies: Int
+    private var lostStatusReplies: Int
+    private var prunedIDs: Set<UUID> = []
+    private var responses: [UUID: LeonardoSync.RubricResponse] = [:]
+
+    init(registry: PairingRegistry, requesterID: UUID, now: @escaping @Sendable () -> Date,
+         lostCreateReplies: Int = 0, lostStatusReplies: Int = 0) {
+        self.registry = registry; self.requesterID = requesterID; self.now = now
+        self.lostCreateReplies = lostCreateReplies; self.lostStatusReplies = lostStatusReplies
+    }
+
+    func start(host: String, port: UInt16, projects: [SharedProjectSource], allowPrivateOverlay: Bool) async throws -> RunningDirectService {
+        RunningDirectService(endpoint: URL(string: "https://127.0.0.1:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+    }
+    func stop() async throws {}
+    func consentState() async throws -> PairingRegistry { registry }
+    func incomingProposals() async throws -> [DesktopPeerIncomingProposal] { [] }
+    func reviewIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposalReview { throw DesktopRuntimeError.notRunning }
+    func applyIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload, review: DesktopPeerProposalReview,
+                               decisions: [String: ReconciliationChoice], projectRoot: URL,
+                               currentSource: CorpusSnapshot, currentDisk: CorpusSnapshot) async throws -> DesktopPeerAcceptanceResult {
+        throw DesktopRuntimeError.notRunning
+    }
+    func createInvitation() async throws -> PairingInvitation { throw DesktopRuntimeError.notRunning }
+    func approve(requestID: UUID, code: String, projectIDs: Set<UUID>) async throws { throw DesktopRuntimeError.notRunning }
+    func reject(requestID: UUID) async throws { throw DesktopRuntimeError.notRunning }
+    func revoke(deviceID: UUID) async throws { throw DesktopRuntimeError.notRunning }
+
+    func createRubricRequest(deviceID: UUID, requestID: UUID, requesterName: String,
+                             labelHint: String?) async throws -> LeonardoSync.RubricRequest {
+        createCalls += 1
+        if let existing = requests[requestID], !prunedIDs.contains(requestID) { return existing }
+        prunedIDs.remove(requestID)
+        let request = try LeonardoSync.RubricRequest(id: requestID, targetDeviceID: deviceID,
+            requesterID: requesterID, requesterName: requesterName, labelHint: labelHint, createdAt: now())
+        requests[requestID] = request
+        if lostCreateReplies > 0 {
+            lostCreateReplies -= 1
+            throw LostCreateReplyError()
+        }
+        return request
+    }
+
+    func cancelRubricRequest(requestID: UUID) async throws -> LeonardoSync.RubricRequest {
+        guard var request = requests[requestID], !prunedIDs.contains(requestID) else { throw RubricExchangeError.notFound }
+        request.state = .cancelled; requests[requestID] = request; return request
+    }
+    func rubricResponse(requestID: UUID) async throws -> LeonardoSync.RubricResponse? { throw RubricExchangeError.notFound }
+    func rubricStatus(requestID: UUID) async throws -> RubricExchangeStatus {
+        if lostStatusReplies > 0 {
+            lostStatusReplies -= 1
+            throw LostCreateReplyError()
+        }
+        guard let request = requests[requestID], !prunedIDs.contains(requestID) else { throw RubricExchangeError.notFound }
+        return RubricExchangeStatus(request: request, response: responses[requestID])
+    }
+
+    func prune(requestID: UUID) { prunedIDs.insert(requestID); requests.removeValue(forKey: requestID) }
+    func request(id: UUID) -> LeonardoSync.RubricRequest? { requests[id] }
+    func complete(requestID: UUID, request: LeonardoSync.RubricRequest, response: LeonardoSync.RubricResponse) {
+        requests[requestID] = request; responses[requestID] = response
+    }
+    func metrics() -> (createCalls: Int, durableRequestCount: Int) { (createCalls, requests.count) }
+}
 
 private actor LostCreateReplyRuntime: DesktopSyncRuntimeAccess {
     let registry: PairingRegistry

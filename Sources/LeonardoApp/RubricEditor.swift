@@ -173,16 +173,20 @@ struct RubricEditor: View {
                             Label(L10n.text("Saved in library"), systemImage: "checkmark.circle")
                                 .font(.caption).foregroundStyle(.secondary)
                             Button(L10n.text("Request another rubric")) {
-                                remoteTask?.cancel()
-                                remoteCapture = nil
-                                remoteLabel = ""
-                                remoteError = nil
-                                remoteCreating = false
+                                requestAnotherRubric()
                             }
                             .font(.caption)
                         }
                     }
                 }
+            }
+        } else if capture.isMissing {
+            HStack {
+                Label(L10n.text("This saved rubric request expired or is no longer available. Request a new rubric."),
+                      systemImage: "exclamationmark.circle")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button(L10n.text("Request again")) { requestAnotherRubric() }
             }
         } else if let state = capture.request?.state, [.rejected, .cancelled, .expired].contains(state) {
             HStack {
@@ -196,13 +200,21 @@ struct RubricEditor: View {
                 ProgressView().controlSize(.small)
                 Text(L10n.text("Sending rubric request…"))
             }
-        } else if capture.request == nil {
+        } else if capture.request == nil && controller.canRetryRubricCapture(capture) {
             HStack {
-                Label(L10n.text("The request was saved but not confirmed. Retry to continue the same request."),
+                Label(L10n.text("The request was saved but not confirmed. Retry now to recover it; after the short window, request a new rubric."),
                       systemImage: "arrow.clockwise.circle")
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button(L10n.text("Retry")) { retryRemote(controller, capture: capture) }
+            }
+        } else if capture.request == nil {
+            HStack {
+                Label(L10n.text("The request could not be confirmed. Request a new rubric to use a fresh request ID."),
+                      systemImage: "exclamationmark.circle")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button(L10n.text("Request again")) { requestAnotherRubric() }
             }
         } else {
             HStack {
@@ -240,6 +252,14 @@ struct RubricEditor: View {
         startRemote(controller, capture: capture)
     }
 
+    private func requestAnotherRubric() {
+        remoteTask?.cancel()
+        remoteCapture = nil
+        remoteLabel = ""
+        remoteError = nil
+        remoteCreating = false
+    }
+
     private func startRemote(_ controller: DesktopSyncController, capture: RubricCaptureRecord) {
         remoteCreating = true
         remoteTask = Task { @MainActor in
@@ -255,6 +275,7 @@ struct RubricEditor: View {
                 if updated.response == nil { pollRemote(controller, requestID: updated.id) }
             } catch {
                 remoteCreating = false
+                if let latest = controller.rubricCapture(id: capture.id) { remoteCapture = latest }
                 remoteError = error.localizedDescription
             }
         }
@@ -285,7 +306,10 @@ struct RubricEditor: View {
         remoteTask?.cancel()
         remoteTask = Task { @MainActor in
             do { remoteCapture = try await controller.cancelRubricCapture(requestID: requestID) }
-            catch { remoteError = error.localizedDescription }
+            catch {
+                if let latest = controller.rubricCapture(id: requestID) { remoteCapture = latest }
+                remoteError = error.localizedDescription
+            }
         }
     }
 

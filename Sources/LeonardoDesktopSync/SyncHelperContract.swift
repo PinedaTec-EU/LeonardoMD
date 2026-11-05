@@ -19,7 +19,7 @@ public enum SyncHelperContract {
     func perform(_ request: Data, withReply reply: @escaping @Sendable (Data?, Int, String?) -> Void)
 }
 
-public enum SyncHelperErrorCode: Int, Sendable { case none, failed, staleComparison }
+public enum SyncHelperErrorCode: Int, Sendable { case none, failed, staleComparison, rubricNotFound }
 
 public enum SyncHelperCommand: Codable, Sendable {
     case status, reload, stopSharing, consent, invitation, incoming

@@ -27,12 +27,14 @@ enum RubricCaptureError: LocalizedError {
     case unavailable(RubricCaptureAvailability)
     case missingRequest
     case requestConflict
+    case requestRequiresNewID
 
     var errorDescription: String? {
         switch self {
         case .unavailable(let availability): availability.messageKey
         case .missingRequest: "The saved rubric request is no longer available."
         case .requestConflict: "The saved rubric request belongs to a different device or document."
+        case .requestRequiresNewID: "This saved rubric request has expired or is no longer available. Request a new rubric."
         }
     }
 }
@@ -80,6 +82,12 @@ final class DesktopSyncController {
     }
 
     var rubricCaptureRecords: [RubricCaptureRecord] { rubricCaptures.records }
+
+    func rubricCapture(id: UUID) -> RubricCaptureRecord? { rubricCaptures.record(id: id) }
+
+    func canRetryRubricCapture(_ record: RubricCaptureRecord) -> Bool {
+        record.canRetryCreate(at: now())
+    }
 
     /// Only an explicitly enrolled read-only peer advertising the exchange
     /// capability appears here. Legacy peers remain visible in Preferences but
@@ -308,31 +316,61 @@ final class DesktopSyncController {
             guard existing.targetDeviceID == targetDeviceID,
                   existing.documentURL == canonicalURL,
                   existing.fieldID == fieldID else { throw RubricCaptureError.requestConflict }
+            guard !existing.isTerminal else { throw RubricCaptureError.requestRequiresNewID }
+            // An unacknowledged record outside its bounded create window is
+            // still queryable by UUID. `beginRubricCapture` performs that
+            // read-only recovery; it never calls create in this state. This
+            // preserves a completed helper response whose Mac acknowledgement
+            // was lost while still requiring a fresh ID after notFound.
             // A retry may happen after the open document changed. Keep the
             // original digest and target metadata so insertion remains guarded
             // by the context in which the request was first made.
             return existing
         }
+        let attemptedAt = now()
         let record = RubricCaptureRecord(id: requestID, targetDeviceID: targetDeviceID,
             targetDeviceName: targetDeviceName, documentURL: canonicalURL,
             sourceDigest: RubricCaptureRecord.digest(source: source), fieldID: fieldID,
-            labelHint: labelHint, updatedAt: now())
+            labelHint: labelHint, updatedAt: attemptedAt,
+            creationAttemptedAt: attemptedAt,
+            retryDeadline: attemptedAt.addingTimeInterval(RubricCaptureRecord.lostAcknowledgementWindow))
         return try rubricCaptures.upsert(record)
     }
 
     private func beginRubricCapture(record: RubricCaptureRecord) async throws -> RubricCaptureRecord {
+        if record.request != nil {
+            guard !record.isTerminal else { throw RubricCaptureError.requestRequiresNewID }
+            // Once the helper has acknowledged a request, a retry is a status
+            // read only. Calling create again after the helper prunes the
+            // record could silently allocate a new prompt under the old ID.
+            return try await refreshRubricCapture(requestID: record.id)
+        }
+        guard record.canRetryCreate(at: now()) else {
+            return try await refreshRubricCapture(requestID: record.id)
+        }
         var record = record
         do {
             let request = try await runtime.createRubricRequest(deviceID: record.targetDeviceID, requestID: record.id,
                 requesterName: Self.rubricRequesterName, labelHint: record.labelHint)
-            record.request = request; record.updatedAt = now()
+            let acknowledgedAt = now()
+            record.request = request; record.updatedAt = acknowledgedAt
+            record.lastKnownRequestAt = acknowledgedAt
             return try rubricCaptures.upsert(record)
         } catch {
-            // Creation can be durable even when the XPC reply is lost. The
-            // caller's stable ID makes this recovery safe and idempotent.
-            if let status = try? await runtime.rubricStatus(requestID: record.id) {
-                record.request = status.request; record.response = status.response; record.updatedAt = now()
+            // Creation can be durable even when the XPC create reply is lost.
+            // The stable ID makes recovery safe only inside the persisted
+            // acknowledgement window.
+            do {
+                let status = try await runtime.rubricStatus(requestID: record.id)
+                let acknowledgedAt = now()
+                record.request = status.request; record.response = status.response
+                record.updatedAt = acknowledgedAt; record.lastKnownRequestAt = acknowledgedAt
                 return try rubricCaptures.upsert(record)
+            } catch let statusError {
+                if Self.isRubricNotFound(statusError), !record.canRetryCreate(at: now()) {
+                    _ = try? markRubricCaptureMissing(record)
+                    throw RubricCaptureError.requestRequiresNewID
+                }
             }
             throw error
         }
@@ -340,18 +378,35 @@ final class DesktopSyncController {
 
     func refreshRubricCapture(requestID: UUID) async throws -> RubricCaptureRecord {
         guard let current = rubricCaptures.record(id: requestID) else { throw RubricCaptureError.missingRequest }
-        let status = try await runtime.rubricStatus(requestID: requestID)
-        var updated = current
-        updated.request = status.request; updated.response = status.response; updated.updatedAt = now()
-        return try rubricCaptures.upsert(updated)
+        guard !current.isMissing else { return current }
+        do {
+            let status = try await runtime.rubricStatus(requestID: requestID)
+            var updated = current
+            let acknowledgedAt = now()
+            updated.request = status.request; updated.response = status.response
+            updated.updatedAt = acknowledgedAt; updated.lastKnownRequestAt = acknowledgedAt
+            return try rubricCaptures.upsert(updated)
+        } catch let error {
+            guard Self.isRubricNotFound(error) else { throw error }
+            if current.request == nil && current.canRetryCreate(at: now()) { throw error }
+            return try markRubricCaptureMissing(current)
+        }
     }
 
     func cancelRubricCapture(requestID: UUID) async throws -> RubricCaptureRecord {
         guard let current = rubricCaptures.record(id: requestID) else { throw RubricCaptureError.missingRequest }
-        let request = try await runtime.cancelRubricRequest(requestID: requestID)
-        var updated = current
-        updated.request = request; updated.updatedAt = now()
-        return try rubricCaptures.upsert(updated)
+        guard !current.isMissing else { return current }
+        do {
+            let request = try await runtime.cancelRubricRequest(requestID: requestID)
+            var updated = current
+            let acknowledgedAt = now()
+            updated.request = request; updated.updatedAt = acknowledgedAt
+            updated.lastKnownRequestAt = acknowledgedAt
+            return try rubricCaptures.upsert(updated)
+        } catch let error {
+            guard Self.isRubricNotFound(error) else { throw error }
+            return try markRubricCaptureMissing(current)
+        }
     }
 
     @discardableResult
@@ -370,7 +425,9 @@ final class DesktopSyncController {
         // Prefer an unsaved response before matching the current source.
         let recoverable = sameDocument.filter {
             $0.savedLibraryEntryID == nil &&
-            ($0.response != nil || $0.request == nil || $0.request?.state == .pending || $0.request?.state == .accepted)
+            !$0.isMissing &&
+            ($0.response != nil || $0.request?.state == .pending || $0.request?.state == .accepted
+                || ($0.request == nil && $0.canRetryCreate(at: now())))
         }
         return recoverable
             .filter { $0.sourceDigest == digest }
@@ -381,20 +438,46 @@ final class DesktopSyncController {
     private func recoverRubricCaptures() async {
         guard rubricCaptureAvailability == .ready else { return }
         let recoverable = rubricCaptures.records.filter {
-            $0.request == nil || $0.request?.state == .pending || $0.request?.state == .accepted
+            !$0.isMissing && ($0.request == nil || $0.request?.state == .pending || $0.request?.state == .accepted)
         }
         for current in recoverable {
             guard !Task.isCancelled else { return }
             do {
                 let status = try await runtime.rubricStatus(requestID: current.id)
                 var updated = current
-                updated.request = status.request; updated.response = status.response; updated.updatedAt = now()
+                let acknowledgedAt = now()
+                updated.request = status.request; updated.response = status.response
+                updated.updatedAt = acknowledgedAt; updated.lastKnownRequestAt = acknowledgedAt
                 _ = try rubricCaptures.upsert(updated)
-            } catch {
-                // A request may have been pruned on the helper after its
-                // terminal retention window. Keep the local intent for review.
+            } catch let error {
+                if Self.isRubricNotFound(error), current.request != nil || !current.canRetryCreate(at: now()) {
+                    _ = try? markRubricCaptureMissing(current)
+                }
+                // Offline/helper failures remain retryable; a notFound after
+                // the bounded window becomes a local tombstone above.
             }
         }
+    }
+
+    private func markRubricCaptureMissing(_ current: RubricCaptureRecord) throws -> RubricCaptureRecord {
+        // A completed response is already the durable recovery result. A
+        // delayed notFound from another instance must never hide it behind a
+        // local tombstone.
+        guard current.response == nil else { return current }
+        var updated = current
+        if var request = updated.request,
+           ![.rejected, .cancelled, .expired, .completed].contains(request.state) {
+            request.state = .expired
+            updated.request = request
+        }
+        if updated.request != nil && updated.lastKnownRequestAt == nil {
+            updated.lastKnownRequestAt = updated.request?.createdAt
+        }
+        return try rubricCaptures.upsert(updated.markedMissing(at: now()))
+    }
+
+    private static func isRubricNotFound(_ error: Error) -> Bool {
+        (error as? RubricExchangeError) == .notFound
     }
 }
 

@@ -13,7 +13,14 @@ private final class HelperEndpoint: NSObject, SyncHelperXPC, @unchecked Sendable
                 let command = try JSONDecoder().decode(SyncHelperCommand.self, from: request)
                 reply(try await host.perform(command), SyncHelperErrorCode.none.rawValue, nil)
             } catch {
-                let code: SyncHelperErrorCode = (error as? ReconciliationError) == .staleComparison ? .staleComparison : .failed
+                let code: SyncHelperErrorCode
+                if (error as? ReconciliationError) == .staleComparison {
+                    code = .staleComparison
+                } else if (error as? RubricExchangeError) == .notFound {
+                    code = .rubricNotFound
+                } else {
+                    code = .failed
+                }
                 reply(nil, code.rawValue, error.localizedDescription)
             }
         }

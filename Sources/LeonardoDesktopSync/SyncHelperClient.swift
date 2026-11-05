@@ -34,6 +34,9 @@ public struct SyncHelperClient: SyncHelperControlAccess, DesktopSyncRuntimeAcces
                 if code == SyncHelperErrorCode.staleComparison.rawValue {
                     pending.finish(.failure(ReconciliationError.staleComparison)); return
                 }
+                if code == SyncHelperErrorCode.rubricNotFound.rawValue {
+                    pending.finish(.failure(RubricExchangeError.notFound)); return
+                }
                 if let data { pending.finish(.success(data)) }
                 else { pending.finish(.failure(SyncHelperFailure(error ?? "Sync helper request failed."))) }
             }

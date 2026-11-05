@@ -1,4 +1,4 @@
 {
   "summary": "macOS targets one explicitly capable linked read-only peer, recovers requests by stable ID, reviews returned rubrics, and saves or inserts them safely. Legacy peers remain unsupported until #342.",
-  "build": 25
+  "build": 28
 }

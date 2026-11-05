@@ -25,6 +25,11 @@ enum RubricCaptureStoreError: LocalizedError, Equatable {
 /// digest only; the open document remains the source of truth for insertion.
 struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
     static let maximumDigestBytes = 32
+    /// A create acknowledgement may be retried with the same caller-owned ID
+    /// only while the original asynchronous operation could still be in flight.
+    /// This is deliberately shorter than local record retention and is stored
+    /// independently of `updatedAt`, which is only an ordering hint.
+    static let lostAcknowledgementWindow = LeonardoSync.RubricRequest.lifetime
 
     let id: UUID
     let targetDeviceID: UUID
@@ -37,21 +42,51 @@ struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
     var response: LeonardoSync.RubricResponse?
     var savedLibraryEntryID: String?
     var updatedAt: Date
+    /// Set before the first helper create call. A nil request with no bounded
+    /// provenance is a legacy/unknown intent and must never be recreated.
+    var creationAttemptedAt: Date?
+    var retryDeadline: Date?
+    /// The last time the helper returned a durable request for this ID. A
+    /// non-nil request is already enough to forbid create-after-missing; this
+    /// marker makes that provenance explicit and survives status refreshes.
+    var lastKnownRequestAt: Date?
+    /// Tombstone for a local intent whose helper request is gone or whose
+    /// acknowledgement window has elapsed. It blocks same-ID creation while
+    /// the record remains visible long enough to explain “Request again”.
+    var missingAt: Date?
 
     init(id: UUID, targetDeviceID: UUID, targetDeviceName: String,
          documentURL: URL?, sourceDigest: Data, fieldID: String?, labelHint: String?,
          request: LeonardoSync.RubricRequest? = nil, response: LeonardoSync.RubricResponse? = nil,
-         savedLibraryEntryID: String? = nil, updatedAt: Date) {
+         savedLibraryEntryID: String? = nil, updatedAt: Date,
+         creationAttemptedAt: Date? = nil, retryDeadline: Date? = nil,
+         lastKnownRequestAt: Date? = nil, missingAt: Date? = nil) {
         self.id = id; self.targetDeviceID = targetDeviceID; self.targetDeviceName = targetDeviceName
         self.documentURL = documentURL; self.sourceDigest = sourceDigest; self.fieldID = fieldID
         self.labelHint = labelHint; self.request = request; self.response = response
         self.savedLibraryEntryID = savedLibraryEntryID; self.updatedAt = updatedAt
+        self.creationAttemptedAt = creationAttemptedAt; self.retryDeadline = retryDeadline
+        self.lastKnownRequestAt = lastKnownRequestAt; self.missingAt = missingAt
     }
 
     var state: RubricRequestState? { request?.state }
     var isTerminal: Bool {
+        if missingAt != nil { return true }
         guard let state else { return false }
         return [.rejected, .cancelled, .expired, .completed].contains(state)
+    }
+
+    var isMissing: Bool { missingAt != nil }
+
+    func canRetryCreate(at date: Date) -> Bool {
+        guard request == nil, missingAt == nil,
+              lastKnownRequestAt == nil,
+              let creationAttemptedAt, let retryDeadline else { return false }
+        // Do not turn a backwards-moving wall clock into an artificial
+        // terminal state. The upper deadline is the durable safety boundary;
+        // the attempt timestamp remains provenance, not an ordering source.
+        return creationAttemptedAt.timeIntervalSince1970.isFinite
+            && date <= retryDeadline
     }
 
     static func digest(source: String) -> Data {
@@ -76,6 +111,13 @@ struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
         var copy = self
         copy.savedLibraryEntryID = entryID
         copy.updatedAt = updatedAt
+        return copy
+    }
+
+    func markedMissing(at date: Date) -> RubricCaptureRecord {
+        var copy = self
+        copy.missingAt = date
+        copy.updatedAt = date
         return copy
     }
 }
@@ -123,7 +165,15 @@ final class RubricCaptureStore {
                 let existingRank = Self.stateRank(existing.request)
                 let sameState = existing.request?.state == candidate.request?.state
                 let lifecycleAccepted: Bool
-                if existing.isTerminal {
+                let recoveredLateCompletion = existing.missingAt != nil && existing.request == nil
+                    && candidate.request?.state == .completed && candidate.response != nil
+                if recoveredLateCompletion {
+                    // A local nil-intent tombstone may still receive the
+                    // helper's already-completed response after a delayed
+                    // status query. Preserve that data without permitting a
+                    // new pending request to resurrect the old ID.
+                    lifecycleAccepted = true
+                } else if existing.isTerminal {
                     // Once a terminal outcome is durably recorded, a delayed
                     // status can never reanimate it. A same-state refresh may
                     // still replace an older representation, but only in the
@@ -145,6 +195,23 @@ final class RubricCaptureStore {
                     merged.request = candidate.request ?? existing.request
                     if existing.response == nil { merged.response = candidate.response }
                     merged.updatedAt = candidate.updatedAt
+                }
+                // Provenance is monotonic and independent of lifecycle
+                // timestamp arbitration. A late create/status reply may not
+                // erase the bounded retry window or a missing tombstone.
+                if merged.creationAttemptedAt == nil {
+                    merged.creationAttemptedAt = candidate.creationAttemptedAt
+                }
+                if merged.retryDeadline == nil {
+                    merged.retryDeadline = candidate.retryDeadline
+                }
+                if merged.lastKnownRequestAt == nil {
+                    merged.lastKnownRequestAt = candidate.lastKnownRequestAt
+                }
+                if merged.missingAt == nil {
+                    if merged.response == nil { merged.missingAt = candidate.missingAt }
+                } else if recoveredLateCompletion {
+                    merged.missingAt = nil
                 }
                 // The library marker is an independent durable mutation. It
                 // must survive lifecycle arbitration and clock rollback, but
@@ -244,16 +311,22 @@ final class RubricCaptureStore {
     private func pruned(_ values: [RubricCaptureRecord], now: Date) throws -> [RubricCaptureRecord] {
         // A completed response is only removable after the user explicitly
         // saved it to the library. A drawing awaiting review must survive both
-        // the age window and the bounded-capacity check.
+        // the age window and the bounded-capacity check. An unacknowledged
+        // intent remains unresolved until an authenticated status query says
+        // notFound; capacity returns limitReached instead of discarding a
+        // potentially completed helper response.
         var next = values.filter {
-            !$0.isTerminal || now.timeIntervalSince($0.updatedAt) < Self.terminalRetention
-                || ($0.request?.state == .completed && $0.savedLibraryEntryID == nil)
+            guard $0.isTerminal else { return true }
+            let retentionDate = $0.missingAt ?? $0.updatedAt
+            let retained = now.timeIntervalSince(retentionDate) < Self.terminalRetention
+            return retained || ($0.request?.state == .completed && $0.savedLibraryEntryID == nil)
         }
         guard next.count > Self.maximumRecords else { return next }
         let removable = next.filter {
-            guard $0.isTerminal else { return false }
-            return $0.request?.state != .completed || $0.savedLibraryEntryID != nil
-        }.sorted { $0.updatedAt < $1.updatedAt }
+            let safeCompleted = $0.request?.state == .completed && $0.savedLibraryEntryID == nil
+            guard !safeCompleted else { return false }
+            return $0.isTerminal
+        }.sorted { ($0.missingAt ?? $0.updatedAt) < ($1.missingAt ?? $1.updatedAt) }
         let removeCount = next.count - Self.maximumRecords
         guard removable.count >= removeCount else { throw RubricCaptureStoreError.limitReached }
         let removed = Set(removable.prefix(removeCount).map(\.id))
@@ -266,6 +339,21 @@ final class RubricCaptureStore {
               !record.targetDeviceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               record.targetDeviceName.count <= 100,
               record.updatedAt.timeIntervalSince1970.isFinite else { return false }
+        if let attempted = record.creationAttemptedAt {
+            guard attempted.timeIntervalSince1970.isFinite,
+                  let deadline = record.retryDeadline,
+                  deadline.timeIntervalSince1970.isFinite,
+                  deadline >= attempted,
+                  deadline.timeIntervalSince(attempted) <= RubricCaptureRecord.lostAcknowledgementWindow else {
+                return false
+            }
+        } else if record.retryDeadline != nil {
+            return false
+        }
+        if let lastKnown = record.lastKnownRequestAt,
+           !lastKnown.timeIntervalSince1970.isFinite { return false }
+        if let missingAt = record.missingAt,
+           !missingAt.timeIntervalSince1970.isFinite { return false }
         if let request = record.request {
             guard request.id == record.id, request.targetDeviceID == record.targetDeviceID else { return false }
             if request.state == .completed && record.response == nil { return false }
