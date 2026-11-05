@@ -1,5 +1,5 @@
 {
-  "reviewed_code_head": "992fa58f49567242b3b77133f94af63cb14cd12f",
+  "reviewed_code_head": "992fa58f49567242b3b77133f94af63cb14cd12f (earlier hosted UI/layout validation; final lifecycle correction receives new exact-head CI)",
   "component_capture_source": "a919f4b53b8d004c112bd0bd4ac6c109ff6e095e",
   "unchanged_ui_file_sha256": {
     "Sources/LeonardoApp/SynchronizationPreferencesView.swift": "00d984cc687bea140bae56e1ee36e881597cef1da2e8b8531cc653e629a5d967",
@@ -12,7 +12,7 @@
     "Sources/LeonardoApp/Resources/Localization/es.json": "16a00c4aa4b0882f94145eea8f728ed027d0b5b39c39910965d097a240bd9d4b"
   },
   "combined_local_tests": {
-    "xctest": 632,
+    "xctest": 633,
     "optional_skips": 34,
     "swift_testing": 28,
     "python": 93,
@@ -23,7 +23,9 @@
     "https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/42059813115"
   ],
   "hosted_test_result": "success",
-  "source_build_delta": 10,
+  "source_build_delta": 12,
   "publication": "pending source integration, materialization, signing and notarization",
-  "policy_provider_problem": "Pinned engine accepted the exact base/head; later check-result publication/revalidation returned GitHub HTTP500. No status was manually overridden."
+  "policy_provider_problem": "Pinned engine accepted the exact base/head; later check-result publication/revalidation returned GitHub HTTP500. No status was manually overridden.",
+  "service_composition_sha256": "3c3b71040fd607ac9ecb29bc9241010c57b1a9c355aec93823b1df4de46c0b46",
+  "service_composition_validation": "Principal role controllers share one helper lifecycle; focused ownership regression plus full 633-case suite passed after this change."
 }

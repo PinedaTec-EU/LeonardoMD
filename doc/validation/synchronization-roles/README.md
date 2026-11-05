@@ -58,8 +58,10 @@ app executable hash stayed unchanged. No helper registration, pairing, new
 sharing consent or network transfer was performed. The original app and its
 previous project were reopened afterwards. See `native-acceptance.json`.
 
-Local combined full suite after integrating #202: 632 XCTest cases (34 optional skips), 28 Swift Testing cases;
+Local combined full suite after integrating #202: 633 XCTest cases (34 optional skips), 28 Swift Testing cases;
 Python suite: 93 tests (7 environment skips). WKWebView guide rendering and
 personal practice-copy preservation are included. Exact-head hosted validation
 and independent judgment remain required; public beta acceptance follows
 integration/materialization and signed publication.
+
+The production principal client now uses the source controller’s helper lifecycle object ([#346](https://github.com/PinedaTec-EU/LeonardoMD/issues/346)); a focused ownership regression prevents independently cached service state behind the common switch. Existing helper transition/late-reply tests exercise that shared lifecycle. No consent or transport gate changes.

@@ -6,6 +6,11 @@ import LeonardoCore
 
 @MainActor
 final class SynchronizationPreferencesTests: XCTestCase {
+    func testPrincipalRolesShareOneServiceLifecycle() {
+        XCTAssertTrue(DesktopSyncController.shared.helper === DesktopPeerController.shared.helper,
+                      "Both roles must observe the common service disable immediately")
+    }
+
     func testBothRolePagesPreserveDisabledSharingAndHelper() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

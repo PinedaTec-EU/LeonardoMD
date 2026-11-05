@@ -13,7 +13,7 @@ final class DesktopPeerEditorRevoker: DesktopPeerAccessRevoker {
 
 @MainActor @Observable
 final class DesktopPeerController {
-    static let shared = DesktopPeerController()
+    static let shared = DesktopPeerController(helper: DesktopSyncController.shared.helper)
     let helper: SyncHelperController
     private(set) var connections: [DesktopPeerConnection] = []
     private(set) var copies: [DesktopPeerCopy] = []
