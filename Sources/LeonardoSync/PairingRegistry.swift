@@ -22,17 +22,21 @@ public struct PairingRequest: Codable, Equatable, Sendable, Identifiable {
     public let expiresAt: Date
     public let credentialDigest: Data
     public let kind: PairingClientKind
+    public let capabilities: Set<DirectCapability>
 
-    init(id: UUID, deviceName: String, comparisonCode: String, expiresAt: Date, credentialDigest: Data, kind: PairingClientKind) {
+    init(id: UUID, deviceName: String, comparisonCode: String, expiresAt: Date, credentialDigest: Data,
+         kind: PairingClientKind, capabilities: Set<DirectCapability> = []) {
         self.id = id; self.deviceName = deviceName; self.comparisonCode = comparisonCode
         self.expiresAt = expiresAt; self.credentialDigest = credentialDigest; self.kind = kind
+        self.capabilities = capabilities
     }
-    private enum CodingKeys: String, CodingKey { case id, deviceName, comparisonCode, expiresAt, credentialDigest, kind }
+    private enum CodingKeys: String, CodingKey { case id, deviceName, comparisonCode, expiresAt, credentialDigest, kind, capabilities }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(id: c.decode(UUID.self, forKey: .id), deviceName: c.decode(String.self, forKey: .deviceName),
                   comparisonCode: c.decode(String.self, forKey: .comparisonCode), expiresAt: c.decode(Date.self, forKey: .expiresAt),
-                  credentialDigest: c.decode(Data.self, forKey: .credentialDigest), kind: c.decodeIfPresent(PairingClientKind.self, forKey: .kind) ?? .readOnly)
+                  credentialDigest: c.decode(Data.self, forKey: .credentialDigest), kind: c.decodeIfPresent(PairingClientKind.self, forKey: .kind) ?? .readOnly,
+                  capabilities: c.decodeIfPresent(Set<DirectCapability>.self, forKey: .capabilities) ?? [])
     }
 }
 
@@ -43,17 +47,20 @@ public struct PairedDevice: Codable, Equatable, Sendable, Identifiable {
     public let projects: Set<UUID>
     public var revoked: Bool
     public let kind: PairingClientKind
+    public let capabilities: Set<DirectCapability>
 
-    init(id: UUID, name: String, credentialDigest: Data, projects: Set<UUID>, revoked: Bool, kind: PairingClientKind) {
+    init(id: UUID, name: String, credentialDigest: Data, projects: Set<UUID>, revoked: Bool,
+         kind: PairingClientKind, capabilities: Set<DirectCapability> = []) {
         self.id = id; self.name = name; self.credentialDigest = credentialDigest
-        self.projects = projects; self.revoked = revoked; self.kind = kind
+        self.projects = projects; self.revoked = revoked; self.kind = kind; self.capabilities = capabilities
     }
-    private enum CodingKeys: String, CodingKey { case id, name, credentialDigest, projects, revoked, kind }
+    private enum CodingKeys: String, CodingKey { case id, name, credentialDigest, projects, revoked, kind, capabilities }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(id: c.decode(UUID.self, forKey: .id), name: c.decode(String.self, forKey: .name),
                   credentialDigest: c.decode(Data.self, forKey: .credentialDigest), projects: c.decode(Set<UUID>.self, forKey: .projects),
-                  revoked: c.decode(Bool.self, forKey: .revoked), kind: c.decodeIfPresent(PairingClientKind.self, forKey: .kind) ?? .readOnly)
+                  revoked: c.decode(Bool.self, forKey: .revoked), kind: c.decodeIfPresent(PairingClientKind.self, forKey: .kind) ?? .readOnly,
+                  capabilities: c.decodeIfPresent(Set<DirectCapability>.self, forKey: .capabilities) ?? [])
     }
 }
 
@@ -93,7 +100,9 @@ public struct PairingRegistry: Codable, Sendable {
     }
 
     public mutating func requestPairing(deviceName: String, credential: String,
-                                       invitation: PairingInvitation? = nil, serverFingerprint: Data, now: Date, kind: PairingClientKind = .readOnly) throws -> PairingRequest {
+                                       invitation: PairingInvitation? = nil, serverFingerprint: Data, now: Date,
+                                       kind: PairingClientKind = .readOnly,
+                                       capabilities: Set<DirectCapability> = []) throws -> PairingRequest {
         guard enabled else { throw PairingError.disabled }
         expire(now: now)
         guard credential.count == 64, credential.allSatisfy(\.isHexDigit),
@@ -115,7 +124,7 @@ public struct PairingRegistry: Codable, Sendable {
         let code = try PairingComparisonCode.make(serverFingerprint: serverFingerprint, credential: credential, requestID: id, kind: kind)
         let request = PairingRequest(id: id, deviceName: deviceName,
             comparisonCode: code, expiresAt: now.addingTimeInterval(Self.requestLifetime),
-            credentialDigest: credentialDigest, kind: kind)
+            credentialDigest: credentialDigest, kind: kind, capabilities: capabilities)
         requests.append(request)
         return request
     }
@@ -128,7 +137,8 @@ public struct PairingRegistry: Codable, Sendable {
               request.comparisonCode == comparisonCode else { throw PairingError.pendingApproval }
         guard !projects.isEmpty else { throw PairingError.invalidProject }
         let device = PairedDevice(id: request.id, name: request.deviceName, credentialDigest: request.credentialDigest,
-                                  projects: projects, revoked: false, kind: request.kind)
+                                  projects: projects, revoked: false, kind: request.kind,
+                                  capabilities: request.capabilities)
         devices.append(device)
         requests.removeAll { $0.id == requestID }
         return device

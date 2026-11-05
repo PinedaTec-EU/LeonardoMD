@@ -828,6 +828,16 @@
       "pr": 336,
       "summary": "Install and relaunch updates directly from Preferences, preserving unsaved-document and Git safety checks.",
       "to_version": "0.2.837"
+    },
+    {
+      "delta": {
+        "build": 7
+      },
+      "from_version": "0.2.837",
+      "merge_sha": "f4b3ddd57ec4c5476c03a872cac84a6a4a516015",
+      "pr": 344,
+      "summary": "Adds protocol foundations for targeted Mac-to-iOS rubric requests without granting document editing. Capability negotiation, durable retries and pinned transport are ready; production UI/enrollment wiring remains deferred to #342.",
+      "to_version": "0.2.844"
     }
   ],
   "initial_version": "0.1.56",
@@ -838,5 +848,5 @@
     "feature",
     "build"
   ],
-  "version": "0.2.837"
+  "version": "0.2.844"
 }

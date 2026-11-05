@@ -32,12 +32,15 @@ public struct DirectEnrollmentClient: Sendable {
         let credential: String
         let invitation: PairingInvitation?
         let kind: PairingClientKind
+        let capabilities: Set<DirectCapability>
     }
 
-    public func begin(deviceName: String, credential: String, now: Date, kind: PairingClientKind = .readOnly) async throws -> DirectEnrollment {
+    public func begin(deviceName: String, credential: String, now: Date, kind: PairingClientKind = .readOnly,
+                      capabilities: Set<DirectCapability> = []) async throws -> DirectEnrollment {
         if let invitation, invitation.expiresAt <= now { throw PairingError.expiredInvitation }
         let response = try await client.request(method: "POST", path: "/v1/pair/request",
-            body: JSONEncoder().encode(PairingStart(deviceName: deviceName, credential: credential, invitation: invitation, kind: kind)))
+            body: JSONEncoder().encode(PairingStart(deviceName: deviceName, credential: credential,
+                                                    invitation: invitation, kind: kind, capabilities: capabilities)))
         guard response.status == 202 else { throw TransportError.unexpectedResponse }
         let challenge = try JSONDecoder().decode(PairingChallenge.self, from: response.body)
         guard challenge.expiresAt > now else { throw PairingError.expiredInvitation }
@@ -60,6 +63,45 @@ public struct DirectEnrollmentClient: Sendable {
         let snapshot = try JSONDecoder().decode(CorpusSnapshot.self, from: response.body)
         return try OfflineProject(id: descriptor.id, name: descriptor.name, mode: .direct,
                                   scope: descriptor.scope, snapshot: snapshot)
+    }
+
+    public func rubricRequests(deviceID: UUID, credential: String) async throws -> [RubricRequest] {
+        let response = try await client.request(method: "GET", path: "/v1/devices/\(deviceID.uuidString)/rubrics/requests", credential: credential)
+        guard response.status == 200 else { throw mapRubricResponse(response.status) }
+        return try JSONDecoder().decode([RubricRequest].self, from: response.body)
+    }
+
+    public func acceptRubricRequest(requestID: UUID, deviceID: UUID, credential: String) async throws -> RubricRequest {
+        try await transitionRubricRequest(requestID: requestID, deviceID: deviceID, credential: credential, action: "accept")
+    }
+
+    public func rejectRubricRequest(requestID: UUID, deviceID: UUID, credential: String) async throws -> RubricRequest {
+        try await transitionRubricRequest(requestID: requestID, deviceID: deviceID, credential: credential, action: "reject")
+    }
+
+    public func submitRubricResponse(_ rubric: RubricResponse, deviceID: UUID, credential: String) async throws -> RubricResponse {
+        let response = try await client.request(method: "POST", path: "/v1/devices/\(deviceID.uuidString)/rubrics/responses",
+                                                credential: credential, body: try JSONEncoder().encode(rubric))
+        guard response.status == 200 else { throw mapRubricResponse(response.status) }
+        return try JSONDecoder().decode(RubricResponse.self, from: response.body)
+    }
+
+    private func transitionRubricRequest(requestID: UUID, deviceID: UUID, credential: String,
+                                         action: String) async throws -> RubricRequest {
+        let path = "/v1/devices/\(deviceID.uuidString)/rubrics/requests/\(requestID.uuidString)/\(action)"
+        let response = try await client.request(method: "POST", path: path, credential: credential)
+        guard response.status == 200 else { throw mapRubricResponse(response.status) }
+        return try JSONDecoder().decode(RubricRequest.self, from: response.body)
+    }
+
+    private func mapRubricResponse(_ status: Int) -> Error {
+        switch status {
+        case 404: return RubricExchangeError.unsupported
+        case 409: return RubricExchangeError.invalidTransition
+        case 403: return SyncError.revoked
+        case 413: return RubricExchangeError.invalidPayload
+        default: return TransportError.unexpectedResponse
+        }
     }
 
 }
