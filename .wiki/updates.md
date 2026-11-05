@@ -71,3 +71,10 @@ startup exclusion, gate lifetime, cancellation, IPC and document/Git safety.
 Signed hosted update/relaunch remains pending. See
 [issue #202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202) and
 [multiple-instance operations](../doc/multiple-instances.md).
+
+#202 corrective pass: explicit install choices at downloaded/installing stages
+dismiss the primary Preferences sheet before replying Install to Sparkle.
+`willInstallUpdate` occurs during installation finalization and cannot remove
+a sheet that blocked termination earlier. Unknown/nested decision sheets refuse
+approval and retain their bindings. Native acceptance must start from a binary
+containing the fix; an unchanged older source updating into it proves no outgoing fix.
