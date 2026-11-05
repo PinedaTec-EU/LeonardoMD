@@ -46,6 +46,7 @@ struct GraphicInspector: View {
                     if let rubric = graphic.rubric {
                         Divider()
                         ColorPicker(L10n.text("Ink color"), selection: inkColor, supportsOpacity: false)
+                            .buttonStyle(.plain)
                             .accessibilityIdentifier("graphic-ink-color")
                         if Set(rubric.strokes.map(\.color)).count > 1 {
                             Text(L10n.text("Mixed ink colors")).font(.caption).foregroundStyle(.secondary)

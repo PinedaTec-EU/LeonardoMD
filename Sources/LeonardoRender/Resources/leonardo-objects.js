@@ -161,7 +161,8 @@
     });
   }
   function apply(nextRoot, nextPayload) {
-    clear(false); root = nextRoot; payload = nextPayload;
+    const nextSelection = nextPayload.selectedGraphicID;
+    clear(false); root = nextRoot; payload = {...nextPayload, selectedGraphicID: nextSelection};
     root.classList.remove("leonardo-paginated");
     if (!payload.leonardo) return;
     const objects = payload.leonardo.layout?.objects || [];

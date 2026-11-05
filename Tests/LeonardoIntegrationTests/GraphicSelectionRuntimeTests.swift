@@ -34,6 +34,12 @@ final class GraphicSelectionRuntimeTests: XCTestCase {
         _ = try await web.evaluateJavaScript("document.querySelector('.leonardo-object-toolbar button').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})); document.querySelector('.leonardo-object-toolbar button').click()")
         try await Task.sleep(for: .milliseconds(100)); XCTAssertTrue(inspected)
         try await wait("!!document.querySelector('.leonardo-object-selected')", web)
+        var resized = try LeonardoFormatParser.parse(source)
+        resized.metadata.layout?.objects[0].width = 240
+        resized.metadata.layout?.objects[0].height = 80
+        currentSource = try LeonardoFormatParser.serialize(resized)
+        host.apply(content: currentSource, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
+        try await wait("document.querySelector('.leonardo-object-selected')?.style.width === '240pt' && !!document.querySelector('.leonardo-object-toolbar')", web)
         _ = try await web.evaluateJavaScript("document.querySelector('p').addEventListener('pointerdown', e=>e.stopPropagation()); document.querySelector('p').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}))")
         try await wait("!document.querySelector('.leonardo-object-toolbar')", web)
         host.selectObject("graphic"); try await wait("!!document.querySelector('.leonardo-object-selected')", web)
