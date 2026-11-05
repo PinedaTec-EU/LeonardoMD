@@ -1,4 +1,4 @@
 {
-  "build": 2,
+  "build": 3,
   "summary": "Local app launches now check bundled dependencies and signing consistency before opening; disposable QA copies share the distribution signing order to prevent Sparkle loading failures."
 }
