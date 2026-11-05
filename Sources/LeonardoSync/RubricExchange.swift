@@ -178,7 +178,15 @@ public actor FileRubricExchangeStore: RubricExchangeStore {
     private var records: [UUID: RubricExchangeRecord] = [:]
     private var loaded = false
 
-    public init(url: URL) { self.url = url }
+    public init(url: URL) {
+        let standardized = url.standardizedFileURL
+        // Host temporary/application-support roots can be aliases (for example
+        // /tmp -> /private/tmp). Resolve only the parent root once so those
+        // legitimate aliases remain usable while the final file itself is
+        // still checked for symlink substitution before every access.
+        let parent = standardized.deletingLastPathComponent().resolvingSymlinksInPath()
+        self.url = parent.appendingPathComponent(standardized.lastPathComponent)
+    }
 
     public func create(_ request: RubricRequest) async throws {
         try loadIfNeeded()
@@ -296,19 +304,22 @@ public actor FileRubricExchangeStore: RubricExchangeStore {
 
     private func loadIfNeeded() throws {
         guard !loaded else { return }
-        guard FileManager.default.fileExists(atPath: url.path) else { loaded = true; return }
         do {
-            guard url.standardizedFileURL == url.resolvingSymlinksInPath() else { throw RubricExchangeError.storageFailure }
-            let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
-            guard let size = attributes[.size] as? NSNumber, size.intValue <= Self.maximumFileBytes else {
+            let destination = try destinationURL()
+            guard FileManager.default.fileExists(atPath: destination.path) else { loaded = true; return }
+            let attributes = try FileManager.default.attributesOfItem(atPath: destination.path)
+            guard attributes[.type] as? FileAttributeType == .typeRegular,
+                  let size = attributes[.size] as? NSNumber,
+                  size.uint64Value <= UInt64(Self.maximumFileBytes) else {
                 throw RubricExchangeError.storageFailure
             }
-            let data = try Data(contentsOf: url)
+            let data = try Data(contentsOf: destination)
             guard data.count <= Self.maximumFileBytes else { throw RubricExchangeError.storageFailure }
             let decoded = try JSONDecoder().decode([RubricExchangeRecord].self, from: data)
             guard decoded.count <= Self.maximumRecords, Set(decoded.map(\.id)).count == decoded.count,
                   decoded.allSatisfy(Self.valid(record:)) else { throw RubricExchangeError.storageFailure }
             records = Dictionary(uniqueKeysWithValues: decoded.map { ($0.id, $0) })
+            try setOwnerOnlyPermissions(at: destination)
             loaded = true
         } catch let error as RubricExchangeError { throw error }
         catch { throw RubricExchangeError.storageFailure }
@@ -316,12 +327,31 @@ public actor FileRubricExchangeStore: RubricExchangeStore {
 
     private func persist(_ values: [UUID: RubricExchangeRecord]) throws {
         do {
+            let destination = try destinationURL()
             let data = try JSONEncoder().encode(values.values.sorted { $0.request.createdAt < $1.request.createdAt })
             guard data.count <= Self.maximumFileBytes else { throw RubricExchangeError.storageFailure }
-            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try data.write(to: url, options: .atomic)
+            try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try data.write(to: destination, options: .atomic)
+            try setOwnerOnlyPermissions(at: destination)
         } catch let error as RubricExchangeError { throw error }
         catch { throw RubricExchangeError.storageFailure }
+    }
+
+    private func destinationURL() throws -> URL {
+        let parent = url.deletingLastPathComponent().standardizedFileURL.resolvingSymlinksInPath()
+        let destination = parent.appendingPathComponent(url.lastPathComponent)
+        if FileManager.default.fileExists(atPath: destination.path),
+           destination.resolvingSymlinksInPath() != destination.standardizedFileURL {
+            throw RubricExchangeError.storageFailure
+        }
+        return destination
+    }
+
+    private func setOwnerOnlyPermissions(at destination: URL) throws {
+        try FileManager.default.setAttributes(
+            [.posixPermissions: NSNumber(value: Int16(0o600))],
+            ofItemAtPath: destination.path
+        )
     }
 
     private static func valid(record: RubricExchangeRecord) -> Bool {
