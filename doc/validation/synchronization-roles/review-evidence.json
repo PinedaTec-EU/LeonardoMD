@@ -15,7 +15,7 @@
     "xctest": 633,
     "optional_skips": 34,
     "swift_testing": 28,
-    "python": 93,
+    "python": 95,
     "python_skips": 7
   },
   "hosted_tests_for_reviewed_code_head": [

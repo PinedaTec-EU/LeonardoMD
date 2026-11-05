@@ -59,7 +59,7 @@ sharing consent or network transfer was performed. The original app and its
 previous project were reopened afterwards. See `native-acceptance.json`.
 
 Local combined full suite after integrating #202: 633 XCTest cases (34 optional skips), 28 Swift Testing cases;
-Python suite: 93 tests (7 environment skips). WKWebView guide rendering and
+Python suite: 95 tests (7 environment skips). WKWebView guide rendering and
 personal practice-copy preservation are included. Exact-head hosted validation
 and independent judgment remain required; public beta acceptance follows
 integration/materialization and signed publication.

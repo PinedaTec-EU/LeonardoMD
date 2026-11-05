@@ -54,19 +54,29 @@ are configured, and real autonomous helper restart/reuse is exercised.
 ## Component captures
 
 Original English/Spanish production-control captures and canonical sidecars are
-in `doc/guide/{en,es}/assets/` as `mobile-helper-v8` and `macs-helper-v8`. Capture
+archived byte-for-byte under `accepted-component-capture/{en,es}/` as
+`mobile-helper-v8` and `macs-helper-v8`. Capture
 source is `0c46b98e85092f5ef169fa6823935f04db200c2c`; native viewports are 560×660
 and 560×650 points, with exact pixels/times/hashes in the sidecars. These show
 isolated synthetic disabled settings and disabled network actions, without
-registration or real-device pairing. Production view/localization files and
-captured disabled-state inputs remain unchanged through native acceptance;
-later changes concern startup/registration/shutdown and QA verification.
+registration or real-device pairing. At the #319 native acceptance checkpoint, those production view/localization
+files and disabled-state inputs remained unchanged; later #337 intentionally
+reorganizes these controls. Current role-page originals live in
+`doc/guide/{en,es}/assets/sync-sharing-v12.*` and `sync-connections-v12.*`.
 
-`prior-component-capture` retains the preceding originals; `previous-guide`
+`prior-component-capture` retains the earlier `4628783b…` originals; `previous-guide`
 retains superseded guide screenshots. No original was transformed or edited.
-Guide v10 packages the new production-control captures alongside the integrated inspector help. Live native AX inspection
+Guide v10 packaged the accepted `0c46b98e…` controls alongside the inspector help;
+Guide v13 uses the current #337 role-page captures. Live native AX inspection
 established running, consent and disabled states; component captures do not
 pretend to be fresh packaged startup screenshots.
+
+Accepted historical originals (their adjacent sidecars retain original capture facts):
+
+- [Sharing controls, English](accepted-component-capture/en/mobile-helper-v8.png)
+- [Sharing controls, Spanish](accepted-component-capture/es/mobile-helper-v8.png)
+- [Client controls, English](accepted-component-capture/en/macs-helper-v8.png)
+- [Client controls, Spanish](accepted-component-capture/es/macs-helper-v8.png)
 
 ## Local and hosted validation
 
