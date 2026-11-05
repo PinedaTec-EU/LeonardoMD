@@ -14,7 +14,7 @@ deps = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(deps)
 
 
-def macho(path, dependencies=(), rpaths=(), filetype=2):
+def macho(path, dependencies=(), rpaths=(), filetype=2, load_command=12):
     """Minimal arm64 Mach-O fixture: parsed by real otool, never executed."""
     commands = []
     for name in rpaths:
@@ -24,7 +24,7 @@ def macho(path, dependencies=(), rpaths=(), filetype=2):
     for name in dependencies:
         value = name.encode() + b'\0'
         size = (24 + len(value) + 7) // 8 * 8
-        commands.append(struct.pack('<IIIIII', 12, size, 24, 0, 0, 0) + value + bytes(size - 24 - len(value)))
+        commands.append(struct.pack('<IIIIII', load_command, size, 24, 0, 0, 0) + value + bytes(size - 24 - len(value)))
     data = b''.join(commands)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(struct.pack('<IIIIIIII', 0xfeedfacf, 0x100000c, 0, filetype, len(commands), len(data), 0, 0) + data)
@@ -76,6 +76,44 @@ class DependencyTests(unittest.TestCase):
         macho(outside)
         macho(self.executable, [str(outside)])
         with self.assertRaisesRegex(ValueError, 'Unresolved bundled dependency'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_system_prefix_cannot_hide_absolute_traversal(self):
+        outside = Path(self.temp.name) / 'outside.dylib'
+        macho(outside)
+        for root in ('/usr/lib/', '/System/Library/'):
+            with self.subTest(root=root):
+                macho(self.executable, [root + '../../' + str(outside).lstrip('/')])
+                with self.assertRaisesRegex(ValueError, 'Unresolved bundled dependency'):
+                    deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_system_prefix_cannot_hide_a_symlink_escape(self):
+        approved = Path(self.temp.name) / 'system'
+        approved.mkdir()
+        outside = Path(self.temp.name) / 'outside.dylib'
+        macho(outside)
+        alias = approved / 'alias.dylib'
+        alias.symlink_to(outside)
+        macho(self.executable, [str(alias)])
+        with patch.object(deps, 'SYSTEM_ROOTS', (str(approved) + '/',)):
+            with self.assertRaisesRegex(ValueError, 'Unresolved bundled dependency'):
+                deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_system_paths_can_normalize_inside_the_approved_root(self):
+        macho(self.executable, ['/usr/lib/../lib/libSystem.B.dylib'])
+        deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_lazy_loaded_and_transitive_dependencies_are_inspected(self):
+        macho(self.executable, [self.name], ['@executable_path/../Frameworks'], load_command=0x20)
+        child = self.sparkle.parent / 'lazy-child.dylib'
+        macho(self.sparkle, ['@loader_path/lazy-child.dylib'], filetype=6, load_command=0x20)
+        macho(child, ['/usr/lib/libSystem.B.dylib'], filetype=6)
+        deps.inspect_dependencies(self.bundle, self.executable)
+        child.unlink()
+        with self.assertRaisesRegex(ValueError, 'lazy-child.dylib'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+        self.sparkle.unlink()
+        with self.assertRaisesRegex(ValueError, 'Sparkle'):
             deps.inspect_dependencies(self.bundle, self.executable)
 
     def test_cli_rejects_missing_dependency_before_signing_or_launch(self):

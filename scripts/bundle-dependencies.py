@@ -2,14 +2,19 @@
 """Inspect bundled Mach-O load paths and apply one inside-out signing policy."""
 from pathlib import Path
 import argparse
+import os
 import re
 import subprocess
 
 MACHO_MAGIC = {b'\xfe\xed\xfa\xce', b'\xce\xfa\xed\xfe', b'\xfe\xed\xfa\xcf',
                b'\xcf\xfa\xed\xfe', b'\xca\xfe\xba\xbe', b'\xbe\xba\xfe\xca',
                b'\xca\xfe\xba\xbf', b'\xbf\xba\xfe\xca'}
-LOAD_COMMANDS = {'LC_LOAD_DYLIB', 'LC_LOAD_WEAK_DYLIB', 'LC_REEXPORT_DYLIB', 'LC_LOAD_UPWARD_DYLIB'}
-SYSTEM_ROOTS = ('/usr/lib/', '/System/Library/')
+LOAD_COMMANDS = {'LC_LOAD_DYLIB', 'LC_LOAD_WEAK_DYLIB', 'LC_REEXPORT_DYLIB',
+                 'LC_LOAD_UPWARD_DYLIB', 'LC_LAZY_LOAD_DYLIB'}
+# WebKit and other OS libraries can resolve through Apple's sealed OS Cryptex.
+SYSTEM_ROOTS = ('/usr/lib/', '/System/Library/',
+                '/System/Volumes/Preboot/Cryptexes/OS/usr/lib/',
+                '/System/Volumes/Preboot/Cryptexes/OS/System/Library/')
 
 
 def macho_files(bundle):
@@ -77,7 +82,8 @@ def expand_path(value, image, executable):
 
 
 def resolve_dependency(name, image, executable, runpaths, bundle):
-    if name.startswith(SYSTEM_ROOTS):
+    if (Path(name).is_absolute() and os.path.normpath(name).startswith(SYSTEM_ROOTS)
+            and str(Path(name).resolve()).startswith(SYSTEM_ROOTS)):
         return None  # Apple libraries may exist only in the dyld shared cache.
     candidates = ([str(Path(path) / name[len('@rpath/'):]) for path in runpaths]
                   if name.startswith('@rpath/') else [expand_path(name, image, executable)])
