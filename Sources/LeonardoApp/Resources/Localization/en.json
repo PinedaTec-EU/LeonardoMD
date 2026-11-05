@@ -556,5 +556,10 @@
   "Changes all strokes in this inserted copy. Your library stays unchanged.": "Changes all strokes in this inserted copy. Your library stays unchanged.",
   "Invalid values or the object changed. Select it again and retry.": "Invalid values or the object changed. Select it again and retry.",
   "Delete object": "Delete object",
-  "Rubric preview": "Rubric preview"
+  "Rubric preview": "Rubric preview",
+  "Colors": "Colors",
+  "Black": "Black",
+  "White": "White",
+  "Blue": "Blue",
+  "Red": "Red"
 }

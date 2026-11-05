@@ -330,7 +330,8 @@ cierra la inspección.
 
 *Componente real del inspector con tinta insertada ficticia; no es una firma personal.*
 
-En una rúbrica insertada, **Color de la tinta** cambia todos sus trazos. La vista
+En una rúbrica insertada, **Color de la tinta** cambia todos sus trazos. **Colores**
+ofrece Negro, Blanco, Azul y Rojo; el selector nativo permite otros colores. La vista
 previa muestra la transparencia y avisa si había varios colores antes de cambiarlo.
 Solo cambia esta copia: conserva la rúbrica guardada en la biblioteca, los puntos,
 el grosor/estilo y los demás objetos. Deshacer/Rehacer incluye el color; guarda el

@@ -5,7 +5,12 @@ import LeonardoCore
 struct GraphicInspector: View {
     @Bindable var session: AppSession
     let graphic: LeonardoGraphic
+    private let documentURL: URL?
     @State private var invalidValue = false
+
+    init(session: AppSession, graphic: LeonardoGraphic) {
+        self.session = session; self.graphic = graphic; documentURL = session.documentURL
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -45,9 +50,16 @@ struct GraphicInspector: View {
                     }
                     if let rubric = graphic.rubric {
                         Divider()
-                        ColorPicker(L10n.text("Ink color"), selection: inkColor, supportsOpacity: false)
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("graphic-ink-color")
+                        HStack {
+                            ColorPicker(L10n.text("Ink color"), selection: inkColor, supportsOpacity: false)
+                                .buttonStyle(.plain).accessibilityIdentifier("graphic-ink-color")
+                            Menu(L10n.text("Colors")) {
+                                Button(L10n.text("Black")) { applyInk("#000000") }
+                                Button(L10n.text("White")) { applyInk("#FFFFFF") }
+                                Button(L10n.text("Blue")) { applyInk("#194D80") }
+                                Button(L10n.text("Red")) { applyInk("#B82030") }
+                            }.fixedSize().accessibilityIdentifier("graphic-ink-presets")
+                        }
                         if Set(rubric.strokes.map(\.color)).count > 1 {
                             Text(L10n.text("Mixed ink colors")).font(.caption).foregroundStyle(.secondary)
                         }
@@ -110,9 +122,18 @@ struct GraphicInspector: View {
         invalidValue = !session.updateInspectedGraphic(graphic, change: change)
     }
 
+    private func applyInk(_ color: String) {
+        // A native color panel can emit several updates before SwiftUI redraws.
+        // Refresh the same selected copy, preserving newer geometry/strokes;
+        // never carry a well's delayed action across document/selection changes.
+        guard session.documentURL == documentURL, let current = session.selectedGraphic,
+              current.id == graphic.id else { invalidValue = true; return }
+        invalidValue = !session.recolorInspectedGraphic(current, color: color)
+    }
+
     private var inkColor: Binding<Color> {
         Binding(get: { Color(nsColor: RubricDrawing.color(graphic.rubric?.strokes.first?.color ?? "#000000")) }, set: {
-            invalidValue = !session.recolorInspectedGraphic(graphic, color: RubricDrawing.hex(NSColor($0)))
+            applyInk(RubricDrawing.hex(NSColor($0)))
         })
     }
 }

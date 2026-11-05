@@ -556,5 +556,10 @@
   "Changes all strokes in this inserted copy. Your library stays unchanged.": "Cambia todos los trazos de esta copia insertada. La biblioteca se conserva.",
   "Invalid values or the object changed. Select it again and retry.": "Los valores no son válidos o el objeto ha cambiado. Vuelve a seleccionarlo e inténtalo otra vez.",
   "Delete object": "Eliminar objeto",
-  "Rubric preview": "Vista previa de la rúbrica"
+  "Rubric preview": "Vista previa de la rúbrica",
+  "Colors": "Colores",
+  "Black": "Negro",
+  "White": "Blanco",
+  "Blue": "Azul",
+  "Red": "Rojo"
 }
