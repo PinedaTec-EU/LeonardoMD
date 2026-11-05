@@ -25,6 +25,37 @@ final class UpdatePreferencesInstallationTests: XCTestCase {
         }
     }
 
+    func testRetryAfterCancelledQuitDismissesPreferencesBeforeTermination() async throws {
+        let fixture = try Fixture()
+        defer { fixture.close() }
+        let driver = CoordinatedUpdateUserDriver(termination: fixture.termination, dismissPreferences: {
+            UpdatePreferencesDismissal.dismiss(sessions: [fixture.session], parent: fixture.parent)
+        })
+        _ = await driver.preparedChoice(.install, stage: .notDownloaded)
+        var retried = false
+        await driver.retryInstallation {
+            XCTAssertNil(fixture.parent.attachedSheet)
+            XCTAssertFalse(fixture.session.showPreferences)
+            retried = true
+        }
+        XCTAssertTrue(retried)
+    }
+
+    func testRetryPreservesNestedDecisionAndDoesNotRequestTermination() async throws {
+        let fixture = try Fixture()
+        defer { fixture.close() }
+        fixture.preferences.beginSheet(fixture.decision, completionHandler: nil)
+        let driver = CoordinatedUpdateUserDriver(termination: fixture.termination, dismissPreferences: {
+            UpdatePreferencesDismissal.dismiss(sessions: [fixture.session], parent: fixture.parent)
+        })
+        _ = await driver.preparedChoice(.install, stage: .notDownloaded)
+        var retried = false
+        await driver.retryInstallation { retried = true }
+        XCTAssertFalse(retried)
+        XCTAssertTrue(fixture.parent.attachedSheet === fixture.preferences)
+        XCTAssertTrue(fixture.preferences.attachedSheet === fixture.decision)
+    }
+
     func testNestedPreferencesDecisionVetoesInstallWithoutDiscardingChanges() async throws {
         let fixture = try Fixture()
         defer { fixture.close() }

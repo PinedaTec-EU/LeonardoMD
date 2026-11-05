@@ -1,4 +1,4 @@
 {
   "summary": "Install and relaunch updates directly from Preferences, preserving unsaved-document and Git safety checks.",
-  "build": 3
+  "build": 5
 }

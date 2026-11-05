@@ -38,6 +38,23 @@ final class CoordinatedUpdateUserDriver: SPUStandardUserDriver {
         })
     }
 
+    override func showInstallingUpdate(withApplicationTerminated applicationTerminated: Bool,
+                                       retryTerminatingApplication: @escaping () -> Void) {
+        // After a cancelled document close, Sparkle retries termination directly;
+        // it does not ask showReadyToInstallAndRelaunch for another install reply.
+        super.showInstallingUpdate(withApplicationTerminated: applicationTerminated,
+            retryTerminatingApplication: { [weak self] in
+                Task { @MainActor in
+                    await self?.retryInstallation(retryTerminatingApplication)
+                }
+            })
+    }
+
+    func retryInstallation(_ retry: () -> Void) async {
+        guard await preparedChoice(.install, stage: .installing) == .install else { return }
+        retry()
+    }
+
     func preparedChoice(_ choice: SPUUserUpdateChoice, stage: SPUUserUpdateStage) async -> SPUUserUpdateChoice {
         guard choice == .install else { return choice }
         // Never close peers under a restored installer whose chosen process is

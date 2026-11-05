@@ -10,7 +10,10 @@ quit checks and all-instance safety gates remain active.
 Sparkle 2.9.6 `SPUCoreBasedUpdateDriver.m` calls `willInstallUpdate` from
 `installerWillFinishInstallationAndRelaunch`; it is too late to unblock an
 earlier termination request. The first approval boundary is in
-`CoordinatedUpdateUserDriver.preparedChoice`.
+`CoordinatedUpdateUserDriver.preparedChoice`. After a cancelled document quit,
+Sparkle stores a separate retry-termination closure. The user driver wraps that
+closure through the same preparation/dismissal gate; a retry does not call
+`showReadyToInstallAndRelaunch` again.
 
 Native outgoing acceptance is pending. It must run from the corrected binary,
 not merely update an unchanged old app into a corrected target. The four

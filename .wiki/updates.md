@@ -78,3 +78,5 @@ dismiss the primary Preferences sheet before replying Install to Sparkle.
 a sheet that blocked termination earlier. Unknown/nested decision sheets refuse
 approval and retain their bindings. Native acceptance must start from a binary
 containing the fix; an unchanged older source updating into it proves no outgoing fix.
+
+The #202 native cancel/save/retry trial found Sparkle’s separate retry-termination callback bypasses the initial install reply. Both callbacks now use the same peer and Preferences gate; do not validate only the first successful installation.
