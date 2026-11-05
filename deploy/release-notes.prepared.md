@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.2.826
+
+- #319 Added: independent macOS sync helper ([#320](https://github.com/PinedaTec-EU/LeonardoMD/pull/320))
+
+<p>Keep selected saved documents available after closing LeonardoMD; manage the required background sync service from either device-sharing preferences screen.</p>
+
+Source: `739fc27885b2766b8ea0dfcc1ba9dcd1df56774f`. Delta: `{"build": 29, "feature": 1}`.
+
 ## 0.1.797
 
 - #329 Added: guide PDF import through the user’s own agent ([#330](https://github.com/PinedaTec-EU/LeonardoMD/pull/330))
