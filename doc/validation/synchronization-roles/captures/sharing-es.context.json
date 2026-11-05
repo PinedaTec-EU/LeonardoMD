@@ -2,7 +2,7 @@
   "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
   "browser_version" : "Not applicable: native view, no browser engine",
   "capture_mode" : "element",
-  "captured_at" : "2026-11-05T15:43:59.530Z",
+  "captured_at" : "2026-11-05T16:24:52.558Z",
   "data_provenance" : "synthetic",
   "native_viewport_points" : {
     "height" : 490,
@@ -11,7 +11,7 @@
   "os" : "Version 27.0.1 (Build 26A434)",
   "route" : "\/native\/user-guide\/es",
   "screen" : "Leonardo guide: Synchronization \/ sharing; helper present but disabled; isolated empty saved content and connections",
-  "source_sha" : "a919f4b53b8d004c112bd0bd4ac6c109ff6e095e",
+  "source_sha" : "f1ecf7b30cfacd296926b102a546402334a0cb67",
   "state" : "Synchronization \/ sharing; helper present but disabled; isolated empty saved content and connections; viewport_css is the measured native-point equivalent; CSS is not applicable",
   "viewport_css" : {
     "height" : 490,
