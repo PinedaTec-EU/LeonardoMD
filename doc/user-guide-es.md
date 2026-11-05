@@ -433,7 +433,13 @@ recién actualizado aún no aparece. Los compañeros antiguos que no anuncian ca
 siguen sin estar disponibles hasta actualizar el compañero. Si Leonardo Sync
 indica que el asistente está desactualizado, desactiva y vuelve a activar
 **Leonardo Sync** en Preferencias para registrar de nuevo el asistente incluido
-y vuelve a pedir la rúbrica. El pincel afina los
+y vuelve a pedir la rúbrica. Reintentar con el mismo ID solo está permitido
+durante la breve ventana de confirmación perdida. Si el asistente indica que la
+petición ha caducado o ya no existe, o esa ventana ha pasado, Leonardo conserva
+un registro local y **Pedir de nuevo** crea un ID nuevo; nunca recrea en silencio
+la petición antigua. Si cancelas mientras el asistente todavía está creando la
+petición, Leonardo confirma la cancelación antes de mostrar cualquier dibujo;
+una finalización tardía no se puede revisar ni guardar. El pincel afina los
 extremos sin exigir presión real. Son rúbricas visuales, no certificados ni
 firmas criptográficas.
 

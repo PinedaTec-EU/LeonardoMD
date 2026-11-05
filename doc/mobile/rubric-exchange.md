@@ -65,7 +65,13 @@ one enrolled read-only device at a time and names the requesting Mac with its
 bounded local computer name. The owner creates a caller-generated request ID,
 persists a local intent, sends the request through XPC, polls the durable status,
 and can cancel it. A lost XPC reply is recovered with the same ID rather than
-creating a duplicate request.
+creating a duplicate request, but only inside the bounded five-minute
+acknowledgement window. The local record stores creation-attempt provenance and
+the deadline separately from its display/update timestamp. A helper `notFound`
+after that window, or after a known request has expired or been pruned, creates a
+local tombstone; **Request again** must use a fresh UUID and never recreate the
+old request. Offline errors remain retryable within the window, while legacy
+records without provenance are treated conservatively as requiring a new ID.
 
 The returned drawing is previewed and must be explicitly saved to the existing
 Mac library or saved-and-inserted. Library writes carry the request ID and are
@@ -78,3 +84,11 @@ Saved/terminal records are bounded and pruned only when safe. The owner UI
 shows helper-offline, service-offline and unsupported-peer states. This is a
 Mac-side protocol/UI foundation: it does not claim that the current mobile
 build advertises or renders rubric requests until #342 is delivered.
+
+If the owner cancels while the helper create call is still in flight, the local
+record stores a separate cancellation intent. A `notFound` cancel reply is not
+treated as proof that no request will appear: a late create is followed by a
+compensating remote cancel, and the old UUID is never reopened for review or
+saved. If that compensation is temporarily unavailable, the intent and UUID
+remain durable for reconciliation; **Request another rubric** is the only way
+to start a fresh request.

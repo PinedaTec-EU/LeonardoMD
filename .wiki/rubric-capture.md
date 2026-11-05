@@ -25,7 +25,16 @@ owner-side Mac flow on top of the authenticated exchange in
   upgraded while the editor is open. The initial intent is persisted before
   the asynchronous create call; a lost create/status acknowledgement leaves a
   visible Retry action that reuses the same UUID, and a retry preserves the
-  original source digest for insertion safety.
+  original source digest for insertion safety. That reuse is bounded to the
+  five-minute lost-acknowledgement window: a helper `notFound` after the window,
+  an expired/pruned known request, or a legacy record without provenance is a
+  local tombstone and can only be followed by **Request again** with a fresh ID.
+- Cancellation is a separate durable intent from a remote `notFound` tombstone.
+  If the user cancels while create is in flight, a late create is immediately
+  reconciled with a remote cancel; until that succeeds the UUID remains
+  queryable but cannot be reviewed, inserted or saved. A late completed reply
+  can recover a technical missing tombstone, never an explicitly cancelled
+  intent.
 - `RubricLibrary` records the stable request UUID so repeated saves do not
   duplicate entries. Delayed status replies cannot regress cancellation or
   completion; the focused `RubricCaptureTests` covers restart/idempotence and

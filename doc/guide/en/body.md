@@ -427,7 +427,14 @@ devices** when a newly upgraded companion is not yet listed. Older companions
 that do not advertise rubric capture stay unsupported until their companion
 update. If Leonardo Sync reports an outdated helper, disable and re-enable
 **Leonardo Sync** in Preferences so the bundled helper is registered again,
-then retry the request. Brush ends taper without requiring a pressure-sensitive pencil. These
+then retry the request. Same-ID Retry is limited to the short lost-acknowledgement
+window. If the helper reports that the request is expired or missing, or that
+window has passed, Leonardo keeps a local tombstone and **Request again** creates
+a fresh request ID; it never silently recreates the old request. If you cancel
+while the helper is still creating the request, Leonardo confirms that
+cancellation before showing any returned drawing; a late completion cannot be
+reviewed or saved. Brush ends taper without requiring a pressure-sensitive
+pencil. These
 are visual rubrics, not digital certificates.
 
 ![Linked rubric request with an offline helper](assets/rubric-linked-offline.png)

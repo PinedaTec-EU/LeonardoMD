@@ -22,8 +22,8 @@ Every PNG has a matching `.context.json` and `.metadata.json` sidecar. The
 metadata helper records the source revision, capture time, native viewport,
 image dimensions, and SHA-256 bytes. These four request/review captures were
 regenerated from the final production fixture at source commit
-`508c397f211585c7836d91ac932ffed71269dd59` (`#350 Fixed: absorb terminal
-rubric outcomes`). The capture run used the recorded full-suite build with
+`17cd16d4e0d8a971f34832814aef68b6257dc84f` (`#350 Fixed: preserve pending
+cancellation on reopen`). The capture run used the recorded build with
 `--skip-build`, and the metadata records the exact final revision.
 
 ## Recorded validation
@@ -31,8 +31,12 @@ rubric outcomes`). The capture run used the recorded full-suite build with
 All compiler-bearing commands used the repository recorder for PR #349. The
 successful cumulative build delta is recorded in `deploy/version/entries/349.yaml`.
 
-- Focused protocol/store/UI invocations for deltas 1–6 passed after their
-  corrective edits; earlier failed compile/test attempts were not counted.
+- Earlier focused protocol/store/UI invocations for deltas 1–6 passed after
+  their corrective edits; failed compile/test attempts were not counted.
+- Earlier recorded validation through delta 25 remains in the commit history;
+  it covered the helper-owned TLS lifecycle, guide v14, persistence,
+  injected-clock ordering, source-context insertion guards and the complete
+  lifecycle matrix.
 - `swift test --filter RubricGuideCaptureTests` — deltas 7, 9–14 passed; the
   opt-in fixture was skipped when no capture directory was supplied.
 - `swift test --filter RubricCaptureTests` — delta 8 passed (four tests).
@@ -41,39 +45,24 @@ successful cumulative build delta is recorded in `deploy/version/entries/349.yam
 - `LEONARDO_RUBRIC_GUIDE_CAPTURE=<temporary directory> swift test --skip-build
   --filter RubricGuideCaptureTests` — passed with English/Spanish offline,
   pending-request, and response-review captures.
-- Recorded `swift test --filter RubricCaptureTests` — delta 17 passed (5 tests),
-  including lost create/status acknowledgement recovery with one stable UUID.
-- Recorded `swift test --filter RubricExchangeTests` — delta 18 passed (9 tests),
-  including idempotent authority create retry.
-- Recorded `swift test --filter BundledUserGuideTests` — delta 19 passed (5
-  tests, both locales, v14 packages and preserved v13 personal-copy fixtures).
-- Recorded full `swift test` — delta 20 passed across the macOS XCTest and Swift
-  Testing suites; opt-in evidence tests remained skipped unless explicitly
-  enabled. Real TLS rubric request/accept/response coverage passed in the same
-  run.
-- Recorded `swift test --filter RubricGuideCaptureTests` with the opt-in capture
-  directory — delta 21 passed and regenerated the English/Spanish request and
-  review captures from the final source.
-- Recorded `swift test --filter RubricCaptureTests` — delta 22 passed (6 tests),
-  including injected-clock retention, rollback ordering and terminal-state
-  monotonicity.
-- Recorded full `swift test` — delta 23 passed across the macOS XCTest and Swift
-  Testing suites; opt-in evidence tests remained skipped unless explicitly
-  enabled. Real TLS rubric request/accept/response coverage passed in the same
-  run.
+- Recorded `swift test --filter RubricCaptureTests` — delta 26 passed (12
+  tests), delta 27 passed (13 tests), delta 28 passed (14 tests), delta 30
+  passed (15 tests), and delta 32 passed (15 tests). The final run covers stable-ID lost acknowledgement,
+  late completed-response recovery before tombstoning, authenticated missing
+  request handling, capacity protection for unresolved/unsaved records,
+  backwards-clock lifecycle ordering, and cancellation while create is in
+  flight. The cancellation regression verifies a `notFound` cancel is retained
+  as a local intent, the late create is compensating-cancelled remotely, and no
+  review/save path receives it.
+- Recorded `swift test --filter BundledUserGuideTests` — delta 31 passed (five
+  tests, both locales, v14 packages and preserved personal-copy fixtures).
+- Recorded full `swift test` — delta 33 passed: 363 XCTest cases with 30
+  expected opt-in skips and 42 Swift Testing cases, including real TLS rubric
+  request/accept/response coverage; no failures.
 - `LEONARDO_RUBRIC_GUIDE_CAPTURE=$PWD/doc/validation/rubric-capture-341 swift
   test --skip-build --filter RubricGuideCaptureTests` — passed and regenerated
-  the English/Spanish request and review captures from the final revision.
-- Recorded `swift test --filter RubricCaptureTests` — delta 24 passed (9 tests),
-  including the complete 7×7 lifecycle matrix, completed-after-cancel
-  absorption, and backward-clock save/reopen idempotence.
-- Recorded full `swift test` — delta 25 passed across the macOS XCTest and Swift
-  Testing suites; opt-in evidence tests remained skipped unless explicitly
-  enabled. Real TLS rubric request/accept/response coverage passed in the same
-  run.
-- `LEONARDO_RUBRIC_GUIDE_CAPTURE=$PWD/doc/validation/rubric-capture-341 swift
-  test --skip-build --filter RubricGuideCaptureTests` — passed and regenerated
-  the English/Spanish request and review captures from source `508c397`.
+  the English/Spanish full-height request and review captures from source
+  `17cd16d4e0d8a971f34832814aef68b6257dc84f`.
 - `python3 scripts/package-user-guide.py --web-output doc` followed by
   `python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py'`
   — deterministic package test passed.
