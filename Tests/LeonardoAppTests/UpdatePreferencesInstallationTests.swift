@@ -28,7 +28,7 @@ final class UpdatePreferencesInstallationTests: XCTestCase {
     func testNestedPreferencesDecisionVetoesInstallWithoutDiscardingChanges() async throws {
         let fixture = try Fixture()
         defer { fixture.close() }
-        fixture.preferences.beginSheet(fixture.decision)
+        fixture.preferences.beginSheet(fixture.decision, completionHandler: nil)
         let driver = CoordinatedUpdateUserDriver(termination: fixture.termination, dismissPreferences: {
             UpdatePreferencesDismissal.dismiss(sessions: [fixture.session], parent: fixture.parent)
         })
@@ -91,7 +91,7 @@ private struct Fixture {
         decision = NSWindow(contentRect: rect, styleMask: [.titled], backing: .buffered, defer: false)
         preferences.identifier = UpdatePreferencesDismissal.identifier
         session.showPreferences = true
-        parent.beginSheet(preferences)
+        parent.beginSheet(preferences, completionHandler: nil)
     }
 
     func close() {
