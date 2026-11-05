@@ -25,7 +25,8 @@ class LaunchPreflightTests(unittest.TestCase):
             bundle = root / 'output/LeonardoMD.app'
             executable = bundle / 'Contents/MacOS/LeonardoMD'
             executable.parent.mkdir(parents=True)
-            shutil.copy2('/usr/bin/true', executable)
+            shutil.copyfile('/usr/bin/true', executable)
+            executable.chmod(0o755)
             (bundle / 'Contents/Info.plist').write_bytes(plistlib.dumps({
                 'CFBundleExecutable': 'LeonardoMD', 'CFBundleIdentifier': 'eu.pinedatec.test',
                 'CFBundlePackageType': 'APPL'}))
