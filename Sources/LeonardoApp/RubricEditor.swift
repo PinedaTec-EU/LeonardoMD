@@ -138,7 +138,7 @@ struct RubricEditor: View {
                     Label(L10n.text("Request from linked device"), systemImage: "paperplane")
                 }
                 .disabled(controller.rubricCaptureAvailability != .ready)
-                Text(controller.rubricCaptureAvailability.message)
+                Text(L10n.text(controller.rubricCaptureAvailability.messageKey))
                     .font(.caption).foregroundStyle(.secondary)
             }
             if let remoteError { Text(remoteError).font(.caption).foregroundStyle(.red) }
@@ -169,7 +169,7 @@ struct RubricEditor: View {
         } else {
             HStack {
                 ProgressView().controlSize(.small)
-                Text(L10n.text("Waiting for (capture.targetDeviceName) to draw the rubric…"))
+                Text(L10n.format("Waiting for %@ to draw the rubric…", capture.targetDeviceName))
                 Spacer()
                 Button(L10n.text("Cancel request")) { cancelRemote(controller, requestID: capture.id) }
             }

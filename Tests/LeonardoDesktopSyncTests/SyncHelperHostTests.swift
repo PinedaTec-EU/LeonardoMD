@@ -31,6 +31,24 @@ final class SyncHelperHostTests: XCTestCase {
         XCTAssertNil(status.sharing)
     }
 
+    func testStatusNegotiatesRubricCapabilityAndLegacyPayloadRemainsUnsupported() async throws {
+        let fixture = try HelperFixture()
+        defer { fixture.remove() }
+        var settings = GlobalPreferences()
+        settings.mobileSync.helperEnabled = true
+        try await fixture.save(settings)
+        let status = try await fixture.status(fixture.host())
+        XCTAssertTrue(status.supportsRubricExchange)
+
+        let legacyPayload = try JSONSerialization.data(withJSONObject: [
+            "enabled": true,
+            "sharing": NSNull(),
+            "error": NSNull()
+        ])
+        let legacy = try JSONDecoder().decode(SyncHelperStatus.self, from: legacyPayload)
+        XCTAssertFalse(legacy.supportsRubricExchange)
+    }
+
     func testPostStartListenerFailureDoesNotAdvertiseStaleEndpointAndRetries() async throws {
         let fixture = try HelperFixture()
         defer { fixture.remove() }

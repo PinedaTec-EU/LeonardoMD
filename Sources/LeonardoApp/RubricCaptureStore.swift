@@ -212,9 +212,18 @@ final class RubricCaptureStore {
     }
 
     private func pruned(_ values: [RubricCaptureRecord], now: Date) throws -> [RubricCaptureRecord] {
-        var next = values.filter { !$0.isTerminal || now.timeIntervalSince($0.updatedAt) < Self.terminalRetention }
+        // A completed response is only removable after the user explicitly
+        // saved it to the library. A drawing awaiting review must survive both
+        // the age window and the bounded-capacity check.
+        var next = values.filter {
+            !$0.isTerminal || now.timeIntervalSince($0.updatedAt) < Self.terminalRetention
+                || ($0.request?.state == .completed && $0.savedLibraryEntryID == nil)
+        }
         guard next.count > Self.maximumRecords else { return next }
-        let removable = next.filter(\.isTerminal).sorted { $0.updatedAt < $1.updatedAt }
+        let removable = next.filter {
+            guard $0.isTerminal else { return false }
+            return $0.request?.state != .completed || $0.savedLibraryEntryID != nil
+        }.sorted { $0.updatedAt < $1.updatedAt }
         let removeCount = next.count - Self.maximumRecords
         guard removable.count >= removeCount else { throw RubricCaptureStoreError.limitReached }
         let removed = Set(removable.prefix(removeCount).map(\.id))

@@ -12,7 +12,7 @@ enum RubricCaptureAvailability: Equatable {
     case serviceOffline
     case noSupportedDevice
 
-    var message: String {
+    var messageKey: String {
         switch self {
         case .ready: "A linked Little Leonardo is ready."
         case .helperOffline: "Leonardo Sync helper is offline. Enable it in Preferences and try again."
@@ -29,7 +29,7 @@ enum RubricCaptureError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .unavailable(let availability): availability.message
+        case .unavailable(let availability): availability.messageKey
         case .missingRequest: "The saved rubric request is no longer available."
         }
     }
@@ -56,7 +56,11 @@ final class DesktopSyncController {
     private let storageRoot: URL
     private let rubricCaptures: RubricCaptureStore
     private var initialized = false
-    private static let rubricRequesterName = "LeonardoMD"
+    private static var rubricRequesterName: String {
+        let name = Host.current().localizedName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let name, !name.isEmpty else { return "LeonardoMD" }
+        return String(name.prefix(100))
+    }
 
     init(preferencesURL: URL = AppSession.preferencesURL, configurations: ConfigurationStore = .shared,
          runtime: DesktopDirectRuntime? = nil, helper: SyncHelperController? = nil) {

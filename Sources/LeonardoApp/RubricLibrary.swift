@@ -64,9 +64,13 @@ final class RubricLibrary {
         }
         var result: SavedRubric?
         try update { current in
-            if let sourceRequestID, let existing = current.first(where: { $0.sourceRequestID == sourceRequestID }) {
-                result = existing
-                return current
+            if let sourceRequestID, let index = current.firstIndex(where: { $0.sourceRequestID == sourceRequestID }) {
+                let existing = current[index]
+                let updated = SavedRubric(id: existing.id, label: label, rubric: rubric,
+                                          sourceRequestID: sourceRequestID)
+                result = updated
+                var next = current; next[index] = updated
+                return next
             }
             guard current.count < 100 else { throw CocoaError(.fileWriteOutOfSpace) }
             let added = SavedRubric(id: UUID().uuidString, label: label, rubric: rubric,
