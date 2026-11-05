@@ -31,6 +31,36 @@ final class SyncHelperHostTests: XCTestCase {
         XCTAssertNil(status.sharing)
     }
 
+    func testPostStartListenerFailureDoesNotAdvertiseStaleEndpointAndRetries() async throws {
+        let fixture = try HelperFixture()
+        defer { fixture.remove() }
+        var settings = GlobalPreferences()
+        settings.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true, host: "127.0.0.1", port: 0)
+        try await fixture.save(settings)
+        let listener = RecoverableListener()
+        let runtime = DesktopDirectRuntime(root: fixture.root.appendingPathComponent("Service"),
+            credentials: fixture.credentials, now: { Date() }, makeListener: { _, _ in listener })
+        let host = SyncHelperHost(preferencesURL: fixture.preferences, configurations: fixture.configurations, runtime: runtime)
+        let first = try await fixture.status(host)
+        XCTAssertNotNil(first.sharing)
+        await listener.failAfterStartup()
+        do { _ = try await fixture.status(host); XCTFail("Failed listener was advertised as healthy") }
+        catch TransportError.connectionClosed {}
+        let servingAfterFailure = await runtime.isServing
+        XCTAssertFalse(servingAfterFailure)
+        await listener.allowRecovery()
+        let recovered = try await fixture.status(host)
+        XCTAssertTrue(recovered.enabled)
+        XCTAssertEqual(recovered.sharing?.certificateFingerprint, first.sharing?.certificateFingerprint)
+        let starts = await listener.starts
+        XCTAssertEqual(starts, 3, "Initial start, failed retry and successful recovery")
+        settings.mobileSync.helperEnabled = false
+        try await fixture.save(settings)
+        let disabled = try await fixture.status(host)
+        XCTAssertFalse(disabled.enabled)
+        XCTAssertNil(disabled.sharing)
+    }
+
     func testSavedScopedSnapshotsDisableAndRestartKeepIdentityAndConsent() async throws {
         let fixture = try HelperFixture()
         defer { fixture.remove() }
@@ -156,4 +186,19 @@ private actor HelperMemoryCredentials: DeviceCredentialStore {
     func credential(deviceID: UUID) -> String? { values[deviceID] }
     func save(_ credential: String, deviceID: UUID) { values[deviceID] = credential }
     func remove(deviceID: UUID) { values[deviceID] = nil }
+}
+
+private actor RecoverableListener: HTTPSListening {
+    private(set) var isReady = false
+    private(set) var starts = 0
+    private var failStart = false
+    func start(host: String, port: UInt16, allowPrivateOverlay: Bool) throws -> UInt16 {
+        starts += 1
+        if failStart { throw TransportError.connectionClosed }
+        isReady = true
+        return 50545
+    }
+    func stop() { isReady = false }
+    func failAfterStartup() { isReady = false; failStart = true }
+    func allowRecovery() { failStart = false }
 }

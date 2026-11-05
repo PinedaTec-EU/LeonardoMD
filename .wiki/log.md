@@ -179,3 +179,5 @@ source/license provenance, including bundled citeproc CPAL source. See
 - 2026-10-30: Remove workspace grouping UI/session lifecycle and add project-context new-tab navigation; legacy stored metadata and package/sync work directories remain intact. [#305](https://github.com/PinedaTec-EU/LeonardoMD/issues/305).
 
 - 2026-11-03 — [#314](https://github.com/PinedaTec-EU/LeonardoMD/issues/314): explorer selection is independent of automatic following, compares display-file identity (original MDLZ for packages), and uses system selection colors. Leonardo filename tint adapts to light/dark appearance. Guide revision 6 documents the distinction.
+
+- 2026-11-05: Corrected sync helper lifecycle diagnostics and listener health recovery in PR #320, tracking [#331](https://github.com/PinedaTec-EU/LeonardoMD/issues/331) and [#332](https://github.com/PinedaTec-EU/LeonardoMD/issues/332). Full suite: 624 XCTest (34 optional skips), 28 Swift Testing cases; focused real TLS and lifecycle regressions pass.

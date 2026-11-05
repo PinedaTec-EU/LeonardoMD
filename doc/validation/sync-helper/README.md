@@ -64,7 +64,7 @@ later changes concern startup/registration/shutdown and QA verification.
 
 `prior-component-capture` retains the preceding originals; `previous-guide`
 retains superseded guide screenshots. No original was transformed or edited.
-Guide v8 packages the new production-control captures. Live native AX inspection
+Guide v9 packages the new production-control captures alongside the integrated inspector help. Live native AX inspection
 established running, consent and disabled states; component captures do not
 pretend to be fresh packaged startup screenshots.
 
@@ -98,3 +98,22 @@ runtime or its captured preferences. Fresh compiled tests and hosted CI validate
 the combined head. No new native guide-window inspection is claimed while the
 Mac is locked. The installed original app was subsequently reopened successfully
 to its Home window after the earlier primary-owner forwarding limitation.
+
+## Lifecycle health regressions (#331 / #332)
+
+The registration controller distinguishes enabled-but-missing/error registration
+from disabled consent, clears superseded diagnostics and rejects late status
+responses after a consent change. Regression fixtures cover both Service
+Management statuses, recovery and an explicitly held status reply during disable.
+The host now reads actual listener readiness instead of caching object existence.
+An injected listener deterministically fails after startup, refuses its first
+restart and then recovers; tests require no stale success and retained TLS identity.
+These fixtures do not claim a physical interface-failure native acceptance run.
+The existing bilingual help already documents unavailable/disabled states and
+network recovery; these fixes enforce that documented behavior without new controls.
+
+The subsequent #331/#332 source changes extend the earlier native acceptance
+with listener readiness and status-generation guards. The historical registered
+service run is not presented as an exact-head physical failure test; fresh full
+and focused tests exercise these corrections, including real loopback TLS
+readiness before startup, after startup and after stop.

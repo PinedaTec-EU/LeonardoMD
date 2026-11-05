@@ -41,6 +41,58 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertFalse(controller.online)
     }
 
+    func testEnabledButMissingRegistrationIsUnavailableAndRecoveryClearsError() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        let registration = HelperRegistrationFake()
+        let control = HelperControlFake()
+        let controller = fixture.controller(registration, control)
+        await controller.setEnabled(true)
+        await control.setUnavailable()
+        await controller.refresh()
+        XCTAssertNotNil(controller.error)
+        for status in [SMAppService.Status.notRegistered, .notFound] {
+            registration.status = status
+            await controller.refresh()
+            XCTAssertTrue(controller.enabled)
+            XCTAssertEqual(controller.state, .failed)
+            XCTAssertFalse(controller.online)
+            XCTAssertNil(controller.error, "Do not retain an unrelated prior XPC error")
+        }
+        registration.status = .enabled
+        await control.setUnavailable(false)
+        await controller.refresh()
+        XCTAssertTrue(controller.online)
+        XCTAssertNil(controller.error)
+        await controller.setEnabled(false)
+        await controller.refresh()
+        XCTAssertEqual(controller.state, .disabled)
+    }
+
+    func testLateHealthReplyCannotOverrideUserDisable() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        let registration = HelperRegistrationFake()
+        let control = HelperControlFake()
+        let controller = fixture.controller(registration, control)
+        await controller.setEnabled(true)
+        await control.pauseStatus()
+        let refresh = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldStatus
+        XCTAssertTrue(held)
+        await controller.setEnabled(false)
+        await control.resumeStatus()
+        await refresh.value
+        XCTAssertFalse(controller.enabled)
+        XCTAssertFalse(controller.online)
+        XCTAssertEqual(controller.state, .disabled)
+        XCTAssertNil(controller.error)
+    }
+
     func testDisablePersistsDenialEvenIfSystemUnregistrationFails() async throws {
         let fixture = try ControllerFixture()
         defer { fixture.remove() }
@@ -148,8 +200,14 @@ private enum HelperControlError: Error { case unavailable }
 private actor HelperControlFake: SyncHelperControlAccess {
     private var unavailable = false
     private(set) var reloads = 0
-    func setUnavailable() { unavailable = true }
-    func status() throws -> SyncHelperStatus {
+    private var paused = false
+    private var heldStatus: CheckedContinuation<Void, Never>?
+    var hasHeldStatus: Bool { heldStatus != nil }
+    func setUnavailable(_ value: Bool = true) { unavailable = value }
+    func pauseStatus() { paused = true }
+    func resumeStatus() { paused = false; heldStatus?.resume(); heldStatus = nil }
+    func status() async throws -> SyncHelperStatus {
+        if paused { await withCheckedContinuation { heldStatus = $0 } }
         if unavailable { throw HelperControlError.unavailable }
         return SyncHelperStatus(enabled: true, sharing: nil)
     }

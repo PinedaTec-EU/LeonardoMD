@@ -19,6 +19,7 @@ final class SyncHelperController {
     private let hasExecutable: @Sendable () -> Bool
     private let verifyPackage: @Sendable () throws -> Void
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "sync-helper-control")
+    private var revision = 0
     private let preferencesURL: URL
     init(preferencesURL: URL = AppSession.preferencesURL,
          configurations: ConfigurationStore = .shared,
@@ -50,8 +51,13 @@ final class SyncHelperController {
 
     func refresh() async {
         guard !busy else { return }
+        revision += 1
+        let expected = revision
         do {
-            enabled = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync.helperEnabled
+            let settings = try await configurations.loadGlobalPreferences(at: preferencesURL)
+            guard expected == revision else { return }
+            enabled = settings.mobileSync.helperEnabled
+            error = nil
             guard hasExecutable() else {
                 state = .notInstalled; sharing = nil; return
             }
@@ -60,17 +66,22 @@ final class SyncHelperController {
             case .requiresApproval: state = .approvalRequired; sharing = nil
             case .enabled:
                 let status = try await client.status()
+                guard expected == revision else { return }
                 state = status.enabled ? .running : .disabled
                 sharing = status.sharing
                 error = status.error
-            case .notFound, .notRegistered: state = .disabled; sharing = nil
+            case .notFound, .notRegistered: state = .failed; sharing = nil
             @unknown default: state = .failed; sharing = nil
             }
-        } catch { state = .failed; sharing = nil; self.error = L10n.text(error.localizedDescription) }
+        } catch {
+            guard expected == revision else { return }
+            state = .failed; sharing = nil; self.error = L10n.text(error.localizedDescription)
+        }
     }
 
     func setEnabled(_ enabled: Bool) async {
         guard !busy, !InstanceRuntime.isAdditional else { return }
+        revision += 1 // Invalidate health replies issued before this consent change.
         busy = true; error = nil
         logger.info("sync_helper_enable_requested enabled=\(enabled, privacy: .public)")
         defer { busy = false }

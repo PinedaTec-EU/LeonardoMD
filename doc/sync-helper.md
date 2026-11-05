@@ -42,8 +42,13 @@ helper can be unregistered only while the app owns its process-wide startup
 lock, proving no helper write is active and preventing a concurrent restart.
 An alive helper retries configuration reconciliation. Failed unregistration cannot
 restore consent on a later restart.
-The helper rechecks configuration for each control request and periodically while
-idle; failed startup/network selection retries without reopening the editor.
+The helper rechecks configuration and the actual Network listener readiness for
+each control request and periodically while idle. A failed listener invalidates
+the cached endpoint and is restarted; unsuccessful recovery is unavailable,
+never a stale running status. Failed startup/network selection retries without
+reopening the editor. Missing/error Service Management registration with consent
+still enabled is unavailable, distinct from the user-disabled state. Health
+replies issued before a consent change cannot overwrite its newer state.
 
 ## Local control and write completion
 

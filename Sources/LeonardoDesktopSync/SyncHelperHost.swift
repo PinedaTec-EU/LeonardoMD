@@ -35,8 +35,9 @@ public actor SyncHelperHost {
             let settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
             // Reconcile failed/unavailable interfaces on subsequent ticks, including wake.
             let selectedHost = settings.host ?? LocalNetworkInterfaces.addresses(allowPrivateOverlay: settings.privateOverlayEnabled).first
+            let sourceHealthy = await runtime.isServing
             if settings == lastSettings, selectedHost == lastHost,
-               !settings.helperEnabled || !settings.enabled || sharing != nil { return }
+               !settings.helperEnabled || !settings.enabled || sourceHealthy { return }
             try await stopRuntime(); sharing = nil
             lastSettings = nil
             if settings.helperEnabled && settings.enabled {
