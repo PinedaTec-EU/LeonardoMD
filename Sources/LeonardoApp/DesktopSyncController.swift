@@ -332,8 +332,16 @@ final class DesktopSyncController {
     func rubricCapture(for documentURL: URL?, source: String) -> RubricCaptureRecord? {
         let canonicalURL = documentURL.map(ProcessFileLock.canonicalURL)
         let digest = RubricCaptureRecord.digest(source: source)
-        let sameDocument = rubricCaptures.records.filter { $0.documentURL == canonicalURL }
+        let sameDocument = rubricCaptures.records.filter {
+            $0.documentURL.map(ProcessFileLock.canonicalURL) == canonicalURL
+        }
+        // A returned drawing must remain reachable even after the user edits
+        // the document and creates a newer cancelled request for that digest.
+        // Prefer an unsaved response before matching the current source.
         return sameDocument
+            .filter { $0.response != nil && $0.savedLibraryEntryID == nil }
+            .sorted { $0.updatedAt > $1.updatedAt }
+            .first ?? sameDocument
             .filter { $0.sourceDigest == digest }
             .sorted { $0.updatedAt > $1.updatedAt }
             .first ?? sameDocument

@@ -134,6 +134,43 @@ final class SyncHelperHostTests: XCTestCase {
             throw error
         }
     }
+
+    func testRubricCaptureCommandsRoundTripThroughHelperOwnedRuntime() async throws {
+        let fixture = try HelperFixture()
+        defer { fixture.remove() }
+        try Data("fixture".utf8).write(to: fixture.root.appendingPathComponent("note.md"))
+        let project = MobileSharedProject(rootURL: fixture.root, name: "Fixture", folders: [], documents: ["note.md"])
+        var settings = GlobalPreferences()
+        settings.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true, host: "127.0.0.1", port: 0, projects: [project])
+        try await fixture.save(settings)
+        let host = fixture.host()
+        let status = try await fixture.status(host)
+        let running = try XCTUnwrap(status.sharing)
+        let client = try DirectEnrollmentClient(endpoint: running.endpoint, certificateFingerprint: running.certificateFingerprint)
+        let credential = try PairingRegistry.makeCredential()
+        let enrollment = try await client.begin(deviceName: "Capture fixture", credential: credential, now: Date(),
+            capabilities: [.rubricExchangeV1])
+        _ = try await host.perform(.approve(enrollment.deviceID, enrollment.comparisonCode, [project.id]))
+        let requestID = UUID()
+        let requestData = try await host.perform(.createRubricRequest(enrollment.deviceID, requestID, "Fixture Mac", "Firma"))
+        let request = try JSONDecoder().decode(RubricRequest.self, from: requestData)
+        XCTAssertEqual(request.id, requestID)
+        let pending = try await client.rubricRequests(deviceID: enrollment.deviceID, credential: credential)
+        XCTAssertEqual(pending, [request])
+        let accepted = try await client.acceptRubricRequest(requestID: requestID, deviceID: enrollment.deviceID, credential: credential)
+        let rubric = LeonardoRubric(strokes: [.init(color: "#224466", width: 4, style: .solid,
+            points: [.init(x: 10, y: 10), .init(x: 100, y: 100)])])
+        let response = try LeonardoSync.RubricResponse(requestID: requestID, targetDeviceID: enrollment.deviceID,
+            requesterID: request.requesterID, label: "Firma", rubric: rubric, submittedAt: Date())
+        let submitted = try await client.submitRubricResponse(response, deviceID: enrollment.deviceID, credential: credential)
+        XCTAssertEqual(submitted, response)
+        let statusData = try await host.perform(.rubricStatus(requestID))
+        let captured = try JSONDecoder().decode(RubricExchangeStatus.self, from: statusData)
+        XCTAssertEqual(captured.request.state, .completed)
+        XCTAssertEqual(captured.response, response)
+        XCTAssertEqual(accepted.state, .accepted)
+    }
+
     func testLocalControlCodecsApplyReviewedIncomingProposalThroughTicket() async throws {
         let fixture = try HelperFixture()
         defer { fixture.remove() }

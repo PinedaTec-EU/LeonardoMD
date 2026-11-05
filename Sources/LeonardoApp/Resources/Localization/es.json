@@ -625,5 +625,8 @@
   "Waiting for %@ to draw the rubric…": "Esperando a que %@ dibuje la rúbrica…",
   "Cancel request": "Cancelar petición",
   "The rubric could not be saved. Try again.": "No se pudo guardar la rúbrica. Inténtalo de nuevo.",
-  "The document changed while the rubric was away. Save it to the library instead.": "El documento cambió mientras la rúbrica estaba fuera. Guárdala en la biblioteca en su lugar."
+  "The document changed while the rubric was away. Save it to the library instead.": "El documento cambió mientras la rúbrica estaba fuera. Guárdala en la biblioteca en su lugar.",
+  "Request again": "Pedir de nuevo",
+  "Retry": "Reintentar",
+  "Saved in library": "Guardada en la biblioteca"
 }

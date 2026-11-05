@@ -38,6 +38,8 @@ struct WorkspaceView: View {
                 return session.saveRubricToLibrary(label: label, rubric: response.rubric, sourceRequestID: capture.id)
             }, completeRemote: { capture, label in
                 guard let response = capture.response else { return false }
+                guard capture.matchesInsertionContext(documentURL: request.documentURL,
+                    source: request.source, fieldID: request.fieldID) else { return false }
                 return session.finishRubric(request, label: label, rubric: response.rubric,
                     saveToLibrary: true, sourceRequestID: capture.id)
             }) { label, rubric, save in

@@ -1,6 +1,7 @@
 import XCTest
 import LeonardoCore
 import LeonardoSync
+import LeonardoDesktopSync
 @testable import LeonardoApp
 
 @MainActor
@@ -56,6 +57,73 @@ final class RubricCaptureTests: XCTestCase {
         let second = try library.add(label: "Changed label", rubric: response.rubric, sourceRequestID: requestID)
         XCTAssertEqual(first.id, second.id)
         XCTAssertEqual(RubricLibrary(url: root.appendingPathComponent("library.json")).entries.count, 1)
+        XCTAssertEqual(RubricLibrary(url: root.appendingPathComponent("library.json")).entries.first?.label, "Changed label")
     }
+
+    func testUnsavedCompletedResponseIsNeverEvictedByCapacityPruning() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let store = RubricCaptureStore(url: root.appendingPathComponent("captures.json"))
+        let now = Date()
+        for index in 0..<64 {
+            let id = UUID(), target = UUID(), owner = UUID()
+            var request = try LeonardoSync.RubricRequest(id: id, targetDeviceID: target, requesterID: owner,
+                requesterName: "Mac", createdAt: now)
+            request.state = .completed
+            let response = try LeonardoSync.RubricResponse(requestID: id, targetDeviceID: target, requesterID: owner,
+                label: "Rubric \(index)", rubric: rubric(), submittedAt: now)
+            let record = RubricCaptureRecord(id: id, targetDeviceID: target, targetDeviceName: "Little",
+                documentURL: nil, sourceDigest: RubricCaptureRecord.digest(source: "\(index)"), fieldID: nil,
+                labelHint: nil, request: request, response: response, updatedAt: now)
+            _ = try store.upsert(record)
+        }
+        XCTAssertEqual(store.records.count, 64)
+        let extraID = UUID(), target = UUID(), owner = UUID()
+        var request = try LeonardoSync.RubricRequest(id: extraID, targetDeviceID: target, requesterID: owner,
+            requesterName: "Mac", createdAt: now)
+        request.state = .completed
+        let response = try LeonardoSync.RubricResponse(requestID: extraID, targetDeviceID: target, requesterID: owner,
+            label: "Extra", rubric: rubric(), submittedAt: now)
+        let extra = RubricCaptureRecord(id: extraID, targetDeviceID: target, targetDeviceName: "Little",
+            documentURL: nil, sourceDigest: RubricCaptureRecord.digest(source: "extra"), fieldID: nil,
+            labelHint: nil, request: request, response: response, updatedAt: now)
+        XCTAssertThrowsError(try store.upsert(extra)) { error in
+            XCTAssertEqual(error as? RubricCaptureStoreError, .limitReached)
+        }
+        XCTAssertEqual(store.records.count, 64)
+    }
+
+    func testUnsavedResponseRemainsReachableAfterNewerCancelledRequestForEditedDocument() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let document = root.appendingPathComponent("note.md")
+        let target = UUID(), owner = UUID(), firstID = UUID(), secondID = UUID(), now = Date()
+        let store = RubricCaptureStore(url: root.appendingPathComponent("MobileSync/RubricCaptures/captures.json"))
+        var firstRequest = try LeonardoSync.RubricRequest(id: firstID, targetDeviceID: target, requesterID: owner,
+            requesterName: "Mac", createdAt: now)
+        firstRequest.state = .completed
+        let firstResponse = try LeonardoSync.RubricResponse(requestID: firstID, targetDeviceID: target, requesterID: owner,
+            label: "First", rubric: rubric(), submittedAt: now)
+        let firstRecord = try store.upsert(RubricCaptureRecord(id: firstID, targetDeviceID: target, targetDeviceName: "Little",
+            documentURL: document, sourceDigest: RubricCaptureRecord.digest(source: "first source"), fieldID: nil,
+            labelHint: nil, request: firstRequest, response: firstResponse, updatedAt: now))
+        XCTAssertTrue(firstRecord.matchesInsertionContext(documentURL: document, source: "first source", fieldID: nil))
+        XCTAssertFalse(firstRecord.matchesInsertionContext(documentURL: document, source: "edited source", fieldID: nil))
+        XCTAssertFalse(firstRecord.matchesInsertionContext(documentURL: document, source: "first source", fieldID: "other"))
+        var secondRequest = try LeonardoSync.RubricRequest(id: secondID, targetDeviceID: target, requesterID: owner,
+            requesterName: "Mac", createdAt: now.addingTimeInterval(1))
+        secondRequest.state = .cancelled
+        _ = try store.upsert(RubricCaptureRecord(id: secondID, targetDeviceID: target, targetDeviceName: "Little",
+            documentURL: document, sourceDigest: RubricCaptureRecord.digest(source: "edited source"), fieldID: nil,
+            labelHint: nil, request: secondRequest, updatedAt: now.addingTimeInterval(1)))
+
+        let controller = DesktopSyncController(preferencesURL: root.appendingPathComponent("preferences.json"),
+            runtime: DesktopDirectRuntime(root: root.appendingPathComponent("Service"), credentials: CaptureTestCredentials(), now: { Date() }))
+        XCTAssertEqual(controller.rubricCapture(for: document, source: "edited source")?.id, firstID)
+    }
+}
+
+private actor CaptureTestCredentials: DeviceCredentialStore {
+    func credential(deviceID: UUID) -> String? { nil }
+    func save(_ credential: String, deviceID: UUID) {}
+    func remove(deviceID: UUID) {}
 }
 

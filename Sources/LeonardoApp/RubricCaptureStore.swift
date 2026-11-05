@@ -56,6 +56,12 @@ struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
         Data(SHA256.hash(data: Data(source.utf8)))
     }
 
+    func matchesInsertionContext(documentURL: URL?, source: String, fieldID: String?) -> Bool {
+        self.documentURL.map(ProcessFileLock.canonicalURL) == documentURL.map(ProcessFileLock.canonicalURL)
+            && sourceDigest == Self.digest(source: source)
+            && self.fieldID == fieldID
+    }
+
     func replacing(request: LeonardoSync.RubricRequest?, response: LeonardoSync.RubricResponse?, updatedAt: Date = Date()) -> RubricCaptureRecord {
         var copy = self
         copy.request = request ?? self.request

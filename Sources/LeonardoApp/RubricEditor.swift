@@ -161,17 +161,29 @@ struct RubricEditor: View {
                         Button(L10n.text("Save to library")) { saveReceived(controller, capture, response) }
                         Button(L10n.text("Save and insert")) { insertReceived(controller, capture, response) }
                     }
+                    if capture.savedLibraryEntryID != nil {
+                        Label(L10n.text("Saved in library"), systemImage: "checkmark.circle")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                 }
             }
         } else if let state = capture.request?.state, [.rejected, .cancelled, .expired].contains(state) {
-            Label(L10n.text("The rubric request was %@.").replacingOccurrences(of: "%@", with: stateLabel(state)), systemImage: "xmark.circle")
-                .foregroundStyle(.secondary)
+            HStack {
+                Label(L10n.format("The rubric request was %@.", stateLabel(state)), systemImage: "xmark.circle")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button(L10n.text("Request again")) { remoteCapture = nil; remoteError = nil }
+            }
         } else {
             HStack {
                 ProgressView().controlSize(.small)
                 Text(L10n.format("Waiting for %@ to draw the rubric…", capture.targetDeviceName))
                 Spacer()
-                Button(L10n.text("Cancel request")) { cancelRemote(controller, requestID: capture.id) }
+                if remoteError != nil {
+                    Button(L10n.text("Retry")) { pollRemote(controller, requestID: capture.id) }
+                } else {
+                    Button(L10n.text("Cancel request")) { cancelRemote(controller, requestID: capture.id) }
+                }
             }
         }
     }
