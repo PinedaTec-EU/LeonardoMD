@@ -22,9 +22,10 @@ Every PNG has a matching `.context.json` and `.metadata.json` sidecar. The
 metadata helper records the source revision, capture time, native viewport,
 image dimensions, and SHA-256 bytes. These four request/review captures were
 regenerated from the final production fixture at source commit
-`6f27d2b66d22da0cc6006317b3039e7a11a1d726` (`#341 Updated: capture full rubric
-review states`); later changes only reconcile evidence metadata and do not alter
-the captured production views.
+`efc9012fc479e3859d929b3a5fcee96768bc0998` (`#350 Fixed: remove rubric EOF
+whitespace`). The capture run used the recorded full-suite build with
+`--skip-build`; the source change after that build was whitespace-only, and the
+metadata records the exact final revision.
 
 ## Recorded validation
 
@@ -54,6 +55,16 @@ successful cumulative build delta is recorded in `deploy/version/entries/349.yam
 - Recorded `swift test --filter RubricGuideCaptureTests` with the opt-in capture
   directory — delta 21 passed and regenerated the English/Spanish request and
   review captures from the final source.
+- Recorded `swift test --filter RubricCaptureTests` — delta 22 passed (6 tests),
+  including injected-clock retention, rollback ordering and terminal-state
+  monotonicity.
+- Recorded full `swift test` — delta 23 passed across the macOS XCTest and Swift
+  Testing suites; opt-in evidence tests remained skipped unless explicitly
+  enabled. Real TLS rubric request/accept/response coverage passed in the same
+  run.
+- `LEONARDO_RUBRIC_GUIDE_CAPTURE=$PWD/doc/validation/rubric-capture-341 swift
+  test --skip-build --filter RubricGuideCaptureTests` — passed and regenerated
+  the English/Spanish request and review captures from the final revision.
 - `python3 scripts/package-user-guide.py --web-output doc` followed by
   `python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py'`
   — deterministic package test passed.
