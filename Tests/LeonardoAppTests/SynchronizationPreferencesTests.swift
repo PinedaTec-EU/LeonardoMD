@@ -30,7 +30,8 @@ final class SynchronizationPreferencesTests: XCTestCase {
             for page in SynchronizationPreferencesView.Page.allCases {
                 let host = NSHostingView(rootView: SynchronizationPreferencesView(session: session,
                     source: source, client: client, initialPage: page)
-                    .buttonStyle(PremiumButtonStyle()).modifier(SessionAppearance(session: session)))
+                    .buttonStyle(PremiumButtonStyle()).modifier(SessionAppearance(session: session))
+                    .background(Color(nsColor: .windowBackgroundColor)))
                 let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_ROLES_EVIDENCE"]
                 let destination = URL(fileURLWithPath: output ?? root.path)
                 try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
