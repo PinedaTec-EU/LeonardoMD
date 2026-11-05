@@ -569,6 +569,58 @@ final class RubricCaptureTests: XCTestCase {
         XCTAssertEqual(metrics.cancelCalls, 2,
                        "The initial notFound and the late-create reconciliation must both be observable")
     }
+
+    func testCompletionWinningCancellationRaceIsDiscardedAcrossRestart() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let fixed = Date(timeIntervalSince1970: 1_701_500_000)
+        let (registry, pairing) = try makeCapturePairing(now: fixed)
+        let runtime = SuspendedCreateRuntime(registry: registry, requesterID: UUID(), now: { fixed },
+                                             completeBeforeCancel: true)
+        let controller = DesktopSyncController(preferencesURL: root.appendingPathComponent("preferences.json"),
+            runtime: runtime, now: { fixed })
+        await controller.update(MobileSyncPreferences(enabled: true, host: "127.0.0.1", port: 0))
+        XCTAssertEqual(controller.rubricCaptureAvailability, .ready, controller.error ?? "Runtime did not start")
+
+        let requestID = UUID()
+        let beginTask = Task { @MainActor in
+            try? await controller.beginRubricCapture(requestID: requestID, targetDeviceID: pairing.id,
+                targetDeviceName: "Little Leonardo", documentURL: nil, source: "source", fieldID: nil)
+        }
+        await runtime.waitForCreateStart()
+
+        let cancellation = try await controller.cancelRubricCapture(requestID: requestID)
+        XCTAssertTrue(cancellation.isCancellationRequested)
+        XCTAssertTrue(cancellation.isCancellationPending)
+        XCTAssertNil(cancellation.request)
+
+        await runtime.releaseCreate()
+        let beginResult = await beginTask.value
+        let discarded = try XCTUnwrap(beginResult)
+        XCTAssertTrue(discarded.isCancellationRequested)
+        XCTAssertTrue(discarded.isCancellationResolvedByCompletion,
+                      "A completed reply must resolve the local cancellation race")
+        XCTAssertFalse(discarded.isCancellationPending)
+        XCTAssertNil(discarded.request)
+        XCTAssertNil(discarded.response)
+        XCTAssertThrowsError(try controller.markRubricCaptureSaved(requestID: requestID,
+                                                                    libraryEntryID: "must-not-save"))
+
+        let reopened = DesktopSyncController(preferencesURL: root.appendingPathComponent("preferences.json"),
+            runtime: runtime, now: { fixed })
+        await reopened.update(MobileSyncPreferences(enabled: true, host: "127.0.0.1", port: 0))
+        let recovered = try XCTUnwrap(reopened.rubricCapture(for: nil, source: "source"))
+        XCTAssertTrue(recovered.isCancellationResolvedByCompletion)
+        XCTAssertFalse(recovered.isCancellationPending)
+        XCTAssertNil(recovered.response)
+        XCTAssertThrowsError(try reopened.markRubricCaptureSaved(requestID: requestID,
+                                                                  libraryEntryID: "must-not-save-after-restart"))
+
+        let metrics = await runtime.metrics()
+        XCTAssertEqual(metrics.createCalls, 1)
+        XCTAssertEqual(metrics.cancelCalls, 1,
+                       "The completed remote request must not be followed by a false compensating cancel")
+    }
 }
 
 private final class FixedRubricClock: @unchecked Sendable {
@@ -733,12 +785,15 @@ private actor SuspendedCreateRuntime: DesktopSyncRuntimeAccess {
     private var requests: [UUID: LeonardoSync.RubricRequest] = [:]
     private var createCalls = 0
     private var cancelCalls = 0
+    private let completeBeforeCancel: Bool
     private var pendingCreate: (request: LeonardoSync.RubricRequest,
                                 continuation: CheckedContinuation<LeonardoSync.RubricRequest, Never>)?
     private var createStarted: CheckedContinuation<Void, Never>?
 
-    init(registry: PairingRegistry, requesterID: UUID, now: @escaping @Sendable () -> Date) {
+    init(registry: PairingRegistry, requesterID: UUID, now: @escaping @Sendable () -> Date,
+         completeBeforeCancel: Bool = false) {
         self.registry = registry; self.requesterID = requesterID; self.now = now
+        self.completeBeforeCancel = completeBeforeCancel
     }
 
     func start(host: String, port: UInt16, projects: [SharedProjectSource], allowPrivateOverlay: Bool) async throws -> RunningDirectService {
@@ -778,8 +833,10 @@ private actor SuspendedCreateRuntime: DesktopSyncRuntimeAccess {
     func releaseCreate() {
         guard let pendingCreate else { return }
         self.pendingCreate = nil
-        requests[pendingCreate.request.id] = pendingCreate.request
-        pendingCreate.continuation.resume(returning: pendingCreate.request)
+        var releasedRequest = pendingCreate.request
+        if completeBeforeCancel { releasedRequest.state = .completed }
+        requests[releasedRequest.id] = releasedRequest
+        pendingCreate.continuation.resume(returning: releasedRequest)
     }
 
     func cancelRubricRequest(requestID: UUID) async throws -> LeonardoSync.RubricRequest {

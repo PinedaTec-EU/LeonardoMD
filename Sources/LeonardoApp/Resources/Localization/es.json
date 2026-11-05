@@ -636,5 +636,6 @@
   "Saved in library": "Guardada en la biblioteca",
   "Request another rubric": "Pedir otra rúbrica",
   "Cancellation is being confirmed. This request cannot be reviewed or saved.": "Se está confirmando la cancelación. Esta petición no se puede revisar ni guardar.",
+  "The rubric finished before cancellation and was discarded. Request another rubric.": "La rúbrica terminó antes de la cancelación y se descartó. Pide otra rúbrica.",
   "Refresh linked devices": "Actualizar dispositivos enlazados"
 }

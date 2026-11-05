@@ -394,9 +394,13 @@ final class DesktopSyncController {
         guard !current.isMissing else { return current }
         do {
             let status = try await runtime.rubricStatus(requestID: requestID)
-            if current.isCancellationRequested,
-               [.pending, .accepted].contains(status.request.state) {
-                return try await reconcileCancelledCreate(current, createdRequest: status.request)
+            if current.isCancellationRequested {
+                if status.request.state == .completed {
+                    return try markRubricCaptureCompletedBeforeCancellation(current)
+                }
+                if [.pending, .accepted].contains(status.request.state) {
+                    return try await reconcileCancelledCreate(current, createdRequest: status.request)
+                }
             }
             var updated = current
             let acknowledgedAt = now()
@@ -475,6 +479,10 @@ final class DesktopSyncController {
             guard !Task.isCancelled else { return }
             do {
                 let status = try await runtime.rubricStatus(requestID: current.id)
+                if current.isCancellationRequested, status.request.state == .completed {
+                    _ = try? markRubricCaptureCompletedBeforeCancellation(current)
+                    continue
+                }
                 if current.isCancellationRequested,
                    [.pending, .accepted].contains(status.request.state) {
                     do {
@@ -528,9 +536,18 @@ final class DesktopSyncController {
         return try rubricCaptures.upsert(current.markedCancellationRequested(at: now()))
     }
 
+    private func markRubricCaptureCompletedBeforeCancellation(_ current: RubricCaptureRecord) throws -> RubricCaptureRecord {
+        try rubricCaptures.upsert(current.markedCancellationCompletedBeforeCancellation(at: now()))
+    }
+
     private func reconcileCancelledCreate(_ current: RubricCaptureRecord,
                                           createdRequest: LeonardoSync.RubricRequest) async throws -> RubricCaptureRecord {
-        guard createdRequest.state != .completed else { return current }
+        if createdRequest.state == .completed {
+            // The companion won the race immediately before cancellation was
+            // confirmed. Resolve locally as discarded rather than leaving the
+            // UI pending or exposing the late response for review/save.
+            return try markRubricCaptureCompletedBeforeCancellation(current)
+        }
         do {
             let cancelled = try await runtime.cancelRubricRequest(requestID: current.id)
             var reconciled = current

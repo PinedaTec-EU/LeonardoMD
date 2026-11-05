@@ -21,6 +21,14 @@ enum RubricCaptureStoreError: LocalizedError, Equatable {
     }
 }
 
+/// Durable local resolution for the race where the companion completed a
+/// request just before the Mac's cancellation was acknowledged. The response
+/// is intentionally discarded: the owner's explicit cancellation intent wins
+/// over a late completion and the request must never become reviewable.
+enum RubricCancellationOutcome: String, Codable, Equatable, Sendable {
+    case completedBeforeCancellation
+}
+
 /// A local, owner-side recovery record. The source text is represented by a
 /// digest only; the open document remains the source of truth for insertion.
 struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
@@ -59,6 +67,10 @@ struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
     /// late create/status reply must be reconciled with cancellation, never
     /// promoted into a reviewable completed response.
     var cancellationRequestedAt: Date?
+    /// Local resolution of a cancellation race. This is separate from the
+    /// remote request state so a completed reply cannot leave the UI pending
+    /// forever or re-enter the review/save path.
+    var cancellationOutcome: RubricCancellationOutcome?
 
     init(id: UUID, targetDeviceID: UUID, targetDeviceName: String,
          documentURL: URL?, sourceDigest: Data, fieldID: String?, labelHint: String?,
@@ -66,7 +78,8 @@ struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
          savedLibraryEntryID: String? = nil, updatedAt: Date,
          creationAttemptedAt: Date? = nil, retryDeadline: Date? = nil,
          lastKnownRequestAt: Date? = nil, missingAt: Date? = nil,
-         cancellationRequestedAt: Date? = nil) {
+         cancellationRequestedAt: Date? = nil,
+         cancellationOutcome: RubricCancellationOutcome? = nil) {
         self.id = id; self.targetDeviceID = targetDeviceID; self.targetDeviceName = targetDeviceName
         self.documentURL = documentURL; self.sourceDigest = sourceDigest; self.fieldID = fieldID
         self.labelHint = labelHint; self.request = request; self.response = response
@@ -74,6 +87,7 @@ struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
         self.creationAttemptedAt = creationAttemptedAt; self.retryDeadline = retryDeadline
         self.lastKnownRequestAt = lastKnownRequestAt; self.missingAt = missingAt
         self.cancellationRequestedAt = cancellationRequestedAt
+        self.cancellationOutcome = cancellationOutcome
     }
 
     var state: RubricRequestState? { request?.state }
@@ -86,10 +100,13 @@ struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
 
     var isMissing: Bool { missingAt != nil }
     var isCancellationRequested: Bool { cancellationRequestedAt != nil }
+    var isCancellationResolvedByCompletion: Bool {
+        cancellationOutcome == .completedBeforeCancellation
+    }
     var isCancellationPending: Bool {
-        guard isCancellationRequested else { return false }
+        guard isCancellationRequested, !isCancellationResolvedByCompletion else { return false }
         guard let state else { return true }
-        return ![.rejected, .cancelled, .expired].contains(state)
+        return ![.rejected, .cancelled, .expired, .completed].contains(state)
     }
 
     func canRetryCreate(at date: Date) -> Bool {
@@ -138,6 +155,15 @@ struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
     func markedCancellationRequested(at date: Date) -> RubricCaptureRecord {
         var copy = self
         copy.cancellationRequestedAt = copy.cancellationRequestedAt ?? date
+        copy.updatedAt = date
+        return copy
+    }
+
+    func markedCancellationCompletedBeforeCancellation(at date: Date) -> RubricCaptureRecord {
+        var copy = self
+        copy.cancellationOutcome = .completedBeforeCancellation
+        copy.request = nil
+        copy.response = nil
         copy.updatedAt = date
         return copy
     }
@@ -242,6 +268,17 @@ final class RubricCaptureStore {
                 }
                 if merged.cancellationRequestedAt == nil {
                     merged.cancellationRequestedAt = candidate.cancellationRequestedAt
+                }
+                if merged.cancellationOutcome == nil {
+                    merged.cancellationOutcome = candidate.cancellationOutcome
+                }
+                if merged.isCancellationResolvedByCompletion {
+                    // The local cancellation resolution is absorbing. Never
+                    // let a completed response or a later status resurrect
+                    // review/save after the owner chose cancellation.
+                    merged.request = nil
+                    merged.response = nil
+                    merged.savedLibraryEntryID = nil
                 }
                 if merged.missingAt == nil {
                     if merged.response == nil { merged.missingAt = candidate.missingAt }
@@ -397,6 +434,12 @@ final class RubricCaptureStore {
            !missingAt.timeIntervalSince1970.isFinite { return false }
         if let cancellationRequestedAt = record.cancellationRequestedAt,
            !cancellationRequestedAt.timeIntervalSince1970.isFinite { return false }
+        if record.isCancellationResolvedByCompletion {
+            guard record.cancellationRequestedAt != nil,
+                  record.request == nil,
+                  record.response == nil,
+                  record.savedLibraryEntryID == nil else { return false }
+        }
         if let request = record.request {
             guard request.id == record.id, request.targetDeviceID == record.targetDeviceID else { return false }
             if request.state == .completed && record.response == nil { return false }

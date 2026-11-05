@@ -636,5 +636,6 @@
   "Saved in library": "Saved in library",
   "Request another rubric": "Request another rubric",
   "Cancellation is being confirmed. This request cannot be reviewed or saved.": "Cancellation is being confirmed. This request cannot be reviewed or saved.",
+  "The rubric finished before cancellation and was discarded. Request another rubric.": "The rubric finished before cancellation and was discarded. Request another rubric.",
   "Refresh linked devices": "Refresh linked devices"
 }
