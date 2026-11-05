@@ -4,35 +4,35 @@
   "style_reference": "exec-8f85f370-ebf3-458d-a1ae-c4aac664db3a.png",
   "created_on": "2026-11-05",
   "issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/334",
-  "packaging": "Aspect-preserving sips resize to 1200 pixels wide; original generated artwork retained in Codex image library. No screenshot retouching.",
+  "packaging": "Aspect-preserving sips resize to 900 pixels wide; original generated artwork retained in Codex image library. No screenshot retouching.",
   "images": {
     "importar.png": {
       "original_image_id": "exec-e4d4e81a-e059-48d8-a911-ddf9a616c01a.png",
       "original_sha256": "a8ca04ab5a7cf3ba747c51aa62c1a2a0592b5030d18b08549f1c2295118459d0",
-      "asset_sha256": "fa73c5b7186374e129d48a753d4515698a123159a008fcaaebb4ce333dc2bddf",
-      "width": 1200,
-      "height": 400
+      "asset_sha256": "9f4c108861832de82cda1282e2b90dccc73fd065219187a92ed6ba37245b109a",
+      "width": 900,
+      "height": 300
     },
     "recorrido.png": {
       "original_image_id": "exec-181ba935-f63a-4cb4-a09c-345209b674c1.png",
       "original_sha256": "90469733914ee8f2aa5e508d8f0eae104cba63b5470260abd7737021f17870b8",
-      "asset_sha256": "d0a92f94020d7ed35f3fa6991382dcf59f8b5877d01c50227fcae4276371709e",
-      "width": 1200,
-      "height": 400
+      "asset_sha256": "db4b3836e501a8f9c1e064fab312c3297d84e744af92bf75223342f15af95249",
+      "width": 900,
+      "height": 300
     },
     "paquete.png": {
       "original_image_id": "exec-bb1095fa-021c-4b5b-8a7b-85565a3471c0.png",
       "original_sha256": "a39899f4f27d264cab193b1edba5ef81352d16bbd46016e6d1f247ba6b4392b8",
-      "asset_sha256": "facf4c47ec0b6d1edf4363752c22679505d60082603e266ebd72ae00a6bc9021",
-      "width": 1200,
-      "height": 400
+      "asset_sha256": "84fab8e9f002a300d1246509298cc7474829ab99536baa26f98e92a70c5da6ca",
+      "width": 900,
+      "height": 300
     },
     "exportar.png": {
       "original_image_id": "exec-ee70e63b-3743-4d88-abbb-ac9152336f17.png",
       "original_sha256": "1bbd894a60488721c1440e8413f6a402e4ba6b814c2498cdd267c056ffd2d54f",
-      "asset_sha256": "9b0ae39e1af639dc1b042d1942441474f146b75c7046a6a295861b31ee4ec905",
-      "width": 1200,
-      "height": 400
+      "asset_sha256": "56d4b134f4795b7ed34e524842bab4fb619cbe76fa94d1e417d2d6b491c23b9d",
+      "width": 900,
+      "height": 300
     }
   }
 }

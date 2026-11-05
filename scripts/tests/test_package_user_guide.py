@@ -33,7 +33,7 @@ class PackageUserGuideTests(unittest.TestCase):
                 for illustration in artwork:
                     asset = ROOT / 'doc/guide' / language / 'assets' / (illustration + '.png')
                     width, height = struct.unpack('>II', asset.read_bytes()[16:24])
-                    self.assertEqual((width, height), (1200, 400))
+                    self.assertEqual((width, height), (900, 300))
                     self.assertIn(f'guide/{language}/assets/{illustration}.png', web_source)
                 practice_name = f'Practice-v1-{language}.mdlr'
                 practice = (output / practice_name).read_bytes()

@@ -31,7 +31,7 @@ plus local assets. Only PNG content assets from locale `assets/` folders are cop
 contexts/metadata stay in Git for provenance and never enter the user package.
 The builder supplies the approved banner; locale `assets/` folders supply the
 premium PNG illustrations. Artwork provenance is stored beside each locale’s assets.
-The four 1200×400 illustrations bound decoded memory without altering renderer limits.
+The four 900×300 illustrations bound decoded memory without altering renderer limits.
 The optional `--web-output doc` also regenerates both web manuals and their
 localized PNG illustration links from the same sources, adapting image paths and showing
 field placeholders as literal source rather than nonfunctional form controls.
