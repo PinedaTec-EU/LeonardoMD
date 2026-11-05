@@ -297,9 +297,12 @@ struct MobileRubricCaptureView: View {
 
     private func persistSnapshot(drawing: LeonardoRubric, label: String) {
         guard !frozen, phase == .drawing else { return }
+        // An empty canvas is a valid unsent draft state. Persist it as nil so
+        // Clear removes previously saved strokes without tripping payload validation.
+        let savedDrawing = drawing.isValid ? drawing : nil
         Task {
             do {
-                try await library.persistRubricDraft(requestID: request.id, label: label, drawing: drawing)
+                try await library.persistRubricDraft(requestID: request.id, label: label, drawing: savedDrawing)
             } catch {
                 failure = "No se pudo guardar el borrador local. Inténtalo de nuevo antes de enviar."
             }

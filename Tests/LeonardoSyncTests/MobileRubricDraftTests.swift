@@ -69,6 +69,24 @@ final class MobileRubricDraftTests: XCTestCase {
         XCTAssertTrue(pruned.isEmpty)
     }
 
+    func testClearingUnsentDrawingPersistsAnEmptyAcceptedDraft() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let request = try request()
+        let draft = MobileRubricDraft(id: request.id, connectionID: UUID(),
+            targetDeviceID: request.targetDeviceID, requesterID: request.requesterID,
+            sourceFingerprint: Data(repeating: 7, count: 32), request: request,
+            drawing: drawing, label: "Firma", state: .accepted, updatedAt: now)
+        let store = MobileRubricDraftStore(url: root.appendingPathComponent("drafts.json"))
+        try await store.save(draft)
+        let cleared = draft.with(drawing: nil, label: draft.label, updatedAt: now.addingTimeInterval(1))
+        try await store.save(cleared)
+        let restored = try await store.all(now: now.addingTimeInterval(2))
+        XCTAssertEqual(restored, [cleared])
+        XCTAssertNil(restored.first?.drawing)
+        XCTAssertNil(restored.first?.response)
+    }
+
     func testBindingIsDeterministicAndStateCannotRegress() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
