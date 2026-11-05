@@ -11,6 +11,38 @@ final class RubricCaptureTests: XCTestCase {
             points: [.init(x: 10, y: 10), .init(x: 100, y: 100)])])
     }
 
+    private func record(id: UUID, target: UUID, owner: UUID, state: RubricRequestState?,
+                        updatedAt: Date) throws -> RubricCaptureRecord {
+        guard let state else {
+            return RubricCaptureRecord(id: id, targetDeviceID: target, targetDeviceName: "Little",
+                documentURL: nil, sourceDigest: RubricCaptureRecord.digest(source: "matrix"), fieldID: nil,
+                labelHint: nil, updatedAt: updatedAt)
+        }
+        var request = try LeonardoSync.RubricRequest(id: id, targetDeviceID: target, requesterID: owner,
+            requesterName: "Mac", createdAt: updatedAt)
+        request.state = state
+        let response: LeonardoSync.RubricResponse?
+        if state == .completed {
+            response = try LeonardoSync.RubricResponse(requestID: id, targetDeviceID: target, requesterID: owner,
+                label: "Matrix", rubric: rubric(), submittedAt: updatedAt)
+        } else {
+            response = nil
+        }
+        return RubricCaptureRecord(id: id, targetDeviceID: target, targetDeviceName: "Little",
+            documentURL: nil, sourceDigest: RubricCaptureRecord.digest(source: "matrix"), fieldID: nil,
+            labelHint: nil, request: request, response: response, updatedAt: updatedAt)
+    }
+
+    private func stateRank(_ state: RubricRequestState?) -> Int {
+        switch state {
+        case nil: 0
+        case .pending: 1
+        case .accepted: 2
+        case .rejected, .cancelled, .expired: 3
+        case .completed: 4
+        }
+    }
+
     func testCaptureStorePersistsAndIgnoresLateLifecycleRegression() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let url = root.appendingPathComponent("captures.json")
@@ -131,6 +163,100 @@ final class RubricCaptureTests: XCTestCase {
                        "A delayed non-terminal reply must not resurrect a terminal request")
         let saved = try store.markSaved(id: freshID, libraryEntryID: "saved")
         XCTAssertEqual(saved.updatedAt, clock.value, "Save ordering must use the same injected clock")
+    }
+
+    func testLateLifecycleMatrixKeepsTerminalOutcomesAcrossRestart() throws {
+        let states: [RubricRequestState?] = [nil, .pending, .accepted, .rejected, .cancelled, .expired, .completed]
+        let fixed = Date(timeIntervalSince1970: 1_700_100_000)
+        let target = UUID(), owner = UUID()
+
+        for existingState in states {
+            for candidateState in states {
+                let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+                let url = root.appendingPathComponent("captures.json")
+                let store = RubricCaptureStore(url: url, now: { fixed })
+                let id = UUID()
+                let existing = try record(id: id, target: target, owner: owner, state: existingState,
+                                          updatedAt: fixed.addingTimeInterval(100))
+                _ = try store.upsert(existing)
+                let candidate = try record(id: id, target: target, owner: owner, state: candidateState,
+                                           updatedAt: fixed)
+                let actual = try store.upsert(candidate)
+                let existingIsTerminal = existingState.map { [.rejected, .cancelled, .expired, .completed].contains($0) } ?? false
+                let expected = existingIsTerminal || stateRank(candidateState) <= stateRank(existingState)
+                    ? existingState : candidateState
+                XCTAssertEqual(actual.request?.state, expected,
+                               "existing=\(String(describing: existingState)) candidate=\(String(describing: candidateState))")
+                let reopened = RubricCaptureStore(url: url, now: { fixed })
+                XCTAssertEqual(reopened.record(id: id)?.request?.state, expected,
+                               "existing=\(String(describing: existingState)) candidate=\(String(describing: candidateState)) after restart")
+                try? FileManager.default.removeItem(at: root)
+            }
+        }
+    }
+
+    func testCancelledCaptureAbsorbsDelayedCompletedResponseAndLeavesLibraryUntouched() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let fixed = Date(timeIntervalSince1970: 1_700_200_000)
+        let target = UUID(), owner = UUID(), requestID = UUID()
+        let store = RubricCaptureStore(url: root.appendingPathComponent("captures.json"), now: { fixed })
+        var cancelledRequest = try LeonardoSync.RubricRequest(id: requestID, targetDeviceID: target, requesterID: owner,
+            requesterName: "Mac", createdAt: fixed)
+        cancelledRequest.state = .cancelled
+        let cancelled = RubricCaptureRecord(id: requestID, targetDeviceID: target, targetDeviceName: "Little",
+            documentURL: nil, sourceDigest: RubricCaptureRecord.digest(source: "cancelled"), fieldID: nil,
+            labelHint: nil, request: cancelledRequest, updatedAt: fixed.addingTimeInterval(100))
+        _ = try store.upsert(cancelled)
+
+        var completedRequest = cancelledRequest
+        completedRequest.state = .completed
+        let response = try LeonardoSync.RubricResponse(requestID: requestID, targetDeviceID: target, requesterID: owner,
+            label: "Delayed", rubric: rubric(), submittedAt: fixed)
+        let delayed = cancelled.replacing(request: completedRequest, response: response, updatedAt: fixed)
+        let merged = try store.upsert(delayed)
+        XCTAssertEqual(merged.request?.state, .cancelled)
+        XCTAssertNil(merged.response)
+
+        let reopened = RubricCaptureStore(url: root.appendingPathComponent("captures.json"), now: { fixed })
+        XCTAssertEqual(reopened.record(id: requestID)?.request?.state, .cancelled)
+        XCTAssertNil(reopened.record(id: requestID)?.response)
+        XCTAssertTrue(RubricLibrary(url: root.appendingPathComponent("library.json")).entries.isEmpty)
+    }
+
+    func testLibraryMarkerSurvivesBackwardClockAndReopenIdempotently() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let fixed = Date(timeIntervalSince1970: 1_700_300_000)
+        let clock = FixedRubricClock(fixed)
+        let document = root.appendingPathComponent("note.md")
+        let target = UUID(), owner = UUID(), requestID = UUID()
+        let storeURL = root.appendingPathComponent("MobileSync/RubricCaptures/captures.json")
+        let store = RubricCaptureStore(url: storeURL, now: { clock.value })
+        var request = try LeonardoSync.RubricRequest(id: requestID, targetDeviceID: target, requesterID: owner,
+            requesterName: "Mac", createdAt: fixed)
+        request.state = .completed
+        let response = try LeonardoSync.RubricResponse(requestID: requestID, targetDeviceID: target, requesterID: owner,
+            label: "Saved", rubric: rubric(), submittedAt: fixed)
+        let record = RubricCaptureRecord(id: requestID, targetDeviceID: target, targetDeviceName: "Little",
+            documentURL: document, sourceDigest: RubricCaptureRecord.digest(source: "source"), fieldID: nil,
+            labelHint: nil, request: request, response: response, updatedAt: fixed.addingTimeInterval(100))
+        _ = try store.upsert(record)
+
+        let library = RubricLibrary(url: root.appendingPathComponent("library.json"))
+        let entry = try library.add(label: response.label, rubric: response.rubric, sourceRequestID: requestID)
+        clock.value = fixed
+        let saved = try store.markSaved(id: requestID, libraryEntryID: entry.id)
+        XCTAssertEqual(saved.savedLibraryEntryID, entry.id)
+        XCTAssertEqual(saved.updatedAt, record.updatedAt, "A backward clock must not discard ordering")
+
+        let reopened = RubricCaptureStore(url: storeURL, now: { clock.value })
+        XCTAssertEqual(reopened.record(id: requestID)?.savedLibraryEntryID, entry.id)
+        let duplicate = try library.add(label: "Renamed", rubric: response.rubric, sourceRequestID: requestID)
+        XCTAssertEqual(duplicate.id, entry.id)
+        let reopenedController = DesktopSyncController(
+            preferencesURL: root.appendingPathComponent("preferences.json"),
+            runtime: DesktopDirectRuntime(root: root.appendingPathComponent("Service"), credentials: CaptureTestCredentials(), now: { clock.value }),
+            now: { clock.value })
+        XCTAssertNil(reopenedController.rubricCapture(for: document, source: "source"))
     }
 
     func testUnsavedResponseRemainsReachableAfterNewerCancelledRequestForEditedDocument() throws {

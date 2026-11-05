@@ -12,7 +12,9 @@ owner-side Mac flow on top of the authenticated exchange in
   document text, uses `ProcessFileLock`, and keeps completed responses until an
   explicit library save is recorded. Persistence, retention and lifecycle
   ordering use the controller-injected clock, so a delayed reply cannot win
-  merely because wall time moved backwards.
+  merely because wall time moved backwards. Every terminal outcome is
+  absorbing, including cancellation versus a late completion; the independent
+  library-save marker is merged durably even when that clock rolls back.
 - `RubricEditor` offers one target, polls/retries durable status, shows a native
   preview, and requires **Save to library** or **Save and insert**. The latter
   rechecks the original document URL/source through `SessionGraphics`; a

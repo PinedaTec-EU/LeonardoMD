@@ -119,30 +119,45 @@ final class RubricCaptureStore {
             var next = current
             if let index = next.firstIndex(where: { $0.id == candidate.id }) {
                 let existing = next[index]
-                if Self.stateRank(candidate.request) < Self.stateRank(existing.request) {
-                    result = existing
-                    return current
+                let candidateRank = Self.stateRank(candidate.request)
+                let existingRank = Self.stateRank(existing.request)
+                let sameState = existing.request?.state == candidate.request?.state
+                let lifecycleAccepted: Bool
+                if existing.isTerminal {
+                    // Once a terminal outcome is durably recorded, a delayed
+                    // status can never reanimate it. A same-state refresh may
+                    // still replace an older representation, but only in the
+                    // forward direction of the injected clock.
+                    lifecycleAccepted = sameState && candidate.updatedAt >= existing.updatedAt
+                } else if candidateRank < existingRank {
+                    lifecycleAccepted = false
+                } else if candidateRank == existingRank && !sameState {
+                    lifecycleAccepted = false
+                } else {
+                    // Lifecycle progress is authoritative even if an injected
+                    // clock moves backwards. Timestamps order updates within
+                    // the same non-terminal state.
+                    lifecycleAccepted = candidateRank > existingRank || candidate.updatedAt >= existing.updatedAt
                 }
-                if Self.stateRank(candidate.request) == Self.stateRank(existing.request),
-                   existing.request?.state != candidate.request?.state,
-                   existing.isTerminal {
-                    result = existing
-                    return current
+
+                var merged = existing
+                if lifecycleAccepted {
+                    merged.request = candidate.request ?? existing.request
+                    if existing.response == nil { merged.response = candidate.response }
+                    merged.updatedAt = candidate.updatedAt
                 }
-                // Lifecycle progress is authoritative even if an injected
-                // clock moves backwards. Timestamps order updates within the
-                // same lifecycle state, but cannot make a valid accepted or
-                // terminal transition disappear.
-                if Self.stateRank(candidate.request) == Self.stateRank(existing.request),
-                   existing.updatedAt > candidate.updatedAt {
-                    result = existing
-                    return current
+                // The library marker is an independent durable mutation. It
+                // must survive lifecycle arbitration and clock rollback, but
+                // an existing marker remains immutable for idempotent saves.
+                if merged.savedLibraryEntryID == nil, let entryID = candidate.savedLibraryEntryID {
+                    merged.savedLibraryEntryID = entryID
+                    merged.updatedAt = max(merged.updatedAt, candidate.updatedAt)
                 }
-                var merged = candidate
-                if merged.request == nil { merged.request = existing.request }
-                if existing.response != nil { merged.response = existing.response }
-                if merged.savedLibraryEntryID == nil { merged.savedLibraryEntryID = existing.savedLibraryEntryID }
                 guard Self.valid(merged) else { throw RubricCaptureStoreError.invalidRecord }
+                if merged == existing {
+                    result = existing
+                    return current
+                }
                 next[index] = merged
                 result = merged
             } else {
