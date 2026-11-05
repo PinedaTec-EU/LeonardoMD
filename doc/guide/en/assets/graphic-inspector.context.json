@@ -2,7 +2,7 @@
   "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
   "browser_version" : "Not applicable: native view, no browser engine",
   "capture_mode" : "element",
-  "captured_at" : "2026-11-05T08:13:09.203Z",
+  "captured_at" : "2026-11-05T08:23:42.196Z",
   "data_provenance" : "synthetic",
   "native_viewport_points" : {
     "height" : 850,
@@ -10,9 +10,9 @@
   },
   "os" : "Version 27.0.1 (Build 26A434)",
   "route" : "\/native\/user-guide\/en",
-  "screen" : "Leonardo guide: Production object inspector; isolated inserted synthetic rubric; no personal ink; editable geometry, Z and color",
-  "source_sha" : "a358e3236e05f42021480f62ff26c710d07c2b41",
-  "state" : "Production object inspector; isolated inserted synthetic rubric; no personal ink; editable geometry, Z and color; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "screen" : "Leonardo guide: Production object inspector; isolated inserted synthetic rubric; no personal ink; editable geometry, Z and color; original 1x bitmap for guide memory budget",
+  "source_sha" : "87cb159d25982ebd1ee48fce5336b04848982c6e",
+  "state" : "Production object inspector; isolated inserted synthetic rubric; no personal ink; editable geometry, Z and color; original 1x bitmap for guide memory budget; viewport_css is the measured native-point equivalent; CSS is not applicable",
   "viewport_css" : {
     "height" : 850,
     "width" : 320

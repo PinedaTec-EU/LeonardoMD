@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "collected_at": "2026-11-05T08:14:10.568567+00:00",
+  "collected_at": "2026-11-05T08:24:21.602437+00:00",
   "capture": {
-    "captured_at": "2026-11-05T08:13:09.203000+00:00",
+    "captured_at": "2026-11-05T08:23:42.196000+00:00",
     "route": "/native/user-guide/en",
-    "screen": "Leonardo guide: Production object inspector; isolated inserted synthetic rubric; no personal ink; editable geometry, Z and color",
+    "screen": "Leonardo guide: Production object inspector; isolated inserted synthetic rubric; no personal ink; editable geometry, Z and color; original 1x bitmap for guide memory budget",
     "browser_name": "Native AppKit / SwiftUI NSHostingView",
     "browser_version": "Not applicable: native view, no browser engine",
-    "state": "Production object inspector; isolated inserted synthetic rubric; no personal ink; editable geometry, Z and color; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "state": "Production object inspector; isolated inserted synthetic rubric; no personal ink; editable geometry, Z and color; original 1x bitmap for guide memory budget; viewport_css is the measured native-point equivalent; CSS is not applicable",
     "viewport_css": {
       "width": 320,
       "height": 850
@@ -17,12 +17,12 @@
   },
   "image": {
     "format": "png",
-    "width_px": 640,
-    "height_px": 1700,
-    "sha256": "5841ee1bcd82e5b477feb6d9a517bdef141d933680d1244973d2a1f799d2dada"
+    "width_px": 320,
+    "height_px": 850,
+    "sha256": "48f146fbcc60421a45c8eb844427aff1353d813e5031560d94b31b4244afe97b"
   },
   "source": {
-    "revision_at_collection": "a358e3236e05f42021480f62ff26c710d07c2b41",
+    "revision_at_collection": "87cb159d25982ebd1ee48fce5336b04848982c6e",
     "tracked_changes_present": true,
     "untracked_files_present": true
   }
