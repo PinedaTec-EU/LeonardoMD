@@ -22,10 +22,9 @@ Every PNG has a matching `.context.json` and `.metadata.json` sidecar. The
 metadata helper records the source revision, capture time, native viewport,
 image dimensions, and SHA-256 bytes. These four request/review captures were
 regenerated from the final production fixture at source commit
-`efc9012fc479e3859d929b3a5fcee96768bc0998` (`#350 Fixed: remove rubric EOF
-whitespace`). The capture run used the recorded full-suite build with
-`--skip-build`; the source change after that build was whitespace-only, and the
-metadata records the exact final revision.
+`508c397f211585c7836d91ac932ffed71269dd59` (`#350 Fixed: absorb terminal
+rubric outcomes`). The capture run used the recorded full-suite build with
+`--skip-build`, and the metadata records the exact final revision.
 
 ## Recorded validation
 
@@ -65,6 +64,16 @@ successful cumulative build delta is recorded in `deploy/version/entries/349.yam
 - `LEONARDO_RUBRIC_GUIDE_CAPTURE=$PWD/doc/validation/rubric-capture-341 swift
   test --skip-build --filter RubricGuideCaptureTests` — passed and regenerated
   the English/Spanish request and review captures from the final revision.
+- Recorded `swift test --filter RubricCaptureTests` — delta 24 passed (9 tests),
+  including the complete 7×7 lifecycle matrix, completed-after-cancel
+  absorption, and backward-clock save/reopen idempotence.
+- Recorded full `swift test` — delta 25 passed across the macOS XCTest and Swift
+  Testing suites; opt-in evidence tests remained skipped unless explicitly
+  enabled. Real TLS rubric request/accept/response coverage passed in the same
+  run.
+- `LEONARDO_RUBRIC_GUIDE_CAPTURE=$PWD/doc/validation/rubric-capture-341 swift
+  test --skip-build --filter RubricGuideCaptureTests` — passed and regenerated
+  the English/Spanish request and review captures from source `508c397`.
 - `python3 scripts/package-user-guide.py --web-output doc` followed by
   `python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py'`
   — deterministic package test passed.
