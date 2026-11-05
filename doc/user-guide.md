@@ -6,6 +6,7 @@
 [English](user-guide.md) · [Español](user-guide-es.md)
 
 Web reading edition. Open Help → Leonardo user guide in the app to use the separate practice form and examples rendered with their required extensions. This web reader may not interpret Mermaid, KaTeX or Vega-Lite.
+![A document journey: write, fill and share](guide/en/assets/journey.png)
 
 ## A document you can see
 
@@ -98,7 +99,9 @@ Use **Save** (⌘S) to persist changes. Undo and Redo apply to document edits. C
 | `.mdlr` | The same structure with current answers | Forms intended for filling; opens in Fill mode |
 | `.mdlz` | ZIP with one MDLF or MDLR and resources under `assets/` | Sharing documents with their local images |
 
-![Inside an MDLZ package](guide/illustrations/en-package.svg)
+![Illustrative diagram: one MDLF or MDLR document, local resources, definitions and answers in an MDLZ package](guide/en/assets/package.png)
+
+Definitions and answers belong inside the root document; they are not additional root files.
 
 MDLZ is transport, not another document language. MDLF and MDLR are UTF-8 text: a versioned JSON front matter block followed by Markdown. Renaming a suffix does not convert a document. MDLR hints at the opening mode; it does not prevent structural editing by a recipient.
 
@@ -161,7 +164,7 @@ not silently change its field identifier or invalidate previous answers.
 
 ## 5. Export and share
 
-![Choose an export for its recipient](guide/illustrations/en-export.svg)
+![Choose an export for its recipient](guide/en/assets/export.png)
 
 | Need | Action | Result and limits |
 | --- | --- | --- |
@@ -234,7 +237,7 @@ Review the output in Leonardo. A valid file can still contain wrong answers. Ins
 
 **File → Import with your agent…** opens this help inside Leonardo. It does not select, convert or send a PDF. You choose the agent and supply a copy of the file for it to convert.
 
-![Illustrative diagram: original PDF → your agent and the skill → editable Leonardo document](guide/illustrations/en-import.svg)
+![Illustrative diagram: original PDF → your agent and the skill → editable Leonardo document](guide/en/assets/import.png)
 
 #### What you need
 

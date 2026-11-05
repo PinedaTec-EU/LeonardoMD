@@ -10,8 +10,7 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let oldCopies = [2, 3, 4, 5, 6, 7, 8, 9].map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
-
+        let oldCopies = [2, 3, 4, 5, 6, 7, 8, 9, 10].map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
         let oldAnswers = Data("previous guide and saved answers".utf8)
         for oldCopy in oldCopies {
             try FileManager.default.createDirectory(at: oldCopy.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -23,8 +22,14 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v10/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v11/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
+            let legacyImport = root.appendingPathComponent("Agent Import Guides/v1/\(language.rawValue)/AgentImport-v1-\(language.rawValue).mdlz")
+            try FileManager.default.createDirectory(at: legacyImport.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try oldAnswers.write(to: legacyImport)
+            let importCopy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root, topic: .agentImport)
+            XCTAssertTrue(importCopy.path.contains("Agent Import Guides/v2/"))
+            XCTAssertEqual(try Data(contentsOf: legacyImport), oldAnswers)
             var workspace = try LeonardoPackageTransport.open(copy)
             defer { LeonardoPackageTransport.discard(workspace) }
             let source = try String(contentsOf: workspace.documentURL, encoding: .utf8)
@@ -149,6 +154,12 @@ final class BundledUserGuideTests: XCTestCase {
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("section-\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Detailed chapter with original \(name) screenshot; all images loaded")
                 }
+                let illustrations = language == .english ? ["journey", "package", "import", "export"] : ["recorrido", "paquete", "importar", "exportar"]
+                for name in illustrations {
+                    _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
+                    try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("premium-\(name)-\(language.rawValue).png"),
+                        language: language.rawValue, state: "Main guide; generated premium \(name) illustration; all 15 images admitted under standard limits")
+                }
                 _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
                 try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("guide-\(language.rawValue).png"),
                     language: language.rawValue, state: "Guide preview; all local images loaded")
@@ -182,8 +193,8 @@ final class BundledUserGuideTests: XCTestCase {
             XCTAssertFalse(session === original)
             XCTAssertNil(session.errorMessage)
             XCTAssertEqual(session.mode, .preview)
-            XCTAssertEqual(session.displayDocumentURL?.lastPathComponent, "AgentImport-v1-\(language.rawValue).mdlz")
-            XCTAssertTrue(session.displayDocumentURL?.path.contains("Agent Import Guides/v1/") == true)
+            XCTAssertEqual(session.displayDocumentURL?.lastPathComponent, "AgentImport-v2-\(language.rawValue).mdlz")
+            XCTAssertTrue(session.displayDocumentURL?.path.contains("Agent Import Guides/v2/") == true)
             XCTAssertFalse(session.leonardoDocument?.isForm ?? true)
             let copy = try XCTUnwrap(session.displayDocumentURL)
             let bytes = try Data(contentsOf: copy)
@@ -212,7 +223,7 @@ final class BundledUserGuideTests: XCTestCase {
                 let directory = URL(fileURLWithPath: output).appendingPathComponent("agent-import")
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
                 try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("overview-\(language.rawValue).png"),
-                    language: language.rawValue, state: "Agent import guide; original illustrative SVG loaded; no PDF selected or sent")
+                    language: language.rawValue, state: "Agent import guide; original illustrative PNG loaded; no PDF selected or sent")
                 _ = try await web.evaluateJavaScript("document.querySelector('pre').scrollIntoView({block:'start'})")
                 try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("prompt-\(language.rawValue).png"),
                     language: language.rawValue, state: "Agent import guide; copyable conversion request")
