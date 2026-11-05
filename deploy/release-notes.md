@@ -295,4 +295,10 @@
 - [#326](https://github.com/PinedaTec-EU/LeonardoMD/pull/326) — #323 Added: native graphic inspector and reliable deselection — build +12
   <p>Inspect placed images and rubrics in a native side panel, recolor inserted ink and dismiss object selection when returning to document text.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.795)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTEtMDVUMTE6MTM6NDBaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjJ9LCJmcm9tX3ZlcnNpb24iOiIwLjEuNzk1Iiwia2luZCI6InB1bGxfcmVxdWVzdCIsIm1lcmdlX3NoYSI6IjQyMWVmMDAxYjg4MTUzYTQyMmI5YmFiY2VhYzFkMTliODc1MmIyMmMiLCJudW1iZXIiOjMzMCwic3VtbWFyeSI6Ik9wZW4gYSBiaWxpbmd1YWwgZ3VpZGUgZnJvbSBGaWxlIFx1MjE5MiBJbXBvcnQgd2l0aCB5b3VyIGFnZW50IHRvIGNvbnZlcnQgUERGcyBpbnRvIGVkaXRhYmxlIExlb25hcmRvIGRvY3VtZW50cyB3aXRoIHlvdXIgb3duIGFnZW50LCB3aXRoIHRoZSBzYW1lIHdvcmtmbG93IGluY2x1ZGVkIGluIHRoZSBtYWluIGhlbHAuIiwidGl0bGUiOiIjMzI5IEFkZGVkOiBndWlkZSBQREYgaW1wb3J0IHRocm91Z2ggdGhlIHVzZXJcdTIwMTlzIG93biBhZ2VudCIsInRvX3ZlcnNpb24iOiIwLjEuNzk3In1dLCJlbnZpcm9ubWVudCI6InJlbGVhc2UiLCJldmVudF9pZCI6ImdpdGh1Yl9yZWxlYXNlOjQzNTEwMDgzNCIsImV2ZW50X2tpbmQiOiJnaXRodWJfcmVsZWFzZSIsImV2aWRlbmNlX3VybCI6Imh0dHBzOi8vZ2l0aHViLmNvbS9QaW5lZGFUZWMtRVUvTGVvbmFyZG9NRC9yZWxlYXNlcy90YWcvdjAuMS43OTciLCJyZXBvc2l0b3J5IjoiUGluZWRhVGVjLUVVL0xlb25hcmRvTUQiLCJzb3VyY2VfcmVmIjoidjAuMS43OTciLCJzb3VyY2Vfc2hhIjoiMWRkMTg2ODQzYTVlNWFjNzRmYTUwYWJhNGIxNTRkY2ZmZjU1MTI4ZSIsInRhcmdldCI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwidmVyc2lvbiI6IjAuMS43OTcifQ -->
+### 0.1.797
+- [#330](https://github.com/PinedaTec-EU/LeonardoMD/pull/330) — #329 Added: guide PDF import through the user’s own agent — build +2
+  <p>Open a bilingual guide from File → Import with your agent to convert PDFs into editable Leonardo documents with your own agent, with the same workflow included in the main help.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.797)
 <!-- release-ledger:end -->
