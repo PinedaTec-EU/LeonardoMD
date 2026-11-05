@@ -24,8 +24,8 @@ both locales under `.skills/leonardo-user-guide/SKILL.md`.
 | All five opt-in engines, actual Mermaid/KaTeX/Vega examples and citation/extras syntax | `ExtensionPreferences.swift`, `../LeonardoRender/Resources/` | Live demonstrations, 12 | Three live outputs; literal citation/footnote/callout examples |
 | Own-extension detection, grouped consent, global/project scope, suppression/reset | `ExtensionRecommendations.swift`, `ExtensionRecommendationPresenter.swift` | Live demonstrations, 12 | Original activation and reset captures |
 | Manual Git init/status/stage/commit/history/fetch/pull/push; ff-only and credentials | `GitPanel.swift`, `../LeonardoCore/GitRepository.swift` | 13 | Ordered local-to-remote workflow |
-| Read-only Little Leonardo, explicit sharing, QR/code verification, address/VPN and revocation | `MobileSyncPreferencesView.swift`, `DesktopSyncController.swift` | 14 | Disabled-service initial-state capture |
-| Linked Macs, imports/offline edits, comparison/proposals and source review | `DesktopPeerPreferencesView.swift`, `DesktopPeerController.swift` | 15 | Empty linked-Macs capture; proposal steps |
+| Synchronization → Share from this Mac: common service, saved content for read-only Little Leonardo and desktop clients, invitation/code verification, address/VPN, grants/revocation and incoming review | `SynchronizationPreferencesView.swift`, `MobileSyncPreferencesView.swift`, `SyncDeviceRole.swift`, `DesktopSyncController.swift` | 14 | `sync-sharing-v12.png` in both locales; isolated disabled service/sharing |
+| Synchronization → Connect to other computers: independent client role, connections, imports/offline edits, comparison/proposals and intervals | `SynchronizationPreferencesView.swift`, `DesktopPeerPreferencesView.swift`, `DesktopPeerController.swift` | 15 | `sync-connections-v12.png` in both locales; empty connections/copies and disabled Connect; proposal steps |
 | Stable/beta subscription vs installed channel, checks/install guards, release notes | `ApplicationUpdates.swift`, `UpdatePreferencesView.swift`, `LeonardoMD.swift` | 16 | Stable subscription capture with fake updater |
 | Menu shortcuts including Fill form; limits/network/privacy/recovery | `LeonardoMD.swift`, `doc/releases.md` | 17–19 | Shortcut table, problem/action list |
 
@@ -40,17 +40,18 @@ Their original capture contexts/metadata live beside the PNGs in each locale's
 - Field formulas/calculated values are deferred in [#203](https://github.com/PinedaTec-EU/LeonardoMD/issues/203); a KaTeX equation is presentation only.
 - Windows availability must not be inferred from desktop architecture; [#227](https://github.com/PinedaTec-EU/LeonardoMD/issues/227) remains separate.
 - The iOS companion is read-only; desktop incoming proposals do not imply mobile editing.
-- The bundled help's inline filling instructions supersede the obsolete web-manual inspector instruction tracked in [#225](https://github.com/PinedaTec-EU/LeonardoMD/issues/225). The owner included #225 in this PR; the web manuals are generated from the same bilingual editorial sources.
+- The bundled help's inline filling instructions supersede the obsolete web-manual inspector instruction tracked in [#225](https://github.com/PinedaTec-EU/LeonardoMD/issues/225). The web manuals are generated from the same canonical bilingual editorial sources.
 - The updater Preferences-sheet workaround stays explicit under [#202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202); screenshots do not prove every channel/install transition.
 
 Practice navigation ([#312](https://github.com/PinedaTec-EU/LeonardoMD/issues/312)):
 `GuidePracticeNavigation.swift` binds the fixed localized resource destination to
-the live guide/session/source and active tab. Guide v6 is read-only content;
+the live guide/session/source and active tab. Since Guide v6, the guide is read-only content;
 practice v1 is a separate MDLR. Reopening selects the existing practice tab in
 Fill mode. Cmd-4 fills, the padlock edits structure, and Cmd-S saves answers.
 
 Page objects/rubrics (#193): `DocumentToolbar.swift`, `SessionGraphics.swift`, `RubricEditor.swift`, `RubricLibrary.swift`, `LeonardoGraphic.swift`, `leonardo-objects.js`, `MarkdownPagePDF.swift`; chapters 4, 5, 10. Covers geometry/Z, menu drawing, local library, protected fields, overflow and Markdown/PDF limits. Follow-up #323/#322 adds `GraphicInspector.swift`/`SessionGraphicInspection.swift`, read-only floating summary, copied-ink color, reliable deselection and v8 inspector illustrations.
 
-Sync helper (#319): chapters 14–15 cover per-user installation/approval, the required master switch in both directions, saved-file snapshots, offline status with the editor open, after-login recovery, editor-independent sharing and manual incoming review. The combined premium Guide v11 uses a separate personal copy.
+Sync helper (#319): chapters 14–15 cover per-user installation/approval, the required master switch in both directions, saved-file snapshots, offline status with the editor open, after-login recovery, editor-independent sharing and manual incoming review. Current Guide v13 retains these helper instructions in a separate personal copy.
 
-Update termination (#202): chapter 16 documents automatic Preferences dismissal before install approval, retained Save/Git decisions, cancellation/retry, and the older-source bootstrap workaround. Guide v12 preserves previous personal copies.
+Synchronization roles (#337): chapters 14–15 now route through one Synchronization category, one service control and separate sharing/consuming pages. Refreshed EN/ES production-component images show both pages with isolated disabled settings; capability labels and invite QR/link equivalence are explained. Guide v13 retains older personal copies.
+Update termination (#202): chapter 16 documents automatic Preferences dismissal before install approval, retained Save/Git decisions, cancellation/retry, and the older-source bootstrap workaround. Introduced in Guide v12 and retained in current Guide v13; previous personal copies are preserved.

@@ -31,13 +31,9 @@ struct PreferencesView: View {
                 }
                 .tag("extensions").tabItem { Label(L10n.text("Extensions"), systemImage: "puzzlepiece.extension") }
                 macPreferences("Service and device settings belong to this Mac.") {
-                    MobileSyncPreferencesView(session: session, controller: .shared)
+                    SynchronizationPreferencesView(session: session)
                 }
-                    .tag("mobile").tabItem { Label("Little Leonardo", systemImage: "iphone") }
-                macPreferences("Service and device settings belong to this Mac.") {
-                    DesktopPeerPreferencesView(session: session, controller: .shared)
-                }
-                    .tag("peers").tabItem { Label(L10n.text("Linked Macs"), systemImage: "desktopcomputer") }
+                    .tag("sync").tabItem { Label(L10n.text("Synchronization"), systemImage: "arrow.triangle.2.circlepath.circle") }
                 macPreferences("Update preferences apply to all windows on this Mac.") {
                     UpdatePreferencesView(updates: updates)
                 }

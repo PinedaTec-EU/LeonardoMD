@@ -1,4 +1,5 @@
 import json
+import hashlib
 import re
 from pathlib import Path
 import subprocess
@@ -12,6 +13,32 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class PackageUserGuideTests(unittest.TestCase):
+    def test_instructional_image_inventory_resolves_both_locales(self):
+        inventory = (ROOT / 'doc/guide/screenshots.md').read_text()
+        names = re.findall(r'`en/es/assets/([^`]+\.png)`', inventory)
+        self.assertGreaterEqual(len(names), 7)
+        for language in ('en', 'es'):
+            for name in names:
+                with self.subTest(language=language, image=name):
+                    image = ROOT / 'doc/guide' / language / 'assets' / name
+                    self.assertTrue(image.is_file(), f'Stale instructional inventory: {image}')
+                    metadata = json.loads(image.with_suffix('.metadata.json').read_text())
+                    self.assertEqual(metadata['image']['sha256'], hashlib.sha256(image.read_bytes()).hexdigest())
+                    self.assertTrue(image.with_suffix('.context.json').is_file())
+
+    def test_historical_sync_evidence_links_preserve_the_accepted_originals(self):
+        directory = ROOT / 'doc/validation/sync-helper'
+        source = (directory / 'README.md').read_text()
+        links = re.findall(r'\]\((accepted-component-capture/[^)]+\.png)\)', source)
+        self.assertEqual(len(links), 4)
+        for link in links:
+            image = directory / link
+            self.assertTrue(image.is_file(), f'Broken historical capture link: {link}')
+            metadata = json.loads(image.with_suffix('.metadata.json').read_text())
+            context = json.loads(image.with_suffix('.context.json').read_text())
+            self.assertEqual(metadata['image']['sha256'], hashlib.sha256(image.read_bytes()).hexdigest())
+            self.assertEqual(context['source_sha'], '0c46b98e85092f5ef169fa6823935f04db200c2c')
+
     def test_generated_guides_match_bundled_artifacts_and_keep_unrelated_files(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)
@@ -45,7 +72,7 @@ class PackageUserGuideTests(unittest.TestCase):
                 self.assertEqual(set(form['fields']), set(form['values']))
                 self.assertEqual(len(form['fields']), 3)
                 self.assertIn(f'/doc/guide/{language}/practice.mdlr', web_source)
-                name = f'Guide-v12-{language}.mdlz'
+                name = f'Guide-v13-{language}.mdlz'
                 self.assertEqual((output / name).read_bytes(), (ROOT / 'Sources/LeonardoApp/Resources' / name).read_bytes())
                 with zipfile.ZipFile(output / name) as archive:
                     self.assertEqual(len(archive.namelist()), 16)
@@ -61,7 +88,7 @@ class PackageUserGuideTests(unittest.TestCase):
                     source = archive.read('guide.mdlf').decode('utf-8')
                     metadata = json.loads(source.split('---\n')[1])
                     self.assertEqual(metadata['formatVersion'], 1)
-                    self.assertEqual(metadata['document']['revision'], 12)
+                    self.assertEqual(metadata['document']['revision'], 13)
                     maintenance = (ROOT / 'doc/guide/README.md').read_text()
                     self.assertIn(name, maintenance)
                     self.assertIn(f"User Guides/v{metadata['document']['revision']}/", maintenance)

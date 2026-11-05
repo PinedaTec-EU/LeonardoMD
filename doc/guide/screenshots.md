@@ -10,13 +10,14 @@ provenance is recorded in each locale’s `assets/illustrations.provenance.json`
 | --- | --- | --- |
 | `en/es/assets/home.png` | `e457e86` | Actual Welcome component; isolated empty favorites/recents |
 | `en/es/assets/palette.png` | `e457e86` | Actual palette editor; initial valid global palette |
-| `en/es/assets/mobile.png` | `e457e86` | Actual Little Leonardo preferences; disabled service, no devices/shares |
-| `en/es/assets/macs.png` | `e457e86` | Actual Linked Macs preferences; no connections/imports |
+| `en/es/assets/sync-sharing-v12.png` | `f1ecf7b` | Synchronization → Share from this Mac; one common service control; disabled helper/sharing; isolated empty content |
+| `en/es/assets/sync-connections-v12.png` | `f1ecf7b` | Synchronization → Connect to other computers; same common service control; disabled Connect; isolated empty connections/copies |
 | `en/es/assets/updates.png` | `e457e86` | Actual update preferences; synthetic installed version, stable subscription, fake transport |
 | `en/es/assets/activation.png` | `b8900bf` | Actual global activation dialog, synthetic source; copied byte-for-byte from `doc/validation/extension-recommendations/current/dialog-<locale>-global.png` |
 | `en/es/assets/warnings.png` | `b8900bf` | Actual extension preferences/reset; copied byte-for-byte from `doc/validation/extension-recommendations/current/reset-<locale>.png` |
 
 Full capture revisions:
+- `f1ecf7b`: `0bc5a737bbbb8e38407a079c70b34cb896aa3064`.
 - `e457e86`: `e457e86eccade662825253d4f94dc3a20999edf9`.
 - `b8900bf`: `b8900bf14f17aba18e4e89cb141c392048a5314f`.
 
@@ -30,7 +31,10 @@ LEONARDO_GUIDE_FEATURE_EVIDENCE=/tmp/guide-photos LEONARDO_NATIVE_CAPTURE_LANGUA
 Build the current tests first using the repository compilation recorder.
 Repeat with `es`. The fixture never starts a sharing service or pairs a real
 device, installs an update, sends a proposal or launches the packaged product.
-Source `e457e86`'s production UI files are unchanged in this help-only continuation;
-only guide selection/resources, editorial content, test harness and governance
-change. Keep the original capture revision when reusing instructional assets.
+Home, palette and update illustrations retain their original `e457e86` capture
+revision; the synchronization pages were recaptured at `f1ecf7b` after the role
+reorganization and common lifecycle composition. Historical pre-role originals
+are preserved under `doc/validation/sync-helper/accepted-component-capture/`
+and `previous-guide/`. Keep the actual original capture revision when reusing
+an unchanged component; do not attribute an older capture to changed UI.
 For changed UI, recapture and replace both locales with new canonical metadata.

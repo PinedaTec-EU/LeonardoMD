@@ -40,10 +40,10 @@ final class UserGuideFeatureCaptureTests: XCTestCase {
                           state: "Home; isolated empty favorites and recent items", session: session, destination: destination, code: code)
         try await capture(PaletteEditor(session: session, projectScope: false), name: "palette", size: NSSize(width: 640, height: 400),
                           state: "Customize palette; initial valid global palette", session: session, destination: destination, code: code)
-        try await capture(MobileSyncPreferencesView(session: session, controller: mobile), name: "mobile", size: NSSize(width: 560, height: 660),
-                          state: "Little Leonardo; bundled helper present but disabled; no shared projects or devices; isolated configuration", session: session, destination: destination, code: code)
-        try await capture(DesktopPeerPreferencesView(session: session, controller: peers), name: "macs", size: NSSize(width: 560, height: 650),
-                          state: "Linked Macs; helper disabled; no connections or imported copies; isolated configuration", session: session, destination: destination, code: code)
+        try await capture(SynchronizationPreferencesView(session: session, source: mobile, client: peers), name: "mobile", size: NSSize(width: 532, height: 490),
+                          state: "Synchronization / Share from this Mac; helper disabled; isolated configuration", session: session, destination: destination, code: code)
+        try await capture(SynchronizationPreferencesView(session: session, source: mobile, client: peers, initialPage: .connections), name: "macs", size: NSSize(width: 532, height: 490),
+                          state: "Synchronization / Connect to other computers; helper disabled; isolated configuration", session: session, destination: destination, code: code)
         try await capture(UpdatePreferencesView(updates: updates), name: "updates", size: NSSize(width: 560, height: 550),
                           state: "Updates; stable subscription; fake driver; no network or install", session: session, destination: destination, code: code)
         await mobile.stop()

@@ -10,21 +10,29 @@ struct DesktopPeerPreferencesView: View {
 
     var body: some View {
         Form {
-            SyncHelperPreferencesSection(controller: controller.helper)
+            Text(L10n.text("Access saved content shared by another computer. This Mac can also share its own content independently."))
+                .font(.callout).foregroundStyle(.secondary)
             Picker(L10n.text("Synchronization interval"), selection: Binding(
                 get: { controller.syncIntervalMinutes }, set: { controller.updateInterval($0) })) {
                 ForEach(DesktopPeerController.intervals, id: \.self) { minutes in
                     Text(minutes == 0 ? L10n.text("Manual") : String(format: L10n.text("Every %d minutes"), minutes)).tag(minutes)
                 }
             }
-            Button(L10n.text("Link another Mac")) { pairing = true }.disabled(!controller.helper.online)
+            Button(L10n.text("Connect to another Mac")) { pairing = true }.disabled(!controller.helper.online)
             Text(L10n.text("Enable Leonardo Sync on this Mac and sharing on the other Mac, then compare the codes."))
                 .font(.caption).foregroundStyle(.secondary)
-            Section(L10n.text("Linked Macs")) {
+            Section(L10n.text("Computers I connect to")) {
+                if controller.connections.isEmpty {
+                    Text(L10n.text("On the other Mac, open Synchronization → Share from this Mac and copy its invitation link."))
+                        .foregroundStyle(.secondary)
+                }
                 ForEach(controller.connections, id: \.id) { connection in
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text(connection.endpoint.absoluteString).textSelection(.enabled)
+                            VStack(alignment: .leading) {
+                                Text(connection.endpoint.absoluteString).textSelection(.enabled)
+                                Text(L10n.text("LeonardoMD on Mac · changes require review")).font(.caption).foregroundStyle(.secondary)
+                            }
                             Spacer()
                             if connection.revoked { Text(L10n.text("Revoked")) }
                             else { Button(L10n.text("Sync")) { Task { await controller.refresh(connection.id) } }.disabled(!controller.helper.online) }
@@ -114,7 +122,9 @@ private struct DesktopPeerPairingView: View {
     @State private var name = Host.current().localizedName ?? "LeonardoMD"
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(L10n.text("Link another Mac")).font(.title2.bold())
+            Text(L10n.text("Connect to another Mac")).font(.title2.bold())
+            Text(L10n.text("Paste the invitation from Share from this Mac on the other computer. Your own sharing can stay off."))
+                .font(.callout).foregroundStyle(.secondary)
             TextField(L10n.text("HTTPS address or pairing link"), text: $address)
                 .accessibilityIdentifier("desktop-peer-address")
             TextField(L10n.text("Device name"), text: $name)

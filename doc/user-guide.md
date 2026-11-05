@@ -525,18 +525,18 @@ Enable **Git tools** for the project in General preferences. Leonardo uses `/usr
 
 These operations are manual. Pull is fast-forward only and protects dirty worktrees; divergent history or conflicts need deliberate resolution. Open a conflicted file in the source editor, resolve and review its contents, then stage/commit as appropriate. Authentication failures belong to the system Git credential setup. Save document drafts before operating and refresh the panel if another tool changed the repository. Leonardo does not silently merge conflicting content.
 
-## 14. Little Leonardo: read on iPhone or iPad
+## 14. Share from this Mac: Little Leonardo and other computers
 
-![Little Leonardo: direct service disabled; no project or device is shared in this example.](guide/en/assets/mobile-helper-v8.png)
+![Synchronization → Share from this Mac; the common service and sharing are off in this example.](guide/en/assets/sync-sharing-v12.png)
 
-*Little Leonardo: direct service disabled; no project or device is shared in this example.*
+*Synchronization → Share from this Mac; the common service and sharing are off in this example.*
 
-Little Leonardo is a **read-only companion**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Little Leonardo**. The service requires a Developer ID signed distribution; local ad-hoc builds cannot enable it.
+Little Leonardo is a **read-only companion**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Synchronization → Share from this Mac**. The same page serves Little Leonardo and other Macs; a Mac can share some content and independently connect to another Mac for other content. The service requires a Developer ID signed distribution; local ad-hoc builds cannot enable it.
 
-1. Enable **Leonardo Sync helper**. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. Wait for **Sync helper running**.
+1. Enable **Leonardo Sync** using the single common control above both pages. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. Wait for **Sync helper running**.
 2. Enable **Share saved files from this Mac** on a network you intend to use. Review the selected local address; Automatic can choose an available address.
 3. Choose **Share current project**, then select the folders/documents you want or the entire project. Confirm the selection; unrelated content is not implicitly shared.
-4. Create a pairing QR code or copy the pairing link. Open it in Little Leonardo, compare the displayed verification codes and approve the pending device on the Mac.
+4. Create an invitation. Its QR and copied link are two ways to open the same invitation: scan the QR in Little Leonardo or paste the link under **Connect to other computers** on another Mac. Compare the verification codes and approve the pending device on this source Mac. Device rows state **read-only** (Little Leonardo or compatible clients) or **LeonardoMD on Mac · changes require review**. The label follows the granted capability, not the device name.
 5. Import the shared content on the companion and verify it before relying on an offline copy. Use Revoke on the Mac to remove a device's future access.
 
 **Leonardo Sync is required in both directions.** If it is disabled, stopped, awaiting macOS approval or unavailable, the Mac is offline for device synchronization even while LeonardoMD is open. Enable it from these preferences on each Mac. The service starts after you log in following a restart and keeps sharing when the editor closes; it does not serve documents before login or wake a sleeping Mac. If unavailable, check the background-item approval, network, shared disk and file permissions, then retry.
@@ -545,13 +545,13 @@ The helper shares **saved files only**, including while the editor is open. Save
 
 The Mac must be reachable for transfers. A private overlay VPN requires the explicit setting and a compatible reachable address; it does not make a public cloud service. Do not assume pairing works across arbitrary networks. Revocation stops future authorized access; it cannot erase copies already downloaded. The iOS companion does not offer Git editing or send document edits back to the Mac. Do not confuse desktop proposal review with mobile editing.
 
-## 15. Linked Macs and offline copies
+## 15. Connect to other computers and offline copies
 
-![Linked Macs before pairing or importing a project.](guide/en/assets/macs-helper-v8.png)
+![Synchronization → Connect to other computers before pairing or importing a project.](guide/en/assets/sync-connections-v12.png)
 
-*Linked Macs before pairing or importing a project.*
+*Synchronization → Connect to other computers before pairing or importing a project.*
 
-Use **Preferences → Linked Macs** in the principal instance. The Leonardo Sync helper switch is also available here. Enable the Leonardo Sync helper on both Macs. On the source Mac, also enable sharing and select the intended content first. On the second Mac, Link another Mac using its HTTPS address or pairing link and a device name. Compare verification codes on both devices and approve the connection before importing projects.
+Use **Preferences → Synchronization → Connect to other computers** in the principal instance. Enable **Leonardo Sync** with the common control on both Macs. On the source Mac, open **Share from this Mac**, enable sharing and select the intended content. On this receiving Mac, choose **Connect to another Mac** and paste the source invitation link or HTTPS address with a name for this device. Compare the codes and approve on the source before importing. Your own **Share saved files from this Mac** can stay off: consuming content does not publish yours. Neither role is a global master/client mode.
 
 Import an available project to create an offline copy. Open it locally, then use manual synchronization or select a synchronization interval. Network reachability is still required for transfers. A disconnected copy remains a local working copy; it is not evidence that the source has your latest edits.
 

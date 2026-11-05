@@ -533,18 +533,18 @@ Activa **Herramientas Git** para el proyecto en General. Leonardo usa `/usr/bin/
 
 Las operaciones son manuales. Pull solo permite avance rápido y protege árboles con cambios; una divergencia o conflicto exige resolverlo deliberadamente. Abre el archivo en conflicto en el editor de fuente, resuelve y revisa su contenido, y después prepara/crea el commit según corresponda. Los fallos de autenticación pertenecen a las credenciales de Git del sistema. Guarda borradores antes de operar y actualiza el panel si otra herramienta cambió el repositorio. Leonardo no fusiona silenciosamente contenido en conflicto.
 
-## 14. Little Leonardo: leer en iPhone o iPad
+## 14. Compartir desde este Mac: Little Leonardo y otros equipos
 
-![Little Leonardo: servicio directo desactivado; este ejemplo no comparte proyectos ni dispositivos.](guide/es/assets/mobile-helper-v8.png)
+![Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.](guide/es/assets/sync-sharing-v12.png)
 
-*Little Leonardo: servicio directo desactivado; este ejemplo no comparte proyectos ni dispositivos.*
+*Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.*
 
-Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Little Leonardo** de la instancia principal del Mac. El servicio requiere una distribución firmada con Developer ID; las compilaciones locales con firma ad-hoc no pueden habilitarlo.
+Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Sincronización → Compartir desde este Mac** en la instancia principal. Esta página sirve a Little Leonardo y a otros Macs; un Mac puede compartir contenido y, de forma independiente, conectarse a otro para acceder a otro contenido. El servicio requiere una distribución firmada con Developer ID; las compilaciones locales con firma ad-hoc no pueden habilitarlo.
 
-1. Activa **Habilitar el servicio Leonardo Sync**. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. Espera a **Servicio de sincronización en ejecución**.
+1. Activa **Leonardo Sync** con el único control común situado encima de ambas páginas. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. Espera a **Servicio de sincronización en ejecución**.
 2. Activa **Compartir archivos guardados de este Mac** en una red que quieras utilizar. Revisa la dirección local; Automática puede seleccionar una disponible.
 3. Elige **Compartir el proyecto actual** y selecciona carpetas/documentos o todo el proyecto. Confirma la selección; el resto del contenido no se comparte implícitamente.
-4. Crea un QR de emparejamiento o copia el enlace. Ábrelo en Little Leonardo, compara los códigos de verificación y aprueba el dispositivo pendiente en el Mac.
+4. Crea una invitación. Su QR y el enlace copiado permiten abrir la misma invitación: escanea el QR en Little Leonardo o pega el enlace en **Conectarme a otros equipos** en otro Mac. Compara los códigos y aprueba el dispositivo pendiente en este Mac de origen. Las filas indican **solo lectura** (Little Leonardo o clientes compatibles) o **LeonardoMD en Mac · cambios sujetos a revisión**. La etiqueta depende del permiso concedido, no del nombre del equipo.
 5. Importa el contenido compartido en el compañero y compruébalo antes de depender de una copia sin conexión. Usa Revocar en el Mac para retirar acceso futuro a un dispositivo.
 
 **Leonardo Sync es necesario en ambas direcciones.** Si está deshabilitado, detenido, pendiente de autorización de macOS o no disponible, el Mac queda sin conexión para sincronizar entre dispositivos aunque LeonardoMD esté abierto. Actívalo desde estas preferencias en cada Mac. El servicio se inicia al entrar en tu cuenta después de reiniciar y sigue compartiendo cuando cierras el editor; no sirve documentos antes de iniciar sesión ni despierta un Mac en reposo. Si no está disponible, revisa la autorización en segundo plano, la red, el disco compartido y los permisos de archivos, y vuelve a intentarlo.
@@ -553,13 +553,13 @@ El servicio comparte **solo archivos guardados**, también con el editor abierto
 
 El Mac debe estar accesible para transferir. Una VPN privada superpuesta requiere su ajuste explícito y una dirección compatible accesible; no convierte el sistema en un servicio público en la nube. No presupongas conectividad entre redes cualesquiera. Revocar impide acceso autorizado futuro; no borra copias ya descargadas. El compañero iOS no ofrece edición Git ni devuelve ediciones de documentos al Mac. La revisión de propuestas del escritorio no es edición móvil.
 
-## 15. Macs enlazados y copias sin conexión
+## 15. Conectarme a otros equipos y copias sin conexión
 
-![Macs enlazados antes de emparejar o importar un proyecto.](guide/es/assets/macs-helper-v8.png)
+![Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.](guide/es/assets/sync-connections-v12.png)
 
-*Macs enlazados antes de emparejar o importar un proyecto.*
+*Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.*
 
-Usa **Preferencias → Macs enlazados** en la instancia principal. El interruptor del servicio Leonardo Sync también está disponible aquí. Habilita el servicio Leonardo Sync en ambos Macs. En el Mac de origen, activa además compartir archivos y selecciona primero el contenido previsto. En el segundo Mac, vincula otro Mac mediante su dirección HTTPS o enlace de emparejamiento y un nombre de dispositivo. Compara los códigos en ambos y aprueba la conexión antes de importar proyectos.
+Usa **Preferencias → Sincronización → Conectarme a otros equipos** en la instancia principal. Activa **Leonardo Sync** con el control común en ambos Macs. En el de origen, abre **Compartir desde este Mac**, activa compartir y selecciona el contenido. En este Mac receptor, pulsa **Conectarme a otro Mac** y pega la invitación o dirección HTTPS del origen junto con un nombre para este dispositivo. Compara los códigos y aprueba en el origen antes de importar. Puedes mantener desactivado **Compartir archivos guardados de este Mac**: acceder al contenido de otro no publica el tuyo. Ninguna función es un modo global de máster o cliente.
 
 Importa un proyecto disponible para crear una copia sin conexión. Ábrela localmente y usa sincronización manual o elige un intervalo. Las transferencias siguen necesitando conectividad. Una copia desconectada es trabajo local; no demuestra que el origen tenga tus últimos cambios.
 
