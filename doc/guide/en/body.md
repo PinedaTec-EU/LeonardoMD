@@ -409,9 +409,39 @@ select it again and retry. Close the inspector to give the document more space.
 stroke width and Solid/Brush, draw, Undo or Clear. New rubrics created here are
 always saved in your local library. Pick a saved thumbnail to insert another
 copy. The dialog's Delete removes only the library entry, never ink already
-inserted in documents. The library holds up to 100 entries on this Mac; it is
-not yet synchronized with Little Leonardo. Brush ends taper without requiring
-a pressure-sensitive pencil. These are visual rubrics, not digital certificates.
+inserted in documents. The library holds up to 100 entries on this Mac. A Mac
+with the current Leonardo Sync helper can also choose **Use a linked Little
+Leonardo** and target one explicitly capable, read-only device. This sends a
+single request; it does not broadcast to the linked group or grant document
+editing. Pending, accepted, rejected, cancelled and expired states are shown;
+when the device returns its drawing, review the preview and label, then choose
+**Save to library** or **Save and insert**. The request intent is saved before
+the helper call, and the returned drawing survives an app/helper restart. If a
+create acknowledgement is lost, **Retry** continues the same request instead
+of asking the companion twice. If the open
+document changed while the device was drawing, insertion is rejected but the
+returned drawing remains available to save in the library. After saving, use
+**Request another rubric** to capture a second response; saved results stay in
+the local library instead of blocking a new request. Use **Refresh linked
+devices** when a newly upgraded companion is not yet listed. Older companions
+that do not advertise rubric capture stay unsupported until their companion
+update. If Leonardo Sync reports an outdated helper, disable and re-enable
+**Leonardo Sync** in Preferences so the bundled helper is registered again,
+then retry the request. Same-ID Retry is limited to the short lost-acknowledgement
+window. If the helper reports that the request is expired or missing, or that
+window has passed, Leonardo keeps a local tombstone and **Request again** creates
+a fresh request ID; it never silently recreates the old request. If you cancel
+while the helper is still creating the request, Leonardo confirms that
+cancellation before showing any returned drawing; a late completion cannot be
+reviewed or saved. If the companion completes just before cancellation is
+confirmed, Leonardo discards that result and shows **Request another rubric**;
+it never turns the cancelled request into a library entry. Brush ends taper without requiring a pressure-sensitive
+pencil. These
+are visual rubrics, not digital certificates.
+
+![Linked rubric request with an offline helper](assets/rubric-linked-offline.png)
+
+*Production linked-rubric section showing an offline helper; no device is paired in this illustration.*
 
 For a rubric form field, use **Fill** and click its area. The expanded dialog
 lets you choose saved ink or draw new ink; **Save in my rubrics** controls whether
@@ -540,6 +570,13 @@ Little Leonardo is a **read-only companion**. Desktop sharing and device trust a
 3. Choose **Share current project**, then select the folders/documents you want or the entire project. Confirm the selection; unrelated content is not implicitly shared.
 4. Create an invitation. Its QR and copied link are two ways to open the same invitation: scan the QR in Little Leonardo or paste the link under **Connect to other computers** on another Mac. Compare the verification codes and approve the pending device on this source Mac. Device rows state **read-only** (Little Leonardo or compatible clients) or **LeonardoMD on Mac · changes require review**. The label follows the granted capability, not the device name.
 5. Import the shared content on the companion and verify it before relying on an offline copy. Use Revoke on the Mac to remove a device's future access.
+
+Rubric capture is a separate, explicit Mac action. After a companion advertises
+support, **Insert → New rubric… → Use a linked Little Leonardo** lists that
+one device. The companion only draws and returns the rubric; it cannot edit the
+document. A helper, service or capability problem is shown as an actionable
+offline/unsupported state. The current companion release does not yet advertise
+this capability; the mobile request/draw/send flow is delivered separately.
 
 **Leonardo Sync is required in both directions.** If it is disabled, stopped, awaiting macOS approval or unavailable, the Mac is offline for device synchronization even while LeonardoMD is open. Enable it from these preferences on each Mac. The service starts after you log in following a restart and keeps sharing when the editor closes; it does not serve documents before login or wake a sleeping Mac. If unavailable, check the background-item approval, network, shared disk and file permissions, then retry.
 

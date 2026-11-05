@@ -15,6 +15,10 @@ public protocol DesktopSyncRuntimeAccess: Sendable {
     func approve(requestID: UUID, code: String, projectIDs: Set<UUID>) async throws
     func reject(requestID: UUID) async throws
     func revoke(deviceID: UUID) async throws
+    func createRubricRequest(deviceID: UUID, requestID: UUID, requesterName: String, labelHint: String?) async throws -> RubricRequest
+    func cancelRubricRequest(requestID: UUID) async throws -> RubricRequest
+    func rubricResponse(requestID: UUID) async throws -> RubricResponse?
+    func rubricStatus(requestID: UUID) async throws -> RubricExchangeStatus
 }
 extension DesktopDirectRuntime: DesktopSyncRuntimeAccess {}
 #endif

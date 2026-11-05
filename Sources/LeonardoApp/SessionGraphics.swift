@@ -13,21 +13,34 @@ extension AppSession {
         rubricRequest = RubricRequest(documentURL: documentURL, source: content, fieldID: fieldID)
     }
 
-    func finishRubric(_ request: RubricRequest, label: String, rubric: LeonardoRubric, saveToLibrary: Bool) -> Bool {
+    func finishRubric(_ request: RubricRequest, label: String, rubric: LeonardoRubric, saveToLibrary: Bool,
+                      sourceRequestID: UUID? = nil) -> Bool {
         guard documentURL == request.documentURL, content == request.source, rubric.isValid else { return false }
         if let field = request.fieldID {
             guard canFillLeonardoForm, let value = rubric.jsonValue,
                   let definition = leonardoFieldDefinition(field), !definition.readOnly, definition.type == .rubric else { return false }
             do {
-                if saveToLibrary { try rubricLibrary.add(label: label, rubric: rubric) }
+                if saveToLibrary { try rubricLibrary.add(label: label, rubric: rubric, sourceRequestID: sourceRequestID) }
                 return updateLeonardoFields(expected: request.source, changes: [field: value]) != nil
             } catch { report(error); return false }
         }
         guard canEditGraphics else { return false }
         do {
-            if saveToLibrary { try rubricLibrary.add(label: label, rubric: rubric) }
+            if saveToLibrary { try rubricLibrary.add(label: label, rubric: rubric, sourceRequestID: sourceRequestID) }
             return insertGraphic(.init(label: label, rubric: rubric))
         } catch { report(error); return false }
+    }
+
+    /// Saves a received rubric without inserting it into the open document.
+    /// This remains available when the document changed while the peer was
+    /// drawing, so the durable response is not lost.
+    @discardableResult
+    func saveRubricToLibrary(label: String, rubric: LeonardoRubric, sourceRequestID: UUID) -> String? {
+        do {
+            return try rubricLibrary.add(label: label, rubric: rubric, sourceRequestID: sourceRequestID).id
+        } catch {
+            report(error); return nil
+        }
     }
 
     @discardableResult

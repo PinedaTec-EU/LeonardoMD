@@ -12,6 +12,7 @@ final class SyncHelperController {
     private(set) var enabled = false
     private(set) var busy = false
     private(set) var sharing: RunningDirectService?
+    private(set) var supportsRubricExchange = false
     var error: String?
     private let service: any SyncHelperRegistration
     private let client: any SyncHelperControlAccess
@@ -59,23 +60,24 @@ final class SyncHelperController {
             enabled = settings.mobileSync.helperEnabled
             error = nil
             guard hasExecutable() else {
-                state = .notInstalled; sharing = nil; return
+                state = .notInstalled; sharing = nil; supportsRubricExchange = false; return
             }
-            guard enabled else { state = .disabled; sharing = nil; return }
+            guard enabled else { state = .disabled; sharing = nil; supportsRubricExchange = false; return }
             switch service.status {
-            case .requiresApproval: state = .approvalRequired; sharing = nil
+            case .requiresApproval: state = .approvalRequired; sharing = nil; supportsRubricExchange = false
             case .enabled:
                 let status = try await client.status()
                 guard expected == revision else { return }
                 state = status.enabled ? .running : .disabled
                 sharing = status.sharing
+                supportsRubricExchange = status.supportsRubricExchange
                 error = status.error
-            case .notFound, .notRegistered: state = .failed; sharing = nil
-            @unknown default: state = .failed; sharing = nil
+            case .notFound, .notRegistered: state = .failed; sharing = nil; supportsRubricExchange = false
+            @unknown default: state = .failed; sharing = nil; supportsRubricExchange = false
             }
         } catch {
             guard expected == revision else { return }
-            state = .failed; sharing = nil; self.error = L10n.text(error.localizedDescription)
+            state = .failed; sharing = nil; supportsRubricExchange = false; self.error = L10n.text(error.localizedDescription)
         }
     }
 

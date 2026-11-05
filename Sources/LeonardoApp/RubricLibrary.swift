@@ -8,6 +8,20 @@ struct SavedRubric: Codable, Identifiable {
     let id: String
     var label: String
     var rubric: LeonardoRubric
+    let sourceRequestID: UUID?
+
+    init(id: String, label: String, rubric: LeonardoRubric, sourceRequestID: UUID? = nil) {
+        self.id = id; self.label = label; self.rubric = rubric; self.sourceRequestID = sourceRequestID
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, label, rubric, sourceRequestID }
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(id: try container.decode(String.self, forKey: .id),
+                  label: try container.decode(String.self, forKey: .label),
+                  rubric: try container.decode(LeonardoRubric.self, forKey: .rubric),
+                  sourceRequestID: try container.decodeIfPresent(UUID.self, forKey: .sourceRequestID))
+    }
 }
 
 @MainActor @Observable
@@ -33,22 +47,39 @@ final class RubricLibrary {
         let data = try Data(contentsOf: url)
         guard data.count <= 16 * 1024 * 1024 else { throw CocoaError(.fileReadTooLarge) }
         let decoded = try JSONDecoder().decode([SavedRubric].self, from: data)
+        let sourceIDs = decoded.compactMap(\.sourceRequestID)
         guard decoded.count <= 100, Set(decoded.map(\.id)).count == decoded.count,
+              Set(sourceIDs).count == sourceIDs.count,
               decoded.allSatisfy({ $0.rubric.isValid && !$0.label.isEmpty && $0.label.count <= 120 }) else {
             throw CocoaError(.fileReadCorruptFile)
         }
         return decoded
     }
 
-    func add(label: String, rubric: LeonardoRubric) throws {
+    @discardableResult
+    func add(label: String, rubric: LeonardoRubric, sourceRequestID: UUID? = nil) throws -> SavedRubric {
         let label = label.trimmingCharacters(in: .whitespacesAndNewlines)
         guard rubric.isValid, !label.isEmpty, label.count <= 120 else {
             throw CocoaError(.validationMissingMandatoryProperty)
         }
+        var result: SavedRubric?
         try update { current in
+            if let sourceRequestID, let index = current.firstIndex(where: { $0.sourceRequestID == sourceRequestID }) {
+                let existing = current[index]
+                let updated = SavedRubric(id: existing.id, label: label, rubric: rubric,
+                                          sourceRequestID: sourceRequestID)
+                result = updated
+                var next = current; next[index] = updated
+                return next
+            }
             guard current.count < 100 else { throw CocoaError(.fileWriteOutOfSpace) }
-            return current + [SavedRubric(id: UUID().uuidString, label: label, rubric: rubric)]
+            let added = SavedRubric(id: UUID().uuidString, label: label, rubric: rubric,
+                                    sourceRequestID: sourceRequestID)
+            result = added
+            return current + [added]
         }
+        guard let result else { throw CocoaError(.fileReadCorruptFile) }
+        return result
     }
 
     func remove(id: String) throws { try update { $0.filter { $0.id != id } } }

@@ -34,6 +34,9 @@ public struct SyncHelperClient: SyncHelperControlAccess, DesktopSyncRuntimeAcces
                 if code == SyncHelperErrorCode.staleComparison.rawValue {
                     pending.finish(.failure(ReconciliationError.staleComparison)); return
                 }
+                if code == SyncHelperErrorCode.rubricNotFound.rawValue {
+                    pending.finish(.failure(RubricExchangeError.notFound)); return
+                }
                 if let data { pending.finish(.success(data)) }
                 else { pending.finish(.failure(SyncHelperFailure(error ?? "Sync helper request failed."))) }
             }
@@ -60,6 +63,19 @@ public struct SyncHelperClient: SyncHelperControlAccess, DesktopSyncRuntimeAcces
     }
     public func reject(requestID: UUID) async throws { let _: Bool = try await request(.reject(requestID)) }
     public func revoke(deviceID: UUID) async throws { let _: Bool = try await request(.revoke(deviceID)) }
+    public func createRubricRequest(deviceID: UUID, requestID: UUID, requesterName: String,
+                                    labelHint: String? = nil) async throws -> RubricRequest {
+        try await request(.createRubricRequest(deviceID, requestID, requesterName, labelHint))
+    }
+    public func cancelRubricRequest(requestID: UUID) async throws -> RubricRequest {
+        try await request(.cancelRubricRequest(requestID))
+    }
+    public func rubricResponse(requestID: UUID) async throws -> RubricResponse? {
+        try await request(.rubricStatus(requestID), as: RubricExchangeStatus.self).response
+    }
+    public func rubricStatus(requestID: UUID) async throws -> RubricExchangeStatus {
+        try await request(.rubricStatus(requestID))
+    }
     public func reviewIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposalReview {
         let value: SyncHelperReview = try await request(.review(deviceID, upload))
         return try DesktopPeerProposalReview(proposal: value.proposal, source: value.source)

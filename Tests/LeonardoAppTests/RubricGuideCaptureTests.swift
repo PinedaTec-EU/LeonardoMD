@@ -2,6 +2,8 @@ import AppKit
 import SwiftUI
 import XCTest
 import LeonardoCore
+import LeonardoSync
+import LeonardoDesktopSync
 @testable import LeonardoApp
 
 @MainActor
@@ -33,6 +35,16 @@ final class RubricGuideCaptureTests: XCTestCase {
             try await GuideCaptureSupport.captureNative(editor, size: NSSize(width: 696, height: 580),
                 to: folder.appendingPathComponent("rubric-canvas.png"), language: code,
                 state: "Production rubric editor; isolated synthetic library; empty new canvas; no device or legal signing")
+            let controller = DesktopSyncController(preferencesURL: root.appendingPathComponent("capture-prefs-\(code).json"))
+            let linkedEditor = NSHostingView(rootView: RubricEditor(request: request, library: library,
+                syncController: controller) { _, _, _ in false }
+                .modifier(SessionAppearance(session: session)).frame(width: 696, height: 360).background(Color(nsColor: .windowBackgroundColor)))
+            try await GuideCaptureSupport.captureNative(linkedEditor, size: NSSize(width: 696, height: 360),
+                to: folder.appendingPathComponent("rubric-linked-offline.png"), language: code,
+                state: "Production linked-rubric section; helper offline state; isolated synthetic data; no device or legal signing",
+                pixelScale: 0.72)
+            try await captureRequestAndReviewStates(root: root, folder: folder, language: code,
+                request: request, library: library, ink: ink)
             let header = NSHostingView(rootView: DocumentToolbar(session: session).modifier(SessionAppearance(session: session)).frame(width: 1260, height: 74).background(Color(nsColor: .windowBackgroundColor)))
             try await GuideCaptureSupport.captureNative(header, size: NSSize(width: 1260, height: 74),
                 to: folder.appendingPathComponent("document-toolbar.png"), language: code,
@@ -49,4 +61,98 @@ final class RubricGuideCaptureTests: XCTestCase {
             session.stop()
         }
     }
+
+    private func captureRequestAndReviewStates(root: URL, folder: URL, language: String,
+                                               request: LeonardoApp.RubricRequest, library: RubricLibrary,
+                                               ink: LeonardoRubric) async throws {
+        let targetID = UUID()
+        let ownerID = UUID()
+        let now = Date()
+        var pending = try LeonardoSync.RubricRequest(id: UUID(), targetDeviceID: targetID,
+            requesterID: ownerID, requesterName: "Mac Studio", labelHint: "Geometry",
+            createdAt: now)
+        let document = root.appendingPathComponent("Inspection.mdlf")
+        let source = "# Synthetic inspection"
+        let requestStoreURL = root.appendingPathComponent("request-state/MobileSync/RubricCaptures/captures.json")
+        let requestStore = RubricCaptureStore(url: requestStoreURL, now: Date.init)
+        try requestStore.upsert(RubricCaptureRecord(id: pending.id, targetDeviceID: targetID,
+            targetDeviceName: "Little Leonardo", documentURL: document,
+            sourceDigest: RubricCaptureRecord.digest(source: source), fieldID: nil,
+            labelHint: pending.labelHint, request: pending, updatedAt: now))
+        let pendingController = DesktopSyncController(
+            preferencesURL: root.appendingPathComponent("request-state/preferences.json"),
+            runtime: RubricGuideCaptureRuntime(status: RubricExchangeStatus(request: pending)))
+        let pendingEditor = NSHostingView(rootView: RubricEditor(
+            request: RubricRequest(documentURL: document, source: source, fieldID: nil), library: library,
+            syncController: pendingController) { _, _, _ in false }
+            .frame(width: 696, height: 760).background(Color(nsColor: .windowBackgroundColor)))
+        try await GuideCaptureSupport.captureNative(pendingEditor, size: NSSize(width: 696, height: 760),
+            to: folder.appendingPathComponent("rubric-linked-request.png"), language: language,
+            state: "Production linked-rubric request; target Little Leonardo; pending request; synthetic data; no device or legal signing")
+
+        let reviewRoot = root.appendingPathComponent("review-state")
+        let reviewStore = RubricCaptureStore(url: reviewRoot.appendingPathComponent("MobileSync/RubricCaptures/captures.json"), now: Date.init)
+        pending.state = .completed
+        let response = try LeonardoSync.RubricResponse(requestID: pending.id, targetDeviceID: targetID,
+            requesterID: ownerID, label: language == "es" ? "Rúbrica revisada" : "Reviewed rubric",
+            rubric: ink, submittedAt: now.addingTimeInterval(1))
+        try reviewStore.upsert(RubricCaptureRecord(id: pending.id, targetDeviceID: targetID,
+            targetDeviceName: "Little Leonardo", documentURL: document,
+            sourceDigest: RubricCaptureRecord.digest(source: source), fieldID: nil,
+            labelHint: pending.labelHint, request: pending, response: response, updatedAt: now.addingTimeInterval(1)))
+        let reviewController = DesktopSyncController(
+            preferencesURL: reviewRoot.appendingPathComponent("preferences.json"),
+            runtime: RubricGuideCaptureRuntime(status: RubricExchangeStatus(request: pending, response: response)))
+        let reviewEditor = NSHostingView(rootView: RubricEditor(
+            request: RubricRequest(documentURL: document, source: source, fieldID: nil), library: library,
+            syncController: reviewController) { _, _, _ in false }
+            .frame(width: 696, height: 760).background(Color(nsColor: .windowBackgroundColor)))
+        try await GuideCaptureSupport.captureNative(reviewEditor, size: NSSize(width: 696, height: 760),
+            to: folder.appendingPathComponent("rubric-linked-review.png"), language: language,
+            state: "Production linked-rubric response review; target Little Leonardo; unsaved response with save actions; synthetic data; no device or legal signing")
+    }
+}
+
+private actor RubricGuideCaptureRuntime: DesktopSyncRuntimeAccess {
+    let registry: PairingRegistry
+    let status: RubricExchangeStatus
+
+    init(status: RubricExchangeStatus) {
+        self.status = status
+        var registry = PairingRegistry()
+        registry.setEnabled(true)
+        if let credential = try? PairingRegistry.makeCredential(),
+           let pairing = try? registry.requestPairing(deviceName: "Little Leonardo", credential: credential,
+               serverFingerprint: Data(repeating: 0, count: 32), now: Date(), kind: .readOnly,
+               capabilities: [.rubricExchangeV1]) {
+            _ = try? registry.approve(requestID: pairing.id, comparisonCode: pairing.comparisonCode,
+                                      projects: [UUID()], now: Date())
+        }
+        self.registry = registry
+    }
+
+    func start(host: String, port: UInt16, projects: [SharedProjectSource], allowPrivateOverlay: Bool) async throws -> RunningDirectService {
+        throw DesktopRuntimeError.notRunning
+    }
+    func stop() async throws { }
+    func consentState() async throws -> PairingRegistry { registry }
+    func incomingProposals() async throws -> [DesktopPeerIncomingProposal] { [] }
+    func reviewIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposalReview {
+        throw DesktopRuntimeError.notRunning
+    }
+    func applyIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload, review: DesktopPeerProposalReview,
+                               decisions: [String: ReconciliationChoice], projectRoot: URL,
+                               currentSource: CorpusSnapshot, currentDisk: CorpusSnapshot) async throws -> DesktopPeerAcceptanceResult {
+        throw DesktopRuntimeError.notRunning
+    }
+    func createInvitation() async throws -> PairingInvitation { throw DesktopRuntimeError.notRunning }
+    func approve(requestID: UUID, code: String, projectIDs: Set<UUID>) async throws { throw DesktopRuntimeError.notRunning }
+    func reject(requestID: UUID) async throws { throw DesktopRuntimeError.notRunning }
+    func revoke(deviceID: UUID) async throws { throw DesktopRuntimeError.notRunning }
+    func createRubricRequest(deviceID: UUID, requestID: UUID, requesterName: String, labelHint: String?) async throws -> LeonardoSync.RubricRequest {
+        status.request
+    }
+    func cancelRubricRequest(requestID: UUID) async throws -> LeonardoSync.RubricRequest { status.request }
+    func rubricResponse(requestID: UUID) async throws -> RubricResponse? { status.response }
+    func rubricStatus(requestID: UUID) async throws -> RubricExchangeStatus { status }
 }

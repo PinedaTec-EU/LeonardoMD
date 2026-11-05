@@ -6,6 +6,11 @@ import LeonardoSyncTransport
 public struct RunningDirectService: Codable, Sendable {
     public let endpoint: URL
     public let certificateFingerprint: Data
+
+    public init(endpoint: URL, certificateFingerprint: Data) {
+        self.endpoint = endpoint
+        self.certificateFingerprint = certificateFingerprint
+    }
 }
 
 public enum DesktopRuntimeError: Error, Sendable { case notRunning, busy }
@@ -171,11 +176,11 @@ public actor DesktopDirectRuntime {
         }
     }
 
-    public func createRubricRequest(deviceID: UUID, requesterName: String,
+    public func createRubricRequest(deviceID: UUID, requestID: UUID = UUID(), requesterName: String,
                                     labelHint: String? = nil) async throws -> RubricRequest {
         guard !transitioning, let authority else { throw DesktopRuntimeError.notRunning }
         return try await authority.createRubricRequest(targetDeviceID: deviceID, requesterName: requesterName,
-                                                       labelHint: labelHint, now: now())
+                                                       labelHint: labelHint, requestID: requestID, now: now())
     }
 
     public func cancelRubricRequest(requestID: UUID) async throws -> RubricRequest {
@@ -186,6 +191,11 @@ public actor DesktopDirectRuntime {
     public func rubricResponse(requestID: UUID) async throws -> RubricResponse? {
         guard !transitioning, let authority else { throw DesktopRuntimeError.notRunning }
         return try await authority.rubricResponse(requestID: requestID, now: now())
+    }
+
+    public func rubricStatus(requestID: UUID) async throws -> RubricExchangeStatus {
+        guard !transitioning, let authority else { throw DesktopRuntimeError.notRunning }
+        return try await authority.rubricStatus(requestID: requestID, now: now())
     }
 }
 #endif
