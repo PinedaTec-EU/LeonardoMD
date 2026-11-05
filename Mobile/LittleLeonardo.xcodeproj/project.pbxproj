@@ -18,6 +18,7 @@
 		C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */; };
 		DA52AFC54A29A9980B0601CC /* MobileQRScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */; };
 		FC0D3FAC5AD74CCF9D75A451 /* MobileRecoveryDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70CAB6D3C2D948039788E971 /* MobileRecoveryDocument.swift */; };
+		A342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,6 +41,7 @@
 		D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileLibrary.swift; sourceTree = "<group>"; };
 		EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileQRScanner.swift; sourceTree = "<group>"; };
 		70CAB6D3C2D948039788E971 /* MobileRecoveryDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRecoveryDocument.swift; sourceTree = "<group>"; };
+		B342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRubricCaptureView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -117,6 +119,7 @@
 				7849226B36C61649B125BDDC /* MobileLibraryView.swift */,
 				70CAB6D3C2D948039788E971 /* MobileRecoveryDocument.swift */,
 				EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */,
+				B342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift */,
 			);
 			name = LittleLeonardo;
 			path = LittleLeonardo;
@@ -225,6 +228,7 @@
 				2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */,
 				FC0D3FAC5AD74CCF9D75A451 /* MobileRecoveryDocument.swift in Sources */,
 				DA52AFC54A29A9980B0601CC /* MobileQRScanner.swift in Sources */,
+				A342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

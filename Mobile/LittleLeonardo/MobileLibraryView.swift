@@ -15,6 +15,7 @@ struct MobileLibraryView: View {
     @State private var manualPairing = false
     @State private var host = ""
     @State private var port = "40882"
+    @State private var presentedRubricRequest: RubricRequest?
     @AppStorage("directSyncIntervalMinutes") private var syncInterval = 0
     @Environment(\.scenePhase) private var scenePhase
     var body: some View {
@@ -47,9 +48,24 @@ struct MobileLibraryView: View {
                 Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
                     Task { await library.synchronize() }
                 }.disabled(library.connecting)
+                if let request = library.pendingRubricRequests.first {
+                    Button("Solicitud de rúbrica", systemImage: "signature") {
+                        presentedRubricRequest = request
+                    }.accessibilityIdentifier("open-rubric-request")
+                }
             }
             .safeAreaInset(edge: .bottom) {
-                if let code = library.comparisonCode {
+                if let request = library.pendingRubricRequests.first {
+                    Button {
+                        presentedRubricRequest = request
+                    } label: {
+                        Label("Solicitud de rúbrica de \(request.requesterName)", systemImage: "signature")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .padding(.horizontal)
+                    .accessibilityIdentifier("rubric-request-banner")
+                } else if let code = library.comparisonCode {
                     VStack {
                         Text("Código de conexión: \(code)").font(.headline.monospacedDigit())
                         Text("Comprueba que coincide en LeonardoMD, autoriza los proyectos y pulsa Sincronizar.")
@@ -63,6 +79,13 @@ struct MobileLibraryView: View {
                 case .settings: synchronizationSettings
                 }
             }
+            .sheet(item: $presentedRubricRequest) { request in
+                MobileRubricCaptureView(request: request, library: library)
+            }
+            .onChange(of: library.pendingRubricRequests) { _, requests in
+                guard presentedRubricRequest == nil, let request = requests.first else { return }
+                presentedRubricRequest = request
+            }
         }
         .task(id: "\(syncInterval)-\(scenePhase)") {
             guard scenePhase == .active, [1, 5, 15, 30, 60].contains(syncInterval) else { return }
@@ -71,6 +94,14 @@ struct MobileLibraryView: View {
                 catch { return }
                 guard !Task.isCancelled else { return }
                 await library.synchronize()
+            }
+        }
+        .task(id: "rubric-\(scenePhase)") {
+            guard scenePhase == .active else { return }
+            while !Task.isCancelled {
+                await library.pollRubricRequests()
+                do { try await Task.sleep(for: .seconds(2)) }
+                catch { return }
             }
         }
         .alert("No se pudo completar la operación", isPresented: Binding(

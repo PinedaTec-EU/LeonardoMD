@@ -141,7 +141,7 @@ public struct RubricResponse: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey { case requestID, targetDeviceID, requesterID, label, rubric, submittedAt }
 
-    static func isValid(label: String, rubric: LeonardoRubric, submittedAt: Date) -> Bool {
+    public static func isValid(label: String, rubric: LeonardoRubric, submittedAt: Date) -> Bool {
         !label.isEmpty && label.count <= 120 && rubric.isValid && submittedAt.timeIntervalSince1970.isFinite
     }
 }
