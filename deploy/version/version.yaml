@@ -849,9 +849,19 @@
       "pr": 338,
       "summary": "Find sharing, device permissions and remote copies together in Synchronization, with separate pages for sharing from this Mac and connecting to other computers.",
       "to_version": "0.3.861"
+    },
+    {
+      "delta": {
+        "build": 37
+      },
+      "from_version": "0.3.861",
+      "merge_sha": "42132c256c5d56d307141218e440c60749fc6b2b",
+      "pr": 349,
+      "summary": "macOS targets one explicitly capable linked read-only peer, recovers requests by stable ID, reviews returned rubrics, and saves or inserts them safely. Legacy peers remain unsupported until #342.",
+      "to_version": "0.3.898"
     }
   ],
-  "current_version": "0.3.861",
+  "current_version": "0.3.898",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

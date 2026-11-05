@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.898
+
+- #341 Added: request and save a Little Leonardo rubric from macOS ([#349](https://github.com/PinedaTec-EU/LeonardoMD/pull/349))
+
+<p>macOS targets one explicitly capable linked read-only peer, recovers requests by stable ID, reviews returned rubrics, and saves or inserts them safely. Legacy peers remain unsupported until #342.</p>
+
+Source: `42132c256c5d56d307141218e440c60749fc6b2b`. Delta: `{"build": 37}`.
+
 ## 0.3.861
 
 - #337 Updated: organize synchronization by sharing and connecting roles ([#338](https://github.com/PinedaTec-EU/LeonardoMD/pull/338))
