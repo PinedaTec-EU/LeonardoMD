@@ -567,7 +567,7 @@ Open **Preferences → Updates** in the principal instance. Choose Stable or Bet
 
 The installed package channel and your subscription are separate. Beta subscriptions can include newer stable releases. Switching to Stable does not downgrade an installed beta; it waits for a newer stable build. Finish or cancel an active update before switching. Save drafts and finish Git operations before installation; quit protection can delay the update.
 
-If Install and Relaunch leaves the old instance running, save, close Preferences and quit normally so the pending update can complete (known issue #202). Very old beta packages using the former signing key need manual installation of a current signed package; changing channels cannot replace their trust root. Development builds may lack the configured update key. Check published release notes for feature availability rather than assuming the stable download includes every beta feature.
+**Install and Relaunch** closes Preferences before requesting an ordinary quit. Save/Discard/Cancel and Git protections still apply. If you cancel quitting, save or finish the pending work, then reopen Updates and Check now to resume the installation. When updating from an older version affected by #202, you may still need to close Preferences and quit normally to install this corrected version. Very old beta packages using the former signing key need manual installation of a current signed package; changing channels cannot replace their trust root. Development builds may lack the configured update key. Check published release notes for feature availability rather than assuming the stable download includes every beta feature.
 
 ## 17. Keyboard reference
 

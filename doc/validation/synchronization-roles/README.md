@@ -23,7 +23,7 @@ illustrate initial states and capability labels; they do not establish a new
 pairing, service registration, remote transfer or physical two-Mac acceptance.
 The EN/ES sharing and connection originals are also the authored chapter 14–15
 help illustrations; previous instructional images are replaced. Personal guides
-stay untouched through the new Guide-v12 copy directory.
+stay untouched through the new Guide-v13 copy directory.
 
 ## Validation
 

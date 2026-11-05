@@ -53,4 +53,5 @@ Page objects/rubrics (#193): `DocumentToolbar.swift`, `SessionGraphics.swift`, `
 
 Sync helper (#319): chapters 14–15 cover per-user installation/approval, the required master switch in both directions, saved-file snapshots, offline status with the editor open, after-login recovery, editor-independent sharing and manual incoming review. The combined premium Guide v11 uses a separate personal copy.
 
-Synchronization roles (#337): chapters 14–15 now route through one Synchronization category, one service control and separate sharing/consuming pages. Refreshed EN/ES production-component images show both pages with isolated disabled settings; capability labels and invite QR/link equivalence are explained. Guide v12 retains older personal copies.
+Synchronization roles (#337): chapters 14–15 now route through one Synchronization category, one service control and separate sharing/consuming pages. Refreshed EN/ES production-component images show both pages with isolated disabled settings; capability labels and invite QR/link equivalence are explained. Guide v13 retains older personal copies.
+Update termination (#202): chapter 16 documents automatic Preferences dismissal before install approval, retained Save/Git decisions, cancellation/retry, and the older-source bootstrap workaround. Guide v12 preserves previous personal copies.
