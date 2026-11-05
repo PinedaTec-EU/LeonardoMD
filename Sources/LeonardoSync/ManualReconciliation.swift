@@ -7,7 +7,7 @@ public enum ReconciliationError: Error, Equatable, Sendable {
 }
 
 /// Explicit user decisions include deletion (a missing file on the selected side).
-public enum ReconciliationChoice: Equatable, Sendable {
+public enum ReconciliationChoice: Codable, Equatable, Sendable {
     case local
     case remote
     case content(Data)

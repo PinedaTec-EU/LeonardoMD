@@ -535,26 +535,31 @@ Las operaciones son manuales. Pull solo permite avance rápido y protege árbole
 
 ## 14. Little Leonardo: leer en iPhone o iPad
 
-![Little Leonardo: servicio directo desactivado; este ejemplo no comparte proyectos ni dispositivos.](assets/mobile.png)
+![Little Leonardo: servicio directo desactivado; este ejemplo no comparte proyectos ni dispositivos.](assets/mobile-helper-v8.png)
 
 *Little Leonardo: servicio directo desactivado; este ejemplo no comparte proyectos ni dispositivos.*
 
-Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Little Leonardo** de la instancia principal del Mac.
+Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Little Leonardo** de la instancia principal del Mac. El servicio requiere una distribución firmada con Developer ID; las compilaciones locales con firma ad-hoc no pueden habilitarlo.
 
-1. Activa el servicio de sincronización directa en una red que quieras utilizar. Revisa la dirección local; Automática puede seleccionar una disponible.
-2. Elige **Compartir el proyecto actual** y selecciona carpetas/documentos o todo el proyecto. Confirma la selección; el resto del contenido no se comparte implícitamente.
-3. Crea un QR de emparejamiento o copia el enlace. Ábrelo en Little Leonardo, compara los códigos de verificación y aprueba el dispositivo pendiente en el Mac.
-4. Importa el contenido compartido en el compañero y compruébalo antes de depender de una copia sin conexión. Usa Revocar en el Mac para retirar acceso futuro a un dispositivo.
+1. Activa **Habilitar el servicio Leonardo Sync**. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. Espera a **Servicio de sincronización en ejecución**.
+2. Activa **Compartir archivos guardados de este Mac** en una red que quieras utilizar. Revisa la dirección local; Automática puede seleccionar una disponible.
+3. Elige **Compartir el proyecto actual** y selecciona carpetas/documentos o todo el proyecto. Confirma la selección; el resto del contenido no se comparte implícitamente.
+4. Crea un QR de emparejamiento o copia el enlace. Ábrelo en Little Leonardo, compara los códigos de verificación y aprueba el dispositivo pendiente en el Mac.
+5. Importa el contenido compartido en el compañero y compruébalo antes de depender de una copia sin conexión. Usa Revocar en el Mac para retirar acceso futuro a un dispositivo.
+
+**Leonardo Sync es necesario en ambas direcciones.** Si está deshabilitado, detenido, pendiente de autorización de macOS o no disponible, el Mac queda sin conexión para sincronizar entre dispositivos aunque LeonardoMD esté abierto. Actívalo desde estas preferencias en cada Mac. El servicio se inicia al entrar en tu cuenta después de reiniciar y sigue compartiendo cuando cierras el editor; no sirve documentos antes de iniciar sesión ni despierta un Mac en reposo. Si no está disponible, revisa la autorización en segundo plano, la red, el disco compartido y los permisos de archivos, y vuelve a intentarlo.
+
+El servicio comparte **solo archivos guardados**, también con el editor abierto. Guarda los borradores antes de actualizar otro dispositivo. Las preferencias y autorizaciones son locales a este Mac y sobreviven al reinicio de la app o del servicio; deshabilitarlo las conserva. Puedes habilitar el servicio sin compartir proyectos para conectar con otro Mac. Las propuestas recibidas esperan una revisión explícita en LeonardoMD; el servicio no acepta escrituras automáticamente.
 
 El Mac debe estar accesible para transferir. Una VPN privada superpuesta requiere su ajuste explícito y una dirección compatible accesible; no convierte el sistema en un servicio público en la nube. No presupongas conectividad entre redes cualesquiera. Revocar impide acceso autorizado futuro; no borra copias ya descargadas. El compañero iOS no ofrece edición Git ni devuelve ediciones de documentos al Mac. La revisión de propuestas del escritorio no es edición móvil.
 
 ## 15. Macs enlazados y copias sin conexión
 
-![Macs enlazados antes de emparejar o importar un proyecto.](assets/macs.png)
+![Macs enlazados antes de emparejar o importar un proyecto.](assets/macs-helper-v8.png)
 
 *Macs enlazados antes de emparejar o importar un proyecto.*
 
-Usa **Preferencias → Macs enlazados** en la instancia principal. En el Mac de origen, activa sincronización directa y comparte primero el contenido previsto. En el segundo Mac, vincula otro Mac mediante su dirección HTTPS o enlace de emparejamiento y un nombre de dispositivo. Compara los códigos en ambos y aprueba la conexión antes de importar proyectos.
+Usa **Preferencias → Macs enlazados** en la instancia principal. El interruptor del servicio Leonardo Sync también está disponible aquí. Habilita el servicio Leonardo Sync en ambos Macs. En el Mac de origen, activa además compartir archivos y selecciona primero el contenido previsto. En el segundo Mac, vincula otro Mac mediante su dirección HTTPS o enlace de emparejamiento y un nombre de dispositivo. Compara los códigos en ambos y aprueba la conexión antes de importar proyectos.
 
 Importa un proyecto disponible para crear una copia sin conexión. Ábrela localmente y usa sincronización manual o elige un intervalo. Las transferencias siguen necesitando conectividad. Una copia desconectada es trabajo local; no demuestra que el origen tenga tus últimos cambios.
 

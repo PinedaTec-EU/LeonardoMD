@@ -195,6 +195,7 @@ public actor ConfigurationStore {
         if updated.showHiddenFiles != baseline.showHiddenFiles {
             merged.showHiddenFiles = updated.showHiddenFiles
         }
+        if updated.mobileSync.helperEnabled != baseline.mobileSync.helperEnabled { merged.mobileSync.helperEnabled = updated.mobileSync.helperEnabled }
         if updated.mobileSync.enabled != baseline.mobileSync.enabled { merged.mobileSync.enabled = updated.mobileSync.enabled }
         if updated.mobileSync.host != baseline.mobileSync.host { merged.mobileSync.host = updated.mobileSync.host }
         if updated.mobileSync.port != baseline.mobileSync.port { merged.mobileSync.port = updated.mobileSync.port }

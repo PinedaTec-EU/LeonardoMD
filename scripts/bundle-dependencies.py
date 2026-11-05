@@ -17,6 +17,7 @@ LOAD_COMMANDS = {'LC_LOAD_DYLIB', 'LC_LOAD_WEAK_DYLIB', 'LC_REEXPORT_DYLIB',
 SYSTEM_ROOTS = ('/usr/lib/', '/System/Library/',
                 '/System/Volumes/Preboot/Cryptexes/OS/usr/lib/',
                 '/System/Volumes/Preboot/Cryptexes/OS/System/Library/')
+SYNC_HELPER_IDENTIFIER = 'eu.pinedatec.LeonardoMD.sync-helper'
 
 
 def macho_files(bundle):
@@ -41,15 +42,26 @@ def signing_components(bundle):
 def sign_bundle(bundle, identity):
     # Keep vendor entitlements; sign code before its enclosing resource seals.
     for component in [*signing_components(bundle), bundle]:
+        identifier = (['--identifier', SYNC_HELPER_IDENTIFIER]
+                      if component == bundle / 'Contents/MacOS/LeonardoSyncHelper' else [])
         subprocess.run(['/usr/bin/codesign', '--force', '--options', 'runtime', '--timestamp',
-                        '--preserve-metadata=entitlements', '--sign', identity, str(component)], check=True)
+                        '--preserve-metadata=entitlements', '--sign', identity,
+                        *identifier, str(component)], check=True)
+
+
+def signing_field(path, name):
+    result = subprocess.run(['/usr/bin/codesign', '-d', '--verbose=2', str(path)],
+                            check=True, capture_output=True, text=True)
+    match = re.search(r'^' + re.escape(name) + r'=(.+)$', result.stderr, re.MULTILINE)
+    return match.group(1) if match and match.group(1) != 'not set' else None
+
+
+def signing_identifier(path):
+    return signing_field(path, 'Identifier')
 
 
 def signing_team(path):
-    result = subprocess.run(['/usr/bin/codesign', '-d', '--verbose=2', str(path)],
-                            check=True, capture_output=True, text=True)
-    match = re.search(r'^TeamIdentifier=(.+)$', result.stderr, re.MULTILINE)
-    return match.group(1) if match and match.group(1) != 'not set' else None
+    return signing_field(path, 'TeamIdentifier')
 
 
 def inspect_signing(bundle):

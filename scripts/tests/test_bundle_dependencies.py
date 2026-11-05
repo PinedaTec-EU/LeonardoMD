@@ -255,7 +255,7 @@ class DependencyTests(unittest.TestCase):
         result = subprocess.run(['python3', str(SCRIPTS / 'qa-bundle.py'), '--verify-only', str(self.bundle)],
                                 capture_output=True, text=True)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn('Unresolved bundled dependency', result.stderr)
+        self.assertIn('Packaged Sparkle framework executable is missing', result.stderr)
 
     def test_team_mismatch_is_rejected_even_when_deep_verification_passes(self):
         for nested_team in (None, 'VENDOR'):
@@ -284,6 +284,16 @@ class DependencyTests(unittest.TestCase):
         for call in run.call_args_list:
             self.assertIn('--preserve-metadata=entitlements', call.args[0])
             self.assertIn('runtime', call.args[0])
+
+    def test_signer_keeps_the_helper_service_identifier_without_changing_app_identity(self):
+        helper = self.bundle / 'Contents/MacOS/LeonardoSyncHelper'
+        macho(helper)
+        with patch.object(deps.subprocess, 'run') as run:
+            deps.sign_bundle(self.bundle, 'Developer ID')
+        commands = [call.args[0] for call in run.call_args_list]
+        helper_command = next(command for command in commands if command[-1] == str(helper))
+        self.assertEqual(helper_command[helper_command.index('--identifier') + 1], deps.SYNC_HELPER_IDENTIFIER)
+        self.assertNotIn('--identifier', commands[-1])
 
 
 if __name__ == '__main__':

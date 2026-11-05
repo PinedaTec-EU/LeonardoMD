@@ -5,7 +5,6 @@ import subprocess
 import tempfile
 import unittest
 import os
-import plistlib
 
 SCRIPTS = Path(__file__).parents[1]
 
@@ -16,38 +15,39 @@ class LaunchPreflightTests(unittest.TestCase):
             root = Path(directory)
             scripts = root / 'scripts'
             scripts.mkdir()
-            for name in ('qa-bundle.py', 'bundle-dependencies.py'):
-                shutil.copy2(SCRIPTS / name, scripts / name)
             shutil.copy2(SCRIPTS.parent / 'launch.sh', root / 'launch.sh')
             build = scripts / 'build-app.sh'
             build.write_text('#!/bin/bash\nexit 0\n')
             build.chmod(0o755)
             bundle = root / 'output/LeonardoMD.app'
-            executable = bundle / 'Contents/MacOS/LeonardoMD'
-            executable.parent.mkdir(parents=True)
-            shutil.copyfile('/usr/bin/true', executable)
-            executable.chmod(0o755)
-            (bundle / 'Contents/Info.plist').write_bytes(plistlib.dumps({
-                'CFBundleExecutable': 'LeonardoMD', 'CFBundleIdentifier': 'eu.pinedatec.test',
-                'CFBundlePackageType': 'APPL'}))
-            subprocess.run(['/usr/bin/codesign', '--force', '--sign', '-', str(bundle)],
-                           check=True, capture_output=True)
+            selected = root / 'QA/LeonardoMDQA.app'
+            selected.mkdir(parents=True)
+            verified = root / 'verified'
+            # Stub only preparation/inspection here; negative tests use the real
+            # verifier, and the packaged CI app exercises the complete helper bundle.
+            (scripts / 'qa-bundle.py').write_text(
+                'import os, sys\nfrom pathlib import Path\n'
+                'selected = os.environ["LAUNCH_QA_COPY"]\n'
+                'if "--verify-only" in sys.argv:\n'
+                '    assert sys.argv[-1] == selected\n'
+                '    Path(os.environ["LAUNCH_VERIFIED"]).touch()\n'
+                'else:\n    print(selected)\n')
             fake_bin = root / 'bin'
             fake_bin.mkdir()
             marker = root / 'opened'
             opener = fake_bin / 'open'
-            opener.write_text('#!/bin/bash\nprintf "%s" "$2" > "$LAUNCH_MARKER"\n')
+            opener.write_text('#!/bin/bash\n[ -f "$LAUNCH_VERIFIED" ] || exit 1\nprintf "%s" "$2" > "$LAUNCH_MARKER"\n')
             opener.chmod(0o755)
             environment = dict(os.environ, PATH=str(fake_bin) + ':' + os.environ['PATH'], LAUNCH_MARKER=str(marker))
             environment.pop('LEONARDO_QA_SIGN_IDENTITY', None)
+            environment.update(LAUNCH_QA_COPY=str(selected), LAUNCH_VERIFIED=str(verified))
             result = subprocess.run(['/bin/bash', str(root / 'launch.sh'), '--qa'],
                                     capture_output=True, text=True, env=environment)
             self.assertEqual(result.returncode, 0, result.stderr)
             selected = Path(marker.read_text())
-            self.addCleanup(shutil.rmtree, selected.parent)
             self.assertEqual(selected.name, 'LeonardoMDQA.app')
             self.assertNotEqual(selected, bundle)
-            self.assertTrue((selected / 'Contents/MacOS/LeonardoMD').is_file())
+            self.assertTrue(verified.exists())
 
     def test_invalid_final_bundle_stops_launch(self):
         with tempfile.TemporaryDirectory(prefix='launch preflight ') as directory:

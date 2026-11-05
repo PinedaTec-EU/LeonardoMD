@@ -35,6 +35,12 @@ inspection. QA and distribution use the same inside-out signer, preserving
 embedded entitlements; never sign only the outer app when switching a copy to
 Developer ID hardened runtime.
 
+The consolidated gate retains the sync-helper launch definition, executable and
+XCTest checks introduced by PR #320. Shared QA/distribution signing explicitly
+keeps `eu.pinedatec.LeonardoMD.sync-helper` as the helper's signing identifier;
+the helper's packaged signature must match that service identity. The outer app
+retains its own bundle-derived identifier, including disposable QA identities.
+
 [Issue #324](https://github.com/PinedaTec-EU/LeonardoMD/issues/324) and
 [the same incident's QA investigation #325](https://github.com/PinedaTec-EU/LeonardoMD/issues/325)
 identify a Sparkle library-validation failure after incomplete nested signing,

@@ -27,9 +27,33 @@ def inspect_bundle(bundle):
     dependencies = subprocess.check_output(['/usr/bin/otool', '-L', str(executable)], text=True)
     if 'XCTest.framework/' in dependencies:
         raise ValueError('GUI executable links XCTest; use swift test instead of launching a test runner as an app')
+    if not (bundle / 'Contents/Frameworks/Sparkle.framework/Sparkle').is_file():
+        raise ValueError('Packaged Sparkle framework executable is missing')
+    inspect_sync_helper(bundle)
     bundle_dependencies.inspect_dependencies(bundle, executable)
     bundle_dependencies.inspect_signing(bundle)
     return metadata, dependencies
+
+
+def inspect_sync_helper(bundle):
+    service = bundle_dependencies.SYNC_HELPER_IDENTIFIER
+    helper = bundle / 'Contents/MacOS/LeonardoSyncHelper'
+    definition = bundle / 'Contents/Library/LaunchAgents' / (service + '.plist')
+    with definition.open('rb') as stream:
+        metadata = plistlib.load(stream)
+    if (metadata.get('Label') != service
+            or metadata.get('BundleProgram') != 'Contents/MacOS/LeonardoSyncHelper'
+            or metadata.get('MachServices') != {service: True}
+            or metadata.get('RunAtLoad') is not True or metadata.get('KeepAlive') is not True):
+        raise ValueError('Sync helper launch definition does not match its packaged executable/service')
+    if not helper.is_file() or helper.is_symlink() or not os.access(helper, os.X_OK):
+        raise ValueError('Sync helper executable is missing or invalid')
+    dependencies = subprocess.check_output(['/usr/bin/otool', '-L', str(helper)], text=True)
+    if 'XCTest.framework/' in dependencies:
+        raise ValueError('Sync helper links XCTest')
+    subprocess.run(['/usr/bin/codesign', '--verify', '--strict', str(helper)], check=True)
+    if bundle_dependencies.signing_identifier(helper) != service:
+        raise ValueError('Sync helper signing identifier does not match its service')
 
 
 def verify_bundle(bundle):

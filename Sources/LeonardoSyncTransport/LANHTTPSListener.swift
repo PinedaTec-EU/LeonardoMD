@@ -2,7 +2,13 @@ import Foundation
 import Network
 import OSLog
 
-public actor LANHTTPSListener {
+public protocol HTTPSListening: Sendable {
+    var isReady: Bool { get async }
+    func start(host: String, port: UInt16, allowPrivateOverlay: Bool) async throws -> UInt16
+    func stop() async
+}
+
+public actor LANHTTPSListener: HTTPSListening {
     public typealias Handler = @Sendable (HTTPRequest) async -> HTTPResponse
     private var listener: NWListener?
     private var connections: [UUID: NWConnection] = [:]
@@ -18,6 +24,12 @@ public actor LANHTTPSListener {
     public init(identity: TLSServerIdentity, handler: @escaping Handler) {
         self.identity = identity
         self.handler = handler
+    }
+
+    /// Read Network's current state rather than treating an allocated listener as healthy.
+    public var isReady: Bool {
+        if case .ready? = listener?.state { return true }
+        return false
     }
 
     public func start(host: String, port: UInt16 = 0, allowPrivateOverlay: Bool = false) async throws -> UInt16 {
