@@ -44,9 +44,10 @@ idle; failed startup/network selection retries without reopening the editor.
 The agent advertises `eu.pinedatec.LeonardoMD.sync-helper` in the user's bootstrap
 domain. XPC checks the caller's user ID and the packaged app's designated code
 requirement before accepting control. The client likewise pins the packaged
-helper's designated requirement. Developer ID builds retain signing identity
-across updates; ad-hoc QA code remains bound to its exact signature. There are
-no unsigned/development bypasses. Signing happens inside out before sealing the
+helper's designated requirement. Both sides require the expected signing
+identifier and the same nonempty Developer ID team, preventing a copied helper
+from trusting an unrelated parent app. Ad-hoc builds cannot enable the service;
+there are no unsigned/development bypasses. Signing happens inside out before sealing the
 app; package inspection verifies the helper, launch definition and dependencies.
 
 XPC failure does not mean a remote write was canceled. Each owner application

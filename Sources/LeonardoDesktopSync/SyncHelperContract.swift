@@ -4,7 +4,8 @@ import LeonardoCore
 import LeonardoSync
 
 public enum SyncHelperContract {
-    public static let serviceName = "eu.pinedatec.LeonardoMD.sync-helper"
+    public static let appIdentifier = "eu.pinedatec.LeonardoMD"
+    public static let serviceName = appIdentifier + ".sync-helper"
     public static let plistName = serviceName + ".plist"
     public static let executableName = "LeonardoSyncHelper"
     public static var preferencesURL: URL {

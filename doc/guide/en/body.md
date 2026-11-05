@@ -447,7 +447,7 @@ These operations are manual. Pull is fast-forward only and protects dirty worktr
 
 *Little Leonardo: direct service disabled; no project or device is shared in this example.*
 
-Little Leonardo is a **read-only companion**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Little Leonardo**.
+Little Leonardo is a **read-only companion**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Little Leonardo**. The service requires a Developer ID signed distribution; local ad-hoc builds cannot enable it.
 
 1. Enable **Leonardo Sync helper**. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. Wait for **Sync helper running**.
 2. Enable **Share saved files from this Mac** on a network you intend to use. Review the selected local address; Automatic can choose an available address.
@@ -467,7 +467,7 @@ The Mac must be reachable for transfers. A private overlay VPN requires the expl
 
 *Linked Macs before pairing or importing a project.*
 
-Use **Preferences → Linked Macs** in the principal instance. Enable the Leonardo Sync helper on both Macs. On the source Mac, also enable sharing and select the intended content first. On the second Mac, Link another Mac using its HTTPS address or pairing link and a device name. Compare verification codes on both devices and approve the connection before importing projects.
+Use **Preferences → Linked Macs** in the principal instance. The Leonardo Sync helper switch is also available here. Enable the Leonardo Sync helper on both Macs. On the source Mac, also enable sharing and select the intended content first. On the second Mac, Link another Mac using its HTTPS address or pairing link and a device name. Compare verification codes on both devices and approve the connection before importing projects.
 
 Import an available project to create an offline copy. Open it locally, then use manual synchronization or select a synchronization interval. Network reachability is still required for transfers. A disconnected copy remains a local working copy; it is not evidence that the source has your latest edits.
 

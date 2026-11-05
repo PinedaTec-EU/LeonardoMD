@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import OSLog
 import ServiceManagement
 import LeonardoCore
 import LeonardoDesktopSync
@@ -16,6 +17,8 @@ final class SyncHelperController {
     private let client: any SyncHelperControlAccess
     private let configurations: ConfigurationStore
     private let hasExecutable: @Sendable () -> Bool
+    private let verifyPackage: @Sendable () throws -> Void
+    private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "sync-helper-control")
     private let preferencesURL: URL
     init(preferencesURL: URL = AppSession.preferencesURL,
          configurations: ConfigurationStore = .shared,
@@ -24,9 +27,13 @@ final class SyncHelperController {
          hasExecutable: @escaping @Sendable () -> Bool = {
              FileManager.default.isExecutableFile(atPath: Bundle.main.bundleURL
                  .appendingPathComponent("Contents/MacOS/" + SyncHelperContract.executableName).path)
+         }, verifyPackage: @escaping @Sendable () throws -> Void = {
+             let bundle = Bundle.main.bundleURL
+             _ = try SyncHelperSigning.requirement(for: bundle.appendingPathComponent("Contents/MacOS/" + SyncHelperContract.executableName),
+                 identifier: SyncHelperContract.serviceName, matching: bundle)
          }) {
         self.preferencesURL = preferencesURL; self.configurations = configurations
-        self.service = service; self.client = client; self.hasExecutable = hasExecutable
+        self.service = service; self.client = client; self.hasExecutable = hasExecutable; self.verifyPackage = verifyPackage
     }
 
     var online: Bool { state == .running }
@@ -59,15 +66,19 @@ final class SyncHelperController {
             case .notFound, .notRegistered: state = .disabled; sharing = nil
             @unknown default: state = .failed; sharing = nil
             }
-        } catch { state = .failed; sharing = nil; self.error = error.localizedDescription }
+        } catch { state = .failed; sharing = nil; self.error = L10n.text(error.localizedDescription) }
     }
 
     func setEnabled(_ enabled: Bool) async {
         guard !busy, !InstanceRuntime.isAdditional else { return }
         busy = true; error = nil
+        logger.info("sync_helper_enable_requested enabled=\(enabled, privacy: .public)")
         defer { busy = false }
         do {
-            if enabled && !hasExecutable() { throw SyncHelperFailure(L10n.text("Sync helper is not installed")) }
+            if enabled {
+                guard hasExecutable() else { throw SyncHelperFailure(L10n.text("Sync helper is not installed")) }
+                try verifyPackage()
+            }
             let baseline = try await configurations.loadGlobalPreferences(at: preferencesURL)
             var updated = baseline; updated.mobileSync.helperEnabled = enabled
             _ = try await configurations.mergeGlobalPreferences(updated: updated, baseline: baseline, at: preferencesURL)
@@ -82,7 +93,10 @@ final class SyncHelperController {
                 if service.status == .enabled { _ = try? await client.reload() }
                 try await service.unregister()
             }
-        } catch { state = .failed; self.error = error.localizedDescription }
+        } catch {
+            state = .failed; self.error = L10n.text(error.localizedDescription)
+            logger.error("sync_helper_lifecycle_failed")
+        }
     }
 
     func openApprovalSettings() { service.openApprovalSettings() }

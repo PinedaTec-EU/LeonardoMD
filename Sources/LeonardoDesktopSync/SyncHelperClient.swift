@@ -13,7 +13,7 @@ public struct SyncHelperClient: SyncHelperControlAccess, DesktopSyncRuntimeAcces
 
     public func request<T: Decodable & Sendable>(_ command: SyncHelperCommand, as: T.Type = T.self) async throws -> T {
         let executable = bundleURL.appendingPathComponent("Contents/MacOS/" + SyncHelperContract.executableName)
-        let requirement = try SyncHelperSigning.requirement(for: executable)
+        let requirement = try SyncHelperSigning.requirement(for: executable, identifier: SyncHelperContract.serviceName, matching: bundleURL)
         let connection = NSXPCConnection(machServiceName: SyncHelperContract.serviceName)
         connection.remoteObjectInterface = NSXPCInterface(with: SyncHelperXPC.self)
         connection.setCodeSigningRequirement(requirement)

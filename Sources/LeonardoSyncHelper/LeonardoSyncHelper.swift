@@ -43,7 +43,7 @@ private final class HelperListener: NSObject, NSXPCListenerDelegate {
         let host = SyncHelperHost()
         let delegate = HelperListener(host: host)
         let listener = NSXPCListener(machServiceName: SyncHelperContract.serviceName)
-        listener.setConnectionCodeSigningRequirement(try SyncHelperSigning.requirement(for: bundle))
+        listener.setConnectionCodeSigningRequirement(try SyncHelperSigning.requirement(for: bundle, identifier: SyncHelperContract.appIdentifier, matching: executable))
         listener.delegate = delegate
         listener.resume()
         logger.info("sync_helper_started")

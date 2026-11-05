@@ -97,7 +97,7 @@ final class SyncHelperControllerTests: XCTestCase {
     }
     func controller(_ registration: HelperRegistrationFake, _ control: HelperControlFake) -> SyncHelperController {
         SyncHelperController(preferencesURL: preferences, configurations: configurations,
-            service: registration, client: control, hasExecutable: { true })
+            service: registration, client: control, hasExecutable: { true }, verifyPackage: {})
     }
     func remove() { try? FileManager.default.removeItem(at: root) }
 }

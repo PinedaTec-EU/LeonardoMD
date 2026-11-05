@@ -10,15 +10,15 @@ struct DesktopPeerPreferencesView: View {
 
     var body: some View {
         Form {
-            Text(controller.helper.statusText).foregroundStyle(.secondary)
+            SyncHelperPreferencesSection(controller: controller.helper)
             Picker(L10n.text("Synchronization interval"), selection: Binding(
                 get: { controller.syncIntervalMinutes }, set: { controller.updateInterval($0) })) {
                 ForEach(DesktopPeerController.intervals, id: \.self) { minutes in
                     Text(minutes == 0 ? L10n.text("Manual") : String(format: L10n.text("Every %d minutes"), minutes)).tag(minutes)
                 }
             }
-            Button(L10n.text("Link another Mac")) { pairing = true }
-            Text(L10n.text("Enable the direct service on the other Mac, then compare the codes on both devices."))
+            Button(L10n.text("Link another Mac")) { pairing = true }.disabled(!controller.helper.online)
+            Text(L10n.text("Enable Leonardo Sync on this Mac and sharing on the other Mac, then compare the codes."))
                 .font(.caption).foregroundStyle(.secondary)
             Section(L10n.text("Linked Macs")) {
                 ForEach(controller.connections, id: \.id) { connection in
@@ -27,7 +27,7 @@ struct DesktopPeerPreferencesView: View {
                             Text(connection.endpoint.absoluteString).textSelection(.enabled)
                             Spacer()
                             if connection.revoked { Text(L10n.text("Revoked")) }
-                            else { Button(L10n.text("Sync")) { Task { await controller.refresh(connection.id) } } }
+                            else { Button(L10n.text("Sync")) { Task { await controller.refresh(connection.id) } }.disabled(!controller.helper.online) }
                         }
                         if let code = connection.comparisonCode {
                             Text(code).font(.title2.monospaced()).textSelection(.enabled)
@@ -38,7 +38,7 @@ struct DesktopPeerPreferencesView: View {
                             HStack {
                                 Text(project.name)
                                 Spacer()
-                                Button(L10n.text("Import")) { Task { await controller.importProject(connectionID: connection.id, projectID: project.id) } }
+                                Button(L10n.text("Import")) { Task { await controller.importProject(connectionID: connection.id, projectID: project.id) } }.disabled(!controller.helper.online)
                             }
                         }
                     }
@@ -95,13 +95,13 @@ struct DesktopPeerPreferencesView: View {
             }
             Button(L10n.text(controller.pendingProposals[copy.id] == nil ? "Send changes for review" : "Retry pending proposal")) {
                 Task { await controller.send(copy.id) }
-            }
+            }.disabled(!controller.helper.online)
             Button(L10n.text("Compare changes")) {
                 Task {
                     await controller.compare(copy.id)
                     if controller.comparisons[copy.id] != nil { reviewing = copy.id }
                 }
-            }
+            }.disabled(!controller.helper.online)
         }.fixedSize(horizontal: true, vertical: false)
     }
 

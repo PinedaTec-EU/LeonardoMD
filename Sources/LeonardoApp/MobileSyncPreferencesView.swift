@@ -9,19 +9,7 @@ struct MobileSyncPreferencesView: View {
     @State private var selectingContent = false
     var body: some View {
         Form {
-            Section("Leonardo Sync") {
-                Toggle(L10n.text("Enable Leonardo Sync helper"), isOn: Binding(
-                    get: { controller.helper.enabled },
-                    set: { value in Task { await controller.helper.setEnabled(value) } }))
-                    .disabled(controller.helper.busy)
-                Text(controller.helper.statusText).foregroundStyle(.secondary)
-                Text(L10n.text("Required for synchronization in both directions, even while LeonardoMD is open. Starts after login and keeps sharing saved files when you close the editor."))
-                    .font(.caption).foregroundStyle(.secondary)
-                if controller.helper.state == .approvalRequired {
-                    Button(L10n.text("Open Login Items settings")) { controller.helper.openApprovalSettings() }
-                }
-                if let error = controller.helper.error { Text(error).font(.caption).foregroundStyle(.secondary) }
-            }
+            SyncHelperPreferencesSection(controller: controller.helper)
             Toggle(L10n.text("Share saved files from this Mac"), isOn: Binding(
                 get: { controller.settings.enabled }, set: { value in
                     var updated = controller.settings; updated.enabled = value
