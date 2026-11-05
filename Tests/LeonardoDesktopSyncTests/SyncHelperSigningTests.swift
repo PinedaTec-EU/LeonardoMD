@@ -2,6 +2,15 @@ import XCTest
 @testable import LeonardoDesktopSync
 
 final class SyncHelperSigningTests: XCTestCase {
+    func testKernelExecutableLocationIsAbsoluteExistingFile() throws {
+        let executable = try ProcessExecutableLocation.current()
+        var directory: ObjCBool = false
+        XCTAssertTrue(executable.isFileURL)
+        XCTAssertTrue(executable.path.hasPrefix("/"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: executable.path, isDirectory: &directory))
+        XCTAssertFalse(directory.boolValue)
+    }
+
     func testSignedPackagedComponentsSatisfyMutualRequirements() throws {
         guard let path = ProcessInfo.processInfo.environment["LEONARDO_SYNC_SIGNING_BUNDLE"] else {
             throw XCTSkip("Set LEONARDO_SYNC_SIGNING_BUNDLE to inspect a signed package without registering it")

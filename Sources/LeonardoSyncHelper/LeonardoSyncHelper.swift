@@ -33,9 +33,18 @@ private final class HelperListener: NSObject, NSXPCListenerDelegate {
 }
 
 @main struct LeonardoSyncHelper {
-    static func main() throws {
+    static func main() {
+        do { try run() }
+        catch {
+            Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "sync-helper")
+                .error("sync_helper_start_failed error=\(error.localizedDescription, privacy: .public)")
+            exit(EXIT_FAILURE)
+        }
+    }
+
+    private static func run() throws {
         let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "sync-helper")
-        let executable = URL(fileURLWithPath: CommandLine.arguments[0]).standardizedFileURL
+        let executable = try ProcessExecutableLocation.current()
         let bundle = executable.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         // Prevent a second manually launched helper from opening the persistent stores.
         let lock = try ProcessFileLock(at: SyncHelperContract.preferencesURL.deletingLastPathComponent()
