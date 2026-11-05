@@ -34,7 +34,10 @@ owner-side Mac flow on top of the authenticated exchange in
   reconciled with a remote cancel; until that succeeds the UUID remains
   queryable but cannot be reviewed, inserted or saved. A late completed reply
   can recover a technical missing tombstone, never an explicitly cancelled
-  intent.
+  intent. If the companion completed just before cancellation was confirmed,
+  the store records `completedBeforeCancellation`, discards the response, and
+  exposes a terminal **Request another rubric** action without claiming that a
+  remote cancel succeeded.
 - Recovery prioritizes an unsaved returned response over a newer cancellation
   marker for the same document, even after the document source digest changes;
   saving the response remains available while insertion still checks the

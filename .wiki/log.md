@@ -1,5 +1,7 @@
 # Changes
 
+- 2026-11-05: [#350](https://github.com/PinedaTec-EU/LeonardoMD/issues/350) completion-winning cancellation correction: a remote completion observed while Mac cancellation is pending is persisted as `completedBeforeCancellation`, discarded from review/save, and remains terminal across restart. Focused `RubricCaptureTests` passes at delta 36 (16 tests); full `swift test` passes at delta 37 (364 XCTest, 30 expected skips, 42 Swift Testing, zero failures). Final native evidence maps to source `7dbf8bdfacc4e4d5ba4f015933a62c4c12e382ee`.
+
 - 2026-11-05: [#319](https://github.com/PinedaTec-EU/LeonardoMD/issues/319) extracts macOS source sharing into a required optional per-user helper; app manages registration/master consent, outbound operations fail closed and saved-file snapshots survive editor exit. Later owner-authorized native acceptance validates registration, reading after owner-editor exit, launchd helper restart and disable/offline behavior; no physical reboot is claimed.
 
 - 2026-10-20: [#249](https://github.com/PinedaTec-EU/LeonardoMD/issues/249) retires the proprietary mobile Git implementation and exclusive dependencies. iOS retains direct read-only snapshots and recovery exports of old corpus states; desktop direct synchronization and installed-system-Git tools are preserved. Persistence also rejects overwriting recovery archives independently of library memory ([#251](https://github.com/PinedaTec-EU/LeonardoMD/issues/251)). Native/automated evidence is tracked on the source PR; no Windows implementation or release is claimed.

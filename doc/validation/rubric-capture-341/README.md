@@ -22,9 +22,9 @@ Every PNG has a matching `.context.json` and `.metadata.json` sidecar. The
 metadata helper records the source revision, capture time, native viewport,
 image dimensions, and SHA-256 bytes. These four request/review captures were
 regenerated from the final production fixture at source commit
-`a6d086b0941f645f5f6343a08d048b1fed7cc903` (`#350 Fixed: reconcile
-cancellation recovery selection`). The capture run used the recorded build with
-`--skip-build`, and the metadata records the exact final revision.
+`7dbf8bdfacc4e4d5ba4f015933a62c4c12e382ee` (`#350 Fixed: resolve
+completion-winning cancellation`). The capture run used the recorded build with
+`--skip-build`, and every metadata sidecar records that exact source revision.
 
 ## Recorded validation
 
@@ -54,7 +54,9 @@ successful cumulative build delta is recorded in `deploy/version/entries/349.yam
   backwards-clock lifecycle ordering, and cancellation while create is in
   flight. The cancellation regression verifies a `notFound` cancel is retained
   as a local intent, the late create is compensating-cancelled remotely, and no
-  review/save path receives it.
+  review/save path receives it. Delta 36 adds the completion-winning race:
+  a completed remote request is recorded as discarded locally, remains terminal
+  after restart, and cannot be saved.
 - Recorded `swift test --filter BundledUserGuideTests` — delta 31 passed (five
   tests, both locales, v14 packages and preserved personal-copy fixtures).
 - Recorded full `swift test` — delta 33 passed: 363 XCTest cases with 30
@@ -64,10 +66,15 @@ successful cumulative build delta is recorded in `deploy/version/entries/349.yam
   recovery-selection guard: 363 XCTest cases with 30 expected opt-in skips and
   42 Swift Testing cases, including real TLS rubric request/accept/response
   coverage; no failures.
+- Recorded full `swift test` — delta 37 passed after the completion-winning
+  cancellation resolution: 364 XCTest cases with 30 expected opt-in skips and
+  42 Swift Testing cases, including real TLS rubric request/accept/response
+  coverage; no failures.
 - `LEONARDO_RUBRIC_GUIDE_CAPTURE=$PWD/doc/validation/rubric-capture-341 swift
   test --skip-build --filter RubricGuideCaptureTests` — passed and regenerated
   the English/Spanish full-height request and review captures from source
-  `a6d086b0941f645f5f6343a08d048b1fed7cc903`.
+  `7dbf8bdfacc4e4d5ba4f015933a62c4c12e382ee`; the run is recorded in
+  `/tmp/leonardo-pr349-final/capture-source-7dbf8bd.log`.
 - `python3 scripts/package-user-guide.py --web-output doc` followed by
   `python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py'`
   — deterministic package test passed.

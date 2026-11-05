@@ -91,4 +91,8 @@ treated as proof that no request will appear: a late create is followed by a
 compensating remote cancel, and the old UUID is never reopened for review or
 saved. If that compensation is temporarily unavailable, the intent and UUID
 remain durable for reconciliation; **Request another rubric** is the only way
-to start a fresh request.
+to start a fresh request. If the helper reports that the companion completed
+just before cancellation could be confirmed, the Mac records a local
+`completedBeforeCancellation` outcome, discards the returned drawing, and
+shows a terminal message with **Request another rubric**; it does not pretend
+that a remote cancellation succeeded or allow a library save.

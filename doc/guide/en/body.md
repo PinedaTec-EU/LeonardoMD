@@ -433,7 +433,9 @@ window has passed, Leonardo keeps a local tombstone and **Request again** create
 a fresh request ID; it never silently recreates the old request. If you cancel
 while the helper is still creating the request, Leonardo confirms that
 cancellation before showing any returned drawing; a late completion cannot be
-reviewed or saved. Brush ends taper without requiring a pressure-sensitive
+reviewed or saved. If the companion completes just before cancellation is
+confirmed, Leonardo discards that result and shows **Request another rubric**;
+it never turns the cancelled request into a library entry. Brush ends taper without requiring a pressure-sensitive
 pencil. These
 are visual rubrics, not digital certificates.
 

@@ -441,7 +441,10 @@ petición ha caducado o ya no existe, o esa ventana ha pasado, Leonardo conserva
 un registro local y **Pedir de nuevo** crea un ID nuevo; nunca recrea en silencio
 la petición antigua. Si cancelas mientras el asistente todavía está creando la
 petición, Leonardo confirma la cancelación antes de mostrar cualquier dibujo;
-una finalización tardía no se puede revisar ni guardar. El pincel afina los
+una finalización tardía no se puede revisar ni guardar. Si el compañero termina
+justo antes de confirmar la cancelación, Leonardo descarta ese resultado y muestra
+**Pedir otra rúbrica**; nunca convierte la petición cancelada en una entrada de
+biblioteca. El pincel afina los
 extremos sin exigir presión real. Son rúbricas visuales, no certificados ni
 firmas criptográficas.
 
