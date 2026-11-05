@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.2.837
+
+- #202 Fixed: install updates directly from Preferences ([#336](https://github.com/PinedaTec-EU/LeonardoMD/pull/336))
+
+<p>Install and relaunch updates directly from Preferences, preserving unsaved-document and Git safety checks.</p>
+
+Source: `a46785d1d7199b08ee7e75b06f7db0e4be1320ac`. Delta: `{"build": 5}`.
+
 ## 0.2.832
 
 - #324 Fixed: validate Sparkle dependencies and share QA signing ([#328](https://github.com/PinedaTec-EU/LeonardoMD/pull/328))
