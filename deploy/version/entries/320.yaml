@@ -1,5 +1,5 @@
 {
-  "build": 11,
+  "build": 12,
   "feature": 1,
-  "summary": "Independent macOS sync helper managed from LeonardoMD, with required online service and saved-file sharing."
+  "summary": "Keep selected saved documents available after closing LeonardoMD; manage the required background sync service from either device-sharing preferences screen."
 }

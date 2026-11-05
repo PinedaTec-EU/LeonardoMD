@@ -17,3 +17,13 @@ Subsequent documentation/package/evidence and test changes do not change the
 captured SwiftUI production controls. This evidence is component rendering,
 not fresh packaged startup, Service Management installation, Keychain migration,
 or reboot/login acceptance. Those gates remain open under issue #319.
+
+## Local checks
+
+- Full suite: 614 XCTest cases, 33 opt-in skips, zero failures, plus 28 passing Swift Testing cases.
+- Scripts: 54 cases (7 platform/environment skips); plugin: 38; packaging: 20.
+- A final source refresh imported only main's version-materialization metadata; three affected release-change tests pass.
+- The release-mode local QA bundle passes strict/deep signature verification, helper launch/dependency inspection and both mutual Developer ID requirement checks. See `signed-package.json` and `package-inspection.json`.
+- The signed QA package is retained at the task worktree's `output/LeonardoMD.app`. It is not an official published/notarized release and has not been installed or registered.
+
+Source and privacy limits above remain applicable. Real installed-service acceptance and fresh independent judgment are pending.
