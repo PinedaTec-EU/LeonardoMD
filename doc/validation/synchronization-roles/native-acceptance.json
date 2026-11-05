@@ -1,0 +1,16 @@
+{
+  "utc": "2026-11-05T15:49:05.641578+00:00",
+  "source_sha": "2c6d2911c02a067bfd4be5e147ddfa024e936b91",
+  "pids": [
+    23538
+  ],
+  "fresh_first_window_observed": true,
+  "both_role_pages_en_es_observed": true,
+  "one_common_service_toggle": true,
+  "helper_not_enabled_or_registered": true,
+  "client_connect_disabled_when_helper_off": true,
+  "preferences_bytes_unchanged": true,
+  "qa_executable_sha256": "0e70e21044c792a0695d248c16de8d302d577106410c39f88629277a9ae92ba6",
+  "original_app_executable_unchanged": true,
+  "type": "Ad-hoc real executable QA; no service registration or pairing acceptance claimed"
+}

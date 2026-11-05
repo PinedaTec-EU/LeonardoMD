@@ -44,3 +44,22 @@ Local intermediates are private to this worktree's `.build`; no external Swift
 build path override is present. Aggregate task budget: 5 GiB; backing volume
 had over 1 TiB free before compilation. Release archives are final deliverables,
 not disposable intermediate caches.
+
+## Packaged native navigation acceptance
+
+The real app executable built at `2c6d2911c02a067bfd4be5e147ddfa024e936b91`
+passed dependency/QA-bundle checks (Sparkle present, no XCTest executable).
+A disposable ad-hoc QA bundle started a fresh PID 23538 after ordinary close of
+the installed app. Its actual first window and native Preferences were observed.
+Both pages were exercised in English and Spanish: a single common service
+toggle remained visible; Connect was disabled while the helper was off; source
+selection remained present. Exact pre-test preferences bytes and the installed
+app executable hash stayed unchanged. No helper registration, pairing, new
+sharing consent or network transfer was performed. The original app and its
+previous project were reopened afterwards. See `native-acceptance.json`.
+
+Local full suite: 626 XCTest cases (34 optional skips), 28 Swift Testing cases;
+Python suite: 93 tests (7 environment skips). WKWebView guide rendering and
+personal practice-copy preservation are included. Exact-head hosted validation
+and independent judgment remain required; public beta acceptance follows
+integration/materialization and signed publication.
