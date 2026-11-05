@@ -3,6 +3,30 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.2.829</title>
+            <pubDate>Thu, 05 Nov 2026 14:11:50 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>829</sparkle:version>
+            <sparkle:shortVersionString>0.2.829</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"># LeonardoMD beta
+
+## Improved help illustrations
+
+- The English and Spanish help now includes premium paper-relief illustrations for the document journey, portable packages, export choices and importing with your own agent.
+- The main help and the separate agent-import guide share the localized artwork. Explanatory illustrations work without Mermaid; the live Mermaid teaching example and its editable source remain available.
+- Help artwork is sized to stay within the normal preview image budget. Existing personal help copies and practice answers are preserved.
+
+## Try it
+
+Open Help → Leonardo user guide or File → Import with your agent… and check the illustrations in your selected language.
+
+This beta is for Apple silicon Macs running macOS 14 or later.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.2.829/LeonardoMD-0.2.829.zip" length="25468429" type="application/octet-stream" sparkle:edSignature="12Fy+iAP8Z+8RS0UIF5N72p6RjDlEqWq+tHt/z0/u/FN0Q1V5GjCVHFa0GYKwocjFnRhXKzD7uc+DAnfcBoQBA==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.2.826</title>
             <pubDate>Thu, 05 Nov 2026 13:25:52 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
