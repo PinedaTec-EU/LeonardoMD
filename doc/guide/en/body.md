@@ -443,7 +443,7 @@ These operations are manual. Pull is fast-forward only and protects dirty worktr
 
 ## 14. Little Leonardo: read on iPhone or iPad
 
-![Little Leonardo: direct service disabled; no project or device is shared in this example.](assets/mobile.png)
+![Little Leonardo: direct service disabled; no project or device is shared in this example.](assets/mobile-helper-v8.png)
 
 *Little Leonardo: direct service disabled; no project or device is shared in this example.*
 
@@ -463,7 +463,7 @@ The Mac must be reachable for transfers. A private overlay VPN requires the expl
 
 ## 15. Linked Macs and offline copies
 
-![Linked Macs before pairing or importing a project.](assets/macs.png)
+![Linked Macs before pairing or importing a project.](assets/macs-helper-v8.png)
 
 *Linked Macs before pairing or importing a project.*
 

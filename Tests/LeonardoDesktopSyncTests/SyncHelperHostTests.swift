@@ -86,6 +86,49 @@ final class SyncHelperHostTests: XCTestCase {
             throw error
         }
     }
+    func testLocalControlCodecsApplyReviewedIncomingProposalThroughTicket() async throws {
+        let fixture = try HelperFixture()
+        defer { fixture.remove() }
+        let file = fixture.root.appendingPathComponent("note.md")
+        try Data("saved".utf8).write(to: file)
+        let project = MobileSharedProject(rootURL: fixture.root, name: "Owner", folders: [], documents: ["note.md"])
+        var settings = GlobalPreferences()
+        settings.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true, host: "127.0.0.1", port: 0, projects: [project])
+        try await fixture.save(settings)
+        let host = fixture.host()
+        let status = try await fixture.status(host)
+        let running = try XCTUnwrap(status.sharing)
+        do {
+            let enrollment = try DirectEnrollmentClient(endpoint: running.endpoint, certificateFingerprint: running.certificateFingerprint)
+            let credential = try PairingRegistry.makeCredential()
+            let paired = try await enrollment.begin(deviceName: "Peer", credential: credential, now: Date(), kind: .desktopPeer)
+            _ = try await host.perform(.approve(paired.deviceID, paired.comparisonCode, [project.id]))
+            let selection = try CorpusSelection(folders: [], documents: ["note.md"])
+            let base = try await ProjectCorpusReader().snapshot(root: fixture.root, selection: selection)
+            let proposal = try DesktopPeerProposal(projectID: project.id, selection: selection, base: base,
+                proposed: CorpusSnapshot(revision: "peer", files: [CorpusFile(path: "note.md", content: Data("approved peer bytes".utf8))]))
+            let peer = try DesktopPeerProposalClient(endpoint: running.endpoint, certificateFingerprint: running.certificateFingerprint)
+            try await peer.submit(proposal, deviceID: paired.deviceID, credential: credential)
+            let incoming = try JSONDecoder().decode([DesktopPeerIncomingProposal].self, from: await host.perform(.incoming))
+            let upload = try XCTUnwrap(incoming.first?.upload)
+            let wireReview = try JSONDecoder().decode(SyncHelperReview.self, from: await host.perform(.review(paired.deviceID, upload)))
+            let review = try DesktopPeerProposalReview(proposal: wireReview.proposal, source: wireReview.source)
+            let application = SyncHelperApplication(deviceID: paired.deviceID, upload: upload, review: review,
+                decisions: ["note.md": .local], projectRoot: fixture.root, currentSource: review.source, currentDisk: base)
+            let ticket = SyncHelperApplicationLease(root: fixture.root.appendingPathComponent("MobileSync/LocalApplications"))
+            try await ticket.prepare(application.id)
+            let command = try JSONDecoder().decode(SyncHelperCommand.self, from: JSONEncoder().encode(SyncHelperCommand.apply(application)))
+            let result = try JSONDecoder().decode(DesktopPeerAcceptanceResult.self, from: await host.perform(command))
+            try await ticket.finish(application.id)
+            XCTAssertTrue(result.appliedNow)
+            XCTAssertEqual(try Data(contentsOf: file), Data("approved peer bytes".utf8))
+            let receipt = try await peer.receipt(proposalID: proposal.id, projectID: project.id,
+                selection: selection, deviceID: paired.deviceID, credential: credential)
+            XCTAssertEqual(receipt, result.receipt)
+            _ = try await host.perform(.stopSharing)
+        } catch { _ = try? await host.perform(.stopSharing); throw error }
+    }
+
 }
 
 private struct HelperFixture {

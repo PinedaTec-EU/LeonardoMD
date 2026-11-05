@@ -448,7 +448,7 @@ Las operaciones son manuales. Pull solo permite avance rápido y protege árbole
 
 ## 14. Little Leonardo: leer en iPhone o iPad
 
-![Little Leonardo: servicio directo desactivado; este ejemplo no comparte proyectos ni dispositivos.](assets/mobile.png)
+![Little Leonardo: servicio directo desactivado; este ejemplo no comparte proyectos ni dispositivos.](assets/mobile-helper-v8.png)
 
 *Little Leonardo: servicio directo desactivado; este ejemplo no comparte proyectos ni dispositivos.*
 
@@ -468,7 +468,7 @@ El Mac debe estar accesible para transferir. Una VPN privada superpuesta requier
 
 ## 15. Macs enlazados y copias sin conexión
 
-![Macs enlazados antes de emparejar o importar un proyecto.](assets/macs.png)
+![Macs enlazados antes de emparejar o importar un proyecto.](assets/macs-helper-v8.png)
 
 *Macs enlazados antes de emparejar o importar un proyecto.*
 

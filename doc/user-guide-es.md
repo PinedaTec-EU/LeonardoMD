@@ -445,11 +445,11 @@ Las operaciones son manuales. Pull solo permite avance rápido y protege árbole
 
 ## 14. Little Leonardo: leer en iPhone o iPad
 
-![Little Leonardo: servicio directo desactivado; este ejemplo no comparte proyectos ni dispositivos.](guide/es/assets/mobile.png)
+![Little Leonardo: servicio directo desactivado; este ejemplo no comparte proyectos ni dispositivos.](guide/es/assets/mobile-helper-v8.png)
 
 *Little Leonardo: servicio directo desactivado; este ejemplo no comparte proyectos ni dispositivos.*
 
-Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Little Leonardo** de la instancia principal del Mac.
+Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Little Leonardo** de la instancia principal del Mac. El servicio requiere una distribución firmada con Developer ID; las compilaciones locales con firma ad-hoc no pueden habilitarlo.
 
 1. Activa **Habilitar el servicio Leonardo Sync**. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. Espera a **Servicio de sincronización en ejecución**.
 2. Activa **Compartir archivos guardados de este Mac** en una red que quieras utilizar. Revisa la dirección local; Automática puede seleccionar una disponible.
@@ -465,11 +465,11 @@ El Mac debe estar accesible para transferir. Una VPN privada superpuesta requier
 
 ## 15. Macs enlazados y copias sin conexión
 
-![Macs enlazados antes de emparejar o importar un proyecto.](guide/es/assets/macs.png)
+![Macs enlazados antes de emparejar o importar un proyecto.](guide/es/assets/macs-helper-v8.png)
 
 *Macs enlazados antes de emparejar o importar un proyecto.*
 
-Usa **Preferencias → Macs enlazados** en la instancia principal. Habilita el servicio Leonardo Sync en ambos Macs. En el Mac de origen, activa además compartir archivos y selecciona primero el contenido previsto. En el segundo Mac, vincula otro Mac mediante su dirección HTTPS o enlace de emparejamiento y un nombre de dispositivo. Compara los códigos en ambos y aprueba la conexión antes de importar proyectos.
+Usa **Preferencias → Macs enlazados** en la instancia principal. El interruptor del servicio Leonardo Sync también está disponible aquí. Habilita el servicio Leonardo Sync en ambos Macs. En el Mac de origen, activa además compartir archivos y selecciona primero el contenido previsto. En el segundo Mac, vincula otro Mac mediante su dirección HTTPS o enlace de emparejamiento y un nombre de dispositivo. Compara los códigos en ambos y aprueba la conexión antes de importar proyectos.
 
 Importa un proyecto disponible para crear una copia sin conexión. Ábrela localmente y usa sincronización manual o elige un intervalo. Las transferencias siguen necesitando conectividad. Una copia desconectada es trabajo local; no demuestra que el origen tenga tus últimos cambios.
 
