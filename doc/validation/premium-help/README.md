@@ -1,3 +1,9 @@
+# Historical pre-integration captures
+
+These captures describe the pre-sync-helper integration revision and are retained
+for provenance. They are not current-head acceptance evidence. Current combined
+guide evidence will be recorded under `integrated/`.
+
 # Premium bilingual help validation
 
 Tracking: [#334](https://github.com/PinedaTec-EU/LeonardoMD/issues/334).

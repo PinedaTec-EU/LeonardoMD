@@ -1,5 +1,7 @@
 # Changes
 
+- 2026-11-05: [#319](https://github.com/PinedaTec-EU/LeonardoMD/issues/319) extracts macOS source sharing into a required optional per-user helper; app manages registration/master consent, outbound operations fail closed and saved-file snapshots survive editor exit. Later owner-authorized native acceptance validates registration, reading after owner-editor exit, launchd helper restart and disable/offline behavior; no physical reboot is claimed.
+
 - 2026-10-20: [#249](https://github.com/PinedaTec-EU/LeonardoMD/issues/249) retires the proprietary mobile Git implementation and exclusive dependencies. iOS retains direct read-only snapshots and recovery exports of old corpus states; desktop direct synchronization and installed-system-Git tools are preserved. Persistence also rejects overwriting recovery archives independently of library memory ([#251](https://github.com/PinedaTec-EU/LeonardoMD/issues/251)). Native/automated evidence is tracked on the source PR; no Windows implementation or release is claimed.
 
 - 2026-10-20: [#244](https://github.com/PinedaTec-EU/LeonardoMD/issues/244) adds ADR 0002 comparing custom Git, libraries, provider APIs, desktop mediation and reduced scope. Owner selected iOS read-only/offline cache and editable macOS/Windows desktop synchronization, replacing the first draft's editable-mobile proposal. Git retirement, legacy recovery and Windows conformance remain pending; existing runtime and in-flight work are preserved.
@@ -177,3 +179,7 @@ source/license provenance, including bundled citeproc CPAL source. See
 - 2026-10-30: Remove workspace grouping UI/session lifecycle and add project-context new-tab navigation; legacy stored metadata and package/sync work directories remain intact. [#305](https://github.com/PinedaTec-EU/LeonardoMD/issues/305).
 
 - 2026-11-03 — [#314](https://github.com/PinedaTec-EU/LeonardoMD/issues/314): explorer selection is independent of automatic following, compares display-file identity (original MDLZ for packages), and uses system selection colors. Leonardo filename tint adapts to light/dark appearance. Guide revision 6 documents the distinction.
+
+- 2026-11-05: Corrected sync helper lifecycle diagnostics and listener health recovery in PR #320, tracking [#331](https://github.com/PinedaTec-EU/LeonardoMD/issues/331) and [#332](https://github.com/PinedaTec-EU/LeonardoMD/issues/332). Full suite: 624 XCTest (34 optional skips), 28 Swift Testing cases; focused real TLS and lifecycle regressions pass.
+
+- 2026-11-05: Combined help integration for PR #320 preserves #330, advances main help to v10, and resolves [#333](https://github.com/PinedaTec-EU/LeonardoMD/issues/333) without changing renderer limits or original captures. Full suite: 625 XCTest (34 optional skips), 28 Swift Testing; 56 script cases (7 skips) and all five native guide tests pass. Four successful review compilations were reconciled into the PR ledger rather than discarded.

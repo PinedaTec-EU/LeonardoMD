@@ -3,7 +3,7 @@ import Foundation
 import LeonardoSync
 import LeonardoSyncTransport
 
-public struct RunningDirectService: Sendable {
+public struct RunningDirectService: Codable, Sendable {
     public let endpoint: URL
     public let certificateFingerprint: Data
 }
@@ -17,12 +17,16 @@ public actor DesktopDirectRuntime {
     private let receipts: FileDesktopPeerReceiptStore
     private let acceptance: DesktopPeerAcceptance
     private var authority: DirectSyncAuthority?
-    private var listener: LANHTTPSListener?
+    public typealias ListenerFactory = @Sendable (TLSServerIdentity, @escaping LANHTTPSListener.Handler) -> any HTTPSListening
+    private let makeListener: ListenerFactory
+    private var listener: (any HTTPSListening)?
     private var generation = 0
     private var transitioning = false
     private let now: @Sendable () -> Date
 
-    public init(root: URL, credentials: any DeviceCredentialStore, now: @escaping @Sendable () -> Date) {
+    public init(root: URL, credentials: any DeviceCredentialStore, now: @escaping @Sendable () -> Date,
+                makeListener: @escaping ListenerFactory = { LANHTTPSListener(identity: $0, handler: $1) }) {
+        self.makeListener = makeListener
         identityStore = DesktopTLSIdentityStore(root: root.appendingPathComponent("TLS"), credentials: credentials)
         registryStore = PairingRegistryStore(url: root.appendingPathComponent("devices.json"))
         uploads = FileDesktopPeerUploadStore(root: root.appendingPathComponent("Proposals"))
@@ -57,7 +61,7 @@ public actor DesktopDirectRuntime {
         try await registryStore.save(registry)
         guard expected == generation else { throw CancellationError() }
         let router = DirectHTTPSRouter(authority: authority, now: now)
-        let listener = LANHTTPSListener(identity: identity) { await router.respond(to: $0) }
+        let listener = makeListener(identity) { await router.respond(to: $0) }
         self.authority = authority
         self.listener = listener
         do {
@@ -73,6 +77,10 @@ public actor DesktopDirectRuntime {
             if expected == generation { self.listener = nil; self.authority = nil }
             throw error
         }
+    }
+
+    public var isServing: Bool {
+        get async { await listener?.isReady ?? false }
     }
 
     public func stop() async throws {

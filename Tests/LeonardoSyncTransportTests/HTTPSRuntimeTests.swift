@@ -14,7 +14,11 @@ final class HTTPSRuntimeTests: XCTestCase {
             }
             return HTTPResponse(status: 200, body: Data("{\"status\":\"authorized\"}".utf8))
         }
+        let initiallyReady = await server.isReady
+        XCTAssertFalse(initiallyReady)
         let port = try await server.start(host: "127.0.0.1")
+        let ready = await server.isReady
+        XCTAssertTrue(ready)
         do {
             let endpoint = URL(string: "https://127.0.0.1:\(port)")!
             let client = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: identity.certificateFingerprint)
@@ -34,6 +38,8 @@ final class HTTPSRuntimeTests: XCTestCase {
                 XCTFail("Wrong certificate pin must not receive a response")
             } catch { XCTAssertTrue(error is URLError) }
             await server.stop()
+            let readyAfterStop = await server.isReady
+            XCTAssertFalse(readyAfterStop)
         } catch { await server.stop(); throw error }
     }
 
