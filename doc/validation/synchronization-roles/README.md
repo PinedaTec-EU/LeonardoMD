@@ -65,3 +65,5 @@ and independent judgment remain required; public beta acceptance follows
 integration/materialization and signed publication.
 
 The production principal client now uses the source controller’s helper lifecycle object ([#346](https://github.com/PinedaTec-EU/LeonardoMD/issues/346)); a focused ownership regression prevents independently cached service state behind the common switch. Existing helper transition/late-reply tests exercise that shared lifecycle. No consent or transport gate changes.
+
+With the shared principal lifecycle, the active role page owns refresh polling. The wrapper adds no second polling loop; its common control observes the same helper object.

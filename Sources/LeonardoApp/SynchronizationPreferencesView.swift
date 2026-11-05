@@ -40,11 +40,5 @@ struct SynchronizationPreferencesView: View {
                     .frame(minHeight: 0, maxHeight: .infinity)
             }
         }.padding(.top, 4)
-        .task {
-            while !Task.isCancelled {
-                await source.helper.refresh()
-                do { try await Task.sleep(for: .seconds(2)) } catch { return }
-            }
-        }
     }
 }
