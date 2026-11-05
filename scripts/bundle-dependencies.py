@@ -97,14 +97,32 @@ def shared_cache_lookup():
     return lookup
 
 
-def executable_image(image):
+def image_types(image):
     header = subprocess.check_output(['/usr/bin/otool', '-hv', str(image)], text=True)
     rows = [line.split() for line in header.splitlines()]
-    types = {row[4] for row in rows if len(row) > 4
-             and row[0] in {'MH_MAGIC', 'MH_MAGIC_64', 'MH_CIGAM', 'MH_CIGAM_64'}}
+    return {row[4] for row in rows if len(row) > 4
+            and row[0] in {'MH_MAGIC', 'MH_MAGIC_64', 'MH_CIGAM', 'MH_CIGAM_64'}}
+
+
+def executable_image(image):
+    types = image_types(image)
     if 'EXECUTE' in types and len(types) > 1:
         raise ValueError(f'Mixed executable/library image types: {image}')
     return types == {'EXECUTE'}
+
+
+def system_image_available(name):
+    if shared_cache_lookup()(os.fsencode(name)):
+        return True
+    path = Path(name)
+    if not path.is_file():
+        return False
+    with path.open('rb') as stream:
+        if stream.read(4) not in MACHO_MAGIC:
+            raise ValueError(f'System dependency is not a Mach-O library: {name}')
+    if image_types(path) != {'DYLIB'}:
+        raise ValueError(f'System dependency is not a dynamic library: {name}')
+    return True
 
 
 def image_architectures(image):
@@ -122,12 +140,14 @@ def resolve_dependency(name, image, executable, runpaths, bundle, *, weak=False)
         if not path.is_absolute():
             raise ValueError(f'Unresolved bundled dependency {name}: relative or unsupported '
                              f'runpath cannot be validated: {candidate}')
-        if system_path(candidate) and (path.is_file() or shared_cache_lookup()(os.fsencode(candidate))):
+        if system_path(candidate) and system_image_available(candidate):
             return None
         if path.is_file():
             if not path.resolve().is_relative_to(bundle):
                 raise ValueError(f'Unresolved bundled dependency {name}: first existing candidate '
                                  f'escapes the bundle: {candidate}')
+            if image_types(path) != {'DYLIB'}:
+                raise ValueError(f'Bundled dependency is not a dynamic library: {candidate}')
             return path.resolve()
     if weak:
         return None  # Weak-linked images are permitted to be absent at runtime.

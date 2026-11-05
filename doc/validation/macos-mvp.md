@@ -9,7 +9,7 @@ the disposable copy produced by `--qa`. `scripts/qa-bundle.py --verify-only <app
 checks the real executable and every embedded Mach-O executable (including
 helpers, XPC services and updater apps), resolving each executable's transitive
 libraries with its own loader/executable context and each architecture separately;
-universal-image slices never share runpath lists. Required library slices must exist.
+universal-image slices never share runpath lists. Required bundled library slices must exist.
 It checks deep strict signatures and consistent
 embedded signing teams for team-signed apps. System framework/library paths may
 be supplied by Apple's dyld shared cache. Search order is preserved: an existing
@@ -17,7 +17,9 @@ external candidate or an escaping symlink blocks validation even when a bundled
 fallback exists later. Relative or unsupported runpath expressions fail closed;
 ordinary loader/executable anchors are expanded. Shared-cache candidates are
 queried through the native dyld API, including direct system-library references;
-an approved path prefix alone is not evidence that the library exists. Weak-linked
+an approved path prefix alone is not evidence that the library exists. Files on disk
+must have a dynamic-library Mach-O type, rather than merely occupying the expected
+path; shared-cache entries are confirmed through dyld. Weak-linked
 libraries may be absent; if present, they undergo the same dependency and external-path
 inspection as required libraries. This inspection covers Mach-O load commands,
 not computed runtime `dlopen` paths or environment-driven injection. This static gate does not prove a fresh

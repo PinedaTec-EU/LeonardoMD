@@ -115,6 +115,16 @@ class DependencyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unresolved bundled dependency'):
             deps.inspect_dependencies(self.bundle, self.executable)
 
+    def test_existing_system_data_file_is_not_a_library(self):
+        macho(self.executable, ['/System/Library/CoreServices/SystemVersion.plist'])
+        with self.assertRaisesRegex(ValueError, 'System dependency is not a Mach-O library'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_bundled_executable_cannot_masquerade_as_a_library(self):
+        macho(self.sparkle, ['/usr/lib/libSystem.B.dylib'], filetype=2)
+        with self.assertRaisesRegex(ValueError, 'Bundled dependency is not a dynamic library'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+
     def test_missing_weak_framework_is_optional(self):
         self.sparkle.unlink()
         macho(self.executable, [self.name], ['@executable_path/../Frameworks'], load_command=0x80000018)
