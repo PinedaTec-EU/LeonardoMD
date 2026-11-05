@@ -80,3 +80,16 @@ Fresh packaged acceptance must use the real app bundle and respect the running
 user instance. In particular, do not close a user's editor or register a QA
 helper over an existing service silently. Release readiness requires recording
 that installation/lifecycle evidence on #319 and its PR.
+
+## Signed local QA packages
+
+The local build script emits an ad-hoc bundle. For Developer ID hardened QA,
+use the same inside-out order as `scripts/prepare-release.sh`: sign the helper
+with its fixed identifier, Sparkle's Downloader/Installer XPC services,
+Autoupdate, Updater app, framework, then the main app. Signing only the helper
+and main app can pass deep static verification but fail library validation at
+startup. The package verifier now checks the nested signing teams as well.
+
+The helper resolves its executable location through the kernel; a launchd
+relative BundleProgram/argv is not a filesystem identity. Startup failures log
+and exit cleanly rather than raising an unhandled Swift top-level error.

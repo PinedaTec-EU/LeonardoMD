@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import plistlib
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -22,7 +23,10 @@ def inspect_bundle(bundle):
     dependencies = subprocess.check_output(['/usr/bin/otool', '-L', str(executable)], text=True)
     if 'XCTest.framework/' in dependencies:
         raise ValueError('GUI executable links XCTest; use swift test instead of launching a test runner as an app')
+    if not (bundle / 'Contents/Frameworks/Sparkle.framework/Sparkle').is_file():
+        raise ValueError('Packaged Sparkle framework executable is missing')
     inspect_sync_helper(bundle)
+    inspect_embedded_signing_teams(bundle)
     subprocess.run(['/usr/bin/codesign', '--verify', '--strict', str(bundle)], check=True)
     return metadata, dependencies
 
@@ -44,6 +48,29 @@ def inspect_sync_helper(bundle):
     if 'XCTest.framework/' in dependencies:
         raise ValueError('Sync helper links XCTest')
     subprocess.run(['/usr/bin/codesign', '--verify', '--strict', str(helper)], check=True)
+
+
+def signing_team(path):
+    result = subprocess.run(['/usr/bin/codesign', '-d', '--verbose=2', str(path)],
+                            check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    match = re.search(r'^TeamIdentifier=(.+)$', result.stderr, re.MULTILINE)
+    return match.group(1) if match and match.group(1) != 'not set' else None
+
+
+def inspect_embedded_signing_teams(bundle):
+    team = signing_team(bundle)
+    if not team:
+        return  # Local ad-hoc packaging remains supported; helper activation denies it.
+    frameworks = bundle / 'Contents/Frameworks'
+    components = [bundle / 'Contents/MacOS/LeonardoSyncHelper']
+    components += sorted(frameworks.glob('*.framework'))
+    components += sorted(frameworks.rglob('*.app')) + sorted(frameworks.rglob('*.xpc'))
+    updater = frameworks / 'Sparkle.framework/Versions/B/Autoupdate'
+    if updater.is_file():
+        components.append(updater)
+    for component in components:
+        if signing_team(component) != team:
+            raise ValueError('Embedded component signing team differs from app: ' + str(component.relative_to(bundle)))
 
 
 def verify_bundle(bundle):

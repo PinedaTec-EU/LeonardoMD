@@ -69,6 +69,20 @@ class QABundleTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'links XCTest'):
                 qa_bundle.inspect_sync_helper(self.bundle)
 
+    def test_developer_id_bundle_rejects_unresigned_framework(self):
+        framework = self.bundle / 'Contents/Frameworks/Sparkle.framework'
+        framework.mkdir(parents=True)
+        with patch.object(qa_bundle, 'signing_team', side_effect=['OWNER', 'OWNER', None]):
+            with self.assertRaisesRegex(ValueError, 'signing team differs.*Sparkle'):
+                qa_bundle.inspect_embedded_signing_teams(self.bundle)
+        with patch.object(qa_bundle, 'signing_team', return_value='OWNER'):
+            qa_bundle.inspect_embedded_signing_teams(self.bundle)
+
+    def test_ad_hoc_bundle_does_not_claim_developer_id_team_validation(self):
+        with patch.object(qa_bundle, 'signing_team', return_value=None) as team:
+            qa_bundle.inspect_embedded_signing_teams(self.bundle)
+            team.assert_called_once_with(self.bundle)
+
     def test_package_report_binds_version_and_exact_artifact_bytes(self):
         root = Path(self.directory.name)
         (root / 'deploy').mkdir()
