@@ -35,6 +35,10 @@ owner-side Mac flow on top of the authenticated exchange in
   queryable but cannot be reviewed, inserted or saved. A late completed reply
   can recover a technical missing tombstone, never an explicitly cancelled
   intent.
+- Recovery prioritizes an unsaved returned response over a newer cancellation
+  marker for the same document, even after the document source digest changes;
+  saving the response remains available while insertion still checks the
+  original context.
 - `RubricLibrary` records the stable request UUID so repeated saves do not
   duplicate entries. Delayed status replies cannot regress cancellation or
   completion; the focused `RubricCaptureTests` covers restart/idempotence and

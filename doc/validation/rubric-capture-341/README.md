@@ -22,8 +22,8 @@ Every PNG has a matching `.context.json` and `.metadata.json` sidecar. The
 metadata helper records the source revision, capture time, native viewport,
 image dimensions, and SHA-256 bytes. These four request/review captures were
 regenerated from the final production fixture at source commit
-`17cd16d4e0d8a971f34832814aef68b6257dc84f` (`#350 Fixed: preserve pending
-cancellation on reopen`). The capture run used the recorded build with
+`a6d086b0941f645f5f6343a08d048b1fed7cc903` (`#350 Fixed: reconcile
+cancellation recovery selection`). The capture run used the recorded build with
 `--skip-build`, and the metadata records the exact final revision.
 
 ## Recorded validation
@@ -47,7 +47,8 @@ successful cumulative build delta is recorded in `deploy/version/entries/349.yam
   pending-request, and response-review captures.
 - Recorded `swift test --filter RubricCaptureTests` — delta 26 passed (12
   tests), delta 27 passed (13 tests), delta 28 passed (14 tests), delta 30
-  passed (15 tests), and delta 32 passed (15 tests). The final run covers stable-ID lost acknowledgement,
+  passed (15 tests), delta 32 passed (15 tests), and delta 34 passed (15
+  tests). The final run covers stable-ID lost acknowledgement,
   late completed-response recovery before tombstoning, authenticated missing
   request handling, capacity protection for unresolved/unsaved records,
   backwards-clock lifecycle ordering, and cancellation while create is in
@@ -59,10 +60,14 @@ successful cumulative build delta is recorded in `deploy/version/entries/349.yam
 - Recorded full `swift test` — delta 33 passed: 363 XCTest cases with 30
   expected opt-in skips and 42 Swift Testing cases, including real TLS rubric
   request/accept/response coverage; no failures.
+- Recorded full `swift test` — delta 35 passed after the final cancellation
+  recovery-selection guard: 363 XCTest cases with 30 expected opt-in skips and
+  42 Swift Testing cases, including real TLS rubric request/accept/response
+  coverage; no failures.
 - `LEONARDO_RUBRIC_GUIDE_CAPTURE=$PWD/doc/validation/rubric-capture-341 swift
   test --skip-build --filter RubricGuideCaptureTests` — passed and regenerated
   the English/Spanish full-height request and review captures from source
-  `17cd16d4e0d8a971f34832814aef68b6257dc84f`.
+  `a6d086b0941f645f5f6343a08d048b1fed7cc903`.
 - `python3 scripts/package-user-guide.py --web-output doc` followed by
   `python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py'`
   — deterministic package test passed.
