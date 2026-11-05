@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.2.829
+
+- #334 Updated: add premium bilingual help illustrations ([#335](https://github.com/PinedaTec-EU/LeonardoMD/pull/335))
+
+<p>Refresh the English and Spanish help with premium illustrations for document workflows, packages, export choices and agent-assisted import, while preserving the live Mermaid demonstrations.</p>
+
+Source: `6348e1b3e0d1bd96fbd7b889dc8452b5b7deac6d`. Delta: `{"build": 3}`.
+
 ## 0.2.826
 
 - #319 Added: independent macOS sync helper ([#320](https://github.com/PinedaTec-EU/LeonardoMD/pull/320))
