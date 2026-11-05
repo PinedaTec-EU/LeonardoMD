@@ -323,7 +323,8 @@ the inspector. Protection, Fill or a different document clears inspection.
 
 *Production inspector component with synthetic inserted ink; not a personal signature.*
 
-For an inserted rubric, **Ink color** recolors all its strokes. The inspector's
+For an inserted rubric, **Ink color** recolors all its strokes. **Colors** offers
+Black, White, Blue and Red shortcuts; the native swatch supports other colors. The inspector's
 preview shows transparency; mixed-color ink is labeled before recoloring.
 This changes only the inserted copy: the saved library rubric, stroke points,
 width/style and other objects stay unchanged. Undo/Redo includes the color change;
