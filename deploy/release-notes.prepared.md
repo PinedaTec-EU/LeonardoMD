@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.2.844
+
+- #340 Added: authorize rubric requests and responses ([#344](https://github.com/PinedaTec-EU/LeonardoMD/pull/344))
+
+<p>Adds protocol foundations for targeted Mac-to-iOS rubric requests without granting document editing. Capability negotiation, durable retries and pinned transport are ready; production UI/enrollment wiring remains deferred to #342.</p>
+
+Source: `f4b3ddd57ec4c5476c03a872cac84a6a4a516015`. Delta: `{"build": 7}`.
+
 ## 0.2.837
 
 - #202 Fixed: install updates directly from Preferences ([#336](https://github.com/PinedaTec-EU/LeonardoMD/pull/336))
