@@ -193,6 +193,9 @@ final class RubricExchangeTests: XCTestCase {
             projects: [SharedProjectSource(descriptor: project) { CorpusSnapshot(revision: "r", files: []) }],
             serverFingerprint: fingerprint, persist: { _ in },
             rubrics: FileRubricExchangeStore(url: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)))
+        let serverStatus = try await authority.status(deviceID: pairing.id, credential: credential, now: now)
+        XCTAssertEqual(serverStatus.capabilities, [.rubricExchangeV1],
+                       "Status capabilities describe the Mac handler, not the linked client's advertisement")
         do {
             _ = try await authority.createRubricRequest(targetDeviceID: pairing.id, requesterName: "MacBook", now: now)
             XCTFail("A legacy peer without the advertised capability must be actionable as unsupported")
@@ -248,8 +251,10 @@ final class RubricExchangeTests: XCTestCase {
         XCTAssertTrue(before.capabilities.isEmpty)
         let after = try await authority.updateCapabilities(deviceID: paired.id, credential: credential,
                                                             update: DirectCapabilityUpdate(rubricExchangeV1: true), now: now)
-        XCTAssertEqual(after.projects.map(\.id), [project.id])
-        XCTAssertEqual(after.capabilities, [.rubricExchangeV1])
+        XCTAssertEqual(after.acceptedCapabilities, [.rubricExchangeV1])
+        let serverStatus = try await authority.status(deviceID: paired.id, credential: credential, now: now)
+        XCTAssertEqual(serverStatus.projects.map(\.id), [project.id])
+        XCTAssertEqual(serverStatus.capabilities, [.rubricExchangeV1])
         let state = await authority.consentState()
         let persisted = try XCTUnwrap(state.devices.first(where: { $0.id == paired.id }))
         XCTAssertEqual(persisted.id, paired.id)

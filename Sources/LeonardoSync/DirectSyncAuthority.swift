@@ -47,6 +47,17 @@ public struct DirectDeviceStatus: Codable, Sendable {
     }
 }
 
+/// Authenticated confirmation for a client capability refresh. This stays
+/// separate from `DirectDeviceStatus.capabilities`, which describes the Mac
+/// service and is already consumed by older V1 readers.
+public struct DirectCapabilityRefreshReceipt: Codable, Sendable {
+    public let acceptedCapabilities: Set<DirectCapability>?
+
+    public init(acceptedCapabilities: Set<DirectCapability>? = nil) {
+        self.acceptedCapabilities = acceptedCapabilities
+    }
+}
+
 /// Optional, forward-compatible capability update. Older clients can ignore
 /// this endpoint and continue reading; unknown future fields decode safely.
 public struct DirectCapabilityUpdate: Codable, Sendable {
@@ -130,28 +141,27 @@ public actor DirectSyncAuthority {
         guard !changing else { throw DirectAuthorityError.busy }
         let access = try registry.pairingStatus(requestID: deviceID, credential: credential, now: now)
         let granted = access == .authorized ? registry.devices.first(where: { $0.id == deviceID })?.projects ?? [] : []
-        let capabilities = access == .authorized && rubrics != nil
-            ? registry.devices.first(where: { $0.id == deviceID })?.capabilities ?? []
-            : []
         return DirectDeviceStatus(access: access,
             projects: granted.compactMap { projects[$0]?.descriptor }.sorted { $0.name < $1.name },
-            capabilities: capabilities)
+            capabilities: rubrics == nil ? [] : [.rubricExchangeV1])
     }
 
     /// Authenticated feature refresh for an already-linked read-only client.
     /// The update is persisted atomically and cannot alter its identity or
     /// document grants. A nil field is a compatibility no-op.
     public func updateCapabilities(deviceID: UUID, credential: String,
-                                   update: DirectCapabilityUpdate, now: Date) async throws -> DirectDeviceStatus {
+                                   update: DirectCapabilityUpdate, now: Date) async throws -> DirectCapabilityRefreshReceipt {
         guard update.rubricExchangeV1 != nil else {
-            return try status(deviceID: deviceID, credential: credential, now: now)
+            _ = try status(deviceID: deviceID, credential: credential, now: now)
+            return DirectCapabilityRefreshReceipt()
         }
-        _ = try await mutate { registry in
+        let device = try await mutate { registry in
             let capabilities: Set<DirectCapability> = update.rubricExchangeV1 == true ? [.rubricExchangeV1] : []
             return try registry.updateCapabilities(deviceID: deviceID, credential: credential,
                                                    capabilities: capabilities)
         }
-        return try status(deviceID: deviceID, credential: credential, now: now)
+        _ = try status(deviceID: deviceID, credential: credential, now: now)
+        return DirectCapabilityRefreshReceipt(acceptedCapabilities: device.capabilities)
     }
 
     /// Creates a single-device request owned by this Mac. The target must be an
