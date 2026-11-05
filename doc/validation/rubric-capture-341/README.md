@@ -45,6 +45,10 @@ successful cumulative build delta is recorded in `deploy/version/entries/349.yam
   including idempotent authority create retry.
 - Recorded `swift test --filter BundledUserGuideTests` — delta 19 passed (5
   tests, both locales, v14 packages and preserved v13 personal-copy fixtures).
+- Recorded full `swift test` — delta 20 passed across the macOS XCTest and Swift
+  Testing suites; opt-in evidence tests remained skipped unless explicitly
+  enabled. Real TLS rubric request/accept/response coverage passed in the same
+  run.
 - `python3 scripts/package-user-guide.py --web-output doc` followed by
   `python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py'`
   — deterministic package test passed.
