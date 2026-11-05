@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "collected_at": "2026-11-05T08:24:21.602437+00:00",
+  "collected_at": "2026-11-05T08:38:00.217149+00:00",
   "capture": {
-    "captured_at": "2026-11-05T08:23:42.196000+00:00",
+    "captured_at": "2026-11-05T08:36:48.213000+00:00",
     "route": "/native/user-guide/en",
     "screen": "Leonardo guide: Production object inspector; isolated inserted synthetic rubric; no personal ink; editable geometry, Z and color; original 1x bitmap for guide memory budget",
     "browser_name": "Native AppKit / SwiftUI NSHostingView",
@@ -22,7 +22,7 @@
     "sha256": "48f146fbcc60421a45c8eb844427aff1353d813e5031560d94b31b4244afe97b"
   },
   "source": {
-    "revision_at_collection": "87cb159d25982ebd1ee48fce5336b04848982c6e",
+    "revision_at_collection": "820a663294e4c9e4ff87f0dd2952d356343e2557",
     "tracked_changes_present": true,
     "untracked_files_present": true
   }
