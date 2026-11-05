@@ -3,6 +3,33 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.2.826</title>
+            <pubDate>Thu, 05 Nov 2026 13:25:52 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>826</sparkle:version>
+            <sparkle:shortVersionString>0.2.826</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">## Changes
+
+- Keep selected saved documents available after closing LeonardoMD; manage the required background sync service from either device-sharing preferences screen.
+- View helper installation, macOS approval, running and offline states from Little Leonardo or Linked Macs preferences.
+- Preserve existing device grants and manual review of incoming changes. Unsaved editor drafts stay local.
+- Updated English and Spanish help explains setup and recovery.
+
+## Getting started
+
+After installing this beta, enable **Leonardo Sync helper** in Preferences on each participating Mac and approve the background item in macOS if requested. On the source Mac, also enable sharing and select the projects or files to share. Synchronization requires an enabled, available helper in both directions; existing local copies remain readable offline.
+
+The helper starts after you log into your account and continues sharing saved files when the editor closes. It does not serve before login or wake a sleeping Mac. Disabling it makes device synchronization offline even while LeonardoMD is open.
+
+## Compatibility
+
+This beta package is for Apple silicon Macs. Background availability depends on macOS approval, network reachability and access to the selected saved files.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.2.826/LeonardoMD-0.2.826.zip" length="23585725" type="application/octet-stream" sparkle:edSignature="/lzWhY5QM6hB4IpOCxlWM2jSlFydXCoFj2M+/Eu8PH4N2RhqrX944oJP+QkSlqw6pFHxxx7qgE/VW1fMm+lBCw==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.1.797</title>
             <pubDate>Thu, 05 Nov 2026 12:10:54 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
