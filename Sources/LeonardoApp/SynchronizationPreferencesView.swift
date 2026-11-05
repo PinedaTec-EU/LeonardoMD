@@ -25,16 +25,19 @@ struct SynchronizationPreferencesView: View {
                 SyncHelperPreferencesSection(controller: source.helper)
                     .toggleStyle(PremiumSwitchStyle())
                     .padding(8)
-            }.padding(.horizontal, 16)
+            }.padding(.horizontal, 16).fixedSize(horizontal: false, vertical: true)
             Picker(L10n.text("Synchronization role"), selection: $page) {
                 ForEach(Page.allCases) { Text($0.title).tag($0) }
             }.pickerStyle(.segmented).labelsHidden().padding(.horizontal, 16)
                 .accessibilityIdentifier("synchronization-role")
+                .fixedSize(horizontal: false, vertical: true)
             switch page {
             case .sharing:
                 MobileSyncPreferencesView(session: session, controller: source)
+                    .frame(minHeight: 0, maxHeight: .infinity)
             case .connections:
                 DesktopPeerPreferencesView(session: session, controller: client)
+                    .frame(minHeight: 0, maxHeight: .infinity)
             }
         }.padding(.top, 4)
         .task {

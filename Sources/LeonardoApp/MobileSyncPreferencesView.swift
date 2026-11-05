@@ -54,21 +54,21 @@ struct MobileSyncPreferencesView: View {
     }
 
     @ViewBuilder private var sharedContent: some View {
-    Section(L10n.text("Content shared from this Mac")) {
-        if session.projectURL != nil {
-            Button(L10n.text("Share current project")) { selectingContent = true }
-        }
-        ForEach(controller.settings.projects) { project in
-            HStack {
-                VStack(alignment: .leading) {
-                    Text(project.name)
-                    Text((project.folders.map { $0.isEmpty ? L10n.text("Entire project") : $0 } + project.documents).joined(separator: ", "))
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Button(L10n.text("Remove")) { Task { await controller.unshare(project.id) } }
+        Section(L10n.text("Content shared from this Mac")) {
+            if session.projectURL != nil {
+                Button(L10n.text("Share current project")) { selectingContent = true }
             }
-        }
+            ForEach(controller.settings.projects) { project in
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text(project.name)
+                        Text((project.folders.map { $0.isEmpty ? L10n.text("Entire project") : $0 } + project.documents).joined(separator: ", "))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button(L10n.text("Remove")) { Task { await controller.unshare(project.id) } }
+                }
+            }
     }
     if controller.settings.projects.isEmpty {
         Text(L10n.text("Open a project and choose Share current project to select its folders or files."))
@@ -77,66 +77,67 @@ struct MobileSyncPreferencesView: View {
     }
 
     @ViewBuilder private var invitation: some View {
-    if let running = controller.running {
-        Text(L10n.text("Invite a device")).font(.headline)
-        Text(L10n.text("Open the invitation link on another Mac, or scan its QR in Little Leonardo. Compare the codes and approve access here."))
-            .font(.caption).foregroundStyle(.secondary)
-        Text(running.endpoint.absoluteString).textSelection(.enabled)
-        Button(L10n.text("Create pairing QR")) { Task { await controller.createQR() } }
-        if let url = controller.invitationURL, let image = qrImage(url.absoluteString) {
-            Button(L10n.text("Copy pairing link")) {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(url.absoluteString, forType: .string)
+        if let running = controller.running {
+            Text(L10n.text("Invite a device")).font(.headline)
+            Text(L10n.text("Open the invitation link on another Mac, or scan its QR in Little Leonardo. Compare the codes and approve access here."))
+                .font(.caption).foregroundStyle(.secondary)
+            Text(running.endpoint.absoluteString).textSelection(.enabled)
+            Button(L10n.text("Create pairing QR")) { Task { await controller.createQR() } }
+            if let url = controller.invitationURL, let image = qrImage(url.absoluteString) {
+                Button(L10n.text("Copy pairing link")) {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(url.absoluteString, forType: .string)
+                }
+                Image(nsImage: image).interpolation(.none).resizable().frame(width: 170, height: 170)
+                    .accessibilityLabel(L10n.text("Device invitation QR"))
             }
-            Image(nsImage: image).interpolation(.none).resizable().frame(width: 170, height: 170)
-                .accessibilityLabel(L10n.text("Device invitation QR"))
-        }
     }
     }
 
     @ViewBuilder private var pendingConnections: some View {
-    Section(L10n.text("Pending connections")) {
-        ForEach(controller.consent.requests) { request in
-            HStack {
-                SyncDeviceIdentity(name: request.deviceName, kind: request.kind)
-                Text(request.comparisonCode).monospaced()
-                Spacer()
-                Button(L10n.text("Review")) { approving = request }
-                Button(L10n.text("Reject")) { Task { await controller.reject(request.id) } }
+        Section(L10n.text("Pending connections")) {
+            ForEach(controller.consent.requests) { request in
+                HStack {
+                    SyncDeviceIdentity(name: request.deviceName, kind: request.kind)
+                    Text(request.comparisonCode).monospaced()
+                    Spacer()
+                    Button(L10n.text("Review")) { approving = request }
+                    Button(L10n.text("Reject")) { Task { await controller.reject(request.id) } }
+                }
             }
-        }
     }
     }
 
     @ViewBuilder private var incomingChanges: some View {
-    Section(L10n.text("Incoming changes")) {
-        if controller.incoming.isEmpty { Text(L10n.text("No proposals awaiting review")).foregroundStyle(.secondary) }
-        ForEach(controller.incoming) { item in
-            HStack {
-                VStack(alignment: .leading) {
-                    Text(item.deviceName)
-                    Text(controller.settings.projects.first(where: { $0.id == item.upload.projectID })?.name ?? item.upload.projectID.uuidString)
-                        .font(.caption).foregroundStyle(.secondary)
+        Section(L10n.text("Incoming changes")) {
+            if controller.incoming.isEmpty { Text(L10n.text("No proposals awaiting review")).foregroundStyle(.secondary) }
+            ForEach(controller.incoming) { item in
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text(item.deviceName)
+                        Text(controller.settings.projects.first(where: { $0.id == item.upload.projectID })?.name ?? item.upload.projectID.uuidString)
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button(L10n.text("Review changes")) { Task { await controller.reviewProposal(item) } }
                 }
-                Spacer()
-                Button(L10n.text("Review changes")) { Task { await controller.reviewProposal(item) } }
             }
-        }
     }
     }
 
     @ViewBuilder private var authorizedDevices: some View {
-    Section(L10n.text("Devices with access to this Mac")) {
-        ForEach(controller.consent.devices) { device in
-            HStack {
-                SyncDeviceIdentity(name: device.name, kind: device.kind)
-                Spacer()
-                if device.revoked { Text(L10n.text("Revoked")).foregroundStyle(.secondary) }
-                else { Button(L10n.text("Revoke")) { Task { await controller.revoke(device.id) } } }
+        Section(L10n.text("Devices with access to this Mac")) {
+            ForEach(controller.consent.devices) { device in
+                HStack {
+                    SyncDeviceIdentity(name: device.name, kind: device.kind)
+                    Spacer()
+                    if device.revoked { Text(L10n.text("Revoked")).foregroundStyle(.secondary) }
+                    else { Button(L10n.text("Revoke")) { Task { await controller.revoke(device.id) } } }
+                }
             }
-        }
     }
     }
+
 
     private func qrImage(_ value: String) -> NSImage? {
         let filter = CIFilter.qrCodeGenerator()
