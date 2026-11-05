@@ -1,0 +1,29 @@
+{
+  "reviewed_code_head": "992fa58f49567242b3b77133f94af63cb14cd12f",
+  "component_capture_source": "a919f4b53b8d004c112bd0bd4ac6c109ff6e095e",
+  "unchanged_ui_file_sha256": {
+    "Sources/LeonardoApp/SynchronizationPreferencesView.swift": "00d984cc687bea140bae56e1ee36e881597cef1da2e8b8531cc653e629a5d967",
+    "Sources/LeonardoApp/MobileSyncPreferencesView.swift": "0d2a1e4d241af78331e64b5a45d63810e43bb4bd09dfce3eca5a78c3916d510a",
+    "Sources/LeonardoApp/DesktopPeerPreferencesView.swift": "d1fa2ee35cdd4cf8eb753ff1356db1b26b0e678e564d82f8339e2681506cda27",
+    "Sources/LeonardoApp/SyncHelperPreferencesSection.swift": "a58b6d9635965e03041cc944c4a6b2b2917db9e8c2c38b45a02b0a3d27cb24b5",
+    "Sources/LeonardoApp/SyncDeviceRole.swift": "636cb8fb04b85328790dbcf0ed1446a8a19be8c10a64f550569225cc7e2d5148",
+    "Sources/LeonardoApp/PreferencesView.swift": "7f6ca78ca167f9060f20c9cf7004d121d3aefc591f818e07526ef3231fb6674c",
+    "Sources/LeonardoApp/Resources/Localization/en.json": "32e47a183dd493eee985290ae49f413a63a045029ad0249be4d7b5c56fbe2a13",
+    "Sources/LeonardoApp/Resources/Localization/es.json": "16a00c4aa4b0882f94145eea8f728ed027d0b5b39c39910965d097a240bd9d4b"
+  },
+  "combined_local_tests": {
+    "xctest": 632,
+    "optional_skips": 34,
+    "swift_testing": 28,
+    "python": 93,
+    "python_skips": 7
+  },
+  "hosted_tests_for_reviewed_code_head": [
+    "https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/42059798302",
+    "https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/42059813115"
+  ],
+  "hosted_test_result": "success",
+  "source_build_delta": 10,
+  "publication": "pending source integration, materialization, signing and notarization",
+  "policy_provider_problem": "Pinned engine accepted the exact base/head; later check-result publication/revalidation returned GitHub HTTP500. No status was manually overridden."
+}
