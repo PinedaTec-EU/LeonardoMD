@@ -1,4 +1,4 @@
 {
-  "summary": "Linked iOS readers can securely receive and answer a Mac rubric request without document editing. Requests target one device, expire, and preserve exact responses across retries and restarts.",
+  "summary": "Adds protocol foundations for targeted Mac-to-iOS rubric requests without granting document editing. Capability negotiation, durable retries and pinned transport are ready; production UI/enrollment wiring remains deferred to #342.",
   "build": 5
 }

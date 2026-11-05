@@ -7,13 +7,17 @@ library to a group.
 
 ## Capability and scope
 
-`rubricExchangeV1` is advertised by the mobile client during pairing and is
-persisted in the paired-device record. A legacy record decodes with no
-capabilities, so the Mac reports `unsupported` instead of creating a request
-that the peer cannot answer. The Mac server separately advertises its own
-capability through `DirectDeviceStatus`. A request is accepted only for one
-explicit authorized `readOnly` device; desktop peers, revoked devices and
-implicit group broadcast are excluded.
+The protocol accepts an explicit `rubricExchangeV1` capability during pairing
+and persists it in the paired-device record. This is a capability contract, not
+an automatic feature flag: protocol fixtures and explicit clients can opt in,
+while the current production `MobileLibrary` enrollment deliberately sends an
+empty capability set. Until #342 delivers the iOS request/draw/send UI and its
+enrollment wiring, current and legacy readers remain unsupported, so the Mac
+refuses to create or deliver a request to them. A legacy record decodes with no
+capabilities. The Mac server separately advertises its own capability through
+`DirectDeviceStatus`. A request is accepted only for one explicit authorized
+`readOnly` device; desktop peers, revoked devices and implicit group broadcast
+are excluded.
 
 ## Lifecycle
 
@@ -41,10 +45,13 @@ Persistence failures leave in-memory state unchanged.
 
 The protocol is pull-based: an inactive iOS process is not treated as a
 continuously running background listener. Unsupported, offline and revoked
-states remain explicit to callers. PR #344 validates the lifecycle with eight
-focused exchange tests and an actual pinned HTTPS request/accept/response,
-duplicate-retry and revocation round trip. Full-suite CI and an independent
-judgment remain required. User-facing iOS/Mac screens are follow-up work in
+states remain explicit to callers. PR #344 validates the lifecycle with focused
+exchange tests, including a default legacy enrollment that remains unsupported,
+an explicit capable client, and an actual pinned HTTPS request/accept/response,
+duplicate-retry and revocation round trip. This validates protocol foundations,
+not the production mobile flow. Full-suite CI and an independent judgment
+remain required. User-facing iOS/Mac screens are follow-up work in
 [#341](https://github.com/PinedaTec-EU/LeonardoMD/issues/341) and
-[#342](https://github.com/PinedaTec-EU/LeonardoMD/issues/342); TestFlight is
+[#342](https://github.com/PinedaTec-EU/LeonardoMD/issues/342); #342 owns the
+request/draw/send UI and production enrollment wiring. TestFlight is
 [#343](https://github.com/PinedaTec-EU/LeonardoMD/issues/343).
