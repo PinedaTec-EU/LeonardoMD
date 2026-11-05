@@ -63,7 +63,7 @@ final class DesktopSyncController {
     }
 
     init(preferencesURL: URL = AppSession.preferencesURL, configurations: ConfigurationStore = .shared,
-         runtime: DesktopDirectRuntime? = nil, helper: SyncHelperController? = nil) {
+         runtime: (any DesktopSyncRuntimeAccess)? = nil, helper: SyncHelperController? = nil) {
         self.preferencesURL = preferencesURL
         self.helper = helper ?? SyncHelperController(preferencesURL: preferencesURL)
         self.configurations = configurations
