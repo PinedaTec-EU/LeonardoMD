@@ -192,8 +192,8 @@ final class RubricCaptureTests: XCTestCase {
         XCTAssertEqual(try store.upsert(fresh.replacing(request: acceptedRequest, response: nil, updatedAt: clock.value)).request?.state,
                        .cancelled,
                        "A delayed non-terminal reply must not resurrect a terminal request")
-        let saved = try store.markSaved(id: freshID, libraryEntryID: "saved")
-        XCTAssertEqual(saved.updatedAt, clock.value, "Save ordering must use the same injected clock")
+        XCTAssertThrowsError(try store.markSaved(id: freshID, libraryEntryID: "saved"),
+                             "A cancelled request cannot be marked as saved without a received response")
     }
 
     func testLateLifecycleMatrixKeepsTerminalOutcomesAcrossRestart() throws {
@@ -271,6 +271,7 @@ final class RubricCaptureTests: XCTestCase {
             documentURL: document, sourceDigest: RubricCaptureRecord.digest(source: "source"), fieldID: nil,
             labelHint: nil, request: request, response: response, updatedAt: fixed.addingTimeInterval(100))
         _ = try store.upsert(record)
+        XCTAssertNotNil(store.record(id: requestID)?.response)
 
         let library = RubricLibrary(url: root.appendingPathComponent("library.json"))
         let entry = try library.add(label: response.label, rubric: response.rubric, sourceRequestID: requestID)
@@ -503,7 +504,9 @@ final class RubricCaptureTests: XCTestCase {
         _ = try controller.prepareRubricCapture(requestID: oldID, targetDeviceID: pairing.id,
             targetDeviceName: "Little Leonardo", documentURL: nil, source: "source", fieldID: nil)
         let cancelled = try await controller.cancelRubricCapture(requestID: oldID)
-        XCTAssertTrue(cancelled.isMissing)
+        XCTAssertTrue(cancelled.isCancellationRequested)
+        XCTAssertFalse(cancelled.isMissing,
+                       "A cancellation race is not the same as an authenticated remote notFound tombstone")
         do {
             _ = try await controller.beginRubricCapture(requestID: oldID, targetDeviceID: pairing.id,
                 targetDeviceName: "Little Leonardo", documentURL: nil, source: "source", fieldID: nil)
@@ -513,6 +516,46 @@ final class RubricCaptureTests: XCTestCase {
         }
         let metrics = await runtime.metrics()
         XCTAssertEqual(metrics.createCalls, 0)
+    }
+
+    func testCancellationDuringInFlightCreateIsReconciledBeforeReview() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let fixed = Date(timeIntervalSince1970: 1_701_400_000)
+        let (registry, pairing) = try makeCapturePairing(now: fixed)
+        let runtime = SuspendedCreateRuntime(registry: registry, requesterID: UUID(), now: { fixed })
+        let controller = DesktopSyncController(preferencesURL: root.appendingPathComponent("preferences.json"),
+            runtime: runtime, now: { fixed })
+        await controller.update(MobileSyncPreferences(enabled: true, host: "127.0.0.1", port: 0))
+        XCTAssertEqual(controller.rubricCaptureAvailability, .ready, controller.error ?? "Runtime did not start")
+
+        let requestID = UUID()
+        let beginTask = Task { @MainActor in
+            try? await controller.beginRubricCapture(requestID: requestID, targetDeviceID: pairing.id,
+                targetDeviceName: "Little Leonardo", documentURL: nil, source: "source", fieldID: nil)
+        }
+        await runtime.waitForCreateStart()
+
+        let cancellation = try await controller.cancelRubricCapture(requestID: requestID)
+        XCTAssertTrue(cancellation.isCancellationRequested)
+        XCTAssertNil(cancellation.request,
+                     "A notFound cancel while create is in flight must retain a local cancellation intent")
+
+        await runtime.releaseCreate()
+        let beginResult = await beginTask.value
+        let reconciled = try XCTUnwrap(beginResult)
+        XCTAssertEqual(reconciled.request?.state, .cancelled,
+                       "The late create reply must be followed by a compensating remote cancel")
+        XCTAssertTrue(reconciled.isCancellationRequested)
+        XCTAssertNil(reconciled.response)
+        XCTAssertNil(controller.rubricCapture(for: nil, source: "source"),
+                     "An explicitly cancelled request must never enter review/save recovery")
+        XCTAssertThrowsError(try controller.markRubricCaptureSaved(requestID: requestID, libraryEntryID: "should-not-save"))
+
+        let metrics = await runtime.metrics()
+        XCTAssertEqual(metrics.createCalls, 1)
+        XCTAssertEqual(metrics.cancelCalls, 2,
+                       "The initial notFound and the late-create reconciliation must both be observable")
     }
 }
 
@@ -669,4 +712,75 @@ private actor LostCreateReplyRuntime: DesktopSyncRuntimeAccess {
     func metrics() -> (createCalls: Int, durableRequestCount: Int) {
         (createCalls, requests.count)
     }
+}
+
+private actor SuspendedCreateRuntime: DesktopSyncRuntimeAccess {
+    let registry: PairingRegistry
+    let requesterID: UUID
+    let now: @Sendable () -> Date
+    private var requests: [UUID: LeonardoSync.RubricRequest] = [:]
+    private var createCalls = 0
+    private var cancelCalls = 0
+    private var pendingCreate: (request: LeonardoSync.RubricRequest,
+                                continuation: CheckedContinuation<LeonardoSync.RubricRequest, Never>)?
+    private var createStarted: CheckedContinuation<Void, Never>?
+
+    init(registry: PairingRegistry, requesterID: UUID, now: @escaping @Sendable () -> Date) {
+        self.registry = registry; self.requesterID = requesterID; self.now = now
+    }
+
+    func start(host: String, port: UInt16, projects: [SharedProjectSource], allowPrivateOverlay: Bool) async throws -> RunningDirectService {
+        RunningDirectService(endpoint: URL(string: "https://127.0.0.1:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+    }
+    func stop() async throws {}
+    func consentState() async throws -> PairingRegistry { registry }
+    func incomingProposals() async throws -> [DesktopPeerIncomingProposal] { [] }
+    func reviewIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposalReview { throw DesktopRuntimeError.notRunning }
+    func applyIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload, review: DesktopPeerProposalReview,
+                               decisions: [String: ReconciliationChoice], projectRoot: URL,
+                               currentSource: CorpusSnapshot, currentDisk: CorpusSnapshot) async throws -> DesktopPeerAcceptanceResult {
+        throw DesktopRuntimeError.notRunning
+    }
+    func createInvitation() async throws -> PairingInvitation { throw DesktopRuntimeError.notRunning }
+    func approve(requestID: UUID, code: String, projectIDs: Set<UUID>) async throws { throw DesktopRuntimeError.notRunning }
+    func reject(requestID: UUID) async throws { throw DesktopRuntimeError.notRunning }
+    func revoke(deviceID: UUID) async throws { throw DesktopRuntimeError.notRunning }
+
+    func createRubricRequest(deviceID: UUID, requestID: UUID, requesterName: String,
+                             labelHint: String?) async throws -> LeonardoSync.RubricRequest {
+        createCalls += 1
+        let request = try LeonardoSync.RubricRequest(id: requestID, targetDeviceID: deviceID,
+            requesterID: requesterID, requesterName: requesterName, labelHint: labelHint, createdAt: now())
+        return await withCheckedContinuation { continuation in
+            pendingCreate = (request, continuation)
+            createStarted?.resume()
+            createStarted = nil
+        }
+    }
+
+    func waitForCreateStart() async {
+        guard pendingCreate == nil else { return }
+        await withCheckedContinuation { continuation in createStarted = continuation }
+    }
+
+    func releaseCreate() {
+        guard let pendingCreate else { return }
+        self.pendingCreate = nil
+        requests[pendingCreate.request.id] = pendingCreate.request
+        pendingCreate.continuation.resume(returning: pendingCreate.request)
+    }
+
+    func cancelRubricRequest(requestID: UUID) async throws -> LeonardoSync.RubricRequest {
+        cancelCalls += 1
+        guard var request = requests[requestID] else { throw RubricExchangeError.notFound }
+        request.state = .cancelled
+        requests[requestID] = request
+        return request
+    }
+    func rubricResponse(requestID: UUID) async throws -> LeonardoSync.RubricResponse? { throw RubricExchangeError.notFound }
+    func rubricStatus(requestID: UUID) async throws -> RubricExchangeStatus {
+        guard let request = requests[requestID] else { throw RubricExchangeError.notFound }
+        return RubricExchangeStatus(request: request, response: nil)
+    }
+    func metrics() -> (createCalls: Int, cancelCalls: Int) { (createCalls, cancelCalls) }
 }

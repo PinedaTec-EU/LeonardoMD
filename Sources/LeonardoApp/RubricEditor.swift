@@ -155,7 +155,16 @@ struct RubricEditor: View {
 
     @ViewBuilder
     private func remoteCaptureState(_ controller: DesktopSyncController, _ capture: RubricCaptureRecord) -> some View {
-        if let response = capture.response {
+        if capture.isCancellationRequested {
+            HStack {
+                Label(L10n.text("Cancellation is being confirmed. This request cannot be reviewed or saved."),
+                      systemImage: "hourglass.circle")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button(L10n.text("Request another rubric")) { requestAnotherRubric() }
+                    .font(.caption)
+            }
+        } else if let response = capture.response {
             HStack(alignment: .top, spacing: 12) {
                 Image(nsImage: RubricDrawing.inspectorPreview(response.rubric))
                     .resizable().aspectRatio(3, contentMode: .fit).frame(width: 240, height: 80)

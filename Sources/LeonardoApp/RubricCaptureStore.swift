@@ -54,32 +54,41 @@ struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
     /// acknowledgement window has elapsed. It blocks same-ID creation while
     /// the record remains visible long enough to explain “Request again”.
     var missingAt: Date?
+    /// The user explicitly cancelled this intent before the helper could
+    /// acknowledge it. This is deliberately separate from `missingAt`: a
+    /// late create/status reply must be reconciled with cancellation, never
+    /// promoted into a reviewable completed response.
+    var cancellationRequestedAt: Date?
 
     init(id: UUID, targetDeviceID: UUID, targetDeviceName: String,
          documentURL: URL?, sourceDigest: Data, fieldID: String?, labelHint: String?,
          request: LeonardoSync.RubricRequest? = nil, response: LeonardoSync.RubricResponse? = nil,
          savedLibraryEntryID: String? = nil, updatedAt: Date,
          creationAttemptedAt: Date? = nil, retryDeadline: Date? = nil,
-         lastKnownRequestAt: Date? = nil, missingAt: Date? = nil) {
+         lastKnownRequestAt: Date? = nil, missingAt: Date? = nil,
+         cancellationRequestedAt: Date? = nil) {
         self.id = id; self.targetDeviceID = targetDeviceID; self.targetDeviceName = targetDeviceName
         self.documentURL = documentURL; self.sourceDigest = sourceDigest; self.fieldID = fieldID
         self.labelHint = labelHint; self.request = request; self.response = response
         self.savedLibraryEntryID = savedLibraryEntryID; self.updatedAt = updatedAt
         self.creationAttemptedAt = creationAttemptedAt; self.retryDeadline = retryDeadline
         self.lastKnownRequestAt = lastKnownRequestAt; self.missingAt = missingAt
+        self.cancellationRequestedAt = cancellationRequestedAt
     }
 
     var state: RubricRequestState? { request?.state }
     var isTerminal: Bool {
         if missingAt != nil { return true }
+        if cancellationRequestedAt != nil { return true }
         guard let state else { return false }
         return [.rejected, .cancelled, .expired, .completed].contains(state)
     }
 
     var isMissing: Bool { missingAt != nil }
+    var isCancellationRequested: Bool { cancellationRequestedAt != nil }
 
     func canRetryCreate(at date: Date) -> Bool {
-        guard request == nil, missingAt == nil,
+        guard request == nil, missingAt == nil, cancellationRequestedAt == nil,
               lastKnownRequestAt == nil,
               let creationAttemptedAt, let retryDeadline else { return false }
         // Do not turn a backwards-moving wall clock into an artificial
@@ -117,6 +126,13 @@ struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
     func markedMissing(at date: Date) -> RubricCaptureRecord {
         var copy = self
         copy.missingAt = date
+        copy.updatedAt = date
+        return copy
+    }
+
+    func markedCancellationRequested(at date: Date) -> RubricCaptureRecord {
+        var copy = self
+        copy.cancellationRequestedAt = copy.cancellationRequestedAt ?? date
         copy.updatedAt = date
         return copy
     }
@@ -165,9 +181,20 @@ final class RubricCaptureStore {
                 let existingRank = Self.stateRank(existing.request)
                 let sameState = existing.request?.state == candidate.request?.state
                 let lifecycleAccepted: Bool
-                let recoveredLateCompletion = existing.missingAt != nil && existing.request == nil
+                let recoveredLateCompletion = existing.missingAt != nil
+                    && !existing.isCancellationRequested && existing.request == nil
                     && candidate.request?.state == .completed && candidate.response != nil
-                if recoveredLateCompletion {
+                let cancellationResolved = existing.isCancellationRequested
+                    && candidate.request?.state == .cancelled
+                let cancellationPendingReply = existing.isCancellationRequested
+                    && candidate.request != nil && candidate.request?.state != .completed
+                if cancellationResolved || cancellationPendingReply {
+                    // A request made while cancellation was pending is
+                    // retained for remote reconciliation. A completed reply
+                    // is intentionally excluded below; explicit user intent
+                    // wins over a late server completion.
+                    lifecycleAccepted = true
+                } else if recoveredLateCompletion {
                     // A local nil-intent tombstone may still receive the
                     // helper's already-completed response after a delayed
                     // status query. Preserve that data without permitting a
@@ -208,6 +235,9 @@ final class RubricCaptureStore {
                 if merged.lastKnownRequestAt == nil {
                     merged.lastKnownRequestAt = candidate.lastKnownRequestAt
                 }
+                if merged.cancellationRequestedAt == nil {
+                    merged.cancellationRequestedAt = candidate.cancellationRequestedAt
+                }
                 if merged.missingAt == nil {
                     if merged.response == nil { merged.missingAt = candidate.missingAt }
                 } else if recoveredLateCompletion {
@@ -240,6 +270,9 @@ final class RubricCaptureStore {
     @discardableResult
     func markSaved(id: UUID, libraryEntryID: String) throws -> RubricCaptureRecord {
         guard let current = record(id: id) else { throw RubricCaptureStoreError.invalidRecord }
+        guard current.response != nil, !current.isCancellationRequested else {
+            throw RubricCaptureStoreError.invalidRecord
+        }
         return try upsert(current.withSavedLibraryEntry(libraryEntryID, updatedAt: now()))
     }
 
@@ -317,7 +350,7 @@ final class RubricCaptureStore {
         // potentially completed helper response.
         var next = values.filter {
             guard $0.isTerminal else { return true }
-            let retentionDate = $0.missingAt ?? $0.updatedAt
+            let retentionDate = $0.missingAt ?? $0.cancellationRequestedAt ?? $0.updatedAt
             let retained = now.timeIntervalSince(retentionDate) < Self.terminalRetention
             return retained || ($0.request?.state == .completed && $0.savedLibraryEntryID == nil)
         }
@@ -326,7 +359,10 @@ final class RubricCaptureStore {
             let safeCompleted = $0.request?.state == .completed && $0.savedLibraryEntryID == nil
             guard !safeCompleted else { return false }
             return $0.isTerminal
-        }.sorted { ($0.missingAt ?? $0.updatedAt) < ($1.missingAt ?? $1.updatedAt) }
+        }.sorted {
+            ($0.missingAt ?? $0.cancellationRequestedAt ?? $0.updatedAt)
+                < ($1.missingAt ?? $1.cancellationRequestedAt ?? $1.updatedAt)
+        }
         let removeCount = next.count - Self.maximumRecords
         guard removable.count >= removeCount else { throw RubricCaptureStoreError.limitReached }
         let removed = Set(removable.prefix(removeCount).map(\.id))
@@ -354,6 +390,8 @@ final class RubricCaptureStore {
            !lastKnown.timeIntervalSince1970.isFinite { return false }
         if let missingAt = record.missingAt,
            !missingAt.timeIntervalSince1970.isFinite { return false }
+        if let cancellationRequestedAt = record.cancellationRequestedAt,
+           !cancellationRequestedAt.timeIntervalSince1970.isFinite { return false }
         if let request = record.request {
             guard request.id == record.id, request.targetDeviceID == record.targetDeviceID else { return false }
             if request.state == .completed && record.response == nil { return false }

@@ -338,6 +338,9 @@ final class DesktopSyncController {
     }
 
     private func beginRubricCapture(record: RubricCaptureRecord) async throws -> RubricCaptureRecord {
+        guard !record.isCancellationRequested else {
+            throw RubricCaptureError.requestRequiresNewID
+        }
         if record.request != nil {
             guard !record.isTerminal else { throw RubricCaptureError.requestRequiresNewID }
             // Once the helper has acknowledged a request, a retry is a status
@@ -352,6 +355,13 @@ final class DesktopSyncController {
         do {
             let request = try await runtime.createRubricRequest(deviceID: record.targetDeviceID, requestID: record.id,
                 requesterName: Self.rubricRequesterName, labelHint: record.labelHint)
+            // Cancellation can be requested while the create call is still
+            // in flight. Re-read the durable intent before exposing the
+            // helper reply: explicit user intent wins and the old UUID must
+            // be cancelled remotely before any review/save path can see it.
+            if let latest = rubricCaptures.record(id: record.id), latest.isCancellationRequested {
+                return try await reconcileCancelledCreate(latest, createdRequest: request)
+            }
             let acknowledgedAt = now()
             record.request = request; record.updatedAt = acknowledgedAt
             record.lastKnownRequestAt = acknowledgedAt
@@ -388,6 +398,12 @@ final class DesktopSyncController {
             return try rubricCaptures.upsert(updated)
         } catch let error {
             guard Self.isRubricNotFound(error) else { throw error }
+            if current.isCancellationRequested {
+                // A cancellation acknowledgement may race a delayed create;
+                // keep the durable local intent so a later recovery can
+                // query/reconcile the same UUID instead of recreating it.
+                return current
+            }
             if current.request == nil && current.canRetryCreate(at: now()) { throw error }
             return try markRubricCaptureMissing(current)
         }
@@ -395,7 +411,8 @@ final class DesktopSyncController {
 
     func cancelRubricCapture(requestID: UUID) async throws -> RubricCaptureRecord {
         guard let current = rubricCaptures.record(id: requestID) else { throw RubricCaptureError.missingRequest }
-        guard !current.isMissing else { return current }
+        guard !current.isMissing, !current.isCancellationRequested, current.response == nil else { return current }
+        guard !current.isTerminal else { return current }
         do {
             let request = try await runtime.cancelRubricRequest(requestID: requestID)
             var updated = current
@@ -405,7 +422,10 @@ final class DesktopSyncController {
             return try rubricCaptures.upsert(updated)
         } catch let error {
             guard Self.isRubricNotFound(error) else { throw error }
-            return try markRubricCaptureMissing(current)
+            // The create may still be in flight. Do not call this a remote
+            // cancellation or mark the request missing: retain the UUID and
+            // a local cancellation intent so a late create is reconciled.
+            return try markRubricCaptureCancellationRequested(current)
         }
     }
 
@@ -444,13 +464,29 @@ final class DesktopSyncController {
             guard !Task.isCancelled else { return }
             do {
                 let status = try await runtime.rubricStatus(requestID: current.id)
+                if current.isCancellationRequested,
+                   [.pending, .accepted].contains(status.request.state) {
+                    do {
+                        let cancelled = try await runtime.cancelRubricRequest(requestID: current.id)
+                        var reconciled = current
+                        reconciled.request = cancelled
+                        reconciled.updatedAt = now()
+                        reconciled.lastKnownRequestAt = reconciled.lastKnownRequestAt ?? reconciled.updatedAt
+                        _ = try rubricCaptures.upsert(reconciled)
+                    } catch {
+                        // Keep the cancellation intent and request durable;
+                        // the next refresh can retry remote reconciliation.
+                    }
+                    continue
+                }
                 var updated = current
                 let acknowledgedAt = now()
                 updated.request = status.request; updated.response = status.response
                 updated.updatedAt = acknowledgedAt; updated.lastKnownRequestAt = acknowledgedAt
                 _ = try rubricCaptures.upsert(updated)
             } catch let error {
-                if Self.isRubricNotFound(error), current.request != nil || !current.canRetryCreate(at: now()) {
+                if Self.isRubricNotFound(error), !current.isCancellationRequested,
+                   current.request != nil || !current.canRetryCreate(at: now()) {
                     _ = try? markRubricCaptureMissing(current)
                 }
                 // Offline/helper failures remain retryable; a notFound after
@@ -463,7 +499,7 @@ final class DesktopSyncController {
         // A completed response is already the durable recovery result. A
         // delayed notFound from another instance must never hide it behind a
         // local tombstone.
-        guard current.response == nil else { return current }
+        guard current.response == nil, !current.isCancellationRequested else { return current }
         var updated = current
         if var request = updated.request,
            ![.rejected, .cancelled, .expired, .completed].contains(request.state) {
@@ -474,6 +510,33 @@ final class DesktopSyncController {
             updated.lastKnownRequestAt = updated.request?.createdAt
         }
         return try rubricCaptures.upsert(updated.markedMissing(at: now()))
+    }
+
+    private func markRubricCaptureCancellationRequested(_ current: RubricCaptureRecord) throws -> RubricCaptureRecord {
+        guard current.response == nil else { return current }
+        return try rubricCaptures.upsert(current.markedCancellationRequested(at: now()))
+    }
+
+    private func reconcileCancelledCreate(_ current: RubricCaptureRecord,
+                                          createdRequest: LeonardoSync.RubricRequest) async throws -> RubricCaptureRecord {
+        do {
+            let cancelled = try await runtime.cancelRubricRequest(requestID: current.id)
+            var reconciled = current
+            reconciled.request = cancelled
+            reconciled.updatedAt = now()
+            reconciled.lastKnownRequestAt = reconciled.lastKnownRequestAt ?? reconciled.updatedAt
+            return try rubricCaptures.upsert(reconciled)
+        } catch {
+            // Preserve the returned request and local cancellation marker even
+            // when the compensating cancel is unavailable. This state cannot
+            // be reviewed or saved and remains queryable for a later retry.
+            var pending = current
+            pending.request = createdRequest
+            pending.updatedAt = now()
+            pending.lastKnownRequestAt = pending.lastKnownRequestAt ?? pending.updatedAt
+            _ = try? rubricCaptures.upsert(pending)
+            throw error
+        }
     }
 
     private static func isRubricNotFound(_ error: Error) -> Bool {
