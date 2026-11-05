@@ -66,12 +66,28 @@ final class SyncHelperControllerTests: XCTestCase {
         let controller = fixture.controller(registration, control)
         await controller.setEnabled(true)
         await control.setUnavailable()
+        let activeHelper = try ProcessFileLock(at: fixture.root.appendingPathComponent("MobileSync/helper.lock"))
+        defer { withExtendedLifetime(activeHelper) {} }
         await controller.setEnabled(false)
         XCTAssertFalse(controller.enabled)
         XCTAssertEqual(controller.state, .failed)
         XCTAssertEqual(registration.status, .enabled, "Do not kill an unconfirmed in-flight helper write")
         let persisted = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
         XCTAssertFalse(persisted.mobileSync.helperEnabled)
+    }
+
+    func testDeadHelperCanBeUnregisteredWithoutAnXPCAcknowledgement() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        let registration = HelperRegistrationFake()
+        let control = HelperControlFake()
+        let controller = fixture.controller(registration, control)
+        await controller.setEnabled(true)
+        await control.setUnavailable()
+        await controller.setEnabled(false)
+        XCTAssertFalse(controller.enabled)
+        XCTAssertEqual(controller.state, .disabled)
+        XCTAssertEqual(registration.status, .notRegistered)
     }
 
     func testMissingPackagedExecutableCannotEnableService() async throws {

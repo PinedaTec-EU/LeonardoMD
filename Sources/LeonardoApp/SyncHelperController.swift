@@ -90,16 +90,30 @@ final class SyncHelperController {
                 state = .disabled
                 // Persist denial before shutdown. Even failed unregistration cannot
                 // restore sharing on the helper's next configuration read/restart.
-                if service.status == .enabled {
-                    let status = try await client.reload()
-                    guard !status.enabled else { throw DesktopRuntimeError.busy }
-                }
-                try await service.unregister()
+                try await unregisterAfterStop()
             }
         } catch {
             state = .failed; self.error = L10n.text(error.localizedDescription)
             logger.error("sync_helper_lifecycle_failed")
         }
+    }
+
+    private func unregisterAfterStop() async throws {
+        var stoppedHelper: ProcessFileLock?
+        defer { withExtendedLifetime(stoppedHelper) {} }
+        if service.status == .enabled {
+            do {
+                let status = try await client.reload()
+                guard !status.enabled else { throw DesktopRuntimeError.busy }
+            } catch {
+                // A dead/crashing helper cannot acknowledge XPC. Its process-wide
+                // startup lock proves no helper write is active and prevents a new
+                // helper from starting until unregistration has completed.
+                stoppedHelper = try ProcessFileLock(at: preferencesURL.deletingLastPathComponent()
+                    .appendingPathComponent("MobileSync/helper.lock"))
+            }
+        }
+        try await service.unregister()
     }
 
     func openApprovalSettings() { service.openApprovalSettings() }

@@ -37,8 +37,10 @@ while the editor is running. There is no in-process source-listener fallback.
 Disabling first persists denial, asks the helper to reconcile it, then unregisters
 the agent after graceful stop is acknowledged. An already approved transaction
 finishes before that acknowledgement. An unavailable/failed acknowledgement
-leaves denial persisted without forcibly killing an uncertain write; the
-helper retries configuration reconciliation. Failed unregistration cannot
+leaves denial persisted without forcibly killing an uncertain write. A dead
+helper can be unregistered only while the app owns its process-wide startup
+lock, proving no helper write is active and preventing a concurrent restart.
+An alive helper retries configuration reconciliation. Failed unregistration cannot
 restore consent on a later restart.
 The helper rechecks configuration for each control request and periodically while
 idle; failed startup/network selection retries without reopening the editor.
