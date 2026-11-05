@@ -15,6 +15,7 @@ public actor DesktopDirectRuntime {
     private let registryStore: PairingRegistryStore
     private let uploads: FileDesktopPeerUploadStore
     private let receipts: FileDesktopPeerReceiptStore
+    private let rubrics: FileRubricExchangeStore
     private let acceptance: DesktopPeerAcceptance
     private var authority: DirectSyncAuthority?
     public typealias ListenerFactory = @Sendable (TLSServerIdentity, @escaping LANHTTPSListener.Handler) -> any HTTPSListening
@@ -32,6 +33,7 @@ public actor DesktopDirectRuntime {
         uploads = FileDesktopPeerUploadStore(root: root.appendingPathComponent("Proposals"))
         let receipts = FileDesktopPeerReceiptStore(root: root.appendingPathComponent("Receipts"))
         self.receipts = receipts
+        rubrics = FileRubricExchangeStore(url: root.appendingPathComponent("Rubrics/requests.json"))
         acceptance = DesktopPeerAcceptance(root: root.appendingPathComponent("Acceptance"), receipts: receipts)
         self.now = now
     }
@@ -57,7 +59,7 @@ public actor DesktopDirectRuntime {
         let store = registryStore
         let authority = try DirectSyncAuthority(registry: registry, projects: projects,
             serverFingerprint: identity.certificateFingerprint, persist: { try await store.save($0) },
-            uploads: uploads, receipts: receipts)
+            uploads: uploads, receipts: receipts, rubrics: rubrics)
         try await registryStore.save(registry)
         guard expected == generation else { throw CancellationError() }
         let router = DirectHTTPSRouter(authority: authority, now: now)
@@ -167,6 +169,23 @@ public actor DesktopDirectRuntime {
             try registry.revoke(deviceID: deviceID)
             try await registryStore.save(registry)
         }
+    }
+
+    public func createRubricRequest(deviceID: UUID, requesterName: String,
+                                    labelHint: String? = nil) async throws -> RubricRequest {
+        guard !transitioning, let authority else { throw DesktopRuntimeError.notRunning }
+        return try await authority.createRubricRequest(targetDeviceID: deviceID, requesterName: requesterName,
+                                                       labelHint: labelHint, now: now())
+    }
+
+    public func cancelRubricRequest(requestID: UUID) async throws -> RubricRequest {
+        guard !transitioning, let authority else { throw DesktopRuntimeError.notRunning }
+        return try await authority.cancelRubricRequest(requestID: requestID, now: now())
+    }
+
+    public func rubricResponse(requestID: UUID) async throws -> RubricResponse? {
+        guard !transitioning, let authority else { throw DesktopRuntimeError.notRunning }
+        return try await authority.rubricResponse(requestID: requestID, now: now())
     }
 }
 #endif

@@ -33,7 +33,11 @@ public struct PairingChallenge: Codable, Sendable {
 public struct DirectDeviceStatus: Codable, Sendable {
     public let access: DeviceAccess
     public let projects: [SharedProjectDescriptor]
-    public init(access: DeviceAccess, projects: [SharedProjectDescriptor]) { self.access = access; self.projects = projects }
+    public let capabilities: Set<DirectCapability>
+    public init(access: DeviceAccess, projects: [SharedProjectDescriptor],
+                capabilities: Set<DirectCapability> = []) {
+        self.access = access; self.projects = projects; self.capabilities = capabilities
+    }
 }
 
 public enum DirectAuthorityError: Error, Sendable { case busy }
@@ -48,11 +52,14 @@ public actor DirectSyncAuthority {
     private var sourceEpoch = UUID()
     private let uploads: (any DesktopPeerUploadStore)?
     private let receipts: (any DesktopPeerReceiptStore)?
+    private let rubrics: (any RubricExchangeStore)?
+    public let sourceDeviceID: UUID
 
     public init(registry: PairingRegistry, projects: [SharedProjectSource], serverFingerprint: Data,
                 persist: @escaping @Sendable (PairingRegistry) async throws -> Void,
                 uploads: (any DesktopPeerUploadStore)? = nil,
-                receipts: (any DesktopPeerReceiptStore)? = nil) throws {
+                receipts: (any DesktopPeerReceiptStore)? = nil,
+                rubrics: (any RubricExchangeStore)? = nil) throws {
         guard serverFingerprint.count == 32, Set(projects.map { $0.descriptor.id }).count == projects.count else {
             throw PairingError.invalidProject
         }
@@ -62,6 +69,8 @@ public actor DirectSyncAuthority {
         self.persist = persist
         self.uploads = uploads
         self.receipts = receipts
+        self.rubrics = rubrics
+        self.sourceDeviceID = Self.sourceID(for: serverFingerprint)
     }
 
     public func consentState() -> PairingRegistry { registry }
@@ -103,7 +112,64 @@ public actor DirectSyncAuthority {
         let access = try registry.pairingStatus(requestID: deviceID, credential: credential, now: now)
         let granted = access == .authorized ? registry.devices.first(where: { $0.id == deviceID })?.projects ?? [] : []
         return DirectDeviceStatus(access: access,
-            projects: granted.compactMap { projects[$0]?.descriptor }.sorted { $0.name < $1.name })
+            projects: granted.compactMap { projects[$0]?.descriptor }.sorted { $0.name < $1.name },
+            capabilities: rubrics == nil ? [] : [.rubricExchangeV1])
+    }
+
+    /// Creates a single-device request owned by this Mac. The target must be an
+    /// authorized read-only client; no group-wide library access is implied.
+    public func createRubricRequest(targetDeviceID: UUID, requesterName: String,
+                                    labelHint: String? = nil, now: Date) async throws -> RubricRequest {
+        guard !changing, let rubrics else { throw RubricExchangeError.unsupported }
+        guard let device = registry.devices.first(where: { $0.id == targetDeviceID }),
+              !device.revoked, device.kind == .readOnly else { throw PairingError.invalidCredential }
+        let request = try RubricRequest(targetDeviceID: targetDeviceID, requesterID: sourceDeviceID,
+                                        requesterName: requesterName, labelHint: labelHint,
+                                        createdAt: now)
+        try await rubrics.create(request)
+        return request
+    }
+
+    public func cancelRubricRequest(requestID: UUID, now: Date) async throws -> RubricRequest {
+        guard !changing, let rubrics else { throw RubricExchangeError.unsupported }
+        return try await rubrics.cancel(requestID: requestID, requesterID: sourceDeviceID, now: now)
+    }
+
+    /// Returns the exact response for a request created by this Mac. Responses
+    /// remain durable until the exchange store's retention policy removes them.
+    public func rubricResponse(requestID: UUID, now: Date) async throws -> RubricResponse? {
+        guard !changing, let rubrics else { throw RubricExchangeError.unsupported }
+        return try await rubrics.response(requestID: requestID, requesterID: sourceDeviceID, now: now)
+    }
+
+    public func rubricRequests(deviceID: UUID, credential: String, now: Date) async throws -> [RubricRequest] {
+        guard !changing, let rubrics else { throw RubricExchangeError.unsupported }
+        try checkReadOnlyAccess(deviceID: deviceID, credential: credential)
+        return try await rubrics.requests(for: deviceID, now: now)
+    }
+
+    public func acceptRubricRequest(deviceID: UUID, credential: String,
+                                    requestID: UUID, now: Date) async throws -> RubricRequest {
+        guard !changing, let rubrics else { throw RubricExchangeError.unsupported }
+        try checkReadOnlyAccess(deviceID: deviceID, credential: credential)
+        return try await rubrics.transition(requestID: requestID, targetDeviceID: deviceID, to: .accepted, now: now)
+    }
+
+    public func rejectRubricRequest(deviceID: UUID, credential: String,
+                                    requestID: UUID, now: Date) async throws -> RubricRequest {
+        guard !changing, let rubrics else { throw RubricExchangeError.unsupported }
+        try checkReadOnlyAccess(deviceID: deviceID, credential: credential)
+        return try await rubrics.transition(requestID: requestID, targetDeviceID: deviceID, to: .rejected, now: now)
+    }
+
+    public func submitRubricResponse(deviceID: UUID, credential: String,
+                                     response: RubricResponse, now: Date) async throws -> RubricResponse {
+        guard !changing, let rubrics else { throw RubricExchangeError.unsupported }
+        try checkReadOnlyAccess(deviceID: deviceID, credential: credential)
+        guard response.targetDeviceID == deviceID, response.requesterID == sourceDeviceID else {
+            throw RubricExchangeError.invalidPayload
+        }
+        return try await rubrics.submit(response, now: now)
     }
 
     public func snapshot(deviceID: UUID, credential: String, projectID: UUID) async throws -> CorpusSnapshot {
@@ -124,6 +190,18 @@ public actor DirectSyncAuthority {
         guard try registry.access(deviceID: deviceID, credential: credential, projectID: projectID) == .authorized else {
             throw SyncError.revoked
         }
+    }
+
+    private func checkReadOnlyAccess(deviceID: UUID, credential: String) throws {
+        let access = try registry.access(deviceID: deviceID, credential: credential)
+        guard access == .authorized else { throw SyncError.revoked }
+        guard registry.devices.first(where: { $0.id == deviceID })?.kind == .readOnly else { throw SyncError.readOnly }
+    }
+
+    private static func sourceID(for fingerprint: Data) -> UUID {
+        let bytes = Array(fingerprint.prefix(16)) + Array(repeating: 0, count: max(0, 16 - fingerprint.count))
+        return UUID(uuid: (bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+                           bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]))
     }
 
     private func mutate<Result: Sendable>(_ operation: (inout PairingRegistry) throws -> Result) async throws -> Result {

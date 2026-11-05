@@ -42,6 +42,27 @@ public struct DirectHTTPSRouter: Sendable {
             if request.method == "GET", path.count == 5, path[4] == "status" {
                 return try json(await authority.status(deviceID: deviceID, credential: credential, now: now()))
             }
+            if request.method == "GET", path.count == 6, path[4] == "rubrics", path[5] == "requests" {
+                return try json(await authority.rubricRequests(deviceID: deviceID, credential: credential, now: now()))
+            }
+            if request.method == "POST", path.count == 8, path[4] == "rubrics", path[5] == "requests",
+               let requestID = UUID(uuidString: String(path[6])) {
+                guard request.body.isEmpty else { return HTTPResponse(status: 400) }
+                if path[7] == "accept" {
+                    return try json(await authority.acceptRubricRequest(deviceID: deviceID, credential: credential,
+                                                                         requestID: requestID, now: now()))
+                }
+                if path[7] == "reject" {
+                    return try json(await authority.rejectRubricRequest(deviceID: deviceID, credential: credential,
+                                                                         requestID: requestID, now: now()))
+                }
+            }
+            if request.method == "POST", path.count == 6, path[4] == "rubrics", path[5] == "responses" {
+                guard request.body.count <= RubricResponse.maximumEncodedBytes else { return HTTPResponse(status: 413) }
+                let response = try JSONDecoder().decode(RubricResponse.self, from: request.body)
+                return try json(await authority.submitRubricResponse(deviceID: deviceID, credential: credential,
+                                                                      response: response, now: now()))
+            }
             if request.method == "GET", path.count == 7, path[4] == "projects", path[6] == "snapshot", let projectID = UUID(uuidString: String(path[5])) {
                 return try json(await authority.snapshot(deviceID: deviceID, credential: credential, projectID: projectID))
             }
@@ -88,6 +109,13 @@ public struct DirectHTTPSRouter: Sendable {
         catch SyncError.publicationPending { return HTTPResponse(status: 409) }
         catch SyncError.sizeLimitExceeded { return HTTPResponse(status: 413) }
         catch SyncError.invalidSnapshot { return HTTPResponse(status: 400) }
+        catch RubricExchangeError.unsupported { return HTTPResponse(status: 404) }
+        catch RubricExchangeError.notFound { return HTTPResponse(status: 404) }
+        catch RubricExchangeError.expired { return HTTPResponse(status: 409) }
+        catch RubricExchangeError.invalidTransition { return HTTPResponse(status: 409) }
+        catch RubricExchangeError.conflict { return HTTPResponse(status: 409) }
+        catch RubricExchangeError.invalidPayload { return HTTPResponse(status: 400) }
+        catch RubricExchangeError.storageFailure { return HTTPResponse(status: 500) }
         catch is DecodingError { return HTTPResponse(status: 400) }
         catch { return HTTPResponse(status: 500) }
     }
