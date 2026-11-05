@@ -37,4 +37,4 @@ Final local checks on the runtime above:
 
 To reproduce native behavior at the PR head: build with the QA command above, open `doc/validation/graphic-inspector/before.mdlf`, enable structural editing, select a rubric and click Inspect. Use synthetic copies when saving. Close any task-owned QA instance normally; do not terminate another running Leonardo instance.
 
-For production-component instructional captures: `LEONARDO_RUBRIC_GUIDE_CAPTURE=1 EVIDENCE_SHA=$(git rev-parse HEAD) python3 scripts/compile-and-record.py --pr-number 326 -- swift test --filter RubricGuideCaptureTests` (read the test for its output directory). Repackage with `python3 scripts/package-user-guide.py --web-output doc`.
+For production-component instructional captures: `LEONARDO_RUBRIC_GUIDE_CAPTURE=/tmp/leonardo-inspector-captures EVIDENCE_SHA=$(git rev-parse HEAD) python3 scripts/compile-and-record.py --pr-number 326 -- swift test --filter RubricGuideCaptureTests` (read the test for its output directory). Repackage with `python3 scripts/package-user-guide.py --web-output doc`.
