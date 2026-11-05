@@ -155,7 +155,7 @@ struct RubricEditor: View {
 
     @ViewBuilder
     private func remoteCaptureState(_ controller: DesktopSyncController, _ capture: RubricCaptureRecord) -> some View {
-        if capture.isCancellationRequested {
+        if capture.isCancellationPending {
             HStack {
                 Label(L10n.text("Cancellation is being confirmed. This request cannot be reviewed or saved."),
                       systemImage: "hourglass.circle")

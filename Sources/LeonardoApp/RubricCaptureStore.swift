@@ -86,6 +86,11 @@ struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
 
     var isMissing: Bool { missingAt != nil }
     var isCancellationRequested: Bool { cancellationRequestedAt != nil }
+    var isCancellationPending: Bool {
+        guard isCancellationRequested else { return false }
+        guard let state else { return true }
+        return ![.rejected, .cancelled, .expired].contains(state)
+    }
 
     func canRetryCreate(at date: Date) -> Bool {
         guard request == nil, missingAt == nil, cancellationRequestedAt == nil,
@@ -184,9 +189,9 @@ final class RubricCaptureStore {
                 let recoveredLateCompletion = existing.missingAt != nil
                     && !existing.isCancellationRequested && existing.request == nil
                     && candidate.request?.state == .completed && candidate.response != nil
-                let cancellationResolved = existing.isCancellationRequested
+                let cancellationResolved = existing.isCancellationPending
                     && candidate.request?.state == .cancelled
-                let cancellationPendingReply = existing.isCancellationRequested
+                let cancellationPendingReply = existing.isCancellationPending
                     && candidate.request != nil && candidate.request?.state != .completed
                 if cancellationResolved || cancellationPendingReply {
                     // A request made while cancellation was pending is

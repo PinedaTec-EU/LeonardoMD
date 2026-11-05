@@ -446,7 +446,7 @@ final class DesktopSyncController {
         let recoverable = sameDocument.filter {
             $0.savedLibraryEntryID == nil &&
             !$0.isMissing &&
-            ($0.response != nil || $0.request?.state == .pending || $0.request?.state == .accepted
+            ($0.isCancellationRequested || $0.response != nil || $0.request?.state == .pending || $0.request?.state == .accepted
                 || ($0.request == nil && $0.canRetryCreate(at: now())))
         }
         return recoverable

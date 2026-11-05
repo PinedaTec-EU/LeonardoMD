@@ -548,9 +548,19 @@ final class RubricCaptureTests: XCTestCase {
                        "The late create reply must be followed by a compensating remote cancel")
         XCTAssertTrue(reconciled.isCancellationRequested)
         XCTAssertNil(reconciled.response)
-        XCTAssertNil(controller.rubricCapture(for: nil, source: "source"),
-                     "An explicitly cancelled request must never enter review/save recovery")
+        let unavailableForReview = controller.rubricCapture(for: nil, source: "source")
+        XCTAssertEqual(unavailableForReview?.request?.state, .cancelled)
+        XCTAssertTrue(unavailableForReview?.isCancellationRequested ?? false,
+                      "The explicit cancellation remains visible for recovery without entering review")
         XCTAssertThrowsError(try controller.markRubricCaptureSaved(requestID: requestID, libraryEntryID: "should-not-save"))
+
+        let reopened = DesktopSyncController(preferencesURL: root.appendingPathComponent("preferences.json"),
+            runtime: runtime, now: { fixed })
+        await reopened.update(MobileSyncPreferences(enabled: true, host: "127.0.0.1", port: 0))
+        let recoveredAfterRestart = reopened.rubricCapture(for: nil, source: "source")
+        XCTAssertEqual(recoveredAfterRestart?.request?.state, .cancelled,
+                       "A reconciled cancellation remains visible after reopening without becoming reviewable")
+        XCTAssertFalse(recoveredAfterRestart?.isCancellationPending ?? true)
 
         let metrics = await runtime.metrics()
         XCTAssertEqual(metrics.createCalls, 1)
