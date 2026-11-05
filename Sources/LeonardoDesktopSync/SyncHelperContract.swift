@@ -25,6 +25,9 @@ public enum SyncHelperCommand: Codable, Sendable {
     case status, reload, stopSharing, consent, invitation, incoming
     case approve(UUID, String, Set<UUID>)
     case reject(UUID), revoke(UUID)
+    case createRubricRequest(UUID, UUID, String, String?)
+    case cancelRubricRequest(UUID)
+    case rubricStatus(UUID)
     case review(UUID, DesktopPeerUpload)
     case apply(SyncHelperApplication)
 }

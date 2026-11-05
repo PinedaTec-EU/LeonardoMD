@@ -81,6 +81,13 @@ public actor SyncHelperHost {
             try await runtime.approve(requestID: id, code: code, projectIDs: projects)
         case .reject(let id): try await runtime.reject(requestID: id)
         case .revoke(let id): try await runtime.revoke(deviceID: id)
+        case .createRubricRequest(let deviceID, let requestID, let requesterName, let labelHint):
+            return try await encode(runtime.createRubricRequest(deviceID: deviceID, requestID: requestID,
+                                                               requesterName: requesterName, labelHint: labelHint))
+        case .cancelRubricRequest(let requestID):
+            return try await encode(runtime.cancelRubricRequest(requestID: requestID))
+        case .rubricStatus(let requestID):
+            return try await encode(runtime.rubricStatus(requestID: requestID))
         case .review(let id, let upload):
             let review = try await runtime.reviewIncomingProposal(deviceID: id, upload: upload)
             return try encode(SyncHelperReview(proposal: review.proposal, source: review.source))

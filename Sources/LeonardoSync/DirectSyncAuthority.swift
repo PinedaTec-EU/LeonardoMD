@@ -128,12 +128,12 @@ public actor DirectSyncAuthority {
     /// Creates a single-device request owned by this Mac. The target must be an
     /// authorized read-only client; no group-wide library access is implied.
     public func createRubricRequest(targetDeviceID: UUID, requesterName: String,
-                                    labelHint: String? = nil, now: Date) async throws -> RubricRequest {
+                                    labelHint: String? = nil, requestID: UUID = UUID(), now: Date) async throws -> RubricRequest {
         return try await withRubricExchange { rubrics in
             guard let device = registry.devices.first(where: { $0.id == targetDeviceID }),
                   !device.revoked, device.kind == .readOnly else { throw PairingError.invalidCredential }
             guard device.capabilities.contains(.rubricExchangeV1) else { throw RubricExchangeError.unsupported }
-            let request = try RubricRequest(targetDeviceID: targetDeviceID, requesterID: sourceDeviceID,
+            let request = try RubricRequest(id: requestID, targetDeviceID: targetDeviceID, requesterID: sourceDeviceID,
                                             requesterName: requesterName, labelHint: labelHint,
                                             createdAt: now)
             try await rubrics.create(request)
@@ -152,6 +152,18 @@ public actor DirectSyncAuthority {
     public func rubricResponse(requestID: UUID, now: Date) async throws -> RubricResponse? {
         try await withRubricExchange { rubrics in
             try await rubrics.response(requestID: requestID, requesterID: sourceDeviceID, now: now)
+        }
+    }
+
+    /// Reads the durable request and response together so the owner can
+    /// recover after a lost XPC reply without creating a second request.
+    public func rubricStatus(requestID: UUID, now: Date) async throws -> RubricExchangeStatus {
+        try await withRubricExchange { rubrics in
+            guard let request = try await rubrics.request(id: requestID, now: now) else {
+                throw RubricExchangeError.notFound
+            }
+            let response = try await rubrics.response(requestID: requestID, requesterID: sourceDeviceID, now: now)
+            return RubricExchangeStatus(request: request, response: response)
         }
     }
 

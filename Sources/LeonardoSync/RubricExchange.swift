@@ -146,6 +146,18 @@ public struct RubricResponse: Codable, Equatable, Sendable {
     }
 }
 
+/// The owner-side view of one request. Keeping the request and optional
+/// response together lets a caller recover after a transport reply is lost.
+public struct RubricExchangeStatus: Codable, Equatable, Sendable {
+    public let request: RubricRequest
+    public let response: RubricResponse?
+
+    public init(request: RubricRequest, response: RubricResponse? = nil) {
+        self.request = request
+        self.response = response
+    }
+}
+
 public struct RubricExchangeRecord: Codable, Equatable, Sendable, Identifiable {
     public let id: UUID
     public var request: RubricRequest
