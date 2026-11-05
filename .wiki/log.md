@@ -183,3 +183,5 @@ source/license provenance, including bundled citeproc CPAL source. See
 - 2026-11-05: Corrected sync helper lifecycle diagnostics and listener health recovery in PR #320, tracking [#331](https://github.com/PinedaTec-EU/LeonardoMD/issues/331) and [#332](https://github.com/PinedaTec-EU/LeonardoMD/issues/332). Full suite: 624 XCTest (34 optional skips), 28 Swift Testing cases; focused real TLS and lifecycle regressions pass.
 
 - 2026-11-05: Combined help integration for PR #320 preserves #330, advances main help to v10, and resolves [#333](https://github.com/PinedaTec-EU/LeonardoMD/issues/333) without changing renderer limits or original captures. Full suite: 625 XCTest (34 optional skips), 28 Swift Testing; 56 script cases (7 skips) and all five native guide tests pass. Four successful review compilations were reconciled into the PR ledger rather than discarded.
+
+- 2026-11-05: [#337](https://github.com/PinedaTec-EU/LeonardoMD/issues/337) reorganizes Synchronization by sharing/connecting roles with one common service control; updates bilingual help and captures. PR integration, beta publication and acceptance remain tracked on the issue.

@@ -22,7 +22,7 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v11/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v12/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
             let legacyImport = root.appendingPathComponent("Agent Import Guides/v1/\(language.rawValue)/AgentImport-v1-\(language.rawValue).mdlz")
             try FileManager.default.createDirectory(at: legacyImport.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -149,7 +149,7 @@ final class BundledUserGuideTests: XCTestCase {
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Live \(name) example; built-in extension enabled")
                 }
-                for name in ["palette", "activation", "mobile-helper-v8"] {
+                for name in ["palette", "activation", "sync-sharing-v12"] {
                     _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("section-\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Detailed chapter with original \(name) screenshot; all images loaded")
