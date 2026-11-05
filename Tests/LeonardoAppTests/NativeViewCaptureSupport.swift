@@ -57,8 +57,14 @@ enum NativeViewCaptureSupport {
         view.frame = NSRect(origin: .zero, size: size)
         view.bounds = NSRect(origin: .zero, size: size)
         view.layoutSubtreeIfNeeded()
+        // SwiftUI may defer layer updates until after AppKit reapplies the final
+        // window geometry. Capturing immediately can omit a section or the
+        // entire view even though its bounds already match the requested size.
+        try await Task.sleep(for: .milliseconds(settlingMilliseconds))
+        view.layoutSubtreeIfNeeded()
+        view.needsDisplay = true
+        view.display()
         try beforeCapture?(view)
-        view.displayIfNeeded()
         reportGeometry("laid-out")
         let bitmap: NSBitmapImageRep
         if let pixelScale {

@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import XCTest
+import Vision
 import LeonardoCore
 @testable import LeonardoApp
 
@@ -41,9 +42,17 @@ final class SynchronizationPreferencesTests: XCTestCase {
                 let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_ROLES_EVIDENCE"]
                 let destination = URL(fileURLWithPath: output ?? root.path)
                 try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+                let image = destination.appendingPathComponent("\(page.rawValue)-\(language.rawValue).png")
                 try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 490),
-                    to: destination.appendingPathComponent("\(page.rawValue)-\(language.rawValue).png"),
+                    to: image,
                     language: language.rawValue, state: "Synchronization / \(page.rawValue); helper present but disabled; isolated empty saved content and connections")
+                let recognition = VNRecognizeTextRequest()
+                recognition.recognitionLevel = .accurate
+                recognition.recognitionLanguages = [language.rawValue]
+                try VNImageRequestHandler(url: image).perform([recognition])
+                let visibleText = (recognition.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+                XCTAssertTrue(visibleText.contains { $0.contains("Leonardo Sync") },
+                              "Common service control must be painted in every role/locale capture: \(page)/\(language)")
                 XCTAssertFalse(helper.enabled)
                 XCTAssertFalse(source.settings.enabled)
                 XCTAssertNil(source.running)
