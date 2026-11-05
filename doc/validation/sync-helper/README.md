@@ -79,3 +79,10 @@ pretend to be fresh packaged startup screenshots.
   package is not an official published/notarized release.
 - Exact-head CI and independent judgment are recorded on PR #320, separately
   from this evidence. No merge is implied by local validation.
+
+The task's Launch Services registrations for its QA copies were removed and the
+installed app's registration refreshed after cleanup; no unrelated QA app was
+unregistered. `package-inspection.json` is the final static inspection collected
+after native acceptance; its checkout differs from the native source only by
+evidence/documentation. The signed executable hashes in native/signing manifests
+bind the actual tested binaries.
