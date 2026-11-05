@@ -85,8 +85,8 @@ final class RubricGuideCaptureTests: XCTestCase {
         let pendingEditor = NSHostingView(rootView: RubricEditor(
             request: RubricRequest(documentURL: document, source: source, fieldID: nil), library: library,
             syncController: pendingController) { _, _, _ in false }
-            .frame(width: 696, height: 500).background(Color(nsColor: .windowBackgroundColor)))
-        try await GuideCaptureSupport.captureNative(pendingEditor, size: NSSize(width: 696, height: 500),
+            .frame(width: 696, height: 760).background(Color(nsColor: .windowBackgroundColor)))
+        try await GuideCaptureSupport.captureNative(pendingEditor, size: NSSize(width: 696, height: 760),
             to: folder.appendingPathComponent("rubric-linked-request.png"), language: language,
             state: "Production linked-rubric request; target Little Leonardo; pending request; synthetic data; no device or legal signing")
 
@@ -106,8 +106,8 @@ final class RubricGuideCaptureTests: XCTestCase {
         let reviewEditor = NSHostingView(rootView: RubricEditor(
             request: RubricRequest(documentURL: document, source: source, fieldID: nil), library: library,
             syncController: reviewController) { _, _, _ in false }
-            .frame(width: 696, height: 500).background(Color(nsColor: .windowBackgroundColor)))
-        try await GuideCaptureSupport.captureNative(reviewEditor, size: NSSize(width: 696, height: 500),
+            .frame(width: 696, height: 760).background(Color(nsColor: .windowBackgroundColor)))
+        try await GuideCaptureSupport.captureNative(reviewEditor, size: NSSize(width: 696, height: 760),
             to: folder.appendingPathComponent("rubric-linked-review.png"), language: language,
             state: "Production linked-rubric response review; target Little Leonardo; unsaved response with save actions; synthetic data; no device or legal signing")
     }
