@@ -22,8 +22,28 @@ def inspect_bundle(bundle):
     dependencies = subprocess.check_output(['/usr/bin/otool', '-L', str(executable)], text=True)
     if 'XCTest.framework/' in dependencies:
         raise ValueError('GUI executable links XCTest; use swift test instead of launching a test runner as an app')
+    inspect_sync_helper(bundle)
     subprocess.run(['/usr/bin/codesign', '--verify', '--strict', str(bundle)], check=True)
     return metadata, dependencies
+
+
+def inspect_sync_helper(bundle):
+    service = 'eu.pinedatec.LeonardoMD.sync-helper'
+    helper = bundle / 'Contents/MacOS/LeonardoSyncHelper'
+    definition = bundle / 'Contents/Library/LaunchAgents' / (service + '.plist')
+    with definition.open('rb') as stream:
+        metadata = plistlib.load(stream)
+    if (metadata.get('Label') != service
+            or metadata.get('BundleProgram') != 'Contents/MacOS/LeonardoSyncHelper'
+            or metadata.get('MachServices') != {service: True}
+            or metadata.get('RunAtLoad') is not True or metadata.get('KeepAlive') is not True):
+        raise ValueError('Sync helper launch definition does not match its packaged executable/service')
+    if not helper.is_file() or helper.is_symlink() or not os.access(helper, os.X_OK):
+        raise ValueError('Sync helper executable is missing or invalid')
+    dependencies = subprocess.check_output(['/usr/bin/otool', '-L', str(helper)], text=True)
+    if 'XCTest.framework/' in dependencies:
+        raise ValueError('Sync helper links XCTest')
+    subprocess.run(['/usr/bin/codesign', '--verify', '--strict', str(helper)], check=True)
 
 
 def verify_bundle(bundle):

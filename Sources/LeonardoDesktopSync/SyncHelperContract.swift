@@ -15,8 +15,10 @@ public enum SyncHelperContract {
 
 /// Only local, mutually code-authenticated XPC transports use this contract.
 @objc public protocol SyncHelperXPC {
-    func perform(_ request: Data, withReply reply: @escaping @Sendable (Data?, String?) -> Void)
+    func perform(_ request: Data, withReply reply: @escaping @Sendable (Data?, Int, String?) -> Void)
 }
+
+public enum SyncHelperErrorCode: Int, Sendable { case none, failed, staleComparison }
 
 public enum SyncHelperCommand: Codable, Sendable {
     case status, reload, stopSharing, consent, invitation, incoming
@@ -27,6 +29,7 @@ public enum SyncHelperCommand: Codable, Sendable {
 }
 
 public struct SyncHelperApplication: Codable, Sendable {
+    public let id: UUID
     public let deviceID: UUID
     public let upload: DesktopPeerUpload
     public let proposal: DesktopPeerProposal
@@ -38,6 +41,7 @@ public struct SyncHelperApplication: Codable, Sendable {
     public init(deviceID: UUID, upload: DesktopPeerUpload, review: DesktopPeerProposalReview,
                 decisions: [String: ReconciliationChoice], projectRoot: URL,
                 currentSource: CorpusSnapshot, currentDisk: CorpusSnapshot) {
+        id = UUID()
         self.deviceID = deviceID; self.upload = upload; proposal = review.proposal
         reviewedSource = review.source; self.decisions = decisions; self.projectRoot = projectRoot
         self.currentSource = currentSource; self.currentDisk = currentDisk

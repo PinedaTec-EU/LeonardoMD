@@ -10,6 +10,7 @@ struct DesktopPeerPreferencesView: View {
 
     var body: some View {
         Form {
+            Text(controller.helper.statusText).foregroundStyle(.secondary)
             Picker(L10n.text("Synchronization interval"), selection: Binding(
                 get: { controller.syncIntervalMinutes }, set: { controller.updateInterval($0) })) {
                 ForEach(DesktopPeerController.intervals, id: \.self) { minutes in
@@ -64,7 +65,13 @@ struct DesktopPeerPreferencesView: View {
                 }
             }
         }.formStyle(.grouped).disabled(controller.busy)
-        .task { await controller.initialize() }
+        .task {
+            await controller.initialize()
+            while !Task.isCancelled {
+                await controller.helper.refresh()
+                do { try await Task.sleep(for: .seconds(2)) } catch { return }
+            }
+        }
         .sheet(isPresented: $pairing) { DesktopPeerPairingView(controller: controller) }
         .sheet(isPresented: Binding(get: { reviewing != nil }, set: { if !$0 { reviewing = nil } })) {
             if let id = reviewing, let comparison = controller.comparisons[id] {

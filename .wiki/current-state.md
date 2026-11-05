@@ -1,5 +1,7 @@
 # Current state
 
+Sync helper extraction [#319](https://github.com/PinedaTec-EU/LeonardoMD/issues/319): default source runtime is an authenticated XPC client; the optional per-user helper owns saved-file sharing. Master consent is required for outbound operations as well. Editor exit leaves the registered helper running. Owner apply uses a durable cancellation/completion barrier before releasing editor ownership. Native installation/login acceptance remains pending; see [contracts and boundaries](../doc/sync-helper.md).
+
 Mobile Git retirement under [#249](https://github.com/PinedaTec-EU/LeonardoMD/issues/249): iOS is read-only with authorized direct refresh/offline cache. The proprietary Git target, publication UI and wakeup API are removed; old Git corpus data is preserved as read-only recovery/export state. Desktop direct-sync proposals/receipts and the system Git adapter remain. [Recovery and boundaries](../doc/mobile/git-retirement.md). Older Git checkpoints below are historical. Windows remains deferred under [#227](https://github.com/PinedaTec-EU/LeonardoMD/issues/227).
 
 The initial macOS implementation is being delivered through [issue #1](https://github.com/PinedaTec-EU/LeonardoMD/issues/1). The repository began with 15 product stories and no source code.

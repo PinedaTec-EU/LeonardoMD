@@ -49,3 +49,5 @@ practice v1 is a separate MDLR. Reopening selects the existing practice tab in
 Fill mode. Cmd-4 fills, the padlock edits structure, and Cmd-S saves answers.
 
 Page objects/rubrics (#193): `DocumentToolbar.swift`, `SessionGraphics.swift`, `RubricEditor.swift`, `RubricLibrary.swift`, `LeonardoGraphic.swift`, `leonardo-objects.js`, `MarkdownPagePDF.swift`; chapters 4, 5, 10. Covers geometry/Z, menu drawing, local library, protected fields, overflow and Markdown/PDF limits.
+
+Sync helper (#319): chapters 14–15 cover per-user installation/approval, the required master switch in both directions, saved-file snapshots, offline status with the editor open, after-login recovery, editor-independent sharing and manual incoming review. Guide v8 uses a separate personal copy.

@@ -8,7 +8,7 @@ public enum SyncHelperSigning {
     public static func requirement(for url: URL) throws -> String {
         var code: SecStaticCode?
         guard SecStaticCodeCreateWithPath(url as CFURL, [], &code) == errSecSuccess, let code,
-              SecStaticCodeCheckValidity(code, [.checkAllArchitectures], nil) == errSecSuccess else {
+              SecStaticCodeCheckValidity(code, SecCSFlags(rawValue: kSecCSCheckAllArchitectures), nil) == errSecSuccess else {
             throw SyncHelperFailure("The sync component has an invalid code signature.")
         }
         var requirement: SecRequirement?

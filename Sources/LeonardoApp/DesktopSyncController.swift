@@ -8,6 +8,7 @@ import LeonardoDesktopSync
 @MainActor @Observable
 final class DesktopSyncController {
     static let shared = DesktopSyncController()
+    let helper: SyncHelperController
     private(set) var settings = MobileSyncPreferences()
     private(set) var running: RunningDirectService?
     private(set) var consent = PairingRegistry()
@@ -28,6 +29,7 @@ final class DesktopSyncController {
     init(preferencesURL: URL = AppSession.preferencesURL, configurations: ConfigurationStore = .shared,
          runtime: DesktopDirectRuntime? = nil) {
         self.preferencesURL = preferencesURL
+        helper = SyncHelperController(preferencesURL: preferencesURL)
         self.configurations = configurations
         let root = preferencesURL.deletingLastPathComponent().appendingPathComponent("MobileSync", isDirectory: true)
         storageRoot = root
@@ -48,9 +50,9 @@ final class DesktopSyncController {
         do {
             try InstancePathOwnership.shared.claim(storageRoot)
             settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
-            if usesHelper { await SyncHelperController.shared.refresh() }
-            if settings.enabled && (!usesHelper || SyncHelperController.shared.online) { try await start() }
-            if !usesHelper || SyncHelperController.shared.online { consent = try await runtime.consentState() }
+            if usesHelper { await helper.refresh() }
+            if settings.enabled && (!usesHelper || helper.online) { try await start() }
+            if !usesHelper || helper.online { consent = try await runtime.consentState() }
             initialized = true
         } catch { self.error = error.localizedDescription }
     }
@@ -72,12 +74,14 @@ final class DesktopSyncController {
                 try InstancePathOwnership.shared.claim(project.rootURL)
             }
             let previous = try await configurations.loadGlobalPreferences(at: preferencesURL)
+            // The helper switch is owned by its lifecycle controller, not a stale sharing form.
+            updated.helperEnabled = previous.mobileSync.helperEnabled
             var next = previous
             next.mobileSync = updated
             settings = try await configurations.mergeGlobalPreferences(updated: next, baseline: previous, at: preferencesURL).mobileSync
             running = nil; invitationURL = nil
-            if usesHelper { await SyncHelperController.shared.refresh() }
-            if !usesHelper || SyncHelperController.shared.online {
+            if usesHelper { await helper.refresh() }
+            if !usesHelper || helper.online {
                 try await runtime.stop()
                 if settings.enabled { try await start() }
                 consent = try await runtime.consentState()
@@ -123,9 +127,9 @@ final class DesktopSyncController {
     func refreshConsent() async {
         guard !InstanceRuntime.isAdditional, !busy else { return }
         if usesHelper {
-            await SyncHelperController.shared.refresh()
-            running = SyncHelperController.shared.sharing
-            guard SyncHelperController.shared.online else {
+            await helper.refresh()
+            running = helper.sharing
+            guard helper.online else {
                 running = nil; invitationURL = nil; incoming = []; consent = PairingRegistry(); return
             }
         }
@@ -139,7 +143,14 @@ final class DesktopSyncController {
         guard !InstanceRuntime.isAdditional, !busy else { return }
         busy = true; error = nil
         defer { busy = false }
-        do { reviewing = DesktopSourceReview(item: item, review: try await runtime.reviewIncomingProposal(deviceID: item.deviceID, upload: item.upload)) }
+        do {
+            let review = try await runtime.reviewIncomingProposal(deviceID: item.deviceID, upload: item.upload)
+            guard let project = settings.projects.first(where: { $0.id == item.upload.projectID }) else { throw SyncError.outsideScope }
+            let drafts = try await buffers(project.rootURL)
+            let source = try await ProjectCorpusReader().snapshot(root: project.rootURL,
+                selection: review.proposal.selection, buffers: drafts)
+            reviewing = DesktopSourceReview(item: item, review: try DesktopPeerProposalReview(proposal: review.proposal, source: source))
+        }
         catch { self.error = error.localizedDescription }
     }
 

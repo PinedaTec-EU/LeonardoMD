@@ -6,16 +6,28 @@ import LeonardoDesktopSync
 
 @MainActor @Observable
 final class SyncHelperController {
-    static let shared = SyncHelperController()
     enum State { case notInstalled, disabled, approvalRequired, starting, running, failed }
     private(set) var state = State.disabled
     private(set) var enabled = false
     private(set) var busy = false
     private(set) var sharing: RunningDirectService?
     var error: String?
-    private let service = SMAppService.agent(plistName: SyncHelperContract.plistName)
-    private let client = SyncHelperClient()
-    private let configurations = ConfigurationStore.shared
+    private let service: any SyncHelperRegistration
+    private let client: any SyncHelperControlAccess
+    private let configurations: ConfigurationStore
+    private let hasExecutable: @Sendable () -> Bool
+    private let preferencesURL: URL
+    init(preferencesURL: URL = AppSession.preferencesURL,
+         configurations: ConfigurationStore = .shared,
+         service: any SyncHelperRegistration = SystemSyncHelperRegistration(),
+         client: any SyncHelperControlAccess = SyncHelperClient(),
+         hasExecutable: @escaping @Sendable () -> Bool = {
+             FileManager.default.isExecutableFile(atPath: Bundle.main.bundleURL
+                 .appendingPathComponent("Contents/MacOS/" + SyncHelperContract.executableName).path)
+         }) {
+        self.preferencesURL = preferencesURL; self.configurations = configurations
+        self.service = service; self.client = client; self.hasExecutable = hasExecutable
+    }
 
     var online: Bool { state == .running }
     var statusText: String {
@@ -32,9 +44,8 @@ final class SyncHelperController {
     func refresh() async {
         guard !busy else { return }
         do {
-            enabled = try await configurations.loadGlobalPreferences(at: AppSession.preferencesURL).mobileSync.helperEnabled
-            let executable = Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/" + SyncHelperContract.executableName)
-            guard FileManager.default.isExecutableFile(atPath: executable.path) else {
+            enabled = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync.helperEnabled
+            guard hasExecutable() else {
                 state = .notInstalled; sharing = nil; return
             }
             guard enabled else { state = .disabled; sharing = nil; return }
@@ -56,24 +67,25 @@ final class SyncHelperController {
         busy = true; error = nil
         defer { busy = false }
         do {
-            let baseline = try await configurations.loadGlobalPreferences(at: AppSession.preferencesURL)
+            if enabled && !hasExecutable() { throw SyncHelperFailure(L10n.text("Sync helper is not installed")) }
+            let baseline = try await configurations.loadGlobalPreferences(at: preferencesURL)
             var updated = baseline; updated.mobileSync.helperEnabled = enabled
-            _ = try await configurations.mergeGlobalPreferences(updated: updated, baseline: baseline, at: AppSession.preferencesURL)
+            _ = try await configurations.mergeGlobalPreferences(updated: updated, baseline: baseline, at: preferencesURL)
             self.enabled = enabled; sharing = nil
             if enabled {
                 state = .starting
-                try service.register()
+                if service.status != .enabled { try service.register() }
             } else {
                 state = .disabled
                 // Persist denial before shutdown. Even failed unregistration cannot
                 // restore sharing on the helper's next configuration read/restart.
-                if service.status == .enabled { let _: SyncHelperStatus = try? await client.request(.reload) }
+                if service.status == .enabled { _ = try? await client.reload() }
                 try await service.unregister()
             }
         } catch { state = .failed; self.error = error.localizedDescription }
     }
 
-    func openApprovalSettings() { SMAppService.openSystemSettingsLoginItems() }
+    func openApprovalSettings() { service.openApprovalSettings() }
 
     static func requireOnline() async throws {
         let settings = try await ConfigurationStore.shared.loadGlobalPreferences(at: AppSession.preferencesURL).mobileSync

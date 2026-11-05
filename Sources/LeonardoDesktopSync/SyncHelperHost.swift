@@ -11,15 +11,18 @@ public actor SyncHelperHost {
     private let preferencesURL: URL
     private let configurations: ConfigurationStore
     private let runtime: DesktopDirectRuntime
+    private let applications: SyncHelperApplicationLease
     private var sharing: RunningDirectService?
     private var failure: String?
     private var configuring = false
     private var lastSettings: MobileSyncPreferences?
+    private var lastHost: String?
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "sync-helper")
 
     public init(preferencesURL: URL = SyncHelperContract.preferencesURL,
                 configurations: ConfigurationStore = ConfigurationStore(), runtime: DesktopDirectRuntime? = nil) {
         self.preferencesURL = preferencesURL; self.configurations = configurations
+        applications = SyncHelperApplicationLease(root: preferencesURL.deletingLastPathComponent().appendingPathComponent("MobileSync/LocalApplications"))
         self.runtime = runtime ?? DesktopDirectRuntime(
             root: preferencesURL.deletingLastPathComponent().appendingPathComponent("MobileSync"),
             credentials: SecureCredentialStore(service: "eu.pinedatec.LeonardoMD.sync.tls"), now: { Date() })
@@ -31,11 +34,13 @@ public actor SyncHelperHost {
         do {
             let settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
             // Reconcile failed/unavailable interfaces on subsequent ticks, including wake.
-            if settings == lastSettings, !settings.helperEnabled || !settings.enabled || sharing != nil { return }
+            let selectedHost = settings.host ?? LocalNetworkInterfaces.addresses(allowPrivateOverlay: settings.privateOverlayEnabled).first
+            if settings == lastSettings, selectedHost == lastHost,
+               !settings.helperEnabled || !settings.enabled || sharing != nil { return }
             try await runtime.stop(); sharing = nil
             lastSettings = nil
             if settings.helperEnabled && settings.enabled {
-                let host = settings.host ?? LocalNetworkInterfaces.addresses(allowPrivateOverlay: settings.privateOverlayEnabled).first
+                let host = selectedHost
                 guard let host else { throw TransportError.invalidEndpoint }
                 let projects = try settings.projects.map { project in
                     let selection = try CorpusSelection(folders: project.folders, documents: project.documents)
@@ -48,7 +53,7 @@ public actor SyncHelperHost {
                 sharing = try await runtime.start(host: host, port: settings.port, projects: projects,
                     allowPrivateOverlay: settings.privateOverlayEnabled)
             }
-            lastSettings = settings; failure = nil
+            lastSettings = settings; lastHost = selectedHost; failure = nil
             logger.info("sync_configuration_applied sharing=\(settings.enabled, privacy: .public)")
         } catch {
             sharing = nil; lastSettings = nil; failure = error.localizedDescription
@@ -59,12 +64,11 @@ public actor SyncHelperHost {
     }
 
     public func perform(_ command: SyncHelperCommand) async throws -> Data {
+        try await reload()
         switch command {
         case .status:
-            try await reload()
             return try encode(SyncHelperStatus(enabled: lastSettings?.helperEnabled == true, sharing: sharing, error: failure))
         case .reload:
-            try await reload()
             return try encode(SyncHelperStatus(enabled: lastSettings?.helperEnabled == true, sharing: sharing, error: failure))
         case .stopSharing:
             try await runtime.stop(); sharing = nil; lastSettings = nil
@@ -81,9 +85,11 @@ public actor SyncHelperHost {
             return try encode(SyncHelperReview(proposal: review.proposal, source: review.source))
         case .apply(let value):
             let review = try DesktopPeerProposalReview(proposal: value.proposal, source: value.reviewedSource)
-            return try await encode(runtime.applyIncomingProposal(deviceID: value.deviceID, upload: value.upload,
-                review: review, decisions: value.decisions, projectRoot: value.projectRoot,
-                currentSource: value.currentSource, currentDisk: value.currentDisk))
+            return try await applications.apply(value.id) {
+                try await encode(runtime.applyIncomingProposal(deviceID: value.deviceID, upload: value.upload,
+                    review: review, decisions: value.decisions, projectRoot: value.projectRoot,
+                    currentSource: value.currentSource, currentDisk: value.currentDisk))
+            }
         }
         return try encode(true)
     }

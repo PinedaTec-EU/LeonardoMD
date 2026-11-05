@@ -14,6 +14,7 @@ final class DesktopPeerEditorRevoker: DesktopPeerAccessRevoker {
 @MainActor @Observable
 final class DesktopPeerController {
     static let shared = DesktopPeerController()
+    let helper: SyncHelperController
     private(set) var connections: [DesktopPeerConnection] = []
     private(set) var copies: [DesktopPeerCopy] = []
     private(set) var available: [UUID: [SharedProjectDescriptor]] = [:]
@@ -37,6 +38,7 @@ final class DesktopPeerController {
          revoker: DesktopPeerEditorRevoker = DesktopPeerEditorRevoker(),
          defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        helper = SyncHelperController(preferencesURL: preferencesURL)
         let savedInterval = defaults.integer(forKey: "desktopPeerSyncMinutes")
         syncIntervalMinutes = Self.intervals.contains(savedInterval) ? savedInterval : 0
         let root = preferencesURL.deletingLastPathComponent().appendingPathComponent("DesktopPeers", isDirectory: true)

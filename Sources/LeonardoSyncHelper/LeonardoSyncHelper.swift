@@ -1,17 +1,21 @@
 import Foundation
 import OSLog
+import LeonardoSync
 import LeonardoCore
 import LeonardoDesktopSync
 
 private final class HelperEndpoint: NSObject, SyncHelperXPC, @unchecked Sendable {
     let host: SyncHelperHost
     init(host: SyncHelperHost) { self.host = host }
-    func perform(_ request: Data, withReply reply: @escaping @Sendable (Data?, String?) -> Void) {
+    func perform(_ request: Data, withReply reply: @escaping @Sendable (Data?, Int, String?) -> Void) {
         Task {
             do {
                 let command = try JSONDecoder().decode(SyncHelperCommand.self, from: request)
-                reply(try await host.perform(command), nil)
-            } catch { reply(nil, error.localizedDescription) }
+                reply(try await host.perform(command), SyncHelperErrorCode.none.rawValue, nil)
+            } catch {
+                let code: SyncHelperErrorCode = (error as? ReconciliationError) == .staleComparison ? .staleComparison : .failed
+                reply(nil, code.rawValue, error.localizedDescription)
+            }
         }
     }
 }

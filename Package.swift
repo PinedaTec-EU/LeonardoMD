@@ -15,7 +15,7 @@ let package = Package(
         .target(name: "LeonardoSync"),
         .target(name: "LeonardoSyncTransport", dependencies: ["LeonardoSync"]),
         .target(name: "LeonardoDesktopSync", dependencies: ["LeonardoCore", "LeonardoSync", "LeonardoSyncTransport"]),
-        .executableTarget(name: "LeonardoSyncHelper", dependencies: ["LeonardoCore", "LeonardoDesktopSync"]),
+        .executableTarget(name: "LeonardoSyncHelper", dependencies: ["LeonardoCore", "LeonardoSync", "LeonardoDesktopSync"]),
         .testTarget(name: "LeonardoDesktopSyncTests", dependencies: ["LeonardoDesktopSync"]),
         .testTarget(name: "LeonardoSyncTransportTests", dependencies: ["LeonardoSyncTransport"]),
         .testTarget(name: "LeonardoSyncTests", dependencies: ["LeonardoSync"]),

@@ -2,7 +2,12 @@
 import Foundation
 import LeonardoSync
 
-public struct SyncHelperClient: DesktopSyncRuntimeAccess {
+public protocol SyncHelperControlAccess: Sendable {
+    func status() async throws -> SyncHelperStatus
+    func reload() async throws -> SyncHelperStatus
+}
+
+public struct SyncHelperClient: SyncHelperControlAccess, DesktopSyncRuntimeAccess {
     private let bundleURL: URL
     public init(bundleURL: URL = Bundle.main.bundleURL) { self.bundleURL = bundleURL }
 
@@ -25,7 +30,10 @@ public struct SyncHelperClient: DesktopSyncRuntimeAccess {
             }) as? SyncHelperXPC else {
                 pending.finish(.failure(SyncHelperFailure("Sync helper is offline."))); return
             }
-            proxy.perform(request) { data, error in
+            proxy.perform(request) { data, code, error in
+                if code == SyncHelperErrorCode.staleComparison.rawValue {
+                    pending.finish(.failure(ReconciliationError.staleComparison)); return
+                }
                 if let data { pending.finish(.success(data)) }
                 else { pending.finish(.failure(SyncHelperFailure(error ?? "Sync helper request failed."))) }
             }
@@ -37,6 +45,7 @@ public struct SyncHelperClient: DesktopSyncRuntimeAccess {
     }
 
     public func status() async throws -> SyncHelperStatus { try await request(.status) }
+    public func reload() async throws -> SyncHelperStatus { try await request(.reload) }
     public func start(host: String, port: UInt16, projects: [SharedProjectSource], allowPrivateOverlay: Bool) async throws -> RunningDirectService {
         let status: SyncHelperStatus = try await request(.reload)
         guard let sharing = status.sharing else { throw DesktopRuntimeError.notRunning }
@@ -58,8 +67,20 @@ public struct SyncHelperClient: DesktopSyncRuntimeAccess {
     public func applyIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload, review: DesktopPeerProposalReview,
         decisions: [String: ReconciliationChoice], projectRoot: URL, currentSource: CorpusSnapshot,
         currentDisk: CorpusSnapshot) async throws -> DesktopPeerAcceptanceResult {
-        try await request(.apply(SyncHelperApplication(deviceID: deviceID, upload: upload, review: review,
-            decisions: decisions, projectRoot: projectRoot, currentSource: currentSource, currentDisk: currentDisk)))
+        let value = SyncHelperApplication(deviceID: deviceID, upload: upload, review: review,
+            decisions: decisions, projectRoot: projectRoot, currentSource: currentSource, currentDisk: currentDisk)
+        let lease = SyncHelperApplicationLease()
+        try await lease.prepare(value.id)
+        do {
+            let result: DesktopPeerAcceptanceResult = try await request(.apply(value))
+            try await lease.finish(value.id)
+            return result
+        } catch {
+            // Revoke a queued command or join an already executing transaction
+            // before allowing the app to release its editor lease.
+            try await lease.finish(value.id)
+            throw error
+        }
     }
 }
 
