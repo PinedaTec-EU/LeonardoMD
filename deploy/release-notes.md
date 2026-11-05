@@ -301,4 +301,12 @@
 - [#330](https://github.com/PinedaTec-EU/LeonardoMD/pull/330) — #329 Added: guide PDF import through the user’s own agent — build +2
   <p>Open a bilingual guide from File → Import with your agent to convert PDFs into editable Leonardo documents with your own agent, with the same workflow included in the main help.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.797)
+
+
+## 0.2
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTEtMDVUMTI6Mjg6MDBaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjI5LCJmZWF0dXJlIjoxfSwiZnJvbV92ZXJzaW9uIjoiMC4xLjc5NyIsImtpbmQiOiJwdWxsX3JlcXVlc3QiLCJtZXJnZV9zaGEiOiI3MzlmYzI3ODg1YjI3NjZiOGVhMGRmY2MxYmE5ZGNkMWRmNTY3NzRmIiwibnVtYmVyIjozMjAsInN1bW1hcnkiOiJLZWVwIHNlbGVjdGVkIHNhdmVkIGRvY3VtZW50cyBhdmFpbGFibGUgYWZ0ZXIgY2xvc2luZyBMZW9uYXJkb01EOyBtYW5hZ2UgdGhlIHJlcXVpcmVkIGJhY2tncm91bmQgc3luYyBzZXJ2aWNlIGZyb20gZWl0aGVyIGRldmljZS1zaGFyaW5nIHByZWZlcmVuY2VzIHNjcmVlbi4iLCJ0aXRsZSI6IiMzMTkgQWRkZWQ6IGluZGVwZW5kZW50IG1hY09TIHN5bmMgaGVscGVyIiwidG9fdmVyc2lvbiI6IjAuMi44MjYifV0sImVudmlyb25tZW50IjoicmVsZWFzZSIsImV2ZW50X2lkIjoiZ2l0aHViX3JlbGVhc2U6NDM1MTczMzEzIiwiZXZlbnRfa2luZCI6ImdpdGh1Yl9yZWxlYXNlIiwiZXZpZGVuY2VfdXJsIjoiaHR0cHM6Ly9naXRodWIuY29tL1BpbmVkYVRlYy1FVS9MZW9uYXJkb01EL3JlbGVhc2VzL3RhZy92MC4yLjgyNiIsInJlcG9zaXRvcnkiOiJQaW5lZGFUZWMtRVUvTGVvbmFyZG9NRCIsInNvdXJjZV9yZWYiOiJ2MC4yLjgyNiIsInNvdXJjZV9zaGEiOiJlYWQ4MTJkZTE3MTk4NmE3OWU4ODM0MDEwMGQyNDFiYjUyY2UwOWU0IiwidGFyZ2V0IjoiUGluZWRhVGVjLUVVL0xlb25hcmRvTUQiLCJ2ZXJzaW9uIjoiMC4yLjgyNiJ9 -->
+### 0.2.826
+- [#320](https://github.com/PinedaTec-EU/LeonardoMD/pull/320) — #319 Added: independent macOS sync helper — feature +1, build +29
+  <p>Keep selected saved documents available after closing LeonardoMD; manage the required background sync service from either device-sharing preferences screen.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.2.826)
 <!-- release-ledger:end -->
