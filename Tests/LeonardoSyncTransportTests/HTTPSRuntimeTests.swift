@@ -119,9 +119,12 @@ final class HTTPSRuntimeTests: XCTestCase {
             let response = try RubricResponse(requestID: request.id, targetDeviceID: enrollment.deviceID,
                                               requesterID: request.requesterID, label: "Firma", rubric: rubric,
                                               submittedAt: Date(timeIntervalSince1970: 2_001))
-            XCTAssertEqual(try await client.submitRubricResponse(response, deviceID: enrollment.deviceID, credential: credential), response)
-            XCTAssertEqual(try await client.submitRubricResponse(response, deviceID: enrollment.deviceID, credential: credential), response)
-            XCTAssertEqual(try await authority.rubricResponse(requestID: request.id, now: Date(timeIntervalSince1970: 2_002)), response)
+            let firstResponse = try await client.submitRubricResponse(response, deviceID: enrollment.deviceID, credential: credential)
+            XCTAssertEqual(firstResponse, response)
+            let retriedResponse = try await client.submitRubricResponse(response, deviceID: enrollment.deviceID, credential: credential)
+            XCTAssertEqual(retriedResponse, response)
+            let ownerResponse = try await authority.rubricResponse(requestID: request.id, now: Date(timeIntervalSince1970: 2_002))
+            XCTAssertEqual(ownerResponse, response)
             try await authority.revoke(deviceID: enrollment.deviceID)
             do { _ = try await client.rubricRequests(deviceID: enrollment.deviceID, credential: credential); XCTFail("Revoked client must not read requests") }
             catch { XCTAssertEqual(error as? SyncError, .revoked) }
