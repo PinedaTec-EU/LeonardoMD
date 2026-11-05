@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.783
+
+- #193 Added: images and reusable drawn rubrics ([#316](https://github.com/PinedaTec-EU/LeonardoMD/pull/316))
+
+<p>Insert images and reusable drawn rubrics with page placement, layer controls and a compact document toolbar.</p>
+
+Source: `00fdf05f9a5bbaf9113b51f1809e32c5985ffc16`. Delta: `{"build": 18}`.
+
 ## 0.1.765
 
 - #314 Fixed: persist Leonardo file selection and improve dark contrast ([#315](https://github.com/PinedaTec-EU/LeonardoMD/pull/315))

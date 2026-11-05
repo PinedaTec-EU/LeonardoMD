@@ -757,6 +757,16 @@
       "pr": 315,
       "summary": "Keep the active Leonardo file visibly selected and improve filename readability in dark appearance.",
       "to_version": "0.1.765"
+    },
+    {
+      "delta": {
+        "build": 18
+      },
+      "from_version": "0.1.765",
+      "merge_sha": "00fdf05f9a5bbaf9113b51f1809e32c5985ffc16",
+      "pr": 316,
+      "summary": "Insert images and reusable drawn rubrics with page placement, layer controls and a compact document toolbar.",
+      "to_version": "0.1.783"
     }
   ],
   "initial_version": "0.1.56",
@@ -767,5 +777,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.765"
+  "version": "0.1.783"
 }
