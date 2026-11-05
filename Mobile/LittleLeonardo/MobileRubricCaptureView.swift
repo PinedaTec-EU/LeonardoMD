@@ -27,14 +27,29 @@ struct MobileRubricCanvas: View {
     let width: Double
     let style: LeonardoInkStyle
     let isInteractive: Bool
+    let canCommit: (LeonardoRubric) -> Bool
     @State private var livePoints: [LeonardoInkPoint] = []
+    @Binding private var limitReached: Bool
     private static let maximumPoints = 600
+
+    init(rubric: Binding<LeonardoRubric>, color: String, width: Double,
+         style: LeonardoInkStyle, isInteractive: Bool,
+         canCommit: @escaping (LeonardoRubric) -> Bool = { $0.isValid },
+         limitReached: Binding<Bool> = .constant(false)) {
+        self._rubric = rubric
+        self.color = color
+        self.width = width
+        self.style = style
+        self.isInteractive = isInteractive
+        self.canCommit = canCommit
+        self._limitReached = limitReached
+    }
 
     var body: some View {
         GeometryReader { geometry in
             Canvas { context, size in
                 for stroke in rubric.strokes { draw(stroke, in: size, context: &context) }
-                if livePoints.count > 1 {
+                if !livePoints.isEmpty {
                     draw(LeonardoInkStroke(color: color, width: width, style: style, points: livePoints),
                          in: size, context: &context)
                 }
@@ -43,29 +58,49 @@ struct MobileRubricCanvas: View {
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                 guard isInteractive else { return }
+                guard drawingRect(in: geometry.size).contains(value.location) else { return }
                 let point = normalized(value.location, in: geometry.size)
-                if livePoints.last.map({ distance($0, point) < 1.0 }) != true,
-                   rubric.strokes.reduce(0, { $0 + $1.points.count }) + livePoints.count < Self.maximumPoints {
+                let pointCount = rubric.strokes.reduce(0, { $0 + $1.points.count })
+                guard rubric.strokes.count < LeonardoRubric.maximumStrokes else {
+                    limitReached = true
+                    return
+                }
+                guard pointCount + livePoints.count < Self.maximumPoints else {
+                    limitReached = true
+                    return
+                }
+                if livePoints.last.map({ distance($0, point) < 1.0 }) != true {
                     livePoints.append(point)
                 }
             }.onEnded { _ in
                 guard isInteractive, !livePoints.isEmpty else { livePoints.removeAll(); return }
-                rubric.strokes.append(LeonardoInkStroke(color: color, width: width, style: style,
-                                                        points: livePoints))
+                let pointCount = rubric.strokes.reduce(0, { $0 + $1.points.count })
+                guard rubric.strokes.count < LeonardoRubric.maximumStrokes,
+                      pointCount + livePoints.count <= Self.maximumPoints else {
+                    livePoints.removeAll()
+                    limitReached = true
+                    return
+                }
+                var candidate = rubric
+                candidate.strokes.append(LeonardoInkStroke(color: color, width: width, style: style,
+                                                            points: livePoints))
+                guard canCommit(candidate) else {
+                    livePoints.removeAll()
+                    limitReached = true
+                    return
+                }
+                rubric = candidate
                 livePoints.removeAll()
             })
         }
-        .frame(minHeight: 90)
     }
 
     private func normalized(_ location: CGPoint, in size: CGSize) -> LeonardoInkPoint {
-        let drawingWidth = min(size.width, size.height * 3)
-        let drawingHeight = drawingWidth / 3
-        let origin = CGPoint(x: (size.width - drawingWidth) / 2, y: (size.height - drawingHeight) / 2)
+        let rect = drawingRect(in: size)
         let x = max(0, min(LeonardoRubric.canvasWidth,
-            (((location.x - origin.x) / max(1, drawingWidth)) * LeonardoRubric.canvasWidth).rounded()))
+            (((location.x - rect.minX) / max(1, rect.width)) * LeonardoRubric.canvasWidth).rounded()))
         let y = max(0, min(LeonardoRubric.canvasHeight,
-            (((location.y - origin.y) / max(1, drawingHeight)) * LeonardoRubric.canvasHeight).rounded()))
+            (((location.y - rect.minY) / max(1, rect.height)) * LeonardoRubric.canvasHeight).rounded()))
         return LeonardoInkPoint(x: x, y: y)
     }
 
@@ -73,24 +108,36 @@ struct MobileRubricCanvas: View {
         hypot(left.x - right.x, left.y - right.y)
     }
 
+    private func drawingRect(in size: CGSize) -> CGRect {
+        let drawingWidth = min(size.width, size.height * 3)
+        let drawingHeight = drawingWidth / 3
+        return CGRect(x: (size.width - drawingWidth) / 2, y: (size.height - drawingHeight) / 2,
+                      width: drawingWidth, height: drawingHeight)
+    }
+
     private func draw(_ stroke: LeonardoInkStroke, in size: CGSize, context: inout GraphicsContext) {
-        guard let first = stroke.points.first else { return }
-        var path = Path()
-        path.move(to: display(first, in: size))
-        for point in stroke.points.dropFirst() { path.addLine(to: display(point, in: size)) }
-        let scale = min(size.width / LeonardoRubric.canvasWidth,
-                        size.height / LeonardoRubric.canvasHeight)
-        context.stroke(path, with: .color(hexColor(stroke.color)),
-                       style: StrokeStyle(lineWidth: max(0.5, stroke.width * scale),
-                                          lineCap: .round, lineJoin: .round))
+        guard !stroke.points.isEmpty else { return }
+        let rect = drawingRect(in: size)
+        let scale = min(rect.width / LeonardoRubric.canvasWidth,
+                        rect.height / LeonardoRubric.canvasHeight)
+        for (index, point) in stroke.points.enumerated() {
+            let previous = stroke.points[max(0, index - 1)]
+            let end = previous == point
+                ? LeonardoInkPoint(x: point.x + 0.01, y: point.y)
+                : point
+            var path = Path()
+            path.move(to: display(previous, in: size))
+            path.addLine(to: display(end, in: size))
+            context.stroke(path, with: .color(hexColor(stroke.color)),
+                           style: StrokeStyle(lineWidth: stroke.segmentWidth(at: index) * scale,
+                                              lineCap: .round, lineJoin: .round))
+        }
     }
 
     private func display(_ point: LeonardoInkPoint, in size: CGSize) -> CGPoint {
-        let drawingWidth = min(size.width, size.height * 3)
-        let drawingHeight = drawingWidth / 3
-        let origin = CGPoint(x: (size.width - drawingWidth) / 2, y: (size.height - drawingHeight) / 2)
-        return CGPoint(x: origin.x + point.x / LeonardoRubric.canvasWidth * drawingWidth,
-                       y: origin.y + point.y / LeonardoRubric.canvasHeight * drawingHeight)
+        let rect = drawingRect(in: size)
+        return CGPoint(x: rect.minX + point.x / LeonardoRubric.canvasWidth * rect.width,
+                       y: rect.minY + point.y / LeonardoRubric.canvasHeight * rect.height)
     }
 
     private func hexColor(_ value: String) -> Color {
@@ -115,6 +162,7 @@ struct MobileRubricCaptureView: View {
     @State private var style = LeonardoInkStyle.solid
     @State private var showingPreview = false
     @State private var frozen = false
+    @State private var limitReached = false
     @State private var failure: String?
 
     init(request: RubricRequest, library: MobileLibrary) {
@@ -219,8 +267,21 @@ struct MobileRubricCaptureView: View {
                     .accessibilityIdentifier("rubric-preview")
             } else {
                 MobileRubricCanvas(rubric: $rubric, color: color, width: width, style: style,
-                                   isInteractive: !frozen && phase != .sending)
+                                   isInteractive: !frozen && phase != .sending,
+                                   canCommit: { RubricResponse.fitsEncodedSize(label: label, rubric: $0) },
+                                   limitReached: $limitReached)
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(LeonardoRubric.canvasWidth / LeonardoRubric.canvasHeight, contentMode: .fit)
                     .accessibilityIdentifier("rubric-canvas")
+            }
+            if limitReached {
+                Label("Límite alcanzado: máximo 256 trazos, 600 puntos y 24 KiB.", systemImage: "exclamationmark.triangle")
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("rubric-limit")
+            }
+            if rubric.isValid && !drawingFitsResponseLimit && !frozen {
+                Label("El dibujo supera el límite portátil de 24 KiB.", systemImage: "exclamationmark.triangle")
+                    .font(.footnote).foregroundStyle(.secondary)
             }
             HStack {
                 Button("Deshacer", systemImage: "arrow.uturn.backward") {
@@ -228,16 +289,24 @@ struct MobileRubricCaptureView: View {
                 }
                 .disabled(frozen || rubric.strokes.isEmpty || phase == .sending)
                 .accessibilityIdentifier("rubric-undo")
-                Button("Limpiar", systemImage: "trash") { rubric = LeonardoRubric() }
+                Button("Limpiar", systemImage: "trash") {
+                    limitReached = false
+                    rubric = LeonardoRubric()
+                }
                     .disabled(frozen || rubric.strokes.isEmpty || phase == .sending)
                     .accessibilityIdentifier("rubric-clear")
                 Spacer()
-                Button(showingPreview || frozen ? "Dibujar" : "Vista previa",
-                       systemImage: showingPreview || frozen ? "pencil" : "eye") {
-                    if !frozen { showingPreview.toggle() }
+                if frozen {
+                    Label("Vista previa bloqueada tras el envío", systemImage: "lock.fill")
+                        .font(.footnote).foregroundStyle(.secondary)
+                } else {
+                    Button(showingPreview ? "Dibujar" : "Vista previa",
+                           systemImage: showingPreview ? "pencil" : "eye") {
+                        showingPreview.toggle()
+                    }
+                    .disabled(phase == .sending)
+                    .accessibilityIdentifier("rubric-preview-toggle")
                 }
-                .disabled(phase == .sending)
-                .accessibilityIdentifier("rubric-preview-toggle")
             }
             if let draft = library.rubricDraft(requestID: request.id), draft.response != nil,
                draft.state != .blocked {
@@ -251,7 +320,7 @@ struct MobileRubricCaptureView: View {
             } else {
                 Button("Enviar rúbrica", systemImage: "paperplane.fill") { send() }
                     .buttonStyle(.borderedProminent)
-                    .disabled(frozen || phase == .sending || !rubric.isValid
+                    .disabled(frozen || phase == .sending || !rubric.isValid || !drawingFitsResponseLimit
                               || label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .accessibilityIdentifier("rubric-send")
             }
@@ -272,6 +341,10 @@ struct MobileRubricCaptureView: View {
 
     private func colorOption(_ title: String, _ value: String) -> some View {
         Text(title).tag(value)
+    }
+
+    private var drawingFitsResponseLimit: Bool {
+        RubricResponse.fitsEncodedSize(label: label, rubric: rubric)
     }
 
     private func accept() {
@@ -297,9 +370,19 @@ struct MobileRubricCaptureView: View {
 
     private func persistSnapshot(drawing: LeonardoRubric, label: String) {
         guard !frozen, phase == .drawing else { return }
-        // An empty canvas is a valid unsent draft state. Persist it as nil so
-        // Clear removes previously saved strokes without tripping payload validation.
-        let savedDrawing = drawing.isValid ? drawing : nil
+        let savedDrawing: LeonardoRubric?
+        if drawing.strokes.isEmpty {
+            // An empty canvas is an explicit unsent Clear. Persist it as nil
+            // without tripping the portable payload validation.
+            savedDrawing = nil
+        } else if drawing.isValid && RubricResponse.fitsEncodedSize(label: label, rubric: drawing) {
+            savedDrawing = drawing
+        } else {
+            // Never turn a nonempty invalid drawing into an empty draft: the
+            // last valid persisted input remains recoverable after restart.
+            failure = "El dibujo supera los límites portátiles; se conserva el último borrador válido."
+            return
+        }
         Task {
             do {
                 try await library.persistRubricDraft(requestID: request.id, label: label, drawing: savedDrawing)
@@ -317,9 +400,13 @@ struct MobileRubricCaptureView: View {
                                                    label: label, rubric: rubric)
                 phase = .submitted
             } catch {
-                frozen = library.rubricDraft(requestID: request.id)?.response != nil
                 phase = .drawing
-                failure = "No se pudo enviar. El dibujo está guardado y puedes reintentarlo."
+                if (error as? RubricExchangeError) == .unsupported || (error as? SyncError) == .revoked {
+                    failure = "Este vínculo ya no admite la solicitud. Cierra esta tarjeta y pide una nueva."
+                } else {
+                    frozen = library.rubricDraft(requestID: request.id)?.response != nil
+                    failure = "No se pudo enviar. El dibujo está guardado y puedes reintentarlo."
+                }
             }
         }
     }

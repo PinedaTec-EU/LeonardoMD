@@ -41,6 +41,17 @@ final class RubricExchangeTests: XCTestCase {
         catch { XCTAssertEqual(error as? RubricExchangeError, .conflict) }
     }
 
+    func testPortableResponseSizeProbeRejectsLargeButCoreValidDrawings() {
+        XCTAssertTrue(RubricResponse.fitsEncodedSize(label: "Firma", rubric: rubric))
+        let threePointStroke = LeonardoInkStroke(color: "#224466", width: 4, style: .solid,
+            points: [.init(x: 20, y: 80), .init(x: 180, y: 100), .init(x: 300, y: 120)])
+        let large = LeonardoRubric(strokes: Array(
+            repeating: threePointStroke, count: LeonardoRubric.maximumStrokes))
+        XCTAssertTrue(large.isValid)
+        XCTAssertFalse(RubricResponse.fitsEncodedSize(label: "Firma", rubric: large),
+                       "The mobile editor must reject a core-valid drawing that exceeds the response envelope")
+    }
+
     func testPersistenceFailureDoesNotMutateInMemoryStateAndCanRetry() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

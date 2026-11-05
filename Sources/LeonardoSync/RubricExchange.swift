@@ -144,6 +144,23 @@ public struct RubricResponse: Codable, Equatable, Sendable {
     public static func isValid(label: String, rubric: LeonardoRubric, submittedAt: Date) -> Bool {
         !label.isEmpty && label.count <= 120 && rubric.isValid && submittedAt.timeIntervalSince1970.isFinite
     }
+
+    /// Checks the complete response envelope before a mobile editor commits a
+    /// draft. UUID and timestamp encodings have fixed-width representations,
+    /// so a representative current-era date is equivalent for the byte budget
+    /// while keeping this helper independent of a live request.
+    public static func fitsEncodedSize(label: String, rubric: LeonardoRubric) -> Bool {
+        let cleanLabel = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        let probeDate = Date(timeIntervalSince1970: 1_700_000_000)
+        guard isValid(label: cleanLabel, rubric: rubric, submittedAt: probeDate) else {
+            return false
+        }
+        let candidate = RubricResponse(uncheckedRequestID: UUID(), targetDeviceID: UUID(),
+                                       requesterID: UUID(), label: cleanLabel, rubric: rubric,
+                                       submittedAt: probeDate)
+        guard let bytes = try? JSONEncoder().encode(candidate) else { return false }
+        return bytes.count <= maximumEncodedBytes
+    }
 }
 
 /// The owner-side view of one request. Keeping the request and optional

@@ -87,6 +87,32 @@ final class MobileRubricDraftTests: XCTestCase {
         XCTAssertNil(restored.first?.response)
     }
 
+    func testInvalidNonemptyDrawingCannotReplaceLastValidDraft() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let request = try request()
+        let draft = MobileRubricDraft(id: request.id, connectionID: UUID(),
+            targetDeviceID: request.targetDeviceID, requesterID: request.requesterID,
+            sourceFingerprint: Data(repeating: 8, count: 32), request: request,
+            drawing: drawing, label: "Firma", state: .accepted, updatedAt: now)
+        let store = MobileRubricDraftStore(url: root.appendingPathComponent("drafts.json"))
+        try await store.save(draft)
+
+        let invalidDrawing = LeonardoRubric(strokes: Array(repeating: drawing.strokes[0],
+                                                            count: LeonardoRubric.maximumStrokes + 1))
+        XCTAssertFalse(invalidDrawing.isValid)
+        let invalid = draft.with(drawing: invalidDrawing, label: draft.label,
+                                 updatedAt: now.addingTimeInterval(1))
+        do {
+            try await store.save(invalid)
+            XCTFail("A nonempty invalid drawing must not replace the valid draft")
+        } catch {
+            XCTAssertEqual(error as? RubricExchangeError, .invalidPayload)
+        }
+        let restored = try await store.all(now: now.addingTimeInterval(2))
+        XCTAssertEqual(restored.first?.drawing, drawing)
+    }
+
     func testBindingIsDeterministicAndStateCannotRegress() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

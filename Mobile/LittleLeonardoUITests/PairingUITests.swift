@@ -99,8 +99,16 @@ final class PairingUITests: XCTestCase {
         drawLine(in: canvas, from: CGVector(dx: 0.2, dy: 0.45), to: CGVector(dx: 0.8, dy: 0.65))
         app.buttons["rubric-clear"].tap()
         drawLine(in: canvas, from: CGVector(dx: 0.15, dy: 0.65), to: CGVector(dx: 0.85, dy: 0.4))
+        let drawingCapture = XCTAttachment(screenshot: app.screenshot())
+        drawingCapture.name = "Native iOS rubric drawing before preview"
+        drawingCapture.lifetime = .keepAlways
+        add(drawingCapture)
         app.buttons["rubric-preview-toggle"].tap()
         XCTAssertTrue(app.otherElements["rubric-preview"].waitForExistence(timeout: 5))
+        let previewCapture = XCTAttachment(screenshot: app.screenshot())
+        previewCapture.name = "Native iOS rubric preview before send"
+        previewCapture.lifetime = .keepAlways
+        add(previewCapture)
         app.buttons["rubric-preview-toggle"].tap()
         XCTAssertTrue(canvas.waitForExistence(timeout: 5))
 
