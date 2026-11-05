@@ -309,4 +309,10 @@
 - [#320](https://github.com/PinedaTec-EU/LeonardoMD/pull/320) — #319 Added: independent macOS sync helper — feature +1, build +29
   <p>Keep selected saved documents available after closing LeonardoMD; manage the required background sync service from either device-sharing preferences screen.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.2.826)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTEtMDVUMTM6MTQ6MDFaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjN9LCJmcm9tX3ZlcnNpb24iOiIwLjIuODI2Iiwia2luZCI6InB1bGxfcmVxdWVzdCIsIm1lcmdlX3NoYSI6IjYzNDhlMWIzZTBkMWJkOTZmYmQ3Yjg4OWRjODQ1MmI1YjdkZWFjNmQiLCJudW1iZXIiOjMzNSwic3VtbWFyeSI6IlJlZnJlc2ggdGhlIEVuZ2xpc2ggYW5kIFNwYW5pc2ggaGVscCB3aXRoIHByZW1pdW0gaWxsdXN0cmF0aW9ucyBmb3IgZG9jdW1lbnQgd29ya2Zsb3dzLCBwYWNrYWdlcywgZXhwb3J0IGNob2ljZXMgYW5kIGFnZW50LWFzc2lzdGVkIGltcG9ydCwgd2hpbGUgcHJlc2VydmluZyB0aGUgbGl2ZSBNZXJtYWlkIGRlbW9uc3RyYXRpb25zLiIsInRpdGxlIjoiIzMzNCBVcGRhdGVkOiBhZGQgcHJlbWl1bSBiaWxpbmd1YWwgaGVscCBpbGx1c3RyYXRpb25zIiwidG9fdmVyc2lvbiI6IjAuMi44MjkifV0sImVudmlyb25tZW50IjoicmVsZWFzZSIsImV2ZW50X2lkIjoiZ2l0aHViX3JlbGVhc2U6NDM1MjIyODc5IiwiZXZlbnRfa2luZCI6ImdpdGh1Yl9yZWxlYXNlIiwiZXZpZGVuY2VfdXJsIjoiaHR0cHM6Ly9naXRodWIuY29tL1BpbmVkYVRlYy1FVS9MZW9uYXJkb01EL3JlbGVhc2VzL3RhZy92MC4yLjgyOSIsInJlcG9zaXRvcnkiOiJQaW5lZGFUZWMtRVUvTGVvbmFyZG9NRCIsInNvdXJjZV9yZWYiOiJ2MC4yLjgyOSIsInNvdXJjZV9zaGEiOiJlMTdiMmRkN2M4MWU2YjZjMzBlMTczMWZhM2VlM2ExMGE3OTAwMDRjIiwidGFyZ2V0IjoiUGluZWRhVGVjLUVVL0xlb25hcmRvTUQiLCJ2ZXJzaW9uIjoiMC4yLjgyOSJ9 -->
+### 0.2.829
+- [#335](https://github.com/PinedaTec-EU/LeonardoMD/pull/335) — #334 Updated: add premium bilingual help illustrations — build +3
+  <p>Refresh the English and Spanish help with premium illustrations for document workflows, packages, export choices and agent-assisted import, while preserving the live Mermaid demonstrations.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.2.829)
 <!-- release-ledger:end -->
