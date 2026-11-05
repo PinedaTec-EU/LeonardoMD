@@ -39,9 +39,18 @@ successful cumulative build delta is recorded in `deploy/version/entries/349.yam
 - `LEONARDO_RUBRIC_GUIDE_CAPTURE=<temporary directory> swift test --skip-build
   --filter RubricGuideCaptureTests` — passed with English/Spanish offline,
   pending-request, and response-review captures.
+- Recorded `swift test --filter RubricCaptureTests` — delta 17 passed (5 tests),
+  including lost create/status acknowledgement recovery with one stable UUID.
+- Recorded `swift test --filter RubricExchangeTests` — delta 18 passed (9 tests),
+  including idempotent authority create retry.
+- Recorded `swift test --filter BundledUserGuideTests` — delta 19 passed (5
+  tests, both locales, v14 packages and preserved v13 personal-copy fixtures).
 - `python3 scripts/package-user-guide.py --web-output doc` followed by
   `python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py'`
   — deterministic package test passed.
+
+The guide package was advanced to v14 after main added the Synchronization role
+pages; the v14 package preserves those pages and the linked-rubric instructions.
 
 Physical iOS, TestFlight distribution, and the mobile request/draw/send UI are
 explicitly deferred to #342/#343. The helper-owned Mac transport fixture and

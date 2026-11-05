@@ -420,9 +420,11 @@ una petición a un único dispositivo explícitamente compatible y de solo lectu
 No se difunde al grupo enlazado ni concede edición de documentos. Se muestran
 los estados pendiente, aceptada, rechazada, cancelada y caducada; cuando el
 dispositivo devuelve el dibujo, revisa la vista previa y la etiqueta y elige
-**Guardar en la biblioteca** o **Guardar e insertar**. La petición y el dibujo
-devuelto sobreviven al reinicio de la app o del asistente para recuperar una
-respuesta perdida. Si el documento abierto cambió mientras el dispositivo
+**Guardar en la biblioteca** o **Guardar e insertar**. La intención de la
+petición se guarda antes de llamar al asistente y el dibujo devuelto sobrevive
+al reinicio de la app o del asistente. Si se pierde la confirmación inicial,
+**Reintentar** continúa la misma petición en vez de pedirla dos veces. Si el
+documento abierto cambió mientras el dispositivo
 dibujaba, la inserción se rechaza pero el dibujo queda disponible para guardarlo
 en la biblioteca. Después de guardar, usa **Pedir otra rúbrica** para capturar
 otra respuesta; las guardadas permanecen en la biblioteca local y no bloquean

@@ -18,7 +18,10 @@ owner-side Mac flow on top of the authenticated exchange in
   another rubric** starts a fresh stable-ID exchange; saved results no longer
   auto-occupy a reopened editor, while unsaved results remain recoverable.
   **Refresh linked devices** re-reads helper/consent state when a companion is
-  upgraded while the editor is open.
+  upgraded while the editor is open. The initial intent is persisted before
+  the asynchronous create call; a lost create/status acknowledgement leaves a
+  visible Retry action that reuses the same UUID, and a retry preserves the
+  original source digest for insertion safety.
 - `RubricLibrary` records the stable request UUID so repeated saves do not
   duplicate entries. Delayed status replies cannot regress cancellation or
   completion; the focused `RubricCaptureTests` covers restart/idempotence and
@@ -27,3 +30,5 @@ owner-side Mac flow on top of the authenticated exchange in
 Production mobile enrollment remains capability-empty until #342 supplies the
 request/draw/send UI. Protocol fixtures may advertise the capability, but the
 Mac must not present an unsupported historical reader as a capture target.
+The published bilingual guide is v14 because main also carries the #337
+Synchronization role pages; Guide-v13 remains historical and is not bundled.

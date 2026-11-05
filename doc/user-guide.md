@@ -413,8 +413,10 @@ Leonardo** and target one explicitly capable, read-only device. This sends a
 single request; it does not broadcast to the linked group or grant document
 editing. Pending, accepted, rejected, cancelled and expired states are shown;
 when the device returns its drawing, review the preview and label, then choose
-**Save to library** or **Save and insert**. The request and returned drawing
-survive an app/helper restart so a lost reply can be recovered. If the open
+**Save to library** or **Save and insert**. The request intent is saved before
+the helper call, and the returned drawing survives an app/helper restart. If a
+create acknowledgement is lost, **Retry** continues the same request instead
+of asking the companion twice. If the open
 document changed while the device was drawing, insertion is rejected but the
 returned drawing remains available to save in the library. After saving, use
 **Request another rubric** to capture a second response; saved results stay in
