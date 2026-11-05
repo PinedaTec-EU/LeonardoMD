@@ -9,20 +9,22 @@ device, share a document, or claim a fresh packaged-process launch.
 
 - `en/rubric-linked-request.png` and `es/rubric-linked-request.png` show one
   targeted pending request waiting for **Little Leonardo**, with explicit
-  cancellation.
+  cancellation, in a full-height 760-point native editor view.
 - `en/rubric-linked-review.png` and `es/rubric-linked-review.png` show the
   returned drawing preview, editable label, **Save to library**, and **Save and
-  insert** actions.
+  insert** actions in the same full-height native editor view; they are not
+  cropped component fragments.
 - The packaged help illustration is kept in each locale's `doc/guide/.../assets`
   directory as `rubric-linked-offline.png`; its sidecar records the helper-offline
   state and the **Refresh linked devices** action.
 
 Every PNG has a matching `.context.json` and `.metadata.json` sidecar. The
 metadata helper records the source revision, capture time, native viewport,
-image dimensions, and SHA-256 bytes. The capture source commit is
-`6463463` (`#341 Updated: capture linked request and review states`); subsequent
-changes in this PR are documentation/package-only and do not alter the captured
-production views.
+image dimensions, and SHA-256 bytes. These four request/review captures were
+regenerated from the final production fixture at source commit
+`6f27d2b66d22da0cc6006317b3039e7a11a1d726` (`#341 Updated: capture full rubric
+review states`); later changes only reconcile evidence metadata and do not alter
+the captured production views.
 
 ## Recorded validation
 
@@ -49,6 +51,9 @@ successful cumulative build delta is recorded in `deploy/version/entries/349.yam
   Testing suites; opt-in evidence tests remained skipped unless explicitly
   enabled. Real TLS rubric request/accept/response coverage passed in the same
   run.
+- Recorded `swift test --filter RubricGuideCaptureTests` with the opt-in capture
+  directory — delta 21 passed and regenerated the English/Spanish request and
+  review captures from the final source.
 - `python3 scripts/package-user-guide.py --web-output doc` followed by
   `python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py'`
   — deterministic package test passed.
