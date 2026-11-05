@@ -16,7 +16,10 @@ be supplied by Apple's dyld shared cache. Search order is preserved: an existing
 external candidate or an escaping symlink blocks validation even when a bundled
 fallback exists later. Relative or unsupported runpath expressions fail closed;
 ordinary loader/executable anchors are expanded. Shared-cache candidates are
-queried through the native dyld API. This inspection covers Mach-O load commands,
+queried through the native dyld API, including direct system-library references;
+an approved path prefix alone is not evidence that the library exists. Weak-linked
+libraries may be absent; if present, they undergo the same dependency and external-path
+inspection as required libraries. This inspection covers Mach-O load commands,
 not computed runtime `dlopen` paths or environment-driven injection. This static gate does not prove a fresh
 process or first-window readiness and does not claim to eliminate concurrent
 modification after inspection.

@@ -72,7 +72,8 @@ def load_commands(image, architecture):
         elif fields[:1] == ['path'] and command == 'LC_RPATH':
             paths.append(line.strip()[5:].rsplit(' (offset ', 1)[0])
         elif fields[:1] == ['name'] and command in LOAD_COMMANDS:
-            dependencies.append(line.strip()[5:].rsplit(' (offset ', 1)[0])
+            dependencies.append((line.strip()[5:].rsplit(' (offset ', 1)[0],
+                                 command == 'LC_LOAD_WEAK_DYLIB'))
     return paths, dependencies
 
 
@@ -113,9 +114,7 @@ def image_architectures(image):
     return architectures
 
 
-def resolve_dependency(name, image, executable, runpaths, bundle):
-    if system_path(name):
-        return None  # Apple libraries may exist only in the dyld shared cache.
+def resolve_dependency(name, image, executable, runpaths, bundle, *, weak=False):
     candidates = ([str(Path(path) / name[len('@rpath/'):]) for path in runpaths]
                   if name.startswith('@rpath/') else [expand_path(name, image, executable)])
     for candidate in candidates:
@@ -130,6 +129,8 @@ def resolve_dependency(name, image, executable, runpaths, bundle):
                 raise ValueError(f'Unresolved bundled dependency {name}: first existing candidate '
                                  f'escapes the bundle: {candidate}')
             return path.resolve()
+    if weak:
+        return None  # Weak-linked images are permitted to be absent at runtime.
     raise ValueError(f'Unresolved bundled dependency {name} from {image.relative_to(bundle)}; '
                      f'searched: {", ".join(candidates)}')
 
@@ -155,8 +156,8 @@ def inspect_dependencies(bundle, executable):
             raise ValueError(f'Missing architecture {architecture} in bundled dependency: {image}')
         paths, names = load_commands(image, architecture)
         runpaths = list(dict.fromkeys([*(expand_path(p, image, launcher) for p in paths), *inherited]))
-        for name in names:
-            dependency = resolve_dependency(name, image, launcher, runpaths, bundle)
+        for name, weak in names:
+            dependency = resolve_dependency(name, image, launcher, runpaths, bundle, weak=weak)
             if dependency is not None and dependency != image:
                 visit(dependency, launcher, architecture, runpaths)
 

@@ -110,6 +110,35 @@ class DependencyTests(unittest.TestCase):
         macho(self.executable, ['@rpath/libswiftCore.dylib'], ['/usr/lib/swift', '@loader_path/absent'])
         deps.inspect_dependencies(self.bundle, self.executable)
 
+    def test_direct_system_dependency_must_exist_in_filesystem_or_shared_cache(self):
+        macho(self.executable, ['/usr/lib/LeonardoMD_UnitTest_Missing_324.dylib'])
+        with self.assertRaisesRegex(ValueError, 'Unresolved bundled dependency'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_missing_weak_framework_is_optional(self):
+        self.sparkle.unlink()
+        macho(self.executable, [self.name], ['@executable_path/../Frameworks'], load_command=0x80000018)
+        deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_missing_weak_system_dependency_is_optional(self):
+        macho(self.executable, ['/usr/lib/LeonardoMD_UnitTest_Missing_324.dylib'], load_command=0x80000018)
+        deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_existing_weak_framework_is_inspected(self):
+        macho(self.executable, [self.name], ['@executable_path/../Frameworks'], load_command=0x80000018)
+        deps.inspect_dependencies(self.bundle, self.executable)
+        macho(self.sparkle, ['@loader_path/missing-child.dylib'], filetype=6)
+        with self.assertRaisesRegex(ValueError, 'missing-child.dylib'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_weak_external_candidate_cannot_hide_behind_a_bundled_fallback(self):
+        outside = Path(self.temp.name) / 'external'
+        macho(outside / 'Sparkle.framework/Versions/B/Sparkle', filetype=6)
+        macho(self.executable, [self.name], [str(outside), '@executable_path/../Frameworks'],
+              load_command=0x80000018)
+        with self.assertRaisesRegex(ValueError, 'first existing candidate escapes'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+
     def test_framework_symlink_escaping_bundle_is_rejected(self):
         outside = Path(self.temp.name) / 'outside'
         self.sparkle.rename(outside)
