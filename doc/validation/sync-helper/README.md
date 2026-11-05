@@ -148,3 +148,9 @@ fidelity and original PNG captures while respecting the existing preview budget.
 All five `BundledUserGuideTests` then pass, including complete native image
 loading in both locales and the standalone agent-import guide. No renderer
 limit was raised.
+
+Final combined-help validation: 625 XCTest cases (34 optional skips), 28 Swift
+Testing cases and 56 script cases (7 skips) pass. The last compiled guide-only
+run passes all five tests with the standalone AgentImport v1 archives restored
+byte-for-byte to main. The compact vector option applies only to main-help
+illustrations; the standalone published guide revision remains unchanged.

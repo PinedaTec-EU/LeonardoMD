@@ -30,7 +30,7 @@ ILLUSTRATIONS = {
 }
 
 
-def illustration(title, labels):
+def illustration(title, labels, *, compact=False):
     cards = []
     for index, label in enumerate(labels):
         x = 30 + index * 350
@@ -40,7 +40,7 @@ def illustration(title, labels):
             cards.append(f'<text x="{x + 325}" y="160" fill="#432333" font-size="25">→</text>')
     # Bounded intrinsic size keeps the combined guide within the preview image
     # admission budget; the original viewBox preserves full vector fidelity.
-    return ('<svg xmlns="http://www.w3.org/2000/svg" width="720" height="160" viewBox="0 0 1080 240">'
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{720 if compact else 1080}" height="{160 if compact else 240}" viewBox="0 0 1080 240">'
             '<rect width="1080" height="240" rx="20" fill="#f1e8dd"/>'
             '<g font-family="Helvetica,Arial,sans-serif">'
             f'<text x="30" y="58" fill="#432333" font-size="30" font-weight="bold">{escape(title)}</text>'
@@ -78,7 +78,7 @@ def build(language, destination):
         assets = staging / "assets"
         assets.mkdir()
         for name, (title, labels) in ILLUSTRATIONS[language].items():
-            (assets / (name + ".svg")).write_text(illustration(title, labels), encoding="utf-8")
+            (assets / (name + ".svg")).write_text(illustration(title, labels, compact=True), encoding="utf-8")
         shutil.copyfile(ROOT / "Sources/LeonardoApp/Resources/AboutBanner.png", assets / "cover.png")
         # Only original PNG content assets belong in the package, not QA sidecars.
         for image in sorted((ROOT / "doc/guide" / language / "assets").glob("*.png")):
@@ -133,7 +133,7 @@ def write_web_guide(language, directory):
     for name, (title, labels) in ILLUSTRATIONS[language].items():
         folder = directory / "guide" / "illustrations"
         folder.mkdir(parents=True, exist_ok=True)
-        (folder / f"{language}-{name}.svg").write_text(illustration(title, labels), encoding="utf-8")
+        (folder / f"{language}-{name}.svg").write_text(illustration(title, labels, compact=True), encoding="utf-8")
         body = body.replace(f"guide/{language}/assets/{name}.svg", f"guide/illustrations/{language}-{name}.svg")
     practice = directory / "guide" / language / "practice.mdlr"
     practice.parent.mkdir(parents=True, exist_ok=True)
