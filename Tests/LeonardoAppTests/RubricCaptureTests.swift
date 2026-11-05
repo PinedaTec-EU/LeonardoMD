@@ -125,11 +125,109 @@ final class RubricCaptureTests: XCTestCase {
         XCTAssertNil(reopened.rubricCapture(for: document, source: "edited source"),
                      "saved results belong to the library; a reopened editor must offer a new request")
     }
+
+    func testLostCreateReplyKeepsOneStableIntentForRetry() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let now = Date()
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let fingerprint = Data(repeating: 4, count: 32)
+        let credential = try PairingRegistry.makeCredential()
+        let pairing = try registry.requestPairing(deviceName: "Little Leonardo", credential: credential,
+            serverFingerprint: fingerprint, now: now, kind: .readOnly, capabilities: [.rubricExchangeV1])
+        let project = SharedProjectDescriptor(id: UUID(), name: "Docs", scope: try CorpusScope(folder: ""))
+        _ = try registry.approve(requestID: pairing.id, comparisonCode: pairing.comparisonCode,
+            projects: [project.id], now: now)
+        let runtime = LostCreateReplyRuntime(registry: registry, requesterID: UUID())
+        let controller = DesktopSyncController(preferencesURL: root.appendingPathComponent("preferences.json"),
+            configurations: ConfigurationStore(), runtime: runtime)
+        await controller.update(MobileSyncPreferences(enabled: true, host: "127.0.0.1", port: 0))
+        XCTAssertEqual(controller.rubricCaptureAvailability, .ready, controller.error ?? "Runtime did not start")
+
+        let document = root.appendingPathComponent("note.md")
+        let requestID = UUID()
+        do {
+            _ = try await controller.beginRubricCapture(requestID: requestID, targetDeviceID: pairing.id,
+                targetDeviceName: "Little Leonardo", documentURL: document, source: "original", fieldID: nil)
+            XCTFail("The first create reply is intentionally lost")
+        } catch { }
+        XCTAssertEqual(controller.rubricCaptureRecords.map(\.id), [requestID])
+        XCTAssertNil(controller.rubricCaptureRecords.first?.request,
+            "The persisted local intent must remain retryable when both create and status replies are unavailable")
+
+        let retried = try await controller.beginRubricCapture(requestID: requestID, targetDeviceID: pairing.id,
+            targetDeviceName: "Little Leonardo", documentURL: document, source: "edited locally", fieldID: nil)
+        XCTAssertEqual(retried.id, requestID)
+        XCTAssertEqual(retried.sourceDigest, RubricCaptureRecord.digest(source: "original"),
+            "A retry must retain the original insertion context")
+        let metrics = await runtime.metrics()
+        XCTAssertEqual(metrics.createCalls, 2)
+        XCTAssertEqual(metrics.durableRequestCount, 1,
+            "The helper must see one durable source request even after a lost create acknowledgement")
+    }
 }
 
 private actor CaptureTestCredentials: DeviceCredentialStore {
     func credential(deviceID: UUID) -> String? { nil }
     func save(_ credential: String, deviceID: UUID) {}
     func remove(deviceID: UUID) {}
+}
+
+private struct LostCreateReplyError: Error {}
+
+private actor LostCreateReplyRuntime: DesktopSyncRuntimeAccess {
+    let registry: PairingRegistry
+    let requesterID: UUID
+    private var requests: [UUID: LeonardoSync.RubricRequest] = [:]
+    private var createCalls = 0
+
+    init(registry: PairingRegistry, requesterID: UUID) {
+        self.registry = registry
+        self.requesterID = requesterID
+    }
+
+    func start(host: String, port: UInt16, projects: [SharedProjectSource], allowPrivateOverlay: Bool) async throws -> RunningDirectService {
+        RunningDirectService(endpoint: URL(string: "https://127.0.0.1:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+    }
+    func stop() async throws {}
+    func consentState() async throws -> PairingRegistry { registry }
+    func incomingProposals() async throws -> [DesktopPeerIncomingProposal] { [] }
+    func reviewIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposalReview {
+        throw DesktopRuntimeError.notRunning
+    }
+    func applyIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload, review: DesktopPeerProposalReview,
+                               decisions: [String: ReconciliationChoice], projectRoot: URL,
+                               currentSource: CorpusSnapshot, currentDisk: CorpusSnapshot) async throws -> DesktopPeerAcceptanceResult {
+        throw DesktopRuntimeError.notRunning
+    }
+    func createInvitation() async throws -> PairingInvitation { throw DesktopRuntimeError.notRunning }
+    func approve(requestID: UUID, code: String, projectIDs: Set<UUID>) async throws { throw DesktopRuntimeError.notRunning }
+    func reject(requestID: UUID) async throws { throw DesktopRuntimeError.notRunning }
+    func revoke(deviceID: UUID) async throws { throw DesktopRuntimeError.notRunning }
+
+    func createRubricRequest(deviceID: UUID, requestID: UUID, requesterName: String,
+                             labelHint: String?) async throws -> LeonardoSync.RubricRequest {
+        createCalls += 1
+        if let existing = requests[requestID] { return existing }
+        let request = try LeonardoSync.RubricRequest(id: requestID, targetDeviceID: deviceID,
+            requesterID: requesterID, requesterName: requesterName, labelHint: labelHint, createdAt: Date())
+        requests[requestID] = request
+        if createCalls == 1 { throw LostCreateReplyError() }
+        return request
+    }
+
+    func cancelRubricRequest(requestID: UUID) async throws -> LeonardoSync.RubricRequest {
+        throw DesktopRuntimeError.notRunning
+    }
+    func rubricResponse(requestID: UUID) async throws -> LeonardoSync.RubricResponse? {
+        throw LostCreateReplyError()
+    }
+    func rubricStatus(requestID: UUID) async throws -> RubricExchangeStatus {
+        throw LostCreateReplyError()
+    }
+
+    func metrics() -> (createCalls: Int, durableRequestCount: Int) {
+        (createCalls, requests.count)
+    }
 }
 

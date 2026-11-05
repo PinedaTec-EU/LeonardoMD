@@ -26,11 +26,13 @@ enum RubricCaptureAvailability: Equatable {
 enum RubricCaptureError: LocalizedError {
     case unavailable(RubricCaptureAvailability)
     case missingRequest
+    case requestConflict
 
     var errorDescription: String? {
         switch self {
         case .unavailable(let availability): availability.messageKey
         case .missingRequest: "The saved rubric request is no longer available."
+        case .requestConflict: "The saved rubric request belongs to a different device or document."
         }
     }
 }
@@ -284,23 +286,48 @@ final class DesktopSyncController {
     func beginRubricCapture(requestID: UUID = UUID(), targetDeviceID: UUID,
                             targetDeviceName: String, labelHint: String? = nil,
                             documentURL: URL?, source: String, fieldID: String?) async throws -> RubricCaptureRecord {
+        let record = try prepareRubricCapture(requestID: requestID, targetDeviceID: targetDeviceID,
+                                               targetDeviceName: targetDeviceName, labelHint: labelHint,
+                                               documentURL: documentURL, source: source, fieldID: fieldID)
+        return try await beginRubricCapture(record: record)
+    }
+
+    /// Persists the caller's stable intent before any asynchronous helper call.
+    /// The editor can therefore keep showing the same request when an XPC create
+    /// reply is lost or the helper is briefly unavailable.
+    func prepareRubricCapture(requestID: UUID = UUID(), targetDeviceID: UUID,
+                              targetDeviceName: String, labelHint: String? = nil,
+                              documentURL: URL?, source: String, fieldID: String?) throws -> RubricCaptureRecord {
         let availability = rubricCaptureAvailability
         guard availability == .ready else { throw RubricCaptureError.unavailable(availability) }
         let canonicalURL = documentURL.map(ProcessFileLock.canonicalURL)
-        var record = RubricCaptureRecord(id: requestID, targetDeviceID: targetDeviceID,
+        if let existing = rubricCaptures.record(id: requestID) {
+            guard existing.targetDeviceID == targetDeviceID,
+                  existing.documentURL == canonicalURL,
+                  existing.fieldID == fieldID else { throw RubricCaptureError.requestConflict }
+            // A retry may happen after the open document changed. Keep the
+            // original digest and target metadata so insertion remains guarded
+            // by the context in which the request was first made.
+            return existing
+        }
+        let record = RubricCaptureRecord(id: requestID, targetDeviceID: targetDeviceID,
             targetDeviceName: targetDeviceName, documentURL: canonicalURL,
             sourceDigest: RubricCaptureRecord.digest(source: source), fieldID: fieldID,
             labelHint: labelHint)
-        try rubricCaptures.upsert(record)
+        return try rubricCaptures.upsert(record)
+    }
+
+    private func beginRubricCapture(record: RubricCaptureRecord) async throws -> RubricCaptureRecord {
+        var record = record
         do {
-            let request = try await runtime.createRubricRequest(deviceID: targetDeviceID, requestID: requestID,
-                requesterName: Self.rubricRequesterName, labelHint: labelHint)
+            let request = try await runtime.createRubricRequest(deviceID: record.targetDeviceID, requestID: record.id,
+                requesterName: Self.rubricRequesterName, labelHint: record.labelHint)
             record.request = request; record.updatedAt = Date()
             return try rubricCaptures.upsert(record)
         } catch {
             // Creation can be durable even when the XPC reply is lost. The
             // caller's stable ID makes this recovery safe and idempotent.
-            if let status = try? await runtime.rubricStatus(requestID: requestID) {
+            if let status = try? await runtime.rubricStatus(requestID: record.id) {
                 record.request = status.request; record.response = status.response; record.updatedAt = Date()
                 return try rubricCaptures.upsert(record)
             }
@@ -340,7 +367,7 @@ final class DesktopSyncController {
         // Prefer an unsaved response before matching the current source.
         let recoverable = sameDocument.filter {
             $0.savedLibraryEntryID == nil &&
-            ($0.response != nil || $0.request?.state == .pending || $0.request?.state == .accepted)
+            ($0.response != nil || $0.request == nil || $0.request?.state == .pending || $0.request?.state == .accepted)
         }
         return recoverable
             .filter { $0.sourceDigest == digest }

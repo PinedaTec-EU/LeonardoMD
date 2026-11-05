@@ -133,6 +133,21 @@ public actor DirectSyncAuthority {
             guard let device = registry.devices.first(where: { $0.id == targetDeviceID }),
                   !device.revoked, device.kind == .readOnly else { throw PairingError.invalidCredential }
             guard device.capabilities.contains(.rubricExchangeV1) else { throw RubricExchangeError.unsupported }
+            // The Mac persists the request ID before crossing XPC. If the
+            // create reply is lost, retrying with that ID must recover the
+            // original durable request instead of creating a second prompt.
+            let cleanName = requesterName.trimmingCharacters(in: .whitespacesAndNewlines)
+            let cleanHint = labelHint?.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let existing = try await rubrics.request(id: requestID, now: now) {
+                guard existing.targetDeviceID == targetDeviceID,
+                      existing.requesterID == sourceDeviceID,
+                      existing.requesterName == cleanName,
+                      existing.labelHint == cleanHint,
+                      existing.capability == .rubricExchangeV1 else {
+                    throw RubricExchangeError.conflict
+                }
+                return existing
+            }
             let request = try RubricRequest(id: requestID, targetDeviceID: targetDeviceID, requesterID: sourceDeviceID,
                                             requesterName: requesterName, labelHint: labelHint,
                                             createdAt: now)

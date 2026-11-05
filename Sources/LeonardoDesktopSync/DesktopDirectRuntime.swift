@@ -6,6 +6,11 @@ import LeonardoSyncTransport
 public struct RunningDirectService: Codable, Sendable {
     public let endpoint: URL
     public let certificateFingerprint: Data
+
+    public init(endpoint: URL, certificateFingerprint: Data) {
+        self.endpoint = endpoint
+        self.certificateFingerprint = certificateFingerprint
+    }
 }
 
 public enum DesktopRuntimeError: Error, Sendable { case notRunning, busy }

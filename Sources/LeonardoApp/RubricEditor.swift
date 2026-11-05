@@ -23,6 +23,7 @@ struct RubricEditor: View {
     @State private var remoteLabel = ""
     @State private var remoteError: String?
     @State private var remoteTask: Task<Void, Never>?
+    @State private var remoteCreating = false
 
     init(request: RubricRequest, library: RubricLibrary, clearField: (() -> Bool)? = nil,
          syncController: DesktopSyncController? = nil,
@@ -113,6 +114,7 @@ struct RubricEditor: View {
                       let existing = syncController.rubricCapture(for: request.documentURL, source: request.source) else { return }
                 remoteCapture = existing
                 if let response = existing.response { remoteLabel = response.label }
+                else { remoteLabel = existing.labelHint ?? label }
                 if existing.request?.state == .pending || existing.request?.state == .accepted {
                     pollRemote(syncController, requestID: existing.id)
                 }
@@ -171,9 +173,11 @@ struct RubricEditor: View {
                             Label(L10n.text("Saved in library"), systemImage: "checkmark.circle")
                                 .font(.caption).foregroundStyle(.secondary)
                             Button(L10n.text("Request another rubric")) {
+                                remoteTask?.cancel()
                                 remoteCapture = nil
                                 remoteLabel = ""
                                 remoteError = nil
+                                remoteCreating = false
                             }
                             .font(.caption)
                         }
@@ -186,6 +190,19 @@ struct RubricEditor: View {
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button(L10n.text("Request again")) { remoteCapture = nil; remoteError = nil }
+            }
+        } else if remoteCreating {
+            HStack {
+                ProgressView().controlSize(.small)
+                Text(L10n.text("Sending rubric request…"))
+            }
+        } else if capture.request == nil {
+            HStack {
+                Label(L10n.text("The request was saved but not confirmed. Retry to continue the same request."),
+                      systemImage: "arrow.clockwise.circle")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button(L10n.text("Retry")) { retryRemote(controller, capture: capture) }
             }
         } else {
             HStack {
@@ -204,17 +221,42 @@ struct RubricEditor: View {
     private func beginRemote(_ controller: DesktopSyncController, device: PairedDevice) {
         remoteError = nil; remoteTask?.cancel()
         let requestID = UUID()
+        do {
+            let capture = try controller.prepareRubricCapture(requestID: requestID,
+                targetDeviceID: device.id, targetDeviceName: device.name,
+                labelHint: label.isEmpty ? nil : label, documentURL: request.documentURL,
+                source: request.source, fieldID: request.fieldID)
+            remoteCapture = capture
+            remoteLabel = capture.labelHint ?? label
+            startRemote(controller, capture: capture)
+        } catch {
+            remoteError = error.localizedDescription
+        }
+    }
+
+    private func retryRemote(_ controller: DesktopSyncController, capture: RubricCaptureRecord) {
+        remoteError = nil
+        remoteTask?.cancel()
+        startRemote(controller, capture: capture)
+    }
+
+    private func startRemote(_ controller: DesktopSyncController, capture: RubricCaptureRecord) {
+        remoteCreating = true
         remoteTask = Task { @MainActor in
             do {
-                let capture = try await controller.beginRubricCapture(requestID: requestID,
-                    targetDeviceID: device.id, targetDeviceName: device.name,
-                    labelHint: label.isEmpty ? nil : label, documentURL: request.documentURL,
-                    source: request.source, fieldID: request.fieldID)
-                remoteCapture = capture
-                if let response = capture.response { remoteLabel = response.label }
-                else { remoteLabel = capture.labelHint ?? label }
-                if capture.response == nil { pollRemote(controller, requestID: capture.id) }
-            } catch { remoteError = error.localizedDescription }
+                let updated = try await controller.beginRubricCapture(requestID: capture.id,
+                    targetDeviceID: capture.targetDeviceID, targetDeviceName: capture.targetDeviceName,
+                    labelHint: capture.labelHint, documentURL: capture.documentURL,
+                    source: request.source, fieldID: capture.fieldID)
+                remoteCapture = updated
+                remoteCreating = false
+                if let response = updated.response { remoteLabel = response.label }
+                else { remoteLabel = updated.labelHint ?? label }
+                if updated.response == nil { pollRemote(controller, requestID: updated.id) }
+            } catch {
+                remoteCreating = false
+                remoteError = error.localizedDescription
+            }
         }
     }
 

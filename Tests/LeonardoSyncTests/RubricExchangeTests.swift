@@ -164,6 +164,9 @@ final class RubricExchangeTests: XCTestCase {
         let request = try await authority.createRubricRequest(targetDeviceID: pairing.id, requesterName: "MacBook", now: now)
         let sourceID = await authority.sourceDeviceID
         XCTAssertEqual(request.requesterID, sourceID)
+        let retried = try await authority.createRubricRequest(targetDeviceID: pairing.id, requesterName: "MacBook",
+                                                              requestID: request.id, now: now.addingTimeInterval(1))
+        XCTAssertEqual(retried, request, "Retrying a lost create reply must recover the original request ID")
         let status = try await authority.status(deviceID: pairing.id, credential: credential, now: now)
         XCTAssertEqual(status.capabilities, [.rubricExchangeV1])
         let visible = try await authority.rubricRequests(deviceID: pairing.id, credential: credential, now: now)
