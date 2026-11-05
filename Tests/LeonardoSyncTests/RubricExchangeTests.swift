@@ -97,6 +97,32 @@ final class RubricExchangeTests: XCTestCase {
         }
     }
 
+    func testDanglingFinalFileSymlinkIsRejectedOnLoadAndPersist() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        let storedURL = root.appendingPathComponent("requests.json")
+        let missingTarget = root.appendingPathComponent("missing.json")
+        try FileManager.default.createSymbolicLink(at: storedURL, withDestinationURL: missingTarget)
+
+        let target = UUID(), requester = UUID()
+        let request = try RubricRequest(targetDeviceID: target, requesterID: requester,
+                                        requesterName: "Mac", createdAt: now)
+        let store = FileRubricExchangeStore(url: storedURL)
+        do {
+            _ = try await store.requests(for: target, now: now)
+            XCTFail("A dangling final-file symlink must fail load")
+        } catch {
+            XCTAssertEqual(error as? RubricExchangeError, .storageFailure)
+        }
+        do {
+            try await store.create(request)
+            XCTFail("A dangling final-file symlink must fail persistence")
+        } catch {
+            XCTAssertEqual(error as? RubricExchangeError, .storageFailure)
+        }
+    }
+
     func testExpiryCancellationAndTargetIsolation() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

@@ -340,8 +340,9 @@ public actor FileRubricExchangeStore: RubricExchangeStore {
     private func destinationURL() throws -> URL {
         let parent = url.deletingLastPathComponent().standardizedFileURL.resolvingSymlinksInPath()
         let destination = parent.appendingPathComponent(url.lastPathComponent)
-        if FileManager.default.fileExists(atPath: destination.path),
-           destination.resolvingSymlinksInPath() != destination.standardizedFileURL {
+        // `fileExists` follows links and returns false for a dangling one, so
+        // inspect the directory entry itself before taking the absent-file path.
+        if (try? FileManager.default.destinationOfSymbolicLink(atPath: destination.path)) != nil {
             throw RubricExchangeError.storageFailure
         }
         return destination
