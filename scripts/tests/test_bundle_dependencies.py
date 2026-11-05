@@ -2,6 +2,7 @@
 import importlib.util
 from pathlib import Path
 import plistlib
+import platform
 import struct
 import subprocess
 import tempfile
@@ -14,7 +15,7 @@ deps = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(deps)
 
 
-def macho(path, dependencies=(), rpaths=(), filetype=2, load_command=12):
+def macho(path, dependencies=(), rpaths=(), filetype=2, load_command=12, cpu=None):
     """Minimal arm64 Mach-O fixture: parsed by real otool, never executed."""
     commands = []
     for name in rpaths:
@@ -27,7 +28,9 @@ def macho(path, dependencies=(), rpaths=(), filetype=2, load_command=12):
         commands.append(struct.pack('<IIIIII', load_command, size, 24, 0, 0, 0) + value + bytes(size - 24 - len(value)))
     data = b''.join(commands)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(struct.pack('<IIIIIIII', 0xfeedfacf, 0x100000c, 0, filetype, len(commands), len(data), 0, 0) + data)
+    cpu = cpu or (0x100000c if platform.machine() == 'arm64' else 0x1000007)
+    path.write_bytes(struct.pack('<IIIIIIII', 0xfeedfacf, cpu, 0 if cpu == 0x100000c else 3,
+                                 filetype, len(commands), len(data), 0, 0) + data)
 
 
 class DependencyTests(unittest.TestCase):
@@ -61,6 +64,26 @@ class DependencyTests(unittest.TestCase):
         macho(library, ['/usr/lib/libSystem.B.dylib'], filetype=6)
         macho(self.executable, [self.name], [str(outside), '@executable_path/../Frameworks'])
         with self.assertRaisesRegex(ValueError, 'first existing candidate escapes'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_universal_image_does_not_merge_other_architectures_runpaths(self):
+        outside = Path(self.temp.name) / 'external'
+        macho(outside / 'Sparkle.framework/Versions/B/Sparkle', filetype=6, cpu=0x100000c)
+        intel = Path(self.temp.name) / 'intel'
+        arm = Path(self.temp.name) / 'arm'
+        macho(intel, [self.name], ['@executable_path/../Frameworks'], cpu=0x1000007)
+        macho(arm, [self.name], [str(outside), '@executable_path/../Frameworks'], cpu=0x100000c)
+        subprocess.run(['/usr/bin/lipo', '-create', str(intel), str(arm), '-output', str(self.executable)], check=True)
+        macho(intel, ['/usr/lib/libSystem.B.dylib'], filetype=6, cpu=0x1000007)
+        macho(arm, ['/usr/lib/libSystem.B.dylib'], filetype=6, cpu=0x100000c)
+        subprocess.run(['/usr/bin/lipo', '-create', str(intel), str(arm), '-output', str(self.sparkle)], check=True)
+        with self.assertRaisesRegex(ValueError, 'first existing candidate escapes'):
+            deps.inspect_dependencies(self.bundle, self.executable)
+
+    def test_dependency_requires_the_launchers_architecture(self):
+        wrong_cpu = 0x1000007 if platform.machine() == 'arm64' else 0x100000c
+        macho(self.sparkle, ['/usr/lib/libSystem.B.dylib'], filetype=6, cpu=wrong_cpu)
+        with self.assertRaisesRegex(ValueError, 'Missing architecture'):
             deps.inspect_dependencies(self.bundle, self.executable)
 
     def test_earlier_rpath_symlink_escape_cannot_be_hidden_by_a_fallback(self):

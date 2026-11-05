@@ -8,7 +8,9 @@ Run `swift test` for Core, App, static render and real WKWebView integration che
 the disposable copy produced by `--qa`. `scripts/qa-bundle.py --verify-only <app>`
 checks the real executable and every embedded Mach-O executable (including
 helpers, XPC services and updater apps), resolving each executable's transitive
-libraries with its own loader/executable context. It checks deep strict signatures and consistent
+libraries with its own loader/executable context and each architecture separately;
+universal-image slices never share runpath lists. Required library slices must exist.
+It checks deep strict signatures and consistent
 embedded signing teams for team-signed apps. System framework/library paths may
 be supplied by Apple's dyld shared cache. Search order is preserved: an existing
 external candidate or an escaping symlink blocks validation even when a bundled

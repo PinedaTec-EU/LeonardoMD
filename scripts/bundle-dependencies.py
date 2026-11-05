@@ -62,8 +62,8 @@ def inspect_signing(bundle):
                                  're-sign the entire QA copy inside out with --sign-identity')
 
 
-def load_commands(image):
-    output = subprocess.check_output(['/usr/bin/otool', '-l', str(image)], text=True)
+def load_commands(image, architecture):
+    output = subprocess.check_output(['/usr/bin/otool', '-arch', architecture, '-l', str(image)], text=True)
     command, paths, dependencies = None, [], []
     for line in output.splitlines():
         fields = line.strip().split()
@@ -106,6 +106,13 @@ def executable_image(image):
     return types == {'EXECUTE'}
 
 
+def image_architectures(image):
+    architectures = subprocess.check_output(['/usr/bin/lipo', '-archs', str(image)], text=True).split()
+    if not architectures:
+        raise ValueError(f'Cannot determine image architectures: {image}')
+    return architectures
+
+
 def resolve_dependency(name, image, executable, runpaths, bundle):
     if system_path(name):
         return None  # Apple libraries may exist only in the dyld shared cache.
@@ -132,18 +139,26 @@ def inspect_dependencies(bundle, executable):
     if not executable.is_relative_to(bundle):
         raise ValueError('App executable resolves outside its bundle')
     inspected = set()
+    architecture_cache = {}
 
-    def visit(image, launcher, inherited):
-        key = (launcher, image, tuple(inherited))
+    def architectures(image):
+        if image not in architecture_cache:
+            architecture_cache[image] = image_architectures(image)
+        return architecture_cache[image]
+
+    def visit(image, launcher, architecture, inherited):
+        key = (launcher, architecture, image, tuple(inherited))
         if key in inspected:
             return
         inspected.add(key)
-        paths, names = load_commands(image)
+        if architecture not in architectures(image):
+            raise ValueError(f'Missing architecture {architecture} in bundled dependency: {image}')
+        paths, names = load_commands(image, architecture)
         runpaths = list(dict.fromkeys([*(expand_path(p, image, launcher) for p in paths), *inherited]))
         for name in names:
             dependency = resolve_dependency(name, image, launcher, runpaths, bundle)
             if dependency is not None and dependency != image:
-                visit(dependency, launcher, runpaths)
+                visit(dependency, launcher, architecture, runpaths)
 
     launchers = []
     for image in macho_files(bundle):
@@ -152,7 +167,8 @@ def inspect_dependencies(bundle, executable):
     if executable not in launchers:
         raise ValueError('The main application binary must be a Mach-O executable')
     for launcher in dict.fromkeys([executable, *launchers]):
-        visit(launcher, launcher, [])
+        for architecture in architectures(launcher):
+            visit(launcher, launcher, architecture, [])
 
 
 if __name__ == '__main__':
