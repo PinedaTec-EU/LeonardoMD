@@ -47,6 +47,16 @@ public struct DirectDeviceStatus: Codable, Sendable {
     }
 }
 
+/// Optional, forward-compatible capability update. Older clients can ignore
+/// this endpoint and continue reading; unknown future fields decode safely.
+public struct DirectCapabilityUpdate: Codable, Sendable {
+    public let rubricExchangeV1: Bool?
+
+    public init(rubricExchangeV1: Bool? = nil) {
+        self.rubricExchangeV1 = rubricExchangeV1
+    }
+}
+
 public enum DirectAuthorityError: Error, Sendable { case busy }
 
 /// Single owner for consent state; a persisted mutation becomes visible atomically.
@@ -120,9 +130,28 @@ public actor DirectSyncAuthority {
         guard !changing else { throw DirectAuthorityError.busy }
         let access = try registry.pairingStatus(requestID: deviceID, credential: credential, now: now)
         let granted = access == .authorized ? registry.devices.first(where: { $0.id == deviceID })?.projects ?? [] : []
+        let capabilities = access == .authorized && rubrics != nil
+            ? registry.devices.first(where: { $0.id == deviceID })?.capabilities ?? []
+            : []
         return DirectDeviceStatus(access: access,
             projects: granted.compactMap { projects[$0]?.descriptor }.sorted { $0.name < $1.name },
-            capabilities: rubrics == nil ? [] : [.rubricExchangeV1])
+            capabilities: capabilities)
+    }
+
+    /// Authenticated feature refresh for an already-linked read-only client.
+    /// The update is persisted atomically and cannot alter its identity or
+    /// document grants. A nil field is a compatibility no-op.
+    public func updateCapabilities(deviceID: UUID, credential: String,
+                                   update: DirectCapabilityUpdate, now: Date) async throws -> DirectDeviceStatus {
+        guard update.rubricExchangeV1 != nil else {
+            return try status(deviceID: deviceID, credential: credential, now: now)
+        }
+        _ = try await mutate { registry in
+            let capabilities: Set<DirectCapability> = update.rubricExchangeV1 == true ? [.rubricExchangeV1] : []
+            return try registry.updateCapabilities(deviceID: deviceID, credential: credential,
+                                                   capabilities: capabilities)
+        }
+        return try status(deviceID: deviceID, credential: credential, now: now)
     }
 
     /// Creates a single-device request owned by this Mac. The target must be an
@@ -262,11 +291,13 @@ public actor DirectSyncAuthority {
         return try await operation(rubrics)
     }
 
-    private static func sourceID(for fingerprint: Data) -> UUID {
+    public static func requesterID(for fingerprint: Data) -> UUID {
         let bytes = Array(fingerprint.prefix(16)) + Array(repeating: 0, count: max(0, 16 - fingerprint.count))
         return UUID(uuid: (bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
                            bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]))
     }
+
+    private static func sourceID(for fingerprint: Data) -> UUID { requesterID(for: fingerprint) }
 
     private func mutate<Result: Sendable>(_ operation: (inout PairingRegistry) throws -> Result) async throws -> Result {
         guard !changing else { throw DirectAuthorityError.busy }

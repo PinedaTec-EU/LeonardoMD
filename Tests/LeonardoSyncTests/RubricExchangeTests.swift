@@ -230,6 +230,35 @@ final class RubricExchangeTests: XCTestCase {
         }
     }
 
+    func testAuthenticatedCapabilityRefreshDoesNotChangeReadOnlyScope() async throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let fingerprint = Data(repeating: 12, count: 32), credential = String(repeating: "e", count: 64)
+        let project = SharedProjectDescriptor(id: UUID(), name: "Docs", scope: try CorpusScope(folder: ""))
+        let pairing = try registry.requestPairing(deviceName: "Existing iPhone", credential: credential,
+                                                   serverFingerprint: fingerprint, now: now)
+        let paired = try registry.approve(requestID: pairing.id, comparisonCode: pairing.comparisonCode,
+                                          projects: [project.id], now: now)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let authority = try DirectSyncAuthority(registry: registry,
+            projects: [SharedProjectSource(descriptor: project) { CorpusSnapshot(revision: "r", files: []) }],
+            serverFingerprint: fingerprint, persist: { _ in },
+            rubrics: FileRubricExchangeStore(url: root.appendingPathComponent("requests.json")))
+        let before = try await authority.status(deviceID: paired.id, credential: credential, now: now)
+        XCTAssertTrue(before.capabilities.isEmpty)
+        let after = try await authority.updateCapabilities(deviceID: paired.id, credential: credential,
+                                                            update: DirectCapabilityUpdate(rubricExchangeV1: true), now: now)
+        XCTAssertEqual(after.projects.map(\.id), [project.id])
+        XCTAssertEqual(after.capabilities, [.rubricExchangeV1])
+        let state = await authority.consentState()
+        let persisted = try XCTUnwrap(state.devices.first(where: { $0.id == paired.id }))
+        XCTAssertEqual(persisted.id, paired.id)
+        XCTAssertEqual(persisted.kind, .readOnly)
+        XCTAssertEqual(persisted.projects, paired.projects)
+        XCTAssertEqual(persisted.credentialDigest, paired.credentialDigest)
+        XCTAssertEqual(persisted.capabilities, [.rubricExchangeV1])
+    }
+
     func testDesktopPeerCannotAnswerReadOnlyRubricRequest() async throws {
         var registry = PairingRegistry(); registry.setEnabled(true)
         let fingerprint = Data(repeating: 8, count: 32), credential = String(repeating: "b", count: 64)
