@@ -101,7 +101,7 @@ Keep the chapter as the single editorial source, including capability-based
 agent requirements, the native-editable output prompt and review boundaries.
 
 Premium bilingual help artwork ([#334](https://github.com/PinedaTec-EU/LeonardoMD/issues/334)):
-Guide v10 and AgentImport v2 use localized 900×300 PNG illustrations from
+Guide v10 and AgentImport v2 use localized 1200×400 PNG illustrations from
 `doc/guide/<locale>/assets`, with explicit generated-art provenance. Mermaid
 teaching examples remain live/source-editable; the illustration generator has
 been removed. The standalone import package reuses the same image as chapter 6.

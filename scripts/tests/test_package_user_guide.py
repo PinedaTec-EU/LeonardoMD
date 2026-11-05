@@ -33,7 +33,7 @@ class PackageUserGuideTests(unittest.TestCase):
                 for illustration in artwork:
                     asset = ROOT / 'doc/guide' / language / 'assets' / (illustration + '.png')
                     width, height = struct.unpack('>II', asset.read_bytes()[16:24])
-                    self.assertEqual((width, height), (900, 300))
+                    self.assertEqual((width, height), (1200, 400))
                     self.assertIn(f'guide/{language}/assets/{illustration}.png', web_source)
                 practice_name = f'Practice-v1-{language}.mdlr'
                 practice = (output / practice_name).read_bytes()
@@ -49,6 +49,15 @@ class PackageUserGuideTests(unittest.TestCase):
                 self.assertEqual((output / name).read_bytes(), (ROOT / 'Sources/LeonardoApp/Resources' / name).read_bytes())
                 with zipfile.ZipFile(output / name) as archive:
                     self.assertEqual(len(archive.namelist()), 16)
+                    # Conservative 16-bit RGBA source envelope catches image
+                    # budget regressions before the native all-images check.
+                    image_bytes = 0
+                    for asset in archive.namelist():
+                        if asset.endswith('.png'):
+                            content = archive.read(asset)
+                            width, height = struct.unpack('>II', content[16:24])
+                            image_bytes += len(content) + width * height * 8
+                    self.assertLessEqual(image_bytes, 128 * 1024 * 1024)
                     source = archive.read('guide.mdlf').decode('utf-8')
                     metadata = json.loads(source.split('---\n')[1])
                     self.assertEqual(metadata['formatVersion'], 1)

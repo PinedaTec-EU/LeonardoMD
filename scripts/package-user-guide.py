@@ -46,7 +46,7 @@ def build(language, destination):
         staging = Path(temporary)
         assets = staging / "assets"
         assets.mkdir()
-        shutil.copyfile(ROOT / "Sources/LeonardoApp/Resources/AboutBanner.png", assets / "cover.png")
+        shutil.copyfile(ROOT / "doc/guide/cover.png", assets / "cover.png")
         # Only PNG content assets belong in the package, not provenance/QA sidecars.
         for image in sorted((ROOT / "doc/guide" / language / "assets").glob("*.png")):
             if image.is_symlink() or not image.is_file():
