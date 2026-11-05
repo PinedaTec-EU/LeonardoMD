@@ -43,16 +43,10 @@ final class SynchronizationPreferencesTests: XCTestCase {
                 let destination = URL(fileURLWithPath: output ?? root.path)
                 try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
                 let image = destination.appendingPathComponent("\(page.rawValue)-\(language.rawValue).png")
-                try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 490),
-                    to: image,
-                    language: language.rawValue, state: "Synchronization / \(page.rawValue); helper present but disabled; isolated empty saved content and connections")
-                let recognition = VNRecognizeTextRequest()
-                recognition.recognitionLevel = .accurate
-                recognition.recognitionLanguages = [language.rawValue]
-                try VNImageRequestHandler(url: image).perform([recognition])
-                let visibleText = (recognition.results ?? []).compactMap { $0.topCandidates(1).first?.string }
-                XCTAssertTrue(visibleText.contains { $0.contains("Leonardo Sync") },
-                              "Common service control must be painted in every role/locale capture: \(page)/\(language)")
+                try await captureVerified(host, size: NSSize(width: 532, height: 490), to: image,
+                    language: language.rawValue,
+                    state: "Synchronization / \(page.rawValue); helper present but disabled; isolated empty saved content and connections",
+                    visibleText: ["Leonardo Sync"])
                 XCTAssertFalse(helper.enabled)
                 XCTAssertFalse(source.settings.enabled)
                 XCTAssertNil(source.running)
@@ -70,11 +64,33 @@ final class SynchronizationPreferencesTests: XCTestCase {
                     SyncDeviceIdentity(name: "Studio Mac", kind: .desktopPeer)
                 }.padding(20).frame(width: 532, height: 150, alignment: .topLeading)
                     .background(Color(nsColor: .windowBackgroundColor)))
-                try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 150),
+                try await captureVerified(host, size: NSSize(width: 532, height: 150),
                     to: URL(fileURLWithPath: output).appendingPathComponent("device-roles-\(language.rawValue).png"),
-                    language: language.rawValue, state: "Production device identity rows; synthetic capability examples, not paired devices")
+                    language: language.rawValue, state: "Production device identity rows; synthetic capability examples, not paired devices",
+                    visibleText: ["Reading tablet", "Studio Mac", "Little Leonardo"])
+
             }
         }
         await source.stop()
     }
+
+    /// Native layer snapshots can be incomplete without reporting an AppKit
+    /// error. Retry the unmodified view, and reject evidence missing its anchors.
+    private func captureVerified(_ host: NSView, size: NSSize, to image: URL,
+                                 language: String, state: String, visibleText: [String]) async throws {
+        var recognized = ""
+        for _ in 0..<3 {
+            try await GuideCaptureSupport.captureNative(host, size: size, to: image,
+                                                        language: language, state: state)
+            let request = VNRecognizeTextRequest()
+            request.recognitionLevel = .accurate
+            request.recognitionLanguages = [language]
+            try VNImageRequestHandler(url: image).perform([request])
+            recognized = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+                .joined(separator: "\n")
+            if visibleText.allSatisfy({ recognized.contains($0) }) { return }
+        }
+        XCTFail("Native capture omitted required visible content: \(state); recognized: \(recognized)")
+    }
+
 }
