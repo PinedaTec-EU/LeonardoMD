@@ -1,0 +1,4 @@
+{
+  "summary": "Adds protocol foundations for targeted Mac-to-iOS rubric requests without granting document editing. Capability negotiation, durable retries and pinned transport are ready; production UI/enrollment wiring remains deferred to #342.",
+  "build": 7
+}

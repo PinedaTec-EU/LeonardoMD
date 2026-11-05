@@ -2,6 +2,7 @@
 import XCTest
 import Security
 import LeonardoSync
+import LeonardoCore
 @testable import LeonardoSyncTransport
 
 final class HTTPSRuntimeTests: XCTestCase {
@@ -80,6 +81,72 @@ final class HTTPSRuntimeTests: XCTestCase {
             let blocked = try await client.request(method: "GET", path: snapshotPath, credential: credential)
             XCTAssertEqual(blocked.status, 403)
             XCTAssertTrue(blocked.body.isEmpty)
+            await server.stop()
+        } catch { await server.stop(); throw error }
+    }
+
+    func testRubricRequestAcceptAndResponseOverRealHTTPS() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
+        let identity = try makeIdentity()
+        let project = SharedProjectDescriptor(id: UUID(), name: "Docs", scope: try CorpusScope(folder: ""))
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = FileRubricExchangeStore(url: root.appendingPathComponent("requests.json"))
+        let authority = try DirectSyncAuthority(registry: PairingRegistry(),
+            projects: [SharedProjectSource(descriptor: project) { CorpusSnapshot(revision: "r", files: []) }],
+            serverFingerprint: identity.certificateFingerprint, persist: { _ in }, rubrics: store)
+        try await authority.setEnabled(true)
+        let router = DirectHTTPSRouter(authority: authority, now: { Date(timeIntervalSince1970: 2_000) })
+        let server = LANHTTPSListener(identity: identity) { await router.respond(to: $0) }
+        let port = try await server.start(host: "127.0.0.1")
+        do {
+            let client = try DirectEnrollmentClient(endpoint: URL(string: "https://127.0.0.1:\(port)")!,
+                                                    certificateFingerprint: identity.certificateFingerprint)
+            let legacyCredential = try PairingRegistry.makeCredential()
+            let legacyEnrollment = try await client.begin(deviceName: "Legacy QA iPhone", credential: legacyCredential,
+                                                           now: Date(timeIntervalSince1970: 2_000))
+            try await authority.approve(requestID: legacyEnrollment.deviceID, code: legacyEnrollment.comparisonCode,
+                                        projectIDs: [project.id], now: Date(timeIntervalSince1970: 2_000))
+            let enrolledDevices = await authority.consentState().devices
+            XCTAssertEqual(enrolledDevices.first(where: { $0.id == legacyEnrollment.deviceID })?.capabilities, [])
+            do {
+                _ = try await authority.createRubricRequest(targetDeviceID: legacyEnrollment.deviceID,
+                                                            requesterName: "QA Mac", labelHint: "Firma",
+                                                            now: Date(timeIntervalSince1970: 2_000))
+                XCTFail("A default enrollment must not opt into rubric exchange")
+            } catch { XCTAssertEqual(error as? RubricExchangeError, .unsupported) }
+            do {
+                _ = try await client.rubricRequests(deviceID: legacyEnrollment.deviceID, credential: legacyCredential)
+                XCTFail("A legacy peer must not read rubric requests")
+            } catch { XCTAssertEqual(error as? RubricExchangeError, .unsupported) }
+
+            let credential = try PairingRegistry.makeCredential()
+            let enrollment = try await client.begin(deviceName: "QA iPhone", credential: credential,
+                                                    now: Date(timeIntervalSince1970: 2_000),
+                                                    capabilities: [.rubricExchangeV1])
+            try await authority.approve(requestID: enrollment.deviceID, code: enrollment.comparisonCode,
+                                        projectIDs: [project.id], now: Date(timeIntervalSince1970: 2_000))
+            let status = try await client.status(deviceID: enrollment.deviceID, credential: credential)
+            XCTAssertTrue(status.capabilities.contains(.rubricExchangeV1))
+            let request = try await authority.createRubricRequest(targetDeviceID: enrollment.deviceID,
+                                                                   requesterName: "QA Mac", labelHint: "Firma", now: Date(timeIntervalSince1970: 2_000))
+            let received = try await client.rubricRequests(deviceID: enrollment.deviceID, credential: credential)
+            XCTAssertEqual(received, [request])
+            _ = try await client.acceptRubricRequest(requestID: request.id, deviceID: enrollment.deviceID, credential: credential)
+            let rubric = LeonardoRubric(strokes: [.init(color: "#224466", width: 4, style: .solid,
+                                                         points: [.init(x: 20, y: 80), .init(x: 180, y: 100)])])
+            let response = try RubricResponse(requestID: request.id, targetDeviceID: enrollment.deviceID,
+                                              requesterID: request.requesterID, label: "Firma", rubric: rubric,
+                                              submittedAt: Date(timeIntervalSince1970: 2_001))
+            let firstResponse = try await client.submitRubricResponse(response, deviceID: enrollment.deviceID, credential: credential)
+            XCTAssertEqual(firstResponse, response)
+            let retriedResponse = try await client.submitRubricResponse(response, deviceID: enrollment.deviceID, credential: credential)
+            XCTAssertEqual(retriedResponse, response)
+            let ownerResponse = try await authority.rubricResponse(requestID: request.id, now: Date(timeIntervalSince1970: 2_002))
+            XCTAssertEqual(ownerResponse, response)
+            try await authority.revoke(deviceID: enrollment.deviceID)
+            do { _ = try await client.rubricRequests(deviceID: enrollment.deviceID, credential: credential); XCTFail("Revoked client must not read requests") }
+            catch { XCTAssertEqual(error as? SyncError, .revoked) }
             await server.stop()
         } catch { await server.stop(); throw error }
     }
