@@ -122,10 +122,12 @@ struct MobileRubricCaptureView: View {
         self.library = library
         let draft = library.rubricDraft(requestID: request.id)
         _phase = State(initialValue: request.state == .accepted || draft != nil ? .drawing : .awaitingApproval)
-        _label = State(initialValue: draft?.response?.label ?? request.labelHint ?? "Rúbrica")
+        _label = State(initialValue: draft?.label ?? request.labelHint ?? "Rúbrica")
         if let response = draft?.response {
             _rubric = State(initialValue: response.rubric)
             _frozen = State(initialValue: true)
+        } else if let drawing = draft?.drawing {
+            _rubric = State(initialValue: drawing)
         }
     }
 
@@ -158,6 +160,8 @@ struct MobileRubricCaptureView: View {
             }
         }
         .accessibilityIdentifier("rubric-request-sheet")
+        .onChange(of: rubric) { _, drawing in persistSnapshot(drawing: drawing, label: label) }
+        .onChange(of: label) { _, value in persistSnapshot(drawing: rubric, label: value) }
     }
 
     private var requestHeader: some View {
@@ -235,10 +239,15 @@ struct MobileRubricCaptureView: View {
                 .disabled(phase == .sending)
                 .accessibilityIdentifier("rubric-preview-toggle")
             }
-            if let draft = library.rubricDraft(requestID: request.id), draft.response != nil {
+            if let draft = library.rubricDraft(requestID: request.id), draft.response != nil,
+               draft.state != .blocked {
                 Button("Reintentar envío", systemImage: "arrow.clockwise") { retry(draft) }
                     .buttonStyle(.borderedProminent).disabled(phase == .sending)
                     .accessibilityIdentifier("rubric-retry")
+            } else if let draft = library.rubricDraft(requestID: request.id), draft.state == .blocked {
+                Label("La solicitud ya no admite envíos (caducada, cancelada o revocada).",
+                      systemImage: "lock.fill")
+                    .font(.footnote).foregroundStyle(.secondary)
             } else {
                 Button("Enviar rúbrica", systemImage: "paperplane.fill") { send() }
                     .buttonStyle(.borderedProminent)
@@ -283,6 +292,17 @@ struct MobileRubricCaptureView: View {
         Task {
             do { try await library.rejectRubricRequest(request); dismiss() }
             catch { failure = "No se pudo rechazar la solicitud." }
+        }
+    }
+
+    private func persistSnapshot(drawing: LeonardoRubric, label: String) {
+        guard !frozen, phase == .drawing else { return }
+        Task {
+            do {
+                try await library.persistRubricDraft(requestID: request.id, label: label, drawing: drawing)
+            } catch {
+                failure = "No se pudo guardar el borrador local. Inténtalo de nuevo antes de enviar."
+            }
         }
     }
 

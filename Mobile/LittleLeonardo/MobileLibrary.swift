@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import LeonardoCore
 import LeonardoSync
 import LeonardoSyncTransport
 
@@ -221,6 +222,21 @@ final class MobileLibrary {
         recoverableRubricDrafts.first { $0.id == requestID }
     }
 
+    /// Persists the editable drawing independently from the response. This is
+    /// deliberately limited to the accepted, unsent state: no submission time
+    /// or network lifecycle is created while the user is still drawing.
+    func persistRubricDraft(requestID: UUID, label: String, drawing: LeonardoRubric?) async throws {
+        guard let draft = rubricDraft(requestID: requestID), draft.response == nil,
+              draft.state == .accepted else { return }
+        let cleanLabel = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanLabel.isEmpty, cleanLabel.count <= 120,
+              drawing == nil || drawing?.isValid == true else {
+            throw RubricExchangeError.invalidPayload
+        }
+        try await draftStore.save(draft.with(drawing: drawing, label: cleanLabel, updatedAt: now()))
+        await refreshDrafts()
+    }
+
     /// Foreground-only polling keeps incoming requests independent from the
     /// document refresh interval. The request is accepted only when its
     /// target and requester match the pinned connection that received it.
@@ -298,6 +314,8 @@ final class MobileLibrary {
         if let draft = rubricDraft(requestID: request.id), let response = draft.response {
             guard response.label == label.trimmingCharacters(in: .whitespacesAndNewlines),
                   response.rubric == rubric else { throw RubricExchangeError.conflict }
+            if draft.state == .submitted { return response }
+            if draft.state == .blocked { throw RubricExchangeError.invalidTransition }
             return try await submitFrozenDraft(draft)
         }
         let context = try await rubricContext(for: request)
@@ -306,7 +324,8 @@ final class MobileLibrary {
                                           submittedAt: now())
         let draft = MobileRubricDraft(id: request.id, connectionID: context.connection.connectionID,
             targetDeviceID: request.targetDeviceID, requesterID: request.requesterID,
-            sourceFingerprint: context.connection.fingerprint, request: request, response: response,
+            sourceFingerprint: context.connection.fingerprint, request: request, drawing: rubric,
+            label: label, response: response,
             state: .pendingSend, updatedAt: now())
         // This write is deliberately before the first network byte.
         try await draftStore.save(draft)
@@ -315,12 +334,14 @@ final class MobileLibrary {
     }
 
     func retryRubricDraft(_ draft: MobileRubricDraft) async throws -> RubricResponse {
-        guard draft.response != nil else { throw RubricExchangeError.invalidPayload }
+        guard draft.response != nil, draft.state != .blocked else { throw RubricExchangeError.invalidTransition }
         return try await submitFrozenDraft(draft)
     }
 
     private func submitFrozenDraft(_ draft: MobileRubricDraft) async throws -> RubricResponse {
         guard let response = draft.response else { throw RubricExchangeError.invalidPayload }
+        if draft.state == .submitted { return response }
+        guard draft.state == .pendingSend else { throw RubricExchangeError.invalidTransition }
         let context = try await rubricContext(for: draft.request)
         guard context.connection.connectionID == draft.connectionID,
               context.connection.deviceID == draft.targetDeviceID,

@@ -19,26 +19,59 @@ public struct MobileRubricDraft: Codable, Equatable, Sendable, Identifiable {
     /// The verified TLS pin used when this request was received.
     public let sourceFingerprint: Data
     public let request: RubricRequest
+    /// The editable, unsent drawing. It deliberately has no submission time.
+    public let drawing: LeonardoRubric?
+    public let label: String
     public let response: RubricResponse?
     public let state: MobileRubricDraftState
     public let updatedAt: Date
     public let failureMessage: String?
 
     public init(id: UUID, connectionID: UUID, targetDeviceID: UUID, requesterID: UUID,
-                sourceFingerprint: Data, request: RubricRequest, response: RubricResponse? = nil,
+                sourceFingerprint: Data, request: RubricRequest, drawing: LeonardoRubric? = nil,
+                label: String? = nil, response: RubricResponse? = nil,
                 state: MobileRubricDraftState, updatedAt: Date,
                 failureMessage: String? = nil) {
         self.id = id; self.connectionID = connectionID; self.targetDeviceID = targetDeviceID
         self.requesterID = requesterID; self.sourceFingerprint = sourceFingerprint
-        self.request = request; self.response = response; self.state = state
+        self.request = request; self.drawing = drawing ?? response?.rubric
+        self.label = (label ?? response?.label ?? request.labelHint ?? "Rúbrica")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        self.response = response; self.state = state
         self.updatedAt = updatedAt; self.failureMessage = failureMessage
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, connectionID, targetDeviceID, requesterID, sourceFingerprint, request, drawing, label,
+             response, state, updatedAt, failureMessage
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let request = try container.decode(RubricRequest.self, forKey: .request)
+        let response = try container.decodeIfPresent(RubricResponse.self, forKey: .response)
+        self.init(id: try container.decode(UUID.self, forKey: .id),
+                  connectionID: try container.decode(UUID.self, forKey: .connectionID),
+                  targetDeviceID: try container.decode(UUID.self, forKey: .targetDeviceID),
+                  requesterID: try container.decode(UUID.self, forKey: .requesterID),
+                  sourceFingerprint: try container.decode(Data.self, forKey: .sourceFingerprint),
+                  request: request,
+                  drawing: try container.decodeIfPresent(LeonardoRubric.self, forKey: .drawing)
+                      ?? response?.rubric,
+                  label: try container.decodeIfPresent(String.self, forKey: .label)
+                      ?? response?.label ?? request.labelHint,
+                  response: response,
+                  state: try container.decode(MobileRubricDraftState.self, forKey: .state),
+                  updatedAt: try container.decode(Date.self, forKey: .updatedAt),
+                  failureMessage: try container.decodeIfPresent(String.self, forKey: .failureMessage))
     }
 
     public func with(response: RubricResponse, state: MobileRubricDraftState,
                      updatedAt: Date, failureMessage: String? = nil) -> MobileRubricDraft {
         MobileRubricDraft(id: id, connectionID: connectionID, targetDeviceID: targetDeviceID,
                           requesterID: requesterID, sourceFingerprint: sourceFingerprint,
-                          request: request, response: response, state: state,
+                          request: request, drawing: response.rubric, label: response.label,
+                          response: response, state: state,
                           updatedAt: updatedAt, failureMessage: failureMessage)
     }
 
@@ -46,18 +79,26 @@ public struct MobileRubricDraft: Codable, Equatable, Sendable, Identifiable {
                      failureMessage: String? = nil) -> MobileRubricDraft {
         MobileRubricDraft(id: id, connectionID: connectionID, targetDeviceID: targetDeviceID,
                           requesterID: requesterID, sourceFingerprint: sourceFingerprint,
-                          request: request, response: response, state: state,
+                          request: request, drawing: drawing, label: label,
+                          response: response, state: state,
                           updatedAt: updatedAt, failureMessage: failureMessage)
     }
 
+    public func with(drawing: LeonardoRubric?, label: String, updatedAt: Date) -> MobileRubricDraft {
+        MobileRubricDraft(id: id, connectionID: connectionID, targetDeviceID: targetDeviceID,
+                          requesterID: requesterID, sourceFingerprint: sourceFingerprint,
+                          request: request, drawing: drawing, label: label, response: response,
+                          state: state, updatedAt: updatedAt, failureMessage: failureMessage)
+    }
+
     public static func isValid(_ draft: MobileRubricDraft) -> Bool {
-        let zeroUUID = UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
         guard draft.id == draft.request.id,
-              draft.connectionID != zeroUUID,
               draft.targetDeviceID == draft.request.targetDeviceID,
               draft.requesterID == draft.request.requesterID,
               draft.sourceFingerprint.count == 32,
               draft.updatedAt.timeIntervalSince1970.isFinite,
+              !draft.label.isEmpty, draft.label.count <= 120,
+              draft.drawing == nil || draft.drawing?.isValid == true,
               draft.request.state == .accepted || draft.request.state == .completed,
               draft.failureMessage?.count ?? 0 <= 512 else { return false }
         switch draft.state {
@@ -71,7 +112,17 @@ public struct MobileRubricDraft: Codable, Equatable, Sendable, Identifiable {
                   RubricResponse.isValid(label: response.label, rubric: response.rubric,
                                          submittedAt: response.submittedAt) else { return false }
             let size = (try? JSONEncoder().encode(response).count) ?? RubricResponse.maximumEncodedBytes + 1
-            return size <= RubricResponse.maximumEncodedBytes
+            return size <= RubricResponse.maximumEncodedBytes && draft.drawing == response.rubric
+        }
+    }
+
+    static func canAdvance(from current: MobileRubricDraftState,
+                           to next: MobileRubricDraftState) -> Bool {
+        switch (current, next) {
+        case (.accepted, .accepted), (.accepted, .pendingSend),
+             (.pendingSend, .pendingSend), (.pendingSend, .submitted), (.pendingSend, .blocked),
+             (.blocked, .blocked), (.submitted, .submitted): return true
+        default: return false
         }
     }
 }
@@ -106,6 +157,9 @@ public actor MobileRubricDraftStore {
                   existing.targetDeviceID == draft.targetDeviceID,
                   existing.requesterID == draft.requesterID,
                   existing.sourceFingerprint == draft.sourceFingerprint else {
+                throw RubricExchangeError.conflict
+            }
+            guard MobileRubricDraft.canAdvance(from: existing.state, to: draft.state) else {
                 throw RubricExchangeError.conflict
             }
             if let oldResponse = existing.response {

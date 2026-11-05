@@ -5,6 +5,11 @@ import LeonardoCore
 final class MobileRubricDraftTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 20_000)
 
+    private var drawing: LeonardoRubric {
+        LeonardoRubric(strokes: [.init(color: "#111111", width: 4,
+            style: .solid, points: [.init(x: 20, y: 100), .init(x: 300, y: 100)])])
+    }
+
     private func request() throws -> RubricRequest {
         var result = try RubricRequest(targetDeviceID: UUID(), requesterID: UUID(),
                                        requesterName: "MacBook", labelHint: "Firma", createdAt: now)
@@ -15,8 +20,7 @@ final class MobileRubricDraftTests: XCTestCase {
     private func response(for request: RubricRequest, label: String = "Firma") throws -> RubricResponse {
         try RubricResponse(requestID: request.id, targetDeviceID: request.targetDeviceID,
                            requesterID: request.requesterID, label: label,
-                           rubric: LeonardoRubric(strokes: [.init(color: "#111111", width: 4,
-                               style: .solid, points: [.init(x: 20, y: 100), .init(x: 300, y: 100)])]),
+                           rubric: drawing,
                            submittedAt: now)
     }
 
@@ -24,10 +28,10 @@ final class MobileRubricDraftTests: XCTestCase {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let request = try request()
-        let response = try response(for: request)
+        let frozenResponse = try response(for: request)
         let draft = MobileRubricDraft(id: request.id, connectionID: UUID(),
             targetDeviceID: request.targetDeviceID, requesterID: request.requesterID,
-            sourceFingerprint: Data(repeating: 4, count: 32), request: request, response: response,
+            sourceFingerprint: Data(repeating: 4, count: 32), request: request, response: frozenResponse,
             state: .pendingSend, updatedAt: now)
         let store = MobileRubricDraftStore(url: root.appendingPathComponent("drafts.json"))
         try await store.save(draft)
@@ -47,16 +51,53 @@ final class MobileRubricDraftTests: XCTestCase {
         let draft = MobileRubricDraft(id: request.id, connectionID: UUID(),
             targetDeviceID: request.targetDeviceID, requesterID: request.requesterID,
             sourceFingerprint: Data(repeating: 5, count: 32), request: request,
-            state: .accepted, updatedAt: now)
+            drawing: drawing, label: "Firma", state: .accepted, updatedAt: now)
         let store = MobileRubricDraftStore(url: root.appendingPathComponent("drafts.json"))
         try await store.save(draft)
-        let submitted = draft.with(response: try response(for: request), state: .submitted,
-                                    updatedAt: now.addingTimeInterval(1))
+        let reopened = MobileRubricDraftStore(url: root.appendingPathComponent("drafts.json"))
+        let restored = try await reopened.all(now: now)
+        XCTAssertEqual(restored, [draft])
+        let pending = draft.with(response: try response(for: request), state: .pendingSend,
+                                 updatedAt: now.addingTimeInterval(1))
+        try await store.save(pending)
+        let submitted = pending.with(response: pending.response!, state: .submitted,
+                                     updatedAt: now.addingTimeInterval(2))
         try await store.save(submitted)
         let retained = try await store.all(now: now.addingTimeInterval(10))
         XCTAssertEqual(retained, [submitted])
         let pruned = try await store.all(now: now.addingTimeInterval(31 * 24 * 60 * 60))
         XCTAssertTrue(pruned.isEmpty)
+    }
+
+    func testBindingIsDeterministicAndStateCannotRegress() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let request = try request()
+        let zero = UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+        let draft = MobileRubricDraft(id: request.id, connectionID: zero,
+            targetDeviceID: request.targetDeviceID, requesterID: request.requesterID,
+            sourceFingerprint: Data(repeating: 6, count: 32), request: request,
+            state: .accepted, updatedAt: now)
+        let store = MobileRubricDraftStore(url: root.appendingPathComponent("drafts.json"))
+        try await store.save(draft)
+
+        let wrongConnection = MobileRubricDraft(id: draft.id, connectionID: UUID(),
+            targetDeviceID: draft.targetDeviceID, requesterID: draft.requesterID,
+            sourceFingerprint: draft.sourceFingerprint, request: draft.request,
+            state: .accepted, updatedAt: now.addingTimeInterval(1))
+        do { try await store.save(wrongConnection); XCTFail("Binding changes must be rejected") }
+        catch { XCTAssertEqual(error as? RubricExchangeError, .conflict) }
+
+        let pending = draft.with(response: try response(for: request), state: .pendingSend,
+                                 updatedAt: now.addingTimeInterval(2))
+        try await store.save(pending)
+        let submitted = pending.with(response: pending.response!, state: .submitted,
+                                     updatedAt: now.addingTimeInterval(3))
+        try await store.save(submitted)
+        do {
+            try await store.save(submitted.with(state: .pendingSend, updatedAt: now.addingTimeInterval(4)))
+            XCTFail("Submitted state must not regress after a late failure")
+        } catch { XCTAssertEqual(error as? RubricExchangeError, .conflict) }
     }
 
     func testMalformedDraftFileFailsClosed() async throws {
