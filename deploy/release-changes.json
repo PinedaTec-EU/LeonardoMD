@@ -838,6 +838,17 @@
       "pr": 344,
       "summary": "Adds protocol foundations for targeted Mac-to-iOS rubric requests without granting document editing. Capability negotiation, durable retries and pinned transport are ready; production UI/enrollment wiring remains deferred to #342.",
       "to_version": "0.2.844"
+    },
+    {
+      "delta": {
+        "build": 17,
+        "feature": 1
+      },
+      "from_version": "0.2.844",
+      "merge_sha": "d76d49d86b99934ac4c6131614ab0c1e9ab4fed5",
+      "pr": 338,
+      "summary": "Find sharing, device permissions and remote copies together in Synchronization, with separate pages for sharing from this Mac and connecting to other computers.",
+      "to_version": "0.3.861"
     }
   ],
   "initial_version": "0.1.56",
@@ -848,5 +859,5 @@
     "feature",
     "build"
   ],
-  "version": "0.2.844"
+  "version": "0.3.861"
 }

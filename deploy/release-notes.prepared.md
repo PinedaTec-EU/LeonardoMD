@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.861
+
+- #337 Updated: organize synchronization by sharing and connecting roles ([#338](https://github.com/PinedaTec-EU/LeonardoMD/pull/338))
+
+<p>Find sharing, device permissions and remote copies together in Synchronization, with separate pages for sharing from this Mac and connecting to other computers.</p>
+
+Source: `d76d49d86b99934ac4c6131614ab0c1e9ab4fed5`. Delta: `{"build": 17, "feature": 1}`.
+
 ## 0.2.844
 
 - #340 Added: authorize rubric requests and responses ([#344](https://github.com/PinedaTec-EU/LeonardoMD/pull/344))
