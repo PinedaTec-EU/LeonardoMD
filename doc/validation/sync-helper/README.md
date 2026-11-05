@@ -86,3 +86,15 @@ unregistered. `package-inspection.json` is the final static inspection collected
 after native acceptance; its checkout differs from the native source only by
 evidence/documentation. The signed executable hashes in native/signing manifests
 bind the actual tested binaries.
+
+## Integration refresh after graphic inspector PR #326
+
+The main-branch inspector update added its own guide v8. This branch preserves
+both sets of chapters, assets and inspector image sizing and regenerates guide
+v9 with a separate personal-copy directory. The native registered-helper
+acceptance above remains for source `5858c47a9762ba6567a7589721bfba71afbbfdb1`;
+the merge changes unrelated inspector code and guide packaging, not helper
+runtime or its captured preferences. Fresh compiled tests and hosted CI validate
+the combined head. No new native guide-window inspection is claimed while the
+Mac is locked. The installed original app was subsequently reopened successfully
+to its Home window after the earlier primary-owner forwarding limitation.

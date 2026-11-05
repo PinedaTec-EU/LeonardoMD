@@ -1,0 +1,14 @@
+{
+  "source_commit": "237d586c37544aab55db4b711b652d391b25269d",
+  "capture_time": "2026-11-05T08:51:59.781Z",
+  "capture_mode": "Original native macOS app-window screenshot via CUA; no transformations",
+  "screen": "Object inspector / synthetic Inspector-323.mdlf",
+  "image_pixels": {
+    "width": 2520,
+    "height": 1700
+  },
+  "native_point_viewport": "Unavailable from CUA; CSS viewport not applicable",
+  "browser": "Not applicable: native SwiftUI + embedded WKWebView",
+  "sha256": "31f471b5a8f167c0f1e379e2d535792278bb7eb7278e25a948fa1b0f6cab0c46",
+  "state": "inspector-top"
+}

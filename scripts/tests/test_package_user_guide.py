@@ -40,14 +40,14 @@ class PackageUserGuideTests(unittest.TestCase):
                 self.assertEqual(set(form['fields']), set(form['values']))
                 self.assertEqual(len(form['fields']), 3)
                 self.assertIn(f'/doc/guide/{language}/practice.mdlr', web_source)
-                name = f'Guide-v8-{language}.mdlz'
+                name = f'Guide-v9-{language}.mdlz'
                 self.assertEqual((output / name).read_bytes(), (ROOT / 'Sources/LeonardoApp/Resources' / name).read_bytes())
                 with zipfile.ZipFile(output / name) as archive:
-                    self.assertEqual(len(archive.namelist()), 14)
+                    self.assertEqual(len(archive.namelist()), 15)
                     source = archive.read('guide.mdlf').decode('utf-8')
                     metadata = json.loads(source.split('---\n')[1])
                     self.assertEqual(metadata['formatVersion'], 1)
-                    self.assertEqual(metadata['document']['revision'], 8)
+                    self.assertEqual(metadata['document']['revision'], 9)
                     self.assertIn('assets/cover.png', source)
                     self.assertTrue(archive.read('assets/cover.png').startswith(b'\x89PNG'))
                     self.assertIn('```mermaid\n', source)

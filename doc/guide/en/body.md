@@ -307,13 +307,33 @@ the document, then **Insert → Image…** to import a local PNG/JPEG/TIFF/GIF/B
 or choose a saved rubric. Imported images are stored beside the working file;
 export an MDLZ to include them. Keep the editable original when exporting PDF.
 
-Select the image/rubric to move it, drag its corner to resize proportionally,
-or change X/Y and Z in the floating block; **Size and page…** opens the page and linked size controls. X/Y are points from the
+Select the image/rubric to move it or drag its corner to resize proportionally.
+The floating block is a read-only X/Y/Z summary: choose **Inspect** to open the
+right-hand **Object inspector**, where you can adjust page, position, linked
+width/height and stacking order. X/Y are points from the
 physical top-left of the selected page; text is Z=0. Negative Z puts the object
 behind text; positive Z puts it in front. At equal Z, the first defined object
 is behind. **More → Objects** selects covered items. Arrow keys move one point,
 Shift+arrow ten. Undo/Redo includes these changes. Save to persist them. The
 background is a separate facility, not an image's behind-text setting.
+
+Click text or empty space, select a text range, or press Escape to dismiss the
+object frame and floating block. Inspector controls retain selection. Its close
+button hides the panel; **Inspect** reopens it. Selecting another object updates
+the inspector. Protection, Fill or a different document clears inspection.
+
+![Native object inspector](assets/graphic-inspector.png)
+
+*Production inspector component with synthetic inserted ink; not a personal signature.*
+
+For an inserted rubric, **Ink color** recolors all its strokes. **Colors** offers
+Black, White, Blue and Red shortcuts; the native swatch supports other colors. The inspector's
+preview shows transparency; mixed-color ink is labeled before recoloring.
+This changes only the inserted copy: the saved library rubric, stroke points,
+width/style and other objects stay unchanged. Undo/Redo includes the color change;
+save the document to retain it. Raster images have no ink-color control. Delete
+an object from the inspector. If a value is invalid or the object changed,
+select it again and retry. Close the inspector to give the document more space.
 
 ![Rubric canvas and local library](assets/rubric-canvas.png)
 

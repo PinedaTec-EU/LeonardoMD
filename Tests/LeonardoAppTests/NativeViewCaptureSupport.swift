@@ -29,6 +29,7 @@ enum NativeViewCaptureSupport {
                         size: NSSize,
                         to url: URL,
                         settlingMilliseconds: Int = 150,
+                        pixelScale: CGFloat? = nil,
                         title: String = "Leonardo Localization QA",
                         beforeCapture: ((NSView) throws -> Void)? = nil) async throws {
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
@@ -59,7 +60,16 @@ enum NativeViewCaptureSupport {
         try beforeCapture?(view)
         view.displayIfNeeded()
         reportGeometry("laid-out")
-        let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        let bitmap: NSBitmapImageRep
+        if let pixelScale {
+            bitmap = try XCTUnwrap(NSBitmapImageRep(bitmapDataPlanes: nil,
+                pixelsWide: Int(size.width * pixelScale), pixelsHigh: Int(size.height * pixelScale),
+                bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+            bitmap.size = size
+        } else {
+            bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        }
         view.cacheDisplay(in: view.bounds, to: bitmap)
         let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
         try png.write(to: url)
