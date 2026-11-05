@@ -157,7 +157,7 @@ public actor DirectSyncAuthority {
 
     public func rubricRequests(deviceID: UUID, credential: String, now: Date) async throws -> [RubricRequest] {
         try await withRubricExchange { rubrics in
-            try checkReadOnlyAccess(deviceID: deviceID, credential: credential)
+            try checkRubricReadOnlyAccess(deviceID: deviceID, credential: credential)
             return try await rubrics.requests(for: deviceID, now: now)
         }
     }
@@ -165,7 +165,7 @@ public actor DirectSyncAuthority {
     public func acceptRubricRequest(deviceID: UUID, credential: String,
                                     requestID: UUID, now: Date) async throws -> RubricRequest {
         try await withRubricExchange { rubrics in
-            try checkReadOnlyAccess(deviceID: deviceID, credential: credential)
+            try checkRubricReadOnlyAccess(deviceID: deviceID, credential: credential)
             return try await rubrics.transition(requestID: requestID, targetDeviceID: deviceID, to: .accepted, now: now)
         }
     }
@@ -173,7 +173,7 @@ public actor DirectSyncAuthority {
     public func rejectRubricRequest(deviceID: UUID, credential: String,
                                     requestID: UUID, now: Date) async throws -> RubricRequest {
         try await withRubricExchange { rubrics in
-            try checkReadOnlyAccess(deviceID: deviceID, credential: credential)
+            try checkRubricReadOnlyAccess(deviceID: deviceID, credential: credential)
             return try await rubrics.transition(requestID: requestID, targetDeviceID: deviceID, to: .rejected, now: now)
         }
     }
@@ -181,7 +181,7 @@ public actor DirectSyncAuthority {
     public func submitRubricResponse(deviceID: UUID, credential: String,
                                      response: RubricResponse, now: Date) async throws -> RubricResponse {
         try await withRubricExchange { rubrics in
-            try checkReadOnlyAccess(deviceID: deviceID, credential: credential)
+            try checkRubricReadOnlyAccess(deviceID: deviceID, credential: credential)
             guard response.targetDeviceID == deviceID, response.requesterID == sourceDeviceID else {
                 throw RubricExchangeError.invalidPayload
             }
@@ -213,6 +213,13 @@ public actor DirectSyncAuthority {
         let access = try registry.access(deviceID: deviceID, credential: credential)
         guard access == .authorized else { throw SyncError.revoked }
         guard registry.devices.first(where: { $0.id == deviceID })?.kind == .readOnly else { throw SyncError.readOnly }
+    }
+
+    private func checkRubricReadOnlyAccess(deviceID: UUID, credential: String) throws {
+        try checkReadOnlyAccess(deviceID: deviceID, credential: credential)
+        guard registry.devices.first(where: { $0.id == deviceID })?.capabilities.contains(.rubricExchangeV1) == true else {
+            throw RubricExchangeError.unsupported
+        }
     }
 
     /// Rubric exchange operations cross an actor boundary into durable storage.

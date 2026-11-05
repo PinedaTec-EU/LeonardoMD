@@ -102,6 +102,24 @@ final class HTTPSRuntimeTests: XCTestCase {
         do {
             let client = try DirectEnrollmentClient(endpoint: URL(string: "https://127.0.0.1:\(port)")!,
                                                     certificateFingerprint: identity.certificateFingerprint)
+            let legacyCredential = try PairingRegistry.makeCredential()
+            let legacyEnrollment = try await client.begin(deviceName: "Legacy QA iPhone", credential: legacyCredential,
+                                                           now: Date(timeIntervalSince1970: 2_000))
+            try await authority.approve(requestID: legacyEnrollment.deviceID, code: legacyEnrollment.comparisonCode,
+                                        projectIDs: [project.id], now: Date(timeIntervalSince1970: 2_000))
+            let enrolledDevices = await authority.consentState().devices
+            XCTAssertEqual(enrolledDevices.first(where: { $0.id == legacyEnrollment.deviceID })?.capabilities, [])
+            do {
+                _ = try await authority.createRubricRequest(targetDeviceID: legacyEnrollment.deviceID,
+                                                            requesterName: "QA Mac", labelHint: "Firma",
+                                                            now: Date(timeIntervalSince1970: 2_000))
+                XCTFail("A default enrollment must not opt into rubric exchange")
+            } catch { XCTAssertEqual(error as? RubricExchangeError, .unsupported) }
+            do {
+                _ = try await client.rubricRequests(deviceID: legacyEnrollment.deviceID, credential: legacyCredential)
+                XCTFail("A legacy peer must not read rubric requests")
+            } catch { XCTAssertEqual(error as? RubricExchangeError, .unsupported) }
+
             let credential = try PairingRegistry.makeCredential()
             let enrollment = try await client.begin(deviceName: "QA iPhone", credential: credential,
                                                     now: Date(timeIntervalSince1970: 2_000),

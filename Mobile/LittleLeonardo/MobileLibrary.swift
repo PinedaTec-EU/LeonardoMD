@@ -86,7 +86,11 @@ final class MobileLibrary {
 
     private func enroll(client: DirectEnrollmentClient, endpoint: URL, fingerprint: Data, deviceName: String) async throws {
         let credential = try PairingRegistry.makeCredential()
-        let enrollment = try await client.begin(deviceName: deviceName, credential: credential, now: Date(), kind: .readOnly)
+        // Keep current production readers explicitly capability-empty until #342
+        // ships the request/draw/send UI; advertising this protocol earlier
+        // would let the Mac target a client that cannot react to a request.
+        let enrollment = try await client.begin(deviceName: deviceName, credential: credential,
+                                                now: Date(), kind: .readOnly, capabilities: [])
         try await credentials.save(credential, deviceID: enrollment.deviceID)
         connections.append(MobileDirectConnection(deviceID: enrollment.deviceID, endpoint: endpoint,
             fingerprint: fingerprint, projectIDs: [], comparisonCode: enrollment.comparisonCode))

@@ -196,6 +196,35 @@ final class RubricExchangeTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? RubricExchangeError, .unsupported)
         }
+        do {
+            _ = try await authority.rubricRequests(deviceID: pairing.id, credential: credential, now: now)
+            XCTFail("Legacy list route must remain unsupported")
+        } catch {
+            XCTAssertEqual(error as? RubricExchangeError, .unsupported)
+        }
+        do {
+            _ = try await authority.acceptRubricRequest(deviceID: pairing.id, credential: credential,
+                                                        requestID: UUID(), now: now)
+            XCTFail("Legacy accept route must remain unsupported")
+        } catch {
+            XCTAssertEqual(error as? RubricExchangeError, .unsupported)
+        }
+        do {
+            _ = try await authority.rejectRubricRequest(deviceID: pairing.id, credential: credential,
+                                                        requestID: UUID(), now: now)
+            XCTFail("Legacy reject route must remain unsupported")
+        } catch {
+            XCTAssertEqual(error as? RubricExchangeError, .unsupported)
+        }
+        let response = try RubricResponse(requestID: UUID(), targetDeviceID: pairing.id,
+                                          requesterID: UUID(), label: "Firma", rubric: rubric, submittedAt: now)
+        do {
+            _ = try await authority.submitRubricResponse(deviceID: pairing.id, credential: credential,
+                                                         response: response, now: now)
+            XCTFail("Legacy response route must remain unsupported")
+        } catch {
+            XCTAssertEqual(error as? RubricExchangeError, .unsupported)
+        }
     }
 
     func testDesktopPeerCannotAnswerReadOnlyRubricRequest() async throws {
