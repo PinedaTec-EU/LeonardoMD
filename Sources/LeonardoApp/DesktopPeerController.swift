@@ -50,7 +50,7 @@ final class DesktopPeerController {
                 connections: FileDesktopPeerConnectionStore(root: root.appendingPathComponent("Connections", isDirectory: true)),
                 copies: copies, workspace: DesktopPeerWorkspace(root: workingRoot, copies: copies),
                 credentials: SecureCredentialStore(service: "eu.pinedatec.LeonardoMD.desktop-peers"),
-                remote: DesktopPeerHTTPSRemote(), revoker: revoker,
+                remote: HelperGatedPeerRemote(), revoker: revoker,
                 outbox: FileDesktopPeerOutboxStore(root: root.appendingPathComponent("Outbox", isDirectory: true)),
                 receiptApplier: DesktopPeerReceiptApplier(workingRoot: workingRoot, copies: copies,
                     intents: receiptIntents))

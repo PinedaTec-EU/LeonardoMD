@@ -3,7 +3,7 @@ import Foundation
 import LeonardoSync
 import LeonardoSyncTransport
 
-public struct RunningDirectService: Sendable {
+public struct RunningDirectService: Codable, Sendable {
     public let endpoint: URL
     public let certificateFingerprint: Data
 }

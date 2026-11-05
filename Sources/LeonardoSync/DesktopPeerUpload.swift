@@ -70,7 +70,7 @@ public protocol DesktopPeerUploadStore: Sendable {
     func acknowledge(deviceID: UUID, projectID: UUID, proposalID: UUID, selection: CorpusSelection) async throws
 }
 
-public struct DesktopPeerIncomingProposal: Sendable, Identifiable {
+public struct DesktopPeerIncomingProposal: Codable, Sendable, Identifiable {
     public let deviceID: UUID
     public let deviceName: String
     public let upload: DesktopPeerUpload
