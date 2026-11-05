@@ -23,3 +23,4 @@ Read [current state](current-state.md), then the relevant source target. Human p
 - [Optional document extensions](document-extensions.md)
 
 - [Page objects and visual rubrics](page-objects.md)
+- [Rubric exchange protocol](../doc/mobile/rubric-exchange.md) — authenticated, targeted Mac↔iOS rubric requests; protocol only, with UI and TestFlight follow-ups tracked separately.
