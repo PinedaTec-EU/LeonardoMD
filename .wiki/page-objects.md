@@ -40,7 +40,7 @@ a pending render and must never be dropped or resurrect selection. Native inspec
 focus is outside the DOM and retains selection. Mode/protection/document switches
 clear it. Tracking: [#323](https://github.com/PinedaTec-EU/LeonardoMD/issues/323),
 [#322](https://github.com/PinedaTec-EU/LeonardoMD/issues/322). More → Objects
-selects obscured images. Bilingual help is Guide v8; generated references and
+selects obscured images. The bilingual help includes the inspector illustrations; generated references and
 native component evidence must not be confused with packaged-process acceptance.
 
 The local rubric library serializes read-latest mutations with a nonblocking stable sidecar lock across app instances; a busy or corrupt library is never overwritten. Opening the editor refreshes its list. Regression tracked in [#318](https://github.com/PinedaTec-EU/LeonardoMD/issues/318).

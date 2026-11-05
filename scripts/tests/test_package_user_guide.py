@@ -48,6 +48,9 @@ class PackageUserGuideTests(unittest.TestCase):
                     metadata = json.loads(source.split('---\n')[1])
                     self.assertEqual(metadata['formatVersion'], 1)
                     self.assertEqual(metadata['document']['revision'], 9)
+                    maintenance = (ROOT / 'doc/guide/README.md').read_text()
+                    self.assertIn(name, maintenance)
+                    self.assertIn(f"User Guides/v{metadata['document']['revision']}/", maintenance)
                     self.assertIn('assets/cover.png', source)
                     self.assertTrue(archive.read('assets/cover.png').startswith(b'\x89PNG'))
                     self.assertIn('```mermaid\n', source)
@@ -65,6 +68,8 @@ class PackageUserGuideTests(unittest.TestCase):
                             self.assertIn(asset, source)
                             self.assertIn(b'<svg ', archive.read(asset))
                 import_name = f'AgentImport-v1-{language}.mdlz'
+                self.assertIn(import_name, maintenance)
+                self.assertIn('Agent Import Guides/v1/', maintenance)
                 self.assertEqual((output / import_name).read_bytes(),
                                  (ROOT / 'Sources/LeonardoApp/Resources' / import_name).read_bytes())
                 with zipfile.ZipFile(output / import_name) as archive:
