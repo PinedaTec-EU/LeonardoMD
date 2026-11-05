@@ -3,6 +3,29 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.1.797</title>
+            <pubDate>Thu, 05 Nov 2026 12:10:54 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>797</sparkle:version>
+            <sparkle:shortVersionString>0.1.797</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"># LeonardoMD beta
+
+## New
+
+- File → Import with your agent… opens a guide for turning PDFs into editable Leonardo documents with your own agent.
+- The guide includes a visual workflow, capability requirements, Leonardo Format skill setup, a copyable conversion request and review steps. It is available in English and Spanish and is also included in the main help.
+
+## Before testing
+
+Leonardo opens guidance; it does not convert or upload PDFs. Conversion fidelity depends on your chosen agent and may require manual adjustments in Leonardo.
+
+This beta is for Apple silicon Macs running macOS 14 or later. Keep a backup of documents you use for testing.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.1.797/LeonardoMD-0.1.797.zip" length="21914527" type="application/octet-stream" sparkle:edSignature="ukoAvJv2+EDyiAycW1tmfxvw+bBQ1j7EcbnrsSpnP72NvFr18+hm9jUmH+Iau5JnT3+/rQZ6X24tLDBLwykrDg==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.1.795</title>
             <pubDate>Thu, 05 Nov 2026 10:29:07 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
