@@ -248,7 +248,7 @@ final class RubricExchangeTests: XCTestCase {
             serverFingerprint: fingerprint, persist: { _ in },
             rubrics: FileRubricExchangeStore(url: root.appendingPathComponent("requests.json")))
         let before = try await authority.status(deviceID: paired.id, credential: credential, now: now)
-        XCTAssertTrue(before.capabilities.isEmpty)
+        XCTAssertEqual(before.capabilities, [.rubricExchangeV1])
         let after = try await authority.updateCapabilities(deviceID: paired.id, credential: credential,
                                                             update: DirectCapabilityUpdate(rubricExchangeV1: true), now: now)
         XCTAssertEqual(after.acceptedCapabilities, [.rubricExchangeV1])
