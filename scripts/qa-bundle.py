@@ -2,15 +2,19 @@
 """Validate real app packaging and prepare disposable native QA copies."""
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 import plistlib
-import re
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
 import uuid
+
+SPEC = importlib.util.spec_from_file_location('bundle_dependencies', Path(__file__).with_name('bundle-dependencies.py'))
+bundle_dependencies = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(bundle_dependencies)
 
 
 def inspect_bundle(bundle):
@@ -26,13 +30,13 @@ def inspect_bundle(bundle):
     if not (bundle / 'Contents/Frameworks/Sparkle.framework/Sparkle').is_file():
         raise ValueError('Packaged Sparkle framework executable is missing')
     inspect_sync_helper(bundle)
-    inspect_embedded_signing_teams(bundle)
-    subprocess.run(['/usr/bin/codesign', '--verify', '--strict', str(bundle)], check=True)
+    bundle_dependencies.inspect_dependencies(bundle, executable)
+    bundle_dependencies.inspect_signing(bundle)
     return metadata, dependencies
 
 
 def inspect_sync_helper(bundle):
-    service = 'eu.pinedatec.LeonardoMD.sync-helper'
+    service = bundle_dependencies.SYNC_HELPER_IDENTIFIER
     helper = bundle / 'Contents/MacOS/LeonardoSyncHelper'
     definition = bundle / 'Contents/Library/LaunchAgents' / (service + '.plist')
     with definition.open('rb') as stream:
@@ -48,29 +52,8 @@ def inspect_sync_helper(bundle):
     if 'XCTest.framework/' in dependencies:
         raise ValueError('Sync helper links XCTest')
     subprocess.run(['/usr/bin/codesign', '--verify', '--strict', str(helper)], check=True)
-
-
-def signing_team(path):
-    result = subprocess.run(['/usr/bin/codesign', '-d', '--verbose=2', str(path)],
-                            check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    match = re.search(r'^TeamIdentifier=(.+)$', result.stderr, re.MULTILINE)
-    return match.group(1) if match and match.group(1) != 'not set' else None
-
-
-def inspect_embedded_signing_teams(bundle):
-    team = signing_team(bundle)
-    if not team:
-        return  # Local ad-hoc packaging remains supported; helper activation denies it.
-    frameworks = bundle / 'Contents/Frameworks'
-    components = [bundle / 'Contents/MacOS/LeonardoSyncHelper']
-    components += sorted(frameworks.glob('*.framework'))
-    components += sorted(frameworks.rglob('*.app')) + sorted(frameworks.rglob('*.xpc'))
-    updater = frameworks / 'Sparkle.framework/Versions/B/Autoupdate'
-    if updater.is_file():
-        components.append(updater)
-    for component in components:
-        if signing_team(component) != team:
-            raise ValueError('Embedded component signing team differs from app: ' + str(component.relative_to(bundle)))
+    if bundle_dependencies.signing_identifier(helper) != service:
+        raise ValueError('Sync helper signing identifier does not match its service')
 
 
 def verify_bundle(bundle):
@@ -95,6 +78,8 @@ def release_changes_report(bundle, source_root, checkout_sha):
         'bundle_identifier': metadata['CFBundleIdentifier'],
         'executable': metadata['CFBundleExecutable'], 'version': version,
         'dependencies': dependencies, 'xctest_dependency': False, 'codesign_verified': True,
+        'bundle_path': str(bundle.resolve()), 'dependency_resolution_verified': True,
+        'embedded_signing_verified': True,
         'changes_sha256': hashlib.sha256(packaged).hexdigest(), 'changes_bytes_identical': True,
         'change_count': len(artifact['changes']),
         'summary_count': sum('summary' in change for change in artifact['changes']),
@@ -102,7 +87,7 @@ def release_changes_report(bundle, source_root, checkout_sha):
     }
 
 
-def prepare_bundle(source):
+def prepare_bundle(source, identity=None):
     metadata = verify_bundle(source)
     directory = Path(tempfile.mkdtemp(prefix='leonardo-native-qa-'))
     bundle = directory / 'LeonardoMDQA.app'
@@ -113,7 +98,10 @@ def prepare_bundle(source):
         metadata['CFBundleDisplayName'] = 'LeonardoMD QA'
         with (bundle / 'Contents/Info.plist').open('wb') as stream:
             plistlib.dump(metadata, stream)
-        subprocess.run(['/usr/bin/codesign', '--force', '--sign', '-', str(bundle)], check=True)
+        if identity:
+            bundle_dependencies.sign_bundle(bundle, identity)
+        else:
+            subprocess.run(['/usr/bin/codesign', '--force', '--sign', '-', str(bundle)], check=True)
         verify_bundle(bundle)
         return bundle
     except BaseException:
@@ -125,10 +113,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('source', type=Path, help='Packaged LeonardoMD.app from scripts/build-app.sh')
     parser.add_argument('--verify-only', action='store_true')
+    parser.add_argument('--sign-identity', help='Sign the disposable QA copy inside out with this Developer ID')
     parser.add_argument('--report', type=Path, help='Write package inspection evidence; requires --verify-only')
     arguments = parser.parse_args()
     if arguments.report and not arguments.verify_only:
         parser.error('--report requires --verify-only')
+    if arguments.sign_identity and arguments.verify_only:
+        parser.error('--sign-identity requires a disposable QA copy')
     try:
         if arguments.report:
             root = Path(__file__).resolve().parents[1]
@@ -141,7 +132,7 @@ def main():
         elif arguments.verify_only:
             verify_bundle(arguments.source)
         else:
-            print(prepare_bundle(arguments.source))
+            print(prepare_bundle(arguments.source, arguments.sign_identity))
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
         parser.exit(1, f'QA bundle rejected: {error}\n')
 
