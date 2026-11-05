@@ -22,3 +22,13 @@ baseline version stays unchanged; this is a local backport test fixture, not a
 new public release or version allocation. Compiler-bearing fixture validation
 is charged to this PR's owning worktree. Preserve signatures, real executable
 and resources; never install over the owner's application or force Quit.
+
+## Author-owned native component captures
+
+`captures/component-{en,es}-{beta,deferred}.png` are original production
+UpdatePreferencesView captures at source `9be0db7`, with isolated defaults and
+a fake updater. They show the unchanged fields and the pending-update channel
+guard; they do not prove network/install/relaunch. Context timestamps and native
+532×550-point viewports were measured during capture; canonical sidecars bind
+the 1064×1100-pixel originals. Native AppKit/SwiftUI has no browser/CSS engine.
+Actual outgoing installation is a separate real-process acceptance below.
