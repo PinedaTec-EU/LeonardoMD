@@ -5,7 +5,7 @@ struct SynchronizationPreferencesView: View {
     enum Page: String, CaseIterable, Identifiable {
         case sharing, connections
         var id: Self { self }
-        var title: String { L10n.text(self == .sharing ? "Share from this Mac" : "Connect to other computers") }
+        @MainActor var title: String { L10n.text(self == .sharing ? "Share from this Mac" : "Connect to other computers") }
     }
 
     let session: AppSession
@@ -23,6 +23,7 @@ struct SynchronizationPreferencesView: View {
         VStack(alignment: .leading, spacing: 12) {
             GroupBox("Leonardo Sync") {
                 SyncHelperPreferencesSection(controller: source.helper)
+                    .toggleStyle(PremiumSwitchStyle())
                     .padding(8)
             }.padding(.horizontal, 16)
             Picker(L10n.text("Synchronization role"), selection: $page) {
