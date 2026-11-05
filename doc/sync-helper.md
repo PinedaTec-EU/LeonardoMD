@@ -35,7 +35,11 @@ A running helper without source sharing is valid for outbound use. A disabled,
 unregistered, approval-pending, missing or unreachable helper is offline even
 while the editor is running. There is no in-process source-listener fallback.
 Disabling first persists denial, asks the helper to reconcile it, then unregisters
-the agent. Failed unregistration cannot restore consent on a later restart.
+the agent after graceful stop is acknowledged. An already approved transaction
+finishes before that acknowledgement. An unavailable/failed acknowledgement
+leaves denial persisted without forcibly killing an uncertain write; the
+helper retries configuration reconciliation. Failed unregistration cannot
+restore consent on a later restart.
 The helper rechecks configuration for each control request and periodically while
 idle; failed startup/network selection retries without reopening the editor.
 

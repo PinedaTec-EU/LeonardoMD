@@ -37,7 +37,7 @@ public actor SyncHelperHost {
             let selectedHost = settings.host ?? LocalNetworkInterfaces.addresses(allowPrivateOverlay: settings.privateOverlayEnabled).first
             if settings == lastSettings, selectedHost == lastHost,
                !settings.helperEnabled || !settings.enabled || sharing != nil { return }
-            try await runtime.stop(); sharing = nil
+            try await stopRuntime(); sharing = nil
             lastSettings = nil
             if settings.helperEnabled && settings.enabled {
                 let host = selectedHost
@@ -57,7 +57,7 @@ public actor SyncHelperHost {
             logger.info("sync_configuration_applied sharing=\(settings.enabled, privacy: .public)")
         } catch {
             sharing = nil; lastSettings = nil; failure = error.localizedDescription
-            try? await runtime.stop()
+            try? await stopRuntime()
             logger.error("sync_configuration_failed")
             throw error
         }
@@ -92,6 +92,15 @@ public actor SyncHelperHost {
             }
         }
         return try encode(true)
+    }
+
+    /// Let an already approved filesystem transaction finish before stopping
+    /// transport. The app unregisters only after this barrier acknowledges denial.
+    private func stopRuntime() async throws {
+        while true {
+            do { try await runtime.stop(); return }
+            catch DesktopRuntimeError.busy { try await Task.sleep(for: .milliseconds(20)) }
+        }
     }
 
     private func encode<T: Encodable>(_ value: T) throws -> Data { try JSONEncoder().encode(value) }

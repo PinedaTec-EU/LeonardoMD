@@ -90,7 +90,10 @@ final class SyncHelperController {
                 state = .disabled
                 // Persist denial before shutdown. Even failed unregistration cannot
                 // restore sharing on the helper's next configuration read/restart.
-                if service.status == .enabled { _ = try? await client.reload() }
+                if service.status == .enabled {
+                    let status = try await client.reload()
+                    guard !status.enabled else { throw DesktopRuntimeError.busy }
+                }
                 try await service.unregister()
             }
         } catch {

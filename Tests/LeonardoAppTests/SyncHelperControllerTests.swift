@@ -58,6 +58,22 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(reloads, 1)
     }
 
+    func testDisableDoesNotKillHelperWhenGracefulStopCannotBeConfirmed() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        let registration = HelperRegistrationFake()
+        let control = HelperControlFake()
+        let controller = fixture.controller(registration, control)
+        await controller.setEnabled(true)
+        await control.setUnavailable()
+        await controller.setEnabled(false)
+        XCTAssertFalse(controller.enabled)
+        XCTAssertEqual(controller.state, .failed)
+        XCTAssertEqual(registration.status, .enabled, "Do not kill an unconfirmed in-flight helper write")
+        let persisted = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertFalse(persisted.mobileSync.helperEnabled)
+    }
+
     func testMissingPackagedExecutableCannotEnableService() async throws {
         let fixture = try ControllerFixture()
         defer { fixture.remove() }
@@ -121,5 +137,9 @@ private actor HelperControlFake: SyncHelperControlAccess {
         if unavailable { throw HelperControlError.unavailable }
         return SyncHelperStatus(enabled: true, sharing: nil)
     }
-    func reload() throws -> SyncHelperStatus { reloads += 1; return SyncHelperStatus(enabled: false, sharing: nil) }
+    func reload() throws -> SyncHelperStatus {
+        reloads += 1
+        if unavailable { throw HelperControlError.unavailable }
+        return SyncHelperStatus(enabled: false, sharing: nil)
+    }
 }
