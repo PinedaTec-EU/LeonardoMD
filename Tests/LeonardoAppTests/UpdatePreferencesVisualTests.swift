@@ -57,9 +57,10 @@ final class UpdatePreferencesVisualTests: XCTestCase {
                     .buttonStyle(PremiumButtonStyle()).modifier(SessionAppearance(session: session))
                     .frame(width: 532, height: 550).background(Color(nsColor: .windowBackgroundColor)))
                 component.frame = NSRect(x: 0, y: 0, width: 532, height: 550)
-                try await NativeViewCaptureSupport.capture(component, size: NSSize(width: 532, height: 550),
+                try await GuideCaptureSupport.captureNative(component, size: NSSize(width: 532, height: 550),
                     to: destination.appendingPathComponent("component-\(language.rawValue)-\(state).png"),
-                    settlingMilliseconds: 250, title: "Leonardo Updates Component QA")
+                    language: language.rawValue, state: "Production Updates component; synthetic \(state); isolated defaults and fake updater; no network/install claim",
+                    route: "/native/preferences/updates", screen: "Preferences → Updates")
             }
         }
         try "Surface: native NSHostingView Preferences → Updates\nViewports: full preferences 580x620; update component 532x550 points\nLanguages: en, es\nStates: stable, beta, waiting, busy, deferred, development, startup-error\nFull preferences bitmap cannot rasterize the native glass tab bar; use component captures for field layout; tab-bar compositor pixels are outside this capture method.\nFixtures: isolated UserDefaults and test-only update driver; no network/install/fresh-process claim\n".write(
