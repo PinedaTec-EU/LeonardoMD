@@ -346,19 +346,23 @@ final class MobileLibrary {
         guard let response = draft.response else { throw RubricExchangeError.invalidPayload }
         if draft.state == .submitted { return response }
         guard draft.state == .pendingSend else { throw RubricExchangeError.invalidTransition }
-        let context = try await rubricContext(for: draft.request)
-        guard context.connection.connectionID == draft.connectionID,
-              context.connection.deviceID == draft.targetDeviceID,
-              context.connection.fingerprint == draft.sourceFingerprint,
-              response.requestID == draft.id,
-              response.targetDeviceID == draft.targetDeviceID,
-              response.requesterID == draft.requesterID else {
-            throw RubricExchangeError.conflict
-        }
         let pending = draft.with(state: .pendingSend, updatedAt: now(), failureMessage: nil)
         try await draftStore.save(pending)
         await refreshDrafts()
         do {
+            // Resolve the connection inside the recoverable section. A
+            // foreground poll can discover revocation and clear capabilities
+            // before Retry; that terminal condition must persist `blocked`
+            // instead of escaping before the durable outcome is recorded.
+            let context = try await rubricContext(for: draft.request)
+            guard context.connection.connectionID == draft.connectionID,
+                  context.connection.deviceID == draft.targetDeviceID,
+                  context.connection.fingerprint == draft.sourceFingerprint,
+                  response.requestID == draft.id,
+                  response.targetDeviceID == draft.targetDeviceID,
+                  response.requesterID == draft.requesterID else {
+                throw RubricExchangeError.conflict
+            }
             let submitted = try await context.client.submitRubricResponse(response,
                 deviceID: context.connection.deviceID, credential: context.credential)
             guard submitted == response else { throw RubricExchangeError.conflict }
