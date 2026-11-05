@@ -26,10 +26,11 @@ final class UserGuideFeatureCaptureTests: XCTestCase {
         let suite = "GuideCapture.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
-        let peers = DesktopPeerController(preferencesURL: fixture.appendingPathComponent("preferences.json"), defaults: defaults)
+        let helper = SyncHelperController(preferencesURL: fixture.appendingPathComponent("preferences.json"), hasExecutable: { true })
+        let peers = DesktopPeerController(preferencesURL: fixture.appendingPathComponent("preferences.json"), defaults: defaults, helper: helper)
         defer { peers.stop() }
         await peers.initialize()
-        let mobile = DesktopSyncController(preferencesURL: fixture.appendingPathComponent("preferences.json"))
+        let mobile = DesktopSyncController(preferencesURL: fixture.appendingPathComponent("preferences.json"), helper: helper)
         await mobile.initialize()
         XCTAssertNil(mobile.running)
         let updates = ApplicationUpdates(defaults: defaults,
@@ -40,9 +41,9 @@ final class UserGuideFeatureCaptureTests: XCTestCase {
         try await capture(PaletteEditor(session: session, projectScope: false), name: "palette", size: NSSize(width: 640, height: 400),
                           state: "Customize palette; initial valid global palette", session: session, destination: destination, code: code)
         try await capture(MobileSyncPreferencesView(session: session, controller: mobile), name: "mobile", size: NSSize(width: 560, height: 660),
-                          state: "Little Leonardo; direct service disabled; no shared projects or devices", session: session, destination: destination, code: code)
+                          state: "Little Leonardo; bundled helper present but disabled; no shared projects or devices; isolated configuration", session: session, destination: destination, code: code)
         try await capture(DesktopPeerPreferencesView(session: session, controller: peers), name: "macs", size: NSSize(width: 560, height: 430),
-                          state: "Linked Macs; no connections or imported copies", session: session, destination: destination, code: code)
+                          state: "Linked Macs; helper disabled; no connections or imported copies; isolated configuration", session: session, destination: destination, code: code)
         try await capture(UpdatePreferencesView(updates: updates), name: "updates", size: NSSize(width: 560, height: 550),
                           state: "Updates; stable subscription; fake driver; no network or install", session: session, destination: destination, code: code)
         await mobile.stop()

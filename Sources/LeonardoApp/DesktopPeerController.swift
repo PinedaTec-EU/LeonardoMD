@@ -36,9 +36,9 @@ final class DesktopPeerController {
     init(preferencesURL: URL = AppSession.preferencesURL,
          library: (any DesktopPeerLibraryAccess)? = nil,
          revoker: DesktopPeerEditorRevoker = DesktopPeerEditorRevoker(),
-         defaults: UserDefaults = .standard) {
+         defaults: UserDefaults = .standard, helper: SyncHelperController? = nil) {
         self.defaults = defaults
-        helper = SyncHelperController(preferencesURL: preferencesURL)
+        self.helper = helper ?? SyncHelperController(preferencesURL: preferencesURL)
         let savedInterval = defaults.integer(forKey: "desktopPeerSyncMinutes")
         syncIntervalMinutes = Self.intervals.contains(savedInterval) ? savedInterval : 0
         let root = preferencesURL.deletingLastPathComponent().appendingPathComponent("DesktopPeers", isDirectory: true)

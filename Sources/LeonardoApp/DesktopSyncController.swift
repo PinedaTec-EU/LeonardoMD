@@ -27,9 +27,9 @@ final class DesktopSyncController {
     private var initialized = false
 
     init(preferencesURL: URL = AppSession.preferencesURL, configurations: ConfigurationStore = .shared,
-         runtime: DesktopDirectRuntime? = nil) {
+         runtime: DesktopDirectRuntime? = nil, helper: SyncHelperController? = nil) {
         self.preferencesURL = preferencesURL
-        helper = SyncHelperController(preferencesURL: preferencesURL)
+        self.helper = helper ?? SyncHelperController(preferencesURL: preferencesURL)
         self.configurations = configurations
         let root = preferencesURL.deletingLastPathComponent().appendingPathComponent("MobileSync", isDirectory: true)
         storageRoot = root
