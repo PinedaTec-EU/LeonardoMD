@@ -2,6 +2,7 @@ import json
 import re
 from pathlib import Path
 import subprocess
+import struct
 import sys
 import tempfile
 import unittest
@@ -21,8 +22,6 @@ class PackageUserGuideTests(unittest.TestCase):
             for language in ('en', 'es'):
                 web_name = 'user-guide-es.md' if language == 'es' else 'user-guide.md'
                 self.assertEqual((output / web_name).read_bytes(), (ROOT / 'doc' / web_name).read_bytes())
-                for diagram in (output / 'guide/illustrations').glob(language + '-*.svg'):
-                    self.assertEqual(diagram.read_bytes(), (ROOT / 'doc/guide/illustrations' / diagram.name).read_bytes())
                 web_source = (output / web_name).read_text()
                 body = (ROOT / 'doc/guide' / language / 'body.md').read_text()
                 # Copyable MDLF source and its package-path vocabulary must
@@ -30,6 +29,12 @@ class PackageUserGuideTests(unittest.TestCase):
                 for sample in re.findall(r'^```text\n(.*?)^```$', body, re.M | re.S):
                     self.assertIn(sample, web_source)
                 self.assertIn('`assets/`', web_source)
+                artwork = ('journey', 'package', 'import', 'export') if language == 'en' else ('recorrido', 'paquete', 'importar', 'exportar')
+                for illustration in artwork:
+                    asset = ROOT / 'doc/guide' / language / 'assets' / (illustration + '.png')
+                    width, height = struct.unpack('>II', asset.read_bytes()[16:24])
+                    self.assertEqual((width, height), (1200, 400))
+                    self.assertIn(f'guide/{language}/assets/{illustration}.png', web_source)
                 practice_name = f'Practice-v1-{language}.mdlr'
                 practice = (output / practice_name).read_bytes()
                 self.assertEqual(practice, (ROOT / 'Sources/LeonardoApp/Resources' / practice_name).read_bytes())
@@ -40,14 +45,14 @@ class PackageUserGuideTests(unittest.TestCase):
                 self.assertEqual(set(form['fields']), set(form['values']))
                 self.assertEqual(len(form['fields']), 3)
                 self.assertIn(f'/doc/guide/{language}/practice.mdlr', web_source)
-                name = f'Guide-v9-{language}.mdlz'
+                name = f'Guide-v10-{language}.mdlz'
                 self.assertEqual((output / name).read_bytes(), (ROOT / 'Sources/LeonardoApp/Resources' / name).read_bytes())
                 with zipfile.ZipFile(output / name) as archive:
                     self.assertEqual(len(archive.namelist()), 16)
                     source = archive.read('guide.mdlf').decode('utf-8')
                     metadata = json.loads(source.split('---\n')[1])
                     self.assertEqual(metadata['formatVersion'], 1)
-                    self.assertEqual(metadata['document']['revision'], 9)
+                    self.assertEqual(metadata['document']['revision'], 10)
                     maintenance = (ROOT / 'doc/guide/README.md').read_text()
                     self.assertIn(name, maintenance)
                     self.assertIn(f"User Guides/v{metadata['document']['revision']}/", maintenance)
@@ -64,19 +69,19 @@ class PackageUserGuideTests(unittest.TestCase):
                     references = set(re.findall(r'assets/[A-Za-z0-9_-]+\.(?:png|svg)', source))
                     self.assertEqual(references, set(archive.namelist()) - {'guide.mdlf'})
                     for asset in archive.namelist():
-                        if asset.startswith('assets/') and asset.endswith('.svg'):
+                        if asset.startswith('assets/'):
                             self.assertIn(asset, source)
-                            self.assertIn(b'<svg ', archive.read(asset))
-                import_name = f'AgentImport-v1-{language}.mdlz'
+                            self.assertTrue(archive.read(asset).startswith(b'\x89PNG'))
+                import_name = f'AgentImport-v2-{language}.mdlz'
                 self.assertIn(import_name, maintenance)
-                self.assertIn('Agent Import Guides/v1/', maintenance)
+                self.assertIn('Agent Import Guides/v2/', maintenance)
                 self.assertEqual((output / import_name).read_bytes(),
                                  (ROOT / 'Sources/LeonardoApp/Resources' / import_name).read_bytes())
                 with zipfile.ZipFile(output / import_name) as archive:
                     source = archive.read('guide.mdlf').decode('utf-8')
                     header = json.loads(source.split('---\n')[1])
                     self.assertEqual(header['document']['kind'], 'document')
-                    self.assertEqual(header['document']['revision'], 1)
+                    self.assertEqual(header['document']['revision'], 2)
                     self.assertEqual(len(archive.namelist()), 2)
                     chapter = body.split('<!-- agent-import:begin -->\n')[1].split('<!-- agent-import:end -->')[0]
                     self.assertTrue(source.endswith(chapter.replace('### ', '# ', 1).replace('\n#### ', '\n## ')))
@@ -87,6 +92,6 @@ class PackageUserGuideTests(unittest.TestCase):
                     for asset in archive.namelist():
                         if asset != 'guide.mdlf':
                             self.assertIn(asset, source)
-                            self.assertIn(b'<svg ', archive.read(asset))
+                            self.assertTrue(archive.read(asset).startswith(b'\x89PNG'))
             self.assertEqual(unrelated.read_bytes(), b'preserve this file')
             self.assertEqual((output / 'other.md').read_text(), 'Keep this documentation')

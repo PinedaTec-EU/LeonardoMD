@@ -15,7 +15,7 @@ both locales under `.skills/leonardo-user-guide/SKILL.md`.
 | Markdown migration keeps original; package vs extracted-folder saving | `LeonardoFormatPreferences.swift`, `SessionLeonardo.swift` | 3, 5 | Package contents diagram |
 | Package, response, Markdown and PDF export; loss/remote resource limits | `SessionMarkdownExport.swift`, `SessionLeonardoExport.swift`, `../LeonardoRender/MarkdownPDFExportCoordinator.swift` | 5, 10, 18–19 | Export decision diagram |
 | External agent skill installation vs runtime app control; attachment limitations | `plugins/leonardo-format/skills/leonardo-format/SKILL.md`, `doc/plugins/leonardo-format.md` | 6 | Copyable prompts; provider instructions retain their explicit check date |
-| File → Import with your agent opens a localized standalone Leonardo guide; PDF conversion is performed by the user’s external agent | `BundledUserGuide.swift`, `LeonardoMD.swift`, `scripts/package-user-guide.py` | 6 | Shared bilingual chapter; illustrative PDF → agent/skill → editable document diagram and copyable request |
+| File → Import with your agent opens a localized standalone Leonardo guide; PDF conversion is performed by the user’s external agent | `BundledUserGuide.swift`, `LeonardoMD.swift`, `scripts/package-user-guide.py` | 6 | Shared bilingual chapter; premium illustrative PDF → agent/skill → editable document image and copyable request |
 | Recents, favorites, project theme association and unavailable paths | `SavedItemsView.swift` | 7 | Home capture (empty initial state) |
 | Tree, CRUD, tab identity, filters, sort, follow-active and Focus | `ProjectSidebar.swift`, `DocumentTabs.swift`, `SessionPreferences.swift` | 8 | Stepwise instructions; keyboard table |
 | Filename/content search, exact tag filter and heading outline | `ProjectSidebar.swift`, `DocumentInspector.swift`, `../LeonardoCore/FrontMatterTags.swift` | 9 | YAML and search examples |
@@ -33,7 +33,7 @@ Source paths above are relative to `Sources/LeonardoApp/` except explicit target
 or documentation prefixes. Screenshots illustrate actual production components
 using isolated synthetic data, not device connectivity or updater acceptance.
 Their original capture contexts/metadata live beside the PNGs in each locale's
-`assets/`; only PNG content assets enter MDLZ. Diagrams are generated illustrations.
+`assets/`; only PNG content assets enter MDLZ. The four explanatory diagrams are premium generated PNG illustrations (1200×400); live Mermaid examples remain editable demonstrations.
 
 ## Availability boundaries retained
 

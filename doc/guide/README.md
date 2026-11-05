@@ -1,8 +1,8 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v9-en.mdlz` and `Guide-v9-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v10-en.mdlz` and `Guide-v10-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v9/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v10/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
@@ -12,11 +12,11 @@ and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
-File → Import with your agent opens `AgentImport-v1-en.mdlz` or
-`AgentImport-v1-es.mdlz` in the same tab/package flow, with personal copies under
-`~/Library/Application Support/LeonardoMD/Agent Import Guides/v1/<language>/`.
+File → Import with your agent opens `AgentImport-v2-en.mdlz` or
+`AgentImport-v2-es.mdlz` in the same tab/package flow, with personal copies under
+`~/Library/Application Support/LeonardoMD/Agent Import Guides/v2/<language>/`.
 The standalone guide is generated from the marked agent-import section of
-chapter 6 in the same bilingual body sources. Its illustrative SVG requires no
+chapter 6 in the same bilingual body sources. Its illustrative PNG requires no
 optional extension. This help entry does not select, send or convert a PDF;
 the user supplies a copy to their external agent using the Leonardo Format skill.
 
@@ -27,11 +27,13 @@ changes explain their lack of help impact.
 
 Run `python3 scripts/package-user-guide.py --web-output doc` after content or asset edits. The
 canonical plugin helper validates and deterministically packages one `guide.mdlf`
-plus local assets. Only PNGs from locale `assets/` folders are copied; capture
+plus local assets. Only PNG content assets from locale `assets/` folders are copied; capture
 contexts/metadata stay in Git for provenance and never enter the user package.
-The approved banner and SVG diagrams are supplied by the builder.
+The builder supplies the approved banner; locale `assets/` folders supply the
+premium PNG illustrations. Artwork provenance is stored beside each locale’s assets.
+The four 1200×400 illustrations bound decoded memory without altering renderer limits.
 The optional `--web-output doc` also regenerates both web manuals and their
-SVG illustrations from the same sources, adapting image paths and showing
+localized PNG illustration links from the same sources, adapting image paths and showing
 field placeholders as literal source rather than nonfunctional form controls.
 
 For a published guide revision, advance metadata revision, resource names and

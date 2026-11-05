@@ -63,7 +63,7 @@ iterations completes filesystem I/O ([#226](https://github.com/PinedaTec-EU/Leon
 
 External package monitoring compares the source MDLZ digest off the main actor, rather than its extracted document. Results are applied only while the complete source/extraction identity remains unchanged and no file operation is in progress, including after flushing preview edits. Clean sessions reload through the existing package workspace replacement; dirty sessions retain both versions behind the Reload/Save copy conflict choice. Tracking: [#275](https://github.com/PinedaTec-EU/LeonardoMD/issues/275).
 
-Bundled guide (#290): `BundledUserGuide` copies localized `Guide-v5-en/es.mdlz` from Bundle.module to Application Support/LeonardoMD/User Guides/v5/<locale>, preserving existing practice answers. Help and Welcome share DocumentTabs.openUserGuide and normal external-document tab opening. Editorial sources and deterministic SVG/package generator: `doc/guide`, `scripts/package-user-guide.py`; native tests cover transport, saved-copy isolation, images and form controls. Tracking: [#290](https://github.com/PinedaTec-EU/LeonardoMD/issues/290).
+Original bundled guide (#290): `BundledUserGuide` copies localized `Guide-v5-en/es.mdlz` from Bundle.module to Application Support/LeonardoMD/User Guides/v5/<locale>, preserving existing practice answers. Help and Welcome share DocumentTabs.openUserGuide and normal external-document tab opening. Editorial sources and deterministic SVG/package generator: `doc/guide`, `scripts/package-user-guide.py`; native tests cover transport, saved-copy isolation, images and form controls. Tracking: [#290](https://github.com/PinedaTec-EU/LeonardoMD/issues/290).
 
 Package conflict recovery ([#308](https://github.com/PinedaTec-EU/LeonardoMD/issues/308))
 lives in `SessionConflictCopy.swift`. A package Save copy requires MDLZ, uses
@@ -92,10 +92,19 @@ navigation. Practice-v1 MDLR copies retain answers under Practice Forms/v1 and
 open/select a separate Fill tab. No custom URL protocol or renderer action API.
 
 Agent-assisted import ([#329](https://github.com/PinedaTec-EU/LeonardoMD/issues/329)):
-File → Import with your agent opens `AgentImport-v1-<locale>.mdlz` through the
+Originally, File → Import with your agent opened `AgentImport-v1-<locale>.mdlz` through the
 existing bundled-guide/session flow, using a separate personal-copy directory.
 There is no native PDF/OCR conversion, upload, provider setup or MCP service.
 The standalone guide is derived from marked chapter 6 content in bilingual
-`doc/guide/*/body.md`; the same packager emits main Guide v9 and web editions.
+`doc/guide/*/body.md`; the initial packager emitted main Guide v9 and web editions.
 Keep the chapter as the single editorial source, including capability-based
 agent requirements, the native-editable output prompt and review boundaries.
+
+Premium bilingual help artwork ([#334](https://github.com/PinedaTec-EU/LeonardoMD/issues/334)):
+Guide v10 and AgentImport v2 use localized 1200×400 PNG illustrations from
+`doc/guide/<locale>/assets`, with explicit generated-art provenance. Mermaid
+teaching examples remain live/source-editable; the illustration generator has
+been removed. The standalone import package reuses the same image as chapter 6.
+Resource versions/copy paths and maintenance references must move together;
+original UI captures and prior user-owned copies remain untouched. Preview image
+limits are unchanged; native checks load every image in both languages.

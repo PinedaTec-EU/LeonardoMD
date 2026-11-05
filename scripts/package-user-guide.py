@@ -6,7 +6,6 @@ import shutil
 from pathlib import Path
 import sys
 import tempfile
-from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parent.parent
 HELPERS = ROOT / "plugins/leonardo-format/skills/leonardo-format/scripts"
@@ -14,35 +13,7 @@ sys.path.insert(0, str(HELPERS))
 import mdlz
 
 
-ILLUSTRATIONS = {
-    "en": {
-        "journey": ("Your document journey", ["Write · MDLF", "Fill · MDLR", "Share · MDLZ"]),
-        "package": ("One portable package · MDLZ", ["guide.mdlf", "assets/ · images", "Definitions + answers"]),
-        "import": ("Import with your agent · illustrative diagram", ["Original PDF", "Your agent + skill", "Editable Leonardo"]),
-        "export": ("Choose what the recipient needs", ["Edit / fill → MDLZ", "Read → Markdown", "Fixed pages → PDF"]),
-    },
-    "es": {
-        "recorrido": ("El recorrido de tu documento", ["Escribir · MDLF", "Rellenar · MDLR", "Compartir · MDLZ"]),
-        "paquete": ("Un paquete portable · MDLZ", ["guia.mdlf", "assets/ · imágenes", "Definición + respuestas"]),
-        "importar": ("Importar con tu agente · diagrama ilustrativo", ["PDF original", "Tu agente + skill", "Leonardo editable"]),
-        "exportar": ("Elige según el destinatario", ["Editar / rellenar → MDLZ", "Leer → Markdown", "Páginas fijas → PDF"]),
-    },
-}
-
-
-def illustration(title, labels):
-    cards = []
-    for index, label in enumerate(labels):
-        x = 30 + index * 350
-        cards.append(f'<rect x="{x}" y="100" width="320" height="100" rx="16" fill="#fff"/>')
-        cards.append(f'<text x="{x + 160}" y="158" text-anchor="middle" fill="#432333" font-size="21">{escape(label)}</text>')
-        if index < 2:
-            cards.append(f'<text x="{x + 325}" y="160" fill="#432333" font-size="25">→</text>')
-    return ('<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="240" viewBox="0 0 1080 240">'
-            '<rect width="1080" height="240" rx="20" fill="#f1e8dd"/>'
-            '<g font-family="Helvetica,Arial,sans-serif">'
-            f'<text x="30" y="58" fill="#432333" font-size="30" font-weight="bold">{escape(title)}</text>'
-            + ''.join(cards) + '</g></svg>\n')
+LANGUAGES = ("en", "es")
 
 
 def practice_metadata(language):
@@ -61,7 +32,7 @@ def practice_metadata(language):
 
 def metadata(language):
     return {"format": "mdlf", "formatVersion": 1,
-            "document": {"id": "leonardo-user-guide-" + language, "kind": "document", "revision": 9},
+            "document": {"id": "leonardo-user-guide-" + language, "kind": "document", "revision": 10},
             "layout": {"images": [{"source": "assets/graphic-inspector.png", "size": {"width": {"value": 240, "unit": "points"}}}]}}
 
 
@@ -75,10 +46,8 @@ def build(language, destination):
         staging = Path(temporary)
         assets = staging / "assets"
         assets.mkdir()
-        for name, (title, labels) in ILLUSTRATIONS[language].items():
-            (assets / (name + ".svg")).write_text(illustration(title, labels), encoding="utf-8")
         shutil.copyfile(ROOT / "Sources/LeonardoApp/Resources/AboutBanner.png", assets / "cover.png")
-        # Only original PNG content assets belong in the package, not QA sidecars.
+        # Only PNG content assets belong in the package, not provenance/QA sidecars.
         for image in sorted((ROOT / "doc/guide" / language / "assets").glob("*.png")):
             if image.is_symlink() or not image.is_file():
                 raise ValueError(f"Guide image must be a regular file: {image.name}")
@@ -95,13 +64,13 @@ def build_agent_import(language, destination):
     section = body.split("<!-- agent-import:begin -->\n", 1)[1].split("<!-- agent-import:end -->", 1)[0]
     section = section.replace("### ", "# ", 1).replace("\n#### ", "\n## ")
     name = "importar" if language == "es" else "import"
-    title, labels = ILLUSTRATIONS[language][name]
     header = {"format": "mdlf", "formatVersion": 1,
-              "document": {"id": "leonardo-agent-import-" + language, "kind": "document", "revision": 1}}
+              "document": {"id": "leonardo-agent-import-" + language, "kind": "document", "revision": 2}}
     with tempfile.TemporaryDirectory(prefix="leonardo-agent-import-") as temporary:
         staging = Path(temporary)
         (staging / "assets").mkdir()
-        (staging / "assets" / (name + ".svg")).write_text(illustration(title, labels), encoding="utf-8")
+        shutil.copyfile(ROOT / "doc/guide" / language / "assets" / (name + ".png"),
+                        staging / "assets" / (name + ".png"))
         (staging / "guide.mdlf").write_text('---\n' + json.dumps(header, ensure_ascii=False, indent=2)
                                             + '\n---\n' + section, encoding="utf-8")
         mdlz.pack_directory(staging, destination)
@@ -111,7 +80,9 @@ def write_web_guide(language, directory):
     """Generate the reading edition without pretending GitHub has form controls."""
     body = (ROOT / "doc/guide" / language / "body.md").read_text(encoding="utf-8")
     cover, rest = body.split("\n", 1)
-    rest = rest[rest.index("\n## "):]
+    intro, rest = rest.split("\n## ", 1)
+    # Keep introductory artwork while omitting native personal-copy instructions.
+    rest = "\n\n".join(line for line in intro.splitlines() if line.startswith("![")) + "\n\n## " + rest
     spanish = language == "es"
     title = "Guía de Leonardo" if spanish else "Leonardo user guide"
     notice = ("Edición web de lectura. Abre Ayuda → Guía de Leonardo en la app para usar "
@@ -128,11 +99,6 @@ def write_web_guide(language, directory):
     # Ordinary web Markdown displays these placeholders literally. Leave all
     # source bytes intact, including copyable MDLF examples inside code fences.
     body = body.replace("](assets/", f"](guide/{language}/assets/")
-    for name, (title, labels) in ILLUSTRATIONS[language].items():
-        folder = directory / "guide" / "illustrations"
-        folder.mkdir(parents=True, exist_ok=True)
-        (folder / f"{language}-{name}.svg").write_text(illustration(title, labels), encoding="utf-8")
-        body = body.replace(f"guide/{language}/assets/{name}.svg", f"guide/illustrations/{language}-{name}.svg")
     practice = directory / "guide" / language / "practice.mdlr"
     practice.parent.mkdir(parents=True, exist_ok=True)
     practice.write_text(practice_source(language), encoding="utf-8")
@@ -148,18 +114,18 @@ def main():
     args = parser.parse_args()
     if args.web_output is not None:
         args.web_output.mkdir(parents=True, exist_ok=True)
-        for language in ILLUSTRATIONS:
+        for language in LANGUAGES:
             write_web_guide(language, args.web_output)
     args.output.mkdir(parents=True, exist_ok=True)
-    for language in ILLUSTRATIONS:
-        destination = args.output / f"Guide-v9-{language}.mdlz"
+    for language in LANGUAGES:
+        destination = args.output / f"Guide-v10-{language}.mdlz"
         # The canonical packer deliberately refuses overwrites. Replace only our generated artifact.
         with tempfile.TemporaryDirectory(prefix="leonardo-guide-output-") as temporary:
             result = Path(temporary) / destination.name
             build(language, result)
             destination.write_bytes(result.read_bytes())
         print(destination)
-        agent_import = args.output / f"AgentImport-v1-{language}.mdlz"
+        agent_import = args.output / f"AgentImport-v2-{language}.mdlz"
         with tempfile.TemporaryDirectory(prefix="leonardo-import-output-") as temporary:
             result = Path(temporary) / agent_import.name
             build_agent_import(language, result)

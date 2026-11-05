@@ -6,6 +6,7 @@
 [English](user-guide.md) · [Español](user-guide-es.md)
 
 Edición web de lectura. Abre Ayuda → Guía de Leonardo en la app para usar el formulario de práctica independiente y los ejemplos renderizados con las extensiones correspondientes. Este lector web puede no interpretar Mermaid, KaTeX o Vega-Lite.
+![El recorrido de un documento: escribir, rellenar y compartir](guide/es/assets/recorrido.png)
 
 ## Un documento que también se puede ver
 
@@ -98,7 +99,9 @@ Usa **Guardar** (⌘S) para persistir cambios. Deshacer y Rehacer actúan sobre 
 | `.mdlr` | La misma estructura, con respuestas | Formulario destinado a rellenarse; abre en modo Rellenar |
 | `.mdlz` | ZIP con un único MDLF o MDLR y recursos en `assets/` | Compartir un documento con sus imágenes locales |
 
-![Qué hay dentro de un paquete MDLZ](guide/illustrations/es-paquete.svg)
+![Diagrama ilustrativo: un documento MDLF o MDLR, recursos locales, definición y respuestas en un paquete MDLZ](guide/es/assets/paquete.png)
+
+La definición y las respuestas pertenecen al documento raíz; no son archivos raíz adicionales.
 
 MDLZ es el transporte, no otro lenguaje de documentos. MDLF y MDLR son texto UTF-8: un bloque inicial de JSON versionado y un cuerpo Markdown. Cambiar una extensión no realiza una conversión. MDLR sugiere el modo de apertura; no impide que alguien edite su definición.
 
@@ -162,7 +165,7 @@ invalidar respuestas anteriores.
 
 ## 5. Exportar y compartir
 
-![Elegir una exportación según el destinatario](guide/illustrations/es-exportar.svg)
+![Elegir una exportación según el destinatario](guide/es/assets/exportar.png)
 
 | Necesidad | Acción | Resultado y límites |
 | --- | --- | --- |
@@ -235,7 +238,7 @@ Revisa el resultado en Leonardo antes de usarlo. Un archivo válido puede conten
 
 **Archivo → Importar con tu agente…** abre esta ayuda en Leonardo. No selecciona, convierte ni envía ningún PDF. Tú eliges el agente y le entregas una copia del archivo para que realice la conversión.
 
-![Diagrama ilustrativo: PDF original → tu agente y la skill → documento Leonardo editable](guide/illustrations/es-importar.svg)
+![Diagrama ilustrativo: PDF original → tu agente y la skill → documento Leonardo editable](guide/es/assets/importar.png)
 
 #### Qué necesitas
 

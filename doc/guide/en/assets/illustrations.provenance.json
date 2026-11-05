@@ -1,0 +1,38 @@
+{
+  "kind": "AI-generated illustrative artwork, not a UI screenshot",
+  "generator": "built-in image_gen",
+  "style_reference": "exec-8f85f370-ebf3-458d-a1ae-c4aac664db3a.png",
+  "created_on": "2026-11-05",
+  "issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/334",
+  "packaging": "Aspect-preserving sips resize to 1200 pixels wide; original generated artwork retained in Codex image library. No screenshot retouching.",
+  "images": {
+    "import.png": {
+      "original_image_id": "exec-8f85f370-ebf3-458d-a1ae-c4aac664db3a.png",
+      "original_sha256": "5cffc93590a810b0c55df63652097ce0f478c091e1e7a9dc98e13ee9e2e9b89e",
+      "asset_sha256": "0313532cd4c37005e3155ccb2eed2995027c766b5f83e0f5612b5b4c604ebe7d",
+      "width": 1200,
+      "height": 400
+    },
+    "journey.png": {
+      "original_image_id": "exec-b6a69351-4551-46af-bd6c-47ca679a9c76.png",
+      "original_sha256": "efc623e0b61691af0a23e98d6f13ac2d09e50273bbab94af46d726011c62fef1",
+      "asset_sha256": "9d1c845f8311f8a0d28301c1cf59e6f33e55d0dfd0133e3e91c81832bc4826f6",
+      "width": 1200,
+      "height": 400
+    },
+    "package.png": {
+      "original_image_id": "exec-171a3ae5-6eb5-4aea-80c8-6650e7950e86.png",
+      "original_sha256": "95960fd9c6f038b28854816add8398694906cfc8bc9294326dd8e9c04914b4de",
+      "asset_sha256": "8770a71937b40b87f239dc30f2c544c3a799a3da461f746a2dedf191746b80f6",
+      "width": 1200,
+      "height": 400
+    },
+    "export.png": {
+      "original_image_id": "exec-b2774b1c-8bf9-4a7c-bd49-a2bc1e56c68f.png",
+      "original_sha256": "4398f75dc0740e74186338b4a4b269b363dd20f629e01e44458502e43237b913",
+      "asset_sha256": "e7c480c8868e3b312027c5deada11653e1cf3c045fafa8de37e8a203564b8c3d",
+      "width": 1200,
+      "height": 400
+    }
+  }
+}

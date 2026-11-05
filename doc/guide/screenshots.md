@@ -3,7 +3,8 @@
 These are content assets in the guide, not a substitute for current-head guide
 rendering evidence. PNGs are unmodified originals; metadata and observed contexts
 are stored beside them in each locale's `assets/`. The MDLZ builder excludes all
-sidecars. Generated SVG diagrams are illustrations, not screenshots.
+sidecars. Generated premium PNG diagrams are illustrations, not screenshots; their generation
+provenance is recorded in each locale’s `assets/illustrations.provenance.json`.
 
 | Locale assets | Original capture source | Observed state |
 | --- | --- | --- |
