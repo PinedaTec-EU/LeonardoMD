@@ -375,6 +375,9 @@ final class DesktopSyncController {
                 let acknowledgedAt = now()
                 record.request = status.request; record.response = status.response
                 record.updatedAt = acknowledgedAt; record.lastKnownRequestAt = acknowledgedAt
+                if let latest = rubricCaptures.record(id: record.id), latest.isCancellationRequested {
+                    return try await reconcileCancelledCreate(latest, createdRequest: status.request)
+                }
                 return try rubricCaptures.upsert(record)
             } catch let statusError {
                 if Self.isRubricNotFound(statusError), !record.canRetryCreate(at: now()) {
@@ -391,6 +394,10 @@ final class DesktopSyncController {
         guard !current.isMissing else { return current }
         do {
             let status = try await runtime.rubricStatus(requestID: requestID)
+            if current.isCancellationRequested,
+               [.pending, .accepted].contains(status.request.state) {
+                return try await reconcileCancelledCreate(current, createdRequest: status.request)
+            }
             var updated = current
             let acknowledgedAt = now()
             updated.request = status.request; updated.response = status.response
@@ -449,10 +456,14 @@ final class DesktopSyncController {
             ($0.isCancellationRequested || $0.response != nil || $0.request?.state == .pending || $0.request?.state == .accepted
                 || ($0.request == nil && $0.canRetryCreate(at: now())))
         }
-        return recoverable
-            .filter { $0.sourceDigest == digest }
-            .sorted { $0.updatedAt > $1.updatedAt }
-            .first ?? recoverable.sorted { $0.updatedAt > $1.updatedAt }.first
+        let bySourceAndDate: (RubricCaptureRecord, RubricCaptureRecord) -> Bool = {
+            $0.updatedAt > $1.updatedAt
+        }
+        let responses = recoverable.filter { $0.response != nil }
+        return responses.filter { $0.sourceDigest == digest }.sorted(by: bySourceAndDate).first
+            ?? responses.sorted(by: bySourceAndDate).first
+            ?? recoverable.filter { $0.sourceDigest == digest }.sorted(by: bySourceAndDate).first
+            ?? recoverable.sorted(by: bySourceAndDate).first
     }
 
     private func recoverRubricCaptures() async {
@@ -519,6 +530,7 @@ final class DesktopSyncController {
 
     private func reconcileCancelledCreate(_ current: RubricCaptureRecord,
                                           createdRequest: LeonardoSync.RubricRequest) async throws -> RubricCaptureRecord {
+        guard createdRequest.state != .completed else { return current }
         do {
             let cancelled = try await runtime.cancelRubricRequest(requestID: current.id)
             var reconciled = current

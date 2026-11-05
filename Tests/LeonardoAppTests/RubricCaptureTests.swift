@@ -312,7 +312,8 @@ final class RubricCaptureTests: XCTestCase {
         secondRequest.state = .cancelled
         _ = try store.upsert(RubricCaptureRecord(id: secondID, targetDeviceID: target, targetDeviceName: "Little",
             documentURL: document, sourceDigest: RubricCaptureRecord.digest(source: "edited source"), fieldID: nil,
-            labelHint: nil, request: secondRequest, updatedAt: now.addingTimeInterval(1)))
+            labelHint: nil, request: secondRequest, updatedAt: now.addingTimeInterval(1),
+            cancellationRequestedAt: now.addingTimeInterval(1)))
 
         let controller = DesktopSyncController(preferencesURL: root.appendingPathComponent("preferences.json"),
             runtime: DesktopDirectRuntime(root: root.appendingPathComponent("Service"), credentials: CaptureTestCredentials(), now: { Date() }))
@@ -321,8 +322,9 @@ final class RubricCaptureTests: XCTestCase {
         try store.markSaved(id: firstID, libraryEntryID: "saved-entry")
         let reopened = DesktopSyncController(preferencesURL: root.appendingPathComponent("preferences.json"),
             runtime: DesktopDirectRuntime(root: root.appendingPathComponent("Service"), credentials: CaptureTestCredentials(), now: { Date() }))
-        XCTAssertNil(reopened.rubricCapture(for: document, source: "edited source"),
-                     "saved results belong to the library; a reopened editor must offer a new request")
+        XCTAssertEqual(reopened.rubricCapture(for: document, source: "edited source")?.id, secondID,
+                       "The reopened editor keeps the explicit cancellation visible so Request again can use a fresh ID")
+        XCTAssertFalse(reopened.rubricCapture(for: document, source: "edited source")?.isCancellationPending ?? true)
     }
 
     func testLostCreateReplyKeepsOneStableIntentForRetry() async throws {

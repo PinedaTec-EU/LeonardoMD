@@ -402,6 +402,7 @@ final class RubricCaptureStore {
             if request.state == .completed && record.response == nil { return false }
         }
         if let response = record.response {
+            guard !record.isCancellationRequested else { return false }
             guard let request = record.request,
                   request.state == .completed,
                   response.requestID == record.id,
