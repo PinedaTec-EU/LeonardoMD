@@ -18,7 +18,7 @@ final class RubricCaptureTests: XCTestCase {
         let created = Date()
         let request = try LeonardoSync.RubricRequest(id: requestID, targetDeviceID: target, requesterID: owner,
             requesterName: "LeonardoMD", createdAt: created)
-        let store = RubricCaptureStore(url: url)
+        let store = RubricCaptureStore(url: url, now: Date.init)
         let initial = RubricCaptureRecord(id: requestID, targetDeviceID: target, targetDeviceName: "Little",
             documentURL: root.appendingPathComponent("note.md"),
             sourceDigest: RubricCaptureRecord.digest(source: "source"), fieldID: nil, labelHint: nil,
@@ -33,7 +33,7 @@ final class RubricCaptureTests: XCTestCase {
         let late = initial.replacing(request: delayed, response: nil, updatedAt: created.addingTimeInterval(2))
         XCTAssertEqual(try store.upsert(late).request?.state, .cancelled)
 
-        let reopened = RubricCaptureStore(url: url)
+        let reopened = RubricCaptureStore(url: url, now: Date.init)
         XCTAssertEqual(reopened.records.count, 1)
         XCTAssertEqual(reopened.records.first?.request?.state, .cancelled)
     }
@@ -46,7 +46,7 @@ final class RubricCaptureTests: XCTestCase {
         request.state = .completed
         let response = try LeonardoSync.RubricResponse(requestID: requestID, targetDeviceID: target, requesterID: owner,
             label: "Firma", rubric: rubric(), submittedAt: now.addingTimeInterval(1))
-        let store = RubricCaptureStore(url: root.appendingPathComponent("captures.json"))
+        let store = RubricCaptureStore(url: root.appendingPathComponent("captures.json"), now: Date.init)
         let record = RubricCaptureRecord(id: requestID, targetDeviceID: target, targetDeviceName: "Little",
             documentURL: root.appendingPathComponent("note.md"), sourceDigest: RubricCaptureRecord.digest(source: "source"),
             fieldID: nil, labelHint: nil, request: request, response: response, updatedAt: now)
@@ -62,7 +62,7 @@ final class RubricCaptureTests: XCTestCase {
 
     func testUnsavedCompletedResponseIsNeverEvictedByCapacityPruning() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let store = RubricCaptureStore(url: root.appendingPathComponent("captures.json"))
+        let store = RubricCaptureStore(url: root.appendingPathComponent("captures.json"), now: Date.init)
         let now = Date()
         for index in 0..<64 {
             let id = UUID(), target = UUID(), owner = UUID()
@@ -92,11 +92,52 @@ final class RubricCaptureTests: XCTestCase {
         XCTAssertEqual(store.records.count, 64)
     }
 
+    func testCaptureStoreUsesInjectedClockForRetentionAndSaveOrdering() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let fixed = Date(timeIntervalSince1970: 1_700_000_000)
+        let clock = FixedRubricClock(fixed)
+        let store = RubricCaptureStore(url: root.appendingPathComponent("captures.json"), now: { clock.value })
+        let target = UUID(), owner = UUID(), oldID = UUID(), freshID = UUID()
+        var oldRequest = try LeonardoSync.RubricRequest(id: oldID, targetDeviceID: target, requesterID: owner,
+            requesterName: "Mac", createdAt: fixed.addingTimeInterval(-2))
+        oldRequest.state = .cancelled
+        let old = RubricCaptureRecord(id: oldID, targetDeviceID: target, targetDeviceName: "Little",
+            documentURL: nil, sourceDigest: RubricCaptureRecord.digest(source: "old"), fieldID: nil,
+            labelHint: nil, request: oldRequest,
+            updatedAt: fixed.addingTimeInterval(-(30 * 24 * 60 * 60 + 1)))
+        _ = try store.upsert(old)
+
+        let freshRequest = try LeonardoSync.RubricRequest(id: freshID, targetDeviceID: target, requesterID: owner,
+            requesterName: "Mac", createdAt: fixed)
+        let fresh = RubricCaptureRecord(id: freshID, targetDeviceID: target, targetDeviceName: "Little",
+            documentURL: nil, sourceDigest: RubricCaptureRecord.digest(source: "fresh"), fieldID: nil,
+            labelHint: nil, request: freshRequest, updatedAt: fixed)
+        _ = try store.upsert(fresh)
+        XCTAssertNil(store.record(id: oldID), "Retention must use the injected clock, not wall time")
+
+        clock.value = fixed.addingTimeInterval(10)
+        var acceptedRequest = freshRequest
+        acceptedRequest.state = .accepted
+        _ = try store.upsert(fresh.replacing(request: acceptedRequest, response: nil, updatedAt: clock.value))
+        clock.value = fixed
+        var cancelledRequest = acceptedRequest
+        cancelledRequest.state = .cancelled
+        XCTAssertEqual(try store.upsert(fresh.replacing(request: cancelledRequest, response: nil, updatedAt: clock.value)).request?.state,
+                       .cancelled,
+                       "A valid lifecycle transition must win when the injected clock moves backwards")
+        clock.value = fixed.addingTimeInterval(20)
+        XCTAssertEqual(try store.upsert(fresh.replacing(request: acceptedRequest, response: nil, updatedAt: clock.value)).request?.state,
+                       .cancelled,
+                       "A delayed non-terminal reply must not resurrect a terminal request")
+        let saved = try store.markSaved(id: freshID, libraryEntryID: "saved")
+        XCTAssertEqual(saved.updatedAt, clock.value, "Save ordering must use the same injected clock")
+    }
+
     func testUnsavedResponseRemainsReachableAfterNewerCancelledRequestForEditedDocument() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let document = root.appendingPathComponent("note.md")
         let target = UUID(), owner = UUID(), firstID = UUID(), secondID = UUID(), now = Date()
-        let store = RubricCaptureStore(url: root.appendingPathComponent("MobileSync/RubricCaptures/captures.json"))
+        let store = RubricCaptureStore(url: root.appendingPathComponent("MobileSync/RubricCaptures/captures.json"), now: Date.init)
         var firstRequest = try LeonardoSync.RubricRequest(id: firstID, targetDeviceID: target, requesterID: owner,
             requesterName: "Mac", createdAt: now)
         firstRequest.state = .completed
@@ -165,6 +206,12 @@ final class RubricCaptureTests: XCTestCase {
         XCTAssertEqual(metrics.durableRequestCount, 1,
             "The helper must see one durable source request even after a lost create acknowledgement")
     }
+}
+
+private final class FixedRubricClock: @unchecked Sendable {
+    var value: Date
+
+    init(_ value: Date) { self.value = value }
 }
 
 private actor CaptureTestCredentials: DeviceCredentialStore {

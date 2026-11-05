@@ -10,7 +10,9 @@ owner-side Mac flow on top of the authenticated exchange in
 - `RubricCaptureStore` keeps a bounded, atomic intent/status record keyed by the
   caller-generated request UUID. It stores a SHA-256 source digest rather than
   document text, uses `ProcessFileLock`, and keeps completed responses until an
-  explicit library save is recorded.
+  explicit library save is recorded. Persistence, retention and lifecycle
+  ordering use the controller-injected clock, so a delayed reply cannot win
+  merely because wall time moved backwards.
 - `RubricEditor` offers one target, polls/retries durable status, shows a native
   preview, and requires **Save to library** or **Save and insert**. The latter
   rechecks the original document URL/source through `SessionGraphics`; a

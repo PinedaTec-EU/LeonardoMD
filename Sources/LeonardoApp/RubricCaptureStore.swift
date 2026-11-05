@@ -3,6 +3,8 @@ import CryptoKit
 import LeonardoCore
 import LeonardoSync
 
+typealias RubricClock = @Sendable () -> Date
+
 enum RubricCaptureStoreError: LocalizedError, Equatable {
     case invalidRecord
     case fileTooLarge
@@ -39,7 +41,7 @@ struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
     init(id: UUID, targetDeviceID: UUID, targetDeviceName: String,
          documentURL: URL?, sourceDigest: Data, fieldID: String?, labelHint: String?,
          request: LeonardoSync.RubricRequest? = nil, response: LeonardoSync.RubricResponse? = nil,
-         savedLibraryEntryID: String? = nil, updatedAt: Date = Date()) {
+         savedLibraryEntryID: String? = nil, updatedAt: Date) {
         self.id = id; self.targetDeviceID = targetDeviceID; self.targetDeviceName = targetDeviceName
         self.documentURL = documentURL; self.sourceDigest = sourceDigest; self.fieldID = fieldID
         self.labelHint = labelHint; self.request = request; self.response = response
@@ -62,7 +64,7 @@ struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
             && self.fieldID == fieldID
     }
 
-    func replacing(request: LeonardoSync.RubricRequest?, response: LeonardoSync.RubricResponse?, updatedAt: Date = Date()) -> RubricCaptureRecord {
+    func replacing(request: LeonardoSync.RubricRequest?, response: LeonardoSync.RubricResponse?, updatedAt: Date) -> RubricCaptureRecord {
         var copy = self
         copy.request = request ?? self.request
         copy.response = response ?? self.response
@@ -70,7 +72,7 @@ struct RubricCaptureRecord: Codable, Equatable, Identifiable, Sendable {
         return copy
     }
 
-    func withSavedLibraryEntry(_ entryID: String, updatedAt: Date = Date()) -> RubricCaptureRecord {
+    func withSavedLibraryEntry(_ entryID: String, updatedAt: Date) -> RubricCaptureRecord {
         var copy = self
         copy.savedLibraryEntryID = entryID
         copy.updatedAt = updatedAt
@@ -88,11 +90,13 @@ final class RubricCaptureStore {
     private static let terminalRetention: TimeInterval = 30 * 24 * 60 * 60
 
     private let url: URL
+    private let now: RubricClock
     private(set) var records: [RubricCaptureRecord] = []
     private(set) var loadError: String?
 
-    init(url: URL) {
+    init(url: URL, now: @escaping RubricClock) {
         self.url = url
+        self.now = now
         refresh()
     }
 
@@ -115,10 +119,6 @@ final class RubricCaptureStore {
             var next = current
             if let index = next.firstIndex(where: { $0.id == candidate.id }) {
                 let existing = next[index]
-                if existing.updatedAt > candidate.updatedAt {
-                    result = existing
-                    return current
-                }
                 if Self.stateRank(candidate.request) < Self.stateRank(existing.request) {
                     result = existing
                     return current
@@ -126,6 +126,15 @@ final class RubricCaptureStore {
                 if Self.stateRank(candidate.request) == Self.stateRank(existing.request),
                    existing.request?.state != candidate.request?.state,
                    existing.isTerminal {
+                    result = existing
+                    return current
+                }
+                // Lifecycle progress is authoritative even if an injected
+                // clock moves backwards. Timestamps order updates within the
+                // same lifecycle state, but cannot make a valid accepted or
+                // terminal transition disappear.
+                if Self.stateRank(candidate.request) == Self.stateRank(existing.request),
+                   existing.updatedAt > candidate.updatedAt {
                     result = existing
                     return current
                 }
@@ -140,7 +149,7 @@ final class RubricCaptureStore {
                 next.append(candidate)
                 result = candidate
             }
-            return try pruned(next, now: Date())
+            return try pruned(next, now: now())
         }
         guard let result else { throw RubricCaptureStoreError.storageFailure }
         return result
@@ -149,7 +158,7 @@ final class RubricCaptureStore {
     @discardableResult
     func markSaved(id: UUID, libraryEntryID: String) throws -> RubricCaptureRecord {
         guard let current = record(id: id) else { throw RubricCaptureStoreError.invalidRecord }
-        return try upsert(current.withSavedLibraryEntry(libraryEntryID))
+        return try upsert(current.withSavedLibraryEntry(libraryEntryID, updatedAt: now()))
     }
 
     private func update(_ change: ([RubricCaptureRecord]) throws -> [RubricCaptureRecord]) throws {

@@ -74,7 +74,7 @@ final class RubricGuideCaptureTests: XCTestCase {
         let document = root.appendingPathComponent("Inspection.mdlf")
         let source = "# Synthetic inspection"
         let requestStoreURL = root.appendingPathComponent("request-state/MobileSync/RubricCaptures/captures.json")
-        let requestStore = RubricCaptureStore(url: requestStoreURL)
+        let requestStore = RubricCaptureStore(url: requestStoreURL, now: Date.init)
         try requestStore.upsert(RubricCaptureRecord(id: pending.id, targetDeviceID: targetID,
             targetDeviceName: "Little Leonardo", documentURL: document,
             sourceDigest: RubricCaptureRecord.digest(source: source), fieldID: nil,
@@ -91,7 +91,7 @@ final class RubricGuideCaptureTests: XCTestCase {
             state: "Production linked-rubric request; target Little Leonardo; pending request; synthetic data; no device or legal signing")
 
         let reviewRoot = root.appendingPathComponent("review-state")
-        let reviewStore = RubricCaptureStore(url: reviewRoot.appendingPathComponent("MobileSync/RubricCaptures/captures.json"))
+        let reviewStore = RubricCaptureStore(url: reviewRoot.appendingPathComponent("MobileSync/RubricCaptures/captures.json"), now: Date.init)
         pending.state = .completed
         let response = try LeonardoSync.RubricResponse(requestID: pending.id, targetDeviceID: targetID,
             requesterID: ownerID, label: language == "es" ? "Rúbrica revisada" : "Reviewed rubric",

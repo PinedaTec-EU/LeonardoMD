@@ -57,6 +57,7 @@ final class DesktopSyncController {
     private let usesHelper: Bool
     private let storageRoot: URL
     private let rubricCaptures: RubricCaptureStore
+    private let now: RubricClock
     private var initialized = false
     private static var rubricRequesterName: String {
         let name = Host.current().localizedName?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -65,13 +66,15 @@ final class DesktopSyncController {
     }
 
     init(preferencesURL: URL = AppSession.preferencesURL, configurations: ConfigurationStore = .shared,
-         runtime: (any DesktopSyncRuntimeAccess)? = nil, helper: SyncHelperController? = nil) {
+         runtime: (any DesktopSyncRuntimeAccess)? = nil, helper: SyncHelperController? = nil,
+         now: @escaping RubricClock = Date.init) {
         self.preferencesURL = preferencesURL
         self.helper = helper ?? SyncHelperController(preferencesURL: preferencesURL)
         self.configurations = configurations
         let root = preferencesURL.deletingLastPathComponent().appendingPathComponent("MobileSync", isDirectory: true)
         storageRoot = root
-        rubricCaptures = RubricCaptureStore(url: root.appendingPathComponent("RubricCaptures/captures.json"))
+        self.now = now
+        rubricCaptures = RubricCaptureStore(url: root.appendingPathComponent("RubricCaptures/captures.json"), now: now)
         self.runtime = runtime ?? SyncHelperClient()
         usesHelper = runtime == nil
     }
@@ -313,7 +316,7 @@ final class DesktopSyncController {
         let record = RubricCaptureRecord(id: requestID, targetDeviceID: targetDeviceID,
             targetDeviceName: targetDeviceName, documentURL: canonicalURL,
             sourceDigest: RubricCaptureRecord.digest(source: source), fieldID: fieldID,
-            labelHint: labelHint)
+            labelHint: labelHint, updatedAt: now())
         return try rubricCaptures.upsert(record)
     }
 
@@ -322,13 +325,13 @@ final class DesktopSyncController {
         do {
             let request = try await runtime.createRubricRequest(deviceID: record.targetDeviceID, requestID: record.id,
                 requesterName: Self.rubricRequesterName, labelHint: record.labelHint)
-            record.request = request; record.updatedAt = Date()
+            record.request = request; record.updatedAt = now()
             return try rubricCaptures.upsert(record)
         } catch {
             // Creation can be durable even when the XPC reply is lost. The
             // caller's stable ID makes this recovery safe and idempotent.
             if let status = try? await runtime.rubricStatus(requestID: record.id) {
-                record.request = status.request; record.response = status.response; record.updatedAt = Date()
+                record.request = status.request; record.response = status.response; record.updatedAt = now()
                 return try rubricCaptures.upsert(record)
             }
             throw error
@@ -339,7 +342,7 @@ final class DesktopSyncController {
         guard let current = rubricCaptures.record(id: requestID) else { throw RubricCaptureError.missingRequest }
         let status = try await runtime.rubricStatus(requestID: requestID)
         var updated = current
-        updated.request = status.request; updated.response = status.response; updated.updatedAt = Date()
+        updated.request = status.request; updated.response = status.response; updated.updatedAt = now()
         return try rubricCaptures.upsert(updated)
     }
 
@@ -347,7 +350,7 @@ final class DesktopSyncController {
         guard let current = rubricCaptures.record(id: requestID) else { throw RubricCaptureError.missingRequest }
         let request = try await runtime.cancelRubricRequest(requestID: requestID)
         var updated = current
-        updated.request = request; updated.updatedAt = Date()
+        updated.request = request; updated.updatedAt = now()
         return try rubricCaptures.upsert(updated)
     }
 
@@ -385,7 +388,7 @@ final class DesktopSyncController {
             do {
                 let status = try await runtime.rubricStatus(requestID: current.id)
                 var updated = current
-                updated.request = status.request; updated.response = status.response; updated.updatedAt = Date()
+                updated.request = status.request; updated.response = status.response; updated.updatedAt = now()
                 _ = try rubricCaptures.upsert(updated)
             } catch {
                 // A request may have been pruned on the helper after its
