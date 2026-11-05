@@ -17,7 +17,7 @@ provenance is recorded in each locale’s `assets/illustrations.provenance.json`
 | `en/es/assets/warnings.png` | `b8900bf` | Actual extension preferences/reset; copied byte-for-byte from `doc/validation/extension-recommendations/current/reset-<locale>.png` |
 
 Full capture revisions:
-- `f1ecf7b`: `f1ecf7b30cfacd296926b102a546402334a0cb67`.
+- `f1ecf7b`: `0bc5a737bbbb8e38407a079c70b34cb896aa3064`.
 - `e457e86`: `e457e86eccade662825253d4f94dc3a20999edf9`.
 - `b8900bf`: `b8900bf14f17aba18e4e89cb141c392048a5314f`.
 

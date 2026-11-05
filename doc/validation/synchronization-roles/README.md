@@ -30,6 +30,8 @@ stay untouched through the new Guide-v13 copy directory.
 `SynchronizationPreferencesTests` hosts each role page in both languages and
 checks that showing them leaves the exact preferences bytes unchanged, helper
 and sharing off, source listener absent, and remote connections/copies empty.
+The capture fixture also recognizes the exact common-control label on all four role/locale images and unclipped device-name anchors, rejecting incomplete native snapshots with bounded recapture attempts. Original PNGs may be independently decoded for inspection; format conversions are never substituted as author originals.
+
 The opt-in capture output is enabled with `LEONARDO_SYNC_ROLES_EVIDENCE`;
 `EVIDENCE_SHA` records the source. Run compiler-bearing validation through the
 PR-bound recorder; read-only repetition may use `swift test --skip-build`.
@@ -58,7 +60,7 @@ app executable hash stayed unchanged. No helper registration, pairing, new
 sharing consent or network transfer was performed. The original app and its
 previous project were reopened afterwards. See `native-acceptance.json`.
 
-Local combined full suite after integrating #202: 633 XCTest cases (34 optional skips), 28 Swift Testing cases;
+Local combined full suite after integrating accepted main (including #202): 643 XCTest cases (34 optional skips), 28 Swift Testing cases;
 Python suite: 95 tests (7 environment skips). WKWebView guide rendering and
 personal practice-copy preservation are included. Exact-head hosted validation
 and independent judgment remain required; public beta acceptance follows

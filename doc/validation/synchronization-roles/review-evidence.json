@@ -1,6 +1,5 @@
 {
-  "reviewed_code_head": "992fa58f49567242b3b77133f94af63cb14cd12f",
-  "component_capture_source": "f1ecf7b30cfacd296926b102a546402334a0cb67",
+  "component_capture_source": "0bc5a737bbbb8e38407a079c70b34cb896aa3064",
   "unchanged_ui_file_sha256": {
     "Sources/LeonardoApp/SynchronizationPreferencesView.swift": "f041e7d589bf0446b1ddd8abe392a1bdbdbc9d948a143d4c074408af331ae831",
     "Sources/LeonardoApp/MobileSyncPreferencesView.swift": "0d2a1e4d241af78331e64b5a45d63810e43bb4bd09dfce3eca5a78c3916d510a",
@@ -12,7 +11,7 @@
     "Sources/LeonardoApp/Resources/Localization/es.json": "16a00c4aa4b0882f94145eea8f728ed027d0b5b39c39910965d097a240bd9d4b"
   },
   "combined_local_tests": {
-    "xctest": 633,
+    "xctest": 643,
     "optional_skips": 34,
     "swift_testing": 28,
     "python": 95,
@@ -23,11 +22,13 @@
     "https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/42059813115"
   ],
   "hosted_test_result": "success",
-  "source_build_delta": 14,
+  "source_build_delta": 17,
   "publication": "pending source integration, materialization, signing and notarization",
   "policy_provider_problem": "Pinned engine accepted the exact base/head; later check-result publication/revalidation returned GitHub HTTP500. No status was manually overridden.",
   "service_composition_sha256": "3c3b71040fd607ac9ecb29bc9241010c57b1a9c355aec93823b1df4de46c0b46",
   "service_composition_validation": "Principal role controllers share one helper lifecycle; focused ownership regression plus full 633-case suite passed after this change.",
-  "capture_note": "Refreshed after common lifecycle composition and removal of redundant wrapper polling; subsequent packaging/evidence/counter changes preserve these UI source files.",
-  "hosted_test_note": "Earlier hosted UI/layout validation; the final lifecycle/refresh changes receive fresh exact-head CI."
+  "capture_note": "All six PNGs decoded and inspected; exact service-control labels and unclipped device-name anchors verified using native Vision. Inspection-only JPEG decodes of the original PNGs resolve intermittent inline viewer omissions; they are not replacement author evidence.",
+  "hosted_test_note": "Earlier hosted UI/layout validation; the final lifecycle/refresh changes receive fresh exact-head CI.",
+  "validated_source_head": "0bc5a737bbbb8e38407a079c70b34cb896aa3064",
+  "head_mapping": "Captures and focused semantic verification were built from validated_source_head. Subsequent delivery commits only refresh capture metadata, help packages, evidence and the additive compiler count; unchanged_ui_file_sha256 and service_composition_sha256 bind the production UI to the reviewed PR head."
 }

@@ -2,7 +2,7 @@
   "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
   "browser_version" : "Not applicable: native view, no browser engine",
   "capture_mode" : "element",
-  "captured_at" : "2026-11-05T16:24:53.134Z",
+  "captured_at" : "2026-11-05T17:47:08.204Z",
   "data_provenance" : "synthetic",
   "native_viewport_points" : {
     "height" : 150,
@@ -11,7 +11,7 @@
   "os" : "Version 27.0.1 (Build 26A434)",
   "route" : "\/native\/user-guide\/es",
   "screen" : "Leonardo guide: Production device identity rows; synthetic capability examples, not paired devices",
-  "source_sha" : "f1ecf7b30cfacd296926b102a546402334a0cb67",
+  "source_sha" : "0bc5a737bbbb8e38407a079c70b34cb896aa3064",
   "state" : "Production device identity rows; synthetic capability examples, not paired devices; viewport_css is the measured native-point equivalent; CSS is not applicable",
   "viewport_css" : {
     "height" : 150,
