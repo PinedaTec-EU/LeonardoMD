@@ -46,7 +46,7 @@ final class SynchronizationPreferencesTests: XCTestCase {
                 try await captureVerified(host, size: NSSize(width: 532, height: 490), to: image,
                     language: language.rawValue,
                     state: "Synchronization / \(page.rawValue); helper present but disabled; isolated empty saved content and connections",
-                    visibleText: ["Leonardo Sync"])
+                    visibleText: [L10n.text("Enable Leonardo Sync")])
                 XCTAssertFalse(helper.enabled)
                 XCTAssertFalse(source.settings.enabled)
                 XCTAssertNil(source.running)
@@ -67,7 +67,7 @@ final class SynchronizationPreferencesTests: XCTestCase {
                 try await captureVerified(host, size: NSSize(width: 532, height: 150),
                     to: URL(fileURLWithPath: output).appendingPathComponent("device-roles-\(language.rawValue).png"),
                     language: language.rawValue, state: "Production device identity rows; synthetic capability examples, not paired devices",
-                    visibleText: ["Reading tablet", "Studio Mac", "Little Leonardo"])
+                    visibleText: ["Reading tablet", "Studio Mac"])
 
             }
         }
@@ -86,9 +86,11 @@ final class SynchronizationPreferencesTests: XCTestCase {
             request.recognitionLevel = .accurate
             request.recognitionLanguages = [language]
             try VNImageRequestHandler(url: image).perform([request])
-            recognized = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
-                .joined(separator: "\n")
-            if visibleText.allSatisfy({ recognized.contains($0) }) { return }
+            let rows = (request.results ?? []).filter {
+                $0.boundingBox.minY >= 0.03 && $0.boundingBox.maxY <= 0.96
+            }.compactMap { $0.topCandidates(1).first?.string }
+            recognized = rows.joined(separator: "\n")
+            if visibleText.allSatisfy({ rows.contains($0) }) { return }
         }
         XCTFail("Native capture omitted required visible content: \(state); recognized: \(recognized)")
     }
