@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.797
+
+- #329 Added: guide PDF import through the user’s own agent ([#330](https://github.com/PinedaTec-EU/LeonardoMD/pull/330))
+
+<p>Open a bilingual guide from File → Import with your agent to convert PDFs into editable Leonardo documents with your own agent, with the same workflow included in the main help.</p>
+
+Source: `421ef001b88153a422b9babceac1d19b8752b22c`. Delta: `{"build": 2}`.
+
 ## 0.1.795
 
 - #323 Added: native graphic inspector and reliable deselection ([#326](https://github.com/PinedaTec-EU/LeonardoMD/pull/326))

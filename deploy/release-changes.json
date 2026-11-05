@@ -777,6 +777,16 @@
       "pr": 326,
       "summary": "Inspect placed images and rubrics in a native side panel, recolor inserted ink and dismiss object selection when returning to document text.",
       "to_version": "0.1.795"
+    },
+    {
+      "delta": {
+        "build": 2
+      },
+      "from_version": "0.1.795",
+      "merge_sha": "421ef001b88153a422b9babceac1d19b8752b22c",
+      "pr": 330,
+      "summary": "Open a bilingual guide from File → Import with your agent to convert PDFs into editable Leonardo documents with your own agent, with the same workflow included in the main help.",
+      "to_version": "0.1.797"
     }
   ],
   "initial_version": "0.1.56",
@@ -787,5 +797,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.795"
+  "version": "0.1.797"
 }
