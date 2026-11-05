@@ -767,6 +767,16 @@
       "pr": 316,
       "summary": "Insert images and reusable drawn rubrics with page placement, layer controls and a compact document toolbar.",
       "to_version": "0.1.783"
+    },
+    {
+      "delta": {
+        "build": 12
+      },
+      "from_version": "0.1.783",
+      "merge_sha": "26b6eca69f5814c2674e1cc06163677ffe4da4f9",
+      "pr": 326,
+      "summary": "Inspect placed images and rubrics in a native side panel, recolor inserted ink and dismiss object selection when returning to document text.",
+      "to_version": "0.1.795"
     }
   ],
   "initial_version": "0.1.56",
@@ -777,5 +787,5 @@
     "feature",
     "build"
   ],
-  "version": "0.1.783"
+  "version": "0.1.795"
 }
