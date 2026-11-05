@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.2.832
+
+- #324 Fixed: validate Sparkle dependencies and share QA signing ([#328](https://github.com/PinedaTec-EU/LeonardoMD/pull/328))
+
+<p>Local app launches now check bundled dependencies and signing consistency before opening; disposable QA copies share the distribution signing order to prevent Sparkle loading failures.</p>
+
+Source: `a8c244af76449ca4542fa646dd97c5a957b15b9e`. Delta: `{"build": 3}`.
+
 ## 0.2.829
 
 - #334 Updated: add premium bilingual help illustrations ([#335](https://github.com/PinedaTec-EU/LeonardoMD/pull/335))
