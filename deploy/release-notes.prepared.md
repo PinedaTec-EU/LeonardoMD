@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.1.795
+
+- #323 Added: native graphic inspector and reliable deselection ([#326](https://github.com/PinedaTec-EU/LeonardoMD/pull/326))
+
+<p>Inspect placed images and rubrics in a native side panel, recolor inserted ink and dismiss object selection when returning to document text.</p>
+
+Source: `26b6eca69f5814c2674e1cc06163677ffe4da4f9`. Delta: `{"build": 12}`.
+
 ## 0.1.783
 
 - #193 Added: images and reusable drawn rubrics ([#316](https://github.com/PinedaTec-EU/LeonardoMD/pull/316))
