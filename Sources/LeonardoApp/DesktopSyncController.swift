@@ -5,6 +5,36 @@ import LeonardoSync
 import LeonardoSyncTransport
 import LeonardoDesktopSync
 
+enum RubricCaptureAvailability: Equatable {
+    case ready
+    case helperOffline
+    case helperUnsupported
+    case serviceOffline
+    case noSupportedDevice
+
+    var message: String {
+        switch self {
+        case .ready: "A linked Little Leonardo is ready."
+        case .helperOffline: "Leonardo Sync helper is offline. Enable it in Preferences and try again."
+        case .helperUnsupported: "Restart LeonardoMD to update the Leonardo Sync helper before requesting a rubric."
+        case .serviceOffline: "The linked-device service is offline. Start sharing in Preferences and try again."
+        case .noSupportedDevice: "No linked read-only Little Leonardo supports rubric capture yet."
+        }
+    }
+}
+
+enum RubricCaptureError: LocalizedError {
+    case unavailable(RubricCaptureAvailability)
+    case missingRequest
+
+    var errorDescription: String? {
+        switch self {
+        case .unavailable(let availability): availability.message
+        case .missingRequest: "The saved rubric request is no longer available."
+        }
+    }
+}
+
 @MainActor @Observable
 final class DesktopSyncController {
     static let shared = DesktopSyncController()
@@ -24,7 +54,9 @@ final class DesktopSyncController {
     private let runtime: any DesktopSyncRuntimeAccess
     private let usesHelper: Bool
     private let storageRoot: URL
+    private let rubricCaptures: RubricCaptureStore
     private var initialized = false
+    private static let rubricRequesterName = "LeonardoMD"
 
     init(preferencesURL: URL = AppSession.preferencesURL, configurations: ConfigurationStore = .shared,
          runtime: DesktopDirectRuntime? = nil, helper: SyncHelperController? = nil) {
@@ -33,8 +65,31 @@ final class DesktopSyncController {
         self.configurations = configurations
         let root = preferencesURL.deletingLastPathComponent().appendingPathComponent("MobileSync", isDirectory: true)
         storageRoot = root
+        rubricCaptures = RubricCaptureStore(url: root.appendingPathComponent("RubricCaptures/captures.json"))
         self.runtime = runtime ?? SyncHelperClient()
         usesHelper = runtime == nil
+    }
+
+    var rubricCaptureRecords: [RubricCaptureRecord] { rubricCaptures.records }
+
+    /// Only an explicitly enrolled read-only peer advertising the exchange
+    /// capability appears here. Legacy peers remain visible in Preferences but
+    /// are never presented as capture targets.
+    var supportedRubricDevices: [PairedDevice] {
+        consent.devices.filter {
+            !$0.revoked && $0.kind == .readOnly && $0.capabilities.contains(.rubricExchangeV1)
+        }.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    var rubricCaptureAvailability: RubricCaptureAvailability {
+        if usesHelper {
+            guard helper.online else { return .helperOffline }
+            guard helper.supportsRubricExchange else { return .helperUnsupported }
+            guard helper.sharing != nil else { return .serviceOffline }
+        } else if running == nil {
+            return .serviceOffline
+        }
+        return supportedRubricDevices.isEmpty ? .noSupportedDevice : .ready
     }
 
     /// LAN addresses are listed first. Overlay addresses appear only after the
@@ -53,6 +108,8 @@ final class DesktopSyncController {
             if usesHelper { await helper.refresh() }
             if settings.enabled && (!usesHelper || helper.online) { try await start() }
             if !usesHelper || helper.online { consent = try await runtime.consentState() }
+            rubricCaptures.refresh()
+            await recoverRubricCaptures()
             initialized = true
         } catch { self.error = error.localizedDescription }
     }
@@ -136,6 +193,8 @@ final class DesktopSyncController {
         do {
             consent = try await runtime.consentState()
             incoming = running == nil ? [] : try await runtime.incomingProposals()
+            rubricCaptures.refresh()
+            await recoverRubricCaptures()
         } catch { self.error = error.localizedDescription }
     }
 
@@ -216,6 +275,86 @@ final class DesktopSyncController {
         do { try await runtime.stop(); running = nil }
         catch { self.error = error.localizedDescription }
 
+    }
+
+    func beginRubricCapture(requestID: UUID = UUID(), targetDeviceID: UUID,
+                            targetDeviceName: String, labelHint: String? = nil,
+                            documentURL: URL?, source: String, fieldID: String?) async throws -> RubricCaptureRecord {
+        let availability = rubricCaptureAvailability
+        guard availability == .ready else { throw RubricCaptureError.unavailable(availability) }
+        let canonicalURL = documentURL.map(ProcessFileLock.canonicalURL)
+        var record = RubricCaptureRecord(id: requestID, targetDeviceID: targetDeviceID,
+            targetDeviceName: targetDeviceName, documentURL: canonicalURL,
+            sourceDigest: RubricCaptureRecord.digest(source: source), fieldID: fieldID,
+            labelHint: labelHint)
+        try rubricCaptures.upsert(record)
+        do {
+            let request = try await runtime.createRubricRequest(deviceID: targetDeviceID, requestID: requestID,
+                requesterName: Self.rubricRequesterName, labelHint: labelHint)
+            record.request = request; record.updatedAt = Date()
+            return try rubricCaptures.upsert(record)
+        } catch {
+            // Creation can be durable even when the XPC reply is lost. The
+            // caller's stable ID makes this recovery safe and idempotent.
+            if let status = try? await runtime.rubricStatus(requestID: requestID) {
+                record.request = status.request; record.response = status.response; record.updatedAt = Date()
+                return try rubricCaptures.upsert(record)
+            }
+            throw error
+        }
+    }
+
+    func refreshRubricCapture(requestID: UUID) async throws -> RubricCaptureRecord {
+        guard let current = rubricCaptures.record(id: requestID) else { throw RubricCaptureError.missingRequest }
+        let status = try await runtime.rubricStatus(requestID: requestID)
+        var updated = current
+        updated.request = status.request; updated.response = status.response; updated.updatedAt = Date()
+        return try rubricCaptures.upsert(updated)
+    }
+
+    func cancelRubricCapture(requestID: UUID) async throws -> RubricCaptureRecord {
+        guard let current = rubricCaptures.record(id: requestID) else { throw RubricCaptureError.missingRequest }
+        let request = try await runtime.cancelRubricRequest(requestID: requestID)
+        var updated = current
+        updated.request = request; updated.updatedAt = Date()
+        return try rubricCaptures.upsert(updated)
+    }
+
+    @discardableResult
+    func markRubricCaptureSaved(requestID: UUID, libraryEntryID: String) throws -> RubricCaptureRecord {
+        try rubricCaptures.markSaved(id: requestID, libraryEntryID: libraryEntryID)
+    }
+
+    func rubricCapture(for documentURL: URL?, source: String) -> RubricCaptureRecord? {
+        let canonicalURL = documentURL.map(ProcessFileLock.canonicalURL)
+        let digest = RubricCaptureRecord.digest(source: source)
+        let sameDocument = rubricCaptures.records.filter { $0.documentURL == canonicalURL }
+        return sameDocument
+            .filter { $0.sourceDigest == digest }
+            .sorted { $0.updatedAt > $1.updatedAt }
+            .first ?? sameDocument
+                .filter { $0.response != nil || $0.request?.state == .pending || $0.request?.state == .accepted }
+                .sorted { $0.updatedAt > $1.updatedAt }
+                .first
+    }
+
+    private func recoverRubricCaptures() async {
+        guard rubricCaptureAvailability == .ready else { return }
+        let recoverable = rubricCaptures.records.filter {
+            $0.request == nil || $0.request?.state == .pending || $0.request?.state == .accepted
+        }
+        for current in recoverable {
+            guard !Task.isCancelled else { return }
+            do {
+                let status = try await runtime.rubricStatus(requestID: current.id)
+                var updated = current
+                updated.request = status.request; updated.response = status.response; updated.updatedAt = Date()
+                _ = try rubricCaptures.upsert(updated)
+            } catch {
+                // A request may have been pruned on the helper after its
+                // terminal retention window. Keep the local intent for review.
+            }
+        }
     }
 }
 

@@ -1,11 +1,15 @@
 import SwiftUI
 import AppKit
 import LeonardoCore
+import LeonardoSync
 
 struct RubricEditor: View {
     let request: RubricRequest
     let clearField: (() -> Bool)?
     let complete: (String, LeonardoRubric, Bool) -> Bool
+    let syncController: DesktopSyncController?
+    let saveRemote: ((RubricCaptureRecord, String) -> String?)?
+    let completeRemote: ((RubricCaptureRecord, String) -> Bool)?
     @Environment(\.dismiss) private var dismiss
     @State private var rubric = LeonardoRubric()
     @State private var label = ""
@@ -15,10 +19,18 @@ struct RubricEditor: View {
     @State private var saveToLibrary = true
     @State private var library: RubricLibrary
     @State private var error: String?
+    @State private var remoteCapture: RubricCaptureRecord?
+    @State private var remoteLabel = ""
+    @State private var remoteError: String?
+    @State private var remoteTask: Task<Void, Never>?
 
     init(request: RubricRequest, library: RubricLibrary, clearField: (() -> Bool)? = nil,
+         syncController: DesktopSyncController? = nil,
+         saveRemote: ((RubricCaptureRecord, String) -> String?)? = nil,
+         completeRemote: ((RubricCaptureRecord, String) -> Bool)? = nil,
          complete: @escaping (String, LeonardoRubric, Bool) -> Bool) {
         self.request = request; self.complete = complete; self.clearField = clearField
+        self.syncController = syncController; self.saveRemote = saveRemote; self.completeRemote = completeRemote
         _library = State(initialValue: library)
     }
 
@@ -44,6 +56,7 @@ struct RubricEditor: View {
                     }
                 }.frame(height: 85)
             }
+            if let syncController { remoteCaptureSection(syncController) }
             TextField(L10n.text("Rubric label"), text: $label).textFieldStyle(.roundedBorder)
                 .accessibilityIdentifier("rubric-label")
             HStack(alignment: .top, spacing: 24) {
@@ -93,7 +106,148 @@ struct RubricEditor: View {
                 }.disabled(!rubric.isValid || label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || label.count > 120)
             }
         }.padding(24).frame(width: 648)
-            .onAppear { library.refresh() }
+            .onAppear {
+                library.refresh()
+                guard let syncController,
+                      let existing = syncController.rubricCapture(for: request.documentURL, source: request.source) else { return }
+                remoteCapture = existing
+                if let response = existing.response { remoteLabel = response.label }
+                if existing.request?.state == .pending || existing.request?.state == .accepted {
+                    pollRemote(syncController, requestID: existing.id)
+                }
+            }
+            .onDisappear { remoteTask?.cancel() }
+    }
+
+    @ViewBuilder
+    private func remoteCaptureSection(_ controller: DesktopSyncController) -> some View {
+        Divider()
+        VStack(alignment: .leading, spacing: 8) {
+            Label(L10n.text("Use a linked Little Leonardo"), systemImage: "iphone.and.arrow.forward")
+                .font(.headline)
+            Text(L10n.text("The linked device draws the rubric. Review it here before saving or inserting it."))
+                .font(.caption).foregroundStyle(.secondary)
+            if let capture = remoteCapture {
+                remoteCaptureState(controller, capture)
+            } else {
+                Menu {
+                    ForEach(controller.supportedRubricDevices) { device in
+                        Button(device.name) { beginRemote(controller, device: device) }
+                    }
+                } label: {
+                    Label(L10n.text("Request from linked device"), systemImage: "paperplane")
+                }
+                .disabled(controller.rubricCaptureAvailability != .ready)
+                Text(controller.rubricCaptureAvailability.message)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if let remoteError { Text(remoteError).font(.caption).foregroundStyle(.red) }
+        }
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private func remoteCaptureState(_ controller: DesktopSyncController, _ capture: RubricCaptureRecord) -> some View {
+        if let response = capture.response {
+            HStack(alignment: .top, spacing: 12) {
+                Image(nsImage: RubricDrawing.inspectorPreview(response.rubric))
+                    .resizable().aspectRatio(3, contentMode: .fit).frame(width: 240, height: 80)
+                    .accessibilityLabel(L10n.text("Received rubric preview"))
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(L10n.text("Review received rubric")).font(.subheadline.weight(.semibold))
+                    TextField(L10n.text("Rubric label"), text: $remoteLabel)
+                        .textFieldStyle(.roundedBorder)
+                    HStack {
+                        Button(L10n.text("Save to library")) { saveReceived(controller, capture, response) }
+                        Button(L10n.text("Save and insert")) { insertReceived(controller, capture, response) }
+                    }
+                }
+            }
+        } else if let state = capture.request?.state, [.rejected, .cancelled, .expired].contains(state) {
+            Label(L10n.text("The rubric request was %@.").replacingOccurrences(of: "%@", with: stateLabel(state)), systemImage: "xmark.circle")
+                .foregroundStyle(.secondary)
+        } else {
+            HStack {
+                ProgressView().controlSize(.small)
+                Text(L10n.text("Waiting for (capture.targetDeviceName) to draw the rubric…"))
+                Spacer()
+                Button(L10n.text("Cancel request")) { cancelRemote(controller, requestID: capture.id) }
+            }
+        }
+    }
+
+    private func beginRemote(_ controller: DesktopSyncController, device: PairedDevice) {
+        remoteError = nil; remoteTask?.cancel()
+        let requestID = UUID()
+        remoteTask = Task { @MainActor in
+            do {
+                let capture = try await controller.beginRubricCapture(requestID: requestID,
+                    targetDeviceID: device.id, targetDeviceName: device.name,
+                    labelHint: label.isEmpty ? nil : label, documentURL: request.documentURL,
+                    source: request.source, fieldID: request.fieldID)
+                remoteCapture = capture
+                if let response = capture.response { remoteLabel = response.label }
+                else { remoteLabel = capture.labelHint ?? label }
+                if capture.response == nil { pollRemote(controller, requestID: capture.id) }
+            } catch { remoteError = error.localizedDescription }
+        }
+    }
+
+    private func pollRemote(_ controller: DesktopSyncController, requestID: UUID) {
+        remoteTask?.cancel()
+        remoteTask = Task { @MainActor in
+            while !Task.isCancelled {
+                do {
+                    let capture = try await controller.refreshRubricCapture(requestID: requestID)
+                    remoteCapture = capture
+                    if let response = capture.response {
+                        remoteLabel = response.label
+                        return
+                    }
+                    if let state = capture.request?.state, [.rejected, .cancelled, .expired].contains(state) { return }
+                    try await Task.sleep(for: .seconds(1))
+                } catch {
+                    remoteError = error.localizedDescription
+                    return
+                }
+            }
+        }
+    }
+
+    private func cancelRemote(_ controller: DesktopSyncController, requestID: UUID) {
+        remoteTask?.cancel()
+        remoteTask = Task { @MainActor in
+            do { remoteCapture = try await controller.cancelRubricCapture(requestID: requestID) }
+            catch { remoteError = error.localizedDescription }
+        }
+    }
+
+    private func saveReceived(_ controller: DesktopSyncController, _ capture: RubricCaptureRecord, _ response: RubricResponse) {
+        guard let saveRemote, let entryID = saveRemote(capture, remoteLabel) else {
+            remoteError = L10n.text("The rubric could not be saved. Try again."); return
+        }
+        do { remoteCapture = try controller.markRubricCaptureSaved(requestID: capture.id, libraryEntryID: entryID) }
+        catch { remoteError = error.localizedDescription }
+    }
+
+    private func insertReceived(_ controller: DesktopSyncController, _ capture: RubricCaptureRecord, _ response: RubricResponse) {
+        guard let completeRemote, completeRemote(capture, remoteLabel) else {
+            remoteError = L10n.text("The document changed while the rubric was away. Save it to the library instead."); return
+        }
+        if let entryID = saveRemote?(capture, remoteLabel) {
+            do { remoteCapture = try controller.markRubricCaptureSaved(requestID: capture.id, libraryEntryID: entryID) }
+            catch { remoteError = error.localizedDescription }
+        }
+        dismiss()
+    }
+
+    private func stateLabel(_ state: RubricRequestState) -> String {
+        switch state {
+        case .rejected: L10n.text("rejected")
+        case .cancelled: L10n.text("cancelled")
+        case .expired: L10n.text("expired")
+        default: L10n.text("finished")
+        }
     }
     private var inkColor: String {
         RubricDrawing.hex(NSColor(color))

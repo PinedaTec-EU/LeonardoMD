@@ -32,6 +32,14 @@ struct WorkspaceView: View {
         .sheet(item: $session.rubricRequest) { request in
             RubricEditor(request: request, library: session.rubricLibrary, clearField: request.fieldID.map { field in
                 { session.documentURL == request.documentURL && session.updateLeonardoFields(expected: request.source, changes: [field: .null]) != nil }
+            }, syncController: DesktopSyncController.shared,
+            saveRemote: { capture, label in
+                guard let response = capture.response else { return nil }
+                return session.saveRubricToLibrary(label: label, rubric: response.rubric, sourceRequestID: capture.id)
+            }, completeRemote: { capture, label in
+                guard let response = capture.response else { return false }
+                return session.finishRubric(request, label: label, rubric: response.rubric,
+                    saveToLibrary: true, sourceRequestID: capture.id)
             }) { label, rubric, save in
                 session.finishRubric(request, label: label, rubric: rubric, saveToLibrary: save)
             }.modifier(SessionAppearance(session: session))
