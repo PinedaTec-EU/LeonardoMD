@@ -2,6 +2,32 @@
 
 Run `swift test` for Core, App, static render and real WKWebView integration checks. Run `./scripts/build-app.sh` for the optimized, locally signed native bundle; `./launch.sh` opens it. Tests use disposable local folders and bare Git remotes, never a production remote.
 
+### Prelaunch dependency and signing gate
+
+`launch.sh` validates the final selected bundle immediately before `open`, including
+the disposable copy produced by `--qa`. `scripts/qa-bundle.py --verify-only <app>`
+checks the real executable, non-system Mach-O dependency resolution inside the
+bundle (including transitive libraries), deep strict signatures, and consistent
+embedded signing teams for team-signed apps. System framework/library paths may
+be supplied by Apple's dyld shared cache. This static gate does not prove a fresh
+process or first-window readiness and does not claim to eliminate concurrent
+modification after inspection.
+
+For Developer ID hardened QA, set `LEONARDO_QA_SIGN_IDENTITY` to the existing
+Developer ID Application identity and use `./launch.sh --qa`. The identity is
+used only to sign the disposable copy. Without it, local ad-hoc QA remains
+supported. To prepare without opening, invoke `scripts/qa-bundle.py` with the
+built source app and `--sign-identity <identity>`. The source must already pass
+inspection. QA and distribution use the same inside-out signer, preserving
+embedded entitlements; never sign only the outer app when switching a copy to
+Developer ID hardened runtime.
+
+[Issue #324](https://github.com/PinedaTec-EU/LeonardoMD/issues/324) and
+[the same incident's QA investigation #325](https://github.com/PinedaTec-EU/LeonardoMD/issues/325)
+identify a Sparkle library-validation failure after incomplete nested signing,
+despite the framework and runpath being present. Keep the active owner's app
+untouched; forwarding to it does not establish fresh-process startup acceptance.
+
 Coverage includes project/file operations, path and symlink boundaries, streamed search/cancellation, schema and stale-window settings merges, external-change protection, navigation isolation, Git dirty/conflict handling, Unicode/newline paths, multi-megabyte process output, and fetch/pull/push against a local bare remote. Real WebKit checks verify sanitization, disabled engine globals, retained content-update context, Mermaid labels, KaTeX, parent-relative images, PDF data and engine context replacement.
 
 Project browsing and both search APIs omit symbolic links. File operations reject symbolic link components and destinations, including dangling links, instead of resolving an alias and mutating its target. This is a preflight boundary, not protection against another process swapping paths concurrently; the correction is tracked in [#25](https://github.com/PinedaTec-EU/LeonardoMD/issues/25).

@@ -54,6 +54,8 @@ def release_changes_report(bundle, source_root, checkout_sha):
         'bundle_identifier': metadata['CFBundleIdentifier'],
         'executable': metadata['CFBundleExecutable'], 'version': version,
         'dependencies': dependencies, 'xctest_dependency': False, 'codesign_verified': True,
+        'bundle_path': str(bundle.resolve()), 'dependency_resolution_verified': True,
+        'embedded_signing_verified': True,
         'changes_sha256': hashlib.sha256(packaged).hexdigest(), 'changes_bytes_identical': True,
         'change_count': len(artifact['changes']),
         'summary_count': sum('summary' in change for change in artifact['changes']),

@@ -1,5 +1,15 @@
 # Application updates
 
+Prelaunch packaging inspection under [#324](https://github.com/PinedaTec-EU/LeonardoMD/issues/324)
+resolves non-system dependencies within the bundle and checks deep signatures plus
+embedded signing teams. `launch.sh` rechecks the final app before `open`.
+`scripts/bundle-dependencies.py` owns the shared inside-out signer used by QA
+(`LEONARDO_QA_SIGN_IDENTITY` with `--qa`) and distribution. The 2026-11-05
+Sparkle crash was the same incomplete hardened-QA signing incident recorded in
+[#325](https://github.com/PinedaTec-EU/LeonardoMD/issues/325), not proof that the
+framework was absent. See [maintainer validation](../doc/validation/macos-mvp.md).
+Static inspection is separate from fresh-process/window acceptance.
+
 `ApplicationUpdates.shared` exposes an observable application-wide subscription and Updates preferences tab. `SparkleUpdateDriver` bridges Sparkle 2.9.6/KVO, feeds and allowed channels; Sparkle persists check preferences and last-check date. No matching public signing key means an explanatory disabled development state in Preferences. Primary instances alone start Sparkle; installation uses the application termination guard covering all document tabs.
 
 `scripts/configure-update-bundle.py` validates version/channel, positive numeric build and HTTPS feed. `prepare-release.sh` embeds helpers, signs inside out, notarizes and generates signed assets; beta-only local candidates may explicitly skip notarization. `verify-update-archive.py` checks real archive bytes with Sparkle. Beta and stable share one increasing build sequence and the existing stable Keychain key. Separate feeds remain: beta subscriptions require a combined stable+beta appcast prepared atomically by `compose-beta-appcast.py`. Stable is the default even in beta packages; user choice persists independently of installed maturity. Active Sparkle sessions and a durable pending-update decision guard block channel changes across relaunch; stable selection never downgrades. Old different-key beta packages require manual signed/notarized replacement. See [release contract](../doc/releases.md). Published packages and working owner-confirmed update detection/installation are established; remaining matrix acceptance stays in [#15](https://github.com/PinedaTec-EU/LeonardoMD/issues/15). The [Preferences-sheet termination limitation #202](https://github.com/PinedaTec-EU/LeonardoMD/issues/202) can keep the old instance open; closing Preferences and normal Quit completed the recorded 445 → 461 transition. The owner's 2026-10-20 report reconfirms installation, without adding exact-build matrix evidence.
