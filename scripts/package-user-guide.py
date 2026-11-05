@@ -93,7 +93,7 @@ def build_agent_import(language, destination):
     """Derive the standalone guide from the same main-help chapter."""
     body = (ROOT / "doc/guide" / language / "body.md").read_text(encoding="utf-8")
     section = body.split("<!-- agent-import:begin -->\n", 1)[1].split("<!-- agent-import:end -->", 1)[0]
-    section = section.replace("### ", "# ", 1)
+    section = section.replace("### ", "# ", 1).replace("\n#### ", "\n## ")
     name = "importar" if language == "es" else "import"
     title, labels = ILLUSTRATIONS[language][name]
     header = {"format": "mdlf", "formatVersion": 1,

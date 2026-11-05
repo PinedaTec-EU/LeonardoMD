@@ -202,7 +202,8 @@ final class BundledUserGuideTests: XCTestCase {
             defer { window.close() }
             let web = try await findWebView(in: hosting)
             try await waitFor("document.querySelector('h1') !== null && document.images.length === 1 && document.images[0].naturalWidth > 0", in: web)
-            let text = try XCTUnwrap(try await web.evaluateJavaScript("document.body.innerText") as? String)
+            let renderedText = try await web.evaluateJavaScript("document.body.innerText")
+            let text = try XCTUnwrap(renderedText as? String)
             XCTAssertTrue(text.contains(language == .english ? "Import with your agent" : "Importar con tu agente"))
             XCTAssertTrue(text.contains("leonardo-format"))
             XCTAssertTrue(text.contains(language == .english ? "Request to copy" : "Encargo que puedes copiar"))

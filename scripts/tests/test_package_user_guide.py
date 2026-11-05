@@ -74,7 +74,7 @@ class PackageUserGuideTests(unittest.TestCase):
                     self.assertEqual(header['document']['revision'], 1)
                     self.assertEqual(len(archive.namelist()), 2)
                     chapter = body.split('<!-- agent-import:begin -->\n')[1].split('<!-- agent-import:end -->')[0]
-                    self.assertTrue(source.endswith(chapter.replace('### ', '# ', 1)))
+                    self.assertTrue(source.endswith(chapter.replace('### ', '# ', 1).replace('\n#### ', '\n## ')))
                     self.assertIn('leonardo-format', source)
                     self.assertIn('.mdlf', source)
                     self.assertIn('.mdlz', source)
