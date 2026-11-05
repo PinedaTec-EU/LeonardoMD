@@ -1,14 +1,16 @@
 {
   "schema_version": 1,
-  "source_sha": "0c46b98e85092f5ef169fa6823935f04db200c2c",
+  "source_sha": "5858c47a9762ba6567a7589721bfba71afbbfdb1",
   "build_configuration": "release",
   "distribution": "local QA, Developer ID signed; not published or notarized as a release",
-  "app_executable_sha256": "4aac5646a22b0db0aa4d849275e28d2e06c6d68cc5f2cae68369f208222b75e2",
-  "helper_executable_sha256": "8812205031d03bda60eacba7576521a4fddd5400d775e5c5c0a5d5bad4e20580",
-  "mutual_developer_id_requirement_tests": "2 passed, zero failures",
+  "app_executable_sha256": "a51eb7539f5493e011fd70d8992f5cc4b644f0d59991872e0591b036612fac40",
+  "helper_executable_sha256": "f1a059faa289fd82edad18bb2ef6c21fdf423a8be1c9217498c769897e372330",
+  "mutual_developer_id_requirement_tests": "Previously passed; real mutually authenticated app/helper XPC consent and health also pass",
   "strict_deep_codesign_verification": true,
   "helper_dependency_inspection": "No XCTest or Sparkle dependency",
-  "service_registered": false,
-  "fresh_app_process_validated": false,
-  "existing_user_instance_terminated": false
+  "fresh_app_process_validated": true,
+  "service_registration_tested": true,
+  "service_registered_after_cleanup": false,
+  "original_app_closed_normally_after_save": true,
+  "installed_app_unchanged": true
 }

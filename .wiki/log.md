@@ -1,6 +1,6 @@
 # Changes
 
-- 2026-11-05: [#319](https://github.com/PinedaTec-EU/LeonardoMD/issues/319) extracts macOS source sharing into a required optional per-user helper; app manages registration/master consent, outbound operations fail closed and saved-file snapshots survive editor exit. Component/TLS tests do not establish installed login-service acceptance.
+- 2026-11-05: [#319](https://github.com/PinedaTec-EU/LeonardoMD/issues/319) extracts macOS source sharing into a required optional per-user helper; app manages registration/master consent, outbound operations fail closed and saved-file snapshots survive editor exit. Later owner-authorized native acceptance validates registration, reading after owner-editor exit, launchd helper restart and disable/offline behavior; no physical reboot is claimed.
 
 - 2026-10-20: [#249](https://github.com/PinedaTec-EU/LeonardoMD/issues/249) retires the proprietary mobile Git implementation and exclusive dependencies. iOS retains direct read-only snapshots and recovery exports of old corpus states; desktop direct synchronization and installed-system-Git tools are preserved. Persistence also rejects overwriting recovery archives independently of library memory ([#251](https://github.com/PinedaTec-EU/LeonardoMD/issues/251)). Native/automated evidence is tracked on the source PR; no Windows implementation or release is claimed.
 

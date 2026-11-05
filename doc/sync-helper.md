@@ -71,17 +71,32 @@ captures local drafts and preserves them through the existing reconciliation lea
 
 ## Validation boundaries
 
-Tests cover isolated host configuration, real pinned HTTPS saved/scope transfers,
-disable/restart identity and grant persistence, lifecycle approval/health/failure,
-stale-form protection, outbound denial and the lost-reply application barrier.
-These compose production components; they do not prove installation with
-`SMAppService`, Keychain approval on an existing installation, fresh packaged
-startup, physical two-Mac networking or a real logout/reboot/login cycle.
+Owner-authorized native acceptance used an immutable Developer ID signed copy,
+registered through the real app preferences, a synthetic loopback project and
+an independently paired test reader. The source owner process exited; the same
+pinned client still read saved bytes. launchd then restarted the helper after
+SIGTERM, without reopening the source editor, and the same identity/grant read
+succeeded. Disabling through the reopened editor unregistered the service and
+rejected transfers while that editor remained open. Linked Macs showed offline
+and disabled its network action. See [evidence](validation/sync-helper/README.md).
 
-Fresh packaged acceptance must use the real app bundle and respect the running
-user instance. In particular, do not close a user's editor or register a QA
-helper over an existing service silently. Release readiness requires recording
-that installation/lifecycle evidence on #319 and its PR.
+The original installed app binary was unchanged. Test service/state and the
+new test-owned TLS Keychain item were removed, original mobile preferences/store
+were restored, and other concurrently changed global preferences were preserved.
+A separate QA process held product-wide primary ownership when reopening the
+installed app was attempted; that unrelated process was not terminated.
+
+This proves the installed per-user service lifecycle on this Mac, not physical
+two-Mac/VPN networking, a hardware logout/reboot cycle, an in-place app upgrade,
+or approval of a legacy app-created Keychain ACL. RunAtLoad/KeepAlive are configured
+and automatic helper recovery is exercised. Existing TLS formats and grants are
+retained; an OS credential-permission decision remains the user's responsibility.
+
+Fresh packaged acceptance must use the real app bundle and respect any running
+user instance. Never close the user's editor or register over an existing service
+without authorization. Do not rebuild a registered QA bundle in place: unregister
+first and test a complete, signed, immutable copy. Development-path churn was
+observed to leave stale launch constraints; no global BTM/security reset was used.
 
 ## Signed local QA packages
 
