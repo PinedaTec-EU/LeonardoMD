@@ -289,4 +289,10 @@
 - [#316](https://github.com/PinedaTec-EU/LeonardoMD/pull/316) — #193 Added: images and reusable drawn rubrics — build +18
   <p>Insert images and reusable drawn rubrics with page placement, layer controls and a compact document toolbar.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.783)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTEtMDVUMDk6MzA6MjJaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjEyfSwiZnJvbV92ZXJzaW9uIjoiMC4xLjc4MyIsImtpbmQiOiJwdWxsX3JlcXVlc3QiLCJtZXJnZV9zaGEiOiIyNmI2ZWNhNjlmNTgxNGMyNjc0ZTFjYzA2MTYzNjc3ZmZlNGRhNGY5IiwibnVtYmVyIjozMjYsInN1bW1hcnkiOiJJbnNwZWN0IHBsYWNlZCBpbWFnZXMgYW5kIHJ1YnJpY3MgaW4gYSBuYXRpdmUgc2lkZSBwYW5lbCwgcmVjb2xvciBpbnNlcnRlZCBpbmsgYW5kIGRpc21pc3Mgb2JqZWN0IHNlbGVjdGlvbiB3aGVuIHJldHVybmluZyB0byBkb2N1bWVudCB0ZXh0LiIsInRpdGxlIjoiIzMyMyBBZGRlZDogbmF0aXZlIGdyYXBoaWMgaW5zcGVjdG9yIGFuZCByZWxpYWJsZSBkZXNlbGVjdGlvbiIsInRvX3ZlcnNpb24iOiIwLjEuNzk1In1dLCJlbnZpcm9ubWVudCI6InJlbGVhc2UiLCJldmVudF9pZCI6ImdpdGh1Yl9yZWxlYXNlOjQzNDk5NjQ1MSIsImV2ZW50X2tpbmQiOiJnaXRodWJfcmVsZWFzZSIsImV2aWRlbmNlX3VybCI6Imh0dHBzOi8vZ2l0aHViLmNvbS9QaW5lZGFUZWMtRVUvTGVvbmFyZG9NRC9yZWxlYXNlcy90YWcvdjAuMS43OTUiLCJyZXBvc2l0b3J5IjoiUGluZWRhVGVjLUVVL0xlb25hcmRvTUQiLCJzb3VyY2VfcmVmIjoidjAuMS43OTUiLCJzb3VyY2Vfc2hhIjoiYWZlOGJlM2RmNzc3ZjE3YzQ1MjA0Nzc4NTJlZmUyYmFiOTJiM2RkZCIsInRhcmdldCI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwidmVyc2lvbiI6IjAuMS43OTUifQ -->
+### 0.1.795
+- [#326](https://github.com/PinedaTec-EU/LeonardoMD/pull/326) — #323 Added: native graphic inspector and reliable deselection — build +12
+  <p>Inspect placed images and rubrics in a native side panel, recolor inserted ink and dismiss object selection when returning to document text.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.1.795)
 <!-- release-ledger:end -->
