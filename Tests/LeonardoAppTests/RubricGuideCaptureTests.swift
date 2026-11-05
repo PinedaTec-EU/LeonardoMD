@@ -33,6 +33,13 @@ final class RubricGuideCaptureTests: XCTestCase {
             try await GuideCaptureSupport.captureNative(editor, size: NSSize(width: 696, height: 580),
                 to: folder.appendingPathComponent("rubric-canvas.png"), language: code,
                 state: "Production rubric editor; isolated synthetic library; empty new canvas; no device or legal signing")
+            let controller = DesktopSyncController(preferencesURL: root.appendingPathComponent("capture-prefs-\(code).json"))
+            let linkedEditor = NSHostingView(rootView: RubricEditor(request: request, library: library,
+                syncController: controller) { _, _, _ in false }
+                .modifier(SessionAppearance(session: session)).frame(width: 696, height: 700).background(Color(nsColor: .windowBackgroundColor)))
+            try await GuideCaptureSupport.captureNative(linkedEditor, size: NSSize(width: 696, height: 700),
+                to: folder.appendingPathComponent("rubric-linked-offline.png"), language: code,
+                state: "Production linked-rubric section; helper offline state; isolated synthetic data; no device or legal signing")
             let header = NSHostingView(rootView: DocumentToolbar(session: session).modifier(SessionAppearance(session: session)).frame(width: 1260, height: 74).background(Color(nsColor: .windowBackgroundColor)))
             try await GuideCaptureSupport.captureNative(header, size: NSSize(width: 1260, height: 74),
                 to: folder.appendingPathComponent("document-toolbar.png"), language: code,
