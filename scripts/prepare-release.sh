@@ -23,12 +23,8 @@ export LEONARDO_DISTRIBUTION=1
 app="$PWD/output/LeonardoMD.app"
 tools="$PWD/.build/artifacts/sparkle/Sparkle/bin"
 python3 scripts/verify-update-signing-key.py "$app/Contents/Info.plist" "$tools/generate_keys" "${SPARKLE_KEY_ACCOUNT:-LeonardoMD-stable}"
-framework="$app/Contents/Frameworks/Sparkle.framework/Versions/B"
-# Re-sign nested executables with this app's Developer ID, preserving vendor entitlements.
-for component in "$framework/XPCServices/Downloader.xpc" "$framework/XPCServices/Installer.xpc" "$framework/Autoupdate" "$framework/Updater.app" "$app/Contents/Frameworks/Sparkle.framework" "$app"; do
-  codesign --force --options runtime --timestamp --preserve-metadata=entitlements --sign "$DEVELOPER_ID_APPLICATION" "$component"
-done
-codesign --verify --deep --strict "$app"
+python3 scripts/bundle-dependencies.py "$app" --sign-identity "$DEVELOPER_ID_APPLICATION"
+python3 scripts/qa-bundle.py --verify-only "$app"
 notary_archive="$PWD/output/notary.zip"
 ditto -c -k --sequesterRsrc --keepParent "$app" "$notary_archive"
 if [ "$notarize" = 1 ]; then

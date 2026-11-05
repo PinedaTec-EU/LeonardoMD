@@ -2,6 +2,7 @@
 """Validate real app packaging and prepare disposable native QA copies."""
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 import plistlib
@@ -10,6 +11,10 @@ import shutil
 import subprocess
 import tempfile
 import uuid
+
+SPEC = importlib.util.spec_from_file_location('bundle_dependencies', Path(__file__).with_name('bundle-dependencies.py'))
+bundle_dependencies = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(bundle_dependencies)
 
 
 def inspect_bundle(bundle):
@@ -22,7 +27,8 @@ def inspect_bundle(bundle):
     dependencies = subprocess.check_output(['/usr/bin/otool', '-L', str(executable)], text=True)
     if 'XCTest.framework/' in dependencies:
         raise ValueError('GUI executable links XCTest; use swift test instead of launching a test runner as an app')
-    subprocess.run(['/usr/bin/codesign', '--verify', '--strict', str(bundle)], check=True)
+    bundle_dependencies.inspect_dependencies(bundle, executable)
+    bundle_dependencies.inspect_signing(bundle)
     return metadata, dependencies
 
 
@@ -55,7 +61,7 @@ def release_changes_report(bundle, source_root, checkout_sha):
     }
 
 
-def prepare_bundle(source):
+def prepare_bundle(source, identity=None):
     metadata = verify_bundle(source)
     directory = Path(tempfile.mkdtemp(prefix='leonardo-native-qa-'))
     bundle = directory / 'LeonardoMDQA.app'
@@ -66,7 +72,10 @@ def prepare_bundle(source):
         metadata['CFBundleDisplayName'] = 'LeonardoMD QA'
         with (bundle / 'Contents/Info.plist').open('wb') as stream:
             plistlib.dump(metadata, stream)
-        subprocess.run(['/usr/bin/codesign', '--force', '--sign', '-', str(bundle)], check=True)
+        if identity:
+            bundle_dependencies.sign_bundle(bundle, identity)
+        else:
+            subprocess.run(['/usr/bin/codesign', '--force', '--sign', '-', str(bundle)], check=True)
         verify_bundle(bundle)
         return bundle
     except BaseException:
@@ -78,10 +87,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('source', type=Path, help='Packaged LeonardoMD.app from scripts/build-app.sh')
     parser.add_argument('--verify-only', action='store_true')
+    parser.add_argument('--sign-identity', help='Sign the disposable QA copy inside out with this Developer ID')
     parser.add_argument('--report', type=Path, help='Write package inspection evidence; requires --verify-only')
     arguments = parser.parse_args()
     if arguments.report and not arguments.verify_only:
         parser.error('--report requires --verify-only')
+    if arguments.sign_identity and arguments.verify_only:
+        parser.error('--sign-identity requires a disposable QA copy')
     try:
         if arguments.report:
             root = Path(__file__).resolve().parents[1]
@@ -94,7 +106,7 @@ def main():
         elif arguments.verify_only:
             verify_bundle(arguments.source)
         else:
-            print(prepare_bundle(arguments.source))
+            print(prepare_bundle(arguments.source, arguments.sign_identity))
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
         parser.exit(1, f'QA bundle rejected: {error}\n')
 

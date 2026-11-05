@@ -17,4 +17,5 @@ if [ "$qa" = true ]; then
   app_path=$(python3 scripts/qa-bundle.py "$app_path")
   printf 'QA bundle: %s\nExisting LeonardoMD instances retain product-wide ownership; verify a new PID before claiming fresh startup.\n' "$app_path"
 fi
+python3 scripts/qa-bundle.py --verify-only "$app_path"
 open -a "$app_path" "$@"
