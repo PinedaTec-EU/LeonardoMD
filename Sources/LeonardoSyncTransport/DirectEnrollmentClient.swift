@@ -32,12 +32,15 @@ public struct DirectEnrollmentClient: Sendable {
         let credential: String
         let invitation: PairingInvitation?
         let kind: PairingClientKind
+        let capabilities: Set<DirectCapability>
     }
 
-    public func begin(deviceName: String, credential: String, now: Date, kind: PairingClientKind = .readOnly) async throws -> DirectEnrollment {
+    public func begin(deviceName: String, credential: String, now: Date, kind: PairingClientKind = .readOnly,
+                      capabilities: Set<DirectCapability> = []) async throws -> DirectEnrollment {
         if let invitation, invitation.expiresAt <= now { throw PairingError.expiredInvitation }
         let response = try await client.request(method: "POST", path: "/v1/pair/request",
-            body: JSONEncoder().encode(PairingStart(deviceName: deviceName, credential: credential, invitation: invitation, kind: kind)))
+            body: JSONEncoder().encode(PairingStart(deviceName: deviceName, credential: credential,
+                                                    invitation: invitation, kind: kind, capabilities: capabilities)))
         guard response.status == 202 else { throw TransportError.unexpectedResponse }
         let challenge = try JSONDecoder().decode(PairingChallenge.self, from: response.body)
         guard challenge.expiresAt > now else { throw PairingError.expiredInvitation }

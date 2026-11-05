@@ -104,7 +104,8 @@ final class HTTPSRuntimeTests: XCTestCase {
                                                     certificateFingerprint: identity.certificateFingerprint)
             let credential = try PairingRegistry.makeCredential()
             let enrollment = try await client.begin(deviceName: "QA iPhone", credential: credential,
-                                                    now: Date(timeIntervalSince1970: 2_000))
+                                                    now: Date(timeIntervalSince1970: 2_000),
+                                                    capabilities: [.rubricExchangeV1])
             try await authority.approve(requestID: enrollment.deviceID, code: enrollment.comparisonCode,
                                         projectIDs: [project.id], now: Date(timeIntervalSince1970: 2_000))
             let status = try await client.status(deviceID: enrollment.deviceID, credential: credential)
