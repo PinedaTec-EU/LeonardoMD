@@ -38,6 +38,13 @@ public struct DirectDeviceStatus: Codable, Sendable {
                 capabilities: Set<DirectCapability> = []) {
         self.access = access; self.projects = projects; self.capabilities = capabilities
     }
+    private enum CodingKeys: String, CodingKey { case access, projects, capabilities }
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        access = try container.decode(DeviceAccess.self, forKey: .access)
+        projects = try container.decode([SharedProjectDescriptor].self, forKey: .projects)
+        capabilities = try container.decodeIfPresent(Set<DirectCapability>.self, forKey: .capabilities) ?? []
+    }
 }
 
 public enum DirectAuthorityError: Error, Sendable { case busy }

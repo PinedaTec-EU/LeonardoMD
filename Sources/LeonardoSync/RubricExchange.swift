@@ -47,14 +47,47 @@ public struct RubricRequest: Codable, Equatable, Sendable, Identifiable {
                 state: RubricRequestState = .pending) throws {
         let cleanName = requesterName.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanHint = labelHint?.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleanName.isEmpty, cleanName.count <= 100,
-              cleanHint == nil || (cleanHint!.isEmpty == false && cleanHint!.count <= 120),
-              let end = expiresAt ?? Optional(createdAt.addingTimeInterval(Self.lifetime)), end > createdAt,
-              end.timeIntervalSince(createdAt) <= Self.lifetime,
-              state != .completed else { throw RubricExchangeError.invalidPayload }
-        self.id = id; self.targetDeviceID = targetDeviceID; self.requesterID = requesterID
-        self.requesterName = cleanName; self.labelHint = cleanHint; self.capability = capability
-        self.createdAt = createdAt; self.expiresAt = end; self.state = state
+        let end = expiresAt ?? createdAt.addingTimeInterval(Self.lifetime)
+        guard Self.isValid(requesterName: cleanName, labelHint: cleanHint, createdAt: createdAt,
+                           expiresAt: end), state != .completed else { throw RubricExchangeError.invalidPayload }
+        self = Self(uncheckedID: id, targetDeviceID: targetDeviceID, requesterID: requesterID,
+                    requesterName: cleanName, labelHint: cleanHint, capability: capability,
+                    createdAt: createdAt, expiresAt: end, state: state)
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let name = try c.decode(String.self, forKey: .requesterName)
+        let hint = try c.decodeIfPresent(String.self, forKey: .labelHint)
+        let created = try c.decode(Date.self, forKey: .createdAt)
+        let expires = try c.decode(Date.self, forKey: .expiresAt)
+        let state = try c.decode(RubricRequestState.self, forKey: .state)
+        guard Self.isValid(requesterName: name, labelHint: hint, createdAt: created, expiresAt: expires) else {
+            throw RubricExchangeError.invalidPayload
+        }
+        self = Self(uncheckedID: try c.decode(UUID.self, forKey: .id),
+                    targetDeviceID: try c.decode(UUID.self, forKey: .targetDeviceID),
+                    requesterID: try c.decode(UUID.self, forKey: .requesterID),
+                    requesterName: name, labelHint: hint,
+                    capability: try c.decode(DirectCapability.self, forKey: .capability),
+                    createdAt: created, expiresAt: expires, state: state)
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, targetDeviceID, requesterID, requesterName, labelHint, capability, createdAt, expiresAt, state }
+    private init(uncheckedID: UUID, targetDeviceID: UUID, requesterID: UUID, requesterName: String,
+                 labelHint: String?, capability: DirectCapability, createdAt: Date,
+                 expiresAt: Date, state: RubricRequestState) {
+        id = uncheckedID; self.targetDeviceID = targetDeviceID; self.requesterID = requesterID
+        self.requesterName = requesterName; self.labelHint = labelHint; self.capability = capability
+        self.createdAt = createdAt; self.expiresAt = expiresAt; self.state = state
+    }
+
+    private static func isValid(requesterName: String, labelHint: String?, createdAt: Date, expiresAt: Date) -> Bool {
+        createdAt.timeIntervalSince1970.isFinite && expiresAt.timeIntervalSince1970.isFinite
+            && !requesterName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && requesterName.count <= 100
+            && (labelHint == nil || (!labelHint!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && labelHint!.count <= 120))
+            && expiresAt > createdAt && expiresAt.timeIntervalSince(createdAt) <= Self.lifetime
     }
 }
 
@@ -70,13 +103,13 @@ public struct RubricResponse: Codable, Equatable, Sendable {
     public init(requestID: UUID, targetDeviceID: UUID, requesterID: UUID,
                 label: String, rubric: LeonardoRubric, submittedAt: Date) throws {
         let cleanLabel = label.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleanLabel.isEmpty, cleanLabel.count <= 120, rubric.isValid else {
+        guard Self.isValid(label: cleanLabel, rubric: rubric, submittedAt: submittedAt) else {
             throw RubricExchangeError.invalidPayload
         }
         let candidate = RubricResponse(uncheckedRequestID: requestID, targetDeviceID: targetDeviceID,
                                        requesterID: requesterID, label: cleanLabel, rubric: rubric,
                                        submittedAt: submittedAt)
-        guard (try? JSONEncoder().encode(candidate).count) ?? (Self.maximumEncodedBytes + 1) <= Self.maximumEncodedBytes else {
+        guard let bytes = try? JSONEncoder().encode(candidate), bytes.count <= Self.maximumEncodedBytes else {
             throw RubricExchangeError.invalidPayload
         }
         self = candidate
@@ -86,6 +119,30 @@ public struct RubricResponse: Codable, Equatable, Sendable {
                  label: String, rubric: LeonardoRubric, submittedAt: Date) {
         requestID = uncheckedRequestID; self.targetDeviceID = targetDeviceID; self.requesterID = requesterID
         self.label = label; self.rubric = rubric; self.submittedAt = submittedAt
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let label = try c.decode(String.self, forKey: .label)
+        let rubric = try c.decode(LeonardoRubric.self, forKey: .rubric)
+        let submittedAt = try c.decode(Date.self, forKey: .submittedAt)
+        guard Self.isValid(label: label, rubric: rubric, submittedAt: submittedAt) else {
+            throw RubricExchangeError.invalidPayload
+        }
+        let candidate = RubricResponse(uncheckedRequestID: try c.decode(UUID.self, forKey: .requestID),
+                                       targetDeviceID: try c.decode(UUID.self, forKey: .targetDeviceID),
+                                       requesterID: try c.decode(UUID.self, forKey: .requesterID),
+                                       label: label, rubric: rubric, submittedAt: submittedAt)
+        guard let bytes = try? JSONEncoder().encode(candidate), bytes.count <= Self.maximumEncodedBytes else {
+            throw RubricExchangeError.invalidPayload
+        }
+        self = candidate
+    }
+
+    private enum CodingKeys: String, CodingKey { case requestID, targetDeviceID, requesterID, label, rubric, submittedAt }
+
+    static func isValid(label: String, rubric: LeonardoRubric, submittedAt: Date) -> Bool {
+        !label.isEmpty && label.count <= 120 && rubric.isValid && submittedAt.timeIntervalSince1970.isFinite
     }
 }
 
@@ -116,6 +173,7 @@ public protocol RubricExchangeStore: Sendable {
 public actor FileRubricExchangeStore: RubricExchangeStore {
     private static let maximumRecords = 256
     private static let maximumFileBytes = 16 * 1_024 * 1_024
+    private static let terminalRetention: TimeInterval = 30 * 24 * 60 * 60
     private let url: URL
     private var records: [UUID: RubricExchangeRecord] = [:]
     private var loaded = false
@@ -124,17 +182,21 @@ public actor FileRubricExchangeStore: RubricExchangeStore {
 
     public func create(_ request: RubricRequest) async throws {
         try loadIfNeeded()
+        let pruned = prunedRecords(now: request.createdAt)
+        if pruned != records { try persist(pruned); records = pruned }
         guard records[request.id] == nil, records.count < Self.maximumRecords else {
             throw RubricExchangeError.conflict
         }
-        records[request.id] = RubricExchangeRecord(request: request, updatedAt: request.createdAt)
-        try persist()
+        var updated = records
+        updated[request.id] = RubricExchangeRecord(request: request, updatedAt: request.createdAt)
+        try persist(updated)
+        records = updated
     }
 
     public func requests(for targetDeviceID: UUID, now: Date) async throws -> [RubricRequest] {
         try loadIfNeeded()
-        let changed = expire(now: now)
-        if changed { try persist() }
+        let updated = expiredRecords(now: now)
+        if updated != records { try persist(updated); records = updated }
         return records.values
             .filter { $0.request.targetDeviceID == targetDeviceID && [.pending, .accepted].contains($0.request.state) }
             .map(\.request).sorted { $0.createdAt < $1.createdAt }
@@ -142,42 +204,48 @@ public actor FileRubricExchangeStore: RubricExchangeStore {
 
     public func request(id: UUID, now: Date) async throws -> RubricRequest? {
         try loadIfNeeded()
-        if expire(now: now) { try persist() }
+        let updated = expiredRecords(now: now)
+        if updated != records { try persist(updated); records = updated }
         return records[id]?.request
     }
 
     public func transition(requestID: UUID, targetDeviceID: UUID, to state: RubricRequestState,
                            now: Date) async throws -> RubricRequest {
         try loadIfNeeded()
-        if expire(now: now) { try persist() }
+        let expired = expiredRecords(now: now)
+        if expired != records { try persist(expired); records = expired }
         guard var record = records[requestID], record.request.targetDeviceID == targetDeviceID else {
             throw RubricExchangeError.notFound
         }
         guard [.accepted, .rejected].contains(state), record.request.state == .pending else {
             throw record.request.state == .expired ? RubricExchangeError.expired : RubricExchangeError.invalidTransition
         }
-        record.request.state = state; record.updatedAt = now; records[requestID] = record
-        try persist()
+        record.request.state = state; record.updatedAt = now
+        var updated = records; updated[requestID] = record
+        try persist(updated); records = updated
         return record.request
     }
 
     public func cancel(requestID: UUID, requesterID: UUID, now: Date) async throws -> RubricRequest {
         try loadIfNeeded()
-        if expire(now: now) { try persist() }
+        let expired = expiredRecords(now: now)
+        if expired != records { try persist(expired); records = expired }
         guard var record = records[requestID], record.request.requesterID == requesterID else {
             throw RubricExchangeError.notFound
         }
         guard [.pending, .accepted].contains(record.request.state) else {
             throw record.request.state == .expired ? RubricExchangeError.expired : RubricExchangeError.invalidTransition
         }
-        record.request.state = .cancelled; record.updatedAt = now; records[requestID] = record
-        try persist()
+        record.request.state = .cancelled; record.updatedAt = now
+        var updated = records; updated[requestID] = record
+        try persist(updated); records = updated
         return record.request
     }
 
     public func submit(_ response: RubricResponse, now: Date) async throws -> RubricResponse {
         try loadIfNeeded()
-        if expire(now: now) { try persist() }
+        let expired = expiredRecords(now: now)
+        if expired != records { try persist(expired); records = expired }
         guard var record = records[response.requestID] else { throw RubricExchangeError.notFound }
         guard record.request.targetDeviceID == response.targetDeviceID,
               record.request.requesterID == response.requesterID else { throw RubricExchangeError.invalidPayload }
@@ -189,54 +257,87 @@ public actor FileRubricExchangeStore: RubricExchangeStore {
         guard record.request.state == .accepted else {
             throw record.request.state == .expired ? RubricExchangeError.expired : RubricExchangeError.invalidTransition
         }
+        guard RubricResponse.isValid(label: response.label, rubric: response.rubric, submittedAt: response.submittedAt) else {
+            throw RubricExchangeError.invalidPayload
+        }
         record.response = response; record.request.state = .completed; record.updatedAt = now
-        records[response.requestID] = record
-        try persist()
+        guard Self.valid(record: record) else { throw RubricExchangeError.invalidPayload }
+        var updated = records; updated[response.requestID] = record
+        try persist(updated); records = updated
         return response
     }
 
     public func response(requestID: UUID, requesterID: UUID, now: Date) async throws -> RubricResponse? {
         try loadIfNeeded()
-        if expire(now: now) { try persist() }
+        let updated = expiredRecords(now: now)
+        if updated != records { try persist(updated); records = updated }
         guard let record = records[requestID], record.request.requesterID == requesterID else {
             throw RubricExchangeError.notFound
         }
         return record.response
     }
 
-    private func expire(now: Date) -> Bool {
-        var changed = false
-        for id in records.keys {
-            guard var record = records[id], record.request.expiresAt <= now,
+    private func expiredRecords(now: Date) -> [UUID: RubricExchangeRecord] {
+        var updated = records
+        for id in updated.keys {
+            guard var record = updated[id], record.request.expiresAt <= now,
                   [.pending, .accepted].contains(record.request.state) else { continue }
-            record.request.state = .expired; record.updatedAt = now; records[id] = record; changed = true
+            record.request.state = .expired; record.updatedAt = now; updated[id] = record
         }
-        return changed
+        return updated
+    }
+
+    private func prunedRecords(now: Date) -> [UUID: RubricExchangeRecord] {
+        records.filter { _, record in
+            ![.rejected, .cancelled, .expired, .completed].contains(record.request.state)
+                || now.timeIntervalSince(record.updatedAt) < Self.terminalRetention
+        }
     }
 
     private func loadIfNeeded() throws {
         guard !loaded else { return }
-        loaded = true
-        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        guard FileManager.default.fileExists(atPath: url.path) else { loaded = true; return }
         do {
+            guard url.standardizedFileURL == url.resolvingSymlinksInPath() else { throw RubricExchangeError.storageFailure }
+            let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+            guard let size = attributes[.size] as? NSNumber, size.intValue <= Self.maximumFileBytes else {
+                throw RubricExchangeError.storageFailure
+            }
             let data = try Data(contentsOf: url)
             guard data.count <= Self.maximumFileBytes else { throw RubricExchangeError.storageFailure }
             let decoded = try JSONDecoder().decode([RubricExchangeRecord].self, from: data)
             guard decoded.count <= Self.maximumRecords, Set(decoded.map(\.id)).count == decoded.count,
-                  decoded.allSatisfy({ $0.id == $0.request.id }) else { throw RubricExchangeError.storageFailure }
+                  decoded.allSatisfy(Self.valid(record:)) else { throw RubricExchangeError.storageFailure }
             records = Dictionary(uniqueKeysWithValues: decoded.map { ($0.id, $0) })
+            loaded = true
         } catch let error as RubricExchangeError { throw error }
         catch { throw RubricExchangeError.storageFailure }
     }
 
-    private func persist() throws {
+    private func persist(_ values: [UUID: RubricExchangeRecord]) throws {
         do {
-            let data = try JSONEncoder().encode(records.values.sorted { $0.request.createdAt < $1.request.createdAt })
+            let data = try JSONEncoder().encode(values.values.sorted { $0.request.createdAt < $1.request.createdAt })
             guard data.count <= Self.maximumFileBytes else { throw RubricExchangeError.storageFailure }
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             try data.write(to: url, options: .atomic)
         } catch let error as RubricExchangeError { throw error }
         catch { throw RubricExchangeError.storageFailure }
+    }
+
+    private static func valid(record: RubricExchangeRecord) -> Bool {
+        guard record.id == record.request.id,
+              record.request.createdAt.timeIntervalSince1970.isFinite,
+              record.request.expiresAt > record.request.createdAt,
+              record.request.expiresAt.timeIntervalSince(record.request.createdAt) <= RubricRequest.lifetime,
+              !record.request.requesterName.isEmpty, record.request.requesterName.count <= 100,
+              record.request.labelHint == nil || (record.request.labelHint!.isEmpty == false && record.request.labelHint!.count <= 120),
+              record.updatedAt.timeIntervalSince1970.isFinite else { return false }
+        guard let response = record.response else { return record.request.state != .completed }
+        return record.request.state == .completed && response.requestID == record.id
+            && response.targetDeviceID == record.request.targetDeviceID
+            && response.requesterID == record.request.requesterID
+            && RubricResponse.isValid(label: response.label, rubric: response.rubric, submittedAt: response.submittedAt)
+            && ((try? JSONEncoder().encode(response).count) ?? RubricResponse.maximumEncodedBytes + 1) <= RubricResponse.maximumEncodedBytes
     }
 }
 

@@ -20,21 +20,25 @@ final class RubricExchangeTests: XCTestCase {
                                         requesterName: "Leonardo Mac", labelHint: "Firma",
                                         createdAt: now)
         try await store.create(request)
-        XCTAssertEqual(try await store.requests(for: target, now: now).map(\.id), [request.id])
+        let initial = try await store.requests(for: target, now: now)
+        XCTAssertEqual(initial.map(\.id), [request.id])
         _ = try await store.transition(requestID: request.id, targetDeviceID: target, to: .accepted, now: now)
         let response = try RubricResponse(requestID: request.id, targetDeviceID: target, requesterID: requester,
                                           label: "Firma de Ana", rubric: rubric, submittedAt: now)
-        XCTAssertEqual(try await store.submit(response, now: now), response)
-        XCTAssertEqual(try await store.submit(response, now: now.addingTimeInterval(1)), response)
-        XCTAssertEqual(try await store.response(requestID: request.id, requesterID: requester, now: now), response)
+        let firstSubmission = try await store.submit(response, now: now)
+        XCTAssertEqual(firstSubmission, response)
+        let retry = try await store.submit(response, now: now.addingTimeInterval(1))
+        XCTAssertEqual(retry, response)
+        let stored = try await store.response(requestID: request.id, requesterID: requester, now: now)
+        XCTAssertEqual(stored, response)
 
         let reopened = FileRubricExchangeStore(url: url)
-        XCTAssertEqual(try await reopened.response(requestID: request.id, requesterID: requester, now: now), response)
-        XCTAssertThrowsError(try await reopened.submit(try RubricResponse(requestID: request.id, targetDeviceID: target,
-                                                                          requesterID: requester, label: "Otra", rubric: rubric,
-                                                                          submittedAt: now), now: now)) { error in
-            XCTAssertEqual(error as? RubricExchangeError, .conflict)
-        }
+        let reopenedResponse = try await reopened.response(requestID: request.id, requesterID: requester, now: now)
+        XCTAssertEqual(reopenedResponse, response)
+        let conflicting = try RubricResponse(requestID: request.id, targetDeviceID: target,
+                                             requesterID: requester, label: "Otra", rubric: rubric, submittedAt: now)
+        do { _ = try await reopened.submit(conflicting, now: now); XCTFail("Conflicting retry must fail") }
+        catch { XCTAssertEqual(error as? RubricExchangeError, .conflict) }
     }
 
     func testExpiryCancellationAndTargetIsolation() async throws {
@@ -45,20 +49,21 @@ final class RubricExchangeTests: XCTestCase {
         let request = try RubricRequest(targetDeviceID: target, requesterID: requester,
                                         requesterName: "Mac", createdAt: now)
         try await store.create(request)
-        XCTAssertTrue(try await store.requests(for: other, now: now).isEmpty)
-        XCTAssertThrowsError(try await store.transition(requestID: request.id, targetDeviceID: other, to: .accepted, now: now)) { error in
-            XCTAssertEqual(error as? RubricExchangeError, .notFound)
-        }
+        let otherRequests = try await store.requests(for: other, now: now)
+        XCTAssertTrue(otherRequests.isEmpty)
+        do { _ = try await store.transition(requestID: request.id, targetDeviceID: other, to: .accepted, now: now); XCTFail("Wrong target must fail") }
+        catch { XCTAssertEqual(error as? RubricExchangeError, .notFound) }
         _ = try await store.cancel(requestID: request.id, requesterID: requester, now: now)
-        XCTAssertTrue(try await store.requests(for: target, now: now).isEmpty)
+        let cancelledRequests = try await store.requests(for: target, now: now)
+        XCTAssertTrue(cancelledRequests.isEmpty)
 
         let expired = try RubricRequest(targetDeviceID: target, requesterID: requester,
                                         requesterName: "Mac", createdAt: now, expiresAt: now.addingTimeInterval(5))
         try await store.create(expired)
-        XCTAssertTrue(try await store.requests(for: target, now: now.addingTimeInterval(6)).isEmpty)
-        XCTAssertThrowsError(try await store.transition(requestID: expired.id, targetDeviceID: target, to: .accepted, now: now.addingTimeInterval(6))) { error in
-            XCTAssertEqual(error as? RubricExchangeError, .expired)
-        }
+        let expiredRequests = try await store.requests(for: target, now: now.addingTimeInterval(6))
+        XCTAssertTrue(expiredRequests.isEmpty)
+        do { _ = try await store.transition(requestID: expired.id, targetDeviceID: target, to: .accepted, now: now.addingTimeInterval(6)); XCTFail("Expired request must fail") }
+        catch { XCTAssertEqual(error as? RubricExchangeError, .expired) }
     }
 
     func testAuthorityBindsRequestsToReadOnlyDeviceAndStableMacIdentity() async throws {
@@ -74,9 +79,10 @@ final class RubricExchangeTests: XCTestCase {
             projects: [SharedProjectSource(descriptor: project) { CorpusSnapshot(revision: "r", files: []) }],
             serverFingerprint: fingerprint, persist: { _ in }, rubrics: store)
         let request = try await authority.createRubricRequest(targetDeviceID: pairing.id, requesterName: "MacBook", now: now)
-        XCTAssertEqual(request.requesterID, await authority.sourceDeviceID)
-        XCTAssertEqual((try await authority.status(deviceID: pairing.id, credential: credential, now: now)).capabilities,
-                       [.rubricExchangeV1])
+        let sourceID = await authority.sourceDeviceID
+        XCTAssertEqual(request.requesterID, sourceID)
+        let status = try await authority.status(deviceID: pairing.id, credential: credential, now: now)
+        XCTAssertEqual(status.capabilities, [.rubricExchangeV1])
         let visible = try await authority.rubricRequests(deviceID: pairing.id, credential: credential, now: now)
         XCTAssertEqual(visible, [request])
         _ = try await authority.acceptRubricRequest(deviceID: pairing.id, credential: credential,
@@ -85,7 +91,8 @@ final class RubricExchangeTests: XCTestCase {
                                           requesterID: request.requesterID, label: "Firma", rubric: rubric, submittedAt: now)
         _ = try await authority.submitRubricResponse(deviceID: pairing.id, credential: credential,
                                                      response: response, now: now)
-        XCTAssertEqual(try await authority.rubricResponse(requestID: request.id, now: now), response)
+        let returned = try await authority.rubricResponse(requestID: request.id, now: now)
+        XCTAssertEqual(returned, response)
     }
 
     func testDesktopPeerCannotAnswerReadOnlyRubricRequest() async throws {
@@ -99,9 +106,8 @@ final class RubricExchangeTests: XCTestCase {
         let authority = try DirectSyncAuthority(registry: registry,
             projects: [SharedProjectSource(descriptor: project) { CorpusSnapshot(revision: "r", files: []) }],
             serverFingerprint: fingerprint, persist: { _ in }, rubrics: FileRubricExchangeStore(url: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)))
-        XCTAssertThrowsError(try await authority.rubricRequests(deviceID: pairing.id, credential: credential, now: now)) { error in
-            XCTAssertEqual(error as? SyncError, .readOnly)
-        }
+        do { _ = try await authority.rubricRequests(deviceID: pairing.id, credential: credential, now: now); XCTFail("Desktop peer must not answer rubric requests") }
+        catch { XCTAssertEqual(error as? SyncError, .readOnly) }
     }
 }
 
