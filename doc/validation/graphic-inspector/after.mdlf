@@ -1,0 +1,222 @@
+---
+{
+  "document" : {
+    "kind" : "document",
+    "revision" : 1,
+    "title" : "Fictional inspection"
+  },
+  "format" : "mdlf",
+  "formatVersion" : 1,
+  "layout" : {
+    "images" : [
+
+    ],
+    "objects" : [
+      {
+        "height" : 70,
+        "id" : "qa-first",
+        "label" : "Rúbrica de ejemplo",
+        "page" : 1,
+        "rubric" : {
+          "strokes" : [
+            {
+              "color" : "#FFFFFF",
+              "points" : [
+                {
+                  "x" : 40,
+                  "y" : 140
+                },
+                {
+                  "x" : 70,
+                  "y" : 100
+                },
+                {
+                  "x" : 100,
+                  "y" : 50
+                },
+                {
+                  "x" : 120,
+                  "y" : 30
+                },
+                {
+                  "x" : 110,
+                  "y" : 100
+                },
+                {
+                  "x" : 90,
+                  "y" : 150
+                },
+                {
+                  "x" : 130,
+                  "y" : 120
+                },
+                {
+                  "x" : 180,
+                  "y" : 90
+                },
+                {
+                  "x" : 220,
+                  "y" : 120
+                },
+                {
+                  "x" : 270,
+                  "y" : 90
+                },
+                {
+                  "x" : 310,
+                  "y" : 100
+                },
+                {
+                  "x" : 360,
+                  "y" : 70
+                },
+                {
+                  "x" : 400,
+                  "y" : 100
+                },
+                {
+                  "x" : 460,
+                  "y" : 70
+                },
+                {
+                  "x" : 520,
+                  "y" : 85
+                },
+                {
+                  "x" : 560,
+                  "y" : 50
+                }
+              ],
+              "style" : "brush",
+              "width" : 5
+            }
+          ]
+        },
+        "width" : 210,
+        "x" : 72,
+        "y" : 360,
+        "z" : 1
+      },
+      {
+        "height" : 50,
+        "id" : "qa-second",
+        "label" : "Segunda rúbrica",
+        "page" : 1,
+        "rubric" : {
+          "strokes" : [
+            {
+              "color" : "#194D80",
+              "points" : [
+                {
+                  "x" : 40,
+                  "y" : 140
+                },
+                {
+                  "x" : 70,
+                  "y" : 100
+                },
+                {
+                  "x" : 100,
+                  "y" : 50
+                },
+                {
+                  "x" : 120,
+                  "y" : 30
+                },
+                {
+                  "x" : 110,
+                  "y" : 100
+                },
+                {
+                  "x" : 90,
+                  "y" : 150
+                },
+                {
+                  "x" : 130,
+                  "y" : 120
+                },
+                {
+                  "x" : 180,
+                  "y" : 90
+                },
+                {
+                  "x" : 220,
+                  "y" : 120
+                },
+                {
+                  "x" : 270,
+                  "y" : 90
+                },
+                {
+                  "x" : 310,
+                  "y" : 100
+                },
+                {
+                  "x" : 360,
+                  "y" : 70
+                },
+                {
+                  "x" : 400,
+                  "y" : 100
+                },
+                {
+                  "x" : 460,
+                  "y" : 70
+                },
+                {
+                  "x" : 520,
+                  "y" : 85
+                },
+                {
+                  "x" : 560,
+                  "y" : 50
+                }
+              ],
+              "style" : "brush",
+              "width" : 5
+            }
+          ]
+        },
+        "width" : 150,
+        "x" : 340,
+        "y" : 470,
+        "z" : 1
+      }
+    ],
+    "page" : {
+      "margins" : {
+        "bottom" : 36,
+        "left" : 36,
+        "right" : 36,
+        "top" : 36
+      },
+      "orientation" : "portrait",
+      "size" : "a4"
+    },
+    "tables" : [
+
+    ]
+  }
+}
+---
+# Inspección de ejemplo
+
+**Documento ficticio · Validación del inspector**
+
+## 1. Alcance
+
+Revisión de equipos y condiciones de seguridad. Todos los datos y trazos de este documento son sintéticos.
+
+## 2. Hallazgos
+
+- Equipos identificados y accesibles.
+- Elementos de protección disponibles.
+- Sin incidencias en la revisión de ejemplo.
+
+## 3. Resultado
+
+La posición y el color de cada rúbrica se ajustan desde el inspector lateral.
+
+**Responsable:** Persona de ejemplo
+
+**Rúbricas visuales:**

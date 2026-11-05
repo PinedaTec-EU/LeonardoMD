@@ -441,8 +441,14 @@ Unlock the document and use **Insert → Image…** or choose a saved rubric. Im
 raster images are normalized to PNG next to the working document; use MDLZ to
 transport them. SVG/remote sources can still be authored in metadata under the
 existing resource policy. Select an object to drag or resize it. Its floating
-block exposes X/Y, Z, forward/backward and deletion; **Size and page…** contains
-page and linked width/height.
+block is a read-only X/Y/Z summary. **Inspect** opens the native right-hand object
+inspector with page, position, linked width/height, Z/stacking actions and deletion.
+Inserted vector rubrics also expose whole-ink color; this updates only the copied
+strokes, preserving the library entry and stroke geometry/style/width. Color and
+geometry use normal history/save. Raster sources cannot be recolored. Clicking
+outside, selecting text or Escape clears selection and its chrome; inspector
+controls retain selection. Its close button hides only the panel. Protection,
+Fill and document switches clear inspection.
 Use **More → Objects** to select an object covered by text or another image.
 Arrow keys move the selected object by one point (Shift: ten). Each completed
 move/resize/change uses the normal document undo/redo history; Save persists it.

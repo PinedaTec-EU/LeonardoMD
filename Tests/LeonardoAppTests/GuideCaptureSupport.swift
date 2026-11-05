@@ -37,10 +37,10 @@ enum GuideCaptureSupport {
     }
 
     static func captureNative(_ view: NSView, size: NSSize, to url: URL,
-                              language: String, state: String) async throws {
+                              language: String, state: String, pixelScale: CGFloat? = nil) async throws {
         view.appearance = NSAppearance(named: .aqua)
         var context = baseContext(language: language, state: state)
-        try await NativeViewCaptureSupport.capture(view, size: size, to: url, beforeCapture: { capturedView in
+        try await NativeViewCaptureSupport.capture(view, size: size, to: url, pixelScale: pixelScale, beforeCapture: { capturedView in
             let bounds = capturedView.bounds.size
             context["captured_at"] = timestamp()
             context["browser_name"] = "Native AppKit / SwiftUI NSHostingView"

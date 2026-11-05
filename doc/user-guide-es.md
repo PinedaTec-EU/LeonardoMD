@@ -306,14 +306,36 @@ PNG/JPEG/TIFF/GIF/BMP local, o elige una rúbrica guardada. Las imágenes se gua
 junto al archivo de trabajo; exporta un MDLZ para incluirlas. Conserva el
 original editable cuando exportes PDF.
 
-Selecciona la imagen o rúbrica para moverla, arrastra su esquina para ajustar
-el tamaño proporcionalmente, o cambia X/Y y Z en el bloque
-flotante; **Tamaño y página…** abre la página y los tamaños enlazados. X/Y son puntos desde la esquina superior izquierda física de la
+Selecciona la imagen o rúbrica para moverla o arrastra su esquina para ajustar
+el tamaño proporcionalmente. El bloque flotante es un resumen de X/Y/Z de solo
+lectura: pulsa **Inspeccionar** para abrir el **Inspector de objetos** lateral,
+donde ajustar página, posición, ancho/alto vinculados y superposición. X/Y son
+puntos desde la esquina superior izquierda física de la
 página elegida; el texto está en Z=0. Z negativo deja el objeto detrás del
 texto; positivo, delante. Con igual Z, el primer objeto definido está detrás.
 **Más → Objetos** permite seleccionar objetos tapados. Las flechas mueven un
 punto; Mayús+flecha, diez. Deshacer/Rehacer incluye estos cambios. Guarda para
 persistirlos. El fondo es independiente de la posición detrás del texto.
+
+Pulsa en texto o espacio vacío, selecciona texto o usa Escape para quitar el
+recuadro y el flotante. Los controles del inspector conservan la selección.
+Su botón de cierre oculta el panel; **Inspeccionar** lo vuelve a abrir. Elegir otro
+objeto actualiza el inspector. Proteger, entrar en Rellenar o cambiar de documento
+cierra la inspección.
+
+![Inspector de objetos nativo](guide/es/assets/graphic-inspector.png)
+
+*Componente real del inspector con tinta insertada ficticia; no es una firma personal.*
+
+En una rúbrica insertada, **Color de la tinta** cambia todos sus trazos. **Colores**
+ofrece Negro, Blanco, Azul y Rojo; el selector nativo permite otros colores. La vista
+previa muestra la transparencia y avisa si había varios colores antes de cambiarlo.
+Solo cambia esta copia: conserva la rúbrica guardada en la biblioteca, los puntos,
+el grosor/estilo y los demás objetos. Deshacer/Rehacer incluye el color; guarda el
+documento para conservarlo. Las imágenes de mapa de bits no tienen este control.
+Elimina un objeto desde el inspector. Si un valor no es válido o el objeto cambió,
+vuelve a seleccionarlo e inténtalo otra vez. Cierra el panel para dar más espacio
+al documento.
 
 ![Lienzo de rúbricas y biblioteca local](guide/es/assets/rubric-canvas.png)
 

@@ -28,6 +28,10 @@ extension AppSession {
             guard let self, self.documentURL == previewDocumentURL else { return false }
             return self.handleGraphicAction(expected: expected, object: object, remove: remove, fieldID: fieldID)
         }
+        renderer.onGraphicSelection = { [weak self] expected, id, inspect in
+            guard let self, self.documentURL == previewDocumentURL else { return }
+            self.receiveGraphicSelection(expected: expected, id: id, inspect: inspect)
+        }
         renderer.onFieldHelp = { [weak self] fieldID in
             guard let self, self.documentURL == previewDocumentURL else { return }
             self.showLeonardoFieldHelp(fieldID)
@@ -89,6 +93,7 @@ extension AppSession {
         // stays locked behind the toolbar padlock.
         configuration.allowsEditing = canEditDocument && mode != .fill
         configuration.allowsFormFilling = canFillLeonardoForm
+        configuration.selectedGraphicID = selectedGraphic?.id
         configuration.formLabels = TranslationCatalog.catalogs[LanguageSettings.shared.language] ?? [:]
         return configuration
     }

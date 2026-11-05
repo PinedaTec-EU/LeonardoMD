@@ -66,7 +66,10 @@ struct WorkspaceView: View {
     private var workspaceDocument: some View {
         HStack(spacing: 0) {
             documentArea.frame(maxWidth: .infinity, maxHeight: .infinity).disabled(session.busy)
-            if session.presentation.showsInspector {
+            if session.showsGraphicInspector, let graphic = session.selectedGraphic {
+                Divider()
+                GraphicInspector(session: session, graphic: graphic)
+            } else if session.presentation.showsInspector {
                 Divider()
                 DocumentInspector(session: session)
             }

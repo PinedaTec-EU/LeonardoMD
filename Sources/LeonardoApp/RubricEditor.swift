@@ -96,8 +96,7 @@ struct RubricEditor: View {
             .onAppear { library.refresh() }
     }
     private var inkColor: String {
-        let c = NSColor(color).usingColorSpace(.sRGB) ?? .black
-        return String(format: "#%02X%02X%02X", Int(c.redComponent * 255), Int(c.greenComponent * 255), Int(c.blueComponent * 255))
+        RubricDrawing.hex(NSColor(color))
     }
 }
 

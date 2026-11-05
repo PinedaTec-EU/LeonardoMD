@@ -48,4 +48,4 @@ the live guide/session/source and active tab. Guide v6 is read-only content;
 practice v1 is a separate MDLR. Reopening selects the existing practice tab in
 Fill mode. Cmd-4 fills, the padlock edits structure, and Cmd-S saves answers.
 
-Page objects/rubrics (#193): `DocumentToolbar.swift`, `SessionGraphics.swift`, `RubricEditor.swift`, `RubricLibrary.swift`, `LeonardoGraphic.swift`, `leonardo-objects.js`, `MarkdownPagePDF.swift`; chapters 4, 5, 10. Covers geometry/Z, menu drawing, local library, protected fields, overflow and Markdown/PDF limits.
+Page objects/rubrics (#193): `DocumentToolbar.swift`, `SessionGraphics.swift`, `RubricEditor.swift`, `RubricLibrary.swift`, `LeonardoGraphic.swift`, `leonardo-objects.js`, `MarkdownPagePDF.swift`; chapters 4, 5, 10. Covers geometry/Z, menu drawing, local library, protected fields, overflow and Markdown/PDF limits. Follow-up #323/#322 adds `GraphicInspector.swift`/`SessionGraphicInspection.swift`, read-only floating summary, copied-ink color, reliable deselection and v8 inspector illustrations.

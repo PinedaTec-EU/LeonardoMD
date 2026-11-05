@@ -77,39 +77,57 @@
       element.style.clipPath = `inset(${pt(Math.max(0, -item.y))} ${pt(right)} ${pt(bottom)} ${pt(Math.max(0, -item.x))})`;
     }
   }
-  function clear() { selected?.classList.remove("leonardo-object-selected"); selected = null; toolbar?.remove(); toolbar = null; }
+  function clear(notify = true) {
+    const hadSelection = !!selected;
+    selected?.classList.remove("leonardo-object-selected"); selected = null; toolbar?.remove(); toolbar = null;
+    payload.selectedGraphicID = null;
+    if (notify && hadSelection) post({selection: null});
+  }
   function commit(item) { post({object: item}); }
-  function select(element, item) {
+  function select(element, item, notify = true) {
     if (!payload.allowsEditing || payload.allowsFormFilling) return;
-    clear(); selected = element; element.classList.add("leonardo-object-selected");
+    clear(false); window.getSelection()?.removeAllRanges(); selected = element; payload.selectedGraphicID = item.id;
+    element.classList.add("leonardo-object-selected");
     toolbar = document.createElement("div"); toolbar.className = "leonardo-object-toolbar"; toolbar.setAttribute("role", "toolbar");
-    toolbar.setAttribute("aria-label", label("Position and size"));
-    const details = document.createElement("details"), summary = document.createElement("summary");
-    summary.textContent = label("Size and page…"); details.append(summary);
-    const extra = document.createElement("div"); extra.className = "leonardo-object-extra"; details.append(extra);
-    for (const [key, title] of [["x", "X"], ["y", "Y"], ["z", "Z"], ["page", "Page"], ["width", "Width"], ["height", "Height"]]) {
-      const caption = document.createElement("label"); caption.textContent = label(title);
-      const input = document.createElement("input"); input.type = "number"; input.value = item[key]; input.setAttribute("aria-label", label(title));
-      input.step = ["page", "z"].includes(key) ? "1" : "0.5";
-      input.addEventListener("change", () => {
-        const value = Number(input.value); if (!Number.isFinite(value)) return;
-        const changed = {...item, [key]: value};
-        if (key === "width" && value > 0) changed.height = item.height * value / item.width;
-        if (key === "height" && value > 0) changed.width = item.width * value / item.height;
-        commit(changed);
-      });
-      caption.append(input); (["page", "width", "height"].includes(key) ? extra : toolbar).append(caption);
+    toolbar.setAttribute("aria-label", label("Object summary"));
+    for (const [key, title] of [["x", "X"], ["y", "Y"], ["z", "Z"]]) {
+      const value = document.createElement("span");
+      value.textContent = `${title} ${Number(item[key].toFixed(1))}${key === "z" ? "" : " pt"}`;
+      toolbar.append(value);
     }
-    for (const [title, action] of [["Bring forward", () => commit({...item, z: Math.min(10000, item.z + 1)})], ["Send backward", () => commit({...item, z: Math.max(-10000, item.z - 1)})], ["Delete", () => post({remove: item.id})]]) {
-      const button = document.createElement("button");
-      button.textContent = title === "Bring forward" ? "+Z" : title === "Send backward" ? "−Z" : "×";
-      button.title = label(title); button.setAttribute("aria-label", label(title)); button.onclick = action; toolbar.append(button);
-    }
-    toolbar.append(details);
+    const inspect = document.createElement("button"); inspect.textContent = label("Inspect");
+    inspect.onclick = () => post({selection: item.id, inspect: true}); toolbar.append(inspect);
     element.parentElement.append(toolbar);
-    const pageWidth = element.parentElement.clientWidth * .75;
-    toolbar.style.left = pt(Math.max(4, Math.min(item.x, pageWidth - 320)));
-    toolbar.style.top = pt(Math.max(4, Math.min(element.parentElement.clientHeight * .75 - 34, item.y >= 34 ? item.y - 30 : item.y + item.height + 8)));
+    positionToolbar(element, item);
+    if (notify) post({selection: item.id});
+  }
+  function positionToolbar(element, item) {
+    if (!toolbar) return;
+    const page = element.parentElement, rect = page.getBoundingClientRect();
+    const bounds = toolbar.getBoundingClientRect(), width = bounds.width * .75, height = bounds.height * .75;
+    const minimum = Math.max(4, -rect.left * .75 + 4);
+    const maximum = Math.min(page.clientWidth * .75 - width - 4, (window.innerWidth - rect.left) * .75 - width - 8);
+    toolbar.style.left = pt(Math.max(minimum, Math.min(item.x, Math.max(minimum, maximum))));
+    toolbar.style.top = pt(Math.max(4, Math.min(page.clientHeight * .75 - height - 4, item.y >= height + 4 ? item.y - height - 4 : item.y + item.height + 8)));
+  }
+  window.addEventListener("resize", () => { if (selected) positionToolbar(selected, selected.leonardoGraphic); });
+  // Capture before lexical text editors can stop propagation. Native inspector
+  // focus never enters this document, so its controls retain graphic selection.
+  document.addEventListener("pointerdown", event => {
+    if (!event.target.closest?.(".leonardo-object, .leonardo-object-toolbar")) clear();
+  }, true);
+  document.addEventListener("selectionchange", () => {
+    const selection = window.getSelection();
+    if (selected && selection && !selection.isCollapsed && root?.contains(selection.anchorNode)) clear();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && selected) { event.preventDefault(); clear(); }
+  }, true);
+  function setSelection(id) {
+    if (!id) { clear(false); return; }
+    if (selected?.dataset.object === id) return;
+    const element = Array.from(root?.querySelectorAll(".leonardo-object") || []).find(node => node.dataset.object === id);
+    if (element) select(element, element.leonardoGraphic, false);
   }
   function interactive(element, item) {
     element.leonardoGraphic = item;
@@ -143,7 +161,8 @@
     });
   }
   function apply(nextRoot, nextPayload) {
-    clear(); root = nextRoot; payload = nextPayload;
+    const nextSelection = nextPayload.selectedGraphicID;
+    clear(false); root = nextRoot; payload = {...nextPayload, selectedGraphicID: nextSelection};
     root.classList.remove("leonardo-paginated");
     if (!payload.leonardo) return;
     const objects = payload.leonardo.layout?.objects || [];
@@ -157,6 +176,7 @@
     paginate();
     renderLegacyImages();
     renderObjects(objects);
+    setSelection(payload.selectedGraphicID);
   }
   function renderLegacyImages() {
     const page = root.querySelector(":scope > .leonardo-page");
@@ -178,15 +198,18 @@
   }
   function refresh() {
     if (!root?.classList.contains("leonardo-paginated")) return;
-    const selectedID = selected?.dataset.object;
-    clear();
+    const selectedID = selected?.dataset.object || payload.selectedGraphicID;
+    clear(false);
     for (const child of Array.from(root.childNodes)) {
       if (!child.classList?.contains("leonardo-page") && !child.classList?.contains("leonardo-document-background") && !logicalNodes.includes(child)) logicalNodes.push(child);
     }
     paginate(); renderLegacyImages(); renderObjects(payload.leonardo?.layout?.objects || []);
-    if (selectedID && payload.allowsEditing && !root.classList.contains("leonardo-form-export")) {
+    if (selectedID && payload.allowsEditing && !payload.allowsFormFilling) {
       const element = Array.from(root.querySelectorAll(".leonardo-object")).find(node => node.dataset.object === selectedID);
-      if (element) select(element, element.leonardoGraphic);
+      if (element) {
+        if (root.classList.contains("leonardo-form-export")) payload.selectedGraphicID = selectedID;
+        else select(element, element.leonardoGraphic, false);
+      }
     }
   }
   function pdfGeometry() {
@@ -196,7 +219,7 @@
       return {x: rect.left + window.scrollX, y: rect.top + window.scrollY, width: rect.width, height: rect.height, overflow: page.dataset.overflow === "true"};
     })});
   }
-  window.LeonardoObjects = {apply, rubric, clear, refresh, validRubric, pdfGeometry, setEditable(value) {
+  window.LeonardoObjects = {apply, rubric, clear, setSelection, refresh, validRubric, pdfGeometry, setEditable(value) {
     payload.allowsEditing = value;
     if (!value) clear();
     root?.querySelectorAll(".leonardo-object").forEach(element => { element.tabIndex = value && !payload.allowsFormFilling ? 0 : -1; });

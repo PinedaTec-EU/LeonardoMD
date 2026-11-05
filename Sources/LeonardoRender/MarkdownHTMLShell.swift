@@ -99,6 +99,7 @@ enum MarkdownHTMLShell {
             source: content,
             allowsEditing: configuration.allowsEditing,
             allowsFormFilling: configuration.allowsFormFilling,
+            selectedGraphicID: configuration.selectedGraphicID.map(LeonardoJSONValue.string) ?? .null,
             formLabels: configuration.formLabels,
             formDiagnostics: leonardo.map { document in
                 Dictionary(grouping: LeonardoFormatValidator.validate(document, context: .draft).filter { $0.fieldID != nil }, by: { $0.fieldID! }).mapValues { $0.map(\.message) }
@@ -147,6 +148,7 @@ private struct MarkdownRenderPayload: Encodable {
     let source: String
     let allowsEditing: Bool
     let allowsFormFilling: Bool
+    let selectedGraphicID: LeonardoJSONValue
     let formLabels: [String: String]
     let formDiagnostics: [String: [String]]
     let frontMatter: [String: String]

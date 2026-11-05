@@ -18,6 +18,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     private var tableResizeTask: Task<Bool, Never>?
     var onFormEdit: ((String, [String: LeonardoJSONValue]) -> String?)?
     var onObjectAction: ((String, LeonardoGraphic?, String?, String?) -> Bool)?
+    var onGraphicSelection: ((String, String?, Bool) -> Void)?
     var onFieldHelp: ((String) -> Void)?
     private var formState = MarkdownFormState()
     var onReady: ((Bool) -> Void)?
@@ -115,6 +116,9 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
 
         if previousConfiguration.allowsEditing != configuration.allowsEditing {
             evaluate("window.LeonardoPreview?.setEditable(\(configuration.allowsEditing));")
+        }
+        if previousConfiguration.selectedGraphicID != configuration.selectedGraphicID, !contentChanged, !renderOptionsChanged {
+            setObjectSelection(configuration.selectedGraphicID)
         }
         if previousConfiguration.appearance != configuration.appearance {
             updateAppearance()
@@ -216,6 +220,13 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         guard pdfExports.owns(ticket), self.webView === webView else {
             throw MarkdownRenderError.webViewUnavailable
         }
+    }
+
+    func clearObjectSelection() { evaluate("window.LeonardoObjects?.clear();") }
+
+    private func setObjectSelection(_ id: String?) {
+        guard let data = try? JSONEncoder().encode(id), let json = String(data: data, encoding: .utf8) else { return }
+        evaluate("window.LeonardoObjects?.setSelection(\(json));")
     }
 
     func selectObject(_ id: String) {
@@ -516,28 +527,41 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         return true
     }
 
+    private func handleObjectMessage(_ message: WKScriptMessage) {
+        guard message.webView === webView, message.frameInfo.isMainFrame, configuration.allowsLeonardoFormat,
+              let body = message.body as? [String: Any], let expected = body["source"] as? String else { return }
+        if body["selection"] is NSNull {
+            onGraphicSelection?(content, nil, false)
+            return
+        }
+        guard renderWorkItem == nil else { return }
+        if let id = body["selection"] as? String {
+            guard configuration.allowsEditing, !configuration.allowsFormFilling, expected == content else { return }
+            onGraphicSelection?(expected, id, body["inspect"] as? Bool == true)
+            return
+        }
+        if let fieldID = body["fieldID"] as? String {
+            guard configuration.allowsFormFilling, expected == formState.baseline else { return }
+            _ = onObjectAction?(content, nil, nil, fieldID)
+            return
+        }
+        guard configuration.allowsEditing, !configuration.allowsFormFilling, expected == content else { return }
+        var object: LeonardoGraphic?
+        if let raw = body["object"], JSONSerialization.isValidJSONObject(raw),
+           let data = try? JSONSerialization.data(withJSONObject: raw) {
+            object = try? JSONDecoder().decode(LeonardoGraphic.self, from: data)
+        }
+        _ = onObjectAction?(expected, object, body["remove"] as? String, nil)
+        scheduleContentUpdate(immediately: true)
+    }
+
     func userContentController(
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
     ) {
         switch message.name {
         case "leonardoObject":
-            guard message.webView === webView, message.frameInfo.isMainFrame, renderWorkItem == nil,
-                  configuration.allowsLeonardoFormat,
-                  let body = message.body as? [String: Any], let expected = body["source"] as? String else { return }
-            if let fieldID = body["fieldID"] as? String {
-                guard configuration.allowsFormFilling, expected == formState.baseline else { return }
-                _ = onObjectAction?(content, nil, nil, fieldID)
-                return
-            }
-            guard configuration.allowsEditing, !configuration.allowsFormFilling, expected == content else { return }
-            var object: LeonardoGraphic?
-            if let raw = body["object"], JSONSerialization.isValidJSONObject(raw),
-               let data = try? JSONSerialization.data(withJSONObject: raw) {
-                object = try? JSONDecoder().decode(LeonardoGraphic.self, from: data)
-            }
-            _ = onObjectAction?(expected, object, body["remove"] as? String, body["fieldID"] as? String)
-            scheduleContentUpdate(immediately: true)
+            handleObjectMessage(message)
         case "leonardoTableResize":
             guard message.webView === webView, message.frameInfo.isMainFrame,
                   configuration.allowsEditing, !configuration.allowsFormFilling,
