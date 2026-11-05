@@ -129,7 +129,7 @@ public enum LeonardoLocalImagePolicy {
 
     private static func metadataReferences(in metadata: LeonardoMetadata) -> [String] {
         guard let layout = metadata.layout else { return [] }
-        var references = layout.images.map(\.source)
+        var references = layout.images.map(\.source) + layout.objects.compactMap(\.source)
         if let image = layout.background?.image { references.append(image) }
         return references
     }

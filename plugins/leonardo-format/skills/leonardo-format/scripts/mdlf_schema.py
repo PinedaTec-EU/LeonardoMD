@@ -17,6 +17,8 @@ SCHEMA_ASSERTION_KEYWORDS = frozenset(
         "const",
         "enum",
         "items",
+        "minItems",
+        "maxItems",
         "maxLength",
         "maximum",
         "minLength",
@@ -146,7 +148,7 @@ def _assert_supported_schema(
             re.compile(pattern)
         except re.error as exc:
             _schema_definition_failure(location, f"invalid regular expression: {exc}")
-    for key in ("minLength", "maxLength"):
+    for key in ("minLength", "maxLength", "minItems", "maxItems"):
         value = schema.get(key)
         if key in schema and (isinstance(value, bool) or not isinstance(value, int) or value < 0):
             _schema_definition_failure(location, f"{key} must be a non-negative integer")
@@ -259,6 +261,9 @@ def _validate_schema_value(
             for name, item in value.items():
                 if name not in known:
                     _validate_schema_value(item, additional, root, path + (name,))
+    if isinstance(value, list):
+        if len(value) < schema.get("minItems", 0) or len(value) > schema.get("maxItems", float("inf")):
+            _schema_failure(path, "array length is outside the allowed range")
     if isinstance(value, list) and "items" in schema:
         for index, item in enumerate(value):
             _validate_schema_value(item, schema["items"], root, path + (index,))

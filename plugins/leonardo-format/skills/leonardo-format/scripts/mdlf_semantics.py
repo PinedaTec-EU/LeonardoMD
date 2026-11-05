@@ -170,6 +170,8 @@ def _validate_opacity(value: object, path: str) -> None:
 def _validate_field(definition: object, path: str) -> None:
     if not isinstance(definition, dict):
         return
+    if "rubricSize" in definition and definition.get("type") != "rubric":
+        _fail(path, "rubricSize is only supported for rubric fields")
     if "appearance" in definition and definition.get("type") != "checkbox":
         _fail(f"{path}.appearance", "appearance is only supported for checkbox fields")
     minimum_length = definition.get("minLength")
@@ -219,6 +221,19 @@ def _validate_layout(layout: object) -> None:
     if not isinstance(layout, dict):
         return
     _validate_page(layout.get("page"), "layout.page")
+    objects = layout.get("objects", [])
+    ids = set()
+    for index, item in enumerate(objects):
+        path = f"layout.objects[{index}]"
+        if item["id"] in ids:
+            _fail(path, "duplicate object identifier")
+        ids.add(item["id"])
+        if ("source" in item) == ("rubric" in item):
+            _fail(path, "declare exactly one image source or rubric")
+        if "source" in item:
+            _validate_asset_reference(item["source"], path + ".source")
+        if "rubric" in item and sum(len(stroke["points"]) for stroke in item["rubric"]["strokes"]) > 20000:
+            _fail(path, "rubric exceeds the total point budget")
 
     background = layout.get("background")
     if isinstance(background, dict):

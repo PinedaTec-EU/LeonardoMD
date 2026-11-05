@@ -190,6 +190,10 @@ public enum LeonardoFormatValidator {
         validateReferences(document.body, fields: document.metadata.fields, into: &diagnostics)
         if let layout = document.metadata.layout {
             validateLayout(layout, into: &diagnostics)
+            let ids = layout.objects.map(\.id)
+            if layout.objects.count > 256 || Set(ids).count != ids.count || layout.objects.contains(where: { !$0.isValid }) {
+                diagnostics.append(.init(severity: .error, code: "layout.objects", message: "Invalid page objects or duplicate identifiers."))
+            }
         }
         return diagnostics
     }
@@ -262,6 +266,9 @@ public enum LeonardoFormatValidator {
             if definition.appearance != nil && definition.type != .checkbox {
                 diagnostics.append(LeonardoDiagnostic(severity: .error, code: "field.appearance", message: "Appearance is only supported for checkbox fields.", fieldID: fieldID))
             }
+            if let size = definition.rubricSize, definition.type != .rubric || ![size.width, size.height].allSatisfy({ $0.isFinite && $0 > 0 && $0 <= 10000 }) {
+                diagnostics.append(.init(severity: .error, code: "field.rubricSize", message: "Rubric size requires a rubric field and positive bounded dimensions.", fieldID: fieldID))
+            }
             validateOptions(definition, fieldID: fieldID, into: &diagnostics)
             let value = metadata.values[fieldID] ?? definition.defaultValue
             if value == nil || value?.isNullOrEmpty == true {
@@ -309,6 +316,10 @@ public enum LeonardoFormatValidator {
         into diagnostics: inout [LeonardoDiagnostic]
     ) {
         switch definition.type {
+        case .rubric:
+            if LeonardoRubric.decode(value) == nil {
+                diagnostics.append(.init(severity: .error, code: "value.rubric", message: "Invalid rubric strokes.", fieldID: fieldID))
+            }
         case .text, .multiline, .email, .url, .date, .select:
             guard let string = value.stringValue else {
                 diagnostics.append(LeonardoDiagnostic(severity: .error, code: "value.type", message: validationMessage(definition, fallback: "This field requires a string value."), fieldID: fieldID))
@@ -389,6 +400,9 @@ public enum LeonardoFormatValidator {
             validateOpacity(background.opacity, code: "layout.backgroundOpacity", into: &diagnostics)
             validatePosition(background.position, into: &diagnostics)
             if let image = background.image { validateAssetReference(image, code: "layout.backgroundImage", into: &diagnostics) }
+        }
+        for object in layout.objects {
+            if let source = object.source { validateAssetReference(source, code: "layout.objectSource", into: &diagnostics) }
         }
         var imageOccurrences = Set<String>()
         for image in layout.images {

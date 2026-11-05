@@ -45,8 +45,9 @@
       "type": "object",
       "required": ["type"],
       "properties": {
-        "type": { "enum": ["text", "multiline", "number", "date", "checkbox", "select", "email", "url"] },
+        "type": { "enum": ["text", "multiline", "number", "date", "checkbox", "select", "email", "url", "rubric"] },
         "appearance": { "enum": ["checkbox", "switch"] },
+        "rubricSize": {"type": "object", "required": ["width", "height"], "properties": {"width": {"type": "number", "minimum": 0.001, "maximum": 10000}, "height": {"type": "number", "minimum": 0.001, "maximum": 10000}}, "additionalProperties": false},
         "label": { "type": "string" },
         "required": { "type": "boolean" },
         "readOnly": { "type": "boolean" },
@@ -145,7 +146,8 @@
         "page": { "$ref": "#/$defs/page" },
         "background": { "$ref": "#/$defs/background" },
         "images": { "type": "array", "items": { "$ref": "#/$defs/image" } },
-        "tables": { "type": "array", "items": { "$ref": "#/$defs/table" } }
+        "tables": { "type": "array", "items": { "$ref": "#/$defs/table" } },
+        "objects": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/graphic"}}
       },
       "additionalProperties": false
     },
@@ -167,6 +169,141 @@
         "right": { "type": "number" },
         "bottom": { "type": "number" },
         "left": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "inkPoint": {
+      "type": "object",
+      "required": [
+        "x",
+        "y"
+      ],
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 600
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 200
+        }
+      },
+      "additionalProperties": false
+    },
+    "inkStroke": {
+      "type": "object",
+      "required": [
+        "color",
+        "width",
+        "style",
+        "points"
+      ],
+      "properties": {
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 24
+        },
+        "style": {
+          "enum": [
+            "solid",
+            "brush"
+          ]
+        },
+        "points": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20000,
+          "items": {
+            "$ref": "#/$defs/inkPoint"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "rubric": {
+      "type": "object",
+      "required": [
+        "strokes"
+      ],
+      "properties": {
+        "strokes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {
+            "$ref": "#/$defs/inkStroke"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "graphic": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "page",
+        "x",
+        "y",
+        "width",
+        "height",
+        "z"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 120,
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rubric": {
+          "$ref": "#/$defs/rubric"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 999
+        },
+        "x": {
+          "type": "number",
+          "minimum": -10000,
+          "maximum": 10000
+        },
+        "y": {
+          "type": "number",
+          "minimum": -10000,
+          "maximum": 10000
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 10000
+        },
+        "height": {
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 10000
+        },
+        "z": {
+          "type": "integer",
+          "minimum": -10000,
+          "maximum": 10000
+        }
       },
       "additionalProperties": false
     }

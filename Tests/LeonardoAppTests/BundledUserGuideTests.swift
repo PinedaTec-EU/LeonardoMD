@@ -22,7 +22,7 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v6/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v7/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
             var workspace = try LeonardoPackageTransport.open(copy)
             defer { LeonardoPackageTransport.discard(workspace) }
@@ -31,7 +31,7 @@ final class BundledUserGuideTests: XCTestCase {
             XCTAssertFalse(document.isForm)
             XCTAssertEqual(document.metadata.fields.count, 0)
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:
-                workspace.directoryURL.appendingPathComponent("assets").path).count, 11)
+                workspace.directoryURL.appendingPathComponent("assets").path).count, 13)
             // Personal annotations remain independent of the bundled template.
             try (source + "\nPersonal note: Ada\n").write(to: workspace.documentURL, atomically: true, encoding: .utf8)
             workspace = try LeonardoPackageTransport.save(workspace)
@@ -116,7 +116,7 @@ final class BundledUserGuideTests: XCTestCase {
             defer { window.close() }
             let web = try await findWebView(in: hosting)
             _ = try await web.evaluateJavaScript("document.querySelectorAll('img').forEach(i => i.loading = 'eager')")
-            try await waitFor("document.images.length === 11 && Array.from(document.images).every(i => i.naturalWidth > 0)", in: web)
+            try await waitFor("document.images.length === 13 && Array.from(document.images).every(i => i.naturalWidth > 0)", in: web)
             try await waitFor("document.querySelectorAll('[data-field-input]').length === 0 && document.querySelector('a[href$=\"/practice.mdlr\"]') !== null", in: web)
             try await waitFor("document.querySelector('.katex') !== null && document.querySelector('.katex-error') === null", in: web)
             try await waitFor("document.querySelector('.vega-lite-placeholder svg') !== null", in: web)

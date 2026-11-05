@@ -262,8 +262,9 @@ PDF** should retain the background and the changed text. Keep the image next to
 the document when moving this loose-file example, or export an MDLZ to carry
 both together.
 
-The current macOS UI does not provide an image import/drag/resize workflow;
-this example authors the image reference in the MDLF metadata. In contrast,
+The macOS **Insert → Image…** action imports an independent page object.
+This background example still authors its image reference in MDLF metadata;
+a background is independent from images placed behind text. In contrast,
 standard Markdown has no native image-behind-text layout; HTML in a `.md` is a
 separate rendering path and does not validate MDLF or its Preview editing.
 
@@ -385,3 +386,106 @@ Definitions belonging to removed images are deleted when no ordinary link uses
 them. Other Markdown reference definitions remain unchanged. Image destinations
 may contain balanced parentheses, Markdown escapes or angle delimiters.
 Retain the Leonardo original or use MDLZ when those capabilities are needed.
+
+## Page objects and visual rubrics
+
+The document header groups commands under **Insert**, **Export** and **More**;
+Preview/Edit/Split share one mode dropdown. Ordinary Markdown must first be
+explicitly saved as MDLF through Insert. Plain Markdown does not store page
+coordinates, stacking or form ink. MDLR carries form answers; MDLZ embeds local
+image bytes. PDF preserves the fixed visual result. A plain Markdown export
+omits page objects and rubric ink (it never emits raw stroke JSON as prose).
+
+Declare independent images and rubrics in `layout.objects`. Unlike `layout.images`,
+these do not need a matching Markdown image occurrence:
+
+```json
+"objects": [{
+  "id": "inspection-image", "label": "Inspection image",
+  "source": "assets/inspection.png",
+  "page": 1, "x": 36, "y": 580, "width": 180, "height": 60, "z": 1
+}]
+```
+
+Exactly one of `source` or `rubric` is required. IDs must be unique within the
+object array. `page` is one-based, X/Y and width/height are physical points from
+the page's top-left edge, independent of margins. Text is Z=0. Signed integer Z
+is supported between -10000 and 10000: negative is behind text, positive is in
+front. At equal Z, earlier object definitions paint farther back. An object at
+Z=0 paints after the text plane. Backgrounds remain independent below objects.
+Definition order survives save/reopen and transport. Moving text does not move
+objects: the person editing the document must readjust their coordinates.
+
+An exact standalone HTML-comment token creates a page boundary:
+
+```markdown
+First page content.
+
+<!-- leonardo:page-break -->
+
+Second page content.
+```
+
+Tokens inside code remain examples, not page boundaries. Page-object documents
+use the declared A4/Letter/custom page geometry (A4 by default); preview surfaces
+and exported PDF pages share the same origins. Content flows between pages at
+block boundaries. A block taller than a page is marked with a dashed outline;
+split that block in source before PDF export, which rejects overflow rather
+than silently clipping the content. Explicit page objects can create otherwise
+empty pages. Page breaks inserted from the menu append to the document; move the
+token in source to choose its location. Check pages after changing fonts,
+content, images or optional rendering extensions. Objects extending beyond a
+page are cropped at its edge in PDF.
+
+Unlock the document and use **Insert → Image…** or choose a saved rubric. Imported
+raster images are normalized to PNG next to the working document; use MDLZ to
+transport them. SVG/remote sources can still be authored in metadata under the
+existing resource policy. Select an object to drag or resize it. Its floating
+block exposes X/Y, Z, forward/backward and deletion; **Size and page…** contains
+page and linked width/height.
+Use **More → Objects** to select an object covered by text or another image.
+Arrow keys move the selected object by one point (Shift: ten). Each completed
+move/resize/change uses the normal document undo/redo history; Save persists it.
+Deleting an object or undoing import does not remove its local image file.
+
+**Insert → New rubric…** opens a 600×200 transparent ink canvas with label,
+color, width, uniform solid and tapered brush styles, stroke undo and clear.
+Menu-created rubrics are always saved to the local library. Brush taper is
+computed along the stroke; pressure hardware is not required. Library files
+live in Application Support/LeonardoMD/Rubrics; up to 100 labeled entries are
+supported. The dialog also offers saved entries and deletion. Each document
+insertion is a copy: library deletion cannot alter existing documents. This
+is visual handwriting, not cryptographic signing or certificate validation.
+
+Rubric payloads retain editable, platform-independent vector strokes:
+
+```json
+"rubric": {"strokes": [{"color": "#112244", "width": 3, "style": "brush",
+  "points": [{"x": 40, "y": 120}, {"x": 300, "y": 40}, {"x": 550, "y": 110}]
+}]}
+```
+
+Canvas coordinates are bounded to 0…600 and 0…200; widths are 0.5…24 points,
+colors are six-digit hex, styles are `solid`/`brush`. A rubric permits at most
+256 strokes and 20000 total points. No SVG/code string is accepted as ink.
+The renderer derives safe SVG from these values; invalid draft answers remain
+transportable with diagnostics but do not execute or draw arbitrary markup.
+The format is ready for another platform to interpret; device pairing/library
+synchronization with Little Leonardo is not implemented by this feature.
+
+For forms, declare `{"type":"rubric","rubricSize":{"width":180,"height":60}}`
+and insert `{{field:signature}}` in the body. Dimensions are authored in points;
+the default is 180×60. Clicking the field in Fill expands the native rubric
+dialog, where the user can pick saved ink or draw, label and optionally save
+new ink to the library. The answer is a rubric object in `values.signature`.
+It stays within the declared area, scales with its aspect ratio, and cannot
+be freely moved through Fill. Read-only fields cannot be changed; source
+protection does not prevent filling writable fields. Removing the source
+padlock is required for structural image placement. Examples:
+[page objects](examples/rubrics/inspection.mdlf) and
+[fillable response](examples/rubrics/inspection.mdlr).
+
+When legacy `layout.images` absolute placements coexist with page objects, their
+origin remains the first document page; they are not re-anchored to whichever
+text block happens to contain the Markdown image. New page-specific placements
+should use `layout.objects`. Relative/flow images remain in the text plane.

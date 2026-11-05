@@ -291,6 +291,67 @@ Para una tabla, desbloquea y arrastra el borde de una columna en la vista previa
 
 Si otro programa modifica un documento sin cambios locales, Leonardo lo recarga. Cuando ambos tienen cambios, elige con cuidado: **Recargar** acepta el archivo externo y **Guardar copia** conserva tu borrador aparte. Para un MDLZ en conflicto, Guardar copia exige un destino MDLZ e incluye respuestas actuales y recursos locales legibles. Si falla, el borrador y el conflicto siguen disponibles. Conserva el original externo hasta comparar las dos versiones.
 
+
+### Imágenes, rúbricas y posición en página
+
+![Cabecera compacta del documento](assets/document-toolbar.png)
+
+*Componente real de la cabecera con un documento ficticio.*
+
+La cabecera tiene un único desplegable **Previsualizar / Editar / Dividir**.
+**Insertar** agrupa imágenes, rúbricas guardadas y creación; **Exportar** agrupa
+PDF, Markdown, paquete, respuesta y extracción; **Más** contiene Foco, Índice y
+la lista de objetos. Se conservan los atajos de teclado.
+
+Para un Markdown normal, elige primero **Insertar → Guardar como MDLF…**.
+Desbloquea el documento y usa **Insertar → Imagen…** para importar un
+PNG/JPEG/TIFF/GIF/BMP local, o elige una rúbrica guardada. Las imágenes se guardan
+junto al archivo de trabajo; exporta un MDLZ para incluirlas. Conserva el
+original editable cuando exportes PDF.
+
+Selecciona la imagen o rúbrica para moverla, arrastra su esquina para ajustar
+el tamaño proporcionalmente, o cambia X/Y y Z en el bloque
+flotante; **Tamaño y página…** abre la página y los tamaños enlazados. X/Y son puntos desde la esquina superior izquierda física de la
+página elegida; el texto está en Z=0. Z negativo deja el objeto detrás del
+texto; positivo, delante. Con igual Z, el primer objeto definido está detrás.
+**Más → Objetos** permite seleccionar objetos tapados. Las flechas mueven un
+punto; Mayús+flecha, diez. Deshacer/Rehacer incluye estos cambios. Guarda para
+persistirlos. El fondo es independiente de la posición detrás del texto.
+
+![Lienzo de rúbricas y biblioteca local](assets/rubric-canvas.png)
+
+*Componente real del diálogo con trazos guardados ficticios; no es un documento firmado.*
+
+**Insertar → Nueva rúbrica…** abre el lienzo: indica una etiqueta, elige color,
+grosor y estilo Uniforme/Pincel, dibuja y usa Deshacer o Borrar trazos.
+Las nuevas rúbricas creadas aquí siempre se guardan en tu biblioteca local.
+Elige una miniatura guardada para insertar otra copia. Eliminar en el diálogo
+borra solo la entrada de biblioteca, nunca rúbricas ya insertadas. La biblioteca
+admite hasta 100 entradas en este Mac; aún no se sincroniza con Little Leonardo.
+El pincel afina los extremos sin exigir presión real. Son rúbricas visuales,
+no certificados ni firmas criptográficas.
+
+En un campo de rúbrica, elige **Rellenar** y pulsa su área. El diálogo ampliado
+permite elegir una guardada o dibujar una nueva; **Guardar en mis rúbricas**
+controla si la nueva también entra en la biblioteca. **Quitar rúbrica** vacía la respuesta de ese campo. La respuesta queda dentro
+del área del autor y se guarda con el formulario. El candado de fuente no
+impide rellenar un campo editable. Los campos de solo lectura siguen protegidos.
+
+Los objetos usan páginas físicas. **Insertar → Salto de página** añade un salto
+al final; mueve este token exacto en Editar entre los párrafos que quieras:
+
+```markdown
+<!-- leonardo:page-break -->
+```
+
+El texto fluye por bloques. Si una página tiene un contorno discontinuo porque
+un bloque supera su altura, divide ese bloque en la fuente; la exportación PDF
+rechaza ese desbordamiento. Revisa la colocación al cambiar texto o fuentes:
+Leonardo no mueve las rúbricas con el texto. Los objetos fuera de la página se
+recortan en PDF. Markdown pierde los objetos y las rúbricas. Eliminar o deshacer
+una importación conserva su archivo de imagen local; comprueba referencias
+antes de borrar archivos que ya no uses.
+
 ## 11. Preferencias: elige el ámbito correcto
 
 ![Personalizar paleta: cuatro colores editables, vista previa del contraste y Aplicar.](assets/palette.png)

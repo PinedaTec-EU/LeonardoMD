@@ -316,6 +316,8 @@
       await Promise.all(diagrams.map((element) => renderDiagram(element)));
     }
     await waitForDocumentAssets();
+    window.LeonardoObjects?.refresh();
+    await waitForDocumentAssets();
     await window.LeonardoImages.preparePDF(root);
     await waitForDocumentAssets();
   }
@@ -366,10 +368,11 @@
       const renderedSource = payload.source;
       window.LeonardoTables.prepare(root);
       window.LeonardoLayout?.apply(root, payload);
+      window.LeonardoObjects?.apply(root, payload);
       window.LeonardoTableResizing.prepare(root, payload);
       installHeadingAnchors();
       root.querySelectorAll("img").forEach((image) => {
-        image.loading = image.closest(".leonardo-document-background") ? "eager" : "lazy";
+        image.loading = image.closest(".leonardo-document-background, .leonardo-object") ? "eager" : "lazy";
         image.decoding = "async";
       });
       window.LeonardoImages.prepare(root);
@@ -388,6 +391,7 @@
       }
       extensionWork = Promise.all(work).then(() => {
         if (generation !== renderGeneration) return;
+        window.LeonardoObjects?.refresh();
         installHeadingAnchors();
         window.LeonardoEditing.prepare(root);
         installInteractions();
@@ -414,7 +418,7 @@
 
   window.LeonardoPreview = {
     setAppearance,
-    setEditable(value) { payload.allowsEditing = value; window.LeonardoEditing.setEditable(root, value); window.LeonardoTableResizing.setEditable(value); },
+    setEditable(value) { payload.allowsEditing = value; window.LeonardoEditing.setEditable(root, value); window.LeonardoTableResizing.setEditable(value); window.LeonardoObjects?.setEditable(value); },
     updateContent(nextPayload) {
       if (!nextPayload || typeof nextPayload.markdown !== "string") return;
       payload = Object.assign(payload, nextPayload, { leonardo: nextPayload.leonardo || null });

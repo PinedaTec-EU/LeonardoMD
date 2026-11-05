@@ -11,6 +11,7 @@ public final class MarkdownPreviewController: ObservableObject {
     public var onEdit: ((String, String) -> Bool)?
     public var onTableResize: ((String, LeonardoTableResize) async -> Bool)?
     public var onFormEdit: ((String, [String: LeonardoJSONValue]) -> String?)?
+    public var onObjectAction: ((String, LeonardoGraphic?, String?, String?) -> Bool)?
     public var onFieldHelp: ((String) -> Void)?
     public var onScrollProgress: ((Double) -> Void)?
 
@@ -49,6 +50,8 @@ public final class MarkdownPreviewController: ObservableObject {
         return try await host.exportPDF()
     }
 
+    public func selectObject(_ id: String) { host?.selectObject(id) }
+
     public func scroll(to anchor: String) {
         host?.scroll(to: anchor)
     }
@@ -84,6 +87,7 @@ public final class MarkdownPreviewController: ObservableObject {
         host.onEdit = onEdit
         host.onFormEdit = onFormEdit
         host.onFieldHelp = onFieldHelp
+        host.onObjectAction = onObjectAction
         host.onScrollProgress = onScrollProgress
     }
 

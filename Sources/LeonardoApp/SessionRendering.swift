@@ -24,6 +24,10 @@ extension AppSession {
             guard let self, self.documentURL == previewDocumentURL else { return nil }
             return self.updateLeonardoFields(expected: expected, changes: changes)
         }
+        renderer.onObjectAction = { [weak self] expected, object, remove, fieldID in
+            guard let self, self.documentURL == previewDocumentURL else { return false }
+            return self.handleGraphicAction(expected: expected, object: object, remove: remove, fieldID: fieldID)
+        }
         renderer.onFieldHelp = { [weak self] fieldID in
             guard let self, self.documentURL == previewDocumentURL else { return }
             self.showLeonardoFieldHelp(fieldID)
@@ -135,7 +139,12 @@ extension AppSession {
                 let data = try await renderer.exportPDF()
                 try await authorizePath(destination, .document)
                 try data.write(to: destination, options: [.atomic])
-            } catch { report(error) }
+            } catch {
+                report(error)
+                if let localized = error as? LocalizedError, let message = localized.errorDescription {
+                    errorMessage = L10n.text(message)
+                }
+            }
         }
     }
 }

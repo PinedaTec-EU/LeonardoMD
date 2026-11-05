@@ -66,6 +66,8 @@ final class AppSession {
 
     var mode: DocumentMode = .preview
     var focus = false
+    var rubricLibrary = RubricLibrary.shared
+    var rubricRequest: RubricRequest?
     var selectedLeonardoFieldID: String?
     var showInspector = false
     var showPreferences = false

@@ -1,0 +1,11 @@
+{
+  "captured_at": "2026-11-04T23:14:54.112Z",
+  "source_commit": "35cec6d3a6d2008735dd8b70cc4b85ac8bfe53f1",
+  "process_id": 76850,
+  "capture": "original Computer Use JPEG",
+  "width_pixels": 1296,
+  "height_pixels": 906,
+  "sha256": "541e2c463e7f90cfff7bef55d37220608cab1014161f19da51ddf370b29d0901",
+  "native_point_and_browser_viewport": "unavailable from Computer Use",
+  "scenario": "New rubric menu after cross-process library hardening; empty library; no saved data altered"
+}

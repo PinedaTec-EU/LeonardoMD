@@ -20,7 +20,7 @@ struct LeonardoJSONSchemaEvaluator {
     private static let assertionKeywords: Set<String> = [
         "$defs", "$ref", "additionalProperties", "const", "enum", "items",
         "maxLength", "maximum", "minLength", "minimum", "pattern", "properties",
-        "propertyNames", "required", "type"
+        "propertyNames", "required", "type", "minItems", "maxItems"
     ]
     private static let annotationKeywords: Set<String> = [
         "$comment", "$id", "$schema", "default", "deprecated", "description",
@@ -129,7 +129,7 @@ struct LeonardoJSONSchemaEvaluator {
                 throw LeonardoJSONSchemaFailure.unsupportedSchema("\(location): invalid regular expression")
             }
         }
-        for key in ["minLength", "maxLength"] {
+        for key in ["minLength", "maxLength", "minItems", "maxItems"] {
             if let value = object[key], !isNonNegativeInteger(value) {
                 throw LeonardoJSONSchemaFailure.unsupportedSchema("\(location): \(key) must be a non-negative integer")
             }
@@ -200,6 +200,10 @@ struct LeonardoJSONSchemaEvaluator {
             }
         }
 
+        if let array = value as? [Any] {
+            if let minimum = numeric(object["minItems"]), Double(array.count) < minimum { throw LeonardoJSONSchemaFailure.violation(path: path, .constraint) }
+            if let maximum = numeric(object["maxItems"]), Double(array.count) > maximum { throw LeonardoJSONSchemaFailure.violation(path: path, .constraint) }
+        }
         if let objectValue = value as? [String: Any] {
             if let required = object["required"] as? [Any] {
                 for name in required.compactMap({ $0 as? String }) where objectValue[name] == nil {

@@ -21,3 +21,5 @@ Read [current state](current-state.md), then the relevant source target. Human p
 - [PDF export and preview replacement](pdf-export.md)
 
 - [Optional document extensions](document-extensions.md)
+
+- [Page objects and visual rubrics](page-objects.md)

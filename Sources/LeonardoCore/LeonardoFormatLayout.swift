@@ -312,20 +312,23 @@ public struct LeonardoLayout: Codable, Equatable, Sendable {
     public var background: LeonardoBackground?
     public var images: [LeonardoImageLayout]
     public var tables: [LeonardoTableLayout]
+    public var objects: [LeonardoGraphic]
 
     public init(
         page: LeonardoPageLayout? = nil,
         background: LeonardoBackground? = nil,
         images: [LeonardoImageLayout] = [],
-        tables: [LeonardoTableLayout] = []
+        tables: [LeonardoTableLayout] = [],
+        objects: [LeonardoGraphic] = []
     ) {
         self.page = page
         self.background = background
         self.images = images
         self.tables = tables
+        self.objects = objects
     }
 
-    private enum CodingKeys: String, CodingKey { case page, background, images, tables }
+    private enum CodingKeys: String, CodingKey { case page, background, images, tables, objects }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -333,5 +336,6 @@ public struct LeonardoLayout: Codable, Equatable, Sendable {
         background = try container.decodeIfPresent(LeonardoBackground.self, forKey: .background)
         images = try container.decodeIfPresent([LeonardoImageLayout].self, forKey: .images) ?? []
         tables = try container.decodeIfPresent([LeonardoTableLayout].self, forKey: .tables) ?? []
+        objects = try container.decodeIfPresent([LeonardoGraphic].self, forKey: .objects) ?? []
     }
 }
