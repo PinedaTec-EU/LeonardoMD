@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 
 final class PairingUITests: XCTestCase {
     @MainActor func testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation() throws {
@@ -107,13 +108,30 @@ final class PairingUITests: XCTestCase {
         drawLine(in: canvas, from: CGVector(dx: 0.2, dy: 0.45), to: CGVector(dx: 0.8, dy: 0.65))
         app.buttons["rubric-clear"].tap()
         drawLine(in: canvas, from: CGVector(dx: 0.15, dy: 0.65), to: CGVector(dx: 0.85, dy: 0.4))
-        let drawingCapture = XCTAttachment(screenshot: app.screenshot())
+        guard let drawingScreenshot = waitForVisibleInk(in: app, element: canvas,
+                                                        timeout: 5,
+                                                        message: "The drawing canvas must contain visible ink before preview") else {
+            return
+        }
+        let drawingInk = darkInkPixelCount(in: drawingScreenshot, app: app, element: canvas)
+        XCTAssertGreaterThan(drawingInk, 40, "The drawing screenshot must contain rendered ink")
+        let drawingCapture = XCTAttachment(screenshot: drawingScreenshot)
         drawingCapture.name = "Native iOS rubric drawing before preview"
         drawingCapture.lifetime = .keepAlways
         add(drawingCapture)
         app.buttons["rubric-preview-toggle"].tap()
-        XCTAssertTrue(app.otherElements["rubric-preview"].waitForExistence(timeout: 5))
-        let previewCapture = XCTAttachment(screenshot: app.screenshot())
+        let preview = app.otherElements["rubric-preview"]
+        XCTAssertTrue(preview.waitForExistence(timeout: 5))
+        guard let previewScreenshot = waitForVisibleInk(in: app, element: preview,
+                                                        timeout: 5,
+                                                        message: "The preview must render the accepted drawing, not only exist in the hierarchy") else {
+            return
+        }
+        let previewInk = darkInkPixelCount(in: previewScreenshot, app: app, element: preview)
+        XCTAssertGreaterThan(previewInk, 40, "The preview screenshot must contain rendered ink")
+        XCTAssertGreaterThan(Double(previewInk), Double(drawingInk) * 0.20,
+                             "Preview ink density must track the drawing canvas")
+        let previewCapture = XCTAttachment(screenshot: previewScreenshot)
         previewCapture.name = "Native iOS rubric preview before send"
         previewCapture.lifetime = .keepAlways
         add(previewCapture)
@@ -784,6 +802,58 @@ final class PairingUITests: XCTestCase {
         let start = canvas.coordinate(withNormalizedOffset: from)
         let end = canvas.coordinate(withNormalizedOffset: to)
         start.press(forDuration: 0.1, thenDragTo: end, withVelocity: .default, thenHoldForDuration: 0.1)
+    }
+
+    @MainActor private func waitForVisibleInk(in app: XCUIApplication, element: XCUIElement,
+                                              timeout: TimeInterval, message: String) -> XCUIScreenshot? {
+        let deadline = Date().addingTimeInterval(timeout)
+        var latest = app.screenshot()
+        repeat {
+            latest = app.screenshot()
+            if darkInkPixelCount(in: latest, app: app, element: element) > 40 { return latest }
+            Thread.sleep(forTimeInterval: 0.1)
+        } while Date() < deadline
+        XCTFail(message)
+        return nil
+    }
+
+    @MainActor private func darkInkPixelCount(in screenshot: XCUIScreenshot, app: XCUIApplication,
+                                              element: XCUIElement) -> Int {
+        guard let image = screenshot.image.cgImage else { return 0 }
+        let screen = app.frame
+        let frame = element.frame
+        guard screen.width > 0, screen.height > 0, frame.width > 0, frame.height > 0 else { return 0 }
+        let scaleX = CGFloat(image.width) / screen.width
+        let scaleY = CGFloat(image.height) / screen.height
+        let crop = CGRect(x: (frame.minX - screen.minX) * scaleX,
+                          y: (frame.minY - screen.minY) * scaleY,
+                          width: frame.width * scaleX,
+                          height: frame.height * scaleY)
+        let x0 = max(0, min(image.width, Int(crop.minX.rounded(.down))))
+        let y0 = max(0, min(image.height, Int(crop.minY.rounded(.down))))
+        let x1 = max(x0, min(image.width, Int(crop.maxX.rounded(.up))))
+        let y1 = max(y0, min(image.height, Int(crop.maxY.rounded(.up))))
+        guard x1 > x0, y1 > y0 else { return 0 }
+
+        var pixels = [UInt8](repeating: 0, count: image.width * image.height * 4)
+        guard let context = CGContext(data: &pixels, width: image.width, height: image.height,
+                                      bitsPerComponent: 8, bytesPerRow: image.width * 4,
+                                      space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+            return 0
+        }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        var count = 0
+        for y in y0..<y1 {
+            for x in x0..<x1 {
+                let offset = (y * image.width + x) * 4
+                if pixels[offset] < 100, pixels[offset + 1] < 100, pixels[offset + 2] < 100,
+                   pixels[offset + 3] > 0 {
+                    count += 1
+                }
+            }
+        }
+        return count
     }
 
     @MainActor func testCachedDocumentLinksNavigateInsideGrantedCorpusAndRejectMissingFiles() throws {
