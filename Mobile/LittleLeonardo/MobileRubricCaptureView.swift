@@ -49,11 +49,11 @@ struct MobileRubricCaptureView: View {
             let landscape = geometry.size.width > geometry.size.height
             let expanded = canDraw && !showingPreview &&
                 (manuallyExpanded || (landscape && !landscapeDismissed))
-            Group {
-                if expanded {
-                    expandedDrawing(landscape: landscape)
-                } else {
-                    NavigationStack {
+            NavigationStack {
+                Group {
+                    if expanded {
+                        expandedDrawing(landscape: landscape)
+                    } else {
                         ScrollView {
                             VStack(alignment: .leading, spacing: 18) {
                                 requestHeader
@@ -69,13 +69,13 @@ struct MobileRubricCaptureView: View {
                                 }
                             }
                             .padding(24).frame(maxWidth: 680).frame(maxWidth: .infinity)
-                        }
-                        .classicSurface()
-                        .navigationTitle("Nueva rúbrica")
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar { Button("Cerrar") { dismiss() } }
+                        }.classicSurface()
                     }
                 }
+                .navigationTitle("Nueva rúbrica")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { Button("Cerrar") { dismiss() } }
+                .toolbar(expanded ? .hidden : .visible, for: .navigationBar)
             }
             .onChange(of: landscape) { _, isLandscape in
                 if !isLandscape {
@@ -87,6 +87,7 @@ struct MobileRubricCaptureView: View {
         .tint(MobileClassic.accent)
         .foregroundStyle(MobileClassic.ink)
         .background(MobileClassic.paper)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("rubric-request-sheet")
         .onChange(of: currentDraft?.state) { _, state in
             guard let draft = currentDraft else { return }
@@ -245,7 +246,8 @@ struct MobileRubricCaptureView: View {
                 limitReached = false
                 rubric = LeonardoRubric()
             }.accessibilityIdentifier("rubric-clear")
-        }.disabled(!canDraw || rubric.strokes.isEmpty)
+        }.foregroundStyle(MobileClassic.accent)
+            .disabled(!canDraw || rubric.strokes.isEmpty)
     }
 
     private func expandedDrawing(landscape: Bool) -> some View {
@@ -255,7 +257,8 @@ struct MobileRubricCaptureView: View {
                     Button("Volver", systemImage: "arrow.left") {
                         manuallyExpanded = false
                         landscapeDismissed = landscape
-                    }.accessibilityIdentifier("rubric-collapse")
+                    }.foregroundStyle(MobileClassic.accent)
+                        .accessibilityIdentifier("rubric-collapse")
                     inkTools
                     undoControls
                 }.padding(.horizontal, 16).padding(.vertical, 8)
@@ -268,6 +271,7 @@ struct MobileRubricCaptureView: View {
         }
         .padding(8)
         .background(MobileClassic.paper)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("rubric-expanded")
     }
 

@@ -8,6 +8,17 @@ struct MobileAboutView: View {
               let build = info["CFBundleVersion"] as? String else { return "Desarrollo" }
         return "\(version) (\(build))"
     }
+    private func informationLink(_ topic: MobileAboutInformation.Topic) -> some View {
+        NavigationLink {
+            MobileAboutInformation(topic: topic)
+        } label: {
+            HStack {
+                Text(topic.rawValue)
+                Spacer()
+                Image(systemName: "chevron.right").font(.footnote)
+            }.padding(.vertical, 6)
+        }
+    }
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -22,6 +33,13 @@ struct MobileAboutView: View {
                     Divider().overlay(MobileClassic.border)
                     LabeledContent("Versión", value: installedVersion)
                         .accessibilityIdentifier("about-version")
+                    VStack(spacing: 0) {
+                        informationLink(.help)
+                        Divider().padding(.vertical, 12)
+                        informationLink(.privacy)
+                        Divider().padding(.vertical, 12)
+                        informationLink(.licenses)
+                    }
                     Label("Documentos de solo lectura", systemImage: "doc.text")
                     Label("Conexión autorizada desde tu Mac", systemImage: "lock.shield")
                     Text("Los proyectos descargados se conservan para consultarlos sin conexión. La sincronización automática funciona mientras la app está activa.")

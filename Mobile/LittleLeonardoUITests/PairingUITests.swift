@@ -6,15 +6,40 @@ final class PairingUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
         XCTAssertTrue(app.buttons["open-sync-settings"].waitForExistence(timeout: 15))
+        captureScreen(app, name: "Classic library")
         app.buttons["open-sync-settings"].tap()
+        captureScreen(app, name: "Classic synchronization settings")
         XCTAssertTrue(app.buttons["open-about"].waitForExistence(timeout: 5))
         app.buttons["open-about"].tap()
         XCTAssertTrue(app.staticTexts["Little Leonardo"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.otherElements["about-version"].exists || app.staticTexts["Versión"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["about-version"].firstMatch.waitForExistence(timeout: 5))
+        app.buttons["Ayuda"].tap()
+        XCTAssertTrue(app.staticTexts["Conecta tu Mac"].waitForExistence(timeout: 5))
+        captureScreen(app, name: "Classic offline help")
+        app.navigationBars.buttons.firstMatch.tap()
+        app.buttons["Privacidad"].tap()
+        XCTAssertTrue(app.staticTexts["Datos en este dispositivo"].waitForExistence(timeout: 5))
+        app.navigationBars.buttons.firstMatch.tap()
+        app.buttons["Licencias"].tap()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "MIT License")).firstMatch.waitForExistence(timeout: 5))
+        app.navigationBars.buttons.firstMatch.tap()
         let capture = XCTAttachment(screenshot: app.screenshot())
         capture.name = "Classic About installed application"
         capture.lifetime = .keepAlways
         add(capture)
+        app.buttons["Cerrar"].tap()
+        app.buttons["open-pairing"].tap()
+        XCTAssertTrue(app.segmentedControls["pairing-method"].waitForExistence(timeout: 5))
+        captureScreen(app, name: "Classic QR pairing")
+        app.segmentedControls["pairing-method"].buttons["IP y puerto"].tap()
+        captureScreen(app, name: "Classic manual pairing")
+    }
+
+    @MainActor private func captureScreen(_ app: XCUIApplication, name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     @MainActor func testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation() throws {
@@ -45,9 +70,15 @@ final class PairingUITests: XCTestCase {
         app.buttons["Sincronizar"].firstMatch.tap()
         let project = app.staticTexts["QA · Native Direct"].firstMatch
         XCTAssertTrue(project.waitForExistence(timeout: 20))
+        captureScreen(app, name: "Classic enrolled library")
         project.tap()
+        captureScreen(app, name: "Classic project documents")
         app.buttons["docs/read.md"].firstMatch.tap()
         XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native direct initial"].waitForExistence(timeout: 15))
+        captureScreen(app, name: "Classic Markdown document")
+        app.buttons["Ver texto"].tap()
+        captureScreen(app, name: "Classic document source")
+        app.buttons["Ver documento"].tap()
         XCTAssertFalse(app.buttons["Editar"].exists)
         XCTAssertFalse(app.textViews.firstMatch.exists)
         XCTAssertFalse(app.buttons["Enviar cambios"].exists)
@@ -122,12 +153,15 @@ final class PairingUITests: XCTestCase {
         defer { XCUIDevice.shared.orientation = .portrait }
         XCTAssertTrue(app.buttons["rubric-expand"].waitForExistence(timeout: 5))
         app.buttons["rubric-expand"].tap()
-        XCTAssertTrue(app.otherElements["rubric-expanded"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["rubric-collapse"].waitForExistence(timeout: 5))
         app.buttons["rubric-collapse"].tap()
         XCTAssertTrue(app.textFields["rubric-label"].waitForExistence(timeout: 5))
         drawLine(in: canvas, from: CGVector(dx: 0.2, dy: 0.5), to: CGVector(dx: 0.7, dy: 0.5))
+        let portraitStrokeCount = canvas.value as? String
         XCUIDevice.shared.orientation = .landscapeLeft
-        XCTAssertTrue(app.otherElements["rubric-expanded"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["rubric-collapse"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.otherElements["rubric-canvas"].value as? String, portraitStrokeCount,
+                       "Rotation must not mutate portable strokes")
         XCTAssertFalse(app.textFields["rubric-label"].exists)
         XCTAssertFalse(app.buttons["rubric-send"].exists)
         let rotated = XCTAttachment(screenshot: app.screenshot())

@@ -32,6 +32,9 @@
 		386100000000000000000001 /* MobileAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000001 /* MobileAboutView.swift */; };
 		386100000000000000000002 /* MobileRubricCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000002 /* MobileRubricCanvas.swift */; };
 		386100000000000000000003 /* MobileRubricInkTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000003 /* MobileRubricInkTools.swift */; };
+		386100000000000000000010 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000010 /* LaunchScreen.storyboard */; };
+		386100000000000000000014 /* MobileAboutInformation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000014 /* MobileAboutInformation.swift */; };
+		386100000000000000000015 /* Legal in Resources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000015 /* Legal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -75,6 +78,9 @@
 		386000000000000000000001 /* MobileAboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileAboutView.swift; sourceTree = "<group>"; };
 		386000000000000000000002 /* MobileRubricCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRubricCanvas.swift; sourceTree = "<group>"; };
 		386000000000000000000003 /* MobileRubricInkTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRubricInkTools.swift; sourceTree = "<group>"; };
+		386000000000000000000010 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		386000000000000000000014 /* MobileAboutInformation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileAboutInformation.swift; sourceTree = "<group>"; };
+		386000000000000000000015 /* Legal */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Legal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -167,6 +173,9 @@
 			isa = PBXGroup;
 			children = (
 				0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */,
+				386000000000000000000015 /* Legal */,
+				386000000000000000000014 /* MobileAboutInformation.swift */,
+				386000000000000000000010 /* LaunchScreen.storyboard */,
 				386000000000000000000003 /* MobileRubricInkTools.swift */,
 				386000000000000000000002 /* MobileRubricCanvas.swift */,
 				386000000000000000000001 /* MobileAboutView.swift */,
@@ -289,6 +298,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				D1A3A7C4F0E84D6C9B1E0A12 /* Assets.xcassets in Resources */,
+				386100000000000000000015 /* Legal in Resources */,
+				386100000000000000000010 /* LaunchScreen.storyboard in Resources */,
 				D1A3A7C4F0E84D6C9B1E0A14 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -315,6 +326,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */,
+				386100000000000000000014 /* MobileAboutInformation.swift in Sources */,
 				386100000000000000000003 /* MobileRubricInkTools.swift in Sources */,
 				386100000000000000000002 /* MobileRubricCanvas.swift in Sources */,
 				386100000000000000000001 /* MobileAboutView.swift in Sources */,
@@ -553,7 +565,7 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "Little Leonardo usa la cámara para leer el QR de conexión que muestra LeonardoMD.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Little Leonardo se conecta con LeonardoMD en tu red local para sincronizar los proyectos que autorices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -579,7 +591,7 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "Little Leonardo usa la cámara para leer el QR de conexión que muestra LeonardoMD.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Little Leonardo se conecta con LeonardoMD en tu red local para sincronizar los proyectos que autorices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;

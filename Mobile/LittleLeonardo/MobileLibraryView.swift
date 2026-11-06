@@ -33,6 +33,7 @@ struct MobileLibraryView: View {
                             .font(.caption).foregroundStyle(MobileClassic.secondary)
                     }
                 }
+                .listRowBackground(MobileClassic.paper)
             }
             .classicSurface()
             .overlay {
@@ -144,7 +145,15 @@ struct MobileLibraryView: View {
     private var directConnectionSheet: some View {
         NavigationStack {
             Form {
-                Text("Ambos dispositivos deben estar en la misma red local. Comprueba el código en las dos pantallas antes de autorizar la conexión.")
+                Section {
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Conecta con tu Mac").font(.title2.bold()).foregroundStyle(MobileClassic.heading)
+                        Label("Abre LeonardoMD y activa el uso compartido", systemImage: "1.circle")
+                        Label("Escanea el QR o introduce la dirección", systemImage: "2.circle")
+                        Label("Comprueba el código y autoriza en el Mac", systemImage: "3.circle")
+                        Text("Ambos dispositivos deben estar en la misma red local.")
+                            .font(.footnote).foregroundStyle(MobileClassic.secondary)
+                    }.padding(.vertical, 8)
                 Picker("Método de conexión", selection: $manualPairing) {
                     Text("QR").tag(false)
                     Text("IP y puerto").tag(true)
@@ -162,7 +171,9 @@ struct MobileLibraryView: View {
                         .disabled(library.connecting)
                         .accessibilityIdentifier("scan-pairing-qr")
                 }
-                syncFrequency
+                }.listRowBackground(MobileClassic.inset)
+                Section { syncFrequency }.listRowBackground(MobileClassic.inset)
+                Section {
                 Button("Solicitar conexión") {
                     Task {
                         if manualPairing {
@@ -173,6 +184,7 @@ struct MobileLibraryView: View {
                         if library.comparisonCode != nil { qrURL = ""; presentedSheet = nil }
                     }
                 }.disabled(library.connecting || (manualPairing ? host.isEmpty || (UInt16(port) ?? 0) == 0 : qrURL.isEmpty))
+                }.listRowBackground(MobileClassic.paper)
             }.classicSurface().navigationTitle("Conectar con LeonardoMD")
             .toolbar { Button("Cerrar") { presentedSheet = nil } }
             .sheet(isPresented: $scanning) {
@@ -194,11 +206,11 @@ struct MobileLibraryView: View {
     private var synchronizationSettings: some View {
         NavigationStack {
             Form {
-                Section("Frecuencia") { syncFrequency }
+                Section("Frecuencia") { syncFrequency }.listRowBackground(MobileClassic.inset)
                 Section {
                     Button("Acerca de Little Leonardo", systemImage: "info.circle") { presentedSheet = .about }
                         .accessibilityIdentifier("open-about")
-                }
+                }.listRowBackground(MobileClassic.inset)
             }
                 .classicSurface()
                 .navigationTitle("Sincronización")
@@ -224,10 +236,11 @@ struct MobileProjectView: View {
                             .accessibilityIdentifier("export-recovery")
                     }
                 }
+                .listRowBackground(MobileClassic.inset)
                 ForEach(project.files.filter { ["md", "markdown", "txt"].contains(($0.path as NSString).pathExtension.lowercased()) }, id: \.path) { file in
                     NavigationLink(file.path) {
                         MobileDocumentView(library: library, projectID: project.id, file: file)
-                    }
+                    }.listRowBackground(MobileClassic.paper)
                 }
             }
         }.classicSurface().navigationTitle(project?.name ?? "Proyecto")
@@ -252,7 +265,8 @@ struct MobileDocumentView: View {
     @StateObject private var previewController = MarkdownPreviewController()
     private let virtualRoot = URL(fileURLWithPath: "/LittleLeonardoCorpus", isDirectory: true)
     private var previewConfiguration: MarkdownPreviewConfiguration {
-        MarkdownPreviewConfiguration(appearance: .leonardoClassic, allowsMermaid: true, allowsMath: true, externalLinkPolicy: .blocked,
+        MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true, externalLinkPolicy: .blocked,
+            appearance: .leonardoClassic,
             localAssetRoot: virtualRoot, memoryAssets: assets, allowsRemoteImages: false)
     }
     private var liveProject: OfflineProject? { library.projects.first { $0.id == projectID } }

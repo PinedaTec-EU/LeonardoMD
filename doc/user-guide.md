@@ -600,6 +600,23 @@ one device. The companion only draws and returns the rubric; it cannot edit the
 document. A helper, service or capability problem is shown as an actionable
 offline/unsupported state.
 
+### Classic appearance, startup and About in Little Leonardo
+
+Little Leonardo uses the **Leonardo Classic** colors: parchment paper,
+burgundy headings and oxide actions. This version has no theme selector or
+Premium page. Startup displays the brand while the local library is prepared,
+without an added delay. Open **Ajustes de sincronización → Acerca de Little
+Leonardo** (sync settings → About) to check the installed version and build and open offline Help, Privacy and
+Licenses pages.
+
+After **Aceptar y dibujar** (accept and draw), the page suggests rotating the
+device. Landscape presents a full-screen canvas with ink color, style, width,
+**Deshacer** (undo) and **Limpiar** (clear). Returning to portrait restores the
+normal page and preserves the drawing's proportions. With rotation lock enabled,
+use **Ampliar lienzo** (expand canvas), then **Volver** (back). Rotating never
+sends or clears the rubric. Preview and **Enviar rúbrica** (send rubric) remain
+explicit actions; a blocked, submitted or frozen retry draft cannot be edited.
+
 ### Answer a rubric request on iOS
 
 This is a capture-only response channel for a **known, linked Mac**. Pairing

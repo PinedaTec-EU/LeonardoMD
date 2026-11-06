@@ -47,6 +47,7 @@ struct MobileRubricCanvas: View {
             }
             .background(MobileClassic.canvas)
             .contentShape(Rectangle())
+
             .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                 guard isInteractive else { return }
                 guard drawingRect(in: geometry.size).contains(value.location) else { return }
@@ -69,6 +70,10 @@ struct MobileRubricCanvas: View {
             .onChange(of: geometry.size) { _, _ in commitLiveStroke() }
             .onDisappear { commitLiveStroke() }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Lienzo de rúbrica")
+        .accessibilityValue("\(rubric.strokes.count) trazos")
+        .accessibilityAddTraits(isInteractive ? .allowsDirectInteraction : [])
     }
 
     private func commitLiveStroke() {

@@ -1,0 +1,7 @@
+# Little Leonardo Classic presentation
+
+Owner-selected design: [#386](https://github.com/PinedaTec-EU/LeonardoMD/issues/386), [PR #387](https://github.com/PinedaTec-EU/LeonardoMD/pull/387). MobileClassic reads PaletteCatalog.leonardoClassic, not an independent color catalog. No Premium or theme selector. LaunchScreen is the static brand surface; MobileStartupView remains only during actual local preparation. About reads installed bundle metadata, with offline help/privacy and legal disclosures. Legal resources mirror the canonical root/renderer licenses; test_mobile_legal_resources checks for drift.
+
+Rubric capture is fullScreenCover with a stable NavigationStack. Only accepted editable drawing expands when available width exceeds height; manuallyExpanded is the rotation-lock alternative. Portrait restores the normal page. Preview/frozen/blocked/submitted states stay outside editable expansion. One parent-owned LeonardoRubric backs both layouts; canvas points remain in portable 3:1 coordinates. Commit an in-progress sampled stroke at resize/disappearance, subject to the same portable limits and live authorization gate. Rotation does not invoke send.
+
+Native acceptance extends PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS using the real opt-in Mac TLS fixture. Never claim generated concepts as application evidence. Packaged bilingual Help smoke and integration with demo/cache PRs remain separate delivery gates; see PR evidence for actual outcomes.
