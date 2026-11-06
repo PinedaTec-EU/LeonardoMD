@@ -1,5 +1,7 @@
 # Little Leonardo offline demo validation
 
+**Current refresh:** #274 and #364 are integrated through #377. See [integrated-fixes validation](integrated-fixes/README.md) for the refreshed source and captures. The record below is historical evidence from the earlier baseline and retains its original failed observations.
+
 Tracking: [#381](https://github.com/PinedaTec-EU/LeonardoMD/issues/381), [draft PR #383](https://github.com/PinedaTec-EU/LeonardoMD/pull/383).
 
 ## Tested application
