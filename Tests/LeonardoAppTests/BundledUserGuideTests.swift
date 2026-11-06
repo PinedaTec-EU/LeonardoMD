@@ -10,7 +10,7 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let oldCopies = Array(2...16).map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
+        let oldCopies = Array(2...17).map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
         let oldAnswers = Data("previous guide and saved answers".utf8)
         for oldCopy in oldCopies {
             try FileManager.default.createDirectory(at: oldCopy.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -22,7 +22,7 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v17/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v18/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
             let legacyImport = root.appendingPathComponent("Agent Import Guides/v1/\(language.rawValue)/AgentImport-v1-\(language.rawValue).mdlz")
             try FileManager.default.createDirectory(at: legacyImport.deletingLastPathComponent(), withIntermediateDirectories: true)
