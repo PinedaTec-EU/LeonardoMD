@@ -157,8 +157,14 @@ public actor DirectSyncAuthority {
         }
         let device = try await mutate { registry in
             let capabilities: Set<DirectCapability> = update.rubricExchangeV1 == true ? [.rubricExchangeV1] : []
-            return try registry.updateCapabilities(deviceID: deviceID, credential: credential,
-                                                   capabilities: capabilities)
+            let device = try registry.updateCapabilities(deviceID: deviceID, credential: credential,
+                                                          capabilities: capabilities)
+            // Authenticate against the transaction copy first. An unavailable
+            // handler must never commit a newly accepted feature advertisement.
+            guard !capabilities.contains(.rubricExchangeV1) || rubrics != nil else {
+                throw RubricExchangeError.unsupported
+            }
+            return device
         }
         _ = try status(deviceID: deviceID, credential: credential, now: now)
         return DirectCapabilityRefreshReceipt(acceptedCapabilities: device.capabilities)
