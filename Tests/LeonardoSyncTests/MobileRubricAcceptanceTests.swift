@@ -82,6 +82,32 @@ final class MobileRubricAcceptanceTests: XCTestCase {
         XCTAssertEqual(repaired.state, .accepted)
     }
 
+    func testDiskFailureAfterRemoteAcceptanceLeavesRecoverableIntent() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("drafts")
+        let store = MobileRubricDraftStore(url: url)
+        let intent = try intent()
+        _ = try await store.prepareAcceptance(intent)
+        let snapshot = try Data(contentsOf: url)
+        try FileManager.default.removeItem(at: url)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: false)
+        var accepted = intent.request; accepted.state = .accepted
+        do {
+            _ = try await store.confirmAcceptance(id: intent.id, request: accepted, at: now)
+            XCTFail("A failed disk commit cannot enable drawing")
+        } catch { XCTAssertEqual(error as? RubricExchangeError, .storageFailure) }
+        let memory = try await store.all(now: now)
+        XCTAssertEqual(memory, [intent])
+        try FileManager.default.removeItem(at: url)
+        try snapshot.write(to: url)
+        let reopened = MobileRubricDraftStore(url: url)
+        let beforeRetry = try await reopened.all(now: now)
+        XCTAssertEqual(beforeRetry, [intent])
+        let repaired = try await reopened.confirmAcceptance(id: intent.id, request: accepted, at: now)
+        XCTAssertEqual(repaired.state, .accepted)
+    }
+
     func testConfirmationRejectsChangedBindingAndRevokedIntent() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

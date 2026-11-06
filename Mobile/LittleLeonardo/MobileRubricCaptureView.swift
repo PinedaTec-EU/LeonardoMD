@@ -209,6 +209,16 @@ struct MobileRubricCaptureView: View {
             }
         }
         .accessibilityIdentifier("rubric-request-sheet")
+        .onChange(of: currentDraft?.state) { _, state in
+            guard let draft = currentDraft else { return }
+            if state == .submitted { phase = .submitted }
+            else if state == .accepted, phase == .awaitingApproval || phase == .accepting {
+                acceptedRequest = draft.request
+                rubric = draft.drawing ?? LeonardoRubric()
+                label = draft.label
+                phase = .drawing
+            }
+        }
         .onChange(of: rubric) { _, drawing in persistSnapshot(drawing: drawing, label: label) }
         .onChange(of: label) { _, value in persistSnapshot(drawing: rubric, label: value) }
     }
