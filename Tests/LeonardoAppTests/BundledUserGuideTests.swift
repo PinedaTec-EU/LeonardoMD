@@ -39,6 +39,15 @@ final class BundledUserGuideTests: XCTestCase {
             let expectedImageCount = language == .spanish ? 17 : 16
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:
                 workspace.directoryURL.appendingPathComponent("assets").path).count, expectedImageCount)
+            let artwork = language == .english ? ["journey", "package", "import", "export"] : ["recorrido", "paquete", "importar", "exportar"]
+            for name in artwork {
+                let imageURL = workspace.directoryURL.appendingPathComponent("assets/\(name).png")
+                let bitmap = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: imageURL)))
+                XCTAssertTrue(bitmap.hasAlpha, name)
+                XCTAssertEqual(bitmap.pixelsWide, 1200)
+                XCTAssertEqual(bitmap.pixelsHigh, 400)
+                XCTAssertEqual(try XCTUnwrap(bitmap.colorAt(x: 0, y: 0)).alphaComponent, 0, name)
+            }
             // Personal annotations remain independent of the bundled template.
             try (source + "\nPersonal note: Ada\n").write(to: workspace.documentURL, atomically: true, encoding: .utf8)
             workspace = try LeonardoPackageTransport.save(workspace)
