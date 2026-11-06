@@ -37,6 +37,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
     private var content = ""
     private var documentURL: URL?
     private var configuration = MarkdownPreviewConfiguration.default
+    private var headingScrollTask: Task<Void, Never>?
     private var ready = false
     private var loadStartedAtUptime: UInt64?
     private let renderLogger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "renderer")
@@ -94,6 +95,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             || previousConfiguration.frontMatter != configuration.frontMatter
             || previousConfiguration.renderDebounce != configuration.renderDebounce
 
+        if contentChanged || baseURLChanged { headingScrollTask?.cancel() }
         self.content = content
         self.documentURL = baseURL
         self.configuration = configuration
@@ -241,12 +243,31 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         evaluate("window.LeonardoPreview && window.LeonardoPreview.scrollToAnchor(\(encoded));")
     }
 
+    func scroll(toSourceLine line: Int) {
+        guard line > 0, let webView else { return }
+        headingScrollTask?.cancel()
+        let expected = content
+        headingScrollTask = Task { @MainActor [weak self, weak webView] in
+            guard let self, let webView, !Task.isCancelled else { return }
+            do {
+                try await self.flushPendingRender()
+                try await self.waitUntilReady()
+                guard !Task.isCancelled, self.webView === webView, self.content == expected else { return }
+                self.evaluate("window.LeonardoPreview?.scrollToSourceLine(\(line));")
+            } catch {
+                // Replacement, teardown and failed loads invalidate this navigation.
+            }
+        }
+    }
+
     func scroll(toFraction fraction: Double) {
         let bounded = fraction.isFinite ? min(1, max(0, fraction)) : 0
         evaluate("window.LeonardoPreview && window.LeonardoPreview.scrollToFraction(\(bounded));")
     }
 
     func teardown() {
+        headingScrollTask?.cancel()
+        headingScrollTask = nil
         pdfExports.invalidate()
         renderWorkItem?.cancel()
         renderWorkItem = nil
@@ -613,7 +634,9 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             // DOM and move the caret after every keystroke.
             content = replacement
         case "leonardoReady":
-            guard message.webView === webView, message.frameInfo.isMainFrame else { return }
+            guard message.webView === webView, message.frameInfo.isMainFrame,
+                  let readyBody = message.body as? [String: Any],
+                  readyBody["source"] as? String == content else { return }
             if let body = message.body as? [String: Any],
                let source = body["source"] as? String, source == content,
                let used = body["usedExtensions"] as? [String] {

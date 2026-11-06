@@ -6,7 +6,9 @@ struct MarkdownEditor: NSViewRepresentable {
     @Binding var text: String
     @Binding var scrollFraction: Double
     var requestedLine: Int?
+    var requestedLineRevision = 0
     var usesDocumentHistory = false
+    var onUserScroll: ((Double) -> Void)?
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -39,6 +41,11 @@ struct MarkdownEditor: NSViewRepresentable {
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         context.coordinator.parent = self
         guard let editor = scroll.documentView as? NSTextView else { return }
+        context.coordinator.applyingScroll = true
+        defer {
+            context.coordinator.programmaticOrigin = scroll.contentView.bounds.minY
+            context.coordinator.applyingScroll = false
+        }
         editor.isEditable = context.environment.isEnabled
         if editor.string != text {
             let selection = editor.selectedRange()
@@ -52,8 +59,9 @@ struct MarkdownEditor: NSViewRepresentable {
             scroll.reflectScrolledClipView(scroll.contentView)
         }
         context.coordinator.expectedText = text
-        if let line = requestedLine, line != context.coordinator.lastLine {
+        if let line = requestedLine, line != context.coordinator.lastLine || requestedLineRevision != context.coordinator.lastLineRevision {
             context.coordinator.lastLine = line
+            context.coordinator.lastLineRevision = requestedLineRevision
             let lines = text.components(separatedBy: "\n")
             let offset = lines.prefix(max(0, line - 1)).reduce(0) { $0 + ($1 as NSString).length + 1 }
             let range = NSRange(location: min(offset, (text as NSString).length), length: 0)
@@ -66,6 +74,9 @@ struct MarkdownEditor: NSViewRepresentable {
         var parent: MarkdownEditor
         var expectedText: String
         var lastLine: Int?
+        var lastLineRevision: Int?
+        var applyingScroll = false
+        var programmaticOrigin: CGFloat?
         var lastScrollFraction = 0.0
         var scrollObserver: NSObjectProtocol?
         init(_ parent: MarkdownEditor) { self.parent = parent; expectedText = parent.text }
@@ -99,6 +110,10 @@ struct MarkdownEditor: NSViewRepresentable {
                     let fraction = min(1, max(0, scroll.contentView.bounds.minY / available))
                     self.lastScrollFraction = fraction
                     self.parent.scrollFraction = fraction
+                    if !self.applyingScroll, self.programmaticOrigin != scroll.contentView.bounds.minY {
+                        self.parent.onUserScroll?(fraction)
+                    }
+                    self.programmaticOrigin = scroll.contentView.bounds.minY
                 }
             }
         }

@@ -432,6 +432,12 @@
       const element = document.getElementById(anchor);
       if (element) element.scrollIntoView({ behavior: "smooth", block: "start" });
     },
+    scrollToSourceLine(line) {
+      const heading = window.LeonardoTables.headingForSourceLine(root, line);
+      if (!heading) return false;
+      heading.scrollIntoView({ behavior: "auto", block: "start" });
+      return true;
+    },
     scrollToFraction(fraction) {
       const maximum = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
       window.scrollTo({ top: Math.max(0, Math.min(1, fraction)) * maximum, behavior: "auto" });

@@ -33,6 +33,19 @@
     const body = (window.LeonardoEditing.body || "").replace(/\r\n/g, "\n");
     const offset = normalized.length - body.length;
     if (offset < 0 || normalized.slice(offset) !== body) return tokens;
+    const lineStarts = [0];
+    for (let index = 0; index < normalized.length; index += 1) {
+      if (normalized[index] === "\n") lineStarts.push(index + 1);
+    }
+    const sourceLine = (offset) => {
+      let lower = 0, upper = lineStarts.length;
+      while (lower < upper) {
+        const middle = (lower + upper) >>> 1;
+        if (lineStarts[middle] <= offset) lower = middle + 1;
+        else upper = middle;
+      }
+      return lower;
+    };
     const originalOffsets = [];
     for (let index = 0; index < source.length; index += 1) {
       originalOffsets.push(index);
@@ -48,6 +61,7 @@
         if (start < cursor || start + token.raw.length > upper) continue;
         const end = start + token.raw.length;
         cursor = end;
+        if (token.type === "heading") token.leonardoSourceLine = sourceLine(start);
         if (token.tokens) {
           visit(token.tokens, start, end);
           if (["strong", "em", "del"].includes(token.type) && !hasOpaqueContent(token)) {
