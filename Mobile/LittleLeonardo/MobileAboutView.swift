@@ -17,7 +17,7 @@ struct MobileAboutView: View {
                 Spacer()
                 Image(systemName: "chevron.right").font(.footnote)
             }.padding(.vertical, 6)
-        }
+        }.foregroundStyle(MobileClassic.accent)
     }
     var body: some View {
         NavigationStack {

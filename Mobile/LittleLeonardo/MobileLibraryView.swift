@@ -44,7 +44,7 @@ struct MobileLibraryView: View {
                         Text("Conecta tu Mac y consulta tus proyectos sin conexión.")
                             .multilineTextAlignment(.center).foregroundStyle(MobileClassic.secondary)
                         Button("Conectar con mi Mac") { presentedSheet = .direct }
-                            .buttonStyle(.borderedProminent).disabled(library.connecting)
+                            .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper).disabled(library.connecting)
                         Label("Solo lectura", systemImage: "lock").font(.footnote)
                     }.padding(28).frame(maxWidth: 460)
 
@@ -79,7 +79,7 @@ struct MobileLibraryView: View {
                         Label("Solicitud de rúbrica de \(request.requesterName)", systemImage: "signature")
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper)
                     .padding(.horizontal)
                     .accessibilityIdentifier("rubric-request-banner")
                 } else if let draft = activeRubricDraft {
@@ -89,7 +89,7 @@ struct MobileLibraryView: View {
                         Label("Recuperar rúbrica de \(draft.request.requesterName)", systemImage: "arrow.clockwise")
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper)
                     .padding(.horizontal)
                     .accessibilityIdentifier("rubric-draft-banner")
                 } else if let code = library.comparisonCode {

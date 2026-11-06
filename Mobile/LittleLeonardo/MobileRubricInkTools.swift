@@ -23,7 +23,7 @@ struct MobileRubricInkTools: View {
                 Text("Sólido").tag(LeonardoInkStyle.solid)
                 Text("Pincel").tag(LeonardoInkStyle.brush)
             }.pickerStyle(.menu)
-        }
+        }.fixedSize(horizontal: true, vertical: false)
     }
     private var thickness: some View {
         HStack(spacing: 8) {

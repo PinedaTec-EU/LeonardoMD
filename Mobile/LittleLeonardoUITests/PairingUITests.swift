@@ -16,13 +16,13 @@ final class PairingUITests: XCTestCase {
         app.buttons["Ayuda"].tap()
         XCTAssertTrue(app.staticTexts["Conecta tu Mac"].waitForExistence(timeout: 5))
         captureScreen(app, name: "Classic offline help")
-        app.navigationBars.buttons.firstMatch.tap()
+        app.navigationBars.buttons["Acerca de"].tap()
         app.buttons["Privacidad"].tap()
         XCTAssertTrue(app.staticTexts["Datos en este dispositivo"].waitForExistence(timeout: 5))
-        app.navigationBars.buttons.firstMatch.tap()
+        app.navigationBars.buttons["Acerca de"].tap()
         app.buttons["Licencias"].tap()
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "MIT License")).firstMatch.waitForExistence(timeout: 5))
-        app.navigationBars.buttons.firstMatch.tap()
+        app.navigationBars.buttons["Acerca de"].tap()
         let capture = XCTAttachment(screenshot: app.screenshot())
         capture.name = "Classic About installed application"
         capture.lifetime = .keepAlways
@@ -158,13 +158,18 @@ final class PairingUITests: XCTestCase {
         XCTAssertTrue(app.textFields["rubric-label"].waitForExistence(timeout: 5))
         drawLine(in: canvas, from: CGVector(dx: 0.2, dy: 0.5), to: CGVector(dx: 0.7, dy: 0.5))
         let portraitStrokeCount = canvas.value as? String
+        XCTAssertNotNil(portraitStrokeCount, "The canvas exposes the portable stroke count")
         XCUIDevice.shared.orientation = .landscapeLeft
         XCTAssertTrue(app.buttons["rubric-collapse"].waitForExistence(timeout: 10))
         XCTAssertEqual(app.otherElements["rubric-canvas"].value as? String, portraitStrokeCount,
                        "Rotation must not mutate portable strokes")
         XCTAssertFalse(app.textFields["rubric-label"].exists)
         XCTAssertFalse(app.buttons["rubric-send"].exists)
-        let rotated = XCTAttachment(screenshot: app.screenshot())
+        let landscapeReady = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            app.frame.width > app.frame.height
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [landscapeReady], timeout: 5), .completed)
+        let rotated = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         rotated.name = "Classic rubric landscape full-screen drawing"
         rotated.lifetime = .keepAlways
         add(rotated)

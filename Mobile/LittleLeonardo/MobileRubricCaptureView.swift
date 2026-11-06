@@ -131,7 +131,7 @@ struct MobileRubricCaptureView: View {
             } else if phase == .accepting { ProgressView("Comprobando solicitud…") }
             else {
                 Button("Aceptar y dibujar", systemImage: "checkmark.circle.fill") { accept() }
-                    .buttonStyle(.borderedProminent).accessibilityIdentifier("rubric-accept")
+                    .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper).accessibilityIdentifier("rubric-accept")
                 Button("Rechazar", role: .destructive) { reject() }
                     .accessibilityIdentifier("rubric-reject")
             }
@@ -142,6 +142,9 @@ struct MobileRubricCaptureView: View {
         VStack(alignment: .leading, spacing: 14) {
             TextField("Nombre de la rúbrica", text: $label)
                 .textInputAutocapitalization(.sentences)
+                .padding(12).background(MobileClassic.canvas)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(MobileClassic.border))
                 .accessibilityIdentifier("rubric-label")
                 .disabled(frozen || terminalBlocked || phase == .sending)
             if canDraw && !showingPreview {
@@ -152,7 +155,8 @@ struct MobileRubricCaptureView: View {
                         .font(.callout).foregroundStyle(MobileClassic.secondary)
                     Button("Ampliar lienzo", systemImage: "arrow.up.left.and.arrow.down.right") {
                         manuallyExpanded = true
-                    }.accessibilityIdentifier("rubric-expand")
+                    }.foregroundStyle(MobileClassic.accent)
+                        .accessibilityIdentifier("rubric-expand")
                 }
             }
             inkTools
@@ -185,13 +189,13 @@ struct MobileRubricCaptureView: View {
                        systemImage: showingPreview ? "pencil" : "eye") {
                     showingPreview.toggle()
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper)
                 .disabled(phase == .sending || rubric.strokes.isEmpty)
                 .accessibilityIdentifier("rubric-preview-toggle")
             }
             if let draft = currentDraft, draft.state == .pendingSend, draft.response != nil {
                 Button("Reintentar envío", systemImage: "arrow.clockwise") { retry(draft) }
-                    .buttonStyle(.borderedProminent).disabled(phase == .sending)
+                    .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper).disabled(phase == .sending)
                     .accessibilityIdentifier("rubric-retry")
             } else if terminalBlocked {
                 Label("La solicitud ya no admite envíos (caducada, cancelada o revocada).",
@@ -199,7 +203,7 @@ struct MobileRubricCaptureView: View {
                     .font(.footnote).foregroundStyle(MobileClassic.secondary)
             } else {
                 Button("Enviar rúbrica", systemImage: "paperplane.fill") { send() }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper)
                     .disabled(frozen || phase == .sending || !rubric.isValid || !drawingFitsResponseLimit
                               || label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .accessibilityIdentifier("rubric-send")
@@ -215,7 +219,7 @@ struct MobileRubricCaptureView: View {
             Text("El ordenador ha confirmado exactamente este dibujo para revisarlo.")
                 .font(.footnote).foregroundStyle(MobileClassic.secondary)
             Button("Terminar") { dismiss() }
-                .buttonStyle(.borderedProminent).accessibilityIdentifier("rubric-done")
+                .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper).accessibilityIdentifier("rubric-done")
         }
     }
 
