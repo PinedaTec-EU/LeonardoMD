@@ -269,6 +269,57 @@ final class PairingUITests: XCTestCase {
         try advanceDirectFixture("finish")
     }
 
+    @MainActor func testGrantedProjectLateResponseDoesNotResurrectAfterForegroundRevocation() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["LEONARDO_DIRECT_RUBRIC_QA"] == "1",
+              environment["LEONARDO_MOBILE_RUBRIC_QA_MODE"] == "late-project-revoke",
+              let port = environment["LEONARDO_DIRECT_QA_PORT"], UInt16(port) != nil,
+              environment["LEONARDO_DIRECT_QA_PHASE_FILE"] != nil else {
+            throw XCTSkip("Requires the explicit delayed-project revocation fixture")
+        }
+        let app = XCUIApplication()
+        app.launch()
+        app.buttons["open-pairing"].tap()
+        app.segmentedControls["pairing-method"].buttons["IP y puerto"].tap()
+        let host = app.textFields["pairing-host"], portField = app.textFields["pairing-port"]
+        host.tap(); host.typeText("127.0.0.1")
+        portField.tap()
+        if let value = portField.value as? String {
+            portField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+        }
+        portField.typeText(port)
+        app.buttons["Solicitar conexión"].tap()
+        let code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
+        XCTAssertTrue(code.waitForExistence(timeout: 15))
+
+        try advanceDirectFixture("approve")
+        try advanceDirectFixture("arm-project")
+        app.buttons["Sincronizar"].firstMatch.tap()
+        XCTAssertTrue(waitForDirectFixtureFile("project-response-held.txt", timeout: 20),
+                      "The authorized project response must be held before revocation")
+
+        try advanceDirectFixture("revoke")
+        XCTAssertTrue(waitForDirectFixtureFile("revocation-observed.txt", timeout: 20),
+                      "Foreground polling must observe the authenticated revoked status while the project is held")
+        try advanceDirectFixture("release-project")
+        XCTAssertTrue(waitForDirectFixtureFile("project-response-released.txt", timeout: 10))
+
+        let sync = app.buttons["Sincronizar"].firstMatch
+        let readiness = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == true AND isEnabled == true"), object: sync)
+        XCTAssertEqual(XCTWaiter().wait(for: [readiness], timeout: 20), .completed,
+                       "The delayed synchronization must settle after the late response is released")
+        XCTAssertFalse(app.staticTexts["QA · Delayed rubric"].exists,
+                       "A project response authorized before revocation must not reappear in the library")
+
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["open-pairing"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.staticTexts["QA · Delayed rubric"].waitForExistence(timeout: 8),
+                       "The late project response must not survive as a resurrected cache after relaunch")
+        try advanceDirectFixture("finish")
+    }
+
     @MainActor private func waitForDocumentSyncToFinish(_ app: XCUIApplication, timeout: TimeInterval) -> Bool {
         let documentSync = app.buttons["document-sync"]
         let readiness = XCTNSPredicateExpectation(
@@ -282,6 +333,19 @@ final class PairingUITests: XCTestCase {
         failure.buttons["Aceptar"].tap()
         XCTAssertFalse(failure.waitForExistence(timeout: 3),
                        "The native failure alert must be dismissed before capture")
+    }
+
+    @MainActor private func waitForDirectFixtureFile(_ name: String, timeout: TimeInterval) -> Bool {
+        guard let root = ProcessInfo.processInfo.environment["LEONARDO_MOBILE_RUBRIC_QA_ROOT"] else {
+            return false
+        }
+        let file = URL(fileURLWithPath: root, isDirectory: true).appendingPathComponent(name)
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if FileManager.default.fileExists(atPath: file.path) { return true }
+            Thread.sleep(forTimeInterval: 0.1)
+        }
+        return false
     }
 
     private func advanceDirectFixture(_ phase: String) throws {
