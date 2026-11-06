@@ -113,7 +113,7 @@ final class MobileLibrary {
         guard !connecting else { return }
         connecting = true
         defer { connecting = false }
-        invalidateCacheAndAuthorization()
+        invalidateCache()
         let loadCacheEpoch = cacheEpoch
         let loadAuthorizationEpoch = authorizationEpoch
         do {
