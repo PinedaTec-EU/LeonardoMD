@@ -57,15 +57,21 @@ not claim physical-device networking, App Store/TestFlight distribution or a
 production Mac. The existing reader navigation/offline corpus remains a
 separate behavior.
 
-### Current source-bound recovery validation
+### Recovery matrix before the terminal approval correction
 
-The current capture/code checkpoint is `c8e52592e6325746237ef9d99f88ea41363d6262`. Its immutable drawing, preview and sent captures and all ten native mode results are recorded in [the source-bound manifest](ios-rubric-capture-final-20261106-c8e5259.json). Earlier raw captures/sidecars remain historical. The final independent iOS rebuild kept every app bundle file byte-identical to the installed capture product. All 34 relevant Swift/test/config inputs and package manifests match the captured source.
+The recovery-matrix capture/code checkpoint is `c8e52592e6325746237ef9d99f88ea41363d6262`. Its immutable drawing, preview and sent captures and all ten native mode results are recorded in [the source-bound manifest](ios-rubric-capture-final-20261106-c8e5259.json). Earlier raw captures/sidecars remain historical. The final independent iOS rebuild kept every app bundle file byte-identical to the installed capture product. All 34 relevant Swift/test/config inputs and package manifests match the captured source.
 
 Current validation: 690 XCTest cases (655 passed, 35 optional skips, no failures) plus 70 Swift Testing cases across nine suites; nine focused iOS cases (two identity and seven revocation cases); ten native UI modes, each one pass/no failures/no skips. Both current guide packages pass three Python checks and five fresh native guide checks.
 
 The two additional native modes preserve a lost acceptance acknowledgement through relaunch and keep inherited security uncertainty quarantined until authenticated STATUS. The acceptance recovery proof records one response POST for one explicit Send. Full-request identity matching rejects a colliding ID from another peer and conflicting concurrent payloads ([#367](https://github.com/PinedaTec-EU/LeonardoMD/issues/367)); identical concurrent sends coalesce ([#365](https://github.com/PinedaTec-EU/LeonardoMD/issues/365)).
 
 These remain signed Simulator/owned synthetic HTTPS fixture and native guide-component checks. Owner TestFlight installation, physical iPhone networking, real compatible Mac startup/save/insertion/restart and production-network outcomes remain separate acceptance gates in [#343](https://github.com/PinedaTec-EU/LeonardoMD/issues/343).
+
+### Final terminal approval validation
+
+Current source is `0d34b7b4c00960014f993ce471946b654b73840d`. [Its manifest](ios-rubric-capture-final-20261106-0d34b7b.json) binds five raw native captures (approval, drawing, preview, sent and blocked) and three current runs: terminal cancellation during Accept, normal roundtrip, and lost acceptance acknowledgement/relaunch. Each reports one pass, no failure and no skip. Nine current iOS unit tests pass. The final full host run reports 690 XCTest cases (655 passed, 35 optional skips) plus 70 Swift Testing cases across nine suites, without failures. The final independent iOS rebuild keeps every app bundle file byte-identical to the capture product.
+
+The previous ten-mode recovery matrix remains bound to its c8 source; it was not rerun in full for this approval-view correction. Core draft, acceptance, submission, journal, client and persistence inputs are unchanged. Existing bilingual Guide v15 already describes terminal cancellation/expiry/revocation and asking the Mac for a new request; its package bytes and guide-test inputs remain unchanged. The correction removes invalid live approval actions and stale retry advice. Physical iPhone, TestFlight and production Mac acceptance remain open in #342/#343.
 
 ## Reproduction and limits
 

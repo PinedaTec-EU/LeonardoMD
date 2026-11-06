@@ -119,3 +119,9 @@ in-flight response operation ([#365](https://github.com/PinedaTec-EU/LeonardoMD/
 
 The published bilingual guide is v15; #337's Synchronization role pages remain
 in chapters 14–15 and previous personal guide copies are preserved.
+
+The live approval card now observes a blocked acceptance immediately, removes
+Accept/Reject and stale retry advice, and asks for a fresh Mac request. Native
+cancellation during Accept and relaunch coverage is recorded with the current
+[source-bound manifest](../doc/validation/little-leonardo/ios-rubric-capture-final-20261106-0d34b7b.json)
+([#356](https://github.com/PinedaTec-EU/LeonardoMD/issues/356)).

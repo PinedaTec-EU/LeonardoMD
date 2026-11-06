@@ -1,7 +1,7 @@
 {
   "schemaVersion": "native-ios-evidence-v3",
   "issue": 342,
-  "canonicalEvidence": "ios-rubric-capture-final-20261106-c8e5259.json",
+  "canonicalEvidence": "doc/validation/little-leonardo/ios-rubric-capture-final-20261106-0d34b7b.json",
   "capture": "ios-rubric-capture-es.png",
   "captureSha256": "e50dd0385cabe233597c9ca163bd18e0dd87b94baa4f5f3c2ea2b8439bfd62df",
   "sourceCommit": "c8e52592e6325746237ef9d99f88ea41363d6262",
@@ -64,5 +64,6 @@
     "claims": "Simulator-only native evidence; no physical device, production Mac, App Store/TestFlight or production-network claim.",
     "fixture": "Synthetic owned Mac authority, source corpus, TLS identity and fault gates; transport remains real pinned HTTPS."
   },
-  "canonicalEvidenceSha256": "678d55c4b9c64d06a2a7b6b57af7f815f81937baeb6feacd407dfd8e4f32701e"
+  "canonicalEvidenceSha256": "741b2f9b812adfb2fce64255fff27ad00336d4ab8e51d38a1439ca61de3157ac",
+  "canonicalEvidenceNote": "The latest approval/capture/terminal raw proof is in canonicalEvidence. This instructional sent-image alias and the packaged guide derivative retain their separately recorded c8 capture provenance."
 }
