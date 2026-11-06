@@ -49,6 +49,18 @@ $$\bar{x}=\frac{x_1+x_2+x_3}{3}$$
 
 Para 2, 4 y 6, la media es 4. Fuente: `$$\bar{x}=\frac{x_1+x_2+x_3}{3}$$`. Es una fórmula de presentación; no calcula campos del formulario.
 
+La notación en línea también funciona: $N(\varepsilon)$ cuenta las cajas.
+
+### Fórmulas de bloque · ejemplos de regresión
+
+**Requiere Matemáticas.** Comprueba que estos ejemplos aparecen como ecuaciones, incluido el número (1), sin `$$` ni comandos con barra invertida visibles. Con Matemáticas desactivadas se conserva la notación fuente. Los ejemplos de código permanecen literales a propósito.
+
+$$ \underbrace{a}_{x} + \underbrace{b}_{y} $$
+
+$$
+D_B(F) := \lim_{\varepsilon \to 0^{+}} \frac{\ln N(\varepsilon)}{\ln (1/\varepsilon)}, \qquad N(\varepsilon) = \text{número de cajas que intersecan, de lado } \varepsilon\tag{1}
+$$
+
 ### Compara de un vistazo · Gráficos
 
 **Requiere Gráficos (Vega-Lite) activado.** Datos ficticios de avance de un documento; todos los datos están dentro del paquete.
