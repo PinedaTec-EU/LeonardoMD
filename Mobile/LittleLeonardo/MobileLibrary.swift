@@ -419,6 +419,7 @@ final class MobileLibrary {
                                                          certificateFingerprint: connection.fingerprint)
                 let status = try await client.status(deviceID: connection.deviceID, credential: credential)
                 guard hasCurrentIdentity(token) else { continue }
+                guard status.access != .pending else { continue }
                 guard status.access == .authorized else {
                     await handleConfirmedRevocation(for: token,
                                                     message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
