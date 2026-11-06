@@ -254,6 +254,7 @@ public actor FileRubricExchangeStore: RubricExchangeStore {
         guard var record = records[requestID], record.request.targetDeviceID == targetDeviceID else {
             throw RubricExchangeError.notFound
         }
+        if state == .accepted, record.request.state == .accepted { return record.request }
         guard [.accepted, .rejected].contains(state), record.request.state == .pending else {
             throw record.request.state == .expired ? RubricExchangeError.expired : RubricExchangeError.invalidTransition
         }

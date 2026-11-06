@@ -23,6 +23,13 @@ final class RubricExchangeTests: XCTestCase {
         let initial = try await store.requests(for: target, now: now)
         XCTAssertEqual(initial.map(\.id), [request.id])
         _ = try await store.transition(requestID: request.id, targetDeviceID: target, to: .accepted, now: now)
+        let acceptedRetry = try await store.transition(requestID: request.id, targetDeviceID: target,
+                                                       to: .accepted, now: now.addingTimeInterval(1))
+        XCTAssertEqual(acceptedRetry.state, .accepted)
+        do {
+            _ = try await store.transition(requestID: request.id, targetDeviceID: UUID(), to: .accepted, now: now)
+            XCTFail("Idempotence cannot bypass target binding")
+        } catch { XCTAssertEqual(error as? RubricExchangeError, .notFound) }
         let response = try RubricResponse(requestID: request.id, targetDeviceID: target, requesterID: requester,
                                           label: "Firma de Ana", rubric: rubric, submittedAt: now)
         let firstSubmission = try await store.submit(response, now: now)

@@ -5,6 +5,7 @@ import LeonardoCore
 /// Responses are immutable once a send state is reached so retries reuse the
 /// exact same portable model.
 public enum MobileRubricDraftState: String, Codable, Equatable, Sendable {
+    case pendingAcceptance
     case accepted
     case pendingSend
     case submitted
@@ -99,15 +100,18 @@ public struct MobileRubricDraft: Codable, Equatable, Sendable, Identifiable {
               draft.updatedAt.timeIntervalSince1970.isFinite,
               !draft.label.isEmpty, draft.label.count <= 120,
               draft.drawing == nil || draft.drawing?.isValid == true,
-              draft.request.state == .accepted || draft.request.state == .completed,
+              [.pending, .accepted, .completed].contains(draft.request.state),
               draft.failureMessage?.count ?? 0 <= 512 else { return false }
         switch draft.state {
+        case .pendingAcceptance:
+            return [.pending, .accepted].contains(draft.request.state)
+                && draft.response == nil && draft.drawing == nil
         case .accepted:
-            return draft.response == nil
+            return draft.request.state == .accepted && draft.response == nil
         case .blocked where draft.response == nil:
             return true
         case .pendingSend, .submitted, .blocked:
-            guard let response = draft.response,
+            guard [.accepted, .completed].contains(draft.request.state), let response = draft.response,
                   response.requestID == draft.id,
                   response.targetDeviceID == draft.targetDeviceID,
                   response.requesterID == draft.requesterID,
@@ -121,7 +125,9 @@ public struct MobileRubricDraft: Codable, Equatable, Sendable, Identifiable {
     static func canAdvance(from current: MobileRubricDraftState,
                            to next: MobileRubricDraftState) -> Bool {
         switch (current, next) {
-        case (.accepted, .accepted), (.accepted, .pendingSend),
+        case (.pendingAcceptance, .pendingAcceptance), (.pendingAcceptance, .accepted),
+             (.pendingAcceptance, .blocked),
+             (.accepted, .accepted), (.accepted, .pendingSend),
              (.accepted, .blocked),
              (.pendingSend, .pendingSend), (.pendingSend, .submitted), (.pendingSend, .blocked),
              (.blocked, .blocked), (.submitted, .submitted): return true
@@ -179,6 +185,40 @@ public actor MobileRubricDraftStore {
         drafts = updated
     }
 
+    public func prepareAcceptance(_ intent: MobileRubricDraft) throws -> MobileRubricDraft {
+        try loadIfNeeded()
+        guard intent.state == .pendingAcceptance, MobileRubricDraft.isValid(intent) else {
+            throw RubricExchangeError.invalidPayload
+        }
+        if let existing = drafts[intent.id] {
+            var expected = intent.request
+            expected.state = existing.request.state
+            guard existing.connectionID == intent.connectionID,
+                  existing.sourceFingerprint == intent.sourceFingerprint,
+                  existing.request == expected else { throw RubricExchangeError.conflict }
+            guard existing.state != .blocked else { throw RubricExchangeError.invalidTransition }
+            return existing
+        }
+        try save(intent)
+        return intent
+    }
+
+    public func confirmAcceptance(id: UUID, request: RubricRequest, at: Date) throws -> MobileRubricDraft {
+        try loadIfNeeded()
+        guard let existing = drafts[id] else { throw RubricExchangeError.notFound }
+        var expected = existing.request
+        expected.state = .accepted
+        guard request == expected else { throw RubricExchangeError.conflict }
+        guard existing.state != .blocked else { throw RubricExchangeError.invalidTransition }
+        guard existing.state == .pendingAcceptance else { return existing }
+        let accepted = MobileRubricDraft(id: existing.id, connectionID: existing.connectionID,
+            targetDeviceID: existing.targetDeviceID, requesterID: existing.requesterID,
+            sourceFingerprint: existing.sourceFingerprint, request: request, label: existing.label,
+            state: .accepted, updatedAt: at)
+        try save(accepted)
+        return accepted
+    }
+
     public func remove(id: UUID) throws {
         try loadIfNeeded()
         guard drafts[id] != nil else { return }
@@ -227,7 +267,7 @@ public actor MobileRubricDraftStore {
 
     private func pruned(now: Date) -> [UUID: MobileRubricDraft] {
         drafts.filter { _, draft in
-            draft.state == .accepted || draft.state == .pendingSend
+            draft.state == .pendingAcceptance || draft.state == .accepted || draft.state == .pendingSend
                 || now.timeIntervalSince(draft.updatedAt) < Self.terminalRetention
         }
     }

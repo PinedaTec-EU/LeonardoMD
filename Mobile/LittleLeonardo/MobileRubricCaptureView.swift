@@ -170,7 +170,7 @@ struct MobileRubricCaptureView: View {
         self.library = library
         let draft = library.rubricDraft(requestID: request.id)
         _phase = State(initialValue: draft?.state == .submitted ? .submitted
-            : request.state == .accepted || draft != nil ? .drawing : .awaitingApproval)
+            : draft != nil && draft?.state != .pendingAcceptance ? .drawing : .awaitingApproval)
         _label = State(initialValue: draft?.label ?? request.labelHint ?? "Rúbrica")
         if let response = draft?.response {
             _rubric = State(initialValue: response.rubric)
