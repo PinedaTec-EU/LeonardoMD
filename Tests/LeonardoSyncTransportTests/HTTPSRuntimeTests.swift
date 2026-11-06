@@ -225,6 +225,16 @@ final class HTTPSRuntimeTests: XCTestCase {
                 XCTAssertEqual(error.status, 403)
                 XCTAssertNil(error.failure)
             }
+            try await authority.setEnabled(false)
+            do {
+                _ = try await client.status(deviceID: enrollment.deviceID, credential: credential)
+                XCTFail("Import access preflight must preserve a source HTTP failure")
+            } catch let error as ProjectDownloadError {
+                XCTAssertEqual(error.status, 503)
+                XCTAssertEqual(error.phase, .access)
+                XCTAssertTrue(error.localizedDescription.contains("HTTP 503"))
+                XCTAssertNil(error.failure)
+            }
             await server.stop()
         } catch { await server.stop(); throw error }
     }

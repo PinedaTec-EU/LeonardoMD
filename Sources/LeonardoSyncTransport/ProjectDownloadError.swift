@@ -3,18 +3,28 @@ import LeonardoSync
 
 /// Keeps the HTTP outcome even when an older source sends an empty error body.
 public struct ProjectDownloadError: Error, LocalizedError, Sendable {
+    public enum Phase: String, Sendable { case access, download }
+    public let phase: Phase
     public let status: Int
     public let failure: CorpusReadFailure?
 
-    public init(response: HTTPResponse) {
+    public init(response: HTTPResponse, phase: Phase = .download) {
+        self.phase = phase
         status = response.status
-        failure = [413, 500].contains(status)
+        failure = phase == .download && [413, 500].contains(status)
             ? try? JSONDecoder().decode(CorpusReadFailure.self, from: response.body) : nil
     }
 
-    public var errorDescription: String? { "Project download failed (HTTP \(status)). \(messageKey)" }
+    public var headingKey: String {
+        phase == .download ? "Project download failed (HTTP %ld)." : "Could not refresh source project access (HTTP %ld)."
+    }
+
+    public var errorDescription: String? { String(format: headingKey, status) + " " + messageKey }
 
     public var messageKey: String {
+        if phase == .access {
+            return "Check Leonardo Sync and pairing authorization on the source Mac, then refresh the connection and retry."
+        }
         switch failure?.reason {
         case .corpusTooLarge: return "The selected content exceeds this version's project transfer limit. Select fewer folders or documents on the source Mac, then retry."
         case .fileTooLarge: return "A selected file exceeds this version's per-file transfer limit. Exclude that file on the source Mac, then retry."

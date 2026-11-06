@@ -35,6 +35,18 @@ final class PeerSyncErrorMessageTests: XCTestCase {
         XCTAssertFalse(message.contains("CorpusReadFailure error"))
     }
 
+    func testAccessPreflightFailureNamesItsPhaseAndHTTPStatus() {
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let message = PeerSyncErrorMessage.text(ProjectDownloadError(response: HTTPResponse(status: 503), phase: .access))
+            XCTAssertTrue(message.contains("HTTP 503"))
+            XCTAssertTrue(message.contains(language == .spanish ? "acceso" : "access"))
+            XCTAssertFalse(message.contains(language == .spanish ? "límite" : "limit"))
+        }
+    }
+
     func testCaptureProductionDownloadAlert() async throws {
         guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_ERROR_EVIDENCE"] else {
             throw XCTSkip("Opt-in production alert capture with synthetic failure")

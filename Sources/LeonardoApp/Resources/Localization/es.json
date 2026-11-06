@@ -660,5 +660,7 @@
   "The source returned an unexpected synchronization response. Update both Macs and check sharing on the source Mac.": "El origen devolvió una respuesta de sincronización inesperada. Actualiza ambos Macs y comprueba la configuración para compartir en el Mac de origen.",
   "Observed at least %.1f MiB (%ld bytes); limit: %.1f MiB (%ld bytes).": "Se han detectado al menos %.1f MiB (%ld bytes); límite: %.1f MiB (%ld bytes).",
   "This Mac could not read a local working-copy file. Check the disk, file permissions and cloud-file availability, then retry.": "Este Mac no pudo leer un archivo de la copia local. Comprueba el disco, los permisos y la disponibilidad de los archivos de la nube y vuelve a intentarlo.",
-  "The local working copy exceeds a synchronization limit. Reduce the affected content or change the shared selection on the source Mac, then retry.": "La copia local supera un límite de sincronización. Reduce el contenido afectado o cambia la selección compartida en el Mac de origen y vuelve a intentarlo."
+  "The local working copy exceeds a synchronization limit. Reduce the affected content or change the shared selection on the source Mac, then retry.": "La copia local supera un límite de sincronización. Reduce el contenido afectado o cambia la selección compartida en el Mac de origen y vuelve a intentarlo.",
+  "Could not refresh source project access (HTTP %ld).": "No se pudo actualizar el acceso a los proyectos del origen (HTTP %ld).",
+  "Check Leonardo Sync and pairing authorization on the source Mac, then refresh the connection and retry.": "Comprueba Leonardo Sync y la autorización del enlace en el Mac de origen; después actualiza la conexión y vuelve a intentarlo."
 }

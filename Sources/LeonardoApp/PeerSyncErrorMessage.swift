@@ -15,7 +15,7 @@ enum PeerSyncErrorMessage {
             if let transport = error as? TransportError { return L10n.text(transport.localizedDescription) }
             return error.localizedDescription
         }
-        var parts = [L10n.format("Project download failed (HTTP %ld).", download.status), L10n.text(download.messageKey)]
+        var parts = [L10n.format(download.headingKey, download.status), L10n.text(download.messageKey)]
         if let failure = download.failure { parts += details(failure) }
         return parts.joined(separator: "\n\n")
     }

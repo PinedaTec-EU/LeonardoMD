@@ -52,7 +52,7 @@ public struct DirectEnrollmentClient: Sendable {
 
     public func status(deviceID: UUID, credential: String) async throws -> DirectDeviceStatus {
         let response = try await client.request(method: "GET", path: "/v1/devices/\(deviceID.uuidString)/status", credential: credential)
-        guard response.status == 200 else { throw TransportError.unexpectedResponse }
+        guard response.status == 200 else { throw ProjectDownloadError(response: response, phase: .access) }
         return try JSONDecoder().decode(DirectDeviceStatus.self, from: response.body)
     }
 
