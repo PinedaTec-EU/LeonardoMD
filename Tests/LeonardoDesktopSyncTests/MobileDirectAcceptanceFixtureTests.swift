@@ -181,9 +181,13 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                         guard mode == "capability-persist-failure", let capabilityFault else { throw SyncError.invalidPath }
                         try installSymlinkFault(at: mobileAppSupport().appendingPathComponent("connections.json"), root: root)
                         await capabilityFault.arm()
+                    case "arm-revocation-persistence-failure":
+                        guard mode == "revocation-cache-delete-failure" else { throw SyncError.invalidPath }
+                        try armConnectionPersistenceFailure(at: mobileAppSupport().appendingPathComponent("connections.json"),
+                                                            root: root)
                     case "arm-cache-delete-failure":
                         guard mode == "revocation-cache-delete-failure" else { throw SyncError.invalidPath }
-                        try installSymlinkFault(at: mobileAppSupport().appendingPathComponent("Corpus")
+                        try armCacheDeletionFailure(at: mobileAppSupport().appendingPathComponent("Corpus")
                             .appendingPathComponent(descriptor.id.uuidString + ".json"), root: root)
                     case "arm-reconnect-purge":
                         guard mode == "reconnect-during-purge", let purgeGate else { throw SyncError.invalidPath }
@@ -207,8 +211,12 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                         try await runtime.revoke(deviceID: try XCTUnwrap(deviceID))
                     case "release-cache-delete":
                         guard mode == "revocation-cache-delete-failure" else { throw SyncError.invalidPath }
-                        try removeSymlinkFault(at: mobileAppSupport().appendingPathComponent("Corpus")
-                            .appendingPathComponent(descriptor.id.uuidString + ".json"))
+                        try releaseCacheDeletionFailure(at: mobileAppSupport().appendingPathComponent("Corpus")
+                            .appendingPathComponent(descriptor.id.uuidString + ".json"), root: root)
+                    case "release-revocation-persistence":
+                        guard mode == "revocation-cache-delete-failure" else { throw SyncError.invalidPath }
+                        try releaseConnectionPersistenceFailure(at: mobileAppSupport().appendingPathComponent("connections.json"),
+                                                               root: root)
                     case "release-purge":
                         guard mode == "reconnect-during-purge", let purgeGate else { throw SyncError.invalidPath }
                         await purgeGate.release()
@@ -239,7 +247,15 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                                           to: root.appendingPathComponent("reconnect-during-purge.json"))
                         } else if ["enrollment-persist-failure", "capability-persist-failure",
                                    "revocation-cache-delete-failure"].contains(mode) {
-                            try writeJSON(["mode": mode, "failureSurface": mode],
+                            var result: [String: Any] = ["mode": mode, "failureSurface": mode]
+                            if mode == "revocation-cache-delete-failure" {
+                                let cacheURL = try mobileAppSupport().appendingPathComponent("Corpus")
+                                    .appendingPathComponent(descriptor.id.uuidString + ".json")
+                                let cachePurged = !FileManager.default.fileExists(atPath: cacheURL.path)
+                                XCTAssertTrue(cachePurged, "The recovered revocation must delete the direct cache on disk")
+                                result["cachePurged"] = cachePurged
+                            }
+                            try writeJSON(result,
                                           to: root.appendingPathComponent("mobile-persistence-failure.json"))
                         } else {
                             let id = try XCTUnwrap(requestID)
@@ -363,6 +379,47 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
             throw SyncError.invalidPath
         }
         try FileManager.default.removeItem(at: destination)
+    }
+
+    private func armConnectionPersistenceFailure(at destination: URL, root: URL) throws {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: destination.path),
+              let type = attributes[.type] as? FileAttributeType,
+              type == .typeRegular else { throw SyncError.invalidPath }
+        let backup = root.appendingPathComponent("revocation-connections-backup.json")
+        try? FileManager.default.removeItem(at: backup)
+        try FileManager.default.copyItem(at: destination, to: backup)
+        try installSymlinkFault(at: destination, root: root)
+    }
+
+    private func releaseConnectionPersistenceFailure(at destination: URL, root: URL) throws {
+        try removeSymlinkFault(at: destination)
+        try restoreRegularBackup(root.appendingPathComponent("revocation-connections-backup.json"), to: destination)
+    }
+
+    private func armCacheDeletionFailure(at destination: URL, root: URL) throws {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: destination.path),
+              let type = attributes[.type] as? FileAttributeType,
+              type == .typeRegular else { throw SyncError.invalidPath }
+        let backup = root.appendingPathComponent("revocation-cache-backup.json")
+        try? FileManager.default.removeItem(at: backup)
+        try FileManager.default.copyItem(at: destination, to: backup)
+        try installSymlinkFault(at: destination, root: root)
+    }
+
+    private func releaseCacheDeletionFailure(at destination: URL, root: URL) throws {
+        try removeSymlinkFault(at: destination)
+        try restoreRegularBackup(root.appendingPathComponent("revocation-cache-backup.json"), to: destination)
+    }
+
+    private func restoreRegularBackup(_ backup: URL, to destination: URL) throws {
+        let temporary = destination.deletingLastPathComponent()
+            .appendingPathComponent(".qa-restore-\(UUID().uuidString).tmp")
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        try FileManager.default.copyItem(at: backup, to: temporary)
+        try FileManager.default.setAttributes([.posixPermissions: NSNumber(value: Int16(0o600))],
+                                              ofItemAtPath: temporary.path)
+        try FileManager.default.moveItem(at: temporary, to: destination)
+        try FileManager.default.removeItem(at: backup)
     }
 
     private func stripSavedCapability(at connectionURL: URL) throws {

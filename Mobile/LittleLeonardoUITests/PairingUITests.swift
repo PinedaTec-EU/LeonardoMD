@@ -403,19 +403,23 @@ final class PairingUITests: XCTestCase {
         try advanceDirectFixture("approve")
         app.buttons["Sincronizar"].firstMatch.tap()
         XCTAssertTrue(app.staticTexts["QA · Cache failure"].waitForExistence(timeout: 30))
+        try advanceDirectFixture("arm-revocation-persistence-failure")
         try advanceDirectFixture("arm-cache-delete-failure")
         try advanceDirectFixture("revoke")
         let failure = app.alerts["No se pudo completar la operación"]
         XCTAssertTrue(failure.waitForExistence(timeout: 30),
                       "A direct-cache deletion failure must be surfaced and kept retryable")
-        XCTAssertTrue(failure.staticTexts.firstMatch.label.contains("caché") ||
-                      failure.staticTexts.firstMatch.label.contains("cache"))
+        let failureBody = failure.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS[c] %@ OR label CONTAINS[c] %@", "caché", "cache")
+        ).firstMatch
+        XCTAssertTrue(failureBody.exists, "The retry alert must expose the cache-deletion failure detail")
         failure.buttons["Aceptar"].tap()
         app.terminate()
+        try advanceDirectFixture("release-revocation-persistence")
         app.launch()
         dismissMobileFailureIfPresent(app)
-        try advanceDirectFixture("release-cache-delete")
         app.terminate()
+        try advanceDirectFixture("release-cache-delete")
         app.launch()
         dismissMobileFailureIfPresent(app)
         XCTAssertFalse(app.staticTexts["QA · Cache failure"].waitForExistence(timeout: 8),

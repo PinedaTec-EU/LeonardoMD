@@ -106,6 +106,25 @@ struct MobileDirectConnectionStore {
         return try JSONDecoder().decode([MobileDirectConnection].self, from: Data(contentsOf: url))
     }
 
+    /// A missing Keychain item is a durable loss of authorization, while a
+    /// Keychain read error must remain a retryable load failure. Reclassify
+    /// only the former so an interrupted revocation journal can be repaired
+    /// on the next launch without hiding a still-authorized connection.
+    func reconcileMissingCredentials(_ connections: [MobileDirectConnection],
+                                     credentials: DeviceCredentialStore) async throws -> [MobileDirectConnection] {
+        var repaired = connections
+        for index in repaired.indices where !repaired[index].revoked {
+            guard try await credentials.credential(deviceID: repaired[index].deviceID) == nil else { continue }
+            let projectIDs = repaired[index].projectIDs
+            repaired[index].capabilities = []
+            repaired[index].projectIDs = []
+            repaired[index].comparisonCode = nil
+            repaired[index].revoked = true
+            repaired[index].pendingPurgeProjectIDs.formUnion(projectIDs)
+        }
+        return repaired
+    }
+
     func loadVisibleProjects(connections: [MobileDirectConnection],
                              credentials: DeviceCredentialStore,
                              corpus: OfflineCorpusStore) async throws -> [OfflineProject] {
@@ -113,7 +132,7 @@ struct MobileDirectConnectionStore {
         var revokedProjectIDs = Set<UUID>()
         var unavailableProjectIDs = Set<UUID>()
         for connection in connections where !connection.revoked {
-            guard (try? await credentials.credential(deviceID: connection.deviceID)) != nil else {
+            guard try await credentials.credential(deviceID: connection.deviceID) != nil else {
                 unavailableProjectIDs.formUnion(connection.projectIDs)
                 continue
             }

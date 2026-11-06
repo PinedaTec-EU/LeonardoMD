@@ -118,10 +118,12 @@ final class MobileLibrary {
         let loadAuthorizationEpoch = authorizationEpoch
         do {
             try await waitForPendingRubricDraftWrite()
-            var loadedConnections = connections
-            var loadedComparisonCode = comparisonCode
-            loadedConnections = try connectionStore.load()
-            loadedComparisonCode = loadedConnections.first(where: { $0.comparisonCode != nil })?.comparisonCode
+            let storedConnections = try connectionStore.load()
+            let loadedConnections = try await connectionStore.reconcileMissingCredentials(storedConnections,
+                                                                                             credentials: credentials)
+            let repairedMissingCredential = storedConnections.count != loadedConnections.count
+                || zip(storedConnections, loadedConnections).contains { $0.0.hasChanges(from: $0.1) }
+            let loadedComparisonCode = loadedConnections.first(where: { $0.comparisonCode != nil })?.comparisonCode
             let loadedDrafts = try await draftStore.all(now: now())
             let loaded = try await connectionStore.loadVisibleProjects(connections: loadedConnections,
                                                                          credentials: credentials, corpus: store)
@@ -130,6 +132,10 @@ final class MobileLibrary {
             comparisonCode = loadedComparisonCode
             recoverableRubricDrafts = loadedDrafts
             projects = loaded
+            if repairedMissingCredential {
+                do { try connectionStore.save(loadedConnections) }
+                catch { self.error = "No se pudo guardar la revocación recuperada: \(error.localizedDescription)" }
+            }
             await retryPendingRevocationPurges()
             await reconcileRubricDrafts()
         } catch { self.error = error.localizedDescription }
