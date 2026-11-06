@@ -42,3 +42,11 @@ The checkout and owned caches remain active for that refresh/QA: `.worktrees/386
 ## Reusable QA note
 
 Consolidate with the existing capture-metadata workflow: wait for the actual orientation and native controls, retain a full-display original and its geometry, and inspect the pixels before using rotated XCTest attachments. This prevents the cropped/black transient capture observed during this task from being mistaken for product layout evidence.
+
+## Merge/publication preflight continuation (2026-11-06)
+
+The owner explicitly requested self-approval/merge of PR387 and a new Little Leonardo publication. Read-only App Store Connect preflight confirms app6831533791, bundle eu.pinedatec.LittleLeonardo, team AU2Z3P42U7 and the existing Owner Internal group, with exactly one tester matching the account holder. The approved existing profile/certificate and login-keychain signing scope verify; no keychain search list, entitlement or account setting was changed. Distribution will use publisher-archive only after source integration and version materialization, followed by export, Apple validation, upload, processing and owner-group assignment/readback. No upload has occurred in this checkpoint.
+
+Additional signed native regression: iPhone SE3, owned simulator270F8BA7-3B7B-4030-9C71-DEDF4CF5CB90, iOS26.5. The complete rubric protocol test and Mac fixture pass (114.593s), including opening the portrait label keyboard, verifying that it does not activate the landscape canvas, dismissing it, manual expansion, both rotations, recovery and Send. Local result: /tmp/ll387-compact-before.xcresult; the name describes a preflight run, not a reproduced product defect. No extra orientation observer or speculative product change was needed.
+
+The common Mac GUI is currently locked according to the coordinating publication chat; the required packaged Help acceptance cannot be executed until the owner unlocks it. Other chats retain their existing integration/GUI turns. The read-only release-cleanup script also encounters an already-tracked missing worktree registration; recurrence is recorded in [ai-skills-shared issue22](https://github.com/PinedaTec-EU/ai-skills-shared/issues/22). The selected source/branch/Apple target audit was completed manually without deleting other worktrees.

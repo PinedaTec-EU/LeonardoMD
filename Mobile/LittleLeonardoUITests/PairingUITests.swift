@@ -151,6 +151,12 @@ final class PairingUITests: XCTestCase {
 
         XCUIDevice.shared.orientation = .portrait
         defer { XCUIDevice.shared.orientation = .portrait }
+        let rubricLabel = app.textFields["rubric-label"]
+        rubricLabel.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["rubric-collapse"].exists,
+                       "The portrait keyboard must not be mistaken for landscape rotation")
+        rubricLabel.typeText("\n")
         XCTAssertTrue(app.buttons["rubric-expand"].waitForExistence(timeout: 5))
         app.buttons["rubric-expand"].tap()
         XCTAssertTrue(app.buttons["rubric-collapse"].waitForExistence(timeout: 5))
