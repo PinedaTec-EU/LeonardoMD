@@ -28,6 +28,10 @@
 		D1A3A7C4F0E84D6C9B1E0A12 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D1A3A7C4F0E84D6C9B1E0A11 /* Assets.xcassets */; };
 		D1A3A7C4F0E84D6C9B1E0A14 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D1A3A7C4F0E84D6C9B1E0A13 /* PrivacyInfo.xcprivacy */; };
 		3E6C7AD17D9D0EDFB5E779BB /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
+		386100000000000000000000 /* MobileClassicStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000000 /* MobileClassicStyle.swift */; };
+		386100000000000000000001 /* MobileAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000001 /* MobileAboutView.swift */; };
+		386100000000000000000002 /* MobileRubricCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000002 /* MobileRubricCanvas.swift */; };
+		386100000000000000000003 /* MobileRubricInkTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000003 /* MobileRubricInkTools.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +71,10 @@
 		D1A3A7C4F0E84D6C9B1E0A11 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D1A3A7C4F0E84D6C9B1E0A13 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		C53CBBB8313118CB2CF6782B /* LittleLeonardoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LittleLeonardoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		386000000000000000000000 /* MobileClassicStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileClassicStyle.swift; sourceTree = "<group>"; };
+		386000000000000000000001 /* MobileAboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileAboutView.swift; sourceTree = "<group>"; };
+		386000000000000000000002 /* MobileRubricCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRubricCanvas.swift; sourceTree = "<group>"; };
+		386000000000000000000003 /* MobileRubricInkTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRubricInkTools.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -159,6 +167,10 @@
 			isa = PBXGroup;
 			children = (
 				0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */,
+				386000000000000000000003 /* MobileRubricInkTools.swift */,
+				386000000000000000000002 /* MobileRubricCanvas.swift */,
+				386000000000000000000001 /* MobileAboutView.swift */,
+				386000000000000000000000 /* MobileClassicStyle.swift */,
 				D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */,
 				A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */,
 				7849226B36C61649B125BDDC /* MobileLibraryView.swift */,
@@ -303,6 +315,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */,
+				386100000000000000000003 /* MobileRubricInkTools.swift in Sources */,
+				386100000000000000000002 /* MobileRubricCanvas.swift in Sources */,
+				386100000000000000000001 /* MobileAboutView.swift in Sources */,
+				386100000000000000000000 /* MobileClassicStyle.swift in Sources */,
 				22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */,
 				A7B6C5D4E3F2019A88776655 /* MobileRubricSubmissionGate.swift in Sources */,
 				2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */,

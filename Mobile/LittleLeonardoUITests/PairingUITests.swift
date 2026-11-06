@@ -2,6 +2,21 @@ import XCTest
 import UIKit
 
 final class PairingUITests: XCTestCase {
+    @MainActor func testClassicLibrarySettingsAndInstalledAbout() throws {
+        let app = XCUIApplication()
+        app.launch()
+        XCTAssertTrue(app.buttons["open-sync-settings"].waitForExistence(timeout: 15))
+        app.buttons["open-sync-settings"].tap()
+        XCTAssertTrue(app.buttons["open-about"].waitForExistence(timeout: 5))
+        app.buttons["open-about"].tap()
+        XCTAssertTrue(app.staticTexts["Little Leonardo"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.otherElements["about-version"].exists || app.staticTexts["Versión"].exists)
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Classic About installed application"
+        capture.lifetime = .keepAlways
+        add(capture)
+    }
+
     @MainActor func testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation() throws {
         let environment = ProcessInfo.processInfo.environment
         guard environment["LEONARDO_DIRECT_QA"] == "1",
@@ -102,6 +117,30 @@ final class PairingUITests: XCTestCase {
         app.buttons["rubric-accept"].tap()
         let canvas = app.otherElements["rubric-canvas"]
         XCTAssertTrue(canvas.waitForExistence(timeout: 10))
+
+        XCUIDevice.shared.orientation = .portrait
+        defer { XCUIDevice.shared.orientation = .portrait }
+        XCTAssertTrue(app.buttons["rubric-expand"].waitForExistence(timeout: 5))
+        app.buttons["rubric-expand"].tap()
+        XCTAssertTrue(app.otherElements["rubric-expanded"].waitForExistence(timeout: 5))
+        app.buttons["rubric-collapse"].tap()
+        XCTAssertTrue(app.textFields["rubric-label"].waitForExistence(timeout: 5))
+        drawLine(in: canvas, from: CGVector(dx: 0.2, dy: 0.5), to: CGVector(dx: 0.7, dy: 0.5))
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(app.otherElements["rubric-expanded"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.textFields["rubric-label"].exists)
+        XCTAssertFalse(app.buttons["rubric-send"].exists)
+        let rotated = XCTAttachment(screenshot: app.screenshot())
+        rotated.name = "Classic rubric landscape full-screen drawing"
+        rotated.lifetime = .keepAlways
+        add(rotated)
+        drawLine(in: app.otherElements["rubric-canvas"], from: CGVector(dx: 0.3, dy: 0.4), to: CGVector(dx: 0.8, dy: 0.6))
+        XCUIDevice.shared.orientation = .portrait
+        XCTAssertTrue(app.textFields["rubric-label"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["rubric-undo"].isEnabled)
+        XCTAssertNotNil(waitForVisibleInk(in: app, element: canvas, timeout: 5,
+            message: "Ink must survive portrait-landscape-portrait"))
+        app.buttons["rubric-clear"].tap()
 
         drawLine(in: canvas, from: CGVector(dx: 0.15, dy: 0.55), to: CGVector(dx: 0.85, dy: 0.55))
         app.buttons["rubric-undo"].tap()
