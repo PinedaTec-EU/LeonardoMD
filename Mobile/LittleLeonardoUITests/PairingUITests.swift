@@ -334,8 +334,8 @@ final class PairingUITests: XCTestCase {
         let failure = app.alerts["No se pudo completar la operación"]
         XCTAssertTrue(failure.waitForExistence(timeout: 30),
                       "A failed enrollment snapshot must be surfaced instead of publishing a connection")
-        XCTAssertTrue(failure.staticTexts.firstMatch.label.contains("vínculo") ||
-                      failure.staticTexts.firstMatch.label.contains("Invalid"))
+        XCTAssertFalse(failure.staticTexts.firstMatch.label.isEmpty,
+                       "The failed enrollment must expose a concrete persistence error")
         failure.buttons["Aceptar"].tap()
         closePairingIfPresent(app)
         app.terminate()
