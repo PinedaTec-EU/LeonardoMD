@@ -417,8 +417,10 @@ final class MobileRubricIdentityTests: XCTestCase {
             }
         }
         await release.open()
-        XCTAssertEqual(try await first.value, response)
-        XCTAssertEqual(try await identical.value, response)
+        let firstResult = try await first.value
+        let identicalResult = try await identical.value
+        XCTAssertEqual(firstResult, response)
+        XCTAssertEqual(identicalResult, response)
     }
 }
 
