@@ -44,6 +44,37 @@ final class HTTPSRuntimeTests: XCTestCase {
         } catch { await server.stop(); throw error }
     }
 
+    func testRealTLSLargeResponseSurvivesConcurrentRequests() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture identity import requires memory-only Security import") }
+        let identity = try makeIdentity()
+        let largeBody = Data(repeating: 0x5A, count: 1 * 1_024 * 1_024)
+        let server = LANHTTPSListener(identity: identity) { request in
+            switch request.path {
+            case "/v1/snapshot": return HTTPResponse(status: 200, body: largeBody)
+            case "/v1/status": return HTTPResponse(status: 200, body: Data("{\"status\":\"authorized\"}".utf8))
+            default: return HTTPResponse(status: 404)
+            }
+        }
+        let port = try await server.start(host: "127.0.0.1")
+        do {
+            let client = try PinnedHTTPSClient(endpoint: URL(string: "https://127.0.0.1:\(port)")!,
+                                               certificateFingerprint: identity.certificateFingerprint)
+            for _ in 0..<8 {
+                async let snapshot = client.request(method: "GET", path: "/v1/snapshot")
+                async let status = client.request(method: "GET", path: "/v1/status")
+                let (snapshotResponse, statusResponse) = try await (snapshot, status)
+                XCTAssertEqual(snapshotResponse.status, 200)
+                XCTAssertEqual(snapshotResponse.body, largeBody)
+                XCTAssertEqual(statusResponse.status, 200)
+                XCTAssertEqual(statusResponse.body, Data("{\"status\":\"authorized\"}".utf8))
+            }
+            await server.stop()
+        } catch {
+            await server.stop()
+            throw error
+        }
+    }
+
     func testPairingSnapshotAndRevocationOverRealHTTPS() async throws {
         guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
         let identity = try makeIdentity()
