@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1000
+
+- #342 Added: iOS rubric capture flow ([#352](https://github.com/PinedaTec-EU/LeonardoMD/pull/352))
+
+<p>iOS captures rubrics requested by a linked Mac with explicit consent, durable drafts, preview and HTTPS retry. Interrupted acceptance recovers safely and revoked links stay blocked after restart. Guides and Mac consent are available in English and Spanish.</p>
+
+Source: `1b905bad76a3a7ecbbdf3a33c9fc33874142bd03`. Delta: `{"build": 102}`.
+
 ## 0.3.898
 
 - #341 Added: request and save a Little Leonardo rubric from macOS ([#349](https://github.com/PinedaTec-EU/LeonardoMD/pull/349))

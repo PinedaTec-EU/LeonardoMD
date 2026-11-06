@@ -47,6 +47,16 @@
                ReferencedContainer = "container:LittleLeonardo.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FB8B56BEE10614284AFC5E30"
+               BuildableName = "LittleLeonardoTests.xctest"
+               BlueprintName = "LittleLeonardoTests"
+               ReferencedContainer = "container:LittleLeonardo.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

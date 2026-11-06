@@ -23,6 +23,13 @@ final class RubricExchangeTests: XCTestCase {
         let initial = try await store.requests(for: target, now: now)
         XCTAssertEqual(initial.map(\.id), [request.id])
         _ = try await store.transition(requestID: request.id, targetDeviceID: target, to: .accepted, now: now)
+        let acceptedRetry = try await store.transition(requestID: request.id, targetDeviceID: target,
+                                                       to: .accepted, now: now.addingTimeInterval(1))
+        XCTAssertEqual(acceptedRetry.state, .accepted)
+        do {
+            _ = try await store.transition(requestID: request.id, targetDeviceID: UUID(), to: .accepted, now: now)
+            XCTFail("Idempotence cannot bypass target binding")
+        } catch { XCTAssertEqual(error as? RubricExchangeError, .notFound) }
         let response = try RubricResponse(requestID: request.id, targetDeviceID: target, requesterID: requester,
                                           label: "Firma de Ana", rubric: rubric, submittedAt: now)
         let firstSubmission = try await store.submit(response, now: now)
@@ -39,6 +46,61 @@ final class RubricExchangeTests: XCTestCase {
                                              requesterID: requester, label: "Otra", rubric: rubric, submittedAt: now)
         do { _ = try await reopened.submit(conflicting, now: now); XCTFail("Conflicting retry must fail") }
         catch { XCTAssertEqual(error as? RubricExchangeError, .conflict) }
+    }
+
+    func testAcceptanceRetryCannotReopenCancelledOrExpiredRequest() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = FileRubricExchangeStore(url: root.appendingPathComponent("requests"))
+        for cancelled in [true, false] {
+            let request = try RubricRequest(targetDeviceID: UUID(), requesterID: UUID(),
+                                           requesterName: "Mac", createdAt: now)
+            try await store.create(request)
+            _ = try await store.transition(requestID: request.id, targetDeviceID: request.targetDeviceID,
+                                           to: .accepted, now: now)
+            if cancelled {
+                _ = try await store.cancel(requestID: request.id, requesterID: request.requesterID, now: now)
+            }
+            do {
+                _ = try await store.transition(requestID: request.id, targetDeviceID: request.targetDeviceID,
+                    to: .accepted, now: cancelled ? now : request.expiresAt)
+                XCTFail("Retry must retain terminal states")
+            } catch {
+                XCTAssertEqual(error as? RubricExchangeError, cancelled ? .invalidTransition : .expired)
+            }
+        }
+    }
+
+    func testPortableResponseSizeProbeRejectsLargeButCoreValidDrawings() {
+        XCTAssertTrue(RubricResponse.fitsEncodedSize(label: "Firma", rubric: rubric))
+        let threePointStroke = LeonardoInkStroke(color: "#224466", width: 4, style: .solid,
+            points: [.init(x: 20, y: 80), .init(x: 180, y: 100), .init(x: 300, y: 120)])
+        let large = LeonardoRubric(strokes: Array(
+            repeating: threePointStroke, count: LeonardoRubric.maximumStrokes))
+        XCTAssertTrue(large.isValid)
+        XCTAssertFalse(RubricResponse.fitsEncodedSize(label: "Firma", rubric: large),
+                       "The mobile editor must reject a core-valid drawing that exceeds the response envelope")
+    }
+
+    func testImmutableRequestIdentityIgnoresOnlyLifecycleState() throws {
+        let target = UUID()
+        let requester = UUID()
+        let request = try RubricRequest(id: UUID(), targetDeviceID: target, requesterID: requester,
+                                        requesterName: "MacBook", labelHint: "Firma", createdAt: now)
+
+        var accepted = request
+        accepted.state = .accepted
+        XCTAssertTrue(request.matchesImmutableIdentity(accepted))
+
+        let differentPeer = try RubricRequest(id: request.id, targetDeviceID: target,
+                                              requesterID: UUID(), requesterName: "Other Mac",
+                                              labelHint: "Firma", createdAt: now)
+        XCTAssertFalse(request.matchesImmutableIdentity(differentPeer))
+
+        let differentPayload = try RubricRequest(id: request.id, targetDeviceID: target,
+                                                 requesterID: requester, requesterName: "MacBook",
+                                                 labelHint: "Otra firma", createdAt: now)
+        XCTAssertFalse(request.matchesImmutableIdentity(differentPayload))
     }
 
     func testPersistenceFailureDoesNotMutateInMemoryStateAndCanRetry() async throws {
@@ -193,6 +255,9 @@ final class RubricExchangeTests: XCTestCase {
             projects: [SharedProjectSource(descriptor: project) { CorpusSnapshot(revision: "r", files: []) }],
             serverFingerprint: fingerprint, persist: { _ in },
             rubrics: FileRubricExchangeStore(url: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)))
+        let serverStatus = try await authority.status(deviceID: pairing.id, credential: credential, now: now)
+        XCTAssertEqual(serverStatus.capabilities, [.rubricExchangeV1],
+                       "Status capabilities describe the Mac handler, not the linked client's advertisement")
         do {
             _ = try await authority.createRubricRequest(targetDeviceID: pairing.id, requesterName: "MacBook", now: now)
             XCTFail("A legacy peer without the advertised capability must be actionable as unsupported")
@@ -228,6 +293,37 @@ final class RubricExchangeTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? RubricExchangeError, .unsupported)
         }
+    }
+
+    func testAuthenticatedCapabilityRefreshDoesNotChangeReadOnlyScope() async throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let fingerprint = Data(repeating: 12, count: 32), credential = String(repeating: "e", count: 64)
+        let project = SharedProjectDescriptor(id: UUID(), name: "Docs", scope: try CorpusScope(folder: ""))
+        let pairing = try registry.requestPairing(deviceName: "Existing iPhone", credential: credential,
+                                                   serverFingerprint: fingerprint, now: now)
+        let paired = try registry.approve(requestID: pairing.id, comparisonCode: pairing.comparisonCode,
+                                          projects: [project.id], now: now)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let authority = try DirectSyncAuthority(registry: registry,
+            projects: [SharedProjectSource(descriptor: project) { CorpusSnapshot(revision: "r", files: []) }],
+            serverFingerprint: fingerprint, persist: { _ in },
+            rubrics: FileRubricExchangeStore(url: root.appendingPathComponent("requests.json")))
+        let before = try await authority.status(deviceID: paired.id, credential: credential, now: now)
+        XCTAssertEqual(before.capabilities, [.rubricExchangeV1])
+        let after = try await authority.updateCapabilities(deviceID: paired.id, credential: credential,
+                                                            update: DirectCapabilityUpdate(rubricExchangeV1: true), now: now)
+        XCTAssertEqual(after.acceptedCapabilities, [.rubricExchangeV1])
+        let serverStatus = try await authority.status(deviceID: paired.id, credential: credential, now: now)
+        XCTAssertEqual(serverStatus.projects.map(\.id), [project.id])
+        XCTAssertEqual(serverStatus.capabilities, [.rubricExchangeV1])
+        let state = await authority.consentState()
+        let persisted = try XCTUnwrap(state.devices.first(where: { $0.id == paired.id }))
+        XCTAssertEqual(persisted.id, paired.id)
+        XCTAssertEqual(persisted.kind, .readOnly)
+        XCTAssertEqual(persisted.projects, paired.projects)
+        XCTAssertEqual(persisted.credentialDigest, paired.credentialDigest)
+        XCTAssertEqual(persisted.capabilities, [.rubricExchangeV1])
     }
 
     func testDesktopPeerCannotAnswerReadOnlyRubricRequest() async throws {

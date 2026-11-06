@@ -593,13 +593,79 @@ Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dis
 4. Crea una invitación. Su QR y el enlace copiado permiten abrir la misma invitación: escanea el QR en Little Leonardo o pega el enlace en **Conectarme a otros equipos** en otro Mac. Compara los códigos y aprueba el dispositivo pendiente en este Mac de origen. Las filas indican **solo lectura** (Little Leonardo o clientes compatibles) o **LeonardoMD en Mac · cambios sujetos a revisión**. La etiqueta depende del permiso concedido, no del nombre del equipo.
 5. Importa el contenido compartido en el compañero y compruébalo antes de depender de una copia sin conexión. Usa Revocar en el Mac para retirar acceso futuro a un dispositivo.
 
+Para capturar solo una rúbrica, sin acceso a documentos, no elijas **Compartir
+el proyecto actual**. En la revisión de la conexión pendiente deja sin marcar
+todos los proyectos. Cuando el panel diga **Este Little Leonardo puede recibir
+rúbricas sin acceso a ningún proyecto**, compara los códigos y pulsa **Permitir
+la conexión**. Este enlace de solo lectura y cero permisos basta para **Usar un
+Little Leonardo enlazado** y mantiene desactivado el uso compartido de
+documentos.
+
 La captura de rúbricas es una acción separada y explícita del Mac. Cuando un
 compañero anuncia compatibilidad, **Insertar → Nueva rúbrica… → Usar un Little
 Leonardo enlazado** muestra ese dispositivo. El compañero solo dibuja y
 devuelve la rúbrica; no puede editar el documento. Si falla el asistente, el
 servicio o la capacidad, se muestra un estado de desconexión o incompatibilidad
-con una acción clara. La versión actual del compañero todavía no anuncia esta
-capacidad; el flujo móvil de pedir, dibujar y enviar se entrega por separado.
+con una acción clara.
+
+### Responder a una solicitud de rúbrica en iOS
+
+Este es un canal de respuesta **solo para capturar**, dirigido a un Mac
+conocido y enlazado. Aprobar el emparejamiento puede habilitar la capacidad
+compatible para crear y devolver rúbricas en un dispositivo móvil de solo
+lectura ya enlazado, pero no concede documentos, proyectos, carpetas, Git ni permisos de
+escritura. Los fallos habituales de conexión mantienen disponibles la navegación de solo
+lectura y las copias sin conexión. Un Mac antiguo que no entiende los campos opcionales sigue
+leyendo el estado normal del servidor y puede mantener el flujo de lector.
+
+Cuando el Mac envía una solicitud, mantén Little Leonardo en primer plano y
+abre la tarjeta. La tarjeta identifica al Mac solicitante y ofrece dos opciones
+explícitas: **Aceptar y dibujar** o **Rechazar**. Little Leonardo guarda tu
+aceptación antes de contactar al Mac y habilita el dibujo cuando el borrador
+aceptado está guardado. Si falla la confirmación o se reinicia la app, vuelve
+a abrir la tarjeta y reintenta: continúa la misma solicitud. Tras aceptar, escribe la
+etiqueta y dibuja con el dedo o el Apple Pencil. **Deshacer** elimina el último
+trazo; **Limpiar** elimina todos los trazos todavía no enviados; **Vista previa**
+muestra el resultado portable sin enviarlo. El lienzo móvil conserva un límite
+conservador de 600 puntos y comprueba la respuesta completa antes de aceptar un
+trazo, para que un dibujo válido para el núcleo no falle después el sobre
+portable de 24 KiB al enviar. Después de **Enviar**, la vista previa queda
+bloqueada con la respuesta congelada. La app consulta solicitudes mientras está
+activa; no promete un receptor continuo en segundo plano.
+
+El dibujo permanece en tu dispositivo hasta que pulses **Enviar**. Pulsa ese botón solo cuando la
+etiqueta y el dibujo estén listos. Leonardo envía una respuesta portable
+`LeonardoRubric`, limitada a 24 KiB, por la conexión HTTPS enlazada y fijada.
+El Mac recibe la respuesta únicamente para la solicitud y el dispositivo
+coincidentes; no recibe documentos ni una operación para editarlos. Un reintento
+reutiliza la etiqueta, el dibujo y la hora de envío congelados, de modo que una
+confirmación perdida no crea otra respuesta. Si la solicitud caduca, se cancela
+o se revoca el dispositivo, el envío queda bloqueado y la tarjeta explica que
+hay que crear una solicitud nueva.
+
+Puedes cerrar y volver a abrir la tarjeta antes de **Enviar**. Little Leonardo
+recupera la etiqueta y los trazos no enviados desde un borrador local durable.
+Después de **Enviar**, la respuesta queda congelada: deshacer o limpiar ya no
+pueden modificar el payload pendiente; un fallo transitorio conserva ese mismo
+payload para **Reintentar**.
+Si el Mac puede haber aceptado **Enviar** pero se perdió la confirmación, cierra
+y vuelve a abrir Little Leonardo: la tarjeta de recuperación conserva el mismo
+dibujo, etiqueta y petición para **Reintentar**. No aceptes una segunda
+petición ni vuelvas a dibujar. Si se revoca el vínculo de captura, el dibujo
+aceptado sigue visible para recuperarlo, pero **Enviar** queda bloqueado.
+Vuelve a enlazar y aprobar el Mac y crea una solicitud de rúbrica nueva; un
+borrador revocado nunca se reutiliza en silencio. La revocación también elimina
+la caché lectora directa de ese proyecto, pero conserva las copias sin conexión
+no relacionadas y las heredadas. Tras un cierre inesperado de la app, un vínculo
+con una comprobación pendiente se verifica otra vez antes de mostrar su caché
+directa o enviar una rúbrica. Si el Mac está sin conexión, vuelve a conectarlo
+para completar esa comprobación; el dibujo sigue guardado localmente.
+
+![Solicitud de Little Leonardo en español tras una captura HTTPS real en simulador; se acepta, dibuja, previsualiza y envía la petición del Mac.](assets/ios-rubric-capture-es.png)
+
+*La captura es del flujo de captura exclusiva en un simulador en español. No
+demuestra un dispositivo físico, distribución por App Store/TestFlight ni un
+permiso sobre documentos.*
 
 **Leonardo Sync es necesario en ambas direcciones.** Si está deshabilitado, detenido, pendiente de autorización de macOS o no disponible, el Mac queda sin conexión para sincronizar entre dispositivos aunque LeonardoMD esté abierto. Actívalo desde estas preferencias en cada Mac. El servicio se inicia al entrar en tu cuenta después de reiniciar y sigue compartiendo cuando cierras el editor; no sirve documentos antes de iniciar sesión ni despierta un Mac en reposo. Si no está disponible, revisa la autorización en segundo plano, la red, el disco compartido y los permisos de archivos, y vuelve a intentarlo.
 
