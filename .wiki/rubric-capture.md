@@ -86,14 +86,15 @@ epochs and active owners, including rollback and deferred cleanup
 ([#359](https://github.com/PinedaTec-EU/LeonardoMD/issues/359)). See the
 [persistence contract](../doc/mobile/rubric-exchange.md#security-and-persistence).
 
-The historical native evidence checkpoint is preserved under
+Native evidence is recorded under
 `doc/validation/little-leonardo/ios-rubric-capture-es.png` plus the drawing and
 preview state captures, with per-state hashes in the JSON sidecar. It is a
 signed iPhone18Pro/iOS27.0 Simulator run against the owned Mac HTTPS fixture,
 not physical-device, App Store/TestFlight or production network evidence.
 The final source-bound evidence and storage/reconnect regressions are tracked
-in [PR #352](https://github.com/PinedaTec-EU/LeonardoMD/pull/352); earlier
-checkpoints must not be treated as proof for later corrective code.
+in [PR #352](https://github.com/PinedaTec-EU/LeonardoMD/pull/352). Earlier
+checkpoints remain in Git history and must not be treated as proof for later
+corrective code; use the source and hashes in the current sidecar.
 
 The published bilingual guide is v15; #337's Synchronization role pages remain
 in chapters 14–15 and previous personal guide copies are preserved.
