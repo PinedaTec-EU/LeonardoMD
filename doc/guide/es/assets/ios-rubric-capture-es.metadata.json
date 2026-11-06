@@ -2,7 +2,7 @@
   "schemaVersion": "native-ios-evidence-v1",
   "asset": "ios-rubric-capture-es.png",
   "assetSha256": "aab2938d3195a15c0ec597e6bafb1956a4ff746675ea89e79c247f4f974c3d16",
-  "sourceCapture": "../../validation/little-leonardo/ios-rubric-capture-es.png",
+  "sourceCapture": "../../../validation/little-leonardo/ios-rubric-capture-es.png",
   "sourceCaptureSha256": "cc92c740070e6a7ace049c8563f77d2fc52df420770ede66d46395d2b8bd88fc",
   "locale": "es",
   "sourceCommit": "44fe550681fa79f10b40a999f49c1a193d0a2184",
@@ -22,9 +22,9 @@
   "responseSha256": "adb41115aa6127e83205932fc19137ebf1cfe9763cdd2149326a86d7942959d7",
   "manifestSha256": "b6a3857415508e3a0a3cced2fe5dcfdafde3315e7c9de66ca5e90d9f599948d6",
   "states": {
-    "drawing": { "asset": "../../validation/little-leonardo/ios-rubric-capture-es-drawing.png", "sha256": "7a7b26036bf09b2844c9eb76ff4129ad0a34e4905987959fcd3de1f6107462a7" },
-    "preview": { "asset": "../../validation/little-leonardo/ios-rubric-capture-es-preview.png", "sha256": "1b90f53006e3af8c67fa6cda5b374f36578f267592625b405cdb8948ca424cd0" },
-    "sent": { "asset": "../../validation/little-leonardo/ios-rubric-capture-es.png", "sha256": "cc92c740070e6a7ace049c8563f77d2fc52df420770ede66d46395d2b8bd88fc" }
+    "drawing": { "asset": "../../../validation/little-leonardo/ios-rubric-capture-es-drawing.png", "sha256": "7a7b26036bf09b2844c9eb76ff4129ad0a34e4905987959fcd3de1f6107462a7" },
+    "preview": { "asset": "../../../validation/little-leonardo/ios-rubric-capture-es-preview.png", "sha256": "1b90f53006e3af8c67fa6cda5b374f36578f267592625b405cdb8948ca424cd0" },
+    "sent": { "asset": "../../../validation/little-leonardo/ios-rubric-capture-es.png", "sha256": "cc92c740070e6a7ace049c8563f77d2fc52df420770ede66d46395d2b8bd88fc" }
   },
   "packaging": "The guide PNG is a deterministic 598x1300 derivative of the 1206x2622 native validation capture; validation PNGs remain byte-for-byte raw exports.",
   "metadataLimitations": "capture_metadata.py requires browser_name, browser_version and viewport_css for browser captures; native iOS provenance intentionally records viewportPoints and browser=null rather than fabricating CSS/browser fields.",
