@@ -212,8 +212,12 @@ struct MobileRubricCaptureView: View {
         .accessibilityIdentifier("rubric-request-sheet")
         .onChange(of: currentDraft?.state) { _, state in
             guard let draft = currentDraft else { return }
-            if state == .submitted { phase = .submitted }
+            if state == .submitted {
+                failure = nil
+                phase = .submitted
+            }
             else if state == .accepted, phase == .awaitingApproval || phase == .accepting {
+                failure = nil
                 acceptedRequest = draft.request
                 rubric = draft.drawing ?? LeonardoRubric()
                 label = draft.label
