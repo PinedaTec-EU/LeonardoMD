@@ -25,6 +25,8 @@
 		B4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift */; };
 		B4C4A7E1D8F74D7E9A1D5C23 /* MobileRevocationClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C23 /* MobileRevocationClient.swift */; };
 		B4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift */; };
+		D1A3A7C4F0E84D6C9B1E0A12 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D1A3A7C4F0E84D6C9B1E0A11 /* Assets.xcassets */; };
+		D1A3A7C4F0E84D6C9B1E0A14 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D1A3A7C4F0E84D6C9B1E0A13 /* PrivacyInfo.xcprivacy */; };
 		3E6C7AD17D9D0EDFB5E779BB /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
 /* End PBXBuildFile section */
 
@@ -62,6 +64,8 @@
 		C4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRevocationJournal.swift; sourceTree = "<group>"; };
 		C4C4A7E1D8F74D7E9A1D5C23 /* MobileRevocationClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRevocationClient.swift; sourceTree = "<group>"; };
 		C4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRevocationTests.swift; sourceTree = "<group>"; };
+		D1A3A7C4F0E84D6C9B1E0A11 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D1A3A7C4F0E84D6C9B1E0A13 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		C53CBBB8313118CB2CF6782B /* LittleLeonardoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LittleLeonardoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -165,6 +169,8 @@
 				C4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift */,
 				C4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift */,
 				C4C4A7E1D8F74D7E9A1D5C23 /* MobileRevocationClient.swift */,
+				D1A3A7C4F0E84D6C9B1E0A11 /* Assets.xcassets */,
+				D1A3A7C4F0E84D6C9B1E0A13 /* PrivacyInfo.xcprivacy */,
 			);
 			name = LittleLeonardo;
 			path = LittleLeonardo;
@@ -270,6 +276,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D1A3A7C4F0E84D6C9B1E0A12 /* Assets.xcassets in Resources */,
+				D1A3A7C4F0E84D6C9B1E0A14 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -530,6 +538,8 @@
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Little Leonardo se conecta con LeonardoMD en tu red local para sincronizar los proyectos que autorices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = eu.pinedatec.LittleLeonardo;
@@ -545,16 +555,21 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "Apple Distribution: JOSE MANUEL RODRIGUEZ PINEDA (AU2Z3P42U7)";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = AU2Z3P42U7;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Little Leonardo";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Little Leonardo usa la cámara para leer el QR de conexión que muestra LeonardoMD.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Little Leonardo se conecta con LeonardoMD en tu red local para sincronizar los proyectos que autorices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = eu.pinedatec.LittleLeonardo;
+				PROVISIONING_PROFILE_SPECIFIER = df1e793d-b217-420f-80ab-3baca818f7cd;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
