@@ -1,7 +1,7 @@
 {
   "schemaVersion": "native-ios-evidence-v3",
   "issue": 342,
-  "canonicalEvidence": "doc/validation/little-leonardo/ios-rubric-capture-final-20261106-0d34b7b.json",
+  "canonicalEvidence": "doc/validation/little-leonardo/ios-rubric-capture-final-20261106-8488e9d.json",
   "capture": "ios-rubric-capture-es.png",
   "captureSha256": "e50dd0385cabe233597c9ca163bd18e0dd87b94baa4f5f3c2ea2b8439bfd62df",
   "sourceCommit": "c8e52592e6325746237ef9d99f88ea41363d6262",
@@ -64,6 +64,6 @@
     "claims": "Simulator-only native evidence; no physical device, production Mac, App Store/TestFlight or production-network claim.",
     "fixture": "Synthetic owned Mac authority, source corpus, TLS identity and fault gates; transport remains real pinned HTTPS."
   },
-  "canonicalEvidenceSha256": "741b2f9b812adfb2fce64255fff27ad00336d4ab8e51d38a1439ca61de3157ac",
-  "canonicalEvidenceNote": "The latest approval/capture/terminal raw proof is in canonicalEvidence. This instructional sent-image alias and the packaged guide derivative retain their separately recorded c8 capture provenance."
+  "canonicalEvidenceSha256": "57d409193c09a736c2ca09a77c656e9fc68f66763ea1026ec4e899668efdf87a",
+  "canonicalEvidenceNote": "Latest iOS approval/drawing/visible-preview/sent/blocked and bilingual Mac consent proof is in canonicalEvidence. The instructional sent-image alias/guide derivative retain their separately recorded c8 provenance."
 }

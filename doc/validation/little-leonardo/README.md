@@ -1,5 +1,12 @@
 # Little Leonardo native validation
 
+## Current rubric capture evidence
+
+The [current source-bound manifest](ios-rubric-capture-final-20261106-8488e9d.json) identifies source `8488e9d42ee148955ea652fc052254d2aaf3ed8b`, 40 relevant code/test/config/package input hashes, five iOS captures and two bilingual Mac consent captures. Three current native modes and nine focused iOS cases pass without failures or skips. The happy mode now waits for actual dark ink in the drawing and Preview before exporting raw screenshots, and checks their relative ink density. Earlier blank Preview attachments were premature composition captures; they do not establish a lost drawing or a renderer defect. Historical raw images remain unchanged.
+
+The full host checkpoint passes 691 XCTest cases (656 passed, 35 optional skips) plus 70 Swift Testing cases across nine suites. Later iOS capture-readiness and Mac capture-metadata changes do not alter host production inputs; the current Mac-consent capture test independently passes. English and Spanish consent explain capture without project access; native component captures show zero projects and the unconfirmed comparison-code gate. Existing Guide v15 bytes are unchanged; five guide cases pass in the full host run and prior Python packaging checks remain bound to unchanged packages. Simulator/native-component evidence does not deliver TestFlight or physical Mac/iPhone acceptance, which remains open in #342/#343.
+
+
 Historical Git implementation evidence: proprietary mobile Git is retired by [#249](https://github.com/PinedaTec-EU/LeonardoMD/issues/249). Use [retirement validation](../git-retirement/README.md) for current behavior. Git fixture reproduction below requires its recorded historical source checkpoint; removed targets are not available on the retirement branch.
 
 These are actual native view/Simulator captures from implementation-owned fixtures, not mockups. No personal document or credential appears. Owning delivery: [#92](https://github.com/PinedaTec-EU/LeonardoMD/issues/92), [#101](https://github.com/PinedaTec-EU/LeonardoMD/issues/101), [PR #93](https://github.com/PinedaTec-EU/LeonardoMD/pull/93).
@@ -67,9 +74,9 @@ The two additional native modes preserve a lost acceptance acknowledgement throu
 
 These remain signed Simulator/owned synthetic HTTPS fixture and native guide-component checks. Owner TestFlight installation, physical iPhone networking, real compatible Mac startup/save/insertion/restart and production-network outcomes remain separate acceptance gates in [#343](https://github.com/PinedaTec-EU/LeonardoMD/issues/343).
 
-### Final terminal approval validation
+### Terminal approval checkpoint before preview capture readiness
 
-Current source is `0d34b7b4c00960014f993ce471946b654b73840d`. [Its manifest](ios-rubric-capture-final-20261106-0d34b7b.json) binds five raw native captures (approval, drawing, preview, sent and blocked) and three current runs: terminal cancellation during Accept, normal roundtrip, and lost acceptance acknowledgement/relaunch. Each reports one pass, no failure and no skip. Nine current iOS unit tests pass. The final full host run reports 690 XCTest cases (655 passed, 35 optional skips) plus 70 Swift Testing cases across nine suites, without failures. The final independent iOS rebuild keeps every app bundle file byte-identical to the capture product.
+This earlier source checkpoint is `0d34b7b4c00960014f993ce471946b654b73840d`. [Its manifest](ios-rubric-capture-final-20261106-0d34b7b.json) binds five raw native captures (approval, drawing, preview, sent and blocked) and three current runs: terminal cancellation during Accept, normal roundtrip, and lost acceptance acknowledgement/relaunch. Each reports one pass, no failure and no skip. Nine current iOS unit tests pass. The final full host run reports 690 XCTest cases (655 passed, 35 optional skips) plus 70 Swift Testing cases across nine suites, without failures. The final independent iOS rebuild keeps every app bundle file byte-identical to the capture product.
 
 The previous ten-mode recovery matrix remains bound to its c8 source; it was not rerun in full for this approval-view correction. Core draft, acceptance, submission, journal, client and persistence inputs are unchanged. Existing bilingual Guide v15 already describes terminal cancellation/expiry/revocation and asking the Mac for a new request; its package bytes and guide-test inputs remain unchanged. The correction removes invalid live approval actions and stale retry advice. Physical iPhone, TestFlight and production Mac acceptance remain open in #342/#343.
 

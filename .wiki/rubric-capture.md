@@ -123,5 +123,12 @@ in chapters 14–15 and previous personal guide copies are preserved.
 The live approval card now observes a blocked acceptance immediately, removes
 Accept/Reject and stale retry advice, and asks for a fresh Mac request. Native
 cancellation during Accept and relaunch coverage is recorded with the current
-[source-bound manifest](../doc/validation/little-leonardo/ios-rubric-capture-final-20261106-0d34b7b.json)
+[source-bound manifest](../doc/validation/little-leonardo/ios-rubric-capture-final-20261106-8488e9d.json)
 ([#356](https://github.com/PinedaTec-EU/LeonardoMD/issues/356)).
+
+Native preview evidence waits for actual rendered ink before capture and checks
+its density against the drawing, avoiding premature blank Canvas attachments
+([#355](https://github.com/PinedaTec-EU/LeonardoMD/issues/355)). Capture-only Mac
+consent is localized in EN/ES and has native component captures with zero project
+grants and the comparison-code confirmation still required
+([#370](https://github.com/PinedaTec-EU/LeonardoMD/issues/370)).
