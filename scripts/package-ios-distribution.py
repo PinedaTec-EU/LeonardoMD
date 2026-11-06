@@ -16,10 +16,12 @@ import os
 from pathlib import Path
 import plistlib
 import re
+import shlex
 import subprocess
 import sys
 import tempfile
 import zipfile
+from contextlib import contextmanager
 
 
 BUNDLE_IDENTIFIER = "eu.pinedatec.LittleLeonardo"
@@ -131,7 +133,7 @@ def validate_profile_path(path: Path) -> dict:
     return validate_profile(decode_profile(path))
 
 
-def signing_keychain(identity: str, requested: str | None) -> Path:
+def signing_keychain(identity: str | None, requested: str | None) -> Path:
     if requested:
         keychain = Path(requested).expanduser().resolve()
     else:
@@ -159,15 +161,56 @@ def signing_keychain(identity: str, requested: str | None) -> Path:
         )
     except (OSError, subprocess.CalledProcessError) as error:
         raise DistributionError(f"Cannot inspect signing keychain: {keychain}") from error
-    if CERTIFICATE_SHA1 not in result.stdout or f'"{identity}"' not in result.stdout:
+    if CERTIFICATE_SHA1 not in result.stdout:
+        raise DistributionError("Signing keychain does not expose the approved certificate")
+    if identity and f'"{identity}"' not in result.stdout:
         raise DistributionError(
-            f"Signing keychain does not expose the approved identity: {identity}"
+            f"Signing keychain does not expose the requested identity: {identity}"
         )
     return keychain
 
 
 def signing_keychain_build_setting(keychain: Path) -> str:
     return f"--keychain {keychain}"
+
+
+def keychain_search_list() -> list[str]:
+    try:
+        result = subprocess.run(
+            ["security", "list-keychains"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise DistributionError("Cannot read the keychain search list") from error
+    paths = shlex.split(result.stdout)
+    if not paths:
+        raise DistributionError("The keychain search list is empty")
+    return paths
+
+
+@contextmanager
+def constrained_keychain_search(keychain: Path):
+    original = keychain_search_list()
+    try:
+        subprocess.run(
+            [
+                "security", "list-keychains", "-s", str(keychain),
+                "/Library/Keychains/System.keychain",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        yield
+    finally:
+        subprocess.run(
+            ["security", "list-keychains", "-s", *original],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
 
 
 def read_plist(path: Path) -> dict:
@@ -398,15 +441,17 @@ def run_export(args: argparse.Namespace, root: Path) -> None:
     output = ensure_external(args.output_root, root)
     archive = Path(args.archive).expanduser().resolve()
     profile = Path(args.profile).expanduser().resolve()
+    keychain = signing_keychain(None, args.keychain)
     verify_archive(archive, profile, version, build)
     export_path = ensure_external(Path(args.export_path), root)
     output.mkdir(parents=True, exist_ok=True)
     export_path.mkdir(parents=True, exist_ok=True)
     options_path = output / "ExportOptions.plist"
     export_options(options_path)
-    subprocess.run(["xcodebuild", "-exportArchive", "-archivePath", str(archive),
-                    "-exportPath", str(export_path), "-exportOptionsPlist", str(options_path)],
-                   cwd=root, check=True)
+    with constrained_keychain_search(keychain):
+        subprocess.run(["xcodebuild", "-exportArchive", "-archivePath", str(archive),
+                        "-exportPath", str(export_path), "-exportOptionsPlist", str(options_path)],
+                       cwd=root, check=True)
     ipa_files = sorted(export_path.glob("*.ipa"))
     if len(ipa_files) != 1:
         raise DistributionError(f"Expected exactly one exported IPA, found {len(ipa_files)}")
@@ -452,6 +497,7 @@ def parser() -> argparse.ArgumentParser:
     export = commands.add_parser("export")
     export.add_argument("--archive", required=True)
     export.add_argument("--profile", required=True)
+    export.add_argument("--keychain")
     export.add_argument("--output-root", type=Path, required=True)
     export.add_argument("--export-path", type=Path, required=True)
     export.set_defaults(handler=run_export)

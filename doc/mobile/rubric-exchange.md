@@ -147,3 +147,17 @@ because it was drawn. The portable payload is a `LeonardoRubric` with a 24 KiB
 encoded response limit. A successful Mac receipt is bound to the same
 requester, target, request ID and TLS identity; expiry, cancellation and
 revocation remain hard send barriers.
+
+## Request identity invariant (#367)
+
+The mobile cache and capture projection bind a request by its complete immutable
+identity: request UUID, target device UUID, requester UUID, normalized requester
+name, normalized label hint, capability, creation time and expiry time. Lifecycle
+state is the only field that may change during recovery; a UUID alone can never
+select another peer's cached draft or response. An in-flight submission may be
+shared only when that full request binding, the normalized label, and the same
+portable `LeonardoRubric` drawing all match. Any mismatch is rejected before
+HTTP, including same-UUID requests from another Mac or a changed drawing. The
+identity tests cover both cross-peer cache projection/accept/send rejection and
+concurrent exact-operation reuse
+([#367](https://github.com/PinedaTec-EU/LeonardoMD/issues/367)).
