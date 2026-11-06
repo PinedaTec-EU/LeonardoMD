@@ -169,7 +169,8 @@ struct MobileRubricCaptureView: View {
         self.request = request
         self.library = library
         let draft = library.rubricDraft(requestID: request.id)
-        _phase = State(initialValue: request.state == .accepted || draft != nil ? .drawing : .awaitingApproval)
+        _phase = State(initialValue: draft?.state == .submitted ? .submitted
+            : request.state == .accepted || draft != nil ? .drawing : .awaitingApproval)
         _label = State(initialValue: draft?.label ?? request.labelHint ?? "Rúbrica")
         if let response = draft?.response {
             _rubric = State(initialValue: response.rubric)
@@ -188,7 +189,7 @@ struct MobileRubricCaptureView: View {
                     case .awaitingApproval, .accepting:
                         approvalControls
                     case .drawing, .sending:
-                        drawingControls
+                        if isSubmitted { submittedState } else { drawingControls }
                     case .submitted:
                         submittedState
                     }
@@ -240,25 +241,25 @@ struct MobileRubricCaptureView: View {
             TextField("Nombre de la rúbrica", text: $label)
                 .textInputAutocapitalization(.sentences)
                 .accessibilityIdentifier("rubric-label")
-                .disabled(frozen || phase == .sending)
+                .disabled(frozen || terminalBlocked || phase == .sending)
             HStack {
                 Picker("Color", selection: $color) {
                     colorOption("Negro", "#111111")
                     colorOption("Azul", "#1C5D99")
                     colorOption("Rojo", "#A52A2A")
                 }
-                .pickerStyle(.menu).disabled(frozen || phase == .sending)
+                .pickerStyle(.menu).disabled(frozen || terminalBlocked || phase == .sending)
                 Picker("Trazo", selection: $style) {
                     Text("Sólido").tag(LeonardoInkStyle.solid)
                     Text("Pincel").tag(LeonardoInkStyle.brush)
                 }
-                .pickerStyle(.menu).disabled(frozen || phase == .sending)
+                .pickerStyle(.menu).disabled(frozen || terminalBlocked || phase == .sending)
             }
             HStack {
                 Text("Ancho")
                 Slider(value: $width, in: 0.5...12, step: 0.5)
                     .accessibilityLabel("Ancho del trazo")
-                    .disabled(frozen || phase == .sending)
+                    .disabled(frozen || terminalBlocked || phase == .sending)
                 Text(width, format: .number.precision(.fractionLength(1)))
                     .monospacedDigit().frame(width: 34)
             }
@@ -267,7 +268,7 @@ struct MobileRubricCaptureView: View {
                     .accessibilityIdentifier("rubric-preview")
             } else {
                 MobileRubricCanvas(rubric: $rubric, color: color, width: width, style: style,
-                                   isInteractive: !frozen && phase != .sending,
+                                   isInteractive: !frozen && !terminalBlocked && phase != .sending,
                                    canCommit: { RubricResponse.fitsEncodedSize(label: label, rubric: $0) },
                                    limitReached: $limitReached)
                     .frame(maxWidth: .infinity)
@@ -287,16 +288,19 @@ struct MobileRubricCaptureView: View {
                 Button("Deshacer", systemImage: "arrow.uturn.backward") {
                     if !rubric.strokes.isEmpty { rubric.strokes.removeLast() }
                 }
-                .disabled(frozen || rubric.strokes.isEmpty || phase == .sending)
+                .disabled(frozen || terminalBlocked || rubric.strokes.isEmpty || phase == .sending)
                 .accessibilityIdentifier("rubric-undo")
                 Button("Limpiar", systemImage: "trash") {
                     limitReached = false
                     rubric = LeonardoRubric()
                 }
-                    .disabled(frozen || rubric.strokes.isEmpty || phase == .sending)
+                    .disabled(frozen || terminalBlocked || rubric.strokes.isEmpty || phase == .sending)
                     .accessibilityIdentifier("rubric-clear")
                 Spacer()
-                if frozen {
+                if terminalBlocked {
+                    Label("Borrador bloqueado: pide una nueva solicitud", systemImage: "lock.fill")
+                        .font(.footnote).foregroundStyle(.secondary)
+                } else if frozen {
                     Label("Vista previa bloqueada tras el envío", systemImage: "lock.fill")
                         .font(.footnote).foregroundStyle(.secondary)
                 } else {
@@ -308,12 +312,11 @@ struct MobileRubricCaptureView: View {
                     .accessibilityIdentifier("rubric-preview-toggle")
                 }
             }
-            if let draft = library.rubricDraft(requestID: request.id), draft.response != nil,
-               draft.state != .blocked {
+            if let draft = currentDraft, draft.state == .pendingSend, draft.response != nil {
                 Button("Reintentar envío", systemImage: "arrow.clockwise") { retry(draft) }
                     .buttonStyle(.borderedProminent).disabled(phase == .sending)
                     .accessibilityIdentifier("rubric-retry")
-            } else if let draft = library.rubricDraft(requestID: request.id), draft.state == .blocked {
+            } else if terminalBlocked {
                 Label("La solicitud ya no admite envíos (caducada, cancelada o revocada).",
                       systemImage: "lock.fill")
                     .font(.footnote).foregroundStyle(.secondary)
@@ -332,7 +335,7 @@ struct MobileRubricCaptureView: View {
         VStack(alignment: .leading, spacing: 12) {
             Label("Rúbrica enviada", systemImage: "checkmark.circle.fill")
                 .font(.headline).foregroundStyle(.green)
-            Text("El ordenador recibirá exactamente este dibujo para revisarlo.")
+            Text("El ordenador ha confirmado exactamente este dibujo para revisarlo.")
                 .font(.footnote).foregroundStyle(.secondary)
             Button("Terminar") { dismiss() }
                 .buttonStyle(.borderedProminent).accessibilityIdentifier("rubric-done")
@@ -345,6 +348,18 @@ struct MobileRubricCaptureView: View {
 
     private var drawingFitsResponseLimit: Bool {
         RubricResponse.fitsEncodedSize(label: label, rubric: rubric)
+    }
+
+    private var currentDraft: MobileRubricDraft? {
+        library.rubricDraft(requestID: request.id)
+    }
+
+    private var terminalBlocked: Bool {
+        currentDraft?.state == .blocked
+    }
+
+    private var isSubmitted: Bool {
+        phase == .submitted || currentDraft?.state == .submitted
     }
 
     private func accept() {
@@ -369,7 +384,8 @@ struct MobileRubricCaptureView: View {
     }
 
     private func persistSnapshot(drawing: LeonardoRubric, label: String) {
-        guard !frozen, phase == .drawing else { return }
+        guard !frozen, !terminalBlocked, phase == .drawing,
+              currentDraft?.state == .accepted else { return }
         let savedDrawing: LeonardoRubric?
         if drawing.strokes.isEmpty {
             // An empty canvas is an explicit unsent Clear. Persist it as nil
@@ -401,7 +417,9 @@ struct MobileRubricCaptureView: View {
                 phase = .submitted
             } catch {
                 phase = .drawing
-                if (error as? RubricExchangeError) == .unsupported || (error as? SyncError) == .revoked {
+                if isTerminal(error) {
+                    await library.blockRubricDraft(requestID: request.id,
+                                                   message: "La solicitud ya no admite envíos; pide una nueva solicitud.")
                     failure = "Este vínculo ya no admite la solicitud. Cierra esta tarjeta y pide una nueva."
                 } else {
                     frozen = library.rubricDraft(requestID: request.id)?.response != nil
@@ -417,5 +435,12 @@ struct MobileRubricCaptureView: View {
             do { _ = try await library.retryRubricDraft(draft); phase = .submitted }
             catch { phase = .drawing; failure = "El envío sigue pendiente. Comprueba la conexión e inténtalo de nuevo." }
         }
+    }
+
+    private func isTerminal(_ error: Error) -> Bool {
+        if let error = error as? RubricExchangeError {
+            return [.expired, .invalidTransition, .unsupported, .notFound, .conflict].contains(error)
+        }
+        return (error as? SyncError) == .revoked
     }
 }

@@ -18,6 +18,9 @@ struct MobileLibraryView: View {
     @State private var presentedRubricRequest: RubricRequest?
     @AppStorage("directSyncIntervalMinutes") private var syncInterval = 0
     @Environment(\.scenePhase) private var scenePhase
+    private var activeRubricDraft: MobileRubricDraft? {
+        library.recoverableRubricDrafts.first { $0.state != .submitted }
+    }
     var body: some View {
         NavigationStack {
             List(library.projects, id: \.id) { project in
@@ -52,6 +55,10 @@ struct MobileLibraryView: View {
                     Button("Solicitud de rúbrica", systemImage: "signature") {
                         presentedRubricRequest = request
                     }.accessibilityIdentifier("open-rubric-request")
+                } else if let draft = activeRubricDraft {
+                    Button("Borrador de rúbrica", systemImage: "signature") {
+                        presentedRubricRequest = draft.request
+                    }.accessibilityIdentifier("open-rubric-draft")
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -65,6 +72,16 @@ struct MobileLibraryView: View {
                     .buttonStyle(.borderedProminent)
                     .padding(.horizontal)
                     .accessibilityIdentifier("rubric-request-banner")
+                } else if let draft = activeRubricDraft {
+                    Button {
+                        presentedRubricRequest = draft.request
+                    } label: {
+                        Label("Recuperar rúbrica de \(draft.request.requesterName)", systemImage: "arrow.clockwise")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .padding(.horizontal)
+                    .accessibilityIdentifier("rubric-draft-banner")
                 } else if let code = library.comparisonCode {
                     VStack {
                         Text("Código de conexión: \(code)").font(.headline.monospacedDigit())
@@ -85,6 +102,11 @@ struct MobileLibraryView: View {
             .onChange(of: library.pendingRubricRequests) { _, requests in
                 guard presentedRubricRequest == nil, let request = requests.first else { return }
                 presentedRubricRequest = request
+            }
+            .onChange(of: library.recoverableRubricDrafts) { _, drafts in
+                guard presentedRubricRequest == nil,
+                      let draft = drafts.first(where: { $0.state != .submitted }) else { return }
+                presentedRubricRequest = draft.request
             }
         }
         .task(id: "\(syncInterval)-\(scenePhase)") {

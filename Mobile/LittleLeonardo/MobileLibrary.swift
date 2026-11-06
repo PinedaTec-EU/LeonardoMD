@@ -80,12 +80,12 @@ final class MobileLibrary {
                 comparisonCode = connections.first(where: { $0.comparisonCode != nil })?.comparisonCode
             }
             recoverableRubricDrafts = try await draftStore.all(now: now())
-                .filter { $0.state != .submitted }
             var loaded: [OfflineProject] = []
             for id in try await store.projectIDs() {
                 if let project = try await store.load(id: id) { loaded.append(project) }
             }
             projects = loaded.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            await reconcileRubricDrafts()
         } catch { self.error = error.localizedDescription }
     }
 
@@ -155,6 +155,10 @@ final class MobileLibrary {
                                                            client: client, credential: credential)
                 } else {
                     connection.capabilities = []
+                    connections[index] = connection
+                    try persistConnections()
+                    await blockRubricDrafts(for: connection,
+                                            message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
                 }
                 let granted = status.access == .authorized ? Set(status.projects.map(\.id)) : []
                 for id in granted {
@@ -163,19 +167,8 @@ final class MobileLibrary {
                         throw SyncError.invalidSnapshot
                     }
                 }
-                // Legacy recovery archives have independent ownership. Never overwrite
-                // or revoke one when a direct connection happens to use the same UUID.
                 let removals = connection.projectIDs.subtracting(granted)
-                var directRemovals = Set<UUID>()
-                for id in removals {
-                    guard let cached = try await store.load(id: id) else { continue }
-                    guard cached.mode == .direct else { throw SyncError.invalidSnapshot }
-                    directRemovals.insert(id)
-                }
-                for id in removals {
-                    if directRemovals.contains(id) { try await store.remove(id: id) }
-                    projects.removeAll { $0.id == id }
-                }
+                try await removeDirectProjects(removals)
                 connection.projectIDs = granted
                 connection.comparisonCode = nil
                 connections[index] = connection
@@ -198,6 +191,10 @@ final class MobileLibrary {
                                      connection: inout MobileDirectConnection,
                                      client: DirectEnrollmentClient,
                                      credential: String) async throws -> DirectDeviceStatus {
+        guard status.capabilities.contains(.rubricExchangeV1) else {
+            connection.capabilities = []
+            return status
+        }
         guard !connection.capabilities.contains(.rubricExchangeV1) else { return status }
         guard !connection.capabilityRefreshAttempted else { return status }
         do {
@@ -216,6 +213,17 @@ final class MobileLibrary {
             connection.capabilities = []
         }
         return status
+    }
+
+    /// Removes only direct-sync caches after confirmed revocation. Legacy
+    /// recovery archives keep their independent read-only ownership.
+    private func removeDirectProjects(_ removals: Set<UUID>) async throws {
+        for id in removals {
+            guard let cached = try await store.load(id: id) else { continue }
+            guard cached.mode == .direct else { continue }
+            try await store.remove(id: id)
+            projects.removeAll { $0.id == id }
+        }
     }
 
     func rubricDraft(requestID: UUID) -> MobileRubricDraft? {
@@ -254,8 +262,13 @@ final class MobileLibrary {
                 let status = try await client.status(deviceID: connection.deviceID, credential: credential)
                 guard status.access == .authorized else {
                     connection.capabilities = []
+                    try? await removeDirectProjects(connection.projectIDs)
+                    connection.projectIDs = []
+                    connection.comparisonCode = nil
                     connections[index] = connection
                     try persistConnections()
+                    await blockRubricDrafts(for: connection,
+                                            message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
                     continue
                 }
                 _ = try await refreshCapabilities(status, connection: &connection,
@@ -278,8 +291,14 @@ final class MobileLibrary {
             } catch RubricExchangeError.unsupported {
                 continue
             } catch SyncError.revoked {
+                let connection = connections[index]
+                try? await removeDirectProjects(connection.projectIDs)
                 connections[index].capabilities = []
+                connections[index].projectIDs = []
+                connections[index].comparisonCode = nil
                 try? persistConnections()
+                await blockRubricDrafts(for: connections[index],
+                                        message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
             } catch {
                 // A foreground poll must not interrupt document navigation or
                 // replace a durable drawing because a Mac is temporarily down.
@@ -289,6 +308,7 @@ final class MobileLibrary {
         let unique = Dictionary(found.map { ($0.id, $0) }, uniquingKeysWith: { old, _ in old })
         let next = unique.values.sorted { $0.createdAt < $1.createdAt }
         if next != pendingRubricRequests { pendingRubricRequests = next }
+        await reconcileRubricDrafts()
     }
 
     func acceptRubricRequest(_ request: RubricRequest) async throws -> RubricRequest {
@@ -315,14 +335,29 @@ final class MobileLibrary {
     }
 
     func submitRubric(request: RubricRequest, label: String, rubric: LeonardoRubric) async throws -> RubricResponse {
-        if let draft = rubricDraft(requestID: request.id), let response = draft.response {
-            guard response.label == label.trimmingCharacters(in: .whitespacesAndNewlines),
-                  response.rubric == rubric else { throw RubricExchangeError.conflict }
-            if draft.state == .submitted { return response }
+        if let draft = rubricDraft(requestID: request.id) {
             if draft.state == .blocked { throw RubricExchangeError.invalidTransition }
-            return try await submitFrozenDraft(draft)
+            if draft.state == .submitted, let response = draft.response {
+                guard response.label == label.trimmingCharacters(in: .whitespacesAndNewlines),
+                      response.rubric == rubric else { throw RubricExchangeError.conflict }
+                return response
+            }
+            if let response = draft.response {
+                guard response.label == label.trimmingCharacters(in: .whitespacesAndNewlines),
+                      response.rubric == rubric else { throw RubricExchangeError.conflict }
+                return try await submitFrozenDraft(draft)
+            }
         }
-        let context = try await rubricContext(for: request)
+        let context: RubricContext
+        do {
+            context = try await rubricContext(for: request)
+        } catch {
+            if isTerminalRubricFailure(error) {
+                await blockRubricDraft(requestID: request.id,
+                                       message: "La solicitud ya no admite envíos; pide una nueva solicitud.")
+            }
+            throw error
+        }
         let response = try RubricResponse(requestID: request.id, targetDeviceID: request.targetDeviceID,
                                           requesterID: request.requesterID, label: label, rubric: rubric,
                                           submittedAt: now())
@@ -338,7 +373,7 @@ final class MobileLibrary {
     }
 
     func retryRubricDraft(_ draft: MobileRubricDraft) async throws -> RubricResponse {
-        guard draft.response != nil, draft.state != .blocked else { throw RubricExchangeError.invalidTransition }
+        guard draft.response != nil, draft.state == .pendingSend else { throw RubricExchangeError.invalidTransition }
         return try await submitFrozenDraft(draft)
     }
 
@@ -382,9 +417,86 @@ final class MobileLibrary {
 
     private func isTerminalRubricFailure(_ error: Error) -> Bool {
         if let error = error as? RubricExchangeError {
-            return [.expired, .invalidTransition, .unsupported, .notFound].contains(error)
+            return [.expired, .invalidTransition, .unsupported, .notFound, .conflict].contains(error)
         }
         return (error as? SyncError) == .revoked
+    }
+
+    /// Preserve an accepted drawing or frozen response when a terminal
+    /// authorization outcome is confirmed. A blocked draft cannot be sent
+    /// again; the Mac must issue a fresh authorized request.
+    func blockRubricDraft(requestID: UUID, message: String) async {
+        guard let draft = rubricDraft(requestID: requestID),
+              draft.state == .accepted || draft.state == .pendingSend else { return }
+        do {
+            try await draftStore.save(draft.with(state: .blocked, updatedAt: now(), failureMessage: message))
+            await refreshDrafts()
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    private func blockRubricDrafts(for connection: MobileDirectConnection, message: String) async {
+        guard let drafts = try? await draftStore.all(now: now()) else { return }
+        for draft in drafts where draft.connectionID == connection.connectionID
+            && draft.targetDeviceID == connection.deviceID
+            && (draft.state == .accepted || draft.state == .pendingSend) {
+            do {
+                try await draftStore.save(draft.with(state: .blocked, updatedAt: now(), failureMessage: message))
+            } catch {
+                self.error = error.localizedDescription
+            }
+        }
+        await refreshDrafts()
+    }
+
+    /// Reconcile local records independently from the server's pending list.
+    /// This recovers a frozen response when the Mac committed it but the
+    /// acknowledgement was lost before the app restarted.
+    private func reconcileRubricDrafts() async {
+        guard let drafts = try? await draftStore.all(now: now()) else { return }
+        for draft in drafts where draft.state == .pendingSend {
+            guard let connection = connections.first(where: {
+                $0.connectionID == draft.connectionID && $0.deviceID == draft.targetDeviceID
+                    && $0.fingerprint == draft.sourceFingerprint
+            }) else { continue }
+            guard let response = draft.response else { continue }
+            do {
+                guard let credential = try await credentials.credential(deviceID: connection.deviceID) else { continue }
+                let client = try DirectEnrollmentClient(endpoint: connection.endpoint,
+                                                         certificateFingerprint: connection.fingerprint)
+                // The response POST is authenticated, idempotent and returns
+                // the durable Mac copy. Replaying these exact frozen bytes is
+                // the V1-compatible lost-ack reconciliation path.
+                let submitted = try await client.submitRubricResponse(response,
+                    deviceID: connection.deviceID, credential: credential)
+                guard submitted == response else {
+                    await blockRubricDraft(requestID: draft.id,
+                                           message: "La respuesta remota no coincide con el envío congelado.")
+                    continue
+                }
+                do {
+                    try await draftStore.save(draft.with(response: response, state: .submitted, updatedAt: now()))
+                } catch {
+                    self.error = error.localizedDescription
+                }
+            } catch SyncError.revoked {
+                await blockRubricDraft(requestID: draft.id,
+                                       message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
+            } catch RubricExchangeError.unsupported {
+                // An older Mac has no capture handler. Keep the exact local
+                // record visible so a later authorized retry remains safe.
+                continue
+            } catch RubricExchangeError.invalidTransition {
+                await blockRubricDraft(requestID: draft.id,
+                                       message: "La solicitud terminó antes de confirmar el envío; pide una nueva.")
+            } catch {
+                // Offline and transient failures must not alter the durable
+                // drawing or frozen response.
+                continue
+            }
+        }
+        await refreshDrafts()
     }
 
     private struct RubricContext {
@@ -408,7 +520,7 @@ final class MobileLibrary {
     }
 
     private func refreshDrafts() async {
-        recoverableRubricDrafts = (try? await draftStore.all(now: now()))?.filter { $0.state != .submitted } ?? []
+        recoverableRubricDrafts = (try? await draftStore.all(now: now())) ?? []
     }
 
     private func persistConnections() throws {
