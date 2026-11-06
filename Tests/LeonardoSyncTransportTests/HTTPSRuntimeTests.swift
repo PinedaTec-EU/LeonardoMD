@@ -1,6 +1,7 @@
 #if os(macOS)
 import XCTest
 import Security
+import Network
 import LeonardoSync
 import LeonardoCore
 @testable import LeonardoSyncTransport
@@ -68,6 +69,22 @@ final class HTTPSRuntimeTests: XCTestCase {
                 XCTAssertEqual(statusResponse.status, 200)
                 XCTAssertEqual(statusResponse.body, Data("{\"status\":\"authorized\"}".utf8))
             }
+            await server.stop()
+        } catch {
+            await server.stop()
+            throw error
+        }
+    }
+
+    func testRealTLSLargeResponseReachesSlowReaderBeforeClose() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture identity import requires memory-only Security import") }
+        let identity = try makeIdentity()
+        let largeBody = Data(repeating: 0x3C, count: 2 * 1_024 * 1_024)
+        let server = LANHTTPSListener(identity: identity) { _ in HTTPResponse(status: 200, body: largeBody) }
+        let port = try await server.start(host: "127.0.0.1")
+        do {
+            let response = try await readSlowTLSResponse(port: port, initialDelay: .milliseconds(200), chunkDelay: .milliseconds(2))
+            XCTAssertEqual(response, HTTPResponse(status: 200, body: largeBody).encoded())
             await server.stop()
         } catch {
             await server.stop()
@@ -211,6 +228,58 @@ final class HTTPSRuntimeTests: XCTestCase {
         try process.run()
         process.waitUntilExit()
         guard process.terminationStatus == 0 else { throw TransportError.invalidIdentity }
+    }
+
+    private func readSlowTLSResponse(port: UInt16, initialDelay: Duration, chunkDelay: Duration) async throws -> Data {
+        let tls = NWProtocolTLS.Options()
+        sec_protocol_options_set_verify_block(tls.securityProtocolOptions, { _, _, complete in complete(true) }, DispatchQueue.global())
+        let parameters = NWParameters(tls: tls, tcp: NWProtocolTCP.Options())
+        let connection = NWConnection(host: "127.0.0.1", port: NWEndpoint.Port(rawValue: port)!, using: parameters)
+        defer { connection.cancel() }
+        try await startAndWaitUntilReady(connection)
+        let request = Data("GET /v1/snapshot HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n".utf8)
+        try await send(request, on: connection)
+        try await Task.sleep(for: initialDelay)
+        var response = Data()
+        var isComplete = false
+        while !isComplete {
+            let chunk = try await receive(on: connection)
+            response.append(chunk.data)
+            isComplete = chunk.isComplete
+            if !chunk.data.isEmpty { try await Task.sleep(for: chunkDelay) }
+        }
+        return response
+    }
+
+    private func startAndWaitUntilReady(_ connection: NWConnection) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            connection.stateUpdateHandler = { state in
+                switch state {
+                case .ready: continuation.resume()
+                case .failed(let error): continuation.resume(throwing: error)
+                case .cancelled: continuation.resume(throwing: TransportError.connectionClosed)
+                default: break
+                }
+            }
+            connection.start(queue: DispatchQueue(label: "eu.pinedatec.LeonardoMD.tests.slow-tls"))
+        }
+    }
+
+    private func send(_ data: Data, on connection: NWConnection) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            connection.send(content: data, completion: .contentProcessed { error in
+                if let error { continuation.resume(throwing: error) } else { continuation.resume() }
+            })
+        }
+    }
+
+    private func receive(on connection: NWConnection) async throws -> (data: Data, isComplete: Bool) {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<(Data, Bool), Error>) in
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 512) { data, _, isComplete, error in
+                if let error { continuation.resume(throwing: error) }
+                else { continuation.resume(returning: (data ?? Data(), isComplete)) }
+            }
+        }
     }
 }
 #endif
