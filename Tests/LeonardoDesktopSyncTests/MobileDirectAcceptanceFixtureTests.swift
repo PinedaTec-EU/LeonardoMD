@@ -80,7 +80,8 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
         guard ["happy", "lost-ack", "revoke-after-draw", "late-project-revoke",
                "enrollment-persist-failure", "capability-persist-failure",
                "revocation-cache-delete-failure", "reconnect-during-purge",
-               "revocation-uncertainty-revalidation", "accept-lost-ack"].contains(mode) else {
+               "revocation-uncertainty-revalidation", "accept-lost-ack",
+               "terminal-accept-cancel"].contains(mode) else {
             throw SyncError.invalidPath
         }
         let root = URL(fileURLWithPath: path, isDirectory: true)
@@ -180,6 +181,13 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                         requestID = try await createRubricRequest(runtime: runtime, deviceID: id)
                         try writeRubricReady(root: root, requestID: try XCTUnwrap(requestID),
                                              deviceID: id, projectCount: 1)
+                    case "cancel":
+                        guard mode == "terminal-accept-cancel", let requestID else { throw SyncError.invalidPath }
+                        let cancelled = try await runtime.cancelRubricRequest(requestID: requestID)
+                        XCTAssertEqual(cancelled.state, .cancelled)
+                        try writeJSON(["requestID": requestID.uuidString,
+                                       "state": cancelled.state.rawValue],
+                                      to: root.appendingPathComponent("terminal-accept-cancel.json"))
                     case "arm-lost-ack":
                         guard mode == "lost-ack", let fault else { throw SyncError.invalidPath }
                         await fault.arm()
@@ -315,6 +323,13 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                                            "injected": snapshot.injected,
                                            "sameRequestID": snapshot.uniqueAcceptRequestIDs == 1 && snapshot.uniqueResponseRequestIDs == 1],
                                       to: root.appendingPathComponent("accept-lost-ack.json"))
+                        } else if mode == "terminal-accept-cancel" {
+                            let id = try XCTUnwrap(requestID)
+                            let status = try await runtime.rubricStatus(requestID: id)
+                            XCTAssertEqual(status.request.state, .cancelled)
+                            try writeJSON(["requestID": id.uuidString,
+                                           "state": status.request.state.rawValue],
+                                          to: root.appendingPathComponent("terminal-accept-cancel.json"))
                         } else if ["enrollment-persist-failure", "capability-persist-failure",
                                    "revocation-cache-delete-failure"].contains(mode) {
                             var result: [String: Any] = ["mode": mode, "failureSurface": mode]
@@ -382,7 +397,8 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
             }
             XCTAssertTrue(finished, "Native rubric acceptance did not finish before fixture deadline")
             if !["enrollment-persist-failure"].contains(mode) { XCTAssertNotNil(deviceID) }
-            if ["happy", "lost-ack", "accept-lost-ack", "revoke-after-draw"].contains(mode) {
+            if ["happy", "lost-ack", "accept-lost-ack", "revoke-after-draw",
+                "terminal-accept-cancel"].contains(mode) {
                 XCTAssertNotNil(requestID)
             }
             try await runtime.stop()

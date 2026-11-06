@@ -94,6 +94,10 @@ final class PairingUITests: XCTestCase {
         let sheet = app.otherElements["rubric-request-sheet"]
         openRubricRequestIfNeeded(app, sheet: sheet, timeout: 30)
         XCTAssertTrue(app.staticTexts["Solicitud de Mac QA"].waitForExistence(timeout: 5))
+        let approvalCapture = XCTAttachment(screenshot: app.screenshot())
+        approvalCapture.name = "Native iOS rubric approval card before acceptance"
+        approvalCapture.lifetime = .keepAlways
+        add(approvalCapture)
         app.buttons["rubric-accept"].tap()
         let canvas = app.otherElements["rubric-canvas"]
         XCTAssertTrue(canvas.waitForExistence(timeout: 10))
@@ -133,6 +137,73 @@ final class PairingUITests: XCTestCase {
         capture.name = "Native iOS Mac-requested rubric sent over pinned HTTPS"
         capture.lifetime = .keepAlways
         add(capture)
+        try advanceDirectFixture("finish")
+    }
+
+    @MainActor func testTerminalAcceptanceCancellationBlocksOpenApprovalCard() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["LEONARDO_DIRECT_RUBRIC_QA"] == "1",
+              environment["LEONARDO_MOBILE_RUBRIC_QA_MODE"] == "terminal-accept-cancel",
+              let port = environment["LEONARDO_DIRECT_QA_PORT"], UInt16(port) != nil,
+              environment["LEONARDO_DIRECT_QA_PHASE_FILE"] != nil else {
+            throw XCTSkip("Requires the terminal acceptance cancellation fixture")
+        }
+        let app = XCUIApplication()
+        app.launch()
+        requestManualConnection(app, port: port)
+        let code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
+        XCTAssertTrue(code.waitForExistence(timeout: 15))
+
+        try advanceDirectFixture("approve")
+        app.buttons["Sincronizar"].firstMatch.tap()
+        let sheet = app.otherElements["rubric-request-sheet"]
+        openRubricRequestIfNeeded(app, sheet: sheet, timeout: 30)
+        XCTAssertTrue(app.buttons["rubric-accept"].waitForExistence(timeout: 10))
+        let approvalCapture = XCTAttachment(screenshot: app.screenshot())
+        approvalCapture.name = "Native iOS terminal request approval before cancellation"
+        approvalCapture.lifetime = .keepAlways
+        add(approvalCapture)
+
+        // Cancel the real pending request after the approval card is visible,
+        // but before iOS sends an Accept. Foreground polling must reconcile the
+        // terminal owner state into the open card rather than leaving retry UI.
+        try advanceDirectFixture("cancel")
+        let blocked = app.staticTexts["rubric-approval-blocked"]
+        XCTAssertTrue(blocked.waitForExistence(timeout: 30),
+                      "A cancelled request must replace the live approval controls with the blocked notice")
+        XCTAssertTrue(app.staticTexts["Cierra esta tarjeta y pide una nueva solicitud al ordenador."].exists)
+        XCTAssertFalse(app.buttons["rubric-accept"].exists,
+                       "A terminal approval request must not remain accept-able")
+        XCTAssertFalse(app.buttons["rubric-reject"].exists,
+                       "A terminal approval request must not remain reject-able")
+        XCTAssertFalse(app.buttons["rubric-retry"].exists,
+                       "A pending acceptance must not expose response retry")
+        XCTAssertFalse(app.staticTexts["No se pudo aceptar la solicitud. Puedes intentarlo de nuevo."].exists,
+                       "Terminal acceptance must not promise a retry")
+        let blockedCapture = XCTAttachment(screenshot: app.screenshot())
+        blockedCapture.name = "Native iOS cancelled approval card blocked with new-request guidance"
+        blockedCapture.lifetime = .keepAlways
+        add(blockedCapture)
+
+        // The durable blocked draft remains recoverable after relaunch, but it
+        // must reopen without Accept/Reject/Retry and continue explaining how
+        // to obtain a new Mac request.
+        app.buttons["Cerrar"].tap()
+        let draftBanner = app.buttons["rubric-draft-banner"]
+        XCTAssertTrue(draftBanner.waitForExistence(timeout: 15),
+                      "The blocked acceptance draft must remain recoverable after closing the card")
+        app.terminate()
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        XCTAssertTrue(app.buttons["rubric-draft-banner"].waitForExistence(timeout: 20),
+                      "The blocked acceptance draft must persist across relaunch")
+        app.buttons["rubric-draft-banner"].tap()
+        XCTAssertTrue(sheet.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["Borrador bloqueado: pide una nueva solicitud"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["rubric-accept"].exists)
+        XCTAssertFalse(app.buttons["rubric-reject"].exists)
+        XCTAssertFalse(app.buttons["rubric-retry"].exists)
+        XCTAssertFalse(app.buttons["rubric-send"].exists)
         try advanceDirectFixture("finish")
     }
 
