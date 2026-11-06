@@ -208,12 +208,13 @@ final class MobileRevocationTests: XCTestCase {
         try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
         try Data("fault\n".utf8).write(to: connectionFaultTarget, options: .atomic)
         let projectFaultTarget = support.appendingPathComponent("project-fault-target")
+        let credentials = TestCredentials(values: [deviceID: "old-credential", otherDeviceID: "unrelated-credential"],
+                                           failRemove: true)
+        let current = MobileLibrary(rootURL: corpusRoot, credentials: credentials, revocationJournal: failingJournal)
+        await current.reload()
         try Data("fault\n".utf8).write(to: projectFaultTarget, options: .atomic)
         try FileManager.default.removeItem(at: projectURL)
         try FileManager.default.createSymbolicLink(at: projectURL, withDestinationURL: projectFaultTarget)
-        let credentials = TestCredentials(values: [deviceID: "old-credential"], failRemove: true)
-        let current = MobileLibrary(rootURL: corpusRoot, credentials: credentials, revocationJournal: failingJournal)
-        await current.reload()
         try FileManager.default.removeItem(at: connectionURL)
         try FileManager.default.createSymbolicLink(at: connectionURL, withDestinationURL: connectionFaultTarget)
         let token = MobileConnectionToken(connectionID: value.connectionID, deviceID: value.deviceID,
@@ -234,7 +235,7 @@ final class MobileRevocationTests: XCTestCase {
         // still honors the in-memory deny overlay after the handler failed.
         try FileManager.default.removeItem(at: connectionURL)
         try FileManager.default.copyItem(at: originalConnections, to: connectionURL)
-        try FileManager.default.removeItem(at: projectURL)
+        try? FileManager.default.removeItem(at: projectURL)
         try FileManager.default.copyItem(at: originalProject, to: projectURL)
         await current.reload()
         XCTAssertFalse(current.projects.contains(where: { $0.id == project }))
@@ -245,9 +246,10 @@ final class MobileRevocationTests: XCTestCase {
         // successful revoke; only the pre-existing marker can quarantine it.
         try FileManager.default.removeItem(at: connectionURL)
         try FileManager.default.copyItem(at: originalConnections, to: connectionURL)
-        try FileManager.default.removeItem(at: projectURL)
+        try? FileManager.default.removeItem(at: projectURL)
         try FileManager.default.copyItem(at: originalProject, to: projectURL)
-        let freshCredentials = TestCredentials(values: [deviceID: "old-credential"], failRemove: true)
+        let freshCredentials = TestCredentials(values: [deviceID: "old-credential", otherDeviceID: "unrelated-credential"],
+                                                failRemove: true)
         let fresh = MobileLibrary(rootURL: corpusRoot, credentials: freshCredentials, revocationJournal: failingJournal)
         await fresh.reload()
         XCTAssertFalse(fresh.projects.contains(where: { $0.id == project }))
