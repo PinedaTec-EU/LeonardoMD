@@ -5,7 +5,7 @@
   "application_version": "0.3.1000 (unmaterialized baseline)",
   "guide_revision": 16,
   "launch_method": "./launch.sh --qa produced and verified bundle; after prior principal quit, CUA opened the exact QA bundle path",
-  "native_window_captures": "Readable full-window images pending; CUA currently returns OS-composited thumbnails. Current full WKWebView screenshots are the primary visual evidence.",
+  "native_window_captures": "Readable full 5120\u00d72880 native application-window JPEGs captured after owner foregrounded QA; original bytes and hash-bound metadata retained as packaged-en/es.",
   "locales": {
     "en": {
       "captured_at": "2026-11-06T15:10:29.058Z",

@@ -15,9 +15,13 @@ The actual verified QA package launched as fresh PID 54488, baseline version
 on/off fallback and practice save/close/reopen were observed; test values and
 preferences were restored. Original native accessibility observations and hashes
 are retained in `main-refresh/packaged-*.ax.txt` and `native-qa.json`.
-CUA currently returns only OS-composited window thumbnails, so readable packaged
-window screenshots remain pending; no thumbnail is presented as full visual QA.
-The full production WKWebView captures provide the current visual evidence.
+After the owner foregrounded QA, CUA captured readable original 5120×2880
+application windows in both locales (`main-refresh/packaged-en.jpg` and
+`packaged-es.jpg`). Each has capture-time context and hash-bound metadata.
+CSS viewport and packaged browser version are unavailable through native CUA
+and are explicitly null; no image dimension is substituted for CSS size.
+Both full production WKWebView and fresh packaged-window captures show the
+equations and tag; missing underbrace paths remain the separately tracked #274.
 
 Current local full Swift suite and focused seven-case math/help suite pass.
 Guide packaging tests: 3 pass. PR 363's compilation counter is 10.
