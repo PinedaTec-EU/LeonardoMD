@@ -129,7 +129,7 @@ final class MobileLibrary {
     /// can receive a revocation use this boundary, including rubric sends.
     private func withAuthenticatedConnection<T>(
         _ connection: MobileDirectConnection,
-        operation: @escaping @Sendable (MobileAuthenticatedContext) async throws -> T
+        operation: (MobileAuthenticatedContext) async throws -> T
     ) async throws -> T {
         let token = self.token(for: connection)
         let result = try await revocationClient.withAuthenticatedConnection(
