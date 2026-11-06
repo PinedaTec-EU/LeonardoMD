@@ -169,6 +169,7 @@ struct MobileRubricCaptureView: View {
         self.request = request
         self.library = library
         let draft = library.rubricDraft(requestID: request.id)
+        _acceptedRequest = State(initialValue: draft?.request)
         _phase = State(initialValue: draft?.state == .submitted ? .submitted
             : draft != nil && draft?.state != .pendingAcceptance ? .drawing : .awaitingApproval)
         _label = State(initialValue: draft?.label ?? request.labelHint ?? "Rúbrica")
