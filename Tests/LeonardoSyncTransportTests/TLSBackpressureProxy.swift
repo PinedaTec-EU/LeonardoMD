@@ -10,6 +10,7 @@ final class TLSBackpressureProxy: @unchecked Sendable {
     private static let responseChunkDelay: TimeInterval = 0.005
 
     private let destinationPort: UInt16
+    private let responseWireByteLimit: Int?
     private let acceptQueue: DispatchQueue
     private let relayQueue: DispatchQueue
     private let lock = NSLock()
@@ -18,8 +19,12 @@ final class TLSBackpressureProxy: @unchecked Sendable {
     private var isStopped = false
     let port: UInt16
 
-    init(destinationPort: UInt16) throws {
+    init(destinationPort: UInt16, responseWireByteLimit: Int? = nil) throws {
+        if let responseWireByteLimit, responseWireByteLimit <= 0 {
+            throw POSIXError(.EINVAL)
+        }
         self.destinationPort = destinationPort
+        self.responseWireByteLimit = responseWireByteLimit
         acceptQueue = DispatchQueue(label: "eu.pinedatec.LeonardoMD.tests.tls-proxy.accept")
         relayQueue = DispatchQueue(label: "eu.pinedatec.LeonardoMD.tests.tls-proxy.relay",
                                   qos: .userInitiated, attributes: .concurrent)
@@ -90,7 +95,10 @@ final class TLSBackpressureProxy: @unchecked Sendable {
                 let destination = try connectToDestination()
                 guard register(destination) else { return }
                 relayQueue.async { [weak self] in self?.relay(from: client, to: destination, pace: false) }
-                relayQueue.async { [weak self] in self?.relay(from: destination, to: client, pace: true) }
+                relayQueue.async { [weak self] in
+                    self?.relay(from: destination, to: client, pace: true,
+                                responseWireByteLimit: self?.responseWireByteLimit)
+                }
             } catch {
                 closeRegisteredSocket(client)
                 return
@@ -117,8 +125,10 @@ final class TLSBackpressureProxy: @unchecked Sendable {
         }
     }
 
-    private func relay(from source: Int32, to destination: Int32, pace: Bool) {
+    private func relay(from source: Int32, to destination: Int32, pace: Bool,
+                       responseWireByteLimit: Int? = nil) {
         var buffer = [UInt8](repeating: 0, count: Self.relayChunkBytes)
+        var forwardedBytes = 0
         while true {
             let received = buffer.withUnsafeMutableBytes { bytes in
                 Darwin.read(source, bytes.baseAddress, bytes.count)
@@ -129,15 +139,28 @@ final class TLSBackpressureProxy: @unchecked Sendable {
                 break
             }
 
+            let permittedBytes = responseWireByteLimit.map { min(received, max(0, $0 - forwardedBytes)) } ?? received
+            guard permittedBytes > 0 else {
+                abortiveCloseRegisteredSocket(destination)
+                closeRegisteredSocket(source)
+                return
+            }
+
             var written = 0
-            while written < received {
+            while written < permittedBytes {
                 let sent = buffer.withUnsafeBytes { bytes in
                     Darwin.send(destination, bytes.baseAddress!.advanced(by: written),
-                                received - written, 0)
+                                permittedBytes - written, 0)
                 }
                 if sent > 0 { written += sent }
                 else if sent < 0, errno == EINTR { continue }
                 else { return }
+            }
+            forwardedBytes += written
+            if let responseWireByteLimit, forwardedBytes >= responseWireByteLimit {
+                abortiveCloseRegisteredSocket(destination)
+                closeRegisteredSocket(source)
+                return
             }
             if pace { Thread.sleep(forTimeInterval: Self.responseChunkDelay) }
         }
@@ -170,6 +193,21 @@ final class TLSBackpressureProxy: @unchecked Sendable {
             _ = Darwin.shutdown(descriptor, SHUT_RDWR)
             _ = Darwin.close(descriptor)
         }
+    }
+
+    private func abortiveCloseRegisteredSocket(_ descriptor: Int32) {
+        lock.lock()
+        let shouldClose = sockets.remove(descriptor) != nil
+        lock.unlock()
+        guard shouldClose else { return }
+
+        var reset = linger()
+        reset.l_onoff = 1
+        reset.l_linger = 0
+        _ = withUnsafePointer(to: &reset) {
+            Darwin.setsockopt(descriptor, SOL_SOCKET, SO_LINGER, $0, socklen_t(MemoryLayout<linger>.size))
+        }
+        _ = Darwin.close(descriptor)
     }
 
     private static func configureSocket(_ descriptor: Int32) throws {

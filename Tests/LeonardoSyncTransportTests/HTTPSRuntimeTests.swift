@@ -30,14 +30,26 @@ final class HTTPSRuntimeTests: XCTestCase {
             do {
                 _ = try await bounded.request(method: "GET", path: "/v1/status", credential: String(repeating: "a", count: 64))
                 XCTFail("Oversized response must not be accumulated")
-            } catch { XCTAssertEqual(error as? TransportError, .responseTooLarge) }
+            } catch {
+                XCTAssertEqual(error as? TransportError, .responseTooLarge)
+                XCTAssertNil(HTTPSFailureDiagnostics.from(error), "Response bounds keep their existing typed error")
+            }
             let unauthorized = try await client.request(method: "GET", path: "/v1/status")
             XCTAssertEqual(unauthorized.status, 401)
             let wrong = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: Data(repeating: 0, count: 32))
             do {
                 _ = try await wrong.request(method: "GET", path: "/v1/status")
                 XCTFail("Wrong certificate pin must not receive a response")
-            } catch { XCTAssertTrue(error is URLError) }
+            } catch {
+                XCTAssertTrue(error is URLError)
+                if let diagnostics = HTTPSFailureDiagnostics.from(error) {
+                    XCTAssertEqual(diagnostics.operation, .status)
+                    XCTAssertNil(diagnostics.httpStatusCode)
+                    XCTAssertEqual(diagnostics.receivedBodyBytes, 0)
+                    XCTAssertNil(diagnostics.expectedBodyBytes)
+                    XCTAssertEqual(diagnostics.errorCode, (error as NSError).code)
+                }
+            }
             await server.stop()
             let readyAfterStop = await server.isReady
             XCTAssertFalse(readyAfterStop)
@@ -95,6 +107,51 @@ final class HTTPSRuntimeTests: XCTestCase {
             await server.stop()
             throw error
         }
+    }
+
+    func testInterruptedPinnedTLSBodyReportsBoundedPartialTransferContext() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture identity import requires memory-only Security import") }
+        let identity = try makeIdentity()
+        let sensitiveMarker = Data("RESPONSE_CONTENT_MUST_NOT_ENTER_DIAGNOSTICS".utf8)
+        let responseBody = sensitiveMarker + Data(repeating: 0x6A, count: 2 * 1_024 * 1_024)
+        let server = LANHTTPSListener(identity: identity) { _ in HTTPResponse(status: 200, body: responseBody) }
+        let port = try await server.start(host: "127.0.0.1")
+        let wireCutoff = 128 * 1_024
+        let proxy = try TLSBackpressureProxy(destinationPort: port, responseWireByteLimit: wireCutoff)
+        defer { proxy.stop() }
+
+        let endpoint = URL(string: "https://127.0.0.1:\(proxy.port)")!
+        let credential = String(repeating: "d", count: 64)
+        let deviceID = UUID()
+        let projectID = UUID()
+        let path = "/v1/devices/\(deviceID.uuidString)/projects/\(projectID.uuidString)/snapshot"
+        let client = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: identity.certificateFingerprint)
+        do {
+            _ = try await client.request(method: "GET", path: path, credential: credential)
+            XCTFail("The TLS relay must interrupt the response before its declared body is complete")
+        } catch {
+            XCTAssertTrue(error is URLError, "The existing URL error type remains visible")
+            let underlying = error as NSError
+            XCTAssertEqual(underlying.domain, NSURLErrorDomain)
+            let diagnostics = try XCTUnwrap(HTTPSFailureDiagnostics.from(error))
+            XCTAssertEqual(diagnostics.operation, .snapshot)
+            XCTAssertEqual(diagnostics.errorDomain, underlying.domain)
+            XCTAssertEqual(diagnostics.errorCode, underlying.code)
+            XCTAssertEqual(diagnostics.httpStatusCode, 200)
+            XCTAssertGreaterThan(diagnostics.receivedBodyBytes, 0)
+            XCTAssertLessThan(diagnostics.receivedBodyBytes, responseBody.count)
+            XCTAssertEqual(diagnostics.expectedBodyBytes, Int64(responseBody.count))
+
+            let code = diagnostics.compactCode
+            print("OBSERVED_TRUNCATED_TLS_DIAGNOSTIC=\(code)")
+            XCTAssertFalse(code.contains(endpoint.absoluteString))
+            XCTAssertFalse(code.contains(path))
+            XCTAssertFalse(code.contains(deviceID.uuidString))
+            XCTAssertFalse(code.contains(projectID.uuidString))
+            XCTAssertFalse(code.contains(credential))
+            XCTAssertFalse(code.contains(String(data: sensitiveMarker, encoding: .utf8)!))
+        }
+        await server.stop()
     }
 
     func testPairingSnapshotAndRevocationOverRealHTTPS() async throws {

@@ -604,6 +604,22 @@ one device. The companion only draws and returns the rubric; it cannot edit the
 document. A helper, service or capability problem is shown as an actionable
 offline/unsupported state.
 
+### If mobile synchronization is interrupted
+
+For a network failure, the existing alert may include a compact diagnostic
+line, for example:
+
+`[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
+
+Share that line or a screenshot when asking for help. It identifies whether a
+status or snapshot request failed, the HTTP status when received, response
+bytes received versus expected, and the system error domain/code. It contains
+no server address or path, pairing credential, device/project identifier, or
+file content. An HTTP 200 header does not mean the response body finished. A
+`?` expected count means the server did not provide a body length. Previously
+downloaded offline copies remain available; check that the source Mac is
+reachable and Leonardo Sync is enabled, then retry synchronization.
+
 ### Answer a rubric request on iOS
 
 This is a capture-only response channel for a **known, linked Mac**. Pairing

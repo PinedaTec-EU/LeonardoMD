@@ -76,7 +76,15 @@ final class PairingUITests: XCTestCase {
         XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native direct updated"].waitForExistence(timeout: 15))
         try advanceDirectFixture("disable")
         app.buttons["document-sync"].tap()
-        XCTAssertTrue(app.alerts["No se pudo completar la operación"].waitForExistence(timeout: 15))
+        let failure = app.alerts["No se pudo completar la operación"]
+        XCTAssertTrue(failure.waitForExistence(timeout: 15))
+        XCTAssertTrue(failure.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "[LL1 op=status")).firstMatch.waitForExistence(timeout: 5),
+            "The native failure alert must expose the safe transport diagnostic")
+        let failureCapture = XCTAttachment(screenshot: app.screenshot())
+        failureCapture.name = "Little Leonardo synchronization failure diagnostic"
+        failureCapture.lifetime = .keepAlways
+        add(failureCapture)
         app.alerts.buttons["Aceptar"].tap()
         XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native direct updated"].exists)
 

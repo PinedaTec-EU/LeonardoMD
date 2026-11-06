@@ -616,6 +616,23 @@ devuelve la rúbrica; no puede editar el documento. Si falla el asistente, el
 servicio o la capacidad, se muestra un estado de desconexión o incompatibilidad
 con una acción clara.
 
+### Si se interrumpe la sincronización móvil
+
+Ante un fallo de red, el aviso existente puede incluir una línea de diagnóstico
+breve, por ejemplo:
+
+`[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
+
+Comparte esa línea o una captura al pedir ayuda. Indica si falló una consulta de
+estado o una instantánea, el estado HTTP si llegó, los bytes de respuesta
+recibidos y esperados, y el dominio/código de error del sistema. No incluye la
+dirección o ruta del servidor, credencial de emparejamiento, identificadores de
+dispositivo/proyecto ni contenido de archivos. Una cabecera HTTP 200 no
+significa que terminara el cuerpo. Un total esperado `?` significa que el
+servidor no informó de la longitud. Las copias descargadas sin conexión siguen
+disponibles; comprueba que el Mac de origen sea accesible y que Leonardo Sync
+esté activo, y vuelve a intentar la sincronización.
+
 ### Responder a una solicitud de rúbrica en iOS
 
 Este es un canal de respuesta **solo para capturar**, dirigido a un Mac

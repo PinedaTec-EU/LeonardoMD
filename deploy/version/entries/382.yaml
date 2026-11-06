@@ -1,4 +1,4 @@
 {
-  "build": 10,
-  "summary": "Adds byte-for-byte HTTPS snapshot coverage for image assets, concurrent requests and constrained TCP windows, plus an opt-in iOS LAN test that downloads and renders the original image. No production transport behavior changes."
+  "build": 19,
+  "summary": "Adds privacy-safe HTTPS diagnostics for iOS sync failures, preserving URL errors, pinning, redirects and bounds. A real TLS cutoff test checks partial byte counts; the alert and bilingual Guide v22 explain the code. Physical root cause remains unconfirmed."
 }

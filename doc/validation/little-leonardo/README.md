@@ -82,6 +82,25 @@ The previous ten-mode recovery matrix remains bound to its c8 source; it was not
 
 ## Reproduction and limits
 
+### #380 native HTTPS diagnostic fixture
+
+`MobileDirectAcceptanceFixtureTests.testServeNativeMobileAcceptanceFixture`
+starts a synthetic `DesktopDirectRuntime` on loopback port `46993`. Give each
+run a fresh, owned root whose `.qa-fixture-owned` file contains exactly
+`LittleLeonardoDirectQA\n`; the fixture rejects an existing `ready.json`.
+Set `LEONARDO_MOBILE_DIRECT_QA_ROOT` for the recorded host `swift test` command
+and wait for that root's `ready.json` before starting iOS UI automation.
+
+The iOS XCTest runner does not inherit shell environment variables. After the
+final `build-for-testing`, patch the generated `.xctestrun` dictionary
+`LittleLeonardoUITests.EnvironmentVariables` with `LEONARDO_DIRECT_QA=1`,
+`LEONARDO_DIRECT_QA_PORT=46993`, `LEONARDO_DIRECT_QA_HOST=127.0.0.1`, and
+`LEONARDO_DIRECT_QA_PHASE_FILE=<fresh-root>/phase.txt`. Rebuilds replace that
+patch. For bounded simulator runs use `-collect-test-diagnostics never`.
+When reusing the owned A5 simulator after a previous direct-LAN fixture, first
+preserve its test app data and reset only the `eu.pinedatec.LittleLeonardo`
+bundle; a stale peer can make unrelated refresh/revocation assertions fail.
+
 Compile delta193 passes 340 XCTest cases (ten optional skips) and twelve renderer tests. Native Git acceptance also passes with the corrected fixture (138.046 seconds UI, 143.760 seconds server), independently verifying both publications, deletion, ancestry, excluded-blob omission and `git fsck`; the provenance manifest records this repetition separately from the retained captures. Delta193 adds only fail-fast guards to the separate publication regression; the native fixture and mobile/shared sources are unchanged. The real SSH fixture gives both upload-pack and receive-pack a 60-second post-EOF deadline, followed by a bounded cleanup check, within the unchanged 120-second transport timeout. A stalled session returns a specific remote-command diagnostic with session/PID, input/output bytes and separate termination/stream state; incomplete cleanup is reported explicitly. The controlled faults use a two-second deadline.
 
 `testRealGitPublicationFaultPreservesPreparedJournalForExactRetry` fails one real SSH publication, verifies the remote ref and journal bytes are unchanged and the child/streams are closed, reloads the journal, then sends the identical commit/request exactly once. It verifies the resulting ref, file bytes and `git fsck` before persisting the published corpus and removing the journal. This exercises the shared durable-publication components; journal orchestration is composed explicitly by the test. The original intermittent stall is not conclusively attributed; [#121](https://github.com/PinedaTec-EU/LeonardoMD/issues/121) is addressed by a reproducible, specific failure guarantee rather than an unexplained rerun.
