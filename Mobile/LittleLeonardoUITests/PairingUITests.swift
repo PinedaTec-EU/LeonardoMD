@@ -132,6 +132,131 @@ final class PairingUITests: XCTestCase {
         try advanceDirectFixture("finish")
     }
 
+    @MainActor func testMacRequestedRubricCaptureLostAcknowledgementReconcilesAfterRelaunch() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["LEONARDO_DIRECT_RUBRIC_QA"] == "1",
+              environment["LEONARDO_MOBILE_RUBRIC_QA_MODE"] == "lost-ack",
+              let port = environment["LEONARDO_DIRECT_QA_PORT"], UInt16(port) != nil,
+              environment["LEONARDO_DIRECT_QA_PHASE_FILE"] != nil else {
+            throw XCTSkip("Requires the explicit lost-ack native rubric fixture")
+        }
+        let app = XCUIApplication()
+        app.launch()
+        app.buttons["open-pairing"].tap()
+        app.segmentedControls["pairing-method"].buttons["IP y puerto"].tap()
+        let host = app.textFields["pairing-host"], portField = app.textFields["pairing-port"]
+        host.tap(); host.typeText("127.0.0.1")
+        portField.tap()
+        if let value = portField.value as? String {
+            portField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+        }
+        portField.typeText(port)
+        app.buttons["Solicitar conexión"].tap()
+        let code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
+        XCTAssertTrue(code.waitForExistence(timeout: 15))
+
+        try advanceDirectFixture("approve")
+        app.buttons["Sincronizar"].firstMatch.tap()
+        let sheet = app.otherElements["rubric-request-sheet"]
+        XCTAssertTrue(sheet.waitForExistence(timeout: 30))
+        app.buttons["rubric-accept"].tap()
+        let canvas = app.otherElements["rubric-canvas"]
+        XCTAssertTrue(canvas.waitForExistence(timeout: 10))
+        drawLine(in: canvas, from: CGVector(dx: 0.16, dy: 0.63), to: CGVector(dx: 0.84, dy: 0.38))
+
+        try advanceDirectFixture("arm-lost-ack")
+        app.buttons["rubric-send"].tap()
+        XCTAssertTrue(app.buttons["rubric-retry"].waitForExistence(timeout: 30),
+                      "The committed response must remain visibly retryable when its first acknowledgement is lost")
+        XCTAssertFalse(app.buttons["rubric-done"].exists)
+
+        app.terminate()
+        app.launch()
+        let recoverySheet = app.otherElements["rubric-request-sheet"]
+        if !recoverySheet.waitForExistence(timeout: 12) {
+            let recoveryBanner = app.buttons["rubric-draft-banner"]
+            XCTAssertTrue(recoveryBanner.waitForExistence(timeout: 12),
+                          "The pending local response must be surfaced after relaunch")
+            recoveryBanner.tap()
+        }
+        XCTAssertTrue(recoverySheet.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["rubric-done"].waitForExistence(timeout: 30),
+                      "Reload reconciliation must mark the matching committed response submitted")
+        XCTAssertFalse(app.buttons["rubric-send"].exists)
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Native iOS rubric recovered after lost acknowledgement"
+        capture.lifetime = .keepAlways
+        add(capture)
+        try advanceDirectFixture("finish")
+    }
+
+    @MainActor func testGrantedReaderAndUnsentRubricBlocksAfterForegroundRevocation() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["LEONARDO_DIRECT_RUBRIC_QA"] == "1",
+              environment["LEONARDO_MOBILE_RUBRIC_QA_MODE"] == "revoke-after-draw",
+              let port = environment["LEONARDO_DIRECT_QA_PORT"], UInt16(port) != nil,
+              environment["LEONARDO_DIRECT_QA_PHASE_FILE"] != nil else {
+            throw XCTSkip("Requires the explicit granted-reader revocation fixture")
+        }
+        let app = XCUIApplication()
+        app.launch()
+        app.buttons["open-pairing"].tap()
+        app.segmentedControls["pairing-method"].buttons["IP y puerto"].tap()
+        let host = app.textFields["pairing-host"], portField = app.textFields["pairing-port"]
+        host.tap(); host.typeText("127.0.0.1")
+        portField.tap()
+        if let value = portField.value as? String {
+            portField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+        }
+        portField.typeText(port)
+        app.buttons["Solicitar conexión"].tap()
+        let code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
+        XCTAssertTrue(code.waitForExistence(timeout: 15))
+
+        try advanceDirectFixture("approve")
+        app.buttons["Sincronizar"].firstMatch.tap()
+        let project = app.staticTexts["QA · Granted rubric"].firstMatch
+        XCTAssertTrue(project.waitForExistence(timeout: 20))
+        project.tap()
+        app.buttons["docs/read.md"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Granted rubric source"].waitForExistence(timeout: 15))
+        let readerCapture = XCTAttachment(screenshot: app.screenshot())
+        readerCapture.name = "Granted read-only document before rubric revocation"
+        readerCapture.lifetime = .keepAlways
+        add(readerCapture)
+
+        try advanceDirectFixture("request")
+        let sheet = app.otherElements["rubric-request-sheet"]
+        XCTAssertTrue(sheet.waitForExistence(timeout: 30),
+                      "The request must arrive while the read-only document is open")
+        app.buttons["rubric-accept"].tap()
+        let canvas = app.otherElements["rubric-canvas"]
+        XCTAssertTrue(canvas.waitForExistence(timeout: 10))
+        drawLine(in: canvas, from: CGVector(dx: 0.18, dy: 0.42), to: CGVector(dx: 0.82, dy: 0.58))
+        XCTAssertTrue(app.buttons["rubric-send"].waitForExistence(timeout: 5))
+
+        try advanceDirectFixture("revoke")
+        XCTAssertTrue(app.staticTexts["Borrador bloqueado: pide una nueva solicitud"].waitForExistence(timeout: 30),
+                      "Foreground polling must durably block an accepted unsent drawing after revocation")
+        XCTAssertFalse(app.buttons["rubric-send"].exists,
+                       "A revoked accepted drawing must not retain a Send action")
+        XCTAssertTrue(canvas.exists, "The blocked drawing must remain visible for recovery")
+        let blockedCapture = XCTAttachment(screenshot: app.screenshot())
+        blockedCapture.name = "Native iOS unsent rubric blocked after foreground revocation"
+        blockedCapture.lifetime = .keepAlways
+        add(blockedCapture)
+
+        app.buttons["Cerrar"].tap()
+        XCTAssertTrue(app.staticTexts["Acceso retirado"].waitForExistence(timeout: 15),
+                      "The exact connection's direct reader cache must be purged after confirmed revocation")
+        app.navigationBars.buttons["QA · Granted rubric"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["QA · Markdown"].waitForExistence(timeout: 10),
+                      "An unrelated offline direct corpus must survive revocation")
+        XCTAssertTrue(app.staticTexts["QA · Recovery"].waitForExistence(timeout: 10),
+                      "A legacy recovery archive must survive direct-cache revocation")
+        try advanceDirectFixture("finish")
+    }
+
     @MainActor private func waitForDocumentSyncToFinish(_ app: XCUIApplication, timeout: TimeInterval) -> Bool {
         let documentSync = app.buttons["document-sync"]
         let readiness = XCTNSPredicateExpectation(

@@ -1,6 +1,7 @@
 #if os(macOS)
 import XCTest
 import LeonardoSync
+import LeonardoSyncTransport
 @testable import LeonardoDesktopSync
 
 /// Opt-in, loopback-only service for native iOS acceptance. It owns synthetic files and
@@ -75,6 +76,10 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
         guard let path = ProcessInfo.processInfo.environment["LEONARDO_MOBILE_RUBRIC_QA_ROOT"] else {
             throw XCTSkip("Requires the explicitly owned native mobile rubric QA fixture")
         }
+        let mode = ProcessInfo.processInfo.environment["LEONARDO_MOBILE_RUBRIC_QA_MODE"] ?? "happy"
+        guard ["happy", "lost-ack", "revoke-after-draw"].contains(mode) else {
+            throw SyncError.invalidPath
+        }
         let root = URL(fileURLWithPath: path, isDirectory: true)
         guard try String(contentsOf: root.appendingPathComponent(".qa-fixture-owned"), encoding: .utf8) == "LittleLeonardoDirectQA\n",
               !FileManager.default.fileExists(atPath: root.appendingPathComponent("ready.json").path) else {
@@ -83,22 +88,35 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
         let sourceRoot = root.appendingPathComponent("Source")
         let file = sourceRoot.appendingPathComponent("docs/read.md")
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Data("# Capture-only source\n".utf8).write(to: file)
+        try Data((mode == "revoke-after-draw"
+                  ? "# Granted rubric source\n\nReader cache must be removed after revocation.\n"
+                  : "# Capture-only source\n").utf8).write(to: file)
         let selection = try CorpusSelection(folders: ["docs"], documents: [])
-        let descriptor = SharedProjectDescriptor(id: UUID(), name: "QA · Capture only",
+        let descriptor = SharedProjectDescriptor(id: UUID(),
+            name: mode == "revoke-after-draw" ? "QA · Granted rubric" : "QA · Capture only",
             scope: try CorpusScope(folder: ""), selection: selection)
         let source = SharedProjectSource(descriptor: descriptor, rootURL: sourceRoot) {
             try await ProjectCorpusReader().snapshot(root: sourceRoot, selection: selection)
         }
+        let fault = mode == "lost-ack" ? LostRubricAcknowledgementFault(root: root) : nil
         let runtime = DesktopDirectRuntime(root: root.appendingPathComponent("Service"),
-            credentials: NativeMobileFixtureCredentials(), now: { Date() })
-        let port: UInt16 = 46994
+            credentials: NativeMobileFixtureCredentials(), now: { Date() },
+            makeListener: { identity, downstream in
+                LANHTTPSListener(identity: identity) { request in
+                    let response = await downstream(request)
+                    guard let fault else { return response }
+                    return await fault.response(for: request, after: response)
+                }
+            })
+        let port = UInt16(ProcessInfo.processInfo.environment["LEONARDO_MOBILE_RUBRIC_QA_PORT"] ?? "46994")!
         _ = try await runtime.start(host: "127.0.0.1", port: port, projects: [source])
         var deviceID: UUID?
         var requestID: UUID?
         var finished = false
         do {
-            let ready: [String: Any] = ["port": Int(port), "captureOnly": true]
+            let ready: [String: Any] = ["port": Int(port), "mode": mode,
+                                        "captureOnly": mode != "revoke-after-draw",
+                                        "projectID": descriptor.id.uuidString]
             try JSONSerialization.data(withJSONObject: ready).write(to: root.appendingPathComponent("ready.json"), options: .atomic)
             var prior = ""
             let deadline = Date().addingTimeInterval(240)
@@ -111,30 +129,57 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                         let pairing = try XCTUnwrap(registry.requests.first)
                         XCTAssertEqual(pairing.kind, .readOnly)
                         XCTAssertTrue(pairing.capabilities.contains(.rubricExchangeV1))
-                        try await runtime.approve(requestID: pairing.id, code: pairing.comparisonCode, projectIDs: [])
+                        let grants: Set<UUID> = mode == "revoke-after-draw" ? [descriptor.id] : []
+                        try await runtime.approve(requestID: pairing.id, code: pairing.comparisonCode, projectIDs: grants)
                         deviceID = pairing.id
-                        let rubricRequest = try await runtime.createRubricRequest(deviceID: pairing.id,
-                            requesterName: "Mac QA", labelHint: "Firma")
-                        requestID = rubricRequest.id
-                        let marker: [String: Any] = ["requestID": rubricRequest.id.uuidString,
-                            "deviceID": pairing.id.uuidString, "projects": 0]
-                        try JSONSerialization.data(withJSONObject: marker).write(
-                            to: root.appendingPathComponent("rubric-ready.json"), options: .atomic)
+                        if mode != "revoke-after-draw" {
+                            requestID = try await createRubricRequest(runtime: runtime, deviceID: pairing.id)
+                            try writeRubricReady(root: root, requestID: try XCTUnwrap(requestID),
+                                                 deviceID: pairing.id, projectCount: grants.count)
+                        }
+                    case "request":
+                        let id = try XCTUnwrap(deviceID)
+                        requestID = try await createRubricRequest(runtime: runtime, deviceID: id)
+                        try writeRubricReady(root: root, requestID: try XCTUnwrap(requestID),
+                                             deviceID: id, projectCount: 1)
+                    case "arm-lost-ack":
+                        guard mode == "lost-ack", let fault else { throw SyncError.invalidPath }
+                        await fault.arm()
+                    case "revoke":
+                        guard mode == "revoke-after-draw" else { throw SyncError.invalidPath }
+                        try await runtime.revoke(deviceID: try XCTUnwrap(deviceID))
                     case "finish":
                         let id = try XCTUnwrap(requestID)
-                        var response: RubricResponse?
-                        for _ in 0..<100 {
-                            response = try await runtime.rubricResponse(requestID: id)
-                            if response != nil { break }
-                            try await Task.sleep(for: .milliseconds(100))
+                        if mode == "revoke-after-draw" {
+                            let response = try await runtime.rubricResponse(requestID: id)
+                            XCTAssertNil(response, "Revoked unsent drawing must not reach the Mac")
+                            let status = try await runtime.rubricStatus(requestID: id)
+                            XCTAssertEqual(status.request.state, .accepted)
+                            try writeJSON(["requestID": id.uuidString, "deviceID": try XCTUnwrap(deviceID).uuidString,
+                                           "response": NSNull(), "requestState": status.request.state.rawValue],
+                                          to: root.appendingPathComponent("rubric-revoked.json"))
+                        } else {
+                            var response: RubricResponse?
+                            for _ in 0..<100 {
+                                response = try await runtime.rubricResponse(requestID: id)
+                                if response != nil { break }
+                                try await Task.sleep(for: .milliseconds(100))
+                            }
+                            let received = try XCTUnwrap(response)
+                            XCTAssertEqual(received.requestID, id)
+                            XCTAssertEqual(received.targetDeviceID, try XCTUnwrap(deviceID))
+                            XCTAssertEqual(received.label, "Firma")
+                            XCTAssertTrue(received.rubric.isValid)
+                            try JSONEncoder().encode(received).write(to: root.appendingPathComponent("rubric-response.json"), options: .atomic)
+                            if let fault {
+                                let snapshot = await fault.snapshot()
+                                XCTAssertTrue(snapshot.injected, "Lost-ack mode must replace the first response acknowledgement")
+                                XCTAssertEqual(snapshot.responsePosts, 2,
+                                               "The frozen response must be committed once and reconciled with one idempotent retry")
+                                try writeJSON(["responsePosts": snapshot.responsePosts, "injected": snapshot.injected],
+                                              to: root.appendingPathComponent("lost-ack.json"))
+                            }
                         }
-                        let received = try XCTUnwrap(response)
-                        XCTAssertEqual(received.requestID, id)
-                        XCTAssertEqual(received.targetDeviceID, try XCTUnwrap(deviceID))
-                        XCTAssertEqual(received.label, "Firma")
-                        XCTAssertTrue(received.rubric.isValid)
-                        let data = try JSONEncoder().encode(received)
-                        try data.write(to: root.appendingPathComponent("rubric-response.json"), options: .atomic)
                         finished = true
                     default: break
                     }
@@ -152,6 +197,21 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
             throw error
         }
     }
+
+    private func createRubricRequest(runtime: DesktopDirectRuntime, deviceID: UUID) async throws -> UUID {
+        let request = try await runtime.createRubricRequest(deviceID: deviceID,
+            requesterName: "Mac QA", labelHint: "Firma")
+        return request.id
+    }
+
+    private func writeRubricReady(root: URL, requestID: UUID, deviceID: UUID, projectCount: Int) throws {
+        try writeJSON(["requestID": requestID.uuidString, "deviceID": deviceID.uuidString,
+                       "projects": projectCount], to: root.appendingPathComponent("rubric-ready.json"))
+    }
+
+    private func writeJSON(_ value: Any, to url: URL) throws {
+        try JSONSerialization.data(withJSONObject: value, options: []).write(to: url, options: .atomic)
+    }
 }
 
 private actor NativeMobileFixtureCredentials: DeviceCredentialStore {
@@ -159,5 +219,40 @@ private actor NativeMobileFixtureCredentials: DeviceCredentialStore {
     func credential(deviceID: UUID) -> String? { values[deviceID] }
     func save(_ credential: String, deviceID: UUID) { values[deviceID] = credential }
     func remove(deviceID: UUID) { values.removeValue(forKey: deviceID) }
+}
+
+private actor LostRubricAcknowledgementFault {
+    struct Snapshot: Sendable {
+        let responsePosts: Int
+        let injected: Bool
+    }
+
+    private let root: URL
+    private var armed = false
+    private var responsePosts = 0
+    private var injected = false
+
+    init(root: URL) { self.root = root }
+
+    func arm() {
+        armed = true
+        try? Data("armed\n".utf8).write(to: root.appendingPathComponent("lost-ack-armed.txt"), options: .atomic)
+    }
+
+    func response(for request: HTTPRequest, after response: HTTPResponse) -> HTTPResponse {
+        guard armed, request.method == "POST", request.path.hasSuffix("/rubrics/responses") else {
+            return response
+        }
+        responsePosts += 1
+        if responsePosts == 1 {
+            injected = true
+            try? Data("first-response-ack-dropped\n".utf8)
+                .write(to: root.appendingPathComponent("lost-ack-injected.txt"), options: .atomic)
+            return HTTPResponse(status: 503)
+        }
+        return response
+    }
+
+    func snapshot() -> Snapshot { Snapshot(responsePosts: responsePosts, injected: injected) }
 }
 #endif
