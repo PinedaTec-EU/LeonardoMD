@@ -19,7 +19,8 @@
     "Tests/LeonardoAppTests/BundledUserGuideTests.swift": "6f07a31e17346fe34a3cb3e25a87b022dc9855f2bdb8c0cf3117d1f1ad3bf3f7",
     "Tests/LeonardoAppTests/GuidePracticeNavigationTests.swift": "771dc2222ad3ba99699521d77c15225eadf3901378f01eaffbb2664f6229c6ba",
     "Tests/LeonardoAppTests/GuideCaptureSupport.swift": "003aff2173b2e7ed3ced96cb8dfe573cc428ad168362c5f30771ca5b001b2ece",
-    "scripts/package-user-guide.py": "45384731c79d5669c24511c38546c3f5d0d34d9b73994a9df6487808e7cda761"
+    "scripts/package-user-guide.py": "45384731c79d5669c24511c38546c3f5d0d34d9b73994a9df6487808e7cda761",
+    "Tests/LeonardoDesktopSyncTests/MobileDirectAcceptanceFixtureTests.swift": "4ed0e13fbf5d1dc304bcb72ca3781de26d250656fb6a824aaa42a6c17f4d0ca1"
   },
   "validation": {
     "guidePackagingPython": "3 passed",
@@ -31,7 +32,8 @@
       "Sources/LeonardoSyncTransport",
       "Mobile/LittleLeonardo",
       "Tests/LeonardoSyncTransportTests",
-      "Tests/LittleLeonardoUITests"
+      "Mobile/LittleLeonardoUITests",
+      "Tests/LeonardoDesktopSyncTests/MobileDirectAcceptanceFixtureTests.swift"
     ]
   },
   "captures": [
