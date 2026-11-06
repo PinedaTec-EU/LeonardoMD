@@ -77,7 +77,9 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
             throw XCTSkip("Requires the explicitly owned native mobile rubric QA fixture")
         }
         let mode = ProcessInfo.processInfo.environment["LEONARDO_MOBILE_RUBRIC_QA_MODE"] ?? "happy"
-        guard ["happy", "lost-ack", "revoke-after-draw", "late-project-revoke"].contains(mode) else {
+        guard ["happy", "lost-ack", "revoke-after-draw", "late-project-revoke",
+               "enrollment-persist-failure", "capability-persist-failure",
+               "revocation-cache-delete-failure", "reconnect-during-purge"].contains(mode) else {
             throw SyncError.invalidPath
         }
         let root = URL(fileURLWithPath: path, isDirectory: true)
@@ -85,25 +87,41 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
               !FileManager.default.fileExists(atPath: root.appendingPathComponent("ready.json").path) else {
             throw SyncError.invalidPath
         }
+        let appSupport = ["enrollment-persist-failure", "capability-persist-failure",
+                          "revocation-cache-delete-failure", "reconnect-during-purge"].contains(mode)
+            ? try mobileAppSupport() : nil
+        if mode == "enrollment-persist-failure" {
+            try installSymlinkFault(at: try XCTUnwrap(appSupport).appendingPathComponent("connections.json"), root: root)
+        }
         let sourceRoot = root.appendingPathComponent("Source")
         let file = sourceRoot.appendingPathComponent("docs/read.md")
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-        let grantedProject = ["revoke-after-draw", "late-project-revoke"].contains(mode)
+        let grantedProject = ["revoke-after-draw", "late-project-revoke",
+                              "revocation-cache-delete-failure", "reconnect-during-purge"].contains(mode)
         try Data((mode == "revoke-after-draw"
                   ? "# Granted rubric source\n\nReader cache must be removed after revocation.\n"
                   : mode == "late-project-revoke"
                     ? "# Delayed rubric source\n\nLate project responses must not resurrect the cache.\n"
+                    : mode == "revocation-cache-delete-failure"
+                      ? "# Revocation persistence source\n\nCache deletion failures must remain fail closed.\n"
+                      : mode == "reconnect-during-purge"
+                        ? "# Reconnect purge source\n\nA re-granted cache must survive stale cleanup.\n"
                     : "# Capture-only source\n").utf8).write(to: file)
         let selection = try CorpusSelection(folders: ["docs"], documents: [])
         let descriptor = SharedProjectDescriptor(id: UUID(),
             name: mode == "revoke-after-draw" ? "QA · Granted rubric"
-                : mode == "late-project-revoke" ? "QA · Delayed rubric" : "QA · Capture only",
+                : mode == "late-project-revoke" ? "QA · Delayed rubric"
+                : mode == "revocation-cache-delete-failure" ? "QA · Cache failure"
+                : mode == "reconnect-during-purge" ? "QA · Regrant purge" : "QA · Capture only",
             scope: try CorpusScope(folder: ""), selection: selection)
         let source = SharedProjectSource(descriptor: descriptor, rootURL: sourceRoot) {
             try await ProjectCorpusReader().snapshot(root: sourceRoot, selection: selection)
         }
         let fault = mode == "lost-ack" ? LostRubricAcknowledgementFault(root: root) : nil
         let delayedProject = mode == "late-project-revoke" ? DelayedProjectRevocationGate(root: root) : nil
+        let capabilityFault = mode == "capability-persist-failure" ? CapabilityRefreshFault(root: root) : nil
+        let purgeGate = mode == "reconnect-during-purge"
+            ? try ReconnectDuringPurgeGate(root: root, container: try XCTUnwrap(appSupport)) : nil
         let runtime = DesktopDirectRuntime(root: root.appendingPathComponent("Service"),
             credentials: NativeMobileFixtureCredentials(), now: { Date() },
             makeListener: { identity, downstream in
@@ -111,12 +129,14 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                     let response = await downstream(request)
                     if let fault { return await fault.response(for: request, after: response) }
                     if let delayedProject { return await delayedProject.response(for: request, after: response) }
+                    if let capabilityFault { return await capabilityFault.response(for: request, after: response) }
                     return response
                 }
             })
         let port = UInt16(ProcessInfo.processInfo.environment["LEONARDO_MOBILE_RUBRIC_QA_PORT"] ?? "46994")!
         _ = try await runtime.start(host: "127.0.0.1", port: port, projects: [source])
         var deviceID: UUID?
+        var regrantDeviceID: UUID?
         var requestID: UUID?
         var finished = false
         do {
@@ -143,6 +163,9 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                             try writeRubricReady(root: root, requestID: try XCTUnwrap(requestID),
                                                  deviceID: pairing.id, projectCount: grants.count)
                         }
+                    case "strip-capability":
+                        guard mode == "capability-persist-failure" else { throw SyncError.invalidPath }
+                        try stripSavedCapability(at: try XCTUnwrap(appSupport).appendingPathComponent("connections.json"))
                     case "request":
                         let id = try XCTUnwrap(deviceID)
                         requestID = try await createRubricRequest(runtime: runtime, deviceID: id)
@@ -157,12 +180,41 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                     case "arm-project":
                         guard mode == "late-project-revoke", let delayedProject else { throw SyncError.invalidPath }
                         await delayedProject.arm()
+                    case "arm-capability-failure":
+                        guard mode == "capability-persist-failure", let capabilityFault else { throw SyncError.invalidPath }
+                        try installSymlinkFault(at: try XCTUnwrap(appSupport).appendingPathComponent("connections.json"), root: root)
+                        await capabilityFault.arm()
+                    case "arm-cache-delete-failure":
+                        guard mode == "revocation-cache-delete-failure" else { throw SyncError.invalidPath }
+                        try installSymlinkFault(at: try XCTUnwrap(appSupport).appendingPathComponent("Corpus")
+                            .appendingPathComponent(descriptor.id.uuidString + ".json"), root: root)
+                    case "arm-reconnect-purge":
+                        guard mode == "reconnect-during-purge", let purgeGate else { throw SyncError.invalidPath }
+                        try await purgeGate.arm(projectID: descriptor.id)
+                    case "approve-regrant":
+                        guard mode == "reconnect-during-purge" else { throw SyncError.invalidPath }
+                        let registry = try await runtime.consentState()
+                        let pairing = try XCTUnwrap(registry.requests.first)
+                        XCTAssertEqual(pairing.kind, .readOnly)
+                        try await runtime.approve(requestID: pairing.id, code: pairing.comparisonCode,
+                                                  projectIDs: [descriptor.id])
+                        regrantDeviceID = pairing.id
                     case "revoke":
-                        guard ["revoke-after-draw", "late-project-revoke"].contains(mode) else { throw SyncError.invalidPath }
+                        guard ["revoke-after-draw", "late-project-revoke",
+                               "revocation-cache-delete-failure", "reconnect-during-purge"].contains(mode) else {
+                            throw SyncError.invalidPath
+                        }
                         if mode == "late-project-revoke", let delayedProject {
                             await delayedProject.markRevocationRequested()
                         }
                         try await runtime.revoke(deviceID: try XCTUnwrap(deviceID))
+                    case "release-cache-delete":
+                        guard mode == "revocation-cache-delete-failure" else { throw SyncError.invalidPath }
+                        try removeSymlinkFault(at: try XCTUnwrap(appSupport).appendingPathComponent("Corpus")
+                            .appendingPathComponent(descriptor.id.uuidString + ".json"))
+                    case "release-purge":
+                        guard mode == "reconnect-during-purge", let purgeGate else { throw SyncError.invalidPath }
+                        await purgeGate.release()
                     case "release-project":
                         guard mode == "late-project-revoke", let delayedProject else { throw SyncError.invalidPath }
                         await delayedProject.release()
@@ -176,6 +228,22 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                                            "projectID": descriptor.id.uuidString,
                                            "revoked": revoked],
                                           to: root.appendingPathComponent("late-project-revocation.json"))
+                        } else if mode == "reconnect-during-purge" {
+                            let registry = try await runtime.consentState()
+                            let original = try XCTUnwrap(deviceID)
+                            let regrant = try XCTUnwrap(regrantDeviceID)
+                            XCTAssertTrue(registry.devices.first(where: { $0.id == original })?.revoked == true)
+                            XCTAssertFalse(registry.devices.first(where: { $0.id == regrant })?.revoked == true)
+                            await purgeGate?.finish()
+                            try writeJSON(["deviceID": original.uuidString,
+                                           "regrantDeviceID": regrant.uuidString,
+                                           "projectID": descriptor.id.uuidString,
+                                           "stalePurgeDidNotDeleteRegrant": true],
+                                          to: root.appendingPathComponent("reconnect-during-purge.json"))
+                        } else if ["enrollment-persist-failure", "capability-persist-failure",
+                                   "revocation-cache-delete-failure"].contains(mode) {
+                            try writeJSON(["mode": mode, "failureSurface": mode],
+                                          to: root.appendingPathComponent("mobile-persistence-failure.json"))
                         } else {
                             let id = try XCTUnwrap(requestID)
                             if mode == "revoke-after-draw" {
@@ -230,10 +298,11 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                 try await Task.sleep(for: .milliseconds(100))
             }
             XCTAssertTrue(finished, "Native rubric acceptance did not finish before fixture deadline")
-            XCTAssertNotNil(deviceID)
-            if mode != "late-project-revoke" { XCTAssertNotNil(requestID) }
+            if !["enrollment-persist-failure"].contains(mode) { XCTAssertNotNil(deviceID) }
+            if ["happy", "lost-ack", "revoke-after-draw"].contains(mode) { XCTAssertNotNil(requestID) }
             try await runtime.stop()
         } catch {
+            await purgeGate?.finish()
             try? await runtime.stop()
             throw error
         }
@@ -252,6 +321,46 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
 
     private func writeJSON(_ value: Any, to url: URL) throws {
         try JSONSerialization.data(withJSONObject: value, options: []).write(to: url, options: .atomic)
+    }
+
+    private func mobileAppSupport() throws -> URL {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_MOBILE_RUBRIC_QA_CONTAINER"] else {
+            throw SyncError.invalidPath
+        }
+        let container = URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
+        let support = container.appendingPathComponent("Library/Application Support/LittleLeonardo", isDirectory: true)
+        try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+        return support
+    }
+
+    private func installSymlinkFault(at destination: URL, root: URL) throws {
+        if FileManager.default.fileExists(atPath: destination.path) ||
+            (try? FileManager.default.destinationOfSymbolicLink(atPath: destination.path)) != nil {
+            try FileManager.default.removeItem(at: destination)
+        }
+        let target = root.appendingPathComponent("fault-target-\(UUID().uuidString)")
+        try Data("fault-target\n".utf8).write(to: target, options: .atomic)
+        try FileManager.default.createSymbolicLink(at: destination, withDestinationURL: target)
+    }
+
+    private func removeSymlinkFault(at destination: URL) throws {
+        guard (try? FileManager.default.destinationOfSymbolicLink(atPath: destination.path)) != nil else {
+            throw SyncError.invalidPath
+        }
+        try FileManager.default.removeItem(at: destination)
+    }
+
+    private func stripSavedCapability(at connectionURL: URL) throws {
+        let object = try JSONSerialization.jsonObject(with: Data(contentsOf: connectionURL))
+        guard var records = object as? [[String: Any]], !records.isEmpty else { throw SyncError.invalidSnapshot }
+        for index in records.indices {
+            records[index]["capabilities"] = []
+            records[index]["capabilityRefreshAttempted"] = false
+            records[index]["revoked"] = false
+            records[index]["pendingPurgeProjectIDs"] = []
+        }
+        let data = try JSONSerialization.data(withJSONObject: records, options: [])
+        try data.write(to: connectionURL, options: .atomic)
     }
 }
 
@@ -368,6 +477,109 @@ private actor DelayedProjectRevocationGate {
             try? Data("observed\n".utf8).write(to: root.appendingPathComponent("revocation-observed.txt"), options: .atomic)
         }
         return response
+    }
+}
+
+private actor CapabilityRefreshFault {
+    private let root: URL
+    private var armed = false
+
+    init(root: URL) { self.root = root }
+
+    func arm() {
+        armed = true
+        try? Data("armed\n".utf8).write(to: root.appendingPathComponent("capability-failure-armed.txt"), options: .atomic)
+    }
+
+    func response(for request: HTTPRequest, after response: HTTPResponse) -> HTTPResponse {
+        guard !armed, request.method == "GET", request.path.hasSuffix("/status"), response.status == 200,
+              let object = try? JSONSerialization.jsonObject(with: response.body),
+              var value = object as? [String: Any] else { return response }
+        value["capabilities"] = []
+        guard let body = try? JSONSerialization.data(withJSONObject: value, options: []) else { return response }
+        return HTTPResponse(status: response.status, body: body)
+    }
+}
+
+private actor ReconnectDuringPurgeGate {
+    private let root: URL
+    private let container: URL
+    private var fifo: URL?
+    private var payload: URL?
+    private var releaseMarker: URL?
+    private var process: Process?
+
+    init(root: URL, container: URL) {
+        self.root = root
+        self.container = container
+    }
+
+    func arm(projectID: UUID) throws {
+        guard process == nil else { throw SyncError.invalidPath }
+        let projectURL = container.appendingPathComponent("Library/Application Support/LittleLeonardo/Corpus")
+            .appendingPathComponent(projectID.uuidString + ".json")
+        guard FileManager.default.fileExists(atPath: projectURL.path) else { throw SyncError.invalidPath }
+        let fifoURL = root.appendingPathComponent("purge-\(projectID.uuidString).fifo")
+        let payloadURL = root.appendingPathComponent("purge-\(projectID.uuidString).payload")
+        let releaseURL = root.appendingPathComponent("purge-release.txt")
+        try? FileManager.default.removeItem(at: fifoURL)
+        try? FileManager.default.removeItem(at: payloadURL)
+        try? FileManager.default.removeItem(at: releaseURL)
+        try Data(contentsOf: projectURL).write(to: payloadURL, options: .atomic)
+        try FileManager.default.removeItem(at: projectURL)
+        try run("/usr/bin/mkfifo", arguments: [fifoURL.path])
+
+        let opened = root.appendingPathComponent("purge-fifo-reader-opened.txt")
+        let written = root.appendingPathComponent("purge-payload-written.txt")
+        let script = "exec 3>\"$FIFO\"; printf 'opened\\n' > \"$OPENED\"; while [ ! -f \"$RELEASE\" ]; do /bin/sleep 0.05; done; /bin/cat \"$PAYLOAD\" >&3; printf 'written\\n' > \"$WRITTEN\""
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/sh")
+        process.arguments = ["-c", script]
+        var environment = ProcessInfo.processInfo.environment
+        environment["FIFO"] = fifoURL.path
+        environment["OPENED"] = opened.path
+        environment["RELEASE"] = releaseURL.path
+        environment["PAYLOAD"] = payloadURL.path
+        environment["WRITTEN"] = written.path
+        process.environment = environment
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        try process.run()
+        fifo = fifoURL
+        payload = payloadURL
+        releaseMarker = releaseURL
+        self.process = process
+        try Data("armed\n".utf8).write(to: root.appendingPathComponent("purge-fifo-armed.txt"), options: .atomic)
+    }
+
+    func release() async {
+        guard let releaseMarker else { return }
+        try? Data("release\n".utf8).write(to: releaseMarker, options: .atomic)
+        let written = root.appendingPathComponent("purge-payload-written.txt")
+        for _ in 0..<200 {
+            if FileManager.default.fileExists(atPath: written.path) { return }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+    }
+
+    func finish() {
+        if let process, process.isRunning { process.terminate() }
+        process?.waitUntilExit()
+        if let fifo { try? FileManager.default.removeItem(at: fifo) }
+        if let payload { try? FileManager.default.removeItem(at: payload) }
+        if let releaseMarker { try? FileManager.default.removeItem(at: releaseMarker) }
+        process = nil
+    }
+
+    private func run(_ executable: String, arguments: [String]) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executable)
+        process.arguments = arguments
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        try process.run()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { throw SyncError.invalidPath }
     }
 }
 #endif

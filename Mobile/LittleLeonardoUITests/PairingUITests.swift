@@ -319,6 +319,142 @@ final class PairingUITests: XCTestCase {
         try advanceDirectFixture("finish")
     }
 
+    @MainActor func testEnrollmentPersistenceFailureFailsClosedAfterRelaunch() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["LEONARDO_DIRECT_RUBRIC_QA"] == "1",
+              environment["LEONARDO_MOBILE_RUBRIC_QA_MODE"] == "enrollment-persist-failure",
+              let port = environment["LEONARDO_DIRECT_QA_PORT"], UInt16(port) != nil,
+              environment["LEONARDO_DIRECT_QA_PHASE_FILE"] != nil else {
+            throw XCTSkip("Requires the enrollment persistence failure fixture")
+        }
+        let app = XCUIApplication()
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        requestManualConnection(app, port: port)
+        let failure = app.alerts["No se pudo completar la operación"]
+        XCTAssertTrue(failure.waitForExistence(timeout: 30),
+                      "A failed enrollment snapshot must be surfaced instead of publishing a connection")
+        XCTAssertTrue(failure.staticTexts.firstMatch.label.contains("vínculo") ||
+                      failure.staticTexts.firstMatch.label.contains("Invalid"))
+        failure.buttons["Aceptar"].tap()
+        closePairingIfPresent(app)
+        app.terminate()
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        XCTAssertFalse(app.staticTexts["QA · Capture only"].exists,
+                       "A connection whose local snapshot failed must not reappear after relaunch")
+        try advanceDirectFixture("finish")
+    }
+
+    @MainActor func testCapabilityRefreshPersistenceFailureFailsClosed() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["LEONARDO_DIRECT_RUBRIC_QA"] == "1",
+              environment["LEONARDO_MOBILE_RUBRIC_QA_MODE"] == "capability-persist-failure",
+              let port = environment["LEONARDO_DIRECT_QA_PORT"], UInt16(port) != nil,
+              environment["LEONARDO_DIRECT_QA_PHASE_FILE"] != nil else {
+            throw XCTSkip("Requires the capability persistence failure fixture")
+        }
+        let app = XCUIApplication()
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        requestManualConnection(app, port: port)
+        let code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
+        XCTAssertTrue(code.waitForExistence(timeout: 20))
+        try advanceDirectFixture("approve")
+        try advanceDirectFixture("strip-capability")
+        app.terminate()
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        try advanceDirectFixture("arm-capability-failure")
+        app.buttons["Sincronizar"].firstMatch.tap()
+        let failure = app.alerts["No se pudo completar la operación"]
+        XCTAssertTrue(failure.waitForExistence(timeout: 30),
+                      "A failed capability snapshot must remain an explicit retryable error")
+        failure.buttons["Aceptar"].tap()
+        app.terminate()
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        XCTAssertFalse(app.buttons["rubric-request-banner"].exists)
+        try advanceDirectFixture("finish")
+    }
+
+    @MainActor func testRevocationCacheDeletionFailureRetriesAfterRelaunch() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["LEONARDO_DIRECT_RUBRIC_QA"] == "1",
+              environment["LEONARDO_MOBILE_RUBRIC_QA_MODE"] == "revocation-cache-delete-failure",
+              let port = environment["LEONARDO_DIRECT_QA_PORT"], UInt16(port) != nil,
+              environment["LEONARDO_DIRECT_QA_PHASE_FILE"] != nil else {
+            throw XCTSkip("Requires the revocation cache deletion failure fixture")
+        }
+        let app = XCUIApplication()
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        requestManualConnection(app, port: port)
+        let code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
+        XCTAssertTrue(code.waitForExistence(timeout: 20))
+        try advanceDirectFixture("approve")
+        app.buttons["Sincronizar"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["QA · Cache failure"].waitForExistence(timeout: 30))
+        try advanceDirectFixture("arm-cache-delete-failure")
+        try advanceDirectFixture("revoke")
+        let failure = app.alerts["No se pudo completar la operación"]
+        XCTAssertTrue(failure.waitForExistence(timeout: 30),
+                      "A direct-cache deletion failure must be surfaced and kept retryable")
+        XCTAssertTrue(failure.staticTexts.firstMatch.label.contains("caché") ||
+                      failure.staticTexts.firstMatch.label.contains("cache"))
+        failure.buttons["Aceptar"].tap()
+        app.terminate()
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        try advanceDirectFixture("release-cache-delete")
+        app.terminate()
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        XCTAssertFalse(app.staticTexts["QA · Cache failure"].waitForExistence(timeout: 8),
+                       "A successful retry must remove the revoked direct cache")
+        try advanceDirectFixture("finish")
+    }
+
+    @MainActor func testReconnectDuringRevocationPurgePreservesNewCache() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["LEONARDO_DIRECT_RUBRIC_QA"] == "1",
+              environment["LEONARDO_MOBILE_RUBRIC_QA_MODE"] == "reconnect-during-purge",
+              let port = environment["LEONARDO_DIRECT_QA_PORT"], UInt16(port) != nil,
+              environment["LEONARDO_DIRECT_QA_PHASE_FILE"] != nil else {
+            throw XCTSkip("Requires the reconnect-during-purge fixture")
+        }
+        let app = XCUIApplication()
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        requestManualConnection(app, port: port)
+        var code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
+        XCTAssertTrue(code.waitForExistence(timeout: 20))
+        try advanceDirectFixture("approve")
+        app.buttons["Sincronizar"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["QA · Regrant purge"].waitForExistence(timeout: 30))
+        try advanceDirectFixture("arm-reconnect-purge")
+        XCTAssertTrue(waitForDirectFixtureFile("purge-fifo-armed.txt", timeout: 10))
+        try advanceDirectFixture("revoke")
+        XCTAssertTrue(waitForDirectFixtureFile("purge-fifo-reader-opened.txt", timeout: 20),
+                      "The revocation purge must be held before reconnecting")
+
+        requestManualConnection(app, port: port)
+        code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
+        XCTAssertTrue(code.waitForExistence(timeout: 20))
+        try advanceDirectFixture("approve-regrant")
+        try advanceDirectFixture("release-purge")
+        dismissMobileFailureIfPresent(app)
+        app.buttons["Sincronizar"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["QA · Regrant purge"].waitForExistence(timeout: 30),
+                      "The re-granted project must be cached after the stale purge is released")
+        app.terminate()
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        XCTAssertTrue(app.staticTexts["QA · Regrant purge"].waitForExistence(timeout: 20),
+                      "The re-granted cache must survive relaunch")
+        try advanceDirectFixture("finish")
+    }
+
     @MainActor private func waitForDocumentSyncToFinish(_ app: XCUIApplication, timeout: TimeInterval) -> Bool {
         let documentSync = app.buttons["document-sync"]
         let readiness = XCTNSPredicateExpectation(
@@ -332,6 +468,30 @@ final class PairingUITests: XCTestCase {
         failure.buttons["Aceptar"].tap()
         XCTAssertFalse(failure.waitForExistence(timeout: 3),
                        "The native failure alert must be dismissed before capture")
+    }
+
+    @MainActor private func dismissMobileFailureIfPresent(_ app: XCUIApplication) {
+        let failure = app.alerts["No se pudo completar la operación"]
+        guard failure.waitForExistence(timeout: 2) else { return }
+        failure.buttons["Aceptar"].tap()
+    }
+
+    @MainActor private func closePairingIfPresent(_ app: XCUIApplication) {
+        let close = app.buttons["Cerrar"].firstMatch
+        if close.waitForExistence(timeout: 2) { close.tap() }
+    }
+
+    @MainActor private func requestManualConnection(_ app: XCUIApplication, port: String) {
+        app.buttons["open-pairing"].tap()
+        app.segmentedControls["pairing-method"].buttons["IP y puerto"].tap()
+        let host = app.textFields["pairing-host"], portField = app.textFields["pairing-port"]
+        host.tap(); host.typeText("127.0.0.1")
+        portField.tap()
+        if let value = portField.value as? String {
+            portField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+        }
+        portField.typeText(port)
+        app.buttons["Solicitar conexión"].tap()
     }
 
     @MainActor private func waitForDirectFixtureFile(_ name: String, timeout: TimeInterval) -> Bool {
