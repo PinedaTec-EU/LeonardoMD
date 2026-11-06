@@ -4,50 +4,6 @@ import LeonardoCore
 import LeonardoSync
 import LeonardoSyncTransport
 
-private struct MobileDirectConnection: Codable {
-    let connectionID: UUID
-    let deviceID: UUID
-    let endpoint: URL
-    let fingerprint: Data
-    var projectIDs: Set<UUID>
-    var comparisonCode: String?
-    var capabilities: Set<DirectCapability>
-    var capabilityRefreshAttempted: Bool
-    var revoked: Bool
-    var pendingPurgeProjectIDs: Set<UUID>
-
-    init(connectionID: UUID = UUID(), deviceID: UUID, endpoint: URL, fingerprint: Data,
-         projectIDs: Set<UUID>, comparisonCode: String?, capabilities: Set<DirectCapability>,
-         capabilityRefreshAttempted: Bool = false, revoked: Bool = false,
-         pendingPurgeProjectIDs: Set<UUID> = []) {
-        self.connectionID = connectionID; self.deviceID = deviceID; self.endpoint = endpoint
-        self.fingerprint = fingerprint; self.projectIDs = projectIDs; self.comparisonCode = comparisonCode
-        self.capabilities = capabilities; self.capabilityRefreshAttempted = capabilityRefreshAttempted
-        self.revoked = revoked; self.pendingPurgeProjectIDs = pendingPurgeProjectIDs
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case connectionID, deviceID, endpoint, fingerprint, projectIDs, comparisonCode, capabilities,
-             capabilityRefreshAttempted, revoked, pendingPurgeProjectIDs
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let deviceID = try container.decode(UUID.self, forKey: .deviceID)
-        self.init(connectionID: try container.decodeIfPresent(UUID.self, forKey: .connectionID) ?? deviceID,
-                  deviceID: deviceID, endpoint: try container.decode(URL.self, forKey: .endpoint),
-                  fingerprint: try container.decode(Data.self, forKey: .fingerprint),
-                  projectIDs: try container.decodeIfPresent(Set<UUID>.self, forKey: .projectIDs) ?? [],
-                  comparisonCode: try container.decodeIfPresent(String.self, forKey: .comparisonCode),
-                  capabilities: try container.decodeIfPresent(Set<DirectCapability>.self, forKey: .capabilities) ?? [],
-                  capabilityRefreshAttempted: try container.decodeIfPresent(Bool.self,
-                      forKey: .capabilityRefreshAttempted) ?? false,
-                  revoked: try container.decodeIfPresent(Bool.self, forKey: .revoked) ?? false,
-                  pendingPurgeProjectIDs: try container.decodeIfPresent(Set<UUID>.self,
-                      forKey: .pendingPurgeProjectIDs) ?? [])
-    }
-}
-
 /// Read-only mobile application boundary. Desktop proposal/write APIs are not exposed.
 @MainActor @Observable
 final class MobileLibrary {
@@ -58,7 +14,7 @@ final class MobileLibrary {
     private(set) var connecting = false
     private(set) var comparisonCode: String?
     private let store: OfflineCorpusStore
-    private let connectionURL: URL
+    private let connectionStore: MobileDirectConnectionStore
     private let credentials = SecureCredentialStore()
     private let draftStore: MobileRubricDraftStore
     private let now: @Sendable () -> Date
@@ -90,7 +46,8 @@ final class MobileLibrary {
         let root = rootURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("LittleLeonardo/Corpus", isDirectory: true)
         store = OfflineCorpusStore(root: root)
-        connectionURL = root.deletingLastPathComponent().appendingPathComponent("connections.json")
+        connectionStore = MobileDirectConnectionStore(url: root.deletingLastPathComponent()
+            .appendingPathComponent("connections.json"))
         draftStore = MobileRubricDraftStore(url: root.deletingLastPathComponent()
             .appendingPathComponent("Rubrics/drafts.json"))
         self.now = now
@@ -141,21 +98,12 @@ final class MobileLibrary {
         cacheEpoch &+= 1
     }
 
-    private func connectionChanged(_ old: MobileDirectConnection,
-                                   _ new: MobileDirectConnection) -> Bool {
-        old.projectIDs != new.projectIDs || old.comparisonCode != new.comparisonCode
-            || old.capabilities != new.capabilities
-            || old.capabilityRefreshAttempted != new.capabilityRefreshAttempted
-            || old.revoked != new.revoked
-            || old.pendingPurgeProjectIDs != new.pendingPurgeProjectIDs
-    }
-
     private func commitConnection(_ connection: MobileDirectConnection,
                                   expected token: ConnectionToken) throws -> ConnectionToken? {
         guard isCurrentCacheOperation(token), let index = connectionIndex(for: token) else { return nil }
         var nextConnections = connections
         nextConnections[index] = connection
-        try persistConnections(nextConnections)
+        try connectionStore.save(nextConnections)
         invalidateCache()
         connections = nextConnections
         return self.token(for: connection)
@@ -172,36 +120,16 @@ final class MobileLibrary {
             try await waitForPendingRubricDraftWrite()
             var loadedConnections = connections
             var loadedComparisonCode = comparisonCode
-            if FileManager.default.fileExists(atPath: connectionURL.path) {
-                let values = try connectionURL.resourceValues(forKeys: [.isSymbolicLinkKey, .fileSizeKey])
-                guard values.isSymbolicLink != true, (values.fileSize ?? 0) <= 2 * 1_024 * 1_024 else { throw SyncError.invalidSnapshot }
-                loadedConnections = try JSONDecoder().decode([MobileDirectConnection].self, from: Data(contentsOf: connectionURL))
-                loadedComparisonCode = loadedConnections.first(where: { $0.comparisonCode != nil })?.comparisonCode
-            }
+            loadedConnections = try connectionStore.load()
+            loadedComparisonCode = loadedConnections.first(where: { $0.comparisonCode != nil })?.comparisonCode
             let loadedDrafts = try await draftStore.all(now: now())
-            var activeProjectIDs = Set<UUID>()
-            var revokedProjectIDs = Set<UUID>()
-            for connection in loadedConnections where !connection.revoked {
-                guard (try? await credentials.credential(deviceID: connection.deviceID)) != nil else { continue }
-                activeProjectIDs.formUnion(connection.projectIDs)
-            }
-            for connection in loadedConnections where connection.revoked {
-                revokedProjectIDs.formUnion(connection.projectIDs)
-                revokedProjectIDs.formUnion(connection.pendingPurgeProjectIDs)
-            }
-            var loaded: [OfflineProject] = []
-            for id in try await store.projectIDs() {
-                guard !revokedProjectIDs.contains(id) || activeProjectIDs.contains(id) else { continue }
-                if let project = try await store.load(id: id),
-                   project.isRecoveryArchive || !revokedProjectIDs.contains(id) || activeProjectIDs.contains(id) {
-                    loaded.append(project)
-                }
-            }
+            let loaded = try await connectionStore.loadVisibleProjects(connections: loadedConnections,
+                                                                         credentials: credentials, corpus: store)
             guard cacheEpoch == loadCacheEpoch, authorizationEpoch == loadAuthorizationEpoch else { return }
             connections = loadedConnections
             comparisonCode = loadedComparisonCode
             recoverableRubricDrafts = loadedDrafts
-            projects = loaded.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            projects = loaded
             await retryPendingRevocationPurges()
             await reconcileRubricDrafts()
         } catch { self.error = error.localizedDescription }
@@ -256,7 +184,7 @@ final class MobileLibrary {
         var nextConnections = connections
         nextConnections.append(connection)
         do {
-            try persistConnections(nextConnections)
+            try connectionStore.save(nextConnections)
         } catch {
             try? await credentials.remove(deviceID: enrollment.deviceID)
             throw error
@@ -283,8 +211,8 @@ final class MobileLibrary {
                 guard hasCurrentIdentity(token) else { continue }
                 if status.access == .pending { continue }
                 if status.access == .authorized {
-                    status = try await refreshCapabilities(status, connection: &connection,
-                                                           client: client, credential: credential)
+                    status = try await MobileDirectConnectionStore.refreshCapabilities(status,
+                        connection: &connection, client: client, credential: credential)
                     guard isCurrentCacheOperation(token) else { continue }
                 } else {
                     await handleConfirmedRevocation(for: token,
@@ -310,7 +238,7 @@ final class MobileLibrary {
                           try await saveDirectProject(project, expected: token) else { continue connectionLoop }
                 }
                 guard isCurrentCacheOperation(token) else { continue }
-                if let current = currentConnection(for: token), connectionChanged(current, connection) {
+                if let current = currentConnection(for: token), connection.hasChanges(from: current) {
                     guard try commitConnection(connection, expected: token) != nil else { continue }
                 }
             } catch SyncError.revoked {
@@ -326,34 +254,6 @@ final class MobileLibrary {
         }
         comparisonCode = connections.first(where: { $0.comparisonCode != nil })?.comparisonCode
         projects.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-    }
-
-    private func refreshCapabilities(_ status: DirectDeviceStatus,
-                                     connection: inout MobileDirectConnection,
-                                     client: DirectEnrollmentClient,
-                                     credential: String) async throws -> DirectDeviceStatus {
-        guard status.capabilities.contains(.rubricExchangeV1) else {
-            connection.capabilities = []
-            return status
-        }
-        guard !connection.capabilities.contains(.rubricExchangeV1) else { return status }
-        guard !connection.capabilityRefreshAttempted else { return status }
-        do {
-            let receipt = try await client.updateCapabilities(deviceID: connection.deviceID,
-                                                               credential: credential)
-            guard receipt.acceptedCapabilities?.contains(.rubricExchangeV1) == true else {
-                throw RubricExchangeError.unsupported
-            }
-            connection.capabilities = [.rubricExchangeV1]
-            connection.capabilityRefreshAttempted = false
-        } catch RubricExchangeError.unsupported {
-            // An older Mac keeps the reader usable but cannot safely claim a
-            // handler it does not expose. A later explicit reconnect can try
-            // the refresh again.
-            connection.capabilityRefreshAttempted = true
-            connection.capabilities = []
-        }
-        return status
     }
 
     /// Removes only direct-sync caches after confirmed revocation. Legacy
@@ -417,7 +317,7 @@ final class MobileLibrary {
         nextConnections[index] = revoked
         var failures: [String] = []
         do {
-            try persistConnections(nextConnections)
+            try connectionStore.save(nextConnections)
         } catch {
             failures.append("No se pudo guardar el vínculo revocado: \(error.localizedDescription)")
         }
@@ -445,7 +345,7 @@ final class MobileLibrary {
             cleanedConnection.pendingPurgeProjectIDs.removeAll()
             cleaned[currentIndex] = cleanedConnection
             do {
-                try persistConnections(cleaned)
+                try connectionStore.save(cleaned)
                 connections = cleaned
             } catch {
                 failures.append("No se pudo confirmar la limpieza de la caché revocada: \(error.localizedDescription)")
@@ -468,7 +368,7 @@ final class MobileLibrary {
                 var cleaned = nextConnections[index]
                 cleaned.pendingPurgeProjectIDs.removeAll()
                 nextConnections[index] = cleaned
-                try persistConnections(nextConnections)
+                try connectionStore.save(nextConnections)
                 connections = nextConnections
             } catch {
                 self.error = "No se pudo reintentar la limpieza de la caché revocada: \(error.localizedDescription)"
@@ -541,10 +441,10 @@ final class MobileLibrary {
                     continue
                 }
                 let previous = connection
-                _ = try await refreshCapabilities(status, connection: &connection,
-                                                  client: client, credential: credential)
+                _ = try await MobileDirectConnectionStore.refreshCapabilities(status,
+                    connection: &connection, client: client, credential: credential)
                 guard isCurrentCacheOperation(token) else { continue }
-                if connectionChanged(previous, connection) {
+                if connection.hasChanges(from: previous) {
                     guard let committed = try commitConnection(connection, expected: token) else { continue }
                     token = committed
                     operationToken = token
@@ -881,16 +781,6 @@ final class MobileLibrary {
         } catch {
             self.error = error.localizedDescription
         }
-    }
-
-    private func persistConnections(_ snapshot: [MobileDirectConnection]) throws {
-        try FileManager.default.createDirectory(at: connectionURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        let values = try? connectionURL.resourceValues(forKeys: [.isSymbolicLinkKey])
-        guard values?.isSymbolicLink != true else { throw SyncError.invalidPath }
-        let data = try JSONEncoder().encode(snapshot)
-        guard data.count <= 2 * 1_024 * 1_024 else { throw SyncError.sizeLimitExceeded }
-        try data.write(to: connectionURL, options: .atomic)
-        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: connectionURL.path)
     }
 
 }
