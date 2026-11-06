@@ -1,0 +1,18 @@
+{
+  "browser": "N/A",
+  "capture_mode": "native production SwiftUI alert window screenshot, captured with screencapture",
+  "captured_at": "2026-11-06T10:04:55Z",
+  "head": "38abda384e637e4449e388e9ea6a7f1bddb5db39",
+  "language": "en",
+  "limitations": "Synthetic fixture; no fresh packaged-process startup or installation claim",
+  "os": "Version 27.0.1 (Build 26A434)",
+  "pixel_dimensions": [
+    1200,
+    1064
+  ],
+  "surface": "Production DesktopPeerPreferencesView alert; synthetic authorized project-size failure",
+  "viewport_points": [
+    260,
+    320
+  ]
+}
