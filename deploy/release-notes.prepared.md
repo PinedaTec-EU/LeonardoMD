@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1022
+
+- #375 Update: blend help illustrations into Leonardo Classic ([#376](https://github.com/PinedaTec-EU/LeonardoMD/pull/376))
+
+<p>Help illustrations now blend into the document background with transparent Leonardo Classic artwork and localized captions, while new guide revisions preserve existing personal copies.</p>
+
+Source: `1fd3c3410a812d8043800fce325aa21404a21100`. Delta: `{"build": 5}`.
+
 ## 0.3.1017
 
 - #343 Added: package owner-only iOS distribution ([#371](https://github.com/PinedaTec-EU/LeonardoMD/pull/371))

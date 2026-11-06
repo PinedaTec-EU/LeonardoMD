@@ -889,9 +889,19 @@
       "pr": 371,
       "summary": "Adds owner-only iOS archive/export and Apple validation with canonical versioning, privacy metadata and branded assets; binds archives to clean committed source, documents #367's immutable rubric request identity, and keeps keychain signing process-scoped.",
       "to_version": "0.3.1017"
+    },
+    {
+      "delta": {
+        "build": 5
+      },
+      "from_version": "0.3.1017",
+      "merge_sha": "1fd3c3410a812d8043800fce325aa21404a21100",
+      "pr": 376,
+      "summary": "Help illustrations now blend into the document background with transparent Leonardo Classic artwork and localized captions, while new guide revisions preserve existing personal copies.",
+      "to_version": "0.3.1022"
     }
   ],
-  "current_version": "0.3.1017",
+  "current_version": "0.3.1022",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
