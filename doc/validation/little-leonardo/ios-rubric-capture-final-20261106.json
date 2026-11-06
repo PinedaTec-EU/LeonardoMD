@@ -1,0 +1,162 @@
+{
+  "schemaVersion": "native-ios-evidence-v2",
+  "issue": 342,
+  "capture": "ios-rubric-capture-final-20261106-sent.png",
+  "captureSha256": "c44cf1f3c0388bd4af0c62bc0f8bcbf385e756477b5a822a79e5882088f9db58",
+  "sourceCommit": "8574debcbfc5bb0ffb7d4dc6ae71f38425222a18",
+  "buildDelta": 33,
+  "capturedAt": "2026-11-06T04:06:05.293+01:00",
+  "testIdentifier": "PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS()",
+  "testResult": "/tmp/leonardo-native-happy-final.xcresult",
+  "simulator": {
+    "name": "LittleLeonardo Rubric342 QA 20261105",
+    "model": "iPhone18Pro",
+    "os": "iOS 27.0",
+    "udid": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B",
+    "screenshotPixels": { "width": 1206, "height": 2622 },
+    "viewportPoints": { "width": 402, "height": 874 },
+    "browser": null,
+    "viewportCSS": null
+  },
+  "transport": "real pinned HTTPS fixture with synthetic TLS identity and owned loopback Mac authority",
+  "captureProvenance": {
+    "attachmentManifest": "/tmp/leonardo-happy-final-attachments.4LSyy1/manifest.json",
+    "attachmentManifestSha256": "fd7361df975cdca118c261294d85074e513301df3607f4b6202b55ae3ef61e80",
+    "qaRoot": "/tmp/leonardo-qa-happy-final.NUbnJV",
+    "response": "/tmp/leonardo-qa-happy-final.NUbnJV/rubric-response.json",
+    "responseSha256": "e36a0134a253c88229c544573664904dacd1776995aef8f2c706980999137f81",
+    "readyManifest": "/tmp/leonardo-qa-happy-final.NUbnJV/ready.json",
+    "readyManifestSha256": "821d208c113930ea95422a8ba3f5fca544a02a91e6244705a6f08a5c208b4d0f",
+    "sourceWasUnchangedAfterBuild": true
+  },
+  "states": {
+    "drawing": {
+      "capture": "ios-rubric-capture-final-20261106-drawing.png",
+      "sha256": "2849b9b083cae04ace26cdcc2e79119b856bc27e91829262a100e06bca345fe7",
+      "pixels": { "width": 1206, "height": 2622 },
+      "attachment": "FED00DC7-9BA6-47AC-AA2E-F790051C1A8F.png",
+      "timestamp": "2026-11-06T04:05:52.883+01:00"
+    },
+    "preview": {
+      "capture": "ios-rubric-capture-final-20261106-preview.png",
+      "sha256": "e97fd9eac9154d2ba5d7e9d43c2ad2878a678aea72e1dc8563bdbe5ba1549b95",
+      "pixels": { "width": 1206, "height": 2622 },
+      "attachment": "5BD98915-4837-43FD-9E71-8404493452EE.png",
+      "timestamp": "2026-11-06T04:05:54.441+01:00"
+    },
+    "sent": {
+      "capture": "ios-rubric-capture-final-20261106-sent.png",
+      "sha256": "c44cf1f3c0388bd4af0c62bc0f8bcbf385e756477b5a822a79e5882088f9db58",
+      "pixels": { "width": 1206, "height": 2622 },
+      "attachment": "AC97E0E2-FACB-45B2-A190-69B5C5671B93.png",
+      "timestamp": "2026-11-06T04:06:05.293+01:00"
+    }
+  },
+  "correctiveRegressions": {
+    "lostAcknowledgement": {
+      "testIdentifier": "PairingUITests/testMacRequestedRubricCaptureLostAcknowledgementReconcilesAfterRelaunch()",
+      "result": "/tmp/leonardo-native-lost2.xcresult",
+      "hostLog": "/tmp/leonardo-native-lost-host2.log",
+      "qaRoot": "/tmp/leonardo-qa-lost.8tYTLP",
+      "evidence": "lost-ack.json",
+      "evidenceSha256": "ee1e4f900732babeefc1cf997db9a4a4a39d350b9aeb82c719bab34b6f094586",
+      "resultSummary": { "passed": 1, "failed": 0, "skipped": 0 },
+      "fixtureProof": {
+        "injected": true,
+        "responsePosts": 7,
+        "uniqueRequestIDs": 1,
+        "blockedRubricPolls": 4,
+        "blockedResponsePosts": 5
+      },
+      "assertion": "A real committed POST acknowledgement was replaced with 503; request polling and replay POSTs remained gated through termination/relaunch, then the same request ID reconciled to submitted after allow-reconcile."
+    },
+    "revocationAfterUnsentDrawing": {
+      "testIdentifier": "PairingUITests/testGrantedReaderAndUnsentRubricBlocksAfterForegroundRevocation()",
+      "result": "/tmp/leonardo-native-revoke.xcresult",
+      "hostLog": "/tmp/leonardo-native-revoke-host.log",
+      "qaRoot": "/tmp/leonardo-qa-revoke.WHq0sq",
+      "evidence": "rubric-revoked.json",
+      "evidenceSha256": "3072fac630dbb2267b949a630b4c3e8cad6bfb2804073951b668729b4aa30a5d",
+      "resultSummary": { "passed": 1, "failed": 0, "skipped": 0 },
+      "fixtureProof": {
+        "requestStateAfterRevoke": "accepted",
+        "response": null,
+        "blockedMessage": "Borrador bloqueado: pide una nueva solicitud",
+        "sendActionPresent": false,
+        "drawingRetained": true,
+        "unrelatedCorpus": "QA · Markdown",
+        "legacyCorpus": "QA · Recovery"
+      },
+      "assertion": "Foreground polling revoked the exact connection, blocked the accepted unsent drawing without sending it, retained the drawing for recovery, purged the direct reader cache, and left unrelated and legacy offline corpora available."
+    },
+    "lateProjectResponseAfterRevocation": {
+      "testIdentifier": "PairingUITests/testGrantedProjectLateResponseDoesNotResurrectAfterForegroundRevocation()",
+      "result": "/tmp/leonardo-native-late.xcresult",
+      "hostLog": "/tmp/leonardo-native-late-host.log",
+      "qaRoot": "/tmp/leonardo-qa-late.BzF5Ez",
+      "evidence": "late-project-revocation.json",
+      "evidenceSha256": "32d56117090d06dcaa7c7868d39f5c1e34bbca140fc113de88cfc6ec77e4b143",
+      "resultSummary": { "passed": 1, "failed": 0, "skipped": 0 },
+      "fixtureProof": {
+        "projectResponseHeld": true,
+        "revocationRequested": true,
+        "revocationObservedBeforeRelease": true,
+        "projectResponseReleasedAfterRevocation": true,
+        "revoked": true,
+        "lateProjectVisibleAfterRelease": false,
+        "lateProjectVisibleAfterRelaunch": false
+      },
+      "assertion": "The authorized project response was held after the real server commit; foreground polling observed revocation first, the late response was released, and the direct cache/UI remained absent through relaunch."
+    }
+  },
+  "buildProof": {
+    "compileRecorder": "python3 scripts/compile-and-record.py --root . --pr-number 352 -- xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination 'platform=iOS Simulator,id=A5A73B11-EE27-40AC-ABAB-CADF1B85143B' -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- build-for-testing",
+    "iosBuildDelta": 33,
+    "finalLedgerDelta": 39,
+    "signing": "CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=-",
+    "diagnostics": "-collect-test-diagnostics never",
+    "sourceCommitBuilt": "8574debcbfc5bb0ffb7d4dc6ae71f38425222a18"
+  },
+  "fullValidation": {
+    "command": "python3 scripts/compile-and-record.py --root . --pr-number 352 -- swift test",
+    "log": "/tmp/leonardo-full-swift.log",
+    "xctest": { "passed": 680, "skipped": 35, "failed": 0 },
+    "swiftTesting": { "passed": 70, "suites": 9, "failed": 0 },
+    "queueFocused": { "passed": 3, "failed": 0, "log": "/tmp/leonardo-360-queue-tests.log" }
+  },
+  "guideValidation": {
+    "packageChecks": { "command": "python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py'", "passed": true, "log": "/tmp/leonardo-guide-package.log" },
+    "nativeChecks": { "command": "python3 scripts/compile-and-record.py --root . --pr-number 352 -- swift test --filter BundledUserGuideTests", "passed": 5, "failed": 0, "log": "/tmp/leonardo-bundled-guide.log" }
+  },
+  "reproducibleCommands": {
+    "commonSimulator": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B (LittleLeonardo Rubric342 QA 20261105, iPhone18Pro, iOS 27.0)",
+    "hostFixture": "LEONARDO_MOBILE_RUBRIC_QA_ROOT=<owned-temp-root> LEONARDO_MOBILE_RUBRIC_QA_MODE=<happy|lost-ack|revoke-after-draw|late-project-revoke> LEONARDO_MOBILE_RUBRIC_QA_PORT=46994 python3 scripts/compile-and-record.py --root . --pr-number 352 -- swift test --filter MobileDirectAcceptanceFixtureTests/testServeNativeMobileRubricFixture",
+    "nativeRun": "xcodebuild test-without-building -xctestrun <product-path>/<mode>.xctestrun -destination 'platform=iOS Simulator,id=A5A73B11-EE27-40AC-ABAB-CADF1B85143B' -only-testing:LittleLeonardoUITests/PairingUITests/<mode-test> -collect-test-diagnostics never -resultBundlePath <result.xcresult>",
+    "modes": {
+      "happy": "testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS",
+      "lost-ack": "testMacRequestedRubricCaptureLostAcknowledgementReconcilesAfterRelaunch",
+      "revoke-after-draw": "testGrantedReaderAndUnsentRubricBlocksAfterForegroundRevocation",
+      "late-project-revoke": "testGrantedProjectLateResponseDoesNotResurrectAfterForegroundRevocation"
+    },
+    "requiredFixtureReset": "Before each mode, uninstall eu.pinedatec.LittleLeonardo and eu.pinedatec.LittleLeonardo.UITests from the owned simulator; for revoke-after-draw, copy only the two committed synthetic corpus fixtures into the LittleLeonardo app container Corpus directory before the test."
+  },
+  "sourceInputSha256": {
+    "Mobile/LittleLeonardo/MobileLibrary.swift": "1733dc2aa1e5b64b7c1827867701e79fe75d0a6900bbff9ff053235a2572e34b",
+    "Mobile/LittleLeonardo/MobileRubricCaptureView.swift": "89bbe7a2451433e73cffd52172b5ac894bc07b7e075dc07f8f1d00f8425c614f",
+    "Mobile/LittleLeonardoUITests/PairingUITests.swift": "2681b0a2ebfcd264a98b5dcc3ae73ff18540121ccfb55cafd7054aab2cf2b181",
+    "Tests/LeonardoDesktopSyncTests/MobileDirectAcceptanceFixtureTests.swift": "aca81f075b494dcf375f1761dc27bc17e1264dc3522ebf43161cf91aec5084c6",
+    "Sources/LeonardoSync/MobileSyncOperationQueue.swift": "572d90d1de22da4551a3d349a0a1a6971e5969197e708cdebd39d51db0f6a56e",
+    "Tests/LeonardoSyncTests/MobileSyncOperationQueueTests.swift": "09764195a60ac7951c5d659951636fa7199261994bf0577c22b1de96331021ce",
+    "Sources/LeonardoSync/MobileRubricDraft.swift": "bec59a45564ae5e5e5cb859b73e9ed81602722fe63e0f9e6413e7bcf95d1f2c8",
+    "Sources/LeonardoSync/RubricExchange.swift": "47a2a1383dccebf43a8e0f6873d94132680e30fb1bb231bceb9d0f3ecb6d10bb",
+    "Sources/LeonardoCore/LeonardoGraphic.swift": "2d49d255baa57368117e8f037cb262e707a6eda2da839a1b8aa9f1c1f00063f3",
+    "Sources/LeonardoSyncTransport/DirectEnrollmentClient.swift": "75b541be6b3b8ef981fabcba1473b4811c9a712bdd5203b03f7a8938cdb964e1",
+    "Sources/LeonardoSyncTransport/DirectHTTPSRouter.swift": "c4d7b0d18d4de32c166e91c3b4fa2f83bfc0db9d4d32d901960c066ae1919578",
+    "Sources/LeonardoSync/DirectSyncAuthority.swift": "85f1b78a0edc6acf6924fb03f346d13d598d82d7ad658a1188162b3827ad25ee"
+  },
+  "metadataLimitations": {
+    "browserCaptureHelper": "capture_metadata.py is browser-only and requires browser_name, browser_version and viewport_css; those fields are intentionally null for native iOS and no CSS/browser values were invented.",
+    "claims": "Simulator-only native evidence; no physical device, production Mac, App Store/TestFlight or production-network claim.",
+    "fixture": "The Mac authority, source corpus, TLS identity and fault gates are synthetic and owned; transport remains the real pinned HTTPS path."
+  }
+}
