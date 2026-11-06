@@ -120,7 +120,7 @@
   "fullValidation": {
     "command": "python3 scripts/compile-and-record.py --root . --pr-number 352 -- swift test",
     "log": "/tmp/leonardo-full-swift.log",
-    "xctest": { "passed": 680, "skipped": 35, "failed": 0 },
+    "xctest": { "executed": 680, "passed": 645, "skipped": 35, "failed": 0 },
     "swiftTesting": { "passed": 70, "suites": 9, "failed": 0 },
     "queueFocused": { "passed": 3, "failed": 0, "log": "/tmp/leonardo-360-queue-tests.log" }
   },
