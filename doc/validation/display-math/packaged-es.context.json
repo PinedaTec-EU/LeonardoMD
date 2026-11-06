@@ -3,8 +3,8 @@
   "capture_mode": "native application window",
   "captured_at": "2026-11-06T08:31:30.081317+00:00",
   "image_pixels": {
-    "width": 4718592,
-    "height": 4292935744
+    "width": 2520,
+    "height": 1700
   },
   "os": "27.0.1",
   "screen": "Help \u2192 Leonardo user guide",
@@ -20,5 +20,10 @@
     "charts": true
   },
   "browser": "native WKWebView; browser version and CSS viewport not measured",
-  "limits": "Packaged process; exact source identity disambiguates baseline version. Known underbrace SVG issue #274 remains visible."
+  "limits": "Packaged process; exact source identity disambiguates baseline version. Known underbrace SVG issue #274 remains visible.",
+  "image_format": "jpeg",
+  "image_sha256": "d09881a554814db75ca6d138be597cf890f122571007f277072003d8afa82efc",
+  "viewport_css": null,
+  "browser_version": null,
+  "capture_context_limit": "Native CUA captures the full application window. CSS viewport and packaged WKWebView User-Agent were not exposed; these browser-specific fields are unavailable and are not inferred from image dimensions."
 }
