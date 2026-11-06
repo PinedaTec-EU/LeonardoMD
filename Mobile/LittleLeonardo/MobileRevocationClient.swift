@@ -1,4 +1,5 @@
 import Foundation
+import LeonardoSync
 
 struct MobileAuthenticatedContext {
     let connection: MobileDirectConnection
