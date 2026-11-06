@@ -199,6 +199,7 @@ final class PairingUITests: XCTestCase {
             throw XCTSkip("Requires the explicit granted-reader revocation fixture")
         }
         let app = XCUIApplication()
+        try seedRubricOfflineCorporaIfRequested()
         app.launch()
         app.buttons["open-pairing"].tap()
         app.segmentedControls["pairing-method"].buttons["IP y puerto"].tap()
@@ -262,6 +263,35 @@ final class PairingUITests: XCTestCase {
         let readiness = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "exists == true AND isEnabled == true"), object: documentSync)
         return XCTWaiter().wait(for: [readiness], timeout: timeout) == .completed
+    }
+
+    private func seedRubricOfflineCorporaIfRequested() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let fixtureRoot = environment["LEONARDO_RUBRIC_QA_FIXTURE_ROOT"],
+              let simulator = environment["LEONARDO_RUBRIC_QA_SIMULATOR"] else { return }
+        let output = Pipe()
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+        process.arguments = ["simctl", "get_app_container", simulator, "eu.pinedatec.LittleLeonardo", "data"]
+        process.standardOutput = output
+        process.standardError = output
+        try process.run()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { throw NSError(domain: "RubricQA", code: 1) }
+        let containerPath = String(data: output.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let containerPath, !containerPath.isEmpty else { throw NSError(domain: "RubricQA", code: 2) }
+        let corpus = URL(fileURLWithPath: containerPath, isDirectory: true)
+            .appendingPathComponent("Library/Application Support/LittleLeonardo/Corpus", isDirectory: true)
+        let appSupport = corpus.deletingLastPathComponent()
+        if FileManager.default.fileExists(atPath: appSupport.path) {
+            try FileManager.default.removeItem(at: appSupport)
+        }
+        try FileManager.default.createDirectory(at: corpus, withIntermediateDirectories: true)
+        for name in ["1AB54B72-61A8-46CA-816D-F48A6C46BCF8.json", "59521A0B-559C-4477-BE42-39AC03349CC3.json"] {
+            try FileManager.default.copyItem(from: URL(fileURLWithPath: fixtureRoot).appendingPathComponent(name),
+                                              to: corpus.appendingPathComponent(name))
+        }
     }
 
     @MainActor private func dismissNativeFailureIfPresent(_ app: XCUIApplication) {
