@@ -179,43 +179,46 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                         } else {
                             let id = try XCTUnwrap(requestID)
                             if mode == "revoke-after-draw" {
-                            let response = try await runtime.rubricResponse(requestID: id)
-                            XCTAssertNil(response, "Revoked unsent drawing must not reach the Mac")
-                            let status = try await runtime.rubricStatus(requestID: id)
-                            XCTAssertEqual(status.request.state, .accepted)
-                            try writeJSON(["requestID": id.uuidString, "deviceID": try XCTUnwrap(deviceID).uuidString,
-                                           "response": NSNull(), "requestState": status.request.state.rawValue],
-                                          to: root.appendingPathComponent("rubric-revoked.json"))
-                        } else {
-                            var response: RubricResponse?
-                            for _ in 0..<100 {
-                                response = try await runtime.rubricResponse(requestID: id)
-                                if response != nil { break }
-                                try await Task.sleep(for: .milliseconds(100))
-                            }
-                            let received = try XCTUnwrap(response)
-                            XCTAssertEqual(received.requestID, id)
-                            XCTAssertEqual(received.targetDeviceID, try XCTUnwrap(deviceID))
-                            XCTAssertEqual(received.label, "Firma")
-                            XCTAssertTrue(received.rubric.isValid)
-                            try JSONEncoder().encode(received).write(to: root.appendingPathComponent("rubric-response.json"), options: .atomic)
-                            if let fault {
-                                let snapshot = await fault.snapshot()
-                                XCTAssertTrue(snapshot.injected, "Lost-ack mode must replace the first response acknowledgement")
-                                XCTAssertGreaterThanOrEqual(snapshot.responsePosts, 2,
-                                                           "The frozen response must remain retryable across relaunch")
-                                XCTAssertEqual(snapshot.uniqueRequestIDs, 1,
-                                               "Every replay must retain the original request ID and payload")
-                                XCTAssertGreaterThan(snapshot.blockedRubricPolls, 0,
-                                                      "Rubric request polling must remain gated until reconciliation is explicitly allowed")
-                                XCTAssertGreaterThan(snapshot.blockedResponsePosts, 0,
-                                                      "At least one replay acknowledgement must remain gated until reconciliation is explicitly allowed")
-                                try writeJSON(["responsePosts": snapshot.responsePosts,
-                                               "uniqueRequestIDs": snapshot.uniqueRequestIDs,
-                                               "blockedRubricPolls": snapshot.blockedRubricPolls,
-                                               "blockedResponsePosts": snapshot.blockedResponsePosts,
-                                               "injected": snapshot.injected],
-                                              to: root.appendingPathComponent("lost-ack.json"))
+                                let response = try await runtime.rubricResponse(requestID: id)
+                                XCTAssertNil(response, "Revoked unsent drawing must not reach the Mac")
+                                let status = try await runtime.rubricStatus(requestID: id)
+                                XCTAssertEqual(status.request.state, .accepted)
+                                try writeJSON(["requestID": id.uuidString,
+                                               "deviceID": try XCTUnwrap(deviceID).uuidString,
+                                               "response": NSNull(),
+                                               "requestState": status.request.state.rawValue],
+                                              to: root.appendingPathComponent("rubric-revoked.json"))
+                            } else {
+                                var response: RubricResponse?
+                                for _ in 0..<100 {
+                                    response = try await runtime.rubricResponse(requestID: id)
+                                    if response != nil { break }
+                                    try await Task.sleep(for: .milliseconds(100))
+                                }
+                                let received = try XCTUnwrap(response)
+                                XCTAssertEqual(received.requestID, id)
+                                XCTAssertEqual(received.targetDeviceID, try XCTUnwrap(deviceID))
+                                XCTAssertEqual(received.label, "Firma")
+                                XCTAssertTrue(received.rubric.isValid)
+                                try JSONEncoder().encode(received).write(to: root.appendingPathComponent("rubric-response.json"), options: .atomic)
+                                if let fault {
+                                    let snapshot = await fault.snapshot()
+                                    XCTAssertTrue(snapshot.injected, "Lost-ack mode must replace the first response acknowledgement")
+                                    XCTAssertGreaterThanOrEqual(snapshot.responsePosts, 2,
+                                                               "The frozen response must remain retryable across relaunch")
+                                    XCTAssertEqual(snapshot.uniqueRequestIDs, 1,
+                                                   "Every replay must retain the original request ID and payload")
+                                    XCTAssertGreaterThan(snapshot.blockedRubricPolls, 0,
+                                                          "Rubric request polling must remain gated until reconciliation is explicitly allowed")
+                                    XCTAssertGreaterThan(snapshot.blockedResponsePosts, 0,
+                                                          "At least one replay acknowledgement must remain gated until reconciliation is explicitly allowed")
+                                    try writeJSON(["responsePosts": snapshot.responsePosts,
+                                                   "uniqueRequestIDs": snapshot.uniqueRequestIDs,
+                                                   "blockedRubricPolls": snapshot.blockedRubricPolls,
+                                                   "blockedResponsePosts": snapshot.blockedResponsePosts,
+                                                   "injected": snapshot.injected],
+                                                  to: root.appendingPathComponent("lost-ack.json"))
+                                }
                             }
                         }
                         finished = true
