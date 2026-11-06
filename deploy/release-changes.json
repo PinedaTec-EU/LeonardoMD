@@ -869,6 +869,16 @@
       "pr": 352,
       "summary": "iOS captures rubrics requested by a linked Mac with explicit consent, durable drafts, preview and HTTPS retry. Interrupted acceptance recovers safely and revoked links stay blocked after restart. Guides and Mac consent are available in English and Spanish.",
       "to_version": "0.3.1000"
+    },
+    {
+      "delta": {
+        "build": 10
+      },
+      "from_version": "0.3.1000",
+      "merge_sha": "63ff472f527ac5f552897726a61ec2cf2ecee735",
+      "pr": 363,
+      "summary": "Display formulas retain their TeX syntax, and both user guides include recurring math regression examples with mandatory help checks in tested app instances.",
+      "to_version": "0.3.1010"
     }
   ],
   "initial_version": "0.1.56",
@@ -879,5 +889,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1000"
+  "version": "0.3.1010"
 }
