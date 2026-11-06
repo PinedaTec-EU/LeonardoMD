@@ -54,3 +54,9 @@ The common Mac GUI is currently locked according to the coordinating publication
 ## Accepted-main reconciliation
 
 The PR branch now incorporates accepted math/outline main0.3.1045 (843670bcd3d5548242f04f11226e06487b3e790b), without advancing main or replacing its renderer changes. Version-only guide conflicts were resolved by regenerating Guide v25 from the combined bilingual bodies, retaining the math/outline additions and Classic rotation instructions. Prior bundled v20/v23 templates are replaced in this branch; their Git history and user-owned working copies remain preserved. Deterministic guide packaging passes. The existing native captures remain checkpoint evidence; exact-head visual acceptance must be refreshed after final demo/cache reconciliation.
+
+### Signed distribution preparation
+
+The author-only Release archive from source `05036373d28d39978d37054237bee48f9a318de7` passed the repository distribution helper, including signing, profile, bundle/resource and provenance checks. The successful compiler-bearing archive raises PR387's ledger delta to20. Private archive and frozen provenance are retained outside the repository at `~/Library/Application Support/PinedaTec/LittleLeonardo-Distribution/pr387-author-0503637/`; command output is `/tmp/ll387-author-archive.log`. This author artifact has not been exported or uploaded and is not the eventual publisher artifact. After integration and central materialization, publication must build the exact clean accepted main checkpoint.
+
+The Mac unlock, final packaged bilingual Help workflow, reconciliation with accepted demo/cache changes, exact-head UI captures, CI and strict isolated judge remain pending. No merge, TestFlight delivery or physical-device acceptance is claimed.
