@@ -87,12 +87,6 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
               !FileManager.default.fileExists(atPath: root.appendingPathComponent("ready.json").path) else {
             throw SyncError.invalidPath
         }
-        let appSupport = ["enrollment-persist-failure", "capability-persist-failure",
-                          "revocation-cache-delete-failure", "reconnect-during-purge"].contains(mode)
-            ? try mobileAppSupport() : nil
-        if mode == "enrollment-persist-failure" {
-            try installSymlinkFault(at: try XCTUnwrap(appSupport).appendingPathComponent("connections.json"), root: root)
-        }
         let sourceRoot = root.appendingPathComponent("Source")
         let file = sourceRoot.appendingPathComponent("docs/read.md")
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -121,7 +115,7 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
         let delayedProject = mode == "late-project-revoke" ? DelayedProjectRevocationGate(root: root) : nil
         let capabilityFault = mode == "capability-persist-failure" ? CapabilityRefreshFault(root: root) : nil
         let purgeGate = mode == "reconnect-during-purge"
-            ? try ReconnectDuringPurgeGate(root: root, container: try XCTUnwrap(appSupport)) : nil
+            ? ReconnectDuringPurgeGate(root: root) : nil
         let runtime = DesktopDirectRuntime(root: root.appendingPathComponent("Service"),
             credentials: NativeMobileFixtureCredentials(), now: { Date() },
             makeListener: { identity, downstream in
@@ -163,9 +157,12 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                             try writeRubricReady(root: root, requestID: try XCTUnwrap(requestID),
                                                  deviceID: pairing.id, projectCount: grants.count)
                         }
+                    case "arm-enrollment-failure":
+                        guard mode == "enrollment-persist-failure" else { throw SyncError.invalidPath }
+                        try installSymlinkFault(at: try mobileAppSupport().appendingPathComponent("connections.json"), root: root)
                     case "strip-capability":
                         guard mode == "capability-persist-failure" else { throw SyncError.invalidPath }
-                        try stripSavedCapability(at: try XCTUnwrap(appSupport).appendingPathComponent("connections.json"))
+                        try stripSavedCapability(at: mobileAppSupport().appendingPathComponent("connections.json"))
                     case "request":
                         let id = try XCTUnwrap(deviceID)
                         requestID = try await createRubricRequest(runtime: runtime, deviceID: id)
@@ -182,15 +179,15 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                         await delayedProject.arm()
                     case "arm-capability-failure":
                         guard mode == "capability-persist-failure", let capabilityFault else { throw SyncError.invalidPath }
-                        try installSymlinkFault(at: try XCTUnwrap(appSupport).appendingPathComponent("connections.json"), root: root)
+                        try installSymlinkFault(at: mobileAppSupport().appendingPathComponent("connections.json"), root: root)
                         await capabilityFault.arm()
                     case "arm-cache-delete-failure":
                         guard mode == "revocation-cache-delete-failure" else { throw SyncError.invalidPath }
-                        try installSymlinkFault(at: try XCTUnwrap(appSupport).appendingPathComponent("Corpus")
+                        try installSymlinkFault(at: mobileAppSupport().appendingPathComponent("Corpus")
                             .appendingPathComponent(descriptor.id.uuidString + ".json"), root: root)
                     case "arm-reconnect-purge":
                         guard mode == "reconnect-during-purge", let purgeGate else { throw SyncError.invalidPath }
-                        try await purgeGate.arm(projectID: descriptor.id)
+                        try await purgeGate.arm(projectID: descriptor.id, support: mobileAppSupport())
                     case "approve-regrant":
                         guard mode == "reconnect-during-purge" else { throw SyncError.invalidPath }
                         let registry = try await runtime.consentState()
@@ -210,7 +207,7 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                         try await runtime.revoke(deviceID: try XCTUnwrap(deviceID))
                     case "release-cache-delete":
                         guard mode == "revocation-cache-delete-failure" else { throw SyncError.invalidPath }
-                        try removeSymlinkFault(at: try XCTUnwrap(appSupport).appendingPathComponent("Corpus")
+                        try removeSymlinkFault(at: mobileAppSupport().appendingPathComponent("Corpus")
                             .appendingPathComponent(descriptor.id.uuidString + ".json"))
                     case "release-purge":
                         guard mode == "reconnect-during-purge", let purgeGate else { throw SyncError.invalidPath }
@@ -324,10 +321,28 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
     }
 
     private func mobileAppSupport() throws -> URL {
-        guard let path = ProcessInfo.processInfo.environment["LEONARDO_MOBILE_RUBRIC_QA_CONTAINER"] else {
+        let environment = ProcessInfo.processInfo.environment
+        let container: URL
+        if let simulator = environment["LEONARDO_MOBILE_RUBRIC_QA_SIMULATOR"],
+           let appID = environment["LEONARDO_MOBILE_RUBRIC_QA_APP_ID"] {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+            process.arguments = ["simctl", "get_app_container", simulator, appID, "data"]
+            let pipe = Pipe()
+            process.standardOutput = pipe
+            process.standardError = FileHandle.nullDevice
+            try process.run()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else { throw SyncError.invalidPath }
+            let path = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let path, !path.isEmpty, path.contains(simulator) else { throw SyncError.invalidPath }
+            container = URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
+        } else if let path = environment["LEONARDO_MOBILE_RUBRIC_QA_CONTAINER"] {
+            container = URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
+        } else {
             throw SyncError.invalidPath
         }
-        let container = URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
         let support = container.appendingPathComponent("Library/Application Support/LittleLeonardo", isDirectory: true)
         try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
         return support
@@ -503,20 +518,18 @@ private actor CapabilityRefreshFault {
 
 private actor ReconnectDuringPurgeGate {
     private let root: URL
-    private let container: URL
     private var fifo: URL?
     private var payload: URL?
     private var releaseMarker: URL?
     private var process: Process?
 
-    init(root: URL, container: URL) {
+    init(root: URL) {
         self.root = root
-        self.container = container
     }
 
-    func arm(projectID: UUID) throws {
+    func arm(projectID: UUID, support: URL) throws {
         guard process == nil else { throw SyncError.invalidPath }
-        let projectURL = container.appendingPathComponent("Library/Application Support/LittleLeonardo/Corpus")
+        let projectURL = support.appendingPathComponent("Corpus")
             .appendingPathComponent(projectID.uuidString + ".json")
         guard FileManager.default.fileExists(atPath: projectURL.path) else { throw SyncError.invalidPath }
         let fifoURL = root.appendingPathComponent("purge-\(projectID.uuidString).fifo")

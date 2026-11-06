@@ -330,6 +330,7 @@ final class PairingUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
         dismissMobileFailureIfPresent(app)
+        try advanceDirectFixture("arm-enrollment-failure")
         requestManualConnection(app, port: port)
         let failure = app.alerts["No se pudo completar la operación"]
         XCTAssertTrue(failure.waitForExistence(timeout: 30),
@@ -337,7 +338,14 @@ final class PairingUITests: XCTestCase {
         XCTAssertFalse(failure.staticTexts.firstMatch.label.isEmpty,
                        "The failed enrollment must expose a concrete persistence error")
         failure.buttons["Aceptar"].tap()
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch.exists,
+                       "A failed enrollment must not publish a comparison code in memory")
         closePairingIfPresent(app)
+        try advanceDirectFixture("approve")
+        app.buttons["Sincronizar"].firstMatch.tap()
+        Thread.sleep(forTimeInterval: 3)
+        XCTAssertFalse(app.buttons["rubric-request-banner"].exists,
+                       "A failed enrollment must not receive requests through a stale in-memory connection")
         app.terminate()
         app.launch()
         dismissMobileFailureIfPresent(app)
