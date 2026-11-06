@@ -61,4 +61,4 @@ Display-math regression coverage ([#272](https://github.com/PinedaTec-EU/Leonard
 
 Extensible Math and outline navigation ([#274](https://github.com/PinedaTec-EU/LeonardoMD/issues/274), [#364](https://github.com/PinedaTec-EU/LeonardoMD/issues/364)): live braces, radical, long arrow and cancellation marks; chapter 9 explains repeated titles and Split navigation. Native tests verify geometry, active-content rejection, original source-line identity and preview/editor feedback.
 
-Little Leonardo offline demo (#381): `MobileDemoStore.swift`, `MobileDemoView.swift`, bundled `Demo/`; bilingual mobile appendix, first-run copies, local-only practice/save/reset/source, read-only sync boundary. Guide v22 preserves earlier personal copies. Native instance acceptance must be recorded separately.
+Little Leonardo offline demo (#381): `MobileDemoStore.swift`, `MobileDemoView.swift`, bundled `Demo/`; bilingual mobile appendix, first-run copies, local-only practice/save/reset/source, read-only sync boundary. Guide v22 preserves earlier personal copies. Fresh native acceptance and original captures: `doc/validation/little-demo/integrated-fixes/`.
