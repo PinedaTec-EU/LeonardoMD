@@ -117,10 +117,11 @@ final class MobileRevocationTests: XCTestCase {
             let token = MobileConnectionToken(connectionID: value.connectionID, deviceID: value.deviceID,
                                               fingerprint: value.fingerprint, cacheEpoch: 0,
                                               authorizationGeneration: 0)
+            let credentials = TestCredentials(values: [value.deviceID: "credential"], failRemove: false)
             let task = Task<SyncError?, Never> {
                 do {
                     _ = try await client.withAuthenticatedConnection(value, token: token,
-                        credentials: TestCredentials(values: [deviceID: "credential"], failRemove: false),
+                        credentials: credentials,
                         isCurrent: { !state.value }, onDenied: { _ in }, operation: { _ in
                         started.value = true
                         startedExpectation.fulfill()
