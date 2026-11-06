@@ -37,8 +37,10 @@ final class WebKitRuntimeTests: XCTestCase {
         XCTAssertTrue(code.contains("$$literal_fence$$"))
         config.allowsMath = false
         host.apply(content: source, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
-        try await waitFor("typeof window.katex === 'undefined' && document.querySelector('.katex') === null", in: web)
-        let fallback = try await evaluate("document.querySelector('#leonardo-markdown').textContent", in: web)
+        let replacement = try XCTUnwrap(webView(of: host))
+        XCTAssertFalse(web === replacement)
+        try await waitFor("typeof window.katex === 'undefined' && document.querySelector('#leonardo-markdown')?.textContent.includes('underbrace')", in: replacement)
+        let fallback = try await evaluate("document.querySelector('#leonardo-markdown').textContent", in: replacement)
         XCTAssertTrue(fallback.contains(#"$$ \underbrace{a}_{x} + \underbrace{b}_{y} $$"#))
     }
 

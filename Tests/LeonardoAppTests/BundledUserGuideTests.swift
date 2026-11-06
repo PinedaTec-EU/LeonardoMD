@@ -142,9 +142,9 @@ final class BundledUserGuideTests: XCTestCase {
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
                 let encodedSource = try XCTUnwrap(String(data: JSONEncoder().encode(session.content), encoding: .utf8))
                 try await waitFor("window.LeonardoEditing.currentSource() === \(encodedSource)", in: web)
-                for (name, selector) in [("diagram", ".mermaid-placeholder"), ("math", ".katex"), ("chart", ".vega-lite-placeholder")] {
+                for (name, selector) in [("diagram", ".mermaid-placeholder"), ("math", ".katex"), ("math-regression", ".math-rendered:has(.katex-tag)"), ("chart", ".vega-lite-placeholder")] {
                     _ = try await web.evaluateJavaScript("document.querySelector('\(selector)').scrollIntoView({block:'center'})")
-                    let readySelector = name == "math" ? selector : selector + " svg"
+                    let readySelector = name.hasPrefix("math") ? selector : selector + " svg"
                     try await waitFor("document.querySelector('\(readySelector)') !== null", in: web)
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Live \(name) example; built-in extension enabled")

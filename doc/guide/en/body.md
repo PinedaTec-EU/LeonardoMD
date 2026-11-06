@@ -47,6 +47,8 @@ $$\bar{x}=\frac{x_1+x_2+x_3}{3}$$
 
 For 2, 4 and 6, the mean is 4. Source: `$$\bar{x}=\frac{x_1+x_2+x_3}{3}$$`. This is a presentation formula; it does not calculate form fields.
 
+Inline notation also works: $N(\varepsilon)$ counts the boxes.
+
 ### Display formulas · regression examples
 
 **Requires Math.** Check that these examples display as equations, including the number (1), rather than literal `$$` or backslash commands. With Math disabled, the source notation remains visible. Code examples intentionally stay literal.
