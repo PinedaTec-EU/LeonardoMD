@@ -170,3 +170,46 @@ share one in-flight operation; changing either the normalized label or ink must
 remain a conflict even while that operation is running. This prevents a peer's
 heading or drawing from being selected by ID alone and preserves the one-POST
 coalescing contract for exact retries.
+
+## Owner-only iOS distribution (#343)
+
+`scripts/package-ios-distribution.py` is scoped to Little Leonardo
+(`eu.pinedatec.LittleLeonardo`, team `AU2Z3P42U7`). Its CLI help lists the
+required profile, signing identity/keychain and external output paths. It never
+uploads or changes App Store Connect. Use a fresh output directory per producer.
+
+1. Before integration, `archive --pr-number <source-PR>` builds Release through
+   the repository compilation recorder. Commit source first and retain the log
+   and generated `distribution-provenance.json`. Failed commands are not counted.
+2. After accepted source integration and central version materialization, fetch
+   main and select its exact accepted materialized SHA in a clean checkout.
+   `publisher-archive --expected-source <full-SHA>` verifies the main ancestry,
+   canonical checkpoint, consumed entries and clean inputs. It does not recreate
+   or increment the frozen source allocation. Detached HEAD is supported.
+3. Only after archive verification succeeds, `export` verifies the archive against
+   its frozen producer and exports an owner-only App Store Connect IPA. It passes
+   the approved certificate fingerprint and process-local signing scope without
+   replacing the user's keychain search list.
+4. Only after export succeeds, `validate` verifies the recorded IPA digest and
+   runs Apple's package validation with the existing authorized API key. This
+   checks the package without uploading it. Upload and owner internal-group
+   assignment remain a separate authorized publication step after integration.
+
+Marketing version is the complete canonical `version.nfo`; iOS bundle build is
+its cumulative final numeric component, not an independent counter. Apple must
+not rewrite either value. The export is internal-TestFlight-only. Verification
+requires the approved team/profile/certificate, opaque existing-brand icons,
+launch/orientation metadata, packaged resources and privacy reasons `CA92.1`
+(own UserDefaults) and `C617.1` (own-container file metadata); no external-file
+read reason is declared. Release archives must exclude tests and XCTest.
+Provenance freezes source/input hashes and complete archive/app/IPA hashes
+through archive, export and Apple validation. Evidence-only commits must explain
+their source equivalence; never restamp an older artifact as a newer producer.
+
+A validated author artifact is not the final delivered build. Publish accepted
+materialized main, await Apple processing, attach that specific build to the
+owner internal group and verify installation from TestFlight. Keep
+[#343](https://github.com/PinedaTec-EU/LeonardoMD/issues/343) open until the real
+device permissions, pairing, offline reading, request/draw/send, Mac review,
+save/insert/restart and terminal/retry/revocation checks are recorded. Simulator
+Home rendering limitations do not establish physical icon appearance.
