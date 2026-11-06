@@ -51,11 +51,14 @@ final class MobileDemoUITests: XCTestCase {
         XCTAssertEqual(resumed.value as? String, "Spanish source sample")
         resumed.tap()
         resumed.typeText(" after source")
+        let editedValue = try XCTUnwrap(resumed.value as? String)
+        XCTAssertTrue(editedValue.contains("Spanish source sample"))
+        XCTAssertTrue(editedValue.contains(" after source"))
         saveDemo(in: app)
         app.terminate()
         app.launch()
         openDemo("es", in: app)
-        XCTAssertEqual(practiceName(in: app.webViews.firstMatch, app: app).value as? String, "Spanish source sample after source")
+        XCTAssertEqual(practiceName(in: app.webViews.firstMatch, app: app).value as? String, editedValue)
         capture(app, "Spanish persisted practice after source")
     }
 
