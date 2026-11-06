@@ -72,7 +72,7 @@ struct MobileDirectConnectionStore {
         self.url = parent.appendingPathComponent(standardized.lastPathComponent)
     }
 
-    struct RevocationRecovery: Equatable {
+    struct RevocationRecovery {
         let connections: [MobileDirectConnection]
         let quarantinedConnectionIDs: Set<UUID>
     }
