@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1017
+
+- #343 Added: package owner-only iOS distribution ([#371](https://github.com/PinedaTec-EU/LeonardoMD/pull/371))
+
+<p>Adds owner-only iOS archive/export and Apple validation with canonical versioning, privacy metadata and branded assets; binds archives to clean committed source, documents #367&#x27;s immutable rubric request identity, and keeps keychain signing process-scoped.</p>
+
+Source: `b9a6e57a16133ef286fce4e6f60fc061f855a0b2`. Delta: `{"build": 7}`.
+
 ## 0.3.1010
 
 - #272 Fixed: preserve display math and require native help QA ([#363](https://github.com/PinedaTec-EU/LeonardoMD/pull/363))

@@ -1,4 +1,0 @@
-{
-  "summary": "Adds owner-only iOS archive/export and Apple validation with canonical versioning, privacy metadata and branded assets; binds archives to clean committed source, documents #367's immutable rubric request identity, and keeps keychain signing process-scoped.",
-  "build": 7
-}

@@ -879,6 +879,16 @@
       "pr": 363,
       "summary": "Display formulas retain their TeX syntax, and both user guides include recurring math regression examples with mandatory help checks in tested app instances.",
       "to_version": "0.3.1010"
+    },
+    {
+      "delta": {
+        "build": 7
+      },
+      "from_version": "0.3.1010",
+      "merge_sha": "b9a6e57a16133ef286fce4e6f60fc061f855a0b2",
+      "pr": 371,
+      "summary": "Adds owner-only iOS archive/export and Apple validation with canonical versioning, privacy metadata and branded assets; binds archives to clean committed source, documents #367's immutable rubric request identity, and keeps keychain signing process-scoped.",
+      "to_version": "0.3.1017"
     }
   ],
   "initial_version": "0.1.56",
@@ -889,5 +899,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1010"
+  "version": "0.3.1017"
 }
