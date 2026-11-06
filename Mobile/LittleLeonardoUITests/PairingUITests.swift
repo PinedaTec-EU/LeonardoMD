@@ -254,7 +254,10 @@ final class PairingUITests: XCTestCase {
         app.buttons["Cerrar"].tap()
         XCTAssertTrue(app.staticTexts["Acceso retirado"].waitForExistence(timeout: 15),
                       "The exact connection's direct reader cache must be purged after confirmed revocation")
-        app.navigationBars.buttons["QA · Granted rubric"].firstMatch.tap()
+        let back = app.navigationBars.buttons.firstMatch
+        XCTAssertTrue(back.waitForExistence(timeout: 5),
+                      "The removed project must still provide a back path to the offline library")
+        back.tap()
         XCTAssertTrue(app.staticTexts["QA · Markdown"].waitForExistence(timeout: 10),
                       "An unrelated offline direct corpus must survive revocation")
         XCTAssertTrue(app.staticTexts["QA · Recovery"].waitForExistence(timeout: 10),
