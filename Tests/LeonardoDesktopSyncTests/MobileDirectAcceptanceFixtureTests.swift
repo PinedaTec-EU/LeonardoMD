@@ -4,8 +4,8 @@ import LeonardoSync
 import LeonardoSyncTransport
 @testable import LeonardoDesktopSync
 
-/// Opt-in, loopback-only service for native iOS acceptance. It owns synthetic files and
-/// generated credentials; normal test runs skip it and never start a server.
+/// Opt-in synthetic service for native iOS acceptance. It binds loopback by default and
+/// accepts an explicit local-LAN host for transport diagnosis; normal runs never start it.
 final class MobileDirectAcceptanceFixtureTests: XCTestCase {
     func testServeNativeMobileAcceptanceFixture() async throws {
         guard let path = ProcessInfo.processInfo.environment["LEONARDO_MOBILE_DIRECT_QA_ROOT"] else {
@@ -19,7 +19,21 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
         let sourceRoot = root.appendingPathComponent("Source")
         let file = sourceRoot.appendingPathComponent("docs/read.md")
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Data("# Native direct initial\n\nSynthetic enrolled corpus.\n".utf8).write(to: file)
+        let environment = ProcessInfo.processInfo.environment
+        let imageData: Data?
+        if let imagePath = environment["LEONARDO_MOBILE_DIRECT_QA_IMAGE"] {
+            let data = try Data(contentsOf: URL(fileURLWithPath: imagePath))
+            XCTAssertEqual(data.count, 338_658, "The owner image fixture must match the reported transfer size")
+            imageData = data
+            let imageURL = sourceRoot.appendingPathComponent("docs/assets/recorrido-leonardo.png")
+            try FileManager.default.createDirectory(at: imageURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try data.write(to: imageURL)
+            try Data("# Native direct initial\n\nOriginal image transfer fixture.\n\n![Original artwork](assets/recorrido-leonardo.png)\n".utf8)
+                .write(to: file)
+        } else {
+            imageData = nil
+            try Data("# Native direct initial\n\nSynthetic enrolled corpus.\n".utf8).write(to: file)
+        }
         let selection = try CorpusSelection(folders: ["docs"], documents: [])
         let descriptor = SharedProjectDescriptor(id: UUID(), name: "QA · Native Direct",
             scope: try CorpusScope(folder: ""), selection: selection)
@@ -30,9 +44,11 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
         let runtime = DesktopDirectRuntime(root: root.appendingPathComponent("Service"),
             credentials: NativeMobileFixtureCredentials(), now: { Date() })
         let port: UInt16 = 46993
-        _ = try await runtime.start(host: "127.0.0.1", port: port, projects: [source])
+        let host = environment["LEONARDO_MOBILE_DIRECT_QA_HOST"] ?? "127.0.0.1"
+        _ = try await runtime.start(host: host, port: port, projects: [source])
         do {
-            let ready: [String: Any] = ["port": Int(port), "projectID": descriptor.id.uuidString]
+            let ready: [String: Any] = ["host": host, "port": Int(port), "projectID": descriptor.id.uuidString,
+                                        "imageBytes": imageData?.count ?? 0]
             try JSONSerialization.data(withJSONObject: ready).write(to: root.appendingPathComponent("ready.json"), options: .atomic)
             var prior = "", deviceID: UUID?, revoked = false, finished = false
             let deadline = Date().addingTimeInterval(240)
@@ -48,7 +64,7 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                         deviceID = request.id
                     case "refresh": try Data("# Native direct updated\n\nDownloaded through enrolled HTTPS.\n".utf8).write(to: file)
                     case "disable": try await runtime.stop()
-                    case "restart": _ = try await runtime.start(host: "127.0.0.1", port: port, projects: [source])
+                    case "restart": _ = try await runtime.start(host: host, port: port, projects: [source])
                     case "revoke":
                         try await runtime.revoke(deviceID: XCTUnwrap(deviceID))
                         revoked = true
@@ -61,9 +77,15 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                 try await Task.sleep(for: .milliseconds(100))
             }
             XCTAssertTrue(finished, "Native acceptance did not finish before fixture deadline")
-            XCTAssertTrue(revoked, "Native acceptance never reached revocation")
+            if imageData == nil {
+                XCTAssertTrue(revoked, "Native acceptance never reached revocation")
+            }
             XCTAssertNotNil(deviceID)
-            XCTAssertTrue(try String(contentsOf: file, encoding: .utf8).contains("Native direct updated"))
+            if imageData == nil {
+                XCTAssertTrue(try String(contentsOf: file, encoding: .utf8).contains("Native direct updated"))
+            } else {
+                XCTAssertEqual(try Data(contentsOf: sourceRoot.appendingPathComponent("docs/assets/recorrido-leonardo.png")), imageData)
+            }
             try await runtime.stop()
         } catch { try? await runtime.stop(); throw error }
     }
