@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "little-leonardo-https-diagnostic-evidence-v1",
+  "issue": 380,
+  "pullRequest": 382,
+  "sourceCommit": "0d9ec261dc6656a77fc852277addf40802c03255",
+  "compilationBuildDelta": 20,
+  "physicalRetry": {
+    "asset": "assets/recorrido-leonardo.png",
+    "bytes": 338658,
+    "observedError": "The network connection was lost.",
+    "rootCause": "unconfirmed"
+  },
+  "transportTests": {
+    "filter": "LeonardoSyncTransportTests",
+    "passed": 17,
+    "failed": 0,
+    "interruptedResponseTest": "HTTPSRuntimeTests.testInterruptedPinnedTLSBodyReportsBoundedPartialTransferContext()",
+    "scope": "Real TLS response cutoff with partial byte-count assertions; this is a transport regression test, not a reproduction of the owner network path."
+  },
+  "guideTests": {
+    "passed": 7,
+    "failed": 0,
+    "nativeGuideTest": "BundledUserGuideTests.testNativeReadingGuideImagesAndActionRenderInBothLanguages()",
+    "practiceTest": "GuidePracticeNavigationTests.testRealGuideLinkOpensLocalizedFormAndPreservesIndependentAnswers()",
+    "packageTestsPassed": 3,
+    "packagedMacHelpWorkflow": "not run; native WKWebView component and practice checks were used"
+  },
+  "iosUI": {
+    "result": "Passed",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "testIdentifier": "PairingUITests/testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation()",
+    "durationSeconds": 42.250091910362244,
+    "startedAt": "2026-11-06T20:23:28.970Z",
+    "finishedAt": "2026-11-06T20:24:18.654Z",
+    "resultArchive": "/private/tmp/leonardo-380-diagnostic-ui/final/Result.xcresult",
+    "simulator": {
+      "name": "LittleLeonardo Rubric342 QA 20261105",
+      "model": "iPhone 18 Pro",
+      "os": "iOS 27.0",
+      "osBuildNumber": "24A434",
+      "udid": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B"
+    },
+    "fixtureScope": "Owned loopback fixture intentionally stops for the status-failure step; the test verifies the existing alert and successful direct-sync recovery. It does not reproduce a partial large snapshot.",
+    "alertDiagnostic": "[LL1 op=status domain=NSURLErrorDomain code=-1004 http=? bytes=0/?]",
+    "capture": {
+      "file": "ios-https-diagnostic-alert-20261106.png",
+      "sha256": "a03c70d8c06cddecdfdcf0837805b0c57fc7a8b938f4217423d6633a37b64bbb",
+      "bytes": 230361
+    }
+  },
+  "guideCaptures": [
+    {
+      "locale": "en",
+      "file": "user-guide-https-diagnostic-en-20261106.png",
+      "sha256": "aab936c36265cb2a37c1dd05d2c9c801c36f78eacf63f82746a76a74579ff59c",
+      "bytes": 444896,
+      "contextFile": "user-guide-https-diagnostic-en-20261106.context.json",
+      "contextSha256": "c70b5f92cfff711f8abd5196eff0f34acfdbc6d84fa2e1c330570333dd7de8b0",
+      "sourceCommit": "0d9ec261dc6656a77fc852277addf40802c03255",
+      "capturedAt": "2026-11-06T20:18:47.542Z",
+      "route": "/native/user-guide/en",
+      "captureMode": "element",
+      "nativeViewportPoints": {
+        "height": 772,
+        "width": 1100
+      },
+      "devicePixelRatio": 2,
+      "os": "Version 27.0.1 (Build 26A434)"
+    },
+    {
+      "locale": "es",
+      "file": "user-guide-https-diagnostic-es-20261106.png",
+      "sha256": "3acc982c91ff45e97ecf91aa10b84c5b7d780816471cec247dc7823697464f8b",
+      "bytes": 440961,
+      "contextFile": "user-guide-https-diagnostic-es-20261106.context.json",
+      "contextSha256": "c29af1bca732fac5f4703c5ddfb1011d881e9d51884cb9356af002bd017be6f3",
+      "sourceCommit": "0d9ec261dc6656a77fc852277addf40802c03255",
+      "capturedAt": "2026-11-06T20:18:52.176Z",
+      "route": "/native/user-guide/es",
+      "captureMode": "element",
+      "nativeViewportPoints": {
+        "height": 772,
+        "width": 1100
+      },
+      "devicePixelRatio": 2,
+      "os": "Version 27.0.1 (Build 26A434)"
+    }
+  ],
+  "sameLocaleRetryComparison": {
+    "initialRun": "leonardo-380-guide-evidence",
+    "retryRun": "leonardo-380-guide-evidence-retry",
+    "retryFilesRetainedOutsideRepository": true,
+    "sameLocaleHashesIdenticalAcrossRuns": true,
+    "englishSha256": "aab936c36265cb2a37c1dd05d2c9c801c36f78eacf63f82746a76a74579ff59c",
+    "spanishSha256": "3acc982c91ff45e97ecf91aa10b84c5b7d780816471cec247dc7823697464f8b",
+    "decodedPixelsContainDiagnosticCodeBackground": true,
+    "conclusion": "The apparent missing example in a visual preview was a reading error; the initial and retry PNGs for each locale are byte-identical. No product rendering failure or capture-harness change is claimed. See issue #388."
+  }
+}

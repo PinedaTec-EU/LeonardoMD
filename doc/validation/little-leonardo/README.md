@@ -101,6 +101,41 @@ When reusing the owned A5 simulator after a previous direct-LAN fixture, first
 preserve its test app data and reset only the `eu.pinedatec.LittleLeonardo`
 bundle; a stale peer can make unrelated refresh/revocation assertions fail.
 
+#### #380 transport diagnostic validation
+
+The implementation checkpoint is source `0d9ec261dc6656a77fc852277addf40802c03255`
+at compilation build delta 20. The focused `LeonardoSyncTransportTests` run
+passes 17 tests, including
+`HTTPSRuntimeTests.testInterruptedPinnedTLSBodyReportsBoundedPartialTransferContext()`;
+that real TLS cutoff verifies a partial byte count without changing pinning or
+transport bounds. The English/Spanish native guide and practice checks pass 7
+tests, and the guide packaging checks pass 3 tests.
+
+`PairingUITests/testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation()`
+passes 1/1 on the owned iPhone 18 Pro Simulator (iOS 27.0, build 24A434; delta
+20). [The raw alert capture](ios-https-diagnostic-alert-20261106.png) shows the
+existing alert with `[LL1 op=status domain=NSURLErrorDomain code=-1004 http=?
+bytes=0/?]`. The loopback fixture intentionally stops for the status-failure
+step and then verifies recovery. This proves the alert display and recovery
+flow; it does not reproduce the owner's interrupted large snapshot. Full run,
+fixture scope, timestamps and SHA-256 values are in
+[the evidence manifest](https-diagnostic-evidence-20261106.json).
+
+The [English](user-guide-https-diagnostic-en-20261106.png) and
+[Spanish](user-guide-https-diagnostic-es-20261106.png) screenshots are the
+original native WKWebView captures from one run. Their context sidecars bind
+each locale to the same source and capture session. The follow-up run's PNG for
+each locale has the same SHA-256 as its initial-run image; decoded pixel checks
+also find the inline-code background in all four files. This invalidates the
+apparent missing-line capture discrepancy recorded in [#388](https://github.com/PinedaTec-EU/LeonardoMD/issues/388);
+no product rendering failure or capture-code change is claimed.
+
+The bundled macOS app's Help workflow was not opened in this run; same-instance
+packaged-app help acceptance remains pending. The owner's 338,658-byte image
+still fails on the physical iPhone after a normal Mac editor restart. Its cause
+is unconfirmed, issue #380 is not resolved by these diagnostics, and no
+TestFlight build is claimed.
+
 Compile delta193 passes 340 XCTest cases (ten optional skips) and twelve renderer tests. Native Git acceptance also passes with the corrected fixture (138.046 seconds UI, 143.760 seconds server), independently verifying both publications, deletion, ancestry, excluded-blob omission and `git fsck`; the provenance manifest records this repetition separately from the retained captures. Delta193 adds only fail-fast guards to the separate publication regression; the native fixture and mobile/shared sources are unchanged. The real SSH fixture gives both upload-pack and receive-pack a 60-second post-EOF deadline, followed by a bounded cleanup check, within the unchanged 120-second transport timeout. A stalled session returns a specific remote-command diagnostic with session/PID, input/output bytes and separate termination/stream state; incomplete cleanup is reported explicitly. The controlled faults use a two-second deadline.
 
 `testRealGitPublicationFaultPreservesPreparedJournalForExactRetry` fails one real SSH publication, verifies the remote ref and journal bytes are unchanged and the child/streams are closed, reloads the journal, then sends the identical commit/request exactly once. It verifies the resulting ref, file bytes and `git fsck` before persisting the published corpus and removing the journal. This exercises the shared durable-publication components; journal orchestration is composed explicitly by the test. The original intermittent stall is not conclusively attributed; [#121](https://github.com/PinedaTec-EU/LeonardoMD/issues/121) is addressed by a reproducible, specific failure guarantee rather than an unexplained rerun.
