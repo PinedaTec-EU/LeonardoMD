@@ -13,7 +13,11 @@ subprocess.run([
     "git", "diff", "--exit-code", source, head, "--", ".",
     ":(exclude)doc/validation/math-outline/**",
     ":(exclude)deploy/version/entries/377.yaml",
+    ":(exclude)deploy/release-notes.md",
 ], cwd=root, check=True)
+expected_notes = subprocess.check_output(["git", "show", "4f1ed5dfa9cb1ea72dbe5db9bf3480a42db973e2:deploy/release-notes.md"], cwd=root)
+actual_notes = subprocess.check_output(["git", "show", f"{head}:deploy/release-notes.md"], cwd=root)
+assert actual_notes == expected_notes, "Publication-only notes differ from accepted main checkpoint"
 print(f"Current component/native captures: product, build, test, guide and workflow inputs match {head}")
 for sidecar in Path(__file__).parent.rglob("*.metadata.json"):
     metadata = json.loads(sidecar.read_text())
