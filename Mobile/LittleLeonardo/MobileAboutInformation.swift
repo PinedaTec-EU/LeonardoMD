@@ -1,4 +1,5 @@
 import SwiftUI
+import LeonardoRender
 
 struct MobileAboutInformation: View {
     enum Topic: String {
@@ -18,13 +19,13 @@ struct MobileAboutInformation: View {
                     section("Intercambio con tu Mac", "El Mac autoriza los proyectos que puedes consultar. Solo se envía la rúbrica al pulsar Enviar rúbrica. La cámara se utiliza para leer el QR de conexión cuando autorizas su uso.")
                     section("Acceso retirado", "Cuando el dispositivo vuelve a contactar con un Mac que ha retirado su autorización, se bloquea el acceso y se elimina la copia autorizada. Sin conexión no se puede garantizar la eliminación inmediata.")
                 case .licenses:
-                    Text(license("LICENSE.txt")).textSelection(.enabled)
+                    Text(contents(Bundle.main.url(forResource: "LICENSE", withExtension: "txt", subdirectory: "Legal"))).textSelection(.enabled)
                     Divider()
-                    Text(license("THIRD_PARTY_NOTICES.txt")).textSelection(.enabled)
-                    ForEach(licenseFiles, id: \.self) { name in
-                        NavigationLink(name) {
-                            ScrollView { Text(license("licenses/" + name)).textSelection(.enabled).padding(24) }
-                                .classicSurface().navigationTitle(name).navigationBarTitleDisplayMode(.inline)
+                    Text(contents(MarkdownLegalResources.noticesURL)).textSelection(.enabled)
+                    ForEach(MarkdownLegalResources.licenseURLs, id: \.self) { url in
+                        NavigationLink(url.lastPathComponent) {
+                            ScrollView { Text(contents(url)).textSelection(.enabled).padding(24) }
+                                .classicSurface().navigationTitle(url.lastPathComponent).navigationBarTitleDisplayMode(.inline)
                         }
                     }
                 }
@@ -37,14 +38,8 @@ struct MobileAboutInformation: View {
             Text(content)
         }
     }
-    private func license(_ name: String) -> String {
-        guard let root = Bundle.main.resourceURL else { return "Recurso no disponible" }
-        return (try? String(contentsOf: root.appendingPathComponent("Legal/" + name), encoding: .utf8))
-            ?? "Recurso no disponible"
-    }
-    private var licenseFiles: [String] {
-        guard let root = Bundle.main.resourceURL else { return [] }
-        return ((try? FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent("Legal/licenses").path)) ?? [])
-            .filter { $0.hasSuffix(".txt") }.sorted()
+    private func contents(_ url: URL?) -> String {
+        guard let url else { return "Recurso no disponible" }
+        return (try? String(contentsOf: url, encoding: .utf8)) ?? "Recurso no disponible"
     }
 }
