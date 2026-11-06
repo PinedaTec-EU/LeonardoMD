@@ -1,0 +1,12 @@
+{
+  "captured_at": "2026-11-06T17:04:17.821Z",
+  "route": "/native/packaged-user-guide/es",
+  "screen": "Help \u2192 user guide \u2192 outline \u2192 math regression examples",
+  "browser_name": "Native macOS application window with WKWebView content, via CUA",
+  "browser_version": null,
+  "viewport_css": null,
+  "capture_mode": "element",
+  "state": "Guide v18 es; Preview; outline-selected heading at viewport start; Math/Mermaid/Charts enabled; complete braces, radical, arrow, cancel and tag; Leonardo Classic/Parchment",
+  "data_provenance": "synthetic",
+  "unavailable_context": "Native CUA does not expose the packaged WKWebView browser version or CSS viewport. Both are explicitly unavailable; image dimensions are not substituted."
+}
