@@ -629,7 +629,10 @@ If the capture link was revoked, the accepted drawing remains visible for
 recovery but **Send** is blocked. Reconnect and approve the Mac again, then
 create a new rubric request; a revoked draft is never silently reused. The
 revocation also removes that project's direct reader cache while unrelated and
-legacy offline copies remain available.
+legacy offline copies remain available. After an unexpected app closure, a
+connection with an unfinished check is verified again before its direct cache
+is shown or a rubric is sent. If the Mac is offline, reconnect to complete that
+check; your drawing remains stored locally.
 
 The Spanish guide includes a real simulator capture of this flow. It is not
 evidence of a physical device, App Store/TestFlight distribution or a document

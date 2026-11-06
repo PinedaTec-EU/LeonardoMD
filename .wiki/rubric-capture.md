@@ -82,12 +82,18 @@ recoverable. Capacity cleanup is committed only after a successful write
 ([#361](https://github.com/PinedaTec-EU/LeonardoMD/issues/361)).
 
 Mobile connection snapshots and visibility policy live in
-`MobileDirectConnectionStore.swift`; per-connection capture generations live in
-`MobileDirectAuthorization.swift`. Confirmed revocation blocks immediately,
-retires the Keychain credential and retains pending cache cleanup. A missing
-credential reconstructs an interrupted revocation after restart; a Keychain
-read error does not revoke a valid link. Serialized cache writes/removals check
-epochs and active owners, including rollback and deferred cleanup
+`MobileDirectConnectionStore.swift`; per-connection capture generations and
+monotonic deny state live in `MobileDirectAuthorization.swift`.
+`MobileRevocationJournal.swift` persists an independent uncertainty marker before
+authenticated network work, coordinated through `MobileRevocationClient.swift`.
+A failed preflight sends no request. An interrupted operation quarantines only
+its link until authenticated STATUS revalidation; an offline result or late
+completion cannot undo inherited uncertainty or confirmed denial. This protects
+restart even when post-response snapshot and credential writes both fail.
+Confirmed revocation retires the Keychain credential and retains cache cleanup;
+a missing item reconstructs revocation, while a Keychain read error stays
+retryable. Serialized cache writes/removals check epochs and active owners,
+including rollback and deferred cleanup
 ([#359](https://github.com/PinedaTec-EU/LeonardoMD/issues/359)). See the
 [persistence contract](../doc/mobile/rubric-exchange.md#security-and-persistence).
 

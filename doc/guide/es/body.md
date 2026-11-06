@@ -644,7 +644,10 @@ aceptado sigue visible para recuperarlo, pero **Enviar** queda bloqueado.
 Vuelve a enlazar y aprobar el Mac y crea una solicitud de rúbrica nueva; un
 borrador revocado nunca se reutiliza en silencio. La revocación también elimina
 la caché lectora directa de ese proyecto, pero conserva las copias sin conexión
-no relacionadas y las heredadas.
+no relacionadas y las heredadas. Tras un cierre inesperado de la app, un vínculo
+con una comprobación pendiente se verifica otra vez antes de mostrar su caché
+directa o enviar una rúbrica. Si el Mac está sin conexión, vuelve a conectarlo
+para completar esa comprobación; el dibujo sigue guardado localmente.
 
 ![Solicitud de Little Leonardo en español tras una captura HTTPS real en simulador; se acepta, dibuja, previsualiza y envía la petición del Mac.](assets/ios-rubric-capture-es.png)
 

@@ -51,15 +51,23 @@ Authority and ordinary mobile connection/draft mutations publish their next
 snapshot only after persistence succeeds. A failed capacity rollover likewise
 keeps the previous draft snapshot in memory.
 
-A confirmed mobile revocation is an immediate deny barrier. It invalidates only
-that connection's capture generation, records a revoked connection with pending
-cache removals, and retires the credential from Keychain. File-write and cache
-deletion failures are surfaced rather than treated as completed cleanup. When
-the connection journal could not be written, an absent Keychain credential
-reconstructs the revoked/pending-cleanup state after relaunch. A Keychain read
-error remains a retryable failure; it is not interpreted as a missing item.
-If neither persistence path succeeds, no durable revocation is claimed: the
-current process remains blocked and reports the storage failures.
+Authenticated mobile operations first persist an independent write-ahead marker.
+If that write fails, no authenticated request is sent. After an interrupted
+operation, the marker quarantines its connection on reload/relaunch until a
+fresh authenticated STATUS revalidates the link; a transient/offline result
+cannot resolve inherited uncertainty. A frozen drawing body is not sent before
+that revalidation.
+
+A confirmed mobile revocation is an immediate, monotonic deny barrier. It
+invalidates only that connection's capture generation, records pending cache
+removals and retires the credential from Keychain. The in-memory deny survives
+ordinary library reload. If the connection snapshot and credential retirement
+both fail, the independent write-ahead marker still survives restart; even a
+failed post-response journal write leaves the earlier uncertainty marker in
+place. Late operation completions must not clear a confirmed deny. File-write
+and cache-deletion failures are surfaced rather than treated as completed
+cleanup. A missing Keychain credential also reconstructs interrupted revocation;
+a Keychain read error remains retryable, rather than meaning a missing item.
 
 Pending cleanup retries on library reload. Known revoked direct caches stay
 hidden while cleanup is pending; unrelated offline corpora remain readable.
