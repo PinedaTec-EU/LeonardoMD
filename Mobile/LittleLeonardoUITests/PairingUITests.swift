@@ -346,6 +346,8 @@ final class PairingUITests: XCTestCase {
         Thread.sleep(forTimeInterval: 3)
         XCTAssertFalse(app.buttons["rubric-request-banner"].exists,
                        "A failed enrollment must not receive requests through a stale in-memory connection")
+        XCTAssertFalse(app.otherElements["rubric-request-sheet"].exists,
+                       "A failed enrollment must not open a stale rubric request sheet")
         app.terminate()
         app.launch()
         dismissMobileFailureIfPresent(app)
@@ -450,6 +452,7 @@ final class PairingUITests: XCTestCase {
         XCTAssertTrue(waitForDirectFixtureFile("purge-fifo-reader-opened.txt", timeout: 20),
                       "The revocation purge must be held before reconnecting")
 
+        dismissMobileFailureIfPresent(app)
         requestManualConnection(app, port: port)
         code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
         XCTAssertTrue(code.waitForExistence(timeout: 20))
