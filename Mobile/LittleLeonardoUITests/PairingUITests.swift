@@ -504,7 +504,11 @@ final class PairingUITests: XCTestCase {
         app.buttons["open-pairing"].tap()
         app.segmentedControls["pairing-method"].buttons["IP y puerto"].tap()
         let host = app.textFields["pairing-host"], portField = app.textFields["pairing-port"]
-        host.tap(); host.typeText("127.0.0.1")
+        host.tap()
+        if let value = host.value as? String {
+            host.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+        }
+        host.typeText("127.0.0.1")
         portField.tap()
         if let value = portField.value as? String {
             portField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
