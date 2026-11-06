@@ -61,6 +61,19 @@ final class MobileRubricAcceptanceTests: XCTestCase {
         XCTAssertEqual(late, edited)
         let restarted = try await MobileRubricDraftStore(url: localURL).all(now: now)
         XCTAssertEqual(restarted, [edited])
+        let response = try RubricResponse(requestID: edited.id, targetDeviceID: edited.targetDeviceID,
+            requesterID: edited.requesterID, label: edited.label, rubric: ink, submittedAt: now)
+        let frozen = edited.with(response: response, state: .pendingSend, updatedAt: now)
+        try await reopened.save(frozen)
+        let retry = try await MobileRubricAcceptance(store: reopened).accept(intent) { _ in
+            XCTFail("A late accept retry must not repeat acceptance or replace a frozen response")
+            throw RubricExchangeError.invalidTransition
+        }
+        XCTAssertEqual(retry, frozen)
+        let submitted = frozen.with(state: .submitted, updatedAt: now)
+        try await reopened.save(submitted)
+        let lateSubmitted = try await reopened.confirmAcceptance(id: intent.id, request: recovered.request, at: now)
+        XCTAssertEqual(lateSubmitted, submitted)
     }
 
     func testFailedConfirmationRetainsIntentAndRetryRepairsIt() async throws {
