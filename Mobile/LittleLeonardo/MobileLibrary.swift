@@ -418,7 +418,11 @@ final class MobileLibrary {
     /// document refresh interval. The request is accepted only when its
     /// target and requester match the pinned connection that received it.
     func pollRubricRequests() async {
-        guard !rubricPolling, !connecting, !revocationInProgress else { return }
+        // Request polling is deliberately independent from the document
+        // synchronizer. A status response can confirm revocation while a
+        // synchronize call is waiting for a project response; the cache epoch
+        // and identity checks below discard that stale synchronize continuation.
+        guard !rubricPolling, !revocationInProgress else { return }
         rubricPolling = true
         defer { rubricPolling = false }
         var found: [RubricRequest] = []
