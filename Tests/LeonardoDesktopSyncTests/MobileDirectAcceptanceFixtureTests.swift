@@ -518,7 +518,7 @@ private actor CapabilityRefreshFault {
 
 private actor ReconnectDuringPurgeGate {
     private let root: URL
-    private var fifo: URL?
+    private var projectURL: URL?
     private var payload: URL?
     private var releaseMarker: URL?
     private var process: Process?
@@ -531,16 +531,15 @@ private actor ReconnectDuringPurgeGate {
         guard process == nil else { throw SyncError.invalidPath }
         let projectURL = support.appendingPathComponent("Corpus")
             .appendingPathComponent(projectID.uuidString + ".json")
-        guard FileManager.default.fileExists(atPath: projectURL.path) else { throw SyncError.invalidPath }
-        let fifoURL = root.appendingPathComponent("purge-\(projectID.uuidString).fifo")
+        let attributes = try FileManager.default.attributesOfItem(atPath: projectURL.path)
+        guard attributes[.type] as? FileAttributeType == .typeRegular else { throw SyncError.invalidPath }
         let payloadURL = root.appendingPathComponent("purge-\(projectID.uuidString).payload")
         let releaseURL = root.appendingPathComponent("purge-release.txt")
-        try? FileManager.default.removeItem(at: fifoURL)
         try? FileManager.default.removeItem(at: payloadURL)
         try? FileManager.default.removeItem(at: releaseURL)
         try Data(contentsOf: projectURL).write(to: payloadURL, options: .atomic)
         try FileManager.default.removeItem(at: projectURL)
-        try run("/usr/bin/mkfifo", arguments: [fifoURL.path])
+        try run("/usr/bin/mkfifo", arguments: [projectURL.path])
 
         let opened = root.appendingPathComponent("purge-fifo-reader-opened.txt")
         let written = root.appendingPathComponent("purge-payload-written.txt")
@@ -549,7 +548,7 @@ private actor ReconnectDuringPurgeGate {
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
         process.arguments = ["-c", script]
         var environment = ProcessInfo.processInfo.environment
-        environment["FIFO"] = fifoURL.path
+        environment["FIFO"] = projectURL.path
         environment["OPENED"] = opened.path
         environment["RELEASE"] = releaseURL.path
         environment["PAYLOAD"] = payloadURL.path
@@ -558,7 +557,7 @@ private actor ReconnectDuringPurgeGate {
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         try process.run()
-        fifo = fifoURL
+        self.projectURL = projectURL
         payload = payloadURL
         releaseMarker = releaseURL
         self.process = process
@@ -570,7 +569,11 @@ private actor ReconnectDuringPurgeGate {
         try? Data("release\n".utf8).write(to: releaseMarker, options: .atomic)
         let written = root.appendingPathComponent("purge-payload-written.txt")
         for _ in 0..<200 {
-            if FileManager.default.fileExists(atPath: written.path) { return }
+            if FileManager.default.fileExists(atPath: written.path) {
+                process?.waitUntilExit()
+                restorePayloadIfStillOwned()
+                return
+            }
             try? await Task.sleep(for: .milliseconds(50))
         }
     }
@@ -578,10 +581,31 @@ private actor ReconnectDuringPurgeGate {
     func finish() {
         if let process, process.isRunning { process.terminate() }
         process?.waitUntilExit()
-        if let fifo { try? FileManager.default.removeItem(at: fifo) }
+        if let projectURL, ownsFIFO(at: projectURL) { try? FileManager.default.removeItem(at: projectURL) }
         if let payload { try? FileManager.default.removeItem(at: payload) }
         if let releaseMarker { try? FileManager.default.removeItem(at: releaseMarker) }
         process = nil
+    }
+
+    private func restorePayloadIfStillOwned() {
+        guard let projectURL, ownsFIFO(at: projectURL), let payload else { return }
+        let temporary = projectURL.deletingLastPathComponent()
+            .appendingPathComponent(".purge-restore-\(UUID().uuidString).tmp")
+        do {
+            try FileManager.default.copyItem(at: payload, to: temporary)
+            try FileManager.default.setAttributes([.posixPermissions: NSNumber(value: Int16(0o600))],
+                                                  ofItemAtPath: temporary.path)
+            _ = try FileManager.default.replaceItemAt(projectURL, withItemAt: temporary,
+                                                      options: .usingNewMetadataOnly)
+        } catch {
+            try? FileManager.default.removeItem(at: temporary)
+        }
+    }
+
+    private func ownsFIFO(at url: URL) -> Bool {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let type = attributes[.type] as? FileAttributeType else { return false }
+        return type != .typeRegular && type != .typeDirectory && type != .typeSymbolicLink
     }
 
     private func run(_ executable: String, arguments: [String]) throws {
