@@ -149,7 +149,7 @@ struct MobileSyncPreferencesView: View {
     }
 }
 
-private struct PairingConsentView: View {
+struct PairingConsentView: View {
     let controller: DesktopSyncController
     let request: PairingRequest
     @Environment(\.dismiss) private var dismiss
@@ -164,7 +164,7 @@ private struct PairingConsentView: View {
             Text(SyncDeviceRole.description(request.kind))
                 .font(.caption).foregroundStyle(.secondary)
             if captureOnly {
-                Text(L10n.text("This Little Leonardo can receive rubrics without access to any project. Select projects only if you also want offline reading."))
+                Text(L10n.text("This Little Leonardo can create rubrics requested by this Mac without access to any project. Select projects only if you also want offline reading."))
                     .font(.caption).foregroundStyle(.secondary)
             }
             Text(request.comparisonCode).font(.largeTitle.monospaced())
