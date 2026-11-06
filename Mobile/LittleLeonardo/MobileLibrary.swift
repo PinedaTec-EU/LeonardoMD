@@ -224,7 +224,11 @@ final class MobileLibrary {
                 guard let self else { throw SyncError.revoked }
                 return try await self.fetchDownload(projectID: id, entry: entry)
             }
-            try await downloads.restore(allowedIDs: Set(loaded.map(\.id)))
+            try await downloads.restore(allowedIDs: Set(loaded.filter { project in
+                !project.isRecoveryArchive && protectedConnections.contains {
+                    !$0.revoked && !visibleQuarantine.contains($0.connectionID) && $0.projectIDs.contains(project.id)
+                }
+            }.map(\.id)))
             let recoveredSnapshotChanged = storedConnections.count != protectedConnections.count
                 || zip(storedConnections, protectedConnections).contains { $0.0.hasChanges(from: $0.1) }
             if repairedMissingCredential || recoveredSnapshotChanged {

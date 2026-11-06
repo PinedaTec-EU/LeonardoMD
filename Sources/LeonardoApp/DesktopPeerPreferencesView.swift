@@ -58,6 +58,7 @@ struct DesktopPeerPreferencesView: View {
                 }
             }
             SyncCacheSettingsView(library: controller.downloads, spanish: LanguageSettings.shared.language == .spanish)
+                .disabled(!controller.storageAuthorized)
             Section(L10n.text("Offline copies")) {
                 ForEach(controller.copies, id: \.id) { copy in
                     VStack(alignment: .leading, spacing: 8) {

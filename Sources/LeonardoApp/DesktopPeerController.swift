@@ -23,6 +23,7 @@ final class DesktopPeerController {
     private(set) var unchanged: Set<UUID> = []
     private(set) var comparisons: [UUID: DesktopPeerComparison] = [:]
     private(set) var busy = false
+    private(set) var storageAuthorized = false
     var error: String?
     private(set) var syncIntervalMinutes: Int
     private let defaults: UserDefaults
@@ -229,9 +230,10 @@ final class DesktopPeerController {
         try await policy.authorize(url, intent: intent)
     }
 
-    private func authorizeStorage() throws {
+    func authorizeStorage() throws {
         guard !InstanceRuntime.isAdditional else { throw InstancePathOwnership.InUse() }
         try InstancePathOwnership.shared.claim(workingRoot.deletingLastPathComponent())
+        storageAuthorized = true
     }
 
     private func reload() async throws {

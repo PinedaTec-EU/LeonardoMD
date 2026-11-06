@@ -30,23 +30,25 @@ extension MobileLibrary {
                     guard isCurrentCacheOperation(context.token) else { return }
                     connection.projectIDs = granted
                     connection.comparisonCode = nil
+                    var cacheToken = context.token
+                    if let current = currentConnection(for: cacheToken), connection.hasChanges(from: current) {
+                        guard let committed = try commitConnection(connection, expected: cacheToken) else { return }
+                        cacheToken = committed
+                    }
                     for descriptor in status.projects {
-                        guard isCurrentCacheOperation(context.token) else { return }
+                        guard isCurrentCacheOperation(cacheToken) else { return }
                         let catalogue = try await context.client.catalogue(descriptor,
                             deviceID: connection.deviceID, credential: context.credential)
-                        guard isCurrentCacheOperation(context.token) else { return }
+                        guard isCurrentCacheOperation(cacheToken) else { return }
                         try await downloads.update(id: descriptor.id, descriptor: descriptor, catalogue: catalogue)
-                        guard isCurrentCacheOperation(context.token) else {
+                        guard isCurrentCacheOperation(cacheToken) else {
                             try await downloads.remove(id: descriptor.id); return
                         }
                         let project = try OfflineProject(id: descriptor.id, name: descriptor.name, mode: .direct,
                             scope: descriptor.scope, snapshot: CorpusSnapshot(revision: "catalogue", files: []))
-                        guard try await saveDirectProject(project, expected: context.token) else { return }
+                        guard try await saveDirectProject(project, expected: cacheToken) else { return }
                     }
-                    guard isCurrentCacheOperation(context.token) else { return }
-                    if let current = currentConnection(for: context.token), connection.hasChanges(from: current) {
-                        _ = try commitConnection(connection, expected: context.token)
-                    }
+
                 }
             } catch SyncError.revoked {
                 continue
@@ -115,8 +117,15 @@ extension MobileLibrary {
         }
         return try await withAuthenticatedConnection(connection) { context in
             guard context.status.access == .authorized,
-                  context.status.projects.contains(where: { $0.id == projectID }),
+                  let descriptor = context.status.projects.first(where: { $0.id == projectID }),
                   isCurrentCacheOperation(context.token) else { throw SyncError.revoked }
+            do {
+                try descriptor.scope.validate(entry.path)
+                try descriptor.selection?.validate(entry.path)
+            } catch {
+                try await downloads.remove(id: projectID)
+                throw error
+            }
             let file = try await context.client.file(entry, projectID: projectID,
                 deviceID: connection.deviceID, credential: context.credential)
             guard isCurrentCacheOperation(context.token) else { throw SyncError.revoked }

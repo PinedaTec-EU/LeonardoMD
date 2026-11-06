@@ -17,13 +17,14 @@ extension DesktopPeerController {
     }
 
     func fetchDownload(id: UUID, entry: RemoteFileEntry) async throws -> CorpusFile {
-        guard !InstanceRuntime.isAdditional else { throw InstancePathOwnership.InUse() }
+        try authorizeStorage()
         for connection in connections where !connection.revoked {
             for projectID in connection.grants.keys where Self.downloadID(connectionID: connection.id, projectID: projectID) == id {
                 do { return try await library.file(connectionID: connection.id, projectID: projectID, entry: entry) }
                 catch {
                     // Authenticated denial must immediately hide any displayed read-only copy.
-                    if (error as? SyncError) == .revoked || (error as? DesktopPeerLibraryError) == .unauthorizedProject {
+                    if (error as? SyncError) == .revoked || (error as? SyncError) == .outsideScope
+                        || (error as? DesktopPeerLibraryError) == .unauthorizedProject {
                         try await downloads.remove(id: id)
                     }
                     throw error
