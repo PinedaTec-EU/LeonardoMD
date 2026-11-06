@@ -256,7 +256,13 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                                           to: root.appendingPathComponent("reconnect-during-purge.json"))
                         } else if mode == "revocation-uncertainty-revalidation" {
                             let journal = try mobileAppSupport().appendingPathComponent("revocation-journal.json")
-                            let markerCleared = !FileManager.default.fileExists(atPath: journal.path)
+                            let markerCleared: Bool
+                            if !FileManager.default.fileExists(atPath: journal.path) {
+                                markerCleared = true
+                            } else {
+                                let object = try JSONSerialization.jsonObject(with: Data(contentsOf: journal))
+                                markerCleared = (object as? [[String: Any]])?.isEmpty == true
+                            }
                             XCTAssertTrue(markerCleared,
                                           "An authorized STATUS must clear the inherited uncertainty marker")
                             try writeJSON(["mode": mode, "markerClearedAfterStatus": markerCleared],
