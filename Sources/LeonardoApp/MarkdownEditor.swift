@@ -100,6 +100,20 @@ struct MarkdownEditor: NSViewRepresentable {
             expectedText = parent.text
             if editor.string != expectedText { restoreSharedDraft(in: editor) }
         }
+        private func isUserScroll(in scroll: NSScrollView) -> Bool {
+            guard let event = NSApp.currentEvent, event.window === scroll.window else { return false }
+            switch event.type {
+            case .scrollWheel:
+                return scroll.bounds.contains(scroll.convert(event.locationInWindow, from: nil))
+            case .leftMouseDown, .leftMouseDragged:
+                guard let scroller = scroll.verticalScroller else { return false }
+                return scroller.bounds.contains(scroller.convert(event.locationInWindow, from: nil))
+            case .keyDown:
+                return scroll.window?.firstResponder === scroll.documentView
+            default:
+                return false
+            }
+        }
         func observe(_ scroll: NSScrollView) {
             scrollObserver = NotificationCenter.default.addObserver(
                 forName: NSView.boundsDidChangeNotification, object: scroll.contentView, queue: .main
@@ -110,7 +124,8 @@ struct MarkdownEditor: NSViewRepresentable {
                     let fraction = min(1, max(0, scroll.contentView.bounds.minY / available))
                     self.lastScrollFraction = fraction
                     self.parent.scrollFraction = fraction
-                    if !self.applyingScroll, self.programmaticOrigin != scroll.contentView.bounds.minY {
+                    if !self.applyingScroll, self.programmaticOrigin != scroll.contentView.bounds.minY,
+                       self.isUserScroll(in: scroll) {
                         self.parent.onUserScroll?(fraction)
                     }
                     self.programmaticOrigin = scroll.contentView.bounds.minY

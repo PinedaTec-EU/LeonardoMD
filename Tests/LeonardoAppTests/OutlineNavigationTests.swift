@@ -28,16 +28,21 @@ final class OutlineNavigationTests: XCTestCase {
         let web: WKWebView = try await findView(in: hosting)
         try await waitFor("Boolean(document.getElementById('destination'))", in: web)
         let target = try XCTUnwrap(session.headings.first { $0.title == "Destination" })
+        let editor: NSTextView = try await findView(in: hosting)
         for _ in 0..<2 {
             _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
             try await waitFor("window.scrollY < 2", in: web)
             session.jumpToHeading(target.line)
             try await waitFor("Math.abs(document.getElementById('destination').getBoundingClientRect().top) < 2", in: web)
+            // AppKit can deliver a later layout-driven clip-view adjustment after
+            // scrollRangeToVisible returns. It is not a new user scroll gesture.
+            let sourceScroll = try XCTUnwrap(editor.enclosingScrollView)
+            sourceScroll.contentView.scroll(to: NSPoint(x: 0, y: sourceScroll.contentView.bounds.minY + 30))
+            sourceScroll.reflectScrolledClipView(sourceScroll.contentView)
             try await Task.sleep(for: .milliseconds(250)) // Let editor/preview scroll notifications settle.
             let top = try await web.evaluateJavaScript("document.getElementById('destination').getBoundingClientRect().top") as? Double
             XCTAssertLessThan(abs(try XCTUnwrap(top)), 2, "Editor synchronization must not replace the exact preview destination with a source-line fraction")
         }
-        let editor: NSTextView = try await findView(in: hosting)
         let expected = (source as NSString).range(of: "## Destination").location
         XCTAssertEqual(editor.selectedRange().location, expected)
         XCTAssertEqual(session.requestedLineRevision, 2)
