@@ -8,6 +8,62 @@ import LeonardoCore
 
 @MainActor
 final class WebKitRuntimeTests: XCTestCase {
+    func testDisplayMathSurvivesMarkdownAndEditingBoundaries() async throws {
+        let source = #"""
+        Before $$ \underbrace{a}_{x} + \underbrace{b}_{y} $$ after.
+
+        $$
+        D_B(F) := \lim_{\varepsilon \to 0^{+}} \frac{\ln N(\varepsilon)}{\ln (1/\varepsilon)}\tag{1}
+        $$
+
+        `$$literal_code$$`
+
+        ```tex
+        $$literal_fence$$
+        ```
+        """#
+        var config = MarkdownPreviewConfiguration(allowsMath: true)
+        config.allowsEditing = true
+        let (host, window) = makeHost(content: source, config: config)
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelectorAll('.katex-display').length === 2 && document.querySelector('.katex-tag') !== null", in: web)
+        let errors = try await evaluate("document.querySelectorAll('.katex-error').length", in: web)
+        XCTAssertEqual(errors, "0")
+        let editable = try await evaluate("document.querySelectorAll('[contenteditable=true] .math-rendered, [contenteditable=plaintext-only] .math-rendered').length", in: web)
+        XCTAssertEqual(editable, "0")
+        let code = try await evaluate("Array.from(document.querySelectorAll('code')).map(node => node.textContent).join('|')", in: web)
+        XCTAssertTrue(code.contains("$$literal_code$$"))
+        XCTAssertTrue(code.contains("$$literal_fence$$"))
+        config.allowsMath = false
+        host.apply(content: source, baseURL: nil, configuration: config, onLinkActivation: nil, onScrollProgress: nil)
+        let replacement = try XCTUnwrap(webView(of: host))
+        XCTAssertFalse(web === replacement)
+        try await waitFor("typeof window.katex === 'undefined' && document.querySelector('#leonardo-markdown')?.textContent.includes('underbrace')", in: replacement)
+        let fallback = try await evaluate("document.querySelector('#leonardo-markdown').textContent", in: replacement)
+        XCTAssertTrue(fallback.contains(#"$$ \underbrace{a}_{x} + \underbrace{b}_{y} $$"#))
+    }
+
+    func testAdjacentDisplayExpressionsPreserveInterveningHTMLAndText() async throws {
+        let source = #"""
+        $$a_b$$<br>$$c_d$$
+
+        $$e_f$$ between $$g_h$$
+        """#
+        let (host, window) = makeHost(content: source, config: MarkdownPreviewConfiguration(allowsMath: true))
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelectorAll('.katex-display').length === 4", in: web)
+        let breaks = try await evaluate("document.querySelectorAll('#leonardo-markdown p br').length", in: web)
+        XCTAssertEqual(breaks, "1")
+        let errors = try await evaluate("document.querySelectorAll('.katex-error').length", in: web)
+        XCTAssertEqual(errors, "0")
+        let text = try await evaluate("document.querySelector('#leonardo-markdown').textContent", in: web)
+        XCTAssertTrue(text.contains(" between "))
+        XCTAssertFalse(text.contains("<br>"))
+        try await captureTagPreview(web, name: "display-math-adjacent")
+    }
+
     func testMigratedMarkdownRendersMetadataOutsideEditedArticle() async throws {
         let markdown = "---\ntitle: Migration example\nauthor: Example Author\ntags: [Docs, Swift]\nsource_url: https://example.com/article\ncustom:\n  nested: retained\n---\n# Migration example\n\nMy saved edit, preserved.\n"
         let source = try LeonardoFormatParser.serialize(

@@ -36,3 +36,20 @@ and English bundled help in the same PR. Apply the repository-local
 changes and when reviewing their help impact. Include relevant images/examples,
 regenerate the packaged guides, and record validation in the PR. Internal changes
 with no user-visible help impact must explain that conclusion in the PR.
+
+## Mandatory help smoke test in tested instances
+
+For every change or validation involving an app instance, open the bundled Spanish
+and English user guides in that same instance through the real Help workflow.
+Inspect the representative live examples: Mermaid, inline/display math, charts,
+local images, tables and the separate practice form (open, fill, save, reopen).
+Keep characteristic supported features represented in both guide sources.
+Always inspect one-line and multiline `$$` formulas, Markdown-sensitive TeX
+(underscores/underbraces), and the tagged box-counting equation from recurring
+[bug #272](https://github.com/PinedaTec-EU/LeonardoMD/issues/272).
+With Math enabled, require actual display equations and the equation tag, with
+no KaTeX errors or literal delimiters; also check the disabled-extension fallback
+and code examples staying literal. Record instance identity, build, locale,
+extension state and evidence. XCTest/WKWebView component tests supplement this
+check but do not replace opening help in the tested packaged application.
+If no fresh instance can be tested, report that acceptance as pending.

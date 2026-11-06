@@ -22,7 +22,7 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v15/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v16/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
             let legacyImport = root.appendingPathComponent("Agent Import Guides/v1/\(language.rawValue)/AgentImport-v1-\(language.rawValue).mdlz")
             try FileManager.default.createDirectory(at: legacyImport.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -134,7 +134,7 @@ final class BundledUserGuideTests: XCTestCase {
                 try await waitFor("document.images[\(index)].naturalWidth > 0", in: web)
             }
             try await waitFor("document.querySelectorAll('[data-field-input]').length === 0 && document.querySelector('a[href$=\"/practice.mdlr\"]') !== null", in: web)
-            try await waitFor("document.querySelector('.katex') !== null && document.querySelector('.katex-error') === null", in: web)
+            try await waitFor("document.querySelectorAll('.katex-display').length === 3 && document.querySelector('.katex-error') === null && document.querySelector('.katex-tag') !== null", in: web)
             try await waitFor("document.querySelector('.vega-lite-placeholder svg') !== null", in: web)
             _ = try await web.evaluateJavaScript("document.querySelector('.mermaid-placeholder').scrollIntoView({block:'center'})")
             try await waitFor("document.querySelector('.mermaid-placeholder svg') !== null", in: web)
@@ -144,9 +144,9 @@ final class BundledUserGuideTests: XCTestCase {
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
                 let encodedSource = try XCTUnwrap(String(data: JSONEncoder().encode(session.content), encoding: .utf8))
                 try await waitFor("window.LeonardoEditing.currentSource() === \(encodedSource)", in: web)
-                for (name, selector) in [("diagram", ".mermaid-placeholder"), ("math", ".katex"), ("chart", ".vega-lite-placeholder")] {
+                for (name, selector) in [("diagram", ".mermaid-placeholder"), ("math", ".katex"), ("math-regression", ".math-rendered:has(.katex-tag)"), ("chart", ".vega-lite-placeholder")] {
                     _ = try await web.evaluateJavaScript("document.querySelector('\(selector)').scrollIntoView({block:'center'})")
-                    let readySelector = name == "math" ? selector : selector + " svg"
+                    let readySelector = name.hasPrefix("math") ? selector : selector + " svg"
                     try await waitFor("document.querySelector('\(readySelector)') !== null", in: web)
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Live \(name) example; built-in extension enabled")
