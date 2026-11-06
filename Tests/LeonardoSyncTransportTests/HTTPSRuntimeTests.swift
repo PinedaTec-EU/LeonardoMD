@@ -255,9 +255,15 @@ final class HTTPSRuntimeTests: XCTestCase {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             connection.stateUpdateHandler = { state in
                 switch state {
-                case .ready: continuation.resume()
-                case .failed(let error): continuation.resume(throwing: error)
-                case .cancelled: continuation.resume(throwing: TransportError.connectionClosed)
+                case .ready:
+                    connection.stateUpdateHandler = nil
+                    continuation.resume()
+                case .failed(let error):
+                    connection.stateUpdateHandler = nil
+                    continuation.resume(throwing: error)
+                case .cancelled:
+                    connection.stateUpdateHandler = nil
+                    continuation.resume(throwing: TransportError.connectionClosed)
                 default: break
                 }
             }
