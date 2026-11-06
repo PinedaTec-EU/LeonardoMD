@@ -3,6 +3,30 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.3.1022</title>
+            <pubDate>Fri, 06 Nov 2026 18:34:41 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>1022</sparkle:version>
+            <sparkle:shortVersionString>0.3.1022</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"># LeonardoMD 0.3.1022 — Beta
+
+- Help illustrations now use transparent Leonardo Classic artwork, with explanatory captions in Spanish and English. Updated main and agent-import guides create new personal copies while preserving your existing annotations.
+- Display math preserves Markdown-sensitive TeX and adjacent expressions, including the bilingual help regression examples.
+- The Mac can request a rubric capture from an explicitly compatible linked iOS device, review the returned image, and save or insert it into a document.
+- iOS capture requests require explicit consent and support preview, durable drafts and retry after interrupted transfers.
+
+- Owner-only iOS distribution tooling prepares companion archives with branded icons and privacy metadata from clean source.
+
+## Known limitations
+
+- This macOS download supports Apple silicon. Compatible iOS companion distribution and physical-device capture acceptance remain separate from this release.
+- This beta has not been installed on the maintainer's Mac as part of publication; candidate-specific hosted update, installation and relaunch checks remain pending.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1022/LeonardoMD-0.3.1022.zip" length="24115582" type="application/octet-stream" sparkle:edSignature="63ZLUKUmegkDxHPvgm9tVWJ0svRu5Nu44WN7dY/eQ8B7RE4+64giSHndxVXy4gPhzlmm9FW9dKvo9btXpOJYCw==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.3.861</title>
             <pubDate>Thu, 05 Nov 2026 19:31:37 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
