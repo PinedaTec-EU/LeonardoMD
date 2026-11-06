@@ -241,7 +241,13 @@ struct MobileRubricCaptureView: View {
 
     private var approvalControls: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if phase == .accepting { ProgressView("Comprobando solicitud…") }
+            if terminalBlocked {
+                Label("La solicitud ya no admite envíos (caducada, cancelada o revocada).",
+                      systemImage: "lock.fill")
+                    .accessibilityIdentifier("rubric-approval-blocked")
+                Text("Cierra esta tarjeta y pide una nueva solicitud al ordenador.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            } else if phase == .accepting { ProgressView("Comprobando solicitud…") }
             else {
                 Button("Aceptar y dibujar", systemImage: "checkmark.circle.fill") { accept() }
                     .buttonStyle(.borderedProminent).accessibilityIdentifier("rubric-accept")
@@ -378,6 +384,7 @@ struct MobileRubricCaptureView: View {
     }
 
     private func accept() {
+        guard !terminalBlocked else { return }
         failure = nil; phase = .accepting
         Task {
             do {
@@ -385,12 +392,14 @@ struct MobileRubricCaptureView: View {
                 phase = .drawing
             } catch {
                 phase = .awaitingApproval
-                failure = "No se pudo aceptar la solicitud. Puedes intentarlo de nuevo."
+                failure = terminalBlocked ? nil
+                    : "No se pudo aceptar la solicitud. Puedes intentarlo de nuevo."
             }
         }
     }
 
     private func reject() {
+        guard !terminalBlocked else { return }
         failure = nil
         Task {
             do { try await library.rejectRubricRequest(request); dismiss() }
