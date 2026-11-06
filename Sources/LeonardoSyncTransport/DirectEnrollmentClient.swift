@@ -81,6 +81,34 @@ public struct DirectEnrollmentClient: Sendable {
                                   scope: descriptor.scope, snapshot: snapshot)
     }
 
+    public func catalogue(_ descriptor: SharedProjectDescriptor, deviceID: UUID,
+                          credential: String) async throws -> RemoteProjectCatalogue {
+        let response = try await client.request(method: "GET",
+            path: "/v1/devices/\(deviceID.uuidString)/projects/\(descriptor.id.uuidString)/catalogue", credential: credential)
+        guard response.status == 200 else {
+            if response.status == 403 { throw SyncError.revoked }
+            throw TransportError.unexpectedResponse
+        }
+        let catalogue = try JSONDecoder().decode(RemoteProjectCatalogue.self, from: response.body)
+        try catalogue.validate(descriptor: descriptor)
+        return catalogue
+    }
+
+    public func file(_ entry: RemoteFileEntry, projectID: UUID, deviceID: UUID,
+                     credential: String) async throws -> CorpusFile {
+        let response = try await client.request(method: "POST",
+            path: "/v1/devices/\(deviceID.uuidString)/projects/\(projectID.uuidString)/file", credential: credential,
+            body: JSONEncoder().encode(RemoteFileRequest(path: entry.path, revision: entry.revision)))
+        guard response.status == 200 else {
+            if response.status == 403 { throw SyncError.revoked }
+            if response.status == 409 { throw SyncError.publicationPending }
+            throw TransportError.unexpectedResponse
+        }
+        let file = try JSONDecoder().decode(CorpusFile.self, from: response.body)
+        try entry.validate(file)
+        return file
+    }
+
     public func rubricRequests(deviceID: UUID, credential: String) async throws -> [RubricRequest] {
         let response = try await client.request(method: "GET", path: "/v1/devices/\(deviceID.uuidString)/rubrics/requests", credential: credential)
         guard response.status == 200 else { throw mapRubricResponse(response.status) }

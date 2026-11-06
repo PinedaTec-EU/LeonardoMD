@@ -31,7 +31,8 @@ final class DesktopPeerController {
     var buffers: @MainActor (URL) async throws -> [OpenDocumentBuffer] = { _ in [] }
     let workingRoot: URL
     let revoker: DesktopPeerEditorRevoker
-    private let library: any DesktopPeerLibraryAccess
+    let library: any DesktopPeerLibraryAccess
+    let downloads: DownloadLibrary
 
     init(preferencesURL: URL = AppSession.preferencesURL,
          library: (any DesktopPeerLibraryAccess)? = nil,
@@ -40,8 +41,9 @@ final class DesktopPeerController {
         self.defaults = defaults
         self.helper = helper ?? SyncHelperController(preferencesURL: preferencesURL)
         let savedInterval = defaults.integer(forKey: "desktopPeerSyncMinutes")
-        syncIntervalMinutes = Self.intervals.contains(savedInterval) ? savedInterval : 0
+        syncIntervalMinutes = defaults.object(forKey: "desktopPeerSyncMinutes") == nil ? 1 : (Self.intervals.contains(savedInterval) ? savedInterval : 1)
         let root = preferencesURL.deletingLastPathComponent().appendingPathComponent("DesktopPeers", isDirectory: true)
+        downloads = DownloadLibrary(cache: OnDemandCache(root: root.appendingPathComponent("Downloads", isDirectory: true)))
         workingRoot = root.appendingPathComponent("Working", isDirectory: true)
         self.revoker = revoker
         if let library { self.library = library }
@@ -65,6 +67,11 @@ final class DesktopPeerController {
         do {
             try authorizeStorage()
             try await reload()
+            downloads.fetch = { [weak self] id, entry in
+                guard let self else { throw SyncError.revoked }
+                return try await self.fetchDownload(id: id, entry: entry)
+            }
+            try await restoreDownloads()
             startAutomaticSync()
         } catch { self.error = error.localizedDescription }
     }
@@ -131,7 +138,14 @@ final class DesktopPeerController {
             let status = try await library.refresh(connectionID: id)
             available[id] = status.projects
             try await reload()
-        } catch { self.error = error.localizedDescription; try? await reload() }
+            try await restoreDownloads()
+            for descriptor in status.projects {
+                let catalogue = try await library.catalogue(connectionID: id, projectID: descriptor.id)
+                try await downloads.update(id: Self.downloadID(connectionID: id, projectID: descriptor.id),
+                    descriptor: descriptor, catalogue: catalogue)
+            }
+        } catch { self.error = error.localizedDescription; try? await reload(); try? await restoreDownloads() }
+        for project in downloads.projects { await downloads.downloadRetained(id: project.id) }
     }
 
     func importProject(connectionID: UUID, projectID: UUID) async {

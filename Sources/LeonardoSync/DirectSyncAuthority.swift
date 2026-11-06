@@ -274,6 +274,23 @@ public actor DirectSyncAuthority {
         return snapshot
     }
 
+    public func catalogue(deviceID: UUID, credential: String, projectID: UUID) async throws -> RemoteProjectCatalogue {
+        let snapshot = try await snapshot(deviceID: deviceID, credential: credential, projectID: projectID)
+        return RemoteProjectCatalogue(snapshot: snapshot)
+    }
+
+    public func file(deviceID: UUID, credential: String, projectID: UUID,
+                     request: RemoteFileRequest) async throws -> CorpusFile {
+        try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
+        guard let source = projects[projectID] else { throw PairingError.invalidProject }
+        try source.descriptor.scope.validate(request.path)
+        try source.descriptor.selection?.validate(request.path)
+        let snapshot = try await snapshot(deviceID: deviceID, credential: credential, projectID: projectID)
+        guard let file = snapshot.files.first(where: { $0.path == request.path }),
+              RemoteFileEntry(file: file).revision == request.revision else { throw SyncError.publicationPending }
+        return file
+    }
+
     private func checkAccess(deviceID: UUID, credential: String, projectID: UUID) throws {
         guard !changing else { throw DirectAuthorityError.busy }
         guard try registry.access(deviceID: deviceID, credential: credential, projectID: projectID) == .authorized else {

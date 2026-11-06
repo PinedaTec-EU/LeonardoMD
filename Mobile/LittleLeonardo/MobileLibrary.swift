@@ -13,6 +13,7 @@ final class MobileLibrary {
     var error: String?
     private(set) var connecting = false
     private(set) var comparisonCode: String?
+    let downloads: DownloadLibrary
     private let store: OfflineCorpusStore
     private let connectionStore: MobileDirectConnectionStore
     private let credentials: any DeviceCredentialStore
@@ -20,7 +21,7 @@ final class MobileLibrary {
     private let draftStore: MobileRubricDraftStore
     private let rubricAcceptance: MobileRubricAcceptance
     private let now: @Sendable () -> Date
-    private var connections: [MobileDirectConnection] = []
+    private(set) var connections: [MobileDirectConnection] = []
     private var rubricPolling = false
     private var revocationsInProgress: Set<UUID> = []
     private let rubricDraftWrites = MobileSyncOperationQueue()
@@ -45,6 +46,7 @@ final class MobileLibrary {
         let root = rootURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("LittleLeonardo/Corpus", isDirectory: true)
         store = OfflineCorpusStore(root: root)
+        downloads = DownloadLibrary(cache: OnDemandCache(root: root.deletingLastPathComponent().appendingPathComponent("Downloads")))
         connectionStore = MobileDirectConnectionStore(url: root.deletingLastPathComponent()
             .appendingPathComponent("connections.json"))
         self.credentials = credentials
@@ -73,7 +75,7 @@ final class MobileLibrary {
         connectionIndex(for: token) != nil
     }
 
-    private func isCurrentCacheOperation(_ token: ConnectionToken) -> Bool {
+    func isCurrentCacheOperation(_ token: ConnectionToken) -> Bool {
         cacheEpoch == token.cacheEpoch && hasCurrentIdentity(token)
     }
 
@@ -128,7 +130,7 @@ final class MobileLibrary {
     /// Performs the write-ahead preflight, authenticated STATUS revalidation,
     /// and outcome recording around one connection operation. All callers that
     /// can receive a revocation use this boundary, including rubric sends.
-    private func withAuthenticatedConnection<T>(
+    func withAuthenticatedConnection<T>(
         _ connection: MobileDirectConnection,
         operation: (MobileAuthenticatedContext) async throws -> T
     ) async throws -> T {
@@ -218,6 +220,11 @@ final class MobileLibrary {
             comparisonCode = loadedComparisonCode
             recoverableRubricDrafts = loadedDrafts
             projects = loaded
+            downloads.fetch = { [weak self] id, entry in
+                guard let self else { throw SyncError.revoked }
+                return try await self.fetchDownload(projectID: id, entry: entry)
+            }
+            try await downloads.restore(allowedIDs: Set(loaded.map(\.id)))
             let recoveredSnapshotChanged = storedConnections.count != protectedConnections.count
                 || zip(storedConnections, protectedConnections).contains { $0.0.hasChanges(from: $0.1) }
             if repairedMissingCredential || recoveredSnapshotChanged {
@@ -318,10 +325,16 @@ final class MobileLibrary {
                     connection.comparisonCode = nil
                     for descriptor in status.projects {
                         guard isCurrentCacheOperation(context.token) else { return }
-                        let project = try await context.client.project(descriptor,
+                        let catalogue = try await context.client.catalogue(descriptor,
                             deviceID: connection.deviceID, credential: context.credential)
-                        guard isCurrentCacheOperation(context.token),
-                              try await saveDirectProject(project, expected: context.token) else { return }
+                        guard isCurrentCacheOperation(context.token) else { return }
+                        try await downloads.update(id: descriptor.id, descriptor: descriptor, catalogue: catalogue)
+                        guard isCurrentCacheOperation(context.token) else {
+                            try await downloads.remove(id: descriptor.id); return
+                        }
+                        let project = try OfflineProject(id: descriptor.id, name: descriptor.name, mode: .direct,
+                            scope: descriptor.scope, snapshot: CorpusSnapshot(revision: "catalogue", files: []))
+                        guard try await saveDirectProject(project, expected: context.token) else { return }
                     }
                     guard isCurrentCacheOperation(context.token) else { return }
                     if let current = currentConnection(for: context.token), connection.hasChanges(from: current) {
@@ -336,6 +349,9 @@ final class MobileLibrary {
         }
         comparisonCode = connections.first(where: { $0.comparisonCode != nil })?.comparisonCode
         projects.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        for id in projects.filter({ !$0.isRecoveryArchive }).map(\.id) {
+            await downloads.downloadRetained(id: id)
+        }
     }
 
     /// Removes only direct-sync caches after confirmed revocation. Legacy
@@ -354,6 +370,7 @@ final class MobileLibrary {
         for id in removals {
             if let expected, !isCurrentCacheOperation(expected) { return }
             if let expected, hasActiveProjectOwner(id, excluding: expected.connectionID) { continue }
+            try await downloads.remove(id: id)
             guard let cached = try await store.load(id: id) else { continue }
             guard cached.mode == .direct else { continue }
             if let expected, !isCurrentCacheOperation(expected) { return }
@@ -418,6 +435,9 @@ final class MobileLibrary {
             failures.append("No se pudo guardar el vínculo revocado: \(error.localizedDescription)")
         }
         invalidateCacheAndAuthorization()
+        for id in revoked.pendingPurgeProjectIDs where !hasActiveProjectOwner(id, excluding: token.connectionID) {
+            downloads.deny(id: id)
+        }
         connections = nextConnections
         pendingRubricRequests.removeAll { $0.targetDeviceID == revoked.deviceID }
         projects.removeAll {

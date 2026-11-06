@@ -31,6 +31,14 @@ public struct DesktopPeerHTTPSRemote: DesktopPeerRemote {
         try await DesktopPeerProposalClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint)
             .acknowledge(proposal, receipt: receipt, deviceID: connection.remoteDeviceID, credential: credential)
     }
+    public func catalogue(_ descriptor: SharedProjectDescriptor, connection: DesktopPeerConnection, credential: String) async throws -> RemoteProjectCatalogue {
+        try await DirectEnrollmentClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint)
+            .catalogue(descriptor, deviceID: connection.remoteDeviceID, credential: credential)
+    }
+    public func file(_ entry: RemoteFileEntry, projectID: UUID, connection: DesktopPeerConnection, credential: String) async throws -> CorpusFile {
+        try await DirectEnrollmentClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint)
+            .file(entry, projectID: projectID, deviceID: connection.remoteDeviceID, credential: credential)
+    }
     public func snapshot(_ descriptor: SharedProjectDescriptor, connection: DesktopPeerConnection, credential: String) async throws -> CorpusSnapshot {
         let project = try await DirectEnrollmentClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint)
             .project(descriptor, deviceID: connection.remoteDeviceID, credential: credential)

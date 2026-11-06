@@ -16,7 +16,7 @@ struct MobileLibraryView: View {
     @State private var host = ""
     @State private var port = "40882"
     @State private var presentedRubricRequest: RubricRequest?
-    @AppStorage("directSyncIntervalMinutes") private var syncInterval = 0
+    @AppStorage("directSyncIntervalMinutes") private var syncInterval = 1
     @Environment(\.scenePhase) private var scenePhase
     private var activeRubricDraft: MobileRubricDraft? {
         library.recoverableRubricDrafts.first { $0.state != .submitted }
@@ -110,7 +110,9 @@ struct MobileLibraryView: View {
             }
         }
         .task(id: "\(syncInterval)-\(scenePhase)") {
-            guard scenePhase == .active, [1, 5, 15, 30, 60].contains(syncInterval) else { return }
+            guard scenePhase == .active else { return }
+            await library.synchronize()
+            guard [1, 5, 15, 30, 60].contains(syncInterval) else { return }
             while !Task.isCancelled {
                 do { try await Task.sleep(for: .seconds(syncInterval * 60)) }
                 catch { return }
@@ -183,7 +185,7 @@ struct MobileLibraryView: View {
 
     private var synchronizationSettings: some View {
         NavigationStack {
-            Form { syncFrequency }
+            Form { syncFrequency; SyncCacheSettingsView(library: library.downloads, spanish: true) }
                 .navigationTitle("Sincronización")
                 .toolbar { Button("Cerrar") { presentedSheet = nil } }
         }
@@ -194,6 +196,7 @@ struct MobileProjectView: View {
     let library: MobileLibrary
     let projectID: UUID
     @State private var exporting = false
+    @State private var selectedEntry: RemoteFileEntry?
     private var project: OfflineProject? { library.projects.first { $0.id == projectID } }
     var body: some View {
         List {
@@ -207,6 +210,11 @@ struct MobileProjectView: View {
                             .accessibilityIdentifier("export-recovery")
                     }
                 }
+                if !project.isRecoveryArchive {
+                    SyncCatalogueView(library: library.downloads, projectID: project.id, spanish: true) { entry in
+                        selectedEntry = entry
+                    }
+                }
                 ForEach(project.files.filter { ["md", "markdown", "txt"].contains(($0.path as NSString).pathExtension.lowercased()) }, id: \.path) { file in
                     NavigationLink(file.path) {
                         MobileDocumentView(library: library, projectID: project.id, file: file)
@@ -214,6 +222,9 @@ struct MobileProjectView: View {
                 }
             }
         }.navigationTitle(project?.name ?? "Proyecto")
+        .navigationDestination(item: $selectedEntry) { entry in
+            MobileDownloadedDocumentView(library: library, projectID: projectID, entry: entry)
+        }
         .fileExporter(isPresented: $exporting, document: project.map(MobileRecoveryDocument.init),
                       contentType: .json, defaultFilename: "LittleLeonardo-\(projectID.uuidString)-recovery") { result in
             if case .failure(let error) = result { library.error = error.localizedDescription }
