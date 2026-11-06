@@ -323,8 +323,6 @@ def run_archive(args: argparse.Namespace, root: Path) -> None:
         "xcodebuild", "-project", "Mobile/LittleLeonardo.xcodeproj", "-scheme", "LittleLeonardo",
         "-configuration", "Release", "-destination", "generic/platform=iOS",
         "-derivedDataPath", str(derived), "-archivePath", str(archive),
-        "DEVELOPMENT_TEAM=" + TEAM_IDENTIFIER, "CODE_SIGN_STYLE=Manual",
-        "CODE_SIGN_IDENTITY=" + args.identity, "PROVISIONING_PROFILE_SPECIFIER=" + PROFILE_UUID,
         "PRODUCT_BUNDLE_IDENTIFIER=" + BUNDLE_IDENTIFIER, "MARKETING_VERSION=" + version,
         "CURRENT_PROJECT_VERSION=" + str(build), "CODE_SIGNING_ALLOWED=YES",
         "CODE_SIGNING_REQUIRED=YES", "archive",
