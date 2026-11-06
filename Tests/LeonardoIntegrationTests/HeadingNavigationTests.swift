@@ -23,8 +23,9 @@ extension WebKitRuntimeTests {
         ## **Repeated** [heading](https://example.com)
 
         """ + String(repeating: "Tail paragraph.\n\n", count: 100)
-        let source = ("---\ntitle: Synthetic navigation\n---\n" + body).replacingOccurrences(of: "\n", with: "\r\n")
+        var source = ("---\ntitle: Synthetic navigation\n---\n" + body).replacingOccurrences(of: "\n", with: "\r\n")
         let line = try XCTUnwrap(source.components(separatedBy: "\n").lastIndex(where: { $0.hasPrefix("## **Repeated**") })) + 1
+        source = source.replacingOccurrences(of: "data-leonardo-source-line=\"18\"", with: "data-leonardo-source-line=\"\(line)\"")
         let (host, window) = makeHost(content: source)
         defer { host.teardown(); window.close() }
         let web = try XCTUnwrap(webView(of: host))
@@ -65,4 +66,28 @@ extension WebKitRuntimeTests {
         host.scroll(toSourceLine: 5) // Flush the debounced update before finding the heading.
         try await waitFor("document.getElementById('refreshed-destination')?.getBoundingClientRect().top < 2 && window.scrollY > 1800", in: web)
     }
+    func testHeadingNavigationWaitsForInFlightExtensionRendering() async throws {
+        let configuration = MarkdownPreviewConfiguration(allowsVegaLite: true)
+        let (host, window) = makeHost(content: "# Initial", config: configuration)
+        defer { host.teardown(); window.close() }
+        let controller = MarkdownPreviewController()
+        controller.attach(host)
+        for _ in 0..<100 {
+            if controller.isReady { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertTrue(controller.isReady)
+        let web = try XCTUnwrap(webView(of: host))
+        _ = try await evaluate("window.LeonardoCharts.render = () => new Promise(resolve => { window.finishNavigationRender = resolve; }); true", in: web)
+        let source = "# Updated\n\n<div style=\"height:2000px\">Spacer</div>\n\n## Destination\n\n" + String(repeating: "Tail.\n\n", count: 100)
+        host.apply(content: source, baseURL: nil, configuration: configuration, onLinkActivation: nil, onScrollProgress: nil)
+        try await waitFor("typeof window.finishNavigationRender === 'function'", in: web)
+        host.scroll(toSourceLine: 5)
+        try await Task.sleep(for: .milliseconds(50)) // Drain navigation while the controlled renderer stays pending.
+        let pendingScroll = try await evaluate("window.scrollY", in: web)
+        XCTAssertEqual(pendingScroll, "0", "A heading request must wait for the in-flight extension layout")
+        _ = try await evaluate("window.finishNavigationRender()", in: web)
+        try await waitFor("Math.abs(document.getElementById('destination').getBoundingClientRect().top) < 2 && window.scrollY > 1800", in: web)
+    }
+
 }

@@ -423,6 +423,8 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
                 baseURL: documentURL,
                 configuration: configuration
             )
+            ready = false
+            onReady?(false)
             formState.baseline = content
             documentHandler?.beginDocument()
             evaluate("window.LeonardoPreview && window.LeonardoPreview.updateContent(\(payload));")
@@ -435,8 +437,6 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
         guard renderWorkItem != nil, ready else { return }
         renderWorkItem?.cancel()
         renderWorkItem = nil
-        ready = false
-        onReady?(false)
         sendCurrentDocumentUpdate()
         try await waitUntilReady()
     }
