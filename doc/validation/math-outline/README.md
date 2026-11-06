@@ -6,6 +6,10 @@ Tracking: [#274](https://github.com/PinedaTec-EU/LeonardoMD/issues/274) and
 
 ## Current candidate
 
+See [main-refresh/README.md](main-refresh/README.md) for the current Guide-v20 candidate and exact source mapping. The captures below are retained historical evidence.
+
+## Historical candidate (before main refresh)
+
 All current acceptance captures use source
 `4ba13fe895a80cfe9dc3a791deab321b56003d67`, guide revision 18 and the
 unmaterialized application baseline 0.3.1010. The final review head may add only
