@@ -55,3 +55,5 @@ Sync helper (#319): chapters 14–15 cover per-user installation/approval, the r
 
 Synchronization roles (#337): chapters 14–15 now route through one Synchronization category, one service control and separate sharing/consuming pages. Refreshed EN/ES production-component images show both pages with isolated disabled settings; capability labels and invite QR/link equivalence are explained. Guide v14 retains older personal copies.
 Update termination (#202): chapter 16 documents automatic Preferences dismissal before install approval, retained Save/Git decisions, cancellation/retry, and the older-source bootstrap workaround. Introduced in Guide v12 and retained in current Guide v14; previous personal copies are preserved.
+
+Display-math regression coverage ([#272](https://github.com/PinedaTec-EU/LeonardoMD/issues/272)): both guides include one-line underbraces and a multiline tagged box-counting equation. Native help QA must inspect enabled rendering and disabled/code fallback in every tested instance.

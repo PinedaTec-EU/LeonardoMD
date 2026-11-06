@@ -80,6 +80,29 @@
     }
   });
 
+  // Protect display TeX before Markdown interprets underscores, escapes or HTML.
+  // Custom tokens have no preview-edit ranges: edit formulas in source.
+  const displayMath = (source) => /^\$\$([\s\S]+?)\$\$/.exec(source);
+  parser.use({ extensions: [
+    {
+      name: "leonardoDisplayMathBlock", level: "block",
+      tokenizer(source) {
+        const match = /^ {0,3}\$\$([\s\S]+?)\$\$(?:[ \t]*\n|[ \t]*$)/.exec(source);
+        if (match) return { type: "leonardoDisplayMathBlock", raw: match[0], text: match[0].trim() };
+      },
+      renderer(token) { return `<p>${window.LeonardoEditing.escapeHTML(token.text)}</p>\n`; }
+    },
+    {
+      name: "leonardoDisplayMathInline", level: "inline",
+      start(source) { return source.indexOf("$$"); },
+      tokenizer(source) {
+        const match = displayMath(source);
+        if (match) return { type: "leonardoDisplayMathInline", raw: match[0], text: match[0] };
+      },
+      renderer(token) { return window.LeonardoEditing.escapeHTML(token.text); }
+    }
+  ] });
+
   window.LeonardoTables = {
     get documentTokens() { return documentTokens; },
     render(markdown, legacyWidths = true) {
