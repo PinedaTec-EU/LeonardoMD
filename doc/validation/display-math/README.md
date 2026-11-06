@@ -27,8 +27,10 @@ Current local full Swift suite and focused seven-case math/help suite pass.
 Guide packaging tests: 3 pass. PR 363's compilation counter is 10.
 
 The source mapping script compares these capture/build inputs with the review
-head, excluding only this evidence directory, the recorded build count and the
-non-packaged revision inventory. Run it with the exact review SHA.
+head, excluding only this evidence directory, the recorded build count, the
+non-packaged revision inventory and `.wiki/document-extensions.md` (agent
+memory). The latter now links the canonical inventory instead of duplicating
+its mutable guide revision; it is not an app/build/package input. Run it with the exact review SHA.
 
 ## Known separate defects
 
