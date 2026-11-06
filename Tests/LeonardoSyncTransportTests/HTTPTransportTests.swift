@@ -1,4 +1,5 @@
 import XCTest
+import LeonardoSync
 @testable import LeonardoSyncTransport
 
 final class HTTPTransportTests: XCTestCase {
@@ -51,6 +52,15 @@ final class HTTPTransportTests: XCTestCase {
         }
         let error = ProjectDownloadError(response: HTTPResponse(status: 500, body: Data("private raw server message".utf8)))
         XCTAssertFalse(error.localizedDescription.contains("private raw server message"))
+    }
+
+    func testStructuredDiagnosticsRejectUnsafePathsOnConstructionAndDecode() throws {
+        for path in ["/private/secret.md", "../secret.md", "docs/../secret.md", "docs\\secret.md", "docs/secret.md\nprivate"] {
+            XCTAssertNil(CorpusReadFailure(reason: .sourceUnavailable, path: path).path)
+            let body = try JSONSerialization.data(withJSONObject: ["reason": "sourceUnavailable", "path": path])
+            let error = ProjectDownloadError(response: HTTPResponse(status: 500, body: body))
+            XCTAssertNil(try XCTUnwrap(error.failure).path)
+        }
     }
 
 }

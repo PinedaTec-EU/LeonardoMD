@@ -157,6 +157,9 @@ final class HTTPSRuntimeTests: XCTestCase {
         let fixedNow = Date(timeIntervalSince1970: 1_000)
         let oversized = SharedProjectDescriptor(id: UUID(), name: "Large", scope: try CorpusScope(folder: ""))
         let unavailable = SharedProjectDescriptor(id: UUID(), name: "Offline", scope: try CorpusScope(folder: ""))
+        let unsafe = SharedProjectDescriptor(id: UUID(), name: "Unsafe diagnostic", scope: try CorpusScope(folder: "docs"))
+        let outsideGrant = SharedProjectDescriptor(id: UUID(), name: "Outside grant", scope: try CorpusScope(folder: ""),
+            selection: try CorpusSelection(folders: ["docs"], documents: []))
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -164,6 +167,12 @@ final class HTTPSRuntimeTests: XCTestCase {
         let authority = try DirectSyncAuthority(registry: PairingRegistry(), projects: [
             SharedProjectSource(descriptor: oversized) {
                 try await ProjectCorpusReader(limits: CorpusLimits(maximumCorpusBytes: 4)).snapshot(root: root, scope: oversized.scope)
+            },
+            SharedProjectSource(descriptor: unsafe) {
+                throw CorpusReadFailure(reason: .sourceUnavailable, path: "/private/secret-root.md")
+            },
+            SharedProjectSource(descriptor: outsideGrant) {
+                throw CorpusReadFailure(reason: .sourceUnavailable, path: "private/secret.md")
             },
             SharedProjectSource(descriptor: unavailable) {
                 throw NSError(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError,
@@ -180,9 +189,10 @@ final class HTTPSRuntimeTests: XCTestCase {
             let credential = String(repeating: "a", count: 64)
             let enrollment = try await client.begin(deviceName: "Receiving Mac", credential: credential, now: fixedNow, kind: .desktopPeer)
             try await authority.approve(requestID: enrollment.deviceID, code: enrollment.comparisonCode,
-                                        projectIDs: [oversized.id, unavailable.id], now: fixedNow)
+                                        projectIDs: [oversized.id, unavailable.id, unsafe.id, outsideGrant.id], now: fixedNow)
             for (descriptor, expectedStatus, reason) in [
-                (oversized, 413, CorpusReadFailure.Reason.corpusTooLarge), (unavailable, 500, .sourceUnavailable)
+                (oversized, 413, CorpusReadFailure.Reason.corpusTooLarge), (unavailable, 500, .sourceUnavailable),
+                (unsafe, 500, .sourceUnavailable), (outsideGrant, 500, .sourceUnavailable)
             ] {
                 do {
                     _ = try await client.project(descriptor, deviceID: enrollment.deviceID, credential: credential)

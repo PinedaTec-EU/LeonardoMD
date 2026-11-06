@@ -128,9 +128,15 @@ public struct DirectHTTPSRouter: Sendable {
         do {
             return try json(await authority.snapshot(deviceID: deviceID, credential: credential, projectID: projectID))
         } catch let failure as CorpusReadFailure {
-            _ = try await authority.snapshotDescriptor(deviceID: deviceID, credential: credential, projectID: projectID)
-            logger.error("sync_snapshot_failed project=\(projectID, privacy: .public) reason=\(failure.reason.rawValue, privacy: .public)")
-            return try json(failure, status: failure.reason == .sourceUnavailable ? 500 : 413)
+            let descriptor = try await authority.snapshotDescriptor(deviceID: deviceID, credential: credential, projectID: projectID)
+            let path = failure.path.flatMap { candidate -> String? in
+                guard (try? descriptor.scope.validate(candidate)) != nil else { return nil }
+                if let selection = descriptor.selection, (try? selection.validate(candidate)) == nil { return nil }
+                return candidate
+            }
+            let safe = CorpusReadFailure(reason: failure.reason, path: path, observed: failure.observed, limit: failure.limit)
+            logger.error("sync_snapshot_failed project=\(projectID, privacy: .public) reason=\(safe.reason.rawValue, privacy: .public)")
+            return try json(safe, status: safe.reason == .sourceUnavailable ? 500 : 413)
         } catch let error as SyncError { throw error }
         catch let error as PairingError { throw error }
         catch let error as DirectAuthorityError { throw error }

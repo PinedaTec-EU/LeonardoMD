@@ -12,7 +12,22 @@ public struct CorpusReadFailure: Error, Codable, Equatable, Sendable {
     public let limit: Int?
 
     public init(reason: Reason, path: String? = nil, observed: Int? = nil, limit: Int? = nil) {
-        self.reason = reason; self.path = path; self.observed = observed; self.limit = limit
+        self.reason = reason
+        self.path = path.flatMap { candidate in
+            (try? CorpusScope(folder: "").validate(candidate)) != nil ? candidate : nil
+        }
+        self.observed = observed.flatMap { $0 >= 0 ? $0 : nil }
+        self.limit = limit.flatMap { $0 >= 0 ? $0 : nil }
+    }
+
+    private enum CodingKeys: String, CodingKey { case reason, path, observed, limit }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(reason: try container.decode(Reason.self, forKey: .reason),
+                  path: try container.decodeIfPresent(String.self, forKey: .path),
+                  observed: try container.decodeIfPresent(Int.self, forKey: .observed),
+                  limit: try container.decodeIfPresent(Int.self, forKey: .limit))
     }
 
     static func check(size: Int, path: String, count: Int, bytes: Int, limits: CorpusLimits) throws {
