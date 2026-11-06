@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-06T20:00:42.135405+00:00",
+  "generator": "Shared capture_metadata.py image_dimensions/git_source; native unavailable-context fallback",
+  "capture": {
+    "captured_at": "2026-11-06T19:56:51.518Z",
+    "route": "/native/packaged-user-guide/en",
+    "screen": "Help \u2192 user guide \u2192 outline \u2192 math regression examples",
+    "browser_name": "Native macOS application window with WKWebView content, via CUA",
+    "browser_version": null,
+    "viewport_css": null,
+    "capture_mode": "element",
+    "state": "Guide v20 en; Preview; outline-selected heading at viewport start; Math/Mermaid/Charts enabled; complete braces, radical, arrow, cancel and tag; Leonardo Classic/Parchment",
+    "data_provenance": "synthetic",
+    "unavailable_context": "Native CUA does not expose the packaged WKWebView browser version or CSS viewport. Both are explicitly unavailable; image dimensions are not substituted."
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "1d2b003ba1a530b52f79d74021168a2b284050005d9c02cedc9e6afff8f59b5e"
+  },
+  "source": {
+    "revision_at_collection": "347dd5ae46e93137741afb050500b003b607cff2",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  },
+  "build_revision": "347dd5ae46e93137741afb050500b003b607cff2",
+  "process_id": 85364,
+  "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.93514a3c680447929117044a73e1489e",
+  "application_version": "0.3.1022 (unmaterialized QA baseline)"
+}

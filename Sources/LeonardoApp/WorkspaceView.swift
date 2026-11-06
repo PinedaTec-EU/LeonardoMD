@@ -127,7 +127,9 @@ struct WorkspaceView: View {
         }
     }
     private var editor: some View {
-        MarkdownEditor(text: Binding(get: { session.content }, set: { _ = session.editDocument(expected: session.content, replacement: $0) }), scrollFraction: $session.editorScroll, requestedLine: session.requestedLine, usesDocumentHistory: true)
+        MarkdownEditor(text: Binding(get: { session.content }, set: { _ = session.editDocument(expected: session.content, replacement: $0) }), scrollFraction: $session.editorScroll, requestedLine: session.requestedLine, requestedLineRevision: session.requestedLineRevision, usesDocumentHistory: true, onUserScroll: { fraction in
+            if session.mode == .split { session.renderer.scroll(toFraction: fraction) }
+        })
             .id(session.documentURL)
             .disabled(!session.canEditDocument)
     }
