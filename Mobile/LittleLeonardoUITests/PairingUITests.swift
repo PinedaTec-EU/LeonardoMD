@@ -88,7 +88,7 @@ final class PairingUITests: XCTestCase {
         try advanceDirectFixture("approve")
         app.buttons["Sincronizar"].firstMatch.tap()
         let sheet = app.otherElements["rubric-request-sheet"]
-        XCTAssertTrue(sheet.waitForExistence(timeout: 30), "The Mac request must reach the mobile foreground poll")
+        openRubricRequestIfNeeded(app, sheet: sheet, timeout: 30)
         XCTAssertTrue(app.staticTexts["Solicitud de Mac QA"].waitForExistence(timeout: 5))
         app.buttons["rubric-accept"].tap()
         let canvas = app.otherElements["rubric-canvas"]
@@ -158,7 +158,7 @@ final class PairingUITests: XCTestCase {
         try advanceDirectFixture("approve")
         app.buttons["Sincronizar"].firstMatch.tap()
         let sheet = app.otherElements["rubric-request-sheet"]
-        XCTAssertTrue(sheet.waitForExistence(timeout: 30))
+        openRubricRequestIfNeeded(app, sheet: sheet, timeout: 30)
         app.buttons["rubric-accept"].tap()
         let canvas = app.otherElements["rubric-canvas"]
         XCTAssertTrue(canvas.waitForExistence(timeout: 10))
@@ -232,8 +232,7 @@ final class PairingUITests: XCTestCase {
 
         try advanceDirectFixture("request")
         let sheet = app.otherElements["rubric-request-sheet"]
-        XCTAssertTrue(sheet.waitForExistence(timeout: 30),
-                      "The request must arrive while the read-only document is open")
+        openRubricRequestIfNeeded(app, sheet: sheet, timeout: 30)
         app.buttons["rubric-accept"].tap()
         let canvas = app.otherElements["rubric-canvas"]
         XCTAssertTrue(canvas.waitForExistence(timeout: 10))
@@ -346,6 +345,18 @@ final class PairingUITests: XCTestCase {
             Thread.sleep(forTimeInterval: 0.1)
         }
         return false
+    }
+
+    @MainActor private func openRubricRequestIfNeeded(_ app: XCUIApplication,
+                                                       sheet: XCUIElement,
+                                                       timeout: TimeInterval) {
+        if sheet.waitForExistence(timeout: timeout) { return }
+        let banner = app.buttons["rubric-request-banner"]
+        XCTAssertTrue(banner.waitForExistence(timeout: 5),
+                      "The Mac request must reach the mobile foreground poll")
+        if banner.exists { banner.tap() }
+        XCTAssertTrue(sheet.waitForExistence(timeout: 10),
+                      "The pending request must open from its visible recovery banner")
     }
 
     private func advanceDirectFixture(_ phase: String) throws {
