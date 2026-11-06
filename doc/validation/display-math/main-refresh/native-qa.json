@@ -1,0 +1,26 @@
+{
+  "source_sha": "70d5f555a69a192b199f5019363a83244394d7a3",
+  "process_id": 54488,
+  "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.3d5f3ca188a74310af11e4e2e01c7ff3",
+  "application_version": "0.3.1000 (unmaterialized baseline)",
+  "guide_revision": 16,
+  "launch_method": "./launch.sh --qa produced and verified bundle; after prior principal quit, CUA opened the exact QA bundle path",
+  "native_window_captures": "Readable full-window images pending; CUA currently returns OS-composited thumbnails. Current full WKWebView screenshots are the primary visual evidence.",
+  "locales": {
+    "en": {
+      "captured_at": "2026-11-06T15:10:29.058Z",
+      "ax_sha256": "5a4b226109435438cf43a5f0a273b41d99ebf7513281979d4e8b765db166f6a5"
+    },
+    "es": {
+      "captured_at": "2026-11-06T15:10:27.511Z",
+      "ax_sha256": "3da310a1a0413d1655402b960aa56081c381d5e66c8fda741cf7b066fe576a8c"
+    }
+  },
+  "observed": [
+    "Fresh PID and actual first window",
+    "Both v16 guides opened via Help",
+    "Math enabled, tagged equation and disabled literal fallback",
+    "Both practices filled with fictitious data, saved, closed, reopened and persistence verified",
+    "Test names cleared; original English language and Math state restored"
+  ]
+}

@@ -7,8 +7,8 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[3]
 head = sys.argv[1] if len(sys.argv) > 1 else "HEAD"
 captures = {
-    "component": "8061b04d640ea87554205e96ba60ea6ae4f165b0",
-    "packaged": "8061b04d640ea87554205e96ba60ea6ae4f165b0",
+    "component": "70d5f555a69a192b199f5019363a83244394d7a3",
+    "packaged": "70d5f555a69a192b199f5019363a83244394d7a3",
 }
 for label, revision in captures.items():
     subprocess.run([
