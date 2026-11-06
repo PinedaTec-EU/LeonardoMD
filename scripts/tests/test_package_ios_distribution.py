@@ -1,4 +1,5 @@
 import importlib.util
+import os
 from pathlib import Path
 import plistlib
 import tempfile
@@ -26,6 +27,7 @@ class IOSDistributionTests(unittest.TestCase):
             payload = plistlib.loads(options.read_bytes())
             self.assertEqual(payload["destination"], "export")
             self.assertEqual(payload["method"], "app-store-connect")
+            self.assertEqual(payload["signingCertificate"], MODULE.CERTIFICATE_SHA1)
             self.assertEqual(payload["teamID"], MODULE.TEAM_IDENTIFIER)
             self.assertFalse(payload["manageAppVersionAndBuildNumber"])
             self.assertTrue(payload["testFlightInternalTestingOnly"])
@@ -91,6 +93,21 @@ class IOSDistributionTests(unittest.TestCase):
                     provenance, artifact, profile, "0.3.1000", 1000,
                     expected_source="a" * 40, expected_inputs="b" * 64,
                 )
+
+    def test_export_signing_scope_does_not_mutate_process_environment(self):
+        keychain = Path("/Users/example/Library/Keychains/login.keychain-db")
+        original = os.environ.get("OTHER_CODE_SIGN_FLAGS")
+        environment = MODULE.export_signing_environment(keychain)
+        self.assertEqual(
+            environment["OTHER_CODE_SIGN_FLAGS"],
+            "--keychain /Users/example/Library/Keychains/login.keychain-db",
+        )
+        self.assertEqual(os.environ.get("OTHER_CODE_SIGN_FLAGS"), original)
+
+    def test_package_script_never_mutates_user_keychain_search_list(self):
+        script = SCRIPT.read_text(encoding="utf-8")
+        self.assertNotIn("list-keychains", script)
+        self.assertNotIn("constrained_keychain_search", script)
 
 if __name__ == "__main__":
     unittest.main()

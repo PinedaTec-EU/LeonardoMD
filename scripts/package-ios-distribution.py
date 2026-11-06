@@ -16,12 +16,10 @@ import os
 from pathlib import Path
 import plistlib
 import re
-import shlex
 import subprocess
 import sys
 import tempfile
 import zipfile
-from contextlib import contextmanager
 
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
@@ -200,43 +198,11 @@ def signing_keychain_build_setting(keychain: Path) -> str:
     return f"--keychain {keychain}"
 
 
-def keychain_search_list() -> list[str]:
-    try:
-        result = subprocess.run(
-            ["security", "list-keychains"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except (OSError, subprocess.CalledProcessError) as error:
-        raise DistributionError("Cannot read the keychain search list") from error
-    paths = shlex.split(result.stdout)
-    if not paths:
-        raise DistributionError("The keychain search list is empty")
-    return paths
-
-
-@contextmanager
-def constrained_keychain_search(keychain: Path):
-    original = keychain_search_list()
-    try:
-        subprocess.run(
-            [
-                "security", "list-keychains", "-s", str(keychain),
-                "/Library/Keychains/System.keychain",
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        yield
-    finally:
-        subprocess.run(
-            ["security", "list-keychains", "-s", *original],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
+def export_signing_environment(keychain: Path) -> dict[str, str]:
+    """Pass signing scope to xcodebuild without changing the user's keychain list."""
+    environment = os.environ.copy()
+    environment["OTHER_CODE_SIGN_FLAGS"] = signing_keychain_build_setting(keychain)
+    return environment
 
 
 def read_plist(path: Path) -> dict:
@@ -542,6 +508,7 @@ def export_options(path: Path) -> None:
         "destination": "export",
         "method": "app-store-connect",
         "signingStyle": "manual",
+        "signingCertificate": CERTIFICATE_SHA1,
         "teamID": TEAM_IDENTIFIER,
         "provisioningProfiles": {BUNDLE_IDENTIFIER: PROFILE_UUID},
         "manageAppVersionAndBuildNumber": False,
@@ -573,10 +540,9 @@ def run_export(args: argparse.Namespace, root: Path) -> None:
     export_options(options_path)
     if list(export_path.glob("*.ipa")):
         raise DistributionError("Export output already contains an IPA")
-    with constrained_keychain_search(keychain):
-        subprocess.run(["xcodebuild", "-exportArchive", "-archivePath", str(archive),
-                        "-exportPath", str(export_path), "-exportOptionsPlist", str(options_path)],
-                       cwd=root, check=True)
+    subprocess.run(["xcodebuild", "-exportArchive", "-archivePath", str(archive),
+                    "-exportPath", str(export_path), "-exportOptionsPlist", str(options_path)],
+                   cwd=root, check=True, env=export_signing_environment(keychain))
     ipa_files = sorted(export_path.glob("*.ipa"))
     if len(ipa_files) != 1:
         raise DistributionError(f"Expected exactly one exported IPA, found {len(ipa_files)}")
