@@ -78,7 +78,7 @@ final class PeerSyncErrorMessageTests: XCTestCase {
             // Capture the actual sheet window: cacheDisplay omits AppKit vibrancy/background layers.
             let capture = Process()
             capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-            capture.arguments = ["-x", "-o", "-l", String(sheet.windowNumber), image.path]
+            capture.arguments = ["-x", "-o", "-l", String(window.windowNumber), image.path]
             let capturedAt = ISO8601DateFormatter().string(from: Date())
             try capture.run()
             capture.waitUntilExit()
@@ -89,7 +89,7 @@ final class PeerSyncErrorMessageTests: XCTestCase {
                 "screen": "Production DesktopPeerPreferencesView download error alert; language \(language.rawValue)",
                 "browser_name": "Native AppKit/SwiftUI window; no browser engine",
                 "browser_version": "Not applicable: native AppKit/SwiftUI",
-                "viewport_css": ["width": Int(sheet.frame.width), "height": Int(sheet.frame.height)],
+                "viewport_css": ["width": Int(window.frame.width), "height": Int(window.frame.height)],
                 "capture_mode": "viewport", "data_provenance": "synthetic",
                 "state": "Synthetic authorized HTTP 413 corpus-size failure; viewport_css records native window points, CSS is not applicable; capture source \(ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "unbound")"
             ]
