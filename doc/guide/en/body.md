@@ -621,6 +621,8 @@ use **Ampliar lienzo** (expand canvas), then **Volver** (back). Rotating never
 sends or clears the rubric. Preview and **Enviar rúbrica** (send rubric) remain
 explicit actions; a blocked, submitted or frozen retry draft cannot be edited.
 
+![Full-screen landscape rubric canvas in Leonardo Classic. Actual simulator capture with a synthetic request and Spanish interface; reduced thumbnail.](assets/ios-rubric-classic-landscape.png)
+
 ### Answer a rubric request on iOS
 
 This is a capture-only response channel for a **known, linked Mac**. Pairing

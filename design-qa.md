@@ -48,3 +48,10 @@ Full local XCTest: 392 cases, 15 optional skips, zero failures. Script checks: 2
 - Exact-head CI and independent judgment before integration: pending final evidence commit.
 
 final result: passed
+
+
+## Little Leonardo Classic (#386)
+
+final result: passed
+
+Scoped native verification, iterations, limitations and the combined reference/application comparison are recorded in [the mobile Classic report](doc/validation/mobile-classic/design-qa.md). This addition preserves the earlier preferences-scope assessment above.

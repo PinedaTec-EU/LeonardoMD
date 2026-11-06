@@ -629,6 +629,8 @@ dibujo conserva sus proporciones. Si tienes bloqueada la rotación, pulsa
 La vista previa y **Enviar rúbrica** siguen siendo acciones explícitas; un
 borrador bloqueado, enviado o pendiente de reintento no permite seguir dibujando.
 
+![Lienzo de rúbrica a pantalla completa en horizontal, con los colores Leonardo Classic. Captura real del simulador con una solicitud sintética; miniatura reducida.](guide/es/assets/ios-rubric-classic-landscape.png)
+
 ### Responder a una solicitud de rúbrica en iOS
 
 Este es un canal de respuesta **solo para capturar**, dirigido a un Mac

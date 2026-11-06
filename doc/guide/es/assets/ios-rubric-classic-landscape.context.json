@@ -1,0 +1,6 @@
+{
+  "source": "../../../validation/mobile-classic/rubric-landscape.png",
+  "source_sha": "793166b2d9137993fbd6a1313ac18fb5ffe75155",
+  "derivation": "Uniform resize of unmodified native full-display capture to 400 x 184 for the guide image budget; original and capture metadata retained in validation directory.",
+  "locale": "Spanish application UI; synthetic Mac QA request"
+}
