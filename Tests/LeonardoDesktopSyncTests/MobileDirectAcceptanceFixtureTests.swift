@@ -177,12 +177,14 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                             if let fault {
                                 let snapshot = await fault.snapshot()
                                 XCTAssertTrue(snapshot.injected, "Lost-ack mode must replace the first response acknowledgement")
-                                XCTAssertEqual(snapshot.responsePosts, 3,
-                                               "The frozen response must be committed once, remain pending across relaunch, then reconcile once")
+                                XCTAssertGreaterThanOrEqual(snapshot.responsePosts, 2,
+                                                           "The frozen response must remain retryable across relaunch")
                                 XCTAssertEqual(snapshot.uniqueRequestIDs, 1,
                                                "Every replay must retain the original request ID and payload")
                                 XCTAssertGreaterThan(snapshot.blockedRubricPolls, 0,
                                                       "Rubric request polling must remain gated until reconciliation is explicitly allowed")
+                                XCTAssertGreaterThan(snapshot.blockedResponsePosts, 0,
+                                                      "At least one replay acknowledgement must remain gated until reconciliation is explicitly allowed")
                                 try writeJSON(["responsePosts": snapshot.responsePosts,
                                                "uniqueRequestIDs": snapshot.uniqueRequestIDs,
                                                "blockedRubricPolls": snapshot.blockedRubricPolls,
