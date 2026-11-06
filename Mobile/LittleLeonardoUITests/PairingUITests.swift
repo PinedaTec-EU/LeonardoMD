@@ -45,8 +45,8 @@ final class PairingUITests: XCTestCase {
         app.buttons["document-sync"].tap()
         XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native direct updated"].waitForExistence(timeout: 15))
         try advanceDirectFixture("revoke")
-        app.buttons["document-sync"].tap()
-        XCTAssertTrue(app.staticTexts["Acceso retirado"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["Acceso retirado"].waitForExistence(timeout: 20),
+                      "Foreground polling must purge the revoked direct cache without a manual refresh")
         dismissNativeFailureIfPresent(app)
         XCTAssertTrue(waitForDocumentSyncToFinish(app, timeout: 15),
                       "The revocation sync did not finish before the final capture")
