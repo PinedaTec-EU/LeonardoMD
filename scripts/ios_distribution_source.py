@@ -130,10 +130,13 @@ def canonical_checkpoint(root: Path, version: str) -> None:
 def publisher_source_guard(root: Path, expected_source: str) -> tuple[str, str]:
     if not re.fullmatch(r"[0-9a-f]{40}", expected_source):
         raise SourceGuardError("Publisher expected source must be a full Git SHA")
-    if git_text(root, "rev-parse", "HEAD") != expected_source:
+    head = git_text(root, "rev-parse", "HEAD")
+    if head != expected_source:
         raise SourceGuardError("Publisher HEAD does not match --expected-source")
-    clean_worktree(root)
     origin_main = git_text(root, "rev-parse", "origin/main")
+    if expected_source != origin_main:
+        raise SourceGuardError("Publisher source must match fetched origin/main")
+    clean_worktree(root)
     ancestry = subprocess.run(["git", "merge-base", "--is-ancestor", expected_source, origin_main],
                               cwd=root)
     if ancestry.returncode:

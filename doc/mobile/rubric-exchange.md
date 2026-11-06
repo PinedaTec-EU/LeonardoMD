@@ -188,10 +188,12 @@ uploads or changes App Store Connect. Use a fresh output directory per producer.
    after the build. This exception does not apply to `publisher-archive`, which
    still requires the entire accepted-checkpoint checkout to be clean.
 2. After accepted source integration and central version materialization, fetch
-   main and select its exact accepted materialized SHA in a clean checkout.
-   `publisher-archive --expected-source <full-SHA>` verifies the main ancestry,
-   canonical checkpoint, consumed entries and clean inputs. It does not recreate
-   or increment the frozen source allocation. Detached HEAD is supported.
+   `origin` and select the exact current accepted materialized `origin/main` SHA
+   in a clean checkout. `publisher-archive --expected-source <full-SHA>` requires
+   `HEAD`, the argument and fetched `origin/main` to match before it verifies the
+   canonical checkpoint, consumed entries and clean inputs. Detached HEAD is
+   supported. Producer provenance stays frozen at that source after startup; a
+   later `origin/main` advance never restamps an existing archive or export.
 3. Only after archive verification succeeds, `export` verifies the archive against
    its frozen producer and exports an owner-only App Store Connect IPA. It passes
    the approved certificate fingerprint and process-local signing scope without

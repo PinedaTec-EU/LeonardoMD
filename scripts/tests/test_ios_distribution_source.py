@@ -54,6 +54,17 @@ def initialize_repository(root: Path, *, own_entry: bool = True) -> str:
     return source_sha
 
 
+def advance_origin_main(root: Path, relative: str, content: str) -> str:
+    path = root / relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+    git(root, "add", relative)
+    git(root, "commit", "--quiet", "-m", "advance main")
+    source_sha = git(root, "rev-parse", "HEAD")
+    git(root, "update-ref", "refs/remotes/origin/main", source_sha)
+    return source_sha
+
+
 class IOSDistributionSourceTests(unittest.TestCase):
     def assert_archive_rejected_before_build(self, root: Path) -> None:
         args = type("Args", (), {"pr_number": 371})()
@@ -114,6 +125,36 @@ class IOSDistributionSourceTests(unittest.TestCase):
 
             self.assertEqual(guarded_sha, source_sha)
             self.assertEqual(inputs_sha, SOURCE.source_inputs_sha256(root))
+
+    def test_publisher_guard_rejects_stale_ancestor_after_mobile_source_change(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stale_source = initialize_repository(root, own_entry=False)
+            current_source = advance_origin_main(
+                root,
+                "Mobile/LittleLeonardo.xcodeproj/project.pbxproj",
+                "new mobile source\n",
+            )
+            git(root, "diff", "--quiet", stale_source, current_source, "--",
+                "version.nfo", "deploy/version/version.yaml")
+            git(root, "checkout", "--quiet", "--detach", stale_source)
+
+            with self.assertRaisesRegex(SOURCE.SourceGuardError, "fetched origin/main"):
+                SOURCE.publisher_source_guard(root, stale_source)
+
+    def test_publisher_guard_rejects_stale_ancestor_with_later_pending_entry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stale_source = initialize_repository(root, own_entry=False)
+            current_source = advance_origin_main(
+                root, "deploy/version/entries/372.yaml", '{"build": 1}\n'
+            )
+            git(root, "diff", "--quiet", stale_source, current_source, "--",
+                "version.nfo", "deploy/version/version.yaml")
+            git(root, "checkout", "--quiet", "--detach", stale_source)
+
+            with self.assertRaisesRegex(SOURCE.SourceGuardError, "fetched origin/main"):
+                SOURCE.publisher_source_guard(root, stale_source)
 
     def test_publisher_guard_still_rejects_own_ledger_changes(self):
         with tempfile.TemporaryDirectory() as directory:
