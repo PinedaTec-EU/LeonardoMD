@@ -147,3 +147,77 @@ because it was drawn. The portable payload is a `LeonardoRubric` with a 24 KiB
 encoded response limit. A successful Mac receipt is bound to the same
 requester, target, request ID and TLS identity; expiry, cancellation and
 revocation remain hard send barriers.
+
+## Request identity invariant (#367)
+
+The mobile cache and capture projection bind a request by its complete immutable
+identity: request UUID, target device UUID, requester UUID, normalized requester
+name, normalized label hint, capability, creation time and expiry time. Lifecycle
+state is the only field that may change during recovery; a UUID alone can never
+select another peer's cached draft or response. An in-flight submission may be
+shared only when that full request binding, the normalized label, and the same
+portable `LeonardoRubric` drawing all match. Any mismatch is rejected before
+HTTP, including same-UUID requests from another Mac or a changed drawing. The
+identity tests cover both cross-peer cache projection/accept/send rejection and
+concurrent exact-operation reuse
+([#367](https://github.com/PinedaTec-EU/LeonardoMD/issues/367)).
+
+The validation matrix is deliberately asymmetric: a same-UUID request with a
+different Mac requester, target device, capability, label hint or timestamp
+must produce no cached projection and a pre-HTTP conflict for Accept and Send;
+the same complete request with the same normalized label and identical ink may
+share one in-flight operation; changing either the normalized label or ink must
+remain a conflict even while that operation is running. This prevents a peer's
+heading or drawing from being selected by ID alone and preserves the one-POST
+coalescing contract for exact retries.
+
+## Owner-only iOS distribution (#343)
+
+`scripts/package-ios-distribution.py` is scoped to Little Leonardo
+(`eu.pinedatec.LittleLeonardo`, team `AU2Z3P42U7`). Its CLI help lists the
+required profile, signing identity/keychain and external output paths. It never
+uploads or changes App Store Connect. Use a fresh output directory per producer.
+
+1. Before integration, `archive --pr-number <source-PR>` builds Release through
+   the repository compilation recorder. Commit source first and retain the log
+   and generated `distribution-provenance.json`. Failed commands are not counted.
+   Before profile validation, signing or compilation, the author guard requires
+   all tracked and untracked changes to be clean except for that PR's own
+   `deploy/version/entries/<source-PR>.yaml`, which may change as recorder
+   bookkeeping. It records the committed source SHA and rechecks source inputs
+   after the build. This exception does not apply to `publisher-archive`, which
+   still requires the entire accepted-checkpoint checkout to be clean.
+2. After accepted source integration and central version materialization, fetch
+   `origin` and select the exact current accepted materialized `origin/main` SHA
+   in a clean checkout. `publisher-archive --expected-source <full-SHA>` requires
+   `HEAD`, the argument and fetched `origin/main` to match before it verifies the
+   canonical checkpoint, consumed entries and clean inputs. Detached HEAD is
+   supported. Producer provenance stays frozen at that source after startup; a
+   later `origin/main` advance never restamps an existing archive or export.
+3. Only after archive verification succeeds, `export` verifies the archive against
+   its frozen producer and exports an owner-only App Store Connect IPA. It passes
+   the approved certificate fingerprint and process-local signing scope without
+   replacing the user's keychain search list.
+4. Only after export succeeds, `validate` verifies the recorded IPA digest and
+   runs Apple's package validation with the existing authorized API key. This
+   checks the package without uploading it. Upload and owner internal-group
+   assignment remain a separate authorized publication step after integration.
+
+Marketing version is the complete canonical `version.nfo`; iOS bundle build is
+its cumulative final numeric component, not an independent counter. Apple must
+not rewrite either value. The export is internal-TestFlight-only. Verification
+requires the approved team/profile/certificate, opaque existing-brand icons,
+launch/orientation metadata, packaged resources and privacy reasons `CA92.1`
+(own UserDefaults) and `C617.1` (own-container file metadata); no external-file
+read reason is declared. Release archives must exclude tests and XCTest.
+Provenance freezes source/input hashes and complete archive/app/IPA hashes
+through archive, export and Apple validation. Evidence-only commits must explain
+their source equivalence; never restamp an older artifact as a newer producer.
+
+A validated author artifact is not the final delivered build. Publish accepted
+materialized main, await Apple processing, attach that specific build to the
+owner internal group and verify installation from TestFlight. Keep
+[#343](https://github.com/PinedaTec-EU/LeonardoMD/issues/343) open until the real
+device permissions, pairing, offline reading, request/draw/send, Mac review,
+save/insert/restart and terminal/retry/revocation checks are recorded. Simulator
+Home rendering limitations do not establish physical icon appearance.
