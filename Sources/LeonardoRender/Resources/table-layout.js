@@ -87,8 +87,12 @@
     {
       name: "leonardoDisplayMathBlock", level: "block",
       tokenizer(source) {
-        const match = /^ {0,3}\$\$([\s\S]+?)\$\$(?:[ \t]*\n|[ \t]*$)/.exec(source);
-        if (match) return { type: "leonardoDisplayMathBlock", raw: match[0], text: match[0].trim() };
+        const match = /^ {0,3}\$\$([\s\S]+?)\$\$/.exec(source);
+        if (!match) return;
+        // Check the first closing delimiter separately: do not backtrack into
+        // another expression to satisfy the end-of-line requirement.
+        const ending = /^[ \t]*(?:\n|$)/.exec(source.slice(match[0].length));
+        if (ending) return { type: "leonardoDisplayMathBlock", raw: match[0] + ending[0], text: match[0].trim() };
       },
       renderer(token) { return `<p>${window.LeonardoEditing.escapeHTML(token.text)}</p>\n`; }
     },

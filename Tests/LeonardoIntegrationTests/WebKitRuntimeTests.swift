@@ -44,6 +44,26 @@ final class WebKitRuntimeTests: XCTestCase {
         XCTAssertTrue(fallback.contains(#"$$ \underbrace{a}_{x} + \underbrace{b}_{y} $$"#))
     }
 
+    func testAdjacentDisplayExpressionsPreserveInterveningHTMLAndText() async throws {
+        let source = #"""
+        $$a_b$$<br>$$c_d$$
+
+        $$e_f$$ between $$g_h$$
+        """#
+        let (host, window) = makeHost(content: source, config: MarkdownPreviewConfiguration(allowsMath: true))
+        defer { host.teardown(); window.close() }
+        let web = try XCTUnwrap(webView(of: host))
+        try await waitFor("document.querySelectorAll('.katex-display').length === 4", in: web)
+        let breaks = try await evaluate("document.querySelectorAll('#leonardo-markdown p br').length", in: web)
+        XCTAssertEqual(breaks, "1")
+        let errors = try await evaluate("document.querySelectorAll('.katex-error').length", in: web)
+        XCTAssertEqual(errors, "0")
+        let text = try await evaluate("document.querySelector('#leonardo-markdown').textContent", in: web)
+        XCTAssertTrue(text.contains(" between "))
+        XCTAssertFalse(text.contains("<br>"))
+        try await captureTagPreview(web, name: "display-math-adjacent")
+    }
+
     func testMigratedMarkdownRendersMetadataOutsideEditedArticle() async throws {
         let markdown = "---\ntitle: Migration example\nauthor: Example Author\ntags: [Docs, Swift]\nsource_url: https://example.com/article\ncustom:\n  nested: retained\n---\n# Migration example\n\nMy saved edit, preserved.\n"
         let source = try LeonardoFormatParser.serialize(
