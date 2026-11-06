@@ -123,6 +123,7 @@ final class BundledUserGuideTests: XCTestCase {
             await session.open(copy, packagePreference: .package)
             XCTAssertEqual(session.documentStorage, .package)
             XCTAssertNil(session.errorMessage)
+            session.setPalette(PaletteID.leonardoClassic.rawValue, project: false)
             session.setMermaid(true, project: false)
             session.setMath(true, project: false)
             session.setVegaLite(true, project: false)
