@@ -48,6 +48,13 @@ class IOSDistributionTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.DistributionError, "provisioned devices"):
             MODULE.validate_profile(profile)
 
+    def test_signing_keychain_setting_is_explicit(self):
+        keychain = Path("/Users/example/Library/Keychains/login.keychain-db")
+        self.assertEqual(
+            MODULE.signing_keychain_build_setting(keychain),
+            "--keychain /Users/example/Library/Keychains/login.keychain-db",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

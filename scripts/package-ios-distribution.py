@@ -131,6 +131,45 @@ def validate_profile_path(path: Path) -> dict:
     return validate_profile(decode_profile(path))
 
 
+def signing_keychain(identity: str, requested: str | None) -> Path:
+    if requested:
+        keychain = Path(requested).expanduser().resolve()
+    else:
+        try:
+            result = subprocess.run(
+                ["security", "default-keychain"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except (OSError, subprocess.CalledProcessError) as error:
+            raise DistributionError("Cannot determine the default signing keychain") from error
+        value = result.stdout.strip().strip('"')
+        if not value:
+            raise DistributionError("The default signing keychain is empty")
+        keychain = Path(value).expanduser().resolve()
+    if not keychain.is_file():
+        raise DistributionError(f"Signing keychain does not exist: {keychain}")
+    try:
+        result = subprocess.run(
+            ["security", "find-identity", "-v", "-p", "codesigning", str(keychain)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise DistributionError(f"Cannot inspect signing keychain: {keychain}") from error
+    if CERTIFICATE_SHA1 not in result.stdout or f'"{identity}"' not in result.stdout:
+        raise DistributionError(
+            f"Signing keychain does not expose the approved identity: {identity}"
+        )
+    return keychain
+
+
+def signing_keychain_build_setting(keychain: Path) -> str:
+    return f"--keychain {keychain}"
+
+
 def read_plist(path: Path) -> dict:
     try:
         with path.open("rb") as stream:
@@ -316,6 +355,7 @@ def run_archive(args: argparse.Namespace, root: Path) -> None:
     output = ensure_external(args.output_root, root)
     profile = Path(args.profile).expanduser().resolve()
     profile_metadata = validate_profile_path(profile)
+    keychain = signing_keychain(args.identity, args.keychain)
     output.mkdir(parents=True, exist_ok=True)
     archive = output / "LittleLeonardo.xcarchive"
     derived = output / "DerivedData"
@@ -325,7 +365,9 @@ def run_archive(args: argparse.Namespace, root: Path) -> None:
         "-derivedDataPath", str(derived), "-archivePath", str(archive),
         "PRODUCT_BUNDLE_IDENTIFIER=" + BUNDLE_IDENTIFIER, "MARKETING_VERSION=" + version,
         "CURRENT_PROJECT_VERSION=" + str(build), "CODE_SIGNING_ALLOWED=YES",
-        "CODE_SIGNING_REQUIRED=YES", "archive",
+        "CODE_SIGNING_REQUIRED=YES",
+        "OTHER_CODE_SIGN_FLAGS=" + signing_keychain_build_setting(keychain),
+        "archive",
     ]
     recorder = [sys.executable, str(root / "scripts/compile-and-record.py"),
                 "--root", str(root), "--pr-number", str(args.pr_number), "--"]
@@ -403,6 +445,7 @@ def parser() -> argparse.ArgumentParser:
     archive = commands.add_parser("archive")
     archive.add_argument("--pr-number", type=int, required=True)
     archive.add_argument("--identity", required=True)
+    archive.add_argument("--keychain")
     archive.add_argument("--profile", required=True)
     archive.add_argument("--output-root", type=Path, required=True)
     archive.set_defaults(handler=run_archive)
