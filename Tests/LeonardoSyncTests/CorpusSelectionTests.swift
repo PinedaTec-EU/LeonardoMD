@@ -41,7 +41,7 @@ final class CorpusSelectionTests: XCTestCase {
         do {
             _ = try await ProjectCorpusReader(limits: CorpusLimits(maximumCorpusBytes: 7)).snapshot(root: root, selection: selection, revision: "r")
             XCTFail("Combined limit must apply across selections")
-        } catch { XCTAssertEqual(error as? SyncError, .sizeLimitExceeded) }
+        } catch { XCTAssertEqual((error as? CorpusReadFailure)?.reason, .corpusTooLarge) }
         do {
             _ = try await ProjectCorpusReader().snapshot(root: root, selection: selection, revision: "r", buffers: [OpenDocumentBuffer(path: "notes/not-selected.md", text: "private")])
             XCTFail("Unselected buffer must not be shared")

@@ -66,7 +66,7 @@ final class DesktopPeerController {
             try authorizeStorage()
             try await reload()
             startAutomaticSync()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = PeerSyncErrorMessage.text(error) }
     }
 
     func updateInterval(_ minutes: Int) {
@@ -119,7 +119,7 @@ final class DesktopPeerController {
             }
             try await reload()
             return true
-        } catch { self.error = error.localizedDescription; return false }
+        } catch { self.error = PeerSyncErrorMessage.text(error); return false }
     }
 
     func refresh(_ id: UUID) async {
@@ -131,7 +131,7 @@ final class DesktopPeerController {
             let status = try await library.refresh(connectionID: id)
             available[id] = status.projects
             try await reload()
-        } catch { self.error = error.localizedDescription; try? await reload() }
+        } catch { self.error = PeerSyncErrorMessage.text(error); try? await reload() }
     }
 
     func importProject(connectionID: UUID, projectID: UUID) async {
@@ -142,14 +142,14 @@ final class DesktopPeerController {
             try authorizeStorage()
             _ = try await library.importProject(connectionID: connectionID, projectID: projectID)
             try await reload()
-        } catch { self.error = error.localizedDescription; try? await reload() }
+        } catch { self.error = PeerSyncErrorMessage.text(error); try? await reload() }
     }
 
     func open(_ id: UUID) async -> URL? {
         guard !InstanceRuntime.isAdditional, !busy else { return nil }
         busy = true; defer { busy = false }
         do { try authorizeStorage(); return try await library.open(copyID: id) }
-        catch { self.error = error.localizedDescription; return nil }
+        catch { self.error = PeerSyncErrorMessage.text(error); return nil }
     }
 
     func send(_ id: UUID) async {
@@ -171,7 +171,7 @@ final class DesktopPeerController {
             if try await library.send(copyID: id, buffers: selected) != nil { submitted.insert(id) }
             else { unchanged.insert(id) }
             try await reload()
-        } catch { self.error = error.localizedDescription; try? await reload() }
+        } catch { self.error = PeerSyncErrorMessage.text(error); try? await reload() }
     }
 
     func compare(_ id: UUID) async {
@@ -186,7 +186,7 @@ final class DesktopPeerController {
             let selectedBuffers = try await buffers(root).filter { selection?.contains($0.path) == true }
             comparisons[id] = try await library.compare(copyID: id, buffers: selectedBuffers)
             try await reload()
-        } catch { self.error = error.localizedDescription; try? await reload() }
+        } catch { self.error = PeerSyncErrorMessage.text(error); try? await reload() }
     }
 
     private func authorizePeerPath(_ url: URL) throws {

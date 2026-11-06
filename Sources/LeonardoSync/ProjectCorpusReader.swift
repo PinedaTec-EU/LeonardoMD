@@ -70,8 +70,8 @@ public actor ProjectCorpusReader {
             try selection.validate(buffer.path)
             let data = Data(buffer.text.utf8)
             let previousSize = files[buffer.path]?.content.count ?? 0
-            guard data.count <= limits.maximumFileBytes,
-                  data.count <= limits.maximumCorpusBytes - (byteCount - previousSize) else { throw SyncError.sizeLimitExceeded }
+            try CorpusReadFailure.check(size: data.count, path: buffer.path,
+                count: files.count - (files[buffer.path] == nil ? 0 : 1), bytes: byteCount - previousSize, limits: limits)
             byteCount += data.count - previousSize
             files[buffer.path] = CorpusFile(path: buffer.path, content: data,
                 isUnsavedBuffer: diskFiles[buffer.path]?.content != data)
@@ -85,15 +85,17 @@ public actor ProjectCorpusReader {
     private func read(path: String, root: URL, files: inout [String: CorpusFile], byteCount: inout Int) throws {
         guard files[path] == nil else { return }
         let url = try CorpusScope(folder: "").fileURL(for: path, under: root)
-        let metadata = try FileManager.default.attributesOfItem(atPath: url.path)
-        guard metadata[.type] as? FileAttributeType == .typeRegular else { throw SyncError.invalidPath }
-        let size = (metadata[.size] as? NSNumber)?.intValue ?? 0
-        guard size <= limits.maximumFileBytes, size <= limits.maximumCorpusBytes - byteCount,
-              files.count < limits.maximumFiles else { throw SyncError.sizeLimitExceeded }
-        let data = try Data(contentsOf: url)
-        guard data.count <= limits.maximumFileBytes, data.count <= limits.maximumCorpusBytes - byteCount else {
-            throw SyncError.sizeLimitExceeded
-        }
+        let data: Data
+        do {
+            let metadata = try FileManager.default.attributesOfItem(atPath: url.path)
+            guard metadata[.type] as? FileAttributeType == .typeRegular else { throw SyncError.invalidPath }
+            let size = (metadata[.size] as? NSNumber)?.intValue ?? 0
+            try CorpusReadFailure.check(size: size, path: path, count: files.count, bytes: byteCount, limits: limits)
+            data = try Data(contentsOf: url)
+        } catch let failure as CorpusReadFailure { throw failure }
+        catch let error as SyncError { throw error }
+        catch { throw CorpusReadFailure(reason: .sourceUnavailable, path: path) }
+        try CorpusReadFailure.check(size: data.count, path: path, count: files.count, bytes: byteCount, limits: limits)
         byteCount += data.count
         files[path] = CorpusFile(path: path, content: data)
     }

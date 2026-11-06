@@ -151,6 +151,94 @@ final class HTTPSRuntimeTests: XCTestCase {
         } catch { await server.stop(); throw error }
     }
 
+    func testProjectDownloadReportsSizeAndReadFailuresOverPinnedHTTPS() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
+        let identity = try makeIdentity()
+        let fixedNow = Date(timeIntervalSince1970: 1_000)
+        let oversized = SharedProjectDescriptor(id: UUID(), name: "Large", scope: try CorpusScope(folder: ""))
+        let unavailable = SharedProjectDescriptor(id: UUID(), name: "Offline", scope: try CorpusScope(folder: ""))
+        let unsafe = SharedProjectDescriptor(id: UUID(), name: "Unsafe diagnostic", scope: try CorpusScope(folder: "docs"))
+        let outsideGrant = SharedProjectDescriptor(id: UUID(), name: "Outside grant", scope: try CorpusScope(folder: ""),
+            selection: try CorpusSelection(folders: ["docs"], documents: []))
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data(repeating: 1, count: 8).write(to: root.appendingPathComponent("image.png"))
+        let authority = try DirectSyncAuthority(registry: PairingRegistry(), projects: [
+            SharedProjectSource(descriptor: oversized) {
+                try await ProjectCorpusReader(limits: CorpusLimits(maximumCorpusBytes: 4)).snapshot(root: root, scope: oversized.scope)
+            },
+            SharedProjectSource(descriptor: unsafe) {
+                throw CorpusReadFailure(reason: .sourceUnavailable, path: "/private/secret-root.md")
+            },
+            SharedProjectSource(descriptor: outsideGrant) {
+                throw CorpusReadFailure(reason: .sourceUnavailable, path: "private/secret.md")
+            },
+            SharedProjectSource(descriptor: unavailable) {
+                throw NSError(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError,
+                              userInfo: [NSFilePathErrorKey: "/private/secret-root", NSLocalizedDescriptionKey: "secret diagnostic"])
+            }
+        ], serverFingerprint: identity.certificateFingerprint, persist: { _ in })
+        try await authority.setEnabled(true)
+        let router = DirectHTTPSRouter(authority: authority, now: { fixedNow })
+        let server = LANHTTPSListener(identity: identity) { await router.respond(to: $0) }
+        let port = try await server.start(host: "127.0.0.1")
+        do {
+            let endpoint = URL(string: "https://127.0.0.1:\(port)")!
+            let client = try DirectEnrollmentClient(endpoint: endpoint, certificateFingerprint: identity.certificateFingerprint)
+            let credential = String(repeating: "a", count: 64)
+            let enrollment = try await client.begin(deviceName: "Receiving Mac", credential: credential, now: fixedNow, kind: .desktopPeer)
+            try await authority.approve(requestID: enrollment.deviceID, code: enrollment.comparisonCode,
+                                        projectIDs: [oversized.id, unavailable.id, unsafe.id, outsideGrant.id], now: fixedNow)
+            for (descriptor, expectedStatus, reason) in [
+                (oversized, 413, CorpusReadFailure.Reason.corpusTooLarge), (unavailable, 500, .sourceUnavailable),
+                (unsafe, 500, .sourceUnavailable), (outsideGrant, 500, .sourceUnavailable)
+            ] {
+                do {
+                    _ = try await client.project(descriptor, deviceID: enrollment.deviceID, credential: credential)
+                    XCTFail("Download must report the source failure")
+                } catch let error as ProjectDownloadError {
+                    XCTAssertEqual(error.status, expectedStatus)
+                    XCTAssertEqual(error.failure?.reason, reason)
+                    if reason == .corpusTooLarge {
+                        XCTAssertEqual(error.failure?.observed, 8)
+                        XCTAssertEqual(error.failure?.limit, 4)
+                        XCTAssertEqual(error.failure?.path, "image.png")
+                    } else { XCTAssertNil(error.failure?.path) }
+                    XCTAssertFalse(error.localizedDescription.contains("secret"))
+                }
+                if reason == .sourceUnavailable {
+                    // Inspect the wire body too: client-side path filtering must not hide a server disclosure.
+                    let wire = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: identity.certificateFingerprint)
+                    let response = try await wire.request(method: "GET",
+                        path: "/v1/devices/\(enrollment.deviceID.uuidString)/projects/\(descriptor.id.uuidString)/snapshot", credential: credential)
+                    let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: response.body) as? [String: Any])
+                    XCTAssertNil(payload["path"])
+                    XCTAssertFalse(String(decoding: response.body, as: UTF8.self).contains("secret"))
+                }
+            }
+            try await authority.revoke(deviceID: enrollment.deviceID)
+            do {
+                _ = try await client.project(oversized, deviceID: enrollment.deviceID, credential: credential)
+                XCTFail("Revoked recipients must not receive size or file diagnostics")
+            } catch let error as ProjectDownloadError {
+                XCTAssertEqual(error.status, 403)
+                XCTAssertNil(error.failure)
+            }
+            try await authority.setEnabled(false)
+            do {
+                _ = try await client.status(deviceID: enrollment.deviceID, credential: credential)
+                XCTFail("Import access preflight must preserve a source HTTP failure")
+            } catch let error as ProjectDownloadError {
+                XCTAssertEqual(error.status, 503)
+                XCTAssertEqual(error.phase, .access)
+                XCTAssertTrue(error.localizedDescription.contains("HTTP 503"))
+                XCTAssertNil(error.failure)
+            }
+            await server.stop()
+        } catch { await server.stop(); throw error }
+    }
+
     @available(macOS 15, *)
     private func makeIdentity() throws -> TLSServerIdentity {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

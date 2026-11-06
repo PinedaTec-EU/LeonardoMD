@@ -261,6 +261,13 @@ public actor DirectSyncAuthority {
         }
     }
 
+    /// Snapshot diagnostics require the same authorization as content, including read-only recipients.
+    public func snapshotDescriptor(deviceID: UUID, credential: String, projectID: UUID) throws -> SharedProjectDescriptor {
+        try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
+        guard let project = projects[projectID] else { throw PairingError.invalidProject }
+        return project.descriptor
+    }
+
     public func snapshot(deviceID: UUID, credential: String, projectID: UUID) async throws -> CorpusSnapshot {
         try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
         guard let project = projects[projectID] else { throw PairingError.invalidProject }

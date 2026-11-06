@@ -1,4 +1,5 @@
 import XCTest
+import LeonardoSync
 @testable import LeonardoSyncTransport
 
 final class HTTPTransportTests: XCTestCase {
@@ -41,4 +42,25 @@ final class HTTPTransportTests: XCTestCase {
         XCTAssertThrowsError(try PinnedHTTPSClient(endpoint: URL(string: "http://192.168.1.2")!, certificateFingerprint: Data(repeating: 0, count: 32)))
         XCTAssertThrowsError(try PinnedHTTPSClient(endpoint: URL(string: "https://example.com")!, certificateFingerprint: Data(repeating: 0, count: 32)))
     }
+    func testOlderSourcesKeepHTTPStatusWithoutInventingSizeCause() {
+        for status in [401, 403, 404, 409, 413, 500, 503] {
+            let error = ProjectDownloadError(response: HTTPResponse(status: status))
+            XCTAssertEqual(error.status, status)
+            XCTAssertNil(error.failure)
+            XCTAssertTrue(error.localizedDescription.contains("HTTP \(status)"))
+            XCTAssertFalse(error.localizedDescription.contains("error 6"))
+        }
+        let error = ProjectDownloadError(response: HTTPResponse(status: 500, body: Data("private raw server message".utf8)))
+        XCTAssertFalse(error.localizedDescription.contains("private raw server message"))
+    }
+
+    func testStructuredDiagnosticsRejectUnsafePathsOnConstructionAndDecode() throws {
+        for path in ["/private/secret.md", "../secret.md", "docs/../secret.md", "docs\\secret.md", "docs/secret.md\nprivate"] {
+            XCTAssertNil(CorpusReadFailure(reason: .sourceUnavailable, path: path).path)
+            let body = try JSONSerialization.data(withJSONObject: ["reason": "sourceUnavailable", "path": path])
+            let error = ProjectDownloadError(response: HTTPResponse(status: 500, body: body))
+            XCTAssertNil(try XCTUnwrap(error.failure).path)
+        }
+    }
+
 }
