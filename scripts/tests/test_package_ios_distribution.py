@@ -55,6 +55,42 @@ class IOSDistributionTests(unittest.TestCase):
             "--keychain /Users/example/Library/Keychains/login.keychain-db",
         )
 
+    def test_publisher_guard_rejects_wrong_source_sha(self):
+        repository = Path(MODULE.__file__).parents[1]
+        with self.assertRaisesRegex(ValueError, "HEAD does not match"):
+            MODULE.publisher_source_guard(repository, "0" * 40)
+
+    def test_archive_binding_rejects_stale_archive_hash(self):
+        with tempfile.TemporaryDirectory() as directory:
+            profile = Path(directory) / "profile.mobileprovision"
+            profile.write_bytes(b"approved-profile")
+            provenance = {
+                "source_sha": "a" * 40,
+                "source_inputs_sha256": "b" * 64,
+                "version": "0.3.1000",
+                "build": 1000,
+                "profile_sha256": MODULE.sha256(profile),
+                "producer": {
+                    "source_sha": "a" * 40,
+                    "source_inputs_sha256": "b" * 64,
+                    "archive_sha256": "old-archive",
+                    "app_bundle_sha256": "same-app",
+                },
+                "stages": {
+                    "archive": {
+                        "artifact": {
+                            "archive_sha256": "old-archive",
+                            "app_bundle_sha256": "same-app",
+                        }
+                    }
+                },
+            }
+            artifact = {"archive_sha256": "new-archive", "app_bundle_sha256": "same-app"}
+            with self.assertRaisesRegex(ValueError, "recorded producer artifact"):
+                MODULE.validate_archive_binding(
+                    provenance, artifact, profile, "0.3.1000", 1000,
+                    expected_source="a" * 40, expected_inputs="b" * 64,
+                )
 
 if __name__ == "__main__":
     unittest.main()

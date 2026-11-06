@@ -24,6 +24,19 @@ import zipfile
 from contextlib import contextmanager
 
 
+SCRIPT_DIRECTORY = Path(__file__).resolve().parent
+if str(SCRIPT_DIRECTORY) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIRECTORY))
+
+from ios_distribution_source import (  # noqa: E402
+    SourceGuardError,
+    ensure_source_unchanged,
+    git_text,
+    publisher_source_guard,
+    source_inputs_sha256,
+)
+
+
 BUNDLE_IDENTIFIER = "eu.pinedatec.LittleLeonardo"
 TEAM_IDENTIFIER = "AU2Z3P42U7"
 PROFILE_UUID = "df1e793d-b217-420f-80ab-3baca818f7cd"
@@ -69,6 +82,19 @@ def sha256(path: Path) -> str:
     with path.open("rb") as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
+    return digest.hexdigest()
+
+
+def tree_sha256(path: Path) -> str:
+    if not path.is_dir():
+        raise DistributionError(f"Expected a directory to hash: {path}")
+    digest = hashlib.sha256()
+    for child in sorted((item for item in path.rglob("*") if item.is_file()),
+                        key=lambda item: item.relative_to(path).as_posix()):
+        relative = child.relative_to(path).as_posix().encode("utf-8")
+        digest.update(len(relative).to_bytes(8, "big"))
+        digest.update(relative)
+        digest.update(bytes.fromhex(sha256(child)))
     return digest.hexdigest()
 
 
@@ -336,7 +362,12 @@ def archive_app(archive: Path) -> Path:
 def verify_archive(archive: Path, profile: Path, version: str, build: int) -> dict:
     app = archive_app(archive)
     result = verify_app(app, version, build, profile)
-    result.update({"artifact": "xcarchive", "archive_sha256": sha256(archive / "Info.plist")})
+    result.update({
+        "artifact": "xcarchive",
+        "archive_sha256": tree_sha256(archive),
+        "archive_info_sha256": sha256(archive / "Info.plist"),
+        "app_bundle_sha256": tree_sha256(app),
+    })
     return result
 
 
@@ -362,18 +393,69 @@ def verify_ipa(ipa: Path, profile: Path, version: str, build: int) -> dict:
         if any(path.name.endswith(".xctest") for path in app.rglob("*.xctest")):
             raise DistributionError("IPA contains a test bundle")
         result = verify_app(app, version, build, profile)
-        result.update({"artifact": "ipa", "ipa_sha256": sha256(ipa)})
+        result.update({"artifact": "ipa", "ipa_sha256": sha256(ipa),
+                       "app_bundle_sha256": tree_sha256(app)})
         return result
     finally:
         temporary.cleanup()
 
 
-def write_provenance(path: Path, root: Path, artifact: dict, profile: Path) -> None:
+def read_provenance(path: Path) -> dict:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise DistributionError(f"Cannot read distribution provenance: {path}") from error
+    if not isinstance(value, dict) or value.get("schema_version") != 2:
+        raise DistributionError("Distribution provenance is missing the current schema")
+    producer = value.get("producer")
+    if not isinstance(producer, dict) or not isinstance(value.get("source_sha"), str):
+        raise DistributionError("Distribution provenance has no frozen producer source")
+    return value
+
+
+def validate_archive_binding(provenance: dict, artifact: dict, profile: Path,
+                             version: str, build: int, expected_source: str | None = None,
+                             expected_inputs: str | None = None) -> None:
+    source_sha = provenance.get("source_sha")
+    inputs_sha = provenance.get("source_inputs_sha256")
+    producer = provenance.get("producer", {})
+    if expected_source is not None and source_sha != expected_source:
+        raise DistributionError("Archive provenance source differs from current source")
+    if expected_inputs is not None and inputs_sha != expected_inputs:
+        raise DistributionError("Archive provenance inputs differ from current source inputs")
+    if source_sha != producer.get("source_sha"):
+        raise DistributionError("Provenance producer source is inconsistent")
+    if inputs_sha != producer.get("source_inputs_sha256"):
+        raise DistributionError("Provenance producer input hash is inconsistent")
+    if producer.get("archive_sha256") != artifact.get("archive_sha256"):
+        raise DistributionError("Archive does not match its recorded producer artifact")
+    if producer.get("app_bundle_sha256") != artifact.get("app_bundle_sha256"):
+        raise DistributionError("Archive app does not match its recorded producer app")
+    archive_stage = provenance.get("stages", {}).get("archive", {}).get("artifact", {})
+    if archive_stage.get("archive_sha256") != producer.get("archive_sha256"):
+        raise DistributionError("Archive stage is not bound to the producer artifact")
+    if archive_stage.get("app_bundle_sha256") != producer.get("app_bundle_sha256"):
+        raise DistributionError("Archive stage app is not bound to the producer artifact")
+    if provenance.get("version") != version or provenance.get("build") != build:
+        raise DistributionError("Archive provenance version differs from canonical version")
+    if provenance.get("profile_sha256") != sha256(profile):
+        raise DistributionError("Archive provenance profile differs from requested profile")
+
+
+def write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def write_archive_provenance(path: Path, root: Path, artifact: dict, profile: Path,
+                             source_sha: str, inputs_sha: str) -> None:
     version, build = canonical_version(root / "version.nfo")
+    recorded_at = dt.datetime.now(dt.timezone.utc).isoformat()
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "repository": "PinedaTec-EU/LeonardoMD",
-        "source_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
+        "source_sha": source_sha,
+        "source_inputs_sha256": inputs_sha,
         "version_source": "version.nfo",
         "version_source_sha256": sha256(root / "version.nfo"),
         "version": version,
@@ -386,14 +468,30 @@ def write_provenance(path: Path, root: Path, artifact: dict, profile: Path) -> N
         "icon_source": "assets/AppIcon/LeonardoMD.png",
         "icon_source_sha256": sha256(root / "assets/AppIcon/LeonardoMD.png"),
         "privacy_manifest_sha256": sha256(root / "Mobile/LittleLeonardo/PrivacyInfo.xcprivacy"),
-        "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "generated_at": recorded_at,
+        "producer": {
+            "source_sha": source_sha,
+            "source_inputs_sha256": inputs_sha,
+            "archive_sha256": artifact["archive_sha256"],
+            "app_bundle_sha256": artifact["app_bundle_sha256"],
+            "recorded_at": recorded_at,
+        },
+        "stages": {"archive": {"recorded_at": recorded_at, "artifact": artifact}},
         "artifact": artifact,
     }
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    write_json(path, payload)
 
 
-def run_archive(args: argparse.Namespace, root: Path) -> None:
+def update_provenance_stage(path: Path, provenance: dict, name: str, artifact: dict) -> None:
+    recorded_at = dt.datetime.now(dt.timezone.utc).isoformat()
+    provenance.setdefault("stages", {})[name] = {"recorded_at": recorded_at, "artifact": artifact}
+    provenance["artifact"] = artifact
+    provenance["updated_at"] = recorded_at
+    write_json(path, provenance)
+
+
+def run_archive_build(args: argparse.Namespace, root: Path, source_sha: str,
+                      inputs_sha: str, recorder_pr: int | None) -> None:
     version, build = canonical_version(root / "version.nfo")
     output = ensure_external(args.output_root, root)
     profile = Path(args.profile).expanduser().resolve()
@@ -401,6 +499,9 @@ def run_archive(args: argparse.Namespace, root: Path) -> None:
     keychain = signing_keychain(args.identity, args.keychain)
     output.mkdir(parents=True, exist_ok=True)
     archive = output / "LittleLeonardo.xcarchive"
+    provenance_path = output / "distribution-provenance.json"
+    if archive.exists() or provenance_path.exists():
+        raise DistributionError("Archive output already contains a producer artifact")
     derived = output / "DerivedData"
     command = [
         "xcodebuild", "-project", "Mobile/LittleLeonardo.xcodeproj", "-scheme", "LittleLeonardo",
@@ -412,13 +513,28 @@ def run_archive(args: argparse.Namespace, root: Path) -> None:
         "OTHER_CODE_SIGN_FLAGS=" + signing_keychain_build_setting(keychain),
         "archive",
     ]
-    recorder = [sys.executable, str(root / "scripts/compile-and-record.py"),
-                "--root", str(root), "--pr-number", str(args.pr_number), "--"]
-    subprocess.run(recorder + command, cwd=root, check=True)
+    if recorder_pr is None:
+        subprocess.run(command, cwd=root, check=True)
+    else:
+        recorder = [sys.executable, str(root / "scripts/compile-and-record.py"),
+                    "--root", str(root), "--pr-number", str(recorder_pr), "--"]
+        subprocess.run(recorder + command, cwd=root, check=True)
+    ensure_source_unchanged(root, source_sha, inputs_sha)
     artifact = verify_archive(archive, profile, version, build)
     artifact["approved_profile"] = profile_metadata
-    write_provenance(output / "distribution-provenance.json", root, artifact, profile)
-    print(json.dumps({"archive": str(archive), "provenance": str(output / "distribution-provenance.json")}, indent=2))
+    write_archive_provenance(provenance_path, root, artifact, profile, source_sha, inputs_sha)
+    print(json.dumps({"archive": str(archive), "provenance": str(provenance_path)}, indent=2))
+
+
+def run_archive(args: argparse.Namespace, root: Path) -> None:
+    source_sha = git_text(root, "rev-parse", "HEAD")
+    inputs_sha = source_inputs_sha256(root)
+    run_archive_build(args, root, source_sha, inputs_sha, args.pr_number)
+
+
+def run_publisher_archive(args: argparse.Namespace, root: Path) -> None:
+    source_sha, inputs_sha = publisher_source_guard(root, args.expected_source)
+    run_archive_build(args, root, source_sha, inputs_sha, None)
 
 
 def export_options(path: Path) -> None:
@@ -441,13 +557,22 @@ def run_export(args: argparse.Namespace, root: Path) -> None:
     output = ensure_external(args.output_root, root)
     archive = Path(args.archive).expanduser().resolve()
     profile = Path(args.profile).expanduser().resolve()
+    provenance_path = output / "distribution-provenance.json"
+    provenance = read_provenance(provenance_path)
     keychain = signing_keychain(None, args.keychain)
-    verify_archive(archive, profile, version, build)
+    source_sha = provenance["source_sha"]
+    inputs_sha = provenance["source_inputs_sha256"]
+    ensure_source_unchanged(root, source_sha, inputs_sha)
+    archive_artifact = verify_archive(archive, profile, version, build)
+    validate_archive_binding(provenance, archive_artifact, profile, version, build,
+                             expected_source=source_sha, expected_inputs=inputs_sha)
     export_path = ensure_external(Path(args.export_path), root)
     output.mkdir(parents=True, exist_ok=True)
     export_path.mkdir(parents=True, exist_ok=True)
     options_path = output / "ExportOptions.plist"
     export_options(options_path)
+    if list(export_path.glob("*.ipa")):
+        raise DistributionError("Export output already contains an IPA")
     with constrained_keychain_search(keychain):
         subprocess.run(["xcodebuild", "-exportArchive", "-archivePath", str(archive),
                         "-exportPath", str(export_path), "-exportOptionsPlist", str(options_path)],
@@ -456,21 +581,28 @@ def run_export(args: argparse.Namespace, root: Path) -> None:
     if len(ipa_files) != 1:
         raise DistributionError(f"Expected exactly one exported IPA, found {len(ipa_files)}")
     artifact = verify_ipa(ipa_files[0], profile, version, build)
-    write_provenance(output / "distribution-provenance.json", root, artifact, profile)
-    print(json.dumps({"ipa": str(ipa_files[0]), "provenance": str(output / "distribution-provenance.json")}, indent=2))
+    update_provenance_stage(provenance_path, provenance, "export", artifact)
+    print(json.dumps({"ipa": str(ipa_files[0]), "provenance": str(provenance_path)}, indent=2))
 
 
 def run_validate(args: argparse.Namespace, root: Path) -> None:
     version, build = canonical_version(root / "version.nfo")
     ipa = Path(args.ipa).expanduser().resolve()
     profile = Path(args.profile).expanduser().resolve()
+    provenance_path = Path(args.provenance).expanduser().resolve()
+    provenance = read_provenance(provenance_path)
+    ensure_source_unchanged(root, provenance["source_sha"], provenance["source_inputs_sha256"])
     artifact = verify_ipa(ipa, profile, version, build)
+    export_stage = provenance.get("stages", {}).get("export", {})
+    if export_stage.get("artifact", {}).get("ipa_sha256") != artifact["ipa_sha256"]:
+        raise DistributionError("IPA does not match its recorded export artifact")
     subprocess.run(["xcrun", "altool", "--validate-app", "--file", str(ipa), "--type", "ios",
                     "--apiKey", args.api_key_id, "--apiIssuer", args.api_issuer],
                    cwd=root, check=True)
     report = {
         "schema_version": 1,
-        "source_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
+        "source_sha": provenance["source_sha"],
+        "source_inputs_sha256": provenance["source_inputs_sha256"],
         "version": version,
         "build": build,
         "ipa_sha256": sha256(ipa),
@@ -480,6 +612,10 @@ def run_validate(args: argparse.Namespace, root: Path) -> None:
     report_path = ensure_external(Path(args.report), root)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    update_provenance_stage(provenance_path, provenance, "apple_validation", {
+        "ipa_sha256": artifact["ipa_sha256"],
+        "status": "passed",
+    })
     print(json.dumps({"report": str(report_path), "ipa_sha256": report["ipa_sha256"]}, indent=2))
 
 
@@ -494,6 +630,13 @@ def parser() -> argparse.ArgumentParser:
     archive.add_argument("--profile", required=True)
     archive.add_argument("--output-root", type=Path, required=True)
     archive.set_defaults(handler=run_archive)
+    publisher = commands.add_parser("publisher-archive")
+    publisher.add_argument("--expected-source", required=True)
+    publisher.add_argument("--identity", required=True)
+    publisher.add_argument("--keychain")
+    publisher.add_argument("--profile", required=True)
+    publisher.add_argument("--output-root", type=Path, required=True)
+    publisher.set_defaults(handler=run_publisher_archive)
     export = commands.add_parser("export")
     export.add_argument("--archive", required=True)
     export.add_argument("--profile", required=True)
@@ -506,6 +649,7 @@ def parser() -> argparse.ArgumentParser:
     validate.add_argument("--profile", required=True)
     validate.add_argument("--api-key-id", required=True)
     validate.add_argument("--api-issuer", required=True)
+    validate.add_argument("--provenance", required=True)
     validate.add_argument("--report", required=True)
     validate.set_defaults(handler=run_validate)
     parser.set_defaults(root=root)
@@ -516,7 +660,7 @@ def main() -> int:
     args = parser().parse_args()
     try:
         args.handler(args, args.root)
-    except (DistributionError, OSError, subprocess.CalledProcessError) as error:
+    except (DistributionError, SourceGuardError, OSError, subprocess.CalledProcessError) as error:
         print(f"package-ios-distribution: {error}", file=sys.stderr)
         return 1
     return 0
