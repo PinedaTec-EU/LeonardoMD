@@ -1,4 +1,4 @@
 {
-  "summary": "Package Little Leonardo for owner-only TestFlight with canonical versioning, required-reason privacy metadata, branded assets, and fail-closed signed archive/export validation.",
+  "summary": "Adds owner-only iOS archive/export and Apple validation with canonical versioning, privacy metadata and branded assets; binds archives to clean committed source, documents #367's immutable rubric request identity, and keeps keychain signing process-scoped.",
   "build": 5
 }

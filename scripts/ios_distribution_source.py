@@ -50,6 +50,49 @@ def source_inputs_sha256(root: Path) -> str:
     return digest.hexdigest()
 
 
+def _worktree_paths(root: Path) -> list[bytes]:
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain=v1", "--untracked-files=all", "-z"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise SourceGuardError("Cannot inspect source checkout changes") from error
+
+    records = result.stdout.split(b"\0")
+    if records and records[-1] == b"":
+        records.pop()
+    paths: list[bytes] = []
+    index = 0
+    while index < len(records):
+        record = records[index]
+        if len(record) < 4 or record[2:3] != b" ":
+            raise SourceGuardError("Git returned an invalid source checkout status")
+        status = record[:2]
+        paths.append(record[3:])
+        if b"R" in status or b"C" in status:
+            index += 1
+            if index >= len(records):
+                raise SourceGuardError("Git returned an incomplete source rename status")
+            paths.append(records[index])
+        index += 1
+    return paths
+
+
+def author_archive_source_guard(root: Path, recorder_pr: int) -> tuple[str, str]:
+    if isinstance(recorder_pr, bool) or recorder_pr <= 0:
+        raise SourceGuardError("Author archive PR number must be positive")
+    allowed_entry = f"deploy/version/entries/{recorder_pr}.yaml".encode("ascii")
+    if any(path != allowed_entry for path in _worktree_paths(root)):
+        raise SourceGuardError(
+            "Author archive source checkout must be clean except for its own version entry"
+        )
+    source_sha = git_text(root, "rev-parse", "HEAD")
+    return source_sha, source_inputs_sha256(root)
+
+
 def ensure_source_unchanged(root: Path, source_sha: str, inputs_sha: str) -> None:
     if git_text(root, "rev-parse", "HEAD") != source_sha:
         raise SourceGuardError("Source HEAD changed during archive production")
@@ -58,7 +101,7 @@ def ensure_source_unchanged(root: Path, source_sha: str, inputs_sha: str) -> Non
 
 
 def clean_worktree(root: Path) -> None:
-    if git_text(root, "status", "--porcelain", "--untracked-files=all"):
+    if _worktree_paths(root):
         raise SourceGuardError("Publisher source checkout must be clean")
 
 

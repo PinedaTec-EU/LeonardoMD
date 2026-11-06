@@ -28,10 +28,11 @@ if str(SCRIPT_DIRECTORY) not in sys.path:
 
 from ios_distribution_source import (  # noqa: E402
     SourceGuardError,
+    author_archive_source_guard,
+    clean_worktree,
     ensure_source_unchanged,
     git_text,
     publisher_source_guard,
-    source_inputs_sha256,
 )
 
 
@@ -485,7 +486,15 @@ def run_archive_build(args: argparse.Namespace, root: Path, source_sha: str,
         recorder = [sys.executable, str(root / "scripts/compile-and-record.py"),
                     "--root", str(root), "--pr-number", str(recorder_pr), "--"]
         subprocess.run(recorder + command, cwd=root, check=True)
-    ensure_source_unchanged(root, source_sha, inputs_sha)
+    if recorder_pr is None:
+        ensure_source_unchanged(root, source_sha, inputs_sha)
+        clean_worktree(root)
+    else:
+        current_sha, current_inputs_sha = author_archive_source_guard(root, recorder_pr)
+        if current_sha != source_sha:
+            raise SourceGuardError("Source HEAD changed during archive production")
+        if current_inputs_sha != inputs_sha:
+            raise SourceGuardError("Tracked source inputs changed during archive production")
     artifact = verify_archive(archive, profile, version, build)
     artifact["approved_profile"] = profile_metadata
     write_archive_provenance(provenance_path, root, artifact, profile, source_sha, inputs_sha)
@@ -493,8 +502,7 @@ def run_archive_build(args: argparse.Namespace, root: Path, source_sha: str,
 
 
 def run_archive(args: argparse.Namespace, root: Path) -> None:
-    source_sha = git_text(root, "rev-parse", "HEAD")
-    inputs_sha = source_inputs_sha256(root)
+    source_sha, inputs_sha = author_archive_source_guard(root, args.pr_number)
     run_archive_build(args, root, source_sha, inputs_sha, args.pr_number)
 
 

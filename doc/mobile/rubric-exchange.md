@@ -181,6 +181,12 @@ uploads or changes App Store Connect. Use a fresh output directory per producer.
 1. Before integration, `archive --pr-number <source-PR>` builds Release through
    the repository compilation recorder. Commit source first and retain the log
    and generated `distribution-provenance.json`. Failed commands are not counted.
+   Before profile validation, signing or compilation, the author guard requires
+   all tracked and untracked changes to be clean except for that PR's own
+   `deploy/version/entries/<source-PR>.yaml`, which may change as recorder
+   bookkeeping. It records the committed source SHA and rechecks source inputs
+   after the build. This exception does not apply to `publisher-archive`, which
+   still requires the entire accepted-checkpoint checkout to be clean.
 2. After accepted source integration and central version materialization, fetch
    main and select its exact accepted materialized SHA in a clean checkout.
    `publisher-archive --expected-source <full-SHA>` verifies the main ancestry,
