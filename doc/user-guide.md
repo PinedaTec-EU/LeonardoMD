@@ -592,6 +592,8 @@ Use **Preferences → Synchronization → Connect to other computers** in the pr
 
 Import an available project to create an offline copy. Open it locally, then use manual synchronization or select a synchronization interval. Network reachability is still required for transfers. A disconnected copy remains a local working copy; it is not evidence that the source has your latest edits.
 
+**If importing or synchronizing fails**, the error identifies the HTTP status and a recovery action. Updated source Macs also report whether the selection exceeds the project size, per-file size or file-count limit, with the observed quantity and limit. “At least” is the amount encountered before stopping, not a complete project inventory; a file path is relative to the shared project. The current whole-project transfer supports up to 200 MiB per project, 20 MiB per file and 10,000 files. On the source Mac, reduce the shared selection and retry; nothing is silently omitted to fit. A source-read error means you should check the disk, permissions and availability of cloud files on that Mac. It does not prove the project is too large. Older source versions may provide only an HTTP status; update both Macs for detailed diagnostics.
+
 To return edits, **Compare changes**, inspect Base / This Mac / Other Mac versions, then **Send changes for review**. Retry pending proposals when connectivity returns. Edits made after submission remain local until another submission. The source Mac reviews incoming proposals; sending is not automatic acceptance. Resolve conflict markers deliberately and verify the result before accepting. Keep local work until the source confirms the expected outcome.
 
 ## 16. Updates and release notes
