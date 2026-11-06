@@ -258,6 +258,10 @@ final class PairingUITests: XCTestCase {
         XCTAssertTrue(back.waitForExistence(timeout: 5),
                       "The removed project must still provide a back path to the offline library")
         back.tap()
+        let libraryBack = app.navigationBars.buttons.firstMatch
+        if libraryBack.waitForExistence(timeout: 5) {
+            libraryBack.tap()
+        }
         XCTAssertTrue(app.staticTexts["QA · Markdown"].waitForExistence(timeout: 10),
                       "An unrelated offline direct corpus must survive revocation")
         XCTAssertTrue(app.staticTexts["QA · Recovery"].waitForExistence(timeout: 10),
