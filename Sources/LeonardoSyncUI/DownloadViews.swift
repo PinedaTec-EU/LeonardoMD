@@ -1,4 +1,5 @@
 import SwiftUI
+import LeonardoSync
 
 /// Identical retention and cache controls on both consuming platforms.
 public struct SyncCacheSettingsView: View {
@@ -89,14 +90,21 @@ public struct SyncCatalogueView: View {
         let failed = paths.contains { library.failures[DownloadLibrary.key(id: projectID, path: $0.path)] != nil }
         if active { ProgressView().controlSize(.small).accessibilityLabel(t("Downloading", "Descargando")) }
         if failed { Image(systemName: "exclamationmark.triangle").accessibilityLabel(t("Download failed; retries automatically", "Error de descarga; reintento automático")) }
-        Text(retained > 0 ? (downloaded == paths.count ? t("Available offline", "Disponible sin conexión") : t("Offline pending", "Offline pendiente"))
-             : (downloaded == 0 ? t("Remote only", "Solo remoto") : t("Cached", "En caché")))
+        Text(statusText(paths: paths, project: project, retained: retained, downloaded: downloaded))
             .font(.caption).foregroundStyle(.secondary)
         if paths.count > 1 { Text("\(downloaded)/\(paths.count)").font(.caption.monospacedDigit()) }
     }
+    private func statusText(paths: [RemoteFileEntry], project: CachedRemoteProject, retained: Int, downloaded: Int) -> String {
+        if retained == paths.count && retained > 0 {
+            return paths.allSatisfy { project.isAvailableOffline($0) }
+                ? t("Available offline", "Disponible sin conexión") : t("Offline pending", "Offline pendiente")
+        }
+        if retained > 0 { return t("Partly kept offline", "Offline parcial") }
+        return downloaded == 0 ? t("Remote only", "Solo remoto") : t("Cached", "En caché")
+    }
     @ViewBuilder private func actions(path: String, isFolder: Bool, project: CachedRemoteProject) -> some View {
         let entries = project.catalogue.files.filter { isFolder ? path.isEmpty || $0.path.hasPrefix(path + "/") : $0.path == path }
-        let kept = !entries.isEmpty && entries.allSatisfy { project.keeps($0.path) }
+        let kept = isFolder ? project.keepsFolder(path) : project.keeps(path)
         Button(kept ? t("Stop keeping offline", "Dejar de mantener sin conexión") : t("Keep offline", "Mantener sin conexión"),
                systemImage: kept ? "pin.slash" : "pin") {
             Task { await library.retain(id: projectID, path: path, isFolder: isFolder, keep: !kept) }

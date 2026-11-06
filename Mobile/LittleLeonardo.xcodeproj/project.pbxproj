@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		384000000000000000000101 /* MobileDownloadedDocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 384000000000000000000001; };
+		384000000000000000000200 /* LeonardoSyncUI in Frameworks */ = {isa = PBXBuildFile; productRef = 384000000000000000000201; };
 		384000000000000000000100 /* MobileLibrary+Downloads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 384000000000000000000000; };
 		15243E6517E367904B34E1C3 /* PairingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88DCAC3D27E3676EFE8737FB /* PairingUITests.swift */; };
 		22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */; };
@@ -50,7 +50,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		384000000000000000000001 /* MobileDownloadedDocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MobileDownloadedDocumentView.swift"; sourceTree = "<group>"; };
 		384000000000000000000000 /* MobileLibrary+Downloads.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MobileLibrary+Downloads.swift"; sourceTree = "<group>"; };
 		0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LittleLeonardoApp.swift; sourceTree = "<group>"; };
 		5B83DAE858F9656CCDF4D6B1 /* LittleLeonardo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LittleLeonardo.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -90,6 +89,7 @@
 				852C58BAA8EDEDB67FDE7FB4 /* LeonardoSync in Frameworks */,
 				636F71B3D4E9A41FC1842500 /* LeonardoSyncTransport in Frameworks */,
 				6BF5E353F685869C538746E5 /* LeonardoRender in Frameworks */,
+				384000000000000000000200 /* LeonardoSyncUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -164,7 +164,6 @@
 			children = (
 				0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */,
 				D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */,
-				384000000000000000000001 /* MobileDownloadedDocumentView.swift */,
 				384000000000000000000000 /* MobileLibrary+Downloads.swift */,
 				A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */,
 				7849226B36C61649B125BDDC /* MobileLibraryView.swift */,
@@ -202,6 +201,7 @@
 				7CAAF1CC01593584A9E0A7F9 /* LeonardoSync */,
 				00F8AB50590ED36AF1934837 /* LeonardoSyncTransport */,
 				3D12268B64E5D2FC1E9F4E35 /* LeonardoRender */,
+				384000000000000000000201 /* LeonardoSyncUI */,
 			);
 			productName = LittleLeonardo;
 			productReference = 5B83DAE858F9656CCDF4D6B1 /* LittleLeonardo.app */;
@@ -310,7 +310,6 @@
 			files = (
 				C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */,
 				22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */,
-				384000000000000000000101 /* MobileDownloadedDocumentView.swift in Sources */,
 				384000000000000000000100 /* MobileLibrary+Downloads.swift in Sources */,
 				A7B6C5D4E3F2019A88776655 /* MobileRubricSubmissionGate.swift in Sources */,
 				2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */,
@@ -634,6 +633,7 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		384000000000000000000201 /* LeonardoSyncUI */ = {isa = XCSwiftPackageProductDependency; package = EF04C10B9BAEA910A5BF75DB; productName = LeonardoSyncUI; };
 		00F8AB50590ED36AF1934837 /* LeonardoSyncTransport */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = EF04C10B9BAEA910A5BF75DB /* XCLocalSwiftPackageReference ".." */;

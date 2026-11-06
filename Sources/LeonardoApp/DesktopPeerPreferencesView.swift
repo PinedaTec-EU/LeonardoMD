@@ -1,5 +1,6 @@
 import SwiftUI
 import LeonardoSync
+import LeonardoSyncUI
 
 struct DesktopPeerPreferencesView: View {
     let session: AppSession
@@ -7,6 +8,7 @@ struct DesktopPeerPreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var pairing = false
     @State private var reviewing: UUID?
+    @State private var browsing: UUID?
 
     var body: some View {
         Form {
@@ -46,12 +48,16 @@ struct DesktopPeerPreferencesView: View {
                             HStack {
                                 Text(project.name)
                                 Spacer()
-                                Button(L10n.text("Import")) { Task { await controller.importProject(connectionID: connection.id, projectID: project.id) } }.disabled(!controller.helper.online)
+                                Button(L10n.text("Browse files")) {
+                                    browsing = DesktopPeerController.downloadID(connectionID: connection.id, projectID: project.id)
+                                }
+                                Button(L10n.text("Create editable copy")) { Task { await controller.importProject(connectionID: connection.id, projectID: project.id) } }.disabled(!controller.helper.online)
                             }
                         }
                     }
                 }
             }
+            SyncCacheSettingsView(library: controller.downloads, spanish: LanguageSettings.shared.language == .spanish)
             Section(L10n.text("Offline copies")) {
                 ForEach(controller.copies, id: \.id) { copy in
                     VStack(alignment: .leading, spacing: 8) {
@@ -75,9 +81,15 @@ struct DesktopPeerPreferencesView: View {
         }.formStyle(.grouped).disabled(controller.busy)
         .task {
             await controller.initialize()
+            for id in controller.connections.filter({ !$0.revoked }).map(\.id) { await controller.refresh(id) }
             while !Task.isCancelled {
                 await controller.helper.refresh()
                 do { try await Task.sleep(for: .seconds(2)) } catch { return }
+            }
+        }
+        .sheet(isPresented: Binding(get: { browsing != nil }, set: { if !$0 { browsing = nil } })) {
+            if let id = browsing {
+                DesktopDownloadBrowser(library: controller.downloads, projectID: id)
             }
         }
         .sheet(isPresented: $pairing) { DesktopPeerPairingView(controller: controller) }

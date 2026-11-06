@@ -668,9 +668,32 @@ The Mac must be reachable for transfers. A private overlay VPN requires the expl
 
 Use **Preferences → Synchronization → Connect to other computers** in the principal instance. Enable **Leonardo Sync** with the common control on both Macs. On the source Mac, open **Share from this Mac**, enable sharing and select the intended content. On this receiving Mac, choose **Connect to another Mac** and paste the source invitation link or HTTPS address with a name for this device. Compare the codes and approve on the source before importing. Your own **Share saved files from this Mac** can stay off: consuming content does not publish yours. Neither role is a global master/client mode.
 
-Import an available project to create an offline copy. Open it locally, then use manual synchronization or select a synchronization interval. Network reachability is still required for transfers. A disconnected copy remains a local working copy; it is not evidence that the source has your latest edits.
+Choose **Create editable copy** to explicitly download an entire editable project. Open it locally, then use manual synchronization or select a synchronization interval. Network reachability is still required for transfers. A disconnected copy remains a local working copy; it is not evidence that the source has your latest edits.
 
 To return edits, **Compare changes**, inspect Base / This Mac / Other Mac versions, then **Send changes for review**. Retry pending proposals when connectivity returns. Edits made after submission remain local until another submission. The source Mac reviews incoming proposals; sending is not automatic acceptance. Resolve conflict markers deliberately and verify the result before accepting. Keep local work until the source confirms the expected outcome.
+
+### On-demand downloads and offline storage
+
+![Diagram: remote catalogue, file opening, temporary cache and separate offline storage.](guide/en/assets/sync-cache-diagram.png)
+
+*Conceptual diagram, not an application screenshot.*
+
+After pairing, the app refreshes the authorized file/folder list without downloading content. On Mac, choose **Browse files** beside a shared project; on iOS, open the project. Opening a file downloads that file and its referenced local images. Already downloaded files open from cache. Only saved source files are shared.
+
+Use the context menu (right-click on Mac; long-press on iOS):
+
+- **Keep offline** downloads and retains the selection. A folder includes future descendants. Referenced local images are retained with the document.
+- **Stop keeping offline** makes copies eligible for cache cleanup without deleting originals. A child can be excluded from a retained folder.
+- **Release local space** removes temporary downloaded copies; retained offline content remains protected.
+
+The list distinguishes **Remote only**, **Cached**, **Offline pending** and **Available offline**, with progress and failure indicators. Folder counts show downloaded files versus total files. A selection is available offline only after all required downloads finish. Failures retry during the next automatic refresh; the last retained version remains readable if an update fails.
+
+In **Synchronization → Storage and cache**, configure the temporary limit in MiB, inspect temporary/offline usage and pending downloads, clear temporary cache or stop retaining a selection. The default limit is 256 MiB; zero disables temporary retention. Least recently used temporary files are removed first. Offline files are stored separately and do not count toward this limit; they require enough free device space. Cleanup never deletes editable desktop copies or rubric drafts.
+
+Automatic refresh defaults to every minute while the receiving app is active; an existing interval preference is preserved. iOS also refreshes on foreground activation and pauses while suspended. Transfers need a reachable source Mac. Offline, only previously downloaded content opens. Confirmed revocation removes access to the managed reader cache.
+
+On Mac, **Create editable copy** explicitly downloads the complete working copy for editing and the existing proposal/review workflow. These copies are separate from the automatically cleaned reader cache. Browsing or keeping files offline does not send edits.
+
 
 ## 16. Updates and release notes
 

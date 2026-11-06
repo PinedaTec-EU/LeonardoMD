@@ -22,6 +22,7 @@ public final class DownloadLibrary {
         for id in allowed.subtracting(allowedIDs) { deny(id: id) }
         allowed = allowedIDs
         let values = try await cache.projects()
+        for value in values where !allowed.contains(value.id) { try await cache.remove(id: value.id) }
         projects = values.filter { allowed.contains($0.id) }
         try await refreshUsage()
     }
@@ -68,7 +69,14 @@ public final class DownloadLibrary {
         tasks[key] = task
         defer { tasks[key] = nil; downloading.remove(key) }
         do { return try await task.value }
-        catch { failures[key] = error.localizedDescription; throw error }
+        catch {
+            failures[key] = error.localizedDescription
+            if allowed.contains(id), generations[id, default: 0] == generation,
+               let previous = try await cache.read(id: id, entry: entry, allowStale: true) {
+                return previous
+            }
+            throw error
+        }
     }
 
     public func retain(id: UUID, path: String, isFolder: Bool, keep: Bool) async {
@@ -81,9 +89,11 @@ public final class DownloadLibrary {
     }
 
     public func downloadRetained(id: UUID) async {
-        guard let project = projects.first(where: { $0.id == id }) else { return }
-        for entry in project.pendingOfflineFiles {
+        var attempted = Set<String>()
+        while let project = projects.first(where: { $0.id == id }),
+              let entry = project.pendingOfflineFiles.first(where: { !attempted.contains($0.path) }) {
             guard allowed.contains(id), !Task.isCancelled else { return }
+            attempted.insert(entry.path)
             do { _ = try await open(id: id, path: entry.path) }
             catch { if !allowed.contains(id) { return } }
         }
@@ -91,23 +101,23 @@ public final class DownloadLibrary {
 
     public func setLimit(bytes: Int) async {
         do { try await cache.setLimit(bytes: bytes); try await refreshAll() }
-        catch { error = error.localizedDescription }
+        catch { self.error = error.localizedDescription }
     }
     public func clearTemporary() async {
         do { try await cache.clearTemporary(); try await refreshAll() }
-        catch { error = error.localizedDescription }
+        catch { self.error = error.localizedDescription }
     }
     public func release(id: UUID, path: String, isFolder: Bool) async {
         do {
             guard allowed.contains(id) else { throw SyncError.revoked }
             try await cache.release(id: id, path: path, isFolder: isFolder); try await reload(id: id)
-        } catch { error = error.localizedDescription }
+        } catch { self.error = error.localizedDescription }
     }
     public func removeRule(id: UUID, ruleID: String) async {
         do {
             guard allowed.contains(id) else { throw SyncError.revoked }
             try await cache.removeRetentionRule(id: id, ruleID: ruleID); try await reload(id: id)
-        } catch { error = error.localizedDescription }
+        } catch { self.error = error.localizedDescription }
     }
     private func refreshAll() async throws {
         projects = try await cache.projects().filter { allowed.contains($0.id) }

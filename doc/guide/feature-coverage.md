@@ -58,3 +58,5 @@ Synchronization roles (#337): chapters 14–15 now route through one Synchroniza
 Update termination (#202): chapter 16 documents automatic Preferences dismissal before install approval, retained Save/Git decisions, cancellation/retry, and the older-source bootstrap workaround. Introduced in Guide v12 and retained in current Guide v16; previous personal copies are preserved.
 
 Display-math regression coverage ([#272](https://github.com/PinedaTec-EU/LeonardoMD/issues/272)): both guides include one-line underbraces and a multiline tagged box-counting equation. Native help QA must inspect enabled rendering and disabled/code fallback in every tested instance.
+
+| Metadata-first browsing, retention and cache management | `DownloadLibrary`, `OnDemandCache`, `LeonardoSyncUI` | 15 | Bilingual storage diagram; remote/cached/offline states; editable-copy boundary |

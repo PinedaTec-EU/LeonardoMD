@@ -685,9 +685,32 @@ El Mac debe estar accesible para transferir. Una VPN privada superpuesta requier
 
 Usa **Preferencias → Sincronización → Conectarme a otros equipos** en la instancia principal. Activa **Leonardo Sync** con el control común en ambos Macs. En el de origen, abre **Compartir desde este Mac**, activa compartir y selecciona el contenido. En este Mac receptor, pulsa **Conectarme a otro Mac** y pega la invitación o dirección HTTPS del origen junto con un nombre para este dispositivo. Compara los códigos y aprueba en el origen antes de importar. Puedes mantener desactivado **Compartir archivos guardados de este Mac**: acceder al contenido de otro no publica el tuyo. Ninguna función es un modo global de máster o cliente.
 
-Importa un proyecto disponible para crear una copia sin conexión. Ábrela localmente y usa sincronización manual o elige un intervalo. Las transferencias siguen necesitando conectividad. Una copia desconectada es trabajo local; no demuestra que el origen tenga tus últimos cambios.
+Pulsa **Crear copia editable** para descargar explícitamente una copia completa del proyecto. Ábrela localmente y usa sincronización manual o elige un intervalo. Las transferencias siguen necesitando conectividad. Una copia desconectada es trabajo local; no demuestra que el origen tenga tus últimos cambios.
 
 Para devolver ediciones, **Comparar cambios**, revisa las versiones Base / Este Mac / Otro Mac y después **Enviar cambios para revisar**. Reintenta propuestas pendientes al recuperar conexión. Las ediciones posteriores al envío siguen locales hasta otra propuesta. El Mac de origen revisa las propuestas entrantes; enviar no significa aceptación automática. Resuelve marcadores de conflicto deliberadamente y verifica el resultado antes de aceptar. Conserva el trabajo local hasta confirmar el resultado esperado en origen.
+
+### Descarga bajo demanda y almacenamiento sin conexión
+
+![Diagrama: catálogo remoto, apertura, caché temporal y almacenamiento offline separado.](guide/es/assets/sync-cache-diagram.png)
+
+*Diagrama conceptual; no es una captura de la aplicación.*
+
+Tras vincular los dispositivos, la app actualiza la lista de archivos y carpetas autorizados sin descargar contenido. En Mac, pulsa **Explorar archivos** junto al proyecto; en iOS, abre el proyecto. Abrir un archivo descarga ese archivo y sus imágenes locales referenciadas. Los archivos ya descargados se abren desde la caché. Solo se comparten archivos guardados en el origen.
+
+Usa el menú contextual (clic derecho en Mac; pulsación prolongada en iOS):
+
+- **Mantener sin conexión** descarga y conserva la selección. Una carpeta incluye futuros descendientes. Las imágenes locales referenciadas se conservan con el documento.
+- **Dejar de mantener sin conexión** permite limpiar las copias como caché, sin eliminar originales. Puedes excluir un archivo de una carpeta conservada offline.
+- **Liberar espacio local** elimina copias temporales descargadas; conserva el contenido offline protegido.
+
+La lista distingue **Solo remoto**, **En caché**, **Offline pendiente** y **Disponible sin conexión**, con progreso e indicadores de error. Las carpetas muestran archivos descargados y total. La selección está disponible offline cuando terminan todas las descargas necesarias. Los fallos se reintentan en la siguiente actualización automática; la última versión conservada sigue legible si falla una actualización.
+
+En **Sincronización → Almacenamiento y caché**, configura el límite temporal en MiB, consulta el uso temporal/offline y las descargas pendientes, limpia la caché o deja de conservar una selección. El límite inicial es 256 MiB; cero desactiva la conservación temporal. Primero se eliminan los archivos temporales usados hace más tiempo. Los archivos offline se almacenan aparte y no cuentan para el límite; necesitan espacio libre suficiente. La limpieza nunca borra copias editables de escritorio ni borradores de rúbricas.
+
+La actualización automática inicial es cada minuto mientras la app receptora está activa; se conserva un intervalo previamente elegido. iOS actualiza también al entrar en primer plano y pausa durante la suspensión. Las transferencias requieren un Mac origen accesible. Sin conexión solo se abre contenido previamente descargado. La revocación confirmada retira el acceso a la caché de consulta gestionada.
+
+En Mac, **Crear copia editable** descarga explícitamente una copia completa para editar y utilizar el flujo existente de propuestas y revisión. Estas copias están separadas de la caché de consulta que se limpia automáticamente. Explorar o mantener archivos offline no envía cambios.
+
 
 ## 16. Actualizaciones y notas de versión
 

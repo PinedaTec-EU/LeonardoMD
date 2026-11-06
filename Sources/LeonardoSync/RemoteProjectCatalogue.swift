@@ -25,17 +25,21 @@ public struct RemoteFileEntry: Codable, Hashable, Sendable, Identifiable {
 
 public struct RemoteProjectCatalogue: Codable, Equatable, Sendable {
     public let files: [RemoteFileEntry]
-    public init(files: [RemoteFileEntry]) { self.files = files }
-    public init(snapshot: CorpusSnapshot) { files = snapshot.files.map(RemoteFileEntry.init) }
+    public let directories: [String]
+    public init(files: [RemoteFileEntry], directories: [String] = []) { self.files = files; self.directories = directories }
+    public init(snapshot: CorpusSnapshot) { files = snapshot.files.map(RemoteFileEntry.init); directories = [] }
 
     public func validate(descriptor: SharedProjectDescriptor) throws {
         guard files.count <= CorpusLimits().maximumFiles else { throw SyncError.sizeLimitExceeded }
+        guard directories.count <= CorpusLimits().maximumFiles else { throw SyncError.sizeLimitExceeded }
+        for directory in directories { try descriptor.scope.validate(directory + "/catalogue.md") }
         var paths = Set<String>()
         for file in files {
             try descriptor.scope.validate(file.path)
             try descriptor.selection?.validate(file.path)
             guard file.byteCount >= 0, file.byteCount <= CorpusLimits().maximumFileBytes,
                   file.revision.hasPrefix("sha256:"), file.revision.count == 71,
+                  file.revision.dropFirst(7).allSatisfy({ $0.isHexDigit && $0.unicodeScalars.allSatisfy(\.isASCII) }),
                   paths.insert(file.path.precomposedStringWithCanonicalMapping.lowercased()).inserted else {
                 throw SyncError.invalidSnapshot
             }
@@ -47,7 +51,7 @@ public struct RemoteProjectCatalogue: Codable, Equatable, Sendable {
     }
 
     public var folders: [String] {
-        var result = Set<String>()
+        var result = Set(directories)
         for file in files {
             var parts = file.path.split(separator: "/").map(String.init)
             while parts.count > 1 {

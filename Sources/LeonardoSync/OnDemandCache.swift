@@ -17,23 +17,43 @@ public struct CachedRemoteProject: Codable, Equatable, Sendable, Identifiable {
     public var catalogue: RemoteProjectCatalogue
     public var retention: [OfflineRetentionRule]
     public var downloads: [String: CachedDownload]
+    public var dependencies: [String: [String]]
 
     public func keeps(_ path: String) -> Bool {
+        directlyKeeps(path) || dependencies.contains { directlyKeeps($0.key) && $0.value.contains(path) }
+    }
+    private func directlyKeeps(_ path: String) -> Bool {
         retention.filter { $0.contains(path) }.max { $0.path.count < $1.path.count }?.keep ?? false
     }
+    public func keepsFolder(_ path: String) -> Bool { directlyKeeps(path.isEmpty ? "offline.md" : path + "/offline.md") }
     public func isDownloaded(_ entry: RemoteFileEntry) -> Bool { downloads[entry.path]?.revision == entry.revision }
+    public func isAvailableOffline(_ entry: RemoteFileEntry) -> Bool {
+        guard keeps(entry.path), isDownloaded(entry) else { return false }
+        return (dependencies[entry.path] ?? []).allSatisfy { path in
+            guard let image = catalogue.files.first(where: { $0.path == path }) else { return false }
+            return isDownloaded(image)
+        }
+    }
     public var pendingOfflineFiles: [RemoteFileEntry] { catalogue.files.filter { keeps($0.path) && !isDownloaded($0) } }
 }
 
 public struct CachedDownload: Codable, Equatable, Sendable {
     public let revision: String
     public let byteCount: Int
+    public let isUnsavedBuffer: Bool
     public var lastAccess: UInt64
 }
 
 public struct OnDemandCacheUsage: Equatable, Sendable {
     public var temporaryBytes: Int = 0
     public var offlineBytes: Int = 0
+    public func isAvailableOffline(_ entry: RemoteFileEntry) -> Bool {
+        guard keeps(entry.path), isDownloaded(entry) else { return false }
+        return (dependencies[entry.path] ?? []).allSatisfy { path in
+            guard let image = catalogue.files.first(where: { $0.path == path }) else { return false }
+            return isDownloaded(image)
+        }
+    }
     public var pendingOfflineFiles: Int = 0
     public var limitBytes: Int = 0
 }
@@ -60,11 +80,12 @@ public actor OnDemandCache {
         try catalogue.validate(descriptor: descriptor)
         var next = try load()
         var project = next.projects.first { $0.id == id } ?? CachedRemoteProject(
-            id: id, descriptor: descriptor, catalogue: catalogue, retention: [], downloads: [:])
+            id: id, descriptor: descriptor, catalogue: catalogue, retention: [], downloads: [:], dependencies: [:])
         project.descriptor = descriptor
         project.catalogue = catalogue
         let entries = Dictionary(uniqueKeysWithValues: catalogue.files.map { ($0.path, $0) })
-        project.downloads = project.downloads.filter { entries[$0.key]?.revision == $0.value.revision }
+        project.dependencies = project.dependencies.filter { entries[$0.key] != nil }
+        project.downloads = project.downloads.filter { entries[$0.key] != nil && (entries[$0.key]?.revision == $0.value.revision || project.keeps($0.key)) }
         next.projects.removeAll { $0.id == id }; next.projects.append(project)
         try commit(evict(next))
         logger.info("cache_catalogue_updated files=\(catalogue.files.count, privacy: .public)")
@@ -94,17 +115,18 @@ public actor OnDemandCache {
         try commit(evict(next))
     }
 
-    public func read(id: UUID, entry: RemoteFileEntry) throws -> CorpusFile? {
+    public func read(id: UUID, entry: RemoteFileEntry, allowStale: Bool = false) throws -> CorpusFile? {
         var next = try load()
         guard let index = next.projects.firstIndex(where: { $0.id == id }),
               next.projects[index].catalogue.files.contains(entry),
-              next.projects[index].isDownloaded(entry) else { return nil }
-        let url = try blob(id: id, revision: entry.revision)
+              let record = next.projects[index].downloads[entry.path],
+              next.projects[index].isDownloaded(entry) || allowStale else { return nil }
+        let url = try blob(id: id, revision: record.revision)
         guard FileManager.default.fileExists(atPath: url.path) else {
             next.projects[index].downloads[entry.path] = nil; try commit(next); return nil
         }
-        let file = CorpusFile(path: entry.path, content: try Data(contentsOf: url), isUnsavedBuffer: entry.isUnsavedBuffer)
-        try entry.validate(file)
+        let file = CorpusFile(path: entry.path, content: try Data(contentsOf: url), isUnsavedBuffer: record.isUnsavedBuffer)
+        try RemoteFileEntry(path: entry.path, byteCount: record.byteCount, revision: record.revision, isUnsavedBuffer: record.isUnsavedBuffer).validate(file)
         next.sequence &+= 1
         next.projects[index].downloads[entry.path]?.lastAccess = next.sequence
         try commit(next)
@@ -121,8 +143,12 @@ public actor OnDemandCache {
         try file.content.write(to: url, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
         next.sequence &+= 1
+        if let source = String(data: file.content, encoding: .utf8), ["md", "markdown", "txt"].contains((entry.path as NSString).pathExtension.lowercased()) {
+            next.projects[index].dependencies[entry.path] = RemoteDocumentResources.imagePaths(
+                in: source, documentPath: entry.path, catalogue: next.projects[index].catalogue)
+        }
         next.projects[index].downloads[entry.path] = CachedDownload(
-            revision: entry.revision, byteCount: entry.byteCount, lastAccess: next.sequence)
+            revision: entry.revision, byteCount: entry.byteCount, isUnsavedBuffer: entry.isUnsavedBuffer, lastAccess: next.sequence)
         try commit(evict(next))
         logger.info("cache_file_stored bytes=\(entry.byteCount, privacy: .public)")
     }
@@ -195,11 +221,18 @@ public actor OnDemandCache {
             try project.catalogue.validate(descriptor: project.descriptor)
             for (path, record) in project.downloads {
                 guard let entry = project.catalogue.files.first(where: { $0.path == path }),
-                      record.revision == entry.revision, record.byteCount == entry.byteCount else { throw SyncError.invalidSnapshot }
+                      record.byteCount >= 0, record.byteCount <= CorpusLimits().maximumFileBytes,
+                      record.revision == entry.revision || project.keeps(path) else { throw SyncError.invalidSnapshot }
             }
         }
-        state = value
-        return value
+        var recovered = value
+        for index in recovered.projects.indices {
+            recovered.projects[index].downloads = try recovered.projects[index].downloads.filter {
+                FileManager.default.fileExists(atPath: try blob(id: recovered.projects[index].id, revision: $0.value.revision).path)
+            }
+        }
+        state = recovered
+        return recovered
     }
 
     private func commit(_ next: State) throws {
@@ -214,7 +247,7 @@ public actor OnDemandCache {
         })
         let blobs = root.appendingPathComponent("Blobs", isDirectory: true)
         if let enumerator = FileManager.default.enumerator(at: blobs, includingPropertiesForKeys: [.isRegularFileKey]) {
-            for case let file as URL in enumerator where !live.contains(file.path) {
+            for case let file as URL in enumerator where !live.contains(file.standardizedFileURL.path) {
                 if (try? file.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true {
                     try FileManager.default.removeItem(at: file)
                 }

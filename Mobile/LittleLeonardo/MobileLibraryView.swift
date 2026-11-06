@@ -1,6 +1,7 @@
 import SwiftUI
 import LeonardoSync
 import LeonardoRender
+import LeonardoSyncUI
 
 private enum MobileLibrarySheet: String, Identifiable {
     case direct, settings
@@ -199,20 +200,19 @@ struct MobileProjectView: View {
     @State private var selectedEntry: RemoteFileEntry?
     private var project: OfflineProject? { library.projects.first { $0.id == projectID } }
     var body: some View {
-        List {
+        Group {
+            if let project, !project.isRecoveryArchive {
+                SyncCatalogueView(library: library.downloads, projectID: project.id, spanish: true) { entry in selectedEntry = entry }
+            } else {
+            List {
             if let project {
                 Section {
-                    Text("Disponible offline · Solo lectura").font(.caption).foregroundStyle(.secondary)
+                    Text("Archivo de recuperación · Solo lectura").font(.caption).foregroundStyle(.secondary)
                     Text("Carpeta: \(project.scope.folder.isEmpty ? "/" : project.scope.folder)").font(.caption)
                     if project.isRecoveryArchive {
                         Text("Esta copia antigua conserva tus cambios locales y enviados. Expórtala para recuperarlos en un ordenador. No se editará ni se enviará automáticamente.")
                         Button("Exportar recuperación", systemImage: "square.and.arrow.up") { exporting = true }
                             .accessibilityIdentifier("export-recovery")
-                    }
-                }
-                if !project.isRecoveryArchive {
-                    SyncCatalogueView(library: library.downloads, projectID: project.id, spanish: true) { entry in
-                        selectedEntry = entry
                     }
                 }
                 ForEach(project.files.filter { ["md", "markdown", "txt"].contains(($0.path as NSString).pathExtension.lowercased()) }, id: \.path) { file in
@@ -221,9 +221,11 @@ struct MobileProjectView: View {
                     }
                 }
             }
+            }
+            }
         }.navigationTitle(project?.name ?? "Proyecto")
         .navigationDestination(item: $selectedEntry) { entry in
-            MobileDownloadedDocumentView(library: library, projectID: projectID, entry: entry)
+            RemoteDocumentPreview(library: library.downloads, projectID: projectID, entry: entry, spanish: true)
         }
         .fileExporter(isPresented: $exporting, document: project.map(MobileRecoveryDocument.init),
                       contentType: .json, defaultFilename: "LittleLeonardo-\(projectID.uuidString)-recovery") { result in
