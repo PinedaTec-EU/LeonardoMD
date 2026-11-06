@@ -74,12 +74,16 @@ final class PeerSyncErrorMessageTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(200))
             view.layoutSubtreeIfNeeded()
             view.display()
-            let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
-            view.cacheDisplay(in: view.bounds, to: bitmap)
             let image = destination.appendingPathComponent("download-error-\(language.rawValue).png")
-            try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: image)
+            // Capture the actual sheet window: cacheDisplay omits AppKit vibrancy/background layers.
+            let capture = Process()
+            capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+            capture.arguments = ["-x", "-o", "-l", String(sheet.windowNumber), image.path]
+            try capture.run()
+            capture.waitUntilExit()
+            XCTAssertEqual(capture.terminationStatus, 0, "Window capture requires local screen-recording permission")
             try NativeViewCaptureSupport.writeProvenance(for: image,
-                screen: "Production DesktopPeerPreferencesView alert; synthetic authorized project-size failure", size: view.bounds.size,
+                screen: "Production DesktopPeerPreferencesView alert; synthetic authorized project-size failure", size: sheet.frame.size,
                 language: language.rawValue)
             window.endSheet(sheet)
             sheet.orderOut(nil)
