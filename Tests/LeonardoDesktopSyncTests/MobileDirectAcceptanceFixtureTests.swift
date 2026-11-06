@@ -145,6 +145,9 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                     case "arm-lost-ack":
                         guard mode == "lost-ack", let fault else { throw SyncError.invalidPath }
                         await fault.arm()
+                    case "allow-reconcile":
+                        guard mode == "lost-ack", let fault else { throw SyncError.invalidPath }
+                        await fault.allowReconcile()
                     case "revoke":
                         guard mode == "revoke-after-draw" else { throw SyncError.invalidPath }
                         try await runtime.revoke(deviceID: try XCTUnwrap(deviceID))
@@ -174,9 +177,17 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                             if let fault {
                                 let snapshot = await fault.snapshot()
                                 XCTAssertTrue(snapshot.injected, "Lost-ack mode must replace the first response acknowledgement")
-                                XCTAssertEqual(snapshot.responsePosts, 2,
-                                               "The frozen response must be committed once and reconciled with one idempotent retry")
-                                try writeJSON(["responsePosts": snapshot.responsePosts, "injected": snapshot.injected],
+                                XCTAssertEqual(snapshot.responsePosts, 3,
+                                               "The frozen response must be committed once, remain pending across relaunch, then reconcile once")
+                                XCTAssertEqual(snapshot.uniqueRequestIDs, 1,
+                                               "Every replay must retain the original request ID and payload")
+                                XCTAssertGreaterThan(snapshot.blockedRubricPolls, 0,
+                                                      "Rubric request polling must remain gated until reconciliation is explicitly allowed")
+                                try writeJSON(["responsePosts": snapshot.responsePosts,
+                                               "uniqueRequestIDs": snapshot.uniqueRequestIDs,
+                                               "blockedRubricPolls": snapshot.blockedRubricPolls,
+                                               "blockedResponsePosts": snapshot.blockedResponsePosts,
+                                               "injected": snapshot.injected],
                                               to: root.appendingPathComponent("lost-ack.json"))
                             }
                         }
@@ -224,12 +235,19 @@ private actor NativeMobileFixtureCredentials: DeviceCredentialStore {
 private actor LostRubricAcknowledgementFault {
     struct Snapshot: Sendable {
         let responsePosts: Int
+        let uniqueRequestIDs: Int
+        let blockedRubricPolls: Int
+        let blockedResponsePosts: Int
         let injected: Bool
     }
 
     private let root: URL
     private var armed = false
+    private var reconcileAllowed = false
     private var responsePosts = 0
+    private var responseRequestIDs: Set<UUID> = []
+    private var blockedRubricPolls = 0
+    private var blockedResponsePosts = 0
     private var injected = false
 
     init(root: URL) { self.root = root }
@@ -239,20 +257,44 @@ private actor LostRubricAcknowledgementFault {
         try? Data("armed\n".utf8).write(to: root.appendingPathComponent("lost-ack-armed.txt"), options: .atomic)
     }
 
+    func allowReconcile() {
+        reconcileAllowed = true
+        try? Data("allowed\n".utf8).write(to: root.appendingPathComponent("lost-ack-reconcile-allowed.txt"), options: .atomic)
+    }
+
     func response(for request: HTTPRequest, after response: HTTPResponse) -> HTTPResponse {
-        guard armed, request.method == "POST", request.path.hasSuffix("/rubrics/responses") else {
+        guard armed else { return response }
+        if request.method == "GET", request.path.hasSuffix("/rubrics/requests"), !reconcileAllowed {
+            blockedRubricPolls += 1
+            try? Data("503\n".utf8).write(to: root.appendingPathComponent("rubric-poll-gated.txt"), options: .atomic)
+            return HTTPResponse(status: 503)
+        }
+        guard request.method == "POST", request.path.hasSuffix("/rubrics/responses") else {
             return response
         }
         responsePosts += 1
+        if let responseBody = try? JSONDecoder().decode(RubricResponse.self, from: request.body) {
+            responseRequestIDs.insert(responseBody.requestID)
+        }
         if responsePosts == 1 {
             injected = true
             try? Data("first-response-ack-dropped\n".utf8)
                 .write(to: root.appendingPathComponent("lost-ack-injected.txt"), options: .atomic)
             return HTTPResponse(status: 503)
         }
+        guard reconcileAllowed else {
+            blockedResponsePosts += 1
+            try? Data("503\n".utf8)
+                .write(to: root.appendingPathComponent("lost-ack-reconcile-gated.txt"), options: .atomic)
+            return HTTPResponse(status: 503)
+        }
         return response
     }
 
-    func snapshot() -> Snapshot { Snapshot(responsePosts: responsePosts, injected: injected) }
+    func snapshot() -> Snapshot {
+        Snapshot(responsePosts: responsePosts, uniqueRequestIDs: responseRequestIDs.count,
+                 blockedRubricPolls: blockedRubricPolls, blockedResponsePosts: blockedResponsePosts,
+                 injected: injected)
+    }
 }
 #endif

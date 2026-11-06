@@ -180,8 +180,13 @@ final class PairingUITests: XCTestCase {
             recoveryBanner.tap()
         }
         XCTAssertTrue(recoverySheet.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["rubric-retry"].waitForExistence(timeout: 15),
+                      "The pending local response must remain visibly retryable while the fixture holds reconciliation")
+        XCTAssertFalse(app.buttons["rubric-done"].exists)
+        try advanceDirectFixture("allow-reconcile")
+        app.buttons["rubric-retry"].tap()
         XCTAssertTrue(app.buttons["rubric-done"].waitForExistence(timeout: 30),
-                      "Reload reconciliation must mark the matching committed response submitted")
+                      "Reload reconciliation must mark the matching committed response submitted after the gate opens")
         XCTAssertFalse(app.buttons["rubric-send"].exists)
         let capture = XCTAttachment(screenshot: app.screenshot())
         capture.name = "Native iOS rubric recovered after lost acknowledgement"
