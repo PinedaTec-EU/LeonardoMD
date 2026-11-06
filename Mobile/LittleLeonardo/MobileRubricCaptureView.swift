@@ -399,9 +399,13 @@ struct MobileRubricCaptureView: View {
             failure = "El dibujo supera los límites portátiles; se conserva el último borrador válido."
             return
         }
+        // Register this snapshot while handling the UI event. The observer
+        // Task may run in any order without changing persistence order.
+        let write = library.enqueueRubricDraftSnapshot(requestID: request.id,
+                                                       label: label, drawing: savedDrawing)
         Task {
             do {
-                try await library.persistRubricDraft(requestID: request.id, label: label, drawing: savedDrawing)
+                try await write.value
             } catch {
                 failure = "No se pudo guardar el borrador local. Inténtalo de nuevo antes de enviar."
             }
