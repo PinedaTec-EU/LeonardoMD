@@ -161,3 +161,12 @@ HTTP, including same-UUID requests from another Mac or a changed drawing. The
 identity tests cover both cross-peer cache projection/accept/send rejection and
 concurrent exact-operation reuse
 ([#367](https://github.com/PinedaTec-EU/LeonardoMD/issues/367)).
+
+The validation matrix is deliberately asymmetric: a same-UUID request with a
+different Mac requester, target device, capability, label hint or timestamp
+must produce no cached projection and a pre-HTTP conflict for Accept and Send;
+the same complete request with the same normalized label and identical ink may
+share one in-flight operation; changing either the normalized label or ink must
+remain a conflict even while that operation is running. This prevents a peer's
+heading or drawing from being selected by ID alone and preserves the one-POST
+coalescing contract for exact retries.
