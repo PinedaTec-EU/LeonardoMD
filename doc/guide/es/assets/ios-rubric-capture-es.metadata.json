@@ -1,36 +1,43 @@
 {
-  "schemaVersion": "native-ios-evidence-v1",
+  "schemaVersion": "native-ios-evidence-v3",
   "asset": "ios-rubric-capture-es.png",
-  "assetSha256": "aab2938d3195a15c0ec597e6bafb1956a4ff746675ea89e79c247f4f974c3d16",
+  "assetSha256": "7e8f9d917cd198c7ffdf7aceeadc8e49cf733ed2443a7a9d14f82eb69d3fec9e",
   "sourceCapture": "../../../validation/little-leonardo/ios-rubric-capture-es.png",
-  "sourceCaptureSha256": "cc92c740070e6a7ace049c8563f77d2fc52df420770ede66d46395d2b8bd88fc",
+  "sourceCaptureSha256": "ab2ccf46fe27ea41fa6156452cd178f3d58bc45dcf6a01f4a0b9b4657f45bf33",
+  "assetPixels": { "width": 598, "height": 1300 },
+  "sourcePixels": { "width": 1206, "height": 2622 },
   "locale": "es",
-  "sourceCommit": "44fe550681fa79f10b40a999f49c1a193d0a2184",
-  "buildDelta": 28,
-  "capturedAt": "2026-11-06T02:30:33.027+01:00",
+  "sourceCommit": "577d8821cd3c146d54dc55b49cc1695c0a7ec2e9",
+  "postCaptureEvidenceHead": "53df9ea810d678d29d8ae5ee46897d2b86650176",
+  "buildDelta": 60,
+  "capturedAt": "2026-11-06T06:29:23.751+01:00",
   "testIdentifier": "PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS()",
-  "testResult": "/Users/jmr.pineda/Library/Developer/Xcode/DerivedData/LittleLeonardo-ebawvvzaugqdpdasbiwdxudxrarn/Logs/Test/Test-LittleLeonardo-2026.11.06_02-29-54-+0100.xcresult",
+  "testResult": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-happy-g0sdjks1/Result.xcresult",
   "simulator": {
     "name": "LittleLeonardo Rubric342 QA 20261105",
     "model": "iPhone18Pro",
     "os": "iOS 27.0",
     "udid": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B",
-    "screenshotPixels": { "width": 1206, "height": 2622 },
-    "viewportPoints": { "width": 402, "height": 874 }
+    "viewportPoints": { "width": 402, "height": 874 },
+    "browser": null,
+    "viewportCSS": null
   },
   "transport": "real pinned HTTPS fixture with synthetic TLS identity and owned loopback Mac authority",
-  "responseSha256": "adb41115aa6127e83205932fc19137ebf1cfe9763cdd2149326a86d7942959d7",
-  "manifestSha256": "b6a3857415508e3a0a3cced2fe5dcfdafde3315e7c9de66ca5e90d9f599948d6",
+  "attachmentManifest": "/tmp/leonardo-happy-577d882-attachments.OPD2RO/manifest.json",
+  "attachmentManifestSha256": "cbf37de5556fcd935f48dd8d3274ac2dce3162cacf8a5c4f8f921beeb0fffff6",
+  "responseSha256": "67535d64f620132ac597ffc9d88f9e81aa048a1ec3e6b884dfac324f399ec270",
+  "readyManifestSha256": "ab317ff8c2f2d48ad1cfdee48010e3d7bde25c7fcd5ab0b546112fcd0fd3e694",
   "states": {
-    "drawing": { "asset": "../../../validation/little-leonardo/ios-rubric-capture-es-drawing.png", "sha256": "7a7b26036bf09b2844c9eb76ff4129ad0a34e4905987959fcd3de1f6107462a7" },
-    "preview": { "asset": "../../../validation/little-leonardo/ios-rubric-capture-es-preview.png", "sha256": "1b90f53006e3af8c67fa6cda5b374f36578f267592625b405cdb8948ca424cd0" },
-    "sent": { "asset": "../../../validation/little-leonardo/ios-rubric-capture-es.png", "sha256": "cc92c740070e6a7ace049c8563f77d2fc52df420770ede66d46395d2b8bd88fc" }
+    "drawing": { "asset": "../../../validation/little-leonardo/ios-rubric-capture-es-drawing.png", "sha256": "075550dc5ad18da9b9b9e9d460e2f737f098bc75b6c54257c2f36823ebeb2262", "attachment": "5D70E914-5F73-4D61-80DB-3694075CF178.png", "timestamp": "2026-11-06T06:29:11.266+01:00" },
+    "preview": { "asset": "../../../validation/little-leonardo/ios-rubric-capture-es-preview.png", "sha256": "9da03f7227883c73cd261d756f5982ef82e34d38c6238e15906a709be6ef5f0f", "attachment": "F8CF74EB-1BD9-4A3C-85BC-4BE4965B2F7C.png", "timestamp": "2026-11-06T06:29:12.864+01:00" },
+    "sent": { "asset": "../../../validation/little-leonardo/ios-rubric-capture-es.png", "sha256": "ab2ccf46fe27ea41fa6156452cd178f3d58bc45dcf6a01f4a0b9b4657f45bf33", "attachment": "3F6E7017-220F-469C-B975-9AC31CCA8020.png", "timestamp": "2026-11-06T06:29:23.751+01:00" }
   },
   "packaging": "The guide PNG is a deterministic 598x1300 derivative of the 1206x2622 native validation capture; validation PNGs remain byte-for-byte raw exports.",
   "metadataLimitations": "capture_metadata.py requires browser_name, browser_version and viewport_css for browser captures; native iOS provenance intentionally records viewportPoints and browser=null rather than fabricating CSS/browser fields.",
   "limitations": [
     "Spanish UI capture only; no English simulator capture is claimed.",
     "Synthetic owned Mac fixture and local pinned HTTPS; no physical device, App Store/TestFlight or production-network claim.",
-    "Capture-only rubric response; it does not grant document access or document editing."
+    "Capture-only rubric response; it does not grant document access or document editing.",
+    "Corrective native result bundles and their hashes are recorded in doc/validation/little-leonardo/ios-rubric-capture-final-20261106.json."
   ]
 }

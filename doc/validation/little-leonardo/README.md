@@ -36,14 +36,19 @@ Send to restore the unsent draft, then sends the frozen response; the fixture
 verifies the response received on the Mac. Exact capture, response, per-state
 hashes and source metadata are in [ios-rubric-capture-es.json](ios-rubric-capture-es.json).
 
-The same source checkpoint also passes the two corrective native regressions:
+The same source checkpoint also passes the corrective native regressions:
 `PairingUITests/testMacRequestedRubricCaptureLostAcknowledgementReconcilesAfterRelaunch()`
 holds a real committed response behind a 503 gate through termination/relaunch,
 then reconciles the same request ID after the gate opens; and
 `PairingUITests/testGrantedReaderAndUnsentRubricBlocksAfterForegroundRevocation()`
 keeps the accepted drawing visible but unsendable after foreground revocation,
 purges the exact direct reader cache, and preserves the unrelated `QA · Markdown`
-and legacy `QA · Recovery` corpora. The final result paths, fixture roots and
+and legacy `QA · Recovery` corpora. The delayed-project regression holds a
+real authorized response until foreground revocation and proves that the late
+response cannot resurrect the cache or UI. Enrollment and capability snapshot
+failure regressions remain fail-closed across relaunch, cache-deletion failure
+is surfaced and retried to physical purge, and reconnect-during-purge preserves
+a new grant for the same project. The final result paths, fixture roots and
 JSON evidence hashes are recorded in the sidecar; these are simulator-only
 checks, not physical-device or production-network claims.
 

@@ -15,7 +15,7 @@ provenance is recorded in each locale’s `assets/illustrations.provenance.json`
 | `en/es/assets/updates.png` | `e457e86` | Actual update preferences; synthetic installed version, stable subscription, fake transport |
 | `en/es/assets/activation.png` | `b8900bf` | Actual global activation dialog, synthetic source; copied byte-for-byte from `doc/validation/extension-recommendations/current/dialog-<locale>-global.png` |
 | `en/es/assets/warnings.png` | `b8900bf` | Actual extension preferences/reset; copied byte-for-byte from `doc/validation/extension-recommendations/current/reset-<locale>.png` |
-| `es/assets/ios-rubric-capture-es.png` | `44fe550681fa79f10b40a999f49c1a193d0a2184`, `PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS()` | Spanish iPhone18Pro/iOS27.0 Simulator sent-state derivative; full drawing and preview states are retained under `doc/validation/little-leonardo/`; capture-only, no document grant |
+| `es/assets/ios-rubric-capture-es.png` | `577d8821cd3c146d54dc55b49cc1695c0a7ec2e9`, `PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS()` | Spanish iPhone18Pro/iOS27.0 Simulator sent-state derivative captured 2026-11-06; full drawing and preview states are retained under `doc/validation/little-leonardo/`; capture-only, no document grant |
 
 Full capture revisions:
 - `f1ecf7b`: `0bc5a737bbbb8e38407a079c70b34cb896aa3064`.
