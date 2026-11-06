@@ -278,7 +278,9 @@ final class MobileLibrary {
                                                     message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
                 }
             } catch {
-                if hasCurrentIdentity(token) { self.error = error.localizedDescription }
+                if let operationToken, hasCurrentIdentity(operationToken) {
+                    self.error = error.localizedDescription
+                }
             }
         }
         comparisonCode = connections.first(where: { $0.comparisonCode != nil })?.comparisonCode
@@ -320,7 +322,9 @@ final class MobileLibrary {
             if let expected, !isCurrentCacheOperation(expected) { return }
             guard let cached = try await store.load(id: id) else { continue }
             guard cached.mode == .direct else { continue }
+            if let expected, !isCurrentCacheOperation(expected) { return }
             try await store.remove(id: id)
+            if let expected, !isCurrentCacheOperation(expected) { return }
             projects.removeAll { $0.id == id }
         }
     }
@@ -467,7 +471,14 @@ final class MobileLibrary {
             targetDeviceID: accepted.targetDeviceID, requesterID: accepted.requesterID,
             sourceFingerprint: context.connection.fingerprint, request: accepted,
             state: .accepted, updatedAt: now())
-        try await draftStore.save(draft)
+        let acceptContextToken = context.token
+        let draftWrite = rubricDraftWrites.enqueue { [weak self] in
+            guard let self else { throw RubricExchangeError.storageFailure }
+            guard self.isCurrentAuthorization(acceptContextToken) else { throw SyncError.revoked }
+            try await self.draftStore.save(draft)
+            guard self.isCurrentAuthorization(acceptContextToken) else { throw SyncError.revoked }
+        }
+        try await draftWrite.value
         await refreshDrafts()
         pendingRubricRequests.removeAll { $0.id == accepted.id }
         return accepted
@@ -478,7 +489,13 @@ final class MobileLibrary {
         _ = try await context.client.rejectRubricRequest(requestID: request.id,
             deviceID: context.connection.deviceID, credential: context.credential)
         try validateRubricContext(context.token)
-        try await draftStore.remove(id: request.id)
+        let rejectContextToken = context.token
+        let draftRemoval = rubricDraftWrites.enqueue { [weak self] in
+            guard let self else { throw RubricExchangeError.storageFailure }
+            guard self.isCurrentAuthorization(rejectContextToken) else { throw SyncError.revoked }
+            try await self.draftStore.remove(id: request.id)
+        }
+        try await draftRemoval.value
         await refreshDrafts()
         pendingRubricRequests.removeAll { $0.id == request.id }
     }
@@ -517,7 +534,13 @@ final class MobileLibrary {
             label: label, response: response,
             state: .pendingSend, updatedAt: now())
         // This write is deliberately before the first network byte.
-        try await draftStore.save(draft)
+        let initialContextToken = context.token
+        let initialWrite = rubricDraftWrites.enqueue { [weak self] in
+            guard let self else { throw RubricExchangeError.storageFailure }
+            guard self.isCurrentAuthorization(initialContextToken) else { throw SyncError.revoked }
+            try await self.draftStore.save(draft)
+        }
+        try await initialWrite.value
         await refreshDrafts()
         return try await submitFrozenDraft(draft)
     }
@@ -533,37 +556,79 @@ final class MobileLibrary {
         guard let response = draft.response else { throw RubricExchangeError.invalidPayload }
         if draft.state == .submitted { return response }
         guard draft.state == .pendingSend else { throw RubricExchangeError.invalidTransition }
-        let pending = draft.with(state: .pendingSend, updatedAt: now(), failureMessage: nil)
-        try await draftStore.save(pending)
+        let pendingWrite = rubricDraftWrites.enqueue { [weak self] in
+            guard let self, let latest = try await self.latestRubricDraft(requestID: draft.id) else {
+                throw RubricExchangeError.notFound
+            }
+            switch latest.state {
+            case .blocked:
+                throw SyncError.revoked
+            case .submitted:
+                return latest
+            case .accepted:
+                throw RubricExchangeError.invalidTransition
+            case .pendingSend:
+                guard latest.response == response else { throw RubricExchangeError.conflict }
+                let pending = latest.with(state: .pendingSend, updatedAt: self.now(), failureMessage: nil)
+                try await self.draftStore.save(pending)
+                return pending
+            }
+        }
+        let pending = try await pendingWrite.value
+        if pending.state == .submitted, let submitted = pending.response { return submitted }
         await refreshDrafts()
         do {
             // Resolve the connection inside the recoverable section. A
             // foreground poll can discover revocation and clear capabilities
             // before Retry; that terminal condition must persist `blocked`
             // instead of escaping before the durable outcome is recorded.
-            let context = try await rubricContext(for: draft.request)
+            let context = try await rubricContext(for: pending.request)
             try validateRubricContext(context.token)
-            guard context.connection.connectionID == draft.connectionID,
-                  context.connection.deviceID == draft.targetDeviceID,
-                  context.connection.fingerprint == draft.sourceFingerprint,
-                  response.requestID == draft.id,
-                  response.targetDeviceID == draft.targetDeviceID,
-                  response.requesterID == draft.requesterID else {
+            guard context.connection.connectionID == pending.connectionID,
+                  context.connection.deviceID == pending.targetDeviceID,
+                  context.connection.fingerprint == pending.sourceFingerprint,
+                  response.requestID == pending.id,
+                  response.targetDeviceID == pending.targetDeviceID,
+                  response.requesterID == pending.requesterID else {
                 throw RubricExchangeError.conflict
             }
             let submitted = try await context.client.submitRubricResponse(response,
                 deviceID: context.connection.deviceID, credential: context.credential)
             guard submitted == response else { throw RubricExchangeError.conflict }
             try validateRubricContext(context.token)
-            try await draftStore.save(pending.with(response: response, state: .submitted, updatedAt: now()))
+            let contextToken = context.token
+            let submittedWrite = rubricDraftWrites.enqueue { [weak self] in
+                guard let self, let latest = try await self.latestRubricDraft(requestID: pending.id) else {
+                    throw RubricExchangeError.notFound
+                }
+                guard latest.state != .blocked else { throw SyncError.revoked }
+                if latest.state == .submitted, let existing = latest.response { return existing }
+                guard latest.state == .pendingSend, latest.response == response else {
+                    throw RubricExchangeError.conflict
+                }
+                guard self.isCurrentAuthorization(contextToken) else { throw SyncError.revoked }
+                try await self.draftStore.save(latest.with(response: response, state: .submitted,
+                                                            updatedAt: self.now()))
+                guard self.isCurrentAuthorization(contextToken) else { throw SyncError.revoked }
+                return response
+            }
+            let submitted = try await submittedWrite.value
             await refreshDrafts()
-            pendingRubricRequests.removeAll { $0.id == draft.id }
+            pendingRubricRequests.removeAll { $0.id == pending.id }
             return submitted
         } catch {
             let blocked = isTerminalRubricFailure(error)
             let state: MobileRubricDraftState = blocked ? .blocked : .pendingSend
-            try? await draftStore.save(pending.with(response: response, state: state,
-                                                    updatedAt: now(), failureMessage: error.localizedDescription))
+            let failureMessage = error.localizedDescription
+            let failureWrite = rubricDraftWrites.enqueue { [weak self] in
+                guard let self, let latest = try await self.latestRubricDraft(requestID: pending.id) else { return }
+                guard latest.state != .blocked, latest.state != .submitted,
+                      latest.state == .pendingSend, latest.response == response else { return }
+                try await self.draftStore.save(latest.with(response: response, state: state,
+                                                           updatedAt: self.now(),
+                                                           failureMessage: failureMessage))
+            }
+            try? await failureWrite.value
             await refreshDrafts()
             throw error
         }
@@ -636,7 +701,19 @@ final class MobileLibrary {
                 }
                 try validateRubricContext(token)
                 do {
-                    try await draftStore.save(draft.with(response: response, state: .submitted, updatedAt: now()))
+                    let submittedWrite = rubricDraftWrites.enqueue { [weak self] in
+                        guard let self, let latest = try await self.latestRubricDraft(requestID: draft.id) else { return }
+                        guard latest.state != .blocked else { throw SyncError.revoked }
+                        guard latest.state == .pendingSend, latest.response == response else { return }
+                        guard self.isCurrentAuthorization(token) else { throw SyncError.revoked }
+                        try await self.draftStore.save(latest.with(response: response, state: .submitted,
+                                                                    updatedAt: self.now()))
+                        guard self.isCurrentAuthorization(token) else { throw SyncError.revoked }
+                    }
+                    try await submittedWrite.value
+                } catch SyncError.revoked {
+                    await blockRubricDraft(requestID: draft.id,
+                                           message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
                 } catch {
                     self.error = error.localizedDescription
                 }
