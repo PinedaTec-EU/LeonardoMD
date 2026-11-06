@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "collected_at": "2026-11-06T10:40:05.965320+00:00",
+  "collected_at": "2026-11-06T10:43:33.939256+00:00",
   "capture": {
-    "captured_at": "2026-11-06T10:39:25+00:00",
+    "captured_at": "2026-11-06T10:42:21+00:00",
     "route": "/native/preferences/synchronization/connections",
     "screen": "Production DesktopPeerPreferencesView download error alert; language en",
     "browser_name": "Native AppKit/SwiftUI window; no browser engine",
     "browser_version": "Not applicable: native AppKit/SwiftUI",
-    "state": "Synthetic authorized HTTP 413 corpus-size failure; viewport_css records native window points, CSS is not applicable; capture source 2e6149cfb43c6f9a8bd98301a8977a67080393c5",
+    "state": "Synthetic authorized HTTP 413 corpus-size failure; viewport_css records the measured owner-window points of the composed alert capture, CSS is not applicable; capture source eaa8a10e8b054a82a15a23b888f84bc3ee1aca48",
     "viewport_css": {
       "width": 600,
       "height": 532
@@ -19,10 +19,10 @@
     "format": "png",
     "width_px": 1200,
     "height_px": 1064,
-    "sha256": "27a206c4658b3197051748200894c2f019ac7555fff70379bf523cc509a70568"
+    "sha256": "96aab761bfdde8b90f7fe11fb9b056d8aa4a69fd5aa0d9df46eabb6c805dd772"
   },
   "source": {
-    "revision_at_collection": "2e6149cfb43c6f9a8bd98301a8977a67080393c5",
+    "revision_at_collection": "eaa8a10e8b054a82a15a23b888f84bc3ee1aca48",
     "tracked_changes_present": false,
     "untracked_files_present": false
   }

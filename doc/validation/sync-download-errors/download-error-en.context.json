@@ -2,11 +2,11 @@
   "browser_name" : "Native AppKit\/SwiftUI window; no browser engine",
   "browser_version" : "Not applicable: native AppKit\/SwiftUI",
   "capture_mode" : "viewport",
-  "captured_at" : "2026-11-06T10:39:25Z",
+  "captured_at" : "2026-11-06T10:42:21Z",
   "data_provenance" : "synthetic",
   "route" : "\/native\/preferences\/synchronization\/connections",
   "screen" : "Production DesktopPeerPreferencesView download error alert; language en",
-  "state" : "Synthetic authorized HTTP 413 corpus-size failure; viewport_css records native window points, CSS is not applicable; capture source 2e6149cfb43c6f9a8bd98301a8977a67080393c5",
+  "state" : "Synthetic authorized HTTP 413 corpus-size failure; viewport_css records the measured owner-window points of the composed alert capture, CSS is not applicable; capture source eaa8a10e8b054a82a15a23b888f84bc3ee1aca48",
   "viewport_css" : {
     "height" : 532,
     "width" : 600
