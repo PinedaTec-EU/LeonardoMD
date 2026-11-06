@@ -8,6 +8,39 @@ Architecture direction (owner-selected 2026-10-20): [ADR 0002](../adr/0002-reeva
 
 Current implementation: [Git retirement and legacy recovery](git-retirement.md), tracked in [#249](https://github.com/PinedaTec-EU/LeonardoMD/issues/249). iOS is read-only; editable direct synchronization is retained for desktops. The original Git implementation/checkpoints below are historical and do not describe currently available mobile editing or publication.
 
+## Current rubric response channel (#342)
+
+The read-only iOS companion now has one additional, capture-only response
+channel for a known linked Mac. Enrollment advertises optional
+`rubricExchangeV1` only when the complete request/list/accept/reject/submit
+handler is present. An approved mobile device may have zero document grants for
+this capability; the update endpoint preserves its existing kind, grants,
+credential and offline cache. Existing linked devices can refresh the optional
+capability when supported, while an older Mac's missing endpoint falls back to
+the normal reader flow. `DirectDeviceStatus.capabilities` continues to mean
+server-side handler support and is not used as a client announcement.
+
+Little Leonardo polls targeted requests while active. The native card requires
+explicit Accept or Reject, then supports a label, finger/Apple Pencil drawing,
+Undo, Clear, Preview and explicit Send. The canvas follows the portable Mac
+renderer for brush taper and single-point dots, samples no more than 600 points,
+and shows a limit before accepting a drawing that would exceed the 24 KiB
+response envelope. It persists unsent drawing/label state separately from the
+response, restores that draft after restart, and freezes the exact bounded
+portable response before network I/O. A transient failure keeps the frozen
+payload for idempotent Retry; expiry, cancellation or revocation blocks
+sending. Once frozen, the card exposes a locked preview rather than a no-op
+draw toggle. The Mac receives only the matching rubric response, never a
+document write or project grant.
+
+Native evidence for the flow is preserved in
+[ios-rubric-capture-es.png](../validation/little-leonardo/ios-rubric-capture-es.png)
+and [its metadata](../validation/little-leonardo/ios-rubric-capture-es.json).
+The signed iPhone18Pro/iOS27.0 Simulator test uses the owned QA simulator and a
+synthetic Mac HTTPS fixture. It does not claim physical-device networking,
+App Store/TestFlight distribution or production pairing. Document navigation,
+read-only access and offline retention remain separate existing behaviors.
+
 Implementation tracking: [#92](https://github.com/PinedaTec-EU/LeonardoMD/issues/92).
 
 Latest local checkpoint (2026-10-09, PR #93, compile delta189):

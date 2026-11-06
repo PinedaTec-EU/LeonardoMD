@@ -3,10 +3,47 @@ import SwiftUI
 import XCTest
 import Vision
 import LeonardoCore
+import LeonardoSync
 @testable import LeonardoApp
 
 @MainActor
 final class SynchronizationPreferencesTests: XCTestCase {
+    func testCaptureOnlyConsentExplainsZeroProjectAccessInBothLanguages() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let controller = DesktopSyncController(preferencesURL: root.appendingPathComponent("preferences.json"))
+        var registry = PairingRegistry()
+        registry.setEnabled(true)
+        let request = try registry.requestPairing(deviceName: "Little Leonardo QA",
+            credential: String(repeating: "a", count: 64), serverFingerprint: Data(repeating: 1, count: 32),
+            now: Date(), kind: .readOnly, capabilities: [.rubricExchangeV1])
+        let key = "This Little Leonardo can create rubrics requested by this Mac without access to any project. Select projects only if you also want offline reading."
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        let output = ProcessInfo.processInfo.environment["LEONARDO_PAIRING_CONSENT_EVIDENCE"]
+        let destination = URL(fileURLWithPath: output ?? root.path)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let expected = language == .spanish
+                ? "Este Little Leonardo puede crear rúbricas solicitadas por este Mac sin acceder a ningún proyecto. Selecciona proyectos solo si también quieres leerlos sin conexión."
+                : key
+            XCTAssertEqual(L10n.text(key), expected)
+            let host = NSHostingView(rootView: PairingConsentView(controller: controller, request: request)
+                .frame(width: 420, height: 380, alignment: .topLeading)
+                .background(Color(nsColor: .windowBackgroundColor)))
+            try await captureVerified(host, size: NSSize(width: 420, height: 380),
+                to: destination.appendingPathComponent("capture-only-consent-\(language.rawValue).png"),
+                language: language.rawValue,
+                state: "Production pairing consent; synthetic read-only capture-capable device; zero selected projects; comparison not confirmed; Allow disabled",
+                visibleText: ["Little Leonardo QA", L10n.text("Allow connection")],
+                route: "/native/preferences/synchronization/pairing", screen: "PairingConsentView")
+            XCTAssertFalse(controller.settings.enabled)
+            XCTAssertNil(controller.running)
+            XCTAssertTrue(controller.settings.projects.isEmpty)
+        }
+    }
+
     func testPrincipalRolesShareOneServiceLifecycle() {
         XCTAssertTrue(DesktopSyncController.shared.helper === DesktopPeerController.shared.helper,
                       "Both roles must observe the common service disable immediately")
@@ -77,11 +114,12 @@ final class SynchronizationPreferencesTests: XCTestCase {
     /// Native layer snapshots can be incomplete without reporting an AppKit
     /// error. Retry the unmodified view, and reject evidence missing its anchors.
     private func captureVerified(_ host: NSView, size: NSSize, to image: URL,
-                                 language: String, state: String, visibleText: [String]) async throws {
+                                 language: String, state: String, visibleText: [String],
+                                 route: String? = nil, screen: String? = nil) async throws {
         var recognized = ""
         for _ in 0..<3 {
             try await GuideCaptureSupport.captureNative(host, size: size, to: image,
-                                                        language: language, state: state)
+                                                        language: language, state: state, route: route, screen: screen)
             let request = VNRecognizeTextRequest()
             request.recognitionLevel = .accurate
             request.recognitionLanguages = [language]

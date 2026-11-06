@@ -22,7 +22,7 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v14/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v15/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
             let legacyImport = root.appendingPathComponent("Agent Import Guides/v1/\(language.rawValue)/AgentImport-v1-\(language.rawValue).mdlz")
             try FileManager.default.createDirectory(at: legacyImport.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -36,8 +36,9 @@ final class BundledUserGuideTests: XCTestCase {
             let document = try LeonardoFormatParser.parse(source)
             XCTAssertFalse(document.isForm)
             XCTAssertEqual(document.metadata.fields.count, 0)
+            let expectedImageCount = language == .spanish ? 17 : 16
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:
-                workspace.directoryURL.appendingPathComponent("assets").path).count, 16)
+                workspace.directoryURL.appendingPathComponent("assets").path).count, expectedImageCount)
             // Personal annotations remain independent of the bundled template.
             try (source + "\nPersonal note: Ada\n").write(to: workspace.documentURL, atomically: true, encoding: .utf8)
             workspace = try LeonardoPackageTransport.save(workspace)
@@ -126,8 +127,9 @@ final class BundledUserGuideTests: XCTestCase {
             window.orderFront(nil)
             defer { window.close() }
             let web = try await findWebView(in: hosting)
-            try await waitFor("document.images.length === 16", in: web)
-            for index in 0..<16 {
+            let expectedImageCount = language == .spanish ? 17 : 16
+            try await waitFor("document.images.length === \(expectedImageCount)", in: web)
+            for index in 0..<expectedImageCount {
                 _ = try await web.evaluateJavaScript("document.images[\(index)].scrollIntoView({block:'center'})")
                 try await waitFor("document.images[\(index)].naturalWidth > 0", in: web)
             }
@@ -157,8 +159,9 @@ final class BundledUserGuideTests: XCTestCase {
                 let illustrations = language == .english ? ["journey", "package", "import", "export"] : ["recorrido", "paquete", "importar", "exportar"]
                 for name in illustrations {
                     _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
+                    let imageCount = language == .spanish ? 17 : 16
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("premium-\(name)-\(language.rawValue).png"),
-                        language: language.rawValue, state: "Main guide; generated premium \(name) illustration; all 16 images admitted under standard limits")
+                        language: language.rawValue, state: "Main guide; generated premium \(name) illustration; all \(imageCount) images admitted under standard limits")
                 }
                 _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
                 try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("guide-\(language.rawValue).png"),

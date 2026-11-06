@@ -53,6 +53,60 @@ final class PairingRegistryTests: XCTestCase {
         XCTAssertThrowsError(try registry.access(deviceID: device.id, credential: String(repeating: "b", count: 64)))
     }
 
+    func testCaptureOnlyReadOnlyApprovalMayUseZeroProjects() throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let request = try registry.requestPairing(deviceName: "Little Leonardo", credential: credential,
+            serverFingerprint: Data(repeating: 1, count: 32), now: now, kind: .readOnly,
+            capabilities: [.rubricExchangeV1])
+        let device = try registry.approve(requestID: request.id, comparisonCode: request.comparisonCode,
+                                          projects: [], now: now)
+        XCTAssertTrue(device.projects.isEmpty)
+        XCTAssertEqual(device.kind, .readOnly)
+        XCTAssertEqual(device.capabilities, [.rubricExchangeV1])
+        XCTAssertEqual(try registry.access(deviceID: device.id, credential: credential), .authorized)
+        XCTAssertThrowsError(try registry.access(deviceID: device.id, credential: credential, projectID: UUID())) { error in
+            XCTAssertEqual(error as? PairingError, .invalidProject)
+        }
+    }
+
+    func testCapabilityEmptyAndDesktopPeerStillRequireProjectConsent() throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let legacy = try registry.requestPairing(deviceName: "Old reader", credential: credential,
+            serverFingerprint: Data(repeating: 1, count: 32), now: now)
+        XCTAssertThrowsError(try registry.approve(requestID: legacy.id, comparisonCode: legacy.comparisonCode,
+                                                  projects: [], now: now)) { error in
+            XCTAssertEqual(error as? PairingError, .invalidProject)
+        }
+        let peerCredential = String(repeating: "b", count: 64)
+        let peer = try registry.requestPairing(deviceName: "Desktop peer", credential: peerCredential,
+            serverFingerprint: Data(repeating: 1, count: 32), now: now, kind: .desktopPeer,
+            capabilities: [.rubricExchangeV1])
+        XCTAssertThrowsError(try registry.approve(requestID: peer.id, comparisonCode: peer.comparisonCode,
+                                                  projects: [], now: now)) { error in
+            XCTAssertEqual(error as? PairingError, .invalidProject)
+        }
+    }
+
+    func testCapabilityRefreshPreservesIdentityKindAndProjectGrants() throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let project = UUID()
+        let request = try registry.requestPairing(deviceName: "Little Leonardo", credential: credential,
+            serverFingerprint: Data(repeating: 1, count: 32), now: now)
+        let original = try registry.approve(requestID: request.id, comparisonCode: request.comparisonCode,
+                                            projects: [project], now: now)
+        let refreshed = try registry.updateCapabilities(deviceID: original.id, credential: credential,
+                                                         capabilities: [.rubricExchangeV1])
+        XCTAssertEqual(refreshed.id, original.id)
+        XCTAssertEqual(refreshed.name, original.name)
+        XCTAssertEqual(refreshed.credentialDigest, original.credentialDigest)
+        XCTAssertEqual(refreshed.projects, original.projects)
+        XCTAssertEqual(refreshed.kind, original.kind)
+        XCTAssertEqual(refreshed.capabilities, [.rubricExchangeV1])
+        let cleared = try registry.updateCapabilities(deviceID: original.id, credential: credential, capabilities: [])
+        XCTAssertEqual(cleared.projects, Set([project]))
+        XCTAssertTrue(cleared.capabilities.isEmpty)
+    }
+
     func testQRIsSingleUseAndReplacementInvalidatesOldQR() throws {
         var registry = PairingRegistry(); registry.setEnabled(true)
         let old = try registry.createInvitation(now: now)

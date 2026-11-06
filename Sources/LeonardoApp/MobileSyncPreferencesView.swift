@@ -149,17 +149,24 @@ struct MobileSyncPreferencesView: View {
     }
 }
 
-private struct PairingConsentView: View {
+struct PairingConsentView: View {
     let controller: DesktopSyncController
     let request: PairingRequest
     @Environment(\.dismiss) private var dismiss
     @State private var projects: Set<UUID> = []
     @State private var confirmed = false
+    private var captureOnly: Bool {
+        request.kind == .readOnly && request.capabilities.contains(.rubricExchangeV1)
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(request.deviceName).font(.title2)
             Text(SyncDeviceRole.description(request.kind))
                 .font(.caption).foregroundStyle(.secondary)
+            if captureOnly {
+                Text(L10n.text("This Little Leonardo can create rubrics requested by this Mac without access to any project. Select projects only if you also want offline reading."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Text(request.comparisonCode).font(.largeTitle.monospaced())
             Toggle(L10n.text("The codes match on both devices"), isOn: $confirmed)
             ForEach(controller.settings.projects) { project in
@@ -172,7 +179,7 @@ private struct PairingConsentView: View {
                 Spacer()
                 Button(L10n.text("Allow connection")) {
                     Task { await controller.approve(request, projects: projects); if controller.error == nil { dismiss() } }
-                }.disabled(!confirmed || projects.isEmpty || controller.busy)
+                }.disabled(!confirmed || (!captureOnly && projects.isEmpty) || controller.busy)
             }
         }.padding(24).frame(width: 420).buttonStyle(PremiumButtonStyle()).toggleStyle(PremiumSwitchStyle())
     }
