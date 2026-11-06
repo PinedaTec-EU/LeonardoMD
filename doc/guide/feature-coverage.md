@@ -58,3 +58,5 @@ Synchronization roles (#337): chapters 14–15 now route through one Synchroniza
 Update termination (#202): chapter 16 documents automatic Preferences dismissal before install approval, retained Save/Git decisions, cancellation/retry, and the older-source bootstrap workaround. Introduced in Guide v12 and retained in current Guide v16; previous personal copies are preserved.
 
 Display-math regression coverage ([#272](https://github.com/PinedaTec-EU/LeonardoMD/issues/272)): both guides include one-line underbraces and a multiline tagged box-counting equation. Native help QA must inspect enabled rendering and disabled/code fallback in every tested instance.
+
+Little Leonardo offline demo (#381): `MobileDemoStore.swift`, `MobileDemoView.swift`, bundled `Demo/`; bilingual mobile appendix, first-run copies, local-only practice/save/reset/source, read-only sync boundary. Guide v18 preserves earlier personal copies. Native instance acceptance must be recorded separately.

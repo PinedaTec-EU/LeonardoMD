@@ -1,0 +1,133 @@
+---
+{
+  "format": "mdlf",
+  "formatVersion": 1,
+  "document": {
+    "id": "little-leonardo-demo-en",
+    "kind": "form",
+    "revision": 1
+  },
+  "fields": {
+    "name": {
+      "type": "text",
+      "maxLength": 80,
+      "label": "Practice name"
+    },
+    "goal": {
+      "type": "multiline",
+      "maxLength": 1000,
+      "label": "Your goal"
+    },
+    "rating": {
+      "type": "select",
+      "options": [
+        {
+          "value": "reading",
+          "label": "Reading"
+        },
+        {
+          "value": "forms",
+          "label": "Forms"
+        }
+      ]
+    },
+    "ready": {
+      "type": "checkbox",
+      "label": "I have tried the demo"
+    }
+  },
+  "values": {
+    "name": null,
+    "goal": null,
+    "rating": null,
+    "ready": false
+  }
+}
+---
+# Welcome to Little Leonardo
+
+This demo is bundled with your installation. Try it without an account, Mac, Internet connection, camera permission or local network permission. Every example and asset is on your device.
+
+## Start here
+
+1. Scroll through the examples and complete the form at the end.
+2. Tap **Guardar / Save** to confirm your answers; wait for the saved message before leaving. Reopen the demo to check them.
+3. Tap **Ver texto / View source** to inspect the Markdown and format metadata.
+4. **Restablecer / Reset** asks for confirmation and clears only this demo's answers in the selected language.
+5. Return to the library to switch between Español and English. Each language keeps its own practice copy.
+
+Answers stay in a private copy on this device; they are never sent to a server or Mac. Uninstalling the app removes that copy. The demo does not modify synchronized documents or submit a form.
+
+## One document, many possibilities
+
+Text with **bold**, *italics*, ~~strikethrough~~ and `code`.
+
+> Little Leonardo lets you read downloaded LeonardoMD content offline.
+
+- Structured reading with examples.
+- Bundled local resources.
+- A safe practice form to explore.
+
+| Capability | Included example |
+| --- | --- |
+| Markdown | Headings, lists, quotes and tables |
+| Visualization | Mermaid, math and charts |
+| Leonardo | Typed fields with answers separate from prose |
+
+![Bundled Leonardo guide cover](assets/demo.png)
+
+## Mermaid diagram
+
+The engine is enabled in this demo. A viewer with the engine disabled preserves the block as code.
+
+```mermaid
+flowchart LR
+  A[Document] --> B[Offline reading]
+  B --> C[Local practice]
+```
+
+## Mathematics
+
+The Math engine is enabled here. Inline formula: $a^2+b^2=c^2$.
+
+$$E = mc^2$$
+
+$$
+\underbrace{N_{\epsilon}}_{\text{boxes}} = C\epsilon^{-D} \tag{1}
+$$
+
+## Chart with local data
+
+Vega-Lite is enabled in this demo; data is bundled and never downloaded. A viewer without the engine preserves the code block.
+
+```vega-lite
+{"mark":"bar","data":{"values":[{"topic":"Markdown","examples":5},{"topic":"Leonardo","examples":4},{"topic":"Offline","examples":3}]},"encoding":{"x":{"field":"topic","type":"nominal"},"y":{"field":"examples","type":"quantitative"}},"width":"container","height":180}
+```
+
+## Try the form
+
+Use fictional details. Tap the fields, type, choose an option and tick the checkbox. No signature or Mac request is needed.
+
+Practice name: {{field:name}}
+
+What would you like to explore?
+
+{{field:goal}}
+
+Your interest: {{field:rating}}
+
+I have tried the demo: {{field:ready}}
+
+Tap **Guardar / Save**, return to the library and reopen: your answers should remain. **Ver texto / View source** shows answers in `values`; field definitions and prose stay separate.
+
+## Your projects and Mac connection
+
+This local practice is independent from downloaded projects, which remain **read-only**. The demo does not enable general synchronized-document editing or opening arbitrary MDLR files from Files.
+
+To read your own projects, return to the library and tap **Conectar** (Connect). Open LeonardoMD on your Mac and go to **Synchronization → Share from this Mac**. Enable the service, choose saved content and open the invitation. With both devices on the same local network, scan the QR or use IP and port in Little Leonardo. Compare the code on both devices, approve access on the Mac, then tap **Sincronizar** (Synchronize) on your phone. Camera access is needed only for scanning; IP and port is the manual alternative. After downloading, you can read offline.
+
+Real rubric requests start on the Mac and require a linked device. This form does not simulate authorization or send a rubric.
+
+## App Review walkthrough
+
+On a clean installation, open **Demo y práctica / Demo & practice** and choose Español or English. Check the table, local image, diagram, two equations and chart. Fill the form, tap **Guardar / Save**, leave and reopen. Inspect **Ver texto / View source** and try **Restablecer / Reset**. This walkthrough works in airplane mode and is the same for all users. Mac pairing is a separate feature and is not needed for this demo.

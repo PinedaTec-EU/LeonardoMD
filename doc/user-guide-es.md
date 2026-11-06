@@ -735,3 +735,10 @@ Activar una extensión no instala una skill de IA, conecta una cuenta ni autoriz
 - **Versión no compatible:** conserva el archivo y actualiza el lector o plugin; no cambies el número de versión para forzar la lectura.
 
 La guía cubre los flujos actuales de macOS. Los nombres de servicios externos se comprobaron el **30 de octubre de 2026** y pueden cambiar. Puedes consultar la [guía web del producto](https://github.com/PinedaTec-EU/LeonardoMD/blob/main/doc/user-guide.md), el [contrato de formato](https://github.com/PinedaTec-EU/LeonardoMD/blob/main/doc/format/README.md) y las [versiones publicadas](https://github.com/PinedaTec-EU/LeonardoMD/releases).
+
+
+## Little Leonardo: demo incluida y práctica local
+
+Al instalar Little Leonardo se preparan dos copias personales de la demo, Español y English. En la biblioteca, abre **Demo y práctica / Demo & practice** y elige el idioma. No requiere cuenta, Mac ni permisos de cámara/red local. Incluye una portada local, tabla, Mermaid, fórmulas y un gráfico con datos incluidos; estos motores están activados en la demo. El formulario usa campos Leonardo reales. Escribe datos ficticios, pulsa **Guardar / Save**, espera el aviso y vuelve a abrir para comprobar las respuestas. Se conservan en este dispositivo, separadas de los proyectos sincronizados de solo lectura. No se envían al Mac. Desinstalar elimina las copias.
+
+En **Opciones / Options**, **Ver texto / View source** muestra Markdown y metadatos; **Restablecer / Reset** pide confirmación y reinicia únicamente la práctica del idioma seleccionado. Si aparece un error de guardado, conserva la pantalla y reintenta; no des por guardadas las respuestas sin confirmación. Para conectar tus proyectos reales, vuelve a **Conectar** y sigue el capítulo de sincronización. La práctica no habilita edición general de los proyectos sincronizados ni sustituye las solicitudes de rúbrica del Mac.
