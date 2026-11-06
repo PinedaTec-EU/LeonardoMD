@@ -25,8 +25,8 @@ final class MobileLibrary {
     private var revocationsInProgress: Set<UUID> = []
     private let rubricDraftWrites = MobileSyncOperationQueue()
     private let cacheMutations = MobileSyncOperationQueue()
+    private let rubricSubmissionGate = MobileRubricSubmissionGate()
     private var pendingRubricDraftWrite: Task<Void, Error>?
-    private var activeRubricSubmissions: [UUID: Task<RubricResponse, Error>] = [:]
     private var cacheEpoch: UInt64 = 0
     private var authorizationEpoch: UInt64 = 0
     private var authorizationGenerations = MobileAuthorizationGenerations()
@@ -82,23 +82,6 @@ final class MobileLibrary {
             && hasCurrentIdentity(token)
             && !authorizationGenerations.isDenied(connectionID: token.connectionID)
             && currentConnection(for: token)?.revoked == false
-    }
-
-    /// Coalesce explicit Send, Retry, and foreground reconciliation for the
-    /// same frozen response. Local draft writes remain ordered by their own
-    /// queue; this gate only shares the in-flight network operation so two
-    /// observers cannot POST identical response bytes concurrently.
-    private func withCoalescedRubricSubmission(
-        requestID: UUID,
-        operation: @escaping @MainActor () async throws -> RubricResponse
-    ) async throws -> RubricResponse {
-        if let active = activeRubricSubmissions[requestID] {
-            return try await active.value
-        }
-        let task = Task { @MainActor in try await operation() }
-        activeRubricSubmissions[requestID] = task
-        defer { activeRubricSubmissions.removeValue(forKey: requestID) }
-        return try await task.value
     }
 
     private func hasActiveProjectOwner(_ projectID: UUID, excluding connectionID: UUID) -> Bool {
@@ -493,15 +476,15 @@ final class MobileLibrary {
         }
     }
 
-    func rubricDraft(requestID: UUID) -> MobileRubricDraft? {
-        recoverableRubricDrafts.first { $0.id == requestID }
+    func rubricDraft(for request: RubricRequest) -> MobileRubricDraft? {
+        recoverableRubricDrafts.first { $0.matchesRequest(request) }
     }
 
-    func enqueueRubricDraftSnapshot(requestID: UUID, label: String,
+    func enqueueRubricDraftSnapshot(request: RubricRequest, label: String,
                                     drawing: LeonardoRubric?) -> Task<Void, Error> {
         let write = rubricDraftWrites.enqueue { [weak self] in
             guard let self else { return }
-            try await self.persistRubricDraft(requestID: requestID, label: label, drawing: drawing)
+            try await self.persistRubricDraft(request: request, label: label, drawing: drawing)
         }
         pendingRubricDraftWrite = write
         return write
@@ -512,15 +495,18 @@ final class MobileLibrary {
         try await pendingRubricDraftWrite.value
     }
 
-    private func latestRubricDraft(requestID: UUID) async throws -> MobileRubricDraft? {
-        try await draftStore.all(now: now()).first { $0.id == requestID }
+    private func latestRubricDraft(for request: RubricRequest) async throws -> MobileRubricDraft? {
+        let drafts = try await draftStore.all(now: now())
+        guard let draft = drafts.first(where: { $0.id == request.id }) else { return nil }
+        guard draft.matchesRequest(request) else { throw RubricExchangeError.conflict }
+        return draft
     }
 
     /// Persists the editable drawing independently from the response. This is
     /// deliberately limited to the accepted, unsent state: no submission time
     /// or network lifecycle is created while the user is still drawing.
-    func persistRubricDraft(requestID: UUID, label: String, drawing: LeonardoRubric?) async throws {
-        guard let draft = try await latestRubricDraft(requestID: requestID), draft.response == nil,
+    func persistRubricDraft(request: RubricRequest, label: String, drawing: LeonardoRubric?) async throws {
+        guard let draft = try await latestRubricDraft(for: request), draft.response == nil,
               draft.state == .accepted else { return }
         let cleanLabel = label.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanLabel.isEmpty, cleanLabel.count <= 120,
@@ -588,7 +574,8 @@ final class MobileLibrary {
     }
 
     func acceptRubricRequest(_ request: RubricRequest) async throws -> RubricRequest {
-        if let existing = rubricDraft(requestID: request.id),
+        try await waitForPendingRubricDraftWrite()
+        if let existing = try await latestRubricDraft(for: request),
            [.accepted, .pendingSend, .submitted].contains(existing.state) {
             return existing.request
         }
@@ -609,7 +596,7 @@ final class MobileLibrary {
                 return accepted.request
             } catch {
                 if isTerminalRubricFailure(error) {
-                    await blockRubricDraft(requestID: request.id,
+                    await blockRubricDraft(request: request,
                                            message: "La solicitud ya no admite aceptación; pide una nueva solicitud.")
                 }
                 throw error
@@ -635,7 +622,7 @@ final class MobileLibrary {
     }
 
     func submitRubric(request: RubricRequest, label: String, rubric: LeonardoRubric) async throws -> RubricResponse {
-        try await withCoalescedRubricSubmission(requestID: request.id) { [weak self] in
+        try await rubricSubmissionGate.submit(request: request, label: label, rubric: rubric) { [weak self] in
             guard let self else { throw RubricExchangeError.storageFailure }
             return try await self.submitRubricUncoalesced(request: request, label: label, rubric: rubric)
         }
@@ -644,7 +631,7 @@ final class MobileLibrary {
     private func submitRubricUncoalesced(request: RubricRequest, label: String,
                                          rubric: LeonardoRubric) async throws -> RubricResponse {
         try await waitForPendingRubricDraftWrite()
-        if let draft = rubricDraft(requestID: request.id) {
+        if let draft = try await latestRubricDraft(for: request) {
             if draft.state == .blocked { throw RubricExchangeError.invalidTransition }
             if draft.state == .submitted, let response = draft.response {
                 guard response.label == label.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -661,7 +648,7 @@ final class MobileLibrary {
             try await withRubricContext(for: request) { _ in }
         } catch {
             if isTerminalRubricFailure(error) {
-                await blockRubricDraft(requestID: request.id,
+                await blockRubricDraft(request: request,
                                        message: "La solicitud ya no admite envíos; pide una nueva solicitud.")
             }
             throw error
@@ -691,11 +678,16 @@ final class MobileLibrary {
 
     func retryRubricDraft(_ draft: MobileRubricDraft) async throws -> RubricResponse {
         try await waitForPendingRubricDraftWrite()
-        let draft = try await latestRubricDraft(requestID: draft.id) ?? draft
-        guard draft.response != nil, draft.state == .pendingSend else { throw RubricExchangeError.invalidTransition }
-        return try await withCoalescedRubricSubmission(requestID: draft.id) { [weak self] in
+        guard let stored = try await latestRubricDraft(for: draft.request),
+              stored.id == draft.id,
+              stored.request.matchesImmutableIdentity(draft.request),
+              stored.response == draft.response,
+              stored.label == draft.label else { throw RubricExchangeError.conflict }
+        guard stored.response != nil, stored.state == .pendingSend else { throw RubricExchangeError.invalidTransition }
+        return try await rubricSubmissionGate.submit(request: stored.request, label: stored.label,
+                                                     rubric: stored.response!.rubric) { [weak self] in
             guard let self else { throw RubricExchangeError.storageFailure }
-            return try await self.submitFrozenDraft(draft)
+            return try await self.submitFrozenDraft(stored)
         }
     }
 
@@ -704,7 +696,7 @@ final class MobileLibrary {
         if draft.state == .submitted { return response }
         guard draft.state == .pendingSend else { throw RubricExchangeError.invalidTransition }
         let pendingWrite = rubricDraftWrites.enqueue { [weak self] in
-            guard let self, let latest = try await self.latestRubricDraft(requestID: draft.id) else {
+            guard let self, let latest = try await self.latestRubricDraft(for: draft.request) else {
                 throw RubricExchangeError.notFound
             }
             switch latest.state {
@@ -747,7 +739,7 @@ final class MobileLibrary {
                 try validateRubricContext(context.token)
                 let contextToken = context.token
                 let submittedWrite = rubricDraftWrites.enqueue { [weak self] in
-                    guard let self, let latest = try await self.latestRubricDraft(requestID: pending.id) else {
+                    guard let self, let latest = try await self.latestRubricDraft(for: pending.request) else {
                         throw RubricExchangeError.notFound
                     }
                     guard latest.state != .blocked else { throw SyncError.revoked }
@@ -771,7 +763,7 @@ final class MobileLibrary {
             let state: MobileRubricDraftState = blocked ? .blocked : .pendingSend
             let failureMessage = error.localizedDescription
             let failureWrite = rubricDraftWrites.enqueue { [weak self] in
-                guard let self, let latest = try await self.latestRubricDraft(requestID: pending.id) else { return }
+                guard let self, let latest = try await self.latestRubricDraft(for: pending.request) else { return }
                 guard latest.state != .blocked, latest.state != .submitted,
                       latest.state == .pendingSend, latest.response == response else { return }
                 try await self.draftStore.save(latest.with(response: response, state: state,
@@ -794,9 +786,9 @@ final class MobileLibrary {
     /// Preserve an accepted drawing or frozen response when a terminal
     /// authorization outcome is confirmed. A blocked draft cannot be sent
     /// again; the Mac must issue a fresh authorized request.
-    func blockRubricDraft(requestID: UUID, message: String) async {
+    func blockRubricDraft(request: RubricRequest, message: String) async {
         let write = rubricDraftWrites.enqueue { [weak self] in
-            guard let self, let draft = try await self.latestRubricDraft(requestID: requestID),
+            guard let self, let draft = try await self.latestRubricDraft(for: request),
                   draft.state == .pendingAcceptance || draft.state == .accepted || draft.state == .pendingSend else { return }
             try await self.draftStore.save(draft.with(state: .blocked, updatedAt: self.now(),
                                                       failureMessage: message))
@@ -843,11 +835,11 @@ final class MobileLibrary {
                 }
                 pendingRubricRequests.removeAll { $0.id == draft.id }
             } catch SyncError.revoked {
-                await blockRubricDraft(requestID: draft.id,
+                await blockRubricDraft(request: draft.request,
                                        message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
             } catch {
                 if isTerminalRubricFailure(error) {
-                    await blockRubricDraft(requestID: draft.id,
+                    await blockRubricDraft(request: draft.request,
                                            message: "La solicitud ya no admite aceptación; pide una nueva solicitud.")
                 }
                 // Offline and storage failures retain pendingAcceptance for a
@@ -863,7 +855,8 @@ final class MobileLibrary {
             let token = token(for: connection)
             guard let response = draft.response else { continue }
             do {
-                _ = try await withCoalescedRubricSubmission(requestID: draft.id) { [weak self] in
+                _ = try await rubricSubmissionGate.submit(request: draft.request, label: draft.label,
+                                                          rubric: response.rubric) { [weak self] in
                     guard let self else { throw RubricExchangeError.storageFailure }
                     return try await self.withRubricContext(for: draft.request) { context in
                         try validateRubricContext(token)
@@ -873,13 +866,13 @@ final class MobileLibrary {
                         let submitted = try await context.client.submitRubricResponse(response,
                             deviceID: context.connection.deviceID, credential: context.credential)
                         guard submitted == response else {
-                            await blockRubricDraft(requestID: draft.id,
+                            await blockRubricDraft(request: draft.request,
                                                    message: "La respuesta remota no coincide con el envío congelado.")
                             return response
                         }
                         try validateRubricContext(context.token)
                         let submittedWrite = rubricDraftWrites.enqueue { [weak self] in
-                            guard let self, let latest = try await self.latestRubricDraft(requestID: draft.id) else { return }
+                            guard let self, let latest = try await self.latestRubricDraft(for: draft.request) else { return }
                             guard latest.state != .blocked else { throw SyncError.revoked }
                             guard latest.state == .pendingSend, latest.response == response else { return }
                             guard self.isCurrentAuthorization(context.token) else { throw SyncError.revoked }
@@ -892,14 +885,14 @@ final class MobileLibrary {
                     }
                 }
             } catch SyncError.revoked {
-                await blockRubricDraft(requestID: draft.id,
+                await blockRubricDraft(request: draft.request,
                                        message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
             } catch RubricExchangeError.unsupported {
                 // An older Mac has no capture handler. Keep the exact local
                 // record visible so a later authorized retry remains safe.
                 continue
             } catch RubricExchangeError.invalidTransition {
-                await blockRubricDraft(requestID: draft.id,
+                await blockRubricDraft(request: draft.request,
                                        message: "La solicitud terminó antes de confirmar el envío; pide una nueva.")
             } catch {
                 // Offline and transient failures must not alter the durable

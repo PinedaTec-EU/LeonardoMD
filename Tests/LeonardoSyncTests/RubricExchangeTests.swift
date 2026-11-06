@@ -82,6 +82,27 @@ final class RubricExchangeTests: XCTestCase {
                        "The mobile editor must reject a core-valid drawing that exceeds the response envelope")
     }
 
+    func testImmutableRequestIdentityIgnoresOnlyLifecycleState() throws {
+        let target = UUID()
+        let requester = UUID()
+        let request = try RubricRequest(id: UUID(), targetDeviceID: target, requesterID: requester,
+                                        requesterName: "MacBook", labelHint: "Firma", createdAt: now)
+
+        var accepted = request
+        accepted.state = .accepted
+        XCTAssertTrue(request.matchesImmutableIdentity(accepted))
+
+        let differentPeer = try RubricRequest(id: request.id, targetDeviceID: target,
+                                              requesterID: UUID(), requesterName: "Other Mac",
+                                              labelHint: "Firma", createdAt: now)
+        XCTAssertFalse(request.matchesImmutableIdentity(differentPeer))
+
+        let differentPayload = try RubricRequest(id: request.id, targetDeviceID: target,
+                                                 requesterID: requester, requesterName: "MacBook",
+                                                 labelHint: "Otra firma", createdAt: now)
+        XCTAssertFalse(request.matchesImmutableIdentity(differentPayload))
+    }
+
     func testPersistenceFailureDoesNotMutateInMemoryStateAndCanRetry() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

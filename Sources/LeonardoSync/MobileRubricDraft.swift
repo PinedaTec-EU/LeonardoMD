@@ -92,6 +92,12 @@ public struct MobileRubricDraft: Codable, Equatable, Sendable, Identifiable {
                           state: state, updatedAt: updatedAt, failureMessage: failureMessage)
     }
 
+    /// Binds a recoverable draft to the complete request envelope rather than
+    /// its UUID alone. This deliberately ignores only request lifecycle state.
+    public func matchesRequest(_ request: RubricRequest) -> Bool {
+        id == request.id && self.request.matchesImmutableIdentity(request)
+    }
+
     public static func isValid(_ draft: MobileRubricDraft) -> Bool {
         guard draft.id == draft.request.id,
               draft.targetDeviceID == draft.request.targetDeviceID,

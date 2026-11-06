@@ -89,6 +89,20 @@ public struct RubricRequest: Codable, Equatable, Sendable, Identifiable {
             && (labelHint == nil || (!labelHint!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && labelHint!.count <= 120))
             && expiresAt > createdAt && expiresAt.timeIntervalSince(createdAt) <= Self.lifetime
     }
+
+    /// Compares the immutable binding carried by a request. Lifecycle state is
+    /// intentionally excluded so an accepted request remains the same request
+    /// for local draft recovery and idempotent submission.
+    public func matchesImmutableIdentity(_ other: RubricRequest) -> Bool {
+        id == other.id
+            && targetDeviceID == other.targetDeviceID
+            && requesterID == other.requesterID
+            && requesterName == other.requesterName
+            && labelHint == other.labelHint
+            && capability == other.capability
+            && createdAt == other.createdAt
+            && expiresAt == other.expiresAt
+    }
 }
 
 public struct RubricResponse: Codable, Equatable, Sendable {

@@ -1,4 +1,5 @@
 import XCTest
+import LeonardoCore
 import LeonardoSync
 @testable import LittleLeonardo
 
@@ -306,6 +307,119 @@ final class MobileRevocationTests: XCTestCase {
     }
 
     private enum TestFailure: Error { case offline }
+}
+
+@MainActor
+final class MobileRubricIdentityTests: XCTestCase {
+    private let now = Date(timeIntervalSince1970: 20_000)
+
+    private var rubric: LeonardoRubric {
+        LeonardoRubric(strokes: [.init(color: "#224466", width: 4, style: .solid,
+                                      points: [.init(x: 20, y: 80), .init(x: 180, y: 100)])])
+    }
+
+    func testSameUUIDDifferentPeerDoesNotProjectOrTouchNetwork() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("LittleLeonardo", isDirectory: true)
+        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
+        try FileManager.default.createDirectory(at: corpusRoot, withIntermediateDirectories: true)
+
+        let connection = MobileDirectConnection(
+            connectionID: UUID(), deviceID: UUID(), endpoint: URL(string: "https://127.0.0.1:9")!,
+            fingerprint: Data(repeating: 7, count: 32), projectIDs: [], comparisonCode: "123456",
+            capabilities: [.rubricExchangeV1])
+        try MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json"))
+            .save([connection])
+
+        let requestID = UUID()
+        let requestA = try RubricRequest(id: requestID, targetDeviceID: connection.deviceID,
+                                         requesterID: UUID(), requesterName: "Mac A",
+                                         labelHint: "Firma A", createdAt: now, state: .accepted)
+        let stored = MobileRubricDraft(id: requestID, connectionID: connection.connectionID,
+            targetDeviceID: connection.deviceID, requesterID: requestA.requesterID,
+            sourceFingerprint: connection.fingerprint, request: requestA, label: "Firma A",
+            state: .accepted, updatedAt: now)
+        let draftStore = MobileRubricDraftStore(url: support.appendingPathComponent("Rubrics/drafts.json"))
+        try await draftStore.save(stored)
+
+        let credentials = TestCredentials(values: [connection.deviceID: "credential"], failRemove: false)
+        let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+                                    revocationJournal: MobileRevocationJournal(
+                                        url: support.appendingPathComponent("revocation.json")))
+        await library.reload()
+
+        let requestB = try RubricRequest(id: requestID, targetDeviceID: connection.deviceID,
+                                         requesterID: UUID(), requesterName: "Mac B",
+                                         labelHint: "Firma B", createdAt: now, state: .pending)
+        XCTAssertNil(library.rubricDraft(for: requestB),
+                     "A same-UUID request from another peer must not project the cached drawing")
+
+        do {
+            _ = try await library.acceptRubricRequest(requestB)
+            XCTFail("A same-UUID request from another peer must be rejected before HTTP")
+        } catch {
+            XCTAssertEqual(error as? RubricExchangeError, .conflict)
+        }
+
+        do {
+            _ = try await library.submitRubric(request: requestB, label: "Firma B", rubric: rubric)
+            XCTFail("A same-UUID submission from another peer must be rejected before HTTP")
+        } catch {
+            XCTAssertEqual(error as? RubricExchangeError, .conflict)
+        }
+    }
+
+    func testSubmissionGateSharesOnlyExactImmutableOperation() async throws {
+        let gate = MobileRubricSubmissionGate()
+        let request = try RubricRequest(id: UUID(), targetDeviceID: UUID(), requesterID: UUID(),
+                                        requesterName: "Mac", labelHint: "Firma", createdAt: now,
+                                        state: .accepted)
+        let differentRequest = try RubricRequest(id: request.id, targetDeviceID: request.targetDeviceID,
+                                                 requesterID: UUID(), requesterName: "Other Mac",
+                                                 labelHint: "Firma", createdAt: now, state: .accepted)
+        let alternateRubric = LeonardoRubric(strokes: [.init(color: "#A52A2A", width: 3, style: .solid,
+                                                              points: [.init(x: 40, y: 40), .init(x: 100, y: 140)])])
+        let response = try RubricResponse(requestID: request.id, targetDeviceID: request.targetDeviceID,
+                                          requesterID: request.requesterID, label: "Firma", rubric: rubric,
+                                          submittedAt: now)
+        let release = RevocationGate()
+        let started = expectation(description: "submission operation started")
+        let first = Task { @MainActor in
+            try await gate.submit(request: request, label: "Firma", rubric: rubric) {
+                started.fulfill()
+                await release.wait()
+                return response
+            }
+        }
+        await fulfillment(of: [started], timeout: 2)
+
+        for (otherRequest, otherLabel, otherRubric) in [
+            (differentRequest, "Firma", rubric),
+            (request, "Otra firma", rubric),
+            (request, "Firma", alternateRubric)
+        ] {
+            do {
+                _ = try await gate.submit(request: otherRequest, label: otherLabel, rubric: otherRubric) {
+                    XCTFail("A conflicting operation must not join the active submission")
+                    return response
+                }
+                XCTFail("A conflicting operation must be rejected")
+            } catch {
+                XCTAssertEqual(error as? RubricExchangeError, .conflict)
+            }
+        }
+
+        let identical = Task { @MainActor in
+            try await gate.submit(request: request, label: "Firma", rubric: rubric) {
+                XCTFail("An identical concurrent operation must share the active task")
+                return response
+            }
+        }
+        await release.open()
+        XCTAssertEqual(try await first.value, response)
+        XCTAssertEqual(try await identical.value, response)
+    }
 }
 
 private struct ThrowingJournal: MobileRevocationJournalStore {

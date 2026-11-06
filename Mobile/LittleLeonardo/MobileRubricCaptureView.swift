@@ -168,7 +168,7 @@ struct MobileRubricCaptureView: View {
     init(request: RubricRequest, library: MobileLibrary) {
         self.request = request
         self.library = library
-        let draft = library.rubricDraft(requestID: request.id)
+        let draft = library.rubricDraft(for: request)
         _acceptedRequest = State(initialValue: draft?.request)
         _phase = State(initialValue: draft?.state == .submitted ? .submitted
             : draft != nil && draft?.state != .pendingAcceptance ? .drawing : .awaitingApproval)
@@ -366,7 +366,7 @@ struct MobileRubricCaptureView: View {
     }
 
     private var currentDraft: MobileRubricDraft? {
-        library.rubricDraft(requestID: request.id)
+        library.rubricDraft(for: request)
     }
 
     private var terminalBlocked: Bool {
@@ -416,7 +416,7 @@ struct MobileRubricCaptureView: View {
         }
         // Register this snapshot while handling the UI event. The observer
         // Task may run in any order without changing persistence order.
-        let write = library.enqueueRubricDraftSnapshot(requestID: request.id,
+        let write = library.enqueueRubricDraftSnapshot(request: request,
                                                        label: label, drawing: savedDrawing)
         Task {
             do {
@@ -437,11 +437,11 @@ struct MobileRubricCaptureView: View {
             } catch {
                 phase = .drawing
                 if isTerminal(error) {
-                    await library.blockRubricDraft(requestID: request.id,
+                    await library.blockRubricDraft(request: request,
                                                    message: "La solicitud ya no admite envíos; pide una nueva solicitud.")
                     failure = "Este vínculo ya no admite la solicitud. Cierra esta tarjeta y pide una nueva."
                 } else {
-                    frozen = library.rubricDraft(requestID: request.id)?.response != nil
+                    frozen = library.rubricDraft(for: request)?.response != nil
                     failure = "No se pudo enviar. El dibujo está guardado y puedes reintentarlo."
                 }
             }

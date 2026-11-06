@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		15243E6517E367904B34E1C3 /* PairingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88DCAC3D27E3676EFE8737FB /* PairingUITests.swift */; };
 		22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */; };
+		A7B6C5D4E3F2019A88776655 /* MobileRubricSubmissionGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */; };
 		2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7849226B36C61649B125BDDC /* MobileLibraryView.swift */; };
 		3E6C7AD17D9D0EDFB5E779BA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
 		46EBC1E01C1296D54919D7A0 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
@@ -52,6 +53,7 @@
 		C13EDFD74D289513F03789EC /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		C53CBBB8313118CB2CF6782A /* LittleLeonardoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LittleLeonardoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileLibrary.swift; sourceTree = "<group>"; };
+		A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRubricSubmissionGate.swift; sourceTree = "<group>"; };
 		EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileQRScanner.swift; sourceTree = "<group>"; };
 		70CAB6D3C2D948039788E971 /* MobileRecoveryDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRecoveryDocument.swift; sourceTree = "<group>"; };
 		B342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRubricCaptureView.swift; sourceTree = "<group>"; };
@@ -154,6 +156,7 @@
 			children = (
 				0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */,
 				D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */,
+				A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */,
 				7849226B36C61649B125BDDC /* MobileLibraryView.swift */,
 				70CAB6D3C2D948039788E971 /* MobileRecoveryDocument.swift */,
 				EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */,
@@ -293,6 +296,7 @@
 			files = (
 				C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */,
 				22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */,
+				A7B6C5D4E3F2019A88776655 /* MobileRubricSubmissionGate.swift in Sources */,
 				2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */,
 				FC0D3FAC5AD74CCF9D75A451 /* MobileRecoveryDocument.swift in Sources */,
 				DA52AFC54A29A9980B0601CC /* MobileQRScanner.swift in Sources */,
