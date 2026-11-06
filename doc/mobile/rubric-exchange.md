@@ -47,7 +47,26 @@ identities. The authority gate spans the durable store await, so revoke/disable
 cannot interleave with an accept or response commit. JSON storage is atomic and
 transactional, normalizes trusted parent aliases, rejects a final-file symlink,
 loads only after a metadata byte bound, and applies owner-only `0600` mode.
-Persistence failures leave in-memory state unchanged.
+Authority and ordinary mobile connection/draft mutations publish their next
+snapshot only after persistence succeeds. A failed capacity rollover likewise
+keeps the previous draft snapshot in memory.
+
+A confirmed mobile revocation is an immediate deny barrier. It invalidates only
+that connection's capture generation, records a revoked connection with pending
+cache removals, and retires the credential from Keychain. File-write and cache
+deletion failures are surfaced rather than treated as completed cleanup. When
+the connection journal could not be written, an absent Keychain credential
+reconstructs the revoked/pending-cleanup state after relaunch. A Keychain read
+error remains a retryable failure; it is not interpreted as a missing item.
+If neither persistence path succeeds, no durable revocation is claimed: the
+current process remains blocked and reports the storage failures.
+
+Pending cleanup retries on library reload. Known revoked direct caches stay
+hidden while cleanup is pending; unrelated offline corpora remain readable.
+Cache mutations are ordered and recheck connection generation and current
+project ownership, so an old purge cannot delete a newly authorized cache.
+An ordinary library reload does not revoke capture authorization, and revoking
+one connection does not invalidate another connection's in-flight response.
 
 ## Runtime limits and validation
 

@@ -70,11 +70,30 @@ cancellation or revocation blocks sending. The frozen card presents a locked
 preview. The Mac receives only the response for the matching request, target
 and linked TLS identity.
 
-Native evidence is preserved under
+Draft snapshot writes register in UI-event order before asynchronous work starts
+([#360](https://github.com/PinedaTec-EU/LeonardoMD/issues/360)). Blocked and
+submitted drafts expire after 30 days; accepted/pending-send work stays
+recoverable. Capacity cleanup is committed only after a successful write
+([#361](https://github.com/PinedaTec-EU/LeonardoMD/issues/361)).
+
+Mobile connection snapshots and visibility policy live in
+`MobileDirectConnectionStore.swift`; per-connection capture generations live in
+`MobileDirectAuthorization.swift`. Confirmed revocation blocks immediately,
+retires the Keychain credential and retains pending cache cleanup. A missing
+credential reconstructs an interrupted revocation after restart; a Keychain
+read error does not revoke a valid link. Serialized cache writes/removals check
+epochs and active owners, including rollback and deferred cleanup
+([#359](https://github.com/PinedaTec-EU/LeonardoMD/issues/359)). See the
+[persistence contract](../doc/mobile/rubric-exchange.md#security-and-persistence).
+
+The historical native evidence checkpoint is preserved under
 `doc/validation/little-leonardo/ios-rubric-capture-es.png` plus the drawing and
 preview state captures, with per-state hashes in the JSON sidecar. It is a
 signed iPhone18Pro/iOS27.0 Simulator run against the owned Mac HTTPS fixture,
 not physical-device, App Store/TestFlight or production network evidence.
+The final source-bound evidence and storage/reconnect regressions are tracked
+in [PR #352](https://github.com/PinedaTec-EU/LeonardoMD/pull/352); earlier
+checkpoints must not be treated as proof for later corrective code.
 
 The published bilingual guide is v15; #337's Synchronization role pages remain
 in chapters 14–15 and previous personal guide copies are preserved.
