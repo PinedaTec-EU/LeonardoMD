@@ -104,6 +104,8 @@ public struct MobileRubricDraft: Codable, Equatable, Sendable, Identifiable {
         switch draft.state {
         case .accepted:
             return draft.response == nil
+        case .blocked where draft.response == nil:
+            return true
         case .pendingSend, .submitted, .blocked:
             guard let response = draft.response,
                   response.requestID == draft.id,
@@ -120,6 +122,7 @@ public struct MobileRubricDraft: Codable, Equatable, Sendable, Identifiable {
                            to next: MobileRubricDraftState) -> Bool {
         switch (current, next) {
         case (.accepted, .accepted), (.accepted, .pendingSend),
+             (.accepted, .blocked),
              (.pendingSend, .pendingSend), (.pendingSend, .submitted), (.pendingSend, .blocked),
              (.blocked, .blocked), (.submitted, .submitted): return true
         default: return false

@@ -87,6 +87,33 @@ final class MobileRubricDraftTests: XCTestCase {
         XCTAssertNil(restored.first?.response)
     }
 
+    func testRevokedAcceptedDraftBecomesBlockedWithoutLosingDrawing() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let request = try request()
+        let draft = MobileRubricDraft(id: request.id, connectionID: UUID(),
+            targetDeviceID: request.targetDeviceID, requesterID: request.requesterID,
+            sourceFingerprint: Data(repeating: 9, count: 32), request: request,
+            drawing: drawing, label: "Firma", state: .accepted, updatedAt: now)
+        let store = MobileRubricDraftStore(url: root.appendingPathComponent("drafts.json"))
+        try await store.save(draft)
+
+        let blocked = draft.with(state: .blocked, updatedAt: now.addingTimeInterval(1),
+                                 failureMessage: "revoked")
+        try await store.save(blocked)
+        let restored = try await MobileRubricDraftStore(url: root.appendingPathComponent("drafts.json"))
+            .all(now: now.addingTimeInterval(2))
+        XCTAssertEqual(restored, [blocked])
+        XCTAssertEqual(restored.first?.drawing, drawing)
+        XCTAssertEqual(restored.first?.label, "Firma")
+        XCTAssertNil(restored.first?.response)
+        XCTAssertTrue(MobileRubricDraft.isValid(blocked))
+        do {
+            try await store.save(blocked.with(state: .accepted, updatedAt: now.addingTimeInterval(3)))
+            XCTFail("A blocked draft must not return to the editable state")
+        } catch { XCTAssertEqual(error as? RubricExchangeError, .conflict) }
+    }
+
     func testInvalidNonemptyDrawingCannotReplaceLastValidDraft() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
