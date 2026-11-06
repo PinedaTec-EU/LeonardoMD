@@ -60,6 +60,12 @@
     } },
     renderer: {
       table: sizedTable,
+      heading(token) {
+        const html = window.marked.Renderer.prototype.heading.call(this, token);
+        if (!Number.isSafeInteger(token.leonardoSourceLine)) return html;
+        return html.replace(/^<h([1-6])>/,
+          `<h$1 data-leonardo-source-line="${token.leonardoSourceLine}" data-leonardo-heading="${tableRenderKey}">`);
+      },
       html(token) {
         if (!allowsLegacyWidths && token.block === true && token.raw.trim() === "<!-- leonardo:page-break -->") return '<hr data-leonardo-page-break="true">';
         return window.marked.Renderer.prototype.html.call(this, token);
@@ -119,6 +125,12 @@
       }
       const html = parser.parse(markdown);
       return extras ? extras.finish(html) : html;
+    },
+    headingForSourceLine(root, line) {
+      if (!Number.isSafeInteger(line) || line < 1) return null;
+      return Array.from(root.querySelectorAll("h1, h2, h3, h4, h5, h6")).find(heading =>
+        heading.dataset.leonardoHeading === tableRenderKey &&
+        Number(heading.dataset.leonardoSourceLine) === line) || null;
     },
     isMarkdownTable: table => table.dataset.leonardoGfm === tableRenderKey,
     sourceFor(table, root, markdown) {

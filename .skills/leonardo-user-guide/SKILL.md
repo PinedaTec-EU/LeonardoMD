@@ -38,6 +38,16 @@ resource names and `BundledUserGuide` personal-copy directory together so existi
 practice answers remain intact; update affected tests. Remove superseded bundle
 resources, preserving historical evidence and user-owned copies.
 
+Before counting a Help-opened personal copy as candidate evidence, compare its
+content identity with the candidate's bundled resource. A filename/revision is
+insufficient: concurrent QA branches can allocate the same revision. Preserve
+existing copies and answers; never overwrite them to make QA pass. For changed
+help content, choose an unused revision and revalidate both locales. Record
+bundle/working-copy hashes and any intentional personal differences in the QA
+record. This check prevents the false candidate validation observed in
+[issue #378](https://github.com/PinedaTec-EU/LeonardoMD/issues/378); it does not
+implement general candidate-scoped working-copy isolation.
+
 Validate deterministic packages with
 `python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py'`.
 Run focused native `BundledUserGuideTests` through the repository's compilation

@@ -1,0 +1,12 @@
+{
+  "captured_at": "2026-11-06T16:58:41.612Z",
+  "route": "/native/diagnostics/narrow-split-tag",
+  "screen": "Diagnostic for separate issue #379: narrow Split layout",
+  "browser_name": "Native macOS application window with WKWebView content, via CUA",
+  "browser_version": null,
+  "viewport_css": null,
+  "capture_mode": "element",
+  "state": "Guide v18 en; Split plus outline; selected heading at preview start; SVG shapes complete; long tagged equation extends beyond narrow preview and tag overlaps. Separate layout issue #379.",
+  "data_provenance": "synthetic",
+  "unavailable_context": "Native CUA does not expose the packaged WKWebView browser version or CSS viewport. Both are explicitly unavailable; image dimensions are not substituted."
+}

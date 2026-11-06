@@ -25,6 +25,24 @@
     renderID = Array.from(crypto.getRandomValues(new Uint32Array(4))).join("-");
   }
 
+  function sourceLineStarts(text) {
+    const starts = [0];
+    for (let index = 0; index < text.length; index += 1) {
+      if (text[index] === "\n") starts.push(index + 1);
+    }
+    return starts;
+  }
+
+  function sourceLineAtOffset(starts, offset) {
+    let lower = 0, upper = starts.length;
+    while (lower < upper) {
+      const middle = (lower + upper) >>> 1;
+      if (starts[middle] <= offset) lower = middle + 1;
+      else upper = middle;
+    }
+    return lower;
+  }
+
   function annotate(tokens) {
     const normalized = source.replace(/\r\n/g, "\n");
     // Marked token raws use LF, while the MDLF parser deliberately preserves
@@ -33,6 +51,7 @@
     const body = (window.LeonardoEditing.body || "").replace(/\r\n/g, "\n");
     const offset = normalized.length - body.length;
     if (offset < 0 || normalized.slice(offset) !== body) return tokens;
+    const lineStarts = sourceLineStarts(normalized);
     const originalOffsets = [];
     for (let index = 0; index < source.length; index += 1) {
       originalOffsets.push(index);
@@ -48,6 +67,7 @@
         if (start < cursor || start + token.raw.length > upper) continue;
         const end = start + token.raw.length;
         cursor = end;
+        if (token.type === "heading") token.leonardoSourceLine = sourceLineAtOffset(lineStarts, start);
         if (token.tokens) {
           visit(token.tokens, start, end);
           if (["strong", "em", "del"].includes(token.type) && !hasOpaqueContent(token)) {
