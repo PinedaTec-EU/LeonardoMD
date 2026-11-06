@@ -1,0 +1,224 @@
+import Foundation
+import LeonardoSync
+import LeonardoSyncTransport
+
+struct MobileDirectConnection: Codable {
+    let connectionID: UUID
+    let deviceID: UUID
+    let endpoint: URL
+    let fingerprint: Data
+    var projectIDs: Set<UUID>
+    var comparisonCode: String?
+    var capabilities: Set<DirectCapability>
+    var capabilityRefreshAttempted: Bool
+    var revoked: Bool
+    var pendingPurgeProjectIDs: Set<UUID>
+
+    init(connectionID: UUID = UUID(), deviceID: UUID, endpoint: URL, fingerprint: Data,
+         projectIDs: Set<UUID>, comparisonCode: String?, capabilities: Set<DirectCapability>,
+         capabilityRefreshAttempted: Bool = false, revoked: Bool = false,
+         pendingPurgeProjectIDs: Set<UUID> = []) {
+        self.connectionID = connectionID
+        self.deviceID = deviceID
+        self.endpoint = endpoint
+        self.fingerprint = fingerprint
+        self.projectIDs = projectIDs
+        self.comparisonCode = comparisonCode
+        self.capabilities = capabilities
+        self.capabilityRefreshAttempted = capabilityRefreshAttempted
+        self.revoked = revoked
+        self.pendingPurgeProjectIDs = pendingPurgeProjectIDs
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case connectionID, deviceID, endpoint, fingerprint, projectIDs, comparisonCode, capabilities,
+             capabilityRefreshAttempted, revoked, pendingPurgeProjectIDs
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let deviceID = try container.decode(UUID.self, forKey: .deviceID)
+        self.init(connectionID: try container.decodeIfPresent(UUID.self, forKey: .connectionID) ?? deviceID,
+                  deviceID: deviceID,
+                  endpoint: try container.decode(URL.self, forKey: .endpoint),
+                  fingerprint: try container.decode(Data.self, forKey: .fingerprint),
+                  projectIDs: try container.decodeIfPresent(Set<UUID>.self, forKey: .projectIDs) ?? [],
+                  comparisonCode: try container.decodeIfPresent(String.self, forKey: .comparisonCode),
+                  capabilities: try container.decodeIfPresent(Set<DirectCapability>.self, forKey: .capabilities) ?? [],
+                  capabilityRefreshAttempted: try container.decodeIfPresent(Bool.self,
+                      forKey: .capabilityRefreshAttempted) ?? false,
+                  revoked: try container.decodeIfPresent(Bool.self, forKey: .revoked) ?? false,
+                  pendingPurgeProjectIDs: try container.decodeIfPresent(Set<UUID>.self,
+                      forKey: .pendingPurgeProjectIDs) ?? [])
+    }
+
+    func hasChanges(from other: MobileDirectConnection) -> Bool {
+        projectIDs != other.projectIDs || comparisonCode != other.comparisonCode
+            || capabilities != other.capabilities
+            || capabilityRefreshAttempted != other.capabilityRefreshAttempted
+            || revoked != other.revoked
+            || pendingPurgeProjectIDs != other.pendingPurgeProjectIDs
+    }
+}
+
+/// Atomic, owner-only persistence for mobile connection snapshots.
+struct MobileDirectConnectionStore {
+    private static let maximumBytes = 2 * 1_024 * 1_024
+    private let url: URL
+
+    init(url: URL) {
+        let standardized = url.standardizedFileURL
+        let parent = standardized.deletingLastPathComponent().resolvingSymlinksInPath()
+        self.url = parent.appendingPathComponent(standardized.lastPathComponent)
+    }
+
+    struct RevocationRecovery {
+        let connections: [MobileDirectConnection]
+        let quarantinedConnectionIDs: Set<UUID>
+    }
+
+    /// Applies the independent write-ahead journal before ordinary connection
+    /// reconciliation. An uncertain marker quarantines only that link until a
+    /// fresh authenticated STATUS; a denied marker is an absorbing local deny.
+    static func applyRevocationMarkers(_ markers: [MobileRevocationMarker],
+                                       to stored: [MobileDirectConnection]) -> RevocationRecovery {
+        var connections = stored
+        var quarantined = Set<UUID>()
+        for marker in markers {
+            guard let index = connections.firstIndex(where: {
+                $0.connectionID == marker.connectionID
+                    && $0.deviceID == marker.deviceID
+                    && $0.fingerprint == marker.fingerprint
+            }) else { continue }
+            switch marker.state {
+            case .uncertain:
+                if !connections[index].revoked { quarantined.insert(marker.connectionID) }
+            case .denied:
+                let previousProjects = connections[index].projectIDs
+                connections[index].capabilities = []
+                connections[index].projectIDs = []
+                connections[index].comparisonCode = nil
+                connections[index].revoked = true
+                connections[index].pendingPurgeProjectIDs.formUnion(previousProjects)
+                connections[index].pendingPurgeProjectIDs.formUnion(marker.projectIDs)
+            }
+        }
+        return RevocationRecovery(connections: connections, quarantinedConnectionIDs: quarantined)
+    }
+
+    static func refreshCapabilities(_ status: DirectDeviceStatus,
+                                    connection: inout MobileDirectConnection,
+                                    client: DirectEnrollmentClient,
+                                    credential: String) async throws -> DirectDeviceStatus {
+        guard status.capabilities.contains(.rubricExchangeV1) else {
+            connection.capabilities = []
+            return status
+        }
+        guard !connection.capabilities.contains(.rubricExchangeV1),
+              !connection.capabilityRefreshAttempted else { return status }
+        do {
+            let receipt = try await client.updateCapabilities(deviceID: connection.deviceID,
+                                                               credential: credential)
+            guard receipt.acceptedCapabilities?.contains(.rubricExchangeV1) == true else {
+                throw RubricExchangeError.unsupported
+            }
+            connection.capabilities = [.rubricExchangeV1]
+            connection.capabilityRefreshAttempted = false
+        } catch RubricExchangeError.unsupported {
+            connection.capabilityRefreshAttempted = true
+            connection.capabilities = []
+        }
+        return status
+    }
+
+    func load() throws -> [MobileDirectConnection] {
+        guard FileManager.default.fileExists(atPath: url.path) else { return [] }
+        let values = try url.resourceValues(forKeys: [.isSymbolicLinkKey, .fileSizeKey])
+        guard values.isSymbolicLink != true, (values.fileSize ?? 0) <= Self.maximumBytes else {
+            throw SyncError.invalidSnapshot
+        }
+        return try JSONDecoder().decode([MobileDirectConnection].self, from: Data(contentsOf: url))
+    }
+
+    /// A missing Keychain item is a durable loss of authorization, while a
+    /// Keychain read error must remain a retryable load failure. Reclassify
+    /// only the former so an interrupted revocation journal can be repaired
+    /// on the next launch without hiding a still-authorized connection.
+    func reconcileMissingCredentials(_ connections: [MobileDirectConnection],
+                                     credentials: DeviceCredentialStore) async throws -> [MobileDirectConnection] {
+        var repaired = connections
+        for index in repaired.indices where !repaired[index].revoked {
+            guard try await credentials.credential(deviceID: repaired[index].deviceID) == nil else { continue }
+            let projectIDs = repaired[index].projectIDs
+            repaired[index].capabilities = []
+            repaired[index].projectIDs = []
+            repaired[index].comparisonCode = nil
+            repaired[index].revoked = true
+            repaired[index].pendingPurgeProjectIDs.formUnion(projectIDs)
+        }
+        return repaired
+    }
+
+    func loadVisibleProjects(connections: [MobileDirectConnection],
+                             quarantinedConnectionIDs: Set<UUID> = [],
+                             credentials: DeviceCredentialStore,
+                             corpus: OfflineCorpusStore) async throws -> [OfflineProject] {
+        var activeProjectIDs = Set<UUID>()
+        var revokedProjectIDs = Set<UUID>()
+        var unavailableProjectIDs = Set<UUID>()
+        for connection in connections where !connection.revoked {
+            if quarantinedConnectionIDs.contains(connection.connectionID) {
+                unavailableProjectIDs.formUnion(connection.projectIDs)
+                continue
+            }
+            guard try await credentials.credential(deviceID: connection.deviceID) != nil else {
+                unavailableProjectIDs.formUnion(connection.projectIDs)
+                continue
+            }
+            activeProjectIDs.formUnion(connection.projectIDs)
+        }
+        for connection in connections where connection.revoked {
+            revokedProjectIDs.formUnion(connection.projectIDs)
+            revokedProjectIDs.formUnion(connection.pendingPurgeProjectIDs)
+        }
+        let hiddenProjectIDs = revokedProjectIDs.union(unavailableProjectIDs)
+        var loaded: [OfflineProject] = []
+        for id in try await corpus.projectIDs() {
+            guard !hiddenProjectIDs.contains(id) || activeProjectIDs.contains(id) else { continue }
+            if let project = try await corpus.load(id: id) {
+                loaded.append(project)
+            }
+        }
+        return loaded.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    func save(_ snapshot: [MobileDirectConnection]) throws {
+        let parent = url.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+        let values = try? url.resourceValues(forKeys: [.isSymbolicLinkKey])
+        guard values?.isSymbolicLink != true else { throw SyncError.invalidPath }
+        let data = try JSONEncoder().encode(snapshot)
+        guard data.count <= Self.maximumBytes else { throw SyncError.sizeLimitExceeded }
+
+        let temporary = parent.appendingPathComponent(".connections-\(UUID().uuidString).tmp")
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        try data.write(to: temporary)
+        try setOwnerOnlyPermissions(at: temporary)
+        let attributes = try FileManager.default.attributesOfItem(atPath: temporary.path)
+        guard attributes[.type] as? FileAttributeType == .typeRegular,
+              (attributes[.posixPermissions] as? NSNumber)?.intValue == 0o600 else {
+            throw SyncError.invalidPath
+        }
+        if FileManager.default.fileExists(atPath: url.path) {
+            _ = try FileManager.default.replaceItemAt(url, withItemAt: temporary,
+                                                      options: .usingNewMetadataOnly)
+        } else {
+            try FileManager.default.moveItem(at: temporary, to: url)
+        }
+    }
+
+    private func setOwnerOnlyPermissions(at url: URL) throws {
+        try FileManager.default.setAttributes([.posixPermissions: NSNumber(value: Int16(0o600))],
+                                              ofItemAtPath: url.path)
+    }
+}

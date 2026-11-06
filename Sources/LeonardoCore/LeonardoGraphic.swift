@@ -56,11 +56,13 @@ public struct LeonardoInkStroke: Codable, Equatable, Sendable {
 public struct LeonardoRubric: Codable, Equatable, Sendable {
     public static let canvasWidth = 600.0
     public static let canvasHeight = 200.0
+    public static let maximumStrokes = 256
+    public static let maximumPoints = 20_000
     public var strokes: [LeonardoInkStroke]
     public init(strokes: [LeonardoInkStroke] = []) { self.strokes = strokes }
     public var isValid: Bool {
-        !strokes.isEmpty && strokes.count <= 256
-        && strokes.reduce(0, { $0 + $1.points.count }) <= 20000
+        !strokes.isEmpty && strokes.count <= Self.maximumStrokes
+        && strokes.reduce(0, { $0 + $1.points.count }) <= Self.maximumPoints
         && strokes.allSatisfy { stroke in
             stroke.color.range(of: "^#[0-9a-fA-F]{6}$", options: .regularExpression) != nil
             && stroke.width.isFinite && stroke.width >= 0.5 && stroke.width <= 24

@@ -859,9 +859,19 @@
       "pr": 349,
       "summary": "macOS targets one explicitly capable linked read-only peer, recovers requests by stable ID, reviews returned rubrics, and saves or inserts them safely. Legacy peers remain unsupported until #342.",
       "to_version": "0.3.898"
+    },
+    {
+      "delta": {
+        "build": 102
+      },
+      "from_version": "0.3.898",
+      "merge_sha": "1b905bad76a3a7ecbbdf3a33c9fc33874142bd03",
+      "pr": 352,
+      "summary": "iOS captures rubrics requested by a linked Mac with explicit consent, durable drafts, preview and HTTPS retry. Interrupted acceptance recovers safely and revoked links stay blocked after restart. Guides and Mac consent are available in English and Spanish.",
+      "to_version": "0.3.1000"
     }
   ],
-  "current_version": "0.3.898",
+  "current_version": "0.3.1000",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

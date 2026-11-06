@@ -135,13 +135,33 @@ public struct PairingRegistry: Codable, Sendable {
         expire(now: now)
         guard let request = requests.first(where: { $0.id == requestID }),
               request.comparisonCode == comparisonCode else { throw PairingError.pendingApproval }
-        guard !projects.isEmpty else { throw PairingError.invalidProject }
+        let captureOnly = request.kind == .readOnly && request.capabilities.contains(.rubricExchangeV1)
+        guard !projects.isEmpty || captureOnly else { throw PairingError.invalidProject }
         let device = PairedDevice(id: request.id, name: request.deviceName, credentialDigest: request.credentialDigest,
                                   projects: projects, revoked: false, kind: request.kind,
                                   capabilities: request.capabilities)
         devices.append(device)
         requests.removeAll { $0.id == requestID }
         return device
+    }
+
+    /// Refreshes only the authenticated device's advertised feature set. This
+    /// is intentionally narrower than re-enrollment: the stable device ID,
+    /// kind, project grants and credential digest remain unchanged.
+    public mutating func updateCapabilities(deviceID: UUID, credential: String,
+                                            capabilities: Set<DirectCapability>) throws -> PairedDevice {
+        guard enabled else { throw PairingError.disabled }
+        guard let index = devices.firstIndex(where: { $0.id == deviceID }),
+              Self.matches(devices[index].credentialDigest, Self.digest(credential)) else {
+            throw PairingError.invalidCredential
+        }
+        guard !devices[index].revoked else { throw SyncError.revoked }
+        guard devices[index].kind == .readOnly else { throw SyncError.readOnly }
+        devices[index] = PairedDevice(id: devices[index].id, name: devices[index].name,
+                                      credentialDigest: devices[index].credentialDigest,
+                                      projects: devices[index].projects, revoked: devices[index].revoked,
+                                      kind: devices[index].kind, capabilities: capabilities)
+        return devices[index]
     }
 
     public mutating func reject(requestID: UUID) { requests.removeAll { $0.id == requestID } }

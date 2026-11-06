@@ -56,6 +56,22 @@ public struct DirectEnrollmentClient: Sendable {
         return try JSONDecoder().decode(DirectDeviceStatus.self, from: response.body)
     }
 
+    /// Refresh the feature advertisement for a device that was already
+    /// approved by the owner. A 404 from an older Mac is a safe fallback: the
+    /// reader remains usable for documents but does not enable rubric capture.
+    public func updateCapabilities(deviceID: UUID, credential: String,
+                                   rubricExchangeV1: Bool = true) async throws -> DirectCapabilityRefreshReceipt {
+        let body = try JSONEncoder().encode(DirectCapabilityUpdate(rubricExchangeV1: rubricExchangeV1))
+        let response = try await client.request(method: "POST",
+            path: "/v1/devices/\(deviceID.uuidString)/capabilities", credential: credential, body: body)
+        guard response.status == 200 else {
+            if response.status == 404 { throw RubricExchangeError.unsupported }
+            if response.status == 403 { throw SyncError.revoked }
+            throw TransportError.unexpectedResponse
+        }
+        return try JSONDecoder().decode(DirectCapabilityRefreshReceipt.self, from: response.body)
+    }
+
     public func project(_ descriptor: SharedProjectDescriptor, deviceID: UUID, credential: String) async throws -> OfflineProject {
         let response = try await client.request(method: "GET",
             path: "/v1/devices/\(deviceID.uuidString)/projects/\(descriptor.id.uuidString)/snapshot", credential: credential)

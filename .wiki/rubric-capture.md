@@ -47,8 +47,88 @@ owner-side Mac flow on top of the authenticated exchange in
   completion; the focused `RubricCaptureTests` covers restart/idempotence and
   this monotonic lifecycle rule.
 
-Production mobile enrollment remains capability-empty until #342 supplies the
-request/draw/send UI. Protocol fixtures may advertise the capability, but the
-Mac must not present an unsupported historical reader as a capture target.
-The published bilingual guide is v14 because main also carries the #337
-Synchronization role pages; Guide-v13 remains historical and is not bundled.
+## iOS response channel ([#342](https://github.com/PinedaTec-EU/LeonardoMD/issues/342))
+
+The linked Little Leonardo companion remains read-only for documents. A mobile
+device may additionally be approved with the optional `rubricExchangeV1`
+capability and zero project grants. An authenticated capability refresh keeps
+kind, grants, credential and cached documents unchanged; an older Mac that
+does not expose that endpoint falls back safely to the existing reader path.
+The server's `DirectDeviceStatus.capabilities` remains the server handler
+status, not a client announcement, and optional V1 fields preserve legacy
+decoding.
+
+The active iOS request card persists a `pendingAcceptance` intent before remote
+acceptance and enables ink only after the accepted local draft commits. The
+accept transition is idempotent for the same authorized target; restart and
+lost-acknowledgement recovery reuse the intent without replacing advanced ink
+or a frozen response ([#362](https://github.com/PinedaTec-EU/LeonardoMD/issues/362)).
+The card requires explicit Accept or Reject and then offers
+label, finger/Pencil drawing, Undo, Clear, Preview and explicit Send. The canvas
+matches the portable renderer's brush taper and single-point dots, samples a
+conservative 600-point budget, and preflights the complete 24 KiB response
+envelope. Before Send, the label and drawing are durable draft fields
+independent of any response; closing/reopening the app restores them. Send
+freezes one portable response before network I/O. `pendingSend` retries the
+exact bytes after a transient error; `submitted` never regresses, while expiry,
+cancellation or revocation blocks sending. The frozen card presents a locked
+preview. The Mac receives only the response for the matching request, target
+and linked TLS identity.
+
+Draft snapshot writes register in UI-event order before asynchronous work starts
+([#360](https://github.com/PinedaTec-EU/LeonardoMD/issues/360)). Blocked and
+submitted drafts expire after 30 days; pending acceptance, accepted drawings
+and pending-send work stay
+recoverable. Capacity cleanup is committed only after a successful write
+([#361](https://github.com/PinedaTec-EU/LeonardoMD/issues/361)).
+
+Mobile connection snapshots and visibility policy live in
+`MobileDirectConnectionStore.swift`; per-connection capture generations and
+monotonic deny state live in `MobileDirectAuthorization.swift`.
+`MobileRevocationJournal.swift` persists an independent uncertainty marker before
+authenticated network work, coordinated through `MobileRevocationClient.swift`.
+A failed preflight sends no request. Ordinary reloads preserve offline reading
+for operations belonging to the current live journal session. An operation
+inherited from another session quarantines only
+its link until authenticated STATUS revalidation; an offline result or late
+completion cannot undo inherited uncertainty or confirmed denial. This protects
+restart even when post-response snapshot and credential writes both fail.
+Confirmed revocation retires the Keychain credential and retains cache cleanup;
+a missing item reconstructs revocation, while a Keychain read error stays
+retryable. Serialized cache writes/removals check epochs and active owners,
+including rollback and deferred cleanup
+([#359](https://github.com/PinedaTec-EU/LeonardoMD/issues/359)). See the
+[persistence contract](../doc/mobile/rubric-exchange.md#security-and-persistence).
+
+Native evidence is recorded under
+`doc/validation/little-leonardo/ios-rubric-capture-es.png` plus the drawing and
+preview state captures, with per-state hashes in the JSON sidecar. It is a
+signed iPhone18Pro/iOS27.0 Simulator run against the owned Mac HTTPS fixture,
+not physical-device, App Store/TestFlight or production network evidence.
+The final source-bound evidence and storage/reconnect regressions are tracked
+in [PR #352](https://github.com/PinedaTec-EU/LeonardoMD/pull/352). Earlier
+checkpoints remain in Git history and must not be treated as proof for later
+corrective code; use the source and hashes in the current sidecar.
+
+Cached draft presentation and reuse compare the complete immutable request
+identity, ignoring only lifecycle state. In-flight submission reuse also compares
+the normalized label and portable drawing; mismatches cannot share another
+request's result ([#367](https://github.com/PinedaTec-EU/LeonardoMD/issues/367)).
+Explicit sends/retries and foreground reconciliation share one identical
+in-flight response operation ([#365](https://github.com/PinedaTec-EU/LeonardoMD/issues/365)).
+
+The published bilingual guide is v15; #337's Synchronization role pages remain
+in chapters 14–15 and previous personal guide copies are preserved.
+
+The live approval card now observes a blocked acceptance immediately, removes
+Accept/Reject and stale retry advice, and asks for a fresh Mac request. Native
+cancellation during Accept and relaunch coverage is recorded with the current
+[source-bound manifest](../doc/validation/little-leonardo/ios-rubric-capture-final-20261106-8488e9d.json)
+([#356](https://github.com/PinedaTec-EU/LeonardoMD/issues/356)).
+
+Native preview evidence waits for actual rendered ink before capture and checks
+its density against the drawing, avoiding premature blank Canvas attachments
+([#355](https://github.com/PinedaTec-EU/LeonardoMD/issues/355)). Capture-only Mac
+consent is localized in EN/ES and has native component captures with zero project
+grants and the comparison-code confirmation still required
+([#370](https://github.com/PinedaTec-EU/LeonardoMD/issues/370)).

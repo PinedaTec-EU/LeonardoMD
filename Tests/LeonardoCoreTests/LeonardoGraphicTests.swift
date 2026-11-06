@@ -49,4 +49,14 @@ final class LeonardoGraphicTests: XCTestCase {
         var object = LeonardoGraphic(label: "Invalid", rubric: rubric); object.page = 0
         XCTAssertThrowsError(try LeonardoFormatParser.serialize(.init(body: "", metadata: .init(layout: .init(objects: [object])))))
     }
+
+    func testPortableRubricLimitsKeepSinglePointDotsValidAndBoundStrokes() {
+        let dot = LeonardoInkStroke(color: "#102030", width: 4, style: .solid,
+                                    points: [.init(x: 300, y: 100)])
+        XCTAssertTrue(LeonardoRubric(strokes: [dot]).isValid)
+        XCTAssertTrue(LeonardoRubric.maximumStrokes > 0)
+        XCTAssertTrue(LeonardoRubric.maximumPoints > 0)
+        XCTAssertFalse(LeonardoRubric(strokes: Array(
+            repeating: dot, count: LeonardoRubric.maximumStrokes + 1)).isValid)
+    }
 }

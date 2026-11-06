@@ -41,6 +41,12 @@ public struct DirectHTTPSRouter: Sendable {
                 return HTTPResponse(status: 401)
             }
             let credential = String(header.dropFirst(7))
+            if request.method == "POST", path.count == 5, path[4] == "capabilities" {
+                guard request.body.count <= 4 * 1_024 else { return HTTPResponse(status: 413) }
+                let update = try JSONDecoder().decode(DirectCapabilityUpdate.self, from: request.body)
+                return try json(await authority.updateCapabilities(deviceID: deviceID, credential: credential,
+                                                                    update: update, now: now()))
+            }
             if request.method == "GET", path.count == 5, path[4] == "status" {
                 return try json(await authority.status(deviceID: deviceID, credential: credential, now: now()))
             }
