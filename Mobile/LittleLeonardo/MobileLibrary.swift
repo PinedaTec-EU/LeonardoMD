@@ -26,14 +26,8 @@ final class MobileLibrary {
     private var pendingRubricDraftWrite: Task<Void, Error>?
     private var cacheEpoch: UInt64 = 0
     private var authorizationEpoch: UInt64 = 0
-
-    private struct ConnectionToken: Sendable {
-        let connectionID: UUID
-        let deviceID: UUID
-        let fingerprint: Data
-        let cacheEpoch: UInt64
-        let authorizationEpoch: UInt64
-    }
+    private var authorizationGenerations = MobileAuthorizationGenerations()
+    private typealias ConnectionToken = MobileConnectionToken
 
     private struct RubricContext {
         let connection: MobileDirectConnection
@@ -56,7 +50,7 @@ final class MobileLibrary {
     private func token(for connection: MobileDirectConnection) -> ConnectionToken {
         ConnectionToken(connectionID: connection.connectionID, deviceID: connection.deviceID,
                         fingerprint: connection.fingerprint, cacheEpoch: cacheEpoch,
-                        authorizationEpoch: authorizationEpoch)
+                        authorizationGeneration: authorizationGenerations[connection.connectionID])
     }
 
     private func connectionIndex(for token: ConnectionToken) -> Int? {
@@ -75,7 +69,9 @@ final class MobileLibrary {
     }
 
     private func isCurrentAuthorization(_ token: ConnectionToken) -> Bool {
-        authorizationEpoch == token.authorizationEpoch && hasCurrentIdentity(token)
+        authorizationGenerations[token.connectionID] == token.authorizationGeneration
+            && hasCurrentIdentity(token)
+            && currentConnection(for: token)?.revoked == false
     }
 
     private func hasActiveProjectOwner(_ projectID: UUID, excluding connectionID: UUID) -> Bool {
@@ -322,6 +318,7 @@ final class MobileLibrary {
         var nextConnections = connections
         nextConnections[index] = revoked
         var failures: [String] = []
+        authorizationGenerations.invalidate(connectionID: revoked.connectionID)
         do {
             try connectionStore.save(nextConnections)
         } catch {

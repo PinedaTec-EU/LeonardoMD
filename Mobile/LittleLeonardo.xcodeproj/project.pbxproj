@@ -20,6 +20,7 @@
 		FC0D3FAC5AD74CCF9D75A451 /* MobileRecoveryDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70CAB6D3C2D948039788E971 /* MobileRecoveryDocument.swift */; };
 		A342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift */; };
 		B4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift */; };
+		B4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,6 +45,7 @@
 		70CAB6D3C2D948039788E971 /* MobileRecoveryDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRecoveryDocument.swift; sourceTree = "<group>"; };
 		B342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRubricCaptureView.swift; sourceTree = "<group>"; };
 		C4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileDirectConnectionStore.swift; sourceTree = "<group>"; };
+		C4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileDirectAuthorization.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -123,6 +125,7 @@
 				EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */,
 				B342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift */,
 				C4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift */,
+				C4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift */,
 			);
 			name = LittleLeonardo;
 			path = LittleLeonardo;
@@ -233,6 +236,7 @@
 				DA52AFC54A29A9980B0601CC /* MobileQRScanner.swift in Sources */,
 				A342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift in Sources */,
 				B4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift in Sources */,
+				B4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
