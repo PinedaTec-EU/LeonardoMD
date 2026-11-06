@@ -1,0 +1,26 @@
+# On-demand synchronization validation
+
+Tracking: [#384](https://github.com/PinedaTec-EU/LeonardoMD/issues/384), [PR #385](https://github.com/PinedaTec-EU/LeonardoMD/pull/385).
+
+## Automated checks
+
+- Full macOS `swift test`: 704 XCTest checks, 35 opt-in/platform skips, zero failures. Compiler invocation is recorded in PR #385's own ledger entry.
+- Final focused checks: catalogue authority, 1,000-file metadata index, LRU eviction, separate retention/cleanup, restart, future folder descendants/child exclusions, image dependencies, stale retained fallback, late-download revocation, empty folders/symlink exclusion, controller interval and bilingual bundled help. Zero failures.
+- iOS simulator generic build succeeds with signing disabled. This proves compilation, not physical-device transport, installation or background execution.
+- Deterministic user-guide packaging: three Python checks pass. Guide v19 and personal-copy namespace advance together; previous user copies remain untouched.
+
+## Native component evidence
+
+`downloads-en.png` and `downloads-es.png` capture the actual shared SwiftUI components using a synthetic project. They show independently accounted temporary/offline bytes, the configurable temporary limit, cleanup, retained-folder management, cached/remote files, complete offline files, a partially retained project, and an interrupted retained folder. The context/metadata files bind original PNG bytes, dimensions, capture time and source. Native viewport: 1180 × 640 points; bitmap: 2360 × 1280 pixels. These are component captures, not packaged-process or physical synchronization acceptance.
+
+Source for final component captures and packaged QA compilation: `278fa8f5df3102c4cf48b932cc8ba9937dbdd9f2`. Later evidence and compilation-ledger-only commits must be mapped to this source explicitly; they do not change product/build inputs.
+
+## Packaged native acceptance
+
+The owner's saved instance was closed with explicit permission. The repository's `./launch.sh --qa` built and verified the real executable, dependencies, signatures and helper before launching a fresh process. Final fresh PID: 16394; QA bundle: `eu.pinedatec.LeonardoMD.qa` with the unique suffix recorded by the bundle metadata. Baseline display version: 0.3.1022; this source PR does not materialize or publish a new version.
+
+**Pending:** real preferences interaction, both Help locales, live Mermaid/math/charts/images/tables, Math-disabled fallback and practice open/fill/save/reopen in the final packaged process. Computer Use reported that the Mac was locked and required manual owner unlock. Component/XCTest evidence does not replace this acceptance.
+
+An earlier QA attempt exposed the same stale personal help-copy signature as [#378](https://github.com/PinedaTec-EU/LeonardoMD/issues/378): the bundle contained updated v18 help but an existing personal v18 copy contained older content. That attempt is not accepted help validation. This PR uses unused v19 and must compare the actual Help working copy with the bundle during final acceptance.
+
+No real device pairing, source sharing, helper registration, release publication or proposal acceptance was performed for these fixtures. Source and receiving applications need the new catalogue/file endpoints; older sources do not silently fall back to bulk downloads.
