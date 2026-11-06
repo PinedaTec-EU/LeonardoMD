@@ -172,7 +172,10 @@
             trust: false
           });
           span.innerHTML = window.DOMPurify.sanitize(rendered, {
-            USE_PROFILES: { html: true, mathMl: true },
+            USE_PROFILES: { html: true, mathMl: true, svg: true },
+            // Generated KaTeX geometry only; raw document SVG remains disallowed.
+            FORBID_TAGS: ["foreignobject", "image", "use", "animate", "set"],
+            FORBID_ATTR: ["href", "xlink:href", "src"],
             ADD_TAGS: ["math", "semantics", "mrow", "annotation"]
           });
         } catch (_) {
