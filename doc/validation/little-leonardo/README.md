@@ -21,7 +21,7 @@ Signed iPhone17ProMax Simulator, iOS26.5. `ios-git-integrated.png` and `ios-git-
 
 `ios-direct-revoked.png` comes from successful HTTPS/UI enrollment, read-only refresh, offline retention, retry and revocation acceptance on these final signed iOS sources (53.320 seconds UI, 53.364 seconds server). The capture shows Access withdrawn with Edit disabled, without an alert masking the state. An independent owned-container check confirms the project corpus and grant are absent. [Direct acceptance provenance](direct-acceptance.json) records results and source hashes. Final hosted CI and strict judgment must cover the delivered head.
 
-### #342 Mac-requested rubric capture
+### [#342](https://github.com/PinedaTec-EU/LeonardoMD/issues/342) Mac-requested rubric capture
 
 `ios-rubric-capture-es.png` is the Spanish iPhone18Pro/iOS27.0 Simulator
 sent-state capture; `ios-rubric-capture-es-drawing.png` and
@@ -35,6 +35,17 @@ native canvas, exercises undo/clear/preview, terminates and relaunches before
 Send to restore the unsent draft, then sends the frozen response; the fixture
 verifies the response received on the Mac. Exact capture, response, per-state
 hashes and source metadata are in [ios-rubric-capture-es.json](ios-rubric-capture-es.json).
+
+The same source checkpoint also passes the two corrective native regressions:
+`PairingUITests/testMacRequestedRubricCaptureLostAcknowledgementReconcilesAfterRelaunch()`
+holds a real committed response behind a 503 gate through termination/relaunch,
+then reconciles the same request ID after the gate opens; and
+`PairingUITests/testGrantedReaderAndUnsentRubricBlocksAfterForegroundRevocation()`
+keeps the accepted drawing visible but unsendable after foreground revocation,
+purges the exact direct reader cache, and preserves the unrelated `QA · Markdown`
+and legacy `QA · Recovery` corpora. The final result paths, fixture roots and
+JSON evidence hashes are recorded in the sidecar; these are simulator-only
+checks, not physical-device or production-network claims.
 
 This is capture-only: it does not grant document access or editing, and does
 not claim physical-device networking, App Store/TestFlight distribution or a

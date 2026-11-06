@@ -1,9 +1,18 @@
 {
   "source": "Native Little Leonardo UI test with an owned Mac HTTPS fixture",
-  "source_sha": "3ff2195641589da70b856141209a418df9eb673a",
-  "captured_at": "2026-11-06T00:49:43+01:00",
+  "source_sha": "44fe550681fa79f10b40a999f49c1a193d0a2184",
+  "captured_at": "2026-11-06T02:30:33.027+01:00",
   "locale": "es",
-  "state": "Accepted Mac request, finger drawing, undo/clear/preview, restart restore, explicit send and Mac receipt; guide image is the resized sent-state derivative, with full drawing and preview states in validation",
+  "state": "Accepted Mac request, native finger drawing, undo/clear/preview, restart restore, explicit send and Mac receipt; guide image is the resized sent-state derivative, with full drawing and preview states retained in validation",
   "simulator": "LittleLeonardo Rubric342 QA 20261105 / iPhone18Pro / iOS 27.0 / A5A73B11-EE27-40AC-ABAB-CADF1B85143B",
+  "viewport_points": { "width": 402, "height": 874 },
+  "browser": null,
+  "asset_mapping": {
+    "guide_asset": "doc/guide/es/assets/ios-rubric-capture-es.png",
+    "validation_sent": "doc/validation/little-leonardo/ios-rubric-capture-es.png",
+    "validation_drawing": "doc/validation/little-leonardo/ios-rubric-capture-es-drawing.png",
+    "validation_preview": "doc/validation/little-leonardo/ios-rubric-capture-es-preview.png"
+  },
+  "metadata_helper_limit": "The shared capture_metadata.py helper is browser-only and requires CSS/browser fields; native evidence uses observed viewport points instead.",
   "limitations": "Capture-only synthetic fixture; no physical device, production network, App Store/TestFlight or document grant"
 }

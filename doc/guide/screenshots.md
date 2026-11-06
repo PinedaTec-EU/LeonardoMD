@@ -15,7 +15,7 @@ provenance is recorded in each locale’s `assets/illustrations.provenance.json`
 | `en/es/assets/updates.png` | `e457e86` | Actual update preferences; synthetic installed version, stable subscription, fake transport |
 | `en/es/assets/activation.png` | `b8900bf` | Actual global activation dialog, synthetic source; copied byte-for-byte from `doc/validation/extension-recommendations/current/dialog-<locale>-global.png` |
 | `en/es/assets/warnings.png` | `b8900bf` | Actual extension preferences/reset; copied byte-for-byte from `doc/validation/extension-recommendations/current/reset-<locale>.png` |
-| `es/assets/ios-rubric-capture-es.png` | `3ff2195`, `PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS()` | Spanish iPhone18Pro/iOS27.0 Simulator sent-state derivative; full drawing and preview states are retained under `doc/validation/little-leonardo/`; capture-only, no document grant |
+| `es/assets/ios-rubric-capture-es.png` | `44fe550681fa79f10b40a999f49c1a193d0a2184`, `PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS()` | Spanish iPhone18Pro/iOS27.0 Simulator sent-state derivative; full drawing and preview states are retained under `doc/validation/little-leonardo/`; capture-only, no document grant |
 
 Full capture revisions:
 - `f1ecf7b`: `0bc5a737bbbb8e38407a079c70b34cb896aa3064`.
@@ -40,7 +40,7 @@ and `previous-guide/`. Keep the actual original capture revision when reusing
 an unchanged component; do not attribute an older capture to changed UI.
 For changed UI, recapture and replace both locales with new canonical metadata.
 
-The #342 mobile capture is also preserved in
+The [#342](https://github.com/PinedaTec-EU/LeonardoMD/issues/342) mobile capture is also preserved in
 `doc/validation/little-leonardo/ios-rubric-capture-es.png`; the adjacent JSON
 sidecars record the exact source/test and SHA-256 values. Its response bytes are
 recorded separately from the screenshot. The Mac side is a synthetic owned

@@ -599,9 +599,9 @@ con una acción clara.
 ### Responder a una solicitud de rúbrica en iOS
 
 Este es un canal de respuesta **solo para capturar**, dirigido a un Mac
-conocido y enlazado. Aprobar el emparejamiento puede añadir la capacidad
-opcional `rubricExchangeV1` a un dispositivo móvil de solo lectura ya
-enlazado, pero no concede documentos, proyectos, carpetas, Git ni permisos de
+conocido y enlazado. Aprobar el emparejamiento puede habilitar la capacidad
+compatible para crear y devolver rúbricas en un dispositivo móvil de solo
+lectura ya enlazado, pero no concede documentos, proyectos, carpetas, Git ni permisos de
 escritura. La navegación de solo lectura y las copias sin conexión conservan su
 funcionamiento. Un Mac antiguo que no entiende los campos opcionales sigue
 leyendo el estado normal del servidor y puede mantener el flujo de lector.
@@ -633,6 +633,15 @@ recupera la etiqueta y los trazos no enviados desde un borrador local durable.
 Después de **Enviar**, la respuesta queda congelada: deshacer o limpiar ya no
 pueden modificar el payload pendiente; un fallo transitorio conserva ese mismo
 payload para **Reintentar**.
+Si el Mac puede haber aceptado **Enviar** pero se perdió la confirmación, cierra
+y vuelve a abrir Little Leonardo: la tarjeta de recuperación conserva el mismo
+dibujo, etiqueta y petición para **Reintentar**. No aceptes una segunda
+petición ni vuelvas a dibujar. Si se revoca el vínculo de captura, el dibujo
+aceptado sigue visible para recuperarlo, pero **Enviar** queda bloqueado.
+Vuelve a enlazar y aprobar el Mac y crea una solicitud de rúbrica nueva; un
+borrador revocado nunca se reutiliza en silencio. La revocación también elimina
+la caché lectora directa de ese proyecto, pero conserva las copias sin conexión
+no relacionadas y las heredadas.
 
 ![Solicitud de Little Leonardo en español tras una captura HTTPS real en simulador; se acepta, dibuja, previsualiza y envía la petición del Mac.](assets/ios-rubric-capture-es.png)
 

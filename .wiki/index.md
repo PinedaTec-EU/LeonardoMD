@@ -23,5 +23,5 @@ Read [current state](current-state.md), then the relevant source target. Human p
 - [Optional document extensions](document-extensions.md)
 
 - [Page objects and visual rubrics](page-objects.md)
-- [macOS rubric capture](rubric-capture.md) — owner-side helper/XPC request, review, safe save and document identity guard for #341.
+- [macOS rubric capture](rubric-capture.md) — owner-side helper/XPC request, review, safe save and document identity guard for [#341](https://github.com/PinedaTec-EU/LeonardoMD/issues/341).
 - [Rubric exchange protocol](../doc/mobile/rubric-exchange.md) — authenticated, targeted Mac↔iOS rubric requests, capture-only mobile response flow and durable retry boundaries; physical distribution remains separate.

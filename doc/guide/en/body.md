@@ -587,8 +587,8 @@ offline/unsupported state.
 ### Answer a rubric request on iOS
 
 This is a capture-only response channel for a **known, linked Mac**. Pairing
-approval may add the optional `rubricExchangeV1` capability to an already
-linked read-only mobile device, but it does not grant a document, project,
+approval may enable the compatible capability for creating and returning a
+rubric on an already linked read-only mobile device, but it does not grant a document, project,
 folder, Git or write permission. Your existing read-only navigation and offline
 copies remain unchanged. A legacy Mac that does not understand the optional
 capability fields continues to decode the normal server status and can keep
@@ -619,6 +619,14 @@ You may close and reopen the card before **Send**. Little Leonardo restores the
 label and unsent strokes from its local durable draft. Once **Send** has frozen
 the response, later undo/clear actions cannot mutate the pending payload; a
 transient network failure keeps that exact payload available for **Retry**.
+If the Mac may have committed **Send** but its acknowledgement was lost, close
+and relaunch Little Leonardo: the recovery card keeps the same drawing, label
+and request available for **Retry**. Do not accept a second request or redraw.
+If the capture link was revoked, the accepted drawing remains visible for
+recovery but **Send** is blocked. Reconnect and approve the Mac again, then
+create a new rubric request; a revoked draft is never silently reused. The
+revocation also removes that project's direct reader cache while unrelated and
+legacy offline copies remain available.
 
 The Spanish guide includes a real simulator capture of this flow. It is not
 evidence of a physical device, App Store/TestFlight distribution or a document

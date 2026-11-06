@@ -47,7 +47,7 @@ owner-side Mac flow on top of the authenticated exchange in
   completion; the focused `RubricCaptureTests` covers restart/idempotence and
   this monotonic lifecycle rule.
 
-## iOS response channel (#342)
+## iOS response channel ([#342](https://github.com/PinedaTec-EU/LeonardoMD/issues/342))
 
 The linked Little Leonardo companion remains read-only for documents. A mobile
 device may additionally be approved with the optional `rubricExchangeV1`
