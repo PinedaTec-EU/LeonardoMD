@@ -25,7 +25,7 @@
     "Real executable with packaged resources/dependencies; no XCTest linkage",
     "Both guides opened through native Help menu; candidate/bundled/personal archive identities match",
     "Complete underbrace, radical, extensible arrow, cancellation stroke and equation tag in both locales",
-    "Outline selects the actual heading; repeated selection returns after scrolling; Split preview retains destination",
+    "Outline selects the actual heading; repeated selection and Split preview retain destination; after-scroll repetition is covered by the exact-source native regression test",
     "Math disabled in each locale preserves literal source; enable recommendation dismissed without persistent suppression; original Math=true restored",
     "Both practices filled with fictitious data, saved, closed, reopened and verified; original blank names restored and saved",
     "Original English interface restored; Leonardo Classic/Parchment and other preferences left as observed"
@@ -34,5 +34,8 @@
   "separate_findings": {
     "378": "Concurrent QA working-copy collision; guide18 and content-identity verification are a bounded workaround; general isolation remains open",
     "379": "Long tagged formula overlap in a narrow Split pane; Preview/wider window workaround; no layout stylesheet change in this PR"
-  }
+  },
+  "validation_limits": [
+    "Native wheel injection returned windowNotFoundAtPosition; no manual wheel acceptance is claimed."
+  ]
 }

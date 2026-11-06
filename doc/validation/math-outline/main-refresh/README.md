@@ -1,4 +1,6 @@
-# Current candidate after main refresh
+# Historical candidate after main refresh (superseded)
+
+Current acceptance is recorded in [../scroll-feedback/README.md](../scroll-feedback/README.md). This candidate predates the delayed-scroll correction and is retained as historical evidence.
 
 Tracking [PR #377](https://github.com/PinedaTec-EU/LeonardoMD/pull/377), [#274](https://github.com/PinedaTec-EU/LeonardoMD/issues/274), [#364](https://github.com/PinedaTec-EU/LeonardoMD/issues/364).
 
