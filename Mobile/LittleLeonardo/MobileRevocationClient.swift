@@ -60,9 +60,9 @@ struct MobileRevocationClient: Sendable {
         _ connection: MobileDirectConnection,
         token: MobileConnectionToken,
         credentials: any DeviceCredentialStore,
-        isCurrent: () -> Bool,
-        onDenied: (MobileRevocationTicket) async -> Void,
-        operation: (MobileAuthenticatedContext) async throws -> T,
+        isCurrent: @escaping @Sendable () -> Bool,
+        onDenied: @escaping @Sendable (MobileRevocationTicket) async -> Void,
+        operation: @escaping @Sendable (MobileAuthenticatedContext) async throws -> T,
         status: @escaping @Sendable (DirectEnrollmentClient, UUID, String) async throws -> DirectDeviceStatus = {
             client, deviceID, credential in
             try await client.status(deviceID: deviceID, credential: credential)
