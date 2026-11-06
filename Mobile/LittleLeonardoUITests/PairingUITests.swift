@@ -433,6 +433,46 @@ final class PairingUITests: XCTestCase {
         try advanceDirectFixture("finish")
     }
 
+    @MainActor func testInheritedRevocationMarkerQuarantinesCacheUntilStatus() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["LEONARDO_DIRECT_RUBRIC_QA"] == "1",
+              environment["LEONARDO_MOBILE_RUBRIC_QA_MODE"] == "revocation-uncertainty-revalidation",
+              let port = environment["LEONARDO_DIRECT_QA_PORT"], UInt16(port) != nil,
+              environment["LEONARDO_DIRECT_QA_PHASE_FILE"] != nil else {
+            throw XCTSkip("Requires the inherited revocation-marker fixture")
+        }
+        let app = XCUIApplication()
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        requestManualConnection(app, port: port)
+        let code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
+        XCTAssertTrue(code.waitForExistence(timeout: 20))
+        try advanceDirectFixture("approve")
+        app.buttons["Sincronizar"].firstMatch.tap()
+        let project = app.staticTexts["QA · Revocation marker"].firstMatch
+        XCTAssertTrue(project.waitForExistence(timeout: 30))
+
+        // The host writes an old-session uncertainty marker after the cache is
+        // known to exist. Relaunch must hide that cache before any body route.
+        try advanceDirectFixture("arm-revocation-marker")
+        app.terminate()
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        XCTAssertFalse(project.waitForExistence(timeout: 8),
+                       "An inherited marker must quarantine the direct cache after relaunch")
+
+        // Only authenticated STATUS may clear the marker and restore the
+        // authorized cache; no frozen rubric/project body is sent first.
+        app.buttons["Sincronizar"].firstMatch.tap()
+        XCTAssertTrue(project.waitForExistence(timeout: 30),
+                      "Authorized STATUS must revalidate and restore the quarantined cache")
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Inherited revocation marker revalidated by STATUS"
+        capture.lifetime = .keepAlways
+        add(capture)
+        try advanceDirectFixture("finish")
+    }
+
     @MainActor func testReconnectDuringRevocationPurgePreservesNewCache() throws {
         let environment = ProcessInfo.processInfo.environment
         guard environment["LEONARDO_DIRECT_RUBRIC_QA"] == "1",

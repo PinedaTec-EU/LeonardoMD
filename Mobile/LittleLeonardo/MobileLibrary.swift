@@ -15,12 +15,14 @@ final class MobileLibrary {
     private(set) var comparisonCode: String?
     private let store: OfflineCorpusStore
     private let connectionStore: MobileDirectConnectionStore
-    private let credentials = SecureCredentialStore()
+    private let credentials: any DeviceCredentialStore
+    private let revocationClient: MobileRevocationClient
     private let draftStore: MobileRubricDraftStore
+    private let rubricAcceptance: MobileRubricAcceptance
     private let now: @Sendable () -> Date
     private var connections: [MobileDirectConnection] = []
     private var rubricPolling = false
-    private var revocationInProgress = false
+    private var revocationsInProgress: Set<UUID> = []
     private let rubricDraftWrites = MobileSyncOperationQueue()
     private let cacheMutations = MobileSyncOperationQueue()
     private var pendingRubricDraftWrite: Task<Void, Error>?
@@ -36,15 +38,21 @@ final class MobileLibrary {
         let token: ConnectionToken
     }
 
-    init(now: @escaping @Sendable () -> Date = Date.init, rootURL: URL? = nil) {
+    init(now: @escaping @Sendable () -> Date = Date.init, rootURL: URL? = nil,
+         credentials: any DeviceCredentialStore = SecureCredentialStore(),
+         revocationJournal: (any MobileRevocationJournalStore)? = nil) {
         let root = rootURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("LittleLeonardo/Corpus", isDirectory: true)
         store = OfflineCorpusStore(root: root)
         connectionStore = MobileDirectConnectionStore(url: root.deletingLastPathComponent()
             .appendingPathComponent("connections.json"))
+        self.credentials = credentials
+        self.revocationClient = MobileRevocationClient(journal: revocationJournal ?? MobileRevocationJournal(
+            url: root.deletingLastPathComponent().appendingPathComponent("revocation-journal.json")))
         draftStore = MobileRubricDraftStore(url: root.deletingLastPathComponent()
             .appendingPathComponent("Rubrics/drafts.json"))
         self.now = now
+        rubricAcceptance = MobileRubricAcceptance(store: draftStore, clock: now)
     }
 
     private func token(for connection: MobileDirectConnection) -> ConnectionToken {
@@ -71,6 +79,7 @@ final class MobileLibrary {
     private func isCurrentAuthorization(_ token: ConnectionToken) -> Bool {
         authorizationGenerations[token.connectionID] == token.authorizationGeneration
             && hasCurrentIdentity(token)
+            && !authorizationGenerations.isDenied(connectionID: token.connectionID)
             && currentConnection(for: token)?.revoked == false
     }
 
@@ -94,6 +103,62 @@ final class MobileLibrary {
         cacheEpoch &+= 1
     }
 
+    private func applyAuthorizationBarriers(to values: [MobileDirectConnection]) -> [MobileDirectConnection] {
+        var protected = values
+        for index in protected.indices {
+            let connectionID = protected[index].connectionID
+            guard authorizationGenerations.isDenied(connectionID: connectionID) else { continue }
+            let previousProjects = protected[index].projectIDs
+            protected[index].capabilities = []
+            protected[index].projectIDs = []
+            protected[index].comparisonCode = nil
+            protected[index].revoked = true
+            protected[index].pendingPurgeProjectIDs.formUnion(previousProjects)
+            protected[index].pendingPurgeProjectIDs.formUnion(
+                authorizationGenerations.projectsPendingPurge(for: connectionID))
+        }
+        return protected
+    }
+
+    private func loadRevocationMarkers() throws -> [MobileRevocationMarker] {
+        try revocationClient.markers()
+    }
+
+    /// Performs the write-ahead preflight, authenticated STATUS revalidation,
+    /// and outcome recording around one connection operation. All callers that
+    /// can receive a revocation use this boundary, including rubric sends.
+    private func withAuthenticatedConnection<T>(
+        _ connection: MobileDirectConnection,
+        operation: (MobileAuthenticatedContext) async throws -> T
+    ) async throws -> T {
+        let token = self.token(for: connection)
+        let result = try await revocationClient.withAuthenticatedConnection(
+            connection, token: token, credentials: credentials,
+            isCurrent: { [weak self] in
+                guard let self else { return false }
+                return self.isCurrentAuthorization(token)
+            },
+            onDenied: { [weak self] ticket in
+                guard let self else { return }
+                guard self.hasCurrentIdentity(token),
+                      !self.authorizationGenerations.isDenied(connectionID: token.connectionID),
+                      !self.revocationsInProgress.contains(token.connectionID) else {
+                    self.finishDeniedTicket(ticket)
+                    return
+                }
+                await self.handleConfirmedRevocation(for: token, ticket: ticket,
+                                                     message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
+            },
+            operation: operation)
+        authorizationGenerations.clearQuarantine(connectionID: connection.connectionID)
+        return result
+    }
+
+    private func finishDeniedTicket(_ ticket: MobileRevocationTicket) {
+        do { try revocationClient.finish(ticket, outcome: .denied) }
+        catch { self.error = error.localizedDescription }
+    }
+
     private func commitConnection(_ connection: MobileDirectConnection,
                                   expected token: ConnectionToken) throws -> ConnectionToken? {
         guard isCurrentCacheOperation(token), let index = connectionIndex(for: token) else { return nil }
@@ -115,21 +180,47 @@ final class MobileLibrary {
         do {
             try await waitForPendingRubricDraftWrite()
             let storedConnections = try connectionStore.load()
-            let loadedConnections = try await connectionStore.reconcileMissingCredentials(storedConnections,
+            for connection in connections where connection.revoked {
+                authorizationGenerations.confirmDenied(
+                    connectionID: connection.connectionID,
+                    projectIDs: connection.projectIDs.union(connection.pendingPurgeProjectIDs))
+            }
+            let markers = try loadRevocationMarkers()
+            let recovery = MobileDirectConnectionStore.applyRevocationMarkers(markers, to: storedConnections)
+            for marker in markers where marker.state == .denied {
+                authorizationGenerations.confirmDenied(connectionID: marker.connectionID,
+                                                        projectIDs: marker.projectIDs)
+            }
+            for connectionID in recovery.quarantinedConnectionIDs {
+                authorizationGenerations.quarantine(connectionID: connectionID)
+            }
+            let barrierConnections = applyAuthorizationBarriers(to: recovery.connections)
+            let loadedConnections = try await connectionStore.reconcileMissingCredentials(barrierConnections,
                                                                                              credentials: credentials)
+            for connection in loadedConnections where connection.revoked {
+                authorizationGenerations.confirmDenied(
+                    connectionID: connection.connectionID,
+                    projectIDs: connection.projectIDs.union(connection.pendingPurgeProjectIDs))
+            }
+            let protectedConnections = applyAuthorizationBarriers(to: loadedConnections)
+            let visibleQuarantine = authorizationGenerations.quarantined
+                .subtracting(authorizationGenerations.denied)
             let repairedMissingCredential = storedConnections.count != loadedConnections.count
-                || zip(storedConnections, loadedConnections).contains { $0.0.hasChanges(from: $0.1) }
-            let loadedComparisonCode = loadedConnections.first(where: { $0.comparisonCode != nil })?.comparisonCode
+                || zip(storedConnections, protectedConnections).contains { $0.0.hasChanges(from: $0.1) }
+            let loadedComparisonCode = protectedConnections.first(where: { $0.comparisonCode != nil })?.comparisonCode
             let loadedDrafts = try await draftStore.all(now: now())
-            let loaded = try await connectionStore.loadVisibleProjects(connections: loadedConnections,
+            let loaded = try await connectionStore.loadVisibleProjects(connections: protectedConnections,
+                                                                         quarantinedConnectionIDs: visibleQuarantine,
                                                                          credentials: credentials, corpus: store)
             guard cacheEpoch == loadCacheEpoch, authorizationEpoch == loadAuthorizationEpoch else { return }
-            connections = loadedConnections
+            connections = protectedConnections
             comparisonCode = loadedComparisonCode
             recoverableRubricDrafts = loadedDrafts
             projects = loaded
-            if repairedMissingCredential {
-                do { try connectionStore.save(loadedConnections) }
+            let recoveredSnapshotChanged = storedConnections.count != protectedConnections.count
+                || zip(storedConnections, protectedConnections).contains { $0.0.hasChanges(from: $0.1) }
+            if repairedMissingCredential || recoveredSnapshotChanged {
+                do { try connectionStore.save(protectedConnections) }
                 catch { self.error = "No se pudo guardar la revocación recuperada: \(error.localizedDescription)" }
             }
             await retryPendingRevocationPurges()
@@ -197,61 +288,49 @@ final class MobileLibrary {
     }
 
     func synchronize() async {
-        guard !connecting, !revocationInProgress else { return }
+        guard !connecting else { return }
         connecting = true
         defer { connecting = false }
-        connectionLoop: for index in connections.indices {
-            var operationToken: ConnectionToken?
+        for index in connections.indices {
             do {
                 guard connections.indices.contains(index), !connections[index].revoked else { continue }
-                var connection = connections[index]
-                let token = token(for: connection)
-                operationToken = token
-                guard let credential = try await credentials.credential(deviceID: connection.deviceID) else { throw PairingError.invalidCredential }
-                let client = try DirectEnrollmentClient(endpoint: connection.endpoint, certificateFingerprint: connection.fingerprint)
-                var status = try await client.status(deviceID: connection.deviceID, credential: credential)
-                guard hasCurrentIdentity(token) else { continue }
-                if status.access == .pending { continue }
-                if status.access == .authorized {
-                    status = try await MobileDirectConnectionStore.refreshCapabilities(status,
-                        connection: &connection, client: client, credential: credential)
-                    guard isCurrentCacheOperation(token) else { continue }
-                } else {
-                    await handleConfirmedRevocation(for: token,
-                                                    message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
-                    continue
-                }
-                let granted = status.access == .authorized ? Set(status.projects.map(\.id)) : []
-                for id in granted {
-                    guard !projects.contains(where: { $0.id == id && $0.isRecoveryArchive }),
-                          !connections.enumerated().contains(where: { $0.offset != index && $0.element.projectIDs.contains(id) }) else {
-                        throw SyncError.invalidSnapshot
+                let original = connections[index]
+                try await withAuthenticatedConnection(original) { context in
+                    guard context.status.access == .authorized else { return }
+                    var connection = original
+                    let status = try await MobileDirectConnectionStore.refreshCapabilities(context.status,
+                        connection: &connection, client: context.client, credential: context.credential)
+                    guard isCurrentCacheOperation(context.token) else { return }
+                    let granted = Set(status.projects.map(\.id))
+                    for id in granted {
+                        guard !projects.contains(where: { $0.id == id && $0.isRecoveryArchive }),
+                              !connections.enumerated().contains(where: {
+                                  $0.offset != index && $0.element.projectIDs.contains(id)
+                              }) else {
+                            throw SyncError.invalidSnapshot
+                        }
+                    }
+                    let removals = connection.projectIDs.subtracting(granted)
+                    try await removeDirectProjects(removals, expected: context.token)
+                    guard isCurrentCacheOperation(context.token) else { return }
+                    connection.projectIDs = granted
+                    connection.comparisonCode = nil
+                    for descriptor in status.projects {
+                        guard isCurrentCacheOperation(context.token) else { return }
+                        let project = try await context.client.project(descriptor,
+                            deviceID: connection.deviceID, credential: context.credential)
+                        guard isCurrentCacheOperation(context.token),
+                              try await saveDirectProject(project, expected: context.token) else { return }
+                    }
+                    guard isCurrentCacheOperation(context.token) else { return }
+                    if let current = currentConnection(for: context.token), connection.hasChanges(from: current) {
+                        _ = try commitConnection(connection, expected: context.token)
                     }
                 }
-                let removals = connection.projectIDs.subtracting(granted)
-                try await removeDirectProjects(removals, expected: token)
-                guard isCurrentCacheOperation(token) else { continue }
-                connection.projectIDs = granted
-                connection.comparisonCode = nil
-                for descriptor in status.projects where status.access == .authorized {
-                    guard isCurrentCacheOperation(token) else { continue connectionLoop }
-                    let project = try await client.project(descriptor, deviceID: connection.deviceID, credential: credential)
-                    guard isCurrentCacheOperation(token),
-                          try await saveDirectProject(project, expected: token) else { continue connectionLoop }
-                }
-                guard isCurrentCacheOperation(token) else { continue }
-                if let current = currentConnection(for: token), connection.hasChanges(from: current) {
-                    guard try commitConnection(connection, expected: token) != nil else { continue }
-                }
             } catch SyncError.revoked {
-                if let operationToken {
-                    await handleConfirmedRevocation(for: operationToken,
-                                                    message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
-                }
+                continue
             } catch {
-                if let operationToken, hasCurrentIdentity(operationToken) {
-                    self.error = error.localizedDescription
-                }
+                self.error = error.localizedDescription
             }
         }
         comparisonCode = connections.first(where: { $0.comparisonCode != nil })?.comparisonCode
@@ -304,11 +383,13 @@ final class MobileLibrary {
         return try await mutation.value
     }
 
-    private func handleConfirmedRevocation(for token: ConnectionToken, message: String) async {
+    func handleConfirmedRevocation(for token: ConnectionToken,
+                                   ticket: MobileRevocationTicket?,
+                                   message: String) async {
         guard hasCurrentIdentity(token), let index = connectionIndex(for: token) else { return }
-        guard !revocationInProgress else { return }
-        revocationInProgress = true
-        defer { revocationInProgress = false }
+        guard !revocationsInProgress.contains(token.connectionID) else { return }
+        revocationsInProgress.insert(token.connectionID)
+        defer { revocationsInProgress.remove(token.connectionID) }
         let previous = connections[index]
         var revoked = previous
         revoked.capabilities = []
@@ -319,7 +400,17 @@ final class MobileLibrary {
         var nextConnections = connections
         nextConnections[index] = revoked
         var failures: [String] = []
-        authorizationGenerations.invalidate(connectionID: revoked.connectionID)
+        authorizationGenerations.confirmDenied(connectionID: revoked.connectionID,
+                                                projectIDs: previous.projectIDs)
+        do {
+            if let ticket {
+                try revocationClient.finish(ticket, outcome: .denied)
+            } else {
+                try revocationClient.recordDenied(for: revoked)
+            }
+        } catch {
+            failures.append("No se pudo registrar el bloqueo durable del vínculo: \(error.localizedDescription)")
+        }
         do {
             try connectionStore.save(nextConnections)
         } catch {
@@ -430,54 +521,42 @@ final class MobileLibrary {
         // synchronizer. A status response can confirm revocation while a
         // synchronize call is waiting for a project response; the cache epoch
         // and identity checks below discard that stale synchronize continuation.
-        guard !rubricPolling, !revocationInProgress else { return }
+        guard !rubricPolling else { return }
         rubricPolling = true
         defer { rubricPolling = false }
         var found: [RubricRequest] = []
         for index in connections.indices {
-            var operationToken: ConnectionToken?
             do {
                 guard connections.indices.contains(index), !connections[index].revoked else { continue }
-                var connection = connections[index]
-                var token = token(for: connection)
-                operationToken = token
-                guard let credential = try await credentials.credential(deviceID: connection.deviceID) else { continue }
-                let client = try DirectEnrollmentClient(endpoint: connection.endpoint,
-                                                         certificateFingerprint: connection.fingerprint)
-                let status = try await client.status(deviceID: connection.deviceID, credential: credential)
-                guard hasCurrentIdentity(token) else { continue }
-                guard status.access != .pending else { continue }
-                guard status.access == .authorized else {
-                    await handleConfirmedRevocation(for: token,
-                                                    message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
-                    continue
+                let original = connections[index]
+                try await withAuthenticatedConnection(original) { context in
+                    guard context.status.access == .authorized else { return }
+                    var connection = original
+                    let previous = connection
+                    _ = try await MobileDirectConnectionStore.refreshCapabilities(context.status,
+                        connection: &connection, client: context.client, credential: context.credential)
+                    guard isCurrentCacheOperation(context.token) else { return }
+                    var requestToken = context.token
+                    if connection.hasChanges(from: previous) {
+                        guard let committed = try commitConnection(connection, expected: context.token) else { return }
+                        requestToken = committed
+                    }
+                    guard connection.capabilities.contains(.rubricExchangeV1) else { return }
+                    let requests = try await context.client.rubricRequests(deviceID: connection.deviceID,
+                                                                             credential: context.credential)
+                    guard isCurrentCacheOperation(requestToken) else { return }
+                    let verifiedRequester = DirectSyncAuthority.requesterID(for: connection.fingerprint)
+                    found.append(contentsOf: requests.filter {
+                        $0.targetDeviceID == connection.deviceID
+                            && $0.requesterID == verifiedRequester
+                            && $0.capability == .rubricExchangeV1
+                            && [.pending, .accepted].contains($0.state)
+                    })
                 }
-                let previous = connection
-                _ = try await MobileDirectConnectionStore.refreshCapabilities(status,
-                    connection: &connection, client: client, credential: credential)
-                guard isCurrentCacheOperation(token) else { continue }
-                if connection.hasChanges(from: previous) {
-                    guard let committed = try commitConnection(connection, expected: token) else { continue }
-                    token = committed
-                    operationToken = token
-                }
-                if connection.capabilities.isEmpty { continue }
-                let requests = try await client.rubricRequests(deviceID: connection.deviceID, credential: credential)
-                guard isCurrentCacheOperation(token) else { continue }
-                let verifiedRequester = DirectSyncAuthority.requesterID(for: connection.fingerprint)
-                found.append(contentsOf: requests.filter {
-                    $0.targetDeviceID == connection.deviceID
-                        && $0.requesterID == verifiedRequester
-                        && $0.capability == .rubricExchangeV1
-                        && [.pending, .accepted].contains($0.state)
-                })
             } catch RubricExchangeError.unsupported {
                 continue
             } catch SyncError.revoked {
-                if let operationToken {
-                    await handleConfirmedRevocation(for: operationToken,
-                                                    message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
-                }
+                continue
             } catch {
                 // A foreground poll must not interrupt document navigation or
                 // replace a durable drawing because a Mac is temporarily down.
@@ -491,41 +570,53 @@ final class MobileLibrary {
     }
 
     func acceptRubricRequest(_ request: RubricRequest) async throws -> RubricRequest {
-        let context = try await rubricContext(for: request)
-        let accepted = try await context.client.acceptRubricRequest(requestID: request.id,
-            deviceID: context.connection.deviceID, credential: context.credential)
-        try validateRubricContext(context.token)
-        let draft = MobileRubricDraft(id: accepted.id, connectionID: context.connection.connectionID,
-            targetDeviceID: accepted.targetDeviceID, requesterID: accepted.requesterID,
-            sourceFingerprint: context.connection.fingerprint, request: accepted,
-            state: .accepted, updatedAt: now())
-        let acceptContextToken = context.token
-        let draftWrite = rubricDraftWrites.enqueue { [weak self] in
-            guard let self else { throw RubricExchangeError.storageFailure }
-            guard self.isCurrentAuthorization(acceptContextToken) else { throw SyncError.revoked }
-            try await self.draftStore.save(draft)
-            guard self.isCurrentAuthorization(acceptContextToken) else { throw SyncError.revoked }
+        if let existing = rubricDraft(requestID: request.id),
+           [.accepted, .pendingSend, .submitted].contains(existing.state) {
+            return existing.request
         }
-        try await draftWrite.value
-        await refreshDrafts()
-        pendingRubricRequests.removeAll { $0.id == accepted.id }
-        return accepted
+        guard let connection = connections.first(where: { $0.deviceID == request.targetDeviceID }) else {
+            throw RubricExchangeError.unsupported
+        }
+        return try await withRubricContext(for: request) { context in
+            let intent = MobileRubricDraft(id: request.id, connectionID: connection.connectionID,
+                targetDeviceID: request.targetDeviceID, requesterID: request.requesterID,
+                sourceFingerprint: connection.fingerprint, request: request,
+                state: .pendingAcceptance, updatedAt: now())
+            do {
+                let accepted = try await rubricAcceptance.accept(intent) { pending in
+                    let accepted = try await context.client.acceptRubricRequest(requestID: pending.id,
+                        deviceID: context.connection.deviceID, credential: context.credential)
+                    try validateRubricContext(context.token)
+                    return accepted
+                }
+                await refreshDrafts()
+                pendingRubricRequests.removeAll { $0.id == accepted.id }
+                return accepted.request
+            } catch {
+                if isTerminalRubricFailure(error) {
+                    await blockRubricDraft(requestID: request.id,
+                                           message: "La solicitud ya no admite aceptación; pide una nueva solicitud.")
+                }
+                throw error
+            }
+        }
     }
 
     func rejectRubricRequest(_ request: RubricRequest) async throws {
-        let context = try await rubricContext(for: request)
-        _ = try await context.client.rejectRubricRequest(requestID: request.id,
-            deviceID: context.connection.deviceID, credential: context.credential)
-        try validateRubricContext(context.token)
-        let rejectContextToken = context.token
-        let draftRemoval = rubricDraftWrites.enqueue { [weak self] in
-            guard let self else { throw RubricExchangeError.storageFailure }
-            guard self.isCurrentAuthorization(rejectContextToken) else { throw SyncError.revoked }
-            try await self.draftStore.remove(id: request.id)
+        try await withRubricContext(for: request) { context in
+            _ = try await context.client.rejectRubricRequest(requestID: request.id,
+                deviceID: context.connection.deviceID, credential: context.credential)
+            try validateRubricContext(context.token)
+            let rejectContextToken = context.token
+            let draftRemoval = rubricDraftWrites.enqueue { [weak self] in
+                guard let self else { throw RubricExchangeError.storageFailure }
+                guard self.isCurrentAuthorization(rejectContextToken) else { throw SyncError.revoked }
+                try await self.draftStore.remove(id: request.id)
+            }
+            try await draftRemoval.value
+            await refreshDrafts()
+            pendingRubricRequests.removeAll { $0.id == request.id }
         }
-        try await draftRemoval.value
-        await refreshDrafts()
-        pendingRubricRequests.removeAll { $0.id == request.id }
     }
 
     func submitRubric(request: RubricRequest, label: String, rubric: LeonardoRubric) async throws -> RubricResponse {
@@ -543,9 +634,8 @@ final class MobileLibrary {
                 return try await submitFrozenDraft(draft)
             }
         }
-        let context: RubricContext
         do {
-            context = try await rubricContext(for: request)
+            try await withRubricContext(for: request) { _ in }
         } catch {
             if isTerminalRubricFailure(error) {
                 await blockRubricDraft(requestID: request.id,
@@ -553,19 +643,22 @@ final class MobileLibrary {
             }
             throw error
         }
+        guard let contextConnection = connections.first(where: { $0.deviceID == request.targetDeviceID }) else {
+            throw RubricExchangeError.unsupported
+        }
+        let contextToken = token(for: contextConnection)
         let response = try RubricResponse(requestID: request.id, targetDeviceID: request.targetDeviceID,
                                           requesterID: request.requesterID, label: label, rubric: rubric,
                                           submittedAt: now())
-        let draft = MobileRubricDraft(id: request.id, connectionID: context.connection.connectionID,
+        let draft = MobileRubricDraft(id: request.id, connectionID: contextConnection.connectionID,
             targetDeviceID: request.targetDeviceID, requesterID: request.requesterID,
-            sourceFingerprint: context.connection.fingerprint, request: request, drawing: rubric,
+            sourceFingerprint: contextConnection.fingerprint, request: request, drawing: rubric,
             label: label, response: response,
             state: .pendingSend, updatedAt: now())
         // This write is deliberately before the first network byte.
-        let initialContextToken = context.token
         let initialWrite = rubricDraftWrites.enqueue { [weak self] in
             guard let self else { throw RubricExchangeError.storageFailure }
-            guard self.isCurrentAuthorization(initialContextToken) else { throw SyncError.revoked }
+            guard self.isCurrentAuthorization(contextToken) else { throw SyncError.revoked }
             try await self.draftStore.save(draft)
         }
         try await initialWrite.value
@@ -610,40 +703,41 @@ final class MobileLibrary {
             // foreground poll can discover revocation and clear capabilities
             // before Retry; that terminal condition must persist `blocked`
             // instead of escaping before the durable outcome is recorded.
-            let context = try await rubricContext(for: pending.request)
-            try validateRubricContext(context.token)
-            guard context.connection.connectionID == pending.connectionID,
-                  context.connection.deviceID == pending.targetDeviceID,
-                  context.connection.fingerprint == pending.sourceFingerprint,
-                  response.requestID == pending.id,
-                  response.targetDeviceID == pending.targetDeviceID,
-                  response.requesterID == pending.requesterID else {
-                throw RubricExchangeError.conflict
-            }
-            let remoteSubmitted = try await context.client.submitRubricResponse(response,
-                deviceID: context.connection.deviceID, credential: context.credential)
-            guard remoteSubmitted == response else { throw RubricExchangeError.conflict }
-            try validateRubricContext(context.token)
-            let contextToken = context.token
-            let submittedWrite = rubricDraftWrites.enqueue { [weak self] in
-                guard let self, let latest = try await self.latestRubricDraft(requestID: pending.id) else {
-                    throw RubricExchangeError.notFound
-                }
-                guard latest.state != .blocked else { throw SyncError.revoked }
-                if latest.state == .submitted, let existing = latest.response { return existing }
-                guard latest.state == .pendingSend, latest.response == response else {
+            return try await withRubricContext(for: pending.request) { context in
+                try validateRubricContext(context.token)
+                guard context.connection.connectionID == pending.connectionID,
+                      context.connection.deviceID == pending.targetDeviceID,
+                      context.connection.fingerprint == pending.sourceFingerprint,
+                      response.requestID == pending.id,
+                      response.targetDeviceID == pending.targetDeviceID,
+                      response.requesterID == pending.requesterID else {
                     throw RubricExchangeError.conflict
                 }
-                guard self.isCurrentAuthorization(contextToken) else { throw SyncError.revoked }
-                try await self.draftStore.save(latest.with(response: response, state: .submitted,
-                                                            updatedAt: self.now()))
-                guard self.isCurrentAuthorization(contextToken) else { throw SyncError.revoked }
-                return response
+                let remoteSubmitted = try await context.client.submitRubricResponse(response,
+                    deviceID: context.connection.deviceID, credential: context.credential)
+                guard remoteSubmitted == response else { throw RubricExchangeError.conflict }
+                try validateRubricContext(context.token)
+                let contextToken = context.token
+                let submittedWrite = rubricDraftWrites.enqueue { [weak self] in
+                    guard let self, let latest = try await self.latestRubricDraft(requestID: pending.id) else {
+                        throw RubricExchangeError.notFound
+                    }
+                    guard latest.state != .blocked else { throw SyncError.revoked }
+                    if latest.state == .submitted, let existing = latest.response { return existing }
+                    guard latest.state == .pendingSend, latest.response == response else {
+                        throw RubricExchangeError.conflict
+                    }
+                    guard self.isCurrentAuthorization(contextToken) else { throw SyncError.revoked }
+                    try await self.draftStore.save(latest.with(response: response, state: .submitted,
+                                                                updatedAt: self.now()))
+                    guard self.isCurrentAuthorization(contextToken) else { throw SyncError.revoked }
+                    return response
+                }
+                let submitted = try await submittedWrite.value
+                await refreshDrafts()
+                pendingRubricRequests.removeAll { $0.id == pending.id }
+                return submitted
             }
-            let submitted = try await submittedWrite.value
-            await refreshDrafts()
-            pendingRubricRequests.removeAll { $0.id == pending.id }
-            return submitted
         } catch {
             let blocked = isTerminalRubricFailure(error)
             let state: MobileRubricDraftState = blocked ? .blocked : .pendingSend
@@ -675,7 +769,7 @@ final class MobileLibrary {
     func blockRubricDraft(requestID: UUID, message: String) async {
         let write = rubricDraftWrites.enqueue { [weak self] in
             guard let self, let draft = try await self.latestRubricDraft(requestID: requestID),
-                  draft.state == .accepted || draft.state == .pendingSend else { return }
+                  draft.state == .pendingAcceptance || draft.state == .accepted || draft.state == .pendingSend else { return }
             try await self.draftStore.save(draft.with(state: .blocked, updatedAt: self.now(),
                                                       failureMessage: message))
             await self.refreshDrafts()
@@ -689,7 +783,7 @@ final class MobileLibrary {
             guard let self, let drafts = try? await self.draftStore.all(now: self.now()) else { return }
             for draft in drafts where draft.connectionID == connection.connectionID
                 && draft.targetDeviceID == connection.deviceID
-                && (draft.state == .accepted || draft.state == .pendingSend) {
+                && (draft.state == .pendingAcceptance || draft.state == .accepted || draft.state == .pendingSend) {
                 try await self.draftStore.save(draft.with(state: .blocked, updatedAt: self.now(),
                                                           failureMessage: message))
             }
@@ -705,6 +799,34 @@ final class MobileLibrary {
     private func reconcileRubricDrafts() async {
         try? await waitForPendingRubricDraftWrite()
         guard let drafts = try? await draftStore.all(now: now()) else { return }
+        for draft in drafts where draft.state == .pendingAcceptance {
+            guard connections.contains(where: {
+                $0.connectionID == draft.connectionID && $0.deviceID == draft.targetDeviceID
+                    && $0.fingerprint == draft.sourceFingerprint
+            }) else { continue }
+            do {
+                try await withRubricContext(for: draft.request) { context in
+                    _ = try await rubricAcceptance.accept(draft) { pending in
+                        let accepted = try await context.client.acceptRubricRequest(requestID: pending.id,
+                            deviceID: context.connection.deviceID, credential: context.credential)
+                        try validateRubricContext(context.token)
+                        return accepted
+                    }
+                }
+                pendingRubricRequests.removeAll { $0.id == draft.id }
+            } catch SyncError.revoked {
+                await blockRubricDraft(requestID: draft.id,
+                                       message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
+            } catch {
+                if isTerminalRubricFailure(error) {
+                    await blockRubricDraft(requestID: draft.id,
+                                           message: "La solicitud ya no admite aceptación; pide una nueva solicitud.")
+                }
+                // Offline and storage failures retain pendingAcceptance for a
+                // later retry; no response body has been sent yet.
+                continue
+            }
+        }
         for draft in drafts where draft.state == .pendingSend {
             guard let connection = connections.first(where: {
                 $0.connectionID == draft.connectionID && $0.deviceID == draft.targetDeviceID
@@ -713,37 +835,29 @@ final class MobileLibrary {
             let token = token(for: connection)
             guard let response = draft.response else { continue }
             do {
-                guard let credential = try await credentials.credential(deviceID: connection.deviceID) else { continue }
-                let client = try DirectEnrollmentClient(endpoint: connection.endpoint,
-                                                         certificateFingerprint: connection.fingerprint)
-                try validateRubricContext(token)
-                // The response POST is authenticated, idempotent and returns
-                // the durable Mac copy. Replaying these exact frozen bytes is
-                // the V1-compatible lost-ack reconciliation path.
-                let submitted = try await client.submitRubricResponse(response,
-                    deviceID: connection.deviceID, credential: credential)
-                guard submitted == response else {
-                    await blockRubricDraft(requestID: draft.id,
-                                           message: "La respuesta remota no coincide con el envío congelado.")
-                    continue
-                }
-                try validateRubricContext(token)
-                do {
+                try await withRubricContext(for: draft.request) { context in
+                    try validateRubricContext(token)
+                    // The response POST is authenticated, idempotent and returns
+                    // the durable Mac copy. Replaying these exact frozen bytes is
+                    // the V1-compatible lost-ack reconciliation path.
+                    let submitted = try await context.client.submitRubricResponse(response,
+                        deviceID: context.connection.deviceID, credential: context.credential)
+                    guard submitted == response else {
+                        await blockRubricDraft(requestID: draft.id,
+                                               message: "La respuesta remota no coincide con el envío congelado.")
+                        return
+                    }
+                    try validateRubricContext(context.token)
                     let submittedWrite = rubricDraftWrites.enqueue { [weak self] in
                         guard let self, let latest = try await self.latestRubricDraft(requestID: draft.id) else { return }
                         guard latest.state != .blocked else { throw SyncError.revoked }
                         guard latest.state == .pendingSend, latest.response == response else { return }
-                        guard self.isCurrentAuthorization(token) else { throw SyncError.revoked }
+                        guard self.isCurrentAuthorization(context.token) else { throw SyncError.revoked }
                         try await self.draftStore.save(latest.with(response: response, state: .submitted,
                                                                     updatedAt: self.now()))
-                        guard self.isCurrentAuthorization(token) else { throw SyncError.revoked }
+                        guard self.isCurrentAuthorization(context.token) else { throw SyncError.revoked }
                     }
                     try await submittedWrite.value
-                } catch SyncError.revoked {
-                    await blockRubricDraft(requestID: draft.id,
-                                           message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
-                } catch {
-                    self.error = error.localizedDescription
                 }
             } catch SyncError.revoked {
                 await blockRubricDraft(requestID: draft.id,
@@ -764,20 +878,23 @@ final class MobileLibrary {
         await refreshDrafts()
     }
 
-    private func rubricContext(for request: RubricRequest) async throws -> RubricContext {
+    private func withRubricContext<T>(for request: RubricRequest,
+                                      operation: (RubricContext) async throws -> T) async throws -> T {
         guard let connection = connections.first(where: { $0.deviceID == request.targetDeviceID }),
-              connection.capabilities.contains(.rubricExchangeV1),
+              !connection.revoked,
+              !authorizationGenerations.isDenied(connectionID: connection.connectionID),
               request.requesterID == DirectSyncAuthority.requesterID(for: connection.fingerprint) else {
             throw RubricExchangeError.unsupported
         }
-        let token = token(for: connection)
-        guard let credential = try await credentials.credential(deviceID: connection.deviceID) else {
-            throw PairingError.invalidCredential
+        return try await withAuthenticatedConnection(connection) { context in
+            guard context.status.access == .authorized,
+                  context.connection.capabilities.contains(.rubricExchangeV1) else {
+                throw RubricExchangeError.unsupported
+            }
+            let rubric = RubricContext(connection: context.connection, credential: context.credential,
+                                       client: context.client, token: context.token)
+            return try await operation(rubric)
         }
-        let client = try DirectEnrollmentClient(endpoint: connection.endpoint,
-                                                 certificateFingerprint: connection.fingerprint)
-        try validateRubricContext(token)
-        return RubricContext(connection: connection, credential: credential, client: client, token: token)
     }
 
     private func validateRubricContext(_ token: ConnectionToken) throws {

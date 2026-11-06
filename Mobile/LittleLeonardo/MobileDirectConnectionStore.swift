@@ -72,6 +72,40 @@ struct MobileDirectConnectionStore {
         self.url = parent.appendingPathComponent(standardized.lastPathComponent)
     }
 
+    struct RevocationRecovery: Equatable {
+        let connections: [MobileDirectConnection]
+        let quarantinedConnectionIDs: Set<UUID>
+    }
+
+    /// Applies the independent write-ahead journal before ordinary connection
+    /// reconciliation. An uncertain marker quarantines only that link until a
+    /// fresh authenticated STATUS; a denied marker is an absorbing local deny.
+    static func applyRevocationMarkers(_ markers: [MobileRevocationMarker],
+                                       to stored: [MobileDirectConnection]) -> RevocationRecovery {
+        var connections = stored
+        var quarantined = Set<UUID>()
+        for marker in markers {
+            guard let index = connections.firstIndex(where: {
+                $0.connectionID == marker.connectionID
+                    && $0.deviceID == marker.deviceID
+                    && $0.fingerprint == marker.fingerprint
+            }) else { continue }
+            switch marker.state {
+            case .uncertain:
+                if !connections[index].revoked { quarantined.insert(marker.connectionID) }
+            case .denied:
+                let previousProjects = connections[index].projectIDs
+                connections[index].capabilities = []
+                connections[index].projectIDs = []
+                connections[index].comparisonCode = nil
+                connections[index].revoked = true
+                connections[index].pendingPurgeProjectIDs.formUnion(previousProjects)
+                connections[index].pendingPurgeProjectIDs.formUnion(marker.projectIDs)
+            }
+        }
+        return RevocationRecovery(connections: connections, quarantinedConnectionIDs: quarantined)
+    }
+
     static func refreshCapabilities(_ status: DirectDeviceStatus,
                                     connection: inout MobileDirectConnection,
                                     client: DirectEnrollmentClient,
@@ -126,12 +160,17 @@ struct MobileDirectConnectionStore {
     }
 
     func loadVisibleProjects(connections: [MobileDirectConnection],
+                             quarantinedConnectionIDs: Set<UUID> = [],
                              credentials: DeviceCredentialStore,
                              corpus: OfflineCorpusStore) async throws -> [OfflineProject] {
         var activeProjectIDs = Set<UUID>()
         var revokedProjectIDs = Set<UUID>()
         var unavailableProjectIDs = Set<UUID>()
         for connection in connections where !connection.revoked {
+            if quarantinedConnectionIDs.contains(connection.connectionID) {
+                unavailableProjectIDs.formUnion(connection.projectIDs)
+                continue
+            }
             guard try await credentials.credential(deviceID: connection.deviceID) != nil else {
                 unavailableProjectIDs.formUnion(connection.projectIDs)
                 continue

@@ -79,7 +79,8 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
         let mode = ProcessInfo.processInfo.environment["LEONARDO_MOBILE_RUBRIC_QA_MODE"] ?? "happy"
         guard ["happy", "lost-ack", "revoke-after-draw", "late-project-revoke",
                "enrollment-persist-failure", "capability-persist-failure",
-               "revocation-cache-delete-failure", "reconnect-during-purge"].contains(mode) else {
+               "revocation-cache-delete-failure", "reconnect-during-purge",
+               "revocation-uncertainty-revalidation"].contains(mode) else {
             throw SyncError.invalidPath
         }
         let root = URL(fileURLWithPath: path, isDirectory: true)
@@ -91,7 +92,8 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
         let file = sourceRoot.appendingPathComponent("docs/read.md")
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         let grantedProject = ["revoke-after-draw", "late-project-revoke",
-                              "revocation-cache-delete-failure", "reconnect-during-purge"].contains(mode)
+                              "revocation-cache-delete-failure", "reconnect-during-purge",
+                              "revocation-uncertainty-revalidation"].contains(mode)
         try Data((mode == "revoke-after-draw"
                   ? "# Granted rubric source\n\nReader cache must be removed after revocation.\n"
                   : mode == "late-project-revoke"
@@ -100,13 +102,17 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                       ? "# Revocation persistence source\n\nCache deletion failures must remain fail closed.\n"
                       : mode == "reconnect-during-purge"
                         ? "# Reconnect purge source\n\nA re-granted cache must survive stale cleanup.\n"
+                      : mode == "revocation-uncertainty-revalidation"
+                        ? "# Revocation marker source\n\nAn inherited uncertainty marker must quarantine this cache until STATUS.\n"
                     : "# Capture-only source\n").utf8).write(to: file)
         let selection = try CorpusSelection(folders: ["docs"], documents: [])
         let descriptor = SharedProjectDescriptor(id: UUID(),
             name: mode == "revoke-after-draw" ? "QA · Granted rubric"
                 : mode == "late-project-revoke" ? "QA · Delayed rubric"
                 : mode == "revocation-cache-delete-failure" ? "QA · Cache failure"
-                : mode == "reconnect-during-purge" ? "QA · Regrant purge" : "QA · Capture only",
+                : mode == "reconnect-during-purge" ? "QA · Regrant purge"
+                : mode == "revocation-uncertainty-revalidation" ? "QA · Revocation marker"
+                : "QA · Capture only",
             scope: try CorpusScope(folder: ""), selection: selection)
         let source = SharedProjectSource(descriptor: descriptor, rootURL: sourceRoot) {
             try await ProjectCorpusReader().snapshot(root: sourceRoot, selection: selection)
@@ -192,6 +198,9 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                     case "arm-reconnect-purge":
                         guard mode == "reconnect-during-purge", let purgeGate else { throw SyncError.invalidPath }
                         try await purgeGate.arm(projectID: descriptor.id, support: mobileAppSupport())
+                    case "arm-revocation-marker":
+                        guard mode == "revocation-uncertainty-revalidation" else { throw SyncError.invalidPath }
+                        try seedRevocationUncertaintyMarker(at: mobileAppSupport(), projectID: descriptor.id)
                     case "approve-regrant":
                         guard mode == "reconnect-during-purge" else { throw SyncError.invalidPath }
                         let registry = try await runtime.consentState()
@@ -245,6 +254,13 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                                            "projectID": descriptor.id.uuidString,
                                            "stalePurgeDidNotDeleteRegrant": true],
                                           to: root.appendingPathComponent("reconnect-during-purge.json"))
+                        } else if mode == "revocation-uncertainty-revalidation" {
+                            let journal = try mobileAppSupport().appendingPathComponent("revocation-journal.json")
+                            let markerCleared = !FileManager.default.fileExists(atPath: journal.path)
+                            XCTAssertTrue(markerCleared,
+                                          "An authorized STATUS must clear the inherited uncertainty marker")
+                            try writeJSON(["mode": mode, "markerClearedAfterStatus": markerCleared],
+                                          to: root.appendingPathComponent("revocation-uncertainty.json"))
                         } else if ["enrollment-persist-failure", "capability-persist-failure",
                                    "revocation-cache-delete-failure"].contains(mode) {
                             var result: [String: Any] = ["mode": mode, "failureSurface": mode]
@@ -433,6 +449,33 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
         }
         let data = try JSONSerialization.data(withJSONObject: records, options: [])
         try data.write(to: connectionURL, options: .atomic)
+    }
+
+    private func seedRevocationUncertaintyMarker(at support: URL, projectID: UUID) throws {
+        let connectionURL = support.appendingPathComponent("connections.json")
+        let object = try JSONSerialization.jsonObject(with: Data(contentsOf: connectionURL))
+        guard let record = (object as? [[String: Any]])?.first,
+              let connectionID = record["connectionID"] as? String,
+              let deviceID = record["deviceID"] as? String,
+              let fingerprint = record["fingerprint"] as? String,
+              UUID(uuidString: connectionID) != nil,
+              UUID(uuidString: deviceID) != nil,
+              Data(base64Encoded: fingerprint) != nil else {
+            throw SyncError.invalidSnapshot
+        }
+        let marker: [String: Any] = [
+            "connectionID": connectionID,
+            "deviceID": deviceID,
+            "fingerprint": fingerprint,
+            "projectIDs": [projectID.uuidString],
+            "state": "uncertain",
+            "generation": 1,
+            "operations": [["sessionID": UUID().uuidString, "operationID": UUID().uuidString]]
+        ]
+        let journal = support.appendingPathComponent("revocation-journal.json")
+        try JSONSerialization.data(withJSONObject: [marker], options: []).write(to: journal, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: NSNumber(value: Int16(0o600))],
+                                               ofItemAtPath: journal.path)
     }
 }
 

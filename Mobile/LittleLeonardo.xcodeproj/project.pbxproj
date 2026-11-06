@@ -21,10 +21,21 @@
 		A342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift */; };
 		B4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift */; };
 		B4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift */; };
+		B4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift */; };
+		B4C4A7E1D8F74D7E9A1D5C23 /* MobileRevocationClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C23 /* MobileRevocationClient.swift */; };
+		B4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift */; };
+		3E6C7AD17D9D0EDFB5E779BB /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		603EE9018F4478E4F0651EB7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B73A091EF914B6DD6523F6A2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D476A74D288EC41321B83D17;
+			remoteInfo = LittleLeonardo;
+		};
+		603EE9018F4478E4F0651EB8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B73A091EF914B6DD6523F6A2 /* Project object */;
 			proxyType = 1;
@@ -46,6 +57,10 @@
 		B342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRubricCaptureView.swift; sourceTree = "<group>"; };
 		C4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileDirectConnectionStore.swift; sourceTree = "<group>"; };
 		C4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileDirectAuthorization.swift; sourceTree = "<group>"; };
+		C4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRevocationJournal.swift; sourceTree = "<group>"; };
+		C4C4A7E1D8F74D7E9A1D5C23 /* MobileRevocationClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRevocationClient.swift; sourceTree = "<group>"; };
+		C4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRevocationTests.swift; sourceTree = "<group>"; };
+		C53CBBB8313118CB2CF6782B /* LittleLeonardoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LittleLeonardoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +83,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F1CFA41E4901A74516604575 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3E6C7AD17D9D0EDFB5E779BB /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -76,6 +99,7 @@
 			children = (
 				5B83DAE858F9656CCDF4D6B1 /* LittleLeonardo.app */,
 				C53CBBB8313118CB2CF6782A /* LittleLeonardoUITests.xctest */,
+				C53CBBB8313118CB2CF6782B /* LittleLeonardoTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -97,6 +121,15 @@
 			path = LittleLeonardoUITests;
 			sourceTree = "<group>";
 		};
+		8B071E7E1B6969A26E0658E0 /* LittleLeonardoTests */ = {
+			isa = PBXGroup;
+			children = (
+				C4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift */,
+			);
+			name = LittleLeonardoTests;
+			path = LittleLeonardoTests;
+			sourceTree = "<group>";
+		};
 		D790DB639180E062A2FDDAA7 = {
 			isa = PBXGroup;
 			children = (
@@ -104,6 +137,7 @@
 				6BDA650CBB19A55BA57B812C /* Frameworks */,
 				F33613B9B52D4F5FD53F5807 /* LittleLeonardo */,
 				8B071E7E1B6969A26E0658D0 /* LittleLeonardoUITests */,
+				8B071E7E1B6969A26E0658E0 /* LittleLeonardoTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -126,6 +160,8 @@
 				B342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift */,
 				C4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift */,
 				C4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift */,
+				C4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift */,
+				C4C4A7E1D8F74D7E9A1D5C23 /* MobileRevocationClient.swift */,
 			);
 			name = LittleLeonardo;
 			path = LittleLeonardo;
@@ -174,6 +210,24 @@
 			productReference = C53CBBB8313118CB2CF6782A /* LittleLeonardoUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		FB8B56BEE10614284AFC5E30 /* LittleLeonardoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 96250E69ED1F18AF37A74FB0 /* Build configuration list for PBXNativeTarget "LittleLeonardoTests" */;
+			buildPhases = (
+				6DA17CEEE55FBFFA512AF083 /* Sources */,
+				F1CFA41E4901A74516604575 /* Frameworks */,
+				4FA0A87B8FEEE63CDDC756 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A3E0EA9EC9E2D629678BDFDD /* PBXTargetDependency */,
+			);
+			name = LittleLeonardoTests;
+			productName = LittleLeonardoTests;
+			productReference = C53CBBB8313118CB2CF6782B /* LittleLeonardoTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -203,6 +257,7 @@
 			targets = (
 				D476A74D288EC41321B83D17 /* LittleLeonardo */,
 				FB8B56BEE10614284AFC5E29 /* LittleLeonardoUITests */,
+				FB8B56BEE10614284AFC5E30 /* LittleLeonardoTests */,
 			);
 		};
 /* End PBXProject section */
@@ -216,6 +271,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		4FA0A87B8FEEE63CDDC75525 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4FA0A87B8FEEE63CDDC756 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -237,6 +299,8 @@
 				A342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift in Sources */,
 				B4C4A7E1D8F74D7E9A1D5C20 /* MobileDirectConnectionStore.swift in Sources */,
 				B4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift in Sources */,
+				B4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift in Sources */,
+				B4C4A7E1D8F74D7E9A1D5C23 /* MobileRevocationClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -248,6 +312,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6DA17CEEE55FBFFA512AF083 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -256,6 +328,12 @@
 			name = LittleLeonardo;
 			target = D476A74D288EC41321B83D17 /* LittleLeonardo */;
 			targetProxy = 603EE9018F4478E4F0651EB7 /* PBXContainerItemProxy */;
+		};
+		A3E0EA9EC9E2D629678BDFDD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = LittleLeonardo;
+			target = D476A74D288EC41321B83D17 /* LittleLeonardo */;
+			targetProxy = 603EE9018F4478E4F0651EB8 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -286,6 +364,37 @@
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = LittleLeonardo;
+			};
+			name = Debug;
+		};
+		06A63060FF7894E6044E5B24 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = eu.pinedatec.LittleLeonardo.Tests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LittleLeonardo.app/LittleLeonardo";
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		07E410DA8BF5BE2C156E3D24 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = eu.pinedatec.LittleLeonardo.Tests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LittleLeonardo.app/LittleLeonardo";
+				BUNDLE_LOADER = "$(TEST_HOST)";
 			};
 			name = Debug;
 		};
@@ -466,6 +575,15 @@
 			buildConfigurations = (
 				06A63060FF7894E6044E58FA /* Release */,
 				07E410DA8BF5BE2C156E3D4A /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		96250E69ED1F18AF37A74FB0 /* Build configuration list for PBXNativeTarget "LittleLeonardoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				06A63060FF7894E6044E5B24 /* Release */,
+				07E410DA8BF5BE2C156E3D24 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
