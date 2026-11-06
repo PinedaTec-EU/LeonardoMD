@@ -1,32 +1,64 @@
 {
   "schemaVersion": "native-ios-evidence-v3",
   "issue": 342,
-  "canonicalEvidence": "ios-rubric-capture-final-20261106-a2e6917.json",
+  "canonicalEvidence": "ios-rubric-capture-final-20261106-c8e5259.json",
   "capture": "ios-rubric-capture-es.png",
-  "captureSha256": "12f0e3d5a20aaf9e35449b67254f4f217fca53a3aa785356aadbc105f5c4751d",
-  "sourceCommit": "a2e691797e310d6e9fc5075179be0a3a781f141f",
-  "buildDelta": 87,
-  "capturedAt": "2026-11-06T09:51:11.716+01:00",
+  "captureSha256": "e50dd0385cabe233597c9ca163bd18e0dd87b94baa4f5f3c2ea2b8439bfd62df",
+  "sourceCommit": "c8e52592e6325746237ef9d99f88ea41363d6262",
+  "buildDelta": 92,
+  "capturedAt": "2026-11-06T10:47:54.439+01:00",
   "locale": "es",
   "testIdentifier": "PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS()",
-  "testResult": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/little-leonardo-342-native-happy-z6tmr6sc/Result.xcresult",
+  "testResult": "/tmp/leonardo-native-367-final-v2-happy.xcresult",
   "simulator": {
     "name": "LittleLeonardo Rubric342 QA 20261105",
     "model": "iPhone18Pro",
     "os": "iOS 27.0",
     "udid": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B",
-    "screenshotPixels": { "width": 1206, "height": 2622 },
-    "viewportPoints": { "width": 402, "height": 874 },
+    "screenshotPixels": {
+      "width": 1206,
+      "height": 2622
+    },
+    "viewportPoints": {
+      "width": 402,
+      "height": 874
+    },
     "browser": null,
     "viewportCSS": null
   },
   "transport": "real pinned HTTPS fixture with synthetic TLS identity and owned loopback Mac authority",
   "states": {
-    "drawing": { "capture": "ios-rubric-capture-es-drawing.png", "sha256": "cf15c162df16beeff2e8fa1770a4ec184e624999ec30937a9169389f9099557e", "pixels": { "width": 1206, "height": 2622 }, "attachment": "BDB04FEC-E294-4F03-8F0A-1E4872944566.png", "timestamp": "2026-11-06T09:50:58.477+01:00" },
-    "preview": { "capture": "ios-rubric-capture-es-preview.png", "sha256": "496e09deb0c5223c552187cafc8f16e886273d6aa26187a1d03f4a162260c9a3", "pixels": { "width": 1206, "height": 2622 }, "attachment": "48149CEA-CFCC-4D96-B509-128923F52AA5.png", "timestamp": "2026-11-06T09:51:00.132+01:00" },
-    "sent": { "capture": "ios-rubric-capture-es.png", "sha256": "12f0e3d5a20aaf9e35449b67254f4f217fca53a3aa785356aadbc105f5c4751d", "pixels": { "width": 1206, "height": 2622 }, "attachment": "239C8AA4-83F3-4034-A09F-6777458BF0CF.png", "timestamp": "2026-11-06T09:51:11.716+01:00" }
+    "drawing": {
+      "capture": "ios-rubric-capture-es-drawing.png",
+      "sha256": "b6d623c3e42eedc74f153e58088da78949969baaac72493d78752cb6c3d6f0fa",
+      "pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "attachment": "BBB50EED-8902-4B5E-898B-E143EDA2C4AB.png",
+      "timestamp": "2026-11-06T10:47:41.950+01:00"
+    },
+    "preview": {
+      "capture": "ios-rubric-capture-es-preview.png",
+      "sha256": "8cc1cfc0da0643861a2f3b0950876f6f7fb6ab4f37609328708bc42084d2c2d9",
+      "pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "attachment": "AA720B98-08CC-4054-AE56-603EF311606B.png",
+      "timestamp": "2026-11-06T10:47:43.528+01:00"
+    },
+    "sent": {
+      "capture": "ios-rubric-capture-es.png",
+      "sha256": "e50dd0385cabe233597c9ca163bd18e0dd87b94baa4f5f3c2ea2b8439bfd62df",
+      "pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "attachment": "87027804-BEB0-487F-BDEF-AE3D2E573690.png",
+      "timestamp": "2026-11-06T10:47:54.439+01:00"
+    }
   },
-  "canonicalEvidenceSha256": "1febc572af75a866581e74137a0b4cc01ffda9c5f745c8aaccad7304d1aa248d",
   "metadataLimitations": {
     "browserCaptureHelper": "capture_metadata.py is browser-only and requires browser_name, browser_version and viewport_css; native iOS records observed viewportPoints and browser=null instead of invented CSS/browser fields.",
     "claims": "Simulator-only native evidence; no physical device, production Mac, App Store/TestFlight or production-network claim.",
