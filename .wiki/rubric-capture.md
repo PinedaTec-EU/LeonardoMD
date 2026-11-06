@@ -110,5 +110,12 @@ in [PR #352](https://github.com/PinedaTec-EU/LeonardoMD/pull/352). Earlier
 checkpoints remain in Git history and must not be treated as proof for later
 corrective code; use the source and hashes in the current sidecar.
 
+Cached draft presentation and reuse compare the complete immutable request
+identity, ignoring only lifecycle state. In-flight submission reuse also compares
+the normalized label and portable drawing; mismatches cannot share another
+request's result ([#367](https://github.com/PinedaTec-EU/LeonardoMD/issues/367)).
+Explicit sends/retries and foreground reconciliation share one identical
+in-flight response operation ([#365](https://github.com/PinedaTec-EU/LeonardoMD/issues/365)).
+
 The published bilingual guide is v15; #337's Synchronization role pages remain
 in chapters 14–15 and previous personal guide copies are preserved.

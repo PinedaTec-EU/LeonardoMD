@@ -63,5 +63,6 @@
     "browserCaptureHelper": "capture_metadata.py is browser-only and requires browser_name, browser_version and viewport_css; native iOS records observed viewportPoints and browser=null instead of invented CSS/browser fields.",
     "claims": "Simulator-only native evidence; no physical device, production Mac, App Store/TestFlight or production-network claim.",
     "fixture": "Synthetic owned Mac authority, source corpus, TLS identity and fault gates; transport remains real pinned HTTPS."
-  }
+  },
+  "canonicalEvidenceSha256": "678d55c4b9c64d06a2a7b6b57af7f815f81937baeb6feacd407dfd8e4f32701e"
 }

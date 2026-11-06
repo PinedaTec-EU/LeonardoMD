@@ -57,6 +57,16 @@ not claim physical-device networking, App Store/TestFlight distribution or a
 production Mac. The existing reader navigation/offline corpus remains a
 separate behavior.
 
+### Current source-bound recovery validation
+
+The current capture/code checkpoint is `c8e52592e6325746237ef9d99f88ea41363d6262`. Its immutable drawing, preview and sent captures and all ten native mode results are recorded in [the source-bound manifest](ios-rubric-capture-final-20261106-c8e5259.json). Earlier raw captures/sidecars remain historical. The final independent iOS rebuild kept every app bundle file byte-identical to the installed capture product. All 34 relevant Swift/test/config inputs and package manifests match the captured source.
+
+Current validation: 690 XCTest cases (655 passed, 35 optional skips, no failures) plus 70 Swift Testing cases across nine suites; nine focused iOS cases (two identity and seven revocation cases); ten native UI modes, each one pass/no failures/no skips. Both current guide packages pass three Python checks and five fresh native guide checks.
+
+The two additional native modes preserve a lost acceptance acknowledgement through relaunch and keep inherited security uncertainty quarantined until authenticated STATUS. The acceptance recovery proof records one response POST for one explicit Send. Full-request identity matching rejects a colliding ID from another peer and conflicting concurrent payloads ([#367](https://github.com/PinedaTec-EU/LeonardoMD/issues/367)); identical concurrent sends coalesce ([#365](https://github.com/PinedaTec-EU/LeonardoMD/issues/365)).
+
+These remain signed Simulator/owned synthetic HTTPS fixture and native guide-component checks. Owner TestFlight installation, physical iPhone networking, real compatible Mac startup/save/insertion/restart and production-network outcomes remain separate acceptance gates in [#343](https://github.com/PinedaTec-EU/LeonardoMD/issues/343).
+
 ## Reproduction and limits
 
 Compile delta193 passes 340 XCTest cases (ten optional skips) and twelve renderer tests. Native Git acceptance also passes with the corrected fixture (138.046 seconds UI, 143.760 seconds server), independently verifying both publications, deletion, ancestry, excluded-blob omission and `git fsck`; the provenance manifest records this repetition separately from the retained captures. Delta193 adds only fail-fast guards to the separate publication regression; the native fixture and mobile/shared sources are unchanged. The real SSH fixture gives both upload-pack and receive-pack a 60-second post-EOF deadline, followed by a bounded cleanup check, within the unchanged 120-second transport timeout. A stalled session returns a specific remote-command diagnostic with session/PID, input/output bytes and separate termination/stream state; incomplete cleanup is reported explicitly. The controlled faults use a two-second deadline.
