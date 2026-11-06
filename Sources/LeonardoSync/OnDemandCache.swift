@@ -47,13 +47,6 @@ public struct CachedDownload: Codable, Equatable, Sendable {
 public struct OnDemandCacheUsage: Equatable, Sendable {
     public var temporaryBytes: Int = 0
     public var offlineBytes: Int = 0
-    public func isAvailableOffline(_ entry: RemoteFileEntry) -> Bool {
-        guard keeps(entry.path), isDownloaded(entry) else { return false }
-        return (dependencies[entry.path] ?? []).allSatisfy { path in
-            guard let image = catalogue.files.first(where: { $0.path == path }) else { return false }
-            return isDownloaded(image)
-        }
-    }
     public var pendingOfflineFiles: Int = 0
     public var limitBytes: Int = 0
 }
