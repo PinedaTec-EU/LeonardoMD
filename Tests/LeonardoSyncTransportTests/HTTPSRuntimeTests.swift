@@ -1,7 +1,6 @@
 #if os(macOS)
 import XCTest
 import Security
-import Network
 import LeonardoSync
 import LeonardoCore
 @testable import LeonardoSyncTransport
@@ -76,15 +75,21 @@ final class HTTPSRuntimeTests: XCTestCase {
         }
     }
 
-    func testRealTLSLargeResponseReachesSlowReaderBeforeClose() async throws {
+    func testPinnedHTTPSLargeResponseSurvivesConstrainedTCPWindow() async throws {
         guard #available(macOS 15, *) else { throw XCTSkip("Fixture identity import requires memory-only Security import") }
         let identity = try makeIdentity()
-        let largeBody = Data(repeating: 0x3C, count: 2 * 1_024 * 1_024)
+        let largeBody = Data(repeating: 0x3C, count: 16 * 1_024 * 1_024)
         let server = LANHTTPSListener(identity: identity) { _ in HTTPResponse(status: 200, body: largeBody) }
         let port = try await server.start(host: "127.0.0.1")
+        let proxy = try TLSBackpressureProxy(destinationPort: port)
+        defer { proxy.stop() }
         do {
-            let response = try await readSlowTLSResponse(port: port, initialDelay: .milliseconds(200), chunkDelay: .milliseconds(2))
-            XCTAssertEqual(response, HTTPResponse(status: 200, body: largeBody).encoded())
+            let client = try PinnedHTTPSClient(
+                endpoint: URL(string: "https://127.0.0.1:\(proxy.port)")!,
+                certificateFingerprint: identity.certificateFingerprint)
+            let response = try await client.request(method: "GET", path: "/v1/snapshot")
+            XCTAssertEqual(response.status, 200)
+            XCTAssertEqual(response.body, largeBody)
             await server.stop()
         } catch {
             await server.stop()
@@ -96,7 +101,11 @@ final class HTTPSRuntimeTests: XCTestCase {
         guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
         let identity = try makeIdentity()
         let project = SharedProjectDescriptor(id: UUID(), name: "Docs", scope: try CorpusScope(folder: "docs"))
-        let snapshot = CorpusSnapshot(revision: "unsaved-r1", files: [CorpusFile(path: "docs/a.md", content: Data("unsaved buffer".utf8), isUnsavedBuffer: true)])
+        let largeImage = Data(repeating: 0x4D, count: 338_658)
+        let snapshot = CorpusSnapshot(revision: "unsaved-r1", files: [
+            CorpusFile(path: "docs/a.md", content: Data("unsaved buffer".utf8), isUnsavedBuffer: true),
+            CorpusFile(path: "docs/assets/large.png", content: largeImage, isUnsavedBuffer: false)
+        ])
         let authority = try DirectSyncAuthority(registry: PairingRegistry(),
             projects: [SharedProjectSource(descriptor: project) { snapshot }],
             serverFingerprint: identity.certificateFingerprint, persist: { _ in })
@@ -120,9 +129,12 @@ final class HTTPSRuntimeTests: XCTestCase {
             let denied = try await client.request(method: "GET", path: snapshotPath, credential: credential)
             XCTAssertEqual(denied.status, 401)
             try await authority.approve(requestID: challenge.id, code: challenge.comparisonCode, projectIDs: [project.id], now: fixedNow)
-            let fetched = try await client.request(method: "GET", path: snapshotPath, credential: credential)
-            XCTAssertEqual(fetched.status, 200)
-            XCTAssertEqual(try JSONDecoder().decode(CorpusSnapshot.self, from: fetched.body), snapshot)
+            async let fetched = client.request(method: "GET", path: snapshotPath, credential: credential)
+            async let refreshedStatus = client.request(method: "GET", path: statusPath, credential: credential)
+            let (snapshotResponse, statusResponse) = try await (fetched, refreshedStatus)
+            XCTAssertEqual(snapshotResponse.status, 200)
+            XCTAssertEqual(statusResponse.status, 200)
+            XCTAssertEqual(try JSONDecoder().decode(CorpusSnapshot.self, from: snapshotResponse.body), snapshot)
             try await authority.revoke(deviceID: challenge.id)
             let revoked = try await client.request(method: "GET", path: statusPath, credential: credential)
             XCTAssertEqual(try JSONDecoder().decode(DirectDeviceStatus.self, from: revoked.body).access, .revoked)
@@ -230,62 +242,5 @@ final class HTTPSRuntimeTests: XCTestCase {
         guard process.terminationStatus == 0 else { throw TransportError.invalidIdentity }
     }
 
-    private func readSlowTLSResponse(port: UInt16, initialDelay: Duration, chunkDelay: Duration) async throws -> Data {
-        let tls = NWProtocolTLS.Options()
-        sec_protocol_options_set_verify_block(tls.securityProtocolOptions, { _, _, complete in complete(true) }, DispatchQueue.global())
-        let parameters = NWParameters(tls: tls, tcp: NWProtocolTCP.Options())
-        let connection = NWConnection(host: "127.0.0.1", port: NWEndpoint.Port(rawValue: port)!, using: parameters)
-        defer { connection.cancel() }
-        try await startAndWaitUntilReady(connection)
-        let request = Data("GET /v1/snapshot HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n".utf8)
-        try await send(request, on: connection)
-        try await Task.sleep(for: initialDelay)
-        var response = Data()
-        var isComplete = false
-        while !isComplete {
-            let chunk = try await receive(on: connection)
-            response.append(chunk.data)
-            isComplete = chunk.isComplete
-            if !chunk.data.isEmpty { try await Task.sleep(for: chunkDelay) }
-        }
-        return response
-    }
-
-    private func startAndWaitUntilReady(_ connection: NWConnection) async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            connection.stateUpdateHandler = { state in
-                switch state {
-                case .ready:
-                    connection.stateUpdateHandler = nil
-                    continuation.resume()
-                case .failed(let error):
-                    connection.stateUpdateHandler = nil
-                    continuation.resume(throwing: error)
-                case .cancelled:
-                    connection.stateUpdateHandler = nil
-                    continuation.resume(throwing: TransportError.connectionClosed)
-                default: break
-                }
-            }
-            connection.start(queue: DispatchQueue(label: "eu.pinedatec.LeonardoMD.tests.slow-tls"))
-        }
-    }
-
-    private func send(_ data: Data, on connection: NWConnection) async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            connection.send(content: data, completion: .contentProcessed { error in
-                if let error { continuation.resume(throwing: error) } else { continuation.resume() }
-            })
-        }
-    }
-
-    private func receive(on connection: NWConnection) async throws -> (data: Data, isComplete: Bool) {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<(Data, Bool), Error>) in
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 512) { data, _, isComplete, error in
-                if let error { continuation.resume(throwing: error) }
-                else { continuation.resume(returning: (data ?? Data(), isComplete)) }
-            }
-        }
-    }
 }
 #endif

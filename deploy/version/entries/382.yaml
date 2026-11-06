@@ -1,3 +1,4 @@
 {
-  "build": 1
+  "build": 7,
+  "summary": "Large HTTPS project snapshots now have byte-for-byte transport coverage for image-sized assets and constrained TCP windows."
 }
