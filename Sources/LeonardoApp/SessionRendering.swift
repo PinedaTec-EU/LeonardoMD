@@ -48,9 +48,6 @@ extension AppSession {
             onTagActivation: { self.search(tag: $0) }
         )
         .id(documentURL)
-        .onChange(of: editorScroll) { _, fraction in
-            if self.mode == .split { self.renderer.scroll(toFraction: fraction) }
-        }
     }
     func search(tag: String) {
         guard !stopped, projectURL != nil else { return }

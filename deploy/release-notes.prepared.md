@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1045
+
+- #274 Fixed: render extensible math and navigate outline headings precisely ([#377](https://github.com/PinedaTec-EU/LeonardoMD/pull/377))
+
+<p>Extensible math symbols render complete shapes, and outline selections open the matching heading even when rendered content has different heights.</p>
+
+Source: `d4ca398e85f949c83d623bdf3b2bee0bacb94909`. Delta: `{"build": 23}`.
+
 ## 0.3.1022
 
 - #375 Update: blend help illustrations into Leonardo Classic ([#376](https://github.com/PinedaTec-EU/LeonardoMD/pull/376))

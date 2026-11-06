@@ -7,3 +7,5 @@ Rubric capture is fullScreenCover with a stable NavigationStack. Only accepted e
 Native acceptance extends PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS using the real opt-in Mac TLS fixture. Never claim generated concepts as application evidence. Packaged bilingual Help smoke and integration with demo/cache PRs remain separate delivery gates; see PR evidence for actual outcomes.
 
 PR387 merge/TestFlight publication is now explicitly owner-authorized. The compact iPhoneSE3/iOS26.5 rubric test also asserts that a portrait label keyboard does not trigger expansion. Publication uses the existing Apple app/Owner Internal group; no signing or account policy change is requested. Main reconciliation, fresh evidence/review and packaged Help remain prerequisites; a locked GUI is not a passing check.
+
+The PR branch has been refreshed onto accepted main0.3.1045, and its combined guide is now v25. Guide v23 references above describe the earlier checkpoint. Final reconciliation after demo/cache and actual packaged Help acceptance are still required.
