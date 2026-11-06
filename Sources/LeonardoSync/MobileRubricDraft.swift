@@ -155,6 +155,7 @@ public actor MobileRubricDraftStore {
     public func save(_ draft: MobileRubricDraft) throws {
         try loadIfNeeded()
         guard MobileRubricDraft.isValid(draft) else { throw RubricExchangeError.invalidPayload }
+        var updated = drafts
         if let existing = drafts[draft.id] {
             guard existing.connectionID == draft.connectionID,
                   existing.targetDeviceID == draft.targetDeviceID,
@@ -171,9 +172,8 @@ public actor MobileRubricDraftStore {
         } else if drafts.count >= Self.maximumRecords {
             let next = pruned(now: draft.updatedAt)
             guard next.count < Self.maximumRecords else { throw RubricExchangeError.storageFailure }
-            drafts = next
+            updated = next
         }
-        var updated = drafts
         updated[draft.id] = draft
         try persist(updated)
         drafts = updated
@@ -227,7 +227,7 @@ public actor MobileRubricDraftStore {
 
     private func pruned(now: Date) -> [UUID: MobileRubricDraft] {
         drafts.filter { _, draft in
-            draft.state == .accepted || draft.state == .pendingSend || draft.state == .blocked
+            draft.state == .accepted || draft.state == .pendingSend
                 || now.timeIntervalSince(draft.updatedAt) < Self.terminalRetention
         }
     }

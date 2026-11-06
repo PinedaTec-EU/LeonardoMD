@@ -69,6 +69,79 @@ final class MobileRubricDraftTests: XCTestCase {
         XCTAssertTrue(pruned.isEmpty)
     }
 
+    func testBlockedDraftExpiresAtThirtyDaysAndPruningSurvivesRestart() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("drafts.json")
+        let store = MobileRubricDraftStore(url: url)
+        let blocked = try terminalDraft(at: now)
+        try await store.save(blocked)
+        let boundary = now.addingTimeInterval(30 * 24 * 60 * 60)
+        let retained = try await store.all(now: boundary.addingTimeInterval(-1))
+        XCTAssertEqual(retained, [blocked])
+        let expired = try await store.all(now: boundary)
+        XCTAssertTrue(expired.isEmpty)
+        let reopened = try await MobileRubricDraftStore(url: url).all(now: boundary)
+        XCTAssertTrue(reopened.isEmpty)
+    }
+
+    func testTerminalCapacityRolloverAcceptsNewDraftWithoutDroppingRecoverableWork() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("drafts.json")
+        let store = MobileRubricDraftStore(url: url)
+        for _ in 0..<62 { try await store.save(terminalDraft(at: now)) }
+        let accepted = try terminalDraft(at: now).with(state: .accepted, updatedAt: now)
+        let pending = try terminalDraft(at: now)
+        let frozen = pending.with(response: try response(for: pending.request), state: .pendingSend,
+                                  updatedAt: now)
+        try await store.save(accepted)
+        try await store.save(frozen)
+        let later = now.addingTimeInterval(31 * 24 * 60 * 60)
+        let fresh = try terminalDraft(at: later).with(state: .accepted, updatedAt: later)
+        try await store.save(fresh)
+        let restored = try await MobileRubricDraftStore(url: url).all(now: later)
+        XCTAssertEqual(Set(restored.map(\.id)), Set([accepted.id, frozen.id, fresh.id]))
+        XCTAssertEqual(restored.first(where: { $0.id == accepted.id })?.drawing, drawing)
+        XCTAssertEqual(restored.first(where: { $0.id == frozen.id })?.response, frozen.response)
+    }
+
+    func testFailedCapacityRolloverDoesNotPublishPruningInMemory() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("drafts.json")
+        let store = MobileRubricDraftStore(url: url)
+        for _ in 0..<64 { try await store.save(terminalDraft(at: now)) }
+        let original = try await store.all(now: now)
+        let backup = root.appendingPathComponent("original.json")
+        try FileManager.default.moveItem(at: url, to: backup)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: false)
+        let later = now.addingTimeInterval(31 * 24 * 60 * 60)
+        let fresh = try terminalDraft(at: later).with(state: .accepted, updatedAt: later)
+        do {
+            try await store.save(fresh)
+            XCTFail("A failed atomic save must not publish the pruned snapshot")
+        } catch { XCTAssertEqual(error as? RubricExchangeError, .storageFailure) }
+        let unchanged = try await store.all(now: now)
+        let expected = Dictionary(uniqueKeysWithValues: original.map { ($0.id, $0) })
+        XCTAssertEqual(Dictionary(uniqueKeysWithValues: unchanged.map { ($0.id, $0) }), expected)
+        try FileManager.default.removeItem(at: url)
+        try FileManager.default.moveItem(at: backup, to: url)
+        let reopened = try await MobileRubricDraftStore(url: url).all(now: now)
+        XCTAssertEqual(Dictionary(uniqueKeysWithValues: reopened.map { ($0.id, $0) }), expected)
+    }
+
+    private func terminalDraft(at date: Date) throws -> MobileRubricDraft {
+        var request = try RubricRequest(targetDeviceID: UUID(), requesterID: UUID(),
+                                       requesterName: "MacBook", labelHint: "Firma", createdAt: date)
+        request.state = .accepted
+        return MobileRubricDraft(id: request.id, connectionID: UUID(),
+            targetDeviceID: request.targetDeviceID, requesterID: request.requesterID,
+            sourceFingerprint: Data(repeating: 5, count: 32), request: request,
+            drawing: drawing, label: "Firma", state: .blocked, updatedAt: date,
+            failureMessage: "revoked")
+    }
+
     func testClearingUnsentDrawingPersistsAnEmptyAcceptedDraft() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
