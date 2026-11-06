@@ -77,6 +77,12 @@ struct MobileRubricCaptureView: View {
                 .toolbar { Button("Cerrar") { dismiss() } }
                 .toolbar(expanded ? .hidden : .visible, for: .navigationBar)
             }
+            // Do not overlap a SwiftUI navigation-bar transition with the
+            // system's interface rotation. The canvas changes layout directly.
+            .transaction { transaction in
+                transaction.animation = nil
+                transaction.disablesAnimations = true
+            }
             .onChange(of: landscape) { _, isLandscape in
                 if !isLandscape {
                     manuallyExpanded = false
