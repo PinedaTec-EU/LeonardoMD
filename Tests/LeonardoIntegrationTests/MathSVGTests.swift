@@ -40,13 +40,16 @@ extension WebKitRuntimeTests {
         let actual = try await evaluate("""
         (() => {
           const original = window.katex.renderToString;
-          window.katex.renderToString = () => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" onload="window.mathInjected=true"><script>window.mathInjected=true</script><foreignObject><iframe src="https://example.com"></iframe></foreignObject><image href="https://example.com/pixel.png"/><use href="https://example.com/symbol.svg#x"/><a href="javascript:alert(1)"><path d="M0 0L10 10" onclick="window.mathInjected=true"/></a></svg>';
+          window.katex.renderToString = () => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" onload="window.mathInjected=true"><script>window.mathInjected=true</script><style>@import url(https://example.com/active.css);</style><foreignObject><iframe src="https://example.com"></iframe></foreignObject><image href="https://example.com/pixel.png"/><use href="https://example.com/symbol.svg#x"/><a href="javascript:alert(1)"><path d="M0 0L10 10" onclick="window.mathInjected=true"/></a></svg>';
           try {
             window.LeonardoPreview.updateContent({markdown: '$$x$$', source: '$$x$$'});
             const root = document.querySelector('#leonardo-markdown');
             return root.querySelectorAll('.math-rendered svg path[d]').length === 1 &&
-              root.querySelectorAll('script, foreignObject, iframe, image, use, [onload], [onclick], [href], [src], [xlink\\:href]').length === 0 &&
+              root.querySelectorAll('script, style, foreignObject, iframe, image, use, [onload], [onclick], [href], [src]').length === 0 &&
+              [...root.querySelectorAll('*')].every(node => !node.hasAttribute('xlink:href')) &&
               typeof window.mathInjected === 'undefined';
+          } catch (error) {
+            return String(error);
           } finally {
             window.katex.renderToString = original;
           }

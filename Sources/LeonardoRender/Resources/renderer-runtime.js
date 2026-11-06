@@ -174,7 +174,7 @@
           span.innerHTML = window.DOMPurify.sanitize(rendered, {
             USE_PROFILES: { html: true, mathMl: true, svg: true },
             // Generated KaTeX geometry only; raw document SVG remains disallowed.
-            FORBID_TAGS: ["foreignobject", "image", "use", "animate", "set"],
+            FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "foreignobject", "image", "use", "animate", "set"],
             FORBID_ATTR: ["href", "xlink:href", "src"],
             ADD_TAGS: ["math", "semantics", "mrow", "annotation"]
           });
