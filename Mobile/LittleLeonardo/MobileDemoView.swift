@@ -85,6 +85,10 @@ struct MobileDemoView: View {
             do { content = try store.load(language) }
             catch { self.error = error.localizedDescription }
         }
+        .onDisappear {
+            controller.onFormEdit = nil
+            controller.onFieldHelp = nil
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { Task { _ = await controller.flushEdits() } }
         }

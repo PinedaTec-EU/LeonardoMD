@@ -114,15 +114,15 @@ Vega-Lite is enabled in this demo; data is bundled and never downloaded. A viewe
 
 Use fictional details. Tap the fields, type, choose an option and tick the checkbox. No signature or Mac request is needed.
 
-Practice name: {{field:name}}
+{{field:name}}
 
 What would you like to explore?
 
 {{field:goal}}
 
-Your interest: {{field:rating}}
+{{field:rating}}
 
-I have tried the demo: {{field:ready}}
+{{field:ready}}
 
 Tap **Guardar / Save**, return to the library and reopen: your answers should remain. **Ver texto / View source** shows answers in `values`; field definitions and prose stay separate.
 

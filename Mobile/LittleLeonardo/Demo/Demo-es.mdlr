@@ -114,15 +114,15 @@ Vega-Lite está activado en esta demo; los datos están incluidos y no se descar
 
 Usa datos ficticios. Toca los campos, escribe, elige una opción y marca la casilla. No se necesita firma ni una solicitud de un Mac.
 
-Nombre de prueba: {{field:name}}
+{{field:name}}
 
 ¿Qué quieres explorar?
 
 {{field:goal}}
 
-Tu interés: {{field:rating}}
+{{field:rating}}
 
-Ya he probado la demo: {{field:ready}}
+{{field:ready}}
 
 Pulsa **Guardar / Save**, vuelve a la biblioteca y entra de nuevo: las respuestas deben seguir ahí. **Ver texto / View source** muestra las respuestas en `values`; los campos y el cuerpo permanecen separados.
 

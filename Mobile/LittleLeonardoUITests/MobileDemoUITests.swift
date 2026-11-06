@@ -20,6 +20,12 @@ final class MobileDemoUITests: XCTestCase {
             capture(app, "English gallery \(step)")
         }
         XCTAssertTrue(field.exists && field.isHittable)
+        XCTAssertEqual(field.value as? String, "")
+        let help = web.buttons["Help for Practice name"]
+        XCTAssertTrue(help.exists)
+        help.tap()
+        XCTAssertTrue(app.staticTexts["Local practice: use fictional details. Tap Save to confirm your answers."].waitForExistence(timeout: 5))
+        app.buttons["Cerrar / Close"].tap()
         field.tap()
         field.typeText("Offline review sample")
         app.buttons["demo-save"].tap()
