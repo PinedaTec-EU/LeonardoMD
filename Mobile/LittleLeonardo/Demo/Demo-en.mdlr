@@ -5,18 +5,21 @@
   "document": {
     "id": "little-leonardo-demo-en",
     "kind": "form",
-    "revision": 1
+    "revision": 1,
+    "locale": "en-US"
   },
   "fields": {
     "name": {
       "type": "text",
       "maxLength": 80,
-      "label": "Practice name"
+      "label": "Practice name",
+      "helpText": "Local practice: use fictional details. Tap Save to confirm your answers."
     },
     "goal": {
       "type": "multiline",
       "maxLength": 1000,
-      "label": "Your goal"
+      "label": "Your goal",
+      "helpText": "Local practice: use fictional details. Tap Save to confirm your answers."
     },
     "rating": {
       "type": "select",
@@ -29,11 +32,14 @@
           "value": "forms",
           "label": "Forms"
         }
-      ]
+      ],
+      "label": "Your interest",
+      "helpText": "Local practice: use fictional details. Tap Save to confirm your answers."
     },
     "ready": {
       "type": "checkbox",
-      "label": "I have tried the demo"
+      "label": "I have tried the demo",
+      "helpText": "Local practice: use fictional details. Tap Save to confirm your answers."
     }
   },
   "values": {

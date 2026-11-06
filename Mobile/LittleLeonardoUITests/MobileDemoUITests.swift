@@ -6,14 +6,18 @@ final class MobileDemoUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.buttons["open-demo-en"].waitForExistence(timeout: 15))
         app.buttons["open-demo-en"].tap()
+        app.buttons["demo-options"].tap()
+        app.buttons["demo-reset"].tap()
+        app.buttons["Restablecer / Reset"].tap()
         let web = app.webViews.firstMatch
         XCTAssertTrue(web.waitForExistence(timeout: 15))
         XCTAssertTrue(web.staticTexts["Welcome to Little Leonardo"].waitForExistence(timeout: 15))
         capture(app, "English welcome")
         let field = web.textFields.firstMatch
-        for _ in 0..<22 {
+        for step in 0..<22 {
             if field.exists && field.isHittable { break }
             web.swipeUp()
+            capture(app, "English gallery \(step)")
         }
         XCTAssertTrue(field.exists && field.isHittable)
         field.tap()

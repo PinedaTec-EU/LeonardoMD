@@ -8,6 +8,7 @@ struct MobileDemoView: View {
     @State private var content = ""
     @State private var source = false
     @State private var error: String?
+    @State private var fieldHelp: String?
     @State private var saved = false
     @State private var confirmingReset = false
     @StateObject private var controller = MarkdownPreviewController()
@@ -54,13 +55,21 @@ struct MobileDemoView: View {
                         source.toggle()
                     }
                 }
+                .accessibilityIdentifier("demo-source")
                 Button("Restablecer / Reset", role: .destructive) { confirmingReset = true }
+                    .accessibilityIdentifier("demo-reset")
             } label: { Label("Opciones / Options", systemImage: "ellipsis.circle") }
+            .accessibilityIdentifier("demo-options")
         }
         .safeAreaInset(edge: .bottom) {
             if saved { Text("Guardado en este dispositivo / Saved on this device").font(.caption).padding(8) }
         }
         .task {
+            controller.onFieldHelp = { fieldID in
+                guard let document = try? LeonardoFormatParser.parse(content),
+                      let field = document.metadata.fields[fieldID] else { return }
+                fieldHelp = field.helpText ?? field.label ?? fieldID
+            }
             controller.onFormEdit = { expected, changes in
                 guard expected == content else { return nil }
                 do {
@@ -88,6 +97,12 @@ struct MobileDemoView: View {
                 }
             }
         } message: { Text("Solo afecta al idioma seleccionado. / Only affects the selected language.") }
+        .sheet(isPresented: Binding(get: { fieldHelp != nil }, set: { if !$0 { fieldHelp = nil } })) {
+            VStack(spacing: 24) {
+                Text(fieldHelp ?? "").padding()
+                Button("Cerrar / Close") { fieldHelp = nil }
+            }.presentationDetents([.medium])
+        }
         .alert("Demo", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
             Button("Aceptar / OK") { error = nil }
         } message: { Text(error ?? "") }
