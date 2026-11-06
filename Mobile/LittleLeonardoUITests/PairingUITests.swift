@@ -462,6 +462,8 @@ final class PairingUITests: XCTestCase {
         XCTAssertTrue(code.waitForExistence(timeout: 20))
         try advanceDirectFixture("approve-regrant")
         try advanceDirectFixture("release-purge")
+        XCTAssertTrue(waitForDirectFixtureFile("purge-cache-restored.txt", timeout: 5),
+                      "The stale purge fixture must restore a regular cache before re-sync")
         dismissMobileFailureIfPresent(app)
         app.buttons["Sincronizar"].firstMatch.tap()
         XCTAssertTrue(app.staticTexts["QA · Regrant purge"].waitForExistence(timeout: 30),
@@ -553,8 +555,8 @@ final class PairingUITests: XCTestCase {
                 if (try? String(contentsOf: appliedURL, encoding: .utf8)) == phase { return }
                 Thread.sleep(forTimeInterval: 0.1)
             }
-            XCTFail("The native fixture did not apply phase \(phase)")
-            return
+            throw NSError(domain: "LittleLeonardoNativeFixture", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "The native fixture did not apply phase \(phase)"])
         }
         try FileHandle.standardOutput.write(contentsOf: Data("LEONARDO_DIRECT_STAGE_\(phase.uppercased())\n".utf8))
         // The host controller applies the phase to the real loopback service. This short

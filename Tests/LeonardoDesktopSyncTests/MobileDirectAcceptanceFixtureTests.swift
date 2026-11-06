@@ -219,7 +219,7 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                                                                root: root)
                     case "release-purge":
                         guard mode == "reconnect-during-purge", let purgeGate else { throw SyncError.invalidPath }
-                        await purgeGate.release()
+                        try await purgeGate.release()
                     case "release-project":
                         guard mode == "late-project-revoke", let delayedProject else { throw SyncError.invalidPath }
                         await delayedProject.release()
@@ -621,18 +621,21 @@ private actor ReconnectDuringPurgeGate {
         try Data("armed\n".utf8).write(to: root.appendingPathComponent("purge-fifo-armed.txt"), options: .atomic)
     }
 
-    func release() async {
-        guard let releaseMarker else { return }
+    func release() async throws {
+        guard let releaseMarker, let projectURL else { throw SyncError.invalidPath }
         try? Data("release\n".utf8).write(to: releaseMarker, options: .atomic)
         let written = root.appendingPathComponent("purge-payload-written.txt")
         for _ in 0..<200 {
             if FileManager.default.fileExists(atPath: written.path) {
                 process?.waitUntilExit()
-                restorePayloadIfStillOwned()
+                try restorePayloadIfStillOwned(projectURL: projectURL)
+                let restored = root.appendingPathComponent("purge-cache-restored.txt")
+                try Data("regular\n".utf8).write(to: restored, options: .atomic)
                 return
             }
             try? await Task.sleep(for: .milliseconds(50))
         }
+        throw SyncError.invalidPath
     }
 
     func finish() {
@@ -644,18 +647,32 @@ private actor ReconnectDuringPurgeGate {
         process = nil
     }
 
-    private func restorePayloadIfStillOwned() {
-        guard let projectURL, ownsFIFO(at: projectURL), let payload else { return }
+    private func restorePayloadIfStillOwned(projectURL: URL) throws {
+        guard ownsFIFO(at: projectURL), let payload else { throw SyncError.invalidPath }
         let temporary = projectURL.deletingLastPathComponent()
             .appendingPathComponent(".purge-restore-\(UUID().uuidString).tmp")
         do {
             try FileManager.default.copyItem(at: payload, to: temporary)
             try FileManager.default.setAttributes([.posixPermissions: NSNumber(value: Int16(0o600))],
                                                   ofItemAtPath: temporary.path)
-            _ = try FileManager.default.replaceItemAt(projectURL, withItemAt: temporary,
-                                                      options: .usingNewMetadataOnly)
+            let attributes = try FileManager.default.attributesOfItem(atPath: temporary.path)
+            guard attributes[.type] as? FileAttributeType == .typeRegular,
+                  (attributes[.posixPermissions] as? NSNumber)?.intValue == 0o600 else {
+                throw SyncError.invalidPath
+            }
+            // Foundation's replacement API does not reliably replace a FIFO on all
+            // simulator host filesystems. The writer has exited, so remove only our
+            // owned FIFO and then move the verified regular file into its exact path.
+            try FileManager.default.removeItem(at: projectURL)
+            try FileManager.default.moveItem(at: temporary, to: projectURL)
+            let restored = try FileManager.default.attributesOfItem(atPath: projectURL.path)
+            guard restored[.type] as? FileAttributeType == .typeRegular,
+                  (restored[.posixPermissions] as? NSNumber)?.intValue == 0o600 else {
+                throw SyncError.invalidPath
+            }
         } catch {
             try? FileManager.default.removeItem(at: temporary)
+            throw error
         }
     }
 
