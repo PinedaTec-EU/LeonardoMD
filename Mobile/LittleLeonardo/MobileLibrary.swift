@@ -592,9 +592,9 @@ final class MobileLibrary {
                   response.requesterID == pending.requesterID else {
                 throw RubricExchangeError.conflict
             }
-            let submitted = try await context.client.submitRubricResponse(response,
+            let remoteSubmitted = try await context.client.submitRubricResponse(response,
                 deviceID: context.connection.deviceID, credential: context.credential)
-            guard submitted == response else { throw RubricExchangeError.conflict }
+            guard remoteSubmitted == response else { throw RubricExchangeError.conflict }
             try validateRubricContext(context.token)
             let contextToken = context.token
             let submittedWrite = rubricDraftWrites.enqueue { [weak self] in
