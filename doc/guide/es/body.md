@@ -602,8 +602,8 @@ Este es un canal de respuesta **solo para capturar**, dirigido a un Mac
 conocido y enlazado. Aprobar el emparejamiento puede habilitar la capacidad
 compatible para crear y devolver rúbricas en un dispositivo móvil de solo
 lectura ya enlazado, pero no concede documentos, proyectos, carpetas, Git ni permisos de
-escritura. La navegación de solo lectura y las copias sin conexión conservan su
-funcionamiento. Un Mac antiguo que no entiende los campos opcionales sigue
+escritura. Los fallos habituales de conexión mantienen disponibles la navegación de solo
+lectura y las copias sin conexión. Un Mac antiguo que no entiende los campos opcionales sigue
 leyendo el estado normal del servidor y puede mantener el flujo de lector.
 
 Cuando el Mac envía una solicitud, mantén Little Leonardo en primer plano y
@@ -621,7 +621,7 @@ portable de 24 KiB al enviar. Después de **Enviar**, la vista previa queda
 bloqueada con la respuesta congelada. La app consulta solicitudes mientras está
 activa; no promete un receptor continuo en segundo plano.
 
-Mientras dibujas no sale nada del dispositivo. Pulsa **Enviar** solo cuando la
+El dibujo permanece en tu dispositivo hasta que pulses **Enviar**. Pulsa ese botón solo cuando la
 etiqueta y el dibujo estén listos. Leonardo envía una respuesta portable
 `LeonardoRubric`, limitada a 24 KiB, por la conexión HTTPS enlazada y fijada.
 El Mac recibe la respuesta únicamente para la solicitud y el dispositivo

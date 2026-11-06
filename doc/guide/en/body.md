@@ -589,8 +589,8 @@ offline/unsupported state.
 This is a capture-only response channel for a **known, linked Mac**. Pairing
 approval may enable the compatible capability for creating and returning a
 rubric on an already linked read-only mobile device, but it does not grant a document, project,
-folder, Git or write permission. Your existing read-only navigation and offline
-copies remain unchanged. A legacy Mac that does not understand the optional
+folder, Git or write permission. Ordinary connection failures keep your read-only navigation and offline
+copies available. A legacy Mac that does not understand the optional
 capability fields continues to decode the normal server status and can keep
 serving the existing reader flow.
 
@@ -608,7 +608,7 @@ drawing cannot later fail the 24 KiB portable envelope at Send. After Send,
 the preview is locked with the frozen response. The app polls requests while
 it is active; it does not promise a continuous background listener.
 
-Nothing leaves the device while you draw. Press **Send** only when the label
+Your drawing stays on the device until **Send**. Press **Send** only when the label
 and drawing are ready. Leonardo sends one portable `LeonardoRubric` response,
 bounded to 24 KiB, over the linked pinned HTTPS connection. The Mac receives
 the response for the matching request and device only; it does not receive

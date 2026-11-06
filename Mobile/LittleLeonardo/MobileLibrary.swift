@@ -121,7 +121,7 @@ final class MobileLibrary {
     }
 
     private func loadRevocationMarkers() throws -> [MobileRevocationMarker] {
-        try revocationClient.markers()
+        try revocationClient.recoveryMarkers()
     }
 
     /// Performs the write-ahead preflight, authenticated STATUS revalidation,

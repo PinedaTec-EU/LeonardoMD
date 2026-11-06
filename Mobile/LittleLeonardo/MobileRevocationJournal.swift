@@ -37,6 +37,7 @@ struct MobileRevocationMarker: Codable, Equatable, Sendable {
 }
 
 protocol MobileRevocationJournalStore: Sendable {
+    var sessionID: UUID { get }
     func load() throws -> [MobileRevocationMarker]
     func begin(connectionID: UUID, deviceID: UUID, fingerprint: Data,
                projectIDs: Set<UUID>) throws -> MobileRevocationTicket

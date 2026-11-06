@@ -54,7 +54,9 @@ keeps the previous draft snapshot in memory.
 Authenticated mobile operations first persist an independent write-ahead marker.
 If that write fails, no authenticated request is sent. After an interrupted
 operation, the marker quarantines its connection on reload/relaunch until a
-fresh authenticated STATUS revalidates the link; a transient/offline result
+fresh authenticated STATUS revalidates the link. An ordinary reload does not
+quarantine operations owned by its current live journal session; confirmed
+in-memory denial applies regardless of session. A transient/offline result
 cannot resolve inherited uncertainty. A frozen drawing body is not sent before
 that revalidation.
 

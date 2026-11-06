@@ -23,8 +23,14 @@ struct MobileRevocationClient: Sendable {
         self.journal = journal
     }
 
-    func markers() throws -> [MobileRevocationMarker] {
-        try journal.load()
+    /// Only foreign or unknown operations represent inherited uncertainty.
+    /// Current-session operations are observed by this live coordinator; a
+    /// confirmed denial is independently retained by its monotonic overlay.
+    func recoveryMarkers() throws -> [MobileRevocationMarker] {
+        try journal.load().filter { marker in
+            marker.state == .denied || marker.operations.isEmpty
+                || marker.operations.contains { $0.sessionID != journal.sessionID }
+        }
     }
 
     /// Must complete successfully before any authenticated network request.

@@ -77,7 +77,8 @@ and linked TLS identity.
 
 Draft snapshot writes register in UI-event order before asynchronous work starts
 ([#360](https://github.com/PinedaTec-EU/LeonardoMD/issues/360)). Blocked and
-submitted drafts expire after 30 days; accepted/pending-send work stays
+submitted drafts expire after 30 days; pending acceptance, accepted drawings
+and pending-send work stay
 recoverable. Capacity cleanup is committed only after a successful write
 ([#361](https://github.com/PinedaTec-EU/LeonardoMD/issues/361)).
 
@@ -86,7 +87,9 @@ Mobile connection snapshots and visibility policy live in
 monotonic deny state live in `MobileDirectAuthorization.swift`.
 `MobileRevocationJournal.swift` persists an independent uncertainty marker before
 authenticated network work, coordinated through `MobileRevocationClient.swift`.
-A failed preflight sends no request. An interrupted operation quarantines only
+A failed preflight sends no request. Ordinary reloads preserve offline reading
+for operations belonging to the current live journal session. An operation
+inherited from another session quarantines only
 its link until authenticated STATUS revalidation; an offline result or late
 completion cannot undo inherited uncertainty or confirmed denial. This protects
 restart even when post-response snapshot and credential writes both fail.

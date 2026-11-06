@@ -165,6 +165,47 @@ final class MobileRevocationTests: XCTestCase {
     }
 
     @MainActor
+    func testLiveOperationReloadRetainsOfflineCacheButNewSessionQuarantinesIt() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("LittleLeonardo", isDirectory: true)
+        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
+        let project = UUID()
+        let value = connection(projectIDs: [project])
+        let cached = try OfflineProject(id: project, name: "Ordinary offline cache", mode: .direct,
+            scope: CorpusScope(folder: ""), snapshot: CorpusSnapshot(revision: "r1",
+                files: [CorpusFile(path: "read.md", content: Data("readable offline".utf8))]))
+        try await OfflineCorpusStore(root: corpusRoot).save(cached)
+        try MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json")).save([value])
+        let journalURL = support.appendingPathComponent("revocation.json")
+        let journal = MobileRevocationJournal(url: journalURL)
+        let credentials = TestCredentials(values: [deviceID: "credential"], failRemove: false)
+        let live = MobileLibrary(rootURL: corpusRoot, credentials: credentials, revocationJournal: journal)
+        await live.reload()
+        XCTAssertEqual(live.projects.map(\.id), [project])
+
+        let inFlight = try journal.begin(connectionID: value.connectionID, deviceID: value.deviceID,
+            fingerprint: value.fingerprint, projectIDs: value.projectIDs)
+        await live.reload()
+        XCTAssertEqual(live.projects.map(\.id), [project],
+                       "An overlapping reload cannot mistake a live operation for a crashed session")
+        try journal.complete(inFlight, outcome: .transient)
+        await live.reload()
+        XCTAssertEqual(live.projects.map(\.id), [project],
+                       "An ordinary offline completion must retain readable cached files")
+
+        _ = try journal.begin(connectionID: value.connectionID, deviceID: value.deviceID,
+            fingerprint: value.fingerprint, projectIDs: value.projectIDs)
+        let fresh = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: MobileRevocationJournal(url: journalURL))
+        await fresh.reload()
+        XCTAssertTrue(fresh.projects.isEmpty,
+                      "A new coordinator must still quarantine uncertainty from the previous session")
+        let preserved = try await OfflineCorpusStore(root: corpusRoot).load(id: project)
+        XCTAssertNotNil(preserved)
+    }
+
+    @MainActor
     func testWriteAheadMarkerSurvivesNormalPersistenceFailuresOnReload() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -250,7 +291,9 @@ final class MobileRevocationTests: XCTestCase {
         try FileManager.default.copyItem(at: originalProject, to: projectURL)
         let freshCredentials = TestCredentials(values: [deviceID: "old-credential", otherDeviceID: "unrelated-credential"],
                                                 failRemove: true)
-        let fresh = MobileLibrary(rootURL: corpusRoot, credentials: freshCredentials, revocationJournal: failingJournal)
+        let reopenedJournal = FailingJournal(backing: MobileRevocationJournal(url: journalURL),
+                                             failCompletion: true, failRecordDenied: true)
+        let fresh = MobileLibrary(rootURL: corpusRoot, credentials: freshCredentials, revocationJournal: reopenedJournal)
         await fresh.reload()
         XCTAssertFalse(fresh.projects.contains(where: { $0.id == project }))
         XCTAssertTrue(fresh.projects.contains(where: { $0.id == unrelatedProjectID }))
@@ -266,6 +309,7 @@ final class MobileRevocationTests: XCTestCase {
 }
 
 private struct ThrowingJournal: MobileRevocationJournalStore {
+    let sessionID = UUID()
     func load() throws -> [MobileRevocationMarker] { [] }
 
     func begin(connectionID: UUID, deviceID: UUID, fingerprint: Data,
@@ -289,6 +333,8 @@ private final class FailingJournal: MobileRevocationJournalStore, @unchecked Sen
         self.failCompletion = failCompletion
         self.failRecordDenied = failRecordDenied
     }
+
+    var sessionID: UUID { backing.sessionID }
 
     func load() throws -> [MobileRevocationMarker] { try backing.load() }
 
