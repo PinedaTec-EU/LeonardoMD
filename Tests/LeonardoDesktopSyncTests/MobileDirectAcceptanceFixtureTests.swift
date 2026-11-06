@@ -303,7 +303,7 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                             }
                         }
                         finished = true
-                    default: break
+                    default: throw SyncError.invalidPath
                     }
                     prior = phase
                     try Data(phase.utf8).write(to: root.appendingPathComponent("phase-applied.txt"), options: .atomic)
