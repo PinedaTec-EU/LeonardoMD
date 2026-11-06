@@ -207,6 +207,15 @@ final class HTTPSRuntimeTests: XCTestCase {
                     } else { XCTAssertNil(error.failure?.path) }
                     XCTAssertFalse(error.localizedDescription.contains("secret"))
                 }
+                if reason == .sourceUnavailable {
+                    // Inspect the wire body too: client-side path filtering must not hide a server disclosure.
+                    let wire = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: identity.certificateFingerprint)
+                    let response = try await wire.request(method: "GET",
+                        path: "/v1/devices/\(enrollment.deviceID.uuidString)/projects/\(descriptor.id.uuidString)/snapshot", credential: credential)
+                    let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: response.body) as? [String: Any])
+                    XCTAssertNil(payload["path"])
+                    XCTAssertFalse(String(decoding: response.body, as: UTF8.self).contains("secret"))
+                }
             }
             try await authority.revoke(deviceID: enrollment.deviceID)
             do {
