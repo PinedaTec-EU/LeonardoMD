@@ -277,9 +277,16 @@ final class PairingUITests: XCTestCase {
 
         app.buttons["Cerrar"].tap()
         let draftBanner = app.buttons["rubric-draft-banner"]
-        XCTAssertTrue(draftBanner.waitForExistence(timeout: 15),
-                      "The accepted drawing must remain recoverable before Send")
-        draftBanner.tap()
+        if draftBanner.waitForExistence(timeout: 5) {
+            draftBanner.tap()
+        } else {
+            // The accepted request remains the foreground banner until the
+            // response is sent; it opens the same durable draft sheet.
+            let requestBanner = app.buttons["rubric-request-banner"]
+            XCTAssertTrue(requestBanner.waitForExistence(timeout: 10),
+                          "The accepted drawing must remain recoverable before Send")
+            requestBanner.tap()
+        }
         XCTAssertTrue(app.otherElements["rubric-request-sheet"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.otherElements["rubric-canvas"].waitForExistence(timeout: 10),
                       "Relaunch-style reopen must restore the accepted ink")
