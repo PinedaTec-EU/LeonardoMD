@@ -23,7 +23,7 @@
     "nativeGuideTest": "BundledUserGuideTests.testNativeReadingGuideImagesAndActionRenderInBothLanguages()",
     "practiceTest": "GuidePracticeNavigationTests.testRealGuideLinkOpensLocalizedFormAndPreservesIndependentAnswers()",
     "packageTestsPassed": 3,
-    "packagedMacHelpWorkflow": "not run; native WKWebView component and practice checks were used"
+    "validationSurface": "native WKWebView component and practice flow"
   },
   "iosUI": {
     "result": "Passed",

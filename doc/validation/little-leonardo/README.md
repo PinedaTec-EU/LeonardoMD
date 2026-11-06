@@ -103,7 +103,7 @@ bundle; a stale peer can make unrelated refresh/revocation assertions fail.
 
 #### #380 transport diagnostic validation
 
-The implementation checkpoint is source `0d9ec261dc6656a77fc852277addf40802c03255`
+The initial diagnostic checkpoint is source `0d9ec261dc6656a77fc852277addf40802c03255`
 at compilation build delta 20. The focused `LeonardoSyncTransportTests` run
 passes 17 tests, including
 `HTTPSRuntimeTests.testInterruptedPinnedTLSBodyReportsBoundedPartialTransferContext()`;
@@ -123,18 +123,37 @@ fixture scope, timestamps and SHA-256 values are in
 
 The [English](user-guide-https-diagnostic-en-20261106.png) and
 [Spanish](user-guide-https-diagnostic-es-20261106.png) screenshots are the
-original native WKWebView captures from one run. Their context sidecars bind
+original native WKWebView captures from that checkpoint. Their context sidecars bind
 each locale to the same source and capture session. The follow-up run's PNG for
 each locale has the same SHA-256 as its initial-run image; decoded pixel checks
 also find the inline-code background in all four files. This invalidates the
 apparent missing-line capture discrepancy recorded in [#388](https://github.com/PinedaTec-EU/LeonardoMD/issues/388);
 no product rendering failure or capture-code change is claimed.
 
-The bundled macOS app's Help workflow was not opened in this run; same-instance
-packaged-app help acceptance remains pending. The owner's 338,658-byte image
-still fails on the physical iPhone after a normal Mac editor restart. Its cause
-is unconfirmed, issue #380 is not resolved by these diagnostics, and no
-TestFlight build is claimed.
+The owner's 338,658-byte image still fails on the physical iPhone after a
+normal Mac editor restart. Its cause is unconfirmed; these diagnostics do not
+resolve #380 and no TestFlight build is claimed.
+
+#### #380 Guide v22 after merging PR #377
+
+The combined source is `7ab7adadc2c46ebf96416f9658b1edf790ea654b`, based on
+materialized PR #377 source `843670bcd3d5548242f04f11226e06487b3e790b`.
+Guide v22 keeps the new interrupted-transfer example and includes the merged
+math/outline help. Python packaging checks pass 3/3; the native guide and
+practice suite passes 7/7 at build delta 21. A source-bound `--skip-build`
+capture run passes those same seven tests, and the practice evidence run passes
+1/1 after filling, saving, closing and reopening the form.
+
+The [current English](user-guide-https-diagnostic-en-20261106-7ab7ada.png) and
+[Spanish](user-guide-https-diagnostic-es-20261106-7ab7ada.png) frames show the
+diagnostic example in the merged Guide v22. [Practice action and saved form
+captures](https-diagnostic-evidence-20261106-7ab7ada.json) record both locales
+with original context sidecars and source hashes. The preceding source-0d iOS
+alert capture remains representative: `Sources/LeonardoSyncTransport`,
+`Mobile/LittleLeonardo`, and their transport/UI test inputs are unchanged through
+the merge. The preceding guide captures remain historical for the pre-merge
+guide; use these new frames for the combined content. The physical large-image
+failure remains unconfirmed.
 
 Compile delta193 passes 340 XCTest cases (ten optional skips) and twelve renderer tests. Native Git acceptance also passes with the corrected fixture (138.046 seconds UI, 143.760 seconds server), independently verifying both publications, deletion, ancestry, excluded-blob omission and `git fsck`; the provenance manifest records this repetition separately from the retained captures. Delta193 adds only fail-fast guards to the separate publication regression; the native fixture and mobile/shared sources are unchanged. The real SSH fixture gives both upload-pack and receive-pack a 60-second post-EOF deadline, followed by a bounded cleanup check, within the unchanged 120-second transport timeout. A stalled session returns a specific remote-command diagnostic with session/PID, input/output bytes and separate termination/stream state; incomplete cleanup is reported explicitly. The controlled faults use a two-second deadline.
 
