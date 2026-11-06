@@ -128,7 +128,7 @@ final class MobileRevocationTests: XCTestCase {
                         }, status: { _, _, _ in
                             DirectDeviceStatus(access: .authorized, projects: [], capabilities: [.rubricExchangeV1])
                         }
-                    }
+                    })
                     return nil
                 } catch let error as SyncError {
                     return error

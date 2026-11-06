@@ -574,13 +574,10 @@ final class MobileLibrary {
            [.accepted, .pendingSend, .submitted].contains(existing.state) {
             return existing.request
         }
-        guard let connection = connections.first(where: { $0.deviceID == request.targetDeviceID }) else {
-            throw RubricExchangeError.unsupported
-        }
         return try await withRubricContext(for: request) { context in
-            let intent = MobileRubricDraft(id: request.id, connectionID: connection.connectionID,
+            let intent = MobileRubricDraft(id: request.id, connectionID: context.connection.connectionID,
                 targetDeviceID: request.targetDeviceID, requesterID: request.requesterID,
-                sourceFingerprint: connection.fingerprint, request: request,
+                sourceFingerprint: context.connection.fingerprint, request: request,
                 state: .pendingAcceptance, updatedAt: now())
             do {
                 let accepted = try await rubricAcceptance.accept(intent) { pending in
