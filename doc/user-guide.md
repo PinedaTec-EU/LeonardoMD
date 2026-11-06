@@ -53,6 +53,10 @@ Inline notation also works: $N(\varepsilon)$ counts the boxes.
 
 $$ \underbrace{a}_{x} + \underbrace{b}_{y} $$
 
+Check the curved brace strokes as well as the letters and labels. Radicals, long arrows and cancellation marks should also keep their complete shapes:
+
+$$ \sqrt{x+1} \xrightarrow{n\to\infty} \cancel{x} $$
+
 $$
 D_B(F) := \lim_{\varepsilon \to 0^{+}} \frac{\ln N(\varepsilon)}{\ln (1/\varepsilon)}, \qquad N(\varepsilon) = \text{number of intersecting boxes of side } \varepsilon\tag{1}
 $$
@@ -352,7 +356,7 @@ tags: [Swift, "Design Systems"]
 
 Search `tag:swift` or `tag:"Design Systems"` for exact, case-insensitive tag matches. A partial word or a body mention is not a tag match. The lightweight parser accepts a string, inline list or block list, not all YAML features. Empty tags disappear and case-insensitive duplicates collapse.
 
-Clickable tag pills remain visible even when the frontmatter table is hidden. In a project, clicking a pill fills search and reveals navigation if Focus was active. In a standalone file, tags do not create a project. **View → Document outline** (⌥⌘I) opens heading navigation; choose a heading to jump within this document. The inspector helps navigate; form answers are entered inside the page.
+Clickable tag pills remain visible even when the frontmatter table is hidden. In a project, clicking a pill fills search and reveals navigation if Focus was active. In a standalone file, tags do not create a project. **View → Document outline** (⌥⌘I) opens heading navigation; choose a heading to jump within this document. The preview goes to that heading even when images, tables or diagrams appear above it. Repeated titles keep their own destination. In Split, the editor selects the corresponding source line; choose the same heading again to return after scrolling. The inspector helps navigate; form answers are entered inside the page.
 
 ## 10. Editing, tables and recovery
 
