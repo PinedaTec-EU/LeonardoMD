@@ -57,6 +57,10 @@ La notación en línea también funciona: $N(\varepsilon)$ cuenta las cajas.
 
 $$ \underbrace{a}_{x} + \underbrace{b}_{y} $$
 
+Comprueba los trazos curvos de las llaves además de las letras y etiquetas. Las raíces, las flechas largas y las marcas de cancelación también deben conservar su forma completa:
+
+$$ \sqrt{x+1} \xrightarrow{n\to\infty} \cancel{x} $$
+
 $$
 D_B(F) := \lim_{\varepsilon \to 0^{+}} \frac{\ln N(\varepsilon)}{\ln (1/\varepsilon)}, \qquad N(\varepsilon) = \text{número de cajas que intersecan, de lado } \varepsilon\tag{1}
 $$
@@ -364,7 +368,7 @@ tags: [Swift, "Design Systems"]
 
 Busca `tag:swift` o `tag:"Design Systems"` para coincidencias exactas sin distinguir mayúsculas. Una palabra parcial o una mención en el cuerpo no es una etiqueta. El analizador ligero acepta una cadena, una lista en línea o una lista en bloque, pero no todas las construcciones YAML. Omite etiquetas vacías y agrupa duplicados sin distinguir mayúsculas.
 
-Las etiquetas pulsables siguen visibles aunque ocultes la tabla de metadatos. En un proyecto, pulsarlas rellena la búsqueda y revela la navegación si estaba activo el modo foco. En un archivo independiente no crean un proyecto. **Vista → Índice del documento** (⌥⌘I) abre la navegación por encabezados; elige uno para saltar dentro del documento. El inspector sirve para navegar; las respuestas del formulario se escriben en la página.
+Las etiquetas pulsables siguen visibles aunque ocultes la tabla de metadatos. En un proyecto, pulsarlas rellena la búsqueda y revela la navegación si estaba activo el modo foco. En un archivo independiente no crean un proyecto. **Vista → Índice del documento** (⌥⌘I) abre la navegación por encabezados; elige uno para saltar dentro del documento. La vista previa llega a ese encabezado aunque tenga imágenes, tablas o diagramas por encima. Los títulos repetidos conservan su propio destino. En Dividir, el editor selecciona la línea de origen correspondiente; vuelve a elegir el mismo encabezado para regresar tras desplazarte. El inspector sirve para navegar; las respuestas del formulario se escriben en la página.
 
 ## 10. Edición, tablas y recuperación
 

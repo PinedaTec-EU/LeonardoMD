@@ -899,9 +899,19 @@
       "pr": 376,
       "summary": "Help illustrations now blend into the document background with transparent Leonardo Classic artwork and localized captions, while new guide revisions preserve existing personal copies.",
       "to_version": "0.3.1022"
+    },
+    {
+      "delta": {
+        "build": 23
+      },
+      "from_version": "0.3.1022",
+      "merge_sha": "d4ca398e85f949c83d623bdf3b2bee0bacb94909",
+      "pr": 377,
+      "summary": "Extensible math symbols render complete shapes, and outline selections open the matching heading even when rendered content has different heights.",
+      "to_version": "0.3.1045"
     }
   ],
-  "current_version": "0.3.1022",
+  "current_version": "0.3.1045",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

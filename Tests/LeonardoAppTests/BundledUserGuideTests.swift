@@ -148,7 +148,10 @@ final class BundledUserGuideTests: XCTestCase {
                 try await waitFor("document.images[\(index)].naturalWidth > 0", in: web)
             }
             try await waitFor("document.querySelectorAll('[data-field-input]').length === 0 && document.querySelector('a[href$=\"/practice.mdlr\"]') !== null", in: web)
-            try await waitFor("document.querySelectorAll('.katex-display').length === 3 && document.querySelector('.katex-error') === null && document.querySelector('.katex-tag') !== null", in: web)
+            try await waitFor("document.querySelectorAll('.katex-display').length === 4 && document.querySelectorAll('.katex svg path[d]').length >= 4 && document.querySelector('.katex svg line') !== null && document.querySelector('.katex-error') === null && document.querySelector('.katex-tag') !== null", in: web)
+            let regression = try XCTUnwrap(session.headings.first { $0.title.contains("regression examples") || $0.title.contains("ejemplos de regresión") })
+            session.jumpToHeading(regression.line)
+            try await waitFor("Math.abs(window.LeonardoTables.headingForSourceLine(document.querySelector('#leonardo-markdown'), \(regression.line)).getBoundingClientRect().top) < 2", in: web)
             try await waitFor("document.querySelector('.vega-lite-placeholder svg') !== null", in: web)
             try await waitFor("Array.from(document.querySelectorAll('p')).some(node => node.textContent.includes('[LL1 op=snapshot'))", in: web)
             _ = try await web.evaluateJavaScript("document.querySelector('.mermaid-placeholder').scrollIntoView({block:'center'})")
