@@ -9,27 +9,35 @@ library to a group.
 
 The protocol accepts an explicit `rubricExchangeV1` capability during pairing
 and persists it in the paired-device record. This is a capability contract, not
-an automatic feature flag: protocol fixtures and explicit clients can opt in,
-while the current production `MobileLibrary` enrollment deliberately sends an
-empty capability set. Until #342 delivers the iOS request/draw/send UI and its
-enrollment wiring, current and legacy readers remain unsupported, so the Mac
-refuses to create or deliver a request to them. A legacy record decodes with no
-capabilities. The Mac server separately advertises its own capability through
-`DirectDeviceStatus`. A request is accepted only for one explicit authorized
-`readOnly` device; desktop peers, revoked devices and implicit group broadcast
-are excluded.
+an automatic feature flag: the mobile handler advertises it only when the
+request/list/accept/reject/submit path is complete. A capture-only mobile
+enrollment may therefore be approved with zero project grants while retaining
+the existing `readOnly` role. Already-linked mobile devices can refresh this
+optional capability through the authenticated endpoint without changing kind,
+grants, credential or document cache. A 404 from an older Mac is a safe
+reader-only fallback. Legacy records decode with no capabilities and old Mac
+decoders ignore the optional update fields. The Mac server separately advertises
+its own handler capability through `DirectDeviceStatus`; that server status is
+not redefined as a client announcement. A request is accepted only for one
+explicit authorized `readOnly` device; desktop peers, revoked devices and
+implicit group broadcast are excluded.
 
 ## Lifecycle
 
 The Mac creates a request with a stable requester identity, optional label hint,
 and a five-minute expiry. The iOS reader lists its targeted requests and may
-accept or reject one. The Mac may cancel it. An accepted reader submits one
-bounded `RubricResponse`; the Mac reads the exact response and never receives a
-document write capability. Expired, cancelled, rejected or revoked requests
-cannot be answered. Identical retries return the saved response, while a
-different retry for the same request is a conflict. Terminal records are
-retained for 30 days and then pruned; the store is bounded to 256 records and
-16 MiB, with responses limited to 24 KiB.
+accept or reject one. The Mac may cancel it. An accepted reader stores an
+independent durable draft containing the label and drawing before it submits
+one bounded `RubricResponse`; drawing, undo and restart do not set
+`submittedAt`. On the first explicit Send, the response bytes and submission
+time are frozen and saved as `pendingSend` before network I/O. The Mac reads the
+exact response and never receives a document write capability. Expired,
+cancelled, rejected or revoked requests cannot be answered. Identical retries
+return the saved response, while a different retry for the same request is a
+conflict. `submitted` never regresses after a late failure; transient failures
+retain the frozen pending payload, while terminal invalidation blocks it.
+Terminal records are retained for 30 days and then pruned; the mobile draft
+store is bounded to 64 records and 2 MiB, with responses limited to 24 KiB.
 
 ## Security and persistence
 
@@ -45,15 +53,12 @@ Persistence failures leave in-memory state unchanged.
 
 The protocol is pull-based: an inactive iOS process is not treated as a
 continuously running background listener. Unsupported, offline and revoked
-states remain explicit to callers. PR #344 validates the lifecycle with focused
-exchange tests, including a default legacy enrollment that remains unsupported,
-an explicit capable client, and an actual pinned HTTPS request/accept/response,
-duplicate-retry and revocation round trip. This validates protocol foundations,
-not the production mobile flow. Full-suite CI and an independent judgment
-remain required. User-facing iOS/Mac screens are follow-up work in
-[#341](https://github.com/PinedaTec-EU/LeonardoMD/issues/341) and
-[#342](https://github.com/PinedaTec-EU/LeonardoMD/issues/342); #342 owns the
-request/draw/send UI and production enrollment wiring. TestFlight is
+states remain explicit to callers. PR #344 records the protocol foundation;
+the #342 implementation adds focused draft/state/legacy tests, a signed native
+iOS UI test and an owned Mac HTTPS fixture. The native test covers a real
+simulator accept/draw/undo/clear/preview/restart/send path and verifies the
+response received by the Mac fixture. This is not physical-device,
+App Store/TestFlight or production-network acceptance; distribution remains
 [#343](https://github.com/PinedaTec-EU/LeonardoMD/issues/343).
 
 ## Mac owner capture flow (#341)
@@ -81,9 +86,9 @@ library-only save remains available. Local capture records contain a SHA-256
 source digest, not the document text, are atomically written with the existing
 process lock, and keep unsaved completed responses until the user saves them.
 Saved/terminal records are bounded and pruned only when safe. The owner UI
-shows helper-offline, service-offline and unsupported-peer states. This is a
-Mac-side protocol/UI foundation: it does not claim that the current mobile
-build advertises or renders rubric requests until #342 is delivered.
+shows helper-offline, service-offline and unsupported-peer states. The current
+Mac flow receives only the mobile rubric response and keeps the existing
+explicit review/save boundary.
 
 If the owner cancels while the helper create call is still in flight, the local
 record stores a separate cancellation intent. A `notFound` cancel reply is not
@@ -96,3 +101,20 @@ just before cancellation could be confirmed, the Mac records a local
 `completedBeforeCancellation` outcome, discards the returned drawing, and
 shows a terminal message with **Request another rubric**; it does not pretend
 that a remote cancellation succeeded or allow a library save.
+
+## iOS draft and response boundary (#342)
+
+`MobileRubricDraft` binds the request ID, linked connection identity, target
+device, requester and pinned source fingerprint. Its persisted `drawing` and
+`label` are independent of the optional response, so a user can close/reopen
+the capture card before Send and recover unsent work. The state ordering is
+`accepted → pendingSend → submitted`; `blocked` and `submitted` absorb late
+errors without reopening or mutating a response. Response persistence compares
+the frozen encoded content, not only a generated ID.
+
+The mobile screen exposes explicit Accept/Reject, label, finger/Pencil drawing,
+Undo, Clear, Preview and Send/Retry controls. It never sends a drawing merely
+because it was drawn. The portable payload is a `LeonardoRubric` with a 24 KiB
+encoded response limit. A successful Mac receipt is bound to the same
+requester, target, request ID and TLS identity; expiry, cancellation and
+revocation remain hard send barriers.

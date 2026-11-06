@@ -571,12 +571,58 @@ Little Leonardo is a **read-only companion**. Desktop sharing and device trust a
 4. Create an invitation. Its QR and copied link are two ways to open the same invitation: scan the QR in Little Leonardo or paste the link under **Connect to other computers** on another Mac. Compare the verification codes and approve the pending device on this source Mac. Device rows state **read-only** (Little Leonardo or compatible clients) or **LeonardoMD on Mac · changes require review**. The label follows the granted capability, not the device name.
 5. Import the shared content on the companion and verify it before relying on an offline copy. Use Revoke on the Mac to remove a device's future access.
 
+For rubric capture without document access, do not choose **Share current project**.
+In the pending-connection review, leave every project toggle off. When the sheet
+says **This Little Leonardo can receive rubrics without access to any project**,
+compare the codes and choose **Allow connection**. This zero-grant read-only
+link is enough for **Use a linked Little Leonardo** and keeps document sharing
+off.
+
 Rubric capture is a separate, explicit Mac action. After a companion advertises
 support, **Insert → New rubric… → Use a linked Little Leonardo** lists that
 one device. The companion only draws and returns the rubric; it cannot edit the
 document. A helper, service or capability problem is shown as an actionable
-offline/unsupported state. The current companion release does not yet advertise
-this capability; the mobile request/draw/send flow is delivered separately.
+offline/unsupported state.
+
+### Answer a rubric request on iOS
+
+This is a capture-only response channel for a **known, linked Mac**. Pairing
+approval may add the optional `rubricExchangeV1` capability to an already
+linked read-only mobile device, but it does not grant a document, project,
+folder, Git or write permission. Your existing read-only navigation and offline
+copies remain unchanged. A legacy Mac that does not understand the optional
+capability fields continues to decode the normal server status and can keep
+serving the existing reader flow.
+
+When the Mac sends a request, keep Little Leonardo in the foreground and open
+the request card. The card names the requesting Mac and offers two explicit
+choices: **Accept and draw** or **Reject**. After accepting, enter the label and
+draw with a finger or Apple Pencil. **Undo** removes the last stroke;
+**Clear** removes all unsent strokes; **Preview** shows the portable result
+without sending it. The mobile canvas keeps a conservative 600-point budget
+and checks the complete response before accepting a stroke, so a valid core
+drawing cannot later fail the 24 KiB portable envelope at Send. After Send,
+the preview is locked with the frozen response. The app polls requests while
+it is active; it does not promise a continuous background listener.
+
+Nothing leaves the device while you draw. Press **Send** only when the label
+and drawing are ready. Leonardo sends one portable `LeonardoRubric` response,
+bounded to 24 KiB, over the linked pinned HTTPS connection. The Mac receives
+the response for the matching request and device only; it does not receive
+document contents or a document-edit operation. A retry reuses the same frozen
+label, drawing and submission time, so a lost acknowledgement cannot create a
+different answer. If the request expires, is cancelled or the device is
+revoked, sending is blocked and the card explains that a new request is
+required.
+
+You may close and reopen the card before **Send**. Little Leonardo restores the
+label and unsent strokes from its local durable draft. Once **Send** has frozen
+the response, later undo/clear actions cannot mutate the pending payload; a
+transient network failure keeps that exact payload available for **Retry**.
+
+The Spanish guide includes a real simulator capture of this flow. It is not
+evidence of a physical device, App Store/TestFlight distribution or a document
+grant.
 
 **Leonardo Sync is required in both directions.** If it is disabled, stopped, awaiting macOS approval or unavailable, the Mac is offline for device synchronization even while LeonardoMD is open. Enable it from these preferences on each Mac. The service starts after you log in following a restart and keeps sharing when the editor closes; it does not serve documents before login or wake a sleeping Mac. If unavailable, check the background-item approval, network, shared disk and file permissions, then retry.
 

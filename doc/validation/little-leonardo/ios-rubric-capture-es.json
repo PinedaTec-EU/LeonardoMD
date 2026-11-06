@@ -1,0 +1,25 @@
+{
+  "capture": "ios-rubric-capture-es.png",
+  "captureSha256": "4f2e55b05403536556876e1c86739f066cae8a9cd20841d2ce3cae476c6baa9b",
+  "sourceCommit": "3ff2195641589da70b856141209a418df9eb673a",
+  "testIdentifier": "PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS()",
+  "testResult": "/Users/jmr.pineda/Library/Developer/Xcode/DerivedData/LittleLeonardo-ahydmcrxoopimxfcjnvtbahydilr/Logs/Test/Test-LittleLeonardo-2026.11.06_00-49-43-+0100.xcresult",
+  "simulator": {
+    "name": "LittleLeonardo Rubric342 QA 20261105",
+    "model": "iPhone18Pro",
+    "os": "iOS 27.0",
+    "udid": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B"
+  },
+  "responseSha256": "5c0b1215cc2871607f42191e8353ab391f621da19214a4823be1cd7837b9e135",
+  "manifestSha256": "fd0da8f317a312e6c8ae5a11c8efee98545f37edf901ab76c191e7583f22c0d0",
+  "states": {
+    "drawing": { "capture": "ios-rubric-capture-es-drawing.png", "sha256": "b2c3871a37cec0d7e174d94e766addf28383e1800e22ec66695ba28331c58d46" },
+    "preview": { "capture": "ios-rubric-capture-es-preview.png", "sha256": "0a633d8cbe66009e8396aa28c16422d19a575ae5dfec99e7f7b669ab401974b7" },
+    "sent": { "capture": "ios-rubric-capture-es.png", "sha256": "4f2e55b05403536556876e1c86739f066cae8a9cd20841d2ce3cae476c6baa9b" }
+  },
+  "limits": [
+    "Spanish simulator capture only.",
+    "Synthetic QA Mac fixture over real pinned HTTPS; no physical device, App Store/TestFlight or production-network claim.",
+    "The request grants no document read/write capability; existing reader/offline behavior is outside this capture."
+  ]
+}

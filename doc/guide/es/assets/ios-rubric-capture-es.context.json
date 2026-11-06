@@ -1,0 +1,9 @@
+{
+  "source": "Native Little Leonardo UI test with an owned Mac HTTPS fixture",
+  "source_sha": "3ff2195641589da70b856141209a418df9eb673a",
+  "captured_at": "2026-11-06T00:49:43+01:00",
+  "locale": "es",
+  "state": "Accepted Mac request, finger drawing, undo/clear/preview, restart restore, explicit send and Mac receipt; guide image is the resized sent-state derivative, with full drawing and preview states in validation",
+  "simulator": "LittleLeonardo Rubric342 QA 20261105 / iPhone18Pro / iOS 27.0 / A5A73B11-EE27-40AC-ABAB-CADF1B85143B",
+  "limitations": "Capture-only synthetic fixture; no physical device, production network, App Store/TestFlight or document grant"
+}

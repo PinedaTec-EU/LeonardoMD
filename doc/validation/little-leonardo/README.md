@@ -21,6 +21,26 @@ Signed iPhone17ProMax Simulator, iOS26.5. `ios-git-integrated.png` and `ios-git-
 
 `ios-direct-revoked.png` comes from successful HTTPS/UI enrollment, read-only refresh, offline retention, retry and revocation acceptance on these final signed iOS sources (53.320 seconds UI, 53.364 seconds server). The capture shows Access withdrawn with Edit disabled, without an alert masking the state. An independent owned-container check confirms the project corpus and grant are absent. [Direct acceptance provenance](direct-acceptance.json) records results and source hashes. Final hosted CI and strict judgment must cover the delivered head.
 
+### #342 Mac-requested rubric capture
+
+`ios-rubric-capture-es.png` is the Spanish iPhone18Pro/iOS27.0 Simulator
+sent-state capture; `ios-rubric-capture-es-drawing.png` and
+`ios-rubric-capture-es-preview.png` preserve the real drawing and pre-send
+preview states from the same run of
+`PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS()`.
+The real signed UI test uses only simulator
+`A5A73B11-EE27-40AC-ABAB-CADF1B85143B` and a synthetic owned Mac fixture over
+the pinned HTTPS transport. It accepts the targeted request, draws with the
+native canvas, exercises undo/clear/preview, terminates and relaunches before
+Send to restore the unsent draft, then sends the frozen response; the fixture
+verifies the response received on the Mac. Exact capture, response, per-state
+hashes and source metadata are in [ios-rubric-capture-es.json](ios-rubric-capture-es.json).
+
+This is capture-only: it does not grant document access or editing, and does
+not claim physical-device networking, App Store/TestFlight distribution or a
+production Mac. The existing reader navigation/offline corpus remains a
+separate behavior.
+
 ## Reproduction and limits
 
 Compile delta193 passes 340 XCTest cases (ten optional skips) and twelve renderer tests. Native Git acceptance also passes with the corrected fixture (138.046 seconds UI, 143.760 seconds server), independently verifying both publications, deletion, ancestry, excluded-blob omission and `git fsck`; the provenance manifest records this repetition separately from the retained captures. Delta193 adds only fail-fast guards to the separate publication regression; the native fixture and mobile/shared sources are unchanged. The real SSH fixture gives both upload-pack and receive-pack a 60-second post-EOF deadline, followed by a bounded cleanup check, within the unchanged 120-second transport timeout. A stalled session returns a specific remote-command diagnostic with session/PID, input/output bytes and separate termination/stream state; incomplete cleanup is reported explicitly. The controlled faults use a two-second deadline.

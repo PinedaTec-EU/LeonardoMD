@@ -47,8 +47,34 @@ owner-side Mac flow on top of the authenticated exchange in
   completion; the focused `RubricCaptureTests` covers restart/idempotence and
   this monotonic lifecycle rule.
 
-Production mobile enrollment remains capability-empty until #342 supplies the
-request/draw/send UI. Protocol fixtures may advertise the capability, but the
-Mac must not present an unsupported historical reader as a capture target.
-The published bilingual guide is v14 because main also carries the #337
-Synchronization role pages; Guide-v13 remains historical and is not bundled.
+## iOS response channel (#342)
+
+The linked Little Leonardo companion remains read-only for documents. A mobile
+device may additionally be approved with the optional `rubricExchangeV1`
+capability and zero project grants. An authenticated capability refresh keeps
+kind, grants, credential and cached documents unchanged; an older Mac that
+does not expose that endpoint falls back safely to the existing reader path.
+The server's `DirectDeviceStatus.capabilities` remains the server handler
+status, not a client announcement, and optional V1 fields preserve legacy
+decoding.
+
+The active iOS request card requires explicit Accept or Reject and then offers
+label, finger/Pencil drawing, Undo, Clear, Preview and explicit Send. The canvas
+matches the portable renderer's brush taper and single-point dots, samples a
+conservative 600-point budget, and preflights the complete 24 KiB response
+envelope. Before Send, the label and drawing are durable draft fields
+independent of any response; closing/reopening the app restores them. Send
+freezes one portable response before network I/O. `pendingSend` retries the
+exact bytes after a transient error; `submitted` never regresses, while expiry,
+cancellation or revocation blocks sending. The frozen card presents a locked
+preview. The Mac receives only the response for the matching request, target
+and linked TLS identity.
+
+Native evidence is preserved under
+`doc/validation/little-leonardo/ios-rubric-capture-es.png` plus the drawing and
+preview state captures, with per-state hashes in the JSON sidecar. It is a
+signed iPhone18Pro/iOS27.0 Simulator run against the owned Mac HTTPS fixture,
+not physical-device, App Store/TestFlight or production network evidence.
+
+The published bilingual guide is v15; #337's Synchronization role pages remain
+in chapters 14–15 and previous personal guide copies are preserved.

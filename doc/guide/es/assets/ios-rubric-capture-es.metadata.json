@@ -1,0 +1,39 @@
+{
+  "asset": "ios-rubric-capture-es.png",
+  "assetSha256": "d1da606130c6bb0d7a2ee88513826f5a3787702990acfdc0fd9ef17689f7e1ab",
+  "sourceCaptureSha256": "4f2e55b05403536556876e1c86739f066cae8a9cd20841d2ce3cae476c6baa9b",
+  "locale": "es",
+  "sourceCommit": "3ff2195641589da70b856141209a418df9eb673a",
+  "capturedAt": "2026-11-06T00:49:43+01:00",
+  "testIdentifier": "PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS()",
+  "testResult": "/Users/jmr.pineda/Library/Developer/Xcode/DerivedData/LittleLeonardo-ahydmcrxoopimxfcjnvtbahydilr/Logs/Test/Test-LittleLeonardo-2026.11.06_00-49-43-+0100.xcresult",
+  "simulator": {
+    "name": "LittleLeonardo Rubric342 QA 20261105",
+    "model": "iPhone18Pro",
+    "os": "iOS 27.0",
+    "udid": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B"
+  },
+  "transport": "real pinned HTTPS fixture",
+  "responseSha256": "5c0b1215cc2871607f42191e8353ab391f621da19214a4823be1cd7837b9e135",
+  "manifestSha256": "fd0da8f317a312e6c8ae5a11c8efee98545f37edf901ab76c191e7583f22c0d0",
+  "sourceFileSha256": {
+    "Mobile/LittleLeonardo/MobileRubricCaptureView.swift": "18b1f858c7bb350a5a96c41a89ca329056365b6494d07fb8e6cf5fe90f9d7d27",
+    "Mobile/LittleLeonardo/MobileLibrary.swift": "0c1b0dd9e24140dd9678253531ea197f616c30b91b0c46d6661abe2fab0aaef7",
+    "Mobile/LittleLeonardoUITests/PairingUITests.swift": "260e6a4d1ef4c670e9f2cb16e1a44a29570d2409bc6c18f3bd8f6827ba5a15e6",
+    "Tests/LeonardoDesktopSyncTests/MobileDirectAcceptanceFixtureTests.swift": "c9b4362f24a6f5057c0ac2e8381ce88febe16486d1e0a53941e3dd886ed2a324",
+    "Sources/LeonardoSync/MobileRubricDraft.swift": "04245f4ad18c54bdd42bd6cfa9aaf8acc38fd5316539e4918ad15dee137a59c9",
+    "Sources/LeonardoSync/RubricExchange.swift": "47a2a1383dccebf43a8e0f6873d94132680e30fb1bb231bceb9d0f3ecb6d10bb",
+    "Sources/LeonardoCore/LeonardoGraphic.swift": "2d49d255baa57368117e8f037cb262e707a6eda2da839a1b8aa9f1c1f00063f3"
+  },
+  "states": {
+    "drawing": { "asset": "ios-rubric-capture-es-drawing.png", "sha256": "b2c3871a37cec0d7e174d94e766addf28383e1800e22ec66695ba28331c58d46" },
+    "preview": { "asset": "ios-rubric-capture-es-preview.png", "sha256": "0a633d8cbe66009e8396aa28c16422d19a575ae5dfec99e7f7b669ab401974b7" },
+    "sent": { "asset": "ios-rubric-capture-es.png", "sha256": "4f2e55b05403536556876e1c86739f066cae8a9cd20841d2ce3cae476c6baa9b" }
+  },
+  "packaging": "Guide copy is a deterministic 598x1300 derivative of the full 1206x2622 validation capture; the validation PNG remains byte-for-byte original.",
+  "limitations": [
+    "Spanish UI capture only; no English simulator capture is claimed.",
+    "Synthetic QA Mac fixture and local pinned HTTPS; no physical device, App Store/TestFlight or production-network claim.",
+    "Capture-only rubric response; it does not grant document access or document editing."
+  ]
+}
