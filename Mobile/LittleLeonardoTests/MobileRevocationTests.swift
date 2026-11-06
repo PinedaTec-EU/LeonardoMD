@@ -75,7 +75,7 @@ final class MobileRevocationTests: XCTestCase {
             XCTAssertEqual(error as? SyncError, .revoked)
         }
 
-        let authorization = MobileAuthorizationGenerations()
+        var authorization = MobileAuthorizationGenerations()
         let before = authorization[revoked.connectionID]
         authorization.confirmDenied(connectionID: revoked.connectionID, projectIDs: [project])
         authorization.clearQuarantine(connectionID: revoked.connectionID)
@@ -98,7 +98,7 @@ final class MobileRevocationTests: XCTestCase {
         } catch TestFailure.offline { }
 
         XCTAssertTrue(try journal.load().isEmpty)
-        var authorization = MobileAuthorizationGenerations()
+        let authorization = MobileAuthorizationGenerations()
         XCTAssertFalse(authorization.isDenied(connectionID: connectionID))
     }
 
