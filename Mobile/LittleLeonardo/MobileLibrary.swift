@@ -29,7 +29,7 @@ final class MobileLibrary {
     private var cacheEpoch: UInt64 = 0
     private var authorizationEpoch: UInt64 = 0
     private var authorizationGenerations = MobileAuthorizationGenerations()
-    private typealias ConnectionToken = MobileConnectionToken
+    typealias ConnectionToken = MobileConnectionToken
 
     private struct RubricContext {
         let connection: MobileDirectConnection
@@ -586,7 +586,7 @@ final class MobileLibrary {
                 let accepted = try await rubricAcceptance.accept(intent) { pending in
                     let accepted = try await context.client.acceptRubricRequest(requestID: pending.id,
                         deviceID: context.connection.deviceID, credential: context.credential)
-                    try validateRubricContext(context.token)
+                    try await self.validateRubricContext(context.token)
                     return accepted
                 }
                 await refreshDrafts()
@@ -687,6 +687,8 @@ final class MobileLibrary {
             case .submitted:
                 return latest
             case .accepted:
+                throw RubricExchangeError.invalidTransition
+            case .pendingAcceptance:
                 throw RubricExchangeError.invalidTransition
             case .pendingSend:
                 guard latest.response == response else { throw RubricExchangeError.conflict }
@@ -809,7 +811,7 @@ final class MobileLibrary {
                     _ = try await rubricAcceptance.accept(draft) { pending in
                         let accepted = try await context.client.acceptRubricRequest(requestID: pending.id,
                             deviceID: context.connection.deviceID, credential: context.credential)
-                        try validateRubricContext(context.token)
+                        try await self.validateRubricContext(context.token)
                         return accepted
                     }
                 }
