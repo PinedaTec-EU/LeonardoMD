@@ -1,6 +1,7 @@
 import XCTest
 import AppKit
 import SwiftUI
+import Vision
 import LeonardoCore
 import LeonardoSync
 import LeonardoSyncTransport
@@ -78,11 +79,18 @@ final class PeerSyncErrorMessageTests: XCTestCase {
             // Capture the actual sheet window: cacheDisplay omits AppKit vibrancy/background layers.
             let capture = Process()
             capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-            capture.arguments = ["-x", "-o", "-l", String(window.windowNumber), image.path]
+            capture.arguments = ["-x", "-o", "-l", String(sheet.windowNumber), image.path]
             let capturedAt = ISO8601DateFormatter().string(from: Date())
             try capture.run()
             capture.waitUntilExit()
             XCTAssertEqual(capture.terminationStatus, 0, "Window capture requires local screen-recording permission")
+            let recognition = VNRecognizeTextRequest()
+            recognition.recognitionLevel = .accurate
+            recognition.recognitionLanguages = [language.rawValue]
+            try VNImageRequestHandler(url: image).perform([recognition])
+            let visible = (recognition.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+            XCTAssertTrue(visible.joined(separator: " ").contains("HTTP 413"), "Reject blank or incomplete captures")
+            XCTAssertTrue(visible.contains(L10n.text("OK")), "The recovery dialog button must be visible")
             let context: [String: Any] = [
                 "captured_at": capturedAt,
                 "route": "/native/preferences/synchronization/connections",
@@ -91,7 +99,7 @@ final class PeerSyncErrorMessageTests: XCTestCase {
                 "browser_version": "Not applicable: native AppKit/SwiftUI",
                 "viewport_css": ["width": Int(window.frame.width), "height": Int(window.frame.height)],
                 "capture_mode": "viewport", "data_provenance": "synthetic",
-                "state": "Synthetic authorized HTTP 413 corpus-size failure; viewport_css records native window points, CSS is not applicable; capture source \(ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "unbound")"
+                "state": "Synthetic authorized HTTP 413 corpus-size failure; viewport_css records the measured owner-window points of the composed alert capture, CSS is not applicable; capture source \(ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "unbound")"
             ]
             try JSONSerialization.data(withJSONObject: context, options: [.prettyPrinted, .sortedKeys])
                 .write(to: image.deletingPathExtension().appendingPathExtension("context.json"))
