@@ -165,9 +165,13 @@ final class PairingUITests: XCTestCase {
         add(approvalCapture)
 
         // Cancel the real pending request after the approval card is visible,
-        // but before iOS sends an Accept. Foreground polling must reconcile the
-        // terminal owner state into the open card rather than leaving retry UI.
+        // but before iOS sends an Accept. Pressing Accept now exercises the
+        // terminal response path: its durable pending intent must be converted
+        // into the blocked card rather than leaving retry UI.
         try advanceDirectFixture("cancel")
+        XCTAssertTrue(app.buttons["rubric-accept"].waitForExistence(timeout: 5),
+                      "The approval control must still be present before the terminal Accept is attempted")
+        app.buttons["rubric-accept"].tap()
         let blocked = app.staticTexts["rubric-approval-blocked"]
         XCTAssertTrue(blocked.waitForExistence(timeout: 30),
                       "A cancelled request must replace the live approval controls with the blocked notice")
