@@ -212,7 +212,9 @@ struct MobileRubricCaptureView: View {
         .accessibilityIdentifier("rubric-request-sheet")
         .onChange(of: currentDraft?.state) { _, state in
             guard let draft = currentDraft else { return }
-            if state == .submitted {
+            if state == .blocked {
+                failure = nil
+            } else if state == .submitted {
                 failure = nil
                 phase = .submitted
             }
