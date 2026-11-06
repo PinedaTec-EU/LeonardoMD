@@ -48,6 +48,29 @@ final class RubricExchangeTests: XCTestCase {
         catch { XCTAssertEqual(error as? RubricExchangeError, .conflict) }
     }
 
+    func testAcceptanceRetryCannotReopenCancelledOrExpiredRequest() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = FileRubricExchangeStore(url: root.appendingPathComponent("requests"))
+        for cancelled in [true, false] {
+            let request = try RubricRequest(targetDeviceID: UUID(), requesterID: UUID(),
+                                           requesterName: "Mac", createdAt: now)
+            try await store.create(request)
+            _ = try await store.transition(requestID: request.id, targetDeviceID: request.targetDeviceID,
+                                           to: .accepted, now: now)
+            if cancelled {
+                _ = try await store.cancel(requestID: request.id, requesterID: request.requesterID, now: now)
+            }
+            do {
+                _ = try await store.transition(requestID: request.id, targetDeviceID: request.targetDeviceID,
+                    to: .accepted, now: cancelled ? now : request.expiresAt)
+                XCTFail("Retry must retain terminal states")
+            } catch {
+                XCTAssertEqual(error as? RubricExchangeError, cancelled ? .invalidTransition : .expired)
+            }
+        }
+    }
+
     func testPortableResponseSizeProbeRejectsLargeButCoreValidDrawings() {
         XCTAssertTrue(RubricResponse.fitsEncodedSize(label: "Firma", rubric: rubric))
         let threePointStroke = LeonardoInkStroke(color: "#224466", width: 4, style: .solid,

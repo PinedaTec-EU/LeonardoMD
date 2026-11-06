@@ -594,7 +594,10 @@ serving the existing reader flow.
 
 When the Mac sends a request, keep Little Leonardo in the foreground and open
 the request card. The card names the requesting Mac and offers two explicit
-choices: **Accept and draw** or **Reject**. After accepting, enter the label and
+choices: **Accept and draw** or **Reject**. Little Leonardo saves your acceptance
+before contacting the Mac and enables drawing only after the accepted draft is
+saved. If confirmation fails or the app restarts, reopen the card and retry;
+it continues the same request. After accepting, enter the label and
 draw with a finger or Apple Pencil. **Undo** removes the last stroke;
 **Clear** removes all unsent strokes; **Preview** shows the portable result
 without sending it. The mobile canvas keeps a conservative 600-point budget

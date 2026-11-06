@@ -606,7 +606,10 @@ leyendo el estado normal del servidor y puede mantener el flujo de lector.
 
 Cuando el Mac envía una solicitud, mantén Little Leonardo en primer plano y
 abre la tarjeta. La tarjeta identifica al Mac solicitante y ofrece dos opciones
-explícitas: **Aceptar y dibujar** o **Rechazar**. Tras aceptar, escribe la
+explícitas: **Aceptar y dibujar** o **Rechazar**. Little Leonardo guarda tu
+aceptación antes de contactar al Mac y habilita el dibujo cuando el borrador
+aceptado está guardado. Si falla la confirmación o se reinicia la app, vuelve
+a abrir la tarjeta y reintenta: continúa la misma solicitud. Tras aceptar, escribe la
 etiqueta y dibuja con el dedo o el Apple Pencil. **Deshacer** elimina el último
 trazo; **Limpiar** elimina todos los trazos todavía no enviados; **Vista previa**
 muestra el resultado portable sin enviarlo. El lienzo móvil conserva un límite

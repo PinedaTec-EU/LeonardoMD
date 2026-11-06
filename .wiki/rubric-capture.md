@@ -58,7 +58,12 @@ The server's `DirectDeviceStatus.capabilities` remains the server handler
 status, not a client announcement, and optional V1 fields preserve legacy
 decoding.
 
-The active iOS request card requires explicit Accept or Reject and then offers
+The active iOS request card persists a `pendingAcceptance` intent before remote
+acceptance and enables ink only after the accepted local draft commits. The
+accept transition is idempotent for the same authorized target; restart and
+lost-acknowledgement recovery reuse the intent without replacing advanced ink
+or a frozen response ([#362](https://github.com/PinedaTec-EU/LeonardoMD/issues/362)).
+The card requires explicit Accept or Reject and then offers
 label, finger/Pencil drawing, Undo, Clear, Preview and explicit Send. The canvas
 matches the portable renderer's brush taper and single-point dots, samples a
 conservative 600-point budget, and preflights the complete 24 KiB response
