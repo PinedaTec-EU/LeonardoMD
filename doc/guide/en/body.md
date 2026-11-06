@@ -9,6 +9,8 @@ This guide is a reading document in the Leonardo format inside an **MDLZ** packa
 
 ![A document journey: write, fill and share](assets/journey.png)
 
+Illustrative workflow: **Write · MDLF → Fill · MDLR → Share · MDLZ**.
+
 
 ## A document you can see
 
@@ -103,6 +105,8 @@ Use **Save** (⌘S) to persist changes. Undo and Redo apply to document edits. C
 
 ![Illustrative diagram: one MDLF or MDLR document, local resources, definitions and answers in an MDLZ package](assets/package.png)
 
+Illustrative diagram: **one MDLF or MDLR document + local resources (`assets/`) + definitions and answers inside that document**.
+
 Definitions and answers belong inside the root document; they are not additional root files.
 
 MDLZ is transport, not another document language. MDLF and MDLR are UTF-8 text: a versioned JSON front matter block followed by Markdown. Renaming a suffix does not convert a document. MDLR hints at the opening mode; it does not prevent structural editing by a recipient.
@@ -167,6 +171,8 @@ not silently change its field identifier or invalidate previous answers.
 ## 5. Export and share
 
 ![Choose an export for its recipient](assets/export.png)
+
+Illustrative alternatives: **MDLZ to edit or fill · Markdown to read · PDF for fixed pages**.
 
 | Need | Action | Result and limits |
 | --- | --- | --- |
@@ -240,6 +246,8 @@ Review the output in Leonardo. A valid file can still contain wrong answers. Ins
 **File → Import with your agent…** opens this help inside Leonardo. It does not select, convert or send a PDF. You choose the agent and supply a copy of the file for it to convert.
 
 ![Illustrative diagram: original PDF → your agent and the skill → editable Leonardo document](assets/import.png)
+
+Illustrative workflow: **original PDF → your agent + the Leonardo Format skill → editable Leonardo document**.
 
 #### What you need
 

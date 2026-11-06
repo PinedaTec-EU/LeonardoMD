@@ -10,7 +10,7 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let oldCopies = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
+        let oldCopies = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
         let oldAnswers = Data("previous guide and saved answers".utf8)
         for oldCopy in oldCopies {
             try FileManager.default.createDirectory(at: oldCopy.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -22,13 +22,13 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v15/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v16/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
-            let legacyImport = root.appendingPathComponent("Agent Import Guides/v1/\(language.rawValue)/AgentImport-v1-\(language.rawValue).mdlz")
+            let legacyImport = root.appendingPathComponent("Agent Import Guides/v2/\(language.rawValue)/AgentImport-v2-\(language.rawValue).mdlz")
             try FileManager.default.createDirectory(at: legacyImport.deletingLastPathComponent(), withIntermediateDirectories: true)
             try oldAnswers.write(to: legacyImport)
             let importCopy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root, topic: .agentImport)
-            XCTAssertTrue(importCopy.path.contains("Agent Import Guides/v2/"))
+            XCTAssertTrue(importCopy.path.contains("Agent Import Guides/v3/"))
             XCTAssertEqual(try Data(contentsOf: legacyImport), oldAnswers)
             var workspace = try LeonardoPackageTransport.open(copy)
             defer { LeonardoPackageTransport.discard(workspace) }
@@ -196,8 +196,8 @@ final class BundledUserGuideTests: XCTestCase {
             XCTAssertFalse(session === original)
             XCTAssertNil(session.errorMessage)
             XCTAssertEqual(session.mode, .preview)
-            XCTAssertEqual(session.displayDocumentURL?.lastPathComponent, "AgentImport-v2-\(language.rawValue).mdlz")
-            XCTAssertTrue(session.displayDocumentURL?.path.contains("Agent Import Guides/v2/") == true)
+            XCTAssertEqual(session.displayDocumentURL?.lastPathComponent, "AgentImport-v3-\(language.rawValue).mdlz")
+            XCTAssertTrue(session.displayDocumentURL?.path.contains("Agent Import Guides/v3/") == true)
             XCTAssertFalse(session.leonardoDocument?.isForm ?? true)
             let copy = try XCTUnwrap(session.displayDocumentURL)
             let bytes = try Data(contentsOf: copy)

@@ -1,8 +1,8 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v15-en.mdlz` and `Guide-v15-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v16-en.mdlz` and `Guide-v16-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v15/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v16/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
@@ -12,9 +12,9 @@ and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
-File → Import with your agent opens `AgentImport-v2-en.mdlz` or
-`AgentImport-v2-es.mdlz` in the same tab/package flow, with personal copies under
-`~/Library/Application Support/LeonardoMD/Agent Import Guides/v2/<language>/`.
+File → Import with your agent opens `AgentImport-v3-en.mdlz` or
+`AgentImport-v3-es.mdlz` in the same tab/package flow, with personal copies under
+`~/Library/Application Support/LeonardoMD/Agent Import Guides/v3/<language>/`.
 The standalone guide is generated from the marked agent-import section of
 chapter 6 in the same bilingual body sources. Its illustrative PNG requires no
 optional extension. This help entry does not select, send or convert a PDF;
@@ -31,7 +31,7 @@ plus local assets. Only PNG content assets from locale `assets/` folders are cop
 contexts/metadata stay in Git for provenance and never enter the user package.
 The builder supplies a lightweight `cover.png` derivative of the approved banner
 (the original About artwork is unchanged); locale `assets/` folders supply the
-premium PNG illustrations. Artwork provenance is stored beside each locale’s assets.
+transparent Leonardo Classic PNG illustrations. Artwork provenance is stored beside each locale’s assets.
 The four 1200×400 illustrations bound decoded memory without altering renderer limits.
 The optional `--web-output doc` also regenerates both web manuals and their
 localized PNG illustration links from the same sources, adapting image paths and showing
@@ -65,3 +65,5 @@ practice link is recognized only in the guide opened through Help/Welcome.
 The linked web copies are generated at `doc/guide/<locale>/practice.mdlr`.
 No system URL protocol or general document-command facility is introduced.
 Tracking: [#312](https://github.com/PinedaTec-EU/LeonardoMD/issues/312).
+
+Illustrations use real alpha transparency and the Classic red/oxide/ochre palette. Keep explanatory captions in the localized Markdown rather than baking them into artwork; the four artwork files are shared across locales. Verify transparency and readability on the document background when refreshing them. Tracking: [#375](https://github.com/PinedaTec-EU/LeonardoMD/issues/375).
