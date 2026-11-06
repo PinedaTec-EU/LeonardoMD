@@ -80,7 +80,7 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
         guard ["happy", "lost-ack", "revoke-after-draw", "late-project-revoke",
                "enrollment-persist-failure", "capability-persist-failure",
                "revocation-cache-delete-failure", "reconnect-during-purge",
-               "revocation-uncertainty-revalidation"].contains(mode) else {
+               "revocation-uncertainty-revalidation", "accept-lost-ack"].contains(mode) else {
             throw SyncError.invalidPath
         }
         let root = URL(fileURLWithPath: path, isDirectory: true)
@@ -104,6 +104,8 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                         ? "# Reconnect purge source\n\nA re-granted cache must survive stale cleanup.\n"
                       : mode == "revocation-uncertainty-revalidation"
                         ? "# Revocation marker source\n\nAn inherited uncertainty marker must quarantine this cache until STATUS.\n"
+                      : mode == "accept-lost-ack"
+                        ? "# Acceptance acknowledgement source\n\nThe Mac commits acceptance before the first acknowledgement is lost.\n"
                     : "# Capture-only source\n").utf8).write(to: file)
         let selection = try CorpusSelection(folders: ["docs"], documents: [])
         let descriptor = SharedProjectDescriptor(id: UUID(),
@@ -112,6 +114,7 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                 : mode == "revocation-cache-delete-failure" ? "QA · Cache failure"
                 : mode == "reconnect-during-purge" ? "QA · Regrant purge"
                 : mode == "revocation-uncertainty-revalidation" ? "QA · Revocation marker"
+                : mode == "accept-lost-ack" ? "QA · Acceptance acknowledgement"
                 : "QA · Capture only",
             scope: try CorpusScope(folder: ""), selection: selection)
         let source = SharedProjectSource(descriptor: descriptor, rootURL: sourceRoot) {
@@ -122,6 +125,8 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
         let capabilityFault = mode == "capability-persist-failure" ? CapabilityRefreshFault(root: root) : nil
         let purgeGate = mode == "reconnect-during-purge"
             ? ReconnectDuringPurgeGate(root: root) : nil
+        let acceptanceFault = mode == "accept-lost-ack"
+            ? LostRubricAcceptanceAcknowledgementFault(root: root) : nil
         let runtime = DesktopDirectRuntime(root: root.appendingPathComponent("Service"),
             credentials: NativeMobileFixtureCredentials(), now: { Date() },
             makeListener: { identity, downstream in
@@ -130,6 +135,7 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                     if let fault { return await fault.response(for: request, after: response) }
                     if let delayedProject { return await delayedProject.response(for: request, after: response) }
                     if let capabilityFault { return await capabilityFault.response(for: request, after: response) }
+                    if let acceptanceFault { return await acceptanceFault.response(for: request, after: response) }
                     return response
                 }
             })
@@ -180,6 +186,12 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                     case "allow-reconcile":
                         guard mode == "lost-ack", let fault else { throw SyncError.invalidPath }
                         await fault.allowReconcile()
+                    case "arm-accept-lost-ack":
+                        guard mode == "accept-lost-ack", let acceptanceFault else { throw SyncError.invalidPath }
+                        await acceptanceFault.arm()
+                    case "allow-accept-reconcile":
+                        guard mode == "accept-lost-ack", let acceptanceFault else { throw SyncError.invalidPath }
+                        await acceptanceFault.allowReconcile()
                     case "arm-project":
                         guard mode == "late-project-revoke", let delayedProject else { throw SyncError.invalidPath }
                         await delayedProject.arm()
@@ -267,6 +279,42 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                                           "An authorized STATUS must clear the inherited uncertainty marker")
                             try writeJSON(["mode": mode, "markerClearedAfterStatus": markerCleared],
                                           to: root.appendingPathComponent("revocation-uncertainty.json"))
+                        } else if mode == "accept-lost-ack" {
+                            let id = try XCTUnwrap(requestID)
+                            var response: RubricResponse?
+                            for _ in 0..<100 {
+                                response = try await runtime.rubricResponse(requestID: id)
+                                if response != nil { break }
+                                try await Task.sleep(for: .milliseconds(100))
+                            }
+                            let received = try XCTUnwrap(response)
+                            XCTAssertEqual(received.requestID, id)
+                            XCTAssertEqual(received.label, "Aceptación recuperada")
+                            XCTAssertTrue(received.rubric.isValid)
+                            guard let acceptanceFault else { throw SyncError.invalidPath }
+                            let snapshot = await acceptanceFault.snapshot()
+                            XCTAssertTrue(snapshot.injected, "Accept-ack mode must replace the first committed acceptance acknowledgement")
+                            XCTAssertGreaterThan(snapshot.acceptPosts, 1,
+                                                 "The same acceptance must be retried after relaunch")
+                            XCTAssertEqual(snapshot.uniqueAcceptRequestIDs, 1,
+                                           "Acceptance retries must retain the original request ID")
+                            XCTAssertGreaterThan(snapshot.blockedAcceptPosts, 0,
+                                                 "Acceptance retries must remain gated until explicit reconciliation")
+                            XCTAssertGreaterThan(snapshot.blockedRubricPolls, 0,
+                                                 "Request polling must remain gated until explicit reconciliation")
+                            XCTAssertEqual(snapshot.responsePosts, 1,
+                                           "The explicit send must reach the Mac exactly once")
+                            XCTAssertEqual(snapshot.uniqueResponseRequestIDs, 1,
+                                           "The response must retain the original request ID")
+                            try writeJSON(["acceptPosts": snapshot.acceptPosts,
+                                           "uniqueAcceptRequestIDs": snapshot.uniqueAcceptRequestIDs,
+                                           "blockedAcceptPosts": snapshot.blockedAcceptPosts,
+                                           "blockedRubricPolls": snapshot.blockedRubricPolls,
+                                           "responsePosts": snapshot.responsePosts,
+                                           "uniqueResponseRequestIDs": snapshot.uniqueResponseRequestIDs,
+                                           "injected": snapshot.injected,
+                                           "sameRequestID": snapshot.uniqueAcceptRequestIDs == 1 && snapshot.uniqueResponseRequestIDs == 1],
+                                      to: root.appendingPathComponent("accept-lost-ack.json"))
                         } else if ["enrollment-persist-failure", "capability-persist-failure",
                                    "revocation-cache-delete-failure"].contains(mode) {
                             var result: [String: Any] = ["mode": mode, "failureSurface": mode]
@@ -334,7 +382,9 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
             }
             XCTAssertTrue(finished, "Native rubric acceptance did not finish before fixture deadline")
             if !["enrollment-persist-failure"].contains(mode) { XCTAssertNotNil(deviceID) }
-            if ["happy", "lost-ack", "revoke-after-draw"].contains(mode) { XCTAssertNotNil(requestID) }
+            if ["happy", "lost-ack", "accept-lost-ack", "revoke-after-draw"].contains(mode) {
+                XCTAssertNotNil(requestID)
+            }
             try await runtime.stop()
         } catch {
             await purgeGate?.finish()
@@ -490,6 +540,86 @@ private actor NativeMobileFixtureCredentials: DeviceCredentialStore {
     func credential(deviceID: UUID) -> String? { values[deviceID] }
     func save(_ credential: String, deviceID: UUID) { values[deviceID] = credential }
     func remove(deviceID: UUID) { values.removeValue(forKey: deviceID) }
+}
+
+private actor LostRubricAcceptanceAcknowledgementFault {
+    struct Snapshot: Sendable {
+        let acceptPosts: Int
+        let uniqueAcceptRequestIDs: Int
+        let blockedAcceptPosts: Int
+        let blockedRubricPolls: Int
+        let responsePosts: Int
+        let uniqueResponseRequestIDs: Int
+        let injected: Bool
+    }
+
+    private let root: URL
+    private var armed = false
+    private var reconcileAllowed = false
+    private var acceptPosts = 0
+    private var acceptRequestIDs: Set<UUID> = []
+    private var blockedAcceptPosts = 0
+    private var blockedRubricPolls = 0
+    private var responsePosts = 0
+    private var responseRequestIDs: Set<UUID> = []
+    private var injected = false
+
+    init(root: URL) { self.root = root }
+
+    func arm() {
+        armed = true
+        try? Data("armed\n".utf8).write(to: root.appendingPathComponent("accept-lost-ack-armed.txt"), options: .atomic)
+    }
+
+    func allowReconcile() {
+        reconcileAllowed = true
+        try? Data("allowed\n".utf8).write(to: root.appendingPathComponent("accept-reconcile-allowed.txt"), options: .atomic)
+    }
+
+    func response(for request: HTTPRequest, after response: HTTPResponse) -> HTTPResponse {
+        guard armed else { return response }
+        if request.method == "GET", request.path.hasSuffix("/rubrics/requests"), !reconcileAllowed {
+            blockedRubricPolls += 1
+            try? Data("503\n".utf8).write(to: root.appendingPathComponent("accept-rubric-poll-gated.txt"), options: .atomic)
+            return HTTPResponse(status: 503)
+        }
+        if request.method == "POST", request.path.contains("/rubrics/requests/"), request.path.hasSuffix("/accept") {
+            acceptPosts += 1
+            let parts = request.path.split(separator: "/")
+            if let requestID = parts.dropLast().last.flatMap({ UUID(uuidString: String($0)) }) {
+                acceptRequestIDs.insert(requestID)
+            }
+            if acceptPosts == 1 {
+                injected = true
+                try? Data("first-accept-ack-dropped\n".utf8)
+                    .write(to: root.appendingPathComponent("accept-ack-injected.txt"), options: .atomic)
+                return HTTPResponse(status: 503)
+            }
+            guard reconcileAllowed else {
+                blockedAcceptPosts += 1
+                try? Data("503\n".utf8)
+                    .write(to: root.appendingPathComponent("accept-reconcile-gated.txt"), options: .atomic)
+                return HTTPResponse(status: 503)
+            }
+            try? Data("accepted\n".utf8)
+                .write(to: root.appendingPathComponent("accept-reconciled.txt"), options: .atomic)
+            return response
+        }
+        if request.method == "POST", request.path.hasSuffix("/rubrics/responses") {
+            responsePosts += 1
+            if let body = try? JSONDecoder().decode(RubricResponse.self, from: request.body) {
+                responseRequestIDs.insert(body.requestID)
+            }
+        }
+        return response
+    }
+
+    func snapshot() -> Snapshot {
+        Snapshot(acceptPosts: acceptPosts, uniqueAcceptRequestIDs: acceptRequestIDs.count,
+                 blockedAcceptPosts: blockedAcceptPosts, blockedRubricPolls: blockedRubricPolls,
+                 responsePosts: responsePosts, uniqueResponseRequestIDs: responseRequestIDs.count,
+                 injected: injected)
+    }
 }
 
 private actor LostRubricAcknowledgementFault {

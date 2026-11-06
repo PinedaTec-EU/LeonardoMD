@@ -199,6 +199,98 @@ final class PairingUITests: XCTestCase {
         try advanceDirectFixture("finish")
     }
 
+    @MainActor func testMacRequestedRubricCaptureLostAcceptanceAcknowledgementReconcilesAfterRelaunch() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["LEONARDO_DIRECT_RUBRIC_QA"] == "1",
+              environment["LEONARDO_MOBILE_RUBRIC_QA_MODE"] == "accept-lost-ack",
+              let port = environment["LEONARDO_DIRECT_QA_PORT"], UInt16(port) != nil,
+              environment["LEONARDO_DIRECT_QA_PHASE_FILE"] != nil else {
+            throw XCTSkip("Requires the explicit accept-ack native rubric fixture")
+        }
+        let app = XCUIApplication()
+        app.launch()
+        requestManualConnection(app, port: port)
+        let code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
+        XCTAssertTrue(code.waitForExistence(timeout: 15))
+
+        try advanceDirectFixture("approve")
+        app.buttons["Sincronizar"].firstMatch.tap()
+        let sheet = app.otherElements["rubric-request-sheet"]
+        openRubricRequestIfNeeded(app, sheet: sheet, timeout: 30)
+        XCTAssertTrue(app.buttons["rubric-accept"].waitForExistence(timeout: 10))
+
+        // Arm after the real Mac request is visible, so the first accept POST
+        // commits on the authority before this fixture drops its acknowledgement.
+        try advanceDirectFixture("arm-accept-lost-ack")
+        app.buttons["rubric-accept"].tap()
+        XCTAssertTrue(waitForDirectFixtureFile("accept-ack-injected.txt", timeout: 20),
+                      "The Mac must commit acceptance before its first acknowledgement is lost")
+        XCTAssertFalse(app.otherElements["rubric-canvas"].exists,
+                       "A lost accept acknowledgement must not enable ink prematurely")
+        XCTAssertTrue(app.buttons["rubric-accept"].waitForExistence(timeout: 10),
+                      "The pending acceptance must remain retryable")
+        XCTAssertTrue(waitForDirectFixtureFile("accept-reconcile-gated.txt", timeout: 20),
+                      "Acceptance recovery must remain gated before the explicit phase")
+
+        app.terminate()
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        let recoverySheet = app.otherElements["rubric-request-sheet"]
+        if !recoverySheet.waitForExistence(timeout: 12) {
+            let recoveryBanner = app.buttons["rubric-draft-banner"]
+            XCTAssertTrue(recoveryBanner.waitForExistence(timeout: 12),
+                          "The pending acceptance intent must be surfaced after relaunch")
+            recoveryBanner.tap()
+        }
+        XCTAssertTrue(recoverySheet.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["rubric-accept"].exists,
+                      "A pending acceptance intent must not appear as an accepted drawing")
+        XCTAssertFalse(app.otherElements["rubric-canvas"].exists,
+                       "Relaunch must preserve pending acceptance without enabling ink")
+
+        try advanceDirectFixture("allow-accept-reconcile")
+        app.buttons["Cerrar"].tap()
+        app.buttons["Sincronizar"].firstMatch.tap()
+        XCTAssertTrue(waitForDirectFixtureFile("accept-reconciled.txt", timeout: 20),
+                      "The same acceptance must be acknowledged only after reconciliation is allowed")
+        let acceptedSheet = app.otherElements["rubric-request-sheet"]
+        if !acceptedSheet.waitForExistence(timeout: 12) {
+            let acceptedBanner = app.buttons["rubric-draft-banner"]
+            XCTAssertTrue(acceptedBanner.waitForExistence(timeout: 12))
+            acceptedBanner.tap()
+        }
+        XCTAssertTrue(acceptedSheet.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.otherElements["rubric-canvas"].waitForExistence(timeout: 20),
+                      "Durable acceptance must enable the native canvas")
+        XCTAssertFalse(app.buttons["rubric-accept"].exists)
+
+        let label = app.textFields["rubric-label"]
+        XCTAssertTrue(label.waitForExistence(timeout: 5))
+        label.tap()
+        if let value = label.value as? String {
+            label.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+        }
+        label.typeText("Aceptación recuperada")
+        drawLine(in: app.otherElements["rubric-canvas"],
+                 from: CGVector(dx: 0.18, dy: 0.52), to: CGVector(dx: 0.82, dy: 0.44))
+        Thread.sleep(forTimeInterval: 1)
+
+        app.buttons["Cerrar"].tap()
+        let draftBanner = app.buttons["rubric-draft-banner"]
+        XCTAssertTrue(draftBanner.waitForExistence(timeout: 15),
+                      "The accepted drawing must remain recoverable before Send")
+        draftBanner.tap()
+        XCTAssertTrue(app.otherElements["rubric-request-sheet"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.otherElements["rubric-canvas"].waitForExistence(timeout: 10),
+                      "Relaunch-style reopen must restore the accepted ink")
+        XCTAssertEqual(app.textFields["rubric-label"].value as? String, "Aceptación recuperada")
+
+        app.buttons["rubric-send"].tap()
+        XCTAssertTrue(app.buttons["rubric-done"].waitForExistence(timeout: 30),
+                      "Explicit Send must complete after recovered acceptance")
+        try advanceDirectFixture("finish")
+    }
+
     @MainActor func testGrantedReaderAndUnsentRubricBlocksAfterForegroundRevocation() throws {
         let environment = ProcessInfo.processInfo.environment
         guard environment["LEONARDO_DIRECT_RUBRIC_QA"] == "1",
