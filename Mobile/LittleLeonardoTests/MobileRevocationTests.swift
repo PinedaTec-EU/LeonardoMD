@@ -112,6 +112,7 @@ final class MobileRevocationTests: XCTestCase {
             let state = LockedFlag()
             let gate = RevocationGate()
             let started = LockedFlag()
+            let startedExpectation = ExpectationSignal(expectation(description: "revocation operation started"))
             let task = Task<SyncError?, Never> {
                 do {
                     let value = connection()
@@ -122,13 +123,14 @@ final class MobileRevocationTests: XCTestCase {
                         credentials: TestCredentials(values: [deviceID: "credential"], failRemove: false),
                         isCurrent: { !state.value }, onDenied: { _ in }, operation: { _ in
                         started.value = true
+                        startedExpectation.fulfill()
                         await gate.wait()
                         if transient { throw RevocationTestFailure.offline }
                         return true
                         }, status: { _, _, _ in
                             DirectDeviceStatus(access: .authorized, projects: [], capabilities: [.rubricExchangeV1])
                         }
-                    })
+                    )
                     return nil
                 } catch let error as SyncError {
                     return error
@@ -136,13 +138,20 @@ final class MobileRevocationTests: XCTestCase {
                     return nil
                 }
             }
-            while !started.value { await Task.yield() }
+            await fulfillment(of: [startedExpectation.expectation], timeout: 2)
+            guard started.value else {
+                await gate.open()
+                _ = await task.value
+                XCTFail("The revocation operation did not reach its gate")
+                continue
+            }
 
             state.value = true
             XCTAssertThrowsError(try journal.recordDenied(connectionID: connectionID, deviceID: deviceID,
                                                           fingerprint: connection().fingerprint, projectIDs: []))
             await gate.open()
-            XCTAssertEqual(await task.value, .revoked)
+            let completion = await task.value
+            XCTAssertEqual(completion, .revoked)
 
             let reopened = MobileRevocationJournal(url: root.appendingPathComponent("revocation.json"),
                                                    sessionID: UUID())
@@ -246,7 +255,8 @@ final class MobileRevocationTests: XCTestCase {
         await fresh.pollRubricRequests()
         XCTAssertTrue(fresh.pendingRubricRequests.isEmpty)
         XCTAssertEqual(try journal.load().first?.state, .uncertain)
-        XCTAssertEqual(try await freshCredentials.credential(deviceID: deviceID), "old-credential")
+        let retainedCredential = try await freshCredentials.credential(deviceID: deviceID)
+        XCTAssertEqual(retainedCredential, "old-credential")
     }
 
     private enum TestFailure: Error { case offline }
@@ -305,6 +315,18 @@ private final class LockedFlag: @unchecked Sendable {
     var value: Bool {
         get { lock.withLock { storedValue } }
         set { lock.withLock { storedValue = newValue } }
+    }
+}
+
+private final class ExpectationSignal: @unchecked Sendable {
+    let expectation: XCTestExpectation
+
+    init(_ expectation: XCTestExpectation) {
+        self.expectation = expectation
+    }
+
+    func fulfill() {
+        expectation.fulfill()
     }
 }
 
