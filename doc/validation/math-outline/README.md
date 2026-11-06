@@ -6,7 +6,7 @@ Tracking: [#274](https://github.com/PinedaTec-EU/LeonardoMD/issues/274) and
 
 ## Current candidate
 
-See [main-refresh/README.md](main-refresh/README.md) for the current Guide-v20 candidate and exact source mapping. The captures below are retained historical evidence.
+See [scroll-feedback/README.md](scroll-feedback/README.md) for the current Guide-v20 candidate and exact source mapping. The captures below are retained historical evidence.
 
 ## Historical candidate (before main refresh)
 

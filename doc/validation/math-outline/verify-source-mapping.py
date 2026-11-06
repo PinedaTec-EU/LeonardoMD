@@ -8,7 +8,7 @@ import sys
 
 root = Path(__file__).resolve().parents[3]
 head = sys.argv[1] if len(sys.argv) > 1 else "HEAD"
-source = "ce121b2c8ecdea17f2f7bbd9fc802092bcb3f5ff"
+source = "347dd5ae46e93137741afb050500b003b607cff2"
 subprocess.run([
     "git", "diff", "--exit-code", source, head, "--", ".",
     ":(exclude)doc/validation/math-outline/**",
