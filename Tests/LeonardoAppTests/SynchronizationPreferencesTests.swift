@@ -36,7 +36,8 @@ final class SynchronizationPreferencesTests: XCTestCase {
                 to: destination.appendingPathComponent("capture-only-consent-\(language.rawValue).png"),
                 language: language.rawValue,
                 state: "Production pairing consent; synthetic read-only capture-capable device; zero selected projects; comparison not confirmed; Allow disabled",
-                visibleText: ["Little Leonardo QA", L10n.text("Allow connection")])
+                visibleText: ["Little Leonardo QA", L10n.text("Allow connection")],
+                route: "/native/preferences/synchronization/pairing", screen: "PairingConsentView")
             XCTAssertFalse(controller.settings.enabled)
             XCTAssertNil(controller.running)
             XCTAssertTrue(controller.settings.projects.isEmpty)
@@ -113,11 +114,12 @@ final class SynchronizationPreferencesTests: XCTestCase {
     /// Native layer snapshots can be incomplete without reporting an AppKit
     /// error. Retry the unmodified view, and reject evidence missing its anchors.
     private func captureVerified(_ host: NSView, size: NSSize, to image: URL,
-                                 language: String, state: String, visibleText: [String]) async throws {
+                                 language: String, state: String, visibleText: [String],
+                                 route: String? = nil, screen: String? = nil) async throws {
         var recognized = ""
         for _ in 0..<3 {
             try await GuideCaptureSupport.captureNative(host, size: size, to: image,
-                                                        language: language, state: state)
+                                                        language: language, state: state, route: route, screen: screen)
             let request = VNRecognizeTextRequest()
             request.recognitionLevel = .accurate
             request.recognitionLanguages = [language]
