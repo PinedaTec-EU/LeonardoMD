@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1010
+
+- #272 Fixed: preserve display math and require native help QA ([#363](https://github.com/PinedaTec-EU/LeonardoMD/pull/363))
+
+<p>Display formulas retain their TeX syntax, and both user guides include recurring math regression examples with mandatory help checks in tested app instances.</p>
+
+Source: `63ff472f527ac5f552897726a61ec2cf2ecee735`. Delta: `{"build": 10}`.
+
 ## 0.3.1000
 
 - #342 Added: iOS rubric capture flow ([#352](https://github.com/PinedaTec-EU/LeonardoMD/pull/352))
