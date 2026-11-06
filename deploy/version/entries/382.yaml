@@ -1,4 +1,4 @@
 {
-  "build": 21,
+  "build": 22,
   "summary": "Adds privacy-safe HTTPS diagnostics for iOS sync failures, preserving URL errors, pinning, redirects and bounds. A real TLS cutoff test checks partial byte counts; the alert and bilingual Guide v22 explain the code. Physical root cause remains unconfirmed."
 }
