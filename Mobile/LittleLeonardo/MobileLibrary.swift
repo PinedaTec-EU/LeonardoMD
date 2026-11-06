@@ -324,7 +324,11 @@ final class MobileLibrary {
         invalidateCacheAndAuthorization()
         connections = nextConnections
         pendingRubricRequests.removeAll { $0.targetDeviceID == revoked.deviceID }
-        projects.removeAll { revoked.pendingPurgeProjectIDs.contains($0.id) && $0.mode == .direct }
+        projects.removeAll {
+            revoked.pendingPurgeProjectIDs.contains($0.id)
+                && $0.mode == .direct
+                && !hasActiveProjectOwner($0.id, excluding: revoked.connectionID)
+        }
         do {
             try await credentials.remove(deviceID: revoked.deviceID)
         } catch {
