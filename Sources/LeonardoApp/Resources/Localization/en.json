@@ -640,7 +640,6 @@
   "Refresh linked devices": "Refresh linked devices",
   "Project download failed (HTTP %ld).": "Project download failed (HTTP %ld).",
   "Observed at least %ld files; limit: %ld files.": "Observed at least %ld files; limit: %ld files.",
-  "Observed at least %ld bytes; limit: %ld bytes.": "Observed at least %ld bytes; limit: %ld bytes.",
   "File: %@": "File: %@",
   "The selected content exceeds this version's project transfer limit. Select fewer folders or documents on the source Mac, then retry.": "The selected content exceeds this version's project transfer limit. Select fewer folders or documents on the source Mac, then retry.",
   "A selected file exceeds this version's per-file transfer limit. Exclude that file on the source Mac, then retry.": "A selected file exceeds this version's per-file transfer limit. Exclude that file on the source Mac, then retry.",
@@ -658,5 +657,8 @@
   "The synchronization connection closed before completion. Check the network and Leonardo Sync on the source Mac, then retry.": "The synchronization connection closed before completion. Check the network and Leonardo Sync on the source Mac, then retry.",
   "The synchronization address is invalid or outside the allowed network. Check the source Mac's address.": "The synchronization address is invalid or outside the allowed network. Check the source Mac's address.",
   "The source Mac's identity could not be verified. Compare pairing codes again.": "The source Mac's identity could not be verified. Compare pairing codes again.",
-  "The source returned an unexpected synchronization response. Update both Macs and check sharing on the source Mac.": "The source returned an unexpected synchronization response. Update both Macs and check sharing on the source Mac."
+  "The source returned an unexpected synchronization response. Update both Macs and check sharing on the source Mac.": "The source returned an unexpected synchronization response. Update both Macs and check sharing on the source Mac.",
+  "Observed at least %.1f MiB (%ld bytes); limit: %.1f MiB (%ld bytes).": "Observed at least %.1f MiB (%ld bytes); limit: %.1f MiB (%ld bytes).",
+  "This Mac could not read a local working-copy file. Check the disk, file permissions and cloud-file availability, then retry.": "This Mac could not read a local working-copy file. Check the disk, file permissions and cloud-file availability, then retry.",
+  "The local working copy exceeds a synchronization limit. Reduce the affected content or change the shared selection on the source Mac, then retry.": "The local working copy exceeds a synchronization limit. Reduce the affected content or change the shared selection on the source Mac, then retry."
 }
