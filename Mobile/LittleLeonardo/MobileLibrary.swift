@@ -26,6 +26,7 @@ final class MobileLibrary {
     private let rubricDraftWrites = MobileSyncOperationQueue()
     private let cacheMutations = MobileSyncOperationQueue()
     private var pendingRubricDraftWrite: Task<Void, Error>?
+    private var activeRubricSubmissions: [UUID: Task<RubricResponse, Error>] = [:]
     private var cacheEpoch: UInt64 = 0
     private var authorizationEpoch: UInt64 = 0
     private var authorizationGenerations = MobileAuthorizationGenerations()
@@ -81,6 +82,23 @@ final class MobileLibrary {
             && hasCurrentIdentity(token)
             && !authorizationGenerations.isDenied(connectionID: token.connectionID)
             && currentConnection(for: token)?.revoked == false
+    }
+
+    /// Coalesce explicit Send, Retry, and foreground reconciliation for the
+    /// same frozen response. Local draft writes remain ordered by their own
+    /// queue; this gate only shares the in-flight network operation so two
+    /// observers cannot POST identical response bytes concurrently.
+    private func withCoalescedRubricSubmission(
+        requestID: UUID,
+        operation: @escaping @MainActor () async throws -> RubricResponse
+    ) async throws -> RubricResponse {
+        if let active = activeRubricSubmissions[requestID] {
+            return try await active.value
+        }
+        let task = Task { @MainActor in try await operation() }
+        activeRubricSubmissions[requestID] = task
+        defer { activeRubricSubmissions.removeValue(forKey: requestID) }
+        return try await task.value
     }
 
     private func hasActiveProjectOwner(_ projectID: UUID, excluding connectionID: UUID) -> Bool {
@@ -617,6 +635,14 @@ final class MobileLibrary {
     }
 
     func submitRubric(request: RubricRequest, label: String, rubric: LeonardoRubric) async throws -> RubricResponse {
+        try await withCoalescedRubricSubmission(requestID: request.id) { [weak self] in
+            guard let self else { throw RubricExchangeError.storageFailure }
+            return try await self.submitRubricUncoalesced(request: request, label: label, rubric: rubric)
+        }
+    }
+
+    private func submitRubricUncoalesced(request: RubricRequest, label: String,
+                                         rubric: LeonardoRubric) async throws -> RubricResponse {
         try await waitForPendingRubricDraftWrite()
         if let draft = rubricDraft(requestID: request.id) {
             if draft.state == .blocked { throw RubricExchangeError.invalidTransition }
@@ -667,7 +693,10 @@ final class MobileLibrary {
         try await waitForPendingRubricDraftWrite()
         let draft = try await latestRubricDraft(requestID: draft.id) ?? draft
         guard draft.response != nil, draft.state == .pendingSend else { throw RubricExchangeError.invalidTransition }
-        return try await submitFrozenDraft(draft)
+        return try await withCoalescedRubricSubmission(requestID: draft.id) { [weak self] in
+            guard let self else { throw RubricExchangeError.storageFailure }
+            return try await self.submitFrozenDraft(draft)
+        }
     }
 
     private func submitFrozenDraft(_ draft: MobileRubricDraft) async throws -> RubricResponse {
@@ -834,29 +863,33 @@ final class MobileLibrary {
             let token = token(for: connection)
             guard let response = draft.response else { continue }
             do {
-                try await withRubricContext(for: draft.request) { context in
-                    try validateRubricContext(token)
-                    // The response POST is authenticated, idempotent and returns
-                    // the durable Mac copy. Replaying these exact frozen bytes is
-                    // the V1-compatible lost-ack reconciliation path.
-                    let submitted = try await context.client.submitRubricResponse(response,
-                        deviceID: context.connection.deviceID, credential: context.credential)
-                    guard submitted == response else {
-                        await blockRubricDraft(requestID: draft.id,
-                                               message: "La respuesta remota no coincide con el envío congelado.")
-                        return
+                _ = try await withCoalescedRubricSubmission(requestID: draft.id) { [weak self] in
+                    guard let self else { throw RubricExchangeError.storageFailure }
+                    return try await self.withRubricContext(for: draft.request) { context in
+                        try validateRubricContext(token)
+                        // The response POST is authenticated, idempotent and returns
+                        // the durable Mac copy. Replaying these exact frozen bytes is
+                        // the V1-compatible lost-ack reconciliation path.
+                        let submitted = try await context.client.submitRubricResponse(response,
+                            deviceID: context.connection.deviceID, credential: context.credential)
+                        guard submitted == response else {
+                            await blockRubricDraft(requestID: draft.id,
+                                                   message: "La respuesta remota no coincide con el envío congelado.")
+                            return response
+                        }
+                        try validateRubricContext(context.token)
+                        let submittedWrite = rubricDraftWrites.enqueue { [weak self] in
+                            guard let self, let latest = try await self.latestRubricDraft(requestID: draft.id) else { return }
+                            guard latest.state != .blocked else { throw SyncError.revoked }
+                            guard latest.state == .pendingSend, latest.response == response else { return }
+                            guard self.isCurrentAuthorization(context.token) else { throw SyncError.revoked }
+                            try await self.draftStore.save(latest.with(response: response, state: .submitted,
+                                                                        updatedAt: self.now()))
+                            guard self.isCurrentAuthorization(context.token) else { throw SyncError.revoked }
+                        }
+                        try await submittedWrite.value
+                        return response
                     }
-                    try validateRubricContext(context.token)
-                    let submittedWrite = rubricDraftWrites.enqueue { [weak self] in
-                        guard let self, let latest = try await self.latestRubricDraft(requestID: draft.id) else { return }
-                        guard latest.state != .blocked else { throw SyncError.revoked }
-                        guard latest.state == .pendingSend, latest.response == response else { return }
-                        guard self.isCurrentAuthorization(context.token) else { throw SyncError.revoked }
-                        try await self.draftStore.save(latest.with(response: response, state: .submitted,
-                                                                    updatedAt: self.now()))
-                        guard self.isCurrentAuthorization(context.token) else { throw SyncError.revoked }
-                    }
-                    try await submittedWrite.value
                 }
             } catch SyncError.revoked {
                 await blockRubricDraft(requestID: draft.id,
