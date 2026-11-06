@@ -75,7 +75,7 @@ final class MobileRevocationTests: XCTestCase {
             XCTAssertEqual(error as? SyncError, .revoked)
         }
 
-        var authorization = MobileAuthorizationGenerations()
+        let authorization = MobileAuthorizationGenerations()
         let before = authorization[revoked.connectionID]
         authorization.confirmDenied(connectionID: revoked.connectionID, projectIDs: [project])
         authorization.clearQuarantine(connectionID: revoked.connectionID)
@@ -113,12 +113,12 @@ final class MobileRevocationTests: XCTestCase {
             let gate = RevocationGate()
             let started = LockedFlag()
             let startedExpectation = ExpectationSignal(expectation(description: "revocation operation started"))
+            let value = connection()
+            let token = MobileConnectionToken(connectionID: value.connectionID, deviceID: value.deviceID,
+                                              fingerprint: value.fingerprint, cacheEpoch: 0,
+                                              authorizationGeneration: 0)
             let task = Task<SyncError?, Never> {
                 do {
-                    let value = connection()
-                    let token = MobileConnectionToken(connectionID: value.connectionID, deviceID: value.deviceID,
-                                                      fingerprint: value.fingerprint, cacheEpoch: 0,
-                                                      authorizationGeneration: 0)
                     _ = try await client.withAuthenticatedConnection(value, token: token,
                         credentials: TestCredentials(values: [deviceID: "credential"], failRemove: false),
                         isCurrent: { !state.value }, onDenied: { _ in }, operation: { _ in
