@@ -290,7 +290,8 @@ final class MobileLibrary {
             guard let self, self.isCurrentCacheOperation(token) else { return false }
             try await self.store.save(project)
             guard self.isCurrentCacheOperation(token) else {
-                if self.connections.first(where: { $0.connectionID == token.connectionID })?.projectIDs.contains(project.id) != true {
+                if self.connections.first(where: { $0.connectionID == token.connectionID })?.projectIDs.contains(project.id) != true,
+                   !self.hasActiveProjectOwner(project.id, excluding: token.connectionID) {
                     try await self.store.remove(id: project.id)
                     self.projects.removeAll { $0.id == project.id }
                 }
