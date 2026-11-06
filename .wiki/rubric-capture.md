@@ -132,3 +132,7 @@ its density against the drawing, avoiding premature blank Canvas attachments
 consent is localized in EN/ES and has native component captures with zero project
 grants and the comparison-code confirmation still required
 ([#370](https://github.com/PinedaTec-EU/LeonardoMD/issues/370)).
+
+## Owner-only iOS distribution
+
+The packaging stage of [#343](https://github.com/PinedaTec-EU/LeonardoMD/issues/343) uses `scripts/package-ios-distribution.py`: author `archive` records the source PR compilation; `publisher-archive --expected-source <accepted-materialized-SHA>` requires a clean accepted checkpoint and preserves the consumed allocation. Archive/export/Apple validation retain producer provenance and complete artifact hashes. Export selects the approved certificate without mutating the user keychain search list. Privacy reasons, opaque existing-brand icons, canonical version projection and exact delivery commands are documented in `doc/mobile/rubric-exchange.md`. A validated author IPA is not the final TestFlight delivery; upload accepted materialized main, then verify owner availability and the physical round trip before closing the feature issues.
