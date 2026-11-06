@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify capture sources match a review head outside evidence and build counts."""
+"""Verify capture sources match a review head outside evidence, build counts and non-packaged revision inventory."""
 import subprocess
 import sys
 from pathlib import Path
@@ -15,5 +15,7 @@ for label, revision in captures.items():
         "git", "diff", "--exit-code", revision, head, "--", ".",
         ":(exclude)doc/validation/display-math/**",
         ":(exclude)deploy/version/entries/363.yaml",
+        # This inventory is not consumed by the guide packager or app build.
+        ":(exclude)doc/guide/feature-coverage.md",
     ], cwd=root, check=True)
     print(f"{label}: all tracked product, build, test, guide and workflow inputs match {head}")

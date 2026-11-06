@@ -51,7 +51,10 @@ packaged window captures supplement them with real-process acceptance.
 
 Run `python3 doc/validation/display-math/verify-source-mapping.py <review-SHA>`.
 It rejects any difference from current capture sources outside this evidence
-directory and PR 363's build-count entry. Every tracked product source, build
+directory, PR 363's build-count entry and the non-packaged feature-coverage
+revision inventory. The latter only corrects current-guide labels from v14 to
+v15; neither the guide generator nor app build reads that inventory. Every
+tracked product source, build
 input, test, guide source/package and workflow must match. Ledger-count changes
 do not materialize a runtime version. Later evidence-only heads use that mapping.
 
