@@ -25,6 +25,8 @@
 		B4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift */; };
 		B4C4A7E1D8F74D7E9A1D5C23 /* MobileRevocationClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C23 /* MobileRevocationClient.swift */; };
 		B4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift */; };
+		D1A3A7C4F0E84D6C9B1E0A12 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D1A3A7C4F0E84D6C9B1E0A11 /* Assets.xcassets */; };
+		D1A3A7C4F0E84D6C9B1E0A14 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D1A3A7C4F0E84D6C9B1E0A13 /* PrivacyInfo.xcprivacy */; };
 		3E6C7AD17D9D0EDFB5E779BB /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
 /* End PBXBuildFile section */
 
@@ -62,6 +64,8 @@
 		C4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRevocationJournal.swift; sourceTree = "<group>"; };
 		C4C4A7E1D8F74D7E9A1D5C23 /* MobileRevocationClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRevocationClient.swift; sourceTree = "<group>"; };
 		C4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRevocationTests.swift; sourceTree = "<group>"; };
+		D1A3A7C4F0E84D6C9B1E0A11 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D1A3A7C4F0E84D6C9B1E0A13 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		C53CBBB8313118CB2CF6782B /* LittleLeonardoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LittleLeonardoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -165,6 +169,8 @@
 				C4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift */,
 				C4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift */,
 				C4C4A7E1D8F74D7E9A1D5C23 /* MobileRevocationClient.swift */,
+				D1A3A7C4F0E84D6C9B1E0A11 /* Assets.xcassets */,
+				D1A3A7C4F0E84D6C9B1E0A13 /* PrivacyInfo.xcprivacy */,
 			);
 			name = LittleLeonardo;
 			path = LittleLeonardo;
@@ -270,6 +276,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D1A3A7C4F0E84D6C9B1E0A12 /* Assets.xcassets in Resources */,
+				D1A3A7C4F0E84D6C9B1E0A14 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
