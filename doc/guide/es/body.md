@@ -9,6 +9,8 @@ Esta guía es un documento Leonardo real, incluido en un paquete **MDLZ** con su
 
 ![El recorrido de un documento: escribir, rellenar y compartir](assets/recorrido.png)
 
+Recorrido ilustrativo: **Escribir · MDLF → Rellenar · MDLR → Compartir · MDLZ**.
+
 
 ## Un documento que también se puede ver
 
@@ -115,6 +117,8 @@ Usa **Guardar** (⌘S) para persistir cambios. Deshacer y Rehacer actúan sobre 
 
 ![Diagrama ilustrativo: un documento MDLF o MDLR, recursos locales, definición y respuestas en un paquete MDLZ](assets/paquete.png)
 
+Diagrama ilustrativo: **un documento MDLF o MDLR + recursos locales (`assets/`) + definiciones y respuestas dentro de ese documento**.
+
 La definición y las respuestas pertenecen al documento raíz; no son archivos raíz adicionales.
 
 MDLZ es el transporte, no otro lenguaje de documentos. MDLF y MDLR son texto UTF-8: un bloque inicial de JSON versionado y un cuerpo Markdown. Cambiar una extensión no realiza una conversión. MDLR sugiere el modo de apertura; no impide que alguien edite su definición.
@@ -180,6 +184,8 @@ invalidar respuestas anteriores.
 ## 5. Exportar y compartir
 
 ![Elegir una exportación según el destinatario](assets/exportar.png)
+
+Alternativas ilustrativas: **MDLZ para editar o rellenar · Markdown para leer · PDF para páginas fijas**.
 
 | Necesidad | Acción | Resultado y límites |
 | --- | --- | --- |
@@ -253,6 +259,8 @@ Revisa el resultado en Leonardo antes de usarlo. Un archivo válido puede conten
 **Archivo → Importar con tu agente…** abre esta ayuda en Leonardo. No selecciona, convierte ni envía ningún PDF. Tú eliges el agente y le entregas una copia del archivo para que realice la conversión.
 
 ![Diagrama ilustrativo: PDF original → tu agente y la skill → documento Leonardo editable](assets/importar.png)
+
+Flujo ilustrativo: **PDF original → tu agente + la skill Leonardo Format → documento Leonardo editable**.
 
 #### Qué necesitas
 

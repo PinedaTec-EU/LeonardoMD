@@ -10,7 +10,7 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let oldCopies = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
+        let oldCopies = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
         let oldAnswers = Data("previous guide and saved answers".utf8)
         for oldCopy in oldCopies {
             try FileManager.default.createDirectory(at: oldCopy.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -22,13 +22,13 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v16/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v17/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
-            let legacyImport = root.appendingPathComponent("Agent Import Guides/v1/\(language.rawValue)/AgentImport-v1-\(language.rawValue).mdlz")
+            let legacyImport = root.appendingPathComponent("Agent Import Guides/v2/\(language.rawValue)/AgentImport-v2-\(language.rawValue).mdlz")
             try FileManager.default.createDirectory(at: legacyImport.deletingLastPathComponent(), withIntermediateDirectories: true)
             try oldAnswers.write(to: legacyImport)
             let importCopy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root, topic: .agentImport)
-            XCTAssertTrue(importCopy.path.contains("Agent Import Guides/v2/"))
+            XCTAssertTrue(importCopy.path.contains("Agent Import Guides/v3/"))
             XCTAssertEqual(try Data(contentsOf: legacyImport), oldAnswers)
             var workspace = try LeonardoPackageTransport.open(copy)
             defer { LeonardoPackageTransport.discard(workspace) }
@@ -39,6 +39,15 @@ final class BundledUserGuideTests: XCTestCase {
             let expectedImageCount = language == .spanish ? 17 : 16
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:
                 workspace.directoryURL.appendingPathComponent("assets").path).count, expectedImageCount)
+            let artwork = language == .english ? ["journey", "package", "import", "export"] : ["recorrido", "paquete", "importar", "exportar"]
+            for name in artwork {
+                let imageURL = workspace.directoryURL.appendingPathComponent("assets/\(name).png")
+                let bitmap = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: imageURL)))
+                XCTAssertTrue(bitmap.hasAlpha, name)
+                XCTAssertEqual(bitmap.pixelsWide, 1200)
+                XCTAssertEqual(bitmap.pixelsHigh, 400)
+                XCTAssertEqual(try XCTUnwrap(bitmap.colorAt(x: 0, y: 0)).alphaComponent, 0, name)
+            }
             // Personal annotations remain independent of the bundled template.
             try (source + "\nPersonal note: Ada\n").write(to: workspace.documentURL, atomically: true, encoding: .utf8)
             workspace = try LeonardoPackageTransport.save(workspace)
@@ -114,6 +123,7 @@ final class BundledUserGuideTests: XCTestCase {
             await session.open(copy, packagePreference: .package)
             XCTAssertEqual(session.documentStorage, .package)
             XCTAssertNil(session.errorMessage)
+            session.setPalette(PaletteID.leonardoClassic.rawValue, project: false)
             session.setMermaid(true, project: false)
             session.setMath(true, project: false)
             session.setVegaLite(true, project: false)
@@ -196,8 +206,8 @@ final class BundledUserGuideTests: XCTestCase {
             XCTAssertFalse(session === original)
             XCTAssertNil(session.errorMessage)
             XCTAssertEqual(session.mode, .preview)
-            XCTAssertEqual(session.displayDocumentURL?.lastPathComponent, "AgentImport-v2-\(language.rawValue).mdlz")
-            XCTAssertTrue(session.displayDocumentURL?.path.contains("Agent Import Guides/v2/") == true)
+            XCTAssertEqual(session.displayDocumentURL?.lastPathComponent, "AgentImport-v3-\(language.rawValue).mdlz")
+            XCTAssertTrue(session.displayDocumentURL?.path.contains("Agent Import Guides/v3/") == true)
             XCTAssertFalse(session.leonardoDocument?.isForm ?? true)
             let copy = try XCTUnwrap(session.displayDocumentURL)
             let bytes = try Data(contentsOf: copy)
