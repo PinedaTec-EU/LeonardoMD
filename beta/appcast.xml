@@ -3,6 +3,28 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.3.1045</title>
+            <pubDate>Fri, 06 Nov 2026 21:55:14 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>1045</sparkle:version>
+            <sparkle:shortVersionString>0.3.1045</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"># LeonardoMD
+
+- Math formulas retain complete braces, radicals, long arrows and cancellation marks.
+- Selecting a document-outline heading opens that exact heading, including repeated selections and Split mode.
+- English and Spanish help include live examples for these recurring math and navigation cases.
+
+## Known limitations
+
+Very long numbered formulas can overlap or extend beyond a narrow Split preview. Use Preview mode or widen the window. [Tracking issue #379](https://github.com/PinedaTec-EU/LeonardoMD/issues/379).
+
+This beta is for Apple silicon Macs.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1045/LeonardoMD-0.3.1045.zip" length="24120257" type="application/octet-stream" sparkle:edSignature="Sm4STBrhb+Rz7lI/vnqHa7STf8rYy00iSnacnz7eDdNhShL4VLaYVUMw0YwuCVvwyD7UxXbgRFT17fTuUIiEDA==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.3.1022</title>
             <pubDate>Fri, 06 Nov 2026 18:34:41 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
