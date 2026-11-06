@@ -1,4 +1,4 @@
 {
   "summary": "iOS now captures rubrics requested by a linked Mac with explicit consent, durable drafts, preview and HTTPS retry. Interrupted acceptance recovers safely and revoked links stay blocked after restart; bilingual guides explain the flow.",
-  "build": 81
+  "build": 89
 }

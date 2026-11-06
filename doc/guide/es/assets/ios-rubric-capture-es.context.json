@@ -1,7 +1,7 @@
 {
   "source": "Native Little Leonardo UI test with an owned Mac HTTPS fixture",
-  "source_sha": "577d8821cd3c146d54dc55b49cc1695c0a7ec2e9",
-  "captured_at": "2026-11-06T06:29:23.751+01:00",
+  "source_sha": "a2e691797e310d6e9fc5075179be0a3a781f141f",
+  "captured_at": "2026-11-06T09:51:11.716+01:00",
   "locale": "es",
   "state": "Accepted Mac request, native finger drawing, undo/clear/preview, restart restore, explicit send and Mac receipt; guide image is the resized sent-state derivative, with full drawing and preview states retained in validation",
   "simulator": "LittleLeonardo Rubric342 QA 20261105 / iPhone18Pro / iOS 27.0 / A5A73B11-EE27-40AC-ABAB-CADF1B85143B",
@@ -9,15 +9,16 @@
   "browser": null,
   "asset_mapping": {
     "guide_asset": "doc/guide/es/assets/ios-rubric-capture-es.png",
-    "guide_asset_sha256": "7e8f9d917cd198c7ffdf7aceeadc8e49cf733ed2443a7a9d14f82eb69d3fec9e",
+    "guide_asset_sha256": "9d656d0affd29757721a12ce17d91622c9a2bafa4981be65b87021d14001a239",
     "validation_sent": "doc/validation/little-leonardo/ios-rubric-capture-es.png",
-    "validation_sent_sha256": "ab2ccf46fe27ea41fa6156452cd178f3d58bc45dcf6a01f4a0b9b4657f45bf33",
+    "validation_sent_sha256": "12f0e3d5a20aaf9e35449b67254f4f217fca53a3aa785356aadbc105f5c4751d",
     "validation_drawing": "doc/validation/little-leonardo/ios-rubric-capture-es-drawing.png",
-    "validation_drawing_sha256": "075550dc5ad18da9b9b9e9d460e2f737f098bc75b6c54257c2f36823ebeb2262",
+    "validation_drawing_sha256": "cf15c162df16beeff2e8fa1770a4ec184e624999ec30937a9169389f9099557e",
     "validation_preview": "doc/validation/little-leonardo/ios-rubric-capture-es-preview.png",
-    "validation_preview_sha256": "9da03f7227883c73cd261d756f5982ef82e34d38c6238e15906a709be6ef5f0f"
+    "validation_preview_sha256": "496e09deb0c5223c552187cafc8f16e886273d6aa26187a1d03f4a162260c9a3",
+    "immutable_capture_sidecar": "doc/validation/little-leonardo/ios-rubric-capture-final-20261106-a2e6917.json"
   },
   "metadata_helper_limit": "The shared capture_metadata.py helper is browser-only and requires CSS/browser fields; native evidence uses observed viewport points instead.",
   "limitations": "Capture-only synthetic fixture; no physical device, production network, App Store/TestFlight or document grant",
-  "source_mapping": "The evidence was captured from source 577d882; later evidence/guide/ledger commits do not change built source inputs."
+  "source_mapping": "The three raw captures and all ten native modes were captured from source a2e691797e310d6e9fc5075179be0a3a781f141f; later guide/package/sidecar commits do not change Swift product/test/config inputs."
 }
