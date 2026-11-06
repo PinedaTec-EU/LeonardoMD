@@ -1,0 +1,24 @@
+{
+  "source_sha": "cc71996d39bf4c73c592be9d522ac9bf615fd3a0",
+  "capture_mode": "native application window",
+  "captured_at": "2026-11-06T08:31:30.081317+00:00",
+  "image_pixels": {
+    "width": 4718592,
+    "height": 4292935744
+  },
+  "os": "27.0.1",
+  "screen": "Help \u2192 Leonardo user guide",
+  "locale": "es",
+  "data_provenance": "synthetic bundled guide",
+  "process_id": 71769,
+  "application_version": "0.3.898",
+  "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.f252d671ee0344db80c18df482821f21",
+  "launch_method": "LEONARDO_SOURCE_PR=363 ./launch.sh --qa",
+  "extensions": {
+    "math": true,
+    "mermaid": true,
+    "charts": true
+  },
+  "browser": "native WKWebView; browser version and CSS viewport not measured",
+  "limits": "Packaged process; exact source identity disambiguates baseline version. Known underbrace SVG issue #274 remains visible."
+}

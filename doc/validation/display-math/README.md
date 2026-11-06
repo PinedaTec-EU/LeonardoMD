@@ -30,8 +30,20 @@ Validation:
   AppKit exhausted dispatch threads in animations and recent-document lookup;
   the full run without captures and targeted guide captures both pass.
 
-Packaged-process Help acceptance is pending: the Mac was locked when computer
-control tried to inspect the running application. The owner authorized closing
-the installed app for this test; no forced termination or unsaved-data discard
-was performed. Resume through `LEONARDO_SOURCE_PR=363 ./launch.sh --qa` after
-unlocking, verify a new PID and first window, then open both guides through Help.
+Packaged-process Help acceptance completed after the owner unlocked the Mac and
+authorized closing the installed app. It quit normally; `./launch.sh --qa` started
+PID 71769 from the verified real executable and dependencies. The fresh window,
+Help → guide actions and revision-15 personal-copy paths were observed in both
+locales. `packaged-en.png` and `packaged-es.png` show the equations in that process;
+sidecars identify the bundle and unmaterialized baseline version 0.3.898.
+
+Observed Math enabled rendering and disabled literal fallback (English), restored
+Math, then inspected the Spanish rendered equation. Mermaid, chart, local images
+and tables were visible. Both practice links opened independent Fill-mode forms;
+synthetic names were saved, the tabs closed and reopened through the guide links,
+and values persisted. The test names were then cleared and saved (the initial
+fields were empty). The original English interface preference was restored.
+
+An outline click on the new regression heading landed around chapter 2 rather
+than at that heading; direct scroll-bar positioning was used to inspect formulas.
+Tracking: [#364](https://github.com/PinedaTec-EU/LeonardoMD/issues/364). No navigation fix is included here.
