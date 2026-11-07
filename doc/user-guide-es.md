@@ -619,7 +619,7 @@ con una acción clara.
 ### Aspecto Classic, arranque y Acerca de en Little Leonardo
 
 Little Leonardo usa los colores de **Leonardo Classic**: papel pergamino,
-títulos burdeos y acciones óxido. Esta versión no ofrece selector de temas ni
+títulos burdeos y acciones óxido, también en la demo incluida, su vista de texto y la ayuda de los campos. La demo está disponible en Biblioteca antes de conectar un Mac. Esta versión no ofrece selector de temas ni
 una página Premium. Al arrancar aparece la marca mientras se prepara la
 biblioteca local, sin una espera añadida. En **Ajustes de sincronización →
 Acerca de Little Leonardo** puedes consultar la versión y compilación instaladas, así como abrir Ayuda,

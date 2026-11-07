@@ -607,7 +607,7 @@ offline/unsupported state.
 ### Classic appearance, startup and About in Little Leonardo
 
 Little Leonardo uses the **Leonardo Classic** colors: parchment paper,
-burgundy headings and oxide actions. This version has no theme selector or
+burgundy headings and oxide actions, including the bundled demo, its source view and field help. The demo remains accessible in the library before connecting a Mac. This version has no theme selector or
 Premium page. Startup displays the brand while the local library is prepared,
 without an added delay. Open **Ajustes de sincronización → Acerca de Little
 Leonardo** (sync settings → About) to check the installed version and build and open offline Help, Privacy and
