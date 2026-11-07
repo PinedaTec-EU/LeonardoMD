@@ -43,6 +43,22 @@ final class DesktopProjectPresentationTests: XCTestCase {
         XCTAssertEqual(resolve(sibling, settings: MobileSyncPreferences()).identity, .local)
     }
 
+    func testReadOnlySessionMetadataDoesNotRequireOwningTheSharingService() {
+        let preferences = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProjectIdentity-" + UUID().uuidString).appendingPathComponent("preferences.json")
+        let session = AppSession(preferencesURL: preferences)
+        defer { session.stop() }
+        session.initialized = true
+        session.globalPreferences.mobileSync = MobileSyncPreferences(enabled: true,
+            projects: [MobileSharedProject(rootURL: source, name: "Journey")])
+        let sharing = DesktopSyncController(preferencesURL: preferences)
+        let peers = DesktopPeerController(preferencesURL: preferences, helper: sharing.helper)
+        let presentation = DesktopProjectPresentation.resolve(source, session: session, sharing: sharing, peers: peers)
+        XCTAssertEqual(presentation.identity, .sharedFromThisDevice)
+        // No service-health observation is available; do not invent an unavailable-service warning.
+        XCTAssertEqual(presentation.detail, L10n.text("Entire project"))
+    }
+
     func testRootAliasesMatchWithoutMatchingSimilarSiblingProjects() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("project-identity-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

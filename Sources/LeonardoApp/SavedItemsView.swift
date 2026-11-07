@@ -87,7 +87,7 @@ struct SavedItemsView: View {
     private func row(_ url: URL, kind: FavoriteItem.Kind) -> some View {
         let favorite = session.isFavorite(url, kind: kind)
         let available = FavoriteItem(kind: kind, url: url).isAvailable
-        let presentation = kind == .project ? DesktopProjectPresentation.resolve(url) : nil
+        let presentation = kind == .project ? DesktopProjectPresentation.resolve(url, session: session) : nil
         return HStack(spacing: 12) {
             Button { Task { await session.openSavedItem(url, kind: kind) } } label: {
                 HStack(spacing: 8) {

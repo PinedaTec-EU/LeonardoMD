@@ -3,6 +3,7 @@
 Read [current state](current-state.md), then the relevant source target. Human product requirements live in `doc/US`, not here.
 
 - [System overview](system-overview.md)
+- [Project identity across macOS and iOS](project-identities.md)
 - [Open questions](open-questions.md)
 - [Change log](log.md)
 

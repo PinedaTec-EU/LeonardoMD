@@ -7,17 +7,21 @@ struct DesktopProjectPresentation {
     let detail: String?
 
     @MainActor
-    static func resolve(_ url: URL?, sharing: DesktopSyncController = .shared,
+    static func resolve(_ url: URL?, session: AppSession? = nil, sharing: DesktopSyncController = .shared,
                         peers: DesktopPeerController = .shared) -> Self {
-        resolve(url, settings: sharing.projectSettingsLoaded ? sharing.settings : nil,
+        // Additional windows/processes may read preferences without owning the sharing service.
+        let settings = sharing.projectSettingsLoaded ? sharing.settings
+            : session.flatMap { $0.initialized ? $0.globalPreferences.mobileSync : nil }
+        let availability: Bool? = sharing.projectSettingsLoaded ? sharing.sharingAvailable : nil
+        return resolve(url, settings: settings,
                 receivedRoots: peers.copies.map {
                     peers.workingRoot.appendingPathComponent($0.id.uuidString, isDirectory: true)
-                }, receivedStorageRoot: peers.workingRoot, sharingAvailable: sharing.sharingAvailable)
+                }, receivedStorageRoot: peers.workingRoot, sharingAvailable: availability)
     }
 
     @MainActor
     static func resolve(_ url: URL?, settings: MobileSyncPreferences?, receivedRoots: [URL],
-                        receivedStorageRoot: URL, sharingAvailable: Bool) -> Self {
+                        receivedStorageRoot: URL, sharingAvailable: Bool?) -> Self {
         guard let url else { return Self(identity: .unknown, detail: nil) }
         let path = normalized(url)
         if receivedRoots.contains(where: { contains(path, under: normalized($0)) }) {
@@ -31,7 +35,8 @@ struct DesktopProjectPresentation {
             return Self(identity: .local, detail: nil)
         }
         let scope = scopeDescription(folders: project.folders)
-        let availability = sharingAvailable ? nil : L10n.text("Sharing paused or unavailable")
+        let availability = sharingAvailable == false || !settings.enabled
+            ? L10n.text("Sharing paused or unavailable") : nil
         return Self(identity: .sharedFromThisDevice,
                     detail: [scope, availability].compactMap { $0 }.joined(separator: " · "))
     }

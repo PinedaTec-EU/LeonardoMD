@@ -11,6 +11,7 @@ struct MobileAboutInformation: View {
             VStack(alignment: .leading, spacing: 20) {
                 switch topic {
                 case .help:
+                    section("Identifica tus proyectos / Project identity", "Recibido de otro equipo / Received from another device identifica un proyecto que comparte otro equipo: muestra el icono de proyecto y una marca de red, también sin conexión. En el Mac de origen aparece como Compartido desde este equipo / Shared from this device. Archivo de recuperación / Recovery archive conserva solo el icono de proyecto y sigue siendo de solo lectura. A received project is already shared by its source; it does not need a second sharing badge.")
                     section("Prueba la demo sin conexión", "En Biblioteca abre Demo y práctica y elige Español o English. Puedes completar los campos, consultar su ayuda y pulsar Guardar sin conectar con un Mac. Las respuestas se conservan en este dispositivo; Restablecer pide confirmación y solo borra las del idioma elegido.")
                     section("Conecta tu Mac", "En LeonardoMD activa el servicio para compartir. En Little Leonardo pulsa Conectar, escanea el QR o introduce IP y puerto. Comprueba el código en ambos equipos y autoriza los proyectos desde el Mac.")
                     section("Consulta sin conexión", "Abre un proyecto y después un documento. La lectura y la vista de texto no modifican el original. Las copias descargadas están disponibles sin conexión. La sincronización automática solo funciona mientras la app está activa.")

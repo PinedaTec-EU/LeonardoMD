@@ -6,6 +6,33 @@ import LeonardoCore
 
 @MainActor
 final class ProjectIdentityCaptureTests: XCTestCase {
+    func testCompactGuideProjectRows() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_PROJECT_IDENTITY_EVIDENCE"] else {
+            throw XCTSkip("Set LEONARDO_PROJECT_IDENTITY_EVIDENCE for the guide illustration")
+        }
+        let destination = URL(fileURLWithPath: path)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let previousLanguage = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previousLanguage }
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let size = NSSize(width: 400, height: 160)
+            let view = VStack(alignment: .leading, spacing: 8) {
+                ProjectIdentityLabel(name: "My journey", identity: .local)
+                ProjectIdentityLabel(name: "My journey", identity: .sharedFromThisDevice,
+                                     detail: L10n.text("Selected content"))
+                ProjectIdentityLabel(name: "My journey", identity: .received)
+            }.padding(12).frame(width: size.width, height: size.height, alignment: .topLeading)
+                .background(Color(hex: PaletteCatalog.leonardoClassic.tokens.surface))
+                .environment(\.colorScheme, .light)
+            let host = NSHostingView(rootView: view)
+            let image = destination.appendingPathComponent("project-identities-guide-\(language.rawValue).png")
+            try await GuideCaptureSupport.captureNative(host, size: size, to: image,
+                language: language.rawValue, state: "Production project identity rows; local, outgoing selected content and received",
+                pixelScale: 1, route: "/native/project-identities", screen: "Project identity instructional illustration")
+        }
+    }
+
     func testNativeProjectIdentityRows() async throws {
         guard let path = ProcessInfo.processInfo.environment["LEONARDO_PROJECT_IDENTITY_EVIDENCE"] else {
             throw XCTSkip("Set LEONARDO_PROJECT_IDENTITY_EVIDENCE for project-role captures")

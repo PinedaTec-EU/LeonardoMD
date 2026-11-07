@@ -1,10 +1,63 @@
 import SwiftUI
+import LeonardoCore
 import LeonardoSync
 import LeonardoRender
 
 private enum MobileLibrarySheet: String, Identifiable {
     case direct, settings, about
     var id: String { rawValue }
+}
+
+extension OfflineProject {
+    /// iOS only receives direct-sync projects from another device. The legacy
+    /// Git payload remains a local recovery archive and must not look remote.
+    var projectIdentity: ProjectIdentity {
+        isRecoveryArchive ? .recoveryArchive : .received
+    }
+}
+
+struct MobileProjectIdentityLabel: View {
+    let name: String
+    let identity: ProjectIdentity
+
+    var bilingualRole: String {
+        let spanish = identity.title(languageCode: "es")
+        let english = identity.title(languageCode: "en")
+        return spanish == english ? spanish : "\(spanish) · \(english)"
+    }
+
+    var accessibilityText: String { "\(name), \(bilingualRole)" }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            ZStack(alignment: .bottomTrailing) {
+                Image(systemName: ProjectIdentity.projectSymbolName)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(MobileClassic.heading)
+                    .frame(width: 30, height: 30)
+                if let indicator = identity.indicatorSymbolName {
+                    Image(systemName: indicator)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(MobileClassic.accent)
+                        .padding(2)
+                        .background(MobileClassic.paper, in: Circle())
+                        .offset(x: 3, y: 3)
+                }
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name)
+                    .font(.headline)
+                    .foregroundStyle(MobileClassic.heading)
+                Text(bilingualRole)
+                    .font(.caption)
+                    .foregroundStyle(MobileClassic.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier("project-identity")
+        .accessibilityLabel(accessibilityText)
+    }
 }
 
 struct MobileLibraryView: View {
@@ -38,8 +91,8 @@ struct MobileLibraryView: View {
                         NavigationLink {
                             MobileProjectView(library: library, projectID: project.id)
                         } label: {
-                            VStack(alignment: .leading) {
-                                Text(project.name).font(.headline).foregroundStyle(MobileClassic.heading)
+                            VStack(alignment: .leading, spacing: 5) {
+                                MobileProjectIdentityLabel(name: project.name, identity: project.projectIdentity)
                                 Text(project.isRecoveryArchive ? "Archivo de recuperación · Solo lectura" : "Consulta desde LeonardoMD · Solo lectura")
                                     .font(.caption).foregroundStyle(MobileClassic.secondary)
                             }
@@ -238,6 +291,7 @@ struct MobileProjectView: View {
         List {
             if let project {
                 Section {
+                    MobileProjectIdentityLabel(name: project.name, identity: project.projectIdentity)
                     Text("Disponible offline · Solo lectura").font(.caption).foregroundStyle(MobileClassic.secondary)
                     Text("Carpeta: \(project.scope.folder.isEmpty ? "/" : project.scope.folder)").font(.caption)
                     if project.isRecoveryArchive {

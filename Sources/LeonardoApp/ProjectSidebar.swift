@@ -23,7 +23,7 @@ struct ProjectSidebar: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                let presentation = DesktopProjectPresentation.resolve(session.projectURL)
+                let presentation = DesktopProjectPresentation.resolve(session.projectURL, session: session)
                 ProjectIdentityLabel(name: session.projectURL?.lastPathComponent ?? L10n.text("Project"),
                                      identity: presentation.identity, detail: presentation.detail)
                     .font(.headline)

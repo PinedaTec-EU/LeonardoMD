@@ -12,6 +12,7 @@ provenance is recorded in each locale’s `assets/illustrations.provenance.json`
 | `en/es/assets/palette.png` | `e457e86` | Actual palette editor; initial valid global palette |
 | `en/es/assets/sync-sharing-v12.png` | `f1ecf7b` | Synchronization → Share from this Mac; one common service control; disabled helper/sharing; isolated empty content |
 | `en/es/assets/sync-connections-v12.png` | `f1ecf7b` | Synchronization → Connect to other computers; same common service control; disabled Connect; isolated empty connections/copies |
+| `en/es/assets/project-identities.png` | `175791211` | Actual macOS project-identity component at 400×160; local, outgoing selected-content and received roles; same meanings apply on iOS; synthetic role data, not a paired-device capture |
 | `en/es/assets/updates.png` | `e457e86` | Actual update preferences; synthetic installed version, stable subscription, fake transport |
 | `en/es/assets/activation.png` | `b8900bf` | Actual global activation dialog, synthetic source; copied byte-for-byte from `doc/validation/extension-recommendations/current/dialog-<locale>-global.png` |
 | `en/es/assets/warnings.png` | `b8900bf` | Actual extension preferences/reset; copied byte-for-byte from `doc/validation/extension-recommendations/current/reset-<locale>.png` |
