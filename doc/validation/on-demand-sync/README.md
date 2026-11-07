@@ -129,8 +129,9 @@ authorization generation and cancellation at every asynchronous delivery path,
 including shared task results. Superseded usage replies cannot overwrite newer
 post-revocation accounting. The RemoteDownloadCache port keeps scheduling doubles
 in tests and the real atomic persistence unchanged. The focused cache/revocation
-suite passes14 tests after correction; the complete new-source suite and captures
-are being finalized. Earlier b240875 packaged acceptance is historical for this
+suite passes14 tests after correction. The complete local suite passes722 XCTest
+checks (37 opt-in/platform skips, zero failures), plus28 Swift Testing checks.
+Current-source native captures are being finalized. Earlier b240875 packaged acceptance is historical for this
 corrective source and must not be reused as its fresh-process acceptance.
 
 The iOS acceptance harness uses the real Little Leonardo interface and a separate
@@ -143,3 +144,12 @@ file transfer. The accepted Classic simulator926C886F-52D8-4766-B84D-1A5D8C21808
 was explicitly ceded with disposable synthetic state. Physical-test helper26651,
 source corpus, grants and trust remain outside this fixture. Runtime capture
 results are pending; code alone is not claimed as iOS acceptance.
+
+
+The first iOS test attempt used CODE_SIGNING_ALLOWED=NO (compilation-only setup).
+HTTPS pairing reached the synthetic server, but the app did not persist its
+connection and no catalogue/file request followed. The test failed and is not
+accepted. The accepted Classic runtime recipe uses local ad-hoc signing enabled
+and Xcode's generated application-identifier entitlement; that existing path is
+being applied to this fixture. No distribution profile or manual Keychain group
+is introduced, and this simulator setup observation does not explain #380.

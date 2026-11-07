@@ -6,6 +6,7 @@ final class OnDemandSyncUITests: XCTestCase {
         guard ProcessInfo.processInfo.environment["LEONARDO_ON_DEMAND_QA_ROOT"] != nil else {
             throw XCTSkip("Requires the isolated on-demand loopback source")
         }
+        defer { try? phase("finish") }
         let app = XCUIApplication()
         app.launch()
         XCTAssertTrue(app.buttons["open-sync-settings"].waitForExistence(timeout: 15))
@@ -56,7 +57,6 @@ final class OnDemandSyncUITests: XCTestCase {
         assertStatus(row("notes/decisions.md", app: app), "Disponible sin conexión", timeout: 80)
         assertStatus(row("notes/future.md", app: app), "Disponible sin conexión")
         try capture(app, "catalogue-recovered", state: "Automatic refresh retried the failed file and retained a future folder descendant without a manual sync")
-        try phase("finish")
     }
 
     @MainActor private func enroll(_ app: XCUIApplication) throws {
@@ -68,7 +68,12 @@ final class OnDemandSyncUITests: XCTestCase {
         port.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: (port.value as? String)?.count ?? 0))
         port.typeText("46987")
         app.buttons["Solicitar conexión"].tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch.waitForExistence(timeout: 15))
+        let code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
+        guard code.waitForExistence(timeout: 15) else {
+            try capture(app, "enrollment-failed", state: "Enrollment did not persist; diagnostic only, not accepted evidence")
+            throw NSError(domain: "OnDemandFixture", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "The native app did not persist enrollment"])
+        }
         try phase("approve")
         app.buttons["Sincronizar"].firstMatch.tap()
         XCTAssertTrue(app.staticTexts["QA · On-demand"].firstMatch.waitForExistence(timeout: 20))
