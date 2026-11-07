@@ -1,0 +1,20 @@
+{
+  "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
+  "browser_version" : "Not applicable: native view, no browser engine",
+  "capture_mode" : "element",
+  "captured_at" : "2026-11-07T21:36:02.241Z",
+  "data_provenance" : "synthetic",
+  "native_viewport_points" : {
+    "height" : 640,
+    "width" : 1180
+  },
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "route" : "\/native\/synchronization\/downloads\/es",
+  "screen" : "Shared production catalogue and storage controls",
+  "source_sha" : "861f579d2e3707008475e2e7dd5c95e1d791b597",
+  "state" : "Remote-only, cached, retained, partially retained folder and interrupted pending download; independent temporary\/offline usage; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "viewport_css" : {
+    "height" : 640,
+    "width" : 1180
+  }
+}
