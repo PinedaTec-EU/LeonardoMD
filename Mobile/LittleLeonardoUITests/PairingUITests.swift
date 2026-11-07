@@ -228,6 +228,10 @@ final class PairingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["rubric-undo"].isEnabled)
         XCTAssertNotNil(waitForVisibleInk(in: app, element: canvas, timeout: 5,
             message: "Ink must survive portrait-landscape-portrait"))
+        let restored = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        restored.name = "Classic rubric restored portrait with preserved ink"
+        restored.lifetime = .keepAlways
+        add(restored)
         app.buttons["rubric-clear"].tap()
 
         drawLine(in: canvas, from: CGVector(dx: 0.15, dy: 0.55), to: CGVector(dx: 0.85, dy: 0.55))
