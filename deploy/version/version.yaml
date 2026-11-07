@@ -909,9 +909,19 @@
       "pr": 377,
       "summary": "Extensible math symbols render complete shapes, and outline selections open the matching heading even when rendered content has different heights.",
       "to_version": "0.3.1045"
+    },
+    {
+      "delta": {
+        "build": 12
+      },
+      "from_version": "0.3.1045",
+      "merge_sha": "99ac3204d49f25210e74ea7d93211b695b96f186",
+      "pr": 383,
+      "summary": "Little Leonardo includes an offline bilingual demo with format examples and a locally saved practice form.",
+      "to_version": "0.3.1057"
     }
   ],
-  "current_version": "0.3.1045",
+  "current_version": "0.3.1057",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
