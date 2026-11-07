@@ -231,3 +231,33 @@ locked before first-window inspection. **Current packaged macOS Guide27 EN/ES
 acceptance remains pending**, including live math/extensions and practice round-trip;
 process existence and component captures do not substitute for it. The physical
 #380 retry remains owned by the diagnostic chat. No merge or beta publication is claimed.
+
+
+## Completed packaged macOS acceptance (2026-11-07 evening)
+
+The preserved real QA executable was relaunched after the physical rubric test
+ceded GUI ownership. The new process displayed its first window and opened both
+Guide27 locales through the actual Help menu. `final-macos/` contains original
+CUA screenshots, capture-time contexts and canonical metadata. The build source
+remains66c9e644a3203e1725f466973e1940acff61e61f; subsequent commits only record
+validation/accounting. The window reports0.3.1113/build1113, unique QA identity
+as recorded in final-native-handoff.json. Native point dimensions/engine version
+were not exposed; metadata explicitly uses image-pixel equivalent dimensions.
+
+Both EN/ES live examples were inspected: Mermaid, inline and single/multiline
+display math, complete underbrace/radical/arrow shapes, tagged box-counting
+formula(1), Vega-Lite chart, packaged local images and tables. Math-off fallback
+was checked after declining the activation recommendation, and literal code
+examples stayed literal. The separate practice form in each locale was opened,
+filled with fictional answers, saved, closed and reopened; the actual fields
+retained their values and checkbox. Bundle/personal Guide27 SHA-256 hashes match
+in both locales (identity-and-restoration.json). No existing guide was overwritten.
+
+Actual Mac cache preferences accepted128MiB with Apply and256MiB with Return,
+restoring the original budget. This ad-hoc QA identity correctly cannot authenticate
+to the signed physical helper; no sharing/enrollment/helper action was attempted.
+The tested editor quit normally, the latest preferences and two practice originals
+were restored byte-for-byte, and helper26651 remained running unchanged. These
+checks supersede the earlier locked-Mac pending note, not the separate #394 fix.
+The physical #380 image/rubric round-trip is recorded by the diagnostic chat;
+PR398 separately fixes the manual status-query recovery observed there.
