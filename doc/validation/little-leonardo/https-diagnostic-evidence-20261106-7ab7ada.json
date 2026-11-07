@@ -1,0 +1,130 @@
+{
+  "schemaVersion": "little-leonardo-https-diagnostic-integration-evidence-v1",
+  "issue": 380,
+  "pullRequest": 382,
+  "sourceCommit": "7ab7adadc2c46ebf96416f9658b1edf790ea654b",
+  "sourceTree": "261c8d01b8f4e2b9aaec0d5f205a516f167260f3",
+  "mergedMainCommit": "843670bcd3d5548242f04f11226e06487b3e790b",
+  "guideRevision": 22,
+  "buildDelta": 21,
+  "sourceInputsSha256": {
+    "doc/guide/en/body.md": "ad6164970c3a76957d166e9de02fb57a9cc63a912e2c9fe289c50040e272c007",
+    "doc/guide/es/body.md": "445e28ffe8c245f744dacf93d33ad8e93575ac8b16429db0b28373071e2dcd18",
+    "Sources/LeonardoApp/Resources/Guide-v22-en.mdlz": "77685abb151945eefb736ccbe8cb05028bf34542e3164540bc0da47c47692ab1",
+    "Sources/LeonardoApp/Resources/Guide-v22-es.mdlz": "c04e2c82532102cc33c10e3781b05d6b7c82a2257392ffbf4a7f2f5e12f37c69",
+    "Sources/LeonardoApp/BundledUserGuide.swift": "c2464f9a5f40f8a61420b7fe9e95f866cb59e7cd31646c9d1b88cc22929465ec",
+    "Sources/LeonardoRender/Resources/renderer-runtime.js": "4393e03001c24ab5292a1936704781422ef981af2123bd56100c57c23e0b6aec",
+    "Sources/LeonardoRender/Resources/table-layout.js": "dc23a1117085f3b4927dcaa1bd362f5df1f11d9e3657731dc701e63d7ee9be18",
+    "Sources/LeonardoRender/MarkdownPreviewController.swift": "e08e2f0acc7bf9fab3f62b3241a2cc18ad437dfa1c091d3cf129f4a09bba1dd2",
+    "Tests/LeonardoAppTests/BundledUserGuideTests.swift": "6f07a31e17346fe34a3cb3e25a87b022dc9855f2bdb8c0cf3117d1f1ad3bf3f7",
+    "Tests/LeonardoAppTests/GuidePracticeNavigationTests.swift": "771dc2222ad3ba99699521d77c15225eadf3901378f01eaffbb2664f6229c6ba",
+    "Tests/LeonardoAppTests/GuideCaptureSupport.swift": "003aff2173b2e7ed3ced96cb8dfe573cc428ad168362c5f30771ca5b001b2ece",
+    "scripts/package-user-guide.py": "45384731c79d5669c24511c38546c3f5d0d34d9b73994a9df6487808e7cda761",
+    "Tests/LeonardoDesktopSyncTests/MobileDirectAcceptanceFixtureTests.swift": "4ed0e13fbf5d1dc304bcb72ca3781de26d250656fb6a824aaa42a6c17f4d0ca1"
+  },
+  "validation": {
+    "guidePackagingPython": "3 passed",
+    "compiledNativeGuide": "7 passed, 0 failed; recorded at build delta 21",
+    "sourceBoundNativeGuideCaptures": "7 passed using EVIDENCE_SHA=sourceCommit",
+    "practiceCapture": "1 passed; EN/ES fill, save, close/reopen retained answer",
+    "transportRegression": "17 passed earlier; transport/mobile/UI input paths unchanged between source 0d9ec26 and this source",
+    "transportUnchangedPaths": [
+      "Sources/LeonardoSyncTransport",
+      "Mobile/LittleLeonardo",
+      "Tests/LeonardoSyncTransportTests",
+      "Mobile/LittleLeonardoUITests",
+      "Tests/LeonardoDesktopSyncTests/MobileDirectAcceptanceFixtureTests.swift"
+    ]
+  },
+  "captures": [
+    {
+      "locale": "en",
+      "kind": "diagnostic",
+      "png": "user-guide-https-diagnostic-en-20261106-7ab7ada.png",
+      "sha256": "c7444ffc86a41f0f3ff24df3da6473164ef7d010320f10a582b69613f4d1c79d",
+      "context": "user-guide-https-diagnostic-en-20261106-7ab7ada.context.json",
+      "contextSha256": "cd68aa96251ebba00a54cc0a94c106512307920a20c9596546337073ef1fde53",
+      "capturedAt": "2026-11-06T21:00:34.358Z",
+      "sourceCommit": "7ab7adadc2c46ebf96416f9658b1edf790ea654b",
+      "route": "/native/user-guide/en",
+      "state": "Interrupted HTTPS response guidance; diagnostic code contains no request identifiers; language en"
+    },
+    {
+      "locale": "es",
+      "kind": "diagnostic",
+      "png": "user-guide-https-diagnostic-es-20261106-7ab7ada.png",
+      "sha256": "25a3987e543d2e31a6a7ef5d758801ba801d0b3c261abc0a1340ba63737bc808",
+      "context": "user-guide-https-diagnostic-es-20261106-7ab7ada.context.json",
+      "contextSha256": "9494e8ee25a2f3498d94cf6fb76b503c47e7f08eabedf92be45d1cbb6c460762",
+      "capturedAt": "2026-11-06T21:00:38.936Z",
+      "sourceCommit": "7ab7adadc2c46ebf96416f9658b1edf790ea654b",
+      "route": "/native/user-guide/es",
+      "state": "Interrupted HTTPS response guidance; diagnostic code contains no request identifiers; language es"
+    },
+    {
+      "locale": "en",
+      "kind": "practice-action",
+      "png": "practice-action-en-20261106-7ab7ada.png",
+      "sha256": "d93eed0291d58b42c02d505ae637978e3b9a00263fffc6e790dcf276de7357b8",
+      "context": "practice-action-en-20261106-7ab7ada.context.json",
+      "contextSha256": "4b668e640cb0d09a6fb59bb6d7120d4078f4fbbf04f538eebbd88bef5edb5627",
+      "capturedAt": "2026-11-06T21:01:48.523Z",
+      "sourceCommit": "7ab7adadc2c46ebf96416f9658b1edf790ea654b",
+      "route": "/native/user-guide/en",
+      "state": "Guide chapter 4; reading mode; fixed practice link; no form fields; language en"
+    },
+    {
+      "locale": "es",
+      "kind": "practice-action",
+      "png": "practice-action-es-20261106-7ab7ada.png",
+      "sha256": "74e30c9ff4dda391ba53c65aad49d9064645cc7846257d086f48896f3bba0b7f",
+      "context": "practice-action-es-20261106-7ab7ada.context.json",
+      "contextSha256": "0bc7187b9d623f46b34d818f3a85096d6744a580264e233371a6229c95ac1ae6",
+      "capturedAt": "2026-11-06T21:01:50.285Z",
+      "sourceCommit": "7ab7adadc2c46ebf96416f9658b1edf790ea654b",
+      "route": "/native/user-guide/es",
+      "state": "Guide chapter 4; reading mode; fixed practice link; no form fields; language es"
+    },
+    {
+      "locale": "en",
+      "kind": "practice-form",
+      "png": "practice-form-en-20261106-7ab7ada.png",
+      "sha256": "1994a408cbc0e85458c97428c7106fa289812cc6eada7be0a762a4d4ff032260",
+      "context": "practice-form-en-20261106-7ab7ada.context.json",
+      "contextSha256": "d32c912002b162f963567491fa8be3a73af1f56efaa74df474f34c94ca238db1",
+      "capturedAt": "2026-11-06T21:01:49.271Z",
+      "sourceCommit": "7ab7adadc2c46ebf96416f9658b1edf790ea654b",
+      "route": "/native/user-guide/en",
+      "state": "Separate practice tab; Fill form; protected structure; synthetic saved Ada answer; language en"
+    },
+    {
+      "locale": "es",
+      "kind": "practice-form",
+      "png": "practice-form-es-20261106-7ab7ada.png",
+      "sha256": "c391daae849b88f4b4bf39d1f1b8b850e73fd7a4c4000314610b96524c4285a8",
+      "context": "practice-form-es-20261106-7ab7ada.context.json",
+      "contextSha256": "9044bb17cb77320b7d975b7170d674bc39d168cc706152446cbb01920a93c906",
+      "capturedAt": "2026-11-06T21:01:51.029Z",
+      "sourceCommit": "7ab7adadc2c46ebf96416f9658b1edf790ea654b",
+      "route": "/native/user-guide/es",
+      "state": "Separate practice tab; Fill form; protected structure; synthetic saved Ada answer; language es"
+    }
+  ],
+  "previousEvidence": {
+    "sourceCommit": "0d9ec261dc6656a77fc852277addf40802c03255",
+    "buildDelta": 20,
+    "equivalentIosAlert": {
+      "file": "ios-https-diagnostic-alert-20261106.png",
+      "sha256": "a03c70d8c06cddecdfdcf0837805b0c57fc7a8b938f4217423d6633a37b64bbb"
+    },
+    "guideCaptures": "Historical pre-merge frames; the six captures above are for combined Guide v22."
+  },
+  "physicalRetry": {
+    "asset": "assets/recorrido-leonardo.png",
+    "bytes": 338658,
+    "error": "The network connection was lost.",
+    "rootCause": "unconfirmed",
+    "testFlightUploaded": false
+  },
+  "issue388": "Initial/retry PNGs matched byte-for-byte per locale; raw pixel inspection confirmed the sample background. No rendering or capture regression is claimed."
+}
