@@ -40,6 +40,29 @@ For interactive native reproduction, launch the built LittleLeonardo.app on an o
 
 ## Delivery boundaries
 
-Own successful compiler count27 is recorded in entry387. Required exact-head CI and strict fresh judge remain merge gates. Final TestFlight publication requires accepted main, central ledger materialization, a fresh clean publisher archive, export/Apple validation, upload, processing and assignment/readback of the existing Owner Internal group. No earlier author archive or diagnostic1082 is substituted. At this evidence checkpoint no merge/upload is claimed.
+Own successful compiler count28 is recorded in entry387. Required exact-head CI and strict fresh judge remain merge gates. Final TestFlight publication requires accepted main, central ledger materialization, a fresh clean publisher archive, export/Apple validation, upload, processing and assignment/readback of the existing Owner Internal group. No earlier author archive or diagnostic1082 is substituted. At this evidence checkpoint no merge/upload is claimed.
 
 Physical-device transport issue380 remains separately investigated; Classic does not claim to fix it. No security/authorization policy is relaxed. Read-only documents, accepted rubric consent and explicit Send remain authoritative. Shared release-cleanup's stale unrelated worktree registration is already tracked in ai-skills-shared issue22; no peer worktree is pruned. Owned caches remain within15GiB. [Earlier checkpoints](checkpoint-history.md) retain their actual historical limitations.
+
+## Complete-suite accounting
+
+SwiftPM runs seven XCTest executables. The last366-test summary belongs to LeonardoAppTests only; it is not the aggregate. Count each `.xctest` summary once, excluding repeated nested/All tests summaries. [Machine-readable totals](final/swift-suite-totals.json) are parsed from the unchanged durable log.
+
+| XCTest executable | Tests | Skipped | Log line |
+|---|---:|---:|---:|
+| LeonardoSyncTransportTests.xctest | 17 | 0 | [167](final/swift-tests.log#L167) |
+| LeonardoSyncTests.xctest | 81 | 0 | [390](final/swift-tests.log#L390) |
+| LeonardoRenderTests.xctest | 23 | 1 | [467](final/swift-tests.log#L467) |
+| LeonardoIntegrationTests.xctest | 46 | 0 | [580](final/swift-tests.log#L580) |
+| LeonardoDesktopSyncTests.xctest | 56 | 4 | [754](final/swift-tests.log#L754) |
+| LeonardoCoreTests.xctest | 115 | 0 | [1044](final/swift-tests.log#L1044) |
+| LeonardoAppTests.xctest | 366 | 30 | [2038](final/swift-tests.log#L2038) |
+| **Total** | **704** | **35** | Zero failures |
+
+Swift Testing separately reports43+28=71 passing tests. No suite was rerun or counted twice to produce this total.
+
+## Installed About metadata acceptance
+
+An additional signed Release build-for-testing from product-equivalent source `a7f58b6a076855fa8cc7a2486b136891e4e88139` supplies the canonical baseline metadata through `MARKETING_VERSION=0.3.1082 CURRENT_PROJECT_VERSION=1082`. The actual installed Info.plist and executable are hashed in [installed-bundle.json](final/versioned-about/installed-bundle.json). The real About workflow passes1/1(24.948s), and the [original installed About capture](final/versioned-about/about-installed-version.png) visibly reads **0.3.1082(1082)**. The original has context/hash metadata; [build log](final/versioned-about/release-build.log), [UI log](final/versioned-about/about-ui-test.log). Testability is enabled solely for this Release simulator test configuration; no product source or canonical version file is changed. The initial unsupported Release unit-test invocation lacked testability and failed before any recorder increment; the corrected invocation records delta28. The final distribution remains a fresh publisher archive without tests.
+
+The earlier Debug About original truthfully retains Desarrollo because its generated plist omitted version fields. It is superseded for installed-version acceptance by this metadata-populated Release capture. The value1082 is development acceptance metadata, not a claim that published TestFlight1082 contains Classic. Final TestFlight version is assigned only after source integration/materialization. All626 product/build hashes remain identical across11a6ddd, a7f58b6 and this evidence-only follow-up.
