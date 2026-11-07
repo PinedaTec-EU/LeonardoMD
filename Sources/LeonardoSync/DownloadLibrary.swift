@@ -13,7 +13,11 @@ public final class DownloadLibrary {
     private var allowed: Set<UUID> = []
     private var generations: [UUID: UInt64] = [:]
     private var usageRevision: UInt64 = 0
-    private var tasks: [String: Task<CorpusFile, Error>] = [:]
+    private struct ActiveDownload {
+        let generation: UInt64
+        let task: Task<CorpusFile, Error>
+    }
+    private var tasks: [String: ActiveDownload] = [:]
     public var fetch: @MainActor (UUID, RemoteFileEntry) async throws -> CorpusFile = { _, _ in throw SyncError.revoked }
 
     public init(cache: any RemoteDownloadCache) { self.cache = cache }
@@ -39,7 +43,7 @@ public final class DownloadLibrary {
         allowed.remove(id); generations[id, default: 0] &+= 1
         usageRevision &+= 1
         projects.removeAll { $0.id == id }
-        for (key, task) in tasks where key.hasPrefix(id.uuidString + ":") { task.cancel() }
+        for (key, active) in tasks where key.hasPrefix(id.uuidString + ":") { active.task.cancel() }
     }
 
     public func remove(id: UUID) async throws {
@@ -56,26 +60,29 @@ public final class DownloadLibrary {
         }
         try requireAccess(id: id, generation: generation)
         let key = Self.key(id: id, path: path)
-        if let task = tasks[key] {
-            let file = try await task.value
+        if let active = tasks[key], active.generation == generation {
+            let file = try await active.task.value
             try requireAccess(id: id, generation: generation)
             return file
         }
         downloading.insert(key); failures[key] = nil
         let task = Task { [self] in
             let file = try await fetch(id, entry)
-            try Task.checkCancellation()
-            guard allowed.contains(id), generations[id, default: 0] == generation else { throw SyncError.revoked }
+            try requireAccess(id: id, generation: generation)
             try await cache.store(id: id, entry: entry, file: file)
-            guard allowed.contains(id), generations[id, default: 0] == generation else {
-                try await cache.remove(id: id); throw SyncError.revoked
-            }
+            // The host owns revocation purge. An obsolete operation must never
+            // delete a project that may already have a new authorization.
+            try requireAccess(id: id, generation: generation)
             try await refreshAll()
             try requireAccess(id: id, generation: generation)
             return file
         }
-        tasks[key] = task
-        defer { tasks[key] = nil; downloading.remove(key) }
+        tasks[key] = ActiveDownload(generation: generation, task: task)
+        defer {
+            if tasks[key]?.generation == generation {
+                tasks[key] = nil; downloading.remove(key)
+            }
+        }
         do {
             let file = try await task.value
             try requireAccess(id: id, generation: generation)

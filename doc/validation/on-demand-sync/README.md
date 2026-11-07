@@ -173,3 +173,18 @@ explains the explicit action; its personal-copy namespace was absent at allocati
 Guide26 personal documents are preserved. Deterministic packages pass3/3 and the
 complete local corrected suite passes722 XCTest checks (37 skips, zero failures)
 plus28 Swift Testing checks. Fresh native iOS/macOS capture acceptance is pending.
+
+
+## Reauthorization isolation
+
+A third deterministic #395 regression holds completion of an actual store,
+removes the grant/cache, grants the same project again and opens a new revision.
+Before correction the new open joined the obsolete task and the old completion
+purged the newly authorized project (the test failed with revoked and a missing
+cache project). Active tasks now carry their authorization generation; old
+cleanup cannot remove a newer task/progress indicator, and only the host owns
+revocation purge. Obsolete completions cannot purge a later grant.
+All15 focused cache/revocation tests pass. Full corrected local validation passes
+723 XCTest checks (37 opt-in/platform skips, zero failures), plus28 Swift Testing
+checks. Current-source iOS/macOS native evidence and exact-head review remain
+pending; earlier capture attempts are not acceptance of this corrective code.

@@ -51,6 +51,33 @@ import XCTest
         XCTAssertTrue(library.projects.isEmpty)
     }
 
+    func testOldDownloadCannotDeleteOrJoinAReauthorizedProject() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project, catalogue: fixture.catalogue)
+        library.fetch = { _, _ in fixture.file }
+        let gate = CacheReadGate()
+        await fixture.cache.holdNextStore(at: gate)
+        let oldOpening = Task { try await library.open(id: fixture.project.id, path: fixture.file.path) }
+        await gate.waitUntilEntered()
+        try await library.remove(id: fixture.project.id)
+        let replacement = CorpusFile(path: fixture.file.path, content: Data("reauthorized version".utf8))
+        let entry = RemoteFileEntry(file: replacement)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: RemoteProjectCatalogue(files: [entry]))
+        try await fixture.cache.setRetained(id: fixture.project.id, path: replacement.path, isFolder: false, keep: true)
+        library.fetch = { _, _ in replacement }
+        let newOpening = Task { try await library.open(id: fixture.project.id, path: replacement.path) }
+        await gate.release()
+        do { _ = try await oldOpening.value; XCTFail("The old authorization must remain denied") }
+        catch { XCTAssertEqual(error as? SyncError, .revoked) }
+        do { let file = try await newOpening.value; XCTAssertEqual(file, replacement) }
+        catch { XCTFail("A new grant must not join or be purged by the old download: \(error)") }
+        let stored = try await fixture.cache.projects()
+        XCTAssertTrue(try XCTUnwrap(stored.first).isAvailableOffline(entry))
+    }
+
     private struct Fixture {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let project: SharedProjectDescriptor
@@ -88,9 +115,11 @@ private actor GatedDownloadCache: RemoteDownloadCache {
     let base: OnDemandCache
     private var usageGate: CacheReadGate?
     private var staleReadGate: CacheReadGate?
+    private var storeGate: CacheReadGate?
     init(base: OnDemandCache) { self.base = base }
     func holdNextUsage(at gate: CacheReadGate) { usageGate = gate }
     func holdNextStaleRead(at gate: CacheReadGate) { staleReadGate = gate }
+    func holdNextStore(at gate: CacheReadGate) { storeGate = gate }
     func projects() async throws -> [CachedRemoteProject] { try await base.projects() }
     func update(id: UUID, descriptor: SharedProjectDescriptor, catalogue: RemoteProjectCatalogue) async throws {
         try await base.update(id: id, descriptor: descriptor, catalogue: catalogue)
@@ -105,6 +134,10 @@ private actor GatedDownloadCache: RemoteDownloadCache {
     }
     func store(id: UUID, entry: RemoteFileEntry, file: CorpusFile) async throws {
         try await base.store(id: id, entry: entry, file: file)
+        if let gate = storeGate {
+            storeGate = nil
+            await gate.hold()
+        }
     }
     func setRetained(id: UUID, path: String, isFolder: Bool, keep: Bool) async throws {
         try await base.setRetained(id: id, path: path, isFolder: isFolder, keep: keep)
