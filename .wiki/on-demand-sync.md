@@ -18,3 +18,8 @@ Implementation tracked by [#384](https://github.com/PinedaTec-EU/LeonardoMD/issu
 - [#396](https://github.com/PinedaTec-EU/LeonardoMD/issues/396): the cache-limit field keeps an independent text draft and a visible MiB label; Apply/Return commits a validated whole number once. Background usage replies cannot rewrite an active edit. Guide27 documents the explicit action and preserves existing personal Guide26 copies. Native iOS keyboard replacement reproduced256128 instead of128 before correction.
 
 - Reauthorization is generation-scoped in both task deduplication and deferred cleanup. A deterministic store-completion regression for #395 verifies that an old grant cannot join or delete a newly retained revision. Purge remains the host revocation operation.
+
+Revocation immediately detaches/cancels that project's active downloads and clears
+only its published progress/failures. Cancelled work may finish later; its obsolete
+generation cannot alter a new grant, including a cached reopen. The deterministic
+#395 regressions cover both held completion and preservation of other projects' errors.

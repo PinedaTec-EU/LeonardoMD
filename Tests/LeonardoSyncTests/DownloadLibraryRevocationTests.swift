@@ -78,6 +78,51 @@ import XCTest
         XCTAssertTrue(try XCTUnwrap(stored.first).isAvailableOffline(entry))
     }
 
+    func testDenyClearsProgressBeforeObsoleteDownloadReturnsAndCachedRegrantOpens() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project, catalogue: fixture.catalogue)
+        library.fetch = { _, _ in fixture.file }
+        let gate = CacheReadGate()
+        await fixture.cache.holdNextStore(at: gate)
+        let obsolete = Task { try await library.open(id: fixture.project.id, path: fixture.file.path) }
+        await gate.waitUntilEntered()
+        let key = DownloadLibrary.key(id: fixture.project.id, path: fixture.file.path)
+        XCTAssertTrue(library.downloading.contains(key))
+        try await library.remove(id: fixture.project.id)
+        XCTAssertFalse(library.downloading.contains(key), "Revocation must clear visible progress before cancelled work returns")
+        try await library.update(id: fixture.project.id, descriptor: fixture.project, catalogue: fixture.catalogue)
+        try await fixture.cache.store(id: fixture.project.id, entry: RemoteFileEntry(file: fixture.file), file: fixture.file)
+        let reopened = try await library.open(id: fixture.project.id, path: fixture.file.path)
+        XCTAssertEqual(reopened, fixture.file)
+        XCTAssertFalse(library.downloading.contains(key), "A cache hit in the new grant must not inherit an old spinner")
+        await gate.release()
+        do { _ = try await obsolete.value; XCTFail("Obsolete bytes returned") }
+        catch { XCTAssertEqual(error as? SyncError, .revoked) }
+    }
+
+    func testDenyClearsOnlyThatProjectsFailures() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let other = SharedProjectDescriptor(id: UUID(), name: "Unrelated", scope: try CorpusScope(folder: ""))
+        let library = DownloadLibrary(cache: fixture.cache)
+        for project in [fixture.project, other] {
+            try await library.update(id: project.id, descriptor: project, catalogue: fixture.catalogue)
+        }
+        library.fetch = { _, _ in throw SyncError.publicationPending }
+        for project in [fixture.project, other] {
+            do { _ = try await library.open(id: project.id, path: fixture.file.path); XCTFail("Expected source failure") }
+            catch SyncError.publicationPending {}
+        }
+        let deniedKey = DownloadLibrary.key(id: fixture.project.id, path: fixture.file.path)
+        let otherKey = DownloadLibrary.key(id: other.id, path: fixture.file.path)
+        XCTAssertNotNil(library.failures[deniedKey]); XCTAssertNotNil(library.failures[otherKey])
+        library.deny(id: fixture.project.id)
+        XCTAssertNil(library.failures[deniedKey])
+        XCTAssertNotNil(library.failures[otherKey], "Revoking one project must preserve another project's error")
+    }
+
     private struct Fixture {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let project: SharedProjectDescriptor

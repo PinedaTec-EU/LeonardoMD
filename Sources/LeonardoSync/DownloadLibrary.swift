@@ -43,7 +43,15 @@ public final class DownloadLibrary {
         allowed.remove(id); generations[id, default: 0] &+= 1
         usageRevision &+= 1
         projects.removeAll { $0.id == id }
-        for (key, active) in tasks where key.hasPrefix(id.uuidString + ":") { active.task.cancel() }
+        let prefix = id.uuidString + ":"
+        for (key, active) in tasks where key.hasPrefix(prefix) {
+            tasks[key] = nil
+            active.task.cancel()
+        }
+        // Cancellation can finish much later than denial. A new grant (even a
+        // cache hit) must start without the previous authorization's UI state.
+        downloading = Set(downloading.filter { !$0.hasPrefix(prefix) })
+        failures = failures.filter { !$0.key.hasPrefix(prefix) }
     }
 
     public func remove(id: UUID) async throws {
