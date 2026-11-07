@@ -21,7 +21,6 @@ public struct SyncCacheSettingsView: View {
                 TextField("MiB", text: $limitDraft)
                     .multilineTextAlignment(.trailing).frame(minWidth: 64, idealWidth: 84, maxWidth: 104)
                     .focused($editingLimit).submitLabel(.done).onSubmit(applyLimit)
-                    .accessibilityLabel(t("Temporary cache limit (MiB)", "Límite de caché temporal (MiB)"))
                     .accessibilityIdentifier("temporary-cache-limit")
             }
             Button(t("Apply cache limit", "Aplicar límite de caché"), action: applyLimit)

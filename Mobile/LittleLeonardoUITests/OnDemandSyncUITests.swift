@@ -11,6 +11,7 @@ final class OnDemandSyncUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.buttons["open-sync-settings"].waitForExistence(timeout: 15))
         app.buttons["open-sync-settings"].tap()
+        try capture(app, "storage-initial", state: "Visible MiB label and explicit Apply action before editing")
         editLimit("128", app: app)
         XCTAssertTrue(app.buttons["apply-cache-limit"].waitForExistence(timeout: 5))
         app.buttons["apply-cache-limit"].tap()
@@ -85,7 +86,9 @@ final class OnDemandSyncUITests: XCTestCase {
     @MainActor private func editLimit(_ text: String, app: XCUIApplication) {
         let field = app.textFields["temporary-cache-limit"]
         XCTAssertTrue(field.waitForExistence(timeout: 5))
-        field.tap()
+        // LabeledContent exposes the whole labeled row as the text-field frame.
+        // Target its trailing editable value rather than the label at row centre.
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
         field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: (field.value as? String)?.count ?? 0))
         field.typeText(text)
     }
