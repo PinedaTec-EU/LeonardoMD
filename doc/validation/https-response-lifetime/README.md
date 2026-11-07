@@ -55,3 +55,11 @@ by this investigation; the native UI lease remains with #387.
 Full local suite:711 XCTest checks,35 opt-in/platform skips,zero failures;28 Swift Testing checks pass. Generic iOS Simulator compilation succeeds. The server's stop, bounds, pin mismatch, interrupted body, pairing and revocation regressions remain covered; new tests cover independent strict TLS EOF/delayed reads,16 held-open peers, second-request rejection during teardown, and diagnostic privacy. Successful compiler invocations are recorded in PR392's own entry, not the consumed382 entry.
 
 This candidate changes no visual controls, renderer, user prerequisites or guide content. Existing bilingual LL1/offline/retry guidance remains accurate; the internal LLS1 support record is documented here and in the technical mobile contract. No new packaged app instance was used by these checks, so no fresh packaged Help acceptance is asserted.
+
+## Signed local candidate checkpoint
+
+The real executable/helper were built from source `cc6c43f7845c61a3fe24f8e862e8ab7f82fc50c5`, then signed inside-out with the existing Developer ID Application (teamAU2Z3P42U7). Canonical package verification confirms dependency resolution, nested signatures and no XCTest linkage. `candidate-package.json` binds the original application/helper/archive bytes to this source. The local display version remains baseline0.3.1082; it is not a newly materialized or published release. Compilation allocation is11.
+
+An immutable canonical bundle and a separate signed disposable QA copy are ready. Neither was launched or installed. Native control reported the Mac locked with automatic unlock paused after physical input before inspection could begin. The unlock request is centralized in the385 thread. Original preferences and the exact EN/ES practice files were backed up; none was modified during this attempted native phase. The diagnostic thread retains ownership of helper replacement/rollback and the next physical test. The installed helper, pins, grants and corpus remain intact.
+
+The owner reported the same LL1 byte counts again. That line came from an additional retry after the allowlisted live collector stopped, so it is not bound to a particular connection in the preceding controlled capture. Do not infer queued/body lengths from TCP summary counters or treat the repeating pattern as conclusive causality.
