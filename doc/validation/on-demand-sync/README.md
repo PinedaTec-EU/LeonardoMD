@@ -153,3 +153,23 @@ accepted. The accepted Classic runtime recipe uses local ad-hoc signing enabled
 and Xcode's generated application-identifier entitlement; that existing path is
 being applied to this fixture. No distribution profile or manual Keychain group
 is introduced, and this simulator setup observation does not explain #380.
+
+
+## Native budget-edit regression and Guide27
+
+The signed iOS run reached all flow stages but was **not accepted**: replacing
+256 with128 read back256.128, recorded in [#396](https://github.com/PinedaTec-EU/LeonardoMD/issues/396).
+Original real-app screenshot/context/metadata are retained in `cache-limit-before/`.
+Its isolated source audit observed two catalogues, no aggregate snapshot, one
+requested reference file, one retained agenda, two decisions attempts and one
+future retained descendant; the other remote file was not requested. That is
+historical diagnostic evidence, not new-source runtime acceptance.
+
+The cache field now edits a separate plain-text draft with a persistent MiB
+label. Apply/Return commits a validated integer once; background usage updates
+cannot rewrite active input. Native acceptance tests both Apply and Return,
+including replacement64→128, before the catalogue flow. Bilingual Guide27
+explains the explicit action; its personal-copy namespace was absent at allocation.
+Guide26 personal documents are preserved. Deterministic packages pass3/3 and the
+complete local corrected suite passes722 XCTest checks (37 skips, zero failures)
+plus28 Swift Testing checks. Fresh native iOS/macOS capture acceptance is pending.

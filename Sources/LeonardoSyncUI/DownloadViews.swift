@@ -5,6 +5,8 @@ import LeonardoSync
 public struct SyncCacheSettingsView: View {
     @Bindable var library: DownloadLibrary
     let spanish: Bool
+    @State private var limitDraft = ""
+    @FocusState private var editingLimit: Bool
     public init(library: DownloadLibrary, spanish: Bool = false) { self.library = library; self.spanish = spanish }
     private func t(_ en: String, _ es: String) -> String { spanish ? es : en }
     public var body: some View {
@@ -15,13 +17,20 @@ public struct SyncCacheSettingsView: View {
                 .accessibilityIdentifier("offline-storage-usage")
             LabeledContent(t("Pending offline files", "Archivos offline pendientes"), value: String(library.usage.pendingOfflineFiles))
                 .accessibilityIdentifier("pending-offline-files")
-            TextField(t("Temporary cache limit (MiB)", "Límite de caché temporal (MiB)"), value: Binding(
-                get: { library.usage.limitBytes / (1_024 * 1_024) },
-                set: { value in
-                    guard value >= 0, value <= Int.max / (1_024 * 1_024) else { return }
-                    Task { await library.setLimit(bytes: value * 1_024 * 1_024) }
-                }), format: .number)
-                .accessibilityIdentifier("temporary-cache-limit")
+            LabeledContent(t("Temporary cache limit (MiB)", "Límite de caché temporal (MiB)")) {
+                TextField("MiB", text: $limitDraft)
+                    .multilineTextAlignment(.trailing).frame(minWidth: 64, idealWidth: 84, maxWidth: 104)
+                    .focused($editingLimit).submitLabel(.done).onSubmit(applyLimit)
+                    .accessibilityLabel(t("Temporary cache limit (MiB)", "Límite de caché temporal (MiB)"))
+                    .accessibilityIdentifier("temporary-cache-limit")
+            }
+            Button(t("Apply cache limit", "Aplicar límite de caché"), action: applyLimit)
+                .disabled(requestedLimitBytes == nil || requestedLimitBytes == library.usage.limitBytes)
+                .accessibilityIdentifier("apply-cache-limit")
+            if !limitDraft.isEmpty, requestedLimitBytes == nil {
+                Text(t("Enter a nonnegative whole number of MiB.", "Introduce un número entero de MiB, igual o mayor que cero."))
+                    .font(.caption).foregroundStyle(.red)
+            }
             Button(t("Clear temporary cache", "Limpiar caché temporal")) { Task { await library.clearTemporary() } }
                 .accessibilityIdentifier("clear-temporary-cache")
             Text(t("Offline files do not count toward this limit. Clearing cache never removes offline files or editable copies.",
@@ -40,7 +49,21 @@ public struct SyncCacheSettingsView: View {
                 }
             }
             if let error = library.error { Text(error).foregroundStyle(.red) }
+        }.onAppear { limitDraft = String(library.usage.limitBytes / Self.bytesPerMiB) }
+        .onChange(of: library.usage.limitBytes) { _, value in
+            if !editingLimit { limitDraft = String(value / Self.bytesPerMiB) }
         }
+    }
+    private static let bytesPerMiB = 1_024 * 1_024
+    private var requestedLimitBytes: Int? {
+        guard let value = Int(limitDraft.trimmingCharacters(in: .whitespacesAndNewlines)),
+              value >= 0, value <= Int.max / Self.bytesPerMiB else { return nil }
+        return value * Self.bytesPerMiB
+    }
+    private func applyLimit() {
+        guard let bytes = requestedLimitBytes else { return }
+        editingLimit = false
+        Task { await library.setLimit(bytes: bytes) }
     }
     private func bytes(_ count: Int) -> String { ByteCountFormatter.string(fromByteCount: Int64(count), countStyle: .file) }
 }

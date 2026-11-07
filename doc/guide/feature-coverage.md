@@ -60,7 +60,7 @@ Update termination (#202): chapter 16 documents automatic Preferences dismissal 
 
 Display-math regression coverage ([#272](https://github.com/PinedaTec-EU/LeonardoMD/issues/272)): both guides include one-line underbraces and a multiline tagged box-counting equation. Native help QA must inspect enabled rendering and disabled/code fallback in every tested instance.
 
-| Metadata-first browsing, retention and cache management | `DownloadLibrary`, `OnDemandCache`, `LeonardoSyncUI` | 15 | Bilingual storage diagram; remote/cached/offline states; editable-copy boundary |
+| Metadata-first browsing, retention and cache management | `DownloadLibrary`, `OnDemandCache`, `LeonardoSyncUI` | 15 | Bilingual storage table; explicit draft/apply budget; remote/cached/offline states; editable-copy boundary |
 
 Extensible Math and outline navigation ([#274](https://github.com/PinedaTec-EU/LeonardoMD/issues/274), [#364](https://github.com/PinedaTec-EU/LeonardoMD/issues/364)): live braces, radical, long arrow and cancellation marks; chapter 9 explains repeated titles and Split navigation. Native tests verify geometry, active-content rejection, original source-line identity and preview/editor feedback.
 

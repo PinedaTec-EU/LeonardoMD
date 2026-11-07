@@ -11,11 +11,11 @@ final class OnDemandSyncUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.buttons["open-sync-settings"].waitForExistence(timeout: 15))
         app.buttons["open-sync-settings"].tap()
-        let limit = app.textFields["temporary-cache-limit"]
-        XCTAssertTrue(limit.waitForExistence(timeout: 5))
-        limit.tap()
-        limit.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: (limit.value as? String)?.count ?? 0))
-        limit.typeText("128\n")
+        editLimit("128", app: app)
+        XCTAssertTrue(app.buttons["apply-cache-limit"].waitForExistence(timeout: 5))
+        app.buttons["apply-cache-limit"].tap()
+        editLimit("64\n", app: app)
+        editLimit("128\n", app: app)
         app.buttons["Cerrar"].tap()
         try enroll(app)
         try phase("assert-metadata")
@@ -81,6 +81,13 @@ final class OnDemandSyncUITests: XCTestCase {
 
     @MainActor private func row(_ path: String, app: XCUIApplication) -> XCUIElement {
         app.buttons["download-file-" + path]
+    }
+    @MainActor private func editLimit(_ text: String, app: XCUIApplication) {
+        let field = app.textFields["temporary-cache-limit"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: (field.value as? String)?.count ?? 0))
+        field.typeText(text)
     }
     @MainActor private func assertStatus(_ element: XCUIElement, _ status: String, timeout: TimeInterval = 15) {
         XCTAssertTrue(element.waitForExistence(timeout: timeout))

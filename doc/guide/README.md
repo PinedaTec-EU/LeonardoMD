@@ -1,8 +1,8 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v26-en.mdlz` and `Guide-v26-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v27-en.mdlz` and `Guide-v27-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v26/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v27/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
