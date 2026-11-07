@@ -458,9 +458,28 @@ final class PairingUITests: XCTestCase {
         XCTAssertTrue(waitForDirectFixtureFile("accept-reconcile-gated.txt", timeout: 20),
                       "Acceptance recovery must remain gated before the explicit phase")
 
+        try advanceDirectFixture("suspend-accept-reconcile")
         app.terminate()
         app.launch()
+        XCTAssertTrue(waitForDirectFixtureFile("accept-recovery-suspended.txt", timeout: 15),
+                      "Cold launch must actually be waiting for the pending acceptance response")
         dismissMobileFailureIfPresent(app)
+        if app.buttons["Cerrar"].waitForExistence(timeout: 2) { app.buttons["Cerrar"].tap() }
+        let localLibraryReady = app.navigationBars["Biblioteca"].waitForExistence(timeout: 5)
+        captureScreen(app, name: "Cold launch while rubric recovery is suspended")
+        guard localLibraryReady else {
+            try advanceDirectFixture("allow-accept-reconcile")
+            XCTFail("Local library and demos must be usable before pending network recovery returns")
+            return
+        }
+        XCTAssertFalse(app.otherElements["startup-splash"].exists)
+        app.buttons["open-demo-en"].tap()
+        XCTAssertTrue(app.webViews.staticTexts["Welcome to Little Leonardo"].waitForExistence(timeout: 10),
+                      "The local demo must render while the Mac response remains suspended")
+        XCTAssertFalse(waitForDirectFixtureFile("accept-reconciled.txt", timeout: 0.2),
+                       "Local access must not release or silently complete pending acceptance")
+        captureScreen(app, name: "Offline demo available during pending rubric recovery")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
         let recoverySheet = app.otherElements["rubric-request-sheet"]
         if !recoverySheet.waitForExistence(timeout: 12) {
             let recoveryBanner = app.buttons["rubric-draft-banner"]
