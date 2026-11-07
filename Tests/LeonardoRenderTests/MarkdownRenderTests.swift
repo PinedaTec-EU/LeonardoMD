@@ -5,6 +5,16 @@ import LeonardoCore
 @testable import LeonardoRender
 
 struct MarkdownRenderTests {
+    @Test func offlineLegalResourcesReuseVendoredDisclosures() throws {
+        let notices = try #require(MarkdownLegalResources.noticesURL)
+        #expect(try String(contentsOf: notices, encoding: .utf8).contains("Bundled rendering assets"))
+        let resources = MarkdownLegalResources.licenseURLs
+        #expect(resources.contains { $0.lastPathComponent == "katex-0.18.2.txt" })
+        #expect(resources.contains { $0.lastPathComponent == "cpal-1.0.txt" })
+        #expect(resources.contains { $0.lastPathComponent == "citeproc-2.4.63-source.txt" })
+        #expect(resources.allSatisfy { FileManager.default.fileExists(atPath: $0.path) })
+    }
+
     @Test
     func leonardoEnvelopeIsNotGenericPreviewMetadata() throws {
         let source = "---\n{\"format\":\"mdlf\",\"formatVersion\":1,\"layout\":{\"background\":{\"image\":\"assets/logo.svg\"}}}\n---\n# Invoice\n"

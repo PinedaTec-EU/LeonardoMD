@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T08:23:43.310000+00:00",
+  "route": "/LittleLeonardo/help",
+  "screen": "Compact help",
+  "browser_name": "Native iOS Simulator; SwiftUI/UIKit; no browser",
+  "browser_version": "iOS26.5; iPhone SE3; SDK27.1",
+  "viewport_css": {
+    "width": 375,
+    "height": 667
+  },
+  "capture_mode": "viewport",
+  "state": "Portrait, Leonardo Classic, no paired projects, source0939fe95aa7cb1f50d7adc12df5d1f999cb3c36e; only compilation ledger changed after build",
+  "data_provenance": "synthetic"
+}

@@ -23,6 +23,7 @@ struct MobileQRScannerScreen: View {
                         .accessibilityIdentifier("scanner-unavailable")
                 } else { ProgressView("Preparando cámara…") }
             }
+            .classicSurface()
             .navigationTitle("Escanear QR de LeonardoMD")
             .toolbar { Button("Cancelar") { dismiss() } }
             .task {

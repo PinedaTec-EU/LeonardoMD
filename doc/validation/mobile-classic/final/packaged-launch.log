@@ -1,0 +1,121 @@
+Building for production...
+[Constructing description]
+[Planning 1 / 474]
+[Planning deferred tasks]
+[7 / 250] Sparkle-product
+[197 / 250]
+[199 / 251] CLeonardoZlib
+[209 / 262]
+[212 / 262] LeonardoCore
+[223 / 301]
+[232 / 301]
+[234 / 301]
+[238 / 301]
+[241 / 301]
+[247 / 301]
+[248 / 301]
+[249 / 301]
+[250 / 301]
+/Volumes/MSM4Ext/XcodeData/Projects/PinedaTec.eu/LeonardoMD/.worktrees/386-little-classic/Sources/LeonardoCore/LeonardoSecureExtraction.swift:665:21: warning: 'init(validatingUTF8:)' is deprecated: replaced by 'String.init(validatingCString:)' [#DeprecatedDeclaration]
+663 |             let name = withUnsafePointer(to: entry.pointee.d_name) { pointer in
+664 |                 pointer.withMemoryRebound(to: CChar.self, capacity: MemoryLayout.size(ofValue: entry.pointee.d_name)) {
+665 |                     String(validatingUTF8: $0)
+    |                     |- warning: 'init(validatingUTF8:)' is deprecated: replaced by 'String.init(validatingCString:)' [#DeprecatedDeclaration]
+    |                     `- note: use 'String.init(validatingCString:)' instead
+666 |                 }
+667 |             }
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+[252 / 301] LeonardoCore
+[261 / 303] LeonardoSync
+[263 / 304] LeonardoRender
+[287 / 343]
+[289 / 343]
+[293 / 343]
+[296 / 343]
+[297 / 343]
+[299 / 343]
+[300 / 343]
+[302 / 343]
+[302 / 343] LeonardoSync
+[310 / 344] LeonardoSyncTransport
+[312 / 345]
+[313 / 345] LeonardoSyncTransport
+[321 / 346] LeonardoDesktopSync
+[323 / 347] LeonardoRender
+/Volumes/MSM4Ext/XcodeData/Projects/PinedaTec.eu/LeonardoMD/.worktrees/386-little-classic/Sources/LeonardoDesktopSync/DesktopIdentityImporter.swift:40:13: warning: 'SecKeychainCreate' was deprecated in macOS 10.10: SecKeychain is deprecated [#DeprecatedDeclaration]
+38 |         var created: SecKeychain?
+39 |         let status = bytes.withUnsafeBytes { buffer in
+40 |             SecKeychainCreate(keychainPath, UInt32(bytes.count),
+   |             `- warning: 'SecKeychainCreate' was deprecated in macOS 10.10: SecKeychain is deprecated [#DeprecatedDeclaration]
+41 |                               buffer.baseAddress, false, nil, &created)
+42 |         }
+
+/Volumes/MSM4Ext/XcodeData/Projects/PinedaTec.eu/LeonardoMD/.worktrees/386-little-classic/Sources/LeonardoDesktopSync/DesktopIdentityImporter.swift:51:9: warning: 'SecKeychainDelete' was deprecated in macOS 10.10: SecKeychain is deprecated [#DeprecatedDeclaration]
+49 | 
+50 |     deinit {
+51 |         SecKeychainDelete(keychain)
+   |         `- warning: 'SecKeychainDelete' was deprecated in macOS 10.10: SecKeychain is deprecated [#DeprecatedDeclaration]
+52 |         try? FileManager.default.removeItem(at: root)
+53 |     }
+
+/Volumes/MSM4Ext/XcodeData/Projects/PinedaTec.eu/LeonardoMD/.worktrees/386-little-classic/Sources/LeonardoDesktopSync/LocalNetworkInterfaces.swift:26:25: warning: 'init(cString:)' is deprecated: Use String(decoding: array, as: UTF8.self) instead, after truncating the null termination. [#DeprecatedDeclaration]
+24 |             guard getnameinfo(address, socklen_t(address.pointee.sa_len), &host, socklen_t(host.count),
+25 |                               nil, 0, NI_NUMERICHOST) == 0 else { continue }
+26 |             let value = String(cString: host)
+   |                         `- warning: 'init(cString:)' is deprecated: Use String(decoding: array, as: UTF8.self) instead, after truncating the null termination. [#DeprecatedDeclaration]
+27 |             guard isSelectable(interface: name, address: value, allowPrivateOverlay: allowPrivateOverlay) else { continue }
+28 |             if name.hasPrefix("utun") { overlay.insert(value) }
+
+/Volumes/MSM4Ext/XcodeData/Projects/PinedaTec.eu/LeonardoMD/.worktrees/386-little-classic/Sources/LeonardoDesktopSync/ProcessExecutableLocation.swift:15:20: warning: 'init(cString:)' is deprecated: Use String(decoding: array, as: UTF8.self) instead, after truncating the null termination. [#DeprecatedDeclaration]
+13 |             throw POSIXError(POSIXErrorCode(rawVa[330 / 347] LeonardoDesktopSync
+lue: errno) ?? .EIO)
+14 |         }
+15 |         let path = String(cString: buffer)
+   |                    `- warning: 'init(cString:)' is deprecated: Use String(decoding: array, as: UTF8.self) instead, after truncating the null termination. [#DeprecatedDeclaration]
+16 |         guard path.hasPrefix("/") else { throw SyncHelperFailure("Cannot resolve the helper executable location.") }
+17 |         return URL(fileURLWithPath: path).resolvingSymlinksInPath()
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+[339 / 349] LeonardoSyncHelper-product
+[341 / 350] LeonardoMD-product
+[347 / 353] LeonardoSyncHelper-product
+[348 / 353] LeonardoSyncHelper-product
+/Volumes/MSM4Ext/XcodeData/Projects/PinedaTec.eu/LeonardoMD/.worktrees/386-little-classic/Sources/LeonardoApp/AppSession.swift:321:20: warning: value 'previousPackageWorkspace' was defined but never used; consider replacing with boolean test [#NoUsage]
+319 |                 _ = try LeonardoFormatParser.parse(loaded.content)
+320 |             }
+321 |             if let previousPackageWorkspace {
+    |                    `- warning: value 'previousPackageWorkspace' was defined but never used; consider replacing with boolean test [#NoUsage]
+322 |                 discardPackageWorkspace()
+323 |                 await waitForPackageWorkspaceDisposal()
+
+/Volumes/MSM4Ext/XcodeData/Projects/PinedaTec.eu/LeonardoMD/.worktrees/386-little-classic/Sources/LeonardoApp/SessionMarkdownExport.swift:16:45: warning: 'weak' ownership of capture 'self' differs from implicitly-captured strong reference in outer scope [#ImplicitStrongCapture]
+ 5 | extension AppSession {
+ 6 |     func exportMarkdown() {
+ 7 |         Task {
+   |              |- note: 'self' implicitly strongly captured here
+   |              `- note: add 'self' as a capture list item to silence
+ 8 |             guard let documentURL, documentKind.isLeonardo, !busy, !isSyncSuspended else { return }
+ 9 |             let alert = Self.markdownExportWarning()
+   :
+14 |             panel.allowedContentTypes = [UTType(filenameExtension: "md") ?? .plainText]
+15 |             panel.nameFieldStringValue = documentURL.deletingPathExtension().lastPathComponent + ".md"
+16 |             presentFilePanel(panel) { [weak self] destination in
+   |                                             |- warning: 'weak' ownership of capture 'self' differs from implicitly-captured strong reference in outer scope [#ImplicitStrongCapture]
+   |                                             `- note: explicitly assign the capture list item to silence
+17 |                 Task { await self?.exportMarkdown(to: destination, documentURL: documentURL) }
+18 |             }
+
+[#ImplicitStrongCapture]: <https://docs.swift.org/compiler/documentation/diagnostics/implicit-strong-capture>
+[#NoUsage]: <https://docs.swift.org/compiler/documentation/diagnostics/no-usage>
+[349 / 353] LeonardoMD-product
+[351 / 353] LeonardoMD-product
+[352 / 353] LeonardoMD-product
+Build complete! (43,55 sec)
+Recorded successful compilation for PR #387: build delta 27
+/Volumes/MSM4Ext/XcodeData/Projects/PinedaTec.eu/LeonardoMD/.worktrees/386-little-classic/output/LeonardoMD.app/Contents/MacOS/LeonardoSyncHelper: replacing existing signature
+/Volumes/MSM4Ext/XcodeData/Projects/PinedaTec.eu/LeonardoMD/.worktrees/386-little-classic/output/LeonardoMD.app: replacing existing signature
+/Volumes/MSM4Ext/XcodeData/Projects/PinedaTec.eu/LeonardoMD/.worktrees/386-little-classic/output/LeonardoMD.app
+/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-sutom47b/LeonardoMDQA.app: replacing existing signature
+QA bundle: /var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-sutom47b/LeonardoMDQA.app
+Existing LeonardoMD instances retain product-wide ownership; verify a new PID before claiming fresh startup.
