@@ -33,8 +33,13 @@ import LeonardoSyncUI
                 SyncCatalogueView(library: library, projectID: descriptor.id, spanish: spanish) { _ in }.frame(width: 620)
                 Form { SyncCacheSettingsView(library: library, spanish: spanish) }.formStyle(.grouped).frame(width: 520)
             }.padding().frame(width: 1180, height: 640).background(Color(nsColor: .windowBackgroundColor)))
-            try await NativeViewCaptureSupport.capture(view, size: NSSize(width: 1180, height: 640),
-                to: destination.appendingPathComponent("downloads-\(spanish ? "es" : "en").png"))
+            let language = spanish ? "es" : "en"
+            try await GuideCaptureSupport.captureNative(view, size: NSSize(width: 1180, height: 640),
+                to: destination.appendingPathComponent("downloads-\(language).png"),
+                language: language,
+                state: "Remote-only, cached, retained, partially retained folder and interrupted pending download; independent temporary/offline usage",
+                route: "/native/synchronization/downloads/\(language)",
+                screen: "Shared production catalogue and storage controls")
         }
     }
 }
