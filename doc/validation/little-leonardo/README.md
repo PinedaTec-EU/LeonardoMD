@@ -177,10 +177,29 @@ Guide/demo integration.
 
 The real QA bundle contains the v23 Guide resources byte-for-byte, uses the
 `LeonardoMD` executable, has no XCTest dependency, and omits superseded v22
-bundles. Packaged Help acceptance is **pending**: the real QA app opened the
-English Guide and its working copy matched the bundled resource; the first
-page and two local images are captured in the evidence manifest. The Mac locked
-before the remaining English examples, Spanish Guide, and practice
-save/close/reopen checks could be completed. No complete packaged Help pass is
-claimed. The owner's 338,658-byte physical image still fails; its cause remains
-unconfirmed, and no TestFlight build was uploaded.
+bundles. Packaged Help acceptance is **passed** in actual QA process PID15291
+(version/build 0.3.1057/1057, producer `0055c164`). Both guides were opened
+through the real Help workflow in that same instance. Both working copies
+matched the bundle hashes. Live Mermaid, charts, images and tables render;
+one-line and multiline display formulas, underscores/underbraces, radical,
+long arrow, cancellation and the tagged box-counting equation (1) render
+without KaTeX errors. Math-disabled fallback preserves source, and code examples
+remain literal. Both separate practice forms were filled with fictional text,
+multiline and checkbox values, saved, closed and reopened through chapter 4;
+all answers persisted. Both live LL1 help paragraphs were inspected.
+
+The [manifest](https-diagnostic-evidence-20261107-v23.json) binds eleven new
+original JPEG window captures and context sidecars under
+[packaged-help](guide-v23/packaged-help). These supplement the historical
+opening capture and native component tests. Native CUA does not expose a CSS
+viewport or browser version; these are explicitly unavailable rather than
+inferred from image pixels. Original images are unmodified at measured
+5120×2880 or 2520×1700 pixels. The producer source is unchanged by the
+subsequent evidence/ledger checkpoint; no artifact is restamped.
+
+After QA, the original English language and Math-on settings were restored,
+then the app quit normally. Both pre-existing practice files were restored
+byte-identical; synthetic answers were archived privately. The real sync helper,
+pairing and grants were untouched. The owner's 338,658-byte physical image
+still fails; its cause remains unconfirmed, and no new TestFlight build is
+claimed by this pre-integration evidence.

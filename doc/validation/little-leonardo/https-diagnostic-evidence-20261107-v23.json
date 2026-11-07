@@ -12,7 +12,29 @@
     "guide-v23/ios-direct/status-error-alert-27.0.context.json": "fa57b35dc0acf3e2a2c8acedd5b270d4944e9700f53a851bb2fcf51365c47ca3",
     "guide-v23/ios-direct/status-error-alert-27.0.png": "104a3941dc570cfcacd010c91665143f5c8fd94971519228fa0477700a97ae12",
     "guide-v23/packaged-help/en-opening-images.jpg": "97ccfa660208aef87e8ac2a9d98d72ca5a60054dcf7c19b5250dbc607b26341c",
-    "guide-v23/packaged-help/en-opening-images.context.json": "b1292494baaa96ba293c605e8b0629dc1e9f5f5ca42d50f47f567c6ccf4144b8"
+    "guide-v23/packaged-help/en-opening-images.context.json": "b1292494baaa96ba293c605e8b0629dc1e9f5f5ca42d50f47f567c6ccf4144b8",
+    "guide-v23/packaged-help/es-diagnostic.context.json": "e02c6d95bedfa2ff13141fe1aec28facbac308e11b2e9398423fce6b95c61f96",
+    "guide-v23/packaged-help/en-table-image.jpg": "8d7aee41c4935db9a1eb0a19a14d2f4c9f57b43e86e003bb2e5bee7f06ebc1ce",
+    "guide-v23/packaged-help/es-help-opening.jpg": "952a82aa69ef4e7034c91150c43b354ffb5256130ed653dccdc5747f654a0923",
+    "guide-v23/packaged-help/en-math-chart.context.json": "83d362cd28416bff0c2f4b0947eb20f535abfb1d40ae15bd8e3704ae7343b4db",
+    "guide-v23/packaged-help/en-table-image.context.json": "2e5d14f03f9b3e3b961c4d1032e8689562a2fdc64caadc38b9459e4572042edb",
+    "guide-v23/packaged-help/es-table-image.jpg": "124af3bb0cac24b63afc997e3befcb10501ce2e9992bdddadaf86f40d4fcc067",
+    "guide-v23/packaged-help/en-diagnostic.context.json": "0ace07842227df671d1632d895478d32d9383de368180aa047cfc6712ed107e7",
+    "guide-v23/packaged-help/es-table-image.context.json": "0f293ac62f3dc10eda2a96241fbd413be6d4512c1a51373aa7a79193e84347de",
+    "guide-v23/packaged-help/en-diagnostic.jpg": "3b0b9240384362cfb4c83d587d3657b08f23de79a66c303f31f33e1374ee8545",
+    "guide-v23/packaged-help/en-math-disabled.jpg": "007ad9ff4c3b915c48971ec9e76ae9a576bda3de4a1fef5a59591dffe91e8cd0",
+    "guide-v23/packaged-help/en-practice-reopened.context.json": "9ba340c342f5ee297d631b3fd4b35a4d3be37094500856378de48a2758ab02de",
+    "guide-v23/packaged-help/en-practice-reopened.jpg": "f9eab1e131508eb5433a24e0cfe6765cf34bd4085130eda4312a5ea0fce6fae5",
+    "guide-v23/packaged-help/es-diagnostic.jpg": "5c8a25799e30ab66abff9e3278acea5aab59d61126a1efbf0726ab481ffb1179",
+    "guide-v23/packaged-help/es-math-disabled.context.json": "2949b7411ce39f4fbd4368b9ac26c2a16806bcf5a4ad3fb5dc63f498d464fc33",
+    "guide-v23/packaged-help/es-help-opening.context.json": "f6f876197f9c783fa87dc0d8f6475e4d47a83ba63c070ad72251a680d908fc97",
+    "guide-v23/packaged-help/es-practice-reopened.context.json": "71f8b9d2c73d332059c4151a86d0396773fe9698001c9fda27e24de15282ae57",
+    "guide-v23/packaged-help/en-math-chart.jpg": "8efd8ddf78f721f74f702ad53022d785c43ed7050a3f194aa117e0a30d864ea6",
+    "guide-v23/packaged-help/es-mermaid-math-chart.context.json": "0f63ce434e6a4afb38b3c1e0238ee99ae46eac19fc335e43fb71c2be62141e44",
+    "guide-v23/packaged-help/es-practice-reopened.jpg": "7d1cc9a65b582402d12b81681856a5add22856f3e837750d1662d7a440466180",
+    "guide-v23/packaged-help/en-math-disabled.context.json": "8a9fd391e0727daccd05e5fdb49943aeed2439003d0810c8848e15a61b0dd43e",
+    "guide-v23/packaged-help/es-mermaid-math-chart.jpg": "a496cb3004730adefe9bd5ad1b93a9c149aac5a2e48ff940f44c4abc2cdf90fe",
+    "guide-v23/packaged-help/es-math-disabled.jpg": "4a5f678030e77378b05635d806edaf38ca32ceda4f140dc0fc82835204b49d8e"
   },
   "guideRevision": 23,
   "integratedMain": {
@@ -145,8 +167,159 @@
       "testFilter": "BundledUserGuideTests|GuidePracticeNavigationTests"
     },
     "packagedGuiHelpAcceptance": {
-      "note": "Parent is conducting real Help CUA on the QA bundle; English Guide opened, but Spanish, full examples and practice close/reopen review are not yet complete. No GUI pass claimed.",
-      "status": "pending"
+      "status": "passed",
+      "sourceCommit": "0055c1640340235037b3c1ef56780cf9a95e4af6",
+      "instance": {
+        "bundleId": "eu.pinedatec.LeonardoMD.qa.a4bd0239ae5644f593cab7025076f017",
+        "pid": 15291,
+        "version": "0.3.1057",
+        "build": "1057"
+      },
+      "workflow": "Actual Help menu opened EN Guide23; General language changed to Espa\u00f1ol and actual Ayuda menu opened ES Guide23 in same packaged process. Outline navigated live sections.",
+      "coverage": [
+        "Both locales: local images, Mermaid, charts, format tables",
+        "Math enabled: inline and one-line/multiline display, underscores, complete underbrace/radical/long arrow/cancellation, tagged box-counting equation (1), no KaTeX error or literal display delimiters",
+        "Math disabled: source fallback retained; code examples stay literal",
+        "Both separate practices: fictional text/multiline/checkbox filled, saved, tab closed, reopened through chapter4; all values retained and Save disabled",
+        "Both live diagnostic LL1 paragraphs inspected"
+      ],
+      "workingCopyIdentity": "Both Guide23 working copies SHA256 matched bundled resources after walkthrough.",
+      "restoration": "Original English language and Math on restored; Mermaid/Charts/extras on and Citations off unchanged. Original practice files retained before exercise and restored byte-identical after normal app quit; synthetic copies archived privately. No helper, pairing or grant mutation.",
+      "captures": [
+        {
+          "image": "guide-v23/packaged-help/en-math-chart.jpg",
+          "sha256": "8efd8ddf78f721f74f702ad53022d785c43ed7050a3f194aa117e0a30d864ea6",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "en",
+          "state": "Math enabled: one-line display, inline math, underbraces, radical, arrow, tagged box-counting (1), chart; literal inline source retained.",
+          "captureBegin": "2026-11-07T08:25:06.258Z",
+          "captureEnd": "2026-11-07T08:25:06.940Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/en-table-image.jpg",
+          "sha256": "8d7aee41c4935db9a1eb0a19a14d2f4c9f57b43e86e003bb2e5bee7f06ebc1ce",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "en",
+          "state": "Live format table and packaged local illustration rendered.",
+          "captureBegin": "2026-11-07T08:25:18.799Z",
+          "captureEnd": "2026-11-07T08:25:19.524Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/en-practice-reopened.jpg",
+          "sha256": "f9eab1e131508eb5433a24e0cfe6765cf34bd4085130eda4312a5ea0fce6fae5",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "en",
+          "state": "Synthetic answers saved, tab closed, reopened through chapter4; all three values retained; Save disabled and Fill mode.",
+          "captureBegin": "2026-11-07T08:26:14.489Z",
+          "captureEnd": "2026-11-07T08:26:14.729Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/en-math-disabled.jpg",
+          "sha256": "007ad9ff4c3b915c48971ec9e76ae9a576bda3de4a1fef5a59591dffe91e8cd0",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "en",
+          "state": "Math disabled fallback retains inline/display source, underscores underbraces/tag; inline code stays literal.",
+          "captureBegin": "2026-11-07T08:26:47.617Z",
+          "captureEnd": "2026-11-07T08:26:53.919Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/en-diagnostic.jpg",
+          "sha256": "3b0b9240384362cfb4c83d587d3657b08f23de79a66c303f31f33e1374ee8545",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "en",
+          "state": "Live chapter14 diagnostic paragraph LL1 fully visible.",
+          "captureBegin": "2026-11-07T08:27:13.827Z",
+          "captureEnd": "2026-11-07T08:27:14.538Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/es-help-opening.jpg",
+          "sha256": "952a82aa69ef4e7034c91150c43b354ffb5256130ed653dccdc5747f654a0923",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "es",
+          "state": "Spanish guide opened through actual Ayuda menu; local cover and journey images visible.",
+          "captureBegin": "2026-11-07T08:27:42.619Z",
+          "captureEnd": "2026-11-07T08:27:43.292Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/es-mermaid-math-chart.jpg",
+          "sha256": "a496cb3004730adefe9bd5ad1b93a9c149aac5a2e48ff940f44c4abc2cdf90fe",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "es",
+          "state": "Live Mermaid, chart, inline math, one-line and multiline display, underbraces, radical, arrow, tagged equation (1); no KaTeX errors; inline code literal.",
+          "captureBegin": "2026-11-07T08:27:56.420Z",
+          "captureEnd": "2026-11-07T08:27:57.188Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/es-table-image.jpg",
+          "sha256": "124af3bb0cac24b63afc997e3befcb10501ce2e9992bdddadaf86f40d4fcc067",
+          "pixels": [
+            5120,
+            2880
+          ],
+          "locale": "es",
+          "state": "Spanish format table and local package illustration rendered.",
+          "captureBegin": "2026-11-07T08:28:10.435Z",
+          "captureEnd": "2026-11-07T08:28:11.156Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/es-practice-reopened.jpg",
+          "sha256": "7d1cc9a65b582402d12b81681856a5add22856f3e837750d1662d7a440466180",
+          "pixels": [
+            2520,
+            1700
+          ],
+          "locale": "es",
+          "state": "Synthetic name, multiline answer and checkbox persist after save, close, chapter4 reopen.",
+          "captureBegin": "2026-11-07T08:28:46.510Z",
+          "captureEnd": "2026-11-07T08:28:46.745Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/es-math-disabled.jpg",
+          "sha256": "4a5f678030e77378b05635d806edaf38ca32ceda4f140dc0fc82835204b49d8e",
+          "pixels": [
+            2520,
+            1700
+          ],
+          "locale": "es",
+          "state": "Spanish Math disabled fallback retains source, underscores, underbraces/tag and literal code.",
+          "captureBegin": "2026-11-07T08:29:14.488Z",
+          "captureEnd": "2026-11-07T08:29:15.296Z"
+        },
+        {
+          "image": "guide-v23/packaged-help/es-diagnostic.jpg",
+          "sha256": "5c8a25799e30ab66abff9e3278acea5aab59d61126a1efbf0726ab481ffb1179",
+          "pixels": [
+            2520,
+            1700
+          ],
+          "locale": "es",
+          "state": "Live Spanish LL1 explanation visible and legible.",
+          "captureBegin": "2026-11-07T08:29:37.711Z",
+          "captureEnd": "2026-11-07T08:29:38.496Z"
+        }
+      ],
+      "limitations": "Native CUA does not expose CSS viewport/browser version. These are original window captures with measured pixels and producer identity. Does not establish physical iPhone transfer root cause or TestFlight delivery."
     },
     "packagedHelp": {
       "appBuild": "1057",
@@ -178,16 +351,158 @@
     }
   },
   "packagedGuiHelpAcceptance": {
-    "status": "pending",
-    "partialObservation": "A real QA app process (build 1057 from producer source 0055) opened Help > English Guide v23. The guide working copy matched the bundled resource; the first page and two local images were visible.",
-    "capture": "guide-v23/packaged-help/en-opening-images.jpg",
-    "captureSha256": "97ccfa660208aef87e8ac2a9d98d72ca5a60054dcf7c19b5250dbc607b26341c",
-    "captureDimensions": "5120x2880 original JPEG; unmodified",
-    "remainingChecks": [
-      "Inspect the English live examples, including Mermaid, math states/equations, charts, tables, and remaining images.",
-      "Inspect the Spanish Guide and its live examples.",
-      "Open, fill, save, close, and reopen the separate practice form."
+    "status": "passed",
+    "sourceCommit": "0055c1640340235037b3c1ef56780cf9a95e4af6",
+    "instance": {
+      "bundleId": "eu.pinedatec.LeonardoMD.qa.a4bd0239ae5644f593cab7025076f017",
+      "pid": 15291,
+      "version": "0.3.1057",
+      "build": "1057"
+    },
+    "workflow": "Actual Help menu opened EN Guide23; General language changed to Espa\u00f1ol and actual Ayuda menu opened ES Guide23 in same packaged process. Outline navigated live sections.",
+    "coverage": [
+      "Both locales: local images, Mermaid, charts, format tables",
+      "Math enabled: inline and one-line/multiline display, underscores, complete underbrace/radical/long arrow/cancellation, tagged box-counting equation (1), no KaTeX error or literal display delimiters",
+      "Math disabled: source fallback retained; code examples stay literal",
+      "Both separate practices: fictional text/multiline/checkbox filled, saved, tab closed, reopened through chapter4; all values retained and Save disabled",
+      "Both live diagnostic LL1 paragraphs inspected"
     ],
-    "limitation": "The Mac locked after the first English Guide view, so the packaged Help walkthrough is incomplete. No complete packaged Help pass is claimed."
+    "workingCopyIdentity": "Both Guide23 working copies SHA256 matched bundled resources after walkthrough.",
+    "restoration": "Original English language and Math on restored; Mermaid/Charts/extras on and Citations off unchanged. Original practice files retained before exercise and restored byte-identical after normal app quit; synthetic copies archived privately. No helper, pairing or grant mutation.",
+    "captures": [
+      {
+        "image": "guide-v23/packaged-help/en-math-chart.jpg",
+        "sha256": "8efd8ddf78f721f74f702ad53022d785c43ed7050a3f194aa117e0a30d864ea6",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "en",
+        "state": "Math enabled: one-line display, inline math, underbraces, radical, arrow, tagged box-counting (1), chart; literal inline source retained.",
+        "captureBegin": "2026-11-07T08:25:06.258Z",
+        "captureEnd": "2026-11-07T08:25:06.940Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/en-table-image.jpg",
+        "sha256": "8d7aee41c4935db9a1eb0a19a14d2f4c9f57b43e86e003bb2e5bee7f06ebc1ce",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "en",
+        "state": "Live format table and packaged local illustration rendered.",
+        "captureBegin": "2026-11-07T08:25:18.799Z",
+        "captureEnd": "2026-11-07T08:25:19.524Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/en-practice-reopened.jpg",
+        "sha256": "f9eab1e131508eb5433a24e0cfe6765cf34bd4085130eda4312a5ea0fce6fae5",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "en",
+        "state": "Synthetic answers saved, tab closed, reopened through chapter4; all three values retained; Save disabled and Fill mode.",
+        "captureBegin": "2026-11-07T08:26:14.489Z",
+        "captureEnd": "2026-11-07T08:26:14.729Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/en-math-disabled.jpg",
+        "sha256": "007ad9ff4c3b915c48971ec9e76ae9a576bda3de4a1fef5a59591dffe91e8cd0",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "en",
+        "state": "Math disabled fallback retains inline/display source, underscores underbraces/tag; inline code stays literal.",
+        "captureBegin": "2026-11-07T08:26:47.617Z",
+        "captureEnd": "2026-11-07T08:26:53.919Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/en-diagnostic.jpg",
+        "sha256": "3b0b9240384362cfb4c83d587d3657b08f23de79a66c303f31f33e1374ee8545",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "en",
+        "state": "Live chapter14 diagnostic paragraph LL1 fully visible.",
+        "captureBegin": "2026-11-07T08:27:13.827Z",
+        "captureEnd": "2026-11-07T08:27:14.538Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/es-help-opening.jpg",
+        "sha256": "952a82aa69ef4e7034c91150c43b354ffb5256130ed653dccdc5747f654a0923",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "es",
+        "state": "Spanish guide opened through actual Ayuda menu; local cover and journey images visible.",
+        "captureBegin": "2026-11-07T08:27:42.619Z",
+        "captureEnd": "2026-11-07T08:27:43.292Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/es-mermaid-math-chart.jpg",
+        "sha256": "a496cb3004730adefe9bd5ad1b93a9c149aac5a2e48ff940f44c4abc2cdf90fe",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "es",
+        "state": "Live Mermaid, chart, inline math, one-line and multiline display, underbraces, radical, arrow, tagged equation (1); no KaTeX errors; inline code literal.",
+        "captureBegin": "2026-11-07T08:27:56.420Z",
+        "captureEnd": "2026-11-07T08:27:57.188Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/es-table-image.jpg",
+        "sha256": "124af3bb0cac24b63afc997e3befcb10501ce2e9992bdddadaf86f40d4fcc067",
+        "pixels": [
+          5120,
+          2880
+        ],
+        "locale": "es",
+        "state": "Spanish format table and local package illustration rendered.",
+        "captureBegin": "2026-11-07T08:28:10.435Z",
+        "captureEnd": "2026-11-07T08:28:11.156Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/es-practice-reopened.jpg",
+        "sha256": "7d1cc9a65b582402d12b81681856a5add22856f3e837750d1662d7a440466180",
+        "pixels": [
+          2520,
+          1700
+        ],
+        "locale": "es",
+        "state": "Synthetic name, multiline answer and checkbox persist after save, close, chapter4 reopen.",
+        "captureBegin": "2026-11-07T08:28:46.510Z",
+        "captureEnd": "2026-11-07T08:28:46.745Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/es-math-disabled.jpg",
+        "sha256": "4a5f678030e77378b05635d806edaf38ca32ceda4f140dc0fc82835204b49d8e",
+        "pixels": [
+          2520,
+          1700
+        ],
+        "locale": "es",
+        "state": "Spanish Math disabled fallback retains source, underscores, underbraces/tag and literal code.",
+        "captureBegin": "2026-11-07T08:29:14.488Z",
+        "captureEnd": "2026-11-07T08:29:15.296Z"
+      },
+      {
+        "image": "guide-v23/packaged-help/es-diagnostic.jpg",
+        "sha256": "5c8a25799e30ab66abff9e3278acea5aab59d61126a1efbf0726ab481ffb1179",
+        "pixels": [
+          2520,
+          1700
+        ],
+        "locale": "es",
+        "state": "Live Spanish LL1 explanation visible and legible.",
+        "captureBegin": "2026-11-07T08:29:37.711Z",
+        "captureEnd": "2026-11-07T08:29:38.496Z"
+      }
+    ],
+    "limitations": "Native CUA does not expose CSS viewport/browser version. These are original window captures with measured pixels and producer identity. Does not establish physical iPhone transfer root cause or TestFlight delivery."
   }
 }
