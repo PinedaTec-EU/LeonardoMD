@@ -138,10 +138,12 @@ sidecars are the authoritative native evidence; earlier disposable captures
 remain local historical evidence rather than replacing this same-instance check.
 The personal Guide23 EN/ES archives match the bundled archives by SHA256.
 
-Both practice tabs were closed and original files restored/hash-verified.
-UI language and Math were restored to English/on. Exact preferences-file
-restoration remains deferred until the canonical editor closes normally after
-the physical attempt, preserving the running instance. The original backup is
-retained. The diagnostic thread owns the next physical retry and collector.
+Both practice tabs were closed. UI language and Math were restored to English/on.
+With the diagnostic chat's permission, editor26060 then quit normally before the
+physical attempt. All three scoped originals (preferences and both practice
+files) were restored and SHA256-verified exactly. The diagnostic chat confirmed
+helper26651 remains active independently on the same port/certificate; no helper,
+trust, grants, rubric or corpus state was changed by closing the editor.
+The diagnostic chat owns the physical retry and allowlisted server collector.
 Successful transfer/rendering is still pending; no issue closure, release or
 merge is claimed by this local acceptance.
