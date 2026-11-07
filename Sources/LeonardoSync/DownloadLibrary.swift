@@ -31,7 +31,7 @@ public final class DownloadLibrary {
         allowed.insert(id)
         try await cache.update(id: id, descriptor: descriptor, catalogue: catalogue)
         guard allowed.contains(id) else { try await cache.remove(id: id); throw SyncError.revoked }
-        try await reload(id: id)
+        try await refreshAll()
     }
 
     public func deny(id: UUID) {
@@ -63,7 +63,7 @@ public final class DownloadLibrary {
             guard allowed.contains(id), generations[id, default: 0] == generation else {
                 try await cache.remove(id: id); throw SyncError.revoked
             }
-            try await reload(id: id)
+            try await refreshAll()
             return file
         }
         tasks[key] = task
@@ -83,7 +83,7 @@ public final class DownloadLibrary {
         do {
             guard allowed.contains(id) else { throw SyncError.revoked }
             try await cache.setRetained(id: id, path: path, isFolder: isFolder, keep: keep)
-            try await reload(id: id)
+            try await refreshAll()
             if keep { await downloadRetained(id: id) }
         } catch { self.error = error.localizedDescription }
     }
@@ -110,24 +110,17 @@ public final class DownloadLibrary {
     public func release(id: UUID, path: String, isFolder: Bool) async {
         do {
             guard allowed.contains(id) else { throw SyncError.revoked }
-            try await cache.release(id: id, path: path, isFolder: isFolder); try await reload(id: id)
+            try await cache.release(id: id, path: path, isFolder: isFolder); try await refreshAll()
         } catch { self.error = error.localizedDescription }
     }
     public func removeRule(id: UUID, ruleID: String) async {
         do {
             guard allowed.contains(id) else { throw SyncError.revoked }
-            try await cache.removeRetentionRule(id: id, ruleID: ruleID); try await reload(id: id)
+            try await cache.removeRetentionRule(id: id, ruleID: ruleID); try await refreshAll()
         } catch { self.error = error.localizedDescription }
     }
     private func refreshAll() async throws {
         projects = try await cache.projects().filter { allowed.contains($0.id) }
-        try await refreshUsage()
-    }
-    private func reload(id: UUID) async throws {
-        let project = try await cache.project(id: id)
-        guard allowed.contains(id) else { return }
-        projects.removeAll { $0.id == id }
-        if let project { projects.append(project) }
         try await refreshUsage()
     }
     private func refreshUsage() async throws { usage = try await cache.usage() }

@@ -220,3 +220,27 @@ extension OnDemandCacheTests {
         XCTAssertEqual(usage.offlineBytes, 0)
     }
 }
+
+extension OnDemandCacheTests {
+    @MainActor func testGlobalEvictionRefreshesOtherProjectDownloadedIndicators() async throws {
+        let (root, cache, first, files) = try fixture(1)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let second = SharedProjectDescriptor(id: UUID(), name: "Second", scope: try CorpusScope(folder: ""))
+        let library = DownloadLibrary(cache: cache)
+        let entry = RemoteFileEntry(file: files[0])
+        for descriptor in [first, second] {
+            try await library.update(id: descriptor.id, descriptor: descriptor,
+                catalogue: RemoteProjectCatalogue(files: [entry]))
+        }
+        await library.setLimit(bytes: files[0].content.count)
+        library.fetch = { _, _ in files[0] }
+        _ = try await library.open(id: first.id, path: entry.path)
+        XCTAssertTrue(try XCTUnwrap(library.projects.first { $0.id == first.id }).isDownloaded(entry))
+        _ = try await library.open(id: second.id, path: entry.path)
+        let cachedFirst = try await cache.project(id: first.id)
+        XCTAssertFalse(try XCTUnwrap(cachedFirst).isDownloaded(entry))
+        XCTAssertFalse(try XCTUnwrap(library.projects.first { $0.id == first.id }).isDownloaded(entry))
+        XCTAssertTrue(try XCTUnwrap(library.projects.first { $0.id == second.id }).isDownloaded(entry))
+        XCTAssertEqual(library.usage.temporaryBytes, files[0].content.count)
+    }
+}

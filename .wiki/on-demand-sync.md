@@ -10,3 +10,5 @@ Implementation tracked by [#384](https://github.com/PinedaTec-EU/LeonardoMD/issu
 - Guide v24 advances beyond integrated demo v22 and the separately reserved diagnostic v23; v19 was the earlier checkpoint. [#378](https://github.com/PinedaTec-EU/LeonardoMD/issues/378) tracks concurrent-candidate guide identity collisions: verify actual Help archive content against the candidate bundle; never overwrite personal help copies.
 
 - [#390](https://github.com/PinedaTec-EU/LeonardoMD/issues/390): removing retention from a stale fallback must discard that record before LRU processing; otherwise restart validation rejects a stale unretained revision. The restart regression covers this alongside stale-retained availability.
+
+- [#391](https://github.com/PinedaTec-EU/LeonardoMD/issues/391): after a cache mutation, refresh all authorized observable project snapshots; global LRU eviction can remove another project’s temporary file. A two-project constrained-budget regression verifies both the real index and the visible downloaded flags.
