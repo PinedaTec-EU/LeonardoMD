@@ -2,7 +2,11 @@
 
 Tracking: [#384](https://github.com/PinedaTec-EU/LeonardoMD/issues/384), [PR #385](https://github.com/PinedaTec-EU/LeonardoMD/pull/385).
 
-## Current corrected acceptance (primary evidence)
+## Preview-revision correction pending native acceptance
+
+[#402](https://github.com/PinedaTec-EU/LeonardoMD/issues/402) fixes a separate presentation boundary: remote text/images/errors are keyed by project, path, catalogue and per-load generation. Four deterministic tests cover immediate revision invalidation, failed replacement, obsolete same-catalogue completions and cross-document/project isolation. The complete suite passes729 XCTest checks (37 skips,zero failures) plus28 Swift Testing checks. Fresh native acceptance of this product correction is pending owner unlock; the earlier corrected-* images are historical for these changed application inputs. The English Math-disabled corrected-macos image was clipped and is not accepted visual proof.
+
+## Earlier corrected acceptance (historical)
 
 The primary evidence is now `corrected-macos/`, `corrected-components/`,
 `corrected-ios/` and `corrected-ios-help/`. All earlier sections/directories are

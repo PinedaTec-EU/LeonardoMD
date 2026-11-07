@@ -23,7 +23,7 @@ let package = Package(
         .target(name: "LeonardoRender", dependencies: ["LeonardoCore"], resources: [.process("Resources")]),
         .executableTarget(name: "LeonardoApp", dependencies: ["LeonardoCore", "LeonardoRender", "LeonardoSyncUI", "LeonardoDesktopSync", .product(name: "Sparkle", package: "Sparkle")], resources: [.process("Resources")], linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"]) ]),
         .testTarget(name: "LeonardoIntegrationTests", dependencies: ["LeonardoRender"]),
-        .testTarget(name: "LeonardoAppTests", dependencies: ["LeonardoApp"]),
+        .testTarget(name: "LeonardoAppTests", dependencies: ["LeonardoApp", "LeonardoSyncUI"]),
         .testTarget(name: "LeonardoCoreTests", dependencies: ["LeonardoCore"]),
         .testTarget(name: "LeonardoRenderTests", dependencies: ["LeonardoRender"])
     ]

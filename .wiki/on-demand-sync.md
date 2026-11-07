@@ -23,3 +23,5 @@ Revocation immediately detaches/cancels that project's active downloads and clea
 only its published progress/failures. Cancelled work may finish later; its obsolete
 generation cannot alter a new grant, including a cached reopen. The deterministic
 #395 regressions cover both held completion and preservation of other projects' errors.
+
+Remote presentation is keyed by project, path, catalogue and a per-load generation. Revision changes hide old text/images before the replacement task starts; failed replacement and obsolete success/error completions cannot restore prior presentation. Regression [#402](https://github.com/PinedaTec-EU/LeonardoMD/issues/402) includes same-catalogue retry and cross-document/project isolation.

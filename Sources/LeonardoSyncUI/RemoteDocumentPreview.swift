@@ -9,20 +9,23 @@ public struct RemoteDocumentPreview: View {
     let entry: RemoteFileEntry
     let spanish: Bool
     let appearance: MarkdownAppearance
-    @State private var file: CorpusFile?
-    @State private var failure: String?
+    @State private var presentation = RemoteDocumentPreviewState()
     @State private var source = false
     @State private var linked: RemoteFileEntry?
-    @State private var images: [String: Data] = [:]
     private let virtualRoot = URL(fileURLWithPath: "/LeonardoRemote", isDirectory: true)
     public init(library: DownloadLibrary, projectID: UUID, entry: RemoteFileEntry, spanish: Bool = false, appearance: MarkdownAppearance = .default) {
         self.library = library; self.projectID = projectID; self.entry = entry; self.spanish = spanish; self.appearance = appearance
     }
     private var project: CachedRemoteProject? { library.projects.first { $0.id == projectID } }
     private var currentEntry: RemoteFileEntry? { project?.catalogue.files.first { $0.path == entry.path } }
+    private var request: RemoteDocumentPreviewRequest {
+        .init(projectID: projectID, path: entry.path, catalogue: project?.catalogue)
+    }
+    private var file: CorpusFile? { presentation.content(for: request) }
+    private var failure: String? { presentation.error(for: request) }
     private var authorizedImages: [String: Data] {
         let paths = Set(project?.catalogue.files.map(\.path) ?? [])
-        return images.filter { paths.contains($0.key) }
+        return presentation.assets(for: request).filter { paths.contains($0.key) }
     }
     private func t(_ en: String, _ es: String) -> String { spanish ? es : en }
     public var body: some View {
@@ -45,19 +48,18 @@ public struct RemoteDocumentPreview: View {
             else { ProgressView(t("Downloading…", "Descargando…")) }
         }.navigationTitle((entry.path as NSString).lastPathComponent)
         .toolbar { Button(t("Show source", "Ver texto")) { source.toggle() } }
-        .task(id: project?.catalogue) { await load() }
+        .task(id: request) { await load() }
         .navigationDestination(item: $linked) { target in
             RemoteDocumentPreview(library: library, projectID: projectID, entry: target, spanish: spanish, appearance: appearance)
         }
     }
     private func load() async {
-        failure = nil
-        images = [:]
-        guard let expectedCatalogue = project?.catalogue else { return }
+        let ticket = presentation.begin(request)
+        guard let expectedCatalogue = project?.catalogue, currentEntry != nil else { return }
         do {
             let value = try await library.open(id: projectID, path: entry.path)
             guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue, currentEntry != nil else { return }
-            file = value
+            presentation.receive(value, ticket: ticket)
             // The canonical Markdown renderer resolves local image requests only from memory.
             // Fetch only referenced, authorized image entries, never the complete corpus.
             if let text = String(data: value.content, encoding: .utf8), let project {
@@ -65,12 +67,18 @@ public struct RemoteDocumentPreview: View {
                     do {
                         let image = try await library.open(id: projectID, path: path)
                         guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue else { return }
-                        images[path] = image.content
+                        presentation.receiveImage(image.content, path: path, ticket: ticket)
                     }
-                    catch { failure = error.localizedDescription }
+                    catch {
+                        guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue else { return }
+                        presentation.fail(error.localizedDescription, ticket: ticket)
+                    }
                 }
             }
-        } catch { failure = error.localizedDescription }
+        } catch {
+            guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue else { return }
+            presentation.fail(error.localizedDescription, ticket: ticket)
+        }
     }
     private func followLink(_ url: URL) {
         guard let path = RemoteDocumentResources.path(url: url, virtualRoot: virtualRoot),
