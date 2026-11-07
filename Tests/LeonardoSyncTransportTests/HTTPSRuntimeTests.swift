@@ -318,7 +318,7 @@ final class HTTPSRuntimeTests: XCTestCase {
             }
         }
         do {
-            let deadline = Date().addingTimeInterval(10)
+            let deadline = Date().addingTimeInterval(20)
             while (0..<16).contains(where: { !FileManager.default.fileExists(atPath: root.appendingPathComponent("ready-\($0)").path) }),
                   Date() < deadline { try await Task.sleep(for: .milliseconds(20)) }
             let ready = (0..<16).allSatisfy { FileManager.default.fileExists(atPath: root.appendingPathComponent("ready-\($0)").path) }

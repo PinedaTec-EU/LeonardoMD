@@ -63,3 +63,35 @@ The real executable/helper were built from source `cc6c43f7845c61a3fe24f8e862e8a
 An immutable canonical bundle and a separate signed disposable QA copy are ready. Neither was launched or installed. Native control reported the Mac locked with automatic unlock paused after physical input before inspection could begin. The unlock request is centralized in the385 thread. Original preferences and the exact EN/ES practice files were backed up; none was modified during this attempted native phase. The diagnostic thread retains ownership of helper replacement/rollback and the next physical test. The installed helper, pins, grants and corpus remain intact.
 
 The owner reported the same LL1 byte counts again. That line came from an additional retry after the allowlisted live collector stopped, so it is not bound to a particular connection in the preceding controlled capture. Do not infer queued/body lengths from TCP summary counters or treat the repeating pattern as conclusive causality.
+
+## 7 November native attempt and CI rejection
+
+The owner unlocked the Mac. The disposable signed candidate started as fresh
+PID74921. Its real Help workflow opened Guide23 in EN and ES. English live
+Mermaid/math/tag1/chart, table/local image, Math-disabled fallback and the saved
+and reopened practice were inspected. Spanish enabled Mermaid, display math
+(including tag1) and chart rendered correctly; its practice saved and reopened
+`QA392 Español` (AX-confirmed). CUA intermittently returned thumbnail captures,
+so the remaining Spanish visual fallback/table/image checks are **pending**.
+This is partial Help acceptance, not a complete smoke-test PASS. The QA process
+quit normally; the exact backed-up preferences and both practice files were
+restored with matching original SHA256 values (3/3).
+
+Current-head CI rejected two runs: [42368026238](https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/42368026238)
+terminated the constrained-window Python probe at its 30-second harness deadline
+after1,775,616 plaintext bytes; [42368023764](https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/42368023764)
+missed the ten-second readiness barrier for16 Python peers. Neither observation
+by itself establishes a server truncation or harmless host slowness. No failed
+assertion has been removed. The next diagnostic run keeps strict EOF, pinning,
+full body equality,1KiB TCP window and delayed reads, adds completion byte/time
+facts, and allows60 seconds for the probe and20 seconds for peer startup.
+The server's production timeouts and frozen candidate binaries are unchanged.
+
+The original Dev1000 app disabled its helper through Preferences. Before any
+candidate activation, CI rejection stopped the installation plan. The original
+helper was restored through the same UI. The diagnostic thread verified PID97190,
+original executable, port40882, identical TLS certificate and semantically
+identical device/grant state; other stored files remained byte-identical.
+Canonical PR392 was **never activated**. The Dev app stays open; no new iPhone
+retry was requested. Physical success, full native acceptance, passing exact-head
+CI and independent judgment remain required before delivery.

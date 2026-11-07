@@ -28,6 +28,9 @@ context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 context.check_hostname = False
 context.verify_mode = ssl.CERT_NONE
 slow = sys.argv[3] == "slow"
+started = time.monotonic()
+received = 0
+reported = 0
 raw = socket.socket()
 raw.settimeout(10)
 if slow:
@@ -42,10 +45,10 @@ with raw:
         while True:
             data = peer.recv(1024 if slow else 4096)
             if not data:
-                print("TLS_CLOSE_NOTIFY", file=sys.stderr)
+                print("TLS_CLOSE_NOTIFY bytes=%d elapsed=%.3f" % (received, time.monotonic() - started), file=sys.stderr)
                 if sys.argv[4]:
                     pathlib.Path(sys.argv[4]).write_text("ready")
-                until = time.monotonic() + 15
+                until = time.monotonic() + 40
                 while sys.argv[5] and not pathlib.Path(sys.argv[5]).exists() and time.monotonic() < until:
                     time.sleep(0.02)
                 break
@@ -55,6 +58,10 @@ with raw:
                 except ssl.SSLError:
                     pass
                 extra = False
+            received += len(data)
+            if received - reported >= 262144:
+                print("TLS_PROGRESS bytes=%d elapsed=%.3f" % (received, time.monotonic() - started), file=sys.stderr, flush=True)
+                reported = received
             sys.stdout.buffer.write(data)
             sys.stdout.buffer.flush()
             if slow:
@@ -78,7 +85,10 @@ with raw:
         process.standardOutput = outputHandle
         process.standardError = errorHandle
         try process.run()
-        let deadline = Date().addingTimeInterval(30)
+        // CI exhausted 30 seconds while bytes were still arriving; allow a bounded
+        // diagnostic run without changing the receive window or byte assertions.
+        // This harness deadline stays below the server's 120-second operation cap.
+        let deadline = Date().addingTimeInterval(60)
         while process.isRunning, Date() < deadline { Thread.sleep(forTimeInterval: 0.01) }
         let timedOut = process.isRunning
         if timedOut { process.terminate() }
