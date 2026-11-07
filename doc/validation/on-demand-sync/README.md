@@ -2,6 +2,41 @@
 
 Tracking: [#384](https://github.com/PinedaTec-EU/LeonardoMD/issues/384), [PR #385](https://github.com/PinedaTec-EU/LeonardoMD/pull/385).
 
+## Current corrected acceptance (primary evidence)
+
+The primary evidence is now `corrected-macos/`, `corrected-components/`,
+`corrected-ios/` and `corrected-ios-help/`. All earlier sections/directories are
+historical checkpoints. Product correction a7759b2db562d2fea04c8e7d7b6c9c4997137a26
+clears revoked-project task/progress/error state immediately. Two deterministic
+regressions fail before correction and pass afterward: cached regrant while an
+obsolete store completion remains suspended, and project-scoped error removal.
+Focused validation passes17/17; full validation passes725 XCTest checks with37
+opt-in/platform skips, zero failures, plus28 Swift Testing checks.
+
+The real corrected Mac QA package launched fresh PID74063 and completed actual
+Guide27 EN/ES Help, supported live examples, Math ON/OFF, literal code, practice
+fill/save/close/reopen and Apply128/Return256 cache controls. Personal and bundled
+guide hashes match. The editor quit normally; all three latest owner originals
+were restored byte-for-byte, leaving physical helper26651 unchanged.
+
+Signed iOS native acceptance passes About/Help1/1 on populated cache state, then
+bilingual demos and on-demand3/3 with independent pinned source fixture1/1.
+Test-only5284cab69df3e59453a52d800e8066486939b722 fixes the About smoke's lazy
+settings navigation ([#401](https://github.com/PinedaTec-EU/LeonardoMD/issues/401)).
+The earlier combined attempt failed that harness navigation and is not accepted.
+Current audits show zero bulk snapshots, only explicitly requested/retained
+bodies, automatic retry/future descendants, and temporary cleanup preserving
+three offline files166bytes outside the134217728-byte temporary budget.
+
+`corrected-build-inputs.json` records exact Git object lists/digests for Mac app,
+iOS app and iOS test driver. Compare each group's `git ls-tree -r HEAD --` input
+scopes with its recorded build revision. The final evidence-only head has the
+same objects: captured revision/timestamps remain truthful instead of relabeling
+originals. The About/navigation driver changed without changing either app.
+The canonical PR comment binds this proof to the reviewed immutable head.
+Physical no-manual-Retry validation of the later combined385→392→398 candidate
+and beta publication remain separate delivery gates.
+
 ## Original checkpoint checks
 
 - Full macOS `swift test`: 704 XCTest checks, 35 opt-in/platform skips, zero failures. Compiler invocation is recorded in PR #385's own ledger entry.
