@@ -46,3 +46,12 @@ sidecars record the exact source/test and SHA-256 values. Its response bytes are
 recorded separately from the screenshot. The Mac side is a synthetic owned
 fixture, so this evidence does not claim physical-device, App Store/TestFlight
 or production-network acceptance.
+
+Classic rotation capture for [#386](https://github.com/PinedaTec-EU/LeonardoMD/issues/386):
+`assets/ios-rubric-classic-landscape.png` in both locales is a uniformly reduced
+400×184 derivative of the original native iOS Simulator full-display capture in
+`doc/validation/mobile-classic/rubric-landscape.png`. The application UI is Spanish
+in both locale illustrations; English captions identify this explicitly. The
+original, timestamp, device/runtime, source-input mapping and image hash remain
+in that evidence directory. This is an actual signed simulator app talking to
+the synthetic Mac TLS fixture, not a generated concept or physical-device claim.

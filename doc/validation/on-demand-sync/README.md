@@ -54,3 +54,25 @@ The consumer preferences page displayed separate offline storage, temporary budg
 ### Joint-source CLI follow-up
 
 The complete local suite on the joint product source d8487bc passed719 XCTest checks (36 skips, zero failures), plus28 Swift Testing checks. Generic iOS Simulator compilation also succeeded; neither result claims a physical iOS run, installation or transport acceptance. Successful invocations are recorded in the385 ledger through delta22. Post-d848 commits contain evidence and ledger updates only; no application/build source changed. The blocked native checks and pending restoration above remain open.
+
+## Accepted Classic integration (7 November)
+
+The branch reconciles accepted Classic PR387 (`6e9f40a5fe94ae76b316023b3a8983a6dc35da5c`),
+including startup fix393: the local library becomes ready before awaiting network
+rubric recovery. Its About screen, rotating rubric canvas and Classic styling
+remain. The shared catalogue accepts presentation row colour and the shared
+remote preview accepts the existing renderer appearance so iOS selects Classic
+without changing macOS defaults or duplicating the cache/retention flow.
+
+Guide26 combines the accepted Guide25 with on-demand synchronization guidance,
+LL1 diagnostics and the offline demo. Guide26 had no existing personal-copy
+directory at allocation. Combining the old conceptual cache PNG with Classic's
+illustration exceeded the existing128MiB conservative image envelope. The cache
+explanation now uses an accessible bilingual table; the old illustrative PNGs
+are retained under `cache-diagrams/` as historical evidence. No image budget was
+raised. Existing packaged images and supported live examples remain.
+
+Deterministic guide checks3/3, cache tests12/12 and focused native guide tests5/5
+pass. The full local suite passes719 XCTest checks (36 opt-in/platform skips, zero failures) plus28 Swift Testing checks. Generic iOS Simulator compilation also passes. Fresh packaged native/Help acceptance and independent exact-head review remain pending for this combined candidate.
+Physical connection work392 is a separately frozen runtime experiment, not a
+claimed fix or a prerequisite for Classic publication.

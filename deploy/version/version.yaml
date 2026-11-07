@@ -919,9 +919,19 @@
       "pr": 383,
       "summary": "Little Leonardo includes an offline bilingual demo with format examples and a locally saved practice form.",
       "to_version": "0.3.1057"
+    },
+    {
+      "delta": {
+        "build": 25
+      },
+      "from_version": "0.3.1057",
+      "merge_sha": "203bd697b21421006b23fae70b30245ef77e15fa",
+      "pr": 382,
+      "summary": "Adds privacy-safe HTTPS diagnostics for iOS sync failures, preserving URL errors, pinning, redirects and bounds. A real TLS cutoff test checks partial byte counts; the alert and bilingual Guide v23 explain the code. Physical root cause remains unconfirmed.",
+      "to_version": "0.3.1082"
     }
   ],
-  "current_version": "0.3.1057",
+  "current_version": "0.3.1082",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

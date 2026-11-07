@@ -8,14 +8,15 @@ public struct RemoteDocumentPreview: View {
     let projectID: UUID
     let entry: RemoteFileEntry
     let spanish: Bool
+    let appearance: MarkdownAppearance
     @State private var file: CorpusFile?
     @State private var failure: String?
     @State private var source = false
     @State private var linked: RemoteFileEntry?
     @State private var images: [String: Data] = [:]
     private let virtualRoot = URL(fileURLWithPath: "/LeonardoRemote", isDirectory: true)
-    public init(library: DownloadLibrary, projectID: UUID, entry: RemoteFileEntry, spanish: Bool = false) {
-        self.library = library; self.projectID = projectID; self.entry = entry; self.spanish = spanish
+    public init(library: DownloadLibrary, projectID: UUID, entry: RemoteFileEntry, spanish: Bool = false, appearance: MarkdownAppearance = .default) {
+        self.library = library; self.projectID = projectID; self.entry = entry; self.spanish = spanish; self.appearance = appearance
     }
     private var project: CachedRemoteProject? { library.projects.first { $0.id == projectID } }
     private var currentEntry: RemoteFileEntry? { project?.catalogue.files.first { $0.path == entry.path } }
@@ -34,7 +35,7 @@ public struct RemoteDocumentPreview: View {
                 } else {
                     MarkdownPreview(content: text, baseURL: virtualRoot.appendingPathComponent(entry.path).deletingLastPathComponent(),
                         configuration: MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true,
-                            externalLinkPolicy: .callbackOnly, localAssetRoot: virtualRoot,
+                            externalLinkPolicy: .callbackOnly, appearance: appearance, localAssetRoot: virtualRoot,
                             memoryAssets: MarkdownMemoryAssets(files: authorizedImages), allowsRemoteImages: false),
                         onLinkActivation: followLink)
                 }
@@ -46,7 +47,7 @@ public struct RemoteDocumentPreview: View {
         .toolbar { Button(t("Show source", "Ver texto")) { source.toggle() } }
         .task(id: project?.catalogue) { await load() }
         .navigationDestination(item: $linked) { target in
-            RemoteDocumentPreview(library: library, projectID: projectID, entry: target, spanish: spanish)
+            RemoteDocumentPreview(library: library, projectID: projectID, entry: target, spanish: spanish, appearance: appearance)
         }
     }
     private func load() async {

@@ -4,7 +4,7 @@ import LeonardoRender
 import LeonardoSyncUI
 
 private enum MobileLibrarySheet: String, Identifiable {
-    case direct, settings
+    case direct, settings, about
     var id: String { rawValue }
 }
 
@@ -28,29 +28,40 @@ struct MobileLibraryView: View {
                 Section("Demo y práctica / Demo & practice") {
                     ForEach(MobileDemoStore.Language.allCases) { language in
                         NavigationLink(language.title) { MobileDemoView(language: language) }
+                            .foregroundStyle(MobileClassic.heading)
                             .accessibilityIdentifier("open-demo-\(language.rawValue)")
                     }
-                    Text("Sin Mac ni conexión · No Mac or network needed").font(.caption)
-                }
+                    Text("Sin Mac ni conexión · No Mac or network needed")
+                        .font(.caption).foregroundStyle(MobileClassic.secondary)
+                }.listRowBackground(MobileClassic.paper)
                 Section("Proyectos / Projects") {
                     ForEach(library.projects, id: \.id) { project in
                         NavigationLink {
                             MobileProjectView(library: library, projectID: project.id)
                         } label: {
                             VStack(alignment: .leading) {
-                                Text(project.name)
+                                Text(project.name).font(.headline).foregroundStyle(MobileClassic.heading)
                                 Text(project.isRecoveryArchive ? "Archivo de recuperación · Solo lectura" : "Consulta desde LeonardoMD · Solo lectura")
-                                    .font(.caption).foregroundStyle(.secondary)
+                                    .font(.caption).foregroundStyle(MobileClassic.secondary)
                             }
                         }
                     }
                     if library.projects.isEmpty {
-                        Text("Conecta con LeonardoMD para descargar tus proyectos y consultarlos offline.")
-                            .font(.caption).foregroundStyle(.secondary)
+                        VStack(spacing: 16) {
+                            MobileBrand(size: 64)
+                            Text("Tus documentos, contigo").font(.title2.bold()).foregroundStyle(MobileClassic.heading)
+                            Text("Conecta tu Mac y consulta tus proyectos sin conexión.")
+                                .multilineTextAlignment(.center).foregroundStyle(MobileClassic.secondary)
+                            Button("Conectar con mi Mac") { presentedSheet = .direct }
+                                .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper).disabled(library.connecting)
+                            Label("Solo lectura", systemImage: "lock").font(.footnote)
+                        }.padding(.vertical, 20).frame(maxWidth: .infinity)
                     }
-                }
+                }.listRowBackground(MobileClassic.paper)
             }
-            .navigationTitle("Little Leonardo")
+            .classicSurface()
+            .navigationTitle("Biblioteca")
+            .navigationBarTitleDisplayMode(.inline)
             .refreshable { await library.synchronize(); await library.reload() }
             .toolbar {
                 Button("Conectar", systemImage: "qrcode") { presentedSheet = .direct }
@@ -79,7 +90,7 @@ struct MobileLibraryView: View {
                         Label("Solicitud de rúbrica de \(request.requesterName)", systemImage: "signature")
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper)
                     .padding(.horizontal)
                     .accessibilityIdentifier("rubric-request-banner")
                 } else if let draft = activeRubricDraft {
@@ -89,7 +100,7 @@ struct MobileLibraryView: View {
                         Label("Recuperar rúbrica de \(draft.request.requesterName)", systemImage: "arrow.clockwise")
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper)
                     .padding(.horizontal)
                     .accessibilityIdentifier("rubric-draft-banner")
                 } else if let code = library.comparisonCode {
@@ -97,16 +108,17 @@ struct MobileLibraryView: View {
                         Text("Código de conexión: \(code)").font(.headline.monospacedDigit())
                         Text("Comprueba que coincide en LeonardoMD, autoriza los proyectos y pulsa Sincronizar.")
                             .font(.caption)
-                    }.padding().background(.regularMaterial)
+                    }.padding().background(MobileClassic.inset)
                 }
             }
             .sheet(item: $presentedSheet) { destination in
                 switch destination {
                 case .direct: directConnectionSheet
                 case .settings: synchronizationSettings
+                case .about: MobileAboutView()
                 }
             }
-            .sheet(item: $presentedRubricRequest) { request in
+            .fullScreenCover(item: $presentedRubricRequest) { request in
                 MobileRubricCaptureView(request: request, library: library)
             }
             .onChange(of: library.pendingRubricRequests) { _, requests in
@@ -146,7 +158,15 @@ struct MobileLibraryView: View {
     private var directConnectionSheet: some View {
         NavigationStack {
             Form {
-                Text("Ambos dispositivos deben estar en la misma red local. Comprueba el código en las dos pantallas antes de autorizar la conexión.")
+                Section {
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Conecta con tu Mac").font(.title2.bold()).foregroundStyle(MobileClassic.heading)
+                        Label("Abre LeonardoMD y activa el uso compartido", systemImage: "1.circle")
+                        Label("Escanea el QR o introduce la dirección", systemImage: "2.circle")
+                        Label("Comprueba el código y autoriza en el Mac", systemImage: "3.circle")
+                        Text("Ambos dispositivos deben estar en la misma red local.")
+                            .font(.footnote).foregroundStyle(MobileClassic.secondary)
+                    }.padding(.vertical, 8)
                 Picker("Método de conexión", selection: $manualPairing) {
                     Text("QR").tag(false)
                     Text("IP y puerto").tag(true)
@@ -164,7 +184,9 @@ struct MobileLibraryView: View {
                         .disabled(library.connecting)
                         .accessibilityIdentifier("scan-pairing-qr")
                 }
-                syncFrequency
+                }.listRowBackground(MobileClassic.inset)
+                Section { syncFrequency }.listRowBackground(MobileClassic.inset)
+                Section {
                 Button("Solicitar conexión") {
                     Task {
                         if manualPairing {
@@ -175,7 +197,8 @@ struct MobileLibraryView: View {
                         if library.comparisonCode != nil { qrURL = ""; presentedSheet = nil }
                     }
                 }.disabled(library.connecting || (manualPairing ? host.isEmpty || (UInt16(port) ?? 0) == 0 : qrURL.isEmpty))
-            }.navigationTitle("Conectar con LeonardoMD")
+                }.listRowBackground(MobileClassic.paper)
+            }.classicSurface().navigationTitle("Conectar con LeonardoMD")
             .toolbar { Button("Cerrar") { presentedSheet = nil } }
             .sheet(isPresented: $scanning) {
                 MobileQRScannerScreen { qrURL = $0 }
@@ -195,7 +218,15 @@ struct MobileLibraryView: View {
 
     private var synchronizationSettings: some View {
         NavigationStack {
-            Form { syncFrequency; SyncCacheSettingsView(library: library.downloads, spanish: true) }
+            Form {
+                Section("Frecuencia") { syncFrequency }.listRowBackground(MobileClassic.inset)
+                SyncCacheSettingsView(library: library.downloads, spanish: true).listRowBackground(MobileClassic.inset)
+                Section {
+                    Button("Acerca de Little Leonardo", systemImage: "info.circle") { presentedSheet = .about }
+                        .accessibilityIdentifier("open-about")
+                }.listRowBackground(MobileClassic.inset)
+            }
+                .classicSurface()
                 .navigationTitle("Sincronización")
                 .toolbar { Button("Cerrar") { presentedSheet = nil } }
         }
@@ -211,12 +242,12 @@ struct MobileProjectView: View {
     var body: some View {
         Group {
             if let project, !project.isRecoveryArchive {
-                SyncCatalogueView(library: library.downloads, projectID: project.id, spanish: true) { entry in selectedEntry = entry }
+                SyncCatalogueView(library: library.downloads, projectID: project.id, spanish: true, rowBackground: MobileClassic.paper) { entry in selectedEntry = entry }
             } else {
             List {
             if let project {
                 Section {
-                    Text("Archivo de recuperación · Solo lectura").font(.caption).foregroundStyle(.secondary)
+                    Text("Archivo de recuperación · Solo lectura").font(.caption).foregroundStyle(MobileClassic.secondary)
                     Text("Carpeta: \(project.scope.folder.isEmpty ? "/" : project.scope.folder)").font(.caption)
                     if project.isRecoveryArchive {
                         Text("Esta copia antigua conserva tus cambios locales y enviados. Expórtala para recuperarlos en un ordenador. No se editará ni se enviará automáticamente.")
@@ -224,17 +255,18 @@ struct MobileProjectView: View {
                             .accessibilityIdentifier("export-recovery")
                     }
                 }
+                .listRowBackground(MobileClassic.inset)
                 ForEach(project.files.filter { ["md", "markdown", "txt"].contains(($0.path as NSString).pathExtension.lowercased()) }, id: \.path) { file in
                     NavigationLink(file.path) {
                         MobileDocumentView(library: library, projectID: project.id, file: file)
-                    }
+                    }.listRowBackground(MobileClassic.paper)
                 }
             }
             }
             }
-        }.navigationTitle(project?.name ?? "Proyecto")
+        }.classicSurface().navigationTitle(project?.name ?? "Proyecto")
         .navigationDestination(item: $selectedEntry) { entry in
-            RemoteDocumentPreview(library: library.downloads, projectID: projectID, entry: entry, spanish: true)
+            RemoteDocumentPreview(library: library.downloads, projectID: projectID, entry: entry, spanish: true, appearance: .leonardoClassic).classicSurface()
         }
         .fileExporter(isPresented: $exporting, document: project.map(MobileRecoveryDocument.init),
                       contentType: .json, defaultFilename: "LittleLeonardo-\(projectID.uuidString)-recovery") { result in
@@ -258,6 +290,7 @@ struct MobileDocumentView: View {
     private let virtualRoot = URL(fileURLWithPath: "/LittleLeonardoCorpus", isDirectory: true)
     private var previewConfiguration: MarkdownPreviewConfiguration {
         MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true, externalLinkPolicy: .blocked,
+            appearance: .leonardoClassic,
             localAssetRoot: virtualRoot, memoryAssets: assets, allowsRemoteImages: false)
     }
     private var liveProject: OfflineProject? { library.projects.first { $0.id == projectID } }
@@ -280,6 +313,7 @@ struct MobileDocumentView: View {
                 }
             }
         }
+        .classicSurface()
         .navigationTitle((file.path as NSString).lastPathComponent)
         .toolbar {
             Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {

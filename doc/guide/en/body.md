@@ -608,6 +608,24 @@ one device. The companion only draws and returns the rubric; it cannot edit the
 document. A helper, service or capability problem is shown as an actionable
 offline/unsupported state.
 
+### Classic appearance, startup and About in Little Leonardo
+
+Little Leonardo uses the **Leonardo Classic** colors: parchment paper,
+burgundy headings and oxide actions, including the bundled demo, its source view and field help. The demo remains accessible in the library before connecting a Mac. Startup displays the brand while the local library is prepared,
+without an added delay. Open **Ajustes de sincronización → Acerca de Little
+Leonardo** (sync settings → About) to check the installed version and build and open offline Help, Privacy and
+Licenses pages.
+
+After **Aceptar y dibujar** (accept and draw), the page suggests rotating the
+device. Landscape presents a full-screen canvas with ink color, style, width,
+**Deshacer** (undo) and **Limpiar** (clear). Returning to portrait restores the
+normal page and preserves the drawing's proportions. With rotation lock enabled,
+use **Ampliar lienzo** (expand canvas), then **Volver** (back). Rotating never
+sends or clears the rubric. Preview and **Enviar rúbrica** (send rubric) remain
+explicit actions; a blocked, submitted or frozen retry draft cannot be edited.
+
+![Full-screen landscape rubric canvas in Leonardo Classic. Actual simulator capture with a synthetic request and Spanish interface; reduced thumbnail.](assets/ios-rubric-classic-landscape.png)
+
 ### If mobile synchronization is interrupted
 
 For a network failure, the existing alert may include a compact diagnostic
@@ -698,9 +716,11 @@ To return edits, **Compare changes**, inspect Base / This Mac / Other Mac versio
 
 ### On-demand downloads and offline storage
 
-![Diagram: remote catalogue, file opening, temporary cache and separate offline storage.](assets/sync-cache-diagram.png)
-
-*Conceptual diagram, not an application screenshot.*
+| Action | Download | Storage |
+|---|---|---|
+| Browse the catalogue | File/folder names | Catalogue only |
+| Open a file | File and referenced local images | Temporary cache, within your limit |
+| Keep offline | Selected files/folders and referenced images | Separate retained storage |
 
 After pairing, the app refreshes the authorized file/folder list without downloading content. On Mac, choose **Browse files** beside a shared project; on iOS, open the project. Opening a file downloads that file and its referenced local images. Already downloaded files open from cache. Only saved source files are shared.
 

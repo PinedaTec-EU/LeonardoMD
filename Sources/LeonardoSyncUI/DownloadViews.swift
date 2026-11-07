@@ -46,9 +46,10 @@ public struct SyncCatalogueView: View {
     @Bindable var library: DownloadLibrary
     let projectID: UUID
     let spanish: Bool
+    let rowBackground: Color?
     let open: (RemoteFileEntry) -> Void
-    public init(library: DownloadLibrary, projectID: UUID, spanish: Bool = false, open: @escaping (RemoteFileEntry) -> Void) {
-        self.library = library; self.projectID = projectID; self.spanish = spanish; self.open = open
+    public init(library: DownloadLibrary, projectID: UUID, spanish: Bool = false, rowBackground: Color? = nil, open: @escaping (RemoteFileEntry) -> Void) {
+        self.library = library; self.projectID = projectID; self.spanish = spanish; self.rowBackground = rowBackground; self.open = open
     }
     private var project: CachedRemoteProject? { library.projects.first { $0.id == projectID } }
     private func t(_ en: String, _ es: String) -> String { spanish ? es : en }
@@ -70,6 +71,7 @@ public struct SyncCatalogueView: View {
                             }.contentShape(Rectangle())
                         }.buttonStyle(.plain)
                         .contextMenu { actions(path: entry.path, isFolder: false, project: project) }
+                        .listRowBackground(rowBackground)
                     }
                 }
             }.navigationTitle(project.descriptor.name)
@@ -81,7 +83,7 @@ public struct SyncCatalogueView: View {
             Label(path.isEmpty ? project.descriptor.name : path, systemImage: "folder")
             Spacer()
             status(paths: entries, project: project)
-        }.contextMenu { actions(path: path, isFolder: true, project: project) }
+        }.contextMenu { actions(path: path, isFolder: true, project: project) }.listRowBackground(rowBackground)
     }
     @ViewBuilder private func status(paths: [RemoteFileEntry], project: CachedRemoteProject) -> some View {
         let retained = paths.filter { project.keeps($0.path) }.count

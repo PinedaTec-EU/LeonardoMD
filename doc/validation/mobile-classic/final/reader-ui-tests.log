@@ -1,0 +1,221 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun /tmp/leonardo-386-derived/Build/Products/Classic387FinalReader.xctestrun -destination "platform=iOS Simulator,id=926C886F-52D8-4766-B84D-1A5D8C218080" "-only-testing:LittleLeonardoUITests/PairingUITests/testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation" -resultBundlePath /tmp/ll387-final-reader.xcresult
+
+Writing result bundle at path:
+	/tmp/ll387-final-reader.xcresult
+
+2026-11-07 12:14:58.328 xcodebuild[35857:104394482] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 12:14:59.318254+0100 LittleLeonardoUITests-Runner[35893:104394844] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-11-07 12:15:02.097.
+Test Suite 'LittleLeonardoUITests.xctest' started at 2026-11-07 12:15:02.097.
+Test Suite 'PairingUITests' started at 2026-11-07 12:15:02.097.
+Test Case '-[LittleLeonardoUITests.PairingUITests testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation]' started.
+    t =     0.00s Start Test at 2026-11-07 12:15:02.099
+    t =     0.02s Set Up
+    t =     0.02s Open eu.pinedatec.LittleLeonardo
+    t =     0.02s     Launch eu.pinedatec.LittleLeonardo
+2026-11-07 12:15:02.319 xcodebuild[35857:104394482] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-11-07 12:15:02.319 xcodebuild[35857:104394482] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-11-07 12:15:02.325 xcodebuild[35857:104394482] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+objc[35893]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x1025ac398) and /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x1026a0310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =     0.64s         Setting up automation session
+    t =     2.50s         Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     3.62s Tap "open-pairing" Button
+    t =     3.62s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     3.63s     Find the "open-pairing" Button
+    t =     3.72s     Check for interrupting elements affecting "open-pairing" Button
+    t =     3.75s     Synthesize event
+    t =     4.06s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     4.53s Tap "IP y puerto" Button
+    t =     4.53s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     4.53s     Find the "IP y puerto" Button
+    t =     4.59s     Check for interrupting elements affecting "IP y puerto" Button
+    t =     4.64s     Synthesize event
+    t =     4.92s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     6.53s Tap "pairing-host" TextField
+    t =     6.53s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     6.54s     Find the "pairing-host" TextField
+    t =     6.61s     Check for interrupting elements affecting "pairing-host" TextField
+    t =     6.65s     Synthesize event
+    t =     6.94s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     7.03s Find the "pairing-host" TextField
+    t =     7.11s Type '' into "pairing-host" TextField
+    t =     7.11s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     7.40s     Find the "pairing-host" TextField
+    t =     7.48s     Check for interrupting elements affecting "pairing-host" TextField
+    t =     7.53s     Synthesize event
+    t =     8.00s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     8.01s Type '127.0.0.1' into "pairing-host" TextField
+    t =     8.01s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     8.01s     Find the "pairing-host" TextField
+    t =     8.06s     Check for interrupting elements affecting "pairing-host" TextField
+    t =     8.11s     Synthesize event
+    t =     8.47s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     8.47s Tap "pairing-port" TextField
+    t =     8.47s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     8.47s     Find the "pairing-port" TextField
+    t =     8.54s     Check for interrupting elements affecting "pairing-port" TextField
+    t =     8.58s     Synthesize event
+    t =     8.87s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.30s Find the "pairing-port" TextField
+    t =     9.35s Type '' into "pairing-port" TextField
+    t =     9.35s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.35s     Find the "pairing-port" TextField
+    t =     9.40s     Check for interrupting elements affecting "pairing-port" TextField
+    t =     9.45s     Synthesize event
+    t =     9.74s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.88s Type '46993' into "pairing-port" TextField
+    t =     9.88s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.88s     Find the "pairing-port" TextField
+    t =     9.94s     Check for interrupting elements affecting "pairing-port" TextField
+    t =     9.99s     Synthesize event
+    t =    10.28s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    10.28s Tap "Solicitar conexión" Button
+    t =    10.28s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    10.28s     Find the "Solicitar conexión" Button
+    t =    10.34s     Check for interrupting elements affecting "Solicitar conexión" Button
+    t =    10.38s     Synthesize event
+    t =    10.67s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    11.16s Waiting 15.0s for StaticText (First Match) to exist
+    t =    12.22s     Checking `Expect predicate `existsNoRetry == 1` for object StaticText (First Match)`
+    t =    12.22s         Checking existence of `StaticText (First Match)`
+    t =    12.38s Tap "Sincronizar" Button
+    t =    12.38s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    12.39s     Find the "Sincronizar" Button
+    t =    12.42s     Check for interrupting elements affecting "Sincronizar" Button
+    t =    12.46s     Synthesize event
+    t =    12.76s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    13.46s Waiting 20.0s for "QA · Native Direct" StaticText to exist
+    t =    14.52s     Checking `Expect predicate `existsNoRetry == 1` for object "QA · Native Direct" StaticText`
+    t =    14.52s         Checking existence of `"QA · Native Direct" StaticText`
+    t =    14.60s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    14.69s Added attachment named 'Classic enrolled library'
+    t =    14.69s Tap "QA · Native Direct" StaticText
+    t =    14.69s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    14.69s     Find the "QA · Native Direct" StaticText
+    t =    14.74s     Check for interrupting elements affecting "QA · Native Direct" StaticText
+    t =    14.77s     Synthesize event
+    t =    15.06s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    15.38s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    15.46s Added attachment named 'Classic project documents'
+    t =    15.46s Tap "docs/read.md" Button
+    t =    15.46s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    15.46s     Find the "docs/read.md" Button
+    t =    15.49s     Check for interrupting elements affecting "docs/read.md" Button
+    t =    15.52s     Synthesize event
+    t =    15.81s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    16.19s Waiting 15.0s for "Native direct initial" StaticText to exist
+    t =    17.24s     Checking `Expect predicate `existsNoRetry == 1` for object "Native direct initial" StaticText`
+    t =    17.24s         Checking existence of `"Native direct initial" StaticText`
+    t =    17.28s Ignoring failure to get hierarchy for remote element in process 36353 (Error getting main window kAXErrorServerNotFound)
+    t =    17.28s         Capturing element debug description
+    t =    18.22s     Checking `Expect predicate `existsNoRetry == 1` for object "Native direct initial" StaticText`
+    t =    18.22s         Checking existence of `"Native direct initial" StaticText`
+    t =    18.26s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    18.34s Added attachment named 'Classic Markdown document'
+    t =    18.34s Tap "Ver texto" Button
+    t =    18.34s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    18.34s     Find the "Ver texto" Button
+    t =    18.38s     Check for interrupting elements affecting "Ver texto" Button
+    t =    18.41s     Synthesize event
+    t =    18.71s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    19.43s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    19.51s Added attachment named 'Classic document source'
+    t =    19.51s Tap "Ver documento" Button
+    t =    19.51s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    19.52s     Find the "Ver documento" Button
+    t =    19.54s     Check for interrupting elements affecting "Ver documento" Button
+    t =    19.56s     Synthesize event
+    t =    19.86s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    20.59s Checking existence of `"Editar" Button`
+    t =    20.61s Checking existence of `TextView (First Match)`
+    t =    20.63s Checking existence of `"Enviar cambios" Button`
+    t =    20.76s Tap "document-sync" Button
+    t =    20.76s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    20.76s     Find the "document-sync" Button
+    t =    20.78s     Check for interrupting elements affecting "document-sync" Button
+    t =    20.80s     Synthesize event
+    t =    21.10s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    21.81s Waiting 15.0s for "Native direct updated" StaticText to exist
+    t =    22.87s     Checking `Expect predicate `existsNoRetry == 1` for object "Native direct updated" StaticText`
+    t =    22.87s         Checking existence of `"Native direct updated" StaticText`
+    t =    23.04s Tap "document-sync" Button
+    t =    23.04s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    23.04s     Find the "document-sync" Button
+    t =    23.07s     Check for interrupting elements affecting "document-sync" Button
+    t =    23.10s     Synthesize event
+    t =    23.39s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    23.81s Waiting 15.0s for "No se pudo completar la operación" Alert to exist
+    t =    24.87s     Checking `Expect predicate `existsNoRetry == 1` for object "No se pudo completar la operación" Alert`
+    t =    24.87s         Checking existence of `"No se pudo completar la operación" Alert`
+    t =    24.93s Waiting 5.0s for StaticText (First Match) to exist
+    t =    25.99s     Checking `Expect predicate `existsNoRetry == 1` for object StaticText (First Match)`
+    t =    25.99s         Checking existence of `StaticText (First Match)`
+    t =    26.01s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    26.10s Added attachment named 'Little Leonardo synchronization failure diagnostic'
+    t =    26.10s Tap "Aceptar" Button
+    t =    26.10s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    26.11s     Find the "Aceptar" Button
+    t =    26.14s     Check for interrupting elements affecting "Aceptar" Button
+    t =    26.17s     Synthesize event
+    t =    26.46s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    26.69s Checking existence of `"Native direct updated" StaticText`
+    t =    26.82s Tap "document-sync" Button
+    t =    26.83s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    26.83s     Find the "document-sync" Button
+    t =    26.85s     Check for interrupting elements affecting "document-sync" Button
+    t =    26.88s     Synthesize event
+    t =    27.17s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    27.88s Waiting 15.0s for "Native direct updated" StaticText to exist
+    t =    28.94s     Checking `Expect predicate `existsNoRetry == 1` for object "Native direct updated" StaticText`
+    t =    28.94s         Checking existence of `"Native direct updated" StaticText`
+    t =    29.08s Waiting 20.0s for "Acceso retirado" StaticText to exist
+    t =    30.14s     Checking `Expect predicate `existsNoRetry == 1` for object "Acceso retirado" StaticText`
+    t =    30.14s         Checking existence of `"Acceso retirado" StaticText`
+    t =    30.16s Waiting 1.0s for "No se pudo completar la operación" Alert to exist
+    t =    31.16s     Checking `Expect predicate `existsNoRetry == 1` for object "No se pudo completar la operación" Alert`
+    t =    31.17s         Checking existence of `"No se pudo completar la operación" Alert`
+    t =    31.19s         Capturing element debug description
+    t =    31.19s     Checking existence of `"No se pudo completar la operación" Alert`
+    t =    31.21s Collecting debug information to assist test failure triage
+    t =    31.21s     Requesting snapshot of accessibility hierarchy for app with pid 36105
+    t =    32.30s Checking `Expect predicate `exists == 1 AND isEnabled == 1` for object "document-sync" Button`
+    t =    32.30s     Checking existence of `"document-sync" Button`
+    t =    32.32s     Find the "document-sync" Button
+    t =    32.34s Waiting 1.0s for "No se pudo completar la operación" Alert to exist
+    t =    33.35s     Checking `Expect predicate `existsNoRetry == 1` for object "No se pudo completar la operación" Alert`
+    t =    33.35s         Checking existence of `"No se pudo completar la operación" Alert`
+    t =    33.37s         Capturing element debug description
+    t =    33.37s     Checking existence of `"No se pudo completar la operación" Alert`
+    t =    33.39s Collecting debug information to assist test failure triage
+    t =    33.39s     Requesting snapshot of accessibility hierarchy for app with pid 36105
+    t =    33.42s Checking existence of `"Acceso retirado" StaticText`
+    t =    33.44s Checking existence of `"Editar" Button`
+    t =    33.45s Checking existence of `WebView (First Match)`
+    t =    33.47s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    33.56s Added attachment named 'Enrolled direct project purged after confirmed revocation'
+    t =    33.67s Tear Down
+Test Case '-[LittleLeonardoUITests.PairingUITests testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation]' passed (33.930 seconds).
+Test Suite 'PairingUITests' passed at 2026-11-07 12:15:36.029.
+	 Executed 1 test, with 0 failures (0 unexpected) in 33.930 (33.932) seconds
+Test Suite 'LittleLeonardoUITests.xctest' passed at 2026-11-07 12:15:36.030.
+	 Executed 1 test, with 0 failures (0 unexpected) in 33.930 (33.933) seconds
+Test Suite 'Selected tests' passed at 2026-11-07 12:15:36.031.
+	 Executed 1 test, with 0 failures (0 unexpected) in 33.930 (33.935) seconds
+2026-11-07 12:15:36.052 xcodebuild[35857:104394482] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 12:15:36.052 xcodebuild[35857:104394482] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 12:15:36.052 xcodebuild[35857:104394482] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 12:15:36.060 xcodebuild[35857:104394482] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 12:15:36.060 xcodebuild[35857:104394482] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 12:15:36.060 xcodebuild[35857:104394482] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 12:15:36.317 xcodebuild[35857:104394482] [MT] IDETestOperationsObserverDebug: 38.023 elapsed -- Testing started completed.
+2026-11-07 12:15:36.317 xcodebuild[35857:104394482] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-07 12:15:36.317 xcodebuild[35857:104394482] [MT] IDETestOperationsObserverDebug: 38.023 sec, +38.023 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/ll387-final-reader.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started
