@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import LeonardoCore
 
 struct NavigationEntry: Identifiable, Hashable {
     let url: URL
@@ -22,10 +23,12 @@ struct ProjectSidebar: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Image(systemName: "folder.fill")
-                Text(session.projectURL?.lastPathComponent ?? L10n.text("Project")).font(.headline)
+                let presentation = DesktopProjectPresentation.resolve(session.projectURL)
+                ProjectIdentityLabel(name: session.projectURL?.lastPathComponent ?? L10n.text("Project"),
+                                     identity: presentation.identity, detail: presentation.detail)
+                    .font(.headline)
                 Spacer()
-                Button { session.chooseProject() } label: { Image(systemName: "folder.badge.plus") }
+                Button { session.chooseProject() } label: { Image(systemName: ProjectIdentity.projectSymbolName) }
                     .help(L10n.text("Open another project"))
             }
             TextField(L10n.text("Search files and content"), text: $session.searchQuery)

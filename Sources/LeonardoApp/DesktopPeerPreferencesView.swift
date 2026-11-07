@@ -44,7 +44,7 @@ struct DesktopPeerPreferencesView: View {
                         }
                         ForEach(controller.available[connection.id] ?? [], id: \.id) { project in
                             HStack {
-                                Text(project.name)
+                                ProjectIdentityLabel(name: project.name, identity: .received)
                                 Spacer()
                                 Button(L10n.text("Import")) { Task { await controller.importProject(connectionID: connection.id, projectID: project.id) } }.disabled(!controller.helper.online)
                             }
@@ -55,7 +55,9 @@ struct DesktopPeerPreferencesView: View {
             Section(L10n.text("Offline copies")) {
                 ForEach(controller.copies, id: \.id) { copy in
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(copy.name).font(.headline)
+                        ProjectIdentityLabel(name: copy.name, identity: .received,
+                                             detail: DesktopProjectPresentation.scopeDescription(folders: copy.selection.folders))
+                            .font(.headline)
                         Text((copy.selection.folders + copy.selection.documents).joined(separator: ", "))
                             .font(.caption).foregroundStyle(.secondary)
                         ViewThatFits(in: .horizontal) {

@@ -87,11 +87,17 @@ struct SavedItemsView: View {
     private func row(_ url: URL, kind: FavoriteItem.Kind) -> some View {
         let favorite = session.isFavorite(url, kind: kind)
         let available = FavoriteItem(kind: kind, url: url).isAvailable
+        let presentation = kind == .project ? DesktopProjectPresentation.resolve(url) : nil
         return HStack(spacing: 12) {
             Button { Task { await session.openSavedItem(url, kind: kind) } } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(url.lastPathComponent).lineLimit(1)
-                    Text(url.deletingLastPathComponent().path).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                HStack(spacing: 8) {
+                    if let presentation { ProjectIdentityIcon(identity: presentation.identity) }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(url.lastPathComponent).lineLimit(1)
+                        Text(savedItemDetail(url, presentation: presentation))
+                            .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
@@ -99,6 +105,8 @@ struct SavedItemsView: View {
             .buttonStyle(.plain)
             .disabled(!available)
             .help(available ? url.path : L10n.text("Item unavailable"))
+            .accessibilityLabel(url.lastPathComponent)
+            .accessibilityValue(savedItemDetail(url, presentation: presentation))
             if favorite, kind != .document {
                 FavoriteThemePicker(session: session, url: url, kind: kind)
             }
@@ -115,5 +123,12 @@ struct SavedItemsView: View {
         .padding(.vertical, 4)
         .padding(.horizontal, 6)
         .modifier(FileRowHighlight(accent: session.accentColor, enabled: available))
+    }
+
+    private func savedItemDetail(_ url: URL, presentation: DesktopProjectPresentation?) -> String {
+        let path = url.deletingLastPathComponent().path
+        guard let presentation else { return path }
+        return [presentation.identity.title(languageCode: LanguageSettings.shared.language.rawValue),
+                presentation.detail, path].compactMap { $0 }.joined(separator: " · ")
     }
 }

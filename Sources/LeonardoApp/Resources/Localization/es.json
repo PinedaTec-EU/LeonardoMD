@@ -638,5 +638,7 @@
   "Cancellation is being confirmed. This request cannot be reviewed or saved.": "Se está confirmando la cancelación. Esta petición no se puede revisar ni guardar.",
   "The rubric finished before cancellation and was discarded. Request another rubric.": "La rúbrica terminó antes de la cancelación y se descartó. Pide otra rúbrica.",
   "Refresh linked devices": "Actualizar dispositivos enlazados",
-  "This Little Leonardo can create rubrics requested by this Mac without access to any project. Select projects only if you also want offline reading.": "Este Little Leonardo puede crear rúbricas solicitadas por este Mac sin acceder a ningún proyecto. Selecciona proyectos solo si también quieres leerlos sin conexión."
+  "This Little Leonardo can create rubrics requested by this Mac without access to any project. Select projects only if you also want offline reading.": "Este Little Leonardo puede crear rúbricas solicitadas por este Mac sin acceder a ningún proyecto. Selecciona proyectos solo si también quieres leerlos sin conexión.",
+  "Selected content": "Contenido seleccionado",
+  "Sharing paused or unavailable": "Uso compartido pausado o no disponible"
 }

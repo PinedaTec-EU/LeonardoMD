@@ -25,7 +25,7 @@ extension FavoriteItem.Kind {
     var symbol: String {
         switch self {
         case .document: "doc.text"
-        case .project: "folder"
+        case .project: ProjectIdentity.projectSymbolName
         case .workspace: "square.stack.3d.up"
         }
     }

@@ -63,6 +63,13 @@ final class RecentItemsMenu: NSObject, NSMenuDelegate {
             item.tag = category.rawValue
             item.representedObject = url
             item.toolTip = url.path
+            if category == .projects {
+                let presentation = DesktopProjectPresentation.resolve(url)
+                let role = presentation.identity.title(languageCode: LanguageSettings.shared.language.rawValue)
+                item.image = ProjectIdentityIcon.menuImage(for: presentation.identity)
+                item.title = url.lastPathComponent + " — " + role
+                item.toolTip = [role, presentation.detail, url.path].compactMap { $0 }.joined(separator: "\n")
+            }
             var directory: ObjCBool = false
             let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &directory)
             item.isEnabled = exists && directory.boolValue == (category != .documents)
