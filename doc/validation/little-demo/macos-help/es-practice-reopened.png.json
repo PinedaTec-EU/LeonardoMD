@@ -1,0 +1,19 @@
+{
+  "type": "Original CUA native macOS app screenshot",
+  "saved_at_utc": "2026-11-06T19:35:26.607357+00:00",
+  "time_source": "Immediate capture-save file timestamp; native capture API did not expose an independent timestamp.",
+  "source_sha": "743b21ddcb5abeda30a33abdb2313962bf1f5788",
+  "source_state": "Only PR-owned compilation delta dirty during release build; product inputs equal 854ae4a.",
+  "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.cfd1f038fd614a619dd5a0a8b58b99b8",
+  "pid": 35129,
+  "version": "0.3.1022",
+  "build": "1022",
+  "locale": "es",
+  "engines": "Mermaid/Math/Charts enabled",
+  "image": {
+    "width_px": 4718592,
+    "height_px": 4292935744,
+    "sha256": "da9e377ca5d67aa5541b66f6c5276628ac4d36cb8754b81e065af7c4b3a99071"
+  },
+  "browser_context": "Native WKWebView; independent browser version/CSS viewport unavailable. Browser-only metadata helper required fields cannot be truthfully supplied."
+}

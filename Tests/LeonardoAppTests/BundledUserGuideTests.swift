@@ -10,7 +10,7 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let oldCopies = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
+        let oldCopies = Array(2...19).map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
         let oldAnswers = Data("previous guide and saved answers".utf8)
         for oldCopy in oldCopies {
             try FileManager.default.createDirectory(at: oldCopy.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -22,7 +22,7 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v19/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v24/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
             let legacyImport = root.appendingPathComponent("Agent Import Guides/v2/\(language.rawValue)/AgentImport-v2-\(language.rawValue).mdlz")
             try FileManager.default.createDirectory(at: legacyImport.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -144,7 +144,10 @@ final class BundledUserGuideTests: XCTestCase {
                 try await waitFor("document.images[\(index)].naturalWidth > 0", in: web)
             }
             try await waitFor("document.querySelectorAll('[data-field-input]').length === 0 && document.querySelector('a[href$=\"/practice.mdlr\"]') !== null", in: web)
-            try await waitFor("document.querySelectorAll('.katex-display').length === 3 && document.querySelector('.katex-error') === null && document.querySelector('.katex-tag') !== null", in: web)
+            try await waitFor("document.querySelectorAll('.katex-display').length === 4 && document.querySelectorAll('.katex svg path[d]').length >= 4 && document.querySelector('.katex svg line') !== null && document.querySelector('.katex-error') === null && document.querySelector('.katex-tag') !== null", in: web)
+            let regression = try XCTUnwrap(session.headings.first { $0.title.contains("regression examples") || $0.title.contains("ejemplos de regresión") })
+            session.jumpToHeading(regression.line)
+            try await waitFor("Math.abs(window.LeonardoTables.headingForSourceLine(document.querySelector('#leonardo-markdown'), \(regression.line)).getBoundingClientRect().top) < 2", in: web)
             try await waitFor("document.querySelector('.vega-lite-placeholder svg') !== null", in: web)
             _ = try await web.evaluateJavaScript("document.querySelector('.mermaid-placeholder').scrollIntoView({block:'center'})")
             try await waitFor("document.querySelector('.mermaid-placeholder svg') !== null", in: web)

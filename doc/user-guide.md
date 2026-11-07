@@ -53,6 +53,10 @@ Inline notation also works: $N(\varepsilon)$ counts the boxes.
 
 $$ \underbrace{a}_{x} + \underbrace{b}_{y} $$
 
+Check the curved brace strokes as well as the letters and labels. Radicals, long arrows and cancellation marks should also keep their complete shapes:
+
+$$ \sqrt{x+1} \xrightarrow{n\to\infty} \cancel{x} $$
+
 $$
 D_B(F) := \lim_{\varepsilon \to 0^{+}} \frac{\ln N(\varepsilon)}{\ln (1/\varepsilon)}, \qquad N(\varepsilon) = \text{number of intersecting boxes of side } \varepsilon\tag{1}
 $$
@@ -358,7 +362,7 @@ tags: [Swift, "Design Systems"]
 
 Search `tag:swift` or `tag:"Design Systems"` for exact, case-insensitive tag matches. A partial word or a body mention is not a tag match. The lightweight parser accepts a string, inline list or block list, not all YAML features. Empty tags disappear and case-insensitive duplicates collapse.
 
-Clickable tag pills remain visible even when the frontmatter table is hidden. In a project, clicking a pill fills search and reveals navigation if Focus was active. In a standalone file, tags do not create a project. **View → Document outline** (⌥⌘I) opens heading navigation; choose a heading to jump within this document. The inspector helps navigate; form answers are entered inside the page.
+Clickable tag pills remain visible even when the frontmatter table is hidden. In a project, clicking a pill fills search and reveals navigation if Focus was active. In a standalone file, tags do not create a project. **View → Document outline** (⌥⌘I) opens heading navigation; choose a heading to jump within this document. The preview goes to that heading even when images, tables or diagrams appear above it. Repeated titles keep their own destination. In Split, the editor selects the corresponding source line; choose the same heading again to return after scrolling. The inspector helps navigate; form answers are entered inside the page.
 
 ## 10. Editing, tables and recovery
 
@@ -741,3 +745,10 @@ An extension's activation does not install an AI skill, connect an AI account or
 - **Unsupported version:** preserve the file and update the reader/plugin. Do not change its version number to force acceptance.
 
 This guide covers current macOS workflows. External service labels were checked on **30 October 2026** and may change. See the [web user guide](https://github.com/PinedaTec-EU/LeonardoMD/blob/main/doc/user-guide.md), [format contract](https://github.com/PinedaTec-EU/LeonardoMD/blob/main/doc/format/README.md) and [published releases](https://github.com/PinedaTec-EU/LeonardoMD/releases).
+
+
+## Little Leonardo: bundled demo and local practice
+
+Installing Little Leonardo prepares two personal demo copies, Español and English. In the library, open **Demo y práctica / Demo & practice** and choose a language. No account, Mac or camera/local-network permission is needed. The demo includes a local cover, table, Mermaid, formulas and a chart with bundled data; these engines are enabled in the demo. The form uses real Leonardo fields. Enter fictional details, tap **Guardar / Save**, wait for confirmation, then reopen to check your answers. They stay on this device, separate from synchronized read-only projects, and are never sent to the Mac. Uninstalling removes the copies.
+
+Under **Opciones / Options**, **Ver texto / View source** shows Markdown and metadata; **Restablecer / Reset** asks for confirmation and resets only the selected language's practice. If saving fails, keep the screen open and retry; do not assume answers are saved without confirmation. For real projects, return to **Conectar** and follow the synchronization chapter. Practice does not enable general synchronized-project editing or replace Mac rubric requests.

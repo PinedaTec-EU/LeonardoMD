@@ -82,9 +82,9 @@ extension AppSession {
         }
     }
     func jumpToHeading(_ line: Int) {
+        guard headings.contains(where: { $0.line == line }) else { return }
         requestedLine = line
-        let total = max(1, content.components(separatedBy: "\n").count - 1)
-        editorScroll = min(1, Double(line - 1) / Double(total))
-        renderer.scroll(toFraction: editorScroll)
+        requestedLineRevision &+= 1
+        renderer.scroll(toSourceLine: line)
     }
 }

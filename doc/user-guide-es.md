@@ -53,6 +53,10 @@ La notación en línea también funciona: $N(\varepsilon)$ cuenta las cajas.
 
 $$ \underbrace{a}_{x} + \underbrace{b}_{y} $$
 
+Comprueba los trazos curvos de las llaves además de las letras y etiquetas. Las raíces, las flechas largas y las marcas de cancelación también deben conservar su forma completa:
+
+$$ \sqrt{x+1} \xrightarrow{n\to\infty} \cancel{x} $$
+
 $$
 D_B(F) := \lim_{\varepsilon \to 0^{+}} \frac{\ln N(\varepsilon)}{\ln (1/\varepsilon)}, \qquad N(\varepsilon) = \text{número de cajas que intersecan, de lado } \varepsilon\tag{1}
 $$
@@ -360,7 +364,7 @@ tags: [Swift, "Design Systems"]
 
 Busca `tag:swift` o `tag:"Design Systems"` para coincidencias exactas sin distinguir mayúsculas. Una palabra parcial o una mención en el cuerpo no es una etiqueta. El analizador ligero acepta una cadena, una lista en línea o una lista en bloque, pero no todas las construcciones YAML. Omite etiquetas vacías y agrupa duplicados sin distinguir mayúsculas.
 
-Las etiquetas pulsables siguen visibles aunque ocultes la tabla de metadatos. En un proyecto, pulsarlas rellena la búsqueda y revela la navegación si estaba activo el modo foco. En un archivo independiente no crean un proyecto. **Vista → Índice del documento** (⌥⌘I) abre la navegación por encabezados; elige uno para saltar dentro del documento. El inspector sirve para navegar; las respuestas del formulario se escriben en la página.
+Las etiquetas pulsables siguen visibles aunque ocultes la tabla de metadatos. En un proyecto, pulsarlas rellena la búsqueda y revela la navegación si estaba activo el modo foco. En un archivo independiente no crean un proyecto. **Vista → Índice del documento** (⌥⌘I) abre la navegación por encabezados; elige uno para saltar dentro del documento. La vista previa llega a ese encabezado aunque tenga imágenes, tablas o diagramas por encima. Los títulos repetidos conservan su propio destino. En Dividir, el editor selecciona la línea de origen correspondiente; vuelve a elegir el mismo encabezado para regresar tras desplazarte. El inspector sirve para navegar; las respuestas del formulario se escriben en la página.
 
 ## 10. Edición, tablas y recuperación
 
@@ -758,3 +762,10 @@ Activar una extensión no instala una skill de IA, conecta una cuenta ni autoriz
 - **Versión no compatible:** conserva el archivo y actualiza el lector o plugin; no cambies el número de versión para forzar la lectura.
 
 La guía cubre los flujos actuales de macOS. Los nombres de servicios externos se comprobaron el **30 de octubre de 2026** y pueden cambiar. Puedes consultar la [guía web del producto](https://github.com/PinedaTec-EU/LeonardoMD/blob/main/doc/user-guide.md), el [contrato de formato](https://github.com/PinedaTec-EU/LeonardoMD/blob/main/doc/format/README.md) y las [versiones publicadas](https://github.com/PinedaTec-EU/LeonardoMD/releases).
+
+
+## Little Leonardo: demo incluida y práctica local
+
+Al instalar Little Leonardo se preparan dos copias personales de la demo, Español y English. En la biblioteca, abre **Demo y práctica / Demo & practice** y elige el idioma. No requiere cuenta, Mac ni permisos de cámara/red local. Incluye una portada local, tabla, Mermaid, fórmulas y un gráfico con datos incluidos; estos motores están activados en la demo. El formulario usa campos Leonardo reales. Escribe datos ficticios, pulsa **Guardar / Save**, espera el aviso y vuelve a abrir para comprobar las respuestas. Se conservan en este dispositivo, separadas de los proyectos sincronizados de solo lectura. No se envían al Mac. Desinstalar elimina las copias.
+
+En **Opciones / Options**, **Ver texto / View source** muestra Markdown y metadatos; **Restablecer / Reset** pide confirmación y reinicia únicamente la práctica del idioma seleccionado. Si aparece un error de guardado, conserva la pantalla y reintenta; no des por guardadas las respuestas sin confirmación. Para conectar tus proyectos reales, vuelve a **Conectar** y sigue el capítulo de sincronización. La práctica no habilita edición general de los proyectos sincronizados ni sustituye las solicitudes de rúbrica del Mac.

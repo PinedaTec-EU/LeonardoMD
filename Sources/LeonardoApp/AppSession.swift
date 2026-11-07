@@ -91,6 +91,7 @@ final class AppSession {
     var saveStatus = "Local file"
     var editorScroll = 0.0
     var requestedLine: Int?
+    var requestedLineRevision = 0
     var rootEntries: [NavigationEntry] = []
     var treeRevision = 0
     var searchQuery = ""

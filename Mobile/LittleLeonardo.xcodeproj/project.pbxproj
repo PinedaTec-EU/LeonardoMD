@@ -30,6 +30,11 @@
 		D1A3A7C4F0E84D6C9B1E0A12 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D1A3A7C4F0E84D6C9B1E0A11 /* Assets.xcassets */; };
 		D1A3A7C4F0E84D6C9B1E0A14 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D1A3A7C4F0E84D6C9B1E0A13 /* PrivacyInfo.xcprivacy */; };
 		3E6C7AD17D9D0EDFB5E779BB /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
+		D38110000000000000000000 /* MobileDemoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000000 /* MobileDemoStore.swift */; };
+		D38110000000000000000001 /* MobileDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000001 /* MobileDemoView.swift */; };
+		D38110000000000000000002 /* Demo in Resources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000002 /* Demo */; };
+		D38110000000000000000003 /* MobileDemoStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000003 /* MobileDemoStoreTests.swift */; };
+		D38110000000000000000004 /* MobileDemoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000004 /* MobileDemoUITests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,6 +75,11 @@
 		D1A3A7C4F0E84D6C9B1E0A11 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D1A3A7C4F0E84D6C9B1E0A13 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		C53CBBB8313118CB2CF6782B /* LittleLeonardoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LittleLeonardoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D38100000000000000000000 /* MobileDemoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDemoStore.swift; sourceTree = "<group>"; };
+		D38100000000000000000001 /* MobileDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDemoView.swift; sourceTree = "<group>"; };
+		D38100000000000000000002 /* Demo */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Demo; sourceTree = "<group>"; };
+		D38100000000000000000003 /* MobileDemoStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDemoStoreTests.swift; sourceTree = "<group>"; };
+		D38100000000000000000004 /* MobileDemoUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDemoUITests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -126,6 +136,7 @@
 			isa = PBXGroup;
 			children = (
 				88DCAC3D27E3676EFE8737FB /* PairingUITests.swift */,
+				D38100000000000000000004 /* MobileDemoUITests.swift */,
 			);
 			name = LittleLeonardoUITests;
 			path = LittleLeonardoUITests;
@@ -135,6 +146,7 @@
 			isa = PBXGroup;
 			children = (
 				C4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift */,
+				D38100000000000000000003 /* MobileDemoStoreTests.swift */,
 			);
 			name = LittleLeonardoTests;
 			path = LittleLeonardoTests;
@@ -163,6 +175,9 @@
 			isa = PBXGroup;
 			children = (
 				0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */,
+				D38100000000000000000002 /* Demo */,
+				D38100000000000000000001 /* MobileDemoView.swift */,
+				D38100000000000000000000 /* MobileDemoStore.swift */,
 				D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */,
 				384000000000000000000000 /* MobileLibrary+Downloads.swift */,
 				A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */,
@@ -283,6 +298,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D1A3A7C4F0E84D6C9B1E0A12 /* Assets.xcassets in Resources */,
+				D38110000000000000000002 /* Demo in Resources */,
 				D1A3A7C4F0E84D6C9B1E0A14 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -309,6 +325,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */,
+				D38110000000000000000001 /* MobileDemoView.swift in Sources */,
+				D38110000000000000000000 /* MobileDemoStore.swift in Sources */,
 				22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */,
 				384000000000000000000100 /* MobileLibrary+Downloads.swift in Sources */,
 				A7B6C5D4E3F2019A88776655 /* MobileRubricSubmissionGate.swift in Sources */,
@@ -328,6 +346,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				15243E6517E367904B34E1C3 /* PairingUITests.swift in Sources */,
+				D38110000000000000000004 /* MobileDemoUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -336,6 +355,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift in Sources */,
+				D38110000000000000000003 /* MobileDemoStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-06T20:00:42.315569+00:00",
+  "capture": {
+    "captured_at": "2026-11-06T19:56:27.163000+00:00",
+    "route": "/native/user-guide/en",
+    "screen": "Leonardo guide: Live math-regression example; built-in extension enabled",
+    "browser_name": "Native WKWebView; User-Agent reports engine compatibility versions",
+    "browser_version": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)",
+    "state": "Live math-regression example; built-in extension enabled; language en",
+    "viewport_css": {
+      "width": 1100,
+      "height": 772
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 2200,
+    "height_px": 1544,
+    "sha256": "896669035d4ac865d8b4b83eefd787c84891a6b1b99d375bd453f1bffa9924eb"
+  },
+  "source": {
+    "revision_at_collection": "347dd5ae46e93137741afb050500b003b607cff2",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}
