@@ -343,4 +343,10 @@
 - [#376](https://github.com/PinedaTec-EU/LeonardoMD/pull/376) — #375 Update: blend help illustrations into Leonardo Classic — build +5
   <p>Help illustrations now blend into the document background with transparent Leonardo Classic artwork and localized captions, while new guide revisions preserve existing personal copies.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.3.1022)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTEtMDZUMjA6NTg6MTdaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjIzfSwiZnJvbV92ZXJzaW9uIjoiMC4zLjEwMjIiLCJraW5kIjoicHVsbF9yZXF1ZXN0IiwibWVyZ2Vfc2hhIjoiZDRjYTM5OGU4NWY5NDljODNkNjIzYmRmM2IyYmVlMGJhY2I5NDkwOSIsIm51bWJlciI6Mzc3LCJzdW1tYXJ5IjoiRXh0ZW5zaWJsZSBtYXRoIHN5bWJvbHMgcmVuZGVyIGNvbXBsZXRlIHNoYXBlcywgYW5kIG91dGxpbmUgc2VsZWN0aW9ucyBvcGVuIHRoZSBtYXRjaGluZyBoZWFkaW5nIGV2ZW4gd2hlbiByZW5kZXJlZCBjb250ZW50IGhhcyBkaWZmZXJlbnQgaGVpZ2h0cy4iLCJ0aXRsZSI6IiMyNzQgRml4ZWQ6IHJlbmRlciBleHRlbnNpYmxlIG1hdGggYW5kIG5hdmlnYXRlIG91dGxpbmUgaGVhZGluZ3MgcHJlY2lzZWx5IiwidG9fdmVyc2lvbiI6IjAuMy4xMDQ1In1dLCJlbnZpcm9ubWVudCI6InJlbGVhc2UiLCJldmVudF9pZCI6ImdpdGh1Yl9yZWxlYXNlOjQzNzAyNjIxMSIsImV2ZW50X2tpbmQiOiJnaXRodWJfcmVsZWFzZSIsImV2aWRlbmNlX3VybCI6Imh0dHBzOi8vZ2l0aHViLmNvbS9QaW5lZGFUZWMtRVUvTGVvbmFyZG9NRC9yZWxlYXNlcy90YWcvdjAuMy4xMDQ1IiwicmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwic291cmNlX3JlZiI6InYwLjMuMTA0NSIsInNvdXJjZV9zaGEiOiI4NDM2NzBiY2QzZDU1NDgyNDJmMDRmMTEyMjZlMDY0ODdiM2U3OTBiIiwidGFyZ2V0IjoiUGluZWRhVGVjLUVVL0xlb25hcmRvTUQiLCJ2ZXJzaW9uIjoiMC4zLjEwNDUifQ -->
+### 0.3.1045
+- [#377](https://github.com/PinedaTec-EU/LeonardoMD/pull/377) — #274 Fixed: render extensible math and navigate outline headings precisely — build +23
+  <p>Extensible math symbols render complete shapes, and outline selections open the matching heading even when rendered content has different heights.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.3.1045)
 <!-- release-ledger:end -->

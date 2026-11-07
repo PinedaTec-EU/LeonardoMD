@@ -6,7 +6,13 @@ struct LittleLeonardoApp: App {
     var body: some Scene {
         WindowGroup {
             MobileLibraryView(library: library)
-                .task { await library.reload() }
+                .task {
+                    do {
+                        let demo = MobileDemoStore()
+                        for language in MobileDemoStore.Language.allCases { _ = try demo.load(language) }
+                    } catch { library.error = error.localizedDescription }
+                    await library.reload()
+                }
         }
     }
 }
