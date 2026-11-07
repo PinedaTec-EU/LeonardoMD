@@ -76,14 +76,14 @@ final class MobileDemoStoreTests: XCTestCase {
                 XCTAssertEqual(compact.view.bounds.width, 390, accuracy: 0.5)
                 XCTAssertEqual(compact.view.bounds.height,
                                max(104, ceil(compact.sizeThatFits(in: CGSize(width: 390,
-                                                                              height: .greatestFiniteMagnitude)).height)),
+                                                                              height: CGFloat.greatestFiniteMagnitude)).height)),
                                accuracy: 1)
                 compact.view.layoutIfNeeded()
                 let iPad = host(name: name, identity: identity, width: 834, dynamicType: dynamicType)
                 XCTAssertGreaterThan(iPad.view.bounds.width, compact.view.bounds.width)
                 XCTAssertEqual(iPad.view.bounds.height,
                                max(104, ceil(iPad.sizeThatFits(in: CGSize(width: 834,
-                                                                           height: .greatestFiniteMagnitude)).height)),
+                                                                           height: CGFloat.greatestFiniteMagnitude)).height)),
                                accuracy: 1)
                 iPad.view.layoutIfNeeded()
 
@@ -100,16 +100,17 @@ final class MobileDemoStoreTests: XCTestCase {
         let view = MobileProjectIdentityLabel(name: name, identity: identity)
             .dynamicTypeSize(dynamicType)
             .padding(20)
-            .frame(width: width, minHeight: 104, alignment: .leading)
+            .frame(width: width, alignment: .leading)
+            .frame(minHeight: 104, alignment: .leading)
             .background(MobileClassic.paper)
         let hosting = UIHostingController(rootView: AnyView(view))
         hosting.loadViewIfNeeded()
         hosting.view.frame = CGRect(x: 0, y: 0, width: width, height: 104)
-        hosting.view.backgroundColor = .clear
+        hosting.view.backgroundColor = UIColor.clear
         hosting.view.setNeedsLayout()
         hosting.view.layoutIfNeeded()
         let fittingHeight = max(104, ceil(hosting.sizeThatFits(in: CGSize(width: width,
-                                                                            height: .greatestFiniteMagnitude)).height))
+                                                                            height: CGFloat.greatestFiniteMagnitude)).height))
         hosting.view.frame.size.height = fittingHeight
         hosting.view.setNeedsLayout()
         hosting.view.layoutIfNeeded()
