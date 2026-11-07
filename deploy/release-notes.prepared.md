@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1113
+
+- #386 Updated: apply Classic mobile design and rotating rubric canvas ([#387](https://github.com/PinedaTec-EU/LeonardoMD/pull/387))
+
+<p>Little Leonardo uses Classic colors and branded startup, adds offline About, help, privacy and license pages, and expands rubric drawing in landscape while restoring portrait controls without changing the drawing.</p>
+
+Source: `6e9f40a5fe94ae76b316023b3a8983a6dc35da5c`. Delta: `{"build": 31}`.
+
 ## 0.3.1082
 
 - #380 Added: expose bounded HTTPS failure diagnostics ([#382](https://github.com/PinedaTec-EU/LeonardoMD/pull/382))

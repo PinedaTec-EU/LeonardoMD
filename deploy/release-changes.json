@@ -929,6 +929,16 @@
       "pr": 382,
       "summary": "Adds privacy-safe HTTPS diagnostics for iOS sync failures, preserving URL errors, pinning, redirects and bounds. A real TLS cutoff test checks partial byte counts; the alert and bilingual Guide v23 explain the code. Physical root cause remains unconfirmed.",
       "to_version": "0.3.1082"
+    },
+    {
+      "delta": {
+        "build": 31
+      },
+      "from_version": "0.3.1082",
+      "merge_sha": "6e9f40a5fe94ae76b316023b3a8983a6dc35da5c",
+      "pr": 387,
+      "summary": "Little Leonardo uses Classic colors and branded startup, adds offline About, help, privacy and license pages, and expands rubric drawing in landscape while restoring portrait controls without changing the drawing.",
+      "to_version": "0.3.1113"
     }
   ],
   "initial_version": "0.1.56",
@@ -939,5 +949,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1082"
+  "version": "0.3.1113"
 }
