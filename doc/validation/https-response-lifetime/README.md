@@ -147,3 +147,25 @@ trust, grants, rubric or corpus state was changed by closing the editor.
 The diagnostic chat owns the physical retry and allowlisted server collector.
 Successful transfer/rendering is still pending; no issue closure, release or
 merge is claimed by this local acceptance.
+
+
+## Owner physical follow-up (2026-11-07 evening)
+
+The owner confirms the original large image renders on the physical iPhone and
+synchronization no longer reports the prior interruption. The diagnostic chat
+records two HTTP200 snapshot bodies of492904bytes, sendProcessed/peerClosed,
+no network error, and the owner's20:30:32 screenshot in
+[issue380](https://github.com/PinedaTec-EU/LeonardoMD/issues/380#issuecomment-6712021663).
+A real requested rubric also returned; after one same-ID query Retry it was
+saved to library, inserted into the synthetic MDLF and saved/closed/reopened.
+Response, library and the single inserted object were structurally identical.
+The consultation error is separately tracked in
+[issue394](https://github.com/PinedaTec-EU/LeonardoMD/issues/394#issuecomment-6712098473)
+and corrected by PR398. No private ink or device credentials are published.
+
+This is physical happy-path evidence for the frozen transport candidate, not
+proof of every root cause or a delivered release. The refreshed source includes
+accepted Classic/main1113; former1082/Guide23 native captures retain their exact
+historical identity. Final combined-main signed Help/native/physical acceptance
+and release verification remain separate gates. Keep the frozen helper26651
+running until the diagnostic owner coordinates its final replacement.

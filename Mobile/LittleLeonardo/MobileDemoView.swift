@@ -18,7 +18,7 @@ struct MobileDemoView: View {
         var configuration = MarkdownPreviewConfiguration(
             allowsMermaid: true, allowsMath: true, allowsVegaLite: true,
             allowsMarkdownExtensions: true, externalLinkPolicy: .blocked,
-            localAssetRoot: store.resources, allowsRemoteImages: false)
+            appearance: .leonardoClassic, localAssetRoot: store.resources, allowsRemoteImages: false)
         configuration.allowsLeonardoFormat = true
         configuration.allowsFormFilling = true
         return configuration
@@ -38,6 +38,7 @@ struct MobileDemoView: View {
                     configuration: configuration, controller: controller)
             }
         }
+        .classicSurface()
         .navigationTitle(language == .es ? "Demo y práctica" : "Demo & practice")
         .toolbar {
             Button("Guardar / Save") {
@@ -105,7 +106,7 @@ struct MobileDemoView: View {
             VStack(spacing: 24) {
                 Text(fieldHelp ?? "").padding()
                 Button("Cerrar / Close") { fieldHelp = nil }
-            }.presentationDetents([.medium])
+            }.classicSurface().presentationDetents([.medium])
         }
         .alert("Demo", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
             Button("Aceptar / OK") { error = nil }

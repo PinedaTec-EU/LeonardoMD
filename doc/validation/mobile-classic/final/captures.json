@@ -1,0 +1,242 @@
+[
+  {
+    "name": "spanish-welcome",
+    "screen": "Spanish welcome",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "spanish-welcome.png"
+  },
+  {
+    "name": "english-saved-practice",
+    "screen": "English saved practice",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "english-saved-practice.png"
+  },
+  {
+    "name": "english-gallery-3",
+    "screen": "English gallery 3",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "english-gallery-3.png"
+  },
+  {
+    "name": "english-gallery-2",
+    "screen": "English gallery 2",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "english-gallery-2.png"
+  },
+  {
+    "name": "english-gallery-1",
+    "screen": "English gallery 1",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "english-gallery-1.png"
+  },
+  {
+    "name": "english-gallery-0",
+    "screen": "English gallery 0",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "english-gallery-0.png"
+  },
+  {
+    "name": "english-welcome",
+    "screen": "English welcome",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "english-welcome.png"
+  },
+  {
+    "name": "spanish-persisted-practice-after-source",
+    "screen": "Spanish persisted practice after source",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "spanish-persisted-practice-after-source.png"
+  },
+  {
+    "name": "spanish-source-with-saved-values",
+    "screen": "Spanish source with saved values",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "spanish-source-with-saved-values.png"
+  },
+  {
+    "name": "classic-manual-pairing",
+    "screen": "Classic manual pairing",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "classic-manual-pairing.png"
+  },
+  {
+    "name": "classic-qr-pairing",
+    "screen": "Classic QR pairing",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "classic-qr-pairing.png"
+  },
+  {
+    "name": "classic-about-installed-application",
+    "screen": "Classic About installed application",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "classic-about-installed-application.png"
+  },
+  {
+    "name": "classic-offline-help",
+    "screen": "Classic offline help",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "classic-offline-help.png"
+  },
+  {
+    "name": "classic-synchronization-settings",
+    "screen": "Classic synchronization settings",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "classic-synchronization-settings.png"
+  },
+  {
+    "name": "classic-library",
+    "screen": "Classic library",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "classic-library.png"
+  },
+  {
+    "name": "native-ios-mac-requested-rubric-sent-over-pinned-https",
+    "screen": "Native iOS Mac-requested rubric sent over pinned HTTPS",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "native-ios-mac-requested-rubric-sent-over-pinned-https.png"
+  },
+  {
+    "name": "native-ios-rubric-preview-before-send",
+    "screen": "Native iOS rubric preview before send",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "native-ios-rubric-preview-before-send.png"
+  },
+  {
+    "name": "native-ios-rubric-drawing-before-preview",
+    "screen": "Native iOS rubric drawing before preview",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "native-ios-rubric-drawing-before-preview.png"
+  },
+  {
+    "name": "classic-rubric-restored-portrait-with-preserved-ink",
+    "screen": "Classic rubric restored portrait with preserved ink",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "classic-rubric-restored-portrait-with-preserved-ink.png"
+  },
+  {
+    "name": "native-ios-rubric-approval-card-before-acceptance",
+    "screen": "Native iOS rubric approval card before acceptance",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "native-ios-rubric-approval-card-before-acceptance.png"
+  },
+  {
+    "name": "enrolled-direct-project-purged-after-confirmed-revocation",
+    "screen": "Enrolled direct project purged after confirmed revocation",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "enrolled-direct-project-purged-after-confirmed-revocation.png"
+  },
+  {
+    "name": "little-leonardo-synchronization-failure-diagnostic",
+    "screen": "Little Leonardo synchronization failure diagnostic",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "little-leonardo-synchronization-failure-diagnostic.png"
+  },
+  {
+    "name": "classic-document-source",
+    "screen": "Classic document source",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "classic-document-source.png"
+  },
+  {
+    "name": "classic-markdown-document",
+    "screen": "Classic Markdown document",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "classic-markdown-document.png"
+  },
+  {
+    "name": "classic-project-documents",
+    "screen": "Classic project documents",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "classic-project-documents.png"
+  },
+  {
+    "name": "classic-enrolled-library",
+    "screen": "Classic enrolled library",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "classic-enrolled-library.png"
+  },
+  {
+    "name": "rubric-landscape",
+    "screen": "Landscape full-window live canvas; one synthetic ink stroke",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "rubric-landscape.png"
+  },
+  {
+    "name": "help-en-chart",
+    "screen": "en-chart; Help menu; Guide25; Math enabled",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "help-en-chart.png"
+  },
+  {
+    "name": "help-en-enabled",
+    "screen": "en-enabled; Help menu; Guide25; Math enabled",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "help-en-enabled.png"
+  },
+  {
+    "name": "help-en-math-disabled",
+    "screen": "en-math-disabled; Help menu; Guide25; Math disabled",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "help-en-math-disabled.png"
+  },
+  {
+    "name": "help-en-mermaid",
+    "screen": "en-mermaid; Help menu; Guide25; Math enabled",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "help-en-mermaid.png"
+  },
+  {
+    "name": "help-en-practice-reopened-ready",
+    "screen": "en-practice-reopened-ready; Help menu; Guide25; Math enabled",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "help-en-practice-reopened-ready.png"
+  },
+  {
+    "name": "help-en-table",
+    "screen": "en-table; Help menu; Guide25; Math enabled",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "help-en-table.png"
+  },
+  {
+    "name": "help-es-chart",
+    "screen": "es-chart; Help menu; Guide25; Math enabled",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "help-es-chart.png"
+  },
+  {
+    "name": "help-es-classic-chapter",
+    "screen": "es-classic-chapter; Help menu; Guide25; Math enabled",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "help-es-classic-chapter.png"
+  },
+  {
+    "name": "help-es-enabled",
+    "screen": "es-enabled; Help menu; Guide25; Math enabled",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "help-es-enabled.png"
+  },
+  {
+    "name": "help-es-math-disabled",
+    "screen": "es-math-disabled; Help menu; Guide25; Math disabled",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "help-es-math-disabled.png"
+  },
+  {
+    "name": "help-es-mermaid",
+    "screen": "es-mermaid; Help menu; Guide25; Math enabled",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "help-es-mermaid.png"
+  },
+  {
+    "name": "help-es-practice-reopened-ready",
+    "screen": "es-practice-reopened-ready; Help menu; Guide25; Math enabled",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "help-es-practice-reopened-ready.png"
+  },
+  {
+    "name": "help-es-table",
+    "screen": "es-table; Help menu; Guide25; Math enabled",
+    "source": "11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+    "capture": "help-es-table.png"
+  }
+]
