@@ -8,6 +8,28 @@ Architecture direction (owner-selected 2026-10-20): [ADR 0002](../adr/0002-reeva
 
 Current implementation: [Git retirement and legacy recovery](git-retirement.md), tracked in [#249](https://github.com/PinedaTec-EU/LeonardoMD/issues/249). iOS is read-only; editable direct synchronization is retained for desktops. The original Git implementation/checkpoints below are historical and do not describe currently available mobile editing or publication.
 
+## Interrupted HTTPS response diagnostics (#380)
+
+When a pinned HTTPS request fails, Little Leonardo keeps the normal localized
+error and adds a compact `[LL1 ...]` code to the existing alert. The code names
+the operation (`status`, `snapshot`, `catalogue` or `file`), `NSURLErrorDomain`
+code, HTTP status when available, and bytes received versus the declared body
+size. It excludes URLs, credentials, device/project identifiers and response
+content. Share the code or a screenshot with support; an HTTP 200 status can
+still accompany an interrupted response body. Cancellation and typed response
+size errors keep their existing behavior.
+
+The regression uses a real TLS listener and cuts the encrypted response after a
+bounded number of wire bytes. It confirms that a partial body reports received
+and expected sizes without exposing a sentinel from the response. An owned
+iPhone 18 Pro / iOS 27.0 Simulator run also captures the alert for a failed
+STATUS request, then verifies refresh, retry and revocation recovery. This
+checks that the existing iOS alert displays the diagnostic; it does not
+reproduce the owner's physical 338,658-byte image failure. That failure still
+needs an owner-reported `[LL1 ...]` code, and the cause remains open in
+[#380](https://github.com/PinedaTec-EU/LeonardoMD/issues/380). No TestFlight
+build or production transport fix is claimed.
+
 ## Current rubric response channel (#342)
 
 The read-only iOS companion now has one additional, capture-only response

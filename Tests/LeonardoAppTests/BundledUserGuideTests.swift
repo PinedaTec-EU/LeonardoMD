@@ -10,7 +10,11 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let oldCopies = Array(2...19).map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
+        let oldCopies = (2...22).flatMap { revision in
+            AppLanguage.allCases.map { language in
+                root.appendingPathComponent("User Guides/v\(revision)/\(language.rawValue)/Guide-v\(revision)-\(language.rawValue).mdlz")
+            }
+        }
         let oldAnswers = Data("previous guide and saved answers".utf8)
         for oldCopy in oldCopies {
             try FileManager.default.createDirectory(at: oldCopy.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -33,6 +37,8 @@ final class BundledUserGuideTests: XCTestCase {
             var workspace = try LeonardoPackageTransport.open(copy)
             defer { LeonardoPackageTransport.discard(workspace) }
             let source = try String(contentsOf: workspace.documentURL, encoding: .utf8)
+            XCTAssertTrue(source.contains("[LL1 op=snapshot"), "The combined guide must retain the HTTPS diagnostic example")
+            XCTAssertTrue(source.contains("Demo y práctica / Demo & practice"), "The combined guide must explain the offline demo")
             let document = try LeonardoFormatParser.parse(source)
             XCTAssertFalse(document.isForm)
             XCTAssertEqual(document.metadata.fields.count, 0)
@@ -149,6 +155,7 @@ final class BundledUserGuideTests: XCTestCase {
             session.jumpToHeading(regression.line)
             try await waitFor("Math.abs(window.LeonardoTables.headingForSourceLine(document.querySelector('#leonardo-markdown'), \(regression.line)).getBoundingClientRect().top) < 2", in: web)
             try await waitFor("document.querySelector('.vega-lite-placeholder svg') !== null", in: web)
+            try await waitFor("Array.from(document.querySelectorAll('p')).some(node => node.textContent.includes('[LL1 op=snapshot'))", in: web)
             _ = try await web.evaluateJavaScript("document.querySelector('.mermaid-placeholder').scrollIntoView({block:'center'})")
             try await waitFor("document.querySelector('.mermaid-placeholder svg') !== null", in: web)
             _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
@@ -169,6 +176,9 @@ final class BundledUserGuideTests: XCTestCase {
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("section-\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Detailed chapter with original \(name) screenshot; all images loaded")
                 }
+                _ = try await web.evaluateJavaScript("Array.from(document.querySelectorAll('p')).find(node => node.textContent.includes('[LL1 op=snapshot')).scrollIntoView({block:'center'})")
+                try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("transport-diagnostic-\(language.rawValue).png"),
+                    language: language.rawValue, state: "Interrupted HTTPS response guidance; diagnostic code contains no request identifiers")
                 let illustrations = language == .english ? ["journey", "package", "import", "export"] : ["recorrido", "paquete", "importar", "exportar"]
                 for name in illustrations {
                     _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
