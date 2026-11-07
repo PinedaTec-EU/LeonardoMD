@@ -162,3 +162,25 @@ Compile delta193 passes 340 XCTest cases (ten optional skips) and twelve rendere
 `LEONARDO_LOCALIZATION_EVIDENCE=<owned-output> swift test --skip-build --filter 'DesktopGitControllerTests|DesktopPeerNativeAcceptanceTests|LocalizationVisualTests.testCaptureIncomingSourceReviewInBothLanguages|LocalizationVisualTests.testCaptureDesktopPeerPreferencesInBothLanguages|LocalizationVisualTests.testCaptureScopedSharingInBothLanguages|LocalizationVisualTests.testCaptureDisabledMobileServiceInBothLanguages'` captures desktop evidence after compilation. Native iOS tests require signed build-for-testing and explicitly owned server fixtures documented in `doc/mobile/little-leonardo.md`.
 
 These fixtures establish native controller/UI behavior; they do not claim a fresh packaged desktop process, physical QR camera, two physical Macs or live VPN. Git filtering depends on server support and fails closed without a full clone fallback. Unreachable revoked peers retain their cache until next contact.
+
+#### #380 Guide v23 after integrating PR #383
+
+Producer source `0055c1640340235037b3c1ef56780cf9a95e4af6` integrates the
+offline demo from PR #383 with the #380 HTTPS diagnostic example in Guide v23.
+The corresponding release materialization is `0.3.1057`. Packaging checks
+pass 3/3, and the native bilingual Guide/practice checks pass 7/7 at build
+delta 24. The iOS Simulator build-for-testing passes at delta 25; the focused
+direct-enrollment UI test passes 1/1 on the owned iPhone 18 Pro Simulator
+(iOS 27.0). Its `--skip-build` host fixture passes 1/1. The existing
+17-test HTTPS transport result is source-equivalent and was not rerun for this
+Guide/demo integration.
+
+The real QA bundle contains the v23 Guide resources byte-for-byte, uses the
+`LeonardoMD` executable, has no XCTest dependency, and omits superseded v22
+bundles. Packaged Help acceptance is **pending**: the real QA app opened the
+English Guide and its working copy matched the bundled resource; the first
+page and two local images are captured in the evidence manifest. The Mac locked
+before the remaining English examples, Spanish Guide, and practice
+save/close/reopen checks could be completed. No complete packaged Help pass is
+claimed. The owner's 338,658-byte physical image still fails; its cause remains
+unconfirmed, and no TestFlight build was uploaded.
