@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T08:36:56.351Z",
+  "route": "/native/preferences/synchronization/connections",
+  "screen": "en-preferences-cache128",
+  "browser_name": "Native LeonardoMD AppKit / WKWebView",
+  "browser_version": "Not exposed by native CUA",
+  "viewport_css": {
+    "width": 1160,
+    "height": 1240
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "Actual Synchronization consumer page; empty cache cleared; limit changed256→128MiB; separate offline accounting; ad-hoc QA helper unavailable as expected; no helper registration; viewport_css is screenshot-pixel equivalent; CSS and native-point dimensions unavailable from CUA; source d8487bc; Guide24; baseline0.3.1057"
+}

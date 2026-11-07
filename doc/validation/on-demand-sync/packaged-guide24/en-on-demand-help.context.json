@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T08:35:33.761Z",
+  "route": "/native/help/en",
+  "screen": "en-on-demand-help",
+  "browser_name": "Native LeonardoMD AppKit / WKWebView",
+  "browser_version": "Not exposed by native CUA",
+  "viewport_css": {
+    "width": 2520,
+    "height": 1700
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "New catalogue/cache/retention chapter and local diagram displayed; viewport_css is screenshot-pixel equivalent; CSS and native-point dimensions unavailable from CUA; source d8487bc; Guide24; baseline0.3.1057"
+}
