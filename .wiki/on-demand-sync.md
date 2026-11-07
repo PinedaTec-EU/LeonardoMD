@@ -12,3 +12,5 @@ Implementation tracked by [#384](https://github.com/PinedaTec-EU/LeonardoMD/issu
 - [#390](https://github.com/PinedaTec-EU/LeonardoMD/issues/390): removing retention from a stale fallback must discard that record before LRU processing; otherwise restart validation rejects a stale unretained revision. The restart regression covers this alongside stale-retained availability.
 
 - [#391](https://github.com/PinedaTec-EU/LeonardoMD/issues/391): after a cache mutation, refresh all authorized observable project snapshots; global LRU eviction can remove another project’s temporary file. A two-project constrained-budget regression verifies both the real index and the visible downloaded flags.
+
+- [#395](https://github.com/PinedaTec-EU/LeonardoMD/issues/395): every open path must recheck the original authorization generation and cancellation immediately before returning bytes, including after the final cache refresh, shared tasks and stale fallback reads. A persistence port allows deterministic suspension of actual cache completions; both late-refresh and stale-fallback regressions failed before correction. Usage refreshes discard superseded replies after revocation.

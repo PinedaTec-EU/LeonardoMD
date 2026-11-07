@@ -116,3 +116,30 @@ unavailable version rather than fabricating them. Captures show packaged UI/help
 they do not claim physical iPhone transport acceptance or beta publication.
 
 Fresh shared production-component captures in `classic-components/` were generated from c1fac112ab0f78f1c8307569b54c76524e22b02c with the existing DownloadViewsCaptureTests fixture (1/1 PASS, recorded delta27). Both locales show remote, cached, retained and pending/error states, independent usage, cleanup and the retention list. Native viewport1180×640points; bitmap2360×1280pixels. These are synthetic component captures, not a running product or physical-device acceptance. Application/build inputs are unchanged from b240875.
+
+
+## Post-review revocation correction
+
+[#395](https://github.com/PinedaTec-EU/LeonardoMD/issues/395) records a late-return
+race within #384's existing authorization criterion. Two deterministic tests
+suspend the real persistence boundary during final usage refresh and stale
+fallback read, remove authorization/cache, then release completion. Both failed
+before correction by returning bytes. The shared client now rechecks the captured
+authorization generation and cancellation at every asynchronous delivery path,
+including shared task results. Superseded usage replies cannot overwrite newer
+post-revocation accounting. The RemoteDownloadCache port keeps scheduling doubles
+in tests and the real atomic persistence unchanged. The focused cache/revocation
+suite passes14 tests after correction; the complete new-source suite and captures
+are being finalized. Earlier b240875 packaged acceptance is historical for this
+corrective source and must not be reused as its fresh-process acceptance.
+
+The iOS acceptance harness uses the real Little Leonardo interface and a separate
+opt-in pinned loopback source on127.0.0.1:46987, with synthetic files/identity/grants.
+OnDemandSyncUITests exercises metadata-only enrollment, one-file reading, native
+context retention, independent128MiB cache controls/cleanup, a pending response,
+automatic retry and a future retained-folder descendant. The source fixture
+records body-request counts and requires no aggregate snapshot or unrequested
+file transfer. The accepted Classic simulator926C886F-52D8-4766-B84D-1A5D8C218080
+was explicitly ceded with disposable synthetic state. Physical-test helper26651,
+source corpus, grants and trust remain outside this fixture. Runtime capture
+results are pending; code alone is not claimed as iOS acceptance.

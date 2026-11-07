@@ -9,13 +9,14 @@ public final class DownloadLibrary {
     public private(set) var downloading: Set<String> = []
     public private(set) var failures: [String: String] = [:]
     public var error: String?
-    private let cache: OnDemandCache
+    private let cache: any RemoteDownloadCache
     private var allowed: Set<UUID> = []
     private var generations: [UUID: UInt64] = [:]
+    private var usageRevision: UInt64 = 0
     private var tasks: [String: Task<CorpusFile, Error>] = [:]
     public var fetch: @MainActor (UUID, RemoteFileEntry) async throws -> CorpusFile = { _, _ in throw SyncError.revoked }
 
-    public init(cache: OnDemandCache) { self.cache = cache }
+    public init(cache: any RemoteDownloadCache) { self.cache = cache }
     public static func key(id: UUID, path: String) -> String { id.uuidString + ":" + path }
 
     public func restore(allowedIDs: Set<UUID>) async throws {
@@ -36,6 +37,7 @@ public final class DownloadLibrary {
 
     public func deny(id: UUID) {
         allowed.remove(id); generations[id, default: 0] &+= 1
+        usageRevision &+= 1
         projects.removeAll { $0.id == id }
         for (key, task) in tasks where key.hasPrefix(id.uuidString + ":") { task.cancel() }
     }
@@ -48,12 +50,17 @@ public final class DownloadLibrary {
         guard allowed.contains(id), let project = projects.first(where: { $0.id == id }),
               let entry = project.catalogue.files.first(where: { $0.path == path }) else { throw SyncError.revoked }
         let generation = generations[id, default: 0]
-        if let file = try await cache.read(id: id, entry: entry) {
-            guard allowed.contains(id), generations[id, default: 0] == generation else { throw SyncError.revoked }
+        if let file = try await cache.read(id: id, entry: entry, allowStale: false) {
+            try requireAccess(id: id, generation: generation)
             return file
         }
+        try requireAccess(id: id, generation: generation)
         let key = Self.key(id: id, path: path)
-        if let task = tasks[key] { return try await task.value }
+        if let task = tasks[key] {
+            let file = try await task.value
+            try requireAccess(id: id, generation: generation)
+            return file
+        }
         downloading.insert(key); failures[key] = nil
         let task = Task { [self] in
             let file = try await fetch(id, entry)
@@ -64,19 +71,31 @@ public final class DownloadLibrary {
                 try await cache.remove(id: id); throw SyncError.revoked
             }
             try await refreshAll()
+            try requireAccess(id: id, generation: generation)
             return file
         }
         tasks[key] = task
         defer { tasks[key] = nil; downloading.remove(key) }
-        do { return try await task.value }
+        do {
+            let file = try await task.value
+            try requireAccess(id: id, generation: generation)
+            return file
+        }
         catch {
+            try requireAccess(id: id, generation: generation)
             failures[key] = error.localizedDescription
-            if allowed.contains(id), generations[id, default: 0] == generation,
-               let previous = try await cache.read(id: id, entry: entry, allowStale: true) {
+            if let previous = try await cache.read(id: id, entry: entry, allowStale: true) {
+                try requireAccess(id: id, generation: generation)
                 return previous
             }
             throw error
         }
+    }
+
+    /// No suspension may separate this check from delivery to the caller.
+    private func requireAccess(id: UUID, generation: UInt64) throws {
+        guard allowed.contains(id), generations[id, default: 0] == generation else { throw SyncError.revoked }
+        try Task.checkCancellation()
     }
 
     public func retain(id: UUID, path: String, isFolder: Bool, keep: Bool) async {
@@ -123,5 +142,11 @@ public final class DownloadLibrary {
         projects = try await cache.projects().filter { allowed.contains($0.id) }
         try await refreshUsage()
     }
-    private func refreshUsage() async throws { usage = try await cache.usage() }
+    private func refreshUsage() async throws {
+        usageRevision &+= 1
+        let expected = usageRevision
+        let value = try await cache.usage()
+        guard usageRevision == expected else { return }
+        usage = value
+    }
 }

@@ -53,7 +53,7 @@ public struct OnDemandCacheUsage: Equatable, Sendable {
 
 /// Read-only remote bytes only. Editable workspaces and rubric outboxes never enter this store.
 /// All mutations are serialized and committed atomically before obsolete blobs are reclaimed.
-public actor OnDemandCache {
+public actor OnDemandCache: RemoteDownloadCache {
     public static let defaultLimitBytes = 256 * 1_024 * 1_024
     private struct State: Codable {
         var limitBytes = OnDemandCache.defaultLimitBytes

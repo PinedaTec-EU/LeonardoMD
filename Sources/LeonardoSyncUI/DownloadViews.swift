@@ -10,8 +10,11 @@ public struct SyncCacheSettingsView: View {
     public var body: some View {
         Section(t("Storage and cache", "Almacenamiento y caché")) {
             LabeledContent(t("Temporary cache", "Caché temporal"), value: bytes(library.usage.temporaryBytes))
+                .accessibilityIdentifier("temporary-cache-usage")
             LabeledContent(t("Kept offline (separate)", "Sin conexión (separado)"), value: bytes(library.usage.offlineBytes))
+                .accessibilityIdentifier("offline-storage-usage")
             LabeledContent(t("Pending offline files", "Archivos offline pendientes"), value: String(library.usage.pendingOfflineFiles))
+                .accessibilityIdentifier("pending-offline-files")
             TextField(t("Temporary cache limit (MiB)", "Límite de caché temporal (MiB)"), value: Binding(
                 get: { library.usage.limitBytes / (1_024 * 1_024) },
                 set: { value in
@@ -70,6 +73,7 @@ public struct SyncCatalogueView: View {
                                 status(paths: [entry], project: project)
                             }.contentShape(Rectangle())
                         }.buttonStyle(.plain)
+                        .accessibilityIdentifier("download-file-" + entry.path)
                         .contextMenu { actions(path: entry.path, isFolder: false, project: project) }
                         .listRowBackground(rowBackground)
                     }
@@ -83,7 +87,8 @@ public struct SyncCatalogueView: View {
             Label(path.isEmpty ? project.descriptor.name : path, systemImage: "folder")
             Spacer()
             status(paths: entries, project: project)
-        }.contextMenu { actions(path: path, isFolder: true, project: project) }.listRowBackground(rowBackground)
+        }.contextMenu { actions(path: path, isFolder: true, project: project) }
+            .accessibilityIdentifier("download-folder-" + path).listRowBackground(rowBackground)
     }
     @ViewBuilder private func status(paths: [RemoteFileEntry], project: CachedRemoteProject) -> some View {
         let retained = paths.filter { project.keeps($0.path) }.count
