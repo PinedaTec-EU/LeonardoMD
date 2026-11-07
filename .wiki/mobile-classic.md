@@ -11,3 +11,5 @@ PR387 merge/TestFlight publication is now explicitly owner-authorized. The compa
 The PR branch has been refreshed onto accepted main0.3.1045, and its combined guide is now v25. Guide v23 references above describe the earlier checkpoint. Final reconciliation after demo/cache and actual packaged Help acceptance are still required.
 
 - Accepted demo PR383 (99ac320) is reconciled. Startup prepares both local demo copies before reload; the library keeps demo entries reachable when there are no paired projects, with the branded connection panel inside the project section. Demo preview/source/help now use Classic while preserving real renderer form callbacks, save/reset and accessibility IDs. Guide25 combines accepted demo and Classic chapters;3 package tests pass. Final cache/diagnostic reconciliation and exact-head native/packaged QA remain pending.
+
+- Follow-up [#389](https://github.com/PinedaTec-EU/LeonardoMD/issues/389): real root title remained blank after launch; inline title fixes pixels plus semantic assertion. Sourcea8a0555 focused native1/1 passes; demo continuation3/3 passes. Compilation entry22; cached demo answers remain separate from synchronization.

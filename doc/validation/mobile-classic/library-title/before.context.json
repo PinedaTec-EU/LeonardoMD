@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T00:24:46.592163+00:00",
+  "route": "/LittleLeonardo/library",
+  "screen": "Library title before",
+  "browser_name": "Native iOS Simulator, SwiftUI/UIKit; no browser",
+  "browser_version": "iOS27.0 (24A434), SDK27.1",
+  "viewport_css": {
+    "width": 402,
+    "height": 874
+  },
+  "capture_mode": "viewport",
+  "state": "Portrait empty paired-project library; real bundled demos; product source 5d0e9efe0f6ffea4d029a2060cdfd098625f3c3b",
+  "data_provenance": "synthetic"
+}
