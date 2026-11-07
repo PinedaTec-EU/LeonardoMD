@@ -193,8 +193,16 @@ public actor OnDemandCache {
     private func evict(_ input: State) -> State {
         var next = input
         var candidates: [(Int, String, CachedDownload)] = []
-        for (index, project) in next.projects.enumerated() {
-            for (path, file) in project.downloads where !project.keeps(path) { candidates.append((index, path, file)) }
+        for index in next.projects.indices {
+            let project = next.projects[index]
+            let revisions = Dictionary(uniqueKeysWithValues: project.catalogue.files.map { ($0.path, $0.revision) })
+            // A stale version is a valid fallback only while retained. It must not
+            // become an invalid temporary record when its retention is removed.
+            let downloads = project.downloads.filter {
+                project.keeps($0.key) || revisions[$0.key] == $0.value.revision
+            }
+            next.projects[index].downloads = downloads
+            for (path, file) in downloads where !project.keeps(path) { candidates.append((index, path, file)) }
         }
         var size = candidates.reduce(0) { $0 + $1.2.byteCount }
         for (index, path, file) in candidates.sorted(by: { $0.2.lastAccess < $1.2.lastAccess }) {

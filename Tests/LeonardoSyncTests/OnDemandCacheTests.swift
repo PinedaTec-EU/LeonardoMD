@@ -197,3 +197,26 @@ extension OnDemandCacheTests {
         } catch { XCTAssertEqual(error as? SyncError, .revoked) }
     }
 }
+
+extension OnDemandCacheTests {
+    func testRemovingRetentionDiscardsStaleFallbackAndKeepsIndexReadableAfterRestart() async throws {
+        let (root, cache, descriptor, files) = try fixture(1)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let original = files[0]
+        try await cache.update(id: descriptor.id, descriptor: descriptor,
+                               catalogue: RemoteProjectCatalogue(files: [RemoteFileEntry(file: original)]))
+        try await cache.setRetained(id: descriptor.id, path: original.path, isFolder: false, keep: true)
+        try await cache.store(id: descriptor.id, entry: RemoteFileEntry(file: original), file: original)
+        let replacement = CorpusFile(path: original.path, content: Data("updated source".utf8))
+        try await cache.update(id: descriptor.id, descriptor: descriptor,
+                               catalogue: RemoteProjectCatalogue(files: [RemoteFileEntry(file: replacement)]))
+        try await cache.setRetained(id: descriptor.id, path: original.path, isFolder: false, keep: false)
+        let reopened = OnDemandCache(root: root)
+        let restored = try await reopened.project(id: descriptor.id)
+        XCTAssertNotNil(restored)
+        XCTAssertNil(restored?.downloads[original.path])
+        let usage = try await reopened.usage()
+        XCTAssertEqual(usage.temporaryBytes, 0)
+        XCTAssertEqual(usage.offlineBytes, 0)
+    }
+}

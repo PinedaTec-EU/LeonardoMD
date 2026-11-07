@@ -30,3 +30,9 @@ No real device pairing, source sharing, helper registration, release publication
 The branch incorporates main99ac320 (accepted math/outline fixes and offline demo) and advances its own help to Guide v24. The refreshed source checkpoint is d956445; 19 focused tests, generic iOS simulator build and three guide-packaging checks pass. It adds an actionable source-update error for missing catalogue/file routes, persistent desktop catalogue access after offline restart, and live-preview invalidation when files/images leave the catalogue.
 
 Current full tests, new exact-source captures and the real packaged bilingual Help/preferences smoke are pending the diagnostic #382 GUI slot and any further source refresh. The older figures and images above are retained as historical evidence and must not be used to approve the current head. No helper update, pairing change or live-source compatibility claim has been made.
+
+## Full-suite and retention-removal regression
+
+After including accepted demo materialization (main e9d73cd / 0.3.1057), the full local suite passed 712 XCTest checks, with 36 opt-in/platform skips and zero failures. During the review a separate cache invariant was registered as [#390](https://github.com/PinedaTec-EU/LeonardoMD/issues/390): a stale retained fallback must be discarded if retention is removed, instead of persisting an unreadable temporary-cache record.
+
+The new restart regression failed against the previous implementation with `invalidSnapshot`. After normalizing unretained stale records before LRU eviction, the complete `OnDemandCacheTests` suite passed. That focused run uses no native UI fixtures. Full current-head CI and native acceptance still apply to the corrective commit; the earlier full-suite result is not asserted as a run of that later source. No product app, helper or CUA operation was performed during this CLI turn.
