@@ -60,6 +60,7 @@ struct MobileLibraryView: View {
             }
             .classicSurface()
             .navigationTitle("Biblioteca")
+            .navigationBarTitleDisplayMode(.inline)
             .refreshable { await library.synchronize(); await library.reload() }
             .toolbar {
                 Button("Conectar", systemImage: "qrcode") { presentedSheet = .direct }

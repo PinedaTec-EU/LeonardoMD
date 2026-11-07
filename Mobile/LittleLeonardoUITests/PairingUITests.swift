@@ -6,6 +6,7 @@ final class PairingUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
         XCTAssertTrue(app.buttons["open-sync-settings"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.navigationBars["Biblioteca"].waitForExistence(timeout: 5))
         captureScreen(app, name: "Classic library")
         app.buttons["open-sync-settings"].tap()
         captureScreen(app, name: "Classic synchronization settings")
