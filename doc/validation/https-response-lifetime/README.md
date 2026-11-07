@@ -95,3 +95,53 @@ identical device/grant state; other stored files remained byte-identical.
 Canonical PR392 was **never activated**. The Dev app stays open; no new iPhone
 retry was requested. Physical success, full native acceptance, passing exact-head
 CI and independent judgment remain required before delivery.
+
+## Readable native evidence after retrying capture
+
+The frozen QA bundle was reopened without altering or registering its helper.
+The remaining Spanish table/local image, Math-disabled source notation and
+practice fill/save/close/reopen were inspected at full screenshot resolution.
+The [native-help captures](native-help/) retain original JPEGs plus capture context
+and byte/dimension metadata. English captures belong to the first fresh QA
+process; Spanish captures include the reopened QA process. This completes the
+missing visual evidence for the frozen bundle but does not replace EN/ES Help
+acceptance in the canonical instance intended for the physical transfer test.
+Both QA processes quit normally, and the exact three scoped originals were again
+restored and hash-verified. The original helper remained enabled throughout the
+second QA phase; no canonical candidate activation occurred.
+
+A delayed generic error appeared in the original Dev1000 editor after helper
+reactivation even though the helper remained reachable. That distinct observation
+is registered in [#394](https://github.com/PinedaTec-EU/LeonardoMD/issues/394);
+no cause or enum-case mapping is asserted, and its implementation is outside
+this transport candidate.
+
+## Canonical candidate activated after passing CI
+
+Both macOS checks passed on `14e68224f141e1dd7505c7e06d775227c576368c`:
+[42374818188](https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/42374818188)
+and [42374821565](https://github.com/PinedaTec-EU/LeonardoMD/actions/runs/42374821565).
+The first run's strict full2MiB/1KiB-window probe passed in31.559s and its held-peer
+test in16.249s. This directly demonstrates insufficient earlier harness deadlines
+for that run; it does not establish the physical connection root cause.
+
+After coordinated original-helper shutdown/unregistration, the immutable
+canonical bundle started as editor PID26060 and helper PID26651. The diagnostic
+thread verified the helper executable/hash, unchanged TLS certificate,
+endpoint40882, grants, rubrics and stored trust state. No reset or re-pair occurred.
+Both real Help-menu workflows then passed **in this same canonical process**:
+EN/ES Mermaid, inline/single-line/multiline display math, Markdown-sensitive TeX,
+underbraces/radicals, box-counting tag1, charts, tables, packaged local images,
+Math-disabled source fallback and literal code, plus each practice filled,
+saved, closed and reopened. The eight [canonical captures](native-help/) and
+sidecars are the authoritative native evidence; earlier disposable captures
+remain local historical evidence rather than replacing this same-instance check.
+The personal Guide23 EN/ES archives match the bundled archives by SHA256.
+
+Both practice tabs were closed and original files restored/hash-verified.
+UI language and Math were restored to English/on. Exact preferences-file
+restoration remains deferred until the canonical editor closes normally after
+the physical attempt, preserving the running instance. The original backup is
+retained. The diagnostic thread owns the next physical retry and collector.
+Successful transfer/rendering is still pending; no issue closure, release or
+merge is claimed by this local acceptance.
