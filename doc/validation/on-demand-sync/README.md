@@ -78,3 +78,41 @@ Physical connection work392 is a separately frozen runtime experiment, not a
 claimed fix or a prerequisite for Classic publication.
 
 A real package was subsequently built from published `b24087574b32eadb1c14f55d9a467dc1507d340f` on baseline0.3.1113. Canonical release-note identity/dependency/signature inspection passes. A separate QA bundle is prepared and passes executable/dependency/signature checks; removing signatures from scratch copies confirms equal executable payloads (the distinct QA identity necessarily changes embedded signature bytes). The canonical release-identity report applies only to the canonical bundle; it must not be requested for a deliberately different QA identity. Neither385 bundle has been launched. Native acceptance waits for the diagnostic thread to release its physical-test GUI lease.
+
+
+## Combined Guide26 native acceptance
+
+This section supersedes earlier pending native checkpoints. A fresh QA process
+53729 ran the real packaged executable from `b24087574b32eadb1c14f55d9a467dc1507d340f`,
+baseline0.3.1113, with unique identity
+`eu.pinedatec.LeonardoMD.qa.436aa7936fa24284949752f547efc6a1`.
+The handoff and package inspection above bind the canonical/QA build.
+Later commits add evidence and compilation ledger only, with no app/build-input changes.
+
+Actual Help menus opened Guide26 EN/ES in that same process. Both locales passed
+Mermaid, inline and single/multiline display math, Markdown-sensitive underbraces,
+radicals, tagged equation(1), charts, local images, tables and literal code.
+Math-disabled fallback was inspected separately in both languages. Both separate
+practice forms were filled with fictional QA names, saved, closed and reopened;
+the answers persisted. Both new cache chapters were inspected. Personal Help
+copies match bundled bytes: EN SHA256
+`100515756813b363209241392d42db3e930c3c1c3c70acf7d5e7f4cd1359f01e`,
+ES SHA256 `e86cf6fc34b70e25fa7936fff95a180dd2e0479c7963b94026d596db3f58657e`.
+
+Preferences showed independent temporary/offline usage and pending counters.
+Changing temporary budget256→128MiB and clearing the empty temporary cache
+worked;256MiB was restored. Populated retention/catalogue states are covered by
+shared production-component fixtures and cache tests, not this empty native cache.
+The ad-hoc QA helper signature cannot register the service, as expected; no service
+registration, pairing, grant, trust pin, source corpus or external helper changed.
+The signed physical-test helper26651 remained under the diagnostic chat's control.
+
+The QA process quit normally. All three scoped originals (preferences and both
+practice forms) were restored with exact SHA256 verification. English and Math ON
+were restored before quitting. Original unmodified CUA JPEGs and canonical sidecars
+are in `classic-native-guide26/`. CUA exposes no native-point/CSS viewport or engine
+version; the context explicitly records screenshot-pixel equivalent dimensions and
+unavailable version rather than fabricating them. Captures show packaged UI/help;
+they do not claim physical iPhone transport acceptance or beta publication.
+
+Fresh shared production-component captures in `classic-components/` were generated from c1fac112ab0f78f1c8307569b54c76524e22b02c with the existing DownloadViewsCaptureTests fixture (1/1 PASS, recorded delta27). Both locales show remote, cached, retained and pending/error states, independent usage, cleanup and the retention list. Native viewport1180×640points; bitmap2360×1280pixels. These are synthetic component captures, not a running product or physical-device acceptance. Application/build inputs are unchanged from b240875.
