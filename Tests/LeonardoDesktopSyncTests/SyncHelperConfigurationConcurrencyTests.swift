@@ -25,6 +25,25 @@ final class SyncHelperConfigurationConcurrencyTests: XCTestCase {
         let count = await preferences.readCount
         XCTAssertEqual(count, 2)
     }
+    func testCancelledQueuedReadDoesNotReloadOrBlockNextCommand() async throws {
+        let preferences = SuspendedHelperPreferences()
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let host = SyncHelperHost(preferencesURL: root.appendingPathComponent("preferences.json"), configurations: preferences)
+        let first = Task { try await host.perform(.status) }
+        await preferences.waitForRead()
+        let cancelled = Task { try await host.perform(.status) }
+        cancelled.cancel()
+        await preferences.resumeDisabled()
+        _ = try await first.value
+        do { _ = try await cancelled.value; XCTFail("Cancelled query was executed") }
+        catch is CancellationError {}
+        let status = try JSONDecoder().decode(SyncHelperStatus.self, from: await host.perform(.status))
+        XCTAssertFalse(status.enabled)
+        let count = await preferences.readCount
+        XCTAssertEqual(count, 2, "Only the original and subsequent live command may read settings")
+    }
+
 }
 
 private actor SuspendedHelperPreferences: SyncHelperPreferencesAccess {

@@ -1,0 +1,4 @@
+{
+  "build": 4,
+  "summary": "Recover rubric status queries automatically after brief helper contention while preserving the original request and current access permissions."
+}

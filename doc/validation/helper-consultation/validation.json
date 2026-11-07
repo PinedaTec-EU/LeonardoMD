@@ -1,0 +1,15 @@
+{
+  "source_commit": "14f8772",
+  "focused_tests": 5,
+  "xctest_checks": 709,
+  "skipped": 35,
+  "swift_testing": 28,
+  "before_fix": {
+    "method": "Restore the previous immediate-busy reload guard while retaining the suspended-preferences regression",
+    "result": "FAIL: queued status finished before barrier release and threw DesktopRuntimeError.busy",
+    "log": "/tmp/leonardo398-contention-before.log"
+  },
+  "after_fix": "PASS: FIFO fresh-consent and cancellation regressions, polling same-ID recovery, bounded persistent error and immediate cancellation",
+  "full_log": "/tmp/leonardo398-full-final.log",
+  "physical_acceptance": "Pending combined signed main candidate with #385/#392/#398; installed helper unchanged"
+}
