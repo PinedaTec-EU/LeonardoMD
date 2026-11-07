@@ -29,3 +29,7 @@ Residual P3 differences: the concept's decorative paper texture is replaced by t
 ## Final accepted-main refresh (2026-11-07)
 
 Final product checkpoint11a6ddd combines accepted math/demo/diagnostics. `final/design-comparison.png` places the same selected reference and fresh native full-display landscape/restored portrait together; inspected actual pixels confirm palette, spacing, visible restored two-stroke ink, readable compact tools and explicit Send only on the portrait page. `final/` also supplies current library/project/Markdown/source/pairing/settings/About/demo and both packaged Help locales. Product/build hashes bind these to the evidence-only reviewed head. Real Help and practices now pass; historical pending statements in checkpoint-history are superseded. Scoped visual result remains passed. Physical transport380 is outside this design verdict.
+
+## Startup correction393 refresh
+
+Current product99cdd46, `startup-fix/design-comparison.png` inspected with selected reference and fresh actual landscape/restored portrait; current About shows installed version/build. Suspended-recovery native capture shows usable library and actual offline demo before Mac response release. Readable Classic palette, spacing, selectors, primary labels and preserved ink remain verified. Source-specific older imagery stays historical; macOS Help production inputs remain independently equal. Scoped result: passed.
