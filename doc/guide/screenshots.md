@@ -41,6 +41,11 @@ and `previous-guide/`. Keep the actual original capture revision when reusing
 an unchanged component; do not attribute an older capture to changed UI.
 For changed UI, recapture and replace both locales with new canonical metadata.
 
+Before adding a guide image, check each locale's decoded-image envelope with
+`test_package_user_guide.py`. Retina captures consume substantially more of the
+existing 128 MiB admission budget. Prefer a legible, compact native capture at its
+intended scale; recapture rather than raising the budget or editing an original.
+
 The [#342](https://github.com/PinedaTec-EU/LeonardoMD/issues/342) mobile capture is also preserved in
 `doc/validation/little-leonardo/ios-rubric-capture-es.png`; the adjacent JSON
 sidecars record the exact source/test and SHA-256 values. Its response bytes are

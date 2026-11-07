@@ -139,12 +139,14 @@ final class MobileDemoStoreTests: XCTestCase {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let size = hosting.view.bounds.size
         let renderer = UIGraphicsImageRenderer(size: size)
+        let capturedAt = ISO8601DateFormatter().string(from: Date())
         let image = renderer.image { _ in
             hosting.view.drawHierarchy(in: hosting.view.bounds, afterScreenUpdates: true)
         }
         let imageURL = directory.appendingPathComponent("\(name).png")
         try XCTUnwrap(image.pngData()).write(to: imageURL, options: .atomic)
         let metadata: [String: String] = [
+            "captured_at": capturedAt,
             "component": "MobileProjectIdentityLabel",
             "role": identity.captureName,
             "source_sha": sourceSHA,
