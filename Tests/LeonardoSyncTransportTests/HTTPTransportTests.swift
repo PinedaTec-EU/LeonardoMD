@@ -41,4 +41,41 @@ final class HTTPTransportTests: XCTestCase {
         XCTAssertThrowsError(try PinnedHTTPSClient(endpoint: URL(string: "http://192.168.1.2")!, certificateFingerprint: Data(repeating: 0, count: 32)))
         XCTAssertThrowsError(try PinnedHTTPSClient(endpoint: URL(string: "https://example.com")!, certificateFingerprint: Data(repeating: 0, count: 32)))
     }
+
+    func testCancellationErrorsRemainUnannotated() {
+        let cancellation = HTTPSFailureDiagnostics.annotate(CancellationError(), operation: .snapshot,
+            httpStatusCode: 200, receivedBodyBytes: 10, expectedBodyBytes: 20)
+        XCTAssertTrue(cancellation is CancellationError)
+        XCTAssertNil(HTTPSFailureDiagnostics.from(cancellation))
+
+        let cancelledRequest = URLError(.cancelled)
+        let preserved = HTTPSFailureDiagnostics.annotate(cancelledRequest, operation: .status,
+            httpStatusCode: nil, receivedBodyBytes: 0, expectedBodyBytes: nil)
+        XCTAssertEqual((preserved as? URLError)?.code, .cancelled)
+        XCTAssertNil(HTTPSFailureDiagnostics.from(preserved))
+    }
+
+    func testAnnotatedURLErrorKeepsSemanticsAndProvidesPrivateSafeLocalizedDescription() throws {
+        let privateURL = "https://127.0.0.1:41823/v1/devices/private-device/snapshot"
+        let privateDescription = "Private request \(privateURL) included a test-only token"
+        let original = URLError(.networkConnectionLost, userInfo: [
+            NSLocalizedDescriptionKey: privateDescription,
+            NSURLErrorFailingURLStringErrorKey: privateURL,
+            "test-preserved-metadata": "kept"
+        ])
+        let annotated = HTTPSFailureDiagnostics.annotate(original, operation: .snapshot,
+            httpStatusCode: 200, receivedBodyBytes: 64, expectedBodyBytes: 128)
+        let annotatedURL = try XCTUnwrap(annotated as? URLError)
+        XCTAssertEqual(annotatedURL.code, .networkConnectionLost)
+        let userInfo = (annotated as NSError).userInfo
+        XCTAssertTrue((userInfo[NSLocalizedDescriptionKey] as? String)?.contains("[LL1 op=snapshot") == true)
+        XCTAssertEqual(userInfo[NSURLErrorFailingURLStringErrorKey] as? String, privateURL)
+        XCTAssertEqual(userInfo["test-preserved-metadata"] as? String, "kept")
+
+        let displayed = annotated.localizedDescription
+        XCTAssertTrue(displayed.contains("[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=64/128]"))
+        XCTAssertFalse(displayed.contains(privateURL))
+        XCTAssertFalse(displayed.contains(privateDescription))
+        XCTAssertFalse(displayed.contains("test-only token"))
+    }
 }

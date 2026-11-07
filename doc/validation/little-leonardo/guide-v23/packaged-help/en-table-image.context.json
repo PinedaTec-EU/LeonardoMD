@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "0055c1640340235037b3c1ef56780cf9a95e4af6",
+  "sourceRole": "Actual packaged producer; subsequent checkpoint changes evidence/ledger only",
+  "captureBegin": "2026-11-07T08:25:18.799Z",
+  "captureEnd": "2026-11-07T08:25:19.524Z",
+  "locale": "en",
+  "state": "Live format table and packaged local illustration rendered.",
+  "captureMode": "native app window original JPEG, unmodified",
+  "imagePixels": {
+    "width": 5120,
+    "height": 2880
+  },
+  "viewportCss": null,
+  "viewportLimitation": "Native CUA exposes no CSS viewport or browser version; browser capture helper requires positive CSS dimensions and cannot truthfully represent this native observation.",
+  "browserEngine": null,
+  "app": {
+    "bundleId": "eu.pinedatec.LeonardoMD.qa.a4bd0239ae5644f593cab7025076f017",
+    "version": "0.3.1057",
+    "build": "1057",
+    "pid": 15291,
+    "executable": "LeonardoMD",
+    "executableSHA256": "fc1de7078270616c35b82b2861a7ff41d1537a8341a5be7b6da292fb32f993c8"
+  },
+  "sha256": "8d7aee41c4935db9a1eb0a19a14d2f4c9f57b43e86e003bb2e5bee7f06ebc1ce",
+  "data": "Bundled public guide and fictional practice answers only"
+}

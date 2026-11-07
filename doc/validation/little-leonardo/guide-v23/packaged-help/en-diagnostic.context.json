@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "0055c1640340235037b3c1ef56780cf9a95e4af6",
+  "sourceRole": "Actual packaged producer; subsequent checkpoint changes evidence/ledger only",
+  "captureBegin": "2026-11-07T08:27:13.827Z",
+  "captureEnd": "2026-11-07T08:27:14.538Z",
+  "locale": "en",
+  "state": "Live chapter14 diagnostic paragraph LL1 fully visible.",
+  "captureMode": "native app window original JPEG, unmodified",
+  "imagePixels": {
+    "width": 5120,
+    "height": 2880
+  },
+  "viewportCss": null,
+  "viewportLimitation": "Native CUA exposes no CSS viewport or browser version; browser capture helper requires positive CSS dimensions and cannot truthfully represent this native observation.",
+  "browserEngine": null,
+  "app": {
+    "bundleId": "eu.pinedatec.LeonardoMD.qa.a4bd0239ae5644f593cab7025076f017",
+    "version": "0.3.1057",
+    "build": "1057",
+    "pid": 15291,
+    "executable": "LeonardoMD",
+    "executableSHA256": "fc1de7078270616c35b82b2861a7ff41d1537a8341a5be7b6da292fb32f993c8"
+  },
+  "sha256": "3b0b9240384362cfb4c83d587d3657b08f23de79a66c303f31f33e1374ee8545",
+  "data": "Bundled public guide and fictional practice answers only"
+}

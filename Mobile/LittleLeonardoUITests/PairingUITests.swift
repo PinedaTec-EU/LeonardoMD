@@ -43,6 +43,40 @@ final class PairingUITests: XCTestCase {
         add(attachment)
     }
 
+    @MainActor func testNativeLargeSnapshotAssetSyncOverLANHTTPS() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["LEONARDO_DIRECT_QA_LARGE_ASSET"] == "1",
+              let port = environment["LEONARDO_DIRECT_QA_PORT"], UInt16(port) != nil,
+              environment["LEONARDO_DIRECT_QA_PHASE_FILE"] != nil,
+              let host = environment["LEONARDO_DIRECT_QA_HOST"] else {
+            throw XCTSkip("Requires the explicitly owned Mac LAN large-image fixture")
+        }
+        let app = XCUIApplication()
+        app.launch()
+        requestManualConnection(app, port: port, hostValue: host)
+        let code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
+        XCTAssertTrue(code.waitForExistence(timeout: 15))
+
+        try advanceDirectFixture("approve")
+        app.buttons["Sincronizar"].firstMatch.tap()
+        let project = app.staticTexts["QA · Native Direct"].firstMatch
+        XCTAssertTrue(project.waitForExistence(timeout: 30),
+                      "The iOS client must finish downloading and storing the large snapshot")
+        project.tap()
+        let document = app.buttons["docs/read.md"].firstMatch
+        XCTAssertTrue(document.waitForExistence(timeout: 10))
+        document.tap()
+        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native direct initial"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.webViews.firstMatch.images["Original artwork"].waitForExistence(timeout: 20),
+                      "The original image asset must resolve from the synchronized offline snapshot")
+
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "iOS LAN sync rendered original 338658-byte image"
+        capture.lifetime = .keepAlways
+        add(capture)
+        try advanceDirectFixture("finish")
+    }
+
     @MainActor func testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation() throws {
         let environment = ProcessInfo.processInfo.environment
         guard environment["LEONARDO_DIRECT_QA"] == "1",
@@ -89,7 +123,15 @@ final class PairingUITests: XCTestCase {
         XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native direct updated"].waitForExistence(timeout: 15))
         try advanceDirectFixture("disable")
         app.buttons["document-sync"].tap()
-        XCTAssertTrue(app.alerts["No se pudo completar la operación"].waitForExistence(timeout: 15))
+        let failure = app.alerts["No se pudo completar la operación"]
+        XCTAssertTrue(failure.waitForExistence(timeout: 15))
+        XCTAssertTrue(failure.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "[LL1 op=status")).firstMatch.waitForExistence(timeout: 5),
+            "The native failure alert must expose the safe transport diagnostic")
+        let failureCapture = XCTAttachment(screenshot: app.screenshot())
+        failureCapture.name = "Little Leonardo synchronization failure diagnostic"
+        failureCapture.lifetime = .keepAlways
+        add(failureCapture)
         app.alerts.buttons["Aceptar"].tap()
         XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native direct updated"].exists)
 
@@ -821,7 +863,8 @@ final class PairingUITests: XCTestCase {
         if close.waitForExistence(timeout: 2) { close.tap() }
     }
 
-    @MainActor private func requestManualConnection(_ app: XCUIApplication, port: String) {
+    @MainActor private func requestManualConnection(_ app: XCUIApplication, port: String,
+                                                   hostValue: String = "127.0.0.1") {
         app.buttons["open-pairing"].tap()
         app.segmentedControls["pairing-method"].buttons["IP y puerto"].tap()
         let host = app.textFields["pairing-host"], portField = app.textFields["pairing-port"]
@@ -829,7 +872,7 @@ final class PairingUITests: XCTestCase {
         if let value = host.value as? String {
             host.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
         }
-        host.typeText("127.0.0.1")
+        host.typeText(hostValue)
         portField.tap()
         if let value = portField.value as? String {
             portField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))

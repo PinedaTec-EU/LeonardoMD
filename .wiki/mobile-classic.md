@@ -15,3 +15,5 @@ The PR branch has been refreshed onto accepted main0.3.1045, and its combined gu
 - Follow-up [#389](https://github.com/PinedaTec-EU/LeonardoMD/issues/389): real root title remained blank after launch; inline title fixes pixels plus semantic assertion. Sourcea8a0555 focused native1/1 passes; demo continuation3/3 passes. Compilation entry22; cached demo answers remain separate from synchronization.
 
 - Updated mobile FAQ/privacy on source0939fe9 verified with signed SE3/iOS26.5 native About flow1/1; entry23. Compact native originals and provenance are in doc/validation/mobile-classic/compact. Complete final-cache and macOS bundled Help gates remain pending.
+
+- Accepted diagnostics PR382/main00fdf938 (0.3.1082) reconciled into Classic. Retain the safe LL1 explanations in both guide bodies and the real LAN large-asset native test alongside Classic tests; Guide25 regenerated. Legacy copy preservation now covers both locales through24. Package tests3/3 pass; final cache/native Help/CI/judge/publication remain pending.

@@ -909,9 +909,29 @@
       "pr": 377,
       "summary": "Extensible math symbols render complete shapes, and outline selections open the matching heading even when rendered content has different heights.",
       "to_version": "0.3.1045"
+    },
+    {
+      "delta": {
+        "build": 12
+      },
+      "from_version": "0.3.1045",
+      "merge_sha": "99ac3204d49f25210e74ea7d93211b695b96f186",
+      "pr": 383,
+      "summary": "Little Leonardo includes an offline bilingual demo with format examples and a locally saved practice form.",
+      "to_version": "0.3.1057"
+    },
+    {
+      "delta": {
+        "build": 25
+      },
+      "from_version": "0.3.1057",
+      "merge_sha": "203bd697b21421006b23fae70b30245ef77e15fa",
+      "pr": 382,
+      "summary": "Adds privacy-safe HTTPS diagnostics for iOS sync failures, preserving URL errors, pinning, redirects and bounds. A real TLS cutoff test checks partial byte counts; the alert and bilingual Guide v23 explain the code. Physical root cause remains unconfirmed.",
+      "to_version": "0.3.1082"
     }
   ],
-  "current_version": "0.3.1045",
+  "current_version": "0.3.1082",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

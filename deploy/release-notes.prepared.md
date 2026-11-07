@@ -2,6 +2,22 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1082
+
+- #380 Added: expose bounded HTTPS failure diagnostics ([#382](https://github.com/PinedaTec-EU/LeonardoMD/pull/382))
+
+<p>Adds privacy-safe HTTPS diagnostics for iOS sync failures, preserving URL errors, pinning, redirects and bounds. A real TLS cutoff test checks partial byte counts; the alert and bilingual Guide v23 explain the code. Physical root cause remains unconfirmed.</p>
+
+Source: `203bd697b21421006b23fae70b30245ef77e15fa`. Delta: `{"build": 25}`.
+
+## 0.3.1057
+
+- #381 Added: bundle offline Little Leonardo demo and practice ([#383](https://github.com/PinedaTec-EU/LeonardoMD/pull/383))
+
+<p>Little Leonardo includes an offline bilingual demo with format examples and a locally saved practice form.</p>
+
+Source: `99ac3204d49f25210e74ea7d93211b695b96f186`. Delta: `{"build": 12}`.
+
 ## 0.3.1045
 
 - #274 Fixed: render extensible math and navigate outline headings precisely ([#377](https://github.com/PinedaTec-EU/LeonardoMD/pull/377))

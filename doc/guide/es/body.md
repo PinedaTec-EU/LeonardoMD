@@ -623,8 +623,7 @@ con una acción clara.
 ### Aspecto Classic, arranque y Acerca de en Little Leonardo
 
 Little Leonardo usa los colores de **Leonardo Classic**: papel pergamino,
-títulos burdeos y acciones óxido, también en la demo incluida, su vista de texto y la ayuda de los campos. La demo está disponible en Biblioteca antes de conectar un Mac. Esta versión no ofrece selector de temas ni
-una página Premium. Al arrancar aparece la marca mientras se prepara la
+títulos burdeos y acciones óxido, también en la demo incluida, su vista de texto y la ayuda de los campos. La demo está disponible en Biblioteca antes de conectar un Mac. Al arrancar aparece la marca mientras se prepara la
 biblioteca local, sin una espera añadida. En **Ajustes de sincronización →
 Acerca de Little Leonardo** puedes consultar la versión y compilación instaladas, así como abrir Ayuda,
 Privacidad y Licencias sin conexión.
@@ -638,6 +637,23 @@ La vista previa y **Enviar rúbrica** siguen siendo acciones explícitas; un
 borrador bloqueado, enviado o pendiente de reintento no permite seguir dibujando.
 
 ![Lienzo de rúbrica a pantalla completa en horizontal, con los colores Leonardo Classic. Captura real del simulador con una solicitud sintética; miniatura reducida.](assets/ios-rubric-classic-landscape.png)
+
+### Si se interrumpe la sincronización móvil
+
+Ante un fallo de red, el aviso existente puede incluir una línea de diagnóstico
+breve, por ejemplo:
+
+`[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
+
+Comparte esa línea o una captura al pedir ayuda. Indica si falló una consulta de
+estado o una instantánea, el estado HTTP si llegó, los bytes de respuesta
+recibidos y esperados, y el dominio/código de error del sistema. No incluye la
+dirección o ruta del servidor, credencial de emparejamiento, identificadores de
+dispositivo/proyecto ni contenido de archivos. Una cabecera HTTP 200 no
+significa que terminara el cuerpo. Un total esperado `?` significa que el
+servidor no informó de la longitud. Las copias descargadas sin conexión siguen
+disponibles; comprueba que el Mac de origen sea accesible y que Leonardo Sync
+esté activo, y vuelve a intentar la sincronización.
 
 ### Responder a una solicitud de rúbrica en iOS
 

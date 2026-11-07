@@ -72,3 +72,7 @@ The Mac is now unlocked. GUI is coordinated383 (done)→382 diagnostic→385 cac
 ## Compact updated-help acceptance
 
 Signed iPhone SE3/iOS26.5 build-and-test passes1/1 for the library/settings/About/Help/privacy/license/pairing flow on source0939fe9 (`/tmp/ll387-compact-about-help.xcresult`). Compilation delta23 is recorded. Native originals/context/hash sidecars under `compact/` verify a visible library title, reachable demos and readable new offline-demo instructions at375×667 points/2×. This scoped mobile Help check supplements the still-pending complete bilingual macOS bundled-guide acceptance, final cache reconciliation and final exact-head visual set.
+
+## Accepted diagnostic baseline
+
+PR382 is integrated in accepted main00fdf938ebba3d9125461d12267c0e89f60b148e, version0.3.1082. This branch preserves its bounded LL1 transport diagnostics, network regression tests and bilingual support instructions. Guide25 is regenerated from the combined source; deterministic package tests3/3 pass. The earlier native captures retain their actual source identities. The next App Store Connect upload remains reserved to the diagnostic publisher until its build is processed and assigned; no Classic upload has occurred.
