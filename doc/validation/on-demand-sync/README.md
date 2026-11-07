@@ -188,3 +188,46 @@ All15 focused cache/revocation tests pass. Full corrected local validation passe
 723 XCTest checks (37 opt-in/platform skips, zero failures), plus28 Swift Testing
 checks. Current-source iOS/macOS native evidence and exact-head review remain
 pending; earlier capture attempts are not acceptance of this corrective code.
+
+
+## Final source native iOS acceptance (2026-11-07)
+
+The current product source is `66c9e644a3203e1725f466973e1940acff61e61f`.
+Subsequent evidence/compilation-ledger commits do not alter product/build inputs.
+The locally signed Simulator app reports version0.3.1113/build1113 in About;
+this is a test candidate, not a distributed release. Simulator926C886F-52D8-4766-B84D-1A5D8C218080
+runs iPhone18Pro/iOS27.0 at402×874 points (original PNG1206×2622).
+
+The versioned native About/Help/privacy/licenses test passes1/1. The combined
+bilingual demo tests and complete on-demand UI test pass3/3. The real pinned
+source fixture also passes. The cache field passes Apply128, Return64 and
+Return128 before synchronization. The source audits prove catalogue-only enrollment,
+exactly one requested reference-file read, zero aggregate snapshots, contextual
+file/folder retention, preserved offline bytes after temporary cleanup, and
+automatic recovery including a newly added descendant. Final state contains
+three retained files (166bytes), zero temporary files and a134217728-byte budget.
+The untouched remote reference file is never requested.
+
+Primary original captures, source contexts and canonical metadata are in
+`final-ios/`; `final-ios-help/` retains actual XCTest About, Help and bilingual
+practice/gallery attachments. `accepted-source-ios/` is an earlier functional
+pass whose Debug package omitted CFBundle version keys; it is historical and
+superseded by the explicitly versioned repetition. `accepted-source-components/`
+contains current-source macOS production-component renders, not packaged-app Help acceptance.
+
+Runtime results: `/tmp/leonardo385-versioned-about.xcresult` and
+`/tmp/leonardo385-versioned-ios-flow.xcresult`; source fixture log
+`/tmp/leonardo385-versioned-ios-fixture.log`. Reproduction uses the existing
+OnDemandMobileAcceptanceFixtureTests and OnDemandSyncUITests with the owned
+LEONARDO_ON_DEMAND_QA_ROOT, loopback46987 and source SHA. Build-for-testing uses
+local ad-hoc signing (CODE_SIGNING_ALLOWED=YES, CODE_SIGN_IDENTITY=-), canonical
+MARKETING_VERSION=0.3.1113 and CURRENT_PROJECT_VERSION=1113; runtime uses
+test-without-building. No physical-device acceptance is inferred.
+
+The real macOS QA bundle was built from the same source, checked for proper
+executable/dependencies and launched as fresh PID35533. Its identity and hashes
+are in `final-native-handoff.json` and `final-package-inspection.json`. The Mac
+locked before first-window inspection. **Current packaged macOS Guide27 EN/ES
+acceptance remains pending**, including live math/extensions and practice round-trip;
+process existence and component captures do not substitute for it. The physical
+#380 retry remains owned by the diagnostic chat. No merge or beta publication is claimed.
