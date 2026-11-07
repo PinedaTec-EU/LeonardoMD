@@ -33,7 +33,7 @@
   "schemaVersion": 1,
   "sourceBranch": "codex/380-transport",
   "sourceCommit": "0055c1640340235037b3c1ef56780cf9a95e4af6",
-  "sourceCommitRole": "Producer checkpoint after integrating PR #383 and its release materialization; subsequent build-count-only ledger update is pending commit.",
+  "sourceCommitRole": "Producer checkpoint after integrating PR #383 and its release materialization. The separate issue-bound evidence checkpoint records the compilation count and validation artifacts; product source inputs remain unchanged.",
   "sourceInputsSha256": {
     "Mobile/LittleLeonardo.xcodeproj/project.pbxproj": "d23439dfced5ce1f72307c5929c12e2e691e19627556740728c26a49b1dff191",
     "Mobile/LittleLeonardo/Demo/Demo-en.mdlr": "86a9cd6df8225e1a62dbdf46bc5b664eeb8fe304f26d6443465b963e8a869482",
