@@ -268,6 +268,98 @@ final class HTTPSRuntimeTests: XCTestCase {
         } catch { await server.stop(); throw error }
     }
 
+    func testTLSResponseDeliversCompleteBodyAndCloseNotify() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
+        let identity = try makeIdentity()
+        let body = Data(repeating: 0x5A, count: 492_904)
+        let server = LANHTTPSListener(identity: identity) { _ in HTTPResponse(status: 200, body: body) }
+        let port = try await server.start(host: "127.0.0.1")
+        do {
+            let result = try await TLSClosureProbe.read(port: port, fingerprint: identity.certificateFingerprint)
+            XCTAssertFalse(result.timedOut, "A Connection: close response must finish without waiting for a client timeout")
+            XCTAssertEqual(result.exitCode, 0, result.diagnostics)
+            XCTAssertTrue(result.response.suffix(body.count) == body, "Every declared body byte must arrive")
+            XCTAssertTrue(result.diagnostics.contains("TLS_CLOSE_NOTIFY"),
+                          "The peer must observe a TLS close_notify, not a ragged TLS EOF: \(result.diagnostics)")
+            await server.stop()
+        } catch { await server.stop(); throw error }
+    }
+
+    func testSlowTLSReaderReceivesAllBytesBeforeCleanClose() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
+        let identity = try makeIdentity()
+        let body = Data(repeating: 0x7E, count: 2 * 1_024 * 1_024)
+        let server = LANHTTPSListener(identity: identity) { _ in HTTPResponse(status: 200, body: body) }
+        let port = try await server.start(host: "127.0.0.1")
+        do {
+            let result = try await TLSClosureProbe.read(port: port, fingerprint: identity.certificateFingerprint, slowReader: true)
+            XCTAssertFalse(result.timedOut)
+            XCTAssertEqual(result.exitCode, 0, result.diagnostics)
+            XCTAssertTrue(result.response.suffix(body.count) == body,
+                          "Slow consumption must not lose queued body bytes: received \(result.response.count) wire-plaintext bytes")
+            XCTAssertTrue(result.diagnostics.contains("TLS_CLOSE_NOTIFY"), result.diagnostics)
+            await server.stop()
+        } catch { await server.stop(); throw error }
+    }
+
+    func testPeersHoldingWriteSideOpenDoNotExhaustConnectionSlots() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
+        let identity = try makeIdentity()
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let release = root.appendingPathComponent("release")
+        let server = LANHTTPSListener(identity: identity) { _ in HTTPResponse(status: 200, body: Data("ok".utf8)) }
+        let port = try await server.start(host: "127.0.0.1")
+        let held = (0..<16).map { index in
+            Task {
+                try await TLSClosureProbe.read(port: port, fingerprint: identity.certificateFingerprint,
+                    readyFile: root.appendingPathComponent("ready-\(index)"), holdOpenUntil: release)
+            }
+        }
+        do {
+            let deadline = Date().addingTimeInterval(10)
+            while (0..<16).contains(where: { !FileManager.default.fileExists(atPath: root.appendingPathComponent("ready-\($0)").path) }),
+                  Date() < deadline { try await Task.sleep(for: .milliseconds(20)) }
+            let ready = (0..<16).allSatisfy { FileManager.default.fileExists(atPath: root.appendingPathComponent("ready-\($0)").path) }
+            XCTAssertTrue(ready, "Every synthetic peer must receive its response before withholding its own close")
+            try await Task.sleep(for: .seconds(6))
+            let client = try PinnedHTTPSClient(endpoint: URL(string: "https://127.0.0.1:\(port)")!,
+                                               certificateFingerprint: identity.certificateFingerprint)
+            let response = try await client.request(method: "GET", path: "/v1/status")
+            XCTAssertEqual(response.body, Data("ok".utf8), "A held-open peer must not monopolize an admission slot")
+            try Data().write(to: release)
+            for task in held {
+                let result = try await task.value
+                XCTAssertFalse(result.timedOut)
+                XCTAssertEqual(result.exitCode, 0, result.diagnostics)
+            }
+            await server.stop()
+        } catch {
+            try? Data().write(to: release)
+            await server.stop()
+            for task in held { _ = try? await task.value }
+            throw error
+        }
+    }
+
+    func testSecondRequestDuringCloseCannotReachHandler() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
+        let identity = try makeIdentity()
+        let counter = HTTPSClosureRequestCounter()
+        let server = LANHTTPSListener(identity: identity) { _ in await counter.response() }
+        let port = try await server.start(host: "127.0.0.1")
+        do {
+            let result = try await TLSClosureProbe.read(port: port,
+                fingerprint: identity.certificateFingerprint, sendSecondRequest: true)
+            XCTAssertFalse(result.timedOut)
+            let handled = await counter.count
+            XCTAssertEqual(handled, 1, "Teardown must not route another HTTP request")
+            XCTAssertEqual(String(decoding: result.response, as: UTF8.self).components(separatedBy: "HTTP/1.1 ").count - 1, 1)
+            await server.stop()
+        } catch { await server.stop(); throw error }
+    }
+
     @available(macOS 15, *)
     private func makeIdentity() throws -> TLSServerIdentity {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -299,5 +391,12 @@ final class HTTPSRuntimeTests: XCTestCase {
         guard process.terminationStatus == 0 else { throw TransportError.invalidIdentity }
     }
 
+}
+private actor HTTPSClosureRequestCounter {
+    private(set) var count = 0
+    func response() -> HTTPResponse {
+        count += 1
+        return HTTPResponse(status: 200, body: Data("first and only response".utf8))
+    }
 }
 #endif

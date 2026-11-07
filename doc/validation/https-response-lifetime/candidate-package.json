@@ -1,0 +1,17 @@
+{
+  "source_sha": "cc6c43f7845c61a3fe24f8e862e8ab7f82fc50c5",
+  "purpose": "Local unvalidated transport candidate; not a published release",
+  "version": "0.3.1082",
+  "bundle_identifier": "eu.pinedatec.LeonardoMD",
+  "team_identifier": "AU2Z3P42U7",
+  "application_executable_sha256": "238c0461c2b94ac0c0df06ec54cc00df115be8ac760ba405706b8d02c0ad8829",
+  "helper_executable_sha256": "d942f4c4c8fa704f4b9e70e4028f0d9b976d23585a310a11eeef4f25e9914609",
+  "archive_sha256": "26e0f440ce6fe3880165ea80a1a3fde8d536a7825dbb9e01cbbba31d906d6136",
+  "xctest_dependency": false,
+  "dependencies_verified": true,
+  "signatures_verified": true,
+  "notarization_claimed": false,
+  "launched": false,
+  "installed": false,
+  "published": false
+}
