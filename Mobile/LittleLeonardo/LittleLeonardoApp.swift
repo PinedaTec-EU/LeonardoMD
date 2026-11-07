@@ -20,8 +20,9 @@ struct LittleLeonardoApp: App {
                     let demo = MobileDemoStore()
                     for language in MobileDemoStore.Language.allCases { _ = try demo.load(language) }
                 } catch { library.error = error.localizedDescription }
-                await library.reload()
                 ready = true
+                // Pending rubric recovery may wait for a Mac; local reading stays available.
+                await library.reload()
             }
         }
     }
