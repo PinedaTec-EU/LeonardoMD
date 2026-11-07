@@ -23,21 +23,30 @@ struct MobileLibraryView: View {
     }
     var body: some View {
         NavigationStack {
-            List(library.projects, id: \.id) { project in
-                NavigationLink {
-                    MobileProjectView(library: library, projectID: project.id)
-                } label: {
-                    VStack(alignment: .leading) {
-                        Text(project.name)
-                        Text(project.isRecoveryArchive ? "Archivo de recuperación · Solo lectura" : "Consulta desde LeonardoMD · Solo lectura")
+            List {
+                Section("Demo y práctica / Demo & practice") {
+                    ForEach(MobileDemoStore.Language.allCases) { language in
+                        NavigationLink(language.title) { MobileDemoView(language: language) }
+                            .accessibilityIdentifier("open-demo-\(language.rawValue)")
+                    }
+                    Text("Sin Mac ni conexión · No Mac or network needed").font(.caption)
+                }
+                Section("Proyectos / Projects") {
+                    ForEach(library.projects, id: \.id) { project in
+                        NavigationLink {
+                            MobileProjectView(library: library, projectID: project.id)
+                        } label: {
+                            VStack(alignment: .leading) {
+                                Text(project.name)
+                                Text(project.isRecoveryArchive ? "Archivo de recuperación · Solo lectura" : "Consulta desde LeonardoMD · Solo lectura")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    if library.projects.isEmpty {
+                        Text("Conecta con LeonardoMD para descargar tus proyectos y consultarlos offline.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
-                }
-            }
-            .overlay {
-                if library.projects.isEmpty {
-                    ContentUnavailableView("Little Leonardo", systemImage: "book.closed",
-                        description: Text("Conecta con LeonardoMD para descargar tus proyectos y consultarlos offline."))
                 }
             }
             .navigationTitle("Little Leonardo")

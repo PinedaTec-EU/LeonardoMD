@@ -726,3 +726,10 @@ An extension's activation does not install an AI skill, connect an AI account or
 - **Unsupported version:** preserve the file and update the reader/plugin. Do not change its version number to force acceptance.
 
 This guide covers current macOS workflows. External service labels were checked on **30 October 2026** and may change. See the [web user guide](https://github.com/PinedaTec-EU/LeonardoMD/blob/main/doc/user-guide.md), [format contract](https://github.com/PinedaTec-EU/LeonardoMD/blob/main/doc/format/README.md) and [published releases](https://github.com/PinedaTec-EU/LeonardoMD/releases).
+
+
+## Little Leonardo: bundled demo and local practice
+
+Installing Little Leonardo prepares two personal demo copies, Español and English. In the library, open **Demo y práctica / Demo & practice** and choose a language. No account, Mac or camera/local-network permission is needed. The demo includes a local cover, table, Mermaid, formulas and a chart with bundled data; these engines are enabled in the demo. The form uses real Leonardo fields. Enter fictional details, tap **Guardar / Save**, wait for confirmation, then reopen to check your answers. They stay on this device, separate from synchronized read-only projects, and are never sent to the Mac. Uninstalling removes the copies.
+
+Under **Opciones / Options**, **Ver texto / View source** shows Markdown and metadata; **Restablecer / Reset** asks for confirmation and resets only the selected language's practice. If saving fails, keep the screen open and retry; do not assume answers are saved without confirmation. For real projects, return to **Conectar** and follow the synchronization chapter. Practice does not enable general synchronized-project editing or replace Mac rubric requests.
