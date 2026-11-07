@@ -88,7 +88,7 @@ final class OnDemandSyncUITests: XCTestCase {
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         // LabeledContent exposes the whole labeled row as the text-field frame.
         // Target its trailing editable value rather than the label at row centre.
-        field.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.99, dy: 0.5)).tap()
         field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: (field.value as? String)?.count ?? 0))
         field.typeText(text)
     }

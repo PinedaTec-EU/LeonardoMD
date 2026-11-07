@@ -17,11 +17,14 @@ public struct SyncCacheSettingsView: View {
                 .accessibilityIdentifier("offline-storage-usage")
             LabeledContent(t("Pending offline files", "Archivos offline pendientes"), value: String(library.usage.pendingOfflineFiles))
                 .accessibilityIdentifier("pending-offline-files")
-            LabeledContent(t("Temporary cache limit (MiB)", "Límite de caché temporal (MiB)")) {
+            LabeledContent {
                 TextField("MiB", text: $limitDraft)
                     .multilineTextAlignment(.trailing).frame(minWidth: 64, idealWidth: 84, maxWidth: 104)
                     .focused($editingLimit).submitLabel(.done).onSubmit(applyLimit)
                     .accessibilityIdentifier("temporary-cache-limit")
+            } label: {
+                Text(t("Temporary limit (MiB)", "Límite temporal (MiB)"))
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Button(t("Apply cache limit", "Aplicar límite de caché"), action: applyLimit)
                 .disabled(requestedLimitBytes == nil || requestedLimitBytes == library.usage.limitBytes)
