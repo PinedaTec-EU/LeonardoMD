@@ -76,3 +76,5 @@ Signed iPhone SE3/iOS26.5 build-and-test passes1/1 for the library/settings/Abou
 ## Accepted diagnostic baseline
 
 PR382 is integrated in accepted main00fdf938ebba3d9125461d12267c0e89f60b148e, version0.3.1082. This branch preserves its bounded LL1 transport diagnostics, network regression tests and bilingual support instructions. Guide25 is regenerated from the combined source; deterministic package tests3/3 pass. The earlier native captures retain their actual source identities. The next App Store Connect upload remains reserved to the diagnostic publisher until its build is processed and assigned; no Classic upload has occurred.
+
+The combined accepted-diagnostics candidate sourcefb5c7aca94a3d30679d3dac9915b075461c8e4ad passes all12 LittleLeonardoTests on the owned SE3/iOS26.5 (`/tmp/ll387-diagnostics-units.xcresult`). The signed compiler-bearing test command records delta24. This supplements the package tests and earlier scoped mobile captures; final cache and packaged Help acceptance remain pending.
