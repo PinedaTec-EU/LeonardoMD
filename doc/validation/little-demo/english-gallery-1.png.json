@@ -1,0 +1,18 @@
+{
+  "capture_type": "native XCTest screenshot of running LittleLeonardo.app",
+  "captured_at": "2026-11-06T18:08:15.662000+00:00",
+  "screen": "English gallery 1",
+  "bundle_identifier": "eu.pinedatec.LittleLeonardo",
+  "build_source": "854ae4a9ab4ed35df65595a590ddba564aced887",
+  "version_and_build": "Not present in this local simulator build; source SHA identifies it. Distribution injects canonical version separately.",
+  "device": "LittleLeonardo381 Demo QA",
+  "runtime": "iOS 27.0 (24A434), iPhone 17 Pro simulator",
+  "locale": "English demo; bilingual native controls",
+  "state": "Bundled demo; no paired Mac, fictional practice answers; Mermaid/Math/Vega/Leonardo enabled",
+  "image": {
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "f0d8ef9059230202e13e23152bac320c0d69a14f139457d5336df5705e72db24"
+  },
+  "missing_context": "Browser version and CSS viewport are not exposed by native XCTest. The browser-only capture_metadata helper cannot truthfully populate those required fields; original native captures and observed context are retained."
+}

@@ -1,0 +1,51 @@
+Window: "", App: LeonardoMD QA.
+0 sheet ID: LeonardoMD.preferences, Secondary Actions: Raise
+	1 container
+		2 text Preferences
+		3 button Done
+		4 tab group
+			5 tab Description: General, Value: 1, ID: gearshape
+			6 tab Description: Extensions, Value: 0, ID: puzzlepiece.extension
+			7 tab Description: Synchronization, Value: 0, ID: arrow.triangle.2.circlepath.circle
+			8 tab Description: Updates, Value: 0, ID: arrow.triangle.2.circlepath
+			9 container
+				10 text General Global preferences apply to the standalone viewer and projects that inherit them.
+				11 scroll area Secondary Actions: Scroll Up, Scroll Down
+					12 heading Appearance
+					13 container
+						14 pop up button Palette, Value: Leonardo Classic, ID: preferences-palette
+						15 pop up button Paper effect, Value: Parchment, ID: preferences-paper
+						16 button Customize / import palette…
+						17 toggle button Description: Color Leonardo files in wine, Value: on, ID: preferences-file-colors
+					18 heading On this Mac
+					19 container
+						20 toggle button Description: Allow multiple instances, Value: off, ID: allow-multiple-instances
+						21 text Use File > New instance to open an independent process. Finder opens go to the principal instance. Turning this off keeps existing instances open.
+						22 toggle button Description: Follow active file in sidebar, Value: on, ID: preferences-follow-active-file
+						23 pop up button Language, Value: English, ID: interface-language
+						24 text Interface language applies to all windows.
+						25 pop up button Open MDLZ packages, Value: Use package
+						26 toggle button Description: Save Markdown as MDLF, Value: off
+						27 toggle button Description: Show front matter, Value: off
+						28 toggle button Description: Confirm external links, Value: on
+						29 toggle button Description: Show hidden files, Value: off
+					30 heading Default document application
+					31 container
+						32 text ID: markdown-default-status, Value: Install a distribution version to change file associations. Applies to .md, .markdown, .mdlf, .mdlr and .mdlz on this Mac, including all projects. Files with an individual Open With override may keep it.
+						33 button (disabled) Description: Use LeonardoMD, ID: markdown-make-default
+						34 toggle button Description: Ask at startup when LeonardoMD is not the default, Value: on, ID: markdown-default-ask
+					35 scroll bar (settable, float) 0.4429906542056075
+						36 value indicator (settable, float) 0.4429906542056075
+						37 increment arrow button
+						38 decrement arrow button
+						39 increment page button
+						40 decrement page button
+41 menu bar
+	42 LeonardoMD QA
+	43 File
+	44 Edit
+	45 View
+	46 Window
+	47 Help
+
+The focused UI element is 0 sheet ID: LeonardoMD.preferences, Secondary Actions: Raise

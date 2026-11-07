@@ -16,6 +16,10 @@ struct LittleLeonardoApp: App {
             .tint(MobileClassic.accent)
             .preferredColorScheme(.light)
             .task {
+                do {
+                    let demo = MobileDemoStore()
+                    for language in MobileDemoStore.Language.allCases { _ = try demo.load(language) }
+                } catch { library.error = error.localizedDescription }
                 await library.reload()
                 ready = true
             }

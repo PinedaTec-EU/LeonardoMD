@@ -145,4 +145,3 @@ struct MobileRubricCanvas: View {
                      blue: Double(number & 0xff) / 255)
     }
 }
-

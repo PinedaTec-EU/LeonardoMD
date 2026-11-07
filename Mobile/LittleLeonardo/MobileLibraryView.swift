@@ -23,33 +23,42 @@ struct MobileLibraryView: View {
     }
     var body: some View {
         NavigationStack {
-            List(library.projects, id: \.id) { project in
-                NavigationLink {
-                    MobileProjectView(library: library, projectID: project.id)
-                } label: {
-                    VStack(alignment: .leading) {
-                        Text(project.name).font(.headline).foregroundStyle(MobileClassic.heading)
-                        Text(project.isRecoveryArchive ? "Archivo de recuperación · Solo lectura" : "Consulta desde LeonardoMD · Solo lectura")
-                            .font(.caption).foregroundStyle(MobileClassic.secondary)
+            List {
+                Section("Demo y práctica / Demo & practice") {
+                    ForEach(MobileDemoStore.Language.allCases) { language in
+                        NavigationLink(language.title) { MobileDemoView(language: language) }
+                            .foregroundStyle(MobileClassic.heading)
+                            .accessibilityIdentifier("open-demo-\(language.rawValue)")
                     }
-                }
-                .listRowBackground(MobileClassic.paper)
+                    Text("Sin Mac ni conexión · No Mac or network needed")
+                        .font(.caption).foregroundStyle(MobileClassic.secondary)
+                }.listRowBackground(MobileClassic.paper)
+                Section("Proyectos / Projects") {
+                    ForEach(library.projects, id: \.id) { project in
+                        NavigationLink {
+                            MobileProjectView(library: library, projectID: project.id)
+                        } label: {
+                            VStack(alignment: .leading) {
+                                Text(project.name).font(.headline).foregroundStyle(MobileClassic.heading)
+                                Text(project.isRecoveryArchive ? "Archivo de recuperación · Solo lectura" : "Consulta desde LeonardoMD · Solo lectura")
+                                    .font(.caption).foregroundStyle(MobileClassic.secondary)
+                            }
+                        }
+                    }
+                    if library.projects.isEmpty {
+                        VStack(spacing: 16) {
+                            MobileBrand(size: 64)
+                            Text("Tus documentos, contigo").font(.title2.bold()).foregroundStyle(MobileClassic.heading)
+                            Text("Conecta tu Mac y consulta tus proyectos sin conexión.")
+                                .multilineTextAlignment(.center).foregroundStyle(MobileClassic.secondary)
+                            Button("Conectar con mi Mac") { presentedSheet = .direct }
+                                .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper).disabled(library.connecting)
+                            Label("Solo lectura", systemImage: "lock").font(.footnote)
+                        }.padding(.vertical, 20).frame(maxWidth: .infinity)
+                    }
+                }.listRowBackground(MobileClassic.paper)
             }
             .classicSurface()
-            .overlay {
-                if library.projects.isEmpty {
-                    VStack(spacing: 20) {
-                        MobileBrand()
-                        Text("Tus documentos, contigo").font(.title.bold()).foregroundStyle(MobileClassic.heading)
-                        Text("Conecta tu Mac y consulta tus proyectos sin conexión.")
-                            .multilineTextAlignment(.center).foregroundStyle(MobileClassic.secondary)
-                        Button("Conectar con mi Mac") { presentedSheet = .direct }
-                            .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper).disabled(library.connecting)
-                        Label("Solo lectura", systemImage: "lock").font(.footnote)
-                    }.padding(28).frame(maxWidth: 460)
-
-                }
-            }
             .navigationTitle("Biblioteca")
             .refreshable { await library.synchronize(); await library.reload() }
             .toolbar {
