@@ -28,6 +28,13 @@
 		D1A3A7C4F0E84D6C9B1E0A12 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D1A3A7C4F0E84D6C9B1E0A11 /* Assets.xcassets */; };
 		D1A3A7C4F0E84D6C9B1E0A14 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D1A3A7C4F0E84D6C9B1E0A13 /* PrivacyInfo.xcprivacy */; };
 		3E6C7AD17D9D0EDFB5E779BB /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
+		386100000000000000000000 /* MobileClassicStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000000 /* MobileClassicStyle.swift */; };
+		386100000000000000000001 /* MobileAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000001 /* MobileAboutView.swift */; };
+		386100000000000000000002 /* MobileRubricCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000002 /* MobileRubricCanvas.swift */; };
+		386100000000000000000003 /* MobileRubricInkTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000003 /* MobileRubricInkTools.swift */; };
+		386100000000000000000010 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000010 /* LaunchScreen.storyboard */; };
+		386100000000000000000014 /* MobileAboutInformation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000014 /* MobileAboutInformation.swift */; };
+		386100000000000000000015 /* Legal in Resources */ = {isa = PBXBuildFile; fileRef = 386000000000000000000015 /* Legal */; };
 		D38110000000000000000000 /* MobileDemoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000000 /* MobileDemoStore.swift */; };
 		D38110000000000000000001 /* MobileDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000001 /* MobileDemoView.swift */; };
 		D38110000000000000000002 /* Demo in Resources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000002 /* Demo */; };
@@ -72,6 +79,13 @@
 		D1A3A7C4F0E84D6C9B1E0A11 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D1A3A7C4F0E84D6C9B1E0A13 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		C53CBBB8313118CB2CF6782B /* LittleLeonardoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LittleLeonardoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		386000000000000000000000 /* MobileClassicStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileClassicStyle.swift; sourceTree = "<group>"; };
+		386000000000000000000001 /* MobileAboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileAboutView.swift; sourceTree = "<group>"; };
+		386000000000000000000002 /* MobileRubricCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRubricCanvas.swift; sourceTree = "<group>"; };
+		386000000000000000000003 /* MobileRubricInkTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRubricInkTools.swift; sourceTree = "<group>"; };
+		386000000000000000000010 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		386000000000000000000014 /* MobileAboutInformation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileAboutInformation.swift; sourceTree = "<group>"; };
+		386000000000000000000015 /* Legal */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Legal; sourceTree = "<group>"; };
 		D38100000000000000000000 /* MobileDemoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDemoStore.swift; sourceTree = "<group>"; };
 		D38100000000000000000001 /* MobileDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDemoView.swift; sourceTree = "<group>"; };
 		D38100000000000000000002 /* Demo */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Demo; sourceTree = "<group>"; };
@@ -171,6 +185,13 @@
 			isa = PBXGroup;
 			children = (
 				0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */,
+				386000000000000000000015 /* Legal */,
+				386000000000000000000014 /* MobileAboutInformation.swift */,
+				386000000000000000000010 /* LaunchScreen.storyboard */,
+				386000000000000000000003 /* MobileRubricInkTools.swift */,
+				386000000000000000000002 /* MobileRubricCanvas.swift */,
+				386000000000000000000001 /* MobileAboutView.swift */,
+				386000000000000000000000 /* MobileClassicStyle.swift */,
 				D38100000000000000000002 /* Demo */,
 				D38100000000000000000001 /* MobileDemoView.swift */,
 				D38100000000000000000000 /* MobileDemoStore.swift */,
@@ -292,6 +313,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				D1A3A7C4F0E84D6C9B1E0A12 /* Assets.xcassets in Resources */,
+				386100000000000000000015 /* Legal in Resources */,
+				386100000000000000000010 /* LaunchScreen.storyboard in Resources */,
 				D38110000000000000000002 /* Demo in Resources */,
 				D1A3A7C4F0E84D6C9B1E0A14 /* PrivacyInfo.xcprivacy in Resources */,
 			);
@@ -319,6 +342,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				C725AC973BC1837BFA8E472D /* LittleLeonardoApp.swift in Sources */,
+				386100000000000000000014 /* MobileAboutInformation.swift in Sources */,
+				386100000000000000000003 /* MobileRubricInkTools.swift in Sources */,
+				386100000000000000000002 /* MobileRubricCanvas.swift in Sources */,
+				386100000000000000000001 /* MobileAboutView.swift in Sources */,
+				386100000000000000000000 /* MobileClassicStyle.swift in Sources */,
 				D38110000000000000000001 /* MobileDemoView.swift in Sources */,
 				D38110000000000000000000 /* MobileDemoStore.swift in Sources */,
 				22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */,
@@ -557,7 +585,7 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "Little Leonardo usa la cámara para leer el QR de conexión que muestra LeonardoMD.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Little Leonardo se conecta con LeonardoMD en tu red local para sincronizar los proyectos que autorices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -583,7 +611,7 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "Little Leonardo usa la cámara para leer el QR de conexión que muestra LeonardoMD.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Little Leonardo se conecta con LeonardoMD en tu red local para sincronizar los proyectos que autorices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;

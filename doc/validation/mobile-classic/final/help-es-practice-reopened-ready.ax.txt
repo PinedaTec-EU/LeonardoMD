@@ -1,0 +1,69 @@
+Window: "Practice-v1-es.mdlr", App: LeonardoMD QA.
+0 standard window Practice-v1-es.mdlr, Secondary Actions: Raise, URL: file:///Users/jmr.pineda/Library/Application%20Support/LeonardoMD/Practice%20Forms/v1/es/Practice-v1-es.mdlr
+	1 container
+		2 scroll area
+			3 button Description: Nueva pestaña, Help: Abre un documento o proyecto en esta pestaña
+			4 button Description: Cerrar pestaña Nueva pestaña, ID: xmark
+			5 unknown Description: Reordenar pestaña Guide-v25-en.mdlz, Help: Arrastra para reordenar la pestaña
+			6 button Description: Guide-v25-en.mdlz, Help: /Users/jmr.pineda/Library/Application Support/LeonardoMD/User Guides/v25/en/Guide-v25-en.mdlz
+			7 button Description: Cerrar pestaña Guide-v25-en.mdlz, ID: xmark
+			8 unknown Description: Reordenar pestaña Guide-v25-es.mdlz, Help: Arrastra para reordenar la pestaña
+			9 button Description: Guide-v25-es.mdlz, Help: /Users/jmr.pineda/Library/Application Support/LeonardoMD/User Guides/v25/es/Guide-v25-es.mdlz
+			10 button Description: Cerrar pestaña Guide-v25-es.mdlz, ID: xmark
+			11 unknown Description: Reordenar pestaña Practice-v1-es.mdlr, Help: Arrastra para reordenar la pestaña
+			12 button (selected) Description: Practice-v1-es.mdlr, Help: /Users/jmr.pineda/Library/Application Support/LeonardoMD/Practice Forms/v1/es/Practice-v1-es.mdlr
+			13 button Description: Cerrar pestaña Practice-v1-es.mdlr, ID: xmark
+		14 button Description: Nueva pestaña, Help: Nueva pestaña (⌘T), ID: new-document-tab
+		15 button Description: Preferencias, Help: Preferencias…, ID: tab-bar-preferences
+		16 text Practice-v1-es.mdlr
+		17 menu button Move
+		18 image Description: Search Document, ID: doc.text.magnifyingglass
+		19 text Respuesta de formulario Leonardo ·
+		20 image Description: Move, ID: folder
+		21 text Archivo local
+		22 button Description: Protección del documento, Help: Protegido · pulsa para permitir la edición, Value: Solo lectura, ID: document-protection
+		23 button (disabled) Description: Undo, Help: Deshacer (⌘Z), ID: document-undo
+		24 button (disabled) Description: Redo, Help: Rehacer (⇧⌘Z), ID: document-redo
+		25 button (disabled) Description: Guardar, Help: Guardar (⌘S)
+		26 menu button Modo, Value: Fill, ID: document-mode
+		27 menu button Insertar, ID: document-insert
+		28 menu button Exportar, ID: document-export
+		29 menu button Más
+		30 scroll area
+			31 HTML content leonardo-document://local/es/
+				32 container
+					33 heading Tu formulario de práctica, Value: 1
+						34 text Tu formulario de práctica
+					35 text Escribe en los campos y guarda con ⌘S. Este documento se abre en Rellenar formulario. Si cambias de modo, vuelve con ⌘4. No necesitas abrir el candado: sirve para editar la estructura. Tu nombre:  Nombre de prueba
+					36 button Ayuda de Nombre de prueba
+					37 text field (settable) Nombre de prueba, Value: Classic QA 387 Español
+					38 text ¿Qué quieres crear con Leonardo? Tu objetivo
+					39 button Ayuda de Tu objetivo
+					40 text entry area (settable) Tu objetivo, Value: [text entry area]
+						41 text (settable) Comprobar respuestas locales tras reabrir.
+					42 text He revisado el destino antes de compartir: Listo para compartir
+					43 button Ayuda de Listo para compartir
+					44 checkbox Listo para compartir, Value: 0
+					45 text Guarda, cierra esta pestaña y usa el botón del punto 4 de la ayuda para volver a tu copia. Las respuestas se conservan por separado. El botón selecciona esta pestaña si ya estaba abierta. Para compartir, usa Exportar respuesta Leonardo y elige un archivo MDLR nuevo. Conserva tu copia original. Usa datos ficticios para practicar.
+			46 scroll bar (settable, float) 0
+		47 text Value: Versión 0.3.1082 · stable Guardado · archivo local, ID: status-version
+		48 image (selected) Description: Selected, ID: checkmark.circle
+		49 text Documento individual Respuesta de formulario Leonardo
+		50 image Description: Search Document, ID: doc.text.magnifyingglass
+		51 text Archivo local
+		52 image Description: Move, ID: folder
+		53 text UTF-8 227 palabras
+	54 close button
+	55 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	56 minimize button
+	57 image Practice-v1-es.mdlr
+	58 text Practice-v1-es.mdlr
+59 menu bar
+	60 LeonardoMD QA
+	61 Archivo
+	62 Edición
+	63 Vista
+	64 Ventana
+	65 Ayuda
+
+The focused UI element is 0 standard window Practice-v1-es.mdlr, Secondary Actions: Raise, URL: file:///Users/jmr.pineda/Library/Application%20Support/LeonardoMD/Practice%20Forms/v1/es/Practice-v1-es.mdlr

@@ -1,0 +1,66 @@
+Window: "Practice-v1-en.mdlr", App: LeonardoMD QA.
+0 standard window Practice-v1-en.mdlr, Secondary Actions: Raise, URL: file:///Users/jmr.pineda/Library/Application%20Support/LeonardoMD/Practice%20Forms/v1/en/Practice-v1-en.mdlr
+	1 container
+		2 scroll area
+			3 button Description: New tab, Help: Open a document or project in this tab
+			4 button Description: Close tab New tab, ID: xmark
+			5 unknown Description: Reorder tab Guide-v25-en.mdlz, Help: Drag to reorder tab
+			6 button Description: Guide-v25-en.mdlz, Help: /Users/jmr.pineda/Library/Application Support/LeonardoMD/User Guides/v25/en/Guide-v25-en.mdlz
+			7 button Description: Close tab Guide-v25-en.mdlz, ID: xmark
+			8 unknown Description: Reorder tab Practice-v1-en.mdlr, Help: Drag to reorder tab
+			9 button (selected) Description: Practice-v1-en.mdlr, Help: /Users/jmr.pineda/Library/Application Support/LeonardoMD/Practice Forms/v1/en/Practice-v1-en.mdlr
+			10 button Description: Close tab Practice-v1-en.mdlr, ID: xmark
+		11 button Description: New tab, Help: New tab (⌘T), ID: new-document-tab
+		12 button Description: Preferences, Help: Preferences…, ID: tab-bar-preferences
+		13 text Practice-v1-en.mdlr
+		14 menu button Move
+		15 image Description: Search Document, ID: doc.text.magnifyingglass
+		16 text Leonardo form response ·
+		17 image Description: Move, ID: folder
+		18 text Local file
+		19 button Description: Document protection, Help: Protected · click to enable editing, Value: Read only, ID: document-protection
+		20 button (disabled) Description: Undo, Help: Undo (⌘Z), ID: document-undo
+		21 button (disabled) Description: Redo, Help: Redo (⇧⌘Z), ID: document-redo
+		22 button (disabled) Description: Save, Help: Save (⌘S)
+		23 menu button Mode, Value: Fill, ID: document-mode
+		24 menu button Insert, ID: document-insert
+		25 menu button Export, ID: document-export
+		26 menu button More
+		27 scroll area
+			28 HTML content leonardo-document://local/en/
+				29 container
+					30 heading Your practice form, Value: 1
+						31 text Your practice form
+					32 text Type into the fields and save with ⌘S. This document opens in Fill form. If you change modes, return with ⌘4. You do not need to unlock the padlock: it permits structural editing. Your name:  Practice name
+					33 button Help for Practice name
+					34 text field (settable) Practice name, Value: Classic QA 387 English
+					35 text What would you like to create with Leonardo? Your goal
+					36 button Help for Your goal
+					37 text entry area (settable) Your goal, Value: [text entry area]
+						38 text (settable) Verify offline practice persistence.
+					39 text I checked the destination before sharing: Ready to share
+					40 button Help for Ready to share
+					41 checkbox Ready to share, Value: 0
+					42 text Save, close this tab and use the button in chapter 4 of the guide to return to your copy. Answers are retained separately. The button selects this tab if already open. To share, use Export Leonardo response and choose a new MDLR file. Keep your original copy. Use fictional data for practice.
+			43 scroll bar (settable, float) 0
+		44 text Value: Version 0.3.1082 · stable Saved · local file, ID: status-version
+		45 image (selected) Description: Selected, ID: checkmark.circle
+		46 text Standalone document Leonardo form response
+		47 image Description: Search Document, ID: doc.text.magnifyingglass
+		48 text Local file
+		49 image Description: Move, ID: folder
+		50 text UTF-8 224 words
+	51 close button
+	52 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	53 minimize button
+	54 image Practice-v1-en.mdlr
+	55 text Practice-v1-en.mdlr
+56 menu bar
+	57 LeonardoMD QA
+	58 File
+	59 Edit
+	60 View
+	61 Window
+	62 Help
+
+The focused UI element is 0 standard window Practice-v1-en.mdlr, Secondary Actions: Raise, URL: file:///Users/jmr.pineda/Library/Application%20Support/LeonardoMD/Practice%20Forms/v1/en/Practice-v1-en.mdlr

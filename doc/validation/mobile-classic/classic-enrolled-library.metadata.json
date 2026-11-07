@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-06T20:47:41.386962+00:00",
+  "capture": {
+    "captured_at": "2026-11-06T20:41:52.727000+00:00",
+    "route": "/LittleLeonardo/classic-enrolled-library",
+    "screen": "Classic enrolled library",
+    "browser_name": "Native iOS Simulator, SwiftUI/UIKit; no browser",
+    "browser_version": "iOS 27.0 (24A434); SDK 27.1",
+    "state": "Leonardo Classic; Spanish UI; synthetic loopback TLS fixture; native points represented in viewport_css schema field",
+    "viewport_css": {
+      "width": 402,
+      "height": 874
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "c81cced72c4cd37c5800a626bf43496f87581f24850a4712a04f05ff975cede0"
+  },
+  "source": {
+    "revision_at_collection": "793166b2d9137993fbd6a1313ac18fb5ffe75155",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

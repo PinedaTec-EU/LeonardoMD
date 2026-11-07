@@ -620,6 +620,24 @@ devuelve la rúbrica; no puede editar el documento. Si falla el asistente, el
 servicio o la capacidad, se muestra un estado de desconexión o incompatibilidad
 con una acción clara.
 
+### Aspecto Classic, arranque y Acerca de en Little Leonardo
+
+Little Leonardo usa los colores de **Leonardo Classic**: papel pergamino,
+títulos burdeos y acciones óxido, también en la demo incluida, su vista de texto y la ayuda de los campos. La demo está disponible en Biblioteca antes de conectar un Mac. Al arrancar aparece la marca mientras se prepara la
+biblioteca local, sin una espera añadida. En **Ajustes de sincronización →
+Acerca de Little Leonardo** puedes consultar la versión y compilación instaladas, así como abrir Ayuda,
+Privacidad y Licencias sin conexión.
+
+Tras **Aceptar y dibujar**, la página recomienda girar el dispositivo. En
+horizontal se muestra el lienzo a pantalla completa con color, trazo, grosor,
+**Deshacer** y **Limpiar**. Al volver a vertical reaparece la página normal y el
+dibujo conserva sus proporciones. Si tienes bloqueada la rotación, pulsa
+**Ampliar lienzo** y después **Volver**. El giro nunca envía ni borra la rúbrica.
+La vista previa y **Enviar rúbrica** siguen siendo acciones explícitas; un
+borrador bloqueado, enviado o pendiente de reintento no permite seguir dibujando.
+
+![Lienzo de rúbrica a pantalla completa en horizontal, con los colores Leonardo Classic. Captura real del simulador con una solicitud sintética; miniatura reducida.](assets/ios-rubric-classic-landscape.png)
+
 ### Si se interrumpe la sincronización móvil
 
 Ante un fallo de red, el aviso existente puede incluir una línea de diagnóstico

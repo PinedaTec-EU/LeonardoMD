@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T11:49:15.580000+00:00",
+  "route": "/LittleLeonardo/Settings/About",
+  "screen": "Installed Release About with canonical version/build",
+  "browser_name": "Native iOS Simulator SwiftUI/UIKit; no browser",
+  "browser_version": "iOS27.0(24A434), SDK27.1",
+  "viewport_css": {
+    "width": 402,
+    "height": 874
+  },
+  "capture_mode": "viewport",
+  "state": "Release build-for-testing, testability enabled; installed version0.3.1082/build1082; product sourcea7f58b6 identical to11a6ddd. Development simulator acceptance, not TestFlight delivery.",
+  "data_provenance": "synthetic"
+}

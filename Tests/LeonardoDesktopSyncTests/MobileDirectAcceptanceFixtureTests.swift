@@ -219,6 +219,9 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                     case "arm-accept-lost-ack":
                         guard mode == "accept-lost-ack", let acceptanceFault else { throw SyncError.invalidPath }
                         await acceptanceFault.arm()
+                    case "suspend-accept-reconcile":
+                        guard mode == "accept-lost-ack", let acceptanceFault else { throw SyncError.invalidPath }
+                        await acceptanceFault.suspendReconcile()
                     case "allow-accept-reconcile":
                         guard mode == "accept-lost-ack", let acceptanceFault else { throw SyncError.invalidPath }
                         await acceptanceFault.allowReconcile()
@@ -594,6 +597,7 @@ private actor LostRubricAcceptanceAcknowledgementFault {
     private let root: URL
     private var armed = false
     private var reconcileAllowed = false
+    private var reconcileSuspended = false
     private var acceptPosts = 0
     private var acceptRequestIDs: Set<UUID> = []
     private var blockedAcceptPosts = 0
@@ -609,12 +613,14 @@ private actor LostRubricAcceptanceAcknowledgementFault {
         try? Data("armed\n".utf8).write(to: root.appendingPathComponent("accept-lost-ack-armed.txt"), options: .atomic)
     }
 
+    func suspendReconcile() { reconcileSuspended = true }
+
     func allowReconcile() {
         reconcileAllowed = true
         try? Data("allowed\n".utf8).write(to: root.appendingPathComponent("accept-reconcile-allowed.txt"), options: .atomic)
     }
 
-    func response(for request: HTTPRequest, after response: HTTPResponse) -> HTTPResponse {
+    func response(for request: HTTPRequest, after response: HTTPResponse) async -> HTTPResponse {
         guard armed else { return response }
         if request.method == "GET", request.path.hasSuffix("/rubrics/requests"), !reconcileAllowed {
             blockedRubricPolls += 1
@@ -632,6 +638,15 @@ private actor LostRubricAcceptanceAcknowledgementFault {
                 try? Data("first-accept-ack-dropped\n".utf8)
                     .write(to: root.appendingPathComponent("accept-ack-injected.txt"), options: .atomic)
                 return HTTPResponse(status: 503)
+            }
+            if reconcileSuspended && !reconcileAllowed {
+                try? Data("pending\n".utf8)
+                    .write(to: root.appendingPathComponent("accept-recovery-suspended.txt"), options: .atomic)
+                let deadline = ContinuousClock.now.advanced(by: .seconds(60))
+                while !reconcileAllowed && ContinuousClock.now < deadline {
+                    do { try await Task.sleep(for: .milliseconds(100)) }
+                    catch { return HTTPResponse(status: 503) }
+                }
             }
             guard reconcileAllowed else {
                 blockedAcceptPosts += 1

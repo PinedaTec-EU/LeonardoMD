@@ -2,6 +2,47 @@ import XCTest
 import UIKit
 
 final class PairingUITests: XCTestCase {
+    @MainActor func testClassicLibrarySettingsAndInstalledAbout() throws {
+        let app = XCUIApplication()
+        app.launch()
+        XCTAssertTrue(app.buttons["open-sync-settings"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.navigationBars["Biblioteca"].waitForExistence(timeout: 5))
+        captureScreen(app, name: "Classic library")
+        app.buttons["open-sync-settings"].tap()
+        captureScreen(app, name: "Classic synchronization settings")
+        XCTAssertTrue(app.buttons["open-about"].waitForExistence(timeout: 5))
+        app.buttons["open-about"].tap()
+        XCTAssertTrue(app.staticTexts["Little Leonardo"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["about-version"].firstMatch.waitForExistence(timeout: 5))
+        app.buttons["Ayuda"].tap()
+        XCTAssertTrue(app.staticTexts["Conecta tu Mac"].waitForExistence(timeout: 5))
+        captureScreen(app, name: "Classic offline help")
+        app.navigationBars.buttons["Acerca de"].tap()
+        app.buttons["Privacidad"].tap()
+        XCTAssertTrue(app.staticTexts["Datos en este dispositivo"].waitForExistence(timeout: 5))
+        app.navigationBars.buttons["Acerca de"].tap()
+        app.buttons["Licencias"].tap()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "MIT License")).firstMatch.waitForExistence(timeout: 5))
+        app.navigationBars.buttons["Acerca de"].tap()
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Classic About installed application"
+        capture.lifetime = .keepAlways
+        add(capture)
+        app.buttons["Cerrar"].tap()
+        app.buttons["open-pairing"].tap()
+        XCTAssertTrue(app.segmentedControls["pairing-method"].waitForExistence(timeout: 5))
+        captureScreen(app, name: "Classic QR pairing")
+        app.segmentedControls["pairing-method"].buttons["IP y puerto"].tap()
+        captureScreen(app, name: "Classic manual pairing")
+    }
+
+    @MainActor private func captureScreen(_ app: XCUIApplication, name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
     @MainActor func testNativeLargeSnapshotAssetSyncOverLANHTTPS() throws {
         let environment = ProcessInfo.processInfo.environment
         guard environment["LEONARDO_DIRECT_QA_LARGE_ASSET"] == "1",
@@ -64,9 +105,15 @@ final class PairingUITests: XCTestCase {
         app.buttons["Sincronizar"].firstMatch.tap()
         let project = app.staticTexts["QA · Native Direct"].firstMatch
         XCTAssertTrue(project.waitForExistence(timeout: 20))
+        captureScreen(app, name: "Classic enrolled library")
         project.tap()
+        captureScreen(app, name: "Classic project documents")
         app.buttons["docs/read.md"].firstMatch.tap()
         XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native direct initial"].waitForExistence(timeout: 15))
+        captureScreen(app, name: "Classic Markdown document")
+        app.buttons["Ver texto"].tap()
+        captureScreen(app, name: "Classic document source")
+        app.buttons["Ver documento"].tap()
         XCTAssertFalse(app.buttons["Editar"].exists)
         XCTAssertFalse(app.textViews.firstMatch.exists)
         XCTAssertFalse(app.buttons["Enviar cambios"].exists)
@@ -144,6 +191,48 @@ final class PairingUITests: XCTestCase {
         app.buttons["rubric-accept"].tap()
         let canvas = app.otherElements["rubric-canvas"]
         XCTAssertTrue(canvas.waitForExistence(timeout: 10))
+
+        XCUIDevice.shared.orientation = .portrait
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let rubricLabel = app.textFields["rubric-label"]
+        rubricLabel.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["rubric-collapse"].exists,
+                       "The portrait keyboard must not be mistaken for landscape rotation")
+        rubricLabel.typeText("\n")
+        XCTAssertTrue(app.buttons["rubric-expand"].waitForExistence(timeout: 5))
+        app.buttons["rubric-expand"].tap()
+        XCTAssertTrue(app.buttons["rubric-collapse"].waitForExistence(timeout: 5))
+        app.buttons["rubric-collapse"].tap()
+        XCTAssertTrue(app.textFields["rubric-label"].waitForExistence(timeout: 5))
+        drawLine(in: canvas, from: CGVector(dx: 0.2, dy: 0.5), to: CGVector(dx: 0.7, dy: 0.5))
+        let portraitStrokeCount = canvas.value as? String
+        XCTAssertNotNil(portraitStrokeCount, "The canvas exposes the portable stroke count")
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(app.buttons["rubric-collapse"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.otherElements["rubric-canvas"].value as? String, portraitStrokeCount,
+                       "Rotation must not mutate portable strokes")
+        XCTAssertFalse(app.textFields["rubric-label"].exists)
+        XCTAssertFalse(app.buttons["rubric-send"].exists)
+        let landscapeReady = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            app.frame.width > app.frame.height
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [landscapeReady], timeout: 5), .completed)
+        let rotated = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        rotated.name = "Classic rubric landscape full-screen drawing"
+        rotated.lifetime = .keepAlways
+        add(rotated)
+        drawLine(in: app.otherElements["rubric-canvas"], from: CGVector(dx: 0.3, dy: 0.4), to: CGVector(dx: 0.8, dy: 0.6))
+        XCUIDevice.shared.orientation = .portrait
+        XCTAssertTrue(app.textFields["rubric-label"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["rubric-undo"].isEnabled)
+        XCTAssertNotNil(waitForVisibleInk(in: app, element: canvas, timeout: 5,
+            message: "Ink must survive portrait-landscape-portrait"))
+        let restored = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        restored.name = "Classic rubric restored portrait with preserved ink"
+        restored.lifetime = .keepAlways
+        add(restored)
+        app.buttons["rubric-clear"].tap()
 
         drawLine(in: canvas, from: CGVector(dx: 0.15, dy: 0.55), to: CGVector(dx: 0.85, dy: 0.55))
         app.buttons["rubric-undo"].tap()
@@ -369,9 +458,28 @@ final class PairingUITests: XCTestCase {
         XCTAssertTrue(waitForDirectFixtureFile("accept-reconcile-gated.txt", timeout: 20),
                       "Acceptance recovery must remain gated before the explicit phase")
 
+        try advanceDirectFixture("suspend-accept-reconcile")
         app.terminate()
         app.launch()
+        XCTAssertTrue(waitForDirectFixtureFile("accept-recovery-suspended.txt", timeout: 15),
+                      "Cold launch must actually be waiting for the pending acceptance response")
         dismissMobileFailureIfPresent(app)
+        if app.buttons["Cerrar"].waitForExistence(timeout: 2) { app.buttons["Cerrar"].tap() }
+        let localLibraryReady = app.navigationBars["Biblioteca"].waitForExistence(timeout: 5)
+        captureScreen(app, name: "Cold launch while rubric recovery is suspended")
+        guard localLibraryReady else {
+            try advanceDirectFixture("allow-accept-reconcile")
+            XCTFail("Local library and demos must be usable before pending network recovery returns")
+            return
+        }
+        XCTAssertFalse(app.otherElements["startup-splash"].exists)
+        app.buttons["open-demo-en"].tap()
+        XCTAssertTrue(app.webViews.staticTexts["Welcome to Little Leonardo"].waitForExistence(timeout: 10),
+                      "The local demo must render while the Mac response remains suspended")
+        XCTAssertFalse(waitForDirectFixtureFile("accept-reconciled.txt", timeout: 0.2),
+                       "Local access must not release or silently complete pending acceptance")
+        captureScreen(app, name: "Offline demo available during pending rubric recovery")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
         let recoverySheet = app.otherElements["rubric-request-sheet"]
         if !recoverySheet.waitForExistence(timeout: 12) {
             let recoveryBanner = app.buttons["rubric-draft-banner"]
