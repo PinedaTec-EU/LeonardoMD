@@ -384,7 +384,7 @@
       ]
     },
     "ios": {
-      "build_source_sha": "490086a6829f30cab3e5a7c6fe6e03a75f90e22d",
+      "build_source_sha": "7ce073dfb43ca0317876223e1d98a42115d40075",
       "input_scopes": [
         "Package.swift",
         "Package.resolved",
@@ -697,7 +697,7 @@
     "version": null,
     "build": null,
     "version_note": "Local Debug test-host app; distribution version metadata is not configured in this build. Source SHA and executable digest identify it.",
-    "executable_sha256": "54edc3c5b93f545bd7f570263e85bd063152b757ca9f5a9a8e5450c59ee09221",
+    "executable_sha256": "17547f45c15a1f688f6629a8be162ce49b93f85c873467b9d0ba450844c48b44",
     "simulator_id": "DF495415-237F-4532-A6C4-793CD90EBF92",
     "simulator_runtime": "iOS 27.0",
     "component_widths_points": [
@@ -709,6 +709,10 @@
       "accessibility3"
     ],
     "physical_device": false,
-    "capture_source_sha": "7ce073dfb43ca0317876223e1d98a42115d40075"
-  }
+    "capture_source_sha": "7ce073dfb43ca0317876223e1d98a42115d40075",
+    "build_source_sha": "7ce073dfb43ca0317876223e1d98a42115d40075",
+    "installed_executable_sha256": "17547f45c15a1f688f6629a8be162ce49b93f85c873467b9d0ba450844c48b44",
+    "installed_executable_matches_build": true
+  },
+  "source_note": "Production-input baseline; final build sources are recorded separately per group."
 }
