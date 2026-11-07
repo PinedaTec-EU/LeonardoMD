@@ -172,3 +172,28 @@ extension OnDemandCacheTests {
         XCTAssertTrue(catalogue.folders.contains("docs/empty"))
     }
 }
+
+extension OnDemandCacheTests {
+    @MainActor func testRestoredOfflineCatalogueCanBeOpenedWithoutCallingTheNetwork() async throws {
+        let (root, cache, descriptor, files) = try fixture(1)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let first = DownloadLibrary(cache: cache)
+        try await first.update(id: descriptor.id, descriptor: descriptor,
+                               catalogue: RemoteProjectCatalogue(files: files.map(RemoteFileEntry.init)))
+        first.fetch = { _, _ in files[0] }
+        await first.retain(id: descriptor.id, path: "docs", isFolder: true, keep: true)
+        let restarted = DownloadLibrary(cache: OnDemandCache(root: root))
+        restarted.fetch = { _, _ in XCTFail("Offline reading must not depend on the source"); throw SyncError.revoked }
+        try await restarted.restore(allowedIDs: [descriptor.id])
+        XCTAssertEqual(restarted.projects.map(\.id), [descriptor.id])
+        let file = try await restarted.open(id: descriptor.id, path: files[0].path)
+        XCTAssertEqual(file, files[0])
+        await restarted.clearTemporary()
+        XCTAssertEqual(restarted.usage.offlineBytes, file.content.count)
+        try await restarted.update(id: descriptor.id, descriptor: descriptor, catalogue: RemoteProjectCatalogue(files: []))
+        do {
+            _ = try await restarted.open(id: descriptor.id, path: file.path)
+            XCTFail("A removed catalogue entry must no longer open")
+        } catch { XCTAssertEqual(error as? SyncError, .revoked) }
+    }
+}

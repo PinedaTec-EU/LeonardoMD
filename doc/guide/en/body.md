@@ -703,6 +703,8 @@ Automatic refresh defaults to every minute while the receiving app is active; an
 On Mac, **Create editable copy** explicitly downloads the complete working copy for editing and the existing proposal/review workflow. These copies are separate from the automatically cleaned reader cache. Browsing or keeping files offline does not send edits.
 
 
+If the source Mac has an older Leonardo Sync service, the app asks you to update LeonardoMD and Leonardo Sync on that Mac. A missing on-demand service is distinct from a network failure; it never triggers a bulk-download fallback or changes pairing.
+
 ## 16. Updates and release notes
 
 ![Stable subscription and manual checks; synthetic installed version, no installation performed.](assets/updates.png)

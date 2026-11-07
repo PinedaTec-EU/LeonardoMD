@@ -23,7 +23,7 @@ public struct RemoteFileEntry: Codable, Hashable, Sendable, Identifiable {
     }
 }
 
-public struct RemoteProjectCatalogue: Codable, Equatable, Sendable {
+public struct RemoteProjectCatalogue: Codable, Hashable, Sendable {
     public let files: [RemoteFileEntry]
     public let directories: [String]
     public init(files: [RemoteFileEntry], directories: [String] = []) { self.files = files; self.directories = directories }

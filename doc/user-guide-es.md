@@ -716,6 +716,8 @@ La actualización automática inicial es cada minuto mientras la app receptora e
 En Mac, **Crear copia editable** descarga explícitamente una copia completa para editar y utilizar el flujo existente de propuestas y revisión. Estas copias están separadas de la caché de consulta que se limpia automáticamente. Explorar o mantener archivos offline no envía cambios.
 
 
+Si el Mac de origen usa un servicio Leonardo Sync anterior, la app pide actualizar LeonardoMD y Leonardo Sync en ese Mac. La falta del servicio bajo demanda se distingue de un fallo de red; no provoca una descarga masiva ni cambia el emparejamiento.
+
 ## 16. Actualizaciones y notas de versión
 
 ![Suscripción estable y comprobaciones manuales; versión instalada ficticia, sin realizar instalaciones.](guide/es/assets/updates.png)
