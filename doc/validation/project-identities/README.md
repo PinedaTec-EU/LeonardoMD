@@ -25,9 +25,9 @@ The compact bilingual guide illustrations and their original contexts are in [`m
 
 ### Native iOS component
 
-The [iOS component captures](ios/components/) contain eight original PNGs from `MobileProjectIdentityLabel`: received and recovery roles at iPhone/iPad widths and standard/accessibility Dynamic Type. The test-emitted metadata is preserved beside each PNG; canonical metadata is under [`ios/components/canonical/`](ios/components/canonical/). All verified captures use source `490086a6829f30cab3e5a7c6fe6e03a75f90e22d`.
+The [iOS component captures](ios/components/) contain eight original PNGs from `MobileProjectIdentityLabel`: received and recovery roles at iPhone/iPad widths and standard/accessibility Dynamic Type. The test-emitted metadata is preserved beside each PNG; canonical metadata is under [`ios/components/canonical/`](ios/components/canonical/). The primary captures use source `7ce073dfb43ca0317876223e1d98a42115d40075`, which adds the capture timestamp to the test driver while preserving the final application inputs from `490086a6829f30cab3e5a7c6fe6e03a75f90e22d`.
 
-The source test metadata does not emit a capture timestamp. Canonical iOS metadata therefore keeps `capture.captured_at` as `null` and records `filesystem_written_at` only as an explicitly labelled source-file write observation; it is not treated as a capture-time claim.
+The source test metadata emits `captured_at`; canonical iOS metadata preserves that capture time. Native viewport dimensions are measured in points and explicitly labelled as a native-point equivalent in the shared browser-oriented schema; CSS is not applicable.
 
 ### Packaged macOS Help and practice
 
@@ -41,7 +41,7 @@ The final fresh-process run used PID `14735`, QA bundle `/var/folders/_s/khfztzr
 
 [Build inputs and package identity](build-inputs.json) record the full producer SHA, immutable Git object lists/digests, actual executable hashes and guide source/bundle/personal-copy hashes. Both Help copies match their packaged resources byte-for-byte. The native Mac bundle reports version/build `0.3.1113/1113`: this is the unmaterialized baseline of this source PR, not a new release. The local iOS Debug test-host app has no distribution version fields; its source SHA and executable digest identify it.
 
-All final application builds and primary captures use producer `490086a6829f30cab3e5a7c6fe6e03a75f90e22d`. Subsequent evidence/accounting-only commits must preserve the recorded application input object lists. Recheck each group's `git ls-tree -r HEAD -- <input_scopes>` SHA-256 against `git_ls_tree_sha256` before reusing this mapping.
+All final application production inputs use producer `490086a6829f30cab3e5a7c6fe6e03a75f90e22d`. The timestamped iOS capture driver uses `7ce073dfb43ca0317876223e1d98a42115d40075` with unchanged production inputs and application executable. The separately recorded `ios_capture_driver` group identifies that test change. Subsequent evidence/accounting-only commits must preserve the recorded input object lists. Recheck each group's `git ls-tree -r HEAD -- <input_scopes>` SHA-256 against `git_ls_tree_sha256` before reusing this mapping.
 
 Representative originals: [Mac narrow Spanish rows](macos/components/project-identities-es-light-220.png), [iPhone received role](ios/components/received-iphone-large.png), [iPhone accessibility size](ios/components/received-iphone-accessibility3.png), [iPad-width accessibility size](ios/components/received-ipad-accessibility3.png), [fresh packaged local header](macos/native/local-project.jpg), [Spanish Help roles](macos/native/help-es-project-roles.jpg).
 
@@ -51,7 +51,7 @@ Representative originals: [Mac narrow Spanish rows](macos/components/project-ide
 | --- | --- |
 | Full Swift log | `/tmp/leonardo-399-full.log`: 713 XCTest tests, 35 skips, 0 failures; 71 Swift Testing tests, 0 failures. |
 | Repository Python suites | 112 tests with 7 skips; Leonardo Format plugin 38 tests; packaging 20 tests passed. |
-| iOS simulator | 13 unit tests and 2 Demo UI tests passed on the owned iOS 27 simulator (UDID prefix `DF495415…`); the focused 13-unit run and corrected fresh component captures also passed. |
+| iOS simulator | 13 unit tests and 2 Demo UI tests passed on the owned iOS 27 simulator (UDID prefix `DF495415…`); the focused 13-unit run, timestamped native captures and final bilingual Demo UI rerun also passed. |
 | Final packaged-process verification | Passed in fresh PID14735; package verification and source/bundle/personal-copy identity are recorded in `build-inputs.json`. English/Math preferences and blank practice names were restored; the process exited normally. |
 
-The verified iOS set came only from `/tmp/leonardo-399-ios-components-verified`; the separate `…-final` directory with the incorrect environment marker was not used.
+The primary iOS set came only from `/tmp/leonardo-399-ios-components-timestamped`, with test-emitted capture times and source SHA. Earlier capture directories were not used. The final successful compiler-bearing invocation brought the source PR release delta to 9.

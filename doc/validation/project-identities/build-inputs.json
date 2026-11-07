@@ -393,9 +393,10 @@
         "Sources/LeonardoSync",
         "Sources/LeonardoSyncTransport",
         "Sources/LeonardoRender",
-        "Mobile"
+        "Mobile/LittleLeonardo",
+        "Mobile/LittleLeonardo.xcodeproj"
       ],
-      "git_ls_tree_sha256": "69b92dca1b437832d411f2ded3e13fa631fa3f627990d5559784ce9e0ad289e0",
+      "git_ls_tree_sha256": "5bdbba656ef01bd40203ceedb1f0cda7cbfe3aaa868f5d23ef98f3e023c106bd",
       "objects": [
         "100644 blob ea89ff5c8488fdf52b779ce3890204696c147d7f\tMobile/LittleLeonardo.xcodeproj/project.pbxproj",
         "100644 blob 7ccd7bed5ac59a7cfccc452d091f5844bcda8671\tMobile/LittleLeonardo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved",
@@ -445,10 +446,6 @@
         "100644 blob f2bc2dbc77d102c8eaee43f80bda971293133b8b\tMobile/LittleLeonardo/MobileRubricInkTools.swift",
         "100644 blob ac985584555e4bf78a180a31562b0a842b599dec\tMobile/LittleLeonardo/MobileRubricSubmissionGate.swift",
         "100644 blob 256b27c61d0324a89be15d449bc87ba25f9c5c6d\tMobile/LittleLeonardo/PrivacyInfo.xcprivacy",
-        "100644 blob 51440d33fd3dbd6c6fbcfe7dc7fde61635b7ef43\tMobile/LittleLeonardoTests/MobileDemoStoreTests.swift",
-        "100644 blob 306dd4a7e638f860a26d1c677c0b0bd255936672\tMobile/LittleLeonardoTests/MobileRevocationTests.swift",
-        "100644 blob 7576648c72d9505b8563c604c99cb7f8655589c0\tMobile/LittleLeonardoUITests/MobileDemoUITests.swift",
-        "100644 blob 0b1f526f92862e36eaa9cda65d3c0418175816dc\tMobile/LittleLeonardoUITests/PairingUITests.swift",
         "100644 blob b67272e588be3d1079b56d556cf662ddfa9a656b\tPackage.resolved",
         "100644 blob c277fe6e5c7af7d0282fdc17c92fe5acf107b539\tPackage.swift",
         "100644 blob 5e0f0589902f4b718066d6f12c8134f1505b099c\tSources/CLeonardoZlib/CLeonardoZlib.c",
@@ -652,6 +649,17 @@
         "100644 blob 0c314d0524f9c7ad74928d00447543c4e3cc5090\tSources/LeonardoSyncTransport/ServerIdentityProbe.swift",
         "100644 blob 0e689fad1499c3b75ead22009affa16e3de9141a\tSources/LeonardoSyncTransport/TLSServerIdentity.swift"
       ]
+    },
+    "ios_capture_driver": {
+      "build_source_sha": "7ce073dfb43ca0317876223e1d98a42115d40075",
+      "input_scopes": [
+        "Mobile/LittleLeonardoTests"
+      ],
+      "git_ls_tree_sha256": "113d033f785e856639c23f934595496e178a46ab7318bc1fa1f0b54605f8496a",
+      "objects": [
+        "100644 blob 27912b002145d396698541010d4cb0401ff43fc4\tMobile/LittleLeonardoTests/MobileDemoStoreTests.swift",
+        "100644 blob 306dd4a7e638f860a26d1c677c0b0bd255936672\tMobile/LittleLeonardoTests/MobileRevocationTests.swift"
+      ]
     }
   },
   "macos": {
@@ -700,6 +708,7 @@
       "large",
       "accessibility3"
     ],
-    "physical_device": false
+    "physical_device": false,
+    "capture_source_sha": "7ce073dfb43ca0317876223e1d98a42115d40075"
   }
 }
