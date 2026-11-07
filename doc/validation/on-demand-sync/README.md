@@ -50,3 +50,7 @@ A real package built successfully (PR385 compilation delta20), passed canonical 
 The consumer preferences page displayed separate offline storage, temporary budget256MiB and pending counts. Changing to128MiB and clearing the empty temporary cache worked. The ad-hoc QA package correctly reports that its helper signature cannot register the service; no helper, trust pin, device grant or pairing was changed.
 
 **Still pending:** the Mac locked again while reopening cache preferences. The QA instance remains open, the limit is128MiB and needs restoration to256; Spanish Help, Math-disabled fallback, Spanish practice, completed restore/capture acceptance, exact-head CI and strict judge remain outstanding. The second unlock request is centralized in the385 thread. This is partial evidence, never a full native acceptance claim. Native CUA screenshots are original JPEG bytes; metadata explicitly uses measured screenshot pixels as the viewport equivalent because CUA exposes no CSS/native-point dimensions.
+
+### Joint-source CLI follow-up
+
+The complete local suite on the joint product source d8487bc passed719 XCTest checks (36 skips, zero failures), plus28 Swift Testing checks. Generic iOS Simulator compilation also succeeded; neither result claims a physical iOS run, installation or transport acceptance. Successful invocations are recorded in the385 ledger through delta22. Post-d848 commits contain evidence and ledger updates only; no application/build source changed. The blocked native checks and pending restoration above remain open.
