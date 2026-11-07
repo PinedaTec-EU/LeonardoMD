@@ -28,8 +28,9 @@ struct ProjectSidebar: View {
                                      identity: presentation.identity, detail: presentation.detail)
                     .font(.headline)
                 Spacer()
-                Button { session.chooseProject() } label: { Image(systemName: ProjectIdentity.projectSymbolName) }
+                Button { session.chooseProject() } label: { Image(systemName: "folder.badge.plus") }
                     .help(L10n.text("Open another project"))
+                    .accessibilityLabel(L10n.text("Open another project"))
             }
             TextField(L10n.text("Search files and content"), text: $session.searchQuery)
                 .textFieldStyle(.roundedBorder)

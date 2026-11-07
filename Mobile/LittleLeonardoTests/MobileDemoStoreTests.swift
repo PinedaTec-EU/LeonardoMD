@@ -104,6 +104,7 @@ final class MobileDemoStoreTests: XCTestCase {
             .frame(minHeight: 104, alignment: .leading)
             .background(MobileClassic.paper)
         let hosting = UIHostingController(rootView: AnyView(view))
+        hosting.safeAreaRegions = []
         hosting.loadViewIfNeeded()
         hosting.view.frame = CGRect(x: 0, y: 0, width: width, height: 104)
         hosting.view.backgroundColor = UIColor.clear

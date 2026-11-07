@@ -30,20 +30,18 @@ struct MobileProjectIdentityLabel: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            ZStack(alignment: .bottomTrailing) {
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Image(systemName: ProjectIdentity.projectSymbolName)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(MobileClassic.heading)
-                    .frame(width: 30, height: 30)
                 if let indicator = identity.indicatorSymbolName {
                     Image(systemName: indicator)
-                        .font(.caption2.weight(.bold))
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(MobileClassic.accent)
-                        .padding(2)
-                        .background(MobileClassic.paper, in: Circle())
-                        .offset(x: 3, y: 3)
                 }
             }
+            .fixedSize()
+            .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(name)
                     .font(.headline)
@@ -51,6 +49,7 @@ struct MobileProjectIdentityLabel: View {
                 Text(bilingualRole)
                     .font(.caption)
                     .foregroundStyle(MobileClassic.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -293,6 +292,10 @@ struct MobileProjectView: View {
                 Section {
                     MobileProjectIdentityLabel(name: project.name, identity: project.projectIdentity)
                     Text("Disponible offline · Solo lectura").font(.caption).foregroundStyle(MobileClassic.secondary)
+                    if !project.isRecoveryArchive {
+                        Text("Contenido autorizado por el Mac · Content authorized by the Mac")
+                            .font(.caption).foregroundStyle(MobileClassic.secondary)
+                    }
                     Text("Carpeta: \(project.scope.folder.isEmpty ? "/" : project.scope.folder)").font(.caption)
                     if project.isRecoveryArchive {
                         Text("Esta copia antigua conserva tus cambios locales y enviados. Expórtala para recuperarlos en un ordenador. No se editará ni se enviará automáticamente.")
