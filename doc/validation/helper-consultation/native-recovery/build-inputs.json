@@ -1,5 +1,5 @@
 {
-  "build_source": "0ba23aa41121d20f3b7adb945e2080389df05c73",
+  "build_source": "b9c5bb7a1cb46d5d989d78de833fae57e402a9c5",
   "scopes": [
     "Sources",
     "Tests",
@@ -11,15 +11,17 @@
     ".github",
     "Mobile"
   ],
-  "git_objects_sha256": "0f7711be7afe277ba990be42a58e89421097f6c4a07c52104a98fa6a580712ee",
+  "git_objects_sha256": "c30800a157c07f5d0c375bce94277c667a37e791cb559bc00ff504ba352e53d0",
   "git_objects_count": 645,
-  "build_configuration": "SwiftPM debug XCTest component, canonical source version0.3.1127",
-  "focused_command": "EVIDENCE_SHA=<build_source> LEONARDO_RUBRIC_RECOVERY_CAPTURE=/tmp/leonardo398-native-recovery python3 scripts/compile-and-record.py --pr-number 398 -- swift test --filter RubricRecoveryVisualTests",
-  "compiled_test_sha256": "9d9ad1b35cb5007c8a07d7b67329d5bdbf2fdd104726cb7899bf704d00e9a771",
-  "allocation_after_success": 6,
-  "full_command": "EVIDENCE_SHA=<build_source> LEONARDO_RUBRIC_RECOVERY_CAPTURE=/tmp/leonardo398-native-recovery swift test --skip-build",
-  "full_log_sha256": "bd889b795c277465755722035c0e16582545b09e417a2a81de389ccbcd2c48dc",
+  "git_objects_command": "git ls-tree -r --full-tree <build_source> -- <scopes>",
+  "build_configuration": "SwiftPM debug XCTest component, canonical source version0.3.1127; Guide29 EN/ES",
+  "focused_command": "EVIDENCE_SHA=<build_source> LEONARDO_RUBRIC_RECOVERY_CAPTURE=/tmp/leonardo398-native-guide29-final python3 scripts/compile-and-record.py --pr-number 398 -- swift test --filter 'BundledUserGuideTests|RubricRecoveryVisualTests|SyncHelperConfigurationConcurrencyTests'",
+  "compiled_test_sha256": "6cd6a9d73d214140b8de0263d28143192fd0f6b29b58847ba371c0cd642356e0",
+  "allocation_after_success": 8,
+  "full_command": "EVIDENCE_SHA=<build_source> LEONARDO_RUBRIC_RECOVERY_CAPTURE=/tmp/leonardo398-native-guide29-final swift test --skip-build",
+  "full_log_sha256": "2142b5f2e331c8199ca604fa9888f2e2fb3b894d958617c9f044dd24891f9086",
   "mapping_rule": "Every scoped Git object must match build_source at reviewed head; later evidence/ledger/docs do not change build inputs",
   "packaged_instance": false,
-  "physical_acceptance": false
+  "physical_acceptance": false,
+  "reviewed_source_allocation_after_QA": 9
 }

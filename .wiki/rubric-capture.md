@@ -143,7 +143,7 @@ The packaging stage of [#343](https://github.com/PinedaTec-EU/LeonardoMD/issues/
 [PR398](https://github.com/PinedaTec-EU/LeonardoMD/pull/398) serializes helper
 configuration reads with a FIFO barrier; queued commands re-read persisted
 consent instead of sharing a possibly obsolete configuration result. A cancelled
-queued read releases its turn without reloading. RubricCapturePolling retries
+queued read waits cooperatively for the active owner, then skips its settings read and releases its turn. A suspended predecessor keeps cancelled waiters suspended; prompt interruption is not promised. RubricCapturePolling retries
 only read-only status for the original UUID, up to three consecutive failures;
 success resets that budget, cancellation stops, persistent errors remain visible.
 It never creates or resubmits a request. The owner-observed response had already
@@ -155,7 +155,7 @@ Owner-selected 8 November release order is accepted connection
 [PR392](https://github.com/PinedaTec-EU/LeonardoMD/pull/392), then consultation
 [PR398](https://github.com/PinedaTec-EU/LeonardoMD/pull/398), then signed main
 macOS beta; the cache feature PR385 is deferred. Reconciliation on main0.3.1127
-passes716 XCTest (35 planned skips) plus71 Swift Testing; final Guide25 Help and
+passes717 XCTest (35 planned skips) plus71 Swift Testing; final Guide29 Help and
 physical no-manual-Retry acceptance must use the actual signed combined app.
 
 CI recovery for [issue403](https://github.com/PinedaTec-EU/LeonardoMD/issues/403)
@@ -171,3 +171,5 @@ suite now passes717 XCTest/35planned skips plus71 Swift Testing. Component
 captures do not establish packaged-process Help or physical acceptance; see
 `doc/validation/helper-consultation/native-recovery/build-inputs.json` for the
 exact build/evidence input mapping.
+
+Guide29 EN/ES now documents automatic recovery, persistent Retry, terminal and close/cancel behavior. Source b9c5bb7 has focused8/8 and complete717/35/71 PASS, recorded delta9 including real QA packaging. Actual QA PID81719 opened both guides through Help/Ayuda, checked all live examples/MathON-OFF and both separate practices save-close-reopen; bundle/personal hashes match. Twenty original native JPEGs plus identity/restoration evidence are in `doc/validation/helper-consultation/packaged-help29/`. Three previous originals were restored byte-for-byte after normal quit; final signed-main and physical acceptance remain pending.

@@ -1,6 +1,6 @@
 {
-  "source_commit": "0ba23aa41121d20f3b7adb945e2080389df05c73",
-  "focused_tests": 5,
+  "source_commit": "b9c5bb7a1cb46d5d989d78de833fae57e402a9c5",
+  "focused_tests": 8,
   "xctest_checks": 717,
   "skipped": 35,
   "swift_testing": 71,
@@ -9,8 +9,8 @@
     "result": "FAIL: queued status finished before barrier release and threw DesktopRuntimeError.busy",
     "log": "/tmp/leonardo398-contention-before.log"
   },
-  "after_fix": "PASS: FIFO fresh-consent and cancellation regressions, polling same-ID recovery, bounded persistent error and immediate cancellation",
-  "full_log": "/tmp/leonardo398-native-full.log",
+  "after_fix": "PASS: FIFO fresh-consent; cooperative queued cancellation tested while predecessor remains suspended, then no read and next live command progress; read-only polling suppresses cancelled delivery and recovers the same UUID.",
+  "full_log": "/tmp/leonardo398-guide29-full.log",
   "physical_acceptance": "Pending combined signed accepted-main candidate with #392/#398; #385 deferred by owner; installed helper unchanged",
   "swift_testing_targets": {
     "LeonardoCoreTests": 28,
@@ -63,9 +63,9 @@
       "failures": 0
     }
   ],
-  "full_log_sha256": "bd889b795c277465755722035c0e16582545b09e417a2a81de389ccbcd2c48dc",
-  "compilation_delta": 6,
-  "help_acceptance": "Guide25 EN/ES unchanged; actual bundled Help and native smoke required in final signed accepted-main app before beta publication",
+  "full_log_sha256": "2142b5f2e331c8199ca604fa9888f2e2fb3b894d958617c9f044dd24891f9086",
+  "compilation_delta": 9,
+  "help_acceptance": "Guide29 EN/ES updated, regenerated, personal/bundle hashes identical; actual packaged QA PID81719 Help/Ayuda both locales, Mermaid/MathON-tag1/MathOFF/literal/Charts/images/tables and practice fill-save-close-reopen PASS. Normal quit; three original files restored exactly. Final signed accepted-main Help still required.",
   "ci_dependency_recovery": {
     "issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/403",
     "sparkle_version": "2.9.6",
@@ -81,21 +81,26 @@
     "prime_log": "/tmp/leonardo403-cache-prime.log",
     "resolve_log": "/tmp/leonardo403-cache-resolve.log",
     "python_log": "/tmp/leonardo398-python-ci-recovery.log",
-    "swift_inputs_unchanged": true
+    "swift_inputs_unchanged_from_ci_recovery": "The Sparkle recovery remains unchanged; current additional Help/test/comment inputs are validated by the new complete build-source suite."
   },
   "native_visual_test": {
-    "result": "PASS focused1/1 and repeated in complete suite",
-    "captures": 8,
+    "result": "PASS native1/1 within focused8/8, repeated in full717/35/71",
+    "captures": 12,
     "scenarios": 6,
     "locales": [
       "en",
       "es"
     ],
-    "test_process_id": 40146,
-    "source": "0ba23aa41121d20f3b7adb945e2080389df05c73",
-    "focused_log": "/tmp/leonardo398-native-recovery.log",
+    "test_process_id": 78513,
+    "source": "b9c5bb7a1cb46d5d989d78de833fae57e402a9c5",
+    "focused_log": "/tmp/leonardo398-guide29-focused.log",
     "full_command": "swift test --skip-build with native capture opt-in; no additional compilation",
     "data": "synthetic isolated runtime/store, real production editor/controller",
-    "packaged_or_physical_acceptance": false
-  }
+    "packaged_or_physical_acceptance": false,
+    "capture_breakdown": {
+      "review_originals_1392x1640": 8,
+      "guide_originals_696x820": 4
+    }
+  },
+  "packaged_help_record": "packaged-help29/validation.json"
 }

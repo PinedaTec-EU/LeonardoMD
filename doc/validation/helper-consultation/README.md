@@ -17,7 +17,7 @@ error/Retry and closing the editor; source/component evidence remains separate
 from the required final packaged Help and physical acceptance. The public preferences-read port allows a real suspended
 boundary in the helper test. Production still uses ConfigurationStore.
 
-Focused5/5 and complete tests are recorded in validation.json. Runtime physical
+Initial focused5/5, current focused8/8 (helper queue, bundled Help and native recovery), and complete tests are recorded in validation.json. Runtime physical
 acceptance belongs to the combined signed main candidate, not this isolated branch
 or the older physical result recovered with manual Retry. Do not infer the numeric
 NSError mapping or claim every cause of the original delayed alert is reproduced.
@@ -29,17 +29,16 @@ is committed. Existing manual Retry remains available for persistent errors.
 
 The branch includes accepted/materialized main
 `8e2af213c6208d471adf019a3c0d9869ed24505f` (0.3.1127), containing
-[PR392](https://github.com/PinedaTec-EU/LeonardoMD/pull/392). The complete suite
-at source `b8390736ef68ee8cc2105d5a5311bdd79e58085e` passed: 716 XCTest checks,
-35 planned skips, zero failures, plus 71 Swift Testing checks (28 core and 43
-render). The seven executable summaries and log digest are in validation.json.
-The successful recorder invocation increased this PR's compilation delta to 5.
-Subsequent validation/context and CI cache-preparation edits do not change
-Swift product/test inputs.
+[PR392](https://github.com/PinedaTec-EU/LeonardoMD/pull/392). The current complete suite at build source
+`b9c5bb7a1cb46d5d989d78de833fae57e402a9c5` passes717 XCTest checks,
+35planned skips, zero failures and71 Swift Testing checks (28 core and43 render).
+The seven executable summaries and current log digest are in validation.json.
+The source compilation allocation is9, including the focused recovery/Help
+checks and actual packaged QA build.
 
 The owner's selected beta includes connection and rubric corrections only;
 [PR385](https://github.com/PinedaTec-EU/LeonardoMD/pull/385) is deferred. Final
-Guide25 EN/ES live examples, Math ON/OFF, practice save/reopen and physical rubric
+Guide29 EN/ES live examples, Math ON/OFF, practice save/reopen and physical rubric
 without manual Mac Retry remain post-merge gates on the exact signed main app.
 This source validation neither activates a helper nor publishes a release.
 
@@ -60,29 +59,29 @@ cache; a fresh `swift package resolve` fetched the binary from that cache despit
 the browser endpoint outage. Six security regressions cover checksum tampering at
 the correct length, wrong length, changed pin, interrupted downloads, verified
 reuse and symlink/other-file protection. The complete Python suite passes118
-checks with7planned skips. Swift product/test inputs remain unchanged from the
-recorded716/35/71 full run; CI and fresh strict review still target the new head.
+checks with7planned skips. The artifact recovery keeps the dependency pin unchanged. Current product, Help
+and test inputs are covered by the complete build-source suite below; CI and
+fresh strict review still target the new head.
 The fixed asset identity intentionally fails closed on a future dependency pin
 change until its immutable manifest/asset binding is reviewed together.
 
 ## Current native evidence and complete validation
 
-At build/capture source `0ba23aa41121d20f3b7adb945e2080389df05c73`, the real
+At build/capture source `b9c5bb7a1cb46d5d989d78de833fae57e402a9c5`, the real
 production RubricEditor/controller run in the configured SwiftPM XCTest runner
 with an isolated synthetic runtime and store. The focused native test passes1/1;
 the complete same-build suite (skip-build, no new compilation) passes717 XCTest,
-35planned skips, zero failures, plus71 Swift Testing. This supersedes the earlier
-716-check run for current validation. The source allocation is now6; the new
+35planned skips, zero failures, plus71 Swift Testing. The source allocation is now9; the new
 summary includes both rubric recovery and the #403 CI dependency recovery.
 
-Eight EN/ES original PNGs in `native-recovery/` were visually inspected. Each has
+Eight full-density EN/ES original PNGs in `native-recovery/` were visually inspected, alongside four separately captured logical-resolution guide originals. Six refreshed guide illustrations (two canvas and four recovery/error originals) were also inspected for legibility. Each has
 its original capture-time context and generated shared metadata. Recovery uses
 the same attached hosting view: first failure remains waiting without Retry or
 error; the second same-ID read displays the received drawing and save actions.
 Four persistent failures show the original error and Retry. The closing scenario
 removes the real editor, exercises onDisappear cancellation, and observes no
 second query or response. Six transition traces record synthetic original/query
-UUIDs, zero create/manual-Retry calls and actual full-run XCTest PID40146.
+UUIDs, zero create/manual-Retry calls and actual full-run XCTest PID78513.
 The source version is0.3.1127, debug component build, not a packaged app. Native
 viewport696x820points yields1392x1640original pixels; metadata's viewport_css field
 records observed native points because CSS/browser versions do not apply.
@@ -92,5 +91,33 @@ the build source and test executable digest. Later evidence/docs/ledger-only
 changes must leave every scoped object identical. Reproduce with
 `EVIDENCE_SHA=$(git rev-parse HEAD) LEONARDO_RUBRIC_RECOVERY_CAPTURE=/tmp/leonardo-rubric-review python3 scripts/compile-and-record.py --pr-number 398 -- swift test --filter RubricRecoveryVisualTests`.
 No test executable is placed inside an app or launched as a standalone GUI.
-This component evidence does not replace final signed-main fresh-process Help25
+This component evidence does not replace final signed-main fresh-process Help29
 EN/ES, physical no-manual-Retry and beta archive/feed acceptance.
+
+## Packaged Guide29 smoke test
+
+`packaged-help29/validation.json` records real QA PID81719, source b9c5bb7,
+version0.3.1127 and the unique disposable QA bundle identity. The normal
+`LEONARDO_SOURCE_PR=398 ./launch.sh --qa` workflow built the real executable and
+verified its dependencies/signature; it did not launch an XCTest app. First-window
+readiness was observed, followed by actual Help/Ayuda opening both bundled guides.
+Personal copies matched both bundle hashes. Twenty original native JPEGs retain
+their capture-time contexts and canonical metadata; 2520x1700 is the observed
+native captured-pixel viewport, not a claim about browser CSS geometry.
+
+Both locales passed Mermaid, inline/one-line/multiline math, Markdown-sensitive
+underbraces, complete radical/arrow/cancel shapes, tagged box-counting equation(1),
+Charts, local images, tables, literal code and Math-disabled fallback. Each real
+separate practice form was filled with fictional data, saved, closed and reopened
+through its guide action. Three prior originals (preferences and both practice
+forms) were backed up and restored byte-for-byte after normal quit. Protected
+helper26651, pairing, grants, corpus and saved physical rubric remained untouched.
+This pre-merge ad-hoc QA does not replace final Developer-ID/notarized main or the
+physical no-manual-Retry round trip.
+
+For repeatable capture, activate the existing QA app via its own Finder bundle
+before observing it: Stage Manager can otherwise return a tiny thumbnail of an
+inactive window. Preserve native image bytes, detect PNG versus JPEG, and reject
+thumbnails before publishing metadata. After ordinary Quit, verify PID absence
+read-only; requesting native AX state can reactivate an empty instance and must
+not be mistaken for a failed quit or new Help acceptance.

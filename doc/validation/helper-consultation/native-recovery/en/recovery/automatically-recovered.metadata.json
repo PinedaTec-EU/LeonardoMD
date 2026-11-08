@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "collected_at": "2026-11-08T09:51:08.827353+00:00",
+  "collected_at": "2026-11-08T11:51:42.722733+00:00",
   "capture": {
-    "captured_at": "2026-11-08T09:48:19+00:00",
+    "captured_at": "2026-11-08T11:49:58+00:00",
     "route": "/native/rubric-recovery/en/automatically-recovered",
     "screen": "Production RubricEditor",
     "browser_name": "Native AppKit NSHostingView",
@@ -22,7 +22,7 @@
     "sha256": "976ce2f397d845993136ad2e1cf0293d7a0c9f3777cccc9a8bfbcd368be19f4a"
   },
   "source": {
-    "revision_at_collection": "0ba23aa41121d20f3b7adb945e2080389df05c73",
+    "revision_at_collection": "b9c5bb7a1cb46d5d989d78de833fae57e402a9c5",
     "tracked_changes_present": true,
     "untracked_files_present": true
   }
