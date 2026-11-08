@@ -32,10 +32,33 @@ at source `b8390736ef68ee8cc2105d5a5311bdd79e58085e` passed: 716 XCTest checks,
 35 planned skips, zero failures, plus 71 Swift Testing checks (28 core and 43
 render). The seven executable summaries and log digest are in validation.json.
 The successful recorder invocation increased this PR's compilation delta to 5.
-Subsequent validation-document/context edits do not change product/test inputs.
+Subsequent validation/context and CI cache-preparation edits do not change
+Swift product/test inputs.
 
 The owner's selected beta includes connection and rubric corrections only;
 [PR385](https://github.com/PinedaTec-EU/LeonardoMD/pull/385) is deferred. Final
 Guide25 EN/ES live examples, Math ON/OFF, practice save/reopen and physical rubric
 without manual Mac Retry remain post-merge gates on the exact signed main app.
 This source validation neither activates a helper nor publishes a release.
+
+## CI dependency recovery (#403)
+
+[Issue403](https://github.com/PinedaTec-EU/LeonardoMD/issues/403) records repeated
+HTTP504/92-byte failures from the pinned Sparkle browser-download endpoint.
+`scripts/prime-sparkle-cache.py` fetches the same official asset through GitHub's
+asset API before SwiftPM runs. It requires the reviewed Package.resolved version,
+revision and repository and verifies the exact upstream Package.swift SHA-256 and
+asset length before atomically publishing a cache entry. SwiftPM retains its own
+normal checksum verification. It never edits a manifest, upgrades a dependency,
+executes downloaded code, skips a test or adds a secret. CI's ephemeral GitHub
+token has contents:read only and is passed through the environment to gh.
+
+The real CLI downloaded and verified the official artifact into a fresh isolated
+cache; a fresh `swift package resolve` fetched the binary from that cache despite
+the browser endpoint outage. Six security regressions cover checksum tampering at
+the correct length, wrong length, changed pin, interrupted downloads, verified
+reuse and symlink/other-file protection. The complete Python suite passes118
+checks with7planned skips. Swift product/test inputs remain unchanged from the
+recorded716/35/71 full run; CI and fresh strict review still target the new head.
+The fixed asset identity intentionally fails closed on a future dependency pin
+change until its immutable manifest/asset binding is reviewed together.

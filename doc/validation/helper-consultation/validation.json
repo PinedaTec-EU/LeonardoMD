@@ -65,5 +65,22 @@
   ],
   "full_log_sha256": "ec28c6913f63e4e22e054027b30ad4db68d3699b3074f83fc66424149ec7ef46",
   "compilation_delta": 5,
-  "help_acceptance": "Guide25 EN/ES unchanged; actual bundled Help and native smoke required in final signed accepted-main app before beta publication"
+  "help_acceptance": "Guide25 EN/ES unchanged; actual bundled Help and native smoke required in final signed accepted-main app before beta publication",
+  "ci_dependency_recovery": {
+    "issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/403",
+    "sparkle_version": "2.9.6",
+    "sparkle_revision": "ac2def288cbff5cfc7df3ffef6abdf45b72bcb0a",
+    "official_asset_api": "repos/sparkle-project/Sparkle/releases/assets/517328210",
+    "size": 11577555,
+    "sha256": "8d5fb41d960b43f4a68aa14126bf62b098544ec8d191cdcc73eb14e63a8e7606",
+    "new_security_regressions": 6,
+    "python_suite_tests": 118,
+    "python_suite_skips": 7,
+    "python_suite_failures": 0,
+    "fresh_resolution": "PASS: official API download verified then fresh SwiftPM cache/scratch resolution fetched the pinned binary from cache",
+    "prime_log": "/tmp/leonardo403-cache-prime.log",
+    "resolve_log": "/tmp/leonardo403-cache-resolve.log",
+    "python_log": "/tmp/leonardo398-python-ci-recovery.log",
+    "swift_inputs_unchanged": true
+  }
 }

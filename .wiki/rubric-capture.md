@@ -157,3 +157,9 @@ Owner-selected 8 November release order is accepted connection
 macOS beta; the cache feature PR385 is deferred. Reconciliation on main0.3.1127
 passes716 XCTest (35 planned skips) plus71 Swift Testing; final Guide25 Help and
 physical no-manual-Retry acceptance must use the actual signed combined app.
+
+CI recovery for [issue403](https://github.com/PinedaTec-EU/LeonardoMD/issues/403)
+primes the exact pinned Sparkle2.9.6 artifact through GitHub's official asset API,
+checking Package.resolved repository/revision/version and upstream SHA-256/length
+before atomic cache replacement. A fresh cache resolve proves SwiftPM consumes it;
+no dependency upgrade, checksum bypass or additional credential is introduced.
