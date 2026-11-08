@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1127
+
+- #380 Updated: complete TLS shutdown and trace response termination ([#392](https://github.com/PinedaTec-EU/LeonardoMD/pull/392))
+
+<p>Shared-project HTTPS responses finish the TLS write stream before teardown, with bounded cleanup and privacy-safe server completion diagnostics.</p>
+
+Source: `955919459b13b2f9fd8c14eefd95e7de53254668`. Delta: `{"build": 14}`.
+
 ## 0.3.1113
 
 - #386 Updated: apply Classic mobile design and rotating rubric canvas ([#387](https://github.com/PinedaTec-EU/LeonardoMD/pull/387))
