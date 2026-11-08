@@ -1,0 +1,14 @@
+{
+  "source": "a2e72e2fd0932f10e09cf84568469c2067856efa",
+  "xctest": 711,
+  "skips": 35,
+  "swift_testing": 71,
+  "result": "PASS",
+  "log": "/tmp/leonardo392-main1113-full.log",
+  "scope": "Transport reconciled onto accepted Classic/main1113; frozen runtime helper not rebuilt or replaced.",
+  "swift_testing_by_target": {
+    "LeonardoCoreTests": 28,
+    "LeonardoRenderTests": 43
+  },
+  "swift_testing_scope": "aggregate across all seven test executables; zero-test executable summaries excluded from the sum"
+}
