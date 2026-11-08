@@ -43,7 +43,7 @@ public final class PinnedHTTPSClient: NSObject, URLSessionDelegate, URLSessionTa
         configuration.httpShouldSetCookies = false
         let session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
         defer { session.invalidateAndCancel() }
-        let operation = Self.operation(for: path)
+        let operation = HTTPSFailureDiagnostics.Operation(path: path)
         let (bytes, response): (URLSession.AsyncBytes, URLResponse)
         do {
             (bytes, response) = try await session.bytes(for: request, delegate: self)
@@ -65,14 +65,6 @@ public final class PinnedHTTPSClient: NSObject, URLSessionDelegate, URLSessionTa
                                                    receivedBodyBytes: data.count, expectedBodyBytes: expectedBodyBytes)
         }
         return HTTPResponse(status: response.statusCode, body: data)
-    }
-
-    private static func operation(for path: String) -> HTTPSFailureDiagnostics.Operation {
-        if path.hasSuffix("/status") { return .status }
-        if path.hasSuffix("/snapshot") { return .snapshot }
-        if path.hasSuffix("/catalogue") { return .catalogue }
-        if path.hasSuffix("/file") { return .file }
-        return .other
     }
 
     public func urlSession(_ session: URLSession, task: URLSessionTask, didReceive challenge: URLAuthenticationChallenge,
