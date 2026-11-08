@@ -949,6 +949,16 @@
       "pr": 392,
       "summary": "Shared-project HTTPS responses finish the TLS write stream before teardown, with bounded cleanup and privacy-safe server completion diagnostics.",
       "to_version": "0.3.1127"
+    },
+    {
+      "delta": {
+        "build": 9
+      },
+      "from_version": "0.3.1127",
+      "merge_sha": "f69ad38b5d28501b8bb35c45a5dbd7296d5551fe",
+      "pr": 398,
+      "summary": "Recover rubric status queries automatically while preserving request identity and access, and restore CI downloads with verified pinned Sparkle artifacts.",
+      "to_version": "0.3.1136"
     }
   ],
   "initial_version": "0.1.56",
@@ -959,5 +969,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1127"
+  "version": "0.3.1136"
 }
