@@ -1,0 +1,4 @@
+{
+  "build": 9,
+  "summary": "Recover rubric status queries automatically while preserving request identity and access, and restore CI downloads with verified pinned Sparkle artifacts."
+}

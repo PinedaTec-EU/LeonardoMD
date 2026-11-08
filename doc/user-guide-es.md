@@ -616,6 +616,28 @@ devuelve la rúbrica; no puede editar el documento. Si falla el asistente, el
 servicio o la capacidad, se muestra un estado de desconexión o incompatibilidad
 con una acción clara.
 
+Mientras espera la rúbrica, Leonardo repite automáticamente las consultas de
+estado que fallan temporalmente para **la misma solicitud**. Deja abierto el
+editor: un fallo breve no necesita Reintentar ni envía otra petición de dibujo.
+La respuesta recibida aparece automáticamente para revisarla.
+
+![Rúbrica recuperada automáticamente y lista para revisar](guide/es/assets/rubric-automatic-recovery.png)
+
+*Componente real del editor con un dibujo sintético recibido tras un fallo temporal de consulta.*
+
+Si fallan varias consultas consecutivas, el editor muestra el error original y
+**Reintentar**. Comprueba la conexión y el asistente y pulsa Reintentar para
+actualizar esa misma solicitud. Las solicitudes rechazadas, canceladas o
+caducadas han terminado: sigue la acción indicada en vez de esperar una
+recuperación automática. Cerrar el editor detiene sus consultas de estado e
+impide mostrar una respuesta tardía en el editor cerrado. Para cancelar también
+la petición de dibujo en el dispositivo, pulsa **Cancelar solicitud** antes de
+cerrar.
+
+![Fallo persistente de consulta con Reintentar](guide/es/assets/rubric-persistent-error.png)
+
+*Componente real del editor con un error persistente sintético; no se utiliza un dispositivo ni un dibujo privado.*
+
 ### Aspecto Classic, arranque y Acerca de en Little Leonardo
 
 Little Leonardo usa los colores de **Leonardo Classic**: papel pergamino,

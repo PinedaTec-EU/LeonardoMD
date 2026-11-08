@@ -1,0 +1,15 @@
+{
+  "captured_at": "2026-11-08T12:05:29.111Z",
+  "route": "/native/packaged-help/guide29/en/en-math-disabled",
+  "screen": "LeonardoMD QA bundled Guide29",
+  "browser_name": "Native macOS application WKWebView",
+  "browser_version": "Packaged WKWebView; browser version not exposed",
+  "viewport_css": {
+    "width": 2520,
+    "height": 1700
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "Math explicitly off in Global Extensions; TeX remains visible as source and literal code remains literal; same QA PID81719; native captured-pixel viewport, CSS not applicable",
+  "source_sha": "b9c5bb7a1cb46d5d989d78de833fae57e402a9c5"
+}
