@@ -52,7 +52,7 @@ by this investigation; the native UI lease remains with #387.
 
 ## Current candidate checks
 
-Full local suite:711 XCTest checks,35 opt-in/platform skips,zero failures;28 Swift Testing checks pass. Generic iOS Simulator compilation succeeds. The server's stop, bounds, pin mismatch, interrupted body, pairing and revocation regressions remain covered; new tests cover independent strict TLS EOF/delayed reads,16 held-open peers, second-request rejection during teardown, and diagnostic privacy. Successful compiler invocations are recorded in PR392's own entry, not the consumed382 entry.
+Full local suite:711 XCTest checks,35 opt-in/platform skips,zero failures;71 Swift Testing checks pass. Generic iOS Simulator compilation succeeds. The server's stop, bounds, pin mismatch, interrupted body, pairing and revocation regressions remain covered; new tests cover independent strict TLS EOF/delayed reads,16 held-open peers, second-request rejection during teardown, and diagnostic privacy. Successful compiler invocations are recorded in PR392's own entry, not the consumed382 entry.
 
 This candidate changes no visual controls, renderer, user prerequisites or guide content. Existing bilingual LL1/offline/retry guidance remains accurate; the internal LLS1 support record is documented here and in the technical mobile contract. No new packaged app instance was used by these checks, so no fresh packaged Help acceptance is asserted.
 
@@ -169,3 +169,10 @@ accepted Classic/main1113; former1082/Guide23 native captures retain their exact
 historical identity. Final combined-main signed Help/native/physical acceptance
 and release verification remain separate gates. Keep the frozen helper26651
 running until the diagnostic owner coordinates its final replacement.
+
+
+## Aggregate count and selected beta scope (8 November)
+
+The unchanged full log has seven executable summaries:711 XCTest checks with35 skips and0 failures, and71 Swift Testing checks (28 in LeonardoCoreTests plus43 in LeonardoRenderTests). The previous28 value counted only the core/package executable and omitted render checks; the aggregate is now explicit in main-reconciliation.json. No implementation, fixture, compiler count or result changed.
+
+The owner now prioritizes392→398 for the connection/rubric beta. PR385 remains draft and is excluded. The selected accepted baseline uses Guide25; previous references to a future Guide27 combined package belonged to the former all-three plan. Final signed392+398 source must pass its real bundled Help25 ES/EN and physical no-manual-Retry acceptance before publication. Historical Guide23 captures retain their actual identity.
