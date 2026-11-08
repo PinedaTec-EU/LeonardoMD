@@ -34,7 +34,8 @@ final class RubricGuideCaptureTests: XCTestCase {
                 .modifier(SessionAppearance(session: session)).frame(width: 696, height: 580).background(Color(nsColor: .windowBackgroundColor)))
             try await GuideCaptureSupport.captureNative(editor, size: NSSize(width: 696, height: 580),
                 to: folder.appendingPathComponent("rubric-canvas.png"), language: code,
-                state: "Production rubric editor; isolated synthetic library; empty new canvas; no device or legal signing")
+                state: "Production rubric editor; isolated synthetic library; empty new canvas; no device or legal signing",
+                pixelScale: 1)
             let controller = DesktopSyncController(preferencesURL: root.appendingPathComponent("capture-prefs-\(code).json"))
             let linkedEditor = NSHostingView(rootView: RubricEditor(request: request, library: library,
                 syncController: controller) { _, _, _ in false }

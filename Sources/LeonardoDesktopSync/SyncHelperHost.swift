@@ -74,6 +74,9 @@ public actor SyncHelperHost {
 
     // Every caller re-reads consent after acquiring the barrier. Sharing an old
     // reload result could let a queued command miss a newly persisted denial.
+    // Queue cancellation is cooperative: it is observed after the current owner
+    // releases the barrier. A suspended predecessor also keeps cancelled waiters
+    // suspended; they skip settings reads and release their turn once resumed.
     private func acquireConfiguration() async {
         if configuring {
             await withCheckedContinuation { configurationWaiters.append($0) }

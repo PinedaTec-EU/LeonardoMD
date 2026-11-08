@@ -6,13 +6,15 @@ PR [#398](https://github.com/PinedaTec-EU/LeonardoMD/pull/398).
 The suspended-settings regression fails with the previous `guard !configuring`
 reload behavior: a concurrent read immediately returns busy instead of waiting.
 The corrected helper uses a FIFO barrier and each queued command re-reads consent.
-Cancellation skips that command's configuration read and releases its turn.
+Queue cancellation is cooperative, not a promise of prompt interruption: the cancelled command remains suspended until the active configuration owner releases the FIFO barrier. If that predecessor stays suspended, its waiters also stay suspended. Once resumed, a cancelled command skips its configuration read and releases its turn; subsequent live commands still read current consent. The regression holds the predecessor suspended while checking that cancellation neither completes early nor reads preferences, then releases it and verifies the next live command.
 The poll runner is read-only and always receives the same UUID; one transient
 failure recovers automatically, four consecutive failures surface the original
 error, and cancellation neither retries nor delivers. No retry path invokes create.
 
-The owning source commit introduced only these recovery internals, not UI controls
-or a new help workflow. The public preferences-read port allows a real suspended
+The recovery changes the visible waiting/error flow without adding controls.
+The bilingual bundled guide describes automatic waiting/recovery, persistent
+error/Retry and closing the editor; source/component evidence remains separate
+from the required final packaged Help and physical acceptance. The public preferences-read port allows a real suspended
 boundary in the helper test. Production still uses ConfigurationStore.
 
 Focused5/5 and complete tests are recorded in validation.json. Runtime physical

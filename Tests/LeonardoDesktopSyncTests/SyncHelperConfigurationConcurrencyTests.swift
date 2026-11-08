@@ -32,8 +32,16 @@ final class SyncHelperConfigurationConcurrencyTests: XCTestCase {
         let host = SyncHelperHost(preferencesURL: root.appendingPathComponent("preferences.json"), configurations: preferences)
         let first = Task { try await host.perform(.status) }
         await preferences.waitForRead()
-        let cancelled = Task { try await host.perform(.status) }
+        let cancelledFinished = expectation(description: "Cancellation waits for the active configuration owner")
+        cancelledFinished.isInverted = true
+        let cancelled = Task {
+            defer { cancelledFinished.fulfill() }
+            return try await host.perform(.status)
+        }
         cancelled.cancel()
+        await fulfillment(of: [cancelledFinished], timeout: 0.1)
+        let heldReadCount = await preferences.readCount
+        XCTAssertEqual(heldReadCount, 1, "A cancelled queued command cannot read while its predecessor is suspended")
         await preferences.resumeDisabled()
         _ = try await first.value
         do { _ = try await cancelled.value; XCTFail("Cancelled query was executed") }

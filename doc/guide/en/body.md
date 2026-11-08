@@ -608,6 +608,27 @@ one device. The companion only draws and returns the rubric; it cannot edit the
 document. A helper, service or capability problem is shown as an actionable
 offline/unsupported state.
 
+While waiting for a returned rubric, Leonardo automatically repeats temporary
+status-query failures for the **same request**. Leave the editor open; a brief
+failure does not require Retry or send a second drawing request. A received
+response appears for review automatically.
+
+![Automatically recovered rubric ready for review](assets/rubric-automatic-recovery.png)
+
+*Production editor component with a synthetic returned drawing after a temporary query failure.*
+
+If several consecutive queries fail, the editor shows the original error and
+**Retry**. Check the connection and helper, then use Retry to refresh that same
+request. Rejected, cancelled or expired requests are terminal; follow the
+request's displayed action rather than waiting for automatic recovery. Closing
+the editor stops its status polling and prevents a late response from being
+shown in the closed editor. To cancel the remote drawing request itself, use
+**Cancel request** before closing.
+
+![Persistent query failure with Retry](assets/rubric-persistent-error.png)
+
+*Production editor component with a synthetic persistent error; no device or private drawing is used.*
+
 ### Classic appearance, startup and About in Little Leonardo
 
 Little Leonardo uses the **Leonardo Classic** colors: parchment paper,

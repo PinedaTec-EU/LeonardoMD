@@ -140,6 +140,14 @@ final class RubricRecoveryVisualTests: XCTestCase {
         try NativeViewCaptureSupport.writeBitmap(host, size: size, to: image, pixelScale: 2)
         try JSONSerialization.data(withJSONObject: context, options: [.prettyPrinted, .sortedKeys])
             .write(to: image.deletingPathExtension().appendingPathExtension("context.json"))
+        // Capture guide illustrations directly at logical pixel resolution;
+        // originals remain separate from the higher-density review evidence.
+        if name == "automatically-recovered" || name == "persistent-error" {
+            let guideImage = output.appendingPathComponent(name + "-guide.png")
+            try NativeViewCaptureSupport.writeBitmap(host, size: size, to: guideImage, pixelScale: 1)
+            try JSONSerialization.data(withJSONObject: context, options: [.prettyPrinted, .sortedKeys])
+                .write(to: guideImage.deletingPathExtension().appendingPathExtension("context.json"))
+        }
         let recognition = VNRecognizeTextRequest()
         recognition.recognitionLevel = .accurate
         recognition.usesLanguageCorrection = false
