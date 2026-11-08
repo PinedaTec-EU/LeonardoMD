@@ -1,4 +1,4 @@
 {
-  "build": 5,
-  "summary": "Recover rubric queries automatically without changing the request or access permissions, and verify the pinned Sparkle download before release validation."
+  "build": 6,
+  "summary": "Recover rubric status queries automatically while preserving request identity and access, and restore CI downloads with verified pinned Sparkle artifacts."
 }

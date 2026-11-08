@@ -62,3 +62,33 @@ checks with7planned skips. Swift product/test inputs remain unchanged from the
 recorded716/35/71 full run; CI and fresh strict review still target the new head.
 The fixed asset identity intentionally fails closed on a future dependency pin
 change until its immutable manifest/asset binding is reviewed together.
+
+## Current native evidence and complete validation
+
+At build/capture source `0ba23aa41121d20f3b7adb945e2080389df05c73`, the real
+production RubricEditor/controller run in the configured SwiftPM XCTest runner
+with an isolated synthetic runtime and store. The focused native test passes1/1;
+the complete same-build suite (skip-build, no new compilation) passes717 XCTest,
+35planned skips, zero failures, plus71 Swift Testing. This supersedes the earlier
+716-check run for current validation. The source allocation is now6; the new
+summary includes both rubric recovery and the #403 CI dependency recovery.
+
+Eight EN/ES original PNGs in `native-recovery/` were visually inspected. Each has
+its original capture-time context and generated shared metadata. Recovery uses
+the same attached hosting view: first failure remains waiting without Retry or
+error; the second same-ID read displays the received drawing and save actions.
+Four persistent failures show the original error and Retry. The closing scenario
+removes the real editor, exercises onDisappear cancellation, and observes no
+second query or response. Six transition traces record synthetic original/query
+UUIDs, zero create/manual-Retry calls and actual full-run XCTest PID40146.
+The source version is0.3.1127, debug component build, not a packaged app. Native
+viewport696x820points yields1392x1640original pixels; metadata's viewport_css field
+records observed native points because CSS/browser versions do not apply.
+
+`native-recovery/build-inputs.json` binds all production/test/packaging inputs to
+the build source and test executable digest. Later evidence/docs/ledger-only
+changes must leave every scoped object identical. Reproduce with
+`EVIDENCE_SHA=$(git rev-parse HEAD) LEONARDO_RUBRIC_RECOVERY_CAPTURE=/tmp/leonardo-rubric-review python3 scripts/compile-and-record.py --pr-number 398 -- swift test --filter RubricRecoveryVisualTests`.
+No test executable is placed inside an app or launched as a standalone GUI.
+This component evidence does not replace final signed-main fresh-process Help25
+EN/ES, physical no-manual-Retry and beta archive/feed acceptance.

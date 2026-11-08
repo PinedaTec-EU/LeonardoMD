@@ -163,3 +163,11 @@ primes the exact pinned Sparkle2.9.6 artifact through GitHub's official asset AP
 checking Package.resolved repository/revision/version and upstream SHA-256/length
 before atomic cache replacement. A fresh cache resolve proves SwiftPM consumes it;
 no dependency upgrade, checksum bypass or additional credential is introduced.
+
+The current PR398 source evidence includes production-editor EN/ES native
+component transitions for automatic same-ID recovery, persistent error and close
+cancellation (isolated runtime/store; zero create/manual-Retry actions). The full
+suite now passes717 XCTest/35planned skips plus71 Swift Testing. Component
+captures do not establish packaged-process Help or physical acceptance; see
+`doc/validation/helper-consultation/native-recovery/build-inputs.json` for the
+exact build/evidence input mapping.

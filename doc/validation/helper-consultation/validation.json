@@ -1,7 +1,7 @@
 {
-  "source_commit": "b8390736ef68ee8cc2105d5a5311bdd79e58085e",
+  "source_commit": "0ba23aa41121d20f3b7adb945e2080389df05c73",
   "focused_tests": 5,
-  "xctest_checks": 716,
+  "xctest_checks": 717,
   "skipped": 35,
   "swift_testing": 71,
   "before_fix": {
@@ -10,7 +10,7 @@
     "log": "/tmp/leonardo398-contention-before.log"
   },
   "after_fix": "PASS: FIFO fresh-consent and cancellation regressions, polling same-ID recovery, bounded persistent error and immediate cancellation",
-  "full_log": "/tmp/leonardo398-main1127-full.log",
+  "full_log": "/tmp/leonardo398-native-full.log",
   "physical_acceptance": "Pending combined signed accepted-main candidate with #392/#398; #385 deferred by owner; installed helper unchanged",
   "swift_testing_targets": {
     "LeonardoCoreTests": 28,
@@ -58,13 +58,13 @@
     },
     {
       "executable": "LeonardoAppTests.xctest",
-      "tests": 369,
+      "tests": 370,
       "skips": 30,
       "failures": 0
     }
   ],
-  "full_log_sha256": "ec28c6913f63e4e22e054027b30ad4db68d3699b3074f83fc66424149ec7ef46",
-  "compilation_delta": 5,
+  "full_log_sha256": "bd889b795c277465755722035c0e16582545b09e417a2a81de389ccbcd2c48dc",
+  "compilation_delta": 6,
   "help_acceptance": "Guide25 EN/ES unchanged; actual bundled Help and native smoke required in final signed accepted-main app before beta publication",
   "ci_dependency_recovery": {
     "issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/403",
@@ -82,5 +82,20 @@
     "resolve_log": "/tmp/leonardo403-cache-resolve.log",
     "python_log": "/tmp/leonardo398-python-ci-recovery.log",
     "swift_inputs_unchanged": true
+  },
+  "native_visual_test": {
+    "result": "PASS focused1/1 and repeated in complete suite",
+    "captures": 8,
+    "scenarios": 6,
+    "locales": [
+      "en",
+      "es"
+    ],
+    "test_process_id": 40146,
+    "source": "0ba23aa41121d20f3b7adb945e2080389df05c73",
+    "focused_log": "/tmp/leonardo398-native-recovery.log",
+    "full_command": "swift test --skip-build with native capture opt-in; no additional compilation",
+    "data": "synthetic isolated runtime/store, real production editor/controller",
+    "packaged_or_physical_acceptance": false
   }
 }

@@ -1,0 +1,16 @@
+{
+  "browser_name" : "Native AppKit NSHostingView",
+  "browser_version" : "N\/A native component",
+  "capture_mode" : "element",
+  "captured_at" : "2026-11-08T09:48:23Z",
+  "data_provenance" : "synthetic",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "route" : "\/native\/rubric-recovery\/en\/persistent-error",
+  "screen" : "Production RubricEditor",
+  "source_sha" : "0ba23aa41121d20f3b7adb945e2080389df05c73",
+  "state" : "Production editor displays persistent original synthetic error and Retry after four failed same-ID reads; language en",
+  "viewport_css" : {
+    "height" : 820,
+    "width" : 696
+  }
+}
