@@ -1,0 +1,29 @@
+{
+  "qa_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-69iy8nfl/LeonardoMDQA.app",
+  "bundle_id": "eu.pinedatec.LeonardoMD.qa.f7101fdb50d14e7ab8e3fba5db47274d",
+  "executable": "LeonardoMD",
+  "version": "0.3.1113",
+  "build": "1113",
+  "sha256": "63de87ca52ad3a547f03c555b57aeb521591356e9c51d56f2f3bc20b6e855c38",
+  "source": "861f579d2e3707008475e2e7dd5c95e1d791b597",
+  "pid": 53146,
+  "native_acceptance": "PASS",
+  "fresh_first_window": true,
+  "normal_quit": true,
+  "restored_latest_originals_exact": 3,
+  "helper_mutated": false,
+  "guides": [
+    {
+      "locale": "en",
+      "bundled_sha256": "032a3c0068aba5bc5a7da9a33dff851e2e287369ee4da0b51cf42a34412c39f7",
+      "working_sha256": "032a3c0068aba5bc5a7da9a33dff851e2e287369ee4da0b51cf42a34412c39f7",
+      "matches": true
+    },
+    {
+      "locale": "es",
+      "bundled_sha256": "723b883fdef13c06d326fb38a6af0f0edeade61684485bf90381c62723219a69",
+      "working_sha256": "723b883fdef13c06d326fb38a6af0f0edeade61684485bf90381c62723219a69",
+      "matches": true
+    }
+  ]
+}
