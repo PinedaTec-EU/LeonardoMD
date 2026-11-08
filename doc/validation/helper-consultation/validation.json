@@ -1,15 +1,69 @@
 {
-  "source_commit": "14f8772",
+  "source_commit": "b8390736ef68ee8cc2105d5a5311bdd79e58085e",
   "focused_tests": 5,
-  "xctest_checks": 709,
+  "xctest_checks": 716,
   "skipped": 35,
-  "swift_testing": 28,
+  "swift_testing": 71,
   "before_fix": {
     "method": "Restore the previous immediate-busy reload guard while retaining the suspended-preferences regression",
     "result": "FAIL: queued status finished before barrier release and threw DesktopRuntimeError.busy",
     "log": "/tmp/leonardo398-contention-before.log"
   },
   "after_fix": "PASS: FIFO fresh-consent and cancellation regressions, polling same-ID recovery, bounded persistent error and immediate cancellation",
-  "full_log": "/tmp/leonardo398-full-final.log",
-  "physical_acceptance": "Pending combined signed main candidate with #385/#392/#398; installed helper unchanged"
+  "full_log": "/tmp/leonardo398-main1127-full.log",
+  "physical_acceptance": "Pending combined signed accepted-main candidate with #392/#398; #385 deferred by owner; installed helper unchanged",
+  "swift_testing_targets": {
+    "LeonardoCoreTests": 28,
+    "LeonardoRenderTests": 43
+  },
+  "accepted_main": "8e2af213c6208d471adf019a3c0d9869ed24505f",
+  "canonical_base_version": "0.3.1127",
+  "failures": 0,
+  "xctest_by_executable": [
+    {
+      "executable": "LeonardoSyncTransportTests.xctest",
+      "tests": 24,
+      "skips": 0,
+      "failures": 0
+    },
+    {
+      "executable": "LeonardoSyncTests.xctest",
+      "tests": 81,
+      "skips": 0,
+      "failures": 0
+    },
+    {
+      "executable": "LeonardoRenderTests.xctest",
+      "tests": 23,
+      "skips": 1,
+      "failures": 0
+    },
+    {
+      "executable": "LeonardoIntegrationTests.xctest",
+      "tests": 46,
+      "skips": 0,
+      "failures": 0
+    },
+    {
+      "executable": "LeonardoDesktopSyncTests.xctest",
+      "tests": 58,
+      "skips": 4,
+      "failures": 0
+    },
+    {
+      "executable": "LeonardoCoreTests.xctest",
+      "tests": 115,
+      "skips": 0,
+      "failures": 0
+    },
+    {
+      "executable": "LeonardoAppTests.xctest",
+      "tests": 369,
+      "skips": 30,
+      "failures": 0
+    }
+  ],
+  "full_log_sha256": "ec28c6913f63e4e22e054027b30ad4db68d3699b3074f83fc66424149ec7ef46",
+  "compilation_delta": 5,
+  "help_acceptance": "Guide25 EN/ES unchanged; actual bundled Help and native smoke required in final signed accepted-main app before beta publication"
 }

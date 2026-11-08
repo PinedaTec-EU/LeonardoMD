@@ -150,3 +150,10 @@ It never creates or resubmits a request. The owner-observed response had already
 reached the helper; a manual same-ID Retry recovered it before this correction.
 Delivery and physical no-manual-Retry acceptance remain separate gates on
 [issue394](https://github.com/PinedaTec-EU/LeonardoMD/issues/394).
+
+Owner-selected 8 November release order is accepted connection
+[PR392](https://github.com/PinedaTec-EU/LeonardoMD/pull/392), then consultation
+[PR398](https://github.com/PinedaTec-EU/LeonardoMD/pull/398), then signed main
+macOS beta; the cache feature PR385 is deferred. Reconciliation on main0.3.1127
+passes716 XCTest (35 planned skips) plus71 Swift Testing; final Guide25 Help and
+physical no-manual-Retry acceptance must use the actual signed combined app.
