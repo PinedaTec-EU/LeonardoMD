@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "capture": {
+    "file": "local-project.jpg",
+    "captured_at": "2026-11-10T15:37:30.976Z",
+    "screen": "Packaged macOS local project header",
+    "locale": "en",
+    "viewport_css": null,
+    "native_viewport_points": null,
+    "pid": 86473,
+    "route": "/native/macos/help42/local-project",
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic",
+    "browser_name": "Packaged LeonardoMD native WKWebView",
+    "browser_version": "not exposed by CUA"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "64171e782737b49ecb6563a5a22c57b9a3c14fbeb5e4b6596420a6e10e73a05b"
+  },
+  "source": {
+    "revision_at_collection": "7a2e097f28bc25575c407ce75719e26b02c2edf0",
+    "tracked_changes_present": false,
+    "untracked_files_present": true
+  }
+}

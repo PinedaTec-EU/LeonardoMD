@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "capture": {
+    "file": "es-mermaid.jpg",
+    "captured_at": "2026-11-10T15:36:33.381Z",
+    "locale": "es",
+    "screen": "Explica un recorrido \u00b7 Mermaid",
+    "math_enabled": true,
+    "viewport_css": null,
+    "native_viewport_points": null,
+    "engine_version": "not exposed",
+    "source": "acb46fc23bf883098d9112803b457e23ac2f21c4",
+    "pid": 86473,
+    "route": "/native/macos/help42/es-mermaid",
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic",
+    "browser_name": "Packaged LeonardoMD native WKWebView",
+    "browser_version": "not exposed by CUA"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "11471592fd90e4f25fc0dd22dd61f2230e2a9fd6442f42f21ca22c06b3314b89"
+  },
+  "source": {
+    "revision_at_collection": "7a2e097f28bc25575c407ce75719e26b02c2edf0",
+    "tracked_changes_present": false,
+    "untracked_files_present": true
+  }
+}

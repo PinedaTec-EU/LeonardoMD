@@ -31,13 +31,11 @@ The previous Guide28 evidence in the parent directory is historical. It does not
 
 The on-demand test selector correction is tracked in [#416](https://github.com/PinedaTec-EU/LeonardoMD/issues/416) and included in `acb46fc23bf883098d9112803b457e23ac2f21c4`. Only this test identifier and compilation accounting differ from the initial reconciliation commit `33650e806efc05cfe462118da3e0b08c44b8f69f`; product inputs are unchanged.
 
-## Pending acceptance
+## Packaged macOS acceptance
 
-The host was locked when CUA attempted to inspect the real macOS QA application. A fresh candidate PID `86473` exists, but first-window readiness and actual Help42 acceptance have **not** been claimed. Manual host unlock is required. The user has also been asked to authorize temporary language/Math changes with restoration for this smoke test; no preference change has been performed.
+Completed in the actual QA process PID86473 after host unlock. Both Guide42 locales opened through the real Help menu and match the bundled bytes. Live Mermaid, inline/display math including the tagged equation, charts, local images, tables, literal source and disabled-Math fallback were inspected. Both separate practice forms passed fill/save/close/reopen; original file bytes were restored. English and MathON were restored. The synthetic local project showed its common project icon and Local header. The app quit normally; helper48295 was preserved. See `macos/native/acceptance.json` and the current native captures.
 
-After unlock, open both bundled locales through the real Help workflow in the same QA process. Verify bundle/personal-copy content identity, changed project examples, Mermaid, inline and one-line/multiline display math, underbraces and the tagged equation, charts, local images, tables, literal code, disabled-Math fallback and separate practice fill/save/close/reopen. Restore original preferences and practice bytes, quit normally and record the outcome.
-
-The candidate remains draft. Final exact-head CI and a fresh strict independent judge are pending this acceptance; no previous PASS is reused. PR #400 must remain open for the owner to integrate.
+Final exact-head CI and fresh strict independent review remain required before readiness. PR #400 remains open for the owner to integrate.
 
 ## Native capture metadata
 

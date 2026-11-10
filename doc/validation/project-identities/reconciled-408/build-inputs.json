@@ -1903,9 +1903,10 @@
     "executable": "LeonardoMD",
     "executable_sha256": "21ecf6e5713bcf3bfdc0ee68acac752fdd93c3c8980606cc86d22b31a160d877",
     "info_plist_sha256": "62c2b7875940c65761bfce5801f1b4333720663c7f16384090166925e2a4ca09",
-    "first_window_visually_observed": false,
-    "help_acceptance": "pending manual host unlock",
-    "helper_pid_preserved": 48295
+    "first_window_visually_observed": true,
+    "help_acceptance": "passed; see macos/native/acceptance.json",
+    "helper_pid_preserved": 48295,
+    "normal_quit_observed": true
   },
   "ios_validation": "ios/validation.json",
   "compilation_delta": {
@@ -1928,13 +1929,13 @@
         "source_sha256": "cfd4b46e206f7b7c15125cda08f3374e7e314a18bf7aec80d9353bc5c80bec93",
         "bundle_sha256": "cfd4b46e206f7b7c15125cda08f3374e7e314a18bf7aec80d9353bc5c80bec93",
         "source_bundle_identical": true,
-        "personal_copy_identity": "pending real Help open"
+        "personal_copy_identity": "identical to bundled Guide42 after actual Help open"
       },
       "es": {
         "source_sha256": "cf21ed43f33e4b7af76ae74b12f6cc7d82847f68ebdf91cb9a58a4e935818f9c",
         "bundle_sha256": "cf21ed43f33e4b7af76ae74b12f6cc7d82847f68ebdf91cb9a58a4e935818f9c",
         "source_bundle_identical": true,
-        "personal_copy_identity": "pending real Help open"
+        "personal_copy_identity": "identical to bundled Guide42 after actual Help open"
       }
     }
   }

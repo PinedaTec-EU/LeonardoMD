@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "capture": {
+    "file": "es-roles.jpg",
+    "captured_at": "2026-11-10T15:36:39.314Z",
+    "locale": "es",
+    "screen": "Reconocer el papel de un proyecto",
+    "math_enabled": true,
+    "viewport_css": null,
+    "native_viewport_points": null,
+    "engine_version": "not exposed",
+    "source": "acb46fc23bf883098d9112803b457e23ac2f21c4",
+    "pid": 86473,
+    "route": "/native/macos/help42/es-roles",
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic",
+    "browser_name": "Packaged LeonardoMD native WKWebView",
+    "browser_version": "not exposed by CUA"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "f963c24586e1748a1d9d708104813e4fe6bb500f206f09d98a2b21c8746f3382"
+  },
+  "source": {
+    "revision_at_collection": "7a2e097f28bc25575c407ce75719e26b02c2edf0",
+    "tracked_changes_present": false,
+    "untracked_files_present": true
+  }
+}

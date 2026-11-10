@@ -32,4 +32,4 @@ recipient example, partial sharing and offline behavior. See
 
 Reconciliation after [#407](https://github.com/PinedaTec-EU/LeonardoMD/issues/407) preserves the one sorted project hierarchy, stable open/delete/restore accessibility identifiers, swipe-plus-tap deletion, both cache boundaries and Demo restoration. Keep the on-demand browser/reader and `compactFirstHeading`; never restore the eager received-file list from the old icon branch.
 
-The current #400 acceptance record is `doc/validation/project-identities/reconciled-408/README.md` (Guide42). Historical Guide28 captures are not proof for the reconciled candidate. Automated macOS/iOS checks pass; actual packaged macOS Help acceptance and the final strict judge remain pending host unlock. Do not mark the PR ready from the historical evidence.
+The current #400 acceptance record is `doc/validation/project-identities/reconciled-408/README.md` (Guide42). Historical Guide28 captures are not proof for the reconciled candidate. Automated macOS/iOS checks and actual packaged Help42 acceptance pass. Use the current input mapping and final exact-head CI/strict judge; never reuse the historical Guide28 acceptance.
