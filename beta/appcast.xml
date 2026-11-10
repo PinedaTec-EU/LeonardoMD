@@ -3,79 +3,26 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.3.1045</title>
-            <pubDate>Fri, 06 Nov 2026 21:55:14 +0100</pubDate>
+            <title>0.3.1136</title>
+            <pubDate>Sun, 08 Nov 2026 14:21:40 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>1045</sparkle:version>
-            <sparkle:shortVersionString>0.3.1045</sparkle:shortVersionString>
+            <sparkle:version>1136</sparkle:version>
+            <sparkle:shortVersionString>0.3.1136</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD
+            <description sparkle:format="markdown"># More reliable connections and rubric capture
 
-- Math formulas retain complete braces, radicals, long arrows and cancellation marks.
-- Selecting a document-outline heading opens that exact heading, including repeated selections and Split mode.
-- English and Spanish help include live examples for these recurring math and navigation cases.
+- Shared-project downloads finish transmitting before the source closes the connection, reducing interrupted transfers.
+- Connection diagnostics distinguish completed server work from a download successfully received on the other device.
+- Rubric status checks recover automatically after brief service contention, keeping the same request and access permissions. Persistent errors remain visible with a recovery action.
 
-## Known limitations
+## Before repeating a rubric request
 
-Very long numbered formulas can overlap or extend beyond a narrow Split preview. Use Preview mode or widen the window. [Tracking issue #379](https://github.com/PinedaTec-EU/LeonardoMD/issues/379).
+Update LeonardoMD and ensure its bundled Leonardo Sync helper is current. If Synchronization preferences report an outdated helper, disable and re-enable Leonardo Sync, then check that it is running. Existing pairing and permissions are preserved. Keep Little Leonardo active while accepting, drawing and sending the requested rubric; review the returned drawing on the Mac before saving or inserting it.
 
-This beta is for Apple silicon Macs.
+This is a macOS beta. On-demand caching is not included, and no new Little Leonardo build is distributed with this package. Transfers require a reachable, explicitly authorized source.
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1045/LeonardoMD-0.3.1045.zip" length="24120257" type="application/octet-stream" sparkle:edSignature="Sm4STBrhb+Rz7lI/vnqHa7STf8rYy00iSnacnz7eDdNhShL4VLaYVUMw0YwuCVvwyD7UxXbgRFT17fTuUIiEDA==" />
-        </item>
-    <item leonardo:channel="beta">
-            <title>0.3.1022</title>
-            <pubDate>Fri, 06 Nov 2026 18:34:41 +0100</pubDate>
-            <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>1022</sparkle:version>
-            <sparkle:shortVersionString>0.3.1022</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># LeonardoMD 0.3.1022 — Beta
-
-- Help illustrations now use transparent Leonardo Classic artwork, with explanatory captions in Spanish and English. Updated main and agent-import guides create new personal copies while preserving your existing annotations.
-- Display math preserves Markdown-sensitive TeX and adjacent expressions, including the bilingual help regression examples.
-- The Mac can request a rubric capture from an explicitly compatible linked iOS device, review the returned image, and save or insert it into a document.
-- iOS capture requests require explicit consent and support preview, durable drafts and retry after interrupted transfers.
-
-- Owner-only iOS distribution tooling prepares companion archives with branded icons and privacy metadata from clean source.
-
-## Known limitations
-
-- This macOS download supports Apple silicon. Compatible iOS companion distribution and physical-device capture acceptance remain separate from this release.
-- This beta has not been installed on the maintainer's Mac as part of publication; candidate-specific hosted update, installation and relaunch checks remain pending.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1022/LeonardoMD-0.3.1022.zip" length="24115582" type="application/octet-stream" sparkle:edSignature="63ZLUKUmegkDxHPvgm9tVWJ0svRu5Nu44WN7dY/eQ8B7RE4+64giSHndxVXy4gPhzlmm9FW9dKvo9btXpOJYCw==" />
-        </item>
-    <item leonardo:channel="beta">
-            <title>0.3.861</title>
-            <pubDate>Thu, 05 Nov 2026 19:31:37 +0100</pubDate>
-            <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>861</sparkle:version>
-            <sparkle:shortVersionString>0.3.861</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">## Synchronization, organized by role
-
-- Open **Preferences → Synchronization** for one shared Leonardo Sync control and two pages: **Share from this Mac** and **Connect to other computers**.
-- Manage shared content, invitations, device access and incoming reviews on the sharing page. Manage remote connections, synchronization intervals and offline copies on the connection page.
-- Device labels distinguish read-only clients, including Little Leonardo, from desktop Macs whose changes require review. Existing permissions and copies are preserved.
-- Turning Leonardo Sync off takes synchronization offline in both directions. Connecting to another Mac does not require sharing your own files.
-
-## Updates from Preferences
-
-Install and relaunch now closes Preferences automatically before the normal document checks. Cancelling keeps unsaved work; after saving, retry from Updates without quitting manually.
-
-## Try it
-
-Open **Preferences → Synchronization** and switch between both pages. Enable Leonardo Sync only when you want device synchronization; approve its background item in macOS if requested. Sharing selected saved files remains a separate choice.
-
-Updated English and Spanish help explains both roles and safe update recovery.
-
-This beta is for Apple silicon Macs running macOS 14 or later. An older app still uses its old update implementation while installing this beta; if that first update stalls behind Preferences, close Preferences and quit normally once. Subsequent outgoing updates from this corrected version use the new flow. Save work before updating. Incoming edits continue to require explicit review.
-</description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.861/LeonardoMD-0.3.861.zip" length="25723574" type="application/octet-stream" sparkle:edSignature="5O+xkeCHwDw2tsUE2mCQWqW+9si82o5dThWilYzYewcDMuKwpU/G1HQ7NGZ8mSk/ISSHHfYXzlH4ehiwVuUtDg==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1136/LeonardoMD-0.3.1136.zip" length="24311330" type="application/octet-stream" sparkle:edSignature="ybTtKl+Q9KZlfoW0SstM3OsFxHtlLbm8gNukpfS1Pw4DK0erRYvY8tkCzp6UemKoSupnclBSxh6NO4jo4UQtDw==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.765</title>
