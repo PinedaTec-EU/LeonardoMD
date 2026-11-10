@@ -14,6 +14,7 @@ public protocol SyncHelperPreferencesAccess: Sendable {
 extension ConfigurationStore: SyncHelperPreferencesAccess {}
 
 public actor SyncHelperHost {
+    private let buildIdentity: SyncHelperBuildIdentity?
     private let preferencesURL: URL
     private let configurations: any SyncHelperPreferencesAccess
     private let runtime: DesktopDirectRuntime
@@ -27,7 +28,9 @@ public actor SyncHelperHost {
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "sync-helper")
 
     public init(preferencesURL: URL = SyncHelperContract.preferencesURL,
-                configurations: any SyncHelperPreferencesAccess = ConfigurationStore(), runtime: DesktopDirectRuntime? = nil) {
+                configurations: any SyncHelperPreferencesAccess = ConfigurationStore(), runtime: DesktopDirectRuntime? = nil,
+                buildIdentity: SyncHelperBuildIdentity? = nil) {
+        self.buildIdentity = buildIdentity
         self.preferencesURL = preferencesURL; self.configurations = configurations
         applications = SyncHelperApplicationLease(root: preferencesURL.deletingLastPathComponent().appendingPathComponent("MobileSync/LocalApplications"))
         self.runtime = runtime ?? DesktopDirectRuntime(
@@ -92,9 +95,9 @@ public actor SyncHelperHost {
         try await reload()
         switch command {
         case .status:
-            return try encode(SyncHelperStatus(enabled: lastSettings?.helperEnabled == true, sharing: sharing, error: failure))
+            return try encode(SyncHelperStatus(enabled: lastSettings?.helperEnabled == true, sharing: sharing, error: failure, buildIdentity: buildIdentity))
         case .reload:
-            return try encode(SyncHelperStatus(enabled: lastSettings?.helperEnabled == true, sharing: sharing, error: failure))
+            return try encode(SyncHelperStatus(enabled: lastSettings?.helperEnabled == true, sharing: sharing, error: failure, buildIdentity: buildIdentity))
         case .stopSharing:
             try await runtime.stop(); sharing = nil; lastSettings = nil
             return try encode(true)

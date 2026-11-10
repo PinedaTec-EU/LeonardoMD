@@ -21,11 +21,14 @@ final class SyncHelperController {
     private let verifyPackage: @Sendable () throws -> Void
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "sync-helper-control")
     private var revision = 0
+    private let expectedBuildIdentity: SyncHelperBuildIdentity?
+    private var nextUpgradeAttempt = Date.distantPast
     private let preferencesURL: URL
     init(preferencesURL: URL = AppSession.preferencesURL,
          configurations: ConfigurationStore = .shared,
          service: any SyncHelperRegistration = SystemSyncHelperRegistration(),
          client: any SyncHelperControlAccess = SyncHelperClient(),
+         expectedBuildIdentity: SyncHelperBuildIdentity? = SyncHelperBuildIdentity(bundleURL: Bundle.main.bundleURL),
          hasExecutable: @escaping @Sendable () -> Bool = {
              FileManager.default.isExecutableFile(atPath: Bundle.main.bundleURL
                  .appendingPathComponent("Contents/MacOS/" + SyncHelperContract.executableName).path)
@@ -34,6 +37,7 @@ final class SyncHelperController {
              _ = try SyncHelperSigning.requirement(for: bundle.appendingPathComponent("Contents/MacOS/" + SyncHelperContract.executableName),
                  identifier: SyncHelperContract.serviceName, matching: bundle)
          }) {
+        self.expectedBuildIdentity = expectedBuildIdentity
         self.preferencesURL = preferencesURL; self.configurations = configurations
         self.service = service; self.client = client; self.hasExecutable = hasExecutable; self.verifyPackage = verifyPackage
     }
@@ -57,7 +61,7 @@ final class SyncHelperController {
         do {
             let settings = try await configurations.loadGlobalPreferences(at: preferencesURL)
             guard expected == revision else { return }
-            enabled = settings.mobileSync.helperEnabled
+            enabled = settings.mobileSync.helperEnabled || settings.mobileSync.helperUpgradeToken != nil
             error = nil
             guard hasExecutable() else {
                 state = .notInstalled; sharing = nil; supportsRubricExchange = false; return
@@ -68,11 +72,21 @@ final class SyncHelperController {
             case .enabled:
                 let status = try await client.status()
                 guard expected == revision else { return }
+                if let expectedBuildIdentity,
+                   settings.mobileSync.helperUpgradeToken != nil ||
+                    (status.buildIdentity?.needsReplacement(by: expectedBuildIdentity) ?? true) {
+                    await reconcileUpgrade(pending: settings.mobileSync.helperUpgradeToken,
+                                           current: status.buildIdentity)
+                    return
+                }
                 state = status.enabled ? .running : .disabled
                 sharing = status.sharing
                 supportsRubricExchange = status.supportsRubricExchange
                 error = status.error
-            case .notFound, .notRegistered: state = .failed; sharing = nil; supportsRubricExchange = false
+            case .notFound, .notRegistered:
+                if expectedBuildIdentity != nil {
+                    await reconcileUpgrade(pending: settings.mobileSync.helperUpgradeToken, current: nil)
+                } else { state = .failed; sharing = nil; supportsRubricExchange = false }
             @unknown default: state = .failed; sharing = nil; supportsRubricExchange = false
             }
         } catch {
@@ -82,7 +96,17 @@ final class SyncHelperController {
     }
 
     func setEnabled(_ enabled: Bool) async {
-        guard !busy, !InstanceRuntime.isAdditional else { return }
+        guard !InstanceRuntime.isAdditional else { return }
+        if busy {
+            // An explicit denial cancels the durable upgrade token even while
+            // graceful shutdown is suspended. It must never be restored later.
+            guard !enabled else { return }
+            revision += 1; self.enabled = false; state = .disabled; sharing = nil
+            supportsRubricExchange = false
+            do { try await configurations.setSyncHelperEnabled(false, at: preferencesURL) }
+            catch { state = .failed; self.error = L10n.text(error.localizedDescription) }
+            return
+        }
         revision += 1 // Invalidate health replies issued before this consent change.
         busy = true; error = nil
         logger.info("sync_helper_enable_requested enabled=\(enabled, privacy: .public)")
@@ -92,9 +116,7 @@ final class SyncHelperController {
                 guard hasExecutable() else { throw SyncHelperFailure(L10n.text("Sync helper is not installed")) }
                 try verifyPackage()
             }
-            let baseline = try await configurations.loadGlobalPreferences(at: preferencesURL)
-            var updated = baseline; updated.mobileSync.helperEnabled = enabled
-            _ = try await configurations.mergeGlobalPreferences(updated: updated, baseline: baseline, at: preferencesURL)
+            try await configurations.setSyncHelperEnabled(enabled, at: preferencesURL)
             self.enabled = enabled; sharing = nil
             if enabled {
                 state = .starting
@@ -108,6 +130,50 @@ final class SyncHelperController {
         } catch {
             state = .failed; self.error = L10n.text(error.localizedDescription)
             logger.error("sync_helper_lifecycle_failed")
+        }
+    }
+
+    private func reconcileUpgrade(pending: UUID?, current: SyncHelperBuildIdentity?) async {
+        guard let expectedBuildIdentity, !busy, !InstanceRuntime.isAdditional else { return }
+        state = .starting; sharing = nil; supportsRubricExchange = false
+        guard Date() >= nextUpgradeAttempt else { return }
+        nextUpgradeAttempt = Date().addingTimeInterval(30)
+        revision += 1
+        let expected = revision
+        busy = true
+        defer { busy = false }
+        let token = pending ?? UUID()
+        do {
+            try verifyPackage()
+            if pending != nil, let current, !current.needsReplacement(by: expectedBuildIdentity) {
+                _ = try await configurations.finishSyncHelperUpgrade(token, at: preferencesURL)
+                return
+            }
+            guard try await configurations.beginSyncHelperUpgrade(token, at: preferencesURL) else {
+                enabled = false; state = .disabled; return
+            }
+            try await unregisterAfterStop()
+            guard expected == revision else { state = .disabled; return }
+            let settings = try await configurations.loadGlobalPreferences(at: preferencesURL)
+            guard settings.mobileSync.helperUpgradeToken == token else {
+                enabled = settings.mobileSync.helperEnabled; state = .disabled; return
+            }
+            try service.register()
+            let restored = try await configurations.finishSyncHelperUpgrade(token, at: preferencesURL)
+            guard restored, expected == revision else {
+                try await configurations.setSyncHelperEnabled(false, at: preferencesURL)
+                try await unregisterAfterStop()
+                enabled = false; state = .disabled; return
+            }
+            nextUpgradeAttempt = .distantPast
+            // Only a subsequent live identity/health response can report running.
+            state = .starting
+        } catch {
+            if expected != revision { state = .disabled; return }
+            // Keep the durable token on failure. A future refresh/startup can
+            // retry, while the old helper remains denied and writes stay safe.
+            state = .failed; self.error = L10n.text(error.localizedDescription)
+            logger.error("sync_helper_upgrade_pending")
         }
     }
 

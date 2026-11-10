@@ -7,6 +7,131 @@ import LeonardoDesktopSync
 
 @MainActor
 final class SyncHelperControllerTests: XCTestCase {
+    private let replacement = SyncHelperBuildIdentity(build: 200, bundlePath: "/Applications/LeonardoMD.app")
+
+    private func upgrading(_ fixture: ControllerFixture, _ registration: HelperRegistrationFake,
+                           _ control: HelperControlFake) -> SyncHelperController {
+        SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            hasExecutable: { true }, verifyPackage: {})
+    }
+
+    func testLegacyRunningHelperIsSafelyReplacedBeforeReportingOnline() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); let control = HelperControlFake()
+        let controller = upgrading(fixture, registration, control)
+        await controller.setEnabled(true)
+        await controller.refresh()
+        XCTAssertEqual(registration.registrations, 2)
+        XCTAssertEqual(registration.unregistrations, 1)
+        XCTAssertFalse(controller.online)
+        let settings = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertTrue(settings.mobileSync.helperEnabled)
+        XCTAssertNil(settings.mobileSync.helperUpgradeToken)
+        await control.setBuildIdentity(replacement)
+        await controller.refresh()
+        XCTAssertTrue(controller.online)
+    }
+
+    func testNewerHelperIsNeverDowngradedByAnOlderEditor() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); let control = HelperControlFake()
+        let controller = upgrading(fixture, registration, control)
+        await controller.setEnabled(true)
+        await control.setBuildIdentity(SyncHelperBuildIdentity(build: 201, bundlePath: "/newer/LeonardoMD.app"))
+        await controller.refresh()
+        XCTAssertTrue(controller.online)
+        XCTAssertEqual(registration.registrations, 1)
+        XCTAssertEqual(registration.unregistrations, 0)
+    }
+
+    func testPendingUpgradeNeverDowngradesANewerRunningHelper() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); let control = HelperControlFake()
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        _ = try await fixture.configurations.beginSyncHelperUpgrade(UUID(), at: fixture.preferences)
+        registration.status = .enabled
+        await control.setBuildIdentity(SyncHelperBuildIdentity(build: 201, bundlePath: "/newer/LeonardoMD.app"))
+        let controller = upgrading(fixture, registration, control)
+        await controller.refresh()
+        let settings = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertTrue(settings.mobileSync.helperEnabled)
+        XCTAssertNil(settings.mobileSync.helperUpgradeToken)
+        XCTAssertEqual(registration.registrations, 0)
+        XCTAssertEqual(registration.unregistrations, 0)
+    }
+
+    func testSameBuildRegisteredFromObsoleteBundleIsRebound() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); let control = HelperControlFake()
+        let controller = upgrading(fixture, registration, control)
+        await controller.setEnabled(true)
+        await control.setBuildIdentity(SyncHelperBuildIdentity(build: 200, bundlePath: "/old-copy/LeonardoMD.app"))
+        await controller.refresh()
+        XCTAssertEqual(registration.registrations, 2)
+        XCTAssertFalse(controller.online)
+    }
+
+    func testManualDisableWhileUpgradeWaitsCannotBeReenabled() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); let control = HelperControlFake()
+        let controller = upgrading(fixture, registration, control)
+        await controller.setEnabled(true)
+        await control.pauseReload()
+        let refresh = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldReload { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldReload; XCTAssertTrue(held)
+        let stopped = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertFalse(stopped.mobileSync.helperEnabled)
+        XCTAssertNotNil(stopped.mobileSync.helperUpgradeToken)
+        await controller.setEnabled(false)
+        await control.resumeReload()
+        await refresh.value
+        let settings = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertFalse(settings.mobileSync.helperEnabled)
+        XCTAssertNil(settings.mobileSync.helperUpgradeToken)
+        XCTAssertFalse(controller.online)
+        XCTAssertEqual(registration.registrations, 1)
+    }
+
+    func testInterruptedUpgradeResumesFromDurableConsent() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); let control = HelperControlFake()
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        _ = try await fixture.configurations.beginSyncHelperUpgrade(UUID(), at: fixture.preferences)
+        let controller = upgrading(fixture, registration, control)
+        await controller.refresh()
+        let settings = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertTrue(settings.mobileSync.helperEnabled)
+        XCTAssertNil(settings.mobileSync.helperUpgradeToken)
+        XCTAssertEqual(registration.registrations, 1)
+        XCTAssertFalse(controller.online)
+    }
+
+    func testFailedUnregisterKeepsPendingIntentAndDoesNotRegisterOverActiveWriter() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); let control = HelperControlFake()
+        let controller = upgrading(fixture, registration, control)
+        await controller.setEnabled(true)
+        registration.failUnregister = true
+        await controller.refresh()
+        let settings = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertFalse(settings.mobileSync.helperEnabled)
+        XCTAssertNotNil(settings.mobileSync.helperUpgradeToken)
+        XCTAssertTrue(controller.enabled)
+        XCTAssertFalse(controller.online)
+        XCTAssertEqual(registration.registrations, 1)
+        registration.failUnregister = false
+        let retry = upgrading(fixture, registration, control)
+        await retry.refresh()
+        let recovered = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertTrue(recovered.mobileSync.helperEnabled)
+        XCTAssertNil(recovered.mobileSync.helperUpgradeToken)
+    }
+
     func testEnableRegistersAndRequiresLiveHealthBeforeReportingOnline() async throws {
         let fixture = try ControllerFixture()
         defer { fixture.remove() }
@@ -181,7 +306,7 @@ final class SyncHelperControllerTests: XCTestCase {
     }
     func controller(_ registration: HelperRegistrationFake, _ control: HelperControlFake) -> SyncHelperController {
         SyncHelperController(preferencesURL: preferences, configurations: configurations,
-            service: registration, client: control, hasExecutable: { true }, verifyPackage: {})
+            service: registration, client: control, expectedBuildIdentity: nil, hasExecutable: { true }, verifyPackage: {})
     }
     func remove() { try? FileManager.default.removeItem(at: root) }
 }
@@ -189,16 +314,25 @@ private enum HelperControlError: Error { case unavailable }
 @MainActor private final class HelperRegistrationFake: SyncHelperRegistration {
     var status = SMAppService.Status.notRegistered
     var registrations = 0
+    var unregistrations = 0
     var failUnregister = false
     func register() { registrations += 1; status = .enabled }
     func unregister() async throws {
         if failUnregister { throw HelperControlError.unavailable }
+        unregistrations += 1
         status = .notRegistered
     }
     func openApprovalSettings() {}
 }
 private actor HelperControlFake: SyncHelperControlAccess {
     private var unavailable = false
+    private var buildIdentity: SyncHelperBuildIdentity?
+    private var reloadPaused = false
+    private var heldReload: CheckedContinuation<Void, Never>?
+    var hasHeldReload: Bool { heldReload != nil }
+    func setBuildIdentity(_ value: SyncHelperBuildIdentity) { buildIdentity = value }
+    func pauseReload() { reloadPaused = true }
+    func resumeReload() { reloadPaused = false; heldReload?.resume(); heldReload = nil }
     private(set) var reloads = 0
     private var paused = false
     private var heldStatus: CheckedContinuation<Void, Never>?
@@ -209,10 +343,11 @@ private actor HelperControlFake: SyncHelperControlAccess {
     func status() async throws -> SyncHelperStatus {
         if paused { await withCheckedContinuation { heldStatus = $0 } }
         if unavailable { throw HelperControlError.unavailable }
-        return SyncHelperStatus(enabled: true, sharing: nil)
+        return SyncHelperStatus(enabled: true, sharing: nil, buildIdentity: buildIdentity)
     }
-    func reload() throws -> SyncHelperStatus {
+    func reload() async throws -> SyncHelperStatus {
         reloads += 1
+        if reloadPaused { await withCheckedContinuation { heldReload = $0 } }
         if unavailable { throw HelperControlError.unavailable }
         return SyncHelperStatus(enabled: false, sharing: nil)
     }
