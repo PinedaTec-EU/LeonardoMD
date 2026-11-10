@@ -2,6 +2,22 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1136
+
+- #394 Fixed: recover rubric queries during helper configuration ([#398](https://github.com/PinedaTec-EU/LeonardoMD/pull/398))
+
+<p>Recover rubric status queries automatically while preserving request identity and access, and restore CI downloads with verified pinned Sparkle artifacts.</p>
+
+Source: `f69ad38b5d28501b8bb35c45a5dbd7296d5551fe`. Delta: `{"build": 9}`.
+
+## 0.3.1127
+
+- #380 Updated: complete TLS shutdown and trace response termination ([#392](https://github.com/PinedaTec-EU/LeonardoMD/pull/392))
+
+<p>Shared-project HTTPS responses finish the TLS write stream before teardown, with bounded cleanup and privacy-safe server completion diagnostics.</p>
+
+Source: `955919459b13b2f9fd8c14eefd95e7de53254668`. Delta: `{"build": 14}`.
+
 ## 0.3.1113
 
 - #386 Updated: apply Classic mobile design and rotating rubric canvas ([#387](https://github.com/PinedaTec-EU/LeonardoMD/pull/387))

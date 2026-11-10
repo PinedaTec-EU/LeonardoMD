@@ -34,7 +34,8 @@ final class RubricGuideCaptureTests: XCTestCase {
                 .modifier(SessionAppearance(session: session)).frame(width: 696, height: 580).background(Color(nsColor: .windowBackgroundColor)))
             try await GuideCaptureSupport.captureNative(editor, size: NSSize(width: 696, height: 580),
                 to: folder.appendingPathComponent("rubric-canvas.png"), language: code,
-                state: "Production rubric editor; isolated synthetic library; empty new canvas; no device or legal signing")
+                state: "Production rubric editor; isolated synthetic library; empty new canvas; no device or legal signing",
+                pixelScale: 1)
             let controller = DesktopSyncController(preferencesURL: root.appendingPathComponent("capture-prefs-\(code).json"))
             let linkedEditor = NSHostingView(rootView: RubricEditor(request: request, library: library,
                 syncController: controller) { _, _, _ in false }
@@ -113,12 +114,20 @@ final class RubricGuideCaptureTests: XCTestCase {
     }
 }
 
-private actor RubricGuideCaptureRuntime: DesktopSyncRuntimeAccess {
+actor RubricGuideCaptureRuntime: DesktopSyncRuntimeAccess {
     let registry: PairingRegistry
     let status: RubricExchangeStatus
+    let failingReads: Int
+    private(set) var queryIDs: [UUID] = []
+    private(set) var creations = 0
 
-    init(status: RubricExchangeStatus) {
+    struct SyntheticQueryFailure: LocalizedError {
+        var errorDescription: String? { "Synthetic query unavailable" }
+    }
+
+    init(status: RubricExchangeStatus, failingReads: Int = 0) {
         self.status = status
+        self.failingReads = failingReads
         var registry = PairingRegistry()
         registry.setEnabled(true)
         if let credential = try? PairingRegistry.makeCredential(),
@@ -150,9 +159,14 @@ private actor RubricGuideCaptureRuntime: DesktopSyncRuntimeAccess {
     func reject(requestID: UUID) async throws { throw DesktopRuntimeError.notRunning }
     func revoke(deviceID: UUID) async throws { throw DesktopRuntimeError.notRunning }
     func createRubricRequest(deviceID: UUID, requestID: UUID, requesterName: String, labelHint: String?) async throws -> LeonardoSync.RubricRequest {
-        status.request
+        creations += 1
+        return status.request
     }
     func cancelRubricRequest(requestID: UUID) async throws -> LeonardoSync.RubricRequest { status.request }
     func rubricResponse(requestID: UUID) async throws -> RubricResponse? { status.response }
-    func rubricStatus(requestID: UUID) async throws -> RubricExchangeStatus { status }
+    func rubricStatus(requestID: UUID) async throws -> RubricExchangeStatus {
+        queryIDs.append(requestID)
+        if queryIDs.count <= failingReads { throw SyntheticQueryFailure() }
+        return status
+    }
 }

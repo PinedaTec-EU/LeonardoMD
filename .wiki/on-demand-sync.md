@@ -25,3 +25,13 @@ generation cannot alter a new grant, including a cached reopen. The deterministi
 #395 regressions cover both held completion and preservation of other projects' errors.
 
 Remote presentation is keyed by project, path, catalogue and a per-load generation. Revision changes hide old text/images before the replacement task starts; failed replacement and obsolete success/error completions cannot restore prior presentation. Regression [#402](https://github.com/PinedaTec-EU/LeonardoMD/issues/402) includes same-catalogue retry and cross-document/project isolation.
+
+Retained fallback freshness is explicit in `RemoteDownloadResult`: the preview receives
+the old file and its failed-update reason atomically. It renders a previous-copy
+warning and Retry above readable content; referenced-image failures are also
+visible above the document. Native integration checks mount the production preview
+with the real download library and disk cache, retain A, advertise B and fail B.
+Both locales must show A, the warning, original error and Retry. This supplements
+the generation-state tests that alone missed the service fallback in
+[#402](https://github.com/PinedaTec-EU/LeonardoMD/issues/402). Guide32 preserves
+the accepted connection/rubric help while adding this recovery policy.

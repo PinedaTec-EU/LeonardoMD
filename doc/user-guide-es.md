@@ -616,6 +616,28 @@ devuelve la rúbrica; no puede editar el documento. Si falla el asistente, el
 servicio o la capacidad, se muestra un estado de desconexión o incompatibilidad
 con una acción clara.
 
+Mientras espera la rúbrica, Leonardo repite automáticamente las consultas de
+estado que fallan temporalmente para **la misma solicitud**. Deja abierto el
+editor: un fallo breve no necesita Reintentar ni envía otra petición de dibujo.
+La respuesta recibida aparece automáticamente para revisarla.
+
+![Rúbrica recuperada automáticamente y lista para revisar](guide/es/assets/rubric-automatic-recovery.png)
+
+*Componente real del editor con un dibujo sintético recibido tras un fallo temporal de consulta.*
+
+Si fallan varias consultas consecutivas, el editor muestra el error original y
+**Reintentar**. Comprueba la conexión y el asistente y pulsa Reintentar para
+actualizar esa misma solicitud. Las solicitudes rechazadas, canceladas o
+caducadas han terminado: sigue la acción indicada en vez de esperar una
+recuperación automática. Cerrar el editor detiene sus consultas de estado e
+impide mostrar una respuesta tardía en el editor cerrado. Para cancelar también
+la petición de dibujo en el dispositivo, pulsa **Cancelar solicitud** antes de
+cerrar.
+
+![Fallo persistente de consulta con Reintentar](guide/es/assets/rubric-persistent-error.png)
+
+*Componente real del editor con un error persistente sintético; no se utiliza un dispositivo ni un dibujo privado.*
+
 ### Aspecto Classic, arranque y Acerca de en Little Leonardo
 
 Little Leonardo usa los colores de **Leonardo Classic**: papel pergamino,
@@ -744,7 +766,7 @@ Usa el menú contextual (clic derecho en Mac; pulsación prolongada en iOS):
 - **Dejar de mantener sin conexión** permite limpiar las copias como caché, sin eliminar originales. Puedes excluir un archivo de una carpeta conservada offline.
 - **Liberar espacio local** elimina copias temporales descargadas; conserva el contenido offline protegido.
 
-La lista distingue **Solo remoto**, **En caché**, **Offline pendiente** y **Disponible sin conexión**, con progreso e indicadores de error. Las carpetas muestran archivos descargados y total. La selección está disponible offline cuando terminan todas las descargas necesarias. Los fallos se reintentan en la siguiente actualización automática; la última versión conservada sigue legible si falla una actualización.
+La lista distingue **Solo remoto**, **En caché**, **Offline pendiente** y **Disponible sin conexión**, con progreso e indicadores de error. Las carpetas muestran archivos descargados y total. La selección está disponible offline cuando terminan todas las descargas necesarias. Los fallos se reintentan en la siguiente actualización automática; la última versión conservada sigue legible si falla una actualización. El lector muestra sobre esa copia un aviso explícito de copia anterior, el error de descarga y **Reintentar**. Los errores de imágenes referenciadas también se muestran aunque el texto del documento sea legible.
 
 En **Sincronización → Almacenamiento y caché**, escribe el límite temporal como un número entero de MiB y pulsa **Aplicar límite de caché** (Intro también lo aplica). El texto que estás editando no cambia el límite guardado. Consulta el uso temporal/offline y las descargas pendientes, limpia la caché o deja de conservar una selección. El límite inicial es 256 MiB; cero desactiva la conservación temporal. Primero se eliminan los archivos temporales usados hace más tiempo. Los archivos offline se almacenan aparte y no cuentan para el límite; necesitan espacio libre suficiente. La limpieza nunca borra copias editables de escritorio ni borradores de rúbricas.
 

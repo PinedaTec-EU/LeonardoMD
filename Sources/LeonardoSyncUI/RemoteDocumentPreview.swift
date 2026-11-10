@@ -29,6 +29,27 @@ public struct RemoteDocumentPreview: View {
     }
     private func t(_ en: String, _ es: String) -> String { spanish ? es : en }
     public var body: some View {
+        VStack(spacing: 0) {
+            if project != nil, currentEntry != nil, let failure {
+                VStack(alignment: .leading, spacing: 8) {
+                    if presentation.showsRetainedCopy(for: request) {
+                        Text(t("Showing a previously downloaded copy. The latest version could not be downloaded.",
+                               "Se muestra una copia descargada anteriormente. No se pudo descargar la versión actual."))
+                    }
+                    Text(failure)
+                    Button(t("Retry", "Reintentar")) { Task { await load() } }
+                }.padding().frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("remote-download-warning")
+            }
+            content
+        }.navigationTitle((entry.path as NSString).lastPathComponent)
+        .toolbar { Button(t("Show source", "Ver texto")) { source.toggle() } }
+        .task(id: request) { await load() }
+        .navigationDestination(item: $linked) { target in
+            RemoteDocumentPreview(library: library, projectID: projectID, entry: target, spanish: spanish, appearance: appearance)
+        }
+    }
+    @ViewBuilder private var content: some View {
         Group {
             if project == nil { Text(t("Access removed", "Acceso retirado")) }
             else if currentEntry == nil { Text(t("Document no longer available", "Documento ya no disponible")) }
@@ -42,32 +63,28 @@ public struct RemoteDocumentPreview: View {
                             memoryAssets: MarkdownMemoryAssets(files: authorizedImages), allowsRemoteImages: false),
                         onLinkActivation: followLink)
                 }
-            } else if let failure {
-                VStack { Text(failure); Button(t("Retry", "Reintentar")) { Task { await load() } } }
             } else if file != nil { Text(t("File downloaded", "Archivo descargado")) }
-            else { ProgressView(t("Downloading…", "Descargando…")) }
-        }.navigationTitle((entry.path as NSString).lastPathComponent)
-        .toolbar { Button(t("Show source", "Ver texto")) { source.toggle() } }
-        .task(id: request) { await load() }
-        .navigationDestination(item: $linked) { target in
-            RemoteDocumentPreview(library: library, projectID: projectID, entry: target, spanish: spanish, appearance: appearance)
+            else if failure == nil { ProgressView(t("Downloading…", "Descargando…")) }
         }
     }
     private func load() async {
         let ticket = presentation.begin(request)
         guard let expectedCatalogue = project?.catalogue, currentEntry != nil else { return }
         do {
-            let value = try await library.open(id: projectID, path: entry.path)
+            let value = try await library.openResult(id: projectID, path: entry.path)
             guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue, currentEntry != nil else { return }
             presentation.receive(value, ticket: ticket)
             // The canonical Markdown renderer resolves local image requests only from memory.
             // Fetch only referenced, authorized image entries, never the complete corpus.
-            if let text = String(data: value.content, encoding: .utf8), let project {
+            if let text = String(data: value.file.content, encoding: .utf8), let project {
                 for path in RemoteDocumentResources.imagePaths(in: text, documentPath: entry.path, catalogue: project.catalogue) {
                     do {
-                        let image = try await library.open(id: projectID, path: path)
+                        let image = try await library.openResult(id: projectID, path: path)
                         guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue else { return }
-                        presentation.receiveImage(image.content, path: path, ticket: ticket)
+                        presentation.receiveImage(image.file.content, path: path, ticket: ticket)
+                        if let failure = image.updateFailure {
+                            presentation.fail(path + ": " + failure, ticket: ticket)
+                        }
                     }
                     catch {
                         guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue else { return }

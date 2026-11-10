@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-07T13:17:25.330534+00:00",
+  "capture": {
+    "captured_at": "2026-11-07T13:16:23.117000+00:00",
+    "route": "/native/help/en",
+    "screen": "canonical-en-live",
+    "browser_name": "Native AppKit/WKWebView",
+    "browser_version": "Not exposed by CUA",
+    "state": "Canonical real Help Math ON Mermaid inline single multiline underbrace radical tag1 chart and literal code; screenshot-pixel equivalent dimensions; canonical cc6c43f7845c61a3fe24f8e862e8ab7f82fc50c5; Guide23 baseline0.3.1082; helper26651",
+    "viewport_css": {
+      "width": 5120,
+      "height": 2880
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 5120,
+    "height_px": 2880,
+    "sha256": "f50e255cc78f6fab1460e2e903f4cf6e19427c774ca249de15e70197f9aabd53"
+  },
+  "source": {
+    "revision_at_collection": "14e68224f141e1dd7505c7e06d775227c576368c",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

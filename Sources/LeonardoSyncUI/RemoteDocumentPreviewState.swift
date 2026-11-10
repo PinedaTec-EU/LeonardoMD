@@ -14,6 +14,7 @@ struct RemoteDocumentPreviewState {
     private var file: CorpusFile?
     private var images: [String: Data] = [:]
     private var failure: String?
+    private var retainedCopy = false
 
     mutating func begin(_ request: RemoteDocumentPreviewRequest) -> UUID {
         generation = UUID()
@@ -21,12 +22,24 @@ struct RemoteDocumentPreviewState {
         file = nil
         images = [:]
         failure = nil
+        retainedCopy = false
         return generation
     }
 
     mutating func receive(_ file: CorpusFile, ticket: UUID) {
         guard ticket == generation else { return }
         self.file = file
+    }
+
+    mutating func receive(_ result: RemoteDownloadResult, ticket: UUID) {
+        guard ticket == generation else { return }
+        file = result.file
+        failure = result.updateFailure
+        retainedCopy = result.updateFailure != nil
+    }
+
+    func showsRetainedCopy(for current: RemoteDocumentPreviewRequest) -> Bool {
+        current.catalogue != nil && request == current && retainedCopy
     }
 
     mutating func receiveImage(_ data: Data, path: String, ticket: UUID) {

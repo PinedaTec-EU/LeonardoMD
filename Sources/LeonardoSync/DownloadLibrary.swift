@@ -1,6 +1,17 @@
 import Foundation
 import Observation
 
+/// Retained content remains readable after a failed update, with explicit freshness.
+public struct RemoteDownloadResult: Sendable {
+    public let file: CorpusFile
+    public let updateFailure: String?
+
+    public init(file: CorpusFile, updateFailure: String? = nil) {
+        self.file = file
+        self.updateFailure = updateFailure
+    }
+}
+
 /// Shared UI state for authorized, read-only remote projects. Hosts must remove access before purge.
 @MainActor @Observable
 public final class DownloadLibrary {
@@ -59,19 +70,22 @@ public final class DownloadLibrary {
     }
 
     public func open(id: UUID, path: String) async throws -> CorpusFile {
+        try await openResult(id: id, path: path).file
+    }
+
+    public func openResult(id: UUID, path: String) async throws -> RemoteDownloadResult {
         guard allowed.contains(id), let project = projects.first(where: { $0.id == id }),
               let entry = project.catalogue.files.first(where: { $0.path == path }) else { throw SyncError.revoked }
         let generation = generations[id, default: 0]
         if let file = try await cache.read(id: id, entry: entry, allowStale: false) {
             try requireAccess(id: id, generation: generation)
-            return file
+            failures[Self.key(id: id, path: path)] = nil
+            return RemoteDownloadResult(file: file)
         }
         try requireAccess(id: id, generation: generation)
         let key = Self.key(id: id, path: path)
         if let active = tasks[key], active.generation == generation {
-            let file = try await active.task.value
-            try requireAccess(id: id, generation: generation)
-            return file
+            return try await result(of: active.task, id: id, entry: entry, generation: generation)
         }
         downloading.insert(key); failures[key] = nil
         let task = Task { [self] in
@@ -91,17 +105,22 @@ public final class DownloadLibrary {
                 tasks[key] = nil; downloading.remove(key)
             }
         }
+        return try await result(of: task, id: id, entry: entry, generation: generation)
+    }
+
+    private func result(of task: Task<CorpusFile, Error>, id: UUID,
+                        entry: RemoteFileEntry, generation: UInt64) async throws -> RemoteDownloadResult {
         do {
             let file = try await task.value
             try requireAccess(id: id, generation: generation)
-            return file
+            return RemoteDownloadResult(file: file)
         }
         catch {
             try requireAccess(id: id, generation: generation)
-            failures[key] = error.localizedDescription
+            failures[Self.key(id: id, path: entry.path)] = error.localizedDescription
             if let previous = try await cache.read(id: id, entry: entry, allowStale: true) {
                 try requireAccess(id: id, generation: generation)
-                return previous
+                return RemoteDownloadResult(file: previous, updateFailure: error.localizedDescription)
             }
             throw error
         }
