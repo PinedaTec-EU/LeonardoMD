@@ -69,6 +69,27 @@ final class OnDemandSyncUITests: XCTestCase {
         assertStatus(row("notes/decisions.md", app: app), "Disponible sin conexión", timeout: 80)
         assertStatus(row("notes/future.md", app: app), "Disponible sin conexión")
         try capture(app, "catalogue-recovered", state: "Automatic refresh retried the failed file and retained a future folder descendant without a manual sync")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        let ready = try JSONSerialization.jsonObject(with: Data(contentsOf: root().appendingPathComponent("ready.json"))) as? [String: Any]
+        let projectID = try XCTUnwrap(ready?["projectID"] as? String)
+        let received = app.buttons["open-project-" + projectID]
+        XCTAssertTrue(received.waitForExistence(timeout: 10))
+        try capture(app, "project-before-delete", state: "Received project remains an ordinary row in the same list as the local Demo project")
+        received.swipeLeft()
+        XCTAssertTrue(received.exists, "A swipe alone must not delete the received project")
+        let delete = app.buttons["delete-project-" + projectID]
+        XCTAssertTrue(delete.waitForExistence(timeout: 5))
+        try capture(app, "project-swipe-delete", state: "Swipe reveals Delete; explicit button tap is still required")
+        delete.tap()
+        XCTAssertTrue(received.waitForNonExistence(timeout: 10))
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["open-sync-settings"].waitForExistence(timeout: 15))
+        XCTAssertFalse(received.exists)
+        app.buttons["Sincronizar"].firstMatch.tap()
+        XCTAssertFalse(received.waitForExistence(timeout: 10), "Authorized refresh must not restore a locally removed project")
+        XCTAssertTrue(app.buttons["open-demo-project"].exists)
+        try capture(app, "project-deleted-after-refresh", state: "Received project stays absent after app relaunch and authenticated synchronization; local Demo remains")
     }
 
     @MainActor private func enroll(_ app: XCUIApplication) throws {
@@ -129,12 +150,13 @@ final class OnDemandSyncUITests: XCTestCase {
         try screenshot.pngRepresentation.write(to: destination.appendingPathComponent(name + ".png"), options: .atomic)
         let context: [String: Any] = [
             "captured_at": capturedAt, "route": "/native/ios/on-demand/" + name, "screen": name,
-            "browser_name": "Little Leonardo native SwiftUI/WKWebView · iPhone18Pro Simulator · iOS " + UIDevice.current.systemVersion,
+            "browser_name": "Little Leonardo native SwiftUI/WKWebView · iOS Simulator " + UIDevice.current.systemVersion,
             "browser_version": "WKWebView engine version not exposed by XCTest",
-            "viewport_css": ["width": Int(app.frame.width), "height": Int(app.frame.height)],
+            "viewport_css": NSNull(),
+            "native_viewport_points": ["width": app.frame.width, "height": app.frame.height],
             "capture_mode": "viewport", "data_provenance": "synthetic",
             "source_sha": ProcessInfo.processInfo.environment["LEONARDO_QA_SOURCE_SHA"] ?? "unavailable",
-            "state": state + "; native-point viewport equivalent; Spanish; Classic appearance"
+            "state": state + "; native points measured from app.frame; Spanish; Classic appearance"
         ]
         try JSONSerialization.data(withJSONObject: context, options: [.prettyPrinted, .sortedKeys])
             .write(to: destination.appendingPathComponent(name + ".context.json"), options: .atomic)

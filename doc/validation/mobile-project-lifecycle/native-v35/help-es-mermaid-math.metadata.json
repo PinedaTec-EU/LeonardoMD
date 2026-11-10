@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T10:28:55.008258+00:00",
+  "capture": {
+    "captured_at": "2026-11-10T10:20:43.894Z",
+    "route": "/native/help/v35/es",
+    "screen": "Guide v35 es",
+    "browser_name": "Native AppKit/WKWebView",
+    "browser_version": "Engine version not exposed by CUA",
+    "viewport_css": null,
+    "native_viewport_points": null,
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic",
+    "state": "Real Spanish Help: Mermaid, inline/display formulas, full underbraces/radical/arrow, tagged equation (1), chart; Math enabled",
+    "source_sha": "782154361512b31ea3837616c30303cf2a013743",
+    "native_geometry_limitation": "CUA exposes screenshot bytes but no native-point or CSS geometry"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 5120,
+    "height_px": 2818,
+    "sha256": "4a049a82811bfceadd5075cc3c8b9db1098f0e8863c38681d9644e1515ff63f1"
+  },
+  "source": {
+    "revision_at_collection": "782154361512b31ea3837616c30303cf2a013743",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  },
+  "schema_limitation": "Browser helper rejects unavailable native CSS viewport. Its image/source collectors were reused; native geometry remains explicitly null."
+}
