@@ -1,0 +1,98 @@
+[
+  {
+    "timestamp": "2026-11-10 10:40:12.208885+0100",
+    "processID": 66019,
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"1136\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":66019,\"startedAt\":1794303612.219956,\"version\":\"0.3.1136\"},\"elapsedMilliseconds\":0.011625,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"process_started\"}",
+    "category": "startup"
+  },
+  {
+    "timestamp": "2026-11-10 10:40:12.208903+0100",
+    "processID": 66019,
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"1136\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":66019,\"startedAt\":1794303612.219956,\"version\":\"0.3.1136\"},\"elapsedMilliseconds\":0.483,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"application_initializing\"}",
+    "category": "startup"
+  },
+  {
+    "timestamp": "2026-11-10 10:40:12.273976+0100",
+    "processID": 66019,
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"1136\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":66019,\"startedAt\":1794303612.219956,\"version\":\"0.3.1136\"},\"elapsedMilliseconds\":65.499708,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"application_initialized\"}",
+    "category": "startup"
+  },
+  {
+    "timestamp": "2026-11-10 10:40:12.275879+0100",
+    "processID": 66019,
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"1136\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":66019,\"startedAt\":1794303612.219956,\"version\":\"0.3.1136\"},\"elapsedMilliseconds\":67.444791,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"delegate_installed\"}",
+    "category": "startup"
+  },
+  {
+    "timestamp": "2026-11-10 10:40:12.276140+0100",
+    "processID": 66019,
+    "eventMessage": "{\"activationPolicy\":{\"actualPolicy\":0,\"switchSucceeded\":false},\"context\":{\"architecture\":\"arm64\",\"build\":\"1136\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":66019,\"startedAt\":1794303612.219956,\"version\":\"0.3.1136\"},\"elapsedMilliseconds\":67.694541,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"activation_policy_requested\"}",
+    "category": "startup"
+  },
+  {
+    "timestamp": "2026-11-10 10:40:12.276154+0100",
+    "processID": 66019,
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"1136\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":66019,\"startedAt\":1794303612.219956,\"version\":\"0.3.1136\"},\"elapsedMilliseconds\":67.738166,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"event_loop_starting\"}",
+    "category": "startup"
+  },
+  {
+    "timestamp": "2026-11-10 10:40:12.276817+0100",
+    "processID": 66019,
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"1136\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":66019,\"startedAt\":1794303612.219956,\"version\":\"0.3.1136\"},\"elapsedMilliseconds\":68.385041,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"application_will_finish_launching\"}",
+    "category": "startup"
+  },
+  {
+    "timestamp": "2026-11-10 10:40:12.345439+0100",
+    "processID": 66019,
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"1136\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":66019,\"startedAt\":1794303612.219956,\"version\":\"0.3.1136\"},\"elapsedMilliseconds\":136.989916,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"application_did_finish_launching\"}",
+    "category": "startup"
+  },
+  {
+    "timestamp": "2026-11-10 10:40:12.345453+0100",
+    "processID": 66019,
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"1136\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":66019,\"startedAt\":1794303612.219956,\"version\":\"0.3.1136\"},\"elapsedMilliseconds\":137.037416,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"menu_configuring\"}",
+    "category": "startup"
+  },
+  {
+    "timestamp": "2026-11-10 10:40:12.364489+0100",
+    "processID": 66019,
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"1136\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":66019,\"startedAt\":1794303612.219956,\"version\":\"0.3.1136\"},\"elapsedMilliseconds\":156.056708,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"menu_configured\"}",
+    "category": "startup"
+  },
+  {
+    "timestamp": "2026-11-10 10:40:12.364510+0100",
+    "processID": 66019,
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"1136\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":66019,\"startedAt\":1794303612.219956,\"version\":\"0.3.1136\"},\"elapsedMilliseconds\":156.096125,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"first_window_creating\"}",
+    "category": "startup"
+  },
+  {
+    "timestamp": "2026-11-10 10:40:12.416202+0100",
+    "processID": 66019,
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"1136\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":66019,\"startedAt\":1794303612.219956,\"version\":\"0.3.1136\"},\"elapsedMilliseconds\":207.759666,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"first_window_created\"}",
+    "category": "startup"
+  },
+  {
+    "timestamp": "2026-11-10 10:40:12.427044+0100",
+    "processID": 66019,
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"1136\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":66019,\"startedAt\":1794303612.219956,\"version\":\"0.3.1136\"},\"elapsedMilliseconds\":218.603875,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"first_window_shown\"}",
+    "category": "startup"
+  },
+  {
+    "timestamp": "2026-11-10 10:40:12.427884+0100",
+    "processID": 66019,
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"1136\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":66019,\"startedAt\":1794303612.219956,\"version\":\"0.3.1136\"},\"elapsedMilliseconds\":219.4595,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"application_ready\"}",
+    "category": "startup"
+  },
+  {
+    "timestamp": "2026-11-10 10:43:41.246287+0100",
+    "processID": 66019,
+    "eventMessage": "{\"context\":{\"architecture\":\"arm64\",\"build\":\"1136\",\"bundleIdentifier\":\"eu.pinedatec.LeonardoMD.qa.c61c64619edf4bb48ba9e0d4c02af087\",\"isAppBundle\":true,\"operatingSystem\":\"Version 27.0.1 (Build 26A434)\",\"parentPID\":1,\"pid\":66019,\"startedAt\":1794303612.219956,\"version\":\"0.3.1136\"},\"elapsedMilliseconds\":209037.830041,\"event\":\"application_startup\",\"isMainThread\":true,\"phase\":\"application_will_terminate\"}",
+    "category": "startup"
+  },
+  {
+    "timestamp": null,
+    "processID": null,
+    "eventMessage": null,
+    "category": null
+  }
+]

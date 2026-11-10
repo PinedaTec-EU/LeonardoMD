@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T12:07:27.326596+00:00",
+  "capture": {
+    "captured_at": "2026-11-10T11:58:02.055Z",
+    "route": "/native/help/v36/en",
+    "screen": "help-en-mermaid-math",
+    "browser_name": "Native AppKit/WKWebView",
+    "browser_version": "Engine version not exposed by CUA",
+    "viewport_css": null,
+    "native_viewport_points": null,
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic",
+    "state": "Live English Mermaid and one-line/multiline display math; Math enabled",
+    "source_sha": "d986f417fd263180219b3b55dfe65d026d5853c5"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 5120,
+    "height_px": 2880,
+    "sha256": "7b8d6a93af547216e32276d31bea9eecf7c7ce5532aeaf687ad0af80500b9a95"
+  },
+  "source": {
+    "revision_at_collection": "b8a41806bdd17dbb17a86796e636fb6a1d15bf0a",
+    "tracked_changes_present": false,
+    "untracked_files_present": true
+  },
+  "schema_limitation": "Native CUA captures expose pixels; CSS viewport, native point dimensions and engine version are not exposed."
+}

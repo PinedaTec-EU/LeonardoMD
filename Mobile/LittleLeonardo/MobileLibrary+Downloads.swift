@@ -35,18 +35,28 @@ extension MobileLibrary {
                         guard let committed = try commitConnection(connection, expected: cacheToken) else { return }
                         cacheToken = committed
                     }
-                    for descriptor in status.projects {
+                    for descriptor in status.projects where !projectLifecycle.isDeleted(descriptor.id) {
                         guard isCurrentCacheOperation(cacheToken) else { return }
                         let catalogue = try await context.client.catalogue(descriptor,
                             deviceID: connection.deviceID, credential: context.credential)
                         guard isCurrentCacheOperation(cacheToken) else { return }
+                        // A deletion queued before this synchronization can finish
+                        // while the catalogue request is suspended.
+                        guard !projectLifecycle.isDeleted(descriptor.id) else { continue }
                         try await downloads.update(id: descriptor.id, descriptor: descriptor, catalogue: catalogue)
                         guard isCurrentCacheOperation(cacheToken) else {
                             try await downloads.remove(id: descriptor.id); return
                         }
+                        if projectLifecycle.isDeleted(descriptor.id) {
+                            try await downloads.remove(id: descriptor.id)
+                            continue
+                        }
                         let project = try OfflineProject(id: descriptor.id, name: descriptor.name, mode: .direct,
                             scope: descriptor.scope, snapshot: CorpusSnapshot(revision: "catalogue", files: []))
-                        guard try await saveDirectProject(project, expected: cacheToken) else { return }
+                        guard try await saveDirectProject(project, expected: cacheToken) else {
+                            if projectLifecycle.isDeleted(descriptor.id) { continue }
+                            return
+                        }
                     }
 
                 }
@@ -80,6 +90,7 @@ extension MobileLibrary {
             if let expected, !isCurrentCacheOperation(expected) { return }
             if let expected, hasActiveProjectOwner(id, excluding: expected.connectionID) { continue }
             try await downloads.remove(id: id)
+            guard !projectLifecycle.isDeleted(id) else { continue }
             guard let cached = try await store.load(id: id) else { continue }
             guard cached.mode == .direct else { continue }
             if let expected, !isCurrentCacheOperation(expected) { return }
@@ -93,7 +104,8 @@ extension MobileLibrary {
     private func saveDirectProject(_ project: OfflineProject,
                                    expected token: ConnectionToken) async throws -> Bool {
         let mutation = cacheMutations.enqueue { [weak self] in
-            guard let self, self.isCurrentCacheOperation(token) else { return false }
+            guard let self, self.isCurrentCacheOperation(token),
+                  !self.projectLifecycle.isDeleted(project.id) else { return false }
             try await self.store.save(project)
             guard self.isCurrentCacheOperation(token) else {
                 if self.connections.first(where: { $0.connectionID == token.connectionID })?.projectIDs.contains(project.id) != true,
@@ -112,7 +124,8 @@ extension MobileLibrary {
 
 
     func fetchDownload(projectID: UUID, entry: RemoteFileEntry) async throws -> CorpusFile {
-        guard let connection = connections.first(where: { !$0.revoked && $0.projectIDs.contains(projectID) }) else {
+        guard !projectLifecycle.isDeleted(projectID),
+              let connection = connections.first(where: { !$0.revoked && $0.projectIDs.contains(projectID) }) else {
             throw SyncError.revoked
         }
         return try await withAuthenticatedConnection(connection) { context in
@@ -128,7 +141,8 @@ extension MobileLibrary {
             }
             let file = try await context.client.file(entry, projectID: projectID,
                 deviceID: connection.deviceID, credential: context.credential)
-            guard isCurrentCacheOperation(context.token) else { throw SyncError.revoked }
+            guard isCurrentCacheOperation(context.token),
+                  !projectLifecycle.isDeleted(projectID) else { throw SyncError.revoked }
             return file
         }
     }
