@@ -28,6 +28,9 @@ final class MobileProjectLifecycle {
 
     func isDeleted(_ id: UUID) -> Bool { state.deletedProjectIDs.contains(id) }
 
+    /// IDs whose device-local removal intent must win before a cache is decoded.
+    var deletedProjectIDs: Set<UUID> { state.deletedProjectIDs }
+
     func deleteDemo() throws {
         var next = state
         next.deletedDemoRevision = demoRevision

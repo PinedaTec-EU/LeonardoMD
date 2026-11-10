@@ -21,6 +21,25 @@ final class MobileDemoStoreTests: XCTestCase {
         XCTAssertEqual(try store.reset(.es), spanish)
     }
 
+    func testNewDemoContentRevisionUsesFreshCopiesAndPreservesOlderAnswers() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let oldRevision = MobileDemoStore(root: root.appendingPathComponent("v1"))
+        let newRevision = MobileDemoStore(root: root.appendingPathComponent("v2"))
+        let original = try oldRevision.load(.es)
+        let document = try LeonardoFormatParser.parse(original)
+        let filled = try XCTUnwrap(document.applyingFormValues(["name": .string("Older revision answer")]))
+        let saved = try LeonardoFormatParser.serialize(filled)
+        try oldRevision.save(saved, language: .es)
+
+        XCTAssertEqual(try oldRevision.load(.es), saved)
+        XCTAssertEqual(try newRevision.load(.es), try newRevision.template(.es),
+                       "A newer bundled content revision must bootstrap its own fresh personal copy")
+        XCTAssertNotEqual(try newRevision.load(.es), saved)
+        XCTAssertEqual(try oldRevision.load(.es), saved,
+                       "Opening a newer revision must not overwrite answers from an older revision")
+    }
+
     func testMalformedPersonalCopyIsNotOverwrittenAtBootstrap() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -93,10 +112,13 @@ final class MobileDemoStoreTests: XCTestCase {
         XCTAssertEqual(library.projects.map(\.id), [sibling.id])
         let deleted = try await store.load(id: project.id)
         XCTAssertNil(deleted)
-        // A late cache recreation cannot defeat the user's durable removal intent.
-        try await store.save(project)
+        // A late malformed cache recreation cannot defeat the user's durable
+        // removal intent or make an otherwise usable library fail to reload.
+        let lateCache = corpus.appendingPathComponent(project.id.uuidString).appendingPathExtension("json")
+        try Data("not a project snapshot".utf8).write(to: lateCache, options: .atomic)
         let reopened = MobileLibrary(rootURL: corpus)
         await reopened.reload()
+        XCTAssertNil(reopened.error)
         XCTAssertEqual(reopened.projects.map(\.id), [sibling.id])
         XCTAssertTrue(reopened.libraryProjects.contains { $0.id == "bundled-demo" })
     }

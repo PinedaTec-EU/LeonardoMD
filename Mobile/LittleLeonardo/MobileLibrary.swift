@@ -216,6 +216,7 @@ final class MobileLibrary {
             let loadedDrafts = try await draftStore.all(now: now())
             let loaded = try await connectionStore.loadVisibleProjects(connections: protectedConnections,
                                                                          quarantinedConnectionIDs: visibleQuarantine,
+                                                                         excludedProjectIDs: projectLifecycle.deletedProjectIDs,
                                                                          credentials: credentials, corpus: store)
             guard cacheEpoch == loadCacheEpoch, authorizationEpoch == loadAuthorizationEpoch else { return }
             connections = protectedConnections
@@ -357,6 +358,11 @@ final class MobileLibrary {
                                                   expected: ConnectionToken? = nil) async throws {
         for id in removals {
             if let expected, !isCurrentCacheOperation(expected) { return }
+            // A deleted ID is already suppressed locally. Do not decode a
+            // late, malformed cache merely to decide whether synchronization
+            // should remove it; recovery archives and unrelated projects must
+            // remain protected by their existing ownership checks.
+            guard !projectLifecycle.isDeleted(id) else { continue }
             if let expected, hasActiveProjectOwner(id, excluding: expected.connectionID) { continue }
             guard let cached = try await store.load(id: id) else { continue }
             guard cached.mode == .direct else { continue }
