@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "capture": {
+    "file": "en-table.jpg",
+    "captured_at": "2026-11-10T15:36:46.278Z",
+    "locale": "en",
+    "screen": "2. Choose a format",
+    "math_enabled": true,
+    "viewport_css": null,
+    "native_viewport_points": null,
+    "engine_version": "not exposed",
+    "source": "acb46fc23bf883098d9112803b457e23ac2f21c4",
+    "pid": 86473,
+    "route": "/native/macos/help42/en-table",
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic",
+    "browser_name": "Packaged LeonardoMD native WKWebView",
+    "browser_version": "not exposed by CUA"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "c27fec6242b35c1f4f0685bd57603a03afd5f211ada6731d2324df3e6438bc87"
+  },
+  "source": {
+    "revision_at_collection": "7a2e097f28bc25575c407ce75719e26b02c2edf0",
+    "tracked_changes_present": false,
+    "untracked_files_present": true
+  }
+}

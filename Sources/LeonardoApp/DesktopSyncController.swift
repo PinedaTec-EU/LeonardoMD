@@ -44,6 +44,7 @@ final class DesktopSyncController {
     static let shared = DesktopSyncController()
     let helper: SyncHelperController
     private(set) var settings = MobileSyncPreferences()
+    private(set) var projectSettingsLoaded = false
     private(set) var running: RunningDirectService?
     private(set) var consent = PairingRegistry()
     private(set) var busy = false
@@ -82,6 +83,10 @@ final class DesktopSyncController {
     }
 
     var rubricCaptureRecords: [RubricCaptureRecord] { rubricCaptures.records }
+
+    var sharingAvailable: Bool {
+        settings.enabled && (usesHelper ? helper.sharing != nil : running != nil)
+    }
 
     func rubricCapture(id: UUID) -> RubricCaptureRecord? { rubricCaptures.record(id: id) }
 
@@ -122,6 +127,7 @@ final class DesktopSyncController {
         do {
             try InstancePathOwnership.shared.claim(storageRoot)
             settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
+            projectSettingsLoaded = true
             if usesHelper { await helper.refresh() }
             if settings.enabled && (!usesHelper || helper.online) { try await start() }
             if !usesHelper || helper.online { consent = try await runtime.consentState() }
@@ -153,6 +159,7 @@ final class DesktopSyncController {
             var next = previous
             next.mobileSync = updated
             settings = try await configurations.mergeGlobalPreferences(updated: next, baseline: previous, at: preferencesURL).mobileSync
+            projectSettingsLoaded = true
             running = nil; invitationURL = nil
             if usesHelper { await helper.refresh() }
             if !usesHelper || helper.online {

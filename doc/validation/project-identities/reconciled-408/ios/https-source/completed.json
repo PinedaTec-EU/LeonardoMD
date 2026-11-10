@@ -1,0 +1,10 @@
+{
+  "catalogues" : 3,
+  "files" : {
+    "notes\/agenda.md" : 1,
+    "notes\/decisions.md" : 3,
+    "notes\/future.md" : 1,
+    "reference\/readme.md" : 1
+  },
+  "snapshots" : 0
+}

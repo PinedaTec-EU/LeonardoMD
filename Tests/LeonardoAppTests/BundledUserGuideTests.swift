@@ -10,7 +10,7 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let oldCopies = (2..<36).flatMap { revision in
+        let oldCopies = (2..<42).flatMap { revision in
             AppLanguage.allCases.map { language in
                 root.appendingPathComponent("User Guides/v\(revision)/\(language.rawValue)/Guide-v\(revision)-\(language.rawValue).mdlz")
             }
@@ -26,7 +26,7 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v40/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v45/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
             let legacyImport = root.appendingPathComponent("Agent Import Guides/v2/\(language.rawValue)/AgentImport-v2-\(language.rawValue).mdlz")
             try FileManager.default.createDirectory(at: legacyImport.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -43,7 +43,7 @@ final class BundledUserGuideTests: XCTestCase {
             let document = try LeonardoFormatParser.parse(source)
             XCTAssertFalse(document.isForm)
             XCTAssertEqual(document.metadata.fields.count, 0)
-            let expectedImageCount = language == .spanish ? 20 : 19
+            let expectedImageCount = language == .spanish ? 21 : 20
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:
                 workspace.directoryURL.appendingPathComponent("assets").path).count, expectedImageCount)
             let artwork = language == .english ? ["journey", "package", "import", "export"] : ["recorrido", "paquete", "importar", "exportar"]
@@ -144,7 +144,7 @@ final class BundledUserGuideTests: XCTestCase {
             window.orderFront(nil)
             defer { window.close() }
             let web = try await findWebView(in: hosting)
-            let expectedImageCount = language == .spanish ? 20 : 19
+            let expectedImageCount = language == .spanish ? 21 : 20
             try await waitFor("document.images.length === \(expectedImageCount)", in: web)
             for index in 0..<expectedImageCount {
                 _ = try await web.evaluateJavaScript("document.images[\(index)].scrollIntoView({block:'center'})")
@@ -183,7 +183,7 @@ final class BundledUserGuideTests: XCTestCase {
                 let illustrations = language == .english ? ["journey", "package", "import", "export"] : ["recorrido", "paquete", "importar", "exportar"]
                 for name in illustrations {
                     _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
-                    let imageCount = language == .spanish ? 20 : 19
+                    let imageCount = language == .spanish ? 21 : 20
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("premium-\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Main guide; generated premium \(name) illustration; all \(imageCount) images admitted under standard limits")
                 }

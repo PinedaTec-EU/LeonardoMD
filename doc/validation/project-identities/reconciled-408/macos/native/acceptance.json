@@ -1,0 +1,42 @@
+{
+  "pid": 86473,
+  "normal_quit_observed": true,
+  "first_window_observed": true,
+  "locales": [
+    "en",
+    "es"
+  ],
+  "help_workflow": "Real Help menu in candidate QA process",
+  "math_original": true,
+  "math_restored": true,
+  "interface_original": "English",
+  "interface_restored": "English",
+  "practice_save_close_reopen_observed": [
+    "en",
+    "es"
+  ],
+  "practice_original_bytes_restored": {
+    "en": true,
+    "es": true
+  },
+  "guide_personal_bundle_identical": {
+    "en": true,
+    "es": true
+  },
+  "preferences_note": "Only recentProjectPaths changed by opening the synthetic local QA project; all other preference fields match baseline. Recent history is retained rather than overwriting possible concurrent history.",
+  "checks": [
+    "Mermaid",
+    "inline math",
+    "one-line display math",
+    "multiline tagged equation (1)",
+    "underbrace/radical/arrow/cancel",
+    "charts",
+    "tables",
+    "local images",
+    "literal code",
+    "Math disabled fallback in both locales",
+    "project origin examples",
+    "local packaged project header"
+  ],
+  "helper_pid_preserved": 48295
+}
