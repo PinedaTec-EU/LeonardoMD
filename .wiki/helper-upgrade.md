@@ -32,3 +32,9 @@ in fresh PID65363 in both locales, practice originals restored, helper48295
 preserved. Full integrated suite760XCTest/39skips plus72SwiftTesting and iOS
 Simulator compilation passed. Evidence and explicit signed-runtime limitation
 are in doc/validation/helper-upgrade/README.md.
+
+Final retry refinement injects a main-actor clock (default Date.init) and names
+the existing30-second interval. Deterministic29/30-second retry test passes; full
+suite761XCTest/39skips+72SwiftTesting passes. Controller component captures were
+renewed; exact unchanged Help/renderer input mapping preserves packaged Help40
+acceptance without relabeling the older executable.
