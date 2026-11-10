@@ -26,3 +26,9 @@ clearing that token, disabling consent, or unregistering the renewed helper. Two
 deterministic regressions failed with four assertions before this correction and
 pass after it; the focused controller/core/identity suite passes (24 tests, one
 opt-in native capture skipped).
+
+Integrated main1233 (#408) before final validation. Guide40 packaged Help passed
+in fresh PID65363 in both locales, practice originals restored, helper48295
+preserved. Full integrated suite760XCTest/39skips plus72SwiftTesting and iOS
+Simulator compilation passed. Evidence and explicit signed-runtime limitation
+are in doc/validation/helper-upgrade/README.md.
