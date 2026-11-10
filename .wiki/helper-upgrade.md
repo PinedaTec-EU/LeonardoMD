@@ -17,5 +17,5 @@ so late upgrade completion cannot re-enable a user-disabled service. Existing
 pairings, source selection, TLS identity and pending application leases remain owned
 by their current stores. Missing/newer health stays separate from operational readiness.
 
-Guide37 is reserved for413; personal34/35/36 already exist from other work and
+Guide40 is reserved for413; personal34/35/36/37 already exist from other work and
 must not be overwritten. Compare actual bundled/personal hashes before acceptance.
