@@ -45,3 +45,5 @@ before correction. Hosted preview acceptance separates native warning OCR from
 actual WKWebView DOM readiness/visible heading geometry; author-owned images
 still require readable composited pixels under
 [#406](https://github.com/PinedaTec-EU/LeonardoMD/issues/406).
+
+Joint acceptance now uses Guide33, main1147, compact common iOS reader, explicit source/document controls and joint-* native proof. See doc/validation/on-demand-sync/README.md for exact source mappings and limitations.

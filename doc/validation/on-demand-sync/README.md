@@ -1,3 +1,36 @@
+## Joint Mac/iOS acceptance — primary evidence
+
+The current evidence is `joint-macos/`, `joint-ios/`, `joint-ios-help/`,
+`joint-reader-spacing/`, `joint-preview-components/` and `joint-build-inputs.json`.
+All older directories and checkpoints below are historical.
+
+Product source25723d6587d902477edffbf2f3b66c94f5e6def3 includes accepted main1147
+and the common on-demand iOS reader with compact first-heading spacing and
+explicit source/document controls. Mac745 XCTest (38 skips),72 Swift Testing,
+signed iOS build, spacing3/3, native on-demand1/1, independent pinned-TLS source
+fixture1/1 and native bilingual demos/Help/About3/3 pass. The test-only ff20ce0
+capture wait change passes both real-cache preview integration tests and retains
+readable original pixels. Failed intermediate captures are not primary evidence.
+
+Fresh packaged Mac QA PID77534 (baseline0.3.1147/build1147, Guide33) completed
+actual EN/ES Help, Mermaid, inline/one-line/multiline mathematics, underbraces,
+radicals/arrows/cancellation, tagged box-count equation, literal code, Math OFF
+fallback, charts, local images and tables. Both separate practice forms were
+filled with fictional values, saved, closed and reopened. Working guide hashes
+match bundled originals. The process quit normally; all three owner originals
+were restored byte-for-byte and physical helper67032 remained running.
+See `joint-macos/validation.json` for hashes and restoration proof.
+
+Native iOS audits show metadata-only initial browsing, a single requested body,
+source/document switching without another fetch, folder retention with automatic
+retry and future descendants, and clearing temporary cache preserving three
+retained files166bytes outside the134217728-byte temporary budget. The common
+reader has measured first-heading spacing16px with later headings spaced.
+Captures preserve actual timestamps/source SHA; scoped Git object digests bind
+unchanged build inputs to the final reviewed head. These simulator checks do not
+claim a physical iPhone acceptance or an already published cache-enabled beta.
+Exact-final-head hosted CI, independent review and publication are delivery gates.
+
 # On-demand synchronization validation
 
 Tracking: [#384](https://github.com/PinedaTec-EU/LeonardoMD/issues/384), [PR #385](https://github.com/PinedaTec-EU/LeonardoMD/pull/385).
