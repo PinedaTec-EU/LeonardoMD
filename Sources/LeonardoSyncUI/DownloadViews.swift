@@ -124,8 +124,8 @@ public struct SyncCatalogueView: View {
                 }
                 .accessibilityIdentifier("download-project-actions")
             }
-            .onChange(of: project.catalogue) { _, _ in
-                currentPath = ""
+            .onChange(of: project.catalogue) { _, catalogue in
+                currentPath = Self.navigationPath(afterRefresh: currentPath, in: catalogue)
             }
         } else { Text(t("Project unavailable", "Proyecto no disponible")) }
     }
@@ -170,6 +170,21 @@ public struct SyncCatalogueView: View {
     }
     private func fileName(_ path: String) -> String {
         path.split(separator: "/").last.map(String.init) ?? path
+    }
+    /// Keeps the user in the folder being refreshed, or in its nearest surviving ancestor.
+    /// A catalogue update must not unexpectedly return a user to the project root.
+    static func navigationPath(afterRefresh path: String, in catalogue: RemoteProjectCatalogue) -> String {
+        var candidate = path
+        let folders = Set(catalogue.folders)
+        while !candidate.isEmpty {
+            if folders.contains(candidate) { return candidate }
+            candidate = parentPath(of: candidate)
+        }
+        return ""
+    }
+    private static func parentPath(of path: String) -> String {
+        guard let separator = path.lastIndex(of: "/") else { return "" }
+        return String(path[..<separator])
     }
     @ViewBuilder private func actions(path: String, isFolder: Bool, project: CachedRemoteProject) -> some View {
         let entries = project.catalogue.files.filter { isFolder ? path.isEmpty || $0.path.hasPrefix(path + "/") : $0.path == path }
