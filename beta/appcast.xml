@@ -3,26 +3,24 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.3.1136</title>
-            <pubDate>Sun, 08 Nov 2026 14:21:40 +0100</pubDate>
+            <title>0.3.1215</title>
+            <pubDate>Tue, 10 Nov 2026 12:38:50 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>1136</sparkle:version>
-            <sparkle:shortVersionString>0.3.1136</sparkle:shortVersionString>
+            <sparkle:version>1215</sparkle:version>
+            <sparkle:shortVersionString>0.3.1215</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"># More reliable connections and rubric capture
+            <description sparkle:format="markdown">Shared projects now open without downloading every file first. LeonardoMD and Little Leonardo synchronize the file and folder catalogue, then download a document and its referenced local images when you open it.
 
-- Shared-project downloads finish transmitting before the source closes the connection, reducing interrupted transfers.
-- Connection diagnostics distinguish completed server work from a download successfully received on the other device.
-- Rubric status checks recover automatically after brief service contention, keeping the same request and access permissions. Persistent errors remain visible with a recovery action.
+Use the contextual menu to keep files or folders offline. Retained folders include new files added later. Preferences shows temporary cache and offline storage separately: choose a temporary cache limit, apply it, or clear temporary files while preserving offline copies. The default temporary limit is 256 MiB; files kept offline do not count toward it.
 
-## Before repeating a rubric request
+If an update fails, a retained earlier copy stays readable with a clear warning, the download error and Retry. Referenced-image failures also remain visible. Spanish and English help explains the new controls and recovery behavior. Little Leonardo keeps document headings close to the navigation bar and lets you switch between the document and its read-only source without downloading it again.
 
-Update LeonardoMD and ensure its bundled Leonardo Sync helper is current. If Synchronization preferences report an outdated helper, disable and re-enable Leonardo Sync, then check that it is running. Existing pairing and permissions are preserved. Keep Little Leonardo active while accepting, drawing and sending the requested rubric; review the returned drawing on the Mac before saving or inserting it.
+This beta also includes the previously published connection and automatic rubric-status recovery fixes.
 
-This is a macOS beta. On-demand caching is not included, and no new Little Leonardo build is distributed with this package. Transfers require a reachable, explicitly authorized source.
+Known limits: automatic refresh runs while the receiving app is active, and transfers require a reachable source Mac. Older source services need updating to support on-demand downloads. Offline retention requires sufficient device storage. This macOS download supports Apple silicon. Little Leonardo distribution is managed separately through TestFlight.
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1136/LeonardoMD-0.3.1136.zip" length="24311330" type="application/octet-stream" sparkle:edSignature="ybTtKl+Q9KZlfoW0SstM3OsFxHtlLbm8gNukpfS1Pw4DK0erRYvY8tkCzp6UemKoSupnclBSxh6NO4jo4UQtDw==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1215/LeonardoMD-0.3.1215.zip" length="24705190" type="application/octet-stream" sparkle:edSignature="Nz4JgkVoHI8FHROHp2W5mqG+yVAoN5n+7J75hfXUQ6x+vHKruA1lWwCUgzXHQDt+OLpMPlDwYxx9zlRlPur9Bw==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.765</title>
