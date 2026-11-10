@@ -28,8 +28,8 @@ extension ConfigurationStore {
         }
     }
 
-    private func updateHelperPreferences<T>(at url: URL,
-        _ update: (inout MobileSyncPreferences) throws -> T) throws -> T {
+    private func updateHelperPreferences<T: Sendable>(at url: URL,
+        _ update: @Sendable (inout MobileSyncPreferences) throws -> T) throws -> T {
         try ProcessFileLock.transaction(for: url) {
             var preferences = try loadGlobalPreferences(at: url)
             let result = try update(&preferences.mobileSync)
