@@ -1,5 +1,6 @@
 import XCTest
 import LeonardoCore
+import LeonardoSync
 @testable import LittleLeonardo
 
 final class MobileDemoStoreTests: XCTestCase {
@@ -69,6 +70,32 @@ final class MobileDemoStoreTests: XCTestCase {
         try lifecycle.deleteDemo()
         try lifecycle.restoreDemo()
         XCTAssertEqual(try store.load(.es), saved)
+    }
+
+    @MainActor func testRemovingDownloadedProjectDeletesBytesAndSuppressesRecreatedCache() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let corpus = root.appendingPathComponent("Corpus")
+        let store = OfflineCorpusStore(root: corpus)
+        let project = try OfflineProject(name: "Sample", mode: .direct, scope: CorpusScope(folder: ""),
+            snapshot: CorpusSnapshot(revision: "r1", files: [CorpusFile(path: "read.md", content: Data("sample".utf8))]))
+        let sibling = try OfflineProject(name: "Unrelated", mode: .direct, scope: CorpusScope(folder: ""),
+            snapshot: CorpusSnapshot(revision: "r1", files: [CorpusFile(path: "keep.md", content: Data("keep".utf8))]))
+        try await store.save(project)
+        try await store.save(sibling)
+        let library = MobileLibrary(rootURL: corpus)
+        await library.reload()
+        XCTAssertEqual(library.projects.count, 2)
+        await library.deleteProject(project.id)
+        XCTAssertEqual(library.projects.map(\.id), [sibling.id])
+        let deleted = try await store.load(id: project.id)
+        XCTAssertNil(deleted)
+        // A late cache recreation cannot defeat the user's durable removal intent.
+        try await store.save(project)
+        let reopened = MobileLibrary(rootURL: corpus)
+        await reopened.reload()
+        XCTAssertEqual(reopened.projects.map(\.id), [sibling.id])
+        XCTAssertTrue(reopened.libraryProjects.contains { $0.id == "bundled-demo" })
     }
 
     @MainActor func testFailedDeletionDoesNotChangeVisibility() throws {

@@ -74,7 +74,9 @@ final class MobileDemoUITests: XCTestCase {
         }
         let project = app.buttons["open-demo-project"]
         XCTAssertTrue(project.exists)
+        capture(app, "Ordinary project library")
         project.swipeLeft()
+        capture(app, "Swipe reveals explicit Delete")
         XCTAssertTrue(project.exists, "Swiping alone must not delete")
         app.buttons["delete-demo-project"].tap()
         XCTAssertFalse(project.exists)
@@ -86,7 +88,9 @@ final class MobileDemoUITests: XCTestCase {
         app.buttons["restore-demo-project"].tap()
         app.buttons["Cerrar"].tap()
         XCTAssertTrue(app.buttons["open-demo-project"].exists)
+        capture(app, "Restored ordinary Demo project")
         openDemo("en", in: app)
+        capture(app, "Demo language document")
     }
 
     @MainActor private func openDemo(_ language: String, in app: XCUIApplication) {

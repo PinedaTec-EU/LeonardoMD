@@ -92,6 +92,7 @@ extension MobileLibrary {
     }
 
     func deleteLibraryProject(_ project: MobileLibraryProject) async {
+        guard !connecting else { return }
         switch project {
         case .demo:
             do { try projectLifecycle.deleteDemo() }
