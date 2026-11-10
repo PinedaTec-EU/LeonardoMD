@@ -29,3 +29,11 @@ can be established. External installers do not execute this preparation.
 
 Automated checks supplement these rows. They must not be represented as an
 installed PASS or used to close the issue.
+
+## Automated result
+
+Final local checks: 790 XCTest checks (41 opt-in skips), 72 Swift Testing checks,
+118 Python checks (7 platform/opt-in skips) and 3 deterministic guide packaging
+checks pass. `automated.json` binds the reviewed production source contents to
+those results. Four successful compiler-bearing author invocations are recorded
+in source PR420; publisher/CI runs do not mutate that allocation.

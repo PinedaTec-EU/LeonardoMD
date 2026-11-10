@@ -3,21 +3,41 @@
   "swiftCommand": "python3 scripts/compile-and-record.py --pr-number 420 -- swift test",
   "result": "PASS",
   "allTestsSummaries": [
-    [
-      "23",
-      "1",
-      "0"
-    ],
-    [
-      "61",
-      "5",
-      "0"
-    ],
-    [
-      "415",
-      "35",
-      "0"
-    ]
+    {
+      "tests": 25,
+      "skipped": 0,
+      "failures": 0
+    },
+    {
+      "tests": 100,
+      "skipped": 0,
+      "failures": 0
+    },
+    {
+      "tests": 23,
+      "skipped": 1,
+      "failures": 0
+    },
+    {
+      "tests": 46,
+      "skipped": 0,
+      "failures": 0
+    },
+    {
+      "tests": 61,
+      "skipped": 5,
+      "failures": 0
+    },
+    {
+      "tests": 120,
+      "skipped": 0,
+      "failures": 0
+    },
+    {
+      "tests": 415,
+      "skipped": 35,
+      "failures": 0
+    }
   ],
   "swiftTestingRuns": [
     "0",
@@ -43,5 +63,8 @@
   },
   "signedInstallation": "PENDING: owner declined logout/recovery",
   "freshPackagedHelp51": "PENDING",
-  "iPhone": "PENDING"
+  "iPhone": "PENDING",
+  "xctestTotal": 790,
+  "xctestSkipped": 41,
+  "swiftTestingTotal": 72
 }
