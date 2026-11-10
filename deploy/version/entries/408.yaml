@@ -1,3 +1,4 @@
 {
-  "build": 1
+  "build": 7,
+  "summary": "Little Leonardo lists Demo alongside other projects, supports swipe-and-tap local project removal, and restores Demo from Settings while retaining practice answers."
 }
