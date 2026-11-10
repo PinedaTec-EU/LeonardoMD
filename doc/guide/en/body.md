@@ -769,7 +769,7 @@ To return edits, **Compare changes**, inspect Base / This Mac / Other Mac versio
 | Open a file | File and referenced local images | Temporary cache, within your limit |
 | Keep offline | Selected files/folders and referenced images | Separate retained storage |
 
-After pairing, the app refreshes the authorized file/folder list without downloading content. On Mac, choose **Browse files** beside a shared project; on iOS, open the project. Opening a file downloads that file and its referenced local images. Already downloaded files open from cache. Only saved source files are shared. Use **Show source / Show document** (iOS: **Ver texto / Ver documento**) to switch between read-only source and preview without another download. Little Leonardo keeps the first heading close to the navigation bar; later sections retain their usual spacing.
+After pairing, the app refreshes the authorized file/folder list without downloading content. On Mac, choose **Browse files** beside a shared project; on iOS, open the project. The catalogue starts at the project root and shows only that level's immediate files and folders. Select a folder to enter it; use **Parent folder** to move back up. The project itself is available from the actions menu rather than appearing as a duplicate folder row. Opening a file downloads that file and its referenced local images. Already downloaded files open from cache. Only saved source files are shared. Use **Show source / Show document** (iOS: **Ver texto / Ver documento**) to switch between read-only source and preview without another download. Little Leonardo keeps the first heading close to the navigation bar; later sections retain their usual spacing.
 
 Use the context menu (right-click on Mac; long-press on iOS):
 

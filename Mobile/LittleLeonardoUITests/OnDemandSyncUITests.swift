@@ -25,6 +25,9 @@ final class OnDemandSyncUITests: XCTestCase {
         XCTAssertTrue(project.waitForExistence(timeout: 20),
                       "The received project must remain reachable through its stable outer navigation identifier")
         project.tap()
+        let referenceFolder = folder("reference", app: app)
+        XCTAssertTrue(referenceFolder.waitForExistence(timeout: 10))
+        referenceFolder.tap()
         let remote = row("reference/remote.md", app: app)
         assertStatus(remote, "Solo remoto")
         try capture(app, "catalogue-remote", state: "Authenticated catalogue; no file body requested")
@@ -45,16 +48,20 @@ final class OnDemandSyncUITests: XCTestCase {
         try capture(app, "document", state: "One requested file rendered through compact Classic preview after source/preview round-trip")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         assertStatus(row("reference/readme.md", app: app), "En caché")
+        app.buttons["download-parent-folder"].tap()
+        folder("notes", app: app).tap()
         let agenda = row("notes/agenda.md", app: app)
         agenda.press(forDuration: 1)
         XCTAssertTrue(app.buttons["Mantener sin conexión"].waitForExistence(timeout: 5))
         try capture(app, "context-menu", state: "Native long-press menu on a remote file")
         app.buttons["Mantener sin conexión"].tap()
         assertStatus(agenda, "Disponible sin conexión")
-        let folder = app.descendants(matching: .any)["download-folder-notes"].firstMatch
-        XCTAssertTrue(folder.waitForExistence(timeout: 5))
-        folder.press(forDuration: 1)
+        app.buttons["download-parent-folder"].tap()
+        let notesFolder = folder("notes", app: app)
+        XCTAssertTrue(notesFolder.waitForExistence(timeout: 5))
+        notesFolder.press(forDuration: 1)
         app.buttons["Mantener sin conexión"].tap()
+        notesFolder.tap()
         assertStatus(row("notes/decisions.md", app: app), "Offline pendiente")
         try capture(app, "catalogue-mixed", state: "Remote, cached, offline, partially retained and failed/pending download states")
         app.navigationBars.buttons.element(boundBy: 0).tap()
@@ -66,7 +73,10 @@ final class OnDemandSyncUITests: XCTestCase {
         try capture(app, "storage-cleared", state: "Temporary cleanup leaves retained content and its pending rule intact")
         app.buttons["Cerrar"].tap()
         project.tap()
+        folder("reference", app: app).tap()
         assertStatus(row("reference/readme.md", app: app), "Solo remoto")
+        app.buttons["download-parent-folder"].tap()
+        folder("notes", app: app).tap()
         assertStatus(row("notes/agenda.md", app: app), "Disponible sin conexión")
         try phase("allow-pending")
         assertStatus(row("notes/decisions.md", app: app), "Disponible sin conexión", timeout: 80)
@@ -117,6 +127,9 @@ final class OnDemandSyncUITests: XCTestCase {
 
     @MainActor private func row(_ path: String, app: XCUIApplication) -> XCUIElement {
         app.buttons["download-file-" + path]
+    }
+    @MainActor private func folder(_ path: String, app: XCUIApplication) -> XCUIElement {
+        app.buttons["download-folder-" + path]
     }
     @MainActor private func editLimit(_ text: String, app: XCUIApplication) {
         let field = app.textFields["temporary-cache-limit"]

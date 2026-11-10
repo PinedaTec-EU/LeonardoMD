@@ -76,6 +76,7 @@ public struct SyncCatalogueView: View {
     let spanish: Bool
     let rowBackground: Color?
     let open: (RemoteFileEntry) -> Void
+    @State private var currentPath = ""
     public init(library: DownloadLibrary, projectID: UUID, spanish: Bool = false, rowBackground: Color? = nil, open: @escaping (RemoteFileEntry) -> Void) {
         self.library = library; self.projectID = projectID; self.spanish = spanish; self.rowBackground = rowBackground; self.open = open
     }
@@ -88,12 +89,22 @@ public struct SyncCatalogueView: View {
                        "Los archivos se descargan al abrirlos. Usa el menú contextual para mantener archivos o carpetas sin conexión."))
                     .font(.caption).foregroundStyle(.secondary)
                 List {
-                    folderRow(path: "", project: project)
-                    ForEach(project.catalogue.folders, id: \.self) { folder in folderRow(path: folder, project: project) }
-                    ForEach(project.catalogue.files) { entry in
+                    if !currentPath.isEmpty {
+                        Button {
+                            currentPath = parentPath(of: currentPath)
+                        } label: {
+                            Label(t("Parent folder", "Carpeta superior"), systemImage: "chevron.left")
+                        }
+                        .accessibilityIdentifier("download-parent-folder")
+                        .listRowBackground(rowBackground)
+                    }
+                    ForEach(project.catalogue.immediateFolders(at: currentPath), id: \.self) { folder in
+                        folderRow(path: folder, project: project)
+                    }
+                    ForEach(project.catalogue.immediateFiles(at: currentPath)) { entry in
                         Button { open(entry) } label: {
                             HStack {
-                                Label(entry.path, systemImage: "doc")
+                                Label(fileName(entry.path), systemImage: "doc")
                                 Spacer()
                                 status(paths: [entry], project: project)
                             }.contentShape(Rectangle())
@@ -103,17 +114,36 @@ public struct SyncCatalogueView: View {
                         .listRowBackground(rowBackground)
                     }
                 }
-            }.navigationTitle(project.descriptor.name)
+            }
+            .navigationTitle(currentPath.isEmpty ? project.descriptor.name : fileName(currentPath))
+            .toolbar {
+                Menu {
+                    actions(path: "", isFolder: true, project: project)
+                } label: {
+                    Label(t("Project actions", "Acciones del proyecto"), systemImage: "ellipsis.circle")
+                }
+                .accessibilityIdentifier("download-project-actions")
+            }
+            .onChange(of: project.catalogue) { _, _ in
+                currentPath = ""
+            }
         } else { Text(t("Project unavailable", "Proyecto no disponible")) }
     }
     private func folderRow(path: String, project: CachedRemoteProject) -> some View {
         let entries = project.catalogue.files.filter { path.isEmpty || $0.path.hasPrefix(path + "/") }
-        return HStack {
-            Label(path.isEmpty ? project.descriptor.name : path, systemImage: "folder")
-            Spacer()
-            status(paths: entries, project: project)
-        }.contextMenu { actions(path: path, isFolder: true, project: project) }
-            .accessibilityIdentifier("download-folder-" + path).listRowBackground(rowBackground)
+        return Button {
+            currentPath = path
+        } label: {
+            HStack {
+                Label(fileName(path), systemImage: "folder")
+                Spacer()
+                status(paths: entries, project: project)
+            }.contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .contextMenu { actions(path: path, isFolder: true, project: project) }
+        .accessibilityIdentifier("download-folder-" + path)
+        .listRowBackground(rowBackground)
     }
     @ViewBuilder private func status(paths: [RemoteFileEntry], project: CachedRemoteProject) -> some View {
         let retained = paths.filter { project.keeps($0.path) }.count
@@ -133,6 +163,13 @@ public struct SyncCatalogueView: View {
         }
         if retained > 0 { return t("Partly kept offline", "Offline parcial") }
         return downloaded == 0 ? t("Remote only", "Solo remoto") : t("Cached", "En caché")
+    }
+    private func parentPath(of path: String) -> String {
+        guard let separator = path.lastIndex(of: "/") else { return "" }
+        return String(path[..<separator])
+    }
+    private func fileName(_ path: String) -> String {
+        path.split(separator: "/").last.map(String.init) ?? path
     }
     @ViewBuilder private func actions(path: String, isFolder: Bool, project: CachedRemoteProject) -> some View {
         let entries = project.catalogue.files.filter { isFolder ? path.isEmpty || $0.path.hasPrefix(path + "/") : $0.path == path }
