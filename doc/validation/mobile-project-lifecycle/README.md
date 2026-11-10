@@ -6,7 +6,7 @@ Tracking: [#407](https://github.com/PinedaTec-EU/LeonardoMD/issues/407), [PR #40
 
 One name-sorted project list includes the explicitly local Demo project. Its language files open within the project. Every row uses a trailing swipe action with full-swipe deletion disabled. Device-local removal intent is written atomically before corpus removal; reload and synchronization exclude removed IDs. Mac originals are unaffected. Settings restores Demo without resetting current-revision answers. Only a strictly newer `MobileDemoStore.contentRevision` restores it automatically; that same revision selects the personal-copy directory.
 
-## Validation
+## Historical validation before the review correction
 
 - iPhone 17 Pro, owned simulator `1A969A0F-D7E2-4C62-B288-CC893C3CBEEF`, iOS 27.0 (24A434), Classic light, synthetic demo/practice data.
 - Expanded iOS run: 19 passed, no failures, including all mobile unit tests and all three demo UI scenarios.
@@ -14,7 +14,7 @@ One name-sorted project list includes the explicitly local Demo project. Its lan
 - Full `swift test` passed; five focused `BundledUserGuideTests` passed again for Guide v34. Three deterministic guide-packaging tests passed.
 - The first full Swift attempt caught an obsolete test expectation for the removed demo section title. The expectation was corrected to require both document filenames and the restoration instructions; the complete suite then passed.
 
-Screenshots are original `XCTAttachment` app captures exported from `lifecycle-merged.xcresult`. Their manifest supplied the actual capture timestamps. Sidecars use the canonical capture helper; native logical points are explicitly identified instead of claiming a browser/CSS viewport. The capture producer is `6f90bc00752a11e6e7709becf937303cb212d5e8`. Subsequent changes are evidence and the recorded compilation count only. Captures are review evidence, not instructional screenshots or physical-device acceptance.
+The four captures in this directory are historical original `XCTAttachment` app captures exported from `lifecycle-merged.xcresult`. Current post-correction originals are in [current-ios](current-ios/). Their manifest supplied the actual capture timestamps. Sidecars use the canonical capture helper; native logical points are explicitly identified instead of claiming a browser/CSS viewport. The capture producer is `6f90bc00752a11e6e7709becf937303cb212d5e8`. Subsequent changes are evidence and the recorded compilation count only. Captures are review evidence, not instructional screenshots or physical-device acceptance.
 
 | State | Original capture | Metadata |
 |---|---|---|
@@ -23,22 +23,44 @@ Screenshots are original `XCTAttachment` app captures exported from `lifecycle-m
 | Settings recovery completed | [restored](restored.png) | [sidecar](restored.metadata.json) |
 | English document opened inside Demo | [document](document.png) | [sidecar](document.metadata.json) |
 
-## Packaged Help
+## Historical packaged Help v34
 
 Fresh real QA process PID 66019, version/build `0.3.1136/1136`, producer `fa95ce6ce991336f3523c4cd5d5dba5e0455f8ab`; identity and startup evidence are in [help-instance.json](help-instance.json) and [startup.json](startup.json). `launch.sh --qa` validated the real executable, dependencies and signatures before launch. Both Help-opened v34 personal packages matched their bundled bytes exactly.
 
 English and Spanish guides were opened through the real Help menu in that same instance. AX showed inline/display equations, underbraces and tagged box-counting equation (1), chart/local-image nodes and tables. Disabling Math showed literal source notation in both guides; source code examples remained literal. Separate practices in both locales were filled, saved, closed and reopened, then their initially empty names were restored. Initial English interface and enabled Math were restored; the owned QA app quit normally.
 
-**Pending visual acceptance:** `cua.getAXStateAndScreenshot` failed with `-10005 stageManagerProcessNotRunning`. AX content and component tests do not establish rendered image/diagram/stroke appearance. Complete the required visual Help smoke before readiness/judgment/merge. No physical iPhone, TestFlight or release claim.
+**Historical v34 limitation:** `cua.getAXStateAndScreenshot` failed with `-10005 stageManagerProcessNotRunning`. Those AX/component checks did not establish visual acceptance. The current v35 fresh-process visual run below supersedes that pending state. No physical iPhone, TestFlight or release claim.
 
 The first Help opening found an unrelated personal v31 copy (existing #378 signature). It was retained intact. v34 was allocated instead; this is mitigation for this task, not a fix for general working-copy identity.
 
 ## Retention
 
-The task-owned worktree `.worktrees/407-mobile-projects` and its internal `.build/407-derived`/Swift caches are retained for pending visual acceptance and review. No shared/other-thread caches were removed. The owned simulator is retained for reproducing the gesture test. It is not a user device.
+The task-owned worktree `.worktrees/407-mobile-projects` and its internal `.build/407-derived`/Swift caches are retained for the current regression checks and review. No shared/other-thread caches were removed. The owned simulator is retained for reproducing the gesture test. It is not a user device.
 
 ## Final synchronization with main
 
-Integrated `origin/main` through `38208529`, preserving #405's compact reader and its bilingual help. Current packages are Guide v35, combining that text and #407 without overwriting tested v34 personal copies. Guide v35 requires its own packaged visual acceptance; v34 evidence above is historical component/workflow evidence only. The post-integration mobile run passed 19 tests with no failures; `ios-merged-summary.json` records the device and exact counts.
+Integrated `origin/main` through `38208529`, preserving #405's compact reader and its bilingual help. Current packages are Guide v35, combining that text and #407 without overwriting tested v34 personal copies. Guide v35 has now completed its own packaged visual acceptance below; v34 evidence above remains historical component/workflow evidence only. The post-integration mobile run passed 19 tests with no failures; `ios-merged-summary.json` records the device and exact counts.
 
-Post-integration full `swift test` passed with no failures. Deterministic Guide v35 packaging passed all three tests. PR #408 records nine successful compilation invocations (failed commands were not counted). Both disposable native QA bundles were removed after their owned processes quit; current worktree-local build caches total approximately 1.4 GiB and are retained for the pending checks.
+Post-integration full `swift test` passed with no failures. Deterministic Guide v35 packaging passed all three tests. This checkpoint recorded nine successful compilation invocations. The current entry records thirteen after the fresh v35 packaged build, focused correction regression, full Swift suite and final iOS run. Failed commands were not counted. The two earlier disposable QA bundles were removed after their owned processes quit; the v35 bundle and worktree-local caches are retained for the current review.
+
+## Fresh packaged v35 visual acceptance
+
+On 2026-11-10, `LEONARDO_SOURCE_PR=408 ./launch.sh --qa` built and verified the real executable, then launched fresh PID 5393. The QA bundle reports `0.3.1147/1147`, the unmaterialized source baseline rather than a new release. Its producer is `782154361512b31ea3837616c30303cf2a013743`; [instance.json](native-v35/instance.json) records the unique bundle identity, executable hash, no-XCTest dependency check and production input objects.
+
+Both v35 locales opened through the actual Help menu. Their source, packaged and Help-opened personal copies matched byte-for-byte. Eleven [original CUA screenshots](native-v35/) cover English/Spanish Mermaid, inline/display math, complete underbraces/radicals/arrows/cancellation, the tagged box-counting equation (1), charts, local images, tables, the updated mobile workflow, Math-disabled source fallback, and both separate practices saved/closed/reopened with fictional values. Initial blank practice names were restored and saved; English and enabled Math were restored. Normal application quit and disappearance of the owned bundle were observed.
+
+The early capture attempts still encountered ScreenCaptureKit/window-position errors and Stage Manager thumbnails. Raising/zooming the owned QA window and using the document-outline controls produced full native captures without changing host settings or controlling another application. Each original has capture context and a canonical image hash/dimension sidecar. CUA does not expose CSS/native-point viewport geometry or its WKWebView engine version; those fields are explicitly unavailable. The shared helper's image/source collectors are used, with this native-schema limitation recorded rather than fabricated browser geometry.
+
+## Final cache-correction and iOS validation
+
+Review found [LMB-410](https://github.com/PinedaTec-EU/LeonardoMD/issues/410): a malformed cache recreated after deletion could be decoded before the removal filter and abort the library reload. The correction excludes removed UUIDs before cache decoding and direct synchronization cleanup, preserving authorization and unrelated recovery archives. Regression tests cover malformed late bytes, missing credentials, unrelated recovery and independent personal Demo copies across content revisions.
+
+- Deterministic Guide v35 packaging: **3 passed**, no failures.
+- Focused `MobileDemoStoreTests` and `MobileRevocationTests`: **16 passed**, no failures.
+- Final iOS mobile units plus all `MobileDemoUITests`: **23 passed** (20 unit, 3 UI), no failures or skips. The compact-reader geometry tests from main remain included.
+- Full `swift test`: **694 XCTest**, 35 expected skips, zero failures; **72 Swift Testing** cases, zero failures.
+- [Final result summary](current-ios/validation-summary.json), [source mapping](current-ios/production-inputs.json), [final debug app hashes](current-ios/final-ios-bundle.json) and four original passed-test captures are retained in [current-ios](current-ios/). Producer: `8bc2122cf52c05c316b762bbb565c322dd5b6e67`. The document capture records navigation before content finishes rendering; the separate offline-demo UI test proves render readiness and saved-answer persistence, rather than that early image.
+
+The Mac production inputs recorded for producer `78215436` and iOS production inputs for `8bc2122c` must equal the final reviewed head. Later changes contain validation evidence, wiki synthesis and the recorded compilation count only. Native logical viewport/engine geometry is unavailable and explicitly null. The simulator was shut down before the read-only installed-container comparison, so the signed build-product hashes do not claim a post-run installed digest match. No physical-device, TestFlight or distribution acceptance is claimed.
+
+Current-head CI and the complete strict independent report are recorded on PR #408 after publication. The general release-cleanup inventory encounters an unrelated stale `/private/tmp/leonardo-129-final-judge` worktree registration; that script is not reported as passed. The selected main/408 checkouts were audited separately, preserving the unrelated user cache and other tasks' worktrees.
