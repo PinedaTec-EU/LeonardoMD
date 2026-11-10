@@ -13,7 +13,29 @@ not claimed. Owner confirmed the already paired project and file now open.
 This proves the operational cause and recovery, not the automatic412 fix.
 
 
-## Corrective candidate validation
+## Current integration with main after #400
+
+The current product source is `2ac7b7c5fb0566fea95b1652d3cd4766f3694cf8`,
+which incorporates main `54c00e421adcaaadaba3de56a8e3d6465ad73ad3`. Guide45
+combines the service-renewal instructions with the project-identity help from
+#400 and preserves all earlier personal guide copies.
+
+`candidate-help45/acceptance.json` records fresh packaged process PID16185,
+its actual baseline 0.3.1233/build1233, both real Help-menu openings, verified
+bundle/personal hashes, and all mandatory live examples. Sixteen full-size
+original CUA captures include both practice save/close/reopen checks, Math OFF
+fallback, and the two integrated feature sections. Original practice files were
+restored byte-for-byte; English and Math ON were restored before normal quit.
+The installed helper PID48295 remained running. This does not claim signed
+installed automatic renewal. Input trees and automation results accompany it.
+
+Full integrated validation passed: 779 XCTest checks, 41 skips, zero failures,
+and 72 Swift Testing checks; generic iOS Simulator build and three deterministic
+package checks also passed. No additional helper lifecycle code changed during
+this integration. Earlier component captures remain scoped to their original
+unchanged preference/controller inputs.
+
+## Historical corrective candidate validation
 
 The candidate is based on main 0.3.1233 (`f04564a2`, including #408). Full
 integrated checks passed: 770 XCTest checks, 39 skips, zero failures, plus

@@ -1,0 +1,47 @@
+{
+  "source": "2ac7b7c5fb0566fea95b1652d3cd4766f3694cf8",
+  "pid": 16185,
+  "bundle": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-6xynknuy/LeonardoMDQA.app",
+  "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.bae8d3aa03524061bd79f3d59b3d8e59",
+  "version": "0.3.1233",
+  "build": "1233",
+  "launch": "LEONARDO_SOURCE_PR=413 ./launch.sh --qa; verify-only passed; real executable and fresh first window observed",
+  "guides": {
+    "en": {
+      "sha256": "012321b115cfbd30b92c15d181290486d1a77dbcb5910a70efb4ea40a208ec58",
+      "personal_matches_bundle": true
+    },
+    "es": {
+      "sha256": "fc8b510008deb79b1319e6ec13b119eb6aafa0cedb90e7a6f96544f368293605",
+      "personal_matches_bundle": true
+    }
+  },
+  "workflow": "Both locales opened through actual Help menu; outline used to inspect examples",
+  "checks": [
+    "Mermaid",
+    "inline and one-line display math",
+    "multiline math",
+    "underscores and underbraces",
+    "radical long arrow cancellation",
+    "tagged box-counting equation (1)",
+    "literal code remains literal",
+    "Math OFF source fallback",
+    "Charts",
+    "local images",
+    "tables",
+    "project role help from #400",
+    "service renewal help #412",
+    "separate practice fill/save/close/reopen EN and ES"
+  ],
+  "practice_originals_restored": true,
+  "preferences_restored": {
+    "language": "en",
+    "math": true
+  },
+  "normal_quit_verified": true,
+  "installed_helper_preserved": 48295,
+  "limitations": [
+    "Ad-hoc packaged QA does not validate signed installed automatic helper replacement; this remains a post-publication acceptance."
+  ],
+  "capture_note": "An initial Stage Manager thumbnail was rejected before acceptance; the full-size reopened practice capture is the accepted observation."
+}

@@ -54,3 +54,11 @@ registration inside probing. Explicit disable invalidates held startup replies.
 A newer healthy refresh owns displayed metadata; older readiness replies do not
 overwrite it or spuriously reject healthy peer operations. Full770XCTest/39skips
 plus72SwiftTesting pass. Current native evidence/input mapping is autonomous-*.
+
+## Integration after project identities (#400)
+
+PR #413 now includes main `54c00e42` and Guide45, preserving both feature help
+sections. Fresh process PID16185 passed bilingual real Help and practice checks,
+with originals/preferences restored and helper48295 untouched. Full integrated
+779 XCTest checks (41 skipped), 72 Swift Testing checks, generic iOS build and
+three deterministic guide checks passed. Current evidence: `doc/validation/helper-upgrade/candidate-help45/`.
