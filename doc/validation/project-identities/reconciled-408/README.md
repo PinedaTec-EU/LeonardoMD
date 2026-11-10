@@ -16,9 +16,9 @@ The previous Guide28 evidence in the parent directory is historical. It does not
 
 | Check | Result |
 | --- | --- |
-| Focused Swift identity, presentation, guide and capture checks | Passed; see `checks/swift-focused.log`. |
-| Full Swift suite | 754 XCTest cases, 40 expected skips, zero failures; 72 Swift Testing cases, zero failures. See `checks/swift-full.log`. |
-| Repository Python suite | 118 tests, seven expected skips, zero failures; see `checks/python.log`. |
+| Focused Swift identity, presentation, guide and capture checks | Passed; see `checks/swift-focused.log.gz`. |
+| Full Swift suite | 754 XCTest cases, 40 expected skips, zero failures; 72 Swift Testing cases, zero failures. See `checks/swift-full.log.gz`. |
+| Repository Python suite | 118 tests, seven expected skips, zero failures; see `checks/python.log.gz`. |
 | Deterministic Guide42 packaging | Three tests passed; packaged image counts EN20/ES21. |
 | iOS unit tests | 22/22 passed. |
 | Bilingual Demo and project lifecycle UI | 3/3 passed, including the local Demo header, deletion, restoration and retained practice answers. |
@@ -42,3 +42,5 @@ The candidate remains draft. Final exact-head CI and a fresh strict independent 
 ## Native capture metadata
 
 Original bytes and test-emitted contexts are preserved. Native sidecars use the shared metadata helper's image/hash and Git-source routines, with `viewport_css: null`; measured native points are recorded separately. A browser engine is not applicable to AppKit/UIKit components. These component fixtures do not prove packaged-process startup or physical-device/network acceptance.
+
+Raw compiler/test logs are preserved byte-for-byte in deterministic gzip archives; `checks/log-archives.json` binds their original and compressed hashes. Decompress with `gzip -dc` to inspect the original diagnostics.
