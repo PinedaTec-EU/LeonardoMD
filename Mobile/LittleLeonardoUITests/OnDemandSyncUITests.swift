@@ -20,7 +20,10 @@ final class OnDemandSyncUITests: XCTestCase {
         app.buttons["Cerrar"].tap()
         try enroll(app)
         try phase("assert-metadata")
-        let project = app.staticTexts["QA · On-demand"].firstMatch
+        let receivedProjectID = try readyProjectID()
+        let project = app.buttons["open-project-" + receivedProjectID]
+        XCTAssertTrue(project.waitForExistence(timeout: 20),
+                      "The received project must remain reachable through its stable outer navigation identifier")
         project.tap()
         let remote = row("reference/remote.md", app: app)
         assertStatus(remote, "Solo remoto")
@@ -70,14 +73,12 @@ final class OnDemandSyncUITests: XCTestCase {
         assertStatus(row("notes/future.md", app: app), "Disponible sin conexión")
         try capture(app, "catalogue-recovered", state: "Automatic refresh retried the failed file and retained a future folder descendant without a manual sync")
         app.navigationBars.buttons.element(boundBy: 0).tap()
-        let ready = try JSONSerialization.jsonObject(with: Data(contentsOf: root().appendingPathComponent("ready.json"))) as? [String: Any]
-        let projectID = try XCTUnwrap(ready?["projectID"] as? String)
-        let received = app.buttons["open-project-" + projectID]
+        let received = app.buttons["open-project-" + receivedProjectID]
         XCTAssertTrue(received.waitForExistence(timeout: 10))
         try capture(app, "project-before-delete", state: "Received project remains an ordinary row in the same list as the local Demo project")
         received.swipeLeft()
         XCTAssertTrue(received.exists, "A swipe alone must not delete the received project")
-        let delete = app.buttons["delete-project-" + projectID]
+        let delete = app.buttons["delete-project-" + receivedProjectID]
         XCTAssertTrue(delete.waitForExistence(timeout: 5))
         try capture(app, "project-swipe-delete", state: "Swipe reveals Delete; explicit button tap is still required")
         delete.tap()
@@ -109,7 +110,9 @@ final class OnDemandSyncUITests: XCTestCase {
         }
         try phase("approve")
         app.buttons["Sincronizar"].firstMatch.tap()
-        XCTAssertTrue(app.staticTexts["QA · On-demand"].firstMatch.waitForExistence(timeout: 20))
+        let projectID = try readyProjectID()
+        XCTAssertTrue(app.buttons["open-project-" + projectID].waitForExistence(timeout: 20),
+                      "Enrollment must expose the received project through its stable outer navigation identifier")
     }
 
     @MainActor private func row(_ path: String, app: XCUIApplication) -> XCUIElement {
@@ -131,6 +134,10 @@ final class OnDemandSyncUITests: XCTestCase {
     }
     private func root() throws -> URL {
         URL(fileURLWithPath: try XCTUnwrap(ProcessInfo.processInfo.environment["LEONARDO_ON_DEMAND_QA_ROOT"]), isDirectory: true)
+    }
+    private func readyProjectID() throws -> String {
+        let ready = try JSONSerialization.jsonObject(with: Data(contentsOf: root().appendingPathComponent("ready.json"))) as? [String: Any]
+        return try XCTUnwrap(ready?["projectID"] as? String)
     }
     private func phase(_ value: String) throws {
         let root = try root()

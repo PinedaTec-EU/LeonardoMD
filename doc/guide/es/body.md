@@ -607,6 +607,24 @@ Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dis
 4. Crea una invitación. Su QR y el enlace copiado permiten abrir la misma invitación: escanea el QR en Little Leonardo o pega el enlace en **Conectarme a otros equipos** en otro Mac. Compara los códigos y aprueba el dispositivo pendiente en este Mac de origen. Las filas indican **solo lectura** (Little Leonardo o clientes compatibles) o **LeonardoMD en Mac · cambios sujetos a revisión**. La etiqueta depende del permiso concedido, no del nombre del equipo.
 5. Importa el contenido compartido en el compañero y compruébalo antes de depender de una copia sin conexión. Usa Revocar en el Mac para retirar acceso futuro a un dispositivo.
 
+### Reconocer el papel de un proyecto
+
+El icono de proyecto muestra la misma identidad en macOS e iOS. Su pequeño indicador de procedencia describe el dispositivo que estás mirando, no el estado actual de la red:
+
+| Lo que ves en este dispositivo | Etiqueta y señal visual | Significado |
+| --- | --- | --- |
+| Un proyecto local | **Local** · icono de proyecto | El proyecto pertenece a este dispositivo y no está configurado para compartir contenido hacia fuera. |
+| Un proyecto compartido desde este dispositivo | **Compartido desde este equipo** · icono de proyecto + indicador de personas | Este dispositivo está configurado para compartir contenido seleccionado. Cada dispositivo receptor necesita su propia invitación y autorización; la etiqueta no afirma que ya exista un receptor autorizado. |
+| Un proyecto recibido de otro dispositivo | **Recibido de otro equipo** · icono de proyecto + indicador de red | El proyecto es remoto para este dispositivo. El uso compartido del origen está implícito, por eso no lleva una segunda marca de compartir. |
+
+![Ejemplos de macOS de identidad e indicadores de procedencia del proyecto; los mismos significados se aplican en iOS.](assets/project-identities.png)
+
+*Ejemplos de componentes de producción de macOS; los mismos significados del papel se aplican en iOS.*
+
+Por ejemplo, un proyecto llamado **Viaje** aparece como **Compartido desde este equipo** en el Mac configurado para servir el contenido seleccionado. El mismo **Viaje** aparece como **Recibido de otro equipo** en el Mac, iPhone o iPad receptor después de invitarlo y autorizarlo. La copia de iOS sigue siendo recibida aunque esté disponible sin conexión; guardar sus archivos localmente no la convierte en un proyecto propio. Un archivo de recuperación se identifica aparte como solo lectura y no implica una conexión remota activa. Si compartes solo carpetas o documentos seleccionados, el texto explica ese alcance; el icono no significa que todo el proyecto esté expuesto. La conectividad, el progreso de sincronización y el acceso de solo lectura son estados independientes.
+
+En el iPhone y el iPad, **Demo** es un proyecto **Local** incluido en la app. Sus ficheros en español e inglés son documentos dentro de ese proyecto. Un proyecto recibido conserva su procedencia mientras cada fichero muestra por separado **Solo remoto**, **En caché** o **Disponible sin conexión**; el icono del proyecto no significa que todos sus ficheros estén descargados.
+
 Para capturar solo una rúbrica, sin acceso a documentos, no elijas **Compartir
 el proyecto actual**. En la revisión de la conexión pendiente deja sin marcar
 todos los proyectos. Cuando el panel diga **Este Little Leonardo puede recibir
@@ -754,7 +772,7 @@ El Mac debe estar accesible para transferir. Una VPN privada superpuesta requier
 
 Usa **Preferencias → Sincronización → Conectarme a otros equipos** en la instancia principal. Activa **Leonardo Sync** con el control común en ambos Macs. En el de origen, abre **Compartir desde este Mac**, activa compartir y selecciona el contenido. En este Mac receptor, pulsa **Conectarme a otro Mac** y pega la invitación o dirección HTTPS del origen junto con un nombre para este dispositivo. Compara los códigos y aprueba en el origen antes de importar. Puedes mantener desactivado **Compartir archivos guardados de este Mac**: acceder al contenido de otro no publica el tuyo. Ninguna función es un modo global de máster o cliente.
 
-Pulsa **Crear copia editable** para descargar explícitamente una copia completa del proyecto. Ábrela localmente y usa sincronización manual o elige un intervalo. Las transferencias siguen necesitando conectividad. Una copia desconectada es trabajo local; no demuestra que el origen tenga tus últimos cambios.
+Pulsa **Crear copia editable** para descargar explícitamente una copia completa del proyecto. Ábrela localmente y usa sincronización manual o elige un intervalo. Las transferencias siguen necesitando conectividad. Sus archivos se guardan localmente en este Mac, pero el proyecto sigue siendo **Recibido de otro equipo**; estar disponible sin conexión no cambia su origen ni demuestra que el origen tenga tus últimos cambios.
 
 Para devolver ediciones, **Comparar cambios**, revisa las versiones Base / Este Mac / Otro Mac y después **Enviar cambios para revisar**. Reintenta propuestas pendientes al recuperar conexión. Las ediciones posteriores al envío siguen locales hasta otra propuesta. El Mac de origen revisa las propuestas entrantes; enviar no significa aceptación automática. Resuelve marcadores de conflicto deliberadamente y verifica el resultado antes de aceptar. Conserva el trabajo local hasta confirmar el resultado esperado en origen.
 

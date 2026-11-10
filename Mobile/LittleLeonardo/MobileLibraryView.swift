@@ -1,4 +1,5 @@
 import SwiftUI
+import LeonardoCore
 import LeonardoSync
 import LeonardoRender
 import LeonardoSyncUI
@@ -6,6 +7,88 @@ import LeonardoSyncUI
 private enum MobileLibrarySheet: String, Identifiable {
     case direct, settings, about
     var id: String { rawValue }
+}
+
+extension OfflineProject {
+    /// iOS only receives direct-sync projects from another device. The legacy
+    /// Git payload remains a local recovery archive and must not look remote.
+    var projectIdentity: ProjectIdentity {
+        isRecoveryArchive ? .recoveryArchive : .received
+    }
+}
+
+extension MobileLibraryProject {
+    /// The library list is a presentation boundary. A downloaded direct-sync
+    /// project is still received from another device; only the bundled demo is
+    /// local, and a legacy Git payload remains a recovery archive.
+    var projectIdentity: ProjectIdentity {
+        switch self {
+        case .demo: .local
+        case .downloaded(let project): project.projectIdentity
+        }
+    }
+}
+
+private struct OptionalAccessibilityIdentifier: ViewModifier {
+    let identifier: String?
+
+    func body(content: Content) -> some View {
+        if let identifier {
+            content.accessibilityIdentifier(identifier)
+        } else {
+            content
+        }
+    }
+}
+
+struct MobileProjectIdentityLabel: View {
+    let name: String
+    let identity: ProjectIdentity
+    let accessibilityIdentifier: String?
+
+    init(name: String, identity: ProjectIdentity, accessibilityIdentifier: String? = "project-identity") {
+        self.name = name
+        self.identity = identity
+        self.accessibilityIdentifier = accessibilityIdentifier
+    }
+
+    var bilingualRole: String {
+        let spanish = identity.title(languageCode: "es")
+        let english = identity.title(languageCode: "en")
+        return spanish == english ? spanish : "\(spanish) · \(english)"
+    }
+
+    var accessibilityText: String { "\(name), \(bilingualRole)" }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Image(systemName: ProjectIdentity.projectSymbolName)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(MobileClassic.heading)
+                if let indicator = identity.indicatorSymbolName {
+                    Image(systemName: indicator)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(MobileClassic.accent)
+                }
+            }
+            .fixedSize()
+            .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name)
+                    .font(.headline)
+                    .foregroundStyle(MobileClassic.heading)
+                Text(bilingualRole)
+                    .font(.caption)
+                    .foregroundStyle(MobileClassic.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
+        .modifier(OptionalAccessibilityIdentifier(identifier: accessibilityIdentifier))
+    }
 }
 
 struct MobileLibraryView: View {
@@ -34,8 +117,22 @@ struct MobileLibraryView: View {
                                 MobileProjectView(library: library, projectID: cached.id)
                             }
                         } label: {
-                            Text(project.name).font(.headline).foregroundStyle(MobileClassic.heading)
+                            VStack(alignment: .leading, spacing: 5) {
+                                MobileProjectIdentityLabel(name: project.name,
+                                                           identity: project.projectIdentity,
+                                                           accessibilityIdentifier: nil)
+                                if project.projectIdentity == .recoveryArchive {
+                                    Text("Archivo de recuperación · Solo lectura")
+                                        .font(.caption).foregroundStyle(MobileClassic.secondary)
+                                } else if project.projectIdentity == .received {
+                                    Text("Consulta desde LeonardoMD · Solo lectura")
+                                        .font(.caption).foregroundStyle(MobileClassic.secondary)
+                                }
+                            }
                         }
+                        // Keep the stable navigation contract on the outer link;
+                        // the descriptive identity label is intentionally a child.
+                        .accessibilityElement(children: .combine)
                         .accessibilityIdentifier(project.id == "bundled-demo" ? "open-demo-project" : "open-project-\(project.id)")
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button("Eliminar / Delete", role: .destructive) {
@@ -251,27 +348,39 @@ struct MobileProjectView: View {
     var body: some View {
         Group {
             if let project, !project.isRecoveryArchive {
-                SyncCatalogueView(library: library.downloads, projectID: project.id, spanish: true, rowBackground: MobileClassic.paper) { entry in selectedEntry = entry }
-            } else {
-            List {
-            if let project {
-                Section {
-                    Text("Archivo de recuperación · Solo lectura").font(.caption).foregroundStyle(MobileClassic.secondary)
-                    Text("Carpeta: \(project.scope.folder.isEmpty ? "/" : project.scope.folder)").font(.caption)
-                    if project.isRecoveryArchive {
-                        Text("Esta copia antigua conserva tus cambios locales y enviados. Expórtala para recuperarlos en un ordenador. No se editará ni se enviará automáticamente.")
-                        Button("Exportar recuperación", systemImage: "square.and.arrow.up") { exporting = true }
-                            .accessibilityIdentifier("export-recovery")
+                VStack(alignment: .leading, spacing: 0) {
+                    MobileProjectIdentityLabel(name: project.name, identity: project.projectIdentity)
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(MobileClassic.inset)
+                    SyncCatalogueView(library: library.downloads, projectID: project.id,
+                                      spanish: true, rowBackground: MobileClassic.paper) { entry in
+                        selectedEntry = entry
                     }
                 }
-                .listRowBackground(MobileClassic.inset)
-                ForEach(project.files.filter { ["md", "markdown", "txt"].contains(($0.path as NSString).pathExtension.lowercased()) }, id: \.path) { file in
-                    NavigationLink(file.path) {
-                        MobileDocumentView(library: library, projectID: project.id, file: file)
-                    }.listRowBackground(MobileClassic.paper)
+            } else {
+                List {
+                    if let project {
+                        Section {
+                            MobileProjectIdentityLabel(name: project.name, identity: project.projectIdentity)
+                            Text("Disponible offline · Solo lectura")
+                                .font(.caption).foregroundStyle(MobileClassic.secondary)
+                            Text("Carpeta: \(project.scope.folder.isEmpty ? "/" : project.scope.folder)")
+                                .font(.caption)
+                            if project.isRecoveryArchive {
+                                Text("Esta copia antigua conserva tus cambios locales y enviados. Expórtala para recuperarlos en un ordenador. No se editará ni se enviará automáticamente.")
+                                Button("Exportar recuperación", systemImage: "square.and.arrow.up") { exporting = true }
+                                    .accessibilityIdentifier("export-recovery")
+                            }
+                        }
+                        .listRowBackground(MobileClassic.inset)
+                        ForEach(project.files.filter { ["md", "markdown", "txt"].contains(($0.path as NSString).pathExtension.lowercased()) }, id: \.path) { file in
+                            NavigationLink(file.path) {
+                                MobileDocumentView(library: library, projectID: project.id, file: file)
+                            }.listRowBackground(MobileClassic.paper)
+                        }
+                    }
                 }
-            }
-            }
             }
         }.classicSurface().navigationTitle(project?.name ?? "Proyecto")
         .navigationDestination(item: $selectedEntry) { entry in

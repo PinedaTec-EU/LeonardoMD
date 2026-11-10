@@ -1,0 +1,16 @@
+{
+  "browser_name" : "Little Leonardo native SwiftUI\/WKWebView · iOS Simulator 27.0",
+  "browser_version" : "WKWebView engine version not exposed by XCTest",
+  "capture_mode" : "viewport",
+  "captured_at" : "2026-11-10T13:38:51Z",
+  "data_provenance" : "synthetic",
+  "native_viewport_points" : {
+    "height" : 874,
+    "width" : 402
+  },
+  "route" : "\/native\/ios\/on-demand\/project-deleted-after-refresh",
+  "screen" : "project-deleted-after-refresh",
+  "source_sha" : "unavailable",
+  "state" : "Received project stays absent after app relaunch and authenticated synchronization; local Demo remains; native points measured from app.frame; Spanish; Classic appearance",
+  "viewport_css" : null
+}

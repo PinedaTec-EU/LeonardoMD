@@ -639,8 +639,10 @@
   "The rubric finished before cancellation and was discarded. Request another rubric.": "The rubric finished before cancellation and was discarded. Request another rubric.",
   "Refresh linked devices": "Refresh linked devices",
   "This Little Leonardo can create rubrics requested by this Mac without access to any project. Select projects only if you also want offline reading.": "This Little Leonardo can create rubrics requested by this Mac without access to any project. Select projects only if you also want offline reading.",
+  "Selected content": "Selected content",
   "Browse files": "Browse files",
   "Create editable copy": "Create editable copy",
   "Projects available to browse": "Projects available to browse",
-  "Saved catalogues and downloaded files remain accessible without a connection.": "Saved catalogues and downloaded files remain accessible without a connection."
+  "Saved catalogues and downloaded files remain accessible without a connection.": "Saved catalogues and downloaded files remain accessible without a connection.",
+  "Sharing paused or unavailable": "Sharing paused or unavailable"
 }

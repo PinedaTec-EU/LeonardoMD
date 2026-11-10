@@ -597,6 +597,24 @@ Little Leonardo is a **read-only companion**. Desktop sharing and device trust a
 4. Create an invitation. Its QR and copied link are two ways to open the same invitation: scan the QR in Little Leonardo or paste the link under **Connect to other computers** on another Mac. Compare the verification codes and approve the pending device on this source Mac. Device rows state **read-only** (Little Leonardo or compatible clients) or **LeonardoMD on Mac · changes require review**. The label follows the granted capability, not the device name.
 5. Import the shared content on the companion and verify it before relying on an offline copy. Use Revoke on the Mac to remove a device's future access.
 
+### Recognize a project's role
+
+The project icon shows the same project identity on macOS and iOS. Its small role indicator describes the device you are looking at, not the current network state:
+
+| What you see on this device | Label and visual cue | Meaning |
+| --- | --- | --- |
+| A local project | **Local** · project icon | The project belongs to this device and is not configured to share content outward. |
+| A project shared from this device | **Shared from this device** · project icon + people indicator | This device is configured to share selected content. Access by each receiving device still requires its own invitation and authorization; the label does not claim that a recipient is currently authorized. |
+| A project received from another device | **Received from another device** · project icon + network indicator | The project is remote from this device. The source's sharing is implicit, so it does not receive a second sharing badge. |
+
+![macOS examples of project identity and role indicators; the same meanings apply on iOS.](assets/project-identities.png)
+
+*macOS production-component examples; the same role meanings apply on iOS.*
+
+For example, a project named **Trip** is **Shared from this device** on the Mac configured to serve selected content. The same **Trip** is **Received from another device** on the receiving Mac, iPhone or iPad after that device is invited and authorized. An iOS copy remains received even when it is available offline; storing its files locally does not turn it into a locally owned project. A recovery archive is identified separately as read-only and does not imply a live remote connection. If you share only selected folders or documents, the text names that scope; the project icon does not mean that the entire project is exposed. Connectivity, synchronization progress and read-only access are separate states.
+
+On iPhone and iPad, the bundled **Demo** is a **Local** project. Its Spanish and English files are documents inside that project. A received project keeps its origin while each file independently shows **Remote only**, **Cached** or **Available offline**; the project icon does not mean that every file has been downloaded.
+
 For rubric capture without document access, do not choose **Share current project**.
 In the pending-connection review, leave every project toggle off. When the sheet
 says **This Little Leonardo can receive rubrics without access to any project**,
@@ -735,7 +753,7 @@ The Mac must be reachable for transfers. A private overlay VPN requires the expl
 
 Use **Preferences → Synchronization → Connect to other computers** in the principal instance. Enable **Leonardo Sync** with the common control on both Macs. On the source Mac, open **Share from this Mac**, enable sharing and select the intended content. On this receiving Mac, choose **Connect to another Mac** and paste the source invitation link or HTTPS address with a name for this device. Compare the codes and approve on the source before importing. Your own **Share saved files from this Mac** can stay off: consuming content does not publish yours. Neither role is a global master/client mode.
 
-Choose **Create editable copy** to explicitly download an entire editable project. Open it locally, then use manual synchronization or select a synchronization interval. Network reachability is still required for transfers. A disconnected copy remains a local working copy; it is not evidence that the source has your latest edits.
+Choose **Create editable copy** to explicitly download an entire editable project. Open it locally, then use manual synchronization or select a synchronization interval. Network reachability is still required for transfers. Its files are stored locally on this Mac, but the project remains **Received from another device**; offline availability does not change its origin or prove that the source has your latest edits.
 
 To return edits, **Compare changes**, inspect Base / This Mac / Other Mac versions, then **Send changes for review**. Retry pending proposals when connectivity returns. Edits made after submission remain local until another submission. The source Mac reviews incoming proposals; sending is not automatic acceptance. Resolve conflict markers deliberately and verify the result before accepting. Keep local work until the source confirms the expected outcome.
 

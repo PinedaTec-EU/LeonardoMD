@@ -1,0 +1,16 @@
+{
+  "browser_name" : "Little Leonardo native SwiftUI\/WKWebView · iOS Simulator 27.0",
+  "browser_version" : "WKWebView engine version not exposed by XCTest",
+  "capture_mode" : "viewport",
+  "captured_at" : "2026-11-10T13:37:00Z",
+  "data_provenance" : "synthetic",
+  "native_viewport_points" : {
+    "height" : 874,
+    "width" : 402
+  },
+  "route" : "\/native\/ios\/on-demand\/document-source",
+  "screen" : "document-source",
+  "source_sha" : "unavailable",
+  "state" : "Read-only source and explicit Show document action; no extra download; native points measured from app.frame; Spanish; Classic appearance",
+  "viewport_css" : null
+}
