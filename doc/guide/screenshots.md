@@ -14,7 +14,7 @@ provenance is recorded in each locale’s `assets/illustrations.provenance.json`
 | `en/es/assets/sync-connections-v13.png` | #421 capture context and metadata | Synchronization → Connect to other computers; same common service control; disabled Connect; isolated empty connections/copies |
 | `en/es/assets/project-identities.png` | `175791211` | Actual macOS project-identity component at 400×160; local, outgoing selected-content and received roles; same meanings apply on iOS; synthetic role data, not a paired-device capture |
 | `en/es/assets/updates.png` | `e457e86` | Actual update preferences; synthetic installed version, stable subscription, fake transport |
-| `en/es/assets/activation.png` | `b8900bf` | Actual global activation dialog, synthetic source; copied byte-for-byte from `doc/validation/extension-recommendations/current/dialog-<locale>-global.png` |
+| `en/es/assets/activation-switch.png` | `6b4db4d` | Global activation component with switches and synthetic content; previous captures remain in `doc/validation/extension-recommendations/current/` |
 | `en/es/assets/warnings.png` | `b8900bf` | Actual extension preferences/reset; copied byte-for-byte from `doc/validation/extension-recommendations/current/reset-<locale>.png` |
 | `es/assets/ios-rubric-capture-es.png` | `577d8821cd3c146d54dc55b49cc1695c0a7ec2e9`, `PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS()` | Spanish iPhone18Pro/iOS27.0 Simulator sent-state derivative captured 2026-11-06; full drawing and preview states are retained under `doc/validation/little-leonardo/`; capture-only, no document grant |
 
