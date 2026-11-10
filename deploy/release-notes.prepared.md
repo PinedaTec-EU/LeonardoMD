@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1215
+
+- #384 Added: on-demand synchronization and offline retention ([#385](https://github.com/PinedaTec-EU/LeonardoMD/pull/385))
+
+<p>Browse shared projects without bulk downloads, open files on demand, and manage temporary cache separately from files and folders kept offline.</p>
+
+Source: `7e9af9c5f02bc5874bffac7bf4f15951a0abb385`. Delta: `{"build": 68}`.
+
 ## 0.3.1147
 
 - #397 Fixed: compact iOS Classic reader heading spacing ([#405](https://github.com/PinedaTec-EU/LeonardoMD/pull/405))
