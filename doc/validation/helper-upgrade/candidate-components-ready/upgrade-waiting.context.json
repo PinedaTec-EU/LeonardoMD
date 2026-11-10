@@ -1,0 +1,20 @@
+{
+  "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
+  "browser_version" : "Not applicable: native view, no browser engine",
+  "capture_mode" : "element",
+  "captured_at" : "2026-11-10T14:27:43.898Z",
+  "data_provenance" : "synthetic",
+  "native_viewport_points" : {
+    "height" : 300,
+    "width" : 900
+  },
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "route" : "\/native\/synchronization\/helper\/upgrade",
+  "screen" : "Production helper preference section",
+  "source_sha" : "355cd71af45694a4976687640b66be2eeb579417",
+  "state" : "Synthetic older helper; graceful stop held; master remains on and explicit disable is available; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "viewport_css" : {
+    "height" : 300,
+    "width" : 900
+  }
+}

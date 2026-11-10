@@ -1,8 +1,8 @@
 {
-  "tested_source_sha": "a2a4c5ccd8fcce670561283731bf30941e49c6d3",
+  "tested_source_sha": "355cd71af45694a4976687640b66be2eeb579417",
   "main_base": "f04564a235343b8efff5316bd95b6416550f291c",
   "xctest": {
-    "tests": 761,
+    "tests": 766,
     "skipped": 39,
     "failures": 0
   },
@@ -18,7 +18,14 @@
     "assertions_failed": 4,
     "after_fix": "PASS"
   },
-  "full_log_sha256": "e8ec77f2fbdcb3b69a1f5bfa72ed205c9499b90f954cadd10356ec1021e37cc9",
-  "previous_tested_source_sha": "dfded0cba4c3c51f543a1ef1b33ab8a651a2685e",
-  "controlled_retry_deadline": "29 seconds: no attempt;30 seconds: retry succeeds, no sleeps"
+  "full_log_sha256": "c4f8be77a629d71bf8d3e7ceda88745eb67c38bb2a1aa4be0f33874a42ebdf24",
+  "previous_tested_source_sha": "a2a4c5ccd8fcce670561283731bf30941e49c6d3",
+  "controlled_retry_deadline": "29 seconds: no attempt;30 seconds: retry succeeds, no sleeps",
+  "activation_and_gate_regression_before_fix": {
+    "source_sha": "3c33acbd4d5f64aad2fd6e28014ed1e92b2cb9db",
+    "tests": 4,
+    "failing_assertions": 12,
+    "fixed": "PASS",
+    "positive_current_or_newer_identity": "PASS"
+  }
 }

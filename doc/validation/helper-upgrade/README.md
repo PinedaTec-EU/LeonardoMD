@@ -16,7 +16,7 @@ This proves the operational cause and recovery, not the automatic412 fix.
 ## Corrective candidate validation
 
 The candidate is based on main 0.3.1233 (`f04564a2`, including #408). Full
-integrated checks passed: 761 XCTest checks, 39 skips, zero failures, plus
+integrated checks passed: 766 XCTest checks, 39 skips, zero failures, plus
 72 Swift Testing checks. Generic iOS Simulator compilation passed. Three
 package determinism tests passed. See `integrated-automated.json`.
 
@@ -35,10 +35,20 @@ This is native component evidence, not installed launchd upgrade acceptance.
 
 Packaged Help and original component captures use source533ba927d191cf6248703b32bab84f87f15d1d45.
 `candidate-inputs.git-ls-tree.txt` binds Sources, Tests, Mobile, package inputs,
-scripts, assets and version.nfo. The later clock-only refinement and test change are identified explicitly in
-`clock-input-mapping.json`. All other inputs, including packaged help and renderer,
-remain unchanged; the old executable is not relabeled. Current controller UI
-captures are in `candidate-components-clock/`. The automatic signed-service replacement is covered
+scripts, assets and version.nfo. The clock-only checkpoint is mapped in `clock-input-mapping.json`. The subsequent
+activation/readiness correction is mapped in `readiness-input-mapping.json`, with
+a current full input tree. Help opening, content, renderer and practice inputs
+remain unchanged; the older Help executable is not relabeled. Current controller
+UI captures are in `candidate-components-ready/`; earlier component captures are
+retained as historical checkpoints. The automatic signed-service replacement is covered
 by controller tests with real temporary preferences and registration/XPC doubles;
 a live automatic replacement in an installed Developer ID package remains a
 post-publication check. The observed owner recovery above was manual.
+
+Activation of an already-enabled legacy registration now calls identity-aware
+refresh before it can report readiness. Peer adapters require an explicit gate
+from their actual shared helper controller; the static legacy gate is removed.
+Fresh health identity and a second persisted-consent read deny a first network
+request when renewal/disable begins while health is in flight. Four pre-fix
+regressions failed with12assertions; all pass afterward, as do current/newer
+identity positive cases.

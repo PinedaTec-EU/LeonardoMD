@@ -38,3 +38,11 @@ the existing30-second interval. Deterministic29/30-second retry test passes; ful
 suite761XCTest/39skips+72SwiftTesting passes. Controller component captures were
 renewed; exact unchanged Help/renderer input mapping preserves packaged Help40
 acceptance without relabeling the older executable.
+
+Activation/readiness follow-up: enabled legacy registration is reconciled from
+setEnabled(true); peer adapters explicitly use their actual shared helper. The
+static legacy gate is removed. Fresh identity, starting/busy state, durable token
+and consent re-read prevent first requests during renewal. Four real regressions
+failed with12assertions before correction; full766XCTest/39skips+72SwiftTesting
+pass afterward. Current native components and unchanged Help inputs are recorded
+in readiness-input-mapping.json.
