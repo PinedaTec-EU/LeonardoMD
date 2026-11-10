@@ -989,6 +989,16 @@
       "pr": 408,
       "summary": "Little Leonardo lists Demo alongside other projects, supports swipe-and-tap local project removal, and restores Demo from Settings while retaining practice answers.",
       "to_version": "0.3.1233"
+    },
+    {
+      "delta": {
+        "build": 13
+      },
+      "from_version": "0.3.1233",
+      "merge_sha": "54c00e421adcaaadaba3de56a8e3d6465ad73ad3",
+      "pr": 400,
+      "summary": "Projects now show a common icon and distinguish local content, sharing from this device and content received from another device on Mac, iPhone and iPad.",
+      "to_version": "0.3.1246"
     }
   ],
   "initial_version": "0.1.56",
@@ -999,5 +1009,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1233"
+  "version": "0.3.1246"
 }
