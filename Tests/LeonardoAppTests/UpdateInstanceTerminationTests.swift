@@ -27,6 +27,22 @@ final class UpdateInstanceTerminationTests: XCTestCase {
         }
     }
 
+    func testInstallOnQuitRequiresHelperDrainButOrdinaryQuitDoesNot() async {
+        let termination = UpdateInstanceTermination(peers: { [] })
+        var calls = 0
+        let ordinary = await termination.prepareHelperForQuit { calls += 1; return false }
+        XCTAssertTrue(ordinary)
+        XCTAssertEqual(calls, 0)
+        termination.requiresHelperPreparationOnQuit = true
+        let blocked = await termination.prepareHelperForQuit { calls += 1; return false }
+        XCTAssertFalse(blocked)
+        XCTAssertEqual(calls, 1)
+        let safe = await termination.prepareHelperForQuit { true }
+        XCTAssertTrue(safe)
+        termination.resolveInstallation()
+        XCTAssertFalse(termination.requiresHelperPreparationOnQuit)
+    }
+
     func testWaitsForActualExitOfEveryInstance() async throws {
         let first = Peer(1), second = Peer(2)
         first.exitsOnQuit = true

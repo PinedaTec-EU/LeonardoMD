@@ -264,6 +264,12 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
                     reportInstallationCancellation(on: reportingSession)
                 }
             }
+            if canTerminate, role == .primary {
+                canTerminate = await UpdateInstanceTermination.shared.prepareHelperForQuit {
+                    await DesktopSyncController.shared.helper.prepareForApplicationUpdate()
+                }
+                if !canTerminate { reportInstallationCancellation(on: reportingSession) }
+            }
             if canTerminate {
                 if role == .primary { await DesktopSyncController.shared.stop() }
                 for window in windows { await window.documents.finishPreparedClose() }

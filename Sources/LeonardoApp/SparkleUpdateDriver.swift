@@ -75,6 +75,7 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
     func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem,
                  immediateInstallationBlock: @escaping () -> Void) -> Bool {
         UpdateInstanceTermination.shared.installationPending = true
+        UpdateInstanceTermination.shared.requiresHelperPreparationOnQuit = true
         return false // Sparkle retains its installer scheduling and retry behavior.
     }
 
