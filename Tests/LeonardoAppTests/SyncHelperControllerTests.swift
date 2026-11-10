@@ -24,14 +24,16 @@ final class SyncHelperControllerTests: XCTestCase {
         let registration = HelperRegistrationFake(); registration.status = .enabled
         let control = HelperControlFake()
         await control.setBuildIdentities([nil, nil, replacement])
+        await control.failStatus(at: 2)
         let controller = SyncHelperController(preferencesURL: fixture.preferences,
             configurations: fixture.configurations, service: registration, client: control,
-            expectedBuildIdentity: replacement, startup: .init(attempts: 3, pause: {}),
+            expectedBuildIdentity: replacement, startup: .init(pause: {}),
             hasExecutable: { true }, verifyPackage: {})
         // This is the single lifecycle call made by normal app initialization.
         // No Preferences view or second manual refresh is created.
         await controller.refresh()
         XCTAssertTrue(controller.online)
+        XCTAssertNil(controller.error)
         XCTAssertEqual(registration.unregistrations, 1)
         XCTAssertEqual(registration.registrations, 1)
         let state = GateProbeState(online: true)
@@ -59,6 +61,15 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(registration.unregistrations, 1)
         let calls = await control.statusCalls
         XCTAssertEqual(calls, 4)
+        // If launch finishes after the bounded startup window, the next normal
+        // peer operation can confirm fresh health without a Preferences refresh.
+        await control.setBuildIdentity(replacement)
+        let state = GateProbeState(online: true)
+        let remote = HelperGatedPeerRemote(remote: GateProbeRemote(state: state),
+            requireOnline: { try await controller.requireReadyHelper() })
+        _ = try await remote.probe(endpoint: URL(string: "https://127.0.0.1")!)
+        XCTAssertTrue(controller.online)
+        XCTAssertEqual(registration.registrations, 1)
     }
 
     func testDisableDuringAutomaticStartupProbeCannotBeOverridden() async throws {
@@ -75,7 +86,7 @@ final class SyncHelperControllerTests: XCTestCase {
         let startup = Task { await controller.refresh() }
         for _ in 0..<5000 {
             if await control.hasHeldStatus { break }
-            await Task.yield()
+            try await Task.sleep(for: .milliseconds(1))
         }
         let held = await control.hasHeldStatus
         guard held else {
@@ -645,12 +656,14 @@ private actor HelperControlFake: SyncHelperControlAccess {
     private var buildIdentity: SyncHelperBuildIdentity?
     private var buildIdentities: [SyncHelperBuildIdentity?] = []
     private var pausedStatusCall: Int?
+    private var failingStatusCalls: Set<Int> = []
     private(set) var statusCalls = 0
     private var reloadPaused = false
     private var heldReload: CheckedContinuation<Void, Never>?
     var hasHeldReload: Bool { heldReload != nil }
     func setBuildIdentities(_ values: [SyncHelperBuildIdentity?]) { buildIdentities = values }
     func pauseStatus(at call: Int) { pausedStatusCall = call }
+    func failStatus(at call: Int) { failingStatusCalls.insert(call) }
     func setBuildIdentity(_ value: SyncHelperBuildIdentity) { buildIdentity = value }
     func pauseReload() { reloadPaused = true }
     func resumeReload() { reloadPaused = false; heldReload?.resume(); heldReload = nil }
@@ -664,7 +677,8 @@ private actor HelperControlFake: SyncHelperControlAccess {
     func status() async throws -> SyncHelperStatus {
         statusCalls += 1
         if paused || pausedStatusCall == statusCalls { await withCheckedContinuation { heldStatus = $0 } }
-        if unavailable { throw HelperControlError.unavailable }
+        let scheduledFailure = failingStatusCalls.remove(statusCalls) != nil
+        if unavailable || scheduledFailure { throw HelperControlError.unavailable }
         if !buildIdentities.isEmpty { buildIdentity = buildIdentities.removeFirst() }
         return SyncHelperStatus(enabled: true, sharing: nil, buildIdentity: buildIdentity)
     }

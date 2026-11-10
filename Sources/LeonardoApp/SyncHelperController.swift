@@ -63,6 +63,11 @@ final class SyncHelperController {
     }
 
     func refresh() async {
+        await refreshOnce()
+        await confirmStartupReadiness()
+    }
+
+    private func refreshOnce() async {
         guard !busy else { return }
         revision += 1
         let expected = revision
@@ -87,10 +92,7 @@ final class SyncHelperController {
                                            current: status.buildIdentity)
                     return
                 }
-                state = status.enabled ? .running : .disabled
-                sharing = status.sharing
-                supportsRubricExchange = status.supportsRubricExchange
-                error = status.error
+                applyStatus(status)
             case .notFound, .notRegistered:
                 if expectedBuildIdentity != nil {
                     await reconcileUpgrade(pending: settings.mobileSync.helperUpgradeToken, current: nil)
@@ -143,6 +145,8 @@ final class SyncHelperController {
         busy = false
         if reconcileExisting, self.enabled, state == .starting {
             await refresh()
+        } else {
+            await confirmStartupReadiness()
         }
     }
 
@@ -203,6 +207,55 @@ final class SyncHelperController {
         state = .starting
     }
 
+    private func confirmStartupReadiness() async {
+        guard enabled, state == .starting, !busy, startup.attempts > 0 else { return }
+        let expected = revision
+        for attempt in 0..<startup.attempts {
+            do {
+                if attempt > 0 { try await startup.pause() }
+                guard canProbeStartup(expected) else { return }
+                let settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
+                guard canProbeStartup(expected), observeStartupConsent(settings) else { return }
+                let status = try await client.status()
+                let current = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
+                guard canProbeStartup(expected), observeStartupConsent(current) else { return }
+                guard status.enabled, let expectedBuildIdentity, let identity = status.buildIdentity,
+                      !identity.needsReplacement(by: expectedBuildIdentity) else { continue }
+                applyStatus(status)
+                logger.info("sync_helper_readiness_confirmed build=\(identity.build, privacy: .public)")
+                return
+            } catch {
+                guard canProbeStartup(expected) else { return }
+                self.error = L10n.text(error.localizedDescription)
+            }
+        }
+        guard canProbeStartup(expected) else { return }
+        state = .failed; sharing = nil; supportsRubricExchange = false
+        if error == nil { error = L10n.text("Offline · sync helper unavailable") }
+        logger.error("sync_helper_readiness_not_confirmed attempts=\(self.startup.attempts, privacy: .public)")
+    }
+
+    private func canProbeStartup(_ expected: Int) -> Bool {
+        expected == revision && enabled && !busy && !Task.isCancelled
+    }
+
+    private func observeStartupConsent(_ settings: MobileSyncPreferences) -> Bool {
+        enabled = settings.helperEnabled || settings.helperUpgradeToken != nil
+        guard settings.helperEnabled, settings.helperUpgradeToken == nil else {
+            state = enabled ? .starting : .disabled
+            sharing = nil; supportsRubricExchange = false
+            return false
+        }
+        return true
+    }
+
+    private func applyStatus(_ status: SyncHelperStatus) {
+        state = status.enabled ? .running : .disabled
+        sharing = status.sharing
+        supportsRubricExchange = status.supportsRubricExchange
+        error = status.error
+    }
+
     private func unregisterAfterStop() async throws {
         var stoppedHelper: ProcessFileLock?
         defer { withExtendedLifetime(stoppedHelper) {} }
@@ -236,6 +289,8 @@ final class SyncHelperController {
               !identity.needsReplacement(by: expectedBuildIdentity) else {
             throw offlineFailure()
         }
+        enabled = true
+        applyStatus(status)
     }
 
     private func permitsPeerOperations(_ settings: MobileSyncPreferences) -> Bool {
