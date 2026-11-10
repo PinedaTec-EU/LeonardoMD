@@ -1,0 +1,4 @@
+{
+  "build": 7,
+  "summary": "Reduces excess space before the first heading in Little Leonardo's synchronized Markdown reader. Desktop and later headings keep their spacing. Adds native iOS layout checks and updates both bundled guides."
+}
