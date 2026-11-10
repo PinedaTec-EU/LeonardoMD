@@ -19,3 +19,10 @@ by their current stores. Missing/newer health stays separate from operational re
 
 Guide40 is reserved for413; personal34/35/36/37 already exist from other work and
 must not be overwritten. Compare actual bundled/personal hashes before acceptance.
+
+Late health replies also retain transaction ownership: when another store replaces
+or completes the upgrade token, the stale controller reloads current intent without
+clearing that token, disabling consent, or unregistering the renewed helper. Two
+deterministic regressions failed with four assertions before this correction and
+pass after it; the focused controller/core/identity suite passes (24 tests, one
+opt-in native capture skipped).

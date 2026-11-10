@@ -1,4 +1,4 @@
 {
   "summary": "Automatically renew outdated sync services after Mac application updates while preserving device access and pending work.",
-  "build": 8
+  "build": 9
 }

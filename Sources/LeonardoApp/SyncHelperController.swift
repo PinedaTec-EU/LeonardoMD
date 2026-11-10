@@ -173,10 +173,18 @@ final class SyncHelperController {
 
     private func completeUpgrade(_ token: UUID, expected: Int) async throws {
         let restored = try await configurations.finishSyncHelperUpgrade(token, at: preferencesURL)
-        guard restored, expected == revision else {
+        guard expected == revision else {
             try await configurations.setSyncHelperEnabled(false, at: preferencesURL)
             try await unregisterAfterStop()
             enabled = false; state = .disabled; return
+        }
+        guard restored else {
+            // Another owner may have replaced or completed this transaction.
+            // A stale response must never clear its intent or stop its helper.
+            let current = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
+            enabled = current.helperEnabled || current.helperUpgradeToken != nil
+            state = enabled ? .starting : .disabled
+            return
         }
         nextUpgradeAttempt = .distantPast
         // Only a subsequent live identity/health response can report running.
