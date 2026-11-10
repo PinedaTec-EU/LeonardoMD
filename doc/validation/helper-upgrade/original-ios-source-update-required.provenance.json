@@ -1,0 +1,15 @@
+{
+  "captured_at": "2026-11-10T12:46:59+01:00",
+  "route": "/native/ios/library/startup-error",
+  "screen": "Owner-provided original iPhone startup error",
+  "browser_name": "Native Little Leonardo on physical iPhone",
+  "browser_version": "Device OS/WK engine not exposed by screenshot",
+  "viewport_css": {
+    "width": 1290,
+    "height": 2796
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "owner-provided real screenshot; no generated or fixture content",
+  "source_sha": "945d05aa71f71790b75497f81d3493a708c7ab8e",
+  "state": "Before recovery; owner reports both apps updated1215; Mac installed1215 independently verified, but registered helper1136. Native image-pixel equivalent viewport; CSS N/A."
+}

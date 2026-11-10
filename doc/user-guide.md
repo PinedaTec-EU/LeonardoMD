@@ -721,6 +721,10 @@ The helper shares **saved files only**, including while the editor is open. Save
 
 The Mac must be reachable for transfers. A private overlay VPN requires the explicit setting and a compatible reachable address; it does not make a public cloud service. Do not assume pairing works across arbitrary networks. Revocation stops future authorized access; it cannot erase copies already downloaded. The iOS companion does not offer Git editing or send document edits back to the Mac. Do not confuse desktop proposal review with mobile editing.
 
+### Updating the background synchronization service
+
+After installing a newer LeonardoMD, opening the main Mac application automatically renews an older synchronization service. Files and existing device access stay in place; do not pair the iPhone again. Sharing may be briefly offline while any active write finishes and the updated service starts. A service waiting for renewal is not reported as ready. If you turn off **Enable Leonardo Sync** during renewal, it stays off. An interrupted renewal resumes when you open LeonardoMD again. If macOS requests approval, use **Open Login Items settings** and approve the existing service there.
+
 ## 15. Connect to other computers and offline copies
 
 ![Synchronization → Connect to other computers before pairing or importing a project.](guide/en/assets/sync-connections-v12.png)

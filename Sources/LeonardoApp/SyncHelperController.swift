@@ -11,6 +11,7 @@ final class SyncHelperController {
     private(set) var state = State.disabled
     private(set) var enabled = false
     private(set) var busy = false
+    private(set) var upgrading = false
     private(set) var sharing: RunningDirectService?
     private(set) var supportsRubricExchange = false
     var error: String?
@@ -108,6 +109,7 @@ final class SyncHelperController {
             return
         }
         revision += 1 // Invalidate health replies issued before this consent change.
+        nextUpgradeAttempt = .distantPast
         busy = true; error = nil
         logger.info("sync_helper_enable_requested enabled=\(enabled, privacy: .public)")
         defer { busy = false }
@@ -140,8 +142,8 @@ final class SyncHelperController {
         nextUpgradeAttempt = Date().addingTimeInterval(30)
         revision += 1
         let expected = revision
-        busy = true
-        defer { busy = false }
+        busy = true; upgrading = true
+        defer { busy = false; upgrading = false }
         let token = pending ?? UUID()
         do {
             try verifyPackage()
@@ -192,6 +194,7 @@ final class SyncHelperController {
                     .appendingPathComponent("MobileSync/helper.lock"))
             }
         }
+        guard service.status != .notRegistered, service.status != .notFound else { return }
         try await service.unregister()
     }
 

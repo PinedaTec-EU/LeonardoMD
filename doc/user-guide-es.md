@@ -740,6 +740,10 @@ El servicio comparte **solo archivos guardados**, también con el editor abierto
 
 El Mac debe estar accesible para transferir. Una VPN privada superpuesta requiere su ajuste explícito y una dirección compatible accesible; no convierte el sistema en un servicio público en la nube. No presupongas conectividad entre redes cualesquiera. Revocar impide acceso autorizado futuro; no borra copias ya descargadas. El compañero iOS no ofrece edición Git ni devuelve ediciones de documentos al Mac. La revisión de propuestas del escritorio no es edición móvil.
 
+### Actualizar el servicio de sincronización en segundo plano
+
+Después de instalar un LeonardoMD más reciente, abrir la aplicación principal del Mac renueva automáticamente un servicio de sincronización anterior. Los archivos y los accesos de los dispositivos se conservan; no vuelvas a emparejar el iPhone. La conexión puede quedar brevemente sin servicio mientras termina cualquier escritura activa y arranca el servicio actualizado. Un servicio pendiente de renovación no se muestra como listo. Si desactivas **Activar Leonardo Sync** durante la renovación, permanece desactivado. Una renovación interrumpida continúa al volver a abrir LeonardoMD. Si macOS pide aprobación, usa **Abrir ajustes de ítems de inicio** y aprueba allí el servicio existente.
+
 ## 15. Conectarme a otros equipos y copias sin conexión
 
 ![Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.](guide/es/assets/sync-connections-v12.png)

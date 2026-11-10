@@ -84,6 +84,8 @@ final class SyncHelperControllerTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(1))
         }
         let held = await control.hasHeldReload; XCTAssertTrue(held)
+        XCTAssertTrue(controller.upgrading)
+        XCTAssertTrue(controller.enabled)
         let stopped = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
         XCTAssertFalse(stopped.mobileSync.helperEnabled)
         XCTAssertNotNil(stopped.mobileSync.helperUpgradeToken)
