@@ -637,6 +637,8 @@ without an added delay. Open **Ajustes de sincronización → Acerca de Little
 Leonardo** (sync settings → About) to check the installed version and build and open offline Help, Privacy and
 Licenses pages.
 
+Open a synchronized Markdown document and choose **Ver documento** (preview) to read it. The first heading begins close to the navigation bar, with a compact reading margin; the remaining sections retain their usual spacing. **Ver texto** shows the source without changing the synchronized document.
+
 After **Aceptar y dibujar** (accept and draw), the page suggests rotating the
 device. Landscape presents a full-screen canvas with ink color, style, width,
 **Deshacer** (undo) and **Limpiar** (clear). Returning to portrait restores the
@@ -743,7 +745,7 @@ To return edits, **Compare changes**, inspect Base / This Mac / Other Mac versio
 | Open a file | File and referenced local images | Temporary cache, within your limit |
 | Keep offline | Selected files/folders and referenced images | Separate retained storage |
 
-After pairing, the app refreshes the authorized file/folder list without downloading content. On Mac, choose **Browse files** beside a shared project; on iOS, open the project. Opening a file downloads that file and its referenced local images. Already downloaded files open from cache. Only saved source files are shared.
+After pairing, the app refreshes the authorized file/folder list without downloading content. On Mac, choose **Browse files** beside a shared project; on iOS, open the project. Opening a file downloads that file and its referenced local images. Already downloaded files open from cache. Only saved source files are shared. Use **Show source / Show document** (iOS: **Ver texto / Ver documento**) to switch between read-only source and preview without another download. Little Leonardo keeps the first heading close to the navigation bar; later sections retain their usual spacing.
 
 Use the context menu (right-click on Mac; long-press on iOS):
 

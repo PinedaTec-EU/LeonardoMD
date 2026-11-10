@@ -646,6 +646,8 @@ biblioteca local, sin una espera añadida. En **Ajustes de sincronización →
 Acerca de Little Leonardo** puedes consultar la versión y compilación instaladas, así como abrir Ayuda,
 Privacidad y Licencias sin conexión.
 
+Abre un documento Markdown sincronizado y elige **Ver documento** para leerlo. El primer título comienza cerca de la barra de navegación, con un margen de lectura compacto; las demás secciones mantienen su separación habitual. **Ver texto** muestra el código fuente sin modificar el documento sincronizado.
+
 Tras **Aceptar y dibujar**, la página recomienda girar el dispositivo. En
 horizontal se muestra el lienzo a pantalla completa con color, trazo, grosor,
 **Deshacer** y **Limpiar**. Al volver a vertical reaparece la página normal y el
@@ -758,7 +760,7 @@ Para devolver ediciones, **Comparar cambios**, revisa las versiones Base / Este 
 | Abrir un archivo | Archivo e imágenes locales referenciadas | Caché temporal, dentro de tu límite |
 | Mantener sin conexión | Archivos/carpetas elegidos e imágenes referenciadas | Almacenamiento retenido separado |
 
-Tras vincular los dispositivos, la app actualiza la lista de archivos y carpetas autorizados sin descargar contenido. En Mac, pulsa **Explorar archivos** junto al proyecto; en iOS, abre el proyecto. Abrir un archivo descarga ese archivo y sus imágenes locales referenciadas. Los archivos ya descargados se abren desde la caché. Solo se comparten archivos guardados en el origen.
+Tras vincular los dispositivos, la app actualiza la lista de archivos y carpetas autorizados sin descargar contenido. En Mac, pulsa **Explorar archivos** junto al proyecto; en iOS, abre el proyecto. Abrir un archivo descarga ese archivo y sus imágenes locales referenciadas. Los archivos ya descargados se abren desde la caché. Solo se comparten archivos guardados en el origen. Usa **Ver texto / Ver documento** para alternar entre el texto de solo lectura y la previsualización sin otra descarga. Little Leonardo mantiene el primer título cerca de la barra de navegación; las secciones posteriores conservan su espaciado habitual.
 
 Usa el menú contextual (clic derecho en Mac; pulsación prolongada en iOS):
 

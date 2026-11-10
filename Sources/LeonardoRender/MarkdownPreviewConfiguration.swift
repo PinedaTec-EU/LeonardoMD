@@ -13,6 +13,9 @@ public struct MarkdownPreviewConfiguration: Equatable, Sendable {
     public var allowsVegaLite: Bool
     public var allowsCitations: Bool
     public var allowsMarkdownExtensions: Bool
+    /// Opts a native reader into a smaller margin above its first heading.
+    /// The default preserves the desktop preview spacing.
+    public var compactFirstHeading: Bool = false
     public var frontMatter: FrontMatterVisibility
     public var externalLinkPolicy: ExternalLinkPolicy
     public var appearance: MarkdownAppearance

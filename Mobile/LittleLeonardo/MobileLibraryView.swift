@@ -289,9 +289,11 @@ struct MobileDocumentView: View {
     @StateObject private var previewController = MarkdownPreviewController()
     private let virtualRoot = URL(fileURLWithPath: "/LittleLeonardoCorpus", isDirectory: true)
     private var previewConfiguration: MarkdownPreviewConfiguration {
-        MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true, externalLinkPolicy: .blocked,
+        var configuration = MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true, externalLinkPolicy: .blocked,
             appearance: .leonardoClassic,
             localAssetRoot: virtualRoot, memoryAssets: assets, allowsRemoteImages: false)
+        configuration.compactFirstHeading = true
+        return configuration
     }
     private var liveProject: OfflineProject? { library.projects.first { $0.id == projectID } }
     private var liveFile: CorpusFile? { library.currentFile(projectID: projectID, path: file.path) }
