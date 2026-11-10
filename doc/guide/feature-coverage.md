@@ -68,4 +68,6 @@ Little Leonardo offline demo (#381) and HTTPS failure diagnostics (#380): `Mobil
 
 PR #398: Guide29 EN/ES documents same-request automatic status recovery, persistent error/Retry, terminal requests and close-versus-cancel behavior. Existing personal guides/practice answers remain preserved in prior revision directories. New illustrations are original production-component captures with synthetic data; they do not claim packaged/physical acceptance.
 
+- Mobile project library: one ordinary Demo project with language documents; swipe + tap removal, persistent local exclusion and Settings recovery. Sources: `MobileProjectLifecycle.swift`, `MobileLibraryView.swift`; both guide bodies, Little Leonardo demo chapter.
+
 Little Leonardo compact synchronized reader (#397): the first heading starts with a 16-point content margin in the iOS reader only; later section margins and the default desktop preview remain unchanged. Chapter 14 explains Preview/Source in both languages. Real iOS renderer and synchronized-document component captures are retained in `doc/validation/reader-spacing/`. Guide v31 preserves existing guide/practice copies.

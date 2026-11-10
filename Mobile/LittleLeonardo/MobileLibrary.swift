@@ -13,6 +13,7 @@ final class MobileLibrary {
     var error: String?
     var connecting = false
     var comparisonCode: String?
+    let projectLifecycle: MobileProjectLifecycle
     let downloads: DownloadLibrary
     let store: OfflineCorpusStore
     private let connectionStore: MobileDirectConnectionStore
@@ -46,6 +47,8 @@ final class MobileLibrary {
         let root = rootURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("LittleLeonardo/Corpus", isDirectory: true)
         store = OfflineCorpusStore(root: root)
+        projectLifecycle = MobileProjectLifecycle(url: root.deletingLastPathComponent()
+            .appendingPathComponent("project-removals.json"))
         downloads = DownloadLibrary(cache: OnDemandCache(root: root.deletingLastPathComponent().appendingPathComponent("Downloads")))
         connectionStore = MobileDirectConnectionStore(url: root.deletingLastPathComponent()
             .appendingPathComponent("connections.json"))
@@ -181,6 +184,7 @@ final class MobileLibrary {
         let loadCacheEpoch = cacheEpoch
         let loadAuthorizationEpoch = authorizationEpoch
         do {
+            try projectLifecycle.reload()
             try await waitForPendingRubricDraftWrite()
             let storedConnections = try connectionStore.load()
             for connection in connections where connection.revoked {
@@ -214,17 +218,18 @@ final class MobileLibrary {
             let loadedDrafts = try await draftStore.all(now: now())
             let loaded = try await connectionStore.loadVisibleProjects(connections: protectedConnections,
                                                                          quarantinedConnectionIDs: visibleQuarantine,
+                                                                         excludedProjectIDs: projectLifecycle.deletedProjectIDs,
                                                                          credentials: credentials, corpus: store)
             guard cacheEpoch == loadCacheEpoch, authorizationEpoch == loadAuthorizationEpoch else { return }
             connections = protectedConnections
             comparisonCode = loadedComparisonCode
             recoverableRubricDrafts = loadedDrafts
-            projects = loaded
+            projects = loaded.filter { !projectLifecycle.isDeleted($0.id) }
             downloads.fetch = { [weak self] id, entry in
                 guard let self else { throw SyncError.revoked }
                 return try await self.fetchDownload(projectID: id, entry: entry)
             }
-            try await downloads.restore(allowedIDs: Set(loaded.filter { project in
+            try await downloads.restore(allowedIDs: Set(projects.filter { project in
                 !project.isRecoveryArchive && protectedConnections.contains {
                     !$0.revoked && !visibleQuarantine.contains($0.connectionID) && $0.projectIDs.contains(project.id)
                 }

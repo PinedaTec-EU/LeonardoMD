@@ -1,0 +1,13 @@
+{
+  "captured_at": "2026-11-10T12:05:44.684Z",
+  "route": "/native/help/v36/es",
+  "screen": "practice-es-reopened",
+  "browser_name": "Native AppKit/WKWebView",
+  "browser_version": "Engine version not exposed by CUA",
+  "viewport_css": null,
+  "native_viewport_points": null,
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "Spanish practice saved, closed and reopened with synthetic answer QA408 Spanish",
+  "source_sha": "d986f417fd263180219b3b55dfe65d026d5853c5"
+}
