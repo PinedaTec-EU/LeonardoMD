@@ -639,8 +639,10 @@
   "The rubric finished before cancellation and was discarded. Request another rubric.": "La rúbrica terminó antes de la cancelación y se descartó. Pide otra rúbrica.",
   "Refresh linked devices": "Actualizar dispositivos enlazados",
   "This Little Leonardo can create rubrics requested by this Mac without access to any project. Select projects only if you also want offline reading.": "Este Little Leonardo puede crear rúbricas solicitadas por este Mac sin acceder a ningún proyecto. Selecciona proyectos solo si también quieres leerlos sin conexión.",
+  "Selected content": "Contenido seleccionado",
   "Browse files": "Explorar archivos",
   "Create editable copy": "Crear copia editable",
   "Projects available to browse": "Proyectos disponibles para consultar",
-  "Saved catalogues and downloaded files remain accessible without a connection.": "Los catálogos guardados y archivos descargados siguen accesibles sin conexión."
+  "Saved catalogues and downloaded files remain accessible without a connection.": "Los catálogos guardados y archivos descargados siguen accesibles sin conexión.",
+  "Sharing paused or unavailable": "Uso compartido pausado o no disponible"
 }

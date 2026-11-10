@@ -61,7 +61,11 @@ struct MobileSyncPreferencesView: View {
             ForEach(controller.settings.projects) { project in
                 HStack {
                     VStack(alignment: .leading) {
-                        Text(project.name)
+                        ProjectIdentityLabel(name: project.name, identity: .sharedFromThisDevice,
+                                             detail: DesktopProjectPresentation.scopeDescription(folders: project.folders))
+                        if !controller.sharingAvailable {
+                            Text(L10n.text("Sharing paused or unavailable")).font(.caption).foregroundStyle(.secondary)
+                        }
                         Text((project.folders.map { $0.isEmpty ? L10n.text("Entire project") : $0 } + project.documents).joined(separator: ", "))
                             .font(.caption).foregroundStyle(.secondary)
                     }

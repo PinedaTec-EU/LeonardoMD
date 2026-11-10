@@ -1,5 +1,6 @@
 import SwiftUI
 import LeonardoSync
+import LeonardoCore
 
 struct SharedProjectSelectionView: View {
     let root: URL
@@ -21,7 +22,8 @@ struct SharedProjectSelectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(L10n.text("Select shared content")).font(.title2)
-            Text(root.lastPathComponent).foregroundStyle(.secondary)
+            ProjectIdentityLabel(name: root.lastPathComponent,
+                                 identity: DesktopProjectPresentation.resolve(root, sharing: controller).identity)
             HStack {
                 Button(L10n.text("Choose folders and documents")) { choose() }
                 Button(L10n.text("Entire project")) { folders = [""]; documents = [] }
@@ -30,7 +32,8 @@ struct SharedProjectSelectionView: View {
                 LazyVStack(alignment: .leading, spacing: 10) {
                     ForEach(folders, id: \.self) { folder in
                         HStack {
-                            Label(folder.isEmpty ? L10n.text("Entire project") : folder, systemImage: "folder")
+                            Label(folder.isEmpty ? L10n.text("Entire project") : folder,
+                                  systemImage: folder.isEmpty ? ProjectIdentity.projectSymbolName : "folder")
                                 .lineLimit(1).truncationMode(.middle).help(folder)
                             Spacer()
                             Button(L10n.text("Remove")) { folders.removeAll { $0 == folder } }

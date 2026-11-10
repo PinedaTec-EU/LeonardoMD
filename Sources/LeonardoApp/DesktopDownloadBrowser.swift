@@ -10,8 +10,15 @@ struct DesktopDownloadBrowser: View {
     private var spanish: Bool { LanguageSettings.shared.language == .spanish }
     var body: some View {
         NavigationStack {
-            SyncCatalogueView(library: library, projectID: projectID, spanish: spanish) { selected = $0 }
-                .padding()
+            VStack(alignment: .leading, spacing: 0) {
+                if let project = library.projects.first(where: { $0.id == projectID }) {
+                    ProjectIdentityLabel(name: project.descriptor.name, identity: .received)
+                        .padding(.horizontal)
+                        .padding(.top)
+                }
+                SyncCatalogueView(library: library, projectID: projectID, spanish: spanish) { selected = $0 }
+                    .padding()
+            }
                 .navigationDestination(item: $selected) { entry in
                     RemoteDocumentPreview(library: library, projectID: projectID, entry: entry, spanish: spanish)
                 }

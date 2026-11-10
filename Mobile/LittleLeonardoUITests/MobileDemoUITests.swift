@@ -89,13 +89,20 @@ final class MobileDemoUITests: XCTestCase {
         app.buttons["Cerrar"].tap()
         XCTAssertTrue(app.buttons["open-demo-project"].exists)
         capture(app, "Restored ordinary Demo project")
+        app.buttons["open-demo-project"].tap()
+        let demoHeader = app.descendants(matching: .any)["project-identity"].firstMatch
+        XCTAssertTrue(demoHeader.waitForExistence(timeout: 10))
+        XCTAssertEqual(demoHeader.label, "Demo, Local")
+        capture(app, "Demo role Local")
         openDemo("en", in: app)
         capture(app, "Demo language document")
     }
 
     @MainActor private func openDemo(_ language: String, in app: XCUIApplication) {
-        if app.buttons["open-demo-project"].exists { app.buttons["open-demo-project"].tap() }
         let entry = app.buttons["open-demo-\(language)"]
+        if !entry.exists, app.buttons["open-demo-project"].exists {
+            app.buttons["open-demo-project"].tap()
+        }
         XCTAssertTrue(entry.waitForExistence(timeout: 15))
         entry.tap()
         XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 15))

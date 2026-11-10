@@ -46,7 +46,7 @@ struct DesktopPeerPreferencesView: View {
                         }
                         ForEach(controller.available[connection.id] ?? [], id: \.id) { project in
                             HStack {
-                                Text(project.name)
+                                ProjectIdentityLabel(name: project.name, identity: .received)
                                 Spacer()
                                 Button(L10n.text("Browse files")) {
                                     browsing = DesktopPeerController.downloadID(connectionID: connection.id, projectID: project.id)
@@ -60,7 +60,7 @@ struct DesktopPeerPreferencesView: View {
             Section(L10n.text("Projects available to browse")) {
                 ForEach(controller.downloads.projects) { project in
                     HStack {
-                        Text(project.descriptor.name)
+                        ProjectIdentityLabel(name: project.descriptor.name, identity: .received)
                         Spacer()
                         Button(L10n.text("Browse files")) { browsing = project.id }
                     }
@@ -73,7 +73,9 @@ struct DesktopPeerPreferencesView: View {
             Section(L10n.text("Offline copies")) {
                 ForEach(controller.copies, id: \.id) { copy in
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(copy.name).font(.headline)
+                        ProjectIdentityLabel(name: copy.name, identity: .received,
+                                             detail: DesktopProjectPresentation.scopeDescription(folders: copy.selection.folders))
+                            .font(.headline)
                         Text((copy.selection.folders + copy.selection.documents).joined(separator: ", "))
                             .font(.caption).foregroundStyle(.secondary)
                         ViewThatFits(in: .horizontal) {

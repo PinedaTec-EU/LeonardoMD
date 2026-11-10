@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "generator": "shared capture metadata assembly from supplied native component JSON",
+  "collected_at": "2026-11-07T21:11:22.783Z",
+  "capture": {
+    "captured_at": "2026-11-07T20:56:10Z",
+    "route": "/native/project-identities/project-identities-en-dark-540",
+    "screen": "Production project identity rows; local, outbound, received, recovery and child folder",
+    "browser_name": "Native AppKit / SwiftUI; no browser",
+    "browser_version": "Version 27.0.1 (Build 26A434)",
+    "state": "Production project identity rows; local, outbound, received, recovery and child folder; en; dark Classic palette; synthetic fixture; Synthetic fixture; no fresh packaged-process startup or installation claim",
+    "viewport_css": null,
+    "native_viewport_points": {
+      "width": 540,
+      "height": 340
+    },
+    "capture_mode": "native AppKit/SwiftUI component bitmap",
+    "data_provenance": "synthetic",
+    "limitations": "Synthetic fixture; no fresh packaged-process startup or installation claim"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1080,
+    "height_px": 680,
+    "sha256": "a2f18e3652ae1fd07127d7993147a09b791b6a8dfd4d246ab86a13f4052b8b21"
+  },
+  "source": {
+    "revision_at_collection": "490086a6829f30cab3e5a7c6fe6e03a75f90e22d",
+    "tracked_changes_present": null,
+    "untracked_files_present": null
+  }
+}
