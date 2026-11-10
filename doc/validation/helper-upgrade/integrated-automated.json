@@ -1,0 +1,22 @@
+{
+  "tested_source_sha": "dfded0cba4c3c51f543a1ef1b33ab8a651a2685e",
+  "main_base": "f04564a235343b8efff5316bd95b6416550f291c",
+  "xctest": {
+    "tests": 760,
+    "skipped": 39,
+    "failures": 0
+  },
+  "swift_testing": {
+    "tests": 72,
+    "failures": 0
+  },
+  "ios_generic_simulator_build": "PASS",
+  "packaging_determinism_tests": 3,
+  "scope": "Integrated Mac tests and iOS compilation; does not establish automatic upgrade in an installed signed runtime.",
+  "regression_before_fix": {
+    "tests": 2,
+    "assertions_failed": 4,
+    "after_fix": "PASS"
+  },
+  "full_log_sha256": "1a0506a8f4aa4e47cb260396c0b30fb0a4af3bace34a77771aa63a4d2bdfb87f"
+}
