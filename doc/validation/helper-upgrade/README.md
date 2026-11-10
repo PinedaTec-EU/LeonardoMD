@@ -71,3 +71,15 @@ newer verified endpoint metadata surviving an older readiness response. These
 are controller/temporary-store tests, not a newly launched packaged process.
 The three startup regressions failed with six assertions before correction; the
 delayed-metadata regression failed with one assertion. All now pass.
+
+## Native measurement provenance
+
+Native captures have no browser CSS viewport. `viewport_css` is null. CUA does
+not expose native window/viewport points here, so those measurements are null;
+only fixture-created AppKit components report their explicitly measured NSSize.
+Image pixels remain separately recorded from the original file header. Earlier
+bitmap/native-point equivalents in the browser field are corrected explicitly
+in `native-provenance-correction.json`; original images, capture times and source
+identities are preserved. Canonical helper image/source primitives support these
+native records; its browser-only context validator requires CSS measurements and
+is not used to invent them.

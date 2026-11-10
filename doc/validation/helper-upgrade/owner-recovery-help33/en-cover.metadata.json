@@ -7,13 +7,13 @@
     "screen": "Packaged LeonardoMD Help33",
     "browser_name": "Native macOS SwiftUI/WKWebView",
     "browser_version": "WKWebView engine not exposed",
-    "state": "Owner recovery instance; English local bundled images; PID41520; baseline0.3.1215/build1215; Guide33; native bitmap-equivalent viewport CSS N/A",
-    "viewport_css": {
-      "width": 4168,
-      "height": 2818
-    },
+    "state": "Owner recovery instance; English local bundled images; PID41520; baseline0.3.1215/build1215; Guide33; native viewport unavailable; bitmap dimensions are image pixels",
+    "viewport_css": null,
     "capture_mode": "viewport",
-    "data_provenance": "synthetic"
+    "data_provenance": "synthetic",
+    "native_viewport_points": null,
+    "capture_surface": "native",
+    "viewport_measurement": "CUA exposes screenshot bytes but no native viewport dimensions; image pixels are recorded only under image"
   },
   "image": {
     "format": "jpeg",
@@ -25,5 +25,10 @@
     "revision_at_collection": "ff3659781bfc15449c0b5f0322ab880a1f28ec45",
     "tracked_changes_present": true,
     "untracked_files_present": true
+  },
+  "metadata_correction": {
+    "at": "2026-11-10T15:49:41.144480+00:00",
+    "source_revision": "b1feaf1994f036428d9564a3ad74dd7018ed4752",
+    "reason": "Remove bitmap/native-point equivalents from the browser-only viewport_css field; preserve original capture timestamps, source identity and image bytes."
   }
 }

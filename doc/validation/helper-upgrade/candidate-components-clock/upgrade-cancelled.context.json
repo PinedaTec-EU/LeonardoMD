@@ -12,10 +12,14 @@
   "route": "/native/synchronization/helper/disabled",
   "screen": "Production helper preference section",
   "source_sha": "a2a4c5ccd8fcce670561283731bf30941e49c6d3",
-  "state": "Owner explicitly disabled during upgrade; stop completed without replacement or re-enabling; viewport_css is the measured native-point equivalent; CSS is not applicable",
-  "viewport_css": {
-    "height": 300,
-    "width": 900
-  },
-  "capture_source_ref": "a2a4c5c"
+  "state": "Owner explicitly disabled during upgrade; stop completed without replacement or re-enabling; native_viewport_points is measured by the fixture; CSS is not applicable",
+  "viewport_css": null,
+  "capture_source_ref": "a2a4c5c",
+  "capture_surface": "native",
+  "viewport_measurement": "NSSize measured by the native fixture; CSS is not applicable",
+  "metadata_correction": {
+    "at": "2026-11-10T15:49:41.144480+00:00",
+    "source_revision": "b1feaf1994f036428d9564a3ad74dd7018ed4752",
+    "reason": "Remove bitmap/native-point equivalents from the browser-only viewport_css field; preserve original capture timestamps, source identity and image bytes."
+  }
 }
