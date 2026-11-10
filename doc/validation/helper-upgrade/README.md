@@ -105,3 +105,12 @@ in `native-provenance-correction.json`; original images, capture times and sourc
 identities are preserved. Canonical helper image/source primitives support these
 native records; its browser-only context validator requires CSS measurements and
 is not used to invent them.
+
+## Central version materialization
+
+The integration also includes main `c009929d` (0.3.1246), satisfying the central
+policy latest-base requirement. This changes only version/release metadata and
+consumes #400’s ledger entry. Runtime, help, renderer and test input trees remain
+identical to `2ac7b7c5`; `candidate-help45/materialized-main-mapping.json` records
+the comparison. Captures keep their actual baseline1233 identity. Fresh CI on
+the integrated head is required before the next judge.

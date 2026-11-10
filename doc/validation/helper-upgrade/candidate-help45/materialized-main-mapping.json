@@ -1,0 +1,26 @@
+{
+  "tested_product_source": "2ac7b7c5fb0566fea95b1652d3cd4766f3694cf8",
+  "integrated_source": "c791c00744f053a6f61dee1d11a457873d66aabb",
+  "main_materialization": "c009929d0eac03348fa8e69e28a4711edef8ed7c",
+  "unchanged_product_input_scopes": [
+    "Sources",
+    "Tests",
+    "Mobile",
+    "scripts",
+    "assets",
+    "Package.swift",
+    "Package.resolved"
+  ],
+  "changed_files": [
+    "deploy/release-changes.json",
+    "deploy/release-notes.prepared.md",
+    "deploy/version/entries/400.yaml",
+    "deploy/version/version.yaml",
+    "version.nfo"
+  ],
+  "version_change": {
+    "from": "0.3.1233",
+    "to": "0.3.1246"
+  },
+  "evidence_scope": "Help45 process16185 is retained at its actual baseline1233; runtime, renderer, help and tests inputs match. Central version/release publication metadata integration does not relabel that executable. Exact integrated-head CI validates the new package baseline."
+}
