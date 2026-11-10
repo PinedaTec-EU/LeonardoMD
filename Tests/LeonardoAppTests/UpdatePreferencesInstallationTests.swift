@@ -5,11 +5,27 @@ import XCTest
 
 @MainActor
 final class UpdatePreferencesInstallationTests: XCTestCase {
+    func testHelperDrainIsRequiredOnlyBeforeActualInstallation() async throws {
+        let fixture = try Fixture(); defer { fixture.close() }
+        var preparations = 0
+        let driver = CoordinatedUpdateUserDriver(termination: fixture.termination,
+            prepareHelper: { preparations += 1; return false }, dismissPreferences: { true })
+        let download = await driver.preparedChoice(.install, stage: .notDownloaded)
+        XCTAssertEqual(download, .install)
+        XCTAssertEqual(preparations, 0)
+        let install = await driver.preparedChoice(.install, stage: .installing)
+        XCTAssertEqual(install, .dismiss)
+        XCTAssertEqual(preparations, 1, "A failed drain must never release Install to Sparkle")
+        var retried = false
+        await driver.retryInstallation { retried = true }
+        XCTAssertFalse(retried)
+    }
+
     func testInstallReplyDismissesNativePreferencesBeforeSparkleCanRequestQuit() async throws {
         for stage in [SPUUserUpdateStage.downloaded, .installing] {
             let fixture = try Fixture()
             defer { fixture.close() }
-            let driver = CoordinatedUpdateUserDriver(termination: fixture.termination, dismissPreferences: {
+            let driver = CoordinatedUpdateUserDriver(termination: fixture.termination, prepareHelper: { true }, dismissPreferences: {
                 UpdatePreferencesDismissal.dismiss(sessions: [fixture.session], parent: fixture.parent)
             })
             let download = await driver.preparedChoice(.install, stage: .notDownloaded)
@@ -28,7 +44,7 @@ final class UpdatePreferencesInstallationTests: XCTestCase {
     func testRetryAfterCancelledQuitDismissesPreferencesBeforeTermination() async throws {
         let fixture = try Fixture()
         defer { fixture.close() }
-        let driver = CoordinatedUpdateUserDriver(termination: fixture.termination, dismissPreferences: {
+        let driver = CoordinatedUpdateUserDriver(termination: fixture.termination, prepareHelper: { true }, dismissPreferences: {
             UpdatePreferencesDismissal.dismiss(sessions: [fixture.session], parent: fixture.parent)
         })
         _ = await driver.preparedChoice(.install, stage: .notDownloaded)
@@ -45,7 +61,7 @@ final class UpdatePreferencesInstallationTests: XCTestCase {
         let fixture = try Fixture()
         defer { fixture.close() }
         fixture.preferences.beginSheet(fixture.decision, completionHandler: nil)
-        let driver = CoordinatedUpdateUserDriver(termination: fixture.termination, dismissPreferences: {
+        let driver = CoordinatedUpdateUserDriver(termination: fixture.termination, prepareHelper: { true }, dismissPreferences: {
             UpdatePreferencesDismissal.dismiss(sessions: [fixture.session], parent: fixture.parent)
         })
         _ = await driver.preparedChoice(.install, stage: .notDownloaded)
@@ -60,7 +76,7 @@ final class UpdatePreferencesInstallationTests: XCTestCase {
         let fixture = try Fixture()
         defer { fixture.close() }
         fixture.preferences.beginSheet(fixture.decision, completionHandler: nil)
-        let driver = CoordinatedUpdateUserDriver(termination: fixture.termination, dismissPreferences: {
+        let driver = CoordinatedUpdateUserDriver(termination: fixture.termination, prepareHelper: { true }, dismissPreferences: {
             UpdatePreferencesDismissal.dismiss(sessions: [fixture.session], parent: fixture.parent)
         })
         _ = await driver.preparedChoice(.install, stage: .notDownloaded)
@@ -77,7 +93,7 @@ final class UpdatePreferencesInstallationTests: XCTestCase {
         let fixture = try Fixture()
         defer { fixture.close() }
         fixture.preferences.identifier = NSUserInterfaceItemIdentifier("SaveDecision")
-        let driver = CoordinatedUpdateUserDriver(termination: fixture.termination, dismissPreferences: {
+        let driver = CoordinatedUpdateUserDriver(termination: fixture.termination, prepareHelper: { true }, dismissPreferences: {
             UpdatePreferencesDismissal.dismiss(sessions: [fixture.session], parent: fixture.parent)
         })
         _ = await driver.preparedChoice(.install, stage: .notDownloaded)
@@ -91,7 +107,7 @@ final class UpdatePreferencesInstallationTests: XCTestCase {
         let fixture = try Fixture()
         defer { fixture.close() }
         var dismissalRequested = false
-        let driver = CoordinatedUpdateUserDriver(termination: fixture.termination, dismissPreferences: {
+        let driver = CoordinatedUpdateUserDriver(termination: fixture.termination, prepareHelper: { true }, dismissPreferences: {
             dismissalRequested = true
             return true
         })

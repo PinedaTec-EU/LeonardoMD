@@ -272,6 +272,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
                 windows.forEach { $0.documents.cancelPreparedClose() }
                 updateQuitEndpoint.cancelled()
                 UpdateInstanceTermination.shared.cancelTermination()
+                if role == .primary { await DesktopSyncController.shared.helper.cancelApplicationUpdate() }
             }
             terminationPending = canTerminate
             if !canTerminate, role == .primary { processPendingLaunches() }

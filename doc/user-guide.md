@@ -741,7 +741,9 @@ The Mac must be reachable for transfers. A private overlay VPN requires the expl
 
 ### Updating the background synchronization service
 
-After installing a newer LeonardoMD, opening the main Mac application automatically renews an older synchronization service. Files and existing device access stay in place; do not pair the iPhone again. Sharing may be briefly offline while any active write finishes and the updated service starts. A service waiting for renewal is not reported as ready. If you turn off **Enable Leonardo Sync** during renewal, it stays off. An interrupted renewal resumes when you open LeonardoMD again. If macOS requests approval, use **Open Login Items settings** and approve the existing service there.
+When you choose **Install and relaunch**, the updater first pauses Leonardo Sync while the current signed application can still communicate with it. It waits for active writes to finish and confirms the service is stopped before replacing the application. The new application resumes the service with the same device access, shared projects and TLS identity; do not pair the iPhone again. Downloading alone does not pause sharing. If you cancel quitting, the current application resumes the service. An interrupted installation keeps the existing consent for recovery on the next launch. Turning off **Enable Leonardo Sync** cancels that consent and remains respected. If macOS requests approval, use **Open Login Items settings** and approve the existing service there.
+
+If a safe stop cannot be confirmed, installation is postponed rather than forcibly terminating a potentially active writer. This preparation requires an application version that includes it before the update begins. Versions up to 0.3.1270 can already have an old service that no longer accepts authenticated communication after replacement; this correction does not retroactively make that state safe to terminate. Leave pairings and permissions intact and arrange a controlled recovery before testing a later update. Replacing the application outside its built-in updater does not run this preparation.
 
 ## 15. Connect to other computers and offline copies
 
