@@ -64,18 +64,21 @@ public struct SyncHelperStatus: Codable, Sendable {
     /// Capability negotiation is deliberately additive. An older helper does
     /// not send this key and therefore remains incapable of rubric capture.
     public let supportsRubricExchange: Bool
+    public let buildIdentity: SyncHelperBuildIdentity?
     public init(enabled: Bool, sharing: RunningDirectService?, error: String? = nil,
-                supportsRubricExchange: Bool = true) {
+                supportsRubricExchange: Bool = true, buildIdentity: SyncHelperBuildIdentity? = nil) {
         self.enabled = enabled
         self.sharing = sharing; self.error = error
         self.supportsRubricExchange = supportsRubricExchange
+        self.buildIdentity = buildIdentity
     }
-    private enum CodingKeys: String, CodingKey { case enabled, sharing, error, supportsRubricExchange }
+    private enum CodingKeys: String, CodingKey { case enabled, sharing, error, supportsRubricExchange, buildIdentity }
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         enabled = try container.decode(Bool.self, forKey: .enabled)
         sharing = try container.decodeIfPresent(RunningDirectService.self, forKey: .sharing)
         error = try container.decodeIfPresent(String.self, forKey: .error)
+        buildIdentity = try container.decodeIfPresent(SyncHelperBuildIdentity.self, forKey: .buildIdentity)
         // Missing on helpers from before #341: do not target them with a new
         // command that their XPC enum cannot decode.
         supportsRubricExchange = try container.decodeIfPresent(Bool.self, forKey: .supportsRubricExchange) ?? false

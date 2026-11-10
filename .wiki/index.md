@@ -30,3 +30,5 @@ Read [current state](current-state.md), then the relevant source target. Human p
 - [On-demand synchronization and cache](on-demand-sync.md)
 - [HTTPS response lifetime and physical acceptance](https-response-lifetime.md)
 - [Little Leonardo Classic UI and rotating canvas](mobile-classic.md)
+
+- [Background helper upgrade](helper-upgrade.md) — launch identity, safe renewal and persistent consent fencing for #412.

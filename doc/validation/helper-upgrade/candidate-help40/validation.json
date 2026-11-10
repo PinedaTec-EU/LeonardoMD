@@ -1,0 +1,48 @@
+{
+  "source_sha": "533ba927d191cf6248703b32bab84f87f15d1d45",
+  "fresh_process_pid": 65363,
+  "version": "0.3.1233",
+  "guide_revision": 40,
+  "process_closed_normally": true,
+  "helper48295_preserved": true,
+  "final_locale": "English",
+  "final_math": "ON",
+  "practice_originals_restored_exactly": true,
+  "practice_fictional_values_saved_closed_reopened": [
+    "en",
+    "es"
+  ],
+  "bundle_personal_sha256": {
+    "en": "684931e0d5e857f1767c0619604301fb8de4b2cd4b7411fcd2edea5ac980d7be",
+    "es": "8cb20507d68edba57605996e82c3d2c4ec3b37e0e2eee5a1a34792d3f25a6294"
+  },
+  "inspected_both_locales": [
+    "real Help menu",
+    "Mermaid",
+    "one-line display math",
+    "inline math",
+    "multiline math",
+    "underscores/underbraces",
+    "radical/arrow/cancellation",
+    "box counting tag1",
+    "literal code",
+    "Math OFF fallback",
+    "chart",
+    "local packaged image",
+    "table",
+    "changed service-update guidance",
+    "separate practice form save/close/reopen"
+  ],
+  "input_scope": [
+    "Sources",
+    "Tests",
+    "Mobile",
+    "Package.swift",
+    "Package.resolved",
+    "scripts",
+    "assets",
+    "version.nfo"
+  ],
+  "input_tree_sha256": "24ef430e07b0404d8fe3a750783fdd13685461e2940d3e6b61ad35c6b74e0535",
+  "limits": "Ad-hoc packaged process cannot register the signed production helper; automatic replacement is covered by real controller/temp-store regression tests with registration/XPC doubles. Installed1215 recovery was manual and owner-confirmed, separate evidence."
+}

@@ -6,7 +6,7 @@ struct HelperGatedPeerRemote: DesktopPeerRemote {
     let remote: any DesktopPeerRemote
     let requireOnline: @Sendable () async throws -> Void
     init(remote: any DesktopPeerRemote = DesktopPeerHTTPSRemote(),
-         requireOnline: @escaping @Sendable () async throws -> Void = { try await SyncHelperController.requireOnline() }) {
+         requireOnline: @escaping @Sendable () async throws -> Void) {
         self.remote = remote; self.requireOnline = requireOnline
     }
     private func checked<T: Sendable>(_ operation: () async throws -> T) async throws -> T {

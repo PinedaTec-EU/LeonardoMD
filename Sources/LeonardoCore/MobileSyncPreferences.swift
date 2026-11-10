@@ -25,6 +25,8 @@ public struct MobileSharedProject: Codable, Hashable, Sendable, Identifiable {
 /// Installation-local settings, never part of portable project configuration.
 public struct MobileSyncPreferences: Codable, Hashable, Sendable {
     public var helperEnabled: Bool
+    /// Durable existing consent while a helper upgrade temporarily denies service work.
+    public var helperUpgradeToken: UUID?
     public var enabled: Bool
     public var host: String?
     public var port: UInt16
@@ -42,12 +44,13 @@ public struct MobileSyncPreferences: Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case helperEnabled, enabled, host, port, projects, privateOverlayEnabled
+        case helperEnabled, helperUpgradeToken, enabled, host, port, projects, privateOverlayEnabled
     }
 
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         helperEnabled = try values.decodeIfPresent(Bool.self, forKey: .helperEnabled) ?? false
+        helperUpgradeToken = try values.decodeIfPresent(UUID.self, forKey: .helperUpgradeToken)
         enabled = try values.decodeIfPresent(Bool.self, forKey: .enabled) ?? false
         host = try values.decodeIfPresent(String.self, forKey: .host)
         port = try values.decodeIfPresent(UInt16.self, forKey: .port) ?? 40882
@@ -58,6 +61,7 @@ public struct MobileSyncPreferences: Codable, Hashable, Sendable {
     public func encode(to encoder: Encoder) throws {
         var values = encoder.container(keyedBy: CodingKeys.self)
         try values.encode(helperEnabled, forKey: .helperEnabled)
+        try values.encodeIfPresent(helperUpgradeToken, forKey: .helperUpgradeToken)
         try values.encode(enabled, forKey: .enabled)
         try values.encodeIfPresent(host, forKey: .host)
         try values.encode(port, forKey: .port)

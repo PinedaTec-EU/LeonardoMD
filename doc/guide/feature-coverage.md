@@ -72,3 +72,12 @@ PR #398: Guide29 EN/ES documents same-request automatic status recovery, persist
 - Mobile project library: one ordinary Demo project with language documents; swipe + tap removal, persistent local exclusion and Settings recovery. Sources: `MobileProjectLifecycle.swift`, `MobileLibraryView.swift`; both guide bodies, Little Leonardo demo chapter.
 
 Little Leonardo compact synchronized reader (#397): the first heading starts with a 16-point content margin in the iOS reader only; later section margins and the default desktop preview remain unchanged. Chapter 14 explains Preview/Source in both languages. Real iOS renderer and synchronized-document component captures are retained in `doc/validation/reader-spacing/`. Guide v31 preserves existing guide/practice copies.
+
+Automatic helper renewal (#412): `SyncHelperBuildIdentity.swift`,
+`SyncHelperController.swift` and `ConfigurationStore+HelperUpgrade.swift`; chapters
+10 and14 now explain automatic renewal after an app update, temporary offline
+state, explicit disable, interrupted renewal and macOS approval. Guide40 keeps
+earlier personal copies separate. Fresh packaged ES/EN acceptance and production
+preference components: `doc/validation/helper-upgrade/`. Signed installed automatic
+replacement remains a post-publication check, distinct from the owner-confirmed
+manual1215 recovery.

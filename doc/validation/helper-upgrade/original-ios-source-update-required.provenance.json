@@ -1,0 +1,20 @@
+{
+  "captured_at": "2026-11-10T12:46:59+01:00",
+  "route": "/native/ios/library/startup-error",
+  "screen": "Owner-provided original iPhone startup error",
+  "browser_name": "Native Little Leonardo on physical iPhone",
+  "browser_version": "Device OS/WK engine not exposed by screenshot",
+  "viewport_css": null,
+  "capture_mode": "viewport",
+  "data_provenance": "owner-provided real screenshot; no generated or fixture content",
+  "source_sha": "945d05aa71f71790b75497f81d3493a708c7ab8e",
+  "state": "Before recovery; owner reports both apps updated1215; Mac installed1215 independently verified, but registered helper1136. Native image-pixel equivalent viewport; CSS N/A.",
+  "native_viewport_points": null,
+  "capture_surface": "native",
+  "viewport_measurement": "CUA exposes screenshot bytes but no native viewport dimensions; image pixels are recorded only under image",
+  "metadata_correction": {
+    "at": "2026-11-10T15:49:41.144480+00:00",
+    "source_revision": "b1feaf1994f036428d9564a3ad74dd7018ed4752",
+    "reason": "Remove bitmap/native-point equivalents from the browser-only viewport_css field; preserve original capture timestamps, source identity and image bytes."
+  }
+}
