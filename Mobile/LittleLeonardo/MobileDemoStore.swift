@@ -3,6 +3,7 @@ import LeonardoCore
 
 /// Personal practice is intentionally outside the authenticated corpus/cache.
 struct MobileDemoStore {
+    static let contentRevision = 1
     enum Language: String, CaseIterable, Identifiable {
         case es, en
         var id: String { rawValue }
@@ -14,7 +15,7 @@ struct MobileDemoStore {
 
     init(root: URL? = nil, resources: URL? = nil) {
         self.root = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("LittleLeonardo/Demo/v1", isDirectory: true)
+            .appendingPathComponent("LittleLeonardo/Demo/v\(Self.contentRevision)", isDirectory: true)
         self.resources = resources ?? Bundle.main.bundleURL.appendingPathComponent("Demo", isDirectory: true)
     }
 

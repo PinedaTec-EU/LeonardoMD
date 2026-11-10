@@ -62,7 +62,35 @@ final class MobileDemoUITests: XCTestCase {
         capture(app, "Spanish persisted practice after source")
     }
 
+    @MainActor func testDemoProjectDeletionRequiresSwipeAndTapAndCanBeRestored() {
+        let app = XCUIApplication()
+        app.launch()
+        let settings = app.buttons["open-sync-settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 15))
+        if !app.buttons["open-demo-project"].exists {
+            settings.tap()
+            app.buttons["restore-demo-project"].tap()
+            app.buttons["Cerrar"].tap()
+        }
+        let project = app.buttons["open-demo-project"]
+        XCTAssertTrue(project.exists)
+        project.swipeLeft()
+        XCTAssertTrue(project.exists, "Swiping alone must not delete")
+        app.buttons["delete-demo-project"].tap()
+        XCTAssertFalse(project.exists)
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["open-sync-settings"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["open-demo-project"].exists)
+        app.buttons["open-sync-settings"].tap()
+        app.buttons["restore-demo-project"].tap()
+        app.buttons["Cerrar"].tap()
+        XCTAssertTrue(app.buttons["open-demo-project"].exists)
+        openDemo("en", in: app)
+    }
+
     @MainActor private func openDemo(_ language: String, in app: XCUIApplication) {
+        if app.buttons["open-demo-project"].exists { app.buttons["open-demo-project"].tap() }
         let entry = app.buttons["open-demo-\(language)"]
         XCTAssertTrue(entry.waitForExistence(timeout: 15))
         entry.tap()

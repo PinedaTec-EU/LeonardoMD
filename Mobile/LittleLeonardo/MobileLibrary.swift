@@ -7,13 +7,14 @@ import LeonardoSyncTransport
 /// Read-only mobile application boundary. Desktop proposal/write APIs are not exposed.
 @MainActor @Observable
 final class MobileLibrary {
-    private(set) var projects: [OfflineProject] = []
+    var projects: [OfflineProject] = []
     private(set) var pendingRubricRequests: [RubricRequest] = []
     private(set) var recoverableRubricDrafts: [MobileRubricDraft] = []
     var error: String?
     private(set) var connecting = false
     private(set) var comparisonCode: String?
-    private let store: OfflineCorpusStore
+    let store: OfflineCorpusStore
+    let projectLifecycle: MobileProjectLifecycle
     private let connectionStore: MobileDirectConnectionStore
     private let credentials: any DeviceCredentialStore
     private let revocationClient: MobileRevocationClient
@@ -24,7 +25,7 @@ final class MobileLibrary {
     private var rubricPolling = false
     private var revocationsInProgress: Set<UUID> = []
     private let rubricDraftWrites = MobileSyncOperationQueue()
-    private let cacheMutations = MobileSyncOperationQueue()
+    let cacheMutations = MobileSyncOperationQueue()
     private let rubricSubmissionGate = MobileRubricSubmissionGate()
     private var pendingRubricDraftWrite: Task<Void, Error>?
     private var cacheEpoch: UInt64 = 0
@@ -45,6 +46,8 @@ final class MobileLibrary {
         let root = rootURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("LittleLeonardo/Corpus", isDirectory: true)
         store = OfflineCorpusStore(root: root)
+        projectLifecycle = MobileProjectLifecycle(url: root.deletingLastPathComponent()
+            .appendingPathComponent("project-removals.json"))
         connectionStore = MobileDirectConnectionStore(url: root.deletingLastPathComponent()
             .appendingPathComponent("connections.json"))
         self.credentials = credentials
@@ -179,6 +182,7 @@ final class MobileLibrary {
         let loadCacheEpoch = cacheEpoch
         let loadAuthorizationEpoch = authorizationEpoch
         do {
+            try projectLifecycle.reload()
             try await waitForPendingRubricDraftWrite()
             let storedConnections = try connectionStore.load()
             for connection in connections where connection.revoked {
@@ -217,7 +221,7 @@ final class MobileLibrary {
             connections = protectedConnections
             comparisonCode = loadedComparisonCode
             recoverableRubricDrafts = loadedDrafts
-            projects = loaded
+            projects = loaded.filter { !projectLifecycle.isDeleted($0.id) }
             let recoveredSnapshotChanged = storedConnections.count != protectedConnections.count
                 || zip(storedConnections, protectedConnections).contains { $0.0.hasChanges(from: $0.1) }
             if repairedMissingCredential || recoveredSnapshotChanged {
@@ -316,7 +320,7 @@ final class MobileLibrary {
                     guard isCurrentCacheOperation(context.token) else { return }
                     connection.projectIDs = granted
                     connection.comparisonCode = nil
-                    for descriptor in status.projects {
+                    for descriptor in status.projects where !projectLifecycle.isDeleted(descriptor.id) {
                         guard isCurrentCacheOperation(context.token) else { return }
                         let project = try await context.client.project(descriptor,
                             deviceID: connection.deviceID, credential: context.credential)
@@ -367,7 +371,8 @@ final class MobileLibrary {
     private func saveDirectProject(_ project: OfflineProject,
                                    expected token: ConnectionToken) async throws -> Bool {
         let mutation = cacheMutations.enqueue { [weak self] in
-            guard let self, self.isCurrentCacheOperation(token) else { return false }
+            guard let self, self.isCurrentCacheOperation(token),
+                  !self.projectLifecycle.isDeleted(project.id) else { return false }
             try await self.store.save(project)
             guard self.isCurrentCacheOperation(token) else {
                 if self.connections.first(where: { $0.connectionID == token.connectionID })?.projectIDs.contains(project.id) != true,

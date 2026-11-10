@@ -24,28 +24,27 @@ struct MobileLibraryView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Demo y práctica / Demo & practice") {
-                    ForEach(MobileDemoStore.Language.allCases) { language in
-                        NavigationLink(language.title) { MobileDemoView(language: language) }
-                            .foregroundStyle(MobileClassic.heading)
-                            .accessibilityIdentifier("open-demo-\(language.rawValue)")
-                    }
-                    Text("Sin Mac ni conexión · No Mac or network needed")
-                        .font(.caption).foregroundStyle(MobileClassic.secondary)
-                }.listRowBackground(MobileClassic.paper)
                 Section("Proyectos / Projects") {
-                    ForEach(library.projects, id: \.id) { project in
+                    ForEach(library.libraryProjects) { project in
                         NavigationLink {
-                            MobileProjectView(library: library, projectID: project.id)
-                        } label: {
-                            VStack(alignment: .leading) {
-                                Text(project.name).font(.headline).foregroundStyle(MobileClassic.heading)
-                                Text(project.isRecoveryArchive ? "Archivo de recuperación · Solo lectura" : "Consulta desde LeonardoMD · Solo lectura")
-                                    .font(.caption).foregroundStyle(MobileClassic.secondary)
+                            switch project {
+                            case .demo: MobileDemoProjectView()
+                            case .downloaded(let cached):
+                                MobileProjectView(library: library, projectID: cached.id)
                             }
+                        } label: {
+                            Text(project.name).font(.headline).foregroundStyle(MobileClassic.heading)
+                        }
+                        .accessibilityIdentifier(project.id == "bundled-demo" ? "open-demo-project" : "open-project-\(project.id)")
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button("Eliminar del dispositivo / Delete from device", role: .destructive) {
+                                Task { await library.deleteLibraryProject(project) }
+                            }
+                            .disabled(library.connecting)
+                            .accessibilityIdentifier(project.id == "bundled-demo" ? "delete-demo-project" : "delete-project-\(project.id)")
                         }
                     }
-                    if library.projects.isEmpty {
+                    if library.libraryProjects.isEmpty {
                         VStack(spacing: 16) {
                             MobileBrand(size: 64)
                             Text("Tus documentos, contigo").font(.title2.bold()).foregroundStyle(MobileClassic.heading)
@@ -217,6 +216,16 @@ struct MobileLibraryView: View {
         NavigationStack {
             Form {
                 Section("Frecuencia") { syncFrequency }.listRowBackground(MobileClassic.inset)
+                Section("Proyectos / Projects") {
+                    Button("Recuperar demo / Restore demo", systemImage: "arrow.counterclockwise") {
+                        do { try library.projectLifecycle.restoreDemo() }
+                        catch { library.error = error.localizedDescription }
+                    }
+                    .disabled(library.projectLifecycle.demoIsVisible)
+                    .accessibilityIdentifier("restore-demo-project")
+                    Text("Recupera el proyecto con tus respuestas de práctica guardadas en este dispositivo. / Restore the project with your practice answers saved on this device.")
+                        .font(.caption)
+                }.listRowBackground(MobileClassic.inset)
                 Section {
                     Button("Acerca de Little Leonardo", systemImage: "info.circle") { presentedSheet = .about }
                         .accessibilityIdentifier("open-about")

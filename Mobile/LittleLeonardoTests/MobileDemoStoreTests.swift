@@ -30,6 +30,59 @@ final class MobileDemoStoreTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: store.url(for: .en), encoding: .utf8), "retained personal bytes")
     }
 
+    @MainActor func testProjectDeletionSurvivesRestartAndOnlyNewDemoRevisionRestoresVisibility() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("removals.json")
+        let projectID = UUID()
+        let lifecycle = MobileProjectLifecycle(url: url, demoRevision: 1)
+        XCTAssertTrue(lifecycle.demoIsVisible)
+        try lifecycle.deleteDemo()
+        try lifecycle.deleteProject(projectID)
+        let reopened = MobileProjectLifecycle(url: url, demoRevision: 1)
+        try reopened.reload()
+        XCTAssertFalse(reopened.demoIsVisible)
+        XCTAssertTrue(reopened.isDeleted(projectID))
+        let updated = MobileProjectLifecycle(url: url, demoRevision: 2)
+        try updated.reload()
+        XCTAssertTrue(updated.demoIsVisible)
+        XCTAssertTrue(updated.isDeleted(projectID))
+        try updated.deleteDemo()
+        XCTAssertFalse(updated.demoIsVisible)
+        try updated.restoreDemo()
+        let restored = MobileProjectLifecycle(url: url, demoRevision: 2)
+        try restored.reload()
+        XCTAssertTrue(restored.demoIsVisible)
+        XCTAssertTrue(restored.isDeleted(projectID))
+    }
+
+    @MainActor func testDemoRecoveryPreservesSavedAnswers() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = MobileDemoStore(root: root.appendingPathComponent("Demo"))
+        let text = try store.load(.es)
+        let document = try LeonardoFormatParser.parse(text)
+        let filled = try XCTUnwrap(document.applyingFormValues(["name": .string("Retained answer")]))
+        let saved = try LeonardoFormatParser.serialize(filled)
+        try store.save(saved, language: .es)
+        let lifecycle = MobileProjectLifecycle(url: root.appendingPathComponent("removals.json"))
+        try lifecycle.deleteDemo()
+        try lifecycle.restoreDemo()
+        XCTAssertEqual(try store.load(.es), saved)
+    }
+
+    @MainActor func testFailedDeletionDoesNotChangeVisibility() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data().write(to: root)
+        let lifecycle = MobileProjectLifecycle(url: root.appendingPathComponent("removals.json"))
+        XCTAssertThrowsError(try lifecycle.deleteDemo())
+        XCTAssertTrue(lifecycle.demoIsVisible)
+        let id = UUID()
+        XCTAssertThrowsError(try lifecycle.deleteProject(id))
+        XCTAssertFalse(lifecycle.isDeleted(id))
+    }
+
     func testBothBundledTemplatesHaveRealFieldsAndOfflineExamples() throws {
         let store = MobileDemoStore()
         for language in MobileDemoStore.Language.allCases {
