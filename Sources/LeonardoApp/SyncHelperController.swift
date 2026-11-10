@@ -113,10 +113,11 @@ final class SyncHelperController {
                 error = nil
                 applyStatus(status)
             case .notFound, .notRegistered:
+                error = nil
                 if expectedBuildIdentity != nil {
                     await reconcileUpgrade(pending: settings.mobileSync.helperUpgradeToken, current: nil)
                 } else { state = .failed; sharing = nil; supportsRubricExchange = false }
-            @unknown default: state = .failed; sharing = nil; supportsRubricExchange = false
+            @unknown default: error = nil; state = .failed; sharing = nil; supportsRubricExchange = false
             }
         } catch {
             guard expected == revision else { return }

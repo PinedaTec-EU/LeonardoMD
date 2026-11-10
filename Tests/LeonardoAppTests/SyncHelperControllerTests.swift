@@ -18,6 +18,29 @@ final class SyncHelperControllerTests: XCTestCase {
             hasExecutable: { true }, verifyPackage: {})
     }
 
+    func testRefreshPreservesErrorWhileChecking() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        await control.pauseStatus()
+        let controller = upgrading(fixture, registration, control)
+        controller.error = "Previous error"
+        let refresh = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldStatus
+        XCTAssertTrue(held)
+        XCTAssertTrue(controller.checking)
+        XCTAssertEqual(controller.error, "Previous error")
+        await control.resumeStatus(); await refresh.value
+        XCTAssertFalse(controller.checking)
+        XCTAssertNil(controller.error)
+        XCTAssertTrue(controller.online)
+    }
+
     func testUpdatePreparationParksServiceUntilNextProcessOrCancellation() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)

@@ -128,7 +128,9 @@ final class SynchronizationPreferencesTests: XCTestCase {
                 $0.boundingBox.minY >= 0.03 && $0.boundingBox.maxY <= 0.96
             }.compactMap { $0.topCandidates(1).first?.string }
             recognized = rows.joined(separator: "\n")
-            if visibleText.allSatisfy({ rows.contains($0) }) { return }
+            if visibleText.allSatisfy({ expected in
+                rows.contains { $0 == expected || $0 == "• " + expected }
+            }) { return }
         }
         XCTFail("Native capture omitted required visible content: \(state); recognized: \(recognized)")
     }
