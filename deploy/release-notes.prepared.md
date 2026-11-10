@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1233
+
+- #407 Added: unify mobile projects and persistent deletion ([#408](https://github.com/PinedaTec-EU/LeonardoMD/pull/408))
+
+<p>Little Leonardo lists Demo alongside other projects, supports swipe-and-tap local project removal, and restores Demo from Settings while retaining practice answers.</p>
+
+Source: `050aed806bb3733918a64b839d7034b73f07b8d5`. Delta: `{"build": 18}`.
+
 ## 0.3.1215
 
 - #384 Added: on-demand synchronization and offline retention ([#385](https://github.com/PinedaTec-EU/LeonardoMD/pull/385))
