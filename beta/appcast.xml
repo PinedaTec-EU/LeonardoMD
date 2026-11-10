@@ -10,7 +10,9 @@
             <sparkle:shortVersionString>0.3.1270</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">LeonardoMD now renews an outdated sharing service automatically after an application update, keeping existing pairings, shared-project access and permissions. The service checks its installed identity and readiness before accepting work, and an explicit decision to disable sharing remains respected.
+            <description sparkle:format="markdown">Known issue found during signed-installation validation: after updating from 0.3.1215, the previous sharing service can remain running while the new editor reports it unavailable. Existing pairings, project permissions and TLS identity were preserved, but automatic service renewal did not pass. Avoid relying on this beta for uninterrupted sharing. Investigation and acceptance evidence: https://github.com/PinedaTec-EU/LeonardoMD/issues/412#issuecomment-6775868256
+
+This beta introduces automatic renewal safeguards for outdated sharing services, including identity and readiness checks and respect for an explicit decision to disable sharing. The installed renewal issue above remains unresolved.
 
 The project library now brings local and received projects together. Origin icons distinguish local projects, projects shared from this Mac and projects received from another device. Project removal and restoration remain available with their associated recovery controls.
 
