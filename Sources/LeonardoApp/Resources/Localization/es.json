@@ -1,4 +1,5 @@
 {
+  "Checking synchronization status": "Comprobando el estado de sincronización",
   "Leonardo Sync requires matching Developer ID signed app and helper components.": "Leonardo Sync requiere que la app y el servicio estén firmados con el mismo Developer ID.",
   "The sync component has an invalid code signature.": "El componente de sincronización no tiene una firma Developer ID válida.",
   "Cannot verify Developer ID signing.": "No se puede verificar la firma Developer ID.",

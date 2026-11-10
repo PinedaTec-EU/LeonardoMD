@@ -1,4 +1,5 @@
 {
+  "Checking synchronization status": "Checking synchronization status",
   "Leonardo Sync requires matching Developer ID signed app and helper components.": "Leonardo Sync requires matching Developer ID signed app and helper components.",
   "The sync component has an invalid code signature.": "The sync component has an invalid code signature.",
   "Cannot verify Developer ID signing.": "Cannot verify Developer ID signing.",
