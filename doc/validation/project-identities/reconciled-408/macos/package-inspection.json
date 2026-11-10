@@ -14,7 +14,7 @@
   "changes_bytes_identical": true,
   "change_count": 103,
   "summary_count": 61,
-  "fresh_process_launched": false,
+  "fresh_process_launched": true,
   "qa_bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-lj753d74/LeonardoMDQA.app",
   "qa_bundle_info": {
     "CFBundleDisplayName": "LeonardoMD QA",
@@ -127,8 +127,9 @@
     ]
   },
   "qa_fresh_pid": 86473,
-  "qa_help_acceptance": "pending host unlock",
-  "qa_first_window_observed": false,
+  "qa_help_acceptance": "passed; macos/native/acceptance.json",
+  "qa_first_window_observed": true,
   "qa_main_executable_sha256": "21ecf6e5713bcf3bfdc0ee68acac752fdd93c3c8980606cc86d22b31a160d877",
-  "qa_xctest_linked": false
+  "qa_xctest_linked": false,
+  "qa_normal_quit_observed": true
 }
