@@ -1,0 +1,86 @@
+{
+  "source": "25723d6587d902477edffbf2f3b66c94f5e6def3",
+  "pid": 65157,
+  "version": "0.3.1147",
+  "build": "1147",
+  "guide": 33,
+  "kind": "fresh packaged QA, ad-hoc; baseline numeric version, no beta publication",
+  "help": {
+    "en": {
+      "bundle_sha256": "7fddd19b7657bfa229083a145575dd8c0a77d6b53e68909023449a3bd95367a0",
+      "personal_sha256": "7fddd19b7657bfa229083a145575dd8c0a77d6b53e68909023449a3bd95367a0",
+      "real_help_workflow": true,
+      "mermaid": true,
+      "inline_math": true,
+      "one_line_display": true,
+      "multiline_display": true,
+      "underbraces": true,
+      "tagged_box_counting_equation": true,
+      "math_disabled_fallback": true,
+      "code_literal": true,
+      "local_images": true,
+      "tables": true,
+      "charts": true
+    },
+    "es": {
+      "bundle_sha256": "95364f9989395fa4e44d167e6d4867670cbf346d22b1462c3a2a58e06f4c0f31",
+      "personal_sha256": "95364f9989395fa4e44d167e6d4867670cbf346d22b1462c3a2a58e06f4c0f31",
+      "real_help_workflow": true,
+      "mermaid": true,
+      "inline_math": true,
+      "one_line_display": true,
+      "multiline_display": true,
+      "underbraces": true,
+      "tagged_box_counting_equation": true,
+      "math_disabled_fallback": true,
+      "code_literal": true,
+      "local_images": true,
+      "tables": true,
+      "charts": true
+    }
+  },
+  "practice": {
+    "en": {
+      "values": {
+        "practiceGoal": "Separate offline storage",
+        "practiceName": "Guide33 cache QA",
+        "practiceReady": true
+      },
+      "filled_saved_closed_reopened": true
+    },
+    "es": {
+      "values": {
+        "practiceGoal": "Separate offline storage",
+        "practiceName": "Guide33 cache QA",
+        "practiceReady": true
+      },
+      "filled_saved_closed_reopened": true
+    }
+  },
+  "restored": [
+    {
+      "file": "preferences.json",
+      "sha256": "7b8b9874e759c45bb341249a8243b35d103a3e63c08a614590a564141ee288d3",
+      "exact": true
+    },
+    {
+      "file": "Practice-v1-en.mdlr",
+      "sha256": "c7ff43836744cf6aae9abf8b71b8aa9eb2f524d6409c91a65f33f705705128d8",
+      "exact": true
+    },
+    {
+      "file": "Practice-v1-es.mdlr",
+      "sha256": "7494395825f50cd52f5b9ad4e19960f55d8e1f98163e3abc242e77835e5827fa",
+      "exact": true
+    }
+  ],
+  "helper_pid_preserved": 67032,
+  "cache_budget_actions": [
+    "Apply128MiB",
+    "Return256MiB",
+    "clear empty temporary QA cache"
+  ],
+  "final_locale": "English",
+  "final_math": "ON",
+  "normal_quit": true
+}

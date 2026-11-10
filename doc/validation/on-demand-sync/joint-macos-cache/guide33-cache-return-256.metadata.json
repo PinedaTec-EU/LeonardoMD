@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T10:57:10.647543+00:00",
+  "capture": {
+    "captured_at": "2026-11-10T10:51:01.576000+00:00",
+    "route": "/native/help33-cache/cache-return-256",
+    "screen": "Actual packaged LeonardoMD QA Help33 cache validation",
+    "browser_name": "Native macOS SwiftUI/WKWebView",
+    "browser_version": "WKWebView engine not exposed",
+    "state": "English; Return applies restored256MiB; offline storage excluded; fresh PID65157; baseline0.3.1147/build1147; Guide33; native bitmap-equivalent viewport CSS N/A",
+    "viewport_css": {
+      "width": 1160,
+      "height": 1240
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 1160,
+    "height_px": 1240,
+    "sha256": "9c2c120dc97fb329a678b359dc5618d0ec391cdf62439f585fcb86a6dccf9b1d"
+  },
+  "source": {
+    "revision_at_collection": "6691431dbd442452ede3c6939e7a1b42a61ac5f2",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}
