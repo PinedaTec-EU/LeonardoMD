@@ -24,6 +24,7 @@ final class SyncHelperController {
     private var revision = 0
     private let expectedBuildIdentity: SyncHelperBuildIdentity?
     private static let upgradeRetryInterval: TimeInterval = 30
+    private let startup: SyncHelperStartupPolicy
     private let now: @MainActor () -> Date
     private var nextUpgradeAttempt = Date.distantPast
     private let preferencesURL: URL
@@ -33,6 +34,7 @@ final class SyncHelperController {
          client: any SyncHelperControlAccess = SyncHelperClient(),
          expectedBuildIdentity: SyncHelperBuildIdentity? = SyncHelperBuildIdentity(bundleURL: Bundle.main.bundleURL),
          now: @escaping @MainActor () -> Date = Date.init,
+         startup: SyncHelperStartupPolicy = .init(),
          hasExecutable: @escaping @Sendable () -> Bool = {
              FileManager.default.isExecutableFile(atPath: Bundle.main.bundleURL
                  .appendingPathComponent("Contents/MacOS/" + SyncHelperContract.executableName).path)
@@ -41,6 +43,7 @@ final class SyncHelperController {
              _ = try SyncHelperSigning.requirement(for: bundle.appendingPathComponent("Contents/MacOS/" + SyncHelperContract.executableName),
                  identifier: SyncHelperContract.serviceName, matching: bundle)
          }) {
+        self.startup = startup
         self.now = now
         self.expectedBuildIdentity = expectedBuildIdentity
         self.preferencesURL = preferencesURL; self.configurations = configurations

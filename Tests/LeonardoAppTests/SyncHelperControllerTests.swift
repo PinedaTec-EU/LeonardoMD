@@ -14,8 +14,82 @@ final class SyncHelperControllerTests: XCTestCase {
     private func upgrading(_ fixture: ControllerFixture, _ registration: HelperRegistrationFake,
                            _ control: HelperControlFake) -> SyncHelperController {
         SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
-            service: registration, client: control, expectedBuildIdentity: replacement,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
             hasExecutable: { true }, verifyPackage: {})
+    }
+
+    func testOneStartupRefreshReachesOnlineWithoutPreferencesPolling() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        await control.setBuildIdentities([nil, nil, replacement])
+        let controller = SyncHelperController(preferencesURL: fixture.preferences,
+            configurations: fixture.configurations, service: registration, client: control,
+            expectedBuildIdentity: replacement, startup: .init(attempts: 3, pause: {}),
+            hasExecutable: { true }, verifyPackage: {})
+        // This is the single lifecycle call made by normal app initialization.
+        // No Preferences view or second manual refresh is created.
+        await controller.refresh()
+        XCTAssertTrue(controller.online)
+        XCTAssertEqual(registration.unregistrations, 1)
+        XCTAssertEqual(registration.registrations, 1)
+        let state = GateProbeState(online: true)
+        let remote = HelperGatedPeerRemote(remote: GateProbeRemote(state: state),
+            requireOnline: { try await controller.requireReadyHelper() })
+        do { _ = try await remote.probe(endpoint: URL(string: "https://127.0.0.1")!) }
+        catch { XCTFail("Startup must become ready without opening Preferences: \(error)") }
+        let calls = await state.calls
+        XCTAssertEqual(calls, 1)
+    }
+
+    func testStartupReadinessBudgetDoesNotReregisterAnUnconfirmedHelper() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let controller = SyncHelperController(preferencesURL: fixture.preferences,
+            configurations: fixture.configurations, service: registration, client: control,
+            expectedBuildIdentity: replacement, startup: .init(attempts: 3, pause: {}),
+            hasExecutable: { true }, verifyPackage: {})
+        await controller.refresh()
+        XCTAssertFalse(controller.online)
+        XCTAssertEqual(controller.state, .failed)
+        XCTAssertEqual(registration.registrations, 1)
+        XCTAssertEqual(registration.unregistrations, 1)
+        let calls = await control.statusCalls
+        XCTAssertEqual(calls, 4)
+    }
+
+    func testDisableDuringAutomaticStartupProbeCannotBeOverridden() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        await control.setBuildIdentities([nil, replacement])
+        await control.pauseStatus(at: 2)
+        let controller = SyncHelperController(preferencesURL: fixture.preferences,
+            configurations: fixture.configurations, service: registration, client: control,
+            expectedBuildIdentity: replacement, startup: .init(attempts: 3, pause: {}),
+            hasExecutable: { true }, verifyPackage: {})
+        let startup = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            await Task.yield()
+        }
+        let held = await control.hasHeldStatus
+        guard held else {
+            await control.resumeStatus(); await startup.value
+            XCTFail("Automatic post-registration health probe never ran"); return
+        }
+        await controller.setEnabled(false)
+        await control.resumeStatus(); await startup.value
+        XCTAssertFalse(controller.online || controller.enabled)
+        XCTAssertEqual(controller.state, .disabled)
+        XCTAssertEqual(registration.registrations, 1)
+        let settings = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertFalse(settings.mobileSync.helperEnabled)
+        XCTAssertNil(settings.mobileSync.helperUpgradeToken)
     }
 
     func testActivationReplacesAnAlreadyRegisteredLegacyHelper() async throws {
@@ -130,7 +204,7 @@ final class SyncHelperControllerTests: XCTestCase {
         var time = Date(timeIntervalSince1970: 100)
         let controller = SyncHelperController(preferencesURL: fixture.preferences,
             configurations: fixture.configurations, service: registration, client: control,
-            expectedBuildIdentity: replacement, now: { time },
+            expectedBuildIdentity: replacement, now: { time }, startup: .init(attempts: 0),
             hasExecutable: { true }, verifyPackage: {})
         await controller.setEnabled(true)
         registration.failUnregister = true
@@ -548,7 +622,7 @@ final class SyncHelperControllerTests: XCTestCase {
     }
     func controller(_ registration: HelperRegistrationFake, _ control: HelperControlFake) -> SyncHelperController {
         SyncHelperController(preferencesURL: preferences, configurations: configurations,
-            service: registration, client: control, expectedBuildIdentity: nil, hasExecutable: { true }, verifyPackage: {})
+            service: registration, client: control, expectedBuildIdentity: nil, startup: .init(attempts: 0), hasExecutable: { true }, verifyPackage: {})
     }
     func remove() { try? FileManager.default.removeItem(at: root) }
 }
@@ -569,9 +643,14 @@ private enum HelperControlError: Error { case unavailable }
 private actor HelperControlFake: SyncHelperControlAccess {
     private var unavailable = false
     private var buildIdentity: SyncHelperBuildIdentity?
+    private var buildIdentities: [SyncHelperBuildIdentity?] = []
+    private var pausedStatusCall: Int?
+    private(set) var statusCalls = 0
     private var reloadPaused = false
     private var heldReload: CheckedContinuation<Void, Never>?
     var hasHeldReload: Bool { heldReload != nil }
+    func setBuildIdentities(_ values: [SyncHelperBuildIdentity?]) { buildIdentities = values }
+    func pauseStatus(at call: Int) { pausedStatusCall = call }
     func setBuildIdentity(_ value: SyncHelperBuildIdentity) { buildIdentity = value }
     func pauseReload() { reloadPaused = true }
     func resumeReload() { reloadPaused = false; heldReload?.resume(); heldReload = nil }
@@ -583,8 +662,10 @@ private actor HelperControlFake: SyncHelperControlAccess {
     func pauseStatus() { paused = true }
     func resumeStatus() { paused = false; heldStatus?.resume(); heldStatus = nil }
     func status() async throws -> SyncHelperStatus {
-        if paused { await withCheckedContinuation { heldStatus = $0 } }
+        statusCalls += 1
+        if paused || pausedStatusCall == statusCalls { await withCheckedContinuation { heldStatus = $0 } }
         if unavailable { throw HelperControlError.unavailable }
+        if !buildIdentities.isEmpty { buildIdentity = buildIdentities.removeFirst() }
         return SyncHelperStatus(enabled: true, sharing: nil, buildIdentity: buildIdentity)
     }
     func reload() async throws -> SyncHelperStatus {
