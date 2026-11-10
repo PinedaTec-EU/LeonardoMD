@@ -35,6 +35,25 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(controller.online)
     }
 
+    func testActivationAndGatedOperationAcceptCurrentOrNewerHealthyHelper() async throws {
+        for identity in [replacement, SyncHelperBuildIdentity(build: 201, bundlePath: "/newer/LeonardoMD.app")] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            let control = HelperControlFake(); await control.setBuildIdentity(identity)
+            let controller = upgrading(fixture, registration, control)
+            await controller.setEnabled(true)
+            XCTAssertTrue(controller.online)
+            XCTAssertEqual(registration.registrations, 0)
+            XCTAssertEqual(registration.unregistrations, 0)
+            let state = GateProbeState(online: true)
+            let remote = HelperGatedPeerRemote(remote: GateProbeRemote(state: state),
+                requireOnline: { try await controller.requireReadyHelper() })
+            _ = try await remote.probe(endpoint: URL(string: "https://127.0.0.1")!)
+            let calls = await state.calls
+            XCTAssertEqual(calls, 1)
+        }
+    }
+
     func testLegacyIdentityCannotStartAGatedPeerOperation() async throws {
         let identities: [SyncHelperBuildIdentity?] = [nil,
             .init(build: 199, bundlePath: replacement.bundlePath),

@@ -114,9 +114,9 @@ final class SyncHelperController {
         }
         revision += 1 // Invalidate health replies issued before this consent change.
         nextUpgradeAttempt = .distantPast
+        let reconcileExisting = enabled && service.status == .enabled && expectedBuildIdentity != nil
         busy = true; error = nil
         logger.info("sync_helper_enable_requested enabled=\(enabled, privacy: .public)")
-        defer { busy = false }
         do {
             if enabled {
                 guard hasExecutable() else { throw SyncHelperFailure(L10n.text("Sync helper is not installed")) }
@@ -136,6 +136,10 @@ final class SyncHelperController {
         } catch {
             state = .failed; self.error = L10n.text(error.localizedDescription)
             logger.error("sync_helper_lifecycle_failed")
+        }
+        busy = false
+        if reconcileExisting, self.enabled, state == .starting {
+            await refresh()
         }
     }
 
@@ -219,13 +223,24 @@ final class SyncHelperController {
 
     func requireReadyHelper() async throws {
         let settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
-        guard settings.helperEnabled, service.status == .enabled,
-              try await client.status().enabled else {
-            throw SyncHelperFailure(L10n.text("Offline · enable Leonardo Sync in Preferences before synchronizing."))
+        guard permitsPeerOperations(settings) else { throw offlineFailure() }
+        let status = try await client.status()
+        // Consent can change while authenticated health is in flight. Re-read
+        // before the adapter is allowed to send even its first peer request.
+        let current = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
+        guard permitsPeerOperations(current), status.enabled,
+              let expectedBuildIdentity, let identity = status.buildIdentity,
+              !identity.needsReplacement(by: expectedBuildIdentity) else {
+            throw offlineFailure()
         }
     }
 
-    static func requireOnline() async throws {
-        try await SyncHelperController().requireReadyHelper()
+    private func permitsPeerOperations(_ settings: MobileSyncPreferences) -> Bool {
+        !busy && !upgrading && state != .starting && settings.helperEnabled &&
+            settings.helperUpgradeToken == nil && service.status == .enabled
+    }
+
+    private func offlineFailure() -> SyncHelperFailure {
+        SyncHelperFailure(L10n.text("Offline · enable Leonardo Sync in Preferences before synchronizing."))
     }
 }
