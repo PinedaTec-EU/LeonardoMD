@@ -1,6 +1,7 @@
 import SwiftUI
 import LeonardoSync
 import LeonardoRender
+import LeonardoSyncUI
 
 private enum MobileLibrarySheet: String, Identifiable {
     case direct, settings, about
@@ -16,7 +17,7 @@ struct MobileLibraryView: View {
     @State private var host = ""
     @State private var port = "40882"
     @State private var presentedRubricRequest: RubricRequest?
-    @AppStorage("directSyncIntervalMinutes") private var syncInterval = 0
+    @AppStorage("directSyncIntervalMinutes") private var syncInterval = 1
     @Environment(\.scenePhase) private var scenePhase
     private var activeRubricDraft: MobileRubricDraft? {
         library.recoverableRubricDrafts.first { $0.state != .submitted }
@@ -131,7 +132,9 @@ struct MobileLibraryView: View {
             }
         }
         .task(id: "\(syncInterval)-\(scenePhase)") {
-            guard scenePhase == .active, [1, 5, 15, 30, 60].contains(syncInterval) else { return }
+            guard scenePhase == .active else { return }
+            await library.synchronize()
+            guard [1, 5, 15, 30, 60].contains(syncInterval) else { return }
             while !Task.isCancelled {
                 do { try await Task.sleep(for: .seconds(syncInterval * 60)) }
                 catch { return }
@@ -217,6 +220,7 @@ struct MobileLibraryView: View {
         NavigationStack {
             Form {
                 Section("Frecuencia") { syncFrequency }.listRowBackground(MobileClassic.inset)
+                SyncCacheSettingsView(library: library.downloads, spanish: true).listRowBackground(MobileClassic.inset)
                 Section {
                     Button("Acerca de Little Leonardo", systemImage: "info.circle") { presentedSheet = .about }
                         .accessibilityIdentifier("open-about")
@@ -233,12 +237,17 @@ struct MobileProjectView: View {
     let library: MobileLibrary
     let projectID: UUID
     @State private var exporting = false
+    @State private var selectedEntry: RemoteFileEntry?
     private var project: OfflineProject? { library.projects.first { $0.id == projectID } }
     var body: some View {
-        List {
+        Group {
+            if let project, !project.isRecoveryArchive {
+                SyncCatalogueView(library: library.downloads, projectID: project.id, spanish: true, rowBackground: MobileClassic.paper) { entry in selectedEntry = entry }
+            } else {
+            List {
             if let project {
                 Section {
-                    Text("Disponible offline · Solo lectura").font(.caption).foregroundStyle(MobileClassic.secondary)
+                    Text("Archivo de recuperación · Solo lectura").font(.caption).foregroundStyle(MobileClassic.secondary)
                     Text("Carpeta: \(project.scope.folder.isEmpty ? "/" : project.scope.folder)").font(.caption)
                     if project.isRecoveryArchive {
                         Text("Esta copia antigua conserva tus cambios locales y enviados. Expórtala para recuperarlos en un ordenador. No se editará ni se enviará automáticamente.")
@@ -253,7 +262,12 @@ struct MobileProjectView: View {
                     }.listRowBackground(MobileClassic.paper)
                 }
             }
+            }
+            }
         }.classicSurface().navigationTitle(project?.name ?? "Proyecto")
+        .navigationDestination(item: $selectedEntry) { entry in
+            RemoteDocumentPreview(library: library.downloads, projectID: projectID, entry: entry, spanish: true, appearance: .leonardoClassic, compactFirstHeading: true).classicSurface()
+        }
         .fileExporter(isPresented: $exporting, document: project.map(MobileRecoveryDocument.init),
                       contentType: .json, defaultFilename: "LittleLeonardo-\(projectID.uuidString)-recovery") { result in
             if case .failure(let error) = result { library.error = error.localizedDescription }

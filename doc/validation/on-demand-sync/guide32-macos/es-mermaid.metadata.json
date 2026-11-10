@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T08:29:53.241010+00:00",
+  "capture": {
+    "captured_at": "2026-11-10T08:26:54.970000+00:00",
+    "route": "/native/help32/es-mermaid",
+    "screen": "Actual packaged LeonardoMD QA Help32",
+    "browser_name": "Native macOS SwiftUI/WKWebView",
+    "browser_version": "WKWebView engine not exposed",
+    "state": "Espa\u00f1ol; Mermaid ON; live diagram and bundled local image; fresh PID52183; version0.3.1136/build1136 baseline; Guide32; native bitmap-equivalent viewport, CSS not applicable",
+    "viewport_css": {
+      "width": 2520,
+      "height": 1700
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "98902575cb4a6b66eb6e2fa3d9476f54e2cc864c2afb5eb0814404f1a327f991"
+  },
+  "source": {
+    "revision_at_collection": "4a73f6192e802de682926df9249c754c01d5982e",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

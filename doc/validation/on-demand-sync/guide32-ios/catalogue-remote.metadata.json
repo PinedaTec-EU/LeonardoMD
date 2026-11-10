@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T08:31:24.416638+00:00",
+  "capture": {
+    "captured_at": "2026-11-10T08:21:30+00:00",
+    "route": "/native/ios/on-demand/catalogue-remote",
+    "screen": "catalogue-remote",
+    "browser_name": "Little Leonardo native SwiftUI/WKWebView \u00b7 iPhone18Pro Simulator \u00b7 iOS 27.0",
+    "browser_version": "WKWebView engine version not exposed by XCTest",
+    "state": "Authenticated catalogue; no file body requested; native-point viewport equivalent; Spanish; Classic appearance",
+    "viewport_css": {
+      "width": 402,
+      "height": 874
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "a5549f4d728ff32676c8779ae68274f5784ccbeaec4a116b42bc778f30bc500a"
+  },
+  "source": {
+    "revision_at_collection": "72a9e2e4bf2dc7af1c6536fc6a5f7510083b83e1",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

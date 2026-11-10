@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T10:08:48.376632+00:00",
+  "capture": {
+    "captured_at": "2026-11-10T10:01:25+00:00",
+    "route": "/native/synchronization/preview/retained-copy-en",
+    "screen": "Production RemoteDocumentPreview",
+    "browser_name": "Native AppKit NSHostingView",
+    "browser_version": "N/A native component",
+    "state": "retained-copy-en; real DownloadLibrary and OnDemandCache; synthetic failed update; native-point viewport; XCTest component, not packaged-process acceptance",
+    "viewport_css": {
+      "width": 900,
+      "height": 600
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1800,
+    "height_px": 1200,
+    "sha256": "2f5282920b8d962ceaa6234b663a30dd72f5cc14b49ede0f8e034980a084ee66"
+  },
+  "source": {
+    "revision_at_collection": "ff20ce0a4bbf4041f45a99e8412ed8e5613e3341",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

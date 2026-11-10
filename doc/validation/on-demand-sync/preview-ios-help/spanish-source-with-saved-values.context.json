@@ -1,0 +1,15 @@
+{
+  "captured_at": "2026-11-07T21:37:01.716000+00:00",
+  "route": "/native/ios/help/spanish-source-with-saved-values",
+  "screen": "Spanish source with saved values",
+  "browser_name": "Little Leonardo native SwiftUI/WKWebView \u00b7 iPhone18Pro Simulator \u00b7 iOS27.0",
+  "browser_version": "Native; WKWebView engine not exposed by XCTest",
+  "viewport_css": {
+    "width": 1206,
+    "height": 2622
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "source_sha": "861f579d2e3707008475e2e7dd5c95e1d791b597",
+  "state": "Version0.3.1113/build1113; original XCTest screenshot-pixel equivalent viewport; capture time from xcresult manifest"
+}

@@ -1,0 +1,15 @@
+{
+  "captured_at": "2026-11-07T20:54:27.891000+00:00",
+  "route": "/native/ios/help/classic-offline-help",
+  "screen": "Classic offline help",
+  "browser_name": "Little Leonardo native SwiftUI/WKWebView \u00b7 iPhone18Pro Simulator \u00b7 iOS27.0",
+  "browser_version": "Native; WKWebView engine not exposed by XCTest",
+  "viewport_css": {
+    "width": 1206,
+    "height": 2622
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "source_sha": "5284cab69df3e59453a52d800e8066486939b722",
+  "state": "Version0.3.1113/build1113; legacy XCTest original pixel dimensions, image-pixel equivalent viewport; actual capture timestamp from xcresult manifest"
+}

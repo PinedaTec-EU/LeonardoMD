@@ -1,0 +1,11 @@
+{
+  "source": "66c9e644a3203e1725f466973e1940acff61e61f",
+  "qa_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-gnh9x2ul/LeonardoMDQA.app",
+  "bundle_id": "eu.pinedatec.LeonardoMD.qa.f709a6dd85f942459ec17e3d086d6fb5",
+  "executable": "LeonardoMD",
+  "version": "0.3.1113",
+  "build": "1113",
+  "pid": 35533,
+  "sha256": "8074cb117696ad9a1f4108dc279816c775368bdff65803a4f5fb176fbac892d0",
+  "no_xctest_linkage": true
+}
