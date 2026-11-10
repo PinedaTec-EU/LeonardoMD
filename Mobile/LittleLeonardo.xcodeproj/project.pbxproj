@@ -40,6 +40,7 @@
 		D38110000000000000000002 /* Demo in Resources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000002 /* Demo */; };
 		D38110000000000000000003 /* MobileDemoStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000003 /* MobileDemoStoreTests.swift */; };
 		D38110000000000000000004 /* MobileDemoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000004 /* MobileDemoUITests.swift */; };
+		D39710000000000000000001 /* MobileReaderSpacingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39700000000000000000001 /* MobileReaderSpacingTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -91,6 +92,7 @@
 		D38100000000000000000002 /* Demo */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Demo; sourceTree = "<group>"; };
 		D38100000000000000000003 /* MobileDemoStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDemoStoreTests.swift; sourceTree = "<group>"; };
 		D38100000000000000000004 /* MobileDemoUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDemoUITests.swift; sourceTree = "<group>"; };
+		D39700000000000000000001 /* MobileReaderSpacingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileReaderSpacingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -157,6 +159,7 @@
 			children = (
 				C4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift */,
 				D38100000000000000000003 /* MobileDemoStoreTests.swift */,
+				D39700000000000000000001 /* MobileReaderSpacingTests.swift */,
 			);
 			name = LittleLeonardoTests;
 			path = LittleLeonardoTests;
@@ -377,6 +380,7 @@
 			files = (
 				B4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift in Sources */,
 				D38110000000000000000003 /* MobileDemoStoreTests.swift in Sources */,
+				D39710000000000000000001 /* MobileReaderSpacingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
