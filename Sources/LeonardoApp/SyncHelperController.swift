@@ -50,7 +50,8 @@ final class SyncHelperController {
         self.preferencesURL = preferencesURL; self.configurations = configurations
         self.service = service; self.client = client; self.hasExecutable = hasExecutable; self.verifyPackage = verifyPackage
         installation = SyncHelperInstallation(preferencesURL: preferencesURL, configurations: configurations,
-            service: service, client: client, verifyPackage: verifyPackage)
+            service: service, client: client, expectedBuildIdentity: expectedBuildIdentity,
+            verifyPackage: verifyPackage)
     }
 
     var online: Bool { state == .running && !installation.blocksOperations }

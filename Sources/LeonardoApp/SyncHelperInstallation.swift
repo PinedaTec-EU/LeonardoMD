@@ -17,13 +17,16 @@ final class SyncHelperInstallation {
     private let configurations: ConfigurationStore
     private let service: any SyncHelperRegistration
     private let client: any SyncHelperControlAccess
+    private let expectedBuildIdentity: SyncHelperBuildIdentity?
     private let verifyPackage: @Sendable () throws -> Void
 
     init(preferencesURL: URL, configurations: ConfigurationStore,
          service: any SyncHelperRegistration, client: any SyncHelperControlAccess,
+         expectedBuildIdentity: SyncHelperBuildIdentity?,
          verifyPackage: @escaping @Sendable () throws -> Void) {
         self.preferencesURL = preferencesURL; self.configurations = configurations
         self.service = service; self.client = client; self.verifyPackage = verifyPackage
+        self.expectedBuildIdentity = expectedBuildIdentity
     }
 
     func prepare() async throws {
@@ -34,6 +37,19 @@ final class SyncHelperInstallation {
         phase = .preparing
         do {
             try verifyPackage()
+            // An older app may borrow a newer helper from another installed
+            // bundle. Updating this app must not unregister/downgrade that helper.
+            let status = service.status == .enabled ? try await client.status() : nil
+            if let expectedBuildIdentity, let current = status?.buildIdentity,
+               current.build > expectedBuildIdentity.build {
+                guard !cancellationRequested, !Task.isCancelled else { throw CancellationError() }
+                // Do not replace the very bundle backing a newer service either.
+                guard current.bundlePath != expectedBuildIdentity.bundlePath else {
+                    throw DesktopRuntimeError.busy
+                }
+                phase = .prepared
+                return
+            }
             _ = try await configurations.beginSyncHelperUpgrade(UUID(), at: preferencesURL)
             try await SyncHelperStopBarrier.stopAndUnregister(service: service, client: client,
                 preferencesURL: preferencesURL)

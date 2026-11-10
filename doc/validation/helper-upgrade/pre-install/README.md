@@ -32,8 +32,14 @@ installed PASS or used to close the issue.
 
 ## Automated result
 
-Final local checks: 790 XCTest checks (41 opt-in skips), 72 Swift Testing checks,
+Final local checks: 793 XCTest checks (41 opt-in skips), 72 Swift Testing checks,
 118 Python checks (7 platform/opt-in skips) and 3 deterministic guide packaging
 checks pass. `automated.json` binds the reviewed production source contents to
-those results. Four successful compiler-bearing author invocations are recorded
+those results. Six successful compiler-bearing author invocations are recorded
 in source PR420; publisher/CI runs do not mutate that allocation.
+
+The pre-install identity query must succeed for an enabled registration before
+consent changes. A newer authenticated helper from a different bundle is left
+running, preserving its preferences. A newer helper backed by the bundle being
+replaced vetoes installation, rather than being downgraded. Three direct
+regressions cover those cases and initial-query failure.

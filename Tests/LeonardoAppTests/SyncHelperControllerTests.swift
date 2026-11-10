@@ -113,6 +113,53 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertNotNil(state.helperUpgradeToken)
     }
 
+    func testUpdatingOlderAppLeavesNewerRegisteredHelperAndConsentUntouched() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let before = try Data(contentsOf: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        await control.setBuildIdentity(.init(build: 300, bundlePath: "/Applications/Newer/LeonardoMD.app"))
+        let controller = upgrading(fixture, registration, control)
+        let prepared = await controller.prepareForApplicationUpdate()
+        XCTAssertTrue(prepared)
+        XCTAssertEqual(registration.unregistrations, 0)
+        XCTAssertEqual(registration.registrations, 0)
+        XCTAssertEqual(try Data(contentsOf: fixture.preferences), before)
+        await controller.cancelApplicationUpdate()
+        XCTAssertTrue(controller.online)
+        XCTAssertEqual(registration.unregistrations, 0)
+        XCTAssertEqual(try Data(contentsOf: fixture.preferences), before)
+    }
+
+    func testUnknownInitialIdentityVetoesInstallBeforeChangingConsent() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let before = try Data(contentsOf: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.failStatus(at: 1)
+        await control.setBuildIdentity(.init(build: 300, bundlePath: "/Applications/Newer/LeonardoMD.app"))
+        let controller = upgrading(fixture, registration, control)
+        let prepared = await controller.prepareForApplicationUpdate()
+        XCTAssertFalse(prepared)
+        XCTAssertEqual(registration.unregistrations, 0)
+        XCTAssertEqual(try Data(contentsOf: fixture.preferences), before)
+    }
+
+    func testOlderAppCannotReplaceBundleBackingNewerHelper() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let before = try Data(contentsOf: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        await control.setBuildIdentity(.init(build: 300, bundlePath: replacement.bundlePath))
+        let controller = upgrading(fixture, registration, control)
+        let prepared = await controller.prepareForApplicationUpdate()
+        XCTAssertFalse(prepared)
+        XCTAssertEqual(registration.unregistrations, 0)
+        XCTAssertEqual(try Data(contentsOf: fixture.preferences), before)
+    }
+
     func testFirstStatusFailureDoesNotDowngradeANewerHelper() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)

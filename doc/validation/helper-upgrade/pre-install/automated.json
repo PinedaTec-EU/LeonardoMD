@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-10T19:10:47.625827+00:00",
+  "checkedAt": "2026-11-10T19:38:37.470026+00:00",
   "swiftCommand": "python3 scripts/compile-and-record.py --pr-number 420 -- swift test",
   "result": "PASS",
   "allTestsSummaries": [
@@ -34,7 +34,7 @@
       "failures": 0
     },
     {
-      "tests": 415,
+      "tests": 418,
       "skipped": 35,
       "failures": 0
     }
@@ -51,11 +51,11 @@
   "pythonTests": 118,
   "pythonSkipped": 7,
   "guidePackagingTests": 3,
-  "successfulCompilationInvocations": 4,
+  "successfulCompilationInvocations": 6,
   "productionSourceSHA256": {
-    "Sources/LeonardoApp/SyncHelperController.swift": "7e533107aac3698fc0ddec7f84b19345c6e57316b448b4aa1a3e577bd391e811",
+    "Sources/LeonardoApp/SyncHelperController.swift": "fbf9b9e5eae0321d8dda5eeb69fab6685f45120121c034002ebd4878f0a2a881",
     "Sources/LeonardoApp/UpdateInstanceTermination.swift": "2782f4c9a59da9c7d9c7a808d867900e36f610c3be2a4415f8788467984d19e3",
-    "Sources/LeonardoApp/SyncHelperInstallation.swift": "71c5923738d8eb4ce913a37417e42a650031c60caca299c48ebcb17aeac08b28",
+    "Sources/LeonardoApp/SyncHelperInstallation.swift": "0a1e6ce18fcb92e98cee2be2c75b53597d6c33102875a19659f11573f94efbb2",
     "Sources/LeonardoApp/SyncHelperStopBarrier.swift": "7a57327e407928dc8fd3ede81dc7e3e051e99c1bbc5e7cc69ccda97fdf18b171",
     "Sources/LeonardoApp/LeonardoMD.swift": "124c4833fab6c401a80a5be29658b6bde110e5facb5f3f9d9af309defb557b72",
     "Sources/LeonardoApp/CoordinatedUpdateUserDriver.swift": "fb576e922f5a9982e91b83f76ba78d7b0e86368f05de516a8e99ce766b2bef2b",
@@ -64,7 +64,7 @@
   "signedInstallation": "PENDING: owner declined logout/recovery",
   "freshPackagedHelp51": "PENDING",
   "iPhone": "PENDING",
-  "xctestTotal": 790,
+  "xctestTotal": 793,
   "xctestSkipped": 41,
   "swiftTestingTotal": 72
 }

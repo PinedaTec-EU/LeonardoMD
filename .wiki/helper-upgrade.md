@@ -85,3 +85,8 @@ Owner declined logout/recovery of the existing unreachable1215 on 2026-11-10.
 Keep that installed process and stores intact. Signed two-candidate A→B testing,
 fresh packaged Help51 and iPhone access acceptance remain pending; do not close
 412 on automated tests alone.
+
+Pre-install preparation also preserves a newer helper registered from another
+bundle without touching consent. A newer helper backed by the bundle being
+replaced blocks installation. Initial authenticated identity failure blocks
+preparation before preference changes; it never assumes that helper is older.
