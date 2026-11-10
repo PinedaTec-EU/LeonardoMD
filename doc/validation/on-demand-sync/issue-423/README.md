@@ -23,7 +23,18 @@ packaging inspection: executable `LeonardoMD`, version `0.3.1276`, no
 `XCTest.framework` dependency, signed helper and Sparkle framework present.
 The inspection record is [package-inspection.json](package-inspection.json).
 
-The fresh packaged-process first-window and bundled Help smoke test remain
-pending because the installed LeonardoMD instance already owns the product-wide
-single-instance process. Launching the disposable QA copy forwarded/exited
-without a new first-window process; the owner instance was not terminated.
+The live disposable QA process and the bundled Help smoke are recorded in
+[help-smoke.md](help-smoke.md). The process opened both Spanish and English
+guides through the real Help menu, exercised the extension fallback and
+restored Mathematics afterwards. The English and Spanish practice forms were
+also saved, closed and reopened successfully.
+
+The automated package report still records `fresh_process_launched: false` for
+its output-bundle probe; that limitation is kept explicit in the Help record.
+The live QA PID evidence is separate and does not claim that the probe field
+passed. The installed LeonardoMD process was not terminated.
+
+The completed iOS UI result is the exact xcresult at
+`/tmp/leonardo-423-evidence.h9ZIHc/ios-ondemand-1794353309.xcresult`:
+`OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()` passed
+1/1 on iPhone 18 Pro / iOS Simulator 27.0, with the fixture at phase `finish`.
