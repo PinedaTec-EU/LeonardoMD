@@ -4,6 +4,8 @@
 
 Tracking: [#407](https://github.com/PinedaTec-EU/LeonardoMD/issues/407), [PR #408](https://github.com/PinedaTec-EU/LeonardoMD/pull/408).
 
+Current acceptance is the on-demand reconciliation and Guide v36 run below. The v34/v35 sections and root/current-ios captures are historical checkpoints; their old whole-application input lists are not asserted to match the current candidate. Current production objects and capture producers are recorded in [on-demand-reconciliation/source-inputs.json](on-demand-reconciliation/source-inputs.json).
+
 ## Behavior
 
 One name-sorted project list includes the explicitly local Demo project. Its language files open within the project. Every row uses a trailing swipe action with full-swipe deletion disabled. Device-local removal intent is written atomically before corpus removal; reload and synchronization exclude removed IDs. Mac originals are unaffected. Settings restores Demo without resetting current-revision answers. Only a strictly newer `MobileDemoStore.contentRevision` restores it automatically; that same revision selects the personal-copy directory.
@@ -39,11 +41,11 @@ The first Help opening found an unrelated personal v31 copy (existing #378 signa
 
 The task-owned worktree `.worktrees/407-mobile-projects` and its internal `.build/407-derived`/Swift caches are retained for the current regression checks and review. No shared/other-thread caches were removed. The owned simulator is retained for reproducing the gesture test. It is not a user device.
 
-## Final synchronization with main
+## Historical synchronization with main through 38208529
 
-Integrated `origin/main` through `38208529`, preserving #405's compact reader and its bilingual help. Current packages are Guide v35, combining that text and #407 without overwriting tested v34 personal copies. Guide v35 has now completed its own packaged visual acceptance below; v34 evidence above remains historical component/workflow evidence only. The post-integration mobile run passed 19 tests with no failures; `ios-merged-summary.json` records the device and exact counts.
+Integrated `origin/main` through `38208529`, preserving #405's compact reader and its bilingual help. At that checkpoint the packages were Guide v35, combining that text and #407 without overwriting tested v34 personal copies. Guide v35 has now completed its own packaged visual acceptance below; v34 evidence above remains historical component/workflow evidence only. The post-integration mobile run passed 19 tests with no failures; `ios-merged-summary.json` records the device and exact counts.
 
-Post-integration full `swift test` passed with no failures. Deterministic Guide v35 packaging passed all three tests. This checkpoint recorded nine successful compilation invocations. The current entry records thirteen after the fresh v35 packaged build, focused correction regression, full Swift suite and final iOS run. Failed commands were not counted. The two earlier disposable QA bundles were removed after their owned processes quit; the v35 bundle and worktree-local caches are retained for the current review.
+Post-integration full `swift test` passed with no failures. Deterministic Guide v35 packaging passed all three tests. This checkpoint recorded nine successful compilation invocations. That checkpoint entry recorded thirteen after the fresh v35 packaged build, focused correction regression, full Swift suite and final iOS run. Failed commands were not counted. The two earlier disposable QA bundles were removed after their owned processes quit; the v35 bundle and worktree-local caches are retained for the current review.
 
 ## Fresh packaged v35 visual acceptance
 
@@ -53,7 +55,7 @@ Both v35 locales opened through the actual Help menu. Their source, packaged and
 
 The early capture attempts still encountered ScreenCaptureKit/window-position errors and Stage Manager thumbnails. Raising/zooming the owned QA window and using the document-outline controls produced full native captures without changing host settings or controlling another application. Each original has capture context and a canonical image hash/dimension sidecar. CUA does not expose CSS/native-point viewport geometry or its WKWebView engine version; those fields are explicitly unavailable. The shared helper's image/source collectors are used, with this native-schema limitation recorded rather than fabricated browser geometry.
 
-## Final cache-correction and iOS validation
+## Historical cache-correction validation before on-demand integration
 
 Review found [LMB-410](https://github.com/PinedaTec-EU/LeonardoMD/issues/410): a malformed cache recreated after deletion could be decoded before the removal filter and abort the library reload. The correction excludes removed UUIDs before cache decoding and direct synchronization cleanup, preserving authorization and unrelated recovery archives. Regression tests cover malformed late bytes, missing credentials, unrelated recovery and independent personal Demo copies across content revisions.
 
@@ -63,13 +65,13 @@ Review found [LMB-410](https://github.com/PinedaTec-EU/LeonardoMD/issues/410): a
 - Full `swift test`: **694 XCTest**, 35 expected skips, zero failures; **72 Swift Testing** cases, zero failures.
 - [Final result summary](current-ios/validation-summary.json), [source mapping](current-ios/production-inputs.json), [final debug app hashes](current-ios/final-ios-bundle.json) and four original passed-test captures are retained in [current-ios](current-ios/). Producer: `8bc2122cf52c05c316b762bbb565c322dd5b6e67`. The document capture records navigation before content finishes rendering; the separate offline-demo UI test proves render readiness and saved-answer persistence, rather than that early image.
 
-The Mac production inputs recorded for producer `78215436` and iOS production inputs for `8bc2122c` must equal the final reviewed head. Later changes contain validation evidence, wiki synthesis and the recorded compilation count only. Native logical viewport/engine geometry is unavailable and explicitly null. The simulator was shut down before the read-only installed-container comparison, so the signed build-product hashes do not claim a post-run installed digest match. No physical-device, TestFlight or distribution acceptance is claimed.
+For historical head `d4a22ceb`, Mac production inputs matched `78215436` and iOS inputs matched `8bc2122c`. The later on-demand integration changes production inputs; use its new source groups and Guide v36 acceptance below. Native logical viewport/engine geometry is unavailable and explicitly null. The simulator was shut down before the read-only installed-container comparison, so the signed build-product hashes do not claim a post-run installed digest match. No physical-device, TestFlight or distribution acceptance is claimed.
 
 Current-head CI and the complete strict independent report are recorded on PR #408 after publication. The general release-cleanup inventory encounters an unrelated stale `/private/tmp/leonardo-129-final-judge` worktree registration; that script is not reported as passed. The selected main/408 checkouts were audited separately, preserving the unrelated user cache and other tasks' worktrees.
 
 ## On-demand merge reconciliation
 
-The owner authorized resolving the in-progress main merge at `945d05aa` (on-demand sync #384/#385). The resolution retains one project list, restores Demo from Settings, keeps cache settings and the new on-demand reader, and moves removal guards into the sole downloads synchronization path. Local deletion now denies active download access and purges downloaded/offline files as well as the corpus record. A regression populates and reads the real on-demand cache before deletion, then verifies both storage boundaries and blocked reads. Both locale sources include the main on-demand chapter and project lifecycle chapter; new Guide v36 packages avoid overwriting earlier personal copies. Prior v35 screenshots are historical until current-candidate acceptance is recorded.
+The owner authorized resolving the in-progress main merge at `945d05aa` (on-demand sync #384/#385). The resolution retains one project list, restores Demo from Settings, keeps cache settings and the new on-demand reader, and moves removal guards into the sole downloads synchronization path. Local deletion now denies active download access and purges downloaded/offline files as well as the corpus record. A regression populates and reads the real on-demand cache before deletion, then verifies both storage boundaries and blocked reads. Both locale sources include the main on-demand chapter and project lifecycle chapter; new Guide v36 packages avoid overwriting earlier personal copies. Prior v35 screenshots remain historical; Guide v36 is the accepted current candidate below.
 
 ## Received-project deletion after integration
 
@@ -91,3 +93,9 @@ After explicit owner approval, the official additional-instance workflow opened 
 Eleven original full-size native captures in [native-v36](native-v36/) cover Mermaid, inline and display math (one-line, multiline, Markdown-sensitive TeX and tagged equation), charts, local images, tables, literal examples, disabled-Math fallback and the updated project workflow. Both separate practice forms were filled with fictional names, saved, closed and reopened; original bytes were restored after closing QA. English and enabled Math were restored. QA quit normally, Allow multiple instances returned to false, and the installed application's original Synchronization preferences remained open. Initial Stage Manager thumbnails are isolated under diagnostics and are not acceptance evidence. Native geometry limitations are explicit in each metadata file.
 
 The final current-source mobile unit rerun passed **21 tests**, no skips or failures, without another compilation. Compilation delta remains 18. Another owner-authorized thread owns the final independent judgment and merge; this implementation thread does not duplicate those actions.
+
+## Final review evidence consolidation
+
+The branch also incorporates accepted release notes from main `2a2bac8f`; only `deploy/release-notes.md` changes in that refresh. No compiled application, guide resource or recorded production object changed. Current source groups explicitly include root/Xcode lockfiles, the complete Xcode project and the Mac packaged release-changes export. The previous pending-launch annotation is replaced by the accepted v36 instance record.
+
+A current-binary Demo deletion/restoration UI repetition uses `test-without-building`, retaining compilation delta **18**. Its original captures and final signed app/installed-product hashes are retained under [current-demo](on-demand-reconciliation/current-demo/). No new compiler invocation, app preference change or principal-instance interaction is involved in this evidence consolidation.
