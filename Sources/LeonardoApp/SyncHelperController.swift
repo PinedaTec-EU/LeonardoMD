@@ -23,6 +23,8 @@ final class SyncHelperController {
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "sync-helper-control")
     private var revision = 0
     private let expectedBuildIdentity: SyncHelperBuildIdentity?
+    private static let upgradeRetryInterval: TimeInterval = 30
+    private let now: @MainActor () -> Date
     private var nextUpgradeAttempt = Date.distantPast
     private let preferencesURL: URL
     init(preferencesURL: URL = AppSession.preferencesURL,
@@ -30,6 +32,7 @@ final class SyncHelperController {
          service: any SyncHelperRegistration = SystemSyncHelperRegistration(),
          client: any SyncHelperControlAccess = SyncHelperClient(),
          expectedBuildIdentity: SyncHelperBuildIdentity? = SyncHelperBuildIdentity(bundleURL: Bundle.main.bundleURL),
+         now: @escaping @MainActor () -> Date = Date.init,
          hasExecutable: @escaping @Sendable () -> Bool = {
              FileManager.default.isExecutableFile(atPath: Bundle.main.bundleURL
                  .appendingPathComponent("Contents/MacOS/" + SyncHelperContract.executableName).path)
@@ -38,6 +41,7 @@ final class SyncHelperController {
              _ = try SyncHelperSigning.requirement(for: bundle.appendingPathComponent("Contents/MacOS/" + SyncHelperContract.executableName),
                  identifier: SyncHelperContract.serviceName, matching: bundle)
          }) {
+        self.now = now
         self.expectedBuildIdentity = expectedBuildIdentity
         self.preferencesURL = preferencesURL; self.configurations = configurations
         self.service = service; self.client = client; self.hasExecutable = hasExecutable; self.verifyPackage = verifyPackage
@@ -138,8 +142,9 @@ final class SyncHelperController {
     private func reconcileUpgrade(pending: UUID?, current: SyncHelperBuildIdentity?) async {
         guard let expectedBuildIdentity, !busy, !InstanceRuntime.isAdditional else { return }
         state = .starting; sharing = nil; supportsRubricExchange = false
-        guard Date() >= nextUpgradeAttempt else { return }
-        nextUpgradeAttempt = Date().addingTimeInterval(30)
+        let currentTime = now()
+        guard currentTime >= nextUpgradeAttempt else { return }
+        nextUpgradeAttempt = currentTime.addingTimeInterval(Self.upgradeRetryInterval)
         revision += 1
         let expected = revision
         busy = true; upgrading = true

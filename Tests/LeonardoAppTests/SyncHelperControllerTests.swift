@@ -18,6 +18,38 @@ final class SyncHelperControllerTests: XCTestCase {
             hasExecutable: { true }, verifyPackage: {})
     }
 
+    func testFailedRenewalRetriesOnlyAfterItsControlledDeadline() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); let control = HelperControlFake()
+        var time = Date(timeIntervalSince1970: 100)
+        let controller = SyncHelperController(preferencesURL: fixture.preferences,
+            configurations: fixture.configurations, service: registration, client: control,
+            expectedBuildIdentity: replacement, now: { time },
+            hasExecutable: { true }, verifyPackage: {})
+        await controller.setEnabled(true)
+        registration.failUnregister = true
+        await controller.refresh()
+        let firstReloads = await control.reloads
+        XCTAssertEqual(firstReloads, 1)
+        XCTAssertFalse(controller.online)
+        registration.failUnregister = false
+        time = time.addingTimeInterval(29)
+        await controller.refresh()
+        let earlyReloads = await control.reloads
+        XCTAssertEqual(earlyReloads, firstReloads)
+        time = time.addingTimeInterval(1)
+        await controller.refresh()
+        let dueReloads = await control.reloads
+        XCTAssertEqual(dueReloads, firstReloads + 1)
+        XCTAssertEqual(registration.unregistrations, 1)
+        let settings = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertTrue(settings.mobileSync.helperEnabled)
+        XCTAssertNil(settings.mobileSync.helperUpgradeToken)
+        await control.setBuildIdentity(replacement)
+        await controller.refresh()
+        XCTAssertTrue(controller.online)
+    }
+
     func testLegacyRunningHelperIsSafelyReplacedBeforeReportingOnline() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         let registration = HelperRegistrationFake(); let control = HelperControlFake()
