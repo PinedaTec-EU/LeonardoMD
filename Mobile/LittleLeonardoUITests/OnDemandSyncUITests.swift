@@ -78,7 +78,7 @@ final class OnDemandSyncUITests: XCTestCase {
         try capture(app, "project-before-delete", state: "Received project remains an ordinary row in the same list as the local Demo project")
         received.swipeLeft()
         XCTAssertTrue(received.exists, "A swipe alone must not delete the received project")
-        let delete = app.buttons["delete-project-" + projectID]
+        let delete = app.buttons["delete-project-" + receivedProjectID]
         XCTAssertTrue(delete.waitForExistence(timeout: 5))
         try capture(app, "project-swipe-delete", state: "Swipe reveals Delete; explicit button tap is still required")
         delete.tap()
