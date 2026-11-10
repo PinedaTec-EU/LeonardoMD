@@ -278,6 +278,7 @@ final class SyncHelperController {
     func openApprovalSettings() { service.openApprovalSettings() }
 
     func requireReadyHelper() async throws {
+        let expected = revision
         let settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
         guard permitsPeerOperations(settings) else { throw offlineFailure() }
         let status = try await client.status()
@@ -288,6 +289,12 @@ final class SyncHelperController {
               let expectedBuildIdentity, let identity = status.buildIdentity,
               !identity.needsReplacement(by: expectedBuildIdentity) else {
             throw offlineFailure()
+        }
+        guard expected == revision else {
+            // A newer healthy refresh owns the displayed endpoint/capabilities.
+            // Keep it, while still allowing operations confirmed by that state.
+            guard online, enabled else { throw offlineFailure() }
+            return
         }
         enabled = true
         applyStatus(status)
