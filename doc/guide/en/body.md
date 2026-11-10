@@ -95,7 +95,7 @@ $$
 
 </details>
 
-**You choose when to enable.** Leonardo groups detected disabled built-in extensions into one dialog. **Not now** avoids repeating that recommendation during the current opening. Select **Do not ask again for this extension** to remember your choice on this Mac. **Preferences → Extensions → Reset extension warnings** allows recommendations again without changing enabled extensions. The dialog states whether activation affects the project or your global preferences.
+**You choose when to enable.** Leonardo groups detected disabled built-in extensions into one dialog. **Not now** avoids repeating that recommendation during the current opening. Turn on **Do not ask again for this extension** to remember your choice on this Mac. **Preferences → Extensions → Reset extension warnings** allows recommendations again without changing enabled extensions. The dialog states whether activation affects the project or your global preferences.
 
 ## 1. Open, read and edit
 

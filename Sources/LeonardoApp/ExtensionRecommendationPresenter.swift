@@ -69,7 +69,8 @@ struct ExtensionRecommendationDialog: View {
                     Toggle(L10n.text("Do not ask again for this extension"), isOn: Binding(
                         get: { suppressed.contains(item) },
                         set: { if $0 { suppressed.insert(item) } else { suppressed.remove(item) } }
-                    )).accessibilityIdentifier("suppress-" + item.rawValue)
+                    )).toggleStyle(PremiumSwitchStyle())
+                        .accessibilityIdentifier("suppress-" + item.rawValue)
                 }
             }
             HStack {

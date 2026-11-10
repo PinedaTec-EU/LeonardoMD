@@ -95,7 +95,7 @@ $$
 
 </details>
 
-**Tú decides cuándo activar.** Leonardo reúne en un diálogo las extensiones integradas que detecta deshabilitadas. **Ahora no** evita repetir esa recomendación durante la apertura actual. Marca **No volver a preguntar por esta extensión** para guardar tu elección en este Mac. **Preferencias → Extensiones → Restablecer avisos de extensiones** permite volver a preguntar, sin cambiar las extensiones activadas. El diálogo indica si la activación afecta al proyecto o a tus preferencias globales.
+**Tú decides cuándo activar.** Leonardo reúne en un diálogo las extensiones integradas que detecta deshabilitadas. **Ahora no** evita repetir esa recomendación durante la apertura actual. Activa el interruptor **No volver a preguntar por esta extensión** para guardar tu elección en este Mac. **Preferencias → Extensiones → Restablecer avisos de extensiones** permite volver a preguntar, sin cambiar las extensiones activadas. El diálogo indica si la activación afecta al proyecto o a tus preferencias globales.
 
 ## 1. Abrir, leer y editar
 
