@@ -18,6 +18,47 @@ final class SyncHelperControllerTests: XCTestCase {
             hasExecutable: { true }, verifyPackage: {})
     }
 
+    func testStatusIndicatorStatesDuringHealthCheck() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        await control.pauseStatus()
+        let controller = upgrading(fixture, registration, control)
+        let refresh = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldStatus
+        guard held else {
+            await control.resumeStatus(); await refresh.value
+            XCTFail("Status check did not reach the controlled barrier"); return
+        }
+        XCTAssertTrue(controller.checking)
+        try await captureStatusIndicator(controller, state: "checking")
+        await control.resumeStatus(); await refresh.value
+        XCTAssertFalse(controller.checking)
+        XCTAssertTrue(controller.online)
+        try await captureStatusIndicator(controller, state: "online")
+    }
+
+    private func captureStatusIndicator(_ controller: SyncHelperController, state: String) async throws {
+        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
+        let destination = URL(fileURLWithPath: output)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        LanguageSettings.shared.language = .english
+        let host = NSHostingView(rootView: SyncHelperPreferencesSection(controller: controller)
+            .toggleStyle(PremiumSwitchStyle()).padding(16).frame(width: 532, height: 150, alignment: .topLeading)
+            .background(Color(nsColor: .windowBackgroundColor)))
+        try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 150),
+            to: destination.appendingPathComponent("status-\(state).png"), language: "en",
+            state: "Synthetic helper status: \(state)", route: "/native/preferences/synchronization",
+            screen: "Synchronization helper status")
+    }
+
     func testRefreshPreservesErrorWhileChecking() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
