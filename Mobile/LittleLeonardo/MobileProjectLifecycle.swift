@@ -12,7 +12,9 @@ final class MobileProjectLifecycle {
     }
     private let url: URL
     private var state = State()
-    var demoIsVisible: Bool { state.deletedDemoRevision != demoRevision }
+    var demoIsVisible: Bool {
+        state.deletedDemoRevision.map { demoRevision > $0 } ?? true
+    }
 
     init(url: URL, demoRevision: Int = MobileDemoStore.contentRevision) {
         self.url = url

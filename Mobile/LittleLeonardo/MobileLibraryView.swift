@@ -37,7 +37,7 @@ struct MobileLibraryView: View {
                         }
                         .accessibilityIdentifier(project.id == "bundled-demo" ? "open-demo-project" : "open-project-\(project.id)")
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button("Eliminar del dispositivo / Delete from device", role: .destructive) {
+                            Button("Eliminar / Delete", role: .destructive) {
                                 Task { await library.deleteLibraryProject(project) }
                             }
                             .disabled(library.connecting)
