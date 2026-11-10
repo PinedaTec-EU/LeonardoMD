@@ -66,6 +66,25 @@ import LeonardoSyncUI
         try await Task.sleep(for: .milliseconds(300))
         let image = root.appendingPathComponent("preview.png")
         try NativeViewCaptureSupport.writeBitmap(host, size: size, to: image, pixelScale: 2)
+        if let destination = ProcessInfo.processInfo.environment["LEONARDO_PREVIEW_EVIDENCE"] {
+            let output = URL(fileURLWithPath: destination, isDirectory: true)
+            try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+            let name = (entry.path.hasSuffix(".txt") ? "retained-copy" : "image-error") + (spanish ? "-es" : "-en")
+            try Data(contentsOf: image).write(to: output.appendingPathComponent(name + ".png"))
+            let context: [String: Any] = [
+                "captured_at": ISO8601DateFormatter().string(from: Date()),
+                "route": "/native/synchronization/preview/" + name,
+                "screen": "Production RemoteDocumentPreview",
+                "browser_name": "Native AppKit NSHostingView",
+                "browser_version": "N/A native component",
+                "viewport_css": ["width": 900, "height": 600],
+                "capture_mode": "element", "data_provenance": "synthetic",
+                "source_sha": ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "local",
+                "state": name + "; real DownloadLibrary and OnDemandCache; synthetic failed update; native-point viewport; XCTest component, not packaged-process acceptance"
+            ]
+            try JSONSerialization.data(withJSONObject: context, options: [.prettyPrinted, .sortedKeys])
+                .write(to: output.appendingPathComponent(name + ".context.json"))
+        }
         let recognition = VNRecognizeTextRequest()
         recognition.recognitionLevel = .accurate
         recognition.usesLanguageCorrection = false
