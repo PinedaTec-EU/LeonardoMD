@@ -2,7 +2,70 @@
 
 Tracking: [#384](https://github.com/PinedaTec-EU/LeonardoMD/issues/384), [PR #385](https://github.com/PinedaTec-EU/LeonardoMD/pull/385).
 
-## Current preview-revision acceptance (primary evidence)
+## Current retained-preview correction and Guide32 acceptance
+
+Product source `4da0d9aba33c7a95256b96311c04c66fb63efdb9` incorporates accepted
+main0.3.1136. The failed-update result explicitly carries a retained copy and
+its original failure. The production preview displays a previous-copy warning,
+error and Retry above readable content, including failed referenced images.
+Two native integration checks exercise the actual preview task, download library
+and disk cache; both EN/ES old-copy states and the readable-image-error state
+pass. `retained-preview-components/` contains inspected originals. Test-only
+`72a9e2e4bf2dc7af1c6536fc6a5f7510083b83e1` waits for WKWebView content before
+accepting the image-error capture; an earlier blank/loading capture was rejected
+and is not review evidence.
+
+Full validation on unchanged product inputs passes744 XCTest checks (38 skips,
+zero failures) plus71 Swift Testing checks. The strengthened integration checks
+pass2/2 afterward. Bilingual deterministic guide packaging passes3/3. The PR385
+compilation ledger records successful invocations through delta61.
+
+`guide32-macos/` records a fresh real packaged QA process52183, baseline numeric
+version0.3.1136/build1136, ad-hoc QA identity. Both Guide32 locales opened through
+the actual Help menu. Mermaid, inline/one-line/multiline Math, underscores and
+underbraces, radicals/arrows/cancellation, box-counting equation tag(1), chart,
+local images, table, Math OFF fallback and literal code passed. Both separate
+practice forms were filled with fictional values, checkboxON, saved, closed
+and reopened. Real Preferences Apply128MiB and Return256MiB passed; final disk
+readback is268435456bytes. Both personal guide hashes equal the bundled guides.
+`validation.json` records those identities and exact restoration of the three
+latest original preferences/practice files after normal quit. Physical helper
+67032 stayed unchanged. The ad-hoc QA helper is intentionally unavailable;
+these checks do not claim a new physical-device connection test.
+
+Signed iOS native acceptance on dedicated simulator926C886F passes4/4
+(on-demand1/1, bilingual demo/practice and About/help3/3). The independent pinned
+HTTPS source fixture passes1/1. `guide32-ios/` contains8 original native flow
+captures, source audits and disk readback: zero bulk snapshots, only requested
+or retained bodies, automatic retry and future descendants, three retained
+files166bytes outside the134217728-byte temporary budget. `guide32-ios-help/`
+contains6 original demo/practice/About/help captures. Earlier preview-* and
+corrected-* directories below are historical for changed product inputs.
+
+`guide32-build-inputs.json` lists complete Git objects and digests for the Mac
+app/build inputs, iOS app/test driver and production preview/test driver. Compare
+each group's `git ls-tree -r HEAD -- <input_scopes>` with its recorded revision
+and digest. This is the shared evidence-only mapping contract: originals retain
+their real source and timestamps. No application/build input changed after its
+respective captured revision. The full-suite checkpoint and subsequent stronger
+test-only check are distinguished explicitly.
+
+To reproduce the warning component, run the recorder with source PR385 and
+`swift test --filter RemoteDocumentPreviewIntegrationTests`; set
+`LEONARDO_PREVIEW_EVIDENCE` to an owned output directory and `EVIDENCE_SHA` to
+the checked-out source revision to retain original captures. Native Mac acceptance
+uses `LEONARDO_SOURCE_PR=385 ./launch.sh --qa`, with normal saved-instance
+handoff and the repository's real bilingual Help smoke workflow. The iOS flow
+uses `OnDemandMobileAcceptanceFixtureTests` with its explicitly owned fixture
+marker, then `OnDemandSyncUITests` against simulator926C886F/port46987; the fixture
+and tests enforce the metadata-only/single-file/retry/cleanup audits. Do not
+reuse the diagnostic helper or real user documents as fixtures.
+
+Current-head CI, strict fresh judge, integration and beta publication remain
+separate delivery gates; no385 beta or new physical iPhone acceptance is claimed
+by these pre-merge checks.
+
+## Earlier preview-revision acceptance (historical)
 
 [#402](https://github.com/PinedaTec-EU/LeonardoMD/issues/402) fixes a separate presentation boundary: remote text/images/errors are keyed by project, path, catalogue and per-load generation. Four deterministic tests cover immediate revision invalidation, failed replacement, obsolete same-catalogue completions and cross-document/project isolation. The complete suite passes729 XCTest checks (37 skips,zero failures) plus28 Swift Testing checks. Current signed iOS native acceptance passes4/4 (bilingual demos, on-demand and populated-cache About/Help) with independent source fixture1/1. Original screenshots/contexts/metadata, source audits and cache readback are in `preview-ios/` and `preview-ios-help/`; `preview-components/` contains fresh production-component renders1/1. `preview-build-inputs.json` records scoped Git object/digest mapping for application and test-driver inputs. The source harness initially refused an unmarked temporary root; the explicit owned fixture marker was initialized before enrollment, and the final source audit passes. Actual macOS native acceptance completed8 November in fresh process53146 (real QA source861f579,version0.3.1113/build1113). Both Guide27 locales opened through Help; live Mermaid, inline and one-line/multiline Math, Markdown-sensitive TeX/underbraces, radicals/arrows/cancellation and tagged equation(1), chart, local image and table passed. Math OFF fallback and literal code passed in both locales. Both separate practices were filled with fictional values and checkboxON, saved, closed and reopened. Actual Mac budget Apply128/Return256 passed. New inspectable original screenshots are in `preview-macos/`; each is visually inspected with its original dimensions rather than accepting thumbnail/clipped capture output. The real editor quit normally, both personal/bundle guide hashes match and all three latest original preferences/practice files were restored exactly. Physical helper26651 remains unchanged; the earlier corrected-* images are historical for these changed application inputs. The English Math-disabled corrected-macos image was clipped and is not accepted visual proof.
 
