@@ -9,6 +9,7 @@ final class UpdateInstanceTermination {
     static let shared = UpdateInstanceTermination()
     static var gateURL: URL { ProcessFileLock.coordinationDirectory.appendingPathComponent("update-installation.lock") }
     var installationPending = false
+    var requiresHelperPreparationOnQuit = false
     private var gate: ProcessFileLock?
     private(set) var installerBoundToPrimary = false
     private var preparingInstaller = false
@@ -62,7 +63,13 @@ final class UpdateInstanceTermination {
         if !installerBoundToPrimary { gate = nil }
     }
 
+    func prepareHelperForQuit(_ prepare: @MainActor () async -> Bool) async -> Bool {
+        guard requiresHelperPreparationOnQuit else { return true }
+        return await prepare()
+    }
+
     func resolveInstallation() {
+        requiresHelperPreparationOnQuit = false
         installationPending = false
         installerBoundToPrimary = false
         cancelTermination()

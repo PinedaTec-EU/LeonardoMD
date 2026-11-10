@@ -264,6 +264,12 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
                     reportInstallationCancellation(on: reportingSession)
                 }
             }
+            if canTerminate, role == .primary {
+                canTerminate = await UpdateInstanceTermination.shared.prepareHelperForQuit {
+                    await DesktopSyncController.shared.helper.prepareForApplicationUpdate()
+                }
+                if !canTerminate { reportHelperUpdateCancellation(on: reportingSession) }
+            }
             if canTerminate {
                 if role == .primary { await DesktopSyncController.shared.stop() }
                 for window in windows { await window.documents.finishPreparedClose() }
@@ -272,6 +278,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
                 windows.forEach { $0.documents.cancelPreparedClose() }
                 updateQuitEndpoint.cancelled()
                 UpdateInstanceTermination.shared.cancelTermination()
+                if role == .primary { await DesktopSyncController.shared.helper.cancelApplicationUpdate() }
             }
             terminationPending = canTerminate
             if !canTerminate, role == .primary { processPendingLaunches() }
@@ -282,6 +289,10 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
 
     func reportInstallationCancellation(on session: AppSession? = nil) {
         (session ?? activeSession)?.errorMessage = L10n.text("Installation cancelled because another LeonardoMD instance did not close. Finish or cancel its pending work, then retry the update.")
+    }
+
+    func reportHelperUpdateCancellation(on session: AppSession? = nil) {
+        (session ?? activeSession)?.errorMessage = L10n.text("Installation postponed because Leonardo Sync could not stop safely. Check Preferences > Synchronization and retry when the service is available.")
     }
 
     /// Dismiss only Preferences; unsaved-document and Git sheets own their decisions.

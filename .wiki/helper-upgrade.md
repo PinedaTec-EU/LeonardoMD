@@ -62,3 +62,31 @@ sections. Fresh process PID16185 passed bilingual real Help and practice checks,
 with originals/preferences restored and helper48295 untouched. Full integrated
 779 XCTest checks (41 skipped), 72 Swift Testing checks, generic iOS build and
 three deterministic guide checks passed. Current evidence: `doc/validation/helper-upgrade/candidate-help45/`.
+
+## Signed 1270 recurrence and pre-install correction
+
+The installed 1215→1270 update failed automatic renewal: old helper PID48295
+remained registered and macOS rejected authenticated XPC with -67065. Three
+device grants, project selections and TLS bytes were preserved. Evidence is
+canonical in issue412 comment6775868256. Do not relabel that run as PASS.
+
+The follow-up parks the helper through authenticated reload/drain and unregister
+BEFORE Sparkle receives an actual Install reply. Download approval alone does
+not pause sharing. A durable token preserves existing consent for the next
+process; the old process cannot poll/re-register while installation is prepared.
+Cancelled quit/installer abort restores through the normal lifecycle. Explicit
+disable still cancels consent. Unknown live helpers retain the lifetime-lock
+barrier and veto installation rather than being forcibly stopped. First-health
+failures receive bounded health-only retries, without assuming an unknown helper
+is older or safe to unregister. This applies to updates initiated by a source
+version containing the preparation; external bundle replacement is not covered.
+
+Owner declined logout/recovery of the existing unreachable1215 on 2026-11-10.
+Keep that installed process and stores intact. Signed two-candidate A→B testing,
+fresh packaged Help51 and iPhone access acceptance remain pending; do not close
+412 on automated tests alone.
+
+Pre-install preparation also preserves a newer helper registered from another
+bundle without touching consent. A newer helper backed by the bundle being
+replaced blocks installation. Initial authenticated identity failure blocks
+preparation before preference changes; it never assumes that helper is older.

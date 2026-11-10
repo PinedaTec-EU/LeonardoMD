@@ -15,6 +15,7 @@ final class SyncHelperController {
     private(set) var sharing: RunningDirectService?
     private(set) var supportsRubricExchange = false
     var error: String?
+    let installation: SyncHelperInstallation
     private let service: any SyncHelperRegistration
     private let client: any SyncHelperControlAccess
     private let configurations: ConfigurationStore
@@ -48,9 +49,12 @@ final class SyncHelperController {
         self.expectedBuildIdentity = expectedBuildIdentity
         self.preferencesURL = preferencesURL; self.configurations = configurations
         self.service = service; self.client = client; self.hasExecutable = hasExecutable; self.verifyPackage = verifyPackage
+        installation = SyncHelperInstallation(preferencesURL: preferencesURL, configurations: configurations,
+            service: service, client: client, expectedBuildIdentity: expectedBuildIdentity,
+            verifyPackage: verifyPackage)
     }
 
-    var online: Bool { state == .running }
+    var online: Bool { state == .running && !installation.blocksOperations }
     var statusText: String {
         switch state {
         case .notInstalled: L10n.text("Sync helper is not installed")
@@ -64,11 +68,18 @@ final class SyncHelperController {
 
     func refresh() async {
         await refreshOnce()
+        // An update may briefly invalidate the first authenticated connection.
+        // Retry health without treating an unknown live process as disposable.
+        for _ in 0..<startup.attempts where state == .failed {
+            do { try await startup.pause() } catch { return }
+            guard !Task.isCancelled, !busy, !installation.blocksOperations else { return }
+            await refreshOnce()
+        }
         await confirmStartupReadiness()
     }
 
     private func refreshOnce() async {
-        guard !busy else { return }
+        guard !busy, !installation.blocksOperations else { return }
         revision += 1
         let expected = revision
         do {
@@ -106,7 +117,7 @@ final class SyncHelperController {
     }
 
     func setEnabled(_ enabled: Bool) async {
-        guard !InstanceRuntime.isAdditional else { return }
+        guard !InstanceRuntime.isAdditional, !enabled || !installation.blocksOperations else { return }
         if busy {
             // An explicit denial cancels the durable upgrade token even while
             // graceful shutdown is suspended. It must never be restored later.
@@ -257,22 +268,36 @@ final class SyncHelperController {
     }
 
     private func unregisterAfterStop() async throws {
-        var stoppedHelper: ProcessFileLock?
-        defer { withExtendedLifetime(stoppedHelper) {} }
-        if service.status == .enabled {
-            do {
-                let status = try await client.reload()
-                guard !status.enabled else { throw DesktopRuntimeError.busy }
-            } catch {
-                // A dead/crashing helper cannot acknowledge XPC. Its process-wide
-                // startup lock proves no helper write is active and prevents a new
-                // helper from starting until unregistration has completed.
-                stoppedHelper = try ProcessFileLock(at: preferencesURL.deletingLastPathComponent()
-                    .appendingPathComponent("MobileSync/helper.lock"))
+        try await SyncHelperStopBarrier.stopAndUnregister(service: service, client: client,
+            preferencesURL: preferencesURL)
+    }
+
+    func prepareForApplicationUpdate() async -> Bool {
+        guard !busy, !InstanceRuntime.isAdditional else { return false }
+        revision += 1 // Discard pre-install health replies before parking the helper.
+        busy = true
+        do {
+            try await installation.prepare()
+            busy = false
+            sharing = nil; supportsRubricExchange = false; state = .starting
+            logger.info("sync_helper_parked_for_update")
+            return true
+        } catch {
+            busy = false
+            if error is CancellationError {
+                await refresh() // Join completed before restoring existing consent.
+            } else {
+                state = .failed; self.error = L10n.text(error.localizedDescription)
+                logger.error("sync_helper_update_preparation_failed")
             }
+            return false
         }
-        guard service.status != .notRegistered, service.status != .notFound else { return }
-        try await service.unregister()
+    }
+
+    func cancelApplicationUpdate(expectedPreparation: Int? = nil) async {
+        guard installation.blocksOperations,
+              installation.release(expected: expectedPreparation ?? installation.revision) else { return }
+        await refresh()
     }
 
     func openApprovalSettings() { service.openApprovalSettings() }
@@ -301,7 +326,7 @@ final class SyncHelperController {
     }
 
     private func permitsPeerOperations(_ settings: MobileSyncPreferences) -> Bool {
-        !busy && !upgrading && state != .starting && settings.helperEnabled &&
+        !busy && !upgrading && !installation.blocksOperations && state != .starting && settings.helperEnabled &&
             settings.helperUpgradeToken == nil && service.status == .enabled
     }
 

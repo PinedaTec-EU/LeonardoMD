@@ -81,3 +81,5 @@ earlier personal copies separate. Fresh packaged ES/EN acceptance and production
 preference components: `doc/validation/helper-upgrade/`. Signed installed automatic
 replacement remains a post-publication check, distinct from the owner-confirmed
 manual1215 recovery.
+
+- #412 signed-update service preparation: chapter 14 in both locales explains the pre-install drain, preserved consent/access, cancellation, safe-install veto and the legacy migration limitation. Guide51; signed installed A→B acceptance remains pending by owner instruction.
