@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1246
+
+- #399 Added: identify local shared and received projects on macOS and iOS ([#400](https://github.com/PinedaTec-EU/LeonardoMD/pull/400))
+
+<p>Projects now show a common icon and distinguish local content, sharing from this device and content received from another device on Mac, iPhone and iPad.</p>
+
+Source: `54c00e421adcaaadaba3de56a8e3d6465ad73ad3`. Delta: `{"build": 13}`.
+
 ## 0.3.1233
 
 - #407 Added: unify mobile projects and persistent deletion ([#408](https://github.com/PinedaTec-EU/LeonardoMD/pull/408))
