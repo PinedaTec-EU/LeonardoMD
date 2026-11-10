@@ -18,6 +18,93 @@ final class SyncHelperControllerTests: XCTestCase {
             hasExecutable: { true }, verifyPackage: {})
     }
 
+    func testActivationReplacesAnAlreadyRegisteredLegacyHelper() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); let control = HelperControlFake()
+        registration.status = .enabled
+        let controller = upgrading(fixture, registration, control)
+        await controller.setEnabled(true)
+        XCTAssertEqual(registration.unregistrations, 1)
+        XCTAssertEqual(registration.registrations, 1)
+        XCTAssertFalse(controller.online)
+        let settings = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertTrue(settings.mobileSync.helperEnabled)
+        XCTAssertNil(settings.mobileSync.helperUpgradeToken)
+        await control.setBuildIdentity(replacement)
+        await controller.refresh()
+        XCTAssertTrue(controller.online)
+    }
+
+    func testLegacyIdentityCannotStartAGatedPeerOperation() async throws {
+        let identities: [SyncHelperBuildIdentity?] = [nil,
+            .init(build: 199, bundlePath: replacement.bundlePath),
+            .init(build: 200, bundlePath: "/obsolete/LeonardoMD.app")]
+        for identity in identities {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            let control = HelperControlFake()
+            if let identity { await control.setBuildIdentity(identity) }
+            let controller = upgrading(fixture, registration, control)
+            let state = GateProbeState(online: true)
+            let remote = HelperGatedPeerRemote(remote: GateProbeRemote(state: state),
+                requireOnline: { try await controller.requireReadyHelper() })
+            do {
+                _ = try await remote.probe(endpoint: URL(string: "https://127.0.0.1")!)
+                XCTFail("Legacy identity must be rejected before any peer request")
+            } catch is SyncHelperFailure {}
+            let calls = await state.calls
+            XCTAssertEqual(calls, 0)
+        }
+    }
+
+    func testRenewalBeginningDuringHealthCheckPreventsTheGatedOperation() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let controller = upgrading(fixture, registration, control)
+        let state = GateProbeState(online: true)
+        let remote = HelperGatedPeerRemote(remote: GateProbeRemote(state: state),
+            requireOnline: { try await controller.requireReadyHelper() })
+        await control.pauseStatus()
+        let operation = Task { try await remote.probe(endpoint: URL(string: "https://127.0.0.1")!) }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldStatus
+        guard held else {
+            await control.resumeStatus(); _ = try? await operation.value
+            XCTFail("Health check did not reach the controlled barrier"); return
+        }
+        _ = try await fixture.configurations.beginSyncHelperUpgrade(UUID(), at: fixture.preferences)
+        await control.resumeStatus()
+        do { _ = try await operation.value; XCTFail("Pending renewal must reject the request") }
+        catch is SyncHelperFailure {}
+        let calls = await state.calls
+        XCTAssertEqual(calls, 0)
+    }
+
+    func testStartingHelperCannotStartAGatedOperationUntilFreshHealth() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); let control = HelperControlFake()
+        await control.setBuildIdentity(replacement)
+        let controller = upgrading(fixture, registration, control)
+        await controller.setEnabled(true)
+        let state = GateProbeState(online: true)
+        let remote = HelperGatedPeerRemote(remote: GateProbeRemote(state: state),
+            requireOnline: { try await controller.requireReadyHelper() })
+        do { _ = try await remote.probe(endpoint: URL(string: "https://127.0.0.1")!); XCTFail("Starting is not ready") }
+        catch is SyncHelperFailure {}
+        let earlyCalls = await state.calls
+        XCTAssertEqual(earlyCalls, 0)
+        await controller.refresh()
+        _ = try await remote.probe(endpoint: URL(string: "https://127.0.0.1")!)
+        let readyCalls = await state.calls
+        XCTAssertEqual(readyCalls, 1)
+    }
+
     func testFailedRenewalRetriesOnlyAfterItsControlledDeadline() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         let registration = HelperRegistrationFake(); let control = HelperControlFake()

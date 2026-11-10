@@ -217,12 +217,15 @@ final class SyncHelperController {
 
     func openApprovalSettings() { service.openApprovalSettings() }
 
-    static func requireOnline() async throws {
-        let settings = try await ConfigurationStore.shared.loadGlobalPreferences(at: AppSession.preferencesURL).mobileSync
-        guard settings.helperEnabled,
-              SMAppService.agent(plistName: SyncHelperContract.plistName).status == .enabled,
-              try await SyncHelperClient().status().enabled else {
+    func requireReadyHelper() async throws {
+        let settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
+        guard settings.helperEnabled, service.status == .enabled,
+              try await client.status().enabled else {
             throw SyncHelperFailure(L10n.text("Offline · enable Leonardo Sync in Preferences before synchronizing."))
         }
+    }
+
+    static func requireOnline() async throws {
+        try await SyncHelperController().requireReadyHelper()
     }
 }
