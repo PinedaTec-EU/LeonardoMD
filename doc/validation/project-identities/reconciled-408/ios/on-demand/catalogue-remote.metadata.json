@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T13:46:33.687458+00:00",
+  "capture": {
+    "browser_name": "Little Leonardo native SwiftUI/WKWebView \u00b7 iOS Simulator 27.0",
+    "browser_version": "WKWebView engine version not exposed by XCTest",
+    "capture_mode": "viewport",
+    "captured_at": "2026-11-10T13:36:54Z",
+    "data_provenance": "synthetic",
+    "native_viewport_points": {
+      "height": 874,
+      "width": 402
+    },
+    "route": "/native/ios/on-demand/catalogue-remote",
+    "screen": "catalogue-remote",
+    "source_sha": "unavailable",
+    "state": "Authenticated catalogue; no file body requested; native points measured from app.frame; Spanish; Classic appearance",
+    "viewport_css": null
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "dae24f5477570b8394c09899649ef9ade6e3bf41cbfc0a1a42f6421f67fd7542"
+  },
+  "source": {
+    "revision_at_collection": "acb46fc23bf883098d9112803b457e23ac2f21c4",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  },
+  "metadata_helper": "Shared image_dimensions/git_source with native viewport fields; CSS is inapplicable"
+}

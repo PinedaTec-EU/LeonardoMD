@@ -1,5 +1,7 @@
 # Project identity evidence
 
+> The current #400 reconciliation after #408 is recorded in [reconciled-408/README.md](reconciled-408/README.md). The Guide28 and earlier producer evidence below is historical and must not be reused as current candidate acceptance.
+
 Evidence for [issue #399](https://github.com/PinedaTec-EU/LeonardoMD/issues/399) and [PR #400](https://github.com/PinedaTec-EU/LeonardoMD/pull/400). The material documents the native project-role presentation and the bilingual Help examples; it does not claim a physical-device, two-Mac, TestFlight or release validation.
 
 ## Role criteria

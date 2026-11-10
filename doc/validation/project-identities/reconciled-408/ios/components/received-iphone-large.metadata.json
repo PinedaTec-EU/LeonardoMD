@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T13:46:33.290868+00:00",
+  "capture": {
+    "captured_at": "2026-11-10T13:31:20Z",
+    "route": "/native/ios/identity/received-iphone-large",
+    "screen": "MobileProjectIdentityLabel received",
+    "browser_name": "Native UIKit/SwiftUI; no browser",
+    "browser_version": "Not applicable to native view",
+    "viewport_css": null,
+    "native_viewport_points": {
+      "width": 390,
+      "height": 104
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic",
+    "state": "received from another device; large"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1170,
+    "height_px": 312,
+    "sha256": "08326ad5250b1b14137df043800afec07769f25a777c51003e47a5cd9ae8b5c2"
+  },
+  "source": {
+    "revision_at_collection": "acb46fc23bf883098d9112803b457e23ac2f21c4",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  },
+  "metadata_helper": "Shared image_dimensions/git_source with native viewport fields; CSS is inapplicable"
+}
