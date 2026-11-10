@@ -1,4 +1,4 @@
 {
   "summary": "Leonardo document types and Markdown now declare a Leonardo icon for Finder; the displayed icon can depend on macOS and the chosen default app.",
-  "build": 12
+  "build": 13
 }
