@@ -9,12 +9,13 @@ public struct RemoteDocumentPreview: View {
     let entry: RemoteFileEntry
     let spanish: Bool
     let appearance: MarkdownAppearance
+    let compactFirstHeading: Bool
     @State private var presentation = RemoteDocumentPreviewState()
     @State private var source = false
     @State private var linked: RemoteFileEntry?
     private let virtualRoot = URL(fileURLWithPath: "/LeonardoRemote", isDirectory: true)
-    public init(library: DownloadLibrary, projectID: UUID, entry: RemoteFileEntry, spanish: Bool = false, appearance: MarkdownAppearance = .default) {
-        self.library = library; self.projectID = projectID; self.entry = entry; self.spanish = spanish; self.appearance = appearance
+    public init(library: DownloadLibrary, projectID: UUID, entry: RemoteFileEntry, spanish: Bool = false, appearance: MarkdownAppearance = .default, compactFirstHeading: Bool = false) {
+        self.library = library; self.projectID = projectID; self.entry = entry; self.spanish = spanish; self.appearance = appearance; self.compactFirstHeading = compactFirstHeading
     }
     private var project: CachedRemoteProject? { library.projects.first { $0.id == projectID } }
     private var currentEntry: RemoteFileEntry? { project?.catalogue.files.first { $0.path == entry.path } }
@@ -23,6 +24,13 @@ public struct RemoteDocumentPreview: View {
     }
     private var file: CorpusFile? { presentation.content(for: request) }
     private var failure: String? { presentation.error(for: request) }
+    private var previewConfiguration: MarkdownPreviewConfiguration {
+        var value = MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true,
+            externalLinkPolicy: .callbackOnly, appearance: appearance, localAssetRoot: virtualRoot,
+            memoryAssets: MarkdownMemoryAssets(files: authorizedImages), allowsRemoteImages: false)
+        value.compactFirstHeading = compactFirstHeading
+        return value
+    }
     private var authorizedImages: [String: Data] {
         let paths = Set(project?.catalogue.files.map(\.path) ?? [])
         return presentation.assets(for: request).filter { paths.contains($0.key) }
@@ -43,10 +51,10 @@ public struct RemoteDocumentPreview: View {
             }
             content
         }.navigationTitle((entry.path as NSString).lastPathComponent)
-        .toolbar { Button(t("Show source", "Ver texto")) { source.toggle() } }
+        .toolbar { Button(source ? t("Show document", "Ver documento") : t("Show source", "Ver texto")) { source.toggle() } }
         .task(id: request) { await load() }
         .navigationDestination(item: $linked) { target in
-            RemoteDocumentPreview(library: library, projectID: projectID, entry: target, spanish: spanish, appearance: appearance)
+            RemoteDocumentPreview(library: library, projectID: projectID, entry: target, spanish: spanish, appearance: appearance, compactFirstHeading: compactFirstHeading)
         }
     }
     @ViewBuilder private var content: some View {
@@ -58,9 +66,7 @@ public struct RemoteDocumentPreview: View {
                     ScrollView { Text(text).font(.system(.body, design: .monospaced)).textSelection(.enabled).padding() }
                 } else {
                     MarkdownPreview(content: text, baseURL: virtualRoot.appendingPathComponent(entry.path).deletingLastPathComponent(),
-                        configuration: MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true,
-                            externalLinkPolicy: .callbackOnly, appearance: appearance, localAssetRoot: virtualRoot,
-                            memoryAssets: MarkdownMemoryAssets(files: authorizedImages), allowsRemoteImages: false),
+                        configuration: previewConfiguration,
                         onLinkActivation: followLink)
                 }
             } else if file != nil { Text(t("File downloaded", "Archivo descargado")) }

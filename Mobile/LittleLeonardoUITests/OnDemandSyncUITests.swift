@@ -27,8 +27,19 @@ final class OnDemandSyncUITests: XCTestCase {
         try capture(app, "catalogue-remote", state: "Authenticated catalogue; no file body requested")
         row("reference/readme.md", app: app).tap()
         XCTAssertTrue(app.webViews.firstMatch.staticTexts["Cached reference"].waitForExistence(timeout: 15))
+        let web = app.webViews.firstMatch
+        let heading = web.staticTexts["Cached reference"].firstMatch
+        XCTAssertGreaterThanOrEqual(heading.frame.minY - web.frame.minY, 0)
+        XCTAssertLessThanOrEqual(heading.frame.minY - web.frame.minY, 40,
+                                "The on-demand reader must preserve the accepted compact first-heading spacing")
+        app.buttons["Ver texto"].tap()
+        XCTAssertTrue(app.buttons["Ver documento"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "# Cached reference")).firstMatch.waitForExistence(timeout: 5))
+        try capture(app, "document-source", state: "Read-only source and explicit Show document action; no extra download")
+        app.buttons["Ver documento"].tap()
+        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Cached reference"].waitForExistence(timeout: 10))
         try phase("assert-single-file")
-        try capture(app, "document", state: "One requested file rendered through the production Classic preview")
+        try capture(app, "document", state: "One requested file rendered through compact Classic preview after source/preview round-trip")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         assertStatus(row("reference/readme.md", app: app), "En caché")
         let agenda = row("notes/agenda.md", app: app)

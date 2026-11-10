@@ -266,7 +266,7 @@ struct MobileProjectView: View {
             }
         }.classicSurface().navigationTitle(project?.name ?? "Proyecto")
         .navigationDestination(item: $selectedEntry) { entry in
-            RemoteDocumentPreview(library: library.downloads, projectID: projectID, entry: entry, spanish: true, appearance: .leonardoClassic).classicSurface()
+            RemoteDocumentPreview(library: library.downloads, projectID: projectID, entry: entry, spanish: true, appearance: .leonardoClassic, compactFirstHeading: true).classicSurface()
         }
         .fileExporter(isPresented: $exporting, document: project.map(MobileRecoveryDocument.init),
                       contentType: .json, defaultFilename: "LittleLeonardo-\(projectID.uuidString)-recovery") { result in

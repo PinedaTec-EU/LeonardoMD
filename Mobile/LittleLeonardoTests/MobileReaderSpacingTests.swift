@@ -3,6 +3,7 @@ import WebKit
 import XCTest
 import LeonardoRender
 import LeonardoSync
+import LeonardoSyncUI
 @testable import LittleLeonardo
 
 @MainActor
@@ -85,6 +86,40 @@ final class MobileReaderSpacingTests: XCTestCase {
         try await waitUntilReady(controller)
         let restored = try await metrics(web)
         XCTAssertEqual(try XCTUnwrap(restored["headingTop"]), try XCTUnwrap(original["headingTop"]), accuracy: 0.5)
+    }
+
+    func testOnDemandReaderKeepsAcceptedCompactHeadingSpacing() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = DownloadLibrary(cache: OnDemandCache(root: root))
+        let project = SharedProjectDescriptor(id: UUID(), name: "On-demand reader QA", scope: try CorpusScope(folder: ""))
+        let file = CorpusFile(path: "read.md", content: Data("# On-demand reader\n\nSynthetic reading content.\n\n## Later section\n\nNormal section spacing.".utf8))
+        try await library.update(id: project.id, descriptor: project, catalogue: RemoteProjectCatalogue(files: [RemoteFileEntry(file: file)]))
+        library.fetch = { _, _ in file }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let priorWindow = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.frame = scene.coordinateSpace.bounds
+        defer { window.isHidden = true; priorWindow?.makeKeyAndVisible() }
+        window.rootViewController = UIHostingController(rootView: NavigationStack {
+            RemoteDocumentPreview(library: library, projectID: project.id, entry: RemoteFileEntry(file: file),
+                appearance: .leonardoClassic, compactFirstHeading: true)
+                .classicSurface().navigationBarTitleDisplayMode(.inline)
+        })
+        window.makeKeyAndVisible()
+        for _ in 0..<150 {
+            if let web = findWebView(window), let values = try? await metrics(web) {
+                XCTAssertEqual(try XCTUnwrap(values["headingTop"]), 16, accuracy: 1)
+                XCTAssertGreaterThan(try XCTUnwrap(values["laterHeadingMargin"]), 0)
+                let data = try JSONSerialization.data(withJSONObject: values, options: [.sortedKeys])
+                let record = XCTAttachment(data: data, uniformTypeIdentifier: "public.json")
+                record.name = "On-demand measured reader spacing"; record.lifetime = .keepAlways; add(record)
+                attach(window, name: "On-demand synchronized document reader")
+                return
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTFail("The real on-demand preview did not render")
     }
 
     private func waitUntilReady(_ controller: MarkdownPreviewController) async throws {
