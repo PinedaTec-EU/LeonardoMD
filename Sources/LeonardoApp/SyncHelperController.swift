@@ -148,7 +148,7 @@ final class SyncHelperController {
         do {
             try verifyPackage()
             if pending != nil, let current, !current.needsReplacement(by: expectedBuildIdentity) {
-                _ = try await configurations.finishSyncHelperUpgrade(token, at: preferencesURL)
+                try await completeUpgrade(token, expected: expected)
                 return
             }
             guard try await configurations.beginSyncHelperUpgrade(token, at: preferencesURL) else {
@@ -161,15 +161,7 @@ final class SyncHelperController {
                 enabled = settings.mobileSync.helperEnabled; state = .disabled; return
             }
             try service.register()
-            let restored = try await configurations.finishSyncHelperUpgrade(token, at: preferencesURL)
-            guard restored, expected == revision else {
-                try await configurations.setSyncHelperEnabled(false, at: preferencesURL)
-                try await unregisterAfterStop()
-                enabled = false; state = .disabled; return
-            }
-            nextUpgradeAttempt = .distantPast
-            // Only a subsequent live identity/health response can report running.
-            state = .starting
+            try await completeUpgrade(token, expected: expected)
         } catch {
             if expected != revision { state = .disabled; return }
             // Keep the durable token on failure. A future refresh/startup can
@@ -177,6 +169,18 @@ final class SyncHelperController {
             state = .failed; self.error = L10n.text(error.localizedDescription)
             logger.error("sync_helper_upgrade_pending")
         }
+    }
+
+    private func completeUpgrade(_ token: UUID, expected: Int) async throws {
+        let restored = try await configurations.finishSyncHelperUpgrade(token, at: preferencesURL)
+        guard restored, expected == revision else {
+            try await configurations.setSyncHelperEnabled(false, at: preferencesURL)
+            try await unregisterAfterStop()
+            enabled = false; state = .disabled; return
+        }
+        nextUpgradeAttempt = .distantPast
+        // Only a subsequent live identity/health response can report running.
+        state = .starting
     }
 
     private func unregisterAfterStop() async throws {

@@ -1,0 +1,15 @@
+{
+  "captured_at": "2026-11-10T12:09:48.055Z",
+  "route": "/native/helper-upgrade/help33/en-math-disabled",
+  "screen": "Packaged LeonardoMD Help33",
+  "browser_name": "Native macOS SwiftUI/WKWebView",
+  "browser_version": "WKWebView engine not exposed",
+  "viewport_css": {
+    "width": 4168,
+    "height": 2818
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "source_sha": "945d05aa71f71790b75497f81d3493a708c7ab8e",
+  "state": "English Math OFF literal TeX fallback and code; PID41520; baseline0.3.1215/build1215; Guide33; native bitmap-equivalent viewport CSS N/A"
+}

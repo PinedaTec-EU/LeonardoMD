@@ -445,9 +445,9 @@ returned drawing remains available to save in the library. After saving, use
 the local library instead of blocking a new request. Use **Refresh linked
 devices** when a newly upgraded companion is not yet listed. Older companions
 that do not advertise rubric capture stay unsupported until their companion
-update. If Leonardo Sync reports an outdated helper, disable and re-enable
-**Leonardo Sync** in Preferences so the bundled helper is registered again,
-then retry the request. Same-ID Retry is limited to the short lost-acknowledgement
+update. After updating the Mac app, its main instance renews an outdated helper
+automatically before reporting sync ready. Wait for the service to finish starting
+or complete any macOS approval, then retry the same request. Same-ID Retry is limited to the short lost-acknowledgement
 window. If the helper reports that the request is expired or missing, or that
 window has passed, Leonardo keeps a local tombstone and **Request again** creates
 a fresh request ID; it never silently recreates the old request. If you cancel
