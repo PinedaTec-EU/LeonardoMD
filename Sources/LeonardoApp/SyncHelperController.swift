@@ -113,10 +113,9 @@ final class SyncHelperController {
                 error = nil
                 applyStatus(status)
             case .notFound, .notRegistered:
-                error = nil
                 if expectedBuildIdentity != nil {
                     await reconcileUpgrade(pending: settings.mobileSync.helperUpgradeToken, current: nil)
-                } else { state = .failed; sharing = nil; supportsRubricExchange = false }
+                } else { error = nil; state = .failed; sharing = nil; supportsRubricExchange = false }
             @unknown default: error = nil; state = .failed; sharing = nil; supportsRubricExchange = false
             }
         } catch {
@@ -223,6 +222,7 @@ final class SyncHelperController {
             return
         }
         nextUpgradeAttempt = .distantPast
+        error = nil
         // Only a subsequent live identity/health response can report running.
         state = .starting
     }

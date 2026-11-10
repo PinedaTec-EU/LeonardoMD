@@ -17,7 +17,9 @@ struct SyncHelperPreferencesSection: View {
                     }
                 }
                     .disabled(controller.busy && (!controller.upgrading || !controller.enabled))
-                Text(controller.statusText).foregroundStyle(.secondary)
+                Text(controller.checking || controller.state == .starting
+                     ? L10n.text("Checking synchronization status") : controller.statusText)
+                    .lineLimit(1).foregroundStyle(.secondary)
                 Text(L10n.text("Required to share and connect. When off, both directions are offline even with LeonardoMD open. Starts after login and keeps sharing saved files when you close the editor."))
                     .font(.caption).foregroundStyle(.secondary)
                 if controller.state == .approvalRequired {

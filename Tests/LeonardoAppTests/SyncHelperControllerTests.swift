@@ -59,6 +59,27 @@ final class SyncHelperControllerTests: XCTestCase {
             screen: "Synchronization helper status")
     }
 
+    func testMissingRegistrationPreservesErrorDuringRecovery() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake()
+        registration.storedStatus = .enabled
+        registration.statusSequence = [.notRegistered]
+        let control = HelperControlFake(); await control.pauseReload()
+        let controller = upgrading(fixture, registration, control)
+        controller.error = "Previous error"
+        let refresh = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldReload { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldReload
+        XCTAssertTrue(held)
+        XCTAssertEqual(controller.error, "Previous error")
+        await control.resumeReload(); await refresh.value
+        XCTAssertNil(controller.error)
+    }
+
     func testRefreshPreservesErrorWhileChecking() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
@@ -955,7 +976,12 @@ final class SyncHelperControllerTests: XCTestCase {
 }
 private enum HelperControlError: Error { case unavailable }
 @MainActor private final class HelperRegistrationFake: SyncHelperRegistration {
-    var status = SMAppService.Status.notRegistered
+    var storedStatus = SMAppService.Status.notRegistered
+    var statusSequence: [SMAppService.Status] = []
+    var status: SMAppService.Status {
+        get { statusSequence.isEmpty ? storedStatus : statusSequence.removeFirst() }
+        set { storedStatus = newValue }
+    }
     var registrations = 0
     var unregistrations = 0
     var failUnregister = false

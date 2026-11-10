@@ -579,7 +579,7 @@ These operations are manual. Pull is fast-forward only and protects dirty worktr
 
 ## 14. Share from this Mac: Little Leonardo and other computers
 
-![Synchronization → Share from this Mac; the common service and sharing are off in this example.](guide/en/assets/sync-sharing-v12.png)
+![Synchronization → Share from this Mac; the common service and sharing are off in this example.](guide/en/assets/sync-sharing-v13.png)
 
 *Synchronization → Share from this Mac; the common service and sharing are off in this example.*
 
@@ -747,7 +747,7 @@ If a safe stop cannot be confirmed, installation is postponed rather than forcib
 
 ## 15. Connect to other computers and offline copies
 
-![Synchronization → Connect to other computers before pairing or importing a project.](guide/en/assets/sync-connections-v12.png)
+![Synchronization → Connect to other computers before pairing or importing a project.](guide/en/assets/sync-connections-v13.png)
 
 *Synchronization → Connect to other computers before pairing or importing a project.*
 

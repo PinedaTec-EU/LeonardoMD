@@ -593,7 +593,7 @@ Las operaciones son manuales. Pull solo permite avance rápido y protege árbole
 
 ## 14. Compartir desde este Mac: Little Leonardo y otros equipos
 
-![Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.](assets/sync-sharing-v12.png)
+![Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.](assets/sync-sharing-v13.png)
 
 *Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.*
 
@@ -770,7 +770,7 @@ Si no se puede confirmar la parada segura, se aplaza la instalación en vez de t
 
 ## 15. Conectarme a otros equipos y copias sin conexión
 
-![Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.](assets/sync-connections-v12.png)
+![Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.](assets/sync-connections-v13.png)
 
 *Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.*
 
