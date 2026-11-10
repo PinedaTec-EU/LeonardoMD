@@ -11,9 +11,12 @@
     "viewport_css": null,
     "capture_mode": "element",
     "data_provenance": "synthetic",
-    "native_viewport_points": null,
+    "native_viewport_points": {
+      "height": 300,
+      "width": 900
+    },
     "capture_surface": "native",
-    "viewport_measurement": "CUA exposes screenshot bytes but no native viewport dimensions; image pixels are recorded only under image"
+    "viewport_measurement": "NSSize measured by the native fixture; CSS is not applicable"
   },
   "image": {
     "format": "png",
@@ -29,6 +32,7 @@
   "metadata_correction": {
     "at": "2026-11-10T15:49:41.144480+00:00",
     "source_revision": "b1feaf1994f036428d9564a3ad74dd7018ed4752",
-    "reason": "Remove bitmap/native-point equivalents from the browser-only viewport_css field; preserve original capture timestamps, source identity and image bytes."
+    "reason": "Remove bitmap/native-point equivalents from the browser-only viewport_css field; preserve original capture timestamps, source identity and image bytes.",
+    "fixture_measurement_source": "doc/validation/helper-upgrade/candidate-components-autonomous/upgrade-cancelled.context.json"
   }
 }

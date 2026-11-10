@@ -117,5 +117,7 @@
   },
   "viewport_css": null,
   "reason": "These are native macOS captures. CUA does not expose native window/viewport points; NSHostingView fixtures explicitly measure their NSSize. No viewport dimensions are inferred from bitmap pixels.",
-  "generator": "Canonical capture_metadata.py image_dimensions/git_source primitives provide file and source evidence; browser capture_context cannot represent unavailable native CSS measurements. Existing source-at-collection and capture times are retained."
+  "generator": "Canonical capture_metadata.py image_dimensions/git_source primitives provide file and source evidence; browser capture_context cannot represent unavailable native CSS measurements. Existing source-at-collection and capture times are retained.",
+  "fixture_measurements_confirmed_at": "2026-11-10T15:50:43.054102+00:00",
+  "fixture_metadata_records": 8
 }
