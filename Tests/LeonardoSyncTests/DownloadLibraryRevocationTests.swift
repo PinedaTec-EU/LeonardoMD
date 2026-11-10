@@ -123,6 +123,44 @@ import XCTest
         XCTAssertNotNil(library.failures[otherKey], "Revoking one project must preserve another project's error")
     }
 
+    func testNewCatalogueRevisionDownloadsIndependentlyOfHeldOldRevision() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        let old = fixture.file
+        let current = CorpusFile(path: old.path, content: Data("current catalogue revision".utf8))
+        let oldGate = CacheReadGate(), currentGate = CacheReadGate()
+        let currentFetched = expectation(description: "Current revision fetch starts without waiting for obsolete revision")
+        library.fetch = { _, entry in
+            if entry.revision == RemoteFileEntry(file: old).revision {
+                await oldGate.hold()
+                return old
+            }
+            currentFetched.fulfill()
+            await currentGate.hold()
+            return current
+        }
+        try await library.update(id: fixture.project.id, descriptor: fixture.project, catalogue: fixture.catalogue)
+        let previous = Task { try await library.openResult(id: fixture.project.id, path: old.path) }
+        await oldGate.waitUntilEntered()
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: RemoteProjectCatalogue(files: [RemoteFileEntry(file: current)]))
+        let latest = Task { try await library.openResult(id: fixture.project.id, path: current.path) }
+        let started = await XCTWaiter.fulfillment(of: [currentFetched], timeout: 3)
+        await oldGate.release()
+        _ = try? await previous.value
+        XCTAssertEqual(started, .completed, "A new catalogue revision must not join an obsolete file transfer")
+        let key = DownloadLibrary.key(id: fixture.project.id, path: current.path)
+        XCTAssertTrue(library.downloading.contains(key), "Old completion must not clear the current revision's progress")
+        XCTAssertNil(library.failures[key], "An obsolete revision must not publish its error into the current catalogue")
+        await currentGate.release()
+        do {
+            let result = try await latest.value
+            XCTAssertEqual(result.file, current)
+            XCTAssertNil(result.updateFailure)
+        } catch { XCTFail("Current revision should download independently: \(error)") }
+    }
+
     private struct Fixture {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let project: SharedProjectDescriptor

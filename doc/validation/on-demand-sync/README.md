@@ -2,7 +2,30 @@
 
 Tracking: [#384](https://github.com/PinedaTec-EU/LeonardoMD/issues/384), [PR #385](https://github.com/PinedaTec-EU/LeonardoMD/pull/385).
 
-## Current retained-preview correction and Guide32 acceptance
+## Current corrective checkpoint: final joint validation pending
+
+The latest code additionally isolates transfers by exact catalogue entry and
+transfer UUID. A new revision must not join an obsolete download or inherit its
+progress cleanup/error. The real-cache controlled-fetch regression for
+[#402](https://github.com/PinedaTec-EU/LeonardoMD/issues/402) fails four assertions
+before correction and passes afterward with the existing cache/revocation tests.
+
+Hosted CI exposed [#406](https://github.com/PinedaTec-EU/LeonardoMD/issues/406):
+NSView bitmap OCR did not include WebKit's composited content on macos-15.
+The real production-preview integration now checks actual WebKit DOM readiness
+and visible heading geometry separately, while native OCR still requires the
+warning and Retry. Author-owned visual captures must additionally include the
+readable content pixels; blank/loading output is never acceptance evidence.
+The corrected focused checks pass locally; current-head CI is pending.
+
+The agreed integration order is405/397 first, then385 reconciled onto its
+accepted main. The shared on-demand iOS preview must opt into405's compact
+first-heading configuration so switching readers does not restore the old gap.
+Final source-bound Mac/iOS/Help evidence and full checks will be repeated after
+that reconciliation. All Guide32 evidence below is a bounded earlier checkpoint,
+not acceptance of the later transfer correction or joint spacing integration.
+
+## Earlier retained-preview correction and Guide32 acceptance (historical)
 
 Product source `4da0d9aba33c7a95256b96311c04c66fb63efdb9` incorporates accepted
 main0.3.1136. The failed-update result explicitly carries a retained copy and

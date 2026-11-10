@@ -25,7 +25,9 @@ public final class DownloadLibrary {
     private var generations: [UUID: UInt64] = [:]
     private var usageRevision: UInt64 = 0
     private struct ActiveDownload {
+        let identity: UUID
         let generation: UInt64
+        let entry: RemoteFileEntry
         let task: Task<CorpusFile, Error>
     }
     private var tasks: [String: ActiveDownload] = [:]
@@ -78,30 +80,33 @@ public final class DownloadLibrary {
               let entry = project.catalogue.files.first(where: { $0.path == path }) else { throw SyncError.revoked }
         let generation = generations[id, default: 0]
         if let file = try await cache.read(id: id, entry: entry, allowStale: false) {
-            try requireAccess(id: id, generation: generation)
+            try requireEntry(id: id, entry: entry, generation: generation)
             failures[Self.key(id: id, path: path)] = nil
             return RemoteDownloadResult(file: file)
         }
-        try requireAccess(id: id, generation: generation)
+        try requireEntry(id: id, entry: entry, generation: generation)
         let key = Self.key(id: id, path: path)
-        if let active = tasks[key], active.generation == generation {
+        if let active = tasks[key], active.generation == generation, active.entry == entry {
             return try await result(of: active.task, id: id, entry: entry, generation: generation)
         }
+        // A catalogue revision is a different transfer even under the same grant.
+        tasks[key]?.task.cancel()
+        let identity = UUID()
         downloading.insert(key); failures[key] = nil
         let task = Task { [self] in
             let file = try await fetch(id, entry)
-            try requireAccess(id: id, generation: generation)
+            try requireEntry(id: id, entry: entry, generation: generation)
             try await cache.store(id: id, entry: entry, file: file)
             // The host owns revocation purge. An obsolete operation must never
             // delete a project that may already have a new authorization.
-            try requireAccess(id: id, generation: generation)
+            try requireEntry(id: id, entry: entry, generation: generation)
             try await refreshAll()
-            try requireAccess(id: id, generation: generation)
+            try requireEntry(id: id, entry: entry, generation: generation)
             return file
         }
-        tasks[key] = ActiveDownload(generation: generation, task: task)
+        tasks[key] = ActiveDownload(identity: identity, generation: generation, entry: entry, task: task)
         defer {
-            if tasks[key]?.generation == generation {
+            if tasks[key]?.identity == identity {
                 tasks[key] = nil; downloading.remove(key)
             }
         }
@@ -112,14 +117,14 @@ public final class DownloadLibrary {
                         entry: RemoteFileEntry, generation: UInt64) async throws -> RemoteDownloadResult {
         do {
             let file = try await task.value
-            try requireAccess(id: id, generation: generation)
+            try requireEntry(id: id, entry: entry, generation: generation)
             return RemoteDownloadResult(file: file)
         }
         catch {
-            try requireAccess(id: id, generation: generation)
+            try requireEntry(id: id, entry: entry, generation: generation)
             failures[Self.key(id: id, path: entry.path)] = error.localizedDescription
             if let previous = try await cache.read(id: id, entry: entry, allowStale: true) {
-                try requireAccess(id: id, generation: generation)
+                try requireEntry(id: id, entry: entry, generation: generation)
                 return RemoteDownloadResult(file: previous, updateFailure: error.localizedDescription)
             }
             throw error
@@ -130,6 +135,13 @@ public final class DownloadLibrary {
     private func requireAccess(id: UUID, generation: UInt64) throws {
         guard allowed.contains(id), generations[id, default: 0] == generation else { throw SyncError.revoked }
         try Task.checkCancellation()
+    }
+
+    private func requireEntry(id: UUID, entry: RemoteFileEntry, generation: UInt64) throws {
+        try requireAccess(id: id, generation: generation)
+        guard projects.first(where: { $0.id == id })?.catalogue.files.first(where: { $0.path == entry.path }) == entry else {
+            throw SyncError.publicationPending
+        }
     }
 
     public func retain(id: UUID, path: String, isFolder: Bool, keep: Bool) async {

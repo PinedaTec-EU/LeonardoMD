@@ -35,3 +35,13 @@ Both locales must show A, the warning, original error and Retry. This supplement
 the generation-state tests that alone missed the service fallback in
 [#402](https://github.com/PinedaTec-EU/LeonardoMD/issues/402). Guide32 preserves
 the accepted connection/rubric help while adding this recovery policy.
+
+Transfers are keyed by authorization, exact catalogue entry and a per-transfer UUID.
+A newer revision starts independently, cancels the obsolete transfer and keeps its
+own progress/error state. Every completion checks the current catalogue before
+returning bytes or publishing failures. The real-cache held-fetch regression for
+[#402](https://github.com/PinedaTec-EU/LeonardoMD/issues/402) failed four assertions
+before correction. Hosted preview acceptance separates native warning OCR from
+actual WKWebView DOM readiness/visible heading geometry; author-owned images
+still require readable composited pixels under
+[#406](https://github.com/PinedaTec-EU/LeonardoMD/issues/406).

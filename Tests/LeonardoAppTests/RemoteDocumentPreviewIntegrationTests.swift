@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import Vision
+import WebKit
 import XCTest
 import LeonardoSync
 import LeonardoSyncUI
@@ -57,7 +58,7 @@ import LeonardoSyncUI
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
-        window.orderFront(nil)
+        window.makeKeyAndOrderFront(nil)
         defer { window.contentView = nil; window.close() }
         let deadline = ContinuousClock.now.advanced(by: .seconds(8))
         while library.failures[DownloadLibrary.key(id: id, path: entry.path)] == nil && library.failures.isEmpty {
@@ -67,6 +68,7 @@ import LeonardoSyncUI
         let image = root.appendingPathComponent("preview.png")
         let expectedContent = entry.path.hasSuffix(".txt") ? "Previously retained content A" : "Readable document"
         var recognized = ""
+        var readableContent = ""
         let renderDeadline = ContinuousClock.now.advanced(by: .seconds(8))
         repeat {
             try await Task.sleep(for: .milliseconds(100))
@@ -76,9 +78,26 @@ import LeonardoSyncUI
             recognition.usesLanguageCorrection = false
             try VNImageRequestHandler(url: image).perform([recognition])
             recognized = (recognition.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: "\n")
-        } while !recognized.contains(expectedContent) && ContinuousClock.now < renderDeadline
-        XCTAssertTrue(recognized.contains(expectedContent), "Production preview content did not become visible: " + recognized)
+            if entry.path.hasSuffix(".txt") {
+                readableContent = recognized
+            } else if let web = webView(in: host) {
+                // Hosted NSView bitmaps may omit WebKit's separate composited surface.
+                // Check the actual embedded renderer's DOM and visible heading geometry,
+                // while still requiring native pixels for the error and Retry controls.
+                readableContent = ((try? await web.evaluateJavaScript("""
+                    (() => {
+                        const h = document.querySelector('h1');
+                        if (!h) return '';
+                        const r = h.getBoundingClientRect(), s = getComputedStyle(h);
+                        return r.width > 0 && r.height > 0 && r.top >= 0 && r.bottom <= innerHeight &&
+                            s.display !== 'none' && s.visibility !== 'hidden' ? document.body.innerText : '';
+                    })()
+                    """)) as? String) ?? ""
+            }
+        } while (!readableContent.contains(expectedContent) || !recognized.contains("Synthetic update unavailable")) && ContinuousClock.now < renderDeadline
+        XCTAssertTrue(readableContent.contains(expectedContent), "Production preview content did not become visible: " + readableContent)
         if let destination = ProcessInfo.processInfo.environment["LEONARDO_PREVIEW_EVIDENCE"] {
+            XCTAssertTrue(recognized.contains(expectedContent), "Author-owned capture must include readable content, not a blank WebKit surface")
             let output = URL(fileURLWithPath: destination, isDirectory: true)
             try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
             let name = (entry.path.hasSuffix(".txt") ? "retained-copy" : "image-error") + (spanish ? "-es" : "-en")
@@ -97,7 +116,12 @@ import LeonardoSyncUI
             try JSONSerialization.data(withJSONObject: context, options: [.prettyPrinted, .sortedKeys])
                 .write(to: output.appendingPathComponent(name + ".context.json"))
         }
-        return recognized
+        return recognized + "\n" + readableContent
+    }
+
+    private func webView(in view: NSView) -> WKWebView? {
+        if let web = view as? WKWebView { return web }
+        return view.subviews.lazy.compactMap { self.webView(in: $0) }.first
     }
 
     private enum PreviewFailure: LocalizedError {
