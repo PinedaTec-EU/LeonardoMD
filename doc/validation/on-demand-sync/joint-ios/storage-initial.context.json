@@ -1,0 +1,15 @@
+{
+  "browser_name" : "Little Leonardo native SwiftUI\/WKWebView · iPhone18Pro Simulator · iOS 27.0",
+  "browser_version" : "WKWebView engine version not exposed by XCTest",
+  "capture_mode" : "viewport",
+  "captured_at" : "2026-11-10T09:56:44Z",
+  "data_provenance" : "synthetic",
+  "route" : "\/native\/ios\/on-demand\/storage-initial",
+  "screen" : "storage-initial",
+  "source_sha" : "25723d6587d902477edffbf2f3b66c94f5e6def3",
+  "state" : "Visible MiB label and explicit Apply action before editing; native-point viewport equivalent; Spanish; Classic appearance",
+  "viewport_css" : {
+    "height" : 874,
+    "width" : 402
+  }
+}

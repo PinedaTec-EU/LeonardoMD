@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T08:31:24.320864+00:00",
+  "capture": {
+    "captured_at": "2026-11-10T08:22:06+00:00",
+    "route": "/native/ios/on-demand/catalogue-recovered",
+    "screen": "catalogue-recovered",
+    "browser_name": "Little Leonardo native SwiftUI/WKWebView \u00b7 iPhone18Pro Simulator \u00b7 iOS 27.0",
+    "browser_version": "WKWebView engine version not exposed by XCTest",
+    "state": "Automatic refresh retried the failed file and retained a future folder descendant without a manual sync; native-point viewport equivalent; Spanish; Classic appearance",
+    "viewport_css": {
+      "width": 402,
+      "height": 874
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "2d9170c23f0be626facf981bcc63d981e4e4ca6336162c87078a39a4e1f21f2a"
+  },
+  "source": {
+    "revision_at_collection": "72a9e2e4bf2dc7af1c6536fc6a5f7510083b83e1",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

@@ -9,6 +9,8 @@ public protocol DesktopPeerRemote: Sendable {
     func receipt(_ proposal: DesktopPeerProposal, connection: DesktopPeerConnection, credential: String) async throws -> DesktopPeerProposalReceipt?
     func acknowledge(_ proposal: DesktopPeerProposal, receipt: DesktopPeerProposalReceipt,
                      connection: DesktopPeerConnection, credential: String) async throws
+    func catalogue(_ descriptor: SharedProjectDescriptor, connection: DesktopPeerConnection, credential: String) async throws -> RemoteProjectCatalogue
+    func file(_ entry: RemoteFileEntry, projectID: UUID, connection: DesktopPeerConnection, credential: String) async throws -> CorpusFile
     func snapshot(_ descriptor: SharedProjectDescriptor, connection: DesktopPeerConnection, credential: String) async throws -> CorpusSnapshot
 }
 
@@ -35,6 +37,8 @@ public protocol DesktopPeerLibraryAccess: Sendable {
     func copies() async throws -> [DesktopPeerCopy]
     func enroll(endpoint: URL, fingerprint: Data?, invitation: PairingInvitation?, name: String) async throws -> DesktopPeerConnection
     func refresh(connectionID: UUID) async throws -> DirectDeviceStatus
+    func catalogue(connectionID: UUID, projectID: UUID) async throws -> RemoteProjectCatalogue
+    func file(connectionID: UUID, projectID: UUID, entry: RemoteFileEntry) async throws -> CorpusFile
     func importProject(connectionID: UUID, projectID: UUID) async throws -> DesktopPeerCopy
     func open(copyID: UUID) async throws -> URL
     func pendingProposal(copyID: UUID) async throws -> DesktopPeerPendingProposal?
@@ -52,4 +56,14 @@ public protocol DesktopPeerReceiptApplier: Sendable {
                receipt: DesktopPeerProposalReceipt,
                diskAtSend: CorpusSnapshot?) async throws -> DesktopPeerAcceptanceResult
     func recover(copyID: UUID) async throws -> DesktopPeerAcceptanceResult?
+}
+
+// Test and alternate adapters fail closed until they implement metadata-first reads.
+public extension DesktopPeerRemote {
+    func catalogue(_ descriptor: SharedProjectDescriptor, connection: DesktopPeerConnection, credential: String) async throws -> RemoteProjectCatalogue { throw DesktopPeerLibraryError.unknownCopy }
+    func file(_ entry: RemoteFileEntry, projectID: UUID, connection: DesktopPeerConnection, credential: String) async throws -> CorpusFile { throw DesktopPeerLibraryError.unknownCopy }
+}
+public extension DesktopPeerLibraryAccess {
+    func catalogue(connectionID: UUID, projectID: UUID) async throws -> RemoteProjectCatalogue { throw DesktopPeerLibraryError.unknownCopy }
+    func file(connectionID: UUID, projectID: UUID, entry: RemoteFileEntry) async throws -> CorpusFile { throw DesktopPeerLibraryError.unknownCopy }
 }

@@ -10,7 +10,7 @@ final class DesktopPeerControllerTests: XCTestCase {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let controller = DesktopPeerController(preferencesURL: root.appendingPathComponent("preferences.json"), defaults: defaults)
         defer { controller.stop() }
-        XCTAssertEqual(controller.syncIntervalMinutes, 0)
+        XCTAssertEqual(controller.syncIntervalMinutes, 1)
         controller.updateInterval(5)
         XCTAssertEqual(controller.syncIntervalMinutes, 5)
         controller.updateInterval(-1)

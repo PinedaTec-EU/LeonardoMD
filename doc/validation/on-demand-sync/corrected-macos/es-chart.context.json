@@ -1,0 +1,16 @@
+{
+  "captured_at": "2026-11-07T20:47:15.328Z",
+  "route": "/native/help/guide27/es-chart",
+  "screen": "Corrected source ES live chart",
+  "source_revision": "a7759b2db562d2fea04c8e7d7b6c9c4997137a26",
+  "browser_name": "Native macOS SwiftUI / WKWebView",
+  "browser_version": "Not exposed by CUA",
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "locale": "es",
+  "state": "Corrected source ES live chart; native capture, CSS/engine version unavailable; viewport uses image pixels unless native points supplied",
+  "viewport_css": {
+    "width": 2520,
+    "height": 1700
+  }
+}

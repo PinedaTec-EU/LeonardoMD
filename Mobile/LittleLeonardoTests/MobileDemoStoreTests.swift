@@ -108,7 +108,25 @@ final class MobileDemoStoreTests: XCTestCase {
         let library = MobileLibrary(rootURL: corpus)
         await library.reload()
         XCTAssertEqual(library.projects.count, 2)
+        let file = try XCTUnwrap(project.files.first)
+        let descriptor = SharedProjectDescriptor(id: project.id, name: project.name, scope: project.scope)
+        try await library.downloads.update(id: project.id, descriptor: descriptor,
+            catalogue: RemoteProjectCatalogue(files: [RemoteFileEntry(file: file)]))
+        library.downloads.fetch = { _, _ in file }
+        let downloaded = try await library.downloads.open(id: project.id, path: file.path)
+        XCTAssertEqual(downloaded, file)
+        XCTAssertEqual(library.downloads.projects.map(\.id), [project.id])
         await library.deleteProject(project.id)
+        XCTAssertFalse(library.downloads.projects.contains { $0.id == project.id })
+        let downloadCache = OnDemandCache(root: root.appendingPathComponent("Downloads"))
+        let remainingDownloads = try await downloadCache.projects()
+        XCTAssertFalse(remainingDownloads.contains { $0.id == project.id })
+        do {
+            _ = try await library.downloads.open(id: project.id, path: file.path)
+            XCTFail("A deleted project must not remain readable from the downloads library")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .revoked)
+        }
         XCTAssertEqual(library.projects.map(\.id), [sibling.id])
         let deleted = try await store.load(id: project.id)
         XCTAssertNil(deleted)

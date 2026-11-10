@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-07T19:48:54.734302+00:00",
+  "capture": {
+    "captured_at": "2026-11-07T19:47:04.743000+00:00",
+    "route": "/native/help/guide27/es-practice-saved",
+    "screen": "Guide27 ES fictional practice saved",
+    "browser_name": "Native macOS SwiftUI / WKWebView",
+    "browser_version": "Not exposed by CUA",
+    "state": "Guide27 ES fictional practice saved; viewport is image-pixel equivalent, native points/CSS unavailable",
+    "viewport_css": {
+      "width": 2520,
+      "height": 1700
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "8e0660109468bf1534acbc364a077bd5e84d98cb741513092806396ad5583116"
+  },
+  "source": {
+    "revision_at_collection": "03c8b373fefd917642d091ea8c2064d6cfc5376f",
+    "tracked_changes_present": false,
+    "untracked_files_present": true
+  }
+}

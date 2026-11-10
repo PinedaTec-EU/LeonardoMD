@@ -11,17 +11,18 @@ final class MobileLibrary {
     private(set) var pendingRubricRequests: [RubricRequest] = []
     private(set) var recoverableRubricDrafts: [MobileRubricDraft] = []
     var error: String?
-    private(set) var connecting = false
-    private(set) var comparisonCode: String?
-    let store: OfflineCorpusStore
+    var connecting = false
+    var comparisonCode: String?
     let projectLifecycle: MobileProjectLifecycle
+    let downloads: DownloadLibrary
+    let store: OfflineCorpusStore
     private let connectionStore: MobileDirectConnectionStore
     private let credentials: any DeviceCredentialStore
     private let revocationClient: MobileRevocationClient
     private let draftStore: MobileRubricDraftStore
     private let rubricAcceptance: MobileRubricAcceptance
     private let now: @Sendable () -> Date
-    private var connections: [MobileDirectConnection] = []
+    var connections: [MobileDirectConnection] = []
     private var rubricPolling = false
     private var revocationsInProgress: Set<UUID> = []
     private let rubricDraftWrites = MobileSyncOperationQueue()
@@ -48,6 +49,7 @@ final class MobileLibrary {
         store = OfflineCorpusStore(root: root)
         projectLifecycle = MobileProjectLifecycle(url: root.deletingLastPathComponent()
             .appendingPathComponent("project-removals.json"))
+        downloads = DownloadLibrary(cache: OnDemandCache(root: root.deletingLastPathComponent().appendingPathComponent("Downloads")))
         connectionStore = MobileDirectConnectionStore(url: root.deletingLastPathComponent()
             .appendingPathComponent("connections.json"))
         self.credentials = credentials
@@ -59,7 +61,7 @@ final class MobileLibrary {
         rubricAcceptance = MobileRubricAcceptance(store: draftStore, clock: now)
     }
 
-    private func token(for connection: MobileDirectConnection) -> ConnectionToken {
+    func token(for connection: MobileDirectConnection) -> ConnectionToken {
         ConnectionToken(connectionID: connection.connectionID, deviceID: connection.deviceID,
                         fingerprint: connection.fingerprint, cacheEpoch: cacheEpoch,
                         authorizationGeneration: authorizationGenerations[connection.connectionID])
@@ -76,7 +78,7 @@ final class MobileLibrary {
         connectionIndex(for: token) != nil
     }
 
-    private func isCurrentCacheOperation(_ token: ConnectionToken) -> Bool {
+    func isCurrentCacheOperation(_ token: ConnectionToken) -> Bool {
         cacheEpoch == token.cacheEpoch && hasCurrentIdentity(token)
     }
 
@@ -87,13 +89,13 @@ final class MobileLibrary {
             && currentConnection(for: token)?.revoked == false
     }
 
-    private func hasActiveProjectOwner(_ projectID: UUID, excluding connectionID: UUID) -> Bool {
+    func hasActiveProjectOwner(_ projectID: UUID, excluding connectionID: UUID) -> Bool {
         connections.contains {
             !$0.revoked && $0.connectionID != connectionID && $0.projectIDs.contains(projectID)
         }
     }
 
-    private func currentConnection(for token: ConnectionToken) -> MobileDirectConnection? {
+    func currentConnection(for token: ConnectionToken) -> MobileDirectConnection? {
         guard let index = connectionIndex(for: token) else { return nil }
         return connections[index]
     }
@@ -131,7 +133,7 @@ final class MobileLibrary {
     /// Performs the write-ahead preflight, authenticated STATUS revalidation,
     /// and outcome recording around one connection operation. All callers that
     /// can receive a revocation use this boundary, including rubric sends.
-    private func withAuthenticatedConnection<T>(
+    func withAuthenticatedConnection<T>(
         _ connection: MobileDirectConnection,
         operation: (MobileAuthenticatedContext) async throws -> T
     ) async throws -> T {
@@ -163,7 +165,7 @@ final class MobileLibrary {
         catch { self.error = error.localizedDescription }
     }
 
-    private func commitConnection(_ connection: MobileDirectConnection,
+    func commitConnection(_ connection: MobileDirectConnection,
                                   expected token: ConnectionToken) throws -> ConnectionToken? {
         guard isCurrentCacheOperation(token), let index = connectionIndex(for: token) else { return nil }
         var nextConnections = connections
@@ -223,6 +225,15 @@ final class MobileLibrary {
             comparisonCode = loadedComparisonCode
             recoverableRubricDrafts = loadedDrafts
             projects = loaded.filter { !projectLifecycle.isDeleted($0.id) }
+            downloads.fetch = { [weak self] id, entry in
+                guard let self else { throw SyncError.revoked }
+                return try await self.fetchDownload(projectID: id, entry: entry)
+            }
+            try await downloads.restore(allowedIDs: Set(projects.filter { project in
+                !project.isRecoveryArchive && protectedConnections.contains {
+                    !$0.revoked && !visibleQuarantine.contains($0.connectionID) && $0.projectIDs.contains(project.id)
+                }
+            }.map(\.id)))
             let recoveredSnapshotChanged = storedConnections.count != protectedConnections.count
                 || zip(storedConnections, protectedConnections).contains { $0.0.hasChanges(from: $0.1) }
             if repairedMissingCredential || recoveredSnapshotChanged {
@@ -293,108 +304,6 @@ final class MobileLibrary {
         comparisonCode = enrollment.comparisonCode
     }
 
-    func synchronize() async {
-        guard !connecting else { return }
-        connecting = true
-        defer { connecting = false }
-        for index in connections.indices {
-            do {
-                guard connections.indices.contains(index), !connections[index].revoked else { continue }
-                let original = connections[index]
-                try await withAuthenticatedConnection(original) { context in
-                    guard context.status.access == .authorized else { return }
-                    var connection = original
-                    let status = try await MobileDirectConnectionStore.refreshCapabilities(context.status,
-                        connection: &connection, client: context.client, credential: context.credential)
-                    guard isCurrentCacheOperation(context.token) else { return }
-                    let granted = Set(status.projects.map(\.id))
-                    for id in granted {
-                        guard !projects.contains(where: { $0.id == id && $0.isRecoveryArchive }),
-                              !connections.enumerated().contains(where: {
-                                  $0.offset != index && $0.element.projectIDs.contains(id)
-                              }) else {
-                            throw SyncError.invalidSnapshot
-                        }
-                    }
-                    let removals = connection.projectIDs.subtracting(granted)
-                    try await removeDirectProjects(removals, expected: context.token)
-                    guard isCurrentCacheOperation(context.token) else { return }
-                    connection.projectIDs = granted
-                    connection.comparisonCode = nil
-                    for descriptor in status.projects where !projectLifecycle.isDeleted(descriptor.id) {
-                        guard isCurrentCacheOperation(context.token) else { return }
-                        let project = try await context.client.project(descriptor,
-                            deviceID: connection.deviceID, credential: context.credential)
-                        guard isCurrentCacheOperation(context.token),
-                              try await saveDirectProject(project, expected: context.token) else { return }
-                    }
-                    guard isCurrentCacheOperation(context.token) else { return }
-                    if let current = currentConnection(for: context.token), connection.hasChanges(from: current) {
-                        _ = try commitConnection(connection, expected: context.token)
-                    }
-                }
-            } catch SyncError.revoked {
-                continue
-            } catch {
-                self.error = error.localizedDescription
-            }
-        }
-        comparisonCode = connections.first(where: { $0.comparisonCode != nil })?.comparisonCode
-        projects.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-    }
-
-    /// Removes only direct-sync caches after confirmed revocation. Legacy
-    /// recovery archives keep their independent read-only ownership.
-    private func removeDirectProjects(_ removals: Set<UUID>, expected: ConnectionToken? = nil) async throws {
-        guard !removals.isEmpty else { return }
-        let mutation = cacheMutations.enqueue { [weak self] in
-            guard let self else { throw RubricExchangeError.storageFailure }
-            try await self.removeDirectProjectsUnserialized(removals, expected: expected)
-        }
-        try await mutation.value
-    }
-
-    private func removeDirectProjectsUnserialized(_ removals: Set<UUID>,
-                                                  expected: ConnectionToken? = nil) async throws {
-        for id in removals {
-            if let expected, !isCurrentCacheOperation(expected) { return }
-            // A deleted ID is already suppressed locally. Do not decode a
-            // late, malformed cache merely to decide whether synchronization
-            // should remove it; recovery archives and unrelated projects must
-            // remain protected by their existing ownership checks.
-            guard !projectLifecycle.isDeleted(id) else { continue }
-            if let expected, hasActiveProjectOwner(id, excluding: expected.connectionID) { continue }
-            guard let cached = try await store.load(id: id) else { continue }
-            guard cached.mode == .direct else { continue }
-            if let expected, !isCurrentCacheOperation(expected) { return }
-            if let expected, hasActiveProjectOwner(id, excluding: expected.connectionID) { continue }
-            try await store.remove(id: id)
-            if let expected, !isCurrentCacheOperation(expected) { return }
-            projects.removeAll { $0.id == id }
-        }
-    }
-
-    private func saveDirectProject(_ project: OfflineProject,
-                                   expected token: ConnectionToken) async throws -> Bool {
-        let mutation = cacheMutations.enqueue { [weak self] in
-            guard let self, self.isCurrentCacheOperation(token),
-                  !self.projectLifecycle.isDeleted(project.id) else { return false }
-            try await self.store.save(project)
-            guard self.isCurrentCacheOperation(token) else {
-                if self.connections.first(where: { $0.connectionID == token.connectionID })?.projectIDs.contains(project.id) != true,
-                   !self.hasActiveProjectOwner(project.id, excluding: token.connectionID) {
-                    try await self.store.remove(id: project.id)
-                    self.projects.removeAll { $0.id == project.id }
-                }
-                return false
-            }
-            self.projects.removeAll { $0.id == project.id }
-            self.projects.append(project)
-            return true
-        }
-        return try await mutation.value
-    }
-
     func handleConfirmedRevocation(for token: ConnectionToken,
                                    ticket: MobileRevocationTicket?,
                                    message: String) async {
@@ -429,6 +338,9 @@ final class MobileLibrary {
             failures.append("No se pudo guardar el vínculo revocado: \(error.localizedDescription)")
         }
         invalidateCacheAndAuthorization()
+        for id in revoked.pendingPurgeProjectIDs where !hasActiveProjectOwner(id, excluding: token.connectionID) {
+            downloads.deny(id: id)
+        }
         connections = nextConnections
         pendingRubricRequests.removeAll { $0.targetDeviceID == revoked.deviceID }
         projects.removeAll {

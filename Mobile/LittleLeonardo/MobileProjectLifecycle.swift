@@ -64,6 +64,8 @@ extension MobileLibrary {
             guard let self else { return }
             try self.projectLifecycle.deleteProject(id)
             self.projects.removeAll { $0.id == id }
+            self.downloads.deny(id: id)
+            try await self.downloads.remove(id: id)
             try await self.store.remove(id: id)
         }
         do { try await mutation.value }

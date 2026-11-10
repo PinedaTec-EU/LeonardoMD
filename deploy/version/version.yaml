@@ -969,9 +969,19 @@
       "pr": 405,
       "summary": "Reduces excess space before the first heading in Little Leonardo's synchronized Markdown reader. Desktop and later headings keep their spacing. Adds native iOS layout checks and updates both bundled guides.",
       "to_version": "0.3.1147"
+    },
+    {
+      "delta": {
+        "build": 68
+      },
+      "from_version": "0.3.1147",
+      "merge_sha": "7e9af9c5f02bc5874bffac7bf4f15951a0abb385",
+      "pr": 385,
+      "summary": "Browse shared projects without bulk downloads, open files on demand, and manage temporary cache separately from files and folders kept offline.",
+      "to_version": "0.3.1215"
     }
   ],
-  "current_version": "0.3.1147",
+  "current_version": "0.3.1215",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
