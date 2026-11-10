@@ -18,6 +18,38 @@ final class SyncHelperControllerTests: XCTestCase {
             hasExecutable: { true }, verifyPackage: {})
     }
 
+    func testLateReadinessCannotOverwriteANewerHealthyRefresh() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let original = RunningDirectService(endpoint: URL(string: "https://127.0.0.1:40881")!,
+            certificateFingerprint: Data(repeating: 1, count: 32))
+        let current = RunningDirectService(endpoint: URL(string: "https://127.0.0.1:40882")!,
+            certificateFingerprint: Data(repeating: 2, count: 32))
+        await control.setSharing(original)
+        let controller = upgrading(fixture, registration, control)
+        await controller.refresh()
+        await control.pauseStatus(at: 2)
+        let readiness = Task { try await controller.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldStatus
+        guard held else {
+            await control.resumeStatus(); _ = try? await readiness.value
+            XCTFail("Readiness response did not reach its controlled barrier"); return
+        }
+        await control.setSharing(current)
+        await controller.refresh()
+        XCTAssertEqual(controller.sharing?.endpoint, current.endpoint)
+        await control.resumeStatus()
+        try await readiness.value
+        XCTAssertTrue(controller.online, "A newer healthy refresh must not spuriously block operations")
+        XCTAssertEqual(controller.sharing?.endpoint, current.endpoint)
+    }
+
     func testOneStartupRefreshReachesOnlineWithoutPreferencesPolling() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
@@ -655,12 +687,14 @@ private actor HelperControlFake: SyncHelperControlAccess {
     private var unavailable = false
     private var buildIdentity: SyncHelperBuildIdentity?
     private var buildIdentities: [SyncHelperBuildIdentity?] = []
+    private var sharing: RunningDirectService?
     private var pausedStatusCall: Int?
     private var failingStatusCalls: Set<Int> = []
     private(set) var statusCalls = 0
     private var reloadPaused = false
     private var heldReload: CheckedContinuation<Void, Never>?
     var hasHeldReload: Bool { heldReload != nil }
+    func setSharing(_ value: RunningDirectService) { sharing = value }
     func setBuildIdentities(_ values: [SyncHelperBuildIdentity?]) { buildIdentities = values }
     func pauseStatus(at call: Int) { pausedStatusCall = call }
     func failStatus(at call: Int) { failingStatusCalls.insert(call) }
@@ -676,11 +710,12 @@ private actor HelperControlFake: SyncHelperControlAccess {
     func resumeStatus() { paused = false; heldStatus?.resume(); heldStatus = nil }
     func status() async throws -> SyncHelperStatus {
         statusCalls += 1
-        if paused || pausedStatusCall == statusCalls { await withCheckedContinuation { heldStatus = $0 } }
         let scheduledFailure = failingStatusCalls.remove(statusCalls) != nil
         if unavailable || scheduledFailure { throw HelperControlError.unavailable }
         if !buildIdentities.isEmpty { buildIdentity = buildIdentities.removeFirst() }
-        return SyncHelperStatus(enabled: true, sharing: nil, buildIdentity: buildIdentity)
+        let reply = SyncHelperStatus(enabled: true, sharing: sharing, buildIdentity: buildIdentity)
+        if paused || pausedStatusCall == statusCalls { await withCheckedContinuation { heldStatus = $0 } }
+        return reply
     }
     func reload() async throws -> SyncHelperStatus {
         reloads += 1
