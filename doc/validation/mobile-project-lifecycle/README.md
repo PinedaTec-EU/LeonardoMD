@@ -1,5 +1,7 @@
 # Mobile project lifecycle validation
 
+> Current candidate after main integration: `de24b150fd3cb97ad40986d3945875e58a04791c`, Guide v36. The historical native-v35 evidence below does not establish current packaged acceptance. See the latest reconciliation section at the end.
+
 Tracking: [#407](https://github.com/PinedaTec-EU/LeonardoMD/issues/407), [PR #408](https://github.com/PinedaTec-EU/LeonardoMD/pull/408).
 
 ## Behavior
@@ -68,3 +70,22 @@ Current-head CI and the complete strict independent report are recorded on PR #4
 ## On-demand merge reconciliation
 
 The owner authorized resolving the in-progress main merge at `945d05aa` (on-demand sync #384/#385). The resolution retains one project list, restores Demo from Settings, keeps cache settings and the new on-demand reader, and moves removal guards into the sole downloads synchronization path. Local deletion now denies active download access and purges downloaded/offline files as well as the corpus record. A regression populates and reads the real on-demand cache before deletion, then verifies both storage boundaries and blocked reads. Both locale sources include the main on-demand chapter and project lifecycle chapter; new Guide v36 packages avoid overwriting earlier personal copies. Prior v35 screenshots are historical until current-candidate acceptance is recorded.
+
+## Received-project deletion after integration
+
+The main merge is fully resolved and committed at `8b893299`; the deleted-project guards now live in `MobileLibrary+Downloads.swift`, preserving the incoming on-demand architecture. The later producer `de24b150fd3cb97ad40986d3945875e58a04791c` rechecks durable deletion after both catalogue fetch and cache update suspension, purges a late catalogue when necessary and continues with unrelated descriptors. File delivery checks deletion before and after its authenticated request.
+
+Validation after resolution:
+
+- Full host suite: **745 XCTest**, 38 expected skips, zero failures; **72 Swift Testing** cases, zero failures.
+- Mobile units and all three Demo UI scenarios: **24 passed**, zero failures or skips. The reset test now waits for and targets the actual confirmation sheet ([#411](https://github.com/PinedaTec-EU/LeonardoMD/issues/411)), preserving saved practice instead of wiping the simulator.
+- On-demand native UI flow: **1 passed**, zero failures/skips, against the independent pinned HTTPS fixture: **1 passed**. The full flow verifies catalogue-only enrollment, a single requested body, separate offline retention, automatic retry/future descendants, then received-project swipe + explicit Delete, relaunch, authenticated refresh and persistent absence while Demo stays visible.
+- The source audit has **zero bulk snapshots**; no remote reference body was fetched. `test-without-building` reused the exact build-for-testing product and did not add another compilation count. The accumulated source-PR entry now records **18 successful compiling commands**; failed runs were not counted.
+
+The [before](on-demand-reconciliation/project-before-delete.png), [revealed Delete](on-demand-reconciliation/project-swipe-delete.png) and [after relaunch/refresh](on-demand-reconciliation/project-deleted-after-refresh.png) captures were visually inspected. Their contexts use measured `app.frame` native points and `viewport_css: null`, without a hardcoded hardware model. [Input groups](on-demand-reconciliation/source-inputs.json), result summaries, source request audits and original images/metadata bind the evidence to the producer.
+
+### Current packaged Help limitation
+
+Guide v36 was deterministically generated from both combined locale sources; all three packaging checks pass. `launch.sh --qa` compiled and verified the real candidate at producer `d986f417` (its Mac production inputs are unchanged by the later mobile/test-only correction). A fresh QA window could not be observed: two CUA attachment attempts timed out and the product-wide principal is an installed application owned outside this task. That process and its documents were not modified or closed.
+
+The official additional-instance path requires the shared `allowMultipleInstances` preference. Owner permission was requested asynchronously to enable it temporarily, run the existing QA with `--new-instance`, close only QA and restore the original false value. No preference change or single-instance bypass has been performed. Until permission and a successful fresh v36 Help run are available, this acceptance and PR readiness remain pending. Another owner-authorized thread owns the final independent judgment and merge; this implementation thread will not duplicate those actions.

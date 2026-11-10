@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T11:53:28.259242+00:00",
+  "capture": {
+    "browser_name": "Little Leonardo native SwiftUI/WKWebView \u00b7 iOS Simulator 27.0",
+    "browser_version": "WKWebView engine version not exposed by XCTest",
+    "capture_mode": "viewport",
+    "captured_at": "2026-11-10T11:52:25Z",
+    "data_provenance": "synthetic",
+    "native_viewport_points": {
+      "height": 874,
+      "width": 402
+    },
+    "route": "/native/ios/on-demand/project-deleted-after-refresh",
+    "screen": "project-deleted-after-refresh",
+    "source_sha": "de24b150fd3cb97ad40986d3945875e58a04791c",
+    "state": "Received project stays absent after app relaunch and authenticated synchronization; local Demo remains; native points measured from app.frame; Spanish; Classic appearance",
+    "viewport_css": null
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "045f550c5090d08b6f8f4535a804826d5bc93060eda25bb246422946aeeabf87"
+  },
+  "source": {
+    "revision_at_collection": "de24b150fd3cb97ad40986d3945875e58a04791c",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  },
+  "schema_limitation": "Canonical helper image/source collectors used; native viewport points come from XCTest app.frame; browser CSS viewport is not applicable and remains null."
+}
