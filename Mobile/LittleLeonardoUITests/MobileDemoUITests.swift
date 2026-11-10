@@ -104,7 +104,10 @@ final class MobileDemoUITests: XCTestCase {
     @MainActor private func resetDemo(in app: XCUIApplication) {
         app.buttons["demo-options"].tap()
         app.buttons["demo-reset"].tap()
-        app.buttons["Restablecer / Reset"].tap()
+        let confirmation = app.sheets.firstMatch
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
+        confirmation.buttons["Restablecer / Reset"].tap()
+        XCTAssertTrue(confirmation.waitForNonExistence(timeout: 5))
     }
 
     @MainActor private func practiceName(in web: XCUIElement, capturePrefix: String? = nil,
