@@ -3,24 +3,20 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.3.1270</title>
-            <pubDate>Tue, 10 Nov 2026 19:26:13 +0100</pubDate>
+            <title>0.3.1276</title>
+            <pubDate>Tue, 10 Nov 2026 23:33:58 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>1270</sparkle:version>
-            <sparkle:shortVersionString>0.3.1270</sparkle:shortVersionString>
+            <sparkle:version>1276</sparkle:version>
+            <sparkle:shortVersionString>0.3.1276</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">Known issue found during signed-installation validation: after updating from 0.3.1215, the previous sharing service can remain running while the new editor reports it unavailable. Existing pairings, project permissions and TLS identity were preserved, but automatic service renewal did not pass. Avoid relying on this beta for uninterrupted sharing. Investigation and acceptance evidence: https://github.com/PinedaTec-EU/LeonardoMD/issues/412#issuecomment-6775868256
+            <description sparkle:format="markdown">The built-in updater now prepares Leonardo Sync before replacing the Mac application. It waits for a cooperative service stop, keeps existing consent for the next launch, and postpones installation if a safe stop cannot be confirmed. Downloading alone does not pause sharing. Cancelling the application quit resumes the service; an explicit decision to disable it remains respected. Newer registered services are protected against downgrade.
 
-This beta introduces automatic renewal safeguards for outdated sharing services, including identity and readiness checks and respect for an explicit decision to disable sharing. The installed renewal issue above remains unresolved.
+Spanish and English help explains the updated installation behavior and recovery limits. This beta retains the unified project library with origin icons, project removal and restoration, on-demand document downloads and separate offline storage controls.
 
-The project library now brings local and received projects together. Origin icons distinguish local projects, projects shared from this Mac and projects received from another device. Project removal and restoration remain available with their associated recovery controls.
-
-Spanish and English help explains the updated library and sharing behavior. This beta also retains on-demand document downloads and separate offline storage controls.
-
-Known limitations: transfers require a reachable source Mac; automatic refresh runs while the receiving app is active. This macOS download supports Apple silicon. Little Leonardo distribution is managed separately through TestFlight.
+Known limits: the originating application must already include the preparation logic for it to protect a later update. This beta does not retroactively recover an older service that has already become unreachable after bundle replacement, and external installers do not run the built-in preparation. Automatic renewal across two signed installations and existing paired-iPhone access remain unvalidated. This download supports Apple silicon; Little Leonardo distribution is managed separately through TestFlight.
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1270/LeonardoMD-0.3.1270.zip" length="24811684" type="application/octet-stream" sparkle:edSignature="jlRs5v4XWBtOnBMgjYP/vdKr8QOXXT6B+rd7odD9RgTGlV6pwzGfWcn0BFzkkKDTGXBPisPjusuoyDP0D8qgBw==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1276/LeonardoMD-0.3.1276.zip" length="24824469" type="application/octet-stream" sparkle:edSignature="zPeIuIuHNlOWgI2WFzHCcfwXbr7FLkKYDKbWtrLMSCBPYxgk7QYSiOavXPsfqjJtkiEKImkmRVVbFwPeGySzAg==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.765</title>
