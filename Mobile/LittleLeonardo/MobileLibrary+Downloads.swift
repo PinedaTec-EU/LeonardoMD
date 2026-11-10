@@ -40,13 +40,23 @@ extension MobileLibrary {
                         let catalogue = try await context.client.catalogue(descriptor,
                             deviceID: connection.deviceID, credential: context.credential)
                         guard isCurrentCacheOperation(cacheToken) else { return }
+                        // A deletion queued before this synchronization can finish
+                        // while the catalogue request is suspended.
+                        guard !projectLifecycle.isDeleted(descriptor.id) else { continue }
                         try await downloads.update(id: descriptor.id, descriptor: descriptor, catalogue: catalogue)
                         guard isCurrentCacheOperation(cacheToken) else {
                             try await downloads.remove(id: descriptor.id); return
                         }
+                        if projectLifecycle.isDeleted(descriptor.id) {
+                            try await downloads.remove(id: descriptor.id)
+                            continue
+                        }
                         let project = try OfflineProject(id: descriptor.id, name: descriptor.name, mode: .direct,
                             scope: descriptor.scope, snapshot: CorpusSnapshot(revision: "catalogue", files: []))
-                        guard try await saveDirectProject(project, expected: cacheToken) else { return }
+                        guard try await saveDirectProject(project, expected: cacheToken) else {
+                            if projectLifecycle.isDeleted(descriptor.id) { continue }
+                            return
+                        }
                     }
 
                 }
