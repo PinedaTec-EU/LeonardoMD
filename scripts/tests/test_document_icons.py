@@ -16,6 +16,13 @@ class DocumentIconTests(unittest.TestCase):
             icon = declarations[uti]['CFBundleTypeIconFile']
             self.assertTrue((ROOT / 'assets/AppIcon' / icon).is_file())
         self.assertNotIn('CFBundleTypeIconFile', declarations['public.plain-text'])
+        types = {entry['UTTypeIdentifier']: entry
+                 for key in ('UTImportedTypeDeclarations', 'UTExportedTypeDeclarations')
+                 for entry in info[key]}
+        for uti in ('net.daringfireball.markdown', 'eu.pinedatec.leonardomd.mdlf',
+                    'eu.pinedatec.leonardomd.mdlr', 'eu.pinedatec.leonardomd.mdlz'):
+            self.assertEqual(types[uti]['UTTypeIconFile'], declarations[uti]['CFBundleTypeIconFile'])
+        self.assertNotIn('public.plain-text', types)
 
 
 if __name__ == '__main__':

@@ -177,5 +177,7 @@ Little Leonardo bundled demo [#381](https://github.com/PinedaTec-EU/LeonardoMD/i
 
 Finder document icon declarations live in `scripts/Info.plist`; Markdown and the
 three Leonardo types reference the packaged `assets/AppIcon/LeonardoMD.icns`.
-Plain text remains a separate unbranded handler. Finder chooses the displayed
-icon and may show previews or another application's icon.
+The imported Markdown and exported Leonardo type definitions also declare that
+icon via `UTTypeIconFile`; plain text remains a separate unbranded handler.
+Finder chooses the displayed icon and may show previews or another application's
+icon.
