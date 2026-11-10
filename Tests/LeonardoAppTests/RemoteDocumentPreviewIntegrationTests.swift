@@ -67,6 +67,7 @@ import LeonardoSyncUI
         }
         let image = root.appendingPathComponent("preview.png")
         let expectedContent = entry.path.hasSuffix(".txt") ? "Previously retained content A" : "Readable document"
+        let captureDestination = ProcessInfo.processInfo.environment["LEONARDO_PREVIEW_EVIDENCE"]
         var recognized = ""
         var readableContent = ""
         let renderDeadline = ContinuousClock.now.advanced(by: .seconds(8))
@@ -94,10 +95,14 @@ import LeonardoSyncUI
                     })()
                     """)) as? String) ?? ""
             }
-        } while (!readableContent.contains(expectedContent) || !recognized.contains("Synthetic update unavailable")) && ContinuousClock.now < renderDeadline
+        } while (!readableContent.contains(expectedContent) || !recognized.contains("Synthetic update unavailable") ||
+                 (captureDestination != nil && !recognized.contains(expectedContent))) && ContinuousClock.now < renderDeadline
         XCTAssertTrue(readableContent.contains(expectedContent), "Production preview content did not become visible: " + readableContent)
-        if let destination = ProcessInfo.processInfo.environment["LEONARDO_PREVIEW_EVIDENCE"] {
-            XCTAssertTrue(recognized.contains(expectedContent), "Author-owned capture must include readable content, not a blank WebKit surface")
+        if let destination = captureDestination {
+            guard recognized.contains(expectedContent) else {
+                XCTFail("Author-owned capture must include readable content, not a blank WebKit surface")
+                return recognized + "\n" + readableContent
+            }
             let output = URL(fileURLWithPath: destination, isDirectory: true)
             try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
             let name = (entry.path.hasSuffix(".txt") ? "retained-copy" : "image-error") + (spanish ? "-es" : "-en")
