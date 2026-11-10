@@ -114,7 +114,8 @@ struct MarkdownRenderTests {
         let stylesheet = String(
             data: MarkdownResourceCatalog.data(for: .previewStyles) ?? Data(), encoding: .utf8) ?? ""
         #expect(stylesheet.contains(".markdown-body.compact-first-heading"))
-        #expect(stylesheet.contains("margin-top: 0.55em"))
+        #expect(stylesheet.contains("padding-top: 16px"))
+        #expect(stylesheet.contains("margin-top: 0"))
     }
 
     @Test

@@ -85,8 +85,12 @@ body[data-paper-effect="parchment"] {
 }
 
 /* Native readers already provide intentional space below their navigation bar. */
+.markdown-body.compact-first-heading {
+  padding-top: 16px;
+}
+
 .markdown-body.compact-first-heading > :first-child:is(h1, h2, h3, h4, h5, h6) {
-  margin-top: 0.55em;
+  margin-top: 0;
 }
 
 .markdown-body h2 {
