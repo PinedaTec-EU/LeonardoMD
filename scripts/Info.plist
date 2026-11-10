@@ -21,22 +21,32 @@
 <key>CFBundleTypeName</key><string>Markdown document</string>
 <key>CFBundleTypeRole</key><string>Editor</string>
 <key>LSHandlerRank</key><string>Alternate</string>
-<key>LSItemContentTypes</key><array><string>net.daringfireball.markdown</string><string>public.plain-text</string></array>
+<key>CFBundleTypeIconFile</key><string>LeonardoMD.icns</string>
+<key>LSItemContentTypes</key><array><string>net.daringfireball.markdown</string></array>
+</dict>
+<dict>
+<key>CFBundleTypeName</key><string>Plain text document</string>
+<key>CFBundleTypeRole</key><string>Editor</string>
+<key>LSHandlerRank</key><string>Alternate</string>
+<key>LSItemContentTypes</key><array><string>public.plain-text</string></array>
 </dict>
 <dict>
 <key>CFBundleTypeName</key><string>Leonardo document</string>
+<key>CFBundleTypeIconFile</key><string>LeonardoMD.icns</string>
 <key>CFBundleTypeRole</key><string>Editor</string>
 <key>LSHandlerRank</key><string>Owner</string>
 <key>LSItemContentTypes</key><array><string>eu.pinedatec.leonardomd.mdlf</string></array>
 </dict>
 <dict>
 <key>CFBundleTypeName</key><string>Leonardo form response</string>
+<key>CFBundleTypeIconFile</key><string>LeonardoMD.icns</string>
 <key>CFBundleTypeRole</key><string>Editor</string>
 <key>LSHandlerRank</key><string>Owner</string>
 <key>LSItemContentTypes</key><array><string>eu.pinedatec.leonardomd.mdlr</string></array>
 </dict>
 <dict>
 <key>CFBundleTypeName</key><string>Leonardo package</string>
+<key>CFBundleTypeIconFile</key><string>LeonardoMD.icns</string>
 <key>CFBundleTypeRole</key><string>Editor</string>
 <key>LSHandlerRank</key><string>Owner</string>
 <key>LSItemContentTypes</key><array><string>eu.pinedatec.leonardomd.mdlz</string></array>
