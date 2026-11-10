@@ -14,7 +14,7 @@ One name-sorted project list includes the explicitly local Demo project. Its lan
 - Full `swift test` passed; five focused `BundledUserGuideTests` passed again for Guide v34. Three deterministic guide-packaging tests passed.
 - The first full Swift attempt caught an obsolete test expectation for the removed demo section title. The expectation was corrected to require both document filenames and the restoration instructions; the complete suite then passed.
 
-Screenshots are original `XCTAttachment` app captures exported from `lifecycle-final.xcresult`. Their manifest supplied the actual capture timestamps. Sidecars use the canonical capture helper; native logical points are explicitly identified instead of claiming a browser/CSS viewport. The capture producer is `c03867b47cf1a61b612d6b1bea42e11909951a96`. The later Guide v34 change affects help resources, packaging and guide tests only. Captures are review evidence, not instructional screenshots or physical-device acceptance.
+Screenshots are original `XCTAttachment` app captures exported from `lifecycle-merged.xcresult`. Their manifest supplied the actual capture timestamps. Sidecars use the canonical capture helper; native logical points are explicitly identified instead of claiming a browser/CSS viewport. The capture producer is `6f90bc00752a11e6e7709becf937303cb212d5e8`. Subsequent changes are evidence and the recorded compilation count only. Captures are review evidence, not instructional screenshots or physical-device acceptance.
 
 | State | Original capture | Metadata |
 |---|---|---|
@@ -36,3 +36,9 @@ The first Help opening found an unrelated personal v31 copy (existing #378 signa
 ## Retention
 
 The task-owned worktree `.worktrees/407-mobile-projects` and its internal `.build/407-derived`/Swift caches are retained for pending visual acceptance and review. No shared/other-thread caches were removed. The owned simulator is retained for reproducing the gesture test. It is not a user device.
+
+## Final synchronization with main
+
+Integrated `origin/main` through `38208529`, preserving #405's compact reader and its bilingual help. Current packages are Guide v35, combining that text and #407 without overwriting tested v34 personal copies. Guide v35 requires its own packaged visual acceptance; v34 evidence above is historical component/workflow evidence only. The post-integration mobile run passed 19 tests with no failures; `ios-merged-summary.json` records the device and exact counts.
+
+Post-integration full `swift test` passed with no failures. Deterministic Guide v35 packaging passed all three tests. PR #408 records nine successful compilation invocations (failed commands were not counted). Both disposable native QA bundles were removed after their owned processes quit; current worktree-local build caches total approximately 1.4 GiB and are retained for the pending checks.
