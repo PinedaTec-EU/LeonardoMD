@@ -1,4 +1,0 @@
-{
-  "build": 6,
-  "summary": "Updates now pause the sharing service safely before replacing the Mac application, preserving existing access for the next launch. Installation waits if a safe stop cannot be confirmed."
-}

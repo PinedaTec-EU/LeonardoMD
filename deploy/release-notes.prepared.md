@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1276
+
+- #412 Fixed: prepare sync helper before signed application replacement ([#420](https://github.com/PinedaTec-EU/LeonardoMD/pull/420))
+
+<p>Updates now pause the sharing service safely before replacing the Mac application, preserving existing access for the next launch. Installation waits if a safe stop cannot be confirmed.</p>
+
+Source: `094d373804134c785eacfa316381f7eddbb4dc2d`. Delta: `{"build": 6}`.
+
 ## 0.3.1270
 
 - #412 Fixed: renew outdated sync helper after app updates ([#413](https://github.com/PinedaTec-EU/LeonardoMD/pull/413))

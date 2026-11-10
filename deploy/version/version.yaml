@@ -1009,9 +1009,19 @@
       "pr": 413,
       "summary": "Automatically renew outdated sync services after Mac application updates while preserving device access and pending work.",
       "to_version": "0.3.1270"
+    },
+    {
+      "delta": {
+        "build": 6
+      },
+      "from_version": "0.3.1270",
+      "merge_sha": "094d373804134c785eacfa316381f7eddbb4dc2d",
+      "pr": 420,
+      "summary": "Updates now pause the sharing service safely before replacing the Mac application, preserving existing access for the next launch. Installation waits if a safe stop cannot be confirmed.",
+      "to_version": "0.3.1276"
     }
   ],
-  "current_version": "0.3.1270",
+  "current_version": "0.3.1276",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
