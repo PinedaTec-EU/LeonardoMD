@@ -110,6 +110,8 @@ La barra del documento muestra el formato, el almacenamiento y el modo. Comprueb
 
 Usa **Guardar** (⌘S) para persistir cambios. Deshacer y Rehacer actúan sobre el documento; cerrar o navegar con cambios pendientes ofrece las opciones de guardado correspondientes. Guardar un borrador con respuestas incompletas no equivale a completarlo correctamente.
 
+Finder puede mostrar el icono de Leonardo para archivos Markdown y Leonardo. El icono puede ser diferente si otra aplicación es la predeterminada, Finder muestra una vista previa o macOS conserva un registro anterior en caché. Para elegir la aplicación predeterminada, selecciona un archivo en Finder, elige Archivo → Obtener información, selecciona Leonardo en Abrir con y usa Cambiar todo si deseas aplicarlo al tipo. Leonardo no cambia automáticamente tu aplicación predeterminada.
+
 ## 2. Elegir el formato
 
 | Formato | Qué contiene | Cuándo elegirlo |
