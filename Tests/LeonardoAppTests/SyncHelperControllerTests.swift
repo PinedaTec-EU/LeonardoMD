@@ -1,4 +1,6 @@
 import Foundation
+import AppKit
+import SwiftUI
 import ServiceManagement
 import XCTest
 import LeonardoCore
@@ -132,6 +134,55 @@ final class SyncHelperControllerTests: XCTestCase {
         let recovered = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
         XCTAssertTrue(recovered.mobileSync.helperEnabled)
         XCTAssertNil(recovered.mobileSync.helperUpgradeToken)
+    }
+
+    func testCaptureSafeUpgradeAndExplicitDisable() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_HELPER_UPGRADE_EVIDENCE"] else {
+            throw XCTSkip("Requires an explicit native component evidence destination")
+        }
+        let destination = URL(fileURLWithPath: path)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); let control = HelperControlFake()
+        let controller = upgrading(fixture, registration, control)
+        await controller.setEnabled(true)
+        await control.pauseReload()
+        let refresh = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldReload { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldReload
+        guard held else {
+            await control.resumeReload(); await refresh.value
+            XCTFail("Upgrade did not reach the controlled graceful-stop barrier"); return
+        }
+        do {
+            XCTAssertTrue(controller.busy && controller.upgrading && controller.enabled)
+            let size = NSSize(width: 900, height: 300)
+            func view() -> NSView {
+                NSHostingView(rootView: Form { SyncHelperPreferencesSection(controller: controller) }
+                    .formStyle(.grouped).frame(width: size.width, height: size.height))
+            }
+            try await GuideCaptureSupport.captureNative(view(), size: size,
+                to: destination.appendingPathComponent("upgrade-waiting.png"), language: "en",
+                state: "Synthetic older helper; graceful stop held; master remains on and explicit disable is available",
+                route: "/native/synchronization/helper/upgrade", screen: "Production helper preference section")
+            await controller.setEnabled(false)
+            await control.resumeReload(); await refresh.value
+            XCTAssertFalse(controller.online || controller.enabled || controller.busy)
+            XCTAssertEqual(registration.registrations, 1)
+            let settings = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+            XCTAssertFalse(settings.mobileSync.helperEnabled)
+            XCTAssertNil(settings.mobileSync.helperUpgradeToken)
+            try await GuideCaptureSupport.captureNative(view(), size: size,
+                to: destination.appendingPathComponent("upgrade-cancelled.png"), language: "en",
+                state: "Owner explicitly disabled during upgrade; stop completed without replacement or re-enabling",
+                route: "/native/synchronization/helper/disabled", screen: "Production helper preference section")
+        } catch {
+            await control.resumeReload(); await refresh.value
+            throw error
+        }
     }
 
     func testEnableRegistersAndRequiresLiveHealthBeforeReportingOnline() async throws {
