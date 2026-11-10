@@ -38,7 +38,8 @@ final class BundledUserGuideTests: XCTestCase {
             defer { LeonardoPackageTransport.discard(workspace) }
             let source = try String(contentsOf: workspace.documentURL, encoding: .utf8)
             XCTAssertTrue(source.contains("[LL1 op=snapshot"), "The combined guide must retain the HTTPS diagnostic example")
-            XCTAssertTrue(source.contains("Demo y práctica / Demo & practice"), "The combined guide must explain the offline demo")
+            XCTAssertTrue(source.contains("Demo-es.mdlr") && source.contains("Demo-en.mdlr"), "The combined guide must explain the demo project documents")
+            XCTAssertTrue(source.contains("Recuperar demo / Restore demo"), "Both guides must explain demo recovery")
             let document = try LeonardoFormatParser.parse(source)
             XCTAssertFalse(document.isForm)
             XCTAssertEqual(document.metadata.fields.count, 0)
