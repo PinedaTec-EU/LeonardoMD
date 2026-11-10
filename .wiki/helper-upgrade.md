@@ -46,3 +46,11 @@ and consent re-read prevent first requests during renewal. Four real regressions
 failed with12assertions before correction; full766XCTest/39skips+72SwiftTesting
 pass afterward. Current native components and unchanged Help inputs are recorded
 in readiness-input-mapping.json.
+
+Readiness completion is lifecycle-owned: one startup refresh now performs bounded
+compatible-health confirmation after registration without Preferences. Five probes
+with250ms async pauses are default; tests inject controlled pauses. No repeated
+registration inside probing. Explicit disable invalidates held startup replies.
+A newer healthy refresh owns displayed metadata; older readiness replies do not
+overwrite it or spuriously reject healthy peer operations. Full770XCTest/39skips
+plus72SwiftTesting pass. Current native evidence/input mapping is autonomous-*.

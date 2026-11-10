@@ -1,8 +1,8 @@
 {
-  "tested_source_sha": "355cd71af45694a4976687640b66be2eeb579417",
+  "tested_source_sha": "654a9f45f49070dfbc4998cd6145a3b3b9994712",
   "main_base": "f04564a235343b8efff5316bd95b6416550f291c",
   "xctest": {
-    "tests": 766,
+    "tests": 770,
     "skipped": 39,
     "failures": 0
   },
@@ -18,8 +18,8 @@
     "assertions_failed": 4,
     "after_fix": "PASS"
   },
-  "full_log_sha256": "c4f8be77a629d71bf8d3e7ceda88745eb67c38bb2a1aa4be0f33874a42ebdf24",
-  "previous_tested_source_sha": "a2a4c5ccd8fcce670561283731bf30941e49c6d3",
+  "full_log_sha256": "232323b7bc8be4df31b227dd3d6783db9772d62df0ed129a453506d04a18135b",
+  "previous_tested_source_sha": "355cd71af45694a4976687640b66be2eeb579417",
   "controlled_retry_deadline": "29 seconds: no attempt;30 seconds: retry succeeds, no sleeps",
   "activation_and_gate_regression_before_fix": {
     "source_sha": "3c33acbd4d5f64aad2fd6e28014ed1e92b2cb9db",
@@ -27,5 +27,25 @@
     "failing_assertions": 12,
     "fixed": "PASS",
     "positive_current_or_newer_identity": "PASS"
+  },
+  "unattended_startup_before_fix": {
+    "source_sha": "83d1135b1631de7d2b965592f1aff7b3e8ec4a6d",
+    "tests": 3,
+    "failing_assertions": 6,
+    "fixed": "PASS",
+    "covers": [
+      "one startup refresh with no Preferences view",
+      "transient XPC failure and delayed compatible health",
+      "bounded probes without reregistration",
+      "late health after budget recovered by normal peer operation",
+      "manual disable during a suspended post-registration health reply"
+    ]
+  },
+  "late_readiness_metadata_before_fix": {
+    "source_sha": "21660a0bc5b215c15ae154ea57608f5dce30d954",
+    "tests": 1,
+    "failing_assertions": 1,
+    "fixed": "PASS",
+    "covers": "Newer healthy refresh remains authoritative without spuriously rejecting peer readiness"
   }
 }

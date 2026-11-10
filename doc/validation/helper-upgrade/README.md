@@ -16,7 +16,7 @@ This proves the operational cause and recovery, not the automatic412 fix.
 ## Corrective candidate validation
 
 The candidate is based on main 0.3.1233 (`f04564a2`, including #408). Full
-integrated checks passed: 766 XCTest checks, 39 skips, zero failures, plus
+integrated checks passed: 770 XCTest checks, 39 skips, zero failures, plus
 72 Swift Testing checks. Generic iOS Simulator compilation passed. Three
 package determinism tests passed. See `integrated-automated.json`.
 
@@ -38,9 +38,10 @@ Packaged Help and original component captures use source533ba927d191cf6248703b32
 scripts, assets and version.nfo. The clock-only checkpoint is mapped in `clock-input-mapping.json`. The subsequent
 activation/readiness correction is mapped in `readiness-input-mapping.json`, with
 a current full input tree. Help opening, content, renderer and practice inputs
-remain unchanged; the older Help executable is not relabeled. Current controller
-UI captures are in `candidate-components-ready/`; earlier component captures are
-retained as historical checkpoints. The automatic signed-service replacement is covered
+remain unchanged; the older Help executable is not relabeled. Current lifecycle confirmation and input scope are recorded in
+`autonomous-input-mapping.json` and `autonomous-inputs.git-ls-tree.txt`. Current
+controller UI captures are in `candidate-components-autonomous/`; earlier
+component captures remain historical checkpoints. The automatic signed-service replacement is covered
 by controller tests with real temporary preferences and registration/XPC doubles;
 a live automatic replacement in an installed Developer ID package remains a
 post-publication check. The observed owner recovery above was manual.
@@ -52,3 +53,21 @@ Fresh health identity and a second persisted-consent read deny a first network
 request when renewal/disable begins while health is in flight. Four pre-fix
 regressions failed with12assertions; all pass afterward, as do current/newer
 identity positive cases.
+
+## Unattended startup readiness
+
+A single normal startup refresh now waits for a bounded compatible health
+confirmation after registration. No Preferences view supplies this lifecycle
+step. The default policy allows five probes, with250ms async pauses between
+probes; tests control pauses and do not depend on real delays. The probe phase
+does not repeat registration. Exhaustion reports unavailable, and a subsequent
+normal peer operation can recognize a helper that completed launch later.
+
+The fresh-controller test makes exactly one startup refresh, handles a transient
+health failure and delayed compatible identity, then performs a gated peer probe
+without mounting Preferences or manually refreshing again. Separate tests cover
+a bounded exhausted budget, explicit disable during a held startup reply, and
+newer verified endpoint metadata surviving an older readiness response. These
+are controller/temporary-store tests, not a newly launched packaged process.
+The three startup regressions failed with six assertions before correction; the
+delayed-metadata regression failed with one assertion. All now pass.

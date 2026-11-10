@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T15:42:23.069476+00:00",
+  "capture": {
+    "captured_at": "2026-11-10T15:38:50.002000+00:00",
+    "route": "/native/synchronization/helper/upgrade",
+    "screen": "Production helper preference section",
+    "browser_name": "Native AppKit / SwiftUI NSHostingView",
+    "browser_version": "Not applicable: native view, no browser engine",
+    "state": "Synthetic older helper; graceful stop held; master remains on and explicit disable is available; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "viewport_css": {
+      "width": 900,
+      "height": 300
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1800,
+    "height_px": 600,
+    "sha256": "8d945e764228f18133464e8f32df080c15d50ae6f0dd69be379574525aa49585"
+  },
+  "source": {
+    "revision_at_collection": "654a9f45f49070dfbc4998cd6145a3b3b9994712",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}
