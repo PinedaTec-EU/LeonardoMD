@@ -2,6 +2,7 @@ import SwiftUI
 import LeonardoCore
 import LeonardoSync
 import LeonardoRender
+import LeonardoSyncUI
 
 private enum MobileLibrarySheet: String, Identifiable {
     case direct, settings, about
@@ -16,9 +17,40 @@ extension OfflineProject {
     }
 }
 
+extension MobileLibraryProject {
+    /// The library list is a presentation boundary. A downloaded direct-sync
+    /// project is still received from another device; only the bundled demo is
+    /// local, and a legacy Git payload remains a recovery archive.
+    var projectIdentity: ProjectIdentity {
+        switch self {
+        case .demo: .local
+        case .downloaded(let project): project.projectIdentity
+        }
+    }
+}
+
+private struct OptionalAccessibilityIdentifier: ViewModifier {
+    let identifier: String?
+
+    func body(content: Content) -> some View {
+        if let identifier {
+            content.accessibilityIdentifier(identifier)
+        } else {
+            content
+        }
+    }
+}
+
 struct MobileProjectIdentityLabel: View {
     let name: String
     let identity: ProjectIdentity
+    let accessibilityIdentifier: String?
+
+    init(name: String, identity: ProjectIdentity, accessibilityIdentifier: String? = "project-identity") {
+        self.name = name
+        self.identity = identity
+        self.accessibilityIdentifier = accessibilityIdentifier
+    }
 
     var bilingualRole: String {
         let spanish = identity.title(languageCode: "es")
@@ -54,8 +86,8 @@ struct MobileProjectIdentityLabel: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityIdentifier("project-identity")
         .accessibilityLabel(accessibilityText)
+        .modifier(OptionalAccessibilityIdentifier(identifier: accessibilityIdentifier))
     }
 }
 
@@ -68,7 +100,7 @@ struct MobileLibraryView: View {
     @State private var host = ""
     @State private var port = "40882"
     @State private var presentedRubricRequest: RubricRequest?
-    @AppStorage("directSyncIntervalMinutes") private var syncInterval = 0
+    @AppStorage("directSyncIntervalMinutes") private var syncInterval = 1
     @Environment(\.scenePhase) private var scenePhase
     private var activeRubricDraft: MobileRubricDraft? {
         library.recoverableRubricDrafts.first { $0.state != .submitted }
@@ -76,28 +108,41 @@ struct MobileLibraryView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Demo y práctica / Demo & practice") {
-                    ForEach(MobileDemoStore.Language.allCases) { language in
-                        NavigationLink(language.title) { MobileDemoView(language: language) }
-                            .foregroundStyle(MobileClassic.heading)
-                            .accessibilityIdentifier("open-demo-\(language.rawValue)")
-                    }
-                    Text("Sin Mac ni conexión · No Mac or network needed")
-                        .font(.caption).foregroundStyle(MobileClassic.secondary)
-                }.listRowBackground(MobileClassic.paper)
                 Section("Proyectos / Projects") {
-                    ForEach(library.projects, id: \.id) { project in
+                    ForEach(library.libraryProjects) { project in
                         NavigationLink {
-                            MobileProjectView(library: library, projectID: project.id)
+                            switch project {
+                            case .demo: MobileDemoProjectView()
+                            case .downloaded(let cached):
+                                MobileProjectView(library: library, projectID: cached.id)
+                            }
                         } label: {
                             VStack(alignment: .leading, spacing: 5) {
-                                MobileProjectIdentityLabel(name: project.name, identity: project.projectIdentity)
-                                Text(project.isRecoveryArchive ? "Archivo de recuperación · Solo lectura" : "Consulta desde LeonardoMD · Solo lectura")
-                                    .font(.caption).foregroundStyle(MobileClassic.secondary)
+                                MobileProjectIdentityLabel(name: project.name,
+                                                           identity: project.projectIdentity,
+                                                           accessibilityIdentifier: nil)
+                                if project.projectIdentity == .recoveryArchive {
+                                    Text("Archivo de recuperación · Solo lectura")
+                                        .font(.caption).foregroundStyle(MobileClassic.secondary)
+                                } else if project.projectIdentity == .received {
+                                    Text("Consulta desde LeonardoMD · Solo lectura")
+                                        .font(.caption).foregroundStyle(MobileClassic.secondary)
+                                }
                             }
                         }
+                        // Keep the stable navigation contract on the outer link;
+                        // the descriptive identity label is intentionally a child.
+                        .accessibilityElement(children: .combine)
+                        .accessibilityIdentifier(project.id == "bundled-demo" ? "open-demo-project" : "open-project-\(project.id)")
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button("Eliminar / Delete", role: .destructive) {
+                                Task { await library.deleteLibraryProject(project) }
+                            }
+                            .disabled(library.connecting)
+                            .accessibilityIdentifier(project.id == "bundled-demo" ? "delete-demo-project" : "delete-project-\(project.id)")
+                        }
                     }
-                    if library.projects.isEmpty {
+                    if library.libraryProjects.isEmpty {
                         VStack(spacing: 16) {
                             MobileBrand(size: 64)
                             Text("Tus documentos, contigo").font(.title2.bold()).foregroundStyle(MobileClassic.heading)
@@ -183,7 +228,9 @@ struct MobileLibraryView: View {
             }
         }
         .task(id: "\(syncInterval)-\(scenePhase)") {
-            guard scenePhase == .active, [1, 5, 15, 30, 60].contains(syncInterval) else { return }
+            guard scenePhase == .active else { return }
+            await library.synchronize()
+            guard [1, 5, 15, 30, 60].contains(syncInterval) else { return }
             while !Task.isCancelled {
                 do { try await Task.sleep(for: .seconds(syncInterval * 60)) }
                 catch { return }
@@ -269,6 +316,17 @@ struct MobileLibraryView: View {
         NavigationStack {
             Form {
                 Section("Frecuencia") { syncFrequency }.listRowBackground(MobileClassic.inset)
+                Section("Proyectos / Projects") {
+                    Button("Recuperar demo / Restore demo", systemImage: "arrow.counterclockwise") {
+                        do { try library.projectLifecycle.restoreDemo() }
+                        catch { library.error = error.localizedDescription }
+                    }
+                    .disabled(library.projectLifecycle.demoIsVisible)
+                    .accessibilityIdentifier("restore-demo-project")
+                    Text("Recupera el proyecto con tus respuestas de práctica guardadas en este dispositivo. / Restore the project with your practice answers saved on this device.")
+                        .font(.caption)
+                }.listRowBackground(MobileClassic.inset)
+                SyncCacheSettingsView(library: library.downloads, spanish: true).listRowBackground(MobileClassic.inset)
                 Section {
                     Button("Acerca de Little Leonardo", systemImage: "info.circle") { presentedSheet = .about }
                         .accessibilityIdentifier("open-about")
@@ -285,32 +343,49 @@ struct MobileProjectView: View {
     let library: MobileLibrary
     let projectID: UUID
     @State private var exporting = false
+    @State private var selectedEntry: RemoteFileEntry?
     private var project: OfflineProject? { library.projects.first { $0.id == projectID } }
     var body: some View {
-        List {
-            if let project {
-                Section {
+        Group {
+            if let project, !project.isRecoveryArchive {
+                VStack(alignment: .leading, spacing: 0) {
                     MobileProjectIdentityLabel(name: project.name, identity: project.projectIdentity)
-                    Text("Disponible offline · Solo lectura").font(.caption).foregroundStyle(MobileClassic.secondary)
-                    if !project.isRecoveryArchive {
-                        Text("Contenido autorizado por el Mac · Content authorized by the Mac")
-                            .font(.caption).foregroundStyle(MobileClassic.secondary)
-                    }
-                    Text("Carpeta: \(project.scope.folder.isEmpty ? "/" : project.scope.folder)").font(.caption)
-                    if project.isRecoveryArchive {
-                        Text("Esta copia antigua conserva tus cambios locales y enviados. Expórtala para recuperarlos en un ordenador. No se editará ni se enviará automáticamente.")
-                        Button("Exportar recuperación", systemImage: "square.and.arrow.up") { exporting = true }
-                            .accessibilityIdentifier("export-recovery")
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(MobileClassic.inset)
+                    SyncCatalogueView(library: library.downloads, projectID: project.id,
+                                      spanish: true, rowBackground: MobileClassic.paper) { entry in
+                        selectedEntry = entry
                     }
                 }
-                .listRowBackground(MobileClassic.inset)
-                ForEach(project.files.filter { ["md", "markdown", "txt"].contains(($0.path as NSString).pathExtension.lowercased()) }, id: \.path) { file in
-                    NavigationLink(file.path) {
-                        MobileDocumentView(library: library, projectID: project.id, file: file)
-                    }.listRowBackground(MobileClassic.paper)
+            } else {
+                List {
+                    if let project {
+                        Section {
+                            MobileProjectIdentityLabel(name: project.name, identity: project.projectIdentity)
+                            Text("Disponible offline · Solo lectura")
+                                .font(.caption).foregroundStyle(MobileClassic.secondary)
+                            Text("Carpeta: \(project.scope.folder.isEmpty ? "/" : project.scope.folder)")
+                                .font(.caption)
+                            if project.isRecoveryArchive {
+                                Text("Esta copia antigua conserva tus cambios locales y enviados. Expórtala para recuperarlos en un ordenador. No se editará ni se enviará automáticamente.")
+                                Button("Exportar recuperación", systemImage: "square.and.arrow.up") { exporting = true }
+                                    .accessibilityIdentifier("export-recovery")
+                            }
+                        }
+                        .listRowBackground(MobileClassic.inset)
+                        ForEach(project.files.filter { ["md", "markdown", "txt"].contains(($0.path as NSString).pathExtension.lowercased()) }, id: \.path) { file in
+                            NavigationLink(file.path) {
+                                MobileDocumentView(library: library, projectID: project.id, file: file)
+                            }.listRowBackground(MobileClassic.paper)
+                        }
+                    }
                 }
             }
         }.classicSurface().navigationTitle(project?.name ?? "Proyecto")
+        .navigationDestination(item: $selectedEntry) { entry in
+            RemoteDocumentPreview(library: library.downloads, projectID: projectID, entry: entry, spanish: true, appearance: .leonardoClassic, compactFirstHeading: true).classicSurface()
+        }
         .fileExporter(isPresented: $exporting, document: project.map(MobileRecoveryDocument.init),
                       contentType: .json, defaultFilename: "LittleLeonardo-\(projectID.uuidString)-recovery") { result in
             if case .failure(let error) = result { library.error = error.localizedDescription }
@@ -332,9 +407,11 @@ struct MobileDocumentView: View {
     @StateObject private var previewController = MarkdownPreviewController()
     private let virtualRoot = URL(fileURLWithPath: "/LittleLeonardoCorpus", isDirectory: true)
     private var previewConfiguration: MarkdownPreviewConfiguration {
-        MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true, externalLinkPolicy: .blocked,
+        var configuration = MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true, externalLinkPolicy: .blocked,
             appearance: .leonardoClassic,
             localAssetRoot: virtualRoot, memoryAssets: assets, allowsRemoteImages: false)
+        configuration.compactFirstHeading = true
+        return configuration
     }
     private var liveProject: OfflineProject? { library.projects.first { $0.id == projectID } }
     private var liveFile: CorpusFile? { library.currentFile(projectID: projectID, path: file.path) }

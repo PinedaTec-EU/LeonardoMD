@@ -26,9 +26,40 @@ iPhone 18 Pro / iOS 27.0 Simulator run also captures the alert for a failed
 STATUS request, then verifies refresh, retry and revocation recovery. This
 checks that the existing iOS alert displays the diagnostic; it does not
 reproduce the owner's physical 338,658-byte image failure. That failure still
-needs an owner-reported `[LL1 ...]` code, and the cause remains open in
-[#380](https://github.com/PinedaTec-EU/LeonardoMD/issues/380). No TestFlight
-build or production transport fix is claimed.
+has now been reported with `[LL1 op=snapshot domain=NSURLErrorDomain
+code=-1005 http=200 bytes=409481/492904]`. Diagnostic TestFlight1082 was
+delivered, but the physical cause and working transfer remain open in
+[#380](https://github.com/PinedaTec-EU/LeonardoMD/issues/380).
+
+### Server completion candidate and release acceptance
+
+[PR #392](https://github.com/PinedaTec-EU/LeonardoMD/pull/392) is an unvalidated
+physical-fix candidate. It marks the response as the final TLS write stream and
+allows the peer to close before teardown, bounded by five seconds. Existing
+15-second request and120-second response deadlines and service-stop cancellation
+remain. Its `[LLS1 ...]` server completion record contains only operation class,
+phase, reason, HTTP status, attempted body/encoded lengths, elapsed time and an
+allowlisted network error family/number. It contains no address, path, business
+identifier, credential, response content or arbitrary error description.
+`sendProcessed` means stack processing, and `peerClosed` means peer EOF; neither
+is proof that the receiving app validated or rendered the document.
+
+For a candidate advertised as resolving #380, require complete body/byte identity,
+strict TLS EOF, delayed consumption, concurrent reads, constrained windows,
+pin mismatch, revocation and deliberate truncation checks. Also verify bounded
+cleanup when peers withhold their own close. Before publishing a resolution,
+record the actual helper version/source, mobile build/OS, physical Wi-Fi path,
+original338,658-byte PNG identity, successful full transfer/rendering and repeated
+refresh with the normal foreground polling. Retain the owner acceptance URL.
+A simulator addressed through the Mac's LAN IP can still route over `lo0`; it
+is not physical Wi-Fi evidence. If the physical check is unavailable or fails,
+keep the candidate unvalidated and #380 open. A UI-only release must not claim
+that it fixes this transport bug.
+
+The original owner screenshot and source-scoped experiments are in
+[the response-lifetime evidence](../validation/https-response-lifetime/README.md).
+No helper replacement or physical success is established by the candidate's
+local checks.
 
 ## Current rubric response channel (#342)
 

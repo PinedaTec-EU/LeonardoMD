@@ -10,8 +10,14 @@ final class PairingUITests: XCTestCase {
         captureScreen(app, name: "Classic library")
         app.buttons["open-sync-settings"].tap()
         captureScreen(app, name: "Classic synchronization settings")
-        XCTAssertTrue(app.buttons["open-about"].waitForExistence(timeout: 5))
-        app.buttons["open-about"].tap()
+        let about = app.buttons["open-about"]
+        // Cache/retention sections can put About below Form's lazy viewport.
+        for _ in 0..<6 {
+            if about.exists { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(about.waitForExistence(timeout: 5))
+        about.tap()
         XCTAssertTrue(app.staticTexts["Little Leonardo"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any)["about-version"].firstMatch.waitForExistence(timeout: 5))
         app.buttons["Ayuda"].tap()
@@ -473,6 +479,11 @@ final class PairingUITests: XCTestCase {
             return
         }
         XCTAssertFalse(app.otherElements["startup-splash"].exists)
+        let demoProject = app.buttons["open-demo-project"]
+        XCTAssertTrue(demoProject.waitForExistence(timeout: 10),
+                      "The bundled Demo must be entered through the unified project row after relaunch")
+        demoProject.tap()
+        XCTAssertTrue(app.buttons["open-demo-en"].waitForExistence(timeout: 10))
         app.buttons["open-demo-en"].tap()
         XCTAssertTrue(app.webViews.staticTexts["Welcome to Little Leonardo"].waitForExistence(timeout: 10),
                       "The local demo must render while the Mac response remains suspended")

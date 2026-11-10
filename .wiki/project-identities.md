@@ -24,9 +24,10 @@ selection scope and paused/unavailable sharing are displayed separately.
 `ProjectIdentityLabel` and its small native icon adapter serve macOS headers and
 project lists; `RecentItemsMenu` uses the same symbols and keeps parent paths for
 disambiguation. `MobileProjectIdentityLabel` uses the same contract for iOS
-library/detail rows: direct projects are received, legacy Git payloads are recovery
-archives. No new iOS creation, sharing or onward-sharing capability is introduced.
+unified library rows and project headers: the bundled Demo is local, direct projects are received, and legacy Git payloads are recovery archives. Received headers wrap the current `SyncCatalogueView`; file transfer/retention states stay independent. No new iOS creation, sharing or onward-sharing capability is introduced.
 
 The bilingual project/synchronization help explains the same-project source and
 recipient example, partial sharing and offline behavior. See
 `doc/guide/feature-coverage.md` for the maintained help entry.
+
+Reconciliation after [#407](https://github.com/PinedaTec-EU/LeonardoMD/issues/407) preserves the one sorted project hierarchy, stable open/delete/restore accessibility identifiers, swipe-plus-tap deletion, both cache boundaries and Demo restoration. Keep the on-demand browser/reader and `compactFirstHeading`; never restore the eager received-file list from the old icon branch.

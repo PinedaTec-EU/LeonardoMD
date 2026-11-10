@@ -113,3 +113,29 @@ struct MobileDemoView: View {
         } message: { Text(error ?? "") }
     }
 }
+
+/// The bundled material is browsed as one ordinary library project.
+struct MobileDemoProjectView: View {
+    var body: some View {
+        List {
+            Section {
+                MobileProjectIdentityLabel(name: "Demo", identity: .local)
+                Text("Práctica local · Sin conexión / Local practice · Offline")
+                    .font(.caption).foregroundStyle(MobileClassic.secondary)
+            }
+            .listRowBackground(MobileClassic.inset)
+            ForEach(MobileDemoStore.Language.allCases) { language in
+                NavigationLink {
+                    MobileDemoView(language: language)
+                } label: {
+                    Label("Demo-\(language.rawValue).mdlr · \(language.title)", systemImage: "doc.text")
+                }
+                .foregroundStyle(MobileClassic.heading)
+                .accessibilityIdentifier("open-demo-\(language.rawValue)")
+                .listRowBackground(MobileClassic.paper)
+            }
+        }
+        .classicSurface()
+        .navigationTitle("Demo")
+    }
+}

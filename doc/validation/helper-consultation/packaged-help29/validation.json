@@ -1,0 +1,64 @@
+{
+  "bundle": "$TMPDIR/leonardo-native-qa-5vilgyyv/LeonardoMDQA.app",
+  "source": "b9c5bb7a1cb46d5d989d78de833fae57e402a9c5",
+  "identity": "eu.pinedatec.LeonardoMD.qa.4bd91d67efe44750b9a794c1973cb739",
+  "version": "0.3.1127",
+  "build": "1127",
+  "pids": [
+    "81719"
+  ],
+  "executable_sha256": "af540683ea89bba9876bd9a99232dc06f129c08de673b46b7eb29072548b2add",
+  "fresh_window_pending": false,
+  "help_revision": 29,
+  "fresh_pid": 81719,
+  "first_window_observed": true,
+  "help_smoke": {
+    "locales": [
+      "en",
+      "es"
+    ],
+    "revision": 29,
+    "Mermaid": true,
+    "Math_on_display_tag1": true,
+    "Math_off_fallback": true,
+    "literal_code": true,
+    "Charts": true,
+    "local_images": true,
+    "tables": true,
+    "practice_fill_save_close_reopen": true
+  },
+  "guide_identity": [
+    {
+      "language": "en",
+      "bundle_sha256": "3d4398817e9e73cb690077dc1ff92a5b48a0ad0eb930fe064a910ae4f53f274c",
+      "working_copy_sha256": "3d4398817e9e73cb690077dc1ff92a5b48a0ad0eb930fe064a910ae4f53f274c",
+      "working_copy_matches": true,
+      "practice_saved_values": {
+        "practiceGoal": "Verify automatic rubric recovery and preserved practice answers.",
+        "practiceName": "Recovery QA EN 398",
+        "practiceReady": true
+      }
+    },
+    {
+      "language": "es",
+      "bundle_sha256": "c8d1dc728b0eaf20c65221d5b37a00358bf8da07afb3aed03ad9a543465bb1a1",
+      "working_copy_sha256": "c8d1dc728b0eaf20c65221d5b37a00358bf8da07afb3aed03ad9a543465bb1a1",
+      "working_copy_matches": true,
+      "practice_saved_values": {
+        "practiceGoal": "Comprobar recuperaci\u00f3n autom\u00e1tica y respuestas conservadas al reabrir.",
+        "practiceName": "Recuperaci\u00f3n QA ES 398",
+        "practiceReady": true
+      }
+    }
+  ],
+  "quit_pending": false,
+  "originals_restore_pending": false,
+  "qa_process_absent": true,
+  "originals_restored_exact": 3,
+  "observation_reopens": "AX getState after normal quit reactivated empty auxiliary instances. They were closed normally and are not claimed as Help acceptance; original validated PID81719 completed the full workflow.",
+  "acceptance": "Source QA packaged Help only; final signed accepted-main and physical no-manual-Retry acceptance remain pending",
+  "source_worktree": "PR398 isolated checkout",
+  "capture_count": 20,
+  "screenshot_format": "Original native JPEG bytes, 2520x1700; no raster conversion. Thumbnail captures are excluded.",
+  "post_quit_observation": "Read-only PID check confirms absence; native app AX calls can reactivate the app and are not a reliable post-quit probe."
+}

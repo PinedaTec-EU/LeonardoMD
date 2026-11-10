@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "purpose": "On-demand reconciliation of the current corrected Demo deletion/restoration UI test after the producer correction.",
+  "test": {
+    "result_bundle": "/tmp/leonardo408-current-demo-de24.xcresult",
+    "log": "/tmp/leonardo408-current-demo-de24.log",
+    "identifier": "MobileDemoUITests/testDemoProjectDeletionRequiresSwipeAndTapAndCanBeRestored()",
+    "result": "Passed",
+    "passed_tests": 1,
+    "failed_tests": 0,
+    "skipped_tests": 0,
+    "expected_failures": 0,
+    "total_tests": 1,
+    "device": {
+      "architecture": "arm64",
+      "deviceId": "1A969A0F-D7E2-4C62-B288-CC893C3CBEEF",
+      "deviceName": "LittleLeonardo407 Project Lifecycle",
+      "modelName": "iPhone 17 Pro",
+      "osBuildNumber": "24A434",
+      "osVersion": "27.0",
+      "platform": "iOS Simulator"
+    },
+    "log_sha256": "c0f4827cb303f1d3dbf87725900ee44a8696a998f24501060bae0bdf8ac98e79"
+  },
+  "source": {
+    "producer_revision": "de24b150fd3cb97ad40986d3945875e58a04791c",
+    "collector_head": "d3a98ba012f500289de4b168ae227ae561783b2b",
+    "collector_note": "Metadata collector HEAD contains notes-only merges; root-owned production source-inputs manifest proves scoped production equality. This evidence does not claim current application source equals the producer."
+  },
+  "attachments": {
+    "manifest": "attachment-manifest.json",
+    "count": 4,
+    "all_passed_nonfailure": true,
+    "items": [
+      {
+        "name": "library",
+        "png": "library.png",
+        "context": "library.context.json",
+        "metadata": "library.metadata.json",
+        "sha256": "b017f35a31b9b2658aeb20937e521d94c16ad6e3b12a7d9dda7b0b6e1d6ffb1c",
+        "dimensions_px": [
+          1206,
+          2622
+        ],
+        "captured_at": "2026-11-10T12:15:52.949Z",
+        "screen": "Ordinary project library",
+        "source_attachment_uuid": "14103E56-ED17-4D2B-8743-FC45053AAB87",
+        "is_associated_with_failure": false
+      },
+      {
+        "name": "swipe-delete",
+        "png": "swipe-delete.png",
+        "context": "swipe-delete.context.json",
+        "metadata": "swipe-delete.metadata.json",
+        "sha256": "3f44d2dc0c4f3ca5419e925ad7afcf1173364c63783b1dec7f0efa548f39e00f",
+        "dimensions_px": [
+          1206,
+          2622
+        ],
+        "captured_at": "2026-11-10T12:15:54.158Z",
+        "screen": "Swipe reveals explicit Delete",
+        "source_attachment_uuid": "23BB095A-2F10-4883-B6EB-900E2625874A",
+        "is_associated_with_failure": false
+      },
+      {
+        "name": "restored",
+        "png": "restored.png",
+        "context": "restored.context.json",
+        "metadata": "restored.metadata.json",
+        "sha256": "093ae6a10ecc76c86ce8a2e67138dc4b6edb7d7fbbef11f7c0472186302cecdd",
+        "dimensions_px": [
+          1206,
+          2622
+        ],
+        "captured_at": "2026-11-10T12:16:03.369Z",
+        "screen": "Restored ordinary Demo project",
+        "source_attachment_uuid": "CC02ABE2-BAC9-4B08-8FD5-6B81EBD24129",
+        "is_associated_with_failure": false
+      },
+      {
+        "name": "document",
+        "png": "document.png",
+        "context": "document.context.json",
+        "metadata": "document.metadata.json",
+        "sha256": "7b09eb172a977c89d320798cae05db34c8d8b858ec5795b56611c8baedea84dd",
+        "dimensions_px": [
+          1206,
+          2622
+        ],
+        "captured_at": "2026-11-10T12:16:06.884Z",
+        "screen": "Demo language document navigation",
+        "source_attachment_uuid": "ED0D49A9-4C7C-4C11-9681-F315DCB3D2AC",
+        "is_associated_with_failure": false
+      }
+    ]
+  },
+  "bundle_manifest": "final-current-ios-bundle.json",
+  "limitations": [
+    "Native XCTest does not expose CSS or native-point viewport geometry; viewport_css and native_viewport_points are explicit null in all sidecars.",
+    "document.png was inspected and shows Demo & practice navigation chrome with an empty body before WebView rendering; it is opening/navigation evidence only, not rendered-document evidence.",
+    "The simulator was shutdown by the time read-only simctl get_app_container ran, so installed executable/dylib/Info.plist matching hashes are explicit null; no reboot or app launch was performed.",
+    "Validation is simulator-only; no physical-device, distribution, or TestFlight claim."
+  ]
+}

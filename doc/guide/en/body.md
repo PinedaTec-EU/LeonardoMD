@@ -611,6 +611,8 @@ The project icon shows the same project identity on macOS and iOS. Its small rol
 
 For example, a project named **Trip** is **Shared from this device** on the Mac configured to serve selected content. The same **Trip** is **Received from another device** on the receiving Mac, iPhone or iPad after that device is invited and authorized. An iOS copy remains received even when it is available offline; storing its files locally does not turn it into a locally owned project. A recovery archive is identified separately as read-only and does not imply a live remote connection. If you share only selected folders or documents, the text names that scope; the project icon does not mean that the entire project is exposed. Connectivity, synchronization progress and read-only access are separate states.
 
+On iPhone and iPad, the bundled **Demo** is a **Local** project. Its Spanish and English files are documents inside that project. A received project keeps its origin while each file independently shows **Remote only**, **Cached** or **Available offline**; the project icon does not mean that every file has been downloaded.
+
 For rubric capture without document access, do not choose **Share current project**.
 In the pending-connection review, leave every project toggle off. When the sheet
 says **This Little Leonardo can receive rubrics without access to any project**,
@@ -624,6 +626,27 @@ one device. The companion only draws and returns the rubric; it cannot edit the
 document. A helper, service or capability problem is shown as an actionable
 offline/unsupported state.
 
+While waiting for a returned rubric, Leonardo automatically repeats temporary
+status-query failures for the **same request**. Leave the editor open; a brief
+failure does not require Retry or send a second drawing request. A received
+response appears for review automatically.
+
+![Automatically recovered rubric ready for review](assets/rubric-automatic-recovery.png)
+
+*Production editor component with a synthetic returned drawing after a temporary query failure.*
+
+If several consecutive queries fail, the editor shows the original error and
+**Retry**. Check the connection and helper, then use Retry to refresh that same
+request. Rejected, cancelled or expired requests are terminal; follow the
+request's displayed action rather than waiting for automatic recovery. Closing
+the editor stops its status polling and prevents a late response from being
+shown in the closed editor. To cancel the remote drawing request itself, use
+**Cancel request** before closing.
+
+![Persistent query failure with Retry](assets/rubric-persistent-error.png)
+
+*Production editor component with a synthetic persistent error; no device or private drawing is used.*
+
 ### Classic appearance, startup and About in Little Leonardo
 
 Little Leonardo uses the **Leonardo Classic** colors: parchment paper,
@@ -631,6 +654,8 @@ burgundy headings and oxide actions, including the bundled demo, its source view
 without an added delay. Open **Ajustes de sincronización → Acerca de Little
 Leonardo** (sync settings → About) to check the installed version and build and open offline Help, Privacy and
 Licenses pages.
+
+Open a synchronized Markdown document and choose **Ver documento** (preview) to read it. The first heading begins close to the navigation bar, with a compact reading margin; the remaining sections retain their usual spacing. **Ver texto** shows the source without changing the synchronized document.
 
 After **Aceptar y dibujar** (accept and draw), the page suggests rotating the
 device. Landscape presents a full-screen canvas with ink color, style, width,
@@ -726,9 +751,36 @@ The Mac must be reachable for transfers. A private overlay VPN requires the expl
 
 Use **Preferences → Synchronization → Connect to other computers** in the principal instance. Enable **Leonardo Sync** with the common control on both Macs. On the source Mac, open **Share from this Mac**, enable sharing and select the intended content. On this receiving Mac, choose **Connect to another Mac** and paste the source invitation link or HTTPS address with a name for this device. Compare the codes and approve on the source before importing. Your own **Share saved files from this Mac** can stay off: consuming content does not publish yours. Neither role is a global master/client mode.
 
-Import an available project to create an offline copy. Open it locally, then use manual synchronization or select a synchronization interval. Network reachability is still required for transfers. Its files are stored locally for this Mac, but the project remains **Received from another device**; offline availability does not change its origin or prove that the source has your latest edits.
+Choose **Create editable copy** to explicitly download an entire editable project. Open it locally, then use manual synchronization or select a synchronization interval. Network reachability is still required for transfers. Its files are stored locally on this Mac, but the project remains **Received from another device**; offline availability does not change its origin or prove that the source has your latest edits.
 
 To return edits, **Compare changes**, inspect Base / This Mac / Other Mac versions, then **Send changes for review**. Retry pending proposals when connectivity returns. Edits made after submission remain local until another submission. The source Mac reviews incoming proposals; sending is not automatic acceptance. Resolve conflict markers deliberately and verify the result before accepting. Keep local work until the source confirms the expected outcome.
+
+### On-demand downloads and offline storage
+
+| Action | Download | Storage |
+|---|---|---|
+| Browse the catalogue | File/folder names | Catalogue only |
+| Open a file | File and referenced local images | Temporary cache, within your limit |
+| Keep offline | Selected files/folders and referenced images | Separate retained storage |
+
+After pairing, the app refreshes the authorized file/folder list without downloading content. On Mac, choose **Browse files** beside a shared project; on iOS, open the project. Opening a file downloads that file and its referenced local images. Already downloaded files open from cache. Only saved source files are shared. Use **Show source / Show document** (iOS: **Ver texto / Ver documento**) to switch between read-only source and preview without another download. Little Leonardo keeps the first heading close to the navigation bar; later sections retain their usual spacing.
+
+Use the context menu (right-click on Mac; long-press on iOS):
+
+- **Keep offline** downloads and retains the selection. A folder includes future descendants. Referenced local images are retained with the document.
+- **Stop keeping offline** makes copies eligible for cache cleanup without deleting originals. A child can be excluded from a retained folder.
+- **Release local space** removes temporary downloaded copies; retained offline content remains protected.
+
+The list distinguishes **Remote only**, **Cached**, **Offline pending** and **Available offline**, with progress and failure indicators. Folder counts show downloaded files versus total files. A selection is available offline only after all required downloads finish. Failures retry during the next automatic refresh; the last retained version remains readable if an update fails. The reader shows an explicit previous-copy warning, the download error and **Retry** above that copy. Failed referenced images also show an error, even when the document text is readable.
+
+In **Synchronization → Storage and cache**, enter the temporary limit as a whole number of MiB and choose **Apply cache limit** (Return also applies it). Text being edited does not change the saved budget. Inspect temporary/offline usage and pending downloads, clear temporary cache or stop retaining a selection. The default limit is 256 MiB; zero disables temporary retention. Least recently used temporary files are removed first. Offline files are stored separately and do not count toward this limit; they require enough free device space. Cleanup never deletes editable desktop copies or rubric drafts.
+
+Automatic refresh defaults to every minute while the receiving app is active; an existing interval preference is preserved. iOS also refreshes on foreground activation and pauses while suspended. Transfers need a reachable source Mac. Offline, only previously downloaded content opens. Confirmed revocation removes access to the managed reader cache.
+
+On Mac, **Create editable copy** explicitly downloads the complete working copy for editing and the existing proposal/review workflow. These copies are separate from the automatically cleaned reader cache. Browsing or keeping files offline does not send edits.
+
+
+If the source Mac has an older Leonardo Sync service, the app asks you to update LeonardoMD and Leonardo Sync on that Mac. A missing on-demand service is distinct from a network failure; it never triggers a bulk-download fallback or changes pairing.
 
 ## 16. Updates and release notes
 
@@ -780,6 +832,9 @@ This guide covers current macOS workflows. External service labels were checked 
 
 ## Little Leonardo: bundled demo and local practice
 
-Installing Little Leonardo prepares two personal demo copies, Español and English. In the library, open **Demo y práctica / Demo & practice** and choose a language. No account, Mac or camera/local-network permission is needed. The demo includes a local cover, table, Mermaid, formulas and a chart with bundled data; these engines are enabled in the demo. The form uses real Leonardo fields. Enter fictional details, tap **Guardar / Save**, wait for confirmation, then reopen to check your answers. They stay on this device, separate from synchronized read-only projects, and are never sent to the Mac. Uninstalling removes the copies.
+The library contains one list of projects. Open **Demo**, then choose **Demo-es.mdlr · Español** or **Demo-en.mdlr · English**. Each document becomes a personal practice copy when first opened. No account, Mac or camera/local-network permission is needed. The demo includes a local cover, table, Mermaid, formulas and a chart with bundled data; these engines are enabled in the demo. The form uses real Leonardo fields. Enter fictional details, tap **Guardar / Save**, wait for confirmation, then reopen to check your answers. They stay on this device, separate from synchronized read-only projects, and are never sent to the Mac. Uninstalling removes the copies.
 
 Under **Opciones / Options**, **Ver texto / View source** shows Markdown and metadata; **Restablecer / Reset** asks for confirmation and resets only the selected language's practice. If saving fails, keep the screen open and retry; do not assume answers are saved without confirmation. For real projects, return to **Conectar** and follow the synchronization chapter. Practice does not enable general synchronized-project editing or replace Mac rubric requests.
+
+
+To remove any project from this device, swipe its row left and tap **Eliminar / Delete**. Swiping alone never deletes. Mac originals remain untouched and removed downloaded projects stay excluded from synchronization. The Demo project disappears like any other project. Recover it at any time from **Ajustes de sincronización → Recuperar demo / Restore demo**; saved answers are retained. It stays removed across restarts and app updates with the same demo content revision. A newer bundled demo content revision makes Demo available again, using new practice copies while retaining earlier copies. This recovery does not reset answers; use **Restablecer / Reset** inside a language document for that.

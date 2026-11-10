@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T08:29:53.274168+00:00",
+  "capture": {
+    "captured_at": "2026-11-10T08:24:09.209000+00:00",
+    "route": "/native/help32/en-chart",
+    "screen": "Actual packaged LeonardoMD QA Help32",
+    "browser_name": "Native macOS SwiftUI/WKWebView",
+    "browser_version": "WKWebView engine not exposed",
+    "state": "English; Charts ON; live bundled chart; fresh PID52183; version0.3.1136/build1136 baseline; Guide32; native bitmap-equivalent viewport, CSS not applicable",
+    "viewport_css": {
+      "width": 2520,
+      "height": 1700
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "6a8d7681b54a93e59c23df0ef83f03a114bd4a3ce260ed8907843014ecd434a9"
+  },
+  "source": {
+    "revision_at_collection": "4a73f6192e802de682926df9249c754c01d5982e",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

@@ -66,6 +66,12 @@ enum NativeViewCaptureSupport {
         view.display()
         try beforeCapture?(view)
         reportGeometry("laid-out")
+        try writeBitmap(view, size: size, to: url, pixelScale: pixelScale)
+    }
+
+    /// Capture an already attached view without closing its window or restarting .task/.onAppear.
+    static func writeBitmap(_ view: NSView, size: NSSize, to url: URL,
+                            pixelScale: CGFloat? = nil) throws {
         let bitmap: NSBitmapImageRep
         if let pixelScale {
             bitmap = try XCTUnwrap(NSBitmapImageRep(bitmapDataPlanes: nil,

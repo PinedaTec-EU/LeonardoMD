@@ -136,3 +136,40 @@ grants and the comparison-code confirmation still required
 ## Owner-only iOS distribution
 
 The packaging stage of [#343](https://github.com/PinedaTec-EU/LeonardoMD/issues/343) uses `scripts/package-ios-distribution.py`: author `archive` rejects dirty tracked/untracked source except its own PR's ledger entry, binds source-input hashes to `HEAD`, and records the source PR compilation; `publisher-archive --expected-source <accepted-materialized-SHA>` requires a fully clean checkout whose `HEAD`, expected SHA and fetched `origin/main` match at startup, while preserving detached-HEAD support and the consumed allocation. Archive/export/Apple validation retain producer provenance and complete artifact hashes; later `origin/main` advances do not restamp an existing producer. Export selects the approved certificate without mutating the user keychain search list. Privacy reasons, opaque existing-brand icons, canonical version projection and exact delivery commands are documented in `doc/mobile/rubric-exchange.md`. A validated author IPA is not the final TestFlight delivery; upload accepted materialized main, then verify owner availability and the physical round trip before closing the feature issues.
+
+
+## Read-only status recovery (#394)
+
+[PR398](https://github.com/PinedaTec-EU/LeonardoMD/pull/398) serializes helper
+configuration reads with a FIFO barrier; queued commands re-read persisted
+consent instead of sharing a possibly obsolete configuration result. A cancelled
+queued read waits cooperatively for the active owner, then skips its settings read and releases its turn. A suspended predecessor keeps cancelled waiters suspended; prompt interruption is not promised. RubricCapturePolling retries
+only read-only status for the original UUID, up to three consecutive failures;
+success resets that budget, cancellation stops, persistent errors remain visible.
+It never creates or resubmits a request. The owner-observed response had already
+reached the helper; a manual same-ID Retry recovered it before this correction.
+Delivery and physical no-manual-Retry acceptance remain separate gates on
+[issue394](https://github.com/PinedaTec-EU/LeonardoMD/issues/394).
+
+Owner-selected 8 November release order is accepted connection
+[PR392](https://github.com/PinedaTec-EU/LeonardoMD/pull/392), then consultation
+[PR398](https://github.com/PinedaTec-EU/LeonardoMD/pull/398), then signed main
+macOS beta; the cache feature PR385 is deferred. Reconciliation on main0.3.1127
+passes717 XCTest (35 planned skips) plus71 Swift Testing; final Guide29 Help and
+physical no-manual-Retry acceptance must use the actual signed combined app.
+
+CI recovery for [issue403](https://github.com/PinedaTec-EU/LeonardoMD/issues/403)
+primes the exact pinned Sparkle2.9.6 artifact through GitHub's official asset API,
+checking Package.resolved repository/revision/version and upstream SHA-256/length
+before atomic cache replacement. A fresh cache resolve proves SwiftPM consumes it;
+no dependency upgrade, checksum bypass or additional credential is introduced.
+
+The current PR398 source evidence includes production-editor EN/ES native
+component transitions for automatic same-ID recovery, persistent error and close
+cancellation (isolated runtime/store; zero create/manual-Retry actions). The full
+suite now passes717 XCTest/35planned skips plus71 Swift Testing. Component
+captures do not establish packaged-process Help or physical acceptance; see
+`doc/validation/helper-consultation/native-recovery/build-inputs.json` for the
+exact build/evidence input mapping.
+
+Guide29 EN/ES now documents automatic recovery, persistent Retry, terminal and close/cancel behavior. Source b9c5bb7 has focused8/8 and complete717/35/71 PASS, recorded delta9 including real QA packaging. Actual QA PID81719 opened both guides through Help/Ayuda, checked all live examples/MathON-OFF and both separate practices save-close-reopen; bundle/personal hashes match. Twenty original native JPEGs plus identity/restoration evidence are in `doc/validation/helper-consultation/packaged-help29/`. Three previous originals were restored byte-for-byte after normal quit; final signed-main and physical acceptance remain pending.

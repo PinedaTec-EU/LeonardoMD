@@ -1,0 +1,15 @@
+{
+  "captured_at": "2026-11-10T08:24:09.209Z",
+  "route": "/native/help32/en-chart",
+  "screen": "Actual packaged LeonardoMD QA Help32",
+  "browser_name": "Native macOS SwiftUI/WKWebView",
+  "browser_version": "WKWebView engine not exposed",
+  "viewport_css": {
+    "width": 2520,
+    "height": 1700
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "source_sha": "4da0d9aba33c7a95256b96311c04c66fb63efdb9",
+  "state": "English; Charts ON; live bundled chart; fresh PID52183; version0.3.1136/build1136 baseline; Guide32; native bitmap-equivalent viewport, CSS not applicable"
+}

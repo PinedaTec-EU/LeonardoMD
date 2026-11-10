@@ -8,6 +8,14 @@ public struct HTTPSFailureDiagnostics: Equatable, Sendable {
         case catalogue
         case file
         case other
+
+        init(path: String) {
+            if path.hasSuffix("/status") { self = .status }
+            else if path.hasSuffix("/snapshot") { self = .snapshot }
+            else if path.hasSuffix("/catalogue") { self = .catalogue }
+            else if path.hasSuffix("/file") { self = .file }
+            else { self = .other }
+        }
     }
 
     private static let userInfoKey = "eu.pinedatec.LeonardoSyncTransport.HTTPSFailureDiagnostics"

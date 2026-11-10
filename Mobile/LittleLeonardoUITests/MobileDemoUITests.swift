@@ -62,8 +62,47 @@ final class MobileDemoUITests: XCTestCase {
         capture(app, "Spanish persisted practice after source")
     }
 
+    @MainActor func testDemoProjectDeletionRequiresSwipeAndTapAndCanBeRestored() {
+        let app = XCUIApplication()
+        app.launch()
+        let settings = app.buttons["open-sync-settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 15))
+        if !app.buttons["open-demo-project"].exists {
+            settings.tap()
+            app.buttons["restore-demo-project"].tap()
+            app.buttons["Cerrar"].tap()
+        }
+        let project = app.buttons["open-demo-project"]
+        XCTAssertTrue(project.exists)
+        capture(app, "Ordinary project library")
+        project.swipeLeft()
+        capture(app, "Swipe reveals explicit Delete")
+        XCTAssertTrue(project.exists, "Swiping alone must not delete")
+        app.buttons["delete-demo-project"].tap()
+        XCTAssertFalse(project.exists)
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["open-sync-settings"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["open-demo-project"].exists)
+        app.buttons["open-sync-settings"].tap()
+        app.buttons["restore-demo-project"].tap()
+        app.buttons["Cerrar"].tap()
+        XCTAssertTrue(app.buttons["open-demo-project"].exists)
+        capture(app, "Restored ordinary Demo project")
+        app.buttons["open-demo-project"].tap()
+        let demoHeader = app.descendants(matching: .any)["project-identity"].firstMatch
+        XCTAssertTrue(demoHeader.waitForExistence(timeout: 10))
+        XCTAssertEqual(demoHeader.label, "Demo, Local")
+        capture(app, "Demo role Local")
+        openDemo("en", in: app)
+        capture(app, "Demo language document")
+    }
+
     @MainActor private func openDemo(_ language: String, in app: XCUIApplication) {
         let entry = app.buttons["open-demo-\(language)"]
+        if !entry.exists, app.buttons["open-demo-project"].exists {
+            app.buttons["open-demo-project"].tap()
+        }
         XCTAssertTrue(entry.waitForExistence(timeout: 15))
         entry.tap()
         XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 15))
@@ -72,7 +111,10 @@ final class MobileDemoUITests: XCTestCase {
     @MainActor private func resetDemo(in app: XCUIApplication) {
         app.buttons["demo-options"].tap()
         app.buttons["demo-reset"].tap()
-        app.buttons["Restablecer / Reset"].tap()
+        let confirmation = app.sheets.firstMatch
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
+        confirmation.buttons["Restablecer / Reset"].tap()
+        XCTAssertTrue(confirmation.waitForNonExistence(timeout: 5))
     }
 
     @MainActor private func practiceName(in web: XCUIElement, capturePrefix: String? = nil,

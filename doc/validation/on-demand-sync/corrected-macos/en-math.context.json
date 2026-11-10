@@ -1,0 +1,16 @@
+{
+  "captured_at": "2026-11-07T20:45:21.445Z",
+  "route": "/native/help/guide27/en-math",
+  "screen": "Corrected source Guide27 EN display math, complete braces/radical and tag(1)",
+  "source_revision": "a7759b2db562d2fea04c8e7d7b6c9c4997137a26",
+  "browser_name": "Native macOS SwiftUI / WKWebView",
+  "browser_version": "Not exposed by CUA",
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "locale": "en",
+  "state": "Corrected source Guide27 EN display math, complete braces/radical and tag(1); native capture, CSS/engine version unavailable; viewport uses image pixels unless native points supplied",
+  "viewport_css": {
+    "width": 2520,
+    "height": 1700
+  }
+}

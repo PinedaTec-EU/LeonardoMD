@@ -302,21 +302,18 @@ struct RubricEditor: View {
     private func pollRemote(_ controller: DesktopSyncController, requestID: UUID) {
         remoteTask?.cancel()
         remoteTask = Task { @MainActor in
-            while !Task.isCancelled {
-                do {
-                    let capture = try await controller.refreshRubricCapture(requestID: requestID)
+            remoteError = nil
+            do {
+                try await RubricCapturePolling.run(requestID: requestID, refresh: { id in
+                    try await controller.refreshRubricCapture(requestID: id)
+                }, receive: { capture in
                     remoteCapture = capture
-                    if let response = capture.response {
-                        remoteLabel = response.label
-                        return
-                    }
-                    if let state = capture.request?.state, [.rejected, .cancelled, .expired].contains(state) { return }
-                    try await Task.sleep(for: .seconds(1))
-                } catch {
-                    remoteError = error.localizedDescription
-                    return
-                }
-            }
+                    remoteError = nil
+                    if let response = capture.response { remoteLabel = response.label }
+                })
+            } catch is CancellationError {
+                // Closing/replacing the sheet must not surface a stale failure.
+            } catch { remoteError = error.localizedDescription }
         }
     }
 

@@ -1,5 +1,6 @@
 import SwiftUI
 import LeonardoSync
+import LeonardoSyncUI
 
 struct DesktopPeerPreferencesView: View {
     let session: AppSession
@@ -7,6 +8,7 @@ struct DesktopPeerPreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var pairing = false
     @State private var reviewing: UUID?
+    @State private var browsing: UUID?
 
     var body: some View {
         Form {
@@ -18,7 +20,7 @@ struct DesktopPeerPreferencesView: View {
                     Text(minutes == 0 ? L10n.text("Manual") : String(format: L10n.text("Every %d minutes"), minutes)).tag(minutes)
                 }
             }
-            Button(L10n.text("Connect to another Mac")) { pairing = true }.disabled(!controller.helper.online)
+            Button(L10n.text("Connect to another Mac")) { pairing = true }.disabled(!controller.helper.online || controller.busy)
             Text(L10n.text("Enable Leonardo Sync on this Mac and sharing on the other Mac, then compare the codes."))
                 .font(.caption).foregroundStyle(.secondary)
             Section(L10n.text("Computers I connect to")) {
@@ -35,7 +37,7 @@ struct DesktopPeerPreferencesView: View {
                             }
                             Spacer()
                             if connection.revoked { Text(L10n.text("Revoked")) }
-                            else { Button(L10n.text("Sync")) { Task { await controller.refresh(connection.id) } }.disabled(!controller.helper.online) }
+                            else { Button(L10n.text("Sync")) { Task { await controller.refresh(connection.id) } }.disabled(!controller.helper.online || controller.busy) }
                         }
                         if let code = connection.comparisonCode {
                             Text(code).font(.title2.monospaced()).textSelection(.enabled)
@@ -46,12 +48,28 @@ struct DesktopPeerPreferencesView: View {
                             HStack {
                                 ProjectIdentityLabel(name: project.name, identity: .received)
                                 Spacer()
-                                Button(L10n.text("Import")) { Task { await controller.importProject(connectionID: connection.id, projectID: project.id) } }.disabled(!controller.helper.online)
+                                Button(L10n.text("Browse files")) {
+                                    browsing = DesktopPeerController.downloadID(connectionID: connection.id, projectID: project.id)
+                                }
+                                Button(L10n.text("Create editable copy")) { Task { await controller.importProject(connectionID: connection.id, projectID: project.id) } }.disabled(!controller.helper.online || controller.busy)
                             }
                         }
                     }
                 }
             }
+            Section(L10n.text("Projects available to browse")) {
+                ForEach(controller.downloads.projects) { project in
+                    HStack {
+                        ProjectIdentityLabel(name: project.descriptor.name, identity: .received)
+                        Spacer()
+                        Button(L10n.text("Browse files")) { browsing = project.id }
+                    }
+                }
+                Text(L10n.text("Saved catalogues and downloaded files remain accessible without a connection."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            SyncCacheSettingsView(library: controller.downloads, spanish: LanguageSettings.shared.language == .spanish)
+                .disabled(!controller.storageAuthorized)
             Section(L10n.text("Offline copies")) {
                 ForEach(controller.copies, id: \.id) { copy in
                     VStack(alignment: .leading, spacing: 8) {
@@ -74,12 +92,18 @@ struct DesktopPeerPreferencesView: View {
                     }
                 }
             }
-        }.formStyle(.grouped).disabled(controller.busy)
+        }.formStyle(.grouped)
         .task {
             await controller.initialize()
+            for id in controller.connections.filter({ !$0.revoked }).map(\.id) { await controller.refresh(id) }
             while !Task.isCancelled {
                 await controller.helper.refresh()
                 do { try await Task.sleep(for: .seconds(2)) } catch { return }
+            }
+        }
+        .sheet(isPresented: Binding(get: { browsing != nil }, set: { if !$0 { browsing = nil } })) {
+            if let id = browsing {
+                DesktopDownloadBrowser(library: controller.downloads, projectID: id)
             }
         }
         .sheet(isPresented: $pairing) { DesktopPeerPairingView(controller: controller) }
@@ -105,14 +129,14 @@ struct DesktopPeerPreferencesView: View {
             }
             Button(L10n.text(controller.pendingProposals[copy.id] == nil ? "Send changes for review" : "Retry pending proposal")) {
                 Task { await controller.send(copy.id) }
-            }.disabled(!controller.helper.online)
+            }.disabled(!controller.helper.online || controller.busy)
             Button(L10n.text("Compare changes")) {
                 Task {
                     await controller.compare(copy.id)
                     if controller.comparisons[copy.id] != nil { reviewing = copy.id }
                 }
-            }.disabled(!controller.helper.online)
-        }.fixedSize(horizontal: true, vertical: false)
+            }.disabled(!controller.helper.online || controller.busy)
+        }.fixedSize(horizontal: true, vertical: false).disabled(controller.busy)
     }
 
 }

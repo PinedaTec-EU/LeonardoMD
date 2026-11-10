@@ -12,6 +12,7 @@ public actor LANHTTPSListener: HTTPSListening {
     public typealias Handler = @Sendable (HTTPRequest) async -> HTTPResponse
     private var listener: NWListener?
     private var connections: [UUID: NWConnection] = [:]
+    private var diagnostics: [UUID: HTTPSResponseDiagnostics] = [:]
     private var allowsPrivateOverlay = false
     private let identity: TLSServerIdentity
     private let handler: Handler
@@ -20,6 +21,7 @@ public actor LANHTTPSListener: HTTPSListening {
     private static let maximumConnections = 16
     private static let responseTimeout: Duration = .seconds(120)
     private static let requestTimeout: Duration = .seconds(15)
+    private static let closeTimeout: Duration = .seconds(5)
 
     public init(identity: TLSServerIdentity, handler: @escaping Handler) {
         self.identity = identity
@@ -78,8 +80,7 @@ public actor LANHTTPSListener: HTTPSListening {
         listener?.cancel()
         listener = nil
         allowsPrivateOverlay = false
-        for connection in connections.values { connection.cancel() }
-        connections.removeAll()
+        for id in Array(connections.keys) { finish(id, reason: .serviceStopped) }
         logger.notice("https_listener_stopped")
     }
 
@@ -91,29 +92,60 @@ public actor LANHTTPSListener: HTTPSListening {
         }
         let id = UUID()
         connections[id] = connection
+        diagnostics[id] = HTTPSResponseDiagnostics()
         connection.start(queue: queue)
         Task { [weak self] in
-            let requestDeadline = Task { [weak self] in
-                do { try await Task.sleep(for: Self.requestTimeout) } catch { return }
-                await self?.finish(id)
-            }
-            let operationDeadline = Task { [weak self] in
-                do { try await Task.sleep(for: Self.responseTimeout) } catch { return }
-                await self?.finish(id)
-            }
-            defer { requestDeadline.cancel(); operationDeadline.cancel() }
-            do {
-                let request = try await Self.readRequest(connection)
-                requestDeadline.cancel()
-                guard let self else { connection.cancel(); return }
-                let response = await self.handler(request)
-                try await Self.send(response, on: connection)
-            } catch { connection.cancel() }
-            await self?.finish(id)
+            guard let self else { connection.cancel(); return }
+            await self.serve(connection, id: id)
         }
     }
 
-    private func finish(_ id: UUID) { connections.removeValue(forKey: id)?.cancel() }
+    private func serve(_ connection: NWConnection, id: UUID) async {
+        let requestDeadline = Task { [weak self] in
+            do { try await Task.sleep(for: Self.requestTimeout) } catch { return }
+            await self?.finish(id, reason: .requestTimeout)
+        }
+        let operationDeadline = Task { [weak self] in
+            do { try await Task.sleep(for: Self.responseTimeout) } catch { return }
+            await self?.finish(id, reason: .responseTimeout)
+        }
+        defer { requestDeadline.cancel(); operationDeadline.cancel() }
+        do {
+            let request = try await Self.readRequest(connection)
+            requestDeadline.cancel()
+            guard self.connections[id] != nil else { return }
+            self.diagnostics[id]?.operation = .init(path: request.path)
+            self.diagnostics[id]?.phase = .handler
+            let response = await self.handler(request)
+            guard self.connections[id] != nil else { return }
+            let encoded = response.encoded()
+            self.diagnostics[id]?.status = response.status
+            self.diagnostics[id]?.bodyBytes = response.body.count
+            self.diagnostics[id]?.encodedBytes = encoded.count
+            self.diagnostics[id]?.phase = .sending
+            try await Self.send(encoded, on: connection)
+            self.diagnostics[id]?.phase = .sendProcessed
+            // A processed send is not a peer receipt. Finish the TLS write
+            // stream, then let the peer close before releasing the connection.
+            let closeDeadline = Task { [weak self] in
+                do { try await Task.sleep(for: Self.closeTimeout) } catch { return }
+                await self?.finish(id, reason: .closeTimeout)
+            }
+            defer { closeDeadline.cancel() }
+            try await Self.waitForPeerClose(connection)
+            self.finish(id, reason: .peerClosed)
+        } catch {
+            self.finish(id, reason: .failed, error: error)
+        }
+    }
+
+    private func finish(_ id: UUID, reason: HTTPSResponseDiagnostics.Finish, error: Error? = nil) {
+        guard let connection = connections.removeValue(forKey: id) else { return }
+        if let trace = diagnostics.removeValue(forKey: id) {
+            logger.notice("https_response_finished \(trace.record(reason: reason, error: error), privacy: .public)")
+        }
+        connection.cancel()
+    }
 
     private static func readRequest(_ connection: NWConnection) async throws -> HTTPRequest {
         var parser = HTTPRequestParser()
@@ -129,9 +161,21 @@ public actor LANHTTPSListener: HTTPSListening {
         }
     }
 
-    private static func send(_ response: HTTPResponse, on connection: NWConnection) async throws {
+    private static func waitForPeerClose(_ connection: NWConnection) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            connection.send(content: response.encoded(), completion: .contentProcessed { error in
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 1) { data, _, complete, error in
+                if let error { continuation.resume(throwing: error) }
+                else if let data, !data.isEmpty { continuation.resume(throwing: TransportError.malformedRequest) }
+                else if complete { continuation.resume() }
+                else { continuation.resume(throwing: TransportError.malformedRequest) }
+            }
+        }
+    }
+
+    private static func send(_ response: Data, on connection: NWConnection) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            connection.send(content: response, contentContext: .finalMessage, isComplete: true,
+                            completion: .contentProcessed { error in
                 if let error { continuation.resume(throwing: error) } else { continuation.resume() }
             })
         }

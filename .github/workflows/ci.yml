@@ -1,5 +1,7 @@
 name: macOS MVP
 on: [push, pull_request]
+permissions:
+  contents: read
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -21,6 +23,10 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -v
       - name: Test Leonardo agent plugin
         run: python3 -m unittest discover -s plugins/leonardo-format/tests -v
+      - name: Verify pinned Sparkle artifact cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/prime-sparkle-cache.py
       - name: Build and test
         env:
           EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
