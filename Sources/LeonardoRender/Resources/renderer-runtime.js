@@ -45,6 +45,10 @@
     document.body.dataset.paperEffect = appearance.paperEffect || "plain";
   }
 
+  function setReaderSpacing(compact) {
+    root.classList.toggle("compact-first-heading", compact === true);
+  }
+
   function hash(value) {
     let result = 2166136261;
     for (let index = 0; index < value.length; index += 1) {
@@ -357,6 +361,7 @@
     const renderStart = performance.now();
     const generation = ++renderGeneration;
     setAppearance(payload.appearance);
+    setReaderSpacing(payload.compactFirstHeading);
     if (diagramObserver) diagramObserver.disconnect();
     diagramTimers.forEach((timer) => window.clearTimeout(timer));
     diagramTimers.clear();

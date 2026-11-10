@@ -650,6 +650,8 @@ biblioteca local, sin una espera añadida. En **Ajustes de sincronización →
 Acerca de Little Leonardo** puedes consultar la versión y compilación instaladas, así como abrir Ayuda,
 Privacidad y Licencias sin conexión.
 
+Abre un documento Markdown sincronizado y elige **Ver documento** para leerlo. El primer título comienza cerca de la barra de navegación, con un margen de lectura compacto; las demás secciones mantienen su separación habitual. **Ver texto** muestra el código fuente sin modificar el documento sincronizado.
+
 Tras **Aceptar y dibujar**, la página recomienda girar el dispositivo. En
 horizontal se muestra el lienzo a pantalla completa con color, trazo, grosor,
 **Deshacer** y **Limpiar**. Al volver a vertical reaparece la página normal y el

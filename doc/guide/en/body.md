@@ -637,6 +637,8 @@ without an added delay. Open **Ajustes de sincronización → Acerca de Little
 Leonardo** (sync settings → About) to check the installed version and build and open offline Help, Privacy and
 Licenses pages.
 
+Open a synchronized Markdown document and choose **Ver documento** (preview) to read it. The first heading begins close to the navigation bar, with a compact reading margin; the remaining sections retain their usual spacing. **Ver texto** shows the source without changing the synchronized document.
+
 After **Aceptar y dibujar** (accept and draw), the page suggests rotating the
 device. Landscape presents a full-screen canvas with ink color, style, width,
 **Deshacer** (undo) and **Limpiar** (clear). Returning to portrait restores the

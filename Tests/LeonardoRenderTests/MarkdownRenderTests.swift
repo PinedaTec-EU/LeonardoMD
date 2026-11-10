@@ -98,6 +98,27 @@ struct MarkdownRenderTests {
     }
 
     @Test
+    func compactFirstHeadingSpacingIsOptIn() throws {
+        let defaultJSON = try MarkdownHTMLShell.payloadJSON(
+            content: "# Heading", baseURL: nil, configuration: .default)
+        let defaultPayload = try #require(JSONSerialization.jsonObject(with: Data(defaultJSON.utf8)) as? [String: Any])
+        #expect(defaultPayload["compactFirstHeading"] as? Bool == false)
+
+        var compactConfiguration = MarkdownPreviewConfiguration(appearance: .leonardoClassic)
+        compactConfiguration.compactFirstHeading = true
+        let compactJSON = try MarkdownHTMLShell.payloadJSON(
+            content: "# Heading", baseURL: nil, configuration: compactConfiguration)
+        let compactPayload = try #require(JSONSerialization.jsonObject(with: Data(compactJSON.utf8)) as? [String: Any])
+        #expect(compactPayload["compactFirstHeading"] as? Bool == true)
+
+        let stylesheet = String(
+            data: MarkdownResourceCatalog.data(for: .previewStyles) ?? Data(), encoding: .utf8) ?? ""
+        #expect(stylesheet.contains(".markdown-body.compact-first-heading"))
+        #expect(stylesheet.contains("padding-top: 16px"))
+        #expect(stylesheet.contains("margin-top: 0"))
+    }
+
+    @Test
     func packagedAssetsMatchRecordedHashesIncludingEmbeddedSanitizer() throws {
         let metadata = try #require(MarkdownResourceCatalog.url(forFile: "THIRD_PARTY_SOURCES.json"))
         let manifest = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: metadata)) as? [String: Any])

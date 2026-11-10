@@ -93,6 +93,7 @@ final class MarkdownPreviewHost: NativeMarkdownView, WKScriptMessageHandler, WKN
             || previousConfiguration.allowsFormFilling != configuration.allowsFormFilling
             || previousConfiguration.formLabels != configuration.formLabels
             || previousConfiguration.frontMatter != configuration.frontMatter
+            || previousConfiguration.compactFirstHeading != configuration.compactFirstHeading
             || previousConfiguration.renderDebounce != configuration.renderDebounce
 
         if contentChanged || baseURLChanged { headingScrollTask?.cancel() }
