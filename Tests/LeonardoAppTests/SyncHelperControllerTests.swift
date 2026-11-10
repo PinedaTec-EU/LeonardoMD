@@ -101,6 +101,57 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(registration.registrations, 1)
     }
 
+    func testStaleHealthyReplyCannotClearASupersedingUpgradeToken() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); let control = HelperControlFake()
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let oldToken = UUID(), newToken = UUID()
+        _ = try await fixture.configurations.beginSyncHelperUpgrade(oldToken, at: fixture.preferences)
+        registration.status = .enabled
+        await control.setBuildIdentity(replacement)
+        await control.pauseStatus()
+        let controller = upgrading(fixture, registration, control)
+        let refresh = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldStatus; XCTAssertTrue(held)
+        let newerOwner = ConfigurationStore()
+        _ = try await newerOwner.beginSyncHelperUpgrade(newToken, at: fixture.preferences)
+        await control.resumeStatus(); await refresh.value
+        let persisted = try await newerOwner.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertFalse(persisted.mobileSync.helperEnabled)
+        XCTAssertEqual(persisted.mobileSync.helperUpgradeToken, newToken)
+        XCTAssertEqual(registration.unregistrations, 0)
+        XCTAssertFalse(controller.online)
+    }
+
+    func testStaleHealthyReplyCannotDisableAnAlreadyCompletedRenewal() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); let control = HelperControlFake()
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let token = UUID()
+        _ = try await fixture.configurations.beginSyncHelperUpgrade(token, at: fixture.preferences)
+        registration.status = .enabled
+        await control.setBuildIdentity(replacement)
+        await control.pauseStatus()
+        let controller = upgrading(fixture, registration, control)
+        let refresh = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldStatus; XCTAssertTrue(held)
+        let newerOwner = ConfigurationStore()
+        _ = try await newerOwner.finishSyncHelperUpgrade(token, at: fixture.preferences)
+        await control.resumeStatus(); await refresh.value
+        let persisted = try await newerOwner.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertTrue(persisted.mobileSync.helperEnabled)
+        XCTAssertNil(persisted.mobileSync.helperUpgradeToken)
+        XCTAssertEqual(registration.unregistrations, 0)
+    }
+
     func testInterruptedUpgradeResumesFromDurableConsent() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         let registration = HelperRegistrationFake(); let control = HelperControlFake()
