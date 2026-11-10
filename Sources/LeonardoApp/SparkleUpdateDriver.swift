@@ -88,7 +88,7 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
     }
 
     func userDidCancelDownload(_ updater: SPUUpdater) {
-        Task { await DesktopSyncController.shared.helper.cancelApplicationUpdate() }
+        resumeHelperAfterCancelledInstallation()
         UpdateInstanceTermination.shared.resolveInstallation()
     }
 
@@ -108,13 +108,19 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
             // Skip, or dismissal of a fresh non-downloaded candidate, resolves a stale guard.
             pendingDecision.clear()
             UpdateInstanceTermination.shared.resolveInstallation()
-            Task { await DesktopSyncController.shared.helper.cancelApplicationUpdate() }
+            resumeHelperAfterCancelledInstallation()
         }
         stateDidChange?()
     }
 
+    private func resumeHelperAfterCancelledInstallation() {
+        let helper = DesktopSyncController.shared.helper
+        let preparation = helper.installation.revision
+        Task { await helper.cancelApplicationUpdate(expectedPreparation: preparation) }
+    }
+
     func updater(_ updater: SPUUpdater, didAbortWithError error: Error) {
-        Task { await DesktopSyncController.shared.helper.cancelApplicationUpdate() }
+        resumeHelperAfterCancelledInstallation()
         if !installerPreparationStarted { UpdateInstanceTermination.shared.resolveInstallation() }
         resolveCheck(error)
     }

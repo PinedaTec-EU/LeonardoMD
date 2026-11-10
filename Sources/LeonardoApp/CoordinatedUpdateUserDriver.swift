@@ -11,7 +11,9 @@ final class CoordinatedUpdateUserDriver: SPUStandardUserDriver {
 
     init(termination: UpdateInstanceTermination = .shared,
          prepareHelper: @escaping @MainActor () async -> Bool = {
-             await DesktopSyncController.shared.helper.prepareForApplicationUpdate()
+             let ready = await DesktopSyncController.shared.helper.prepareForApplicationUpdate()
+             if !ready { (NSApp.delegate as? ApplicationDelegate)?.reportHelperUpdateCancellation() }
+             return ready
          },
          dismissPreferences: @escaping @MainActor () -> Bool = {
              (NSApp.delegate as? ApplicationDelegate)?.dismissUpdatePreferences() ?? false

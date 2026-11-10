@@ -268,7 +268,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
                 canTerminate = await UpdateInstanceTermination.shared.prepareHelperForQuit {
                     await DesktopSyncController.shared.helper.prepareForApplicationUpdate()
                 }
-                if !canTerminate { reportInstallationCancellation(on: reportingSession) }
+                if !canTerminate { reportHelperUpdateCancellation(on: reportingSession) }
             }
             if canTerminate {
                 if role == .primary { await DesktopSyncController.shared.stop() }
@@ -289,6 +289,10 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
 
     func reportInstallationCancellation(on session: AppSession? = nil) {
         (session ?? activeSession)?.errorMessage = L10n.text("Installation cancelled because another LeonardoMD instance did not close. Finish or cancel its pending work, then retry the update.")
+    }
+
+    func reportHelperUpdateCancellation(on session: AppSession? = nil) {
+        (session ?? activeSession)?.errorMessage = L10n.text("Installation postponed because Leonardo Sync could not stop safely. Check Preferences > Synchronization and retry when the service is available.")
     }
 
     /// Dismiss only Preferences; unsaved-document and Git sheets own their decisions.

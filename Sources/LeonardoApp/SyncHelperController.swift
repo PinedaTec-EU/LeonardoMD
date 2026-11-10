@@ -275,21 +275,27 @@ final class SyncHelperController {
         guard !busy, !InstanceRuntime.isAdditional else { return false }
         revision += 1 // Discard pre-install health replies before parking the helper.
         busy = true
-        defer { busy = false }
         do {
             try await installation.prepare()
+            busy = false
             sharing = nil; supportsRubricExchange = false; state = .starting
+            logger.info("sync_helper_parked_for_update")
             return true
         } catch {
-            state = .failed; self.error = L10n.text(error.localizedDescription)
-            logger.error("sync_helper_update_preparation_failed")
+            busy = false
+            if error is CancellationError {
+                await refresh() // Join completed before restoring existing consent.
+            } else {
+                state = .failed; self.error = L10n.text(error.localizedDescription)
+                logger.error("sync_helper_update_preparation_failed")
+            }
             return false
         }
     }
 
-    func cancelApplicationUpdate() async {
-        guard installation.blocksOperations else { return }
-        installation.release()
+    func cancelApplicationUpdate(expectedPreparation: Int? = nil) async {
+        guard installation.blocksOperations,
+              installation.release(expected: expectedPreparation ?? installation.revision) else { return }
         await refresh()
     }
 

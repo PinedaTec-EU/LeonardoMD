@@ -65,6 +65,86 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertNil(settings.helperUpgradeToken)
     }
 
+    func testAbortDuringDrainJoinsBeforeRestoringAndNeverInstalls() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        await control.pauseReload()
+        let controller = upgrading(fixture, registration, control)
+        let preparation = Task { await controller.prepareForApplicationUpdate() }
+        for _ in 0..<5000 {
+            if await control.hasHeldReload { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldReload
+        guard held else {
+            await control.resumeReload(); _ = await preparation.value
+            XCTFail("Drain did not reach the controlled barrier"); return
+        }
+        await controller.cancelApplicationUpdate(expectedPreparation: controller.installation.revision)
+        XCTAssertEqual(registration.unregistrations, 0, "Cancellation cannot release a live writer")
+        await control.resumeReload()
+        let installAllowed = await preparation.value
+        XCTAssertFalse(installAllowed)
+        XCTAssertFalse(controller.installation.blocksOperations)
+        let settings = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences).mobileSync
+        XCTAssertTrue(settings.helperEnabled)
+        XCTAssertNil(settings.helperUpgradeToken)
+    }
+
+    func testDelayedAbortCannotResumeAReplacementPreparation() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let controller = upgrading(fixture, registration, control)
+        let first = await controller.prepareForApplicationUpdate()
+        XCTAssertTrue(first)
+        let obsolete = controller.installation.revision
+        await controller.cancelApplicationUpdate()
+        let second = await controller.prepareForApplicationUpdate()
+        XCTAssertTrue(second)
+        await controller.cancelApplicationUpdate(expectedPreparation: obsolete)
+        XCTAssertTrue(controller.installation.blocksOperations)
+        XCTAssertEqual(registration.status, .notRegistered)
+        let state = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences).mobileSync
+        XCTAssertFalse(state.helperEnabled)
+        XCTAssertNotNil(state.helperUpgradeToken)
+    }
+
+    func testFirstStatusFailureDoesNotDowngradeANewerHelper() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        await control.setBuildIdentity(.init(build: 300, bundlePath: replacement.bundlePath))
+        await control.failStatus(at: 1)
+        let controller = SyncHelperController(preferencesURL: fixture.preferences,
+            configurations: fixture.configurations, service: registration, client: control,
+            expectedBuildIdentity: replacement, startup: .init(pause: {}),
+            hasExecutable: { true }, verifyPackage: {})
+        await controller.refresh()
+        XCTAssertTrue(controller.online)
+        XCTAssertEqual(registration.unregistrations, 0)
+        XCTAssertEqual(registration.registrations, 0)
+    }
+
+    func testInvalidPackageCannotParkServiceOrChangeConsent() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let before = try Data(contentsOf: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let controller = SyncHelperController(preferencesURL: fixture.preferences,
+            configurations: fixture.configurations, service: registration, client: HelperControlFake(),
+            expectedBuildIdentity: replacement, hasExecutable: { true },
+            verifyPackage: { throw HelperControlError.unavailable })
+        let prepared = await controller.prepareForApplicationUpdate()
+        XCTAssertFalse(prepared)
+        XCTAssertEqual(try Data(contentsOf: fixture.preferences), before)
+        XCTAssertEqual(registration.unregistrations, 0)
+    }
+
     func testUnreachableLiveHelperVetoesInstallationWithoutKillingIt() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)

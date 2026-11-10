@@ -10,6 +10,8 @@ import LeonardoDesktopSync
 final class SyncHelperInstallation {
     private enum Phase { case available, preparing, prepared }
     private var phase = Phase.available
+    private(set) var revision = 0
+    private var cancellationRequested = false
     var blocksOperations: Bool { phase != .available }
     private let preferencesURL: URL
     private let configurations: ConfigurationStore
@@ -27,12 +29,15 @@ final class SyncHelperInstallation {
     func prepare() async throws {
         if phase == .prepared { return }
         guard phase == .available else { throw DesktopRuntimeError.busy }
+        revision += 1
+        cancellationRequested = false
         phase = .preparing
         do {
             try verifyPackage()
             _ = try await configurations.beginSyncHelperUpgrade(UUID(), at: preferencesURL)
             try await SyncHelperStopBarrier.stopAndUnregister(service: service, client: client,
                 preferencesURL: preferencesURL)
+            guard !cancellationRequested, !Task.isCancelled else { throw CancellationError() }
             phase = .prepared
         } catch {
             phase = .available
@@ -40,5 +45,14 @@ final class SyncHelperInstallation {
         }
     }
 
-    func release() { phase = .available }
+    func release(expected: Int) -> Bool {
+        guard revision == expected else { return false }
+        if phase == .preparing {
+            cancellationRequested = true
+            return false // The caller holding the drain owns recovery after it joins.
+        }
+        revision += 1
+        phase = .available
+        return true
+    }
 }
