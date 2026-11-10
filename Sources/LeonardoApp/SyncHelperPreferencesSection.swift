@@ -7,7 +7,7 @@ struct SyncHelperPreferencesSection: View {
                 Toggle(L10n.text("Enable Leonardo Sync"), isOn: Binding(
                     get: { controller.enabled },
                     set: { value in Task { await controller.setEnabled(value) } }))
-                    .disabled(controller.busy)
+                    .disabled(controller.busy && (!controller.upgrading || !controller.enabled))
                 Text(controller.statusText).foregroundStyle(.secondary)
                 Text(L10n.text("Required to share and connect. When off, both directions are offline even with LeonardoMD open. Starts after login and keeps sharing saved files when you close the editor."))
                     .font(.caption).foregroundStyle(.secondary)

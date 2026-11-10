@@ -451,9 +451,9 @@ returned drawing remains available to save in the library. After saving, use
 the local library instead of blocking a new request. Use **Refresh linked
 devices** when a newly upgraded companion is not yet listed. Older companions
 that do not advertise rubric capture stay unsupported until their companion
-update. If Leonardo Sync reports an outdated helper, disable and re-enable
-**Leonardo Sync** in Preferences so the bundled helper is registered again,
-then retry the request. Same-ID Retry is limited to the short lost-acknowledgement
+update. After updating the Mac app, its main instance renews an outdated helper
+automatically before reporting sync ready. Wait for the service to finish starting
+or complete any macOS approval, then retry the same request. Same-ID Retry is limited to the short lost-acknowledgement
 window. If the helper reports that the request is expired or missing, or that
 window has passed, Leonardo keeps a local tombstone and **Request again** creates
 a fresh request ID; it never silently recreates the old request. If you cancel
@@ -744,6 +744,10 @@ grant.
 The helper shares **saved files only**, including while the editor is open. Save drafts before refreshing another device. Sharing preferences and device permissions are local to this Mac and survive restarting the app/helper; disabling the helper retains them. You can enable the helper without sharing any projects to connect to another Mac. Incoming proposals wait for explicit review in LeonardoMD; the helper does not accept writes automatically.
 
 The Mac must be reachable for transfers. A private overlay VPN requires the explicit setting and a compatible reachable address; it does not make a public cloud service. Do not assume pairing works across arbitrary networks. Revocation stops future authorized access; it cannot erase copies already downloaded. The iOS companion does not offer Git editing or send document edits back to the Mac. Do not confuse desktop proposal review with mobile editing.
+
+### Updating the background synchronization service
+
+After installing a newer LeonardoMD, opening the main Mac application automatically renews an older synchronization service. Files and existing device access stay in place; do not pair the iPhone again. Sharing may be briefly offline while any active write finishes and the updated service starts. A service waiting for renewal is not reported as ready. If you turn off **Enable Leonardo Sync** during renewal, it stays off. An interrupted renewal resumes when you open LeonardoMD again. If macOS requests approval, use **Open Login Items settings** and approve the existing service there.
 
 ## 15. Connect to other computers and offline copies
 

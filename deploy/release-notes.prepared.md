@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1270
+
+- #412 Fixed: renew outdated sync helper after app updates ([#413](https://github.com/PinedaTec-EU/LeonardoMD/pull/413))
+
+<p>Automatically renew outdated sync services after Mac application updates while preserving device access and pending work.</p>
+
+Source: `20498060ed7009be164a72913c11aacb838a18ef`. Delta: `{"build": 24}`.
+
 ## 0.3.1246
 
 - #399 Added: identify local shared and received projects on macOS and iOS ([#400](https://github.com/PinedaTec-EU/LeonardoMD/pull/400))

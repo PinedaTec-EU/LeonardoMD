@@ -454,10 +454,10 @@ en la biblioteca. Después de guardar, usa **Pedir otra rúbrica** para capturar
 otra respuesta; las guardadas permanecen en la biblioteca local y no bloquean
 una nueva petición. Usa **Actualizar dispositivos enlazados** si un compañero
 recién actualizado aún no aparece. Los compañeros antiguos que no anuncian captura de rúbricas
-siguen sin estar disponibles hasta actualizar el compañero. Si Leonardo Sync
-indica que el asistente está desactualizado, desactiva y vuelve a activar
-**Leonardo Sync** en Preferencias para registrar de nuevo el asistente incluido
-y vuelve a pedir la rúbrica. Reintentar con el mismo ID solo está permitido
+siguen sin estar disponibles hasta actualizar el compañero. Tras actualizar la aplicación del Mac, su instancia principal renueva el servicio
+anterior automáticamente antes de mostrar la sincronización como disponible.
+Espera a que termine de arrancar o completa la aprobación de macOS y reintenta
+la misma petición. Reintentar con el mismo ID solo está permitido
 durante la breve ventana de confirmación perdida. Si el asistente indica que la
 petición ha caducado o ya no existe, o esa ventana ha pasado, Leonardo conserva
 un registro local y **Pedir de nuevo** crea un ID nuevo; nunca recrea en silencio
@@ -759,6 +759,10 @@ permiso sobre documentos.*
 El servicio comparte **solo archivos guardados**, también con el editor abierto. Guarda los borradores antes de actualizar otro dispositivo. Las preferencias y autorizaciones son locales a este Mac y sobreviven al reinicio de la app o del servicio; deshabilitarlo las conserva. Puedes habilitar el servicio sin compartir proyectos para conectar con otro Mac. Las propuestas recibidas esperan una revisión explícita en LeonardoMD; el servicio no acepta escrituras automáticamente.
 
 El Mac debe estar accesible para transferir. Una VPN privada superpuesta requiere su ajuste explícito y una dirección compatible accesible; no convierte el sistema en un servicio público en la nube. No presupongas conectividad entre redes cualesquiera. Revocar impide acceso autorizado futuro; no borra copias ya descargadas. El compañero iOS no ofrece edición Git ni devuelve ediciones de documentos al Mac. La revisión de propuestas del escritorio no es edición móvil.
+
+### Actualizar el servicio de sincronización en segundo plano
+
+Después de instalar un LeonardoMD más reciente, abrir la aplicación principal del Mac renueva automáticamente un servicio de sincronización anterior. Los archivos y los accesos de los dispositivos se conservan; no vuelvas a emparejar el iPhone. La conexión puede quedar brevemente sin servicio mientras termina cualquier escritura activa y arranca el servicio actualizado. Un servicio pendiente de renovación no se muestra como listo. Si desactivas **Activar Leonardo Sync** durante la renovación, permanece desactivado. Una renovación interrumpida continúa al volver a abrir LeonardoMD. Si macOS pide aprobación, usa **Abrir ajustes de ítems de inicio** y aprueba allí el servicio existente.
 
 ## 15. Conectarme a otros equipos y copias sin conexión
 

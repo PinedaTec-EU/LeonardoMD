@@ -56,7 +56,7 @@ private final class HelperListener: NSObject, NSXPCListenerDelegate {
         // Prevent a second manually launched helper from opening the persistent stores.
         let lock = try ProcessFileLock(at: SyncHelperContract.preferencesURL.deletingLastPathComponent()
             .appendingPathComponent("MobileSync/helper.lock"))
-        let host = SyncHelperHost()
+        let host = SyncHelperHost(buildIdentity: SyncHelperBuildIdentity(bundleURL: bundle))
         let delegate = HelperListener(host: host)
         let listener = NSXPCListener(machServiceName: SyncHelperContract.serviceName)
         listener.setConnectionCodeSigningRequirement(try SyncHelperSigning.requirement(for: bundle, identifier: SyncHelperContract.appIdentifier, matching: executable))

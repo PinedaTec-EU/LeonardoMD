@@ -999,9 +999,19 @@
       "pr": 400,
       "summary": "Projects now show a common icon and distinguish local content, sharing from this device and content received from another device on Mac, iPhone and iPad.",
       "to_version": "0.3.1246"
+    },
+    {
+      "delta": {
+        "build": 24
+      },
+      "from_version": "0.3.1246",
+      "merge_sha": "20498060ed7009be164a72913c11aacb838a18ef",
+      "pr": 413,
+      "summary": "Automatically renew outdated sync services after Mac application updates while preserving device access and pending work.",
+      "to_version": "0.3.1270"
     }
   ],
-  "current_version": "0.3.1246",
+  "current_version": "0.3.1270",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
