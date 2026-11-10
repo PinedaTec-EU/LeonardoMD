@@ -979,9 +979,19 @@
       "pr": 385,
       "summary": "Browse shared projects without bulk downloads, open files on demand, and manage temporary cache separately from files and folders kept offline.",
       "to_version": "0.3.1215"
+    },
+    {
+      "delta": {
+        "build": 18
+      },
+      "from_version": "0.3.1215",
+      "merge_sha": "050aed806bb3733918a64b839d7034b73f07b8d5",
+      "pr": 408,
+      "summary": "Little Leonardo lists Demo alongside other projects, supports swipe-and-tap local project removal, and restores Demo from Settings while retaining practice answers.",
+      "to_version": "0.3.1233"
     }
   ],
-  "current_version": "0.3.1215",
+  "current_version": "0.3.1233",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
