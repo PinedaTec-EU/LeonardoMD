@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1147
+
+- #397 Fixed: compact iOS Classic reader heading spacing ([#405](https://github.com/PinedaTec-EU/LeonardoMD/pull/405))
+
+<p>Reduces excess space before the first heading in Little Leonardo&#x27;s synchronized Markdown reader. Desktop and later headings keep their spacing. Adds native iOS layout checks and updates both bundled guides.</p>
+
+Source: `cd6b08f0b9851fd5510880bc3c0696c979ae0fee`. Delta: `{"build": 11}`.
+
 ## 0.3.1136
 
 - #394 Fixed: recover rubric queries during helper configuration ([#398](https://github.com/PinedaTec-EU/LeonardoMD/pull/398))

@@ -959,9 +959,19 @@
       "pr": 398,
       "summary": "Recover rubric status queries automatically while preserving request identity and access, and restore CI downloads with verified pinned Sparkle artifacts.",
       "to_version": "0.3.1136"
+    },
+    {
+      "delta": {
+        "build": 11
+      },
+      "from_version": "0.3.1136",
+      "merge_sha": "cd6b08f0b9851fd5510880bc3c0696c979ae0fee",
+      "pr": 405,
+      "summary": "Reduces excess space before the first heading in Little Leonardo's synchronized Markdown reader. Desktop and later headings keep their spacing. Adds native iOS layout checks and updates both bundled guides.",
+      "to_version": "0.3.1147"
     }
   ],
-  "current_version": "0.3.1136",
+  "current_version": "0.3.1147",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
