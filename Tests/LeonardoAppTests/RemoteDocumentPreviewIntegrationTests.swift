@@ -45,6 +45,7 @@ import LeonardoSyncUI
             return document
         }
         let text = try await render(library: library, id: descriptor.id, entry: RemoteFileEntry(file: document), spanish: false, root: root)
+        XCTAssertTrue(text.contains("Readable document"), text)
         XCTAssertTrue(text.contains("Synthetic update unavailable"), text)
         XCTAssertTrue(text.contains("Retry"), text)
     }
@@ -63,9 +64,20 @@ import LeonardoSyncUI
             guard ContinuousClock.now < deadline else { XCTFail("Preview task did not reach the failed download"); return "" }
             try await Task.sleep(for: .milliseconds(20))
         }
-        try await Task.sleep(for: .milliseconds(300))
         let image = root.appendingPathComponent("preview.png")
-        try NativeViewCaptureSupport.writeBitmap(host, size: size, to: image, pixelScale: 2)
+        let expectedContent = entry.path.hasSuffix(".txt") ? "Previously retained content A" : "Readable document"
+        var recognized = ""
+        let renderDeadline = ContinuousClock.now.advanced(by: .seconds(8))
+        repeat {
+            try await Task.sleep(for: .milliseconds(100))
+            try NativeViewCaptureSupport.writeBitmap(host, size: size, to: image, pixelScale: 2)
+            let recognition = VNRecognizeTextRequest()
+            recognition.recognitionLevel = .accurate
+            recognition.usesLanguageCorrection = false
+            try VNImageRequestHandler(url: image).perform([recognition])
+            recognized = (recognition.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: "\n")
+        } while !recognized.contains(expectedContent) && ContinuousClock.now < renderDeadline
+        XCTAssertTrue(recognized.contains(expectedContent), "Production preview content did not become visible: " + recognized)
         if let destination = ProcessInfo.processInfo.environment["LEONARDO_PREVIEW_EVIDENCE"] {
             let output = URL(fileURLWithPath: destination, isDirectory: true)
             try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
@@ -85,11 +97,7 @@ import LeonardoSyncUI
             try JSONSerialization.data(withJSONObject: context, options: [.prettyPrinted, .sortedKeys])
                 .write(to: output.appendingPathComponent(name + ".context.json"))
         }
-        let recognition = VNRecognizeTextRequest()
-        recognition.recognitionLevel = .accurate
-        recognition.usesLanguageCorrection = false
-        try VNImageRequestHandler(url: image).perform([recognition])
-        return (recognition.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: "\n")
+        return recognized
     }
 
     private enum PreviewFailure: LocalizedError {
