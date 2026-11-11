@@ -23,8 +23,10 @@ final class SyncHelperControllerTests: XCTestCase {
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
         let registration = HelperRegistrationFake(); registration.status = .enabled
         let control = HelperControlFake(); await control.setBuildIdentity(replacement)
-        await control.pauseStatus()
         let controller = upgrading(fixture, registration, control)
+        await controller.refresh()
+        XCTAssertEqual(controller.displayedState, .running)
+        await control.pauseStatus()
         let refresh = Task { await controller.refresh() }
         for _ in 0..<5000 {
             if await control.hasHeldStatus { break }
@@ -36,6 +38,7 @@ final class SyncHelperControllerTests: XCTestCase {
             XCTFail("Status check did not reach the controlled barrier"); return
         }
         XCTAssertTrue(controller.checking)
+        XCTAssertEqual(controller.displayedState, .running, "A background check must preserve the last visible status")
         try await captureStatusIndicator(controller, state: "checking")
         await control.resumeStatus(); await refresh.value
         XCTAssertFalse(controller.checking)

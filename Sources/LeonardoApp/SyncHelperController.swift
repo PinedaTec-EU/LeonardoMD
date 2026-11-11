@@ -13,6 +13,7 @@ final class SyncHelperController {
     private(set) var busy = false
     private(set) var checking = false
     private var activeRefreshes = 0
+    private var stateBeforeRefresh = State.disabled
     private(set) var upgrading = false
     private(set) var sharing: RunningDirectService?
     private(set) var supportsRubricExchange = false
@@ -58,8 +59,9 @@ final class SyncHelperController {
 
     var online: Bool { state == .running && !installation.blocksOperations }
     var checkingStatus: Bool { checking || busy }
+    var displayedState: State { checking ? stateBeforeRefresh : state }
     var statusText: String {
-        switch state {
+        switch displayedState {
         case .notInstalled: L10n.text("Sync helper is not installed")
         case .disabled: L10n.text("Offline · sync helper disabled")
         case .approvalRequired: L10n.text("Offline · approve the sync helper in System Settings")
@@ -70,6 +72,7 @@ final class SyncHelperController {
     }
 
     func refresh() async {
+        if activeRefreshes == 0 { stateBeforeRefresh = state }
         activeRefreshes += 1
         checking = true
         defer {

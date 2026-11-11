@@ -39,7 +39,7 @@ struct MobileSyncPreferencesView: View {
         .task {
             await controller.initialize()
             while !Task.isCancelled {
-                await controller.refreshConsent()
+                await controller.refreshConsent(refreshHelper: false)
                 do { try await Task.sleep(for: .seconds(2)) } catch { return }
             }
         }

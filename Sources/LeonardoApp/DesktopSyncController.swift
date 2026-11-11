@@ -121,7 +121,11 @@ final class DesktopSyncController {
     }
 
     func initialize() async {
-        guard !InstanceRuntime.isAdditional, !initialized, !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
+        if initialized {
+            if usesHelper { await helper.refresh() }
+            return
+        }
         busy = true
         defer { busy = false }
         do {
@@ -205,10 +209,10 @@ final class DesktopSyncController {
         await update(updated)
     }
 
-    func refreshConsent() async {
+    func refreshConsent(refreshHelper: Bool = true) async {
         guard !InstanceRuntime.isAdditional, !busy else { return }
         if usesHelper {
-            await helper.refresh()
+            if refreshHelper { await helper.refresh() }
             running = helper.sharing
             guard helper.online else {
                 running = nil; invitationURL = nil; incoming = []; consent = PairingRegistry(); return

@@ -96,10 +96,7 @@ struct DesktopPeerPreferencesView: View {
         .task {
             await controller.initialize()
             for id in controller.connections.filter({ !$0.revoked }).map(\.id) { await controller.refresh(id) }
-            while !Task.isCancelled {
-                await controller.helper.refresh()
-                do { try await Task.sleep(for: .seconds(2)) } catch { return }
-            }
+            await controller.helper.refresh()
         }
         .sheet(isPresented: Binding(get: { browsing != nil }, set: { if !$0 { browsing = nil } })) {
             if let id = browsing {
