@@ -50,10 +50,13 @@ final class SyncHelperControllerTests: XCTestCase {
         let previous = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = previous }
         LanguageSettings.shared.language = .english
-        let host = NSHostingView(rootView: SyncHelperPreferencesSection(controller: controller)
-            .toggleStyle(PremiumSwitchStyle()).padding(16).frame(width: 532, height: 150, alignment: .topLeading)
+        let host = NSHostingView(rootView: VStack(alignment: .leading, spacing: 12) {
+            SyncHelperPreferencesSection(controller: controller)
+            Divider()
+            Text("Share from this Mac")
+        }.toggleStyle(PremiumSwitchStyle()).padding(16).frame(width: 532, height: 220, alignment: .topLeading)
             .background(Color(nsColor: .windowBackgroundColor)))
-        try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 150),
+        try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 220),
             to: destination.appendingPathComponent("status-\(state).png"), language: "en",
             state: "Synthetic helper status: \(state)", route: "/native/preferences/synchronization",
             screen: "Synchronization helper status")
@@ -77,7 +80,58 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(held)
         XCTAssertEqual(controller.error, "Previous error")
         await control.resumeReload(); await refresh.value
+        XCTAssertEqual(controller.error, "Previous error")
+    }
+
+    func testRecoveryRetainsDiagnosticUntilHealthCompletes() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake()
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        await control.pauseStatus()
+        let controller = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 1),
+            hasExecutable: { true }, verifyPackage: {})
+        controller.error = "Previous error"
+        let refresh = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldStatus
+        XCTAssertTrue(held)
+        XCTAssertTrue(controller.checkingStatus)
+        XCTAssertEqual(controller.error, "Previous error")
+        try await captureStatusIndicator(controller, state: "recovery-checking")
+        await control.resumeStatus(); await refresh.value
+        XCTAssertTrue(controller.online)
         XCTAssertNil(controller.error)
+        XCTAssertFalse(controller.checkingStatus)
+        try await captureStatusIndicator(controller, state: "recovery-online")
+    }
+
+    func testRecoveryRetainsDiagnosticUntilFailedHealthReturns() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake()
+        let control = HelperControlFake(); await control.failStatus(at: 1); await control.pauseStatus()
+        let controller = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 1),
+            hasExecutable: { true }, verifyPackage: {})
+        controller.error = "Previous error"
+        let refresh = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTAssertTrue(controller.checkingStatus)
+        XCTAssertEqual(controller.error, "Previous error")
+        try await captureStatusIndicator(controller, state: "recovery-before-failure")
+        await control.resumeStatus(); await refresh.value
+        XCTAssertEqual(controller.state, .failed)
+        XCTAssertNotNil(controller.error)
+        XCTAssertFalse(controller.checkingStatus)
+        try await captureStatusIndicator(controller, state: "recovery-failed")
     }
 
     func testRefreshPreservesErrorWhileChecking() async throws {
@@ -1021,11 +1075,10 @@ private actor HelperControlFake: SyncHelperControlAccess {
     func status() async throws -> SyncHelperStatus {
         statusCalls += 1
         let scheduledFailure = failingStatusCalls.remove(statusCalls) != nil
+        if paused || pausedStatusCall == statusCalls { await withCheckedContinuation { heldStatus = $0 } }
         if unavailable || scheduledFailure { throw HelperControlError.unavailable }
         if !buildIdentities.isEmpty { buildIdentity = buildIdentities.removeFirst() }
-        let reply = SyncHelperStatus(enabled: true, sharing: sharing, buildIdentity: buildIdentity)
-        if paused || pausedStatusCall == statusCalls { await withCheckedContinuation { heldStatus = $0 } }
-        return reply
+        return SyncHelperStatus(enabled: true, sharing: sharing, buildIdentity: buildIdentity)
     }
     func reload() async throws -> SyncHelperStatus {
         reloads += 1

@@ -57,6 +57,7 @@ final class SyncHelperController {
     }
 
     var online: Bool { state == .running && !installation.blocksOperations }
+    var checkingStatus: Bool { checking || busy }
     var statusText: String {
         switch state {
         case .notInstalled: L10n.text("Sync helper is not installed")
@@ -222,13 +223,19 @@ final class SyncHelperController {
             return
         }
         nextUpgradeAttempt = .distantPast
-        error = nil
+        // Retain the diagnostic until a live health response replaces it.
         // Only a subsequent live identity/health response can report running.
         state = .starting
     }
 
     private func confirmStartupReadiness() async {
         guard enabled, state == .starting, !busy, startup.attempts > 0 else { return }
+        activeRefreshes += 1
+        checking = true
+        defer {
+            activeRefreshes -= 1
+            checking = activeRefreshes > 0
+        }
         let expected = revision
         for attempt in 0..<startup.attempts {
             do {
