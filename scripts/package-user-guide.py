@@ -14,6 +14,7 @@ import mdlz
 
 
 LANGUAGES = ("en", "es")
+GUIDE_REVISION = 54
 
 
 def practice_metadata(language):
@@ -32,7 +33,7 @@ def practice_metadata(language):
 
 def metadata(language):
     return {"format": "mdlf", "formatVersion": 1,
-            "document": {"id": "leonardo-user-guide-" + language, "kind": "document", "revision": 53},
+            "document": {"id": "leonardo-user-guide-" + language, "kind": "document", "revision": GUIDE_REVISION},
             "layout": {"images": [{"source": "assets/graphic-inspector.png", "size": {"width": {"value": 240, "unit": "points"}}}]}}
 
 
@@ -118,7 +119,7 @@ def main():
             write_web_guide(language, args.web_output)
     args.output.mkdir(parents=True, exist_ok=True)
     for language in LANGUAGES:
-        destination = args.output / f"Guide-v53-{language}.mdlz"
+        destination = args.output / f"Guide-v{GUIDE_REVISION}-{language}.mdlz"
         # The canonical packer deliberately refuses overwrites. Replace only our generated artifact.
         with tempfile.TemporaryDirectory(prefix="leonardo-guide-output-") as temporary:
             result = Path(temporary) / destination.name

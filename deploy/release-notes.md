@@ -381,4 +381,10 @@
 - [#413](https://github.com/PinedaTec-EU/LeonardoMD/pull/413) — #412 Fixed: renew outdated sync helper after app updates — build +24
   <p>Automatically renew outdated sync services after Mac application updates while preserving device access and pending work.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.3.1270)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTEtMTBUMjI6MzY6MTVaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjZ9LCJmcm9tX3ZlcnNpb24iOiIwLjMuMTI3MCIsImtpbmQiOiJwdWxsX3JlcXVlc3QiLCJtZXJnZV9zaGEiOiIwOTRkMzczODA0MTM0Yzc4NWVhY2ZhMzE2MzgxZjdlZGRiYjRkYzJkIiwibnVtYmVyIjo0MjAsInN1bW1hcnkiOiJVcGRhdGVzIG5vdyBwYXVzZSB0aGUgc2hhcmluZyBzZXJ2aWNlIHNhZmVseSBiZWZvcmUgcmVwbGFjaW5nIHRoZSBNYWMgYXBwbGljYXRpb24sIHByZXNlcnZpbmcgZXhpc3RpbmcgYWNjZXNzIGZvciB0aGUgbmV4dCBsYXVuY2guIEluc3RhbGxhdGlvbiB3YWl0cyBpZiBhIHNhZmUgc3RvcCBjYW5ub3QgYmUgY29uZmlybWVkLiIsInRpdGxlIjoiIzQxMiBGaXhlZDogcHJlcGFyZSBzeW5jIGhlbHBlciBiZWZvcmUgc2lnbmVkIGFwcGxpY2F0aW9uIHJlcGxhY2VtZW50IiwidG9fdmVyc2lvbiI6IjAuMy4xMjc2In1dLCJlbnZpcm9ubWVudCI6InJlbGVhc2UiLCJldmVudF9pZCI6ImdpdGh1Yl9yZWxlYXNlOjQ0MTAxMjM0NCIsImV2ZW50X2tpbmQiOiJnaXRodWJfcmVsZWFzZSIsImV2aWRlbmNlX3VybCI6Imh0dHBzOi8vZ2l0aHViLmNvbS9QaW5lZGFUZWMtRVUvTGVvbmFyZG9NRC9yZWxlYXNlcy90YWcvdjAuMy4xMjc2IiwicmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwic291cmNlX3JlZiI6InYwLjMuMTI3NiIsInNvdXJjZV9zaGEiOiIxOGUwNmJmNjFlMGUyN2I4OThmN2VlNzI4YTA0MjZmMjZjMjAzNTFhIiwidGFyZ2V0IjoiUGluZWRhVGVjLUVVL0xlb25hcmRvTUQiLCJ2ZXJzaW9uIjoiMC4zLjEyNzYifQ -->
+### 0.3.1276
+- [#420](https://github.com/PinedaTec-EU/LeonardoMD/pull/420) — #412 Fixed: prepare sync helper before signed application replacement — build +6
+  <p>Updates now pause the sharing service safely before replacing the Mac application, preserving existing access for the next launch. Installation waits if a safe stop cannot be confirmed.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.3.1276)
 <!-- release-ledger:end -->

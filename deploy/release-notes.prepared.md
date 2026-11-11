@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1279
+
+- #423 Fixed: make synchronized folders navigable ([#424](https://github.com/PinedaTec-EU/LeonardoMD/pull/424))
+
+<p>Navigate synchronized folders and see only the files and folders in the current location.</p>
+
+Source: `d93a51fa7e8bd457e5616b75d44d9cf431034016`. Delta: `{"build": 3}`.
+
 ## 0.3.1276
 
 - #412 Fixed: prepare sync helper before signed application replacement ([#420](https://github.com/PinedaTec-EU/LeonardoMD/pull/420))
