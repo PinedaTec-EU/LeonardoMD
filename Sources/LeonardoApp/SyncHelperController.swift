@@ -143,7 +143,19 @@ final class SyncHelperController {
             case .enabled:
                 let status = try await client.status()
                 observeHealth(status, revision: expected, requiresIdentity: false)
-                guard !Task.isCancelled else { return }
+                if Task.isCancelled {
+                    let incompatible = expectedBuildIdentity.map { expected in
+                        status.buildIdentity.map { $0.needsReplacement(by: expected) } ?? true
+                    } ?? false
+                    if (!status.enabled || incompatible), expected == revision, expectedLifecycle == lifecycleRevision {
+                        if !reconcileRegistration() {
+                            state = .failed; sharing = nil; supportsRubricExchange = false
+                            error = L10n.text("Offline · sync helper unavailable")
+                            presentCurrentState()
+                        }
+                    }
+                    return
+                }
                 if expectedLifecycle == lifecycleRevision && reconcileRegistration() { return }
                 guard expected == revision else { return }
                 if let expectedBuildIdentity,
@@ -164,9 +176,10 @@ final class SyncHelperController {
             }
         } catch {
             if !(error is CancellationError) { observeHealthFailure(revision: expected) }
-            if expectedLifecycle == lifecycleRevision && !Task.isCancelled && reconcileRegistration() { return }
-            guard expected == revision else { return }
+            if expectedLifecycle == lifecycleRevision && !(error is CancellationError) && reconcileRegistration() { return }
+            guard expected == revision, !(error is CancellationError) else { return }
             state = .failed; sharing = nil; supportsRubricExchange = false; self.error = L10n.text(error.localizedDescription)
+            if Task.isCancelled { presentCurrentState() }
         }
     }
 
@@ -306,7 +319,7 @@ final class SyncHelperController {
                 logger.info("sync_helper_readiness_confirmed build=\(identity.build, privacy: .public)")
                 return
             } catch {
-                if expectedLifecycle == lifecycleRevision && !Task.isCancelled && reconcileRegistration() { return }
+                if expectedLifecycle == lifecycleRevision && !(error is CancellationError) && reconcileRegistration() { return }
                 guard canProbeStartup(expected) else { return }
                 self.error = L10n.text(error.localizedDescription)
             }
@@ -440,7 +453,8 @@ final class SyncHelperController {
         let settings: MobileSyncPreferences
         do { settings = try await loadPeerPreferences() }
         catch {
-            if initialRevision == lifecycleRevision && initialHealthRevision == revision && !busy && !Task.isCancelled {
+            if initialRevision == lifecycleRevision && !(error is CancellationError) && reconcileRegistration() { throw error }
+            if initialRevision == lifecycleRevision && initialHealthRevision == revision && !busy && !(error is CancellationError) {
                 revision += 1; presentationRevision += 1
                 lastFailureRevision = revision; state = .failed; sharing = nil; supportsRubricExchange = false
                 self.error = L10n.text(error.localizedDescription); presentCurrentState()
@@ -466,8 +480,8 @@ final class SyncHelperController {
         do { status = try await client.status() }
         catch {
             if !(error is CancellationError) { observeHealthFailure(revision: expected) }
-            if initialRevision == lifecycleRevision && !Task.isCancelled && reconcileRegistration() { throw error }
-            if expected == revision && !Task.isCancelled {
+            if initialRevision == lifecycleRevision && !(error is CancellationError) && reconcileRegistration() { throw error }
+            if expected == revision && !(error is CancellationError) {
                 presentationRevision += 1
                 state = .failed; sharing = nil; supportsRubricExchange = false
                 self.error = L10n.text(error.localizedDescription)
@@ -482,7 +496,8 @@ final class SyncHelperController {
         do { current = try await loadPeerPreferences() }
         catch {
             if !(error is CancellationError) { observeHealthFailure(revision: expected) }
-            if expected == revision && !Task.isCancelled {
+            if initialRevision == lifecycleRevision && !(error is CancellationError) && reconcileRegistration() { throw error }
+            if expected == revision && !(error is CancellationError) {
                 lastFailureRevision = expected; presentationRevision += 1
                 state = .failed; sharing = nil; supportsRubricExchange = false
                 self.error = L10n.text(error.localizedDescription)
@@ -506,6 +521,7 @@ final class SyncHelperController {
             }
             throw offlineFailure()
         }
+        try Task.checkCancellation()
         guard expected == revision else {
             // A newer healthy refresh owns the displayed endpoint/capabilities.
             // Keep it, while still allowing operations confirmed by that state.

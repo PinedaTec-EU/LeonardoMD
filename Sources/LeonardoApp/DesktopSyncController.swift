@@ -64,9 +64,12 @@ final class DesktopSyncController {
     private var initialized = false
     private var consentFailureChecked = false
     private var lastNetworkAddresses: Set<String>?
+    private var networkRefreshPending = false
+    private var nextNetworkRefresh = Date.distantPast
     private var invitationNetworkAddresses: Set<String>?
     private var nextHelperRecovery = Date.distantPast
     var networkAddresses: @MainActor (Bool) -> [String] = { LocalNetworkInterfaces.addresses(allowPrivateOverlay: $0) }
+    var isLocalAddress: @MainActor (String) -> Bool = { LocalNetworkInterfaces.containsLocalAddress($0) }
     private static var rubricRequesterName: String {
         let name = Host.current().localizedName?.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let name, !name.isEmpty else { return "LeonardoMD" }
@@ -215,7 +218,11 @@ final class DesktopSyncController {
     }
 
     private func updateRunningFromHelper() {
-        let current = helper.sharing
+        let advertised = helper.sharing
+        let current: RunningDirectService?
+        if networkRefreshPending, let host = advertised?.endpoint.host,
+           !isCurrentHost(host, addresses: Set(addresses)) { current = nil }
+        else { current = advertised }
         if running?.endpoint != current?.endpoint || running?.certificateFingerprint != current?.certificateFingerprint {
             invitationURL = nil
         }
@@ -228,13 +235,29 @@ final class DesktopSyncController {
             invitationURL = nil; invitationNetworkAddresses = nil
         }
         guard !InstanceRuntime.isAdditional, !busy else { return }
+        var checkedHelper = false
         if usesHelper {
-            let networkChanged = lastNetworkAddresses.map { $0 != currentAddresses } ?? false
+            let networkChanged = lastNetworkAddresses.map { $0 != currentAddresses } ?? true
             lastNetworkAddresses = currentAddresses
+            if networkChanged {
+                networkRefreshPending = true; nextNetworkRefresh = .distantPast
+                updateRunningFromHelper()
+            }
             let recoveryDue = helper.needsAutomaticRecovery && now() >= nextHelperRecovery
-            if refreshHelper || networkChanged || recoveryDue {
+            let networkDue = networkRefreshPending && now() >= nextNetworkRefresh
+            if refreshHelper || networkDue || recoveryDue {
+                checkedHelper = true
                 nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
-                await helper.refresh()
+                if networkDue || (refreshHelper && networkRefreshPending) {
+                    nextNetworkRefresh = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
+                    let confirmed = await helper.refreshForInvitation()
+                    let host = helper.sharing?.endpoint.host
+                    if Set(addresses) != currentAddresses {
+                        nextNetworkRefresh = .distantPast
+                    } else if confirmed && (host.map { isCurrentHost($0, addresses: currentAddresses) } ?? true) {
+                        networkRefreshPending = false
+                    }
+                } else { await helper.refresh() }
             }
             updateRunningFromHelper()
             guard helper.online else {
@@ -249,7 +272,8 @@ final class DesktopSyncController {
             consentFailureChecked = false
         } catch {
             self.error = error.localizedDescription
-            if usesHelper && !refreshHelper && (!consentFailureChecked || now() >= nextHelperRecovery) {
+            if checkedHelper { consentFailureChecked = true }
+            if usesHelper && !refreshHelper && !checkedHelper && (!consentFailureChecked || now() >= nextHelperRecovery) {
                 consentFailureChecked = true
                 nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
                 await helper.refresh()
@@ -302,6 +326,14 @@ final class DesktopSyncController {
         return false
     }
 
+    private func isCurrentHost(_ host: String, addresses: Set<String>) -> Bool {
+        if addresses.contains(host) { return true }
+        guard let configured = settings.host,
+              configured.trimmingCharacters(in: CharacterSet(charactersIn: "[]")) == host.trimmingCharacters(in: CharacterSet(charactersIn: "[]")),
+              LocalNetworkAddress.isAllowed(host, allowPrivateOverlay: settings.privateOverlayEnabled) else { return false }
+        return isLocalAddress(host)
+    }
+
     func createQR() async {
         guard !busy else { return }
         busy = true
@@ -326,7 +358,7 @@ final class DesktopSyncController {
             }
             guard Set(addresses) == invitationAddresses else { return }
             if usesHelper {
-                guard let host = running.endpoint.host, invitationAddresses.contains(host) else { return }
+                guard let host = running.endpoint.host, isCurrentHost(host, addresses: invitationAddresses) else { return }
             }
             invitationURL = try DirectPairingQR(endpoint: running.endpoint,
                 certificateFingerprint: running.certificateFingerprint, invitation: invitation).encodedURL()
