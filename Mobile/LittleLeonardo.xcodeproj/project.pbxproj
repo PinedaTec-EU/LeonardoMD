@@ -601,6 +601,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Little Leonardo";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Little Leonardo usa la cámara para leer el QR de conexión que muestra LeonardoMD.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Little Leonardo se conecta con LeonardoMD en tu red local para sincronizar los proyectos que autorices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -627,6 +628,7 @@
 				DEVELOPMENT_TEAM = AU2Z3P42U7;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Little Leonardo";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Little Leonardo usa la cámara para leer el QR de conexión que muestra LeonardoMD.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Little Leonardo se conecta con LeonardoMD en tu red local para sincronizar los proyectos que autorices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
