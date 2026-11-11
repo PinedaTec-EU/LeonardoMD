@@ -65,7 +65,6 @@ final class DesktopSyncController {
     private var consentFailureChecked = false
     private var lastNetworkAddresses: Set<String>?
     private var nextHelperRecovery = Date.distantPast
-    private static let helperRecoveryInterval: TimeInterval = 30
     var networkAddresses: @MainActor (Bool) -> [String] = { LocalNetworkInterfaces.addresses(allowPrivateOverlay: $0) }
     private static var rubricRequesterName: String {
         let name = Host.current().localizedName?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -230,7 +229,7 @@ final class DesktopSyncController {
             lastNetworkAddresses = currentAddresses
             let recoveryDue = helper.state == .failed && now() >= nextHelperRecovery
             if refreshHelper || networkChanged || recoveryDue {
-                nextHelperRecovery = now().addingTimeInterval(Self.helperRecoveryInterval)
+                nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
                 await helper.refresh()
             }
             updateRunningFromHelper()
@@ -248,7 +247,7 @@ final class DesktopSyncController {
             self.error = error.localizedDescription
             if usesHelper && !refreshHelper && !consentFailureChecked {
                 consentFailureChecked = true
-                nextHelperRecovery = now().addingTimeInterval(Self.helperRecoveryInterval)
+                nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
                 await helper.refresh()
                 updateRunningFromHelper()
             }

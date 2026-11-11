@@ -94,4 +94,8 @@ preparation before preference changes; it never assumes that helper is older.
 Synchronization preferences preserve the previous helper error while a health
 query is in flight. The common switch preserves its previous indicator during checking,
 shows green when online and red when unavailable, and hides it when disabled;
-the status remains available to assistive technology. See `SyncHelperPreferencesSection` and `SyncHelperController`.
+the status remains available to assistive technology. While the service is in an
+error state, preferences retry health at a bounded interval; a change in local
+addresses refreshes the sharing endpoint and discards an obsolete invitation.
+Approval changes are reconciled when the app becomes active. See
+`SyncHelperPreferencesSection` and `SyncHelperController`.

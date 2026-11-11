@@ -257,6 +257,24 @@ final class SyncHelperControllerTests: XCTestCase {
         catch { XCTAssertEqual(helper.state, .failed); XCTAssertFalse(helper.online) }
     }
 
+    func testErrorRecoveryChecksOnlyFailedHelperAndRestoresOnlineStatus() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let helper = fixture.controller(registration, control)
+        await helper.refresh(); XCTAssertTrue(helper.online)
+        let healthyCalls = await control.statusCalls
+        await helper.refreshIfFailed()
+        let unchangedCalls = await control.statusCalls
+        XCTAssertEqual(unchangedCalls, healthyCalls, "Healthy helpers are not periodically checked")
+        await control.setUnavailable()
+        await helper.refresh(); XCTAssertEqual(helper.state, .failed)
+        await control.setUnavailable(false)
+        await helper.refreshIfFailed()
+        XCTAssertTrue(helper.online, "The connections page can recover without reopening")
+    }
+
     func testApprovalTransitionKeepsSpaceForLoginItemsAction() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)

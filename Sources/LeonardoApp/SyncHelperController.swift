@@ -30,6 +30,7 @@ final class SyncHelperController {
     private var revision = 0
     private let expectedBuildIdentity: SyncHelperBuildIdentity?
     private static let upgradeRetryInterval: TimeInterval = 30
+    static let errorRecoveryInterval: TimeInterval = 30
     private let startup: SyncHelperStartupPolicy
     private let now: @MainActor () -> Date
     private var nextUpgradeAttempt = Date.distantPast
@@ -327,6 +328,11 @@ final class SyncHelperController {
     }
 
     func openApprovalSettings() { service.openApprovalSettings() }
+
+    func refreshIfFailed() async {
+        guard state == .failed, !checking, !busy else { return }
+        await refresh()
+    }
 
     func refreshAfterActivation() async {
         guard !checking else { return }

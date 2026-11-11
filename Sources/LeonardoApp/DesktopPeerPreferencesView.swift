@@ -98,6 +98,13 @@ struct DesktopPeerPreferencesView: View {
             for id in controller.connections.filter({ !$0.revoked }).map(\.id) { await controller.refresh(id) }
             await controller.helper.refresh()
         }
+        .task {
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(SyncHelperController.errorRecoveryInterval)) }
+                catch { return }
+                await controller.helper.refreshIfFailed()
+            }
+        }
         .sheet(isPresented: Binding(get: { browsing != nil }, set: { if !$0 { browsing = nil } })) {
             if let id = browsing {
                 DesktopDownloadBrowser(library: controller.downloads, projectID: id)
