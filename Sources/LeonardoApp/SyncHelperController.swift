@@ -96,7 +96,7 @@ final class SyncHelperController {
         presentationRevision += 1
         let presentation = presentationRevision
         defer {
-            if presentation == presentationRevision { presentCurrentState() }
+            if presentation == presentationRevision && !Task.isCancelled { presentCurrentState() }
             activeRefreshes -= 1
             checking = activeRefreshes > 0
         }
@@ -119,7 +119,7 @@ final class SyncHelperController {
         let expected = revision
         let expectedLifecycle = lifecycleRevision
         await refreshOnceBody(expected: expected, expectedLifecycle: expectedLifecycle)
-        if expected == revision, state != .running { lastFailureRevision = expected }
+        if expected == revision, !Task.isCancelled, state != .running { lastFailureRevision = expected }
     }
 
     private func presentCurrentState() {
@@ -143,7 +143,8 @@ final class SyncHelperController {
             case .enabled:
                 let status = try await client.status()
                 observeHealth(status, revision: expected, requiresIdentity: false)
-                if expectedLifecycle == lifecycleRevision && !Task.isCancelled && reconcileRegistration() { return }
+                guard !Task.isCancelled else { return }
+                if expectedLifecycle == lifecycleRevision && reconcileRegistration() { return }
                 guard expected == revision else { return }
                 if let expectedBuildIdentity,
                    settings.mobileSync.helperUpgradeToken != nil ||
@@ -162,7 +163,7 @@ final class SyncHelperController {
             @unknown default: error = nil; state = .failed; sharing = nil; supportsRubricExchange = false
             }
         } catch {
-            if !Task.isCancelled { observeHealthFailure(revision: expected) }
+            if !(error is CancellationError) { observeHealthFailure(revision: expected) }
             if expectedLifecycle == lifecycleRevision && !Task.isCancelled && reconcileRegistration() { return }
             guard expected == revision else { return }
             state = .failed; sharing = nil; supportsRubricExchange = false; self.error = L10n.text(error.localizedDescription)
@@ -186,7 +187,7 @@ final class SyncHelperController {
         lifecycleRevision += 1; revision += 1; presentationRevision += 1 // Invalidate prior health and presentation.
         let presentation = presentationRevision
         defer {
-            if presentation == presentationRevision { presentCurrentState(); hasPresentedStatus = true }
+            if presentation == presentationRevision && !Task.isCancelled { presentCurrentState(); hasPresentedStatus = true }
         }
         nextUpgradeAttempt = .distantPast
         let reconcileExisting = enabled && service.status == .enabled && expectedBuildIdentity != nil
@@ -446,6 +447,11 @@ final class SyncHelperController {
             }
             throw error
         }
+        guard initialRevision == lifecycleRevision else { throw offlineFailure() }
+        if settings.helperEnabled && settings.helperUpgradeToken == nil {
+            if !enabled { hasPresentedStatus = false }
+            enabled = true
+        }
         guard permitsPeerOperations(settings) else {
             if initialRevision == lifecycleRevision && !busy {
                 if !settings.helperEnabled || settings.helperUpgradeToken != nil { presentDeniedConsent(settings) }
@@ -459,7 +465,7 @@ final class SyncHelperController {
         let status: SyncHelperStatus
         do { status = try await client.status() }
         catch {
-            if !Task.isCancelled { observeHealthFailure(revision: expected) }
+            if !(error is CancellationError) { observeHealthFailure(revision: expected) }
             if initialRevision == lifecycleRevision && !Task.isCancelled && reconcileRegistration() { throw error }
             if expected == revision && !Task.isCancelled {
                 presentationRevision += 1
@@ -475,7 +481,7 @@ final class SyncHelperController {
         let current: MobileSyncPreferences
         do { current = try await loadPeerPreferences() }
         catch {
-            if !Task.isCancelled { observeHealthFailure(revision: expected) }
+            if !(error is CancellationError) { observeHealthFailure(revision: expected) }
             if expected == revision && !Task.isCancelled {
                 lastFailureRevision = expected; presentationRevision += 1
                 state = .failed; sharing = nil; supportsRubricExchange = false

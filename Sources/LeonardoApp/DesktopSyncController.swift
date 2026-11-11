@@ -64,6 +64,7 @@ final class DesktopSyncController {
     private var initialized = false
     private var consentFailureChecked = false
     private var lastNetworkAddresses: Set<String>?
+    private var invitationNetworkAddresses: Set<String>?
     private var nextHelperRecovery = Date.distantPast
     var networkAddresses: @MainActor (Bool) -> [String] = { LocalNetworkInterfaces.addresses(allowPrivateOverlay: $0) }
     private static var rubricRequesterName: String {
@@ -222,12 +223,14 @@ final class DesktopSyncController {
     }
 
     func refreshConsent(refreshHelper: Bool = true) async {
+        let currentAddresses = Set(addresses)
+        if invitationURL != nil && invitationNetworkAddresses != currentAddresses {
+            invitationURL = nil; invitationNetworkAddresses = nil
+        }
         guard !InstanceRuntime.isAdditional, !busy else { return }
         if usesHelper {
-            let currentAddresses = Set(addresses)
             let networkChanged = lastNetworkAddresses.map { $0 != currentAddresses } ?? false
             lastNetworkAddresses = currentAddresses
-            if networkChanged { invitationURL = nil }
             let recoveryDue = helper.needsAutomaticRecovery && now() >= nextHelperRecovery
             if refreshHelper || networkChanged || recoveryDue {
                 nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
@@ -304,6 +307,7 @@ final class DesktopSyncController {
         busy = true
         defer { busy = false }
         let invitationAddresses = Set(addresses)
+        invitationURL = nil; invitationNetworkAddresses = nil
         if usesHelper {
             await helper.refresh()
             updateRunningFromHelper()
@@ -321,8 +325,12 @@ final class DesktopSyncController {
                       current.certificateFingerprint == running.certificateFingerprint else { return }
             }
             guard Set(addresses) == invitationAddresses else { return }
+            if usesHelper {
+                guard let host = running.endpoint.host, invitationAddresses.contains(host) else { return }
+            }
             invitationURL = try DirectPairingQR(endpoint: running.endpoint,
                 certificateFingerprint: running.certificateFingerprint, invitation: invitation).encodedURL()
+            invitationNetworkAddresses = invitationAddresses
         } catch { self.error = error.localizedDescription }
     }
 
