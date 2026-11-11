@@ -2,12 +2,20 @@ import Foundation
 import LeonardoSync
 import LeonardoSyncTransport
 
-struct MobileDirectConnection: Codable {
+struct MobileDirectConnection: Codable, Identifiable {
     let connectionID: UUID
+    var id: UUID { connectionID }
     let deviceID: UUID
     let endpoint: URL
     let fingerprint: Data
+    /// Projects the Mac currently grants to this connection. This is the
+    /// authorization boundary and is independent from the user's local choice.
     var projectIDs: Set<UUID>
+    var projectDescriptors: [SharedProjectDescriptor]
+    var acceptedProjectIDs: Set<UUID>
+    var ignoredProjectIDs: Set<UUID>
+    var newFilePaths: [UUID: Set<String>]
+    var selectionMigrationCompleted: Bool
     var comparisonCode: String?
     var capabilities: Set<DirectCapability>
     var capabilityRefreshAttempted: Bool
@@ -17,12 +25,19 @@ struct MobileDirectConnection: Codable {
     init(connectionID: UUID = UUID(), deviceID: UUID, endpoint: URL, fingerprint: Data,
          projectIDs: Set<UUID>, comparisonCode: String?, capabilities: Set<DirectCapability>,
          capabilityRefreshAttempted: Bool = false, revoked: Bool = false,
-         pendingPurgeProjectIDs: Set<UUID> = []) {
+         pendingPurgeProjectIDs: Set<UUID> = [], projectDescriptors: [SharedProjectDescriptor] = [],
+         acceptedProjectIDs: Set<UUID>? = nil, ignoredProjectIDs: Set<UUID> = [],
+         newFilePaths: [UUID: Set<String>] = [:], selectionMigrationCompleted: Bool = true) {
         self.connectionID = connectionID
         self.deviceID = deviceID
         self.endpoint = endpoint
         self.fingerprint = fingerprint
         self.projectIDs = projectIDs
+        self.projectDescriptors = projectDescriptors
+        self.acceptedProjectIDs = acceptedProjectIDs ?? projectIDs
+        self.ignoredProjectIDs = ignoredProjectIDs
+        self.newFilePaths = newFilePaths
+        self.selectionMigrationCompleted = selectionMigrationCompleted
         self.comparisonCode = comparisonCode
         self.capabilities = capabilities
         self.capabilityRefreshAttempted = capabilityRefreshAttempted
@@ -32,28 +47,45 @@ struct MobileDirectConnection: Codable {
 
     private enum CodingKeys: String, CodingKey {
         case connectionID, deviceID, endpoint, fingerprint, projectIDs, comparisonCode, capabilities,
-             capabilityRefreshAttempted, revoked, pendingPurgeProjectIDs
+             capabilityRefreshAttempted, revoked, pendingPurgeProjectIDs, projectDescriptors,
+             acceptedProjectIDs, ignoredProjectIDs, newFilePaths, selectionMigrationCompleted
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let deviceID = try container.decode(UUID.self, forKey: .deviceID)
+        let projectIDs = try container.decodeIfPresent(Set<UUID>.self, forKey: .projectIDs) ?? []
         self.init(connectionID: try container.decodeIfPresent(UUID.self, forKey: .connectionID) ?? deviceID,
                   deviceID: deviceID,
                   endpoint: try container.decode(URL.self, forKey: .endpoint),
                   fingerprint: try container.decode(Data.self, forKey: .fingerprint),
-                  projectIDs: try container.decodeIfPresent(Set<UUID>.self, forKey: .projectIDs) ?? [],
+                  projectIDs: projectIDs,
                   comparisonCode: try container.decodeIfPresent(String.self, forKey: .comparisonCode),
                   capabilities: try container.decodeIfPresent(Set<DirectCapability>.self, forKey: .capabilities) ?? [],
                   capabilityRefreshAttempted: try container.decodeIfPresent(Bool.self,
                       forKey: .capabilityRefreshAttempted) ?? false,
                   revoked: try container.decodeIfPresent(Bool.self, forKey: .revoked) ?? false,
                   pendingPurgeProjectIDs: try container.decodeIfPresent(Set<UUID>.self,
-                      forKey: .pendingPurgeProjectIDs) ?? [])
+                      forKey: .pendingPurgeProjectIDs) ?? [],
+                  projectDescriptors: try container.decodeIfPresent([SharedProjectDescriptor].self,
+                      forKey: .projectDescriptors) ?? [],
+                  acceptedProjectIDs: try container.decodeIfPresent(Set<UUID>.self,
+                      forKey: .acceptedProjectIDs) ?? projectIDs,
+                  ignoredProjectIDs: try container.decodeIfPresent(Set<UUID>.self,
+                      forKey: .ignoredProjectIDs) ?? [],
+                  newFilePaths: try container.decodeIfPresent([UUID: Set<String>].self,
+                      forKey: .newFilePaths) ?? [:],
+                  selectionMigrationCompleted: try container.decodeIfPresent(Bool.self,
+                      forKey: .selectionMigrationCompleted) ?? false)
     }
 
     func hasChanges(from other: MobileDirectConnection) -> Bool {
         projectIDs != other.projectIDs || comparisonCode != other.comparisonCode
+            || projectDescriptors != other.projectDescriptors
+            || acceptedProjectIDs != other.acceptedProjectIDs
+            || ignoredProjectIDs != other.ignoredProjectIDs
+            || newFilePaths != other.newFilePaths
+            || selectionMigrationCompleted != other.selectionMigrationCompleted
             || capabilities != other.capabilities
             || capabilityRefreshAttempted != other.capabilityRefreshAttempted
             || revoked != other.revoked
@@ -97,6 +129,10 @@ struct MobileDirectConnectionStore {
                 let previousProjects = connections[index].projectIDs
                 connections[index].capabilities = []
                 connections[index].projectIDs = []
+                connections[index].acceptedProjectIDs = []
+                connections[index].ignoredProjectIDs = []
+                connections[index].projectDescriptors = []
+                connections[index].newFilePaths = [:]
                 connections[index].comparisonCode = nil
                 connections[index].revoked = true
                 connections[index].pendingPurgeProjectIDs.formUnion(previousProjects)
@@ -152,6 +188,10 @@ struct MobileDirectConnectionStore {
             let projectIDs = repaired[index].projectIDs
             repaired[index].capabilities = []
             repaired[index].projectIDs = []
+            repaired[index].acceptedProjectIDs = []
+            repaired[index].ignoredProjectIDs = []
+            repaired[index].projectDescriptors = []
+            repaired[index].newFilePaths = [:]
             repaired[index].comparisonCode = nil
             repaired[index].revoked = true
             repaired[index].pendingPurgeProjectIDs.formUnion(projectIDs)
@@ -176,7 +216,7 @@ struct MobileDirectConnectionStore {
                 unavailableProjectIDs.formUnion(connection.projectIDs)
                 continue
             }
-            activeProjectIDs.formUnion(connection.projectIDs)
+            activeProjectIDs.formUnion(connection.acceptedProjectIDs.intersection(connection.projectIDs))
         }
         for connection in connections where connection.revoked {
             revokedProjectIDs.formUnion(connection.projectIDs)

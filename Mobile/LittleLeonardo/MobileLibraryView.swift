@@ -41,6 +41,12 @@ private struct OptionalAccessibilityIdentifier: ViewModifier {
     }
 }
 
+private struct MobileRemoteFileRoute: Hashable, Identifiable {
+    let projectID: UUID
+    let entry: RemoteFileEntry
+    var id: String { projectID.uuidString + ":" + entry.path }
+}
+
 struct MobileProjectIdentityLabel: View {
     let name: String
     let identity: ProjectIdentity
@@ -99,6 +105,7 @@ struct MobileLibraryView: View {
     @State private var manualPairing = false
     @State private var host = ""
     @State private var port = "40882"
+    @State private var selectedRemoteFile: MobileRemoteFileRoute?
     @State private var presentedRubricRequest: RubricRequest?
     @AppStorage("directSyncIntervalMinutes") private var syncInterval = 1
     @Environment(\.scenePhase) private var scenePhase
@@ -108,41 +115,25 @@ struct MobileLibraryView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Proyectos / Projects") {
-                    ForEach(library.libraryProjects) { project in
-                        NavigationLink {
-                            switch project {
-                            case .demo: MobileDemoProjectView()
-                            case .downloaded(let cached):
-                                MobileProjectView(library: library, projectID: cached.id)
-                            }
-                        } label: {
-                            VStack(alignment: .leading, spacing: 5) {
-                                MobileProjectIdentityLabel(name: project.name,
-                                                           identity: project.projectIdentity,
-                                                           accessibilityIdentifier: nil)
-                                if project.projectIdentity == .recoveryArchive {
-                                    Text("Archivo de recuperación · Solo lectura")
-                                        .font(.caption).foregroundStyle(MobileClassic.secondary)
-                                } else if project.projectIdentity == .received {
-                                    Text("Consulta desde LeonardoMD · Solo lectura")
-                                        .font(.caption).foregroundStyle(MobileClassic.secondary)
-                                }
-                            }
-                        }
-                        // Keep the stable navigation contract on the outer link;
-                        // the descriptive identity label is intentionally a child.
-                        .accessibilityElement(children: .combine)
-                        .accessibilityIdentifier(project.id == "bundled-demo" ? "open-demo-project" : "open-project-\(project.id)")
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button("Eliminar / Delete", role: .destructive) {
-                                Task { await library.deleteLibraryProject(project) }
-                            }
-                            .disabled(library.connecting)
-                            .accessibilityIdentifier(project.id == "bundled-demo" ? "delete-demo-project" : "delete-project-\(project.id)")
-                        }
+                Section("Mac conectados") {
+                    let activeConnections = library.connections.filter { !$0.revoked }
+                    if activeConnections.isEmpty {
+                        Text("Los proyectos compartidos aparecerán aquí al conectar un Mac.")
+                            .font(.subheadline).foregroundStyle(MobileClassic.secondary)
                     }
-                    if library.libraryProjects.isEmpty {
+                    ForEach(activeConnections) { connection in
+                        MobileSharedHostDisclosureRow(library: library, connection: connection,
+                            descriptors: sharedProjectDescriptors(for: connection)) { descriptor, entry in
+                                selectedRemoteFile = MobileRemoteFileRoute(projectID: descriptor.id, entry: entry)
+                            }
+                    }
+                }
+
+                Section("En este dispositivo") {
+                    ForEach(localLibraryProjects) { project in
+                        MobileLocalLibraryProjectRow(library: library, project: project)
+                    }
+                    if localLibraryProjects.isEmpty && library.connections.allSatisfy(\.revoked) {
                         VStack(spacing: 16) {
                             MobileBrand(size: 64)
                             Text("Tus documentos, contigo").font(.title2.bold()).foregroundStyle(MobileClassic.heading)
@@ -158,55 +149,14 @@ struct MobileLibraryView: View {
             .classicSurface()
             .navigationTitle("Biblioteca")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(item: $selectedRemoteFile) { route in
+                RemoteDocumentPreview(library: library.downloads, projectID: route.projectID,
+                    entry: route.entry, spanish: true, appearance: .leonardoClassic,
+                    compactFirstHeading: true).classicSurface()
+            }
             .refreshable { await library.synchronize(); await library.reload() }
-            .toolbar {
-                Button("Conectar", systemImage: "qrcode") { presentedSheet = .direct }
-                    .disabled(library.connecting)
-                    .accessibilityIdentifier("open-pairing")
-                Button("Ajustes de sincronización", systemImage: "gearshape") { presentedSheet = .settings }
-                    .accessibilityIdentifier("open-sync-settings")
-                Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
-                    Task { await library.synchronize() }
-                }.disabled(library.connecting)
-                if let request = library.pendingRubricRequests.first {
-                    Button("Solicitud de rúbrica", systemImage: "signature") {
-                        presentedRubricRequest = request
-                    }.accessibilityIdentifier("open-rubric-request")
-                } else if let draft = activeRubricDraft {
-                    Button("Borrador de rúbrica", systemImage: "signature") {
-                        presentedRubricRequest = draft.request
-                    }.accessibilityIdentifier("open-rubric-draft")
-                }
-            }
-            .safeAreaInset(edge: .bottom) {
-                if let request = library.pendingRubricRequests.first {
-                    Button {
-                        presentedRubricRequest = request
-                    } label: {
-                        Label("Solicitud de rúbrica de \(request.requesterName)", systemImage: "signature")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper)
-                    .padding(.horizontal)
-                    .accessibilityIdentifier("rubric-request-banner")
-                } else if let draft = activeRubricDraft {
-                    Button {
-                        presentedRubricRequest = draft.request
-                    } label: {
-                        Label("Recuperar rúbrica de \(draft.request.requesterName)", systemImage: "arrow.clockwise")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper)
-                    .padding(.horizontal)
-                    .accessibilityIdentifier("rubric-draft-banner")
-                } else if let code = library.comparisonCode {
-                    VStack {
-                        Text("Código de conexión: \(code)").font(.headline.monospacedDigit())
-                        Text("Comprueba que coincide en LeonardoMD, autoriza los proyectos y pulsa Sincronizar.")
-                            .font(.caption)
-                    }.padding().background(MobileClassic.inset)
-                }
-            }
+            .toolbar { libraryToolbar }
+            .safeAreaInset(edge: .bottom) { bottomAccessory }
             .sheet(item: $presentedSheet) { destination in
                 switch destination {
                 case .direct: directConnectionSheet
@@ -302,6 +252,25 @@ struct MobileLibraryView: View {
         }
     }
 
+    private var localLibraryProjects: [MobileLibraryProject] {
+        library.libraryProjects.filter { project in
+            switch project {
+            case .demo: true
+            case .downloaded(let value): value.isRecoveryArchive
+            }
+        }
+    }
+
+    private func sharedProjectDescriptors(for connection: MobileDirectConnection) -> [SharedProjectDescriptor] {
+        var descriptors = connection.projectDescriptors.filter { connection.projectIDs.contains($0.id) }
+        let known = Set(descriptors.map(\.id))
+        for project in library.projects where connection.projectIDs.contains(project.id)
+            && connection.acceptedProjectIDs.contains(project.id) && !known.contains(project.id) {
+            descriptors.append(SharedProjectDescriptor(id: project.id, name: project.name, scope: project.scope))
+        }
+        return descriptors.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
     private var syncFrequency: some View {
         Group {
             Picker("Sincronización automática", selection: $syncInterval) {
@@ -309,6 +278,58 @@ struct MobileLibraryView: View {
                 ForEach([1, 5, 15, 30, 60], id: \.self) { Text("Cada \($0) min").tag($0) }
             }
             Text("La sincronización automática funciona mientras la app está activa.").font(.caption)
+        }
+    }
+
+    @ToolbarContentBuilder private var libraryToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .topBarTrailing) {
+            Button("Conectar", systemImage: "qrcode") { presentedSheet = .direct }
+                .disabled(library.connecting)
+                .accessibilityIdentifier("open-pairing")
+            Button("Ajustes de sincronización", systemImage: "gearshape") { presentedSheet = .settings }
+                .accessibilityIdentifier("open-sync-settings")
+            Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
+                Task { await library.synchronize() }
+            }.disabled(library.connecting)
+            if let request = library.pendingRubricRequests.first {
+                Button("Solicitud de rúbrica", systemImage: "signature") {
+                    presentedRubricRequest = request
+                }.accessibilityIdentifier("open-rubric-request")
+            } else if let draft = activeRubricDraft {
+                Button("Borrador de rúbrica", systemImage: "signature") {
+                    presentedRubricRequest = draft.request
+                }.accessibilityIdentifier("open-rubric-draft")
+            }
+        }
+    }
+
+    @ViewBuilder private var bottomAccessory: some View {
+        if let request = library.pendingRubricRequests.first {
+            Button {
+                presentedRubricRequest = request
+            } label: {
+                Label("Solicitud de rúbrica de \(request.requesterName)", systemImage: "signature")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper)
+            .padding(.horizontal)
+            .accessibilityIdentifier("rubric-request-banner")
+        } else if let draft = activeRubricDraft {
+            Button {
+                presentedRubricRequest = draft.request
+            } label: {
+                Label("Recuperar rúbrica de \(draft.request.requesterName)", systemImage: "arrow.clockwise")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper)
+            .padding(.horizontal)
+            .accessibilityIdentifier("rubric-draft-banner")
+        } else if let code = library.comparisonCode {
+            VStack {
+                Text("Código de conexión: \(code)").font(.headline.monospacedDigit())
+                Text("Comprueba que coincide en LeonardoMD, autoriza los proyectos y pulsa Sincronizar.")
+                    .font(.caption)
+            }.padding().background(MobileClassic.inset)
         }
     }
 
@@ -336,6 +357,331 @@ struct MobileLibraryView: View {
                 .navigationTitle("Sincronización")
                 .toolbar { Button("Cerrar") { presentedSheet = nil } }
         }
+    }
+}
+
+private struct MobileLocalLibraryProjectRow: View {
+    @Bindable var library: MobileLibrary
+    let project: MobileLibraryProject
+
+    var body: some View {
+        NavigationLink(destination: destination) {
+            VStack(alignment: .leading, spacing: 5) {
+                MobileProjectIdentityLabel(name: project.name, identity: project.projectIdentity,
+                                           accessibilityIdentifier: nil)
+                if isRecoveryArchive {
+                    Text("Archivo de recuperación · Solo lectura")
+                        .font(.caption).foregroundStyle(MobileClassic.secondary)
+                }
+            }
+        }
+        // Keep the stable navigation contract on the outer link; the identity
+        // label remains a child of the navigable row.
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(project.id == "bundled-demo" ? "open-demo-project" : "open-project-\(project.id)")
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button("Eliminar / Delete", role: .destructive) {
+                Task { await library.deleteLibraryProject(project) }
+            }
+            .disabled(library.connecting)
+            .accessibilityIdentifier(project.id == "bundled-demo" ? "delete-demo-project" : "delete-project-\(project.id)")
+        }
+    }
+
+    @ViewBuilder private var destination: some View {
+        switch project {
+        case .demo: MobileDemoProjectView()
+        case .downloaded(let cached): MobileProjectView(library: library, projectID: cached.id)
+        }
+    }
+
+    private var isRecoveryArchive: Bool {
+        guard case .downloaded(let cached) = project else { return false }
+        return cached.isRecoveryArchive
+    }
+}
+
+private struct MobileSharedHostDisclosureRow: View {
+    @Bindable var library: MobileLibrary
+    let connection: MobileDirectConnection
+    let descriptors: [SharedProjectDescriptor]
+    let openFile: (SharedProjectDescriptor, RemoteFileEntry) -> Void
+
+    var body: some View {
+        DisclosureGroup {
+            if descriptors.isEmpty {
+                Text("Este Mac todavía no comparte proyectos.")
+                    .font(.subheadline).foregroundStyle(MobileClassic.secondary)
+            }
+            ForEach(descriptors) { descriptor in
+                projectRow(descriptor)
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "laptopcomputer")
+                    .font(.title3).foregroundStyle(MobileClassic.heading)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(Self.hostDisplayName(connection.endpoint))
+                        .font(.headline).foregroundStyle(MobileClassic.heading)
+                    let pendingCount = connection.projectIDs.subtracting(connection.ignoredProjectIDs)
+                        .subtracting(connection.acceptedProjectIDs).count
+                    let totalCount = connection.projectIDs.count
+                    Text(totalCount == 0 ? "Conexión activa" :
+                         "\(totalCount) proyectos · \(pendingCount) por revisar")
+                        .font(.caption).foregroundStyle(MobileClassic.secondary)
+                }
+            }
+            .accessibilityIdentifier("shared-host-\(connection.connectionID)")
+        }
+        .listRowBackground(MobileClassic.paper)
+    }
+
+    @ViewBuilder private func projectRow(_ descriptor: SharedProjectDescriptor) -> some View {
+        if connection.acceptedProjectIDs.contains(descriptor.id) {
+            MobileSharedProjectTreeRow(library: library, connection: connection,
+                descriptor: descriptor, newFilePaths: connection.newFilePaths[descriptor.id] ?? []) { entry in
+                    openFile(descriptor, entry)
+                }
+        } else {
+            MobileIncomingSharedProjectRow(library: library, connection: connection,
+                                           descriptor: descriptor,
+                                           ignored: connection.ignoredProjectIDs.contains(descriptor.id))
+        }
+    }
+
+    private static func hostDisplayName(_ endpoint: URL) -> String {
+        guard var host = endpoint.host, !host.isEmpty else { return "Mac conectado" }
+        if host.lowercased().hasSuffix(".local") { host.removeLast(6) }
+        host = host.replacingOccurrences(of: "-", with: " ")
+        return host.prefix(1).uppercased() + String(host.dropFirst())
+    }
+}
+
+private struct MobileIncomingSharedProjectRow: View {
+    @Bindable var library: MobileLibrary
+    let connection: MobileDirectConnection
+    let descriptor: SharedProjectDescriptor
+    let ignored: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(descriptor.name).font(.headline).foregroundStyle(MobileClassic.heading)
+                Label(ignored ? "Ignorado" : "Proyecto nuevo",
+                      systemImage: ignored ? "minus.circle" : "sparkle")
+                    .font(.caption).foregroundStyle(MobileClassic.secondary)
+            }
+            Spacer(minLength: 4)
+            if ignored {
+                Button("Añadir") { addProject() }
+                    .buttonStyle(.bordered).disabled(library.connecting)
+            } else {
+                Button("Añadir") { addProject() }
+                    .buttonStyle(.borderedProminent).tint(MobileClassic.heading)
+                    .foregroundStyle(MobileClassic.paper).disabled(library.connecting)
+                Button("Ignorar") {
+                    library.ignoreSharedProject(connectionID: connection.connectionID, projectID: descriptor.id)
+                }
+                .buttonStyle(.bordered).disabled(library.connecting)
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityIdentifier("incoming-project-\(descriptor.id)")
+    }
+
+    private func addProject() {
+        Task { await library.acceptSharedProject(connectionID: connection.connectionID, projectID: descriptor.id) }
+    }
+}
+
+private struct MobileSharedProjectTreeRow: View {
+    @Bindable var library: MobileLibrary
+    let connection: MobileDirectConnection
+    let descriptor: SharedProjectDescriptor
+    let newFilePaths: Set<String>
+    let open: (RemoteFileEntry) -> Void
+
+    private var cached: CachedRemoteProject? {
+        library.downloads.projects.first { $0.id == descriptor.id }
+    }
+    private var isKeepingProjectOffline: Bool { cached?.keepsFolder("") == true }
+    private var hasRetainedFiles: Bool {
+        guard let cached else { return false }
+        return cached.catalogue.files.contains { cached.keeps($0.path) }
+    }
+    private var releasableFiles: [RemoteFileEntry] {
+        guard let cached else { return [] }
+        return cached.catalogue.files.filter { entry in
+            !cached.keeps(entry.path) && cached.isDownloaded(entry)
+        }
+    }
+
+    var body: some View {
+        DisclosureGroup {
+            if let cached {
+                if cached.catalogue.files.isEmpty {
+                    Text("Este proyecto no tiene ficheros compartidos.")
+                        .font(.subheadline).foregroundStyle(MobileClassic.secondary)
+                }
+                ForEach(cached.catalogue.files.sorted {
+                    $0.path.localizedStandardCompare($1.path) == .orderedAscending
+                }) { entry in
+                    fileRow(entry, project: cached)
+                }
+            } else {
+                Text("Sincroniza para cargar los ficheros compartidos.")
+                    .font(.subheadline).foregroundStyle(MobileClassic.secondary)
+            }
+        } label: {
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: "folder")
+                    .foregroundStyle(MobileClassic.heading).accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(descriptor.name).font(.headline).foregroundStyle(MobileClassic.heading)
+                    Text(projectStatus)
+                        .font(.caption).foregroundStyle(MobileClassic.secondary)
+                    if isKeepingProjectOffline {
+                        Text("Incluye los ficheros nuevos")
+                            .font(.caption2).foregroundStyle(MobileClassic.secondary)
+                    }
+                }
+                Spacer(minLength: 4)
+                projectMenu
+            }
+            .contentShape(Rectangle())
+            .accessibilityIdentifier("shared-project-\(descriptor.id)")
+        }
+        .listRowBackground(MobileClassic.paper)
+    }
+
+    private var projectStatus: String {
+        guard let cached else { return "Solo remoto" }
+        let entries = cached.catalogue.files
+        guard !entries.isEmpty else { return "Sin ficheros" }
+        let downloaded = entries.filter { cached.isDownloaded($0) }.count
+        if isKeepingProjectOffline {
+            let availability = entries.allSatisfy { cached.isAvailableOffline($0) }
+                ? "Disponible sin conexión" : "Sin conexión pendiente"
+            return "\(availability) · \(downloaded)/\(entries.count) ficheros"
+        }
+        return downloaded == 0 ? "Solo remoto" : "En caché · \(downloaded)/\(entries.count) ficheros"
+    }
+
+    private var projectMenu: some View {
+        Menu {
+            Button(isKeepingProjectOffline ? "Dejar de mantener sin conexión" : "Mantener sin conexión",
+                   systemImage: isKeepingProjectOffline ? "pin.slash" : "pin") {
+                if !isKeepingProjectOffline {
+                    library.dismissNewFiles(connectionID: connection.connectionID, projectID: descriptor.id)
+                }
+                Task {
+                    await library.downloads.retain(id: descriptor.id, path: "", isFolder: true,
+                                                   keep: !isKeepingProjectOffline)
+                }
+            }
+            .disabled(cached == nil || library.connecting)
+            Button("Liberar espacio local", systemImage: "externaldrive.badge.minus") {
+                Task { await library.downloads.release(id: descriptor.id, path: "", isFolder: true) }
+            }
+            .disabled(releasableFiles.isEmpty || library.connecting)
+            if hasRetainedFiles {
+                Text("Los ficheros fijados se conservan. Deja de mantenerlos sin conexión para liberarlos.")
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(MobileClassic.heading)
+                .frame(width: 36, height: 36)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("Acciones de \(descriptor.name)")
+        .accessibilityIdentifier("shared-project-actions-\(descriptor.id)")
+    }
+
+    private func fileRow(_ entry: RemoteFileEntry, project: CachedRemoteProject) -> some View {
+        let isNew = newFilePaths.contains(entry.path)
+        let retained = project.keeps(entry.path)
+        let downloaded = project.isDownloaded(entry)
+        return HStack(spacing: 10) {
+            Button {
+                if isNew {
+                    library.dismissNewFile(connectionID: connection.connectionID,
+                                           projectID: descriptor.id, path: entry.path)
+                }
+                open(entry)
+            } label: {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text((entry.path as NSString).lastPathComponent)
+                        .foregroundStyle(MobileClassic.heading)
+                        .lineLimit(1)
+                    if let parent = parentPath(entry.path) {
+                        Text(parent).font(.caption2).foregroundStyle(MobileClassic.secondary).lineLimit(1)
+                    }
+                    if isNew {
+                        Label("Archivo nuevo", systemImage: "sparkle")
+                            .font(.caption2).foregroundStyle(MobileClassic.accent)
+                    } else {
+                        Text(fileStatus(project: project, entry: entry))
+                            .font(.caption2).foregroundStyle(MobileClassic.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("shared-file-\(descriptor.id)-\(entry.path)")
+            Menu {
+                Button("Abrir", systemImage: "doc.text") {
+                    if isNew {
+                        library.dismissNewFile(connectionID: connection.connectionID,
+                                               projectID: descriptor.id, path: entry.path)
+                    }
+                    open(entry)
+                }
+                Button(retained ? "Dejar de mantener sin conexión" : "Mantener sin conexión",
+                       systemImage: retained ? "pin.slash" : "pin") {
+                    if isNew {
+                        library.dismissNewFile(connectionID: connection.connectionID,
+                                               projectID: descriptor.id, path: entry.path)
+                    }
+                    Task { await library.downloads.retain(id: descriptor.id, path: entry.path,
+                                                          isFolder: false, keep: !retained) }
+                }
+                Button("Liberar espacio local", systemImage: "externaldrive.badge.minus") {
+                    Task { await library.downloads.release(id: descriptor.id, path: entry.path, isFolder: false) }
+                }
+                .disabled(!downloaded || retained || library.connecting)
+                if isNew {
+                    Button("Ignorar novedad", systemImage: "xmark.circle") {
+                        library.dismissNewFile(connectionID: connection.connectionID,
+                                               projectID: descriptor.id, path: entry.path)
+                    }
+                    Text("No se descarga. Puedes abrirlo más adelante.")
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(MobileClassic.heading)
+                    .frame(width: 36, height: 36)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Acciones de \((entry.path as NSString).lastPathComponent)")
+            .accessibilityIdentifier("shared-file-actions-\(descriptor.id)-\(entry.path)")
+        }
+        .padding(.vertical, 3)
+        .listRowBackground(MobileClassic.paper)
+    }
+
+    private func fileStatus(project: CachedRemoteProject, entry: RemoteFileEntry) -> String {
+        if project.isAvailableOffline(entry) { return "Disponible sin conexión" }
+        if project.keeps(entry.path) { return "Sin conexión pendiente" }
+        return project.isDownloaded(entry) ? "En caché" : "Solo remoto"
+    }
+
+    private func parentPath(_ path: String) -> String? {
+        let parent = (path as NSString).deletingLastPathComponent
+        return parent.isEmpty || parent == "." ? nil : parent
     }
 }
 

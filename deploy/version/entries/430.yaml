@@ -1,4 +1,4 @@
 {
-  "summary": "Remote projects and file additions now show their linked Mac for explicit review; sync status stays steady without two-second preference polling.",
-  "build": 1
+  "summary": "Little Leonardo groups projects by their linked Mac, adds local review for new projects and files, and adds per-project and per-file offline retention and cache cleanup; synchronization status stays steady.",
+  "build": 7
 }
