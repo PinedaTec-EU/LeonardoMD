@@ -264,6 +264,8 @@ def verify_app(app: Path, expected_version: str, expected_build: int, profile_pa
     if not app.is_dir() or app.suffix != ".app":
         raise DistributionError(f"Expected an app bundle: {app}")
     info = read_plist(app / "Info.plist")
+    if info.get("ITSAppUsesNonExemptEncryption") is not False:
+        raise DistributionError("Packaged app must declare exempt encryption as Boolean false")
     if info.get("CFBundleIdentifier") != BUNDLE_IDENTIFIER:
         raise DistributionError("Packaged bundle identifier is incorrect")
     if info.get("CFBundleShortVersionString") != expected_version:

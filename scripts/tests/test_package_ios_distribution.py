@@ -14,6 +14,22 @@ SPEC.loader.exec_module(MODULE)
 
 
 class IOSDistributionTests(unittest.TestCase):
+    def test_distribution_rejects_missing_or_non_boolean_encryption_declaration(self):
+        with tempfile.TemporaryDirectory() as directory:
+            app = Path(directory) / "LittleLeonardo.app"
+            app.mkdir()
+            info_path = app / "Info.plist"
+            for value in (None, True, "NO", 0):
+                info = {} if value is None else {"ITSAppUsesNonExemptEncryption": value}
+                info_path.write_bytes(plistlib.dumps(info))
+                with self.subTest(value=value), self.assertRaisesRegex(
+                    MODULE.DistributionError, "declare exempt encryption"
+                ):
+                    MODULE.verify_app(app, "0.3.1000", 1000, Path("unused"))
+            info_path.write_bytes(plistlib.dumps({"ITSAppUsesNonExemptEncryption": False}))
+            with self.assertRaisesRegex(MODULE.DistributionError, "bundle identifier"):
+                MODULE.verify_app(app, "0.3.1000", 1000, Path("unused"))
+
     def test_canonical_version_projects_to_marketing_and_build(self):
         with tempfile.TemporaryDirectory() as directory:
             version = Path(directory) / "version.nfo"

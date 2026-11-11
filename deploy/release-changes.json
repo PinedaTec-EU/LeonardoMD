@@ -1029,6 +1029,16 @@
       "pr": 424,
       "summary": "Navigate synchronized folders and see only the files and folders in the current location.",
       "to_version": "0.3.1279"
+    },
+    {
+      "delta": {
+        "build": 1
+      },
+      "from_version": "0.3.1279",
+      "merge_sha": "b257f584ad22dfcce226373b99a6d8e8f3a69c3d",
+      "pr": 426,
+      "summary": "Include the encryption compliance declaration in Little Leonardo builds.",
+      "to_version": "0.3.1280"
     }
   ],
   "initial_version": "0.1.56",
@@ -1039,5 +1049,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1279"
+  "version": "0.3.1280"
 }

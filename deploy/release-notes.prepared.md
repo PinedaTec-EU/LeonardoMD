@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1280
+
+- #425 Added: declare iOS export compliance ([#426](https://github.com/PinedaTec-EU/LeonardoMD/pull/426))
+
+<p>Include the encryption compliance declaration in Little Leonardo builds.</p>
+
+Source: `b257f584ad22dfcce226373b99a6d8e8f3a69c3d`. Delta: `{"build": 1}`.
+
 ## 0.3.1279
 
 - #423 Fixed: make synchronized folders navigable ([#424](https://github.com/PinedaTec-EU/LeonardoMD/pull/424))
