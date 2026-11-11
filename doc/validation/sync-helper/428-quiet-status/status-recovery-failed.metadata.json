@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "collected_at": "2026-11-11T19:05:48.633670+00:00",
+  "collected_at": "2026-11-11T19:16:00.561390+00:00",
   "capture": {
-    "captured_at": "2026-11-11T19:05:28.069000+00:00",
+    "captured_at": "2026-11-11T19:15:38.468000+00:00",
     "route": "/native/preferences/synchronization",
     "screen": "Synchronization helper status",
     "browser_name": "Native AppKit / SwiftUI NSHostingView",
@@ -19,10 +19,10 @@
     "format": "png",
     "width_px": 1064,
     "height_px": 520,
-    "sha256": "782a66ee8751db87bd480d2991d6b39fda9f356f319f41ffc22c673bf4fb2f2a"
+    "sha256": "361415019afff12f5748a67dd7453aa547c444e7f454555d35b0803b18c10d34"
   },
   "source": {
-    "revision_at_collection": "accd841bb9a41a7df04d900e63c56a6fe04a9a69",
+    "revision_at_collection": "d9122adbcf47d351ff05fbd6a2534fd3a043c102",
     "tracked_changes_present": true,
     "untracked_files_present": false
   }
