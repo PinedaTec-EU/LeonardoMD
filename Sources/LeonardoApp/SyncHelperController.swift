@@ -65,7 +65,7 @@ final class SyncHelperController {
     var online: Bool { state == .running && !installation.blocksOperations }
     var checkingStatus: Bool { checking || busy }
     var needsAutomaticRecovery: Bool {
-        state == .failed || (state == .starting && nextUpgradeAttempt != .distantPast)
+        state == .failed || state == .starting
     }
     var displayedState: State { checking ? stateBeforeRefresh : state }
     var displayedError: String? { checking ? errorBeforeRefresh : error }
@@ -82,6 +82,7 @@ final class SyncHelperController {
     }
 
     func refresh() async {
+        guard !busy, !installation.blocksOperations else { return }
         if activeRefreshes == 0 { stateBeforeRefresh = state; errorBeforeRefresh = error }
         activeRefreshes += 1
         checking = true
@@ -163,12 +164,14 @@ final class SyncHelperController {
             revision += 1; presentationRevision += 1; self.enabled = false; state = .disabled; stateBeforeRefresh = .disabled; errorBeforeRefresh = nil; sharing = nil
             supportsRubricExchange = false
             do { try await configurations.setSyncHelperEnabled(false, at: preferencesURL) }
-            catch { state = .failed; self.error = L10n.text(error.localizedDescription) }
+            catch { state = .failed; self.error = L10n.text(error.localizedDescription); presentCurrentState() }
             return
         }
         if !enabled { stateBeforeRefresh = .disabled; errorBeforeRefresh = nil }
         hasPresentedStatus = true
         revision += 1; presentationRevision += 1 // Invalidate prior health and presentation.
+        let presentation = presentationRevision
+        defer { if presentation == presentationRevision { presentCurrentState() } }
         nextUpgradeAttempt = .distantPast
         let reconcileExisting = enabled && service.status == .enabled && expectedBuildIdentity != nil
         busy = true; error = nil

@@ -115,6 +115,51 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(controller.state, .approvalRequired)
     }
 
+    func testEnableApprovalIsVisibleWhileOldHealthIsHeld() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); let helper = fixture.controller(registration, control)
+        await helper.refresh(); await control.pauseStatus(at: 2)
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await old.value; XCTFail("Health not held"); return
+        }
+        await helper.setEnabled(false)
+        registration.registrationResult = .requiresApproval
+        await helper.setEnabled(true)
+        XCTAssertEqual(helper.displayedState, .approvalRequired)
+        XCTAssertTrue(helper.showsApprovalAction)
+        await control.resumeStatus(at: 2); await old.value
+        XCTAssertEqual(helper.displayedState, .approvalRequired)
+    }
+
+    func testConcurrentRefreshDoesNotInterruptRenewalReadiness() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentities([nil, replacement])
+        await control.pauseReload()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: {}), hasExecutable: { true }, verifyPackage: {})
+        let renewal = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldReload { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldReload else {
+            await control.resumeReload(); await renewal.value; XCTFail("Renewal not held"); return
+        }
+        await helper.refresh()
+        await control.resumeReload(); await renewal.value
+        XCTAssertTrue(helper.online, "An overlapping no-op check must not cancel renewal readiness")
+    }
+
     func testFailedLocalHealthDuringPeerOperationUpdatesDisplayedState() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
