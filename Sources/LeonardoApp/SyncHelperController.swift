@@ -14,6 +14,8 @@ final class SyncHelperController {
     private(set) var checking = false
     private var activeRefreshes = 0
     private var stateBeforeRefresh = State.disabled
+    private var errorBeforeRefresh: String?
+    private(set) var hasPresentedStatus = false
     private(set) var upgrading = false
     private(set) var sharing: RunningDirectService?
     private(set) var supportsRubricExchange = false
@@ -60,6 +62,7 @@ final class SyncHelperController {
     var online: Bool { state == .running && !installation.blocksOperations }
     var checkingStatus: Bool { checking || busy }
     var displayedState: State { checking ? stateBeforeRefresh : state }
+    var displayedError: String? { checking ? errorBeforeRefresh : error }
     var statusText: String {
         switch displayedState {
         case .notInstalled: L10n.text("Sync helper is not installed")
@@ -72,12 +75,13 @@ final class SyncHelperController {
     }
 
     func refresh() async {
-        if activeRefreshes == 0 { stateBeforeRefresh = state }
+        if activeRefreshes == 0 { stateBeforeRefresh = state; errorBeforeRefresh = error }
         activeRefreshes += 1
         checking = true
         defer {
             activeRefreshes -= 1
             checking = activeRefreshes > 0
+            if !checking { hasPresentedStatus = true }
         }
         await refreshOnce()
         // An update may briefly invalidate the first authenticated connection.
@@ -134,12 +138,14 @@ final class SyncHelperController {
             // An explicit denial cancels the durable upgrade token even while
             // graceful shutdown is suspended. It must never be restored later.
             guard !enabled else { return }
-            revision += 1; self.enabled = false; state = .disabled; sharing = nil
+            revision += 1; self.enabled = false; state = .disabled; stateBeforeRefresh = .disabled; errorBeforeRefresh = nil; sharing = nil
             supportsRubricExchange = false
             do { try await configurations.setSyncHelperEnabled(false, at: preferencesURL) }
             catch { state = .failed; self.error = L10n.text(error.localizedDescription) }
             return
         }
+        if !enabled { stateBeforeRefresh = .disabled; errorBeforeRefresh = nil }
+        hasPresentedStatus = true
         revision += 1 // Invalidate health replies issued before this consent change.
         nextUpgradeAttempt = .distantPast
         let reconcileExisting = enabled && service.status == .enabled && expectedBuildIdentity != nil

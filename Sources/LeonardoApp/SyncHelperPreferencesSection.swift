@@ -2,6 +2,13 @@ import SwiftUI
 
 struct SyncHelperPreferencesSection: View {
     @Bindable var controller: SyncHelperController
+    private var showsDiagnostic: Bool {
+        switch controller.displayedState {
+        case .notInstalled, .approvalRequired, .failed: true
+        case .disabled, .starting, .running: false
+        }
+    }
+
     var body: some View {
             VStack(alignment: .leading, spacing: 6) {
                 Toggle(isOn: Binding(
@@ -11,12 +18,14 @@ struct SyncHelperPreferencesSection: View {
                         Circle()
                             .fill(controller.displayedState == .running ? Color.green : Color.red)
                             .frame(width: 9, height: 9)
+                            .opacity(controller.hasPresentedStatus ? 1 : 0)
+                            .accessibilityHidden(!controller.hasPresentedStatus)
                             .accessibilityLabel(controller.statusText)
                         Text(L10n.text("Enable Leonardo Sync"))
                     }
                 }
                     .disabled(controller.busy && (!controller.upgrading || !controller.enabled))
-                Text(controller.displayedState == .running ? " " : controller.statusText)
+                Text(showsDiagnostic ? controller.statusText : " ")
                     .lineLimit(1).foregroundStyle(.secondary)
                 Text(L10n.text("Required to share and connect. When off, both directions are offline even with LeonardoMD open. Starts after login and keeps sharing saved files when you close the editor."))
                     .font(.caption).foregroundStyle(.secondary)
@@ -24,12 +33,12 @@ struct SyncHelperPreferencesSection: View {
                     .opacity(controller.state == .approvalRequired ? 1 : 0)
                     .disabled(controller.state != .approvalRequired)
                     .accessibilityHidden(controller.state != .approvalRequired)
-                Text(controller.error ?? " ")
+                Text(controller.displayedError ?? " ")
                     .font(.caption).foregroundStyle(.secondary)
                     .lineLimit(2)
                     .frame(height: 30, alignment: .topLeading)
-                    .help(controller.error ?? "")
-                    .accessibilityHidden(controller.error == nil)
+                    .help(controller.displayedError ?? "")
+                    .accessibilityHidden(controller.displayedError == nil)
             }
     }
 }
