@@ -407,6 +407,8 @@ final class SyncHelperControllerTests: XCTestCase {
             XCTFail("Refresh did not reach the barrier"); return
         }
         do { try await helper.requireReadyHelper(); XCTFail("Expected local helper failure") } catch {}
+        XCTAssertEqual(helper.displayedState, .failed)
+        XCTAssertNotNil(helper.displayedError)
         await control.resumeStatus(); await stale.value
         XCTAssertEqual(helper.state, .failed)
         XCTAssertFalse(helper.online, "An older success must not erase a newer failure")
@@ -852,6 +854,32 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertFalse(settings.helperEnabled)
         XCTAssertNil(settings.helperUpgradeToken)
         XCTAssertEqual(registration.registrations, 0)
+    }
+
+    func testTransientFailureRemainsHiddenUntilRefreshCompletes() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let pause = StatusPause()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: { await pause.wait() }),
+            hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh(); XCTAssertTrue(helper.online)
+        await control.failStatus(at: 2)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await pause.isWaiting { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await pause.isWaiting else {
+            await pause.resume(); await refresh.value; XCTFail("Retry did not pause"); return
+        }
+        XCTAssertEqual(helper.displayedState, .running)
+        XCTAssertNil(helper.displayedError)
+        await pause.resume(); await refresh.value
+        XCTAssertTrue(helper.online)
     }
 
     func testFirstStatusFailureRetriesHealthBeforeReconciliation() async throws {
@@ -1646,4 +1674,11 @@ private final class StatusTestClock: @unchecked Sendable {
     private var value = Date(timeIntervalSince1970: 1_000)
     func read() -> Date { lock.lock(); defer { lock.unlock() }; return value }
     func advance(_ seconds: TimeInterval) { lock.lock(); defer { lock.unlock() }; value.addTimeInterval(seconds) }
+}
+
+private actor StatusPause {
+    private var continuation: CheckedContinuation<Void, Never>?
+    var isWaiting: Bool { continuation != nil }
+    func wait() async { await withCheckedContinuation { continuation = $0 } }
+    func resume() { continuation?.resume(); continuation = nil }
 }

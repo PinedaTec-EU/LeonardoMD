@@ -28,6 +28,7 @@ final class SyncHelperController {
     private let verifyPackage: @Sendable () throws -> Void
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "sync-helper-control")
     private var revision = 0
+    private var presentationRevision = 0
     private var lastSuccessfulRefreshRevision = 0
     private let expectedBuildIdentity: SyncHelperBuildIdentity?
     private static let upgradeRetryInterval: TimeInterval = 30
@@ -84,7 +85,10 @@ final class SyncHelperController {
         if activeRefreshes == 0 { stateBeforeRefresh = state; errorBeforeRefresh = error }
         activeRefreshes += 1
         checking = true
+        presentationRevision += 1
+        let presentation = presentationRevision
         defer {
+            if presentation == presentationRevision { presentCurrentState() }
             activeRefreshes -= 1
             checking = activeRefreshes > 0
             if !checking { hasPresentedStatus = true }
@@ -93,10 +97,12 @@ final class SyncHelperController {
         // An update may briefly invalidate the first authenticated connection.
         // Retry health without treating an unknown live process as disposable.
         for _ in 0..<startup.attempts where state == .failed {
+            guard presentation == presentationRevision else { return }
             do { try await startup.pause() } catch { return }
-            guard !Task.isCancelled, !busy, !installation.blocksOperations else { return }
+            guard presentation == presentationRevision, !Task.isCancelled, !busy, !installation.blocksOperations else { return }
             await refreshOnce()
         }
+        guard presentation == presentationRevision else { return }
         await confirmStartupReadiness()
     }
 
@@ -104,9 +110,15 @@ final class SyncHelperController {
         guard !busy, !installation.blocksOperations else { return }
         revision += 1
         let expected = revision
-        defer {
-            if expected == revision { stateBeforeRefresh = state; errorBeforeRefresh = error }
-        }
+        await refreshOnceBody(expected: expected)
+    }
+
+    private func presentCurrentState() {
+        stateBeforeRefresh = state
+        errorBeforeRefresh = error
+    }
+
+    private func refreshOnceBody(expected: Int) async {
         do {
             let settings = try await configurations.loadGlobalPreferences(at: preferencesURL)
             guard expected == revision else { return }
@@ -148,7 +160,7 @@ final class SyncHelperController {
             // An explicit denial cancels the durable upgrade token even while
             // graceful shutdown is suspended. It must never be restored later.
             guard !enabled else { return }
-            revision += 1; self.enabled = false; state = .disabled; stateBeforeRefresh = .disabled; errorBeforeRefresh = nil; sharing = nil
+            revision += 1; presentationRevision += 1; self.enabled = false; state = .disabled; stateBeforeRefresh = .disabled; errorBeforeRefresh = nil; sharing = nil
             supportsRubricExchange = false
             do { try await configurations.setSyncHelperEnabled(false, at: preferencesURL) }
             catch { state = .failed; self.error = L10n.text(error.localizedDescription) }
@@ -156,7 +168,7 @@ final class SyncHelperController {
         }
         if !enabled { stateBeforeRefresh = .disabled; errorBeforeRefresh = nil }
         hasPresentedStatus = true
-        revision += 1 // Invalidate health replies issued before this consent change.
+        revision += 1; presentationRevision += 1 // Invalidate prior health and presentation.
         nextUpgradeAttempt = .distantPast
         let reconcileExisting = enabled && service.status == .enabled && expectedBuildIdentity != nil
         busy = true; error = nil
@@ -310,7 +322,7 @@ final class SyncHelperController {
 
     func prepareForApplicationUpdate() async -> Bool {
         guard !busy, !InstanceRuntime.isAdditional else { return false }
-        revision += 1 // Discard pre-install health replies before parking the helper.
+        revision += 1; presentationRevision += 1 // Discard pre-install health and presentation.
         busy = true
         do {
             try await installation.prepare()
@@ -359,12 +371,12 @@ final class SyncHelperController {
         guard enabled, !busy, !upgrading, !installation.blocksOperations else { return false }
         switch service.status {
         case .requiresApproval:
-            revision += 1; state = .approvalRequired; error = nil
+            revision += 1; presentationRevision += 1; state = .approvalRequired; error = nil
             stateBeforeRefresh = state; errorBeforeRefresh = nil
             sharing = nil; supportsRubricExchange = false
             return true
         case .notFound, .notRegistered:
-            revision += 1; state = .failed; sharing = nil; supportsRubricExchange = false
+            revision += 1; presentationRevision += 1; state = .failed; sharing = nil; supportsRubricExchange = false
             stateBeforeRefresh = state; errorBeforeRefresh = error
             return true
         default: return false
@@ -384,9 +396,10 @@ final class SyncHelperController {
         do { status = try await client.status() }
         catch {
             if expected == revision && !Task.isCancelled {
-                revision += 1
+                revision += 1; presentationRevision += 1
                 state = .failed; sharing = nil; supportsRubricExchange = false
                 self.error = L10n.text(error.localizedDescription)
+                presentCurrentState()
             }
             throw error
         }
@@ -398,9 +411,10 @@ final class SyncHelperController {
               !identity.needsReplacement(by: expectedBuildIdentity) else {
             if expected == revision && current.helperEnabled && current.helperUpgradeToken == nil && !busy {
                 if !reconcileRegistration() {
-                    revision += 1
+                    revision += 1; presentationRevision += 1
                     state = .failed; sharing = nil; supportsRubricExchange = false
                     error = L10n.text("Offline · sync helper unavailable")
+                    presentCurrentState()
                 }
             }
             throw offlineFailure()
@@ -411,9 +425,10 @@ final class SyncHelperController {
             guard online, enabled else { throw offlineFailure() }
             return
         }
-        revision += 1
+        revision += 1; presentationRevision += 1
         enabled = true
         applyStatus(status)
+        presentCurrentState()
     }
 
     private func permitsPeerOperations(_ settings: MobileSyncPreferences) -> Bool {
