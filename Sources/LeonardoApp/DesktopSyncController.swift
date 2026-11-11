@@ -97,6 +97,10 @@ final class DesktopSyncController {
         settings.enabled && (usesHelper ? helper.sharing != nil : running != nil)
     }
 
+    var sharingPresentationAvailable: Bool {
+        settings.enabled && (usesHelper ? helper.displayedSharing != nil : running != nil)
+    }
+
     func rubricCapture(id: UUID) -> RubricCaptureRecord? { rubricCaptures.record(id: id) }
 
     func canRetryRubricCapture(_ record: RubricCaptureRecord) -> Bool {

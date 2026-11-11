@@ -1974,6 +1974,63 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(helper.online)
     }
 
+    func testSharedProjectPresentationStaysStableDuringTransientRetry() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true,
+            projects: [MobileSharedProject(rootURL: fixture.root, name: "Fictional project")])
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        await control.setSharing(RunningDirectService(endpoint: URL(string: "https://127.0.0.1:40882")!, certificateFingerprint: Data(repeating: 4, count: 32)))
+        let pause = StatusPause()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: { await pause.wait() }), hasExecutable: { true }, verifyPackage: {})
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["127.0.0.1"] }
+        await source.initialize()
+        XCTAssertEqual(source.settings.projects.count, 1)
+        XCTAssertTrue(source.sharingPresentationAvailable)
+        let project = try XCTUnwrap(source.settings.projects.first)
+        try await captureSharedProjectRow(project, controller: source, state: "before")
+        await control.failStatus(at: 2)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 { if await pause.isWaiting { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await pause.isWaiting else { await pause.resume(); await refresh.value; XCTFail("Retry did not pause"); return }
+        XCTAssertFalse(source.sharingAvailable, "Operations must see the real failure")
+        XCTAssertTrue(source.sharingPresentationAvailable, "A retry must not add a transient paused line to shared projects")
+        try await captureSharedProjectRow(project, controller: source, state: "retrying")
+        await pause.resume(); await refresh.value
+        XCTAssertTrue(source.sharingAvailable)
+        XCTAssertTrue(source.sharingPresentationAvailable)
+        try await captureSharedProjectRow(project, controller: source, state: "recovered")
+        await control.setUnavailable()
+        let failed = Task { await helper.refresh() }
+        for _ in 0..<5000 { if await pause.isWaiting { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await pause.isWaiting else { await pause.resume(); await failed.value; XCTFail("Failure retry did not pause"); return }
+        XCTAssertTrue(source.sharingPresentationAvailable)
+        await pause.resume(); await failed.value
+        XCTAssertFalse(source.sharingPresentationAvailable, "A confirmed failure must be visible after retries finish")
+    }
+
+    private func captureSharedProjectRow(_ project: MobileSharedProject, controller: DesktopSyncController, state: String) async throws {
+        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
+        let destination = URL(fileURLWithPath: output)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        LanguageSettings.shared.language = .english
+        let host = NSHostingView(rootView: SharedProjectRow(project: project, controller: controller)
+            .padding(16).frame(width: 532, height: 100, alignment: .topLeading)
+            .background(Color(nsColor: .windowBackgroundColor)))
+        try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 100),
+            to: destination.appendingPathComponent("project-\(state).png"), language: "en",
+            state: "Synthetic shared project: \(state)", route: "/native/preferences/synchronization",
+            screen: "Shared project status")
+    }
+
     func testFirstStatusFailureRetriesHealthBeforeReconciliation() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)

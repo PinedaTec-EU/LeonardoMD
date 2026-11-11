@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreImage.CIFilterBuiltins
 import LeonardoSync
+import LeonardoCore
 
 struct MobileSyncPreferencesView: View {
     let session: AppSession
@@ -59,19 +60,7 @@ struct MobileSyncPreferencesView: View {
                 Button(L10n.text("Share current project")) { selectingContent = true }
             }
             ForEach(controller.settings.projects) { project in
-                HStack {
-                    VStack(alignment: .leading) {
-                        ProjectIdentityLabel(name: project.name, identity: .sharedFromThisDevice,
-                                             detail: DesktopProjectPresentation.scopeDescription(folders: project.folders))
-                        if !controller.sharingAvailable {
-                            Text(L10n.text("Sharing paused or unavailable")).font(.caption).foregroundStyle(.secondary)
-                        }
-                        Text((project.folders.map { $0.isEmpty ? L10n.text("Entire project") : $0 } + project.documents).joined(separator: ", "))
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button(L10n.text("Remove")) { Task { await controller.unshare(project.id) } }
-                }
+                SharedProjectRow(project: project, controller: controller)
             }
     }
     if controller.settings.projects.isEmpty {
@@ -186,5 +175,27 @@ struct PairingConsentView: View {
                 }.disabled(!confirmed || (!captureOnly && projects.isEmpty) || controller.busy)
             }
         }.padding(24).frame(width: 420).buttonStyle(PremiumButtonStyle()).toggleStyle(PremiumSwitchStyle())
+    }
+}
+
+/// Shared by Preferences and native transition evidence.
+struct SharedProjectRow: View {
+    let project: MobileSharedProject
+    @Bindable var controller: DesktopSyncController
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading) {
+                ProjectIdentityLabel(name: project.name, identity: .sharedFromThisDevice,
+                                     detail: DesktopProjectPresentation.scopeDescription(folders: project.folders))
+                if !controller.sharingPresentationAvailable {
+                    Text(L10n.text("Sharing paused or unavailable")).font(.caption).foregroundStyle(.secondary)
+                }
+                Text((project.folders.map { $0.isEmpty ? L10n.text("Entire project") : $0 } + project.documents).joined(separator: ", "))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button(L10n.text("Remove")) { Task { await controller.unshare(project.id) } }
+        }
     }
 }

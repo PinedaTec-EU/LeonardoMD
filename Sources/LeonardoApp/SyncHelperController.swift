@@ -15,6 +15,7 @@ final class SyncHelperController {
     private var activeRefreshes = 0
     private var stateBeforeRefresh = State.disabled
     private var errorBeforeRefresh: String?
+    private var sharingBeforeRefresh: RunningDirectService?
     private(set) var hasPresentedStatus = false
     private(set) var upgrading = false
     private(set) var sharing: RunningDirectService?
@@ -77,6 +78,7 @@ final class SyncHelperController {
     }
     var displayedState: State { stateBeforeRefresh }
     var displayedError: String? { errorBeforeRefresh }
+    var displayedSharing: RunningDirectService? { sharingBeforeRefresh }
     var showsApprovalAction: Bool { displayedState == .approvalRequired }
     var statusText: String {
         switch displayedState {
@@ -127,6 +129,7 @@ final class SyncHelperController {
         hasPresentedStatus = true
         stateBeforeRefresh = state
         errorBeforeRefresh = error
+        sharingBeforeRefresh = sharing
     }
 
     private func refreshOnceBody(expected: Int, expectedLifecycle: Int) async {
@@ -189,13 +192,13 @@ final class SyncHelperController {
             // An explicit denial cancels the durable upgrade token even while
             // graceful shutdown is suspended. It must never be restored later.
             guard !enabled else { return }
-            lifecycleRevision += 1; revision += 1; presentationRevision += 1; self.enabled = false; state = .disabled; error = nil; stateBeforeRefresh = .disabled; errorBeforeRefresh = nil; sharing = nil
+            lifecycleRevision += 1; revision += 1; presentationRevision += 1; self.enabled = false; state = .disabled; error = nil; stateBeforeRefresh = .disabled; errorBeforeRefresh = nil; sharingBeforeRefresh = nil; sharing = nil
             supportsRubricExchange = false
             do { try await configurations.setSyncHelperEnabled(false, at: preferencesURL) }
             catch { state = .failed; self.error = L10n.text(error.localizedDescription); presentCurrentState() }
             return
         }
-        if !enabled { stateBeforeRefresh = .disabled; errorBeforeRefresh = nil }
+        if !enabled { stateBeforeRefresh = .disabled; errorBeforeRefresh = nil; sharingBeforeRefresh = nil }
         if enabled && !self.enabled { hasPresentedStatus = false }
         lifecycleRevision += 1; revision += 1; presentationRevision += 1 // Invalidate prior health and presentation.
         let presentation = presentationRevision
@@ -416,8 +419,8 @@ final class SyncHelperController {
         switch service.status {
         case .requiresApproval:
             lifecycleRevision += 1; revision += 1; presentationRevision += 1; state = .approvalRequired; error = nil
-            presentCurrentState()
             sharing = nil; supportsRubricExchange = false
+            presentCurrentState()
             return true
         case .notFound, .notRegistered:
             lifecycleRevision += 1; revision += 1; presentationRevision += 1; state = .failed; sharing = nil; supportsRubricExchange = false
