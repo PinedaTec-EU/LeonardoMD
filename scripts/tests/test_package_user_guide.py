@@ -72,7 +72,7 @@ class PackageUserGuideTests(unittest.TestCase):
                 self.assertEqual(set(form['fields']), set(form['values']))
                 self.assertEqual(len(form['fields']), 3)
                 self.assertIn(f'/doc/guide/{language}/practice.mdlr', web_source)
-                name = f'Guide-v54-{language}.mdlz'
+                name = f'Guide-v55-{language}.mdlz'
                 self.assertEqual((output / name).read_bytes(), (ROOT / 'Sources/LeonardoApp/Resources' / name).read_bytes())
                 with zipfile.ZipFile(output / name) as archive:
                     expected_images = 21 if language == 'es' else 20

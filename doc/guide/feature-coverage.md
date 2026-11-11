@@ -57,11 +57,14 @@ Page objects/rubrics (#193): `DocumentToolbar.swift`, `SessionGraphics.swift`, `
 Sync helper (#319): chapters 14–15 cover per-user installation/approval, the required master switch in both directions, saved-file snapshots, offline status with the editor open, after-login recovery, editor-independent sharing and manual incoming review. Current Guide v20 retains these helper instructions in a separate personal copy.
 
 Synchronization roles (#337): chapters 14–15 now route through one Synchronization category, one service control and separate sharing/consuming pages. Refreshed EN/ES production-component images show both pages with isolated disabled settings; capability labels and invite QR/link equivalence are explained. Guide v20 opens a new personal copy; existing older guide copies and separate practice answers are preserved.
+
+Remote project review (#429) and stable helper status (#421): chapters 14–15 explain host naming, explicit project acceptance, new-file notices, on-demand open/retention, preserved pre-review projects, stable status display, and manual linked-device refresh. The preference screen and synchronization controls are available only on macOS; no Little Leonardo interface change is included.
 Update termination (#202): chapter 16 documents automatic Preferences dismissal before install approval, retained Save/Git decisions, cancellation/retry, and the older-source bootstrap workaround. Introduced in Guide v12 and retained in current Guide v23; previous personal copies are preserved.
 
 Display-math regression coverage ([#272](https://github.com/PinedaTec-EU/LeonardoMD/issues/272)): both guides include one-line underbraces and a multiline tagged box-counting equation. Native help QA must inspect enabled rendering and disabled/code fallback in every tested instance.
 
 | Metadata-first browsing, navigable folder hierarchy, retention and cache management | `DownloadLibrary`, `OnDemandCache`, `LeonardoSyncUI` | 15 | Bilingual storage table; immediate-child folder navigation; explicit draft/apply budget; remote/cached/offline states; editable-copy boundary |
+| Host attribution, review of new projects/files, stable status and quieter linked-device refresh | `DesktopPeerRemoteProjectsView`, `DesktopPeerReviewStore`, `SyncHelperPreferencesSection`, `MobileSyncPreferencesView` | 14–15 | Add/ignore decision; on-demand file open vs offline retention; local host alias; preserved existing projects; manual device refresh |
 
 Extensible Math and outline navigation ([#274](https://github.com/PinedaTec-EU/LeonardoMD/issues/274), [#364](https://github.com/PinedaTec-EU/LeonardoMD/issues/364)): live braces, radical, long arrow and cancellation marks; chapter 9 explains repeated titles and Split navigation. Native tests verify geometry, active-content rejection, original source-line identity and preview/editor feedback.
 

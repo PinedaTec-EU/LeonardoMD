@@ -12,6 +12,7 @@ final class SyncHelperController {
     private(set) var enabled = false
     private(set) var busy = false
     private(set) var checking = false
+    private(set) var hasStatusResult = false
     private var activeRefreshes = 0
     private(set) var upgrading = false
     private(set) var sharing: RunningDirectService?
@@ -58,6 +59,7 @@ final class SyncHelperController {
 
     var online: Bool { state == .running && !installation.blocksOperations }
     var checkingStatus: Bool { checking || busy }
+    var showsInitialStatusCheck: Bool { checking && !hasStatusResult }
     var statusText: String {
         switch state {
         case .notInstalled: L10n.text("Sync helper is not installed")
@@ -91,6 +93,9 @@ final class SyncHelperController {
         guard !busy, !installation.blocksOperations else { return }
         revision += 1
         let expected = revision
+        defer {
+            if expected == revision { hasStatusResult = true }
+        }
         do {
             let settings = try await configurations.loadGlobalPreferences(at: preferencesURL)
             guard expected == revision else { return }
