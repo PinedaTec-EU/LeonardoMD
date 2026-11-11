@@ -227,6 +227,7 @@ final class DesktopSyncController {
             let currentAddresses = Set(addresses)
             let networkChanged = lastNetworkAddresses.map { $0 != currentAddresses } ?? false
             lastNetworkAddresses = currentAddresses
+            if networkChanged { invitationURL = nil }
             let recoveryDue = helper.needsAutomaticRecovery && now() >= nextHelperRecovery
             if refreshHelper || networkChanged || recoveryDue {
                 nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
@@ -302,6 +303,7 @@ final class DesktopSyncController {
         guard !busy else { return }
         busy = true
         defer { busy = false }
+        let invitationAddresses = Set(addresses)
         if usesHelper {
             await helper.refresh()
             updateRunningFromHelper()
@@ -318,6 +320,7 @@ final class DesktopSyncController {
                       current.endpoint == running.endpoint,
                       current.certificateFingerprint == running.certificateFingerprint else { return }
             }
+            guard Set(addresses) == invitationAddresses else { return }
             invitationURL = try DirectPairingQR(endpoint: running.endpoint,
                 certificateFingerprint: running.certificateFingerprint, invitation: invitation).encodedURL()
         } catch { self.error = error.localizedDescription }

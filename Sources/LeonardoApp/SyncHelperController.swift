@@ -32,7 +32,6 @@ final class SyncHelperController {
     private var presentationRevision = 0
     private var lastSuccessfulRefreshRevision = 0
     private var lastFailureRevision = 0
-    private var lastSuccessfulHealthRevision = 0
     private var lastAuthorizedHealthRevision = 0
     private let expectedBuildIdentity: SyncHelperBuildIdentity?
     private static let upgradeRetryInterval: TimeInterval = 30
@@ -118,7 +117,8 @@ final class SyncHelperController {
         guard !busy, !installation.blocksOperations else { return }
         revision += 1
         let expected = revision
-        await refreshOnceBody(expected: expected)
+        let expectedLifecycle = lifecycleRevision
+        await refreshOnceBody(expected: expected, expectedLifecycle: expectedLifecycle)
         if expected == revision, state != .running { lastFailureRevision = expected }
     }
 
@@ -129,7 +129,7 @@ final class SyncHelperController {
         errorBeforeRefresh = error
     }
 
-    private func refreshOnceBody(expected: Int) async {
+    private func refreshOnceBody(expected: Int, expectedLifecycle: Int) async {
         do {
             let settings = try await configurations.loadGlobalPreferences(at: preferencesURL)
             guard expected == revision else { return }
@@ -143,8 +143,8 @@ final class SyncHelperController {
             case .enabled:
                 let status = try await client.status()
                 observeHealth(status, revision: expected, requiresIdentity: false)
+                if expectedLifecycle == lifecycleRevision && !Task.isCancelled && reconcileRegistration() { return }
                 guard expected == revision else { return }
-                if reconcileRegistration() { return }
                 if let expectedBuildIdentity,
                    settings.mobileSync.helperUpgradeToken != nil ||
                     (status.buildIdentity?.needsReplacement(by: expectedBuildIdentity) ?? true) {
@@ -163,6 +163,7 @@ final class SyncHelperController {
             }
         } catch {
             if !Task.isCancelled { observeHealthFailure(revision: expected) }
+            if expectedLifecycle == lifecycleRevision && !Task.isCancelled && reconcileRegistration() { return }
             guard expected == revision else { return }
             state = .failed; sharing = nil; supportsRubricExchange = false; self.error = L10n.text(error.localizedDescription)
         }
@@ -287,6 +288,7 @@ final class SyncHelperController {
             checking = activeRefreshes > 0
         }
         let expected = revision
+        let expectedLifecycle = lifecycleRevision
         for attempt in 0..<startup.attempts {
             do {
                 if attempt > 0 { try await startup.pause() }
@@ -303,6 +305,7 @@ final class SyncHelperController {
                 logger.info("sync_helper_readiness_confirmed build=\(identity.build, privacy: .public)")
                 return
             } catch {
+                if expectedLifecycle == lifecycleRevision && !Task.isCancelled && reconcileRegistration() { return }
                 guard canProbeStartup(expected) else { return }
                 self.error = L10n.text(error.localizedDescription)
             }
@@ -411,7 +414,7 @@ final class SyncHelperController {
     }
 
     private func observeHealthFailure(revision: Int) {
-        if revision > lastSuccessfulHealthRevision { lastFailureRevision = max(lastFailureRevision, revision) }
+        lastFailureRevision = max(lastFailureRevision, revision)
     }
 
     private func observeHealth(_ status: SyncHelperStatus, revision: Int, requiresIdentity: Bool) {
@@ -419,8 +422,7 @@ final class SyncHelperController {
         if let expectedBuildIdentity {
             compatible = status.buildIdentity.map { !$0.needsReplacement(by: expectedBuildIdentity) } ?? false
         } else { compatible = !requiresIdentity }
-        if status.enabled && compatible { lastSuccessfulHealthRevision = max(lastSuccessfulHealthRevision, revision) }
-        else { observeHealthFailure(revision: revision) }
+        if !status.enabled || !compatible { observeHealthFailure(revision: revision) }
     }
 
     private func presentDeniedConsent(_ settings: MobileSyncPreferences) {
@@ -458,6 +460,7 @@ final class SyncHelperController {
         do { status = try await client.status() }
         catch {
             if !Task.isCancelled { observeHealthFailure(revision: expected) }
+            if initialRevision == lifecycleRevision && !Task.isCancelled && reconcileRegistration() { throw error }
             if expected == revision && !Task.isCancelled {
                 presentationRevision += 1
                 state = .failed; sharing = nil; supportsRubricExchange = false
