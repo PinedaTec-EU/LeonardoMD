@@ -223,7 +223,15 @@ final class DesktopSyncController {
             incoming = running == nil ? [] : try await runtime.incomingProposals()
             rubricCaptures.refresh()
             await recoverRubricCaptures()
-        } catch { self.error = error.localizedDescription }
+        } catch {
+            self.error = error.localizedDescription
+            // A failed operation is a reason to check the helper even though
+            // the preferences page does not poll its health continuously.
+            if usesHelper && !refreshHelper {
+                await helper.refresh()
+                running = helper.sharing
+            }
+        }
     }
 
     func reviewProposal(_ item: DesktopPeerIncomingProposal) async {
