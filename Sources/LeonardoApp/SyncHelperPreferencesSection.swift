@@ -18,8 +18,8 @@ struct SyncHelperPreferencesSection: View {
                         Circle()
                             .fill(controller.displayedState == .running ? Color.green : Color.red)
                             .frame(width: 9, height: 9)
-                            .opacity(controller.hasPresentedStatus ? 1 : 0)
-                            .accessibilityHidden(!controller.hasPresentedStatus)
+                            .opacity(controller.hasPresentedStatus && controller.enabled ? 1 : 0)
+                            .accessibilityHidden(!controller.hasPresentedStatus || !controller.enabled)
                             .accessibilityLabel(controller.statusText)
                         Text(L10n.text("Enable Leonardo Sync"))
                     }
