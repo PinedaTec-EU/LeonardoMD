@@ -251,6 +251,36 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(helper.displayedState, .running)
     }
 
+    func testConcurrentHealthyPeerPreflightsSucceedWithoutCachedHealth() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.pauseStatus()
+        let helper = upgrading(fixture, registration, control)
+        let first = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 1) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 1) else {
+            await control.resumeStatus(); _ = try? await first.value; XCTFail("First health not held"); return
+        }
+        let second = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); _ = try? await first.value; _ = try? await second.value
+            XCTFail("Second health not held"); return
+        }
+        await control.resumeStatus(at: 1)
+        try await first.value
+        XCTAssertFalse(helper.hasPresentedStatus, "An older success must not publish over a newer check")
+        await control.resumeStatus(at: 2); try await second.value
+        XCTAssertTrue(helper.online)
+    }
+
     func testConcurrentPeerPreflightsDoNotInvalidateEachOther() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)

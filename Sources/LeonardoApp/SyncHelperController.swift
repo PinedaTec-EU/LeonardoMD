@@ -31,6 +31,7 @@ final class SyncHelperController {
     private var lifecycleRevision = 0
     private var presentationRevision = 0
     private var lastSuccessfulRefreshRevision = 0
+    private var lastConfirmedFailureRevision = 0
     private let expectedBuildIdentity: SyncHelperBuildIdentity?
     private static let upgradeRetryInterval: TimeInterval = 30
     static let errorRecoveryInterval: TimeInterval = 30
@@ -119,6 +120,7 @@ final class SyncHelperController {
     }
 
     private func presentCurrentState() {
+        if state == .failed { lastConfirmedFailureRevision = revision }
         hasPresentedStatus = true
         stateBeforeRefresh = state
         errorBeforeRefresh = error
@@ -437,7 +439,7 @@ final class SyncHelperController {
         guard expected == revision else {
             // A newer healthy refresh owns the displayed endpoint/capabilities.
             // Keep it, while still allowing operations confirmed by that state.
-            guard online, enabled else { throw offlineFailure() }
+            guard initialRevision == lifecycleRevision, lastConfirmedFailureRevision <= expected else { throw offlineFailure() }
             return
         }
         presentationRevision += 1
