@@ -254,6 +254,42 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(helper.displayedState, .running)
     }
 
+    func testSupersededAuthorizedRecoveryRemainsValidDuringAnotherRefresh() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let preferences = PeerSelectedPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        let first = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await preferences.isHeld(2) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await preferences.isHeld(2) else {
+            await preferences.releaseAll(); _ = try? await first.value; XCTFail("First consent not held"); return
+        }
+        await control.failStatus(at: 3)
+        do { try await helper.requireReadyHelper(); XCTFail("Middle health must fail") } catch {}
+        let recovery = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await preferences.isHeld(5) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await preferences.isHeld(5) else {
+            await preferences.releaseAll(); _ = try? await first.value; _ = try? await recovery.value
+            XCTFail("Recovery consent not held"); return
+        }
+        await control.pauseStatus(at: 5)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 5) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 5) else {
+            await control.resumeStatus(); await preferences.releaseAll(); _ = try? await first.value
+            _ = try? await recovery.value; await refresh.value; XCTFail("Refresh not held"); return
+        }
+        await preferences.release(5); try await recovery.value
+        await preferences.release(2); try await first.value
+        await control.resumeStatus(at: 5); await refresh.value
+        XCTAssertTrue(helper.online)
+    }
+
     func testOlderPeerCanProceedAfterNewerFullyAuthorizedRecovery() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
@@ -348,6 +384,61 @@ final class SyncHelperControllerTests: XCTestCase {
             do { try await helper.requireReadyHelper(); XCTFail("Consent must block operation") } catch {}
             XCTAssertEqual(helper.displayedState, upgradePending ? .starting : .disabled)
             XCTAssertFalse(helper.online)
+        }
+    }
+
+    func testRegistrationRevocationOrMissingHelperWinsOverConcurrentRefresh() async throws {
+        for missing in [false, true] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+            let preferences = PeerFinalPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+            let executable = HelperExecutableFlag()
+            let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+                loadPeerPreferences: { try await preferences.load() }, hasExecutable: { executable.exists }, verifyPackage: {})
+            await helper.refresh()
+            let peer = Task { try await helper.requireReadyHelper() }
+            for _ in 0..<5000 { if await preferences.isHeld { break }; try await Task.sleep(for: .milliseconds(1)) }
+            guard await preferences.isHeld else {
+                await preferences.release(); _ = try? await peer.value; XCTFail("Final consent not held"); return
+            }
+            await control.pauseStatus(at: 3)
+            let refresh = Task { await helper.refresh() }
+            for _ in 0..<5000 { if await control.hasHeldStatus(at: 3) { break }; try await Task.sleep(for: .milliseconds(1)) }
+            guard await control.hasHeldStatus(at: 3) else {
+                await preferences.release(); await control.resumeStatus(); _ = try? await peer.value; await refresh.value
+                XCTFail("Refresh not held"); return
+            }
+            if missing { executable.remove() } else { registration.status = .requiresApproval }
+            await preferences.release(); _ = try? await peer.value
+            XCTAssertEqual(helper.displayedState, missing ? .notInstalled : .approvalRequired)
+            await control.resumeStatus(at: 3); await refresh.value
+            XCTAssertEqual(helper.displayedState, missing ? .notInstalled : .approvalRequired)
+            XCTAssertEqual(helper.showsApprovalAction, !missing)
+        }
+    }
+
+    func testRefreshRechecksRegistrationAfterHealthReturns() async throws {
+        for missing in [false, true] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+            let executable = HelperExecutableFlag()
+            let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+                hasExecutable: { executable.exists }, verifyPackage: {})
+            await helper.refresh(); await control.pauseStatus(at: 2)
+            let refresh = Task { await helper.refresh() }
+            for _ in 0..<5000 { if await control.hasHeldStatus(at: 2) { break }; try await Task.sleep(for: .milliseconds(1)) }
+            guard await control.hasHeldStatus(at: 2) else {
+                await control.resumeStatus(); await refresh.value; XCTFail("Refresh not held"); return
+            }
+            if missing { executable.remove() } else { registration.status = .requiresApproval }
+            await control.resumeStatus(at: 2); await refresh.value
+            XCTAssertEqual(helper.displayedState, missing ? .notInstalled : .approvalRequired)
         }
     }
 
@@ -2208,6 +2299,21 @@ private final class HelperExecutableFlag: @unchecked Sendable {
     private var value = true
     var exists: Bool { lock.lock(); defer { lock.unlock() }; return value }
     func remove() { lock.lock(); defer { lock.unlock() }; value = false }
+}
+private actor PeerSelectedPreferencesBarrier {
+    let configurations: ConfigurationStore
+    let url: URL
+    private var calls = 0
+    private var waiting: [Int: CheckedContinuation<Void, Never>] = [:]
+    init(configurations: ConfigurationStore, url: URL) { self.configurations = configurations; self.url = url }
+    func isHeld(_ call: Int) -> Bool { waiting[call] != nil }
+    func load() async throws -> MobileSyncPreferences {
+        calls += 1; let call = calls
+        if call == 2 || call == 5 { await withCheckedContinuation { waiting[call] = $0 } }
+        return try await configurations.loadGlobalPreferences(at: url).mobileSync
+    }
+    func release(_ call: Int) { waiting.removeValue(forKey: call)?.resume() }
+    func releaseAll() { let pending = waiting.values; waiting.removeAll(); pending.forEach { $0.resume() } }
 }
 private actor PeerIndexedPreferencesBarrier {
     let configurations: ConfigurationStore

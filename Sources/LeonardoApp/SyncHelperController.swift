@@ -144,6 +144,7 @@ final class SyncHelperController {
                 let status = try await client.status()
                 observeHealth(status, revision: expected, requiresIdentity: false)
                 guard expected == revision else { return }
+                if reconcileRegistration() { return }
                 if let expectedBuildIdentity,
                    settings.mobileSync.helperUpgradeToken != nil ||
                     (status.buildIdentity?.needsReplacement(by: expectedBuildIdentity) ?? true) {
@@ -295,6 +296,7 @@ final class SyncHelperController {
                 let status = try await client.status()
                 let current = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
                 guard canProbeStartup(expected), observeStartupConsent(current) else { return }
+                if reconcileRegistration() { return }
                 guard status.enabled, let expectedBuildIdentity, let identity = status.buildIdentity,
                       !identity.needsReplacement(by: expectedBuildIdentity) else { continue }
                 applyStatus(status)
@@ -485,8 +487,8 @@ final class SyncHelperController {
             if initialRevision == lifecycleRevision && !busy &&
                 (!current.helperEnabled || current.helperUpgradeToken != nil) {
                 presentDeniedConsent(current)
-            } else if expected == revision && !busy {
-                if !reconcileRegistration() {
+            } else if initialRevision == lifecycleRevision && !busy {
+                if !reconcileRegistration(), expected == revision {
                     presentationRevision += 1
                     state = .failed; sharing = nil; supportsRubricExchange = false
                     error = L10n.text("Offline · sync helper unavailable")
@@ -498,8 +500,9 @@ final class SyncHelperController {
         guard expected == revision else {
             // A newer healthy refresh owns the displayed endpoint/capabilities.
             // Keep it, while still allowing operations confirmed by that state.
-            let recovered = lastAuthorizedHealthRevision > lastFailureRevision && online && enabled
+            let recovered = lastAuthorizedHealthRevision > lastFailureRevision
             guard initialRevision == lifecycleRevision, lastFailureRevision <= expected || recovered else { throw offlineFailure() }
+            lastAuthorizedHealthRevision = max(lastAuthorizedHealthRevision, expected)
             return
         }
         presentationRevision += 1
