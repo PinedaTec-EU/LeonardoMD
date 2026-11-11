@@ -33,6 +33,7 @@ final class SyncHelperController {
     private var lastSuccessfulRefreshRevision = 0
     private var lastFailureRevision = 0
     private var lastSuccessfulHealthRevision = 0
+    private var lastAuthorizedHealthRevision = 0
     private let expectedBuildIdentity: SyncHelperBuildIdentity?
     private static let upgradeRetryInterval: TimeInterval = 30
     static let errorRecoveryInterval: TimeInterval = 30
@@ -481,9 +482,11 @@ final class SyncHelperController {
         guard permitsPeerOperations(current), status.enabled,
               let expectedBuildIdentity, let identity = status.buildIdentity,
               !identity.needsReplacement(by: expectedBuildIdentity) else {
-            if expected == revision && !busy {
-                if !current.helperEnabled || current.helperUpgradeToken != nil { presentDeniedConsent(current) }
-                else if !reconcileRegistration() {
+            if initialRevision == lifecycleRevision && !busy &&
+                (!current.helperEnabled || current.helperUpgradeToken != nil) {
+                presentDeniedConsent(current)
+            } else if expected == revision && !busy {
+                if !reconcileRegistration() {
                     presentationRevision += 1
                     state = .failed; sharing = nil; supportsRubricExchange = false
                     error = L10n.text("Offline · sync helper unavailable")
@@ -495,11 +498,14 @@ final class SyncHelperController {
         guard expected == revision else {
             // A newer healthy refresh owns the displayed endpoint/capabilities.
             // Keep it, while still allowing operations confirmed by that state.
-            guard initialRevision == lifecycleRevision, lastFailureRevision <= expected else { throw offlineFailure() }
+            let recovered = lastAuthorizedHealthRevision > lastFailureRevision &&
+                lastAuthorizedHealthRevision == revision && online && enabled
+            guard initialRevision == lifecycleRevision, lastFailureRevision <= expected || recovered else { throw offlineFailure() }
             return
         }
         presentationRevision += 1
         enabled = true
+        lastAuthorizedHealthRevision = expected
         applyStatus(status)
         presentCurrentState()
     }

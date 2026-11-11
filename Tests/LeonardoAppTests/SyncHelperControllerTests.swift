@@ -254,6 +254,29 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(helper.displayedState, .running)
     }
 
+    func testOlderPeerCanProceedAfterNewerFullyAuthorizedRecovery() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let preferences = PeerFinalPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        let older = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await preferences.isHeld { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await preferences.isHeld else {
+            await preferences.release(); _ = try? await older.value; XCTFail("Final consent not held"); return
+        }
+        await control.failStatus(at: 3)
+        do { try await helper.requireReadyHelper(); XCTFail("Middle health must fail") } catch {}
+        try await helper.requireReadyHelper()
+        XCTAssertTrue(helper.online)
+        await preferences.release(); try await older.value
+        XCTAssertTrue(helper.online)
+    }
+
     func testThreePeerChecksHonorMiddleFailureWhileNewestIsPending() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
@@ -317,6 +340,36 @@ final class SyncHelperControllerTests: XCTestCase {
             XCTAssertEqual(helper.displayedState, upgradePending ? .starting : .disabled)
             XCTAssertFalse(helper.online)
         }
+    }
+
+    func testFinalConsentRevocationWinsOverConcurrentPeerHealth() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let preferences = PeerFinalPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        let older = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await preferences.isHeld { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await preferences.isHeld else {
+            await preferences.release(); _ = try? await older.value; XCTFail("Final consent not held"); return
+        }
+        await control.failStatus(at: 3); await control.pauseStatus(at: 3)
+        let newer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 3) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 3) else {
+            await preferences.release(); await control.resumeStatus(); _ = try? await older.value; _ = try? await newer.value
+            XCTFail("Concurrent health not held"); return
+        }
+        try await fixture.configurations.setSyncHelperEnabled(false, at: fixture.preferences)
+        await preferences.release(); _ = try? await older.value
+        XCTAssertFalse(helper.enabled); XCTAssertEqual(helper.displayedState, .disabled)
+        await control.resumeStatus(at: 3); _ = try? await newer.value
+        XCTAssertFalse(helper.enabled); XCTAssertEqual(helper.displayedState, .disabled)
+        XCTAssertNil(helper.displayedError)
     }
 
     func testPeerFinalConsentRevocationUpdatesDisplayedState() async throws {
