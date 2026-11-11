@@ -52,6 +52,12 @@ public struct RemoteProjectCatalogue: Codable, Hashable, Sendable {
 
     public var folders: [String] {
         var result = Set(directories)
+        for directory in directories {
+            var parts = directory.split(separator: "/").map(String.init)
+            while parts.count > 1 {
+                parts.removeLast(); result.insert(parts.joined(separator: "/"))
+            }
+        }
         for file in files {
             var parts = file.path.split(separator: "/").map(String.init)
             while parts.count > 1 {
@@ -59,6 +65,28 @@ public struct RemoteProjectCatalogue: Codable, Hashable, Sendable {
             }
         }
         return result.sorted()
+    }
+
+    /// Returns only the folders that are directly inside the requested folder.
+    ///
+    /// The catalogue keeps paths relative to the project root. Consumers should
+    /// use this projection when rendering a navigable folder view instead of
+    /// flattening every descendant into one list.
+    public func immediateFolders(at path: String) -> [String] {
+        let prefix = path.isEmpty ? "" : path + "/"
+        return folders.filter { candidate in
+            guard candidate.hasPrefix(prefix), candidate != path else { return false }
+            return !candidate.dropFirst(prefix.count).contains("/")
+        }
+    }
+
+    /// Returns only the files that are directly inside the requested folder.
+    public func immediateFiles(at path: String) -> [RemoteFileEntry] {
+        let prefix = path.isEmpty ? "" : path + "/"
+        return files.filter { entry in
+            guard entry.path.hasPrefix(prefix) else { return false }
+            return !entry.path.dropFirst(prefix.count).contains("/")
+        }
     }
 }
 
