@@ -1019,9 +1019,19 @@
       "pr": 420,
       "summary": "Updates now pause the sharing service safely before replacing the Mac application, preserving existing access for the next launch. Installation waits if a safe stop cannot be confirmed.",
       "to_version": "0.3.1276"
+    },
+    {
+      "delta": {
+        "build": 3
+      },
+      "from_version": "0.3.1276",
+      "merge_sha": "d93a51fa7e8bd457e5616b75d44d9cf431034016",
+      "pr": 424,
+      "summary": "Navigate synchronized folders and see only the files and folders in the current location.",
+      "to_version": "0.3.1279"
     }
   ],
-  "current_version": "0.3.1276",
+  "current_version": "0.3.1279",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
