@@ -254,6 +254,30 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(helper.displayedState, .running)
     }
 
+    func testCancelledLastPeerPreflightAllowsInitialStateRecovery() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.pauseStatus()
+        let helper = upgrading(fixture, registration, control)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 1) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 1) else { await control.resumeStatus(); await refresh.value; XCTFail("Initial health not held"); return }
+        let peer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 2) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await refresh.value; _ = try? await peer.value; XCTFail("Peer health not held"); return
+        }
+        await control.resumeStatus(at: 1); await refresh.value
+        peer.cancel(); await control.resumeStatus(at: 2)
+        do { try await peer.value; XCTFail("Cancelled peer must not start work") } catch is CancellationError {} catch { XCTFail("Unexpected error: \(error)") }
+        XCTAssertFalse(helper.hasPresentedStatus)
+        XCTAssertTrue(helper.needsAutomaticRecovery, "A cancelled last owner must leave initial health recoverable")
+        await control.resumeStatus(); await helper.refreshIfRecoverable()
+        XCTAssertEqual(helper.displayedState, .running)
+        XCTAssertFalse(helper.needsAutomaticRecovery)
+    }
+
     func testCancelledInitialRefreshDoesNotPublishUnverifiedHealth() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)

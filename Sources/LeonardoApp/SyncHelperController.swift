@@ -74,7 +74,7 @@ final class SyncHelperController {
     var online: Bool { state == .running && !installation.blocksOperations }
     var checkingStatus: Bool { checking || busy }
     var needsAutomaticRecovery: Bool {
-        state == .failed || state == .starting
+        state == .failed || state == .starting || (enabled && !hasPresentedStatus)
     }
     var displayedState: State { stateBeforeRefresh }
     var displayedError: String? { errorBeforeRefresh }
@@ -404,7 +404,7 @@ final class SyncHelperController {
 
     func refreshAfterActivation() async {
         if reconcileRegistration() { return }
-        guard state == .approvalRequired else { return }
+        guard state == .approvalRequired || (enabled && !hasPresentedStatus) else { return }
         await refresh()
     }
 
