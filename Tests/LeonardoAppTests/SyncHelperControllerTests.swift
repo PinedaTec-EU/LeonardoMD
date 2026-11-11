@@ -416,6 +416,27 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(registration.registrations, 1)
     }
 
+    func testHeldStatusRetainsItsOriginalSnapshot() async throws {
+        let control = HelperControlFake()
+        let original = RunningDirectService(endpoint: URL(string: "https://127.0.0.1:40881")!,
+            certificateFingerprint: Data(repeating: 1, count: 32))
+        let current = RunningDirectService(endpoint: URL(string: "https://127.0.0.1:40882")!,
+            certificateFingerprint: Data(repeating: 2, count: 32))
+        await control.setSharing(original)
+        await control.pauseStatus()
+        let pending = Task { try await control.status() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldStatus
+        XCTAssertTrue(held)
+        await control.setSharing(current)
+        await control.resumeStatus()
+        let response = try await pending.value
+        XCTAssertEqual(response.sharing?.endpoint, original.endpoint)
+    }
+
     func testLateReadinessCannotOverwriteANewerHealthyRefresh() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
@@ -1114,10 +1135,12 @@ private actor HelperControlFake: SyncHelperControlAccess {
     func status() async throws -> SyncHelperStatus {
         statusCalls += 1
         let scheduledFailure = failingStatusCalls.remove(statusCalls) != nil
+        let shouldFail = unavailable || scheduledFailure
+        if !shouldFail, !buildIdentities.isEmpty { buildIdentity = buildIdentities.removeFirst() }
+        let reply = SyncHelperStatus(enabled: true, sharing: sharing, buildIdentity: buildIdentity)
         if paused || pausedStatusCall == statusCalls { await withCheckedContinuation { heldStatus = $0 } }
-        if unavailable || scheduledFailure { throw HelperControlError.unavailable }
-        if !buildIdentities.isEmpty { buildIdentity = buildIdentities.removeFirst() }
-        return SyncHelperStatus(enabled: true, sharing: sharing, buildIdentity: buildIdentity)
+        if shouldFail { throw HelperControlError.unavailable }
+        return reply
     }
     func reload() async throws -> SyncHelperStatus {
         reloads += 1
