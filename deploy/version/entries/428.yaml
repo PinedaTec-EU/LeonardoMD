@@ -1,4 +1,4 @@
 {
-  "build": 80,
+  "build": 81,
   "summary": "Synchronization keeps its last status during checks, avoids repeated healthy-service checks, and removes obsolete invitations after network changes."
 }
