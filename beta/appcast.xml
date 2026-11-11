@@ -3,20 +3,20 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.3.1276</title>
-            <pubDate>Tue, 10 Nov 2026 23:33:58 +0100</pubDate>
+            <title>0.3.1316</title>
+            <pubDate>Wed, 11 Nov 2026 10:56:48 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>1276</sparkle:version>
-            <sparkle:shortVersionString>0.3.1276</sparkle:shortVersionString>
+            <sparkle:version>1316</sparkle:version>
+            <sparkle:shortVersionString>0.3.1316</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">The built-in updater now prepares Leonardo Sync before replacing the Mac application. It waits for a cooperative service stop, keeps existing consent for the next launch, and postpones installation if a safe stop cannot be confirmed. Downloading alone does not pause sharing. Cancelling the application quit resumes the service; an explicit decision to disable it remains respected. Newer registered services are protected against downgrade.
+            <description sparkle:format="markdown">Synchronization preferences keep their layout steady during refresh and show whether the service is checking, online, or unavailable beside the main switch. The full diagnostic remains available when it is longer than the visible space.
 
-Spanish and English help explains the updated installation behavior and recovery limits. This beta retains the unified project library with origin icons, project removal and restoration, on-demand document downloads and separate offline storage controls.
+Synchronized folders are now navigable and show only the files and folders in the current location.
 
-Known limits: the originating application must already include the preparation logic for it to protect a later update. This beta does not retroactively recover an older service that has already become unreachable after bundle replacement, and external installers do not run the built-in preparation. Automatic renewal across two signed installations and existing paired-iPhone access remain unvalidated. This download supports Apple silicon; Little Leonardo distribution is managed separately through TestFlight.
+The update preparation introduced in earlier betas continues to preserve sync access when replacing the Mac application. A service already unreachable after an older application replacement may still need controlled recovery.
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1276/LeonardoMD-0.3.1276.zip" length="24824469" type="application/octet-stream" sparkle:edSignature="zPeIuIuHNlOWgI2WFzHCcfwXbr7FLkKYDKbWtrLMSCBPYxgk7QYSiOavXPsfqjJtkiEKImkmRVVbFwPeGySzAg==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1316/LeonardoMD-0.3.1316.zip" length="24820430" type="application/octet-stream" sparkle:edSignature="bAXjpb/ueDMABIz2mAYyGxSk6beIaVhqD4Cge76derjJxyyY9byuwesjiLKsgi0ByIEoEL2rIrZducB779KBDQ==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.765</title>
