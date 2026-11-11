@@ -245,7 +245,7 @@ final class DesktopSyncController {
             consentFailureChecked = false
         } catch {
             self.error = error.localizedDescription
-            if usesHelper && !refreshHelper && !consentFailureChecked {
+            if usesHelper && !refreshHelper && (!consentFailureChecked || now() >= nextHelperRecovery) {
                 consentFailureChecked = true
                 nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
                 await helper.refresh()
@@ -314,7 +314,7 @@ final class DesktopSyncController {
             if usesHelper {
                 await helper.refresh()
                 updateRunningFromHelper()
-                guard helper.online, let current = helper.sharing,
+                guard !helper.checkingStatus, helper.online, let current = helper.sharing,
                       current.endpoint == running.endpoint,
                       current.certificateFingerprint == running.certificateFingerprint else { return }
             }

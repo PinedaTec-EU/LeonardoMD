@@ -173,6 +173,68 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(nextCalls, 3, "A new failure after recovery triggers one new check")
     }
 
+    func testPersistentConsentFailureRechecksHealthAfterInterval() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); let helper = fixture.controller(registration, control)
+        await helper.refresh()
+        let runtime = StatusRefreshRuntime(); let clock = StatusTestClock()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true, now: { clock.read() })
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        await runtime.setConsentFailure(true)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertTrue(helper.online)
+        await control.setUnavailable()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertTrue(helper.online, "The retry is bounded")
+        clock.advance(31)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertFalse(helper.online, "A later outage must not remain green indefinitely")
+    }
+
+    func testNegativeHealthRecoversInBothPreferenceRoles() async throws {
+        for sharing in [true, false] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            let control = HelperControlFake(); let helper = fixture.controller(registration, control)
+            await helper.refresh()
+            await control.setStatusEnabled(false); await helper.refresh()
+            XCTAssertEqual(helper.state, .failed)
+            XCTAssertTrue(helper.needsAutomaticRecovery)
+            await control.setStatusEnabled(true)
+            if sharing {
+                let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                    runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true)
+                await source.refreshConsent(refreshHelper: false)
+            } else { await helper.refreshIfRecoverable() }
+            XCTAssertTrue(helper.online)
+        }
+    }
+
+    func testActivationReconcilesRevocationDuringHeldHealth() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); let helper = fixture.controller(registration, control)
+        await helper.refresh(); await control.pauseStatus(at: 2)
+        let pending = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus else {
+            await control.resumeStatus(); await pending.value
+            XCTFail("Status did not reach the barrier"); return
+        }
+        registration.status = .requiresApproval
+        await helper.refreshAfterActivation()
+        await control.resumeStatus(); await pending.value
+        XCTAssertEqual(helper.state, .approvalRequired)
+    }
+
     func testNewInvitationUsesLatestHelperEndpoint() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
@@ -345,6 +407,52 @@ final class SyncHelperControllerTests: XCTestCase {
         await runtime.resumeInvitation(); await create.value
         XCTAssertNil(source.invitationURL, "Never publish a token with the previous endpoint")
         XCTAssertEqual(source.running?.endpoint, b.endpoint)
+    }
+
+    func testInvitationDiscardedWhenFinalHealthIsSuperseded() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let a = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+        let b = RunningDirectService(endpoint: URL(string: "https://192.168.1.5:40882")!, certificateFingerprint: Data(repeating: 5, count: 32))
+        await control.setSharing(a)
+        let helper = fixture.controller(registration, control); await helper.refresh()
+        let runtime = StatusRefreshRuntime(); await runtime.pauseInvitation()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true)
+        let create = Task { await source.createQR() }
+        for _ in 0..<5000 {
+            if await runtime.hasHeldInvitation { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await runtime.hasHeldInvitation else {
+            await runtime.resumeInvitation(); await create.value
+            XCTFail("Invitation did not reach the barrier"); return
+        }
+        await control.setSharing(b); await control.pauseStatus(at: 3)
+        await runtime.resumeInvitation()
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 3) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 3) else {
+            await control.resumeStatus(); await create.value
+            XCTFail("Final status did not reach the barrier"); return
+        }
+        await control.pauseStatus(at: 4)
+        let newer = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 4) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 4) else {
+            await control.resumeStatus(); await create.value; await newer.value
+            XCTFail("Superseding status did not reach the barrier"); return
+        }
+        await control.resumeStatus(at: 3); await create.value
+        XCTAssertNil(source.invitationURL, "A superseded final check cannot validate an invitation")
+        await control.resumeStatus(at: 4); await newer.value
     }
 
     func testPendingRenewalRetriesFromBothPreferenceRoles() async throws {
@@ -1423,19 +1531,22 @@ private actor HelperControlFake: SyncHelperControlAccess {
     func resumeReload() { reloadPaused = false; heldReload?.resume(); heldReload = nil }
     private(set) var reloads = 0
     private var paused = false
-    private var heldStatus: CheckedContinuation<Void, Never>?
-    var hasHeldStatus: Bool { heldStatus != nil }
+    private var heldStatuses: [Int: CheckedContinuation<Void, Never>] = [:]
+    var hasHeldStatus: Bool { !heldStatuses.isEmpty }
+    func hasHeldStatus(at call: Int) -> Bool { heldStatuses[call] != nil }
     func setUnavailable(_ value: Bool = true) { unavailable = value }
     func setStatusEnabled(_ value: Bool) { statusEnabled = value }
     func pauseStatus() { paused = true }
-    func resumeStatus() { paused = false; heldStatus?.resume(); heldStatus = nil }
+    func resumeStatus() { paused = false; let pending = heldStatuses.values; heldStatuses.removeAll(); pending.forEach { $0.resume() } }
+    func resumeStatus(at call: Int) { heldStatuses.removeValue(forKey: call)?.resume() }
     func status() async throws -> SyncHelperStatus {
         statusCalls += 1
         let scheduledFailure = failingStatusCalls.remove(statusCalls) != nil
         let shouldFail = unavailable || scheduledFailure
         if !shouldFail, !buildIdentities.isEmpty { buildIdentity = buildIdentities.removeFirst() }
         let reply = SyncHelperStatus(enabled: statusEnabled, sharing: sharing, buildIdentity: buildIdentity)
-        if paused || pausedStatusCall == statusCalls { await withCheckedContinuation { heldStatus = $0 } }
+        let call = statusCalls
+        if paused || pausedStatusCall == call { await withCheckedContinuation { heldStatuses[call] = $0 } }
         if shouldFail { throw HelperControlError.unavailable }
         return reply
     }

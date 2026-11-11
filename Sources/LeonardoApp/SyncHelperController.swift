@@ -291,10 +291,10 @@ final class SyncHelperController {
     }
 
     private func applyStatus(_ status: SyncHelperStatus) {
-        state = status.enabled ? .running : .disabled
-        sharing = status.sharing
-        supportsRubricExchange = status.supportsRubricExchange
-        error = status.error
+        state = status.enabled ? .running : .failed
+        sharing = status.enabled ? status.sharing : nil
+        supportsRubricExchange = status.enabled && status.supportsRubricExchange
+        error = status.enabled ? status.error : L10n.text("Offline · sync helper unavailable")
     }
 
     private func unregisterAfterStop() async throws {
@@ -338,8 +338,8 @@ final class SyncHelperController {
     }
 
     func refreshAfterActivation() async {
-        guard !checking else { return }
         if reconcileRegistration() { return }
+        guard !checking else { return }
         guard state == .approvalRequired else { return }
         await refresh()
     }
