@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1316
+
+- #421 Fixed: stabilize synchronization status refresh ([#422](https://github.com/PinedaTec-EU/LeonardoMD/pull/422))
+
+<p>Synchronization preferences keep their layout steady during refresh and show whether the service is checking, online, or unavailable beside the main switch.</p>
+
+Source: `0e8b4c3e408478741edd3848e8b33c3bb328acbe`. Delta: `{"build": 36}`.
+
 ## 0.3.1280
 
 - #425 Added: declare iOS export compliance ([#426](https://github.com/PinedaTec-EU/LeonardoMD/pull/426))

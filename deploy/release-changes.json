@@ -1039,6 +1039,16 @@
       "pr": 426,
       "summary": "Include the encryption compliance declaration in Little Leonardo builds.",
       "to_version": "0.3.1280"
+    },
+    {
+      "delta": {
+        "build": 36
+      },
+      "from_version": "0.3.1280",
+      "merge_sha": "0e8b4c3e408478741edd3848e8b33c3bb328acbe",
+      "pr": 422,
+      "summary": "Synchronization preferences keep their layout steady during refresh and show whether the service is checking, online, or unavailable beside the main switch.",
+      "to_version": "0.3.1316"
     }
   ],
   "initial_version": "0.1.56",
@@ -1049,5 +1059,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1280"
+  "version": "0.3.1316"
 }
