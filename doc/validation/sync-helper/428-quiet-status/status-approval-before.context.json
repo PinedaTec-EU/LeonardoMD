@@ -2,7 +2,7 @@
   "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
   "browser_version" : "Not applicable: native view, no browser engine",
   "capture_mode" : "element",
-  "captured_at" : "2026-11-11T16:32:02.884Z",
+  "captured_at" : "2026-11-11T17:01:38.653Z",
   "data_provenance" : "synthetic",
   "native_viewport_points" : {
     "height" : 260,
@@ -11,7 +11,7 @@
   "os" : "Version 27.0.1 (Build 26A434)",
   "route" : "\/native\/preferences\/synchronization",
   "screen" : "Synchronization helper status",
-  "source_sha" : "9a7c26145c0118a653233d171680e769c5f8bdd9",
+  "source_sha" : "141d5357ec97ab0272d3aa5df6f42d7bdf40ad9e",
   "state" : "Synthetic helper status: approval-before; viewport_css is the measured native-point equivalent; CSS is not applicable",
   "viewport_css" : {
     "height" : 260,
