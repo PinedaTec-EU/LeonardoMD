@@ -383,12 +383,12 @@ final class SyncHelperController {
         switch service.status {
         case .requiresApproval:
             lifecycleRevision += 1; revision += 1; presentationRevision += 1; state = .approvalRequired; error = nil
-            stateBeforeRefresh = state; errorBeforeRefresh = nil
+            presentCurrentState()
             sharing = nil; supportsRubricExchange = false
             return true
         case .notFound, .notRegistered:
             lifecycleRevision += 1; revision += 1; presentationRevision += 1; state = .failed; sharing = nil; supportsRubricExchange = false
-            stateBeforeRefresh = state; errorBeforeRefresh = error
+            presentCurrentState()
             return true
         default: return false
         }
@@ -404,7 +404,7 @@ final class SyncHelperController {
             throw offlineFailure()
         }
         guard initialRevision == lifecycleRevision else { throw offlineFailure() }
-        revision += 1
+        revision += 1; presentationRevision += 1
         let expected = revision
         let status: SyncHelperStatus
         do { status = try await client.status() }

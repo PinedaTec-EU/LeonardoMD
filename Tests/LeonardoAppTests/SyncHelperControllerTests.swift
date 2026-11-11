@@ -160,6 +160,60 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(helper.online, "An overlapping no-op check must not cancel renewal readiness")
     }
 
+    func testRegistrationChangesPresentDuringFirstHeldHealth() async throws {
+        for registrationState: SMAppService.Status in [.requiresApproval, .notRegistered] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.pauseStatus()
+            let helper = upgrading(fixture, registration, control)
+            let refresh = Task { await helper.refresh() }
+            for _ in 0..<5000 {
+                if await control.hasHeldStatus { break }
+                try await Task.sleep(for: .milliseconds(1))
+            }
+            guard await control.hasHeldStatus else {
+                await control.resumeStatus(); await refresh.value; XCTFail("Initial health not held"); return
+            }
+            registration.status = registrationState
+            await helper.refreshAfterActivation()
+            XCTAssertTrue(helper.hasPresentedStatus)
+            XCTAssertEqual(helper.displayedState, registrationState == .requiresApproval ? .approvalRequired : .failed)
+            await control.resumeStatus(); await refresh.value
+            XCTAssertTrue(helper.hasPresentedStatus)
+        }
+    }
+
+    func testPeerPreflightKeepsInitialStatusHiddenUntilItsHealthReturns() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.pauseStatus()
+        let helper = upgrading(fixture, registration, control)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 1) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 1) else {
+            await control.resumeStatus(); await refresh.value; XCTFail("Initial health not held"); return
+        }
+        let peer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await refresh.value; _ = try? await peer.value
+            XCTFail("Peer health not held"); return
+        }
+        await control.resumeStatus(at: 1); await refresh.value
+        XCTAssertFalse(helper.hasPresentedStatus, "A superseded initial health response must not show disabled")
+        await control.resumeStatus(at: 2); try await peer.value
+        XCTAssertTrue(helper.hasPresentedStatus)
+        XCTAssertEqual(helper.displayedState, .running)
+    }
+
     func testConcurrentPeerPreflightsDoNotInvalidateEachOther() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
