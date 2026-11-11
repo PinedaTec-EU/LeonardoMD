@@ -1300,6 +1300,31 @@ final class SyncHelperControllerTests: XCTestCase {
         }
     }
 
+    func testPollInvalidatesExplicitHostWithoutIPv4ChangeAndRecovers() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(helperEnabled: true, host: "::1")
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let service = RunningDirectService(endpoint: URL(string: "https://[::1]:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+        await control.setSharing(service)
+        let helper = fixture.controller(registration, control)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        var local = true; source.isLocalAddress = { _ in local }
+        await source.initialize(); await source.refreshConsent(refreshHelper: false); await source.createQR()
+        XCTAssertNotNil(source.invitationURL); XCTAssertNotNil(source.running)
+        local = false
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.invitationURL, "An invitation for a removed explicit host must disappear")
+        XCTAssertNil(source.running, "The removed endpoint must not remain visible")
+        local = true
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.running?.endpoint, service.endpoint, "Recovery must not require an IPv4 change")
+    }
+
     func testNewInvitationSurvivesFirstNetworkPollAfterAddressChange() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)

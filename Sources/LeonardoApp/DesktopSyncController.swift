@@ -64,6 +64,7 @@ final class DesktopSyncController {
     private var initialized = false
     private var consentFailureChecked = false
     private var lastNetworkAddresses: Set<String>?
+    private var lastEndpointAvailable: Bool?
     private var networkRefreshPending = false
     private var nextNetworkRefresh = Date.distantPast
     private var invitationNetworkAddresses: Set<String>?
@@ -234,11 +235,17 @@ final class DesktopSyncController {
         if invitationURL != nil && invitationNetworkAddresses != currentAddresses {
             invitationURL = nil; invitationNetworkAddresses = nil
         }
+        let endpointAvailable = helper.sharing?.endpoint.host.map { isCurrentHost($0, addresses: currentAddresses) } ?? true
+        if usesHelper && !endpointAvailable {
+            running = nil; invitationURL = nil; invitationNetworkAddresses = nil
+        }
         guard !InstanceRuntime.isAdditional, !busy else { return }
         var checkedHelper = false
         if usesHelper {
-            let networkChanged = lastNetworkAddresses.map { $0 != currentAddresses } ?? true
+            let networkChanged = (lastNetworkAddresses.map { $0 != currentAddresses } ?? true) ||
+                (lastEndpointAvailable.map { $0 != endpointAvailable } ?? false)
             lastNetworkAddresses = currentAddresses
+            lastEndpointAvailable = endpointAvailable
             if networkChanged {
                 networkRefreshPending = true; nextNetworkRefresh = .distantPast
                 updateRunningFromHelper()
