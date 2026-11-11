@@ -80,9 +80,12 @@ final class SyncHelperControllerTests: XCTestCase {
             return host.fittingSize.height
         }
         let baseline = sectionHeight()
-        controller.error = "Previous error"
+        await control.setStatusError("Previous error"); await controller.refresh()
+        XCTAssertEqual(controller.displayedError, "Previous error")
         XCTAssertEqual(sectionHeight(), baseline, "A one-line diagnostic must not move the following controls")
-        controller.error = String(repeating: "A long diagnostic message. ", count: 20)
+        let longError = String(repeating: "A long diagnostic message. ", count: 20)
+        await control.setStatusError(longError); await controller.refresh()
+        XCTAssertEqual(controller.displayedError, longError)
         XCTAssertEqual(sectionHeight(), baseline, "A wrapped diagnostic must not move the following controls")
         registration.status = .requiresApproval
         await controller.refresh()
@@ -249,6 +252,43 @@ final class SyncHelperControllerTests: XCTestCase {
         await control.resumeStatus(at: 2); try await peer.value
         XCTAssertTrue(helper.hasPresentedStatus)
         XCTAssertEqual(helper.displayedState, .running)
+    }
+
+    func testNewerOperationalFailureBlocksOlderPeerBeforeRetryCompletes() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let preferences = PeerFinalPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let retry = StartupPauseBarrier()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: { await retry.pause() }),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        let peer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await preferences.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await preferences.isHeld else {
+            await preferences.release(); _ = try? await peer.value; XCTFail("Final consent not held"); return
+        }
+        await control.failStatus(at: 3)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await retry.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await retry.isHeld else {
+            await retry.release(); await preferences.release(); await refresh.value; _ = try? await peer.value
+            XCTFail("Retry not held"); return
+        }
+        XCTAssertEqual(helper.displayedState, .running, "Transient failure stays visually hidden")
+        await preferences.release()
+        do { try await peer.value; XCTFail("A newer observed failure must block the older health response") } catch {}
+        await retry.release(); await refresh.value
+        XCTAssertTrue(helper.online)
     }
 
     func testConcurrentHealthyPeerPreflightsSucceedWithoutCachedHealth() async throws {
@@ -1909,6 +1949,21 @@ private enum HelperControlError: Error { case unavailable }
     }
     func openApprovalSettings() {}
 }
+private actor PeerFinalPreferencesBarrier {
+    let configurations: ConfigurationStore
+    let url: URL
+    private var calls = 0
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var released = false
+    var isHeld: Bool { continuation != nil }
+    init(configurations: ConfigurationStore, url: URL) { self.configurations = configurations; self.url = url }
+    func load() async throws -> MobileSyncPreferences {
+        calls += 1
+        if calls == 2 && !released { await withCheckedContinuation { continuation = $0 } }
+        return try await configurations.loadGlobalPreferences(at: url).mobileSync
+    }
+    func release() { released = true; continuation?.resume(); continuation = nil }
+}
 private actor StartupPauseBarrier {
     private var continuation: CheckedContinuation<Void, Never>?
     private var released = false
@@ -1934,6 +1989,7 @@ private actor PeerPreferencesBarrier {
 private actor HelperControlFake: SyncHelperControlAccess {
     private var unavailable = false
     private var statusEnabled = true
+    private var statusError: String?
     private var buildIdentity: SyncHelperBuildIdentity?
     private var buildIdentities: [SyncHelperBuildIdentity?] = []
     private var sharing: RunningDirectService?
@@ -1957,6 +2013,7 @@ private actor HelperControlFake: SyncHelperControlAccess {
     func hasHeldStatus(at call: Int) -> Bool { heldStatuses[call] != nil }
     func setUnavailable(_ value: Bool = true) { unavailable = value }
     func setStatusEnabled(_ value: Bool) { statusEnabled = value }
+    func setStatusError(_ value: String?) { statusError = value }
     func pauseStatus() { paused = true }
     func resumeStatus() { paused = false; let pending = heldStatuses.values; heldStatuses.removeAll(); pending.forEach { $0.resume() } }
     func resumeStatus(at call: Int) { heldStatuses.removeValue(forKey: call)?.resume() }
@@ -1965,7 +2022,7 @@ private actor HelperControlFake: SyncHelperControlAccess {
         let scheduledFailure = failingStatusCalls.remove(statusCalls) != nil
         let shouldFail = unavailable || scheduledFailure
         if !shouldFail, !buildIdentities.isEmpty { buildIdentity = buildIdentities.removeFirst() }
-        let reply = SyncHelperStatus(enabled: statusEnabled, sharing: sharing, buildIdentity: buildIdentity)
+        let reply = SyncHelperStatus(enabled: statusEnabled, sharing: sharing, error: statusError, buildIdentity: buildIdentity)
         let call = statusCalls
         if paused || pausedStatusCall == call { await withCheckedContinuation { heldStatuses[call] = $0 } }
         if shouldFail { throw HelperControlError.unavailable }
