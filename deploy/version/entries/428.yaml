@@ -1,4 +1,4 @@
 {
-  "build": 16,
+  "build": 17,
   "summary": "Synchronization preferences keep the last service status during checks, show details only for problems, and avoid repeated service health checks while the page is open."
 }
