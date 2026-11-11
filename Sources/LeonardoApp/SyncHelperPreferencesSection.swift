@@ -22,12 +22,15 @@ struct SyncHelperPreferencesSection: View {
                     .lineLimit(1).foregroundStyle(.secondary)
                 Text(L10n.text("Required to share and connect. When off, both directions are offline even with LeonardoMD open. Starts after login and keeps sharing saved files when you close the editor."))
                     .font(.caption).foregroundStyle(.secondary)
-                if controller.state == .approvalRequired {
-                    Button(L10n.text("Open Login Items settings")) { controller.openApprovalSettings() }
-                }
+                Button(L10n.text("Open Login Items settings")) { controller.openApprovalSettings() }
+                    .opacity(controller.state == .approvalRequired ? 1 : 0)
+                    .disabled(controller.state != .approvalRequired)
+                    .accessibilityHidden(controller.state != .approvalRequired)
                 Text(controller.error ?? " ")
                     .font(.caption).foregroundStyle(.secondary)
-                    .lineLimit(2, reservesSpace: true)
+                    .lineLimit(2)
+                    .frame(height: 30, alignment: .topLeading)
+                    .help(controller.error ?? "")
                     .accessibilityHidden(controller.error == nil)
             }
     }

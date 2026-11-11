@@ -54,12 +54,51 @@ final class SyncHelperControllerTests: XCTestCase {
             SyncHelperPreferencesSection(controller: controller)
             Divider()
             Text("Share from this Mac")
-        }.toggleStyle(PremiumSwitchStyle()).padding(16).frame(width: 532, height: 220, alignment: .topLeading)
+        }.toggleStyle(PremiumSwitchStyle()).padding(16).frame(width: 532, height: 260, alignment: .topLeading)
             .background(Color(nsColor: .windowBackgroundColor)))
-        try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 220),
+        try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 260),
             to: destination.appendingPathComponent("status-\(state).png"), language: "en",
             state: "Synthetic helper status: \(state)", route: "/native/preferences/synchronization",
             screen: "Synchronization helper status")
+    }
+
+    func testStatusSectionHeightDoesNotChangeWithDiagnosticOrApproval() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let controller = upgrading(fixture, registration, control)
+        await controller.refresh()
+        func sectionHeight() -> CGFloat {
+            let host = NSHostingView(rootView: SyncHelperPreferencesSection(controller: controller).frame(width: 532))
+            host.layoutSubtreeIfNeeded()
+            return host.fittingSize.height
+        }
+        let baseline = sectionHeight()
+        controller.error = "Previous error"
+        XCTAssertEqual(sectionHeight(), baseline, "A one-line diagnostic must not move the following controls")
+        controller.error = String(repeating: "A long diagnostic message. ", count: 20)
+        XCTAssertEqual(sectionHeight(), baseline, "A wrapped diagnostic must not move the following controls")
+        registration.status = .requiresApproval
+        await controller.refresh()
+        XCTAssertEqual(controller.state, .approvalRequired)
+        XCTAssertEqual(sectionHeight(), baseline, "The authorization action must not move the following controls")
+    }
+
+    func testApprovalTransitionKeepsSpaceForLoginItemsAction() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let controller = upgrading(fixture, registration, control)
+        await controller.refresh()
+        XCTAssertTrue(controller.online)
+        try await captureStatusIndicator(controller, state: "approval-before")
+        registration.status = .requiresApproval
+        await controller.refresh()
+        XCTAssertEqual(controller.state, .approvalRequired)
+        XCTAssertFalse(controller.checkingStatus)
+        try await captureStatusIndicator(controller, state: "approval-required")
     }
 
     func testMissingRegistrationPreservesErrorDuringRecovery() async throws {
