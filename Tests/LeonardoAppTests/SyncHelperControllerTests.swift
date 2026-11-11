@@ -194,6 +194,52 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertFalse(helper.online, "A later outage must not remain green indefinitely")
     }
 
+    func testApprovalGrantedAgainWhileOlderHealthIsHeld() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); let helper = fixture.controller(registration, control)
+        await helper.refresh(); await control.pauseStatus(at: 2)
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await old.value; XCTFail("Health not held"); return
+        }
+        registration.status = .requiresApproval; await helper.refreshAfterActivation()
+        XCTAssertEqual(helper.state, .approvalRequired)
+        registration.status = .enabled; await helper.refreshAfterActivation()
+        XCTAssertTrue(helper.online, "Reapproval starts a fresh check even while the old one is held")
+        await control.resumeStatus(at: 2); await old.value
+        XCTAssertTrue(helper.online)
+    }
+
+    func testInvitationCanBePublishedWhileOlderHealthIsHeld() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let endpoint = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+        await control.setSharing(endpoint)
+        let helper = fixture.controller(registration, control); await helper.refresh()
+        await control.pauseStatus(at: 2)
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await old.value; XCTFail("Health not held"); return
+        }
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true)
+        await source.createQR()
+        XCTAssertNotNil(source.invitationURL, "An older pending check must not invalidate a freshly confirmed invitation")
+        await control.resumeStatus(at: 2); await old.value
+    }
+
     func testNegativeHealthRecoversInBothPreferenceRoles() async throws {
         for sharing in [true, false] {
             let fixture = try ControllerFixture(); defer { fixture.remove() }

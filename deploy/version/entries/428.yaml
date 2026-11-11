@@ -1,4 +1,4 @@
 {
-  "build": 31,
-  "summary": "Synchronization preferences keep the last service status during checks, show details only for problems, and avoid repeated service health checks while the page is open."
+  "build": 33,
+  "summary": "Synchronization keeps its last status during checks, avoids repeated healthy-service checks, and removes obsolete invitations after network changes."
 }

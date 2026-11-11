@@ -28,6 +28,7 @@ final class SyncHelperController {
     private let verifyPackage: @Sendable () throws -> Void
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "sync-helper-control")
     private var revision = 0
+    private var lastSuccessfulRefreshRevision = 0
     private let expectedBuildIdentity: SyncHelperBuildIdentity?
     private static let upgradeRetryInterval: TimeInterval = 30
     static let errorRecoveryInterval: TimeInterval = 30
@@ -124,6 +125,7 @@ final class SyncHelperController {
                 }
                 error = nil
                 applyStatus(status)
+                if status.enabled { lastSuccessfulRefreshRevision = expected }
             case .notFound, .notRegistered:
                 if expectedBuildIdentity != nil {
                     await reconcileUpgrade(pending: settings.mobileSync.helperUpgradeToken, current: nil)
@@ -332,6 +334,12 @@ final class SyncHelperController {
 
     func openApprovalSettings() { service.openApprovalSettings() }
 
+    func refreshForInvitation() async -> Bool {
+        let previous = lastSuccessfulRefreshRevision
+        await refresh()
+        return lastSuccessfulRefreshRevision > previous && lastSuccessfulRefreshRevision == revision && online
+    }
+
     func refreshIfRecoverable() async {
         guard needsAutomaticRecovery, !checking, !busy else { return }
         await refresh()
@@ -339,7 +347,6 @@ final class SyncHelperController {
 
     func refreshAfterActivation() async {
         if reconcileRegistration() { return }
-        guard !checking else { return }
         guard state == .approvalRequired else { return }
         await refresh()
     }

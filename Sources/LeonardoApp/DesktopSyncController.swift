@@ -312,9 +312,9 @@ final class DesktopSyncController {
         do {
             let invitation = try await runtime.createInvitation()
             if usesHelper {
-                await helper.refresh()
+                let confirmed = await helper.refreshForInvitation()
                 updateRunningFromHelper()
-                guard !helper.checkingStatus, helper.online, let current = helper.sharing,
+                guard confirmed, let current = helper.sharing,
                       current.endpoint == running.endpoint,
                       current.certificateFingerprint == running.certificateFingerprint else { return }
             }
