@@ -249,7 +249,7 @@ struct DesktopPeerRemoteProjectsView: View {
     }
 
     private func fileNotices(for connection: DesktopPeerConnection) -> [FileNotice] {
-        (controller.available[connection.id] ?? []).flatMap { descriptor in
+        (controller.available[connection.id] ?? []).flatMap { descriptor -> [FileNotice] in
             let downloadID = DesktopPeerController.downloadID(connectionID: connection.id, projectID: descriptor.id)
             guard let project = controller.downloads.projects.first(where: { $0.id == downloadID }) else { return [] }
             let paths = controller.reviewStore.pendingFilePaths(connectionID: connection.id, projectID: descriptor.id)

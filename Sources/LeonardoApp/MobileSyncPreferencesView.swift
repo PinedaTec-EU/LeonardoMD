@@ -148,7 +148,6 @@ struct MobileSyncPreferencesView: View {
             }
         }
     }
-    }
 
 
     private func qrImage(_ value: String) -> NSImage? {
