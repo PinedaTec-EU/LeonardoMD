@@ -227,7 +227,7 @@ final class DesktopSyncController {
             let currentAddresses = Set(addresses)
             let networkChanged = lastNetworkAddresses.map { $0 != currentAddresses } ?? false
             lastNetworkAddresses = currentAddresses
-            let recoveryDue = helper.state == .failed && now() >= nextHelperRecovery
+            let recoveryDue = helper.needsAutomaticRecovery && now() >= nextHelperRecovery
             if refreshHelper || networkChanged || recoveryDue {
                 nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
                 await helper.refresh()
@@ -312,6 +312,8 @@ final class DesktopSyncController {
         do {
             let invitation = try await runtime.createInvitation()
             if usesHelper {
+                await helper.refresh()
+                updateRunningFromHelper()
                 guard helper.online, let current = helper.sharing,
                       current.endpoint == running.endpoint,
                       current.certificateFingerprint == running.certificateFingerprint else { return }

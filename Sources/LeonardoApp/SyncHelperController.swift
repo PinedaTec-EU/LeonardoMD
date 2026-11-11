@@ -62,6 +62,9 @@ final class SyncHelperController {
 
     var online: Bool { state == .running && !installation.blocksOperations }
     var checkingStatus: Bool { checking || busy }
+    var needsAutomaticRecovery: Bool {
+        state == .failed || (state == .starting && nextUpgradeAttempt != .distantPast)
+    }
     var displayedState: State { checking ? stateBeforeRefresh : state }
     var displayedError: String? { checking ? errorBeforeRefresh : error }
     var statusText: String {
@@ -329,8 +332,8 @@ final class SyncHelperController {
 
     func openApprovalSettings() { service.openApprovalSettings() }
 
-    func refreshIfFailed() async {
-        guard state == .failed, !checking, !busy else { return }
+    func refreshIfRecoverable() async {
+        guard needsAutomaticRecovery, !checking, !busy else { return }
         await refresh()
     }
 
@@ -368,6 +371,7 @@ final class SyncHelperController {
         do { status = try await client.status() }
         catch {
             if expected == revision && !Task.isCancelled {
+                revision += 1
                 state = .failed; sharing = nil; supportsRubricExchange = false
                 self.error = L10n.text(error.localizedDescription)
             }
@@ -381,6 +385,7 @@ final class SyncHelperController {
               !identity.needsReplacement(by: expectedBuildIdentity) else {
             if expected == revision && current.helperEnabled && current.helperUpgradeToken == nil && !busy {
                 if !reconcileRegistration() {
+                    revision += 1
                     state = .failed; sharing = nil; supportsRubricExchange = false
                     error = L10n.text("Offline · sync helper unavailable")
                 }
@@ -393,6 +398,7 @@ final class SyncHelperController {
             guard online, enabled else { throw offlineFailure() }
             return
         }
+        revision += 1
         enabled = true
         applyStatus(status)
     }

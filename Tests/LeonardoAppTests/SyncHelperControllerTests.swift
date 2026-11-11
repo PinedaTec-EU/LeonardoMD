@@ -265,14 +265,118 @@ final class SyncHelperControllerTests: XCTestCase {
         let helper = fixture.controller(registration, control)
         await helper.refresh(); XCTAssertTrue(helper.online)
         let healthyCalls = await control.statusCalls
-        await helper.refreshIfFailed()
+        await helper.refreshIfRecoverable()
         let unchangedCalls = await control.statusCalls
         XCTAssertEqual(unchangedCalls, healthyCalls, "Healthy helpers are not periodically checked")
         await control.setUnavailable()
         await helper.refresh(); XCTAssertEqual(helper.state, .failed)
         await control.setUnavailable(false)
-        await helper.refreshIfFailed()
+        await helper.refreshIfRecoverable()
         XCTAssertTrue(helper.online, "The connections page can recover without reopening")
+    }
+
+    func testNewerPeerFailureCannotBeOverwrittenByOlderRefresh() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control)
+        await helper.refresh(); XCTAssertTrue(helper.online)
+        await control.pauseStatus(at: 2); await control.failStatus(at: 3)
+        let stale = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus else {
+            await control.resumeStatus(); await stale.value
+            XCTFail("Refresh did not reach the barrier"); return
+        }
+        do { try await helper.requireReadyHelper(); XCTFail("Expected local helper failure") } catch {}
+        await control.resumeStatus(); await stale.value
+        XCTAssertEqual(helper.state, .failed)
+        XCTAssertFalse(helper.online, "An older success must not erase a newer failure")
+    }
+
+    func testNewerPeerSuccessCannotBeOverwrittenByOlderRefreshFailure() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control)
+        await helper.refresh(); XCTAssertTrue(helper.online)
+        await control.pauseStatus(at: 2); await control.failStatus(at: 2)
+        let stale = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus else {
+            await control.resumeStatus(); await stale.value
+            XCTFail("Refresh did not reach the barrier"); return
+        }
+        try await helper.requireReadyHelper()
+        await control.resumeStatus(); await stale.value
+        XCTAssertTrue(helper.online, "An older failure must not erase a newer success")
+    }
+
+    func testInvitationIsDiscardedIfEndpointChangesDuringCreation() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let a = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+        let b = RunningDirectService(endpoint: URL(string: "https://192.168.1.5:40882")!, certificateFingerprint: Data(repeating: 5, count: 32))
+        await control.setSharing(a)
+        let helper = fixture.controller(registration, control); await helper.refresh()
+        let runtime = StatusRefreshRuntime(); await runtime.pauseInvitation()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                                           runtime: runtime, helper: helper, usesHelper: true)
+        let create = Task { await source.createQR() }
+        for _ in 0..<5000 {
+            if await runtime.hasHeldInvitation { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await runtime.hasHeldInvitation else {
+            await runtime.resumeInvitation(); await create.value
+            XCTFail("Invitation did not reach the barrier"); return
+        }
+        await control.setSharing(b)
+        await runtime.resumeInvitation(); await create.value
+        XCTAssertNil(source.invitationURL, "Never publish a token with the previous endpoint")
+        XCTAssertEqual(source.running?.endpoint, b.endpoint)
+    }
+
+    func testPendingRenewalRetriesFromBothPreferenceRoles() async throws {
+        for sharing in [true, false] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            registration.failUnregister = true
+            let control = HelperControlFake(); await control.setBuildIdentities([nil, nil, nil, replacement])
+            let clock = StatusTestClock()
+            let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                service: registration, client: control, expectedBuildIdentity: replacement,
+                now: { clock.read() }, startup: .init(attempts: 1, pause: {}),
+                hasExecutable: { true }, verifyPackage: {})
+            await helper.refresh()
+            XCTAssertEqual(helper.state, .starting)
+            XCTAssertTrue(helper.needsAutomaticRecovery)
+            registration.failUnregister = false
+            clock.advance(30)
+            if sharing {
+                let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                    runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true, now: { clock.read() })
+                source.networkAddresses = { _ in ["192.168.1.4"] }
+                await source.refreshConsent(refreshHelper: false)
+            } else {
+                await helper.refreshIfRecoverable()
+            }
+            let settings = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+            XCTAssertNil(settings.mobileSync.helperUpgradeToken)
+            XCTAssertEqual(registration.unregistrations, 1)
+            XCTAssertTrue(helper.online, "Both preference roles must recover pending renewal")
+        }
     }
 
     func testApprovalTransitionKeepsSpaceForLoginItemsAction() async throws {
@@ -1345,6 +1449,11 @@ private actor HelperControlFake: SyncHelperControlAccess {
 
 private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
     private var consentFailure = false
+    private var invitationPaused = false
+    private var heldInvitation: CheckedContinuation<Void, Never>?
+    var hasHeldInvitation: Bool { heldInvitation != nil }
+    func pauseInvitation() { invitationPaused = true }
+    func resumeInvitation() { invitationPaused = false; heldInvitation?.resume(); heldInvitation = nil }
     func setConsentFailure(_ value: Bool) { consentFailure = value }
     func start(host: String, port: UInt16, projects: [SharedProjectSource], allowPrivateOverlay: Bool) async throws -> RunningDirectService { throw DesktopRuntimeError.notRunning }
     func stop() async throws {}
@@ -1354,6 +1463,7 @@ private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
     }
     func incomingProposals() async throws -> [DesktopPeerIncomingProposal] { [] }
     func createInvitation() async throws -> PairingInvitation {
+        if invitationPaused { await withCheckedContinuation { heldInvitation = $0 } }
         var registry = PairingRegistry(); registry.setEnabled(true)
         return try registry.createInvitation(now: Date())
     }
