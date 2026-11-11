@@ -28,6 +28,7 @@ final class SyncHelperController {
     private let verifyPackage: @Sendable () throws -> Void
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "sync-helper-control")
     private var revision = 0
+    private var lifecycleRevision = 0
     private var presentationRevision = 0
     private var lastSuccessfulRefreshRevision = 0
     private let expectedBuildIdentity: SyncHelperBuildIdentity?
@@ -37,6 +38,7 @@ final class SyncHelperController {
     private let now: @MainActor () -> Date
     private var nextUpgradeAttempt = Date.distantPast
     private let preferencesURL: URL
+    private let loadPeerPreferences: @Sendable () async throws -> MobileSyncPreferences
     init(preferencesURL: URL = AppSession.preferencesURL,
          configurations: ConfigurationStore = .shared,
          service: any SyncHelperRegistration = SystemSyncHelperRegistration(),
@@ -44,6 +46,7 @@ final class SyncHelperController {
          expectedBuildIdentity: SyncHelperBuildIdentity? = SyncHelperBuildIdentity(bundleURL: Bundle.main.bundleURL),
          now: @escaping @MainActor () -> Date = Date.init,
          startup: SyncHelperStartupPolicy = .init(),
+         loadPeerPreferences: (@Sendable () async throws -> MobileSyncPreferences)? = nil,
          hasExecutable: @escaping @Sendable () -> Bool = {
              FileManager.default.isExecutableFile(atPath: Bundle.main.bundleURL
                  .appendingPathComponent("Contents/MacOS/" + SyncHelperContract.executableName).path)
@@ -56,6 +59,9 @@ final class SyncHelperController {
         self.now = now
         self.expectedBuildIdentity = expectedBuildIdentity
         self.preferencesURL = preferencesURL; self.configurations = configurations
+        self.loadPeerPreferences = loadPeerPreferences ?? {
+            try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
+        }
         self.service = service; self.client = client; self.hasExecutable = hasExecutable; self.verifyPackage = verifyPackage
         installation = SyncHelperInstallation(preferencesURL: preferencesURL, configurations: configurations,
             service: service, client: client, expectedBuildIdentity: expectedBuildIdentity,
@@ -92,7 +98,6 @@ final class SyncHelperController {
             if presentation == presentationRevision { presentCurrentState() }
             activeRefreshes -= 1
             checking = activeRefreshes > 0
-            if !checking { hasPresentedStatus = true }
         }
         await refreshOnce()
         // An update may briefly invalidate the first authenticated connection.
@@ -115,6 +120,7 @@ final class SyncHelperController {
     }
 
     private func presentCurrentState() {
+        hasPresentedStatus = true
         stateBeforeRefresh = state
         errorBeforeRefresh = error
     }
@@ -161,7 +167,7 @@ final class SyncHelperController {
             // An explicit denial cancels the durable upgrade token even while
             // graceful shutdown is suspended. It must never be restored later.
             guard !enabled else { return }
-            revision += 1; presentationRevision += 1; self.enabled = false; state = .disabled; stateBeforeRefresh = .disabled; errorBeforeRefresh = nil; sharing = nil
+            lifecycleRevision += 1; revision += 1; presentationRevision += 1; self.enabled = false; state = .disabled; stateBeforeRefresh = .disabled; errorBeforeRefresh = nil; sharing = nil
             supportsRubricExchange = false
             do { try await configurations.setSyncHelperEnabled(false, at: preferencesURL) }
             catch { state = .failed; self.error = L10n.text(error.localizedDescription); presentCurrentState() }
@@ -169,7 +175,7 @@ final class SyncHelperController {
         }
         if !enabled { stateBeforeRefresh = .disabled; errorBeforeRefresh = nil }
         if enabled && !self.enabled { hasPresentedStatus = false }
-        revision += 1; presentationRevision += 1 // Invalidate prior health and presentation.
+        lifecycleRevision += 1; revision += 1; presentationRevision += 1 // Invalidate prior health and presentation.
         let presentation = presentationRevision
         defer {
             if presentation == presentationRevision { presentCurrentState(); hasPresentedStatus = true }
@@ -213,7 +219,7 @@ final class SyncHelperController {
         let currentTime = now()
         guard currentTime >= nextUpgradeAttempt else { return }
         nextUpgradeAttempt = currentTime.addingTimeInterval(Self.upgradeRetryInterval)
-        revision += 1
+        lifecycleRevision += 1; revision += 1
         let expected = revision
         busy = true; upgrading = true
         defer { busy = false; upgrading = false }
@@ -327,7 +333,7 @@ final class SyncHelperController {
 
     func prepareForApplicationUpdate() async -> Bool {
         guard !busy, !InstanceRuntime.isAdditional else { return false }
-        revision += 1; presentationRevision += 1 // Discard pre-install health and presentation.
+        lifecycleRevision += 1; revision += 1; presentationRevision += 1 // Discard pre-install health and presentation.
         busy = true
         do {
             try await installation.prepare()
@@ -376,12 +382,12 @@ final class SyncHelperController {
         guard enabled, !busy, !upgrading, !installation.blocksOperations else { return false }
         switch service.status {
         case .requiresApproval:
-            revision += 1; presentationRevision += 1; state = .approvalRequired; error = nil
+            lifecycleRevision += 1; revision += 1; presentationRevision += 1; state = .approvalRequired; error = nil
             stateBeforeRefresh = state; errorBeforeRefresh = nil
             sharing = nil; supportsRubricExchange = false
             return true
         case .notFound, .notRegistered:
-            revision += 1; presentationRevision += 1; state = .failed; sharing = nil; supportsRubricExchange = false
+            lifecycleRevision += 1; revision += 1; presentationRevision += 1; state = .failed; sharing = nil; supportsRubricExchange = false
             stateBeforeRefresh = state; errorBeforeRefresh = error
             return true
         default: return false
@@ -389,15 +395,15 @@ final class SyncHelperController {
     }
 
     func requireReadyHelper() async throws {
-        let initialRevision = revision
-        let settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
+        let initialRevision = lifecycleRevision
+        let settings = try await loadPeerPreferences()
         guard permitsPeerOperations(settings) else {
-            if initialRevision == revision && settings.helperEnabled && settings.helperUpgradeToken == nil {
+            if initialRevision == lifecycleRevision && settings.helperEnabled && settings.helperUpgradeToken == nil {
                 reconcileRegistration()
             }
             throw offlineFailure()
         }
-        guard initialRevision == revision else { throw offlineFailure() }
+        guard initialRevision == lifecycleRevision else { throw offlineFailure() }
         revision += 1
         let expected = revision
         let status: SyncHelperStatus
@@ -413,7 +419,7 @@ final class SyncHelperController {
         }
         // Consent can change while authenticated health is in flight. Re-read
         // before the adapter is allowed to send even its first peer request.
-        let current = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
+        let current = try await loadPeerPreferences()
         guard permitsPeerOperations(current), status.enabled,
               let expectedBuildIdentity, let identity = status.buildIdentity,
               !identity.needsReplacement(by: expectedBuildIdentity) else {

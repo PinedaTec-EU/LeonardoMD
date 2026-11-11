@@ -160,6 +160,96 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(helper.online, "An overlapping no-op check must not cancel renewal readiness")
     }
 
+    func testConcurrentPeerPreflightsDoNotInvalidateEachOther() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let barrier = PeerPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await barrier.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh(); await control.pauseStatus()
+        let first = Task { try await helper.requireReadyHelper() }
+        let second = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await barrier.count == 2 { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await barrier.count == 2 else {
+            await barrier.release(); await control.resumeStatus(); _ = try? await first.value; _ = try? await second.value
+            XCTFail("Preflights did not reach the barrier"); return
+        }
+        await barrier.release()
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2), await control.hasHeldStatus(at: 3) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let firstReachedHealth = await control.hasHeldStatus(at: 2)
+        let secondReachedHealth = await control.hasHeldStatus(at: 3)
+        let bothReachedHealth = firstReachedHealth && secondReachedHealth
+        await control.resumeStatus()
+        XCTAssertTrue(bothReachedHealth, "Both healthy preflights must reach the helper")
+        try await first.value; try await second.value
+        XCTAssertTrue(helper.online)
+    }
+
+    func testValidRefreshPresentsWhileOlderRefreshIsStillHeld() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.pauseStatus(at: 1)
+        let helper = upgrading(fixture, registration, control)
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 1) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 1) else {
+            await control.resumeStatus(); await old.value; XCTFail("Old health not held"); return
+        }
+        await helper.refresh()
+        XCTAssertTrue(helper.checking)
+        XCTAssertTrue(helper.hasPresentedStatus, "The latest confirmed health must be presented immediately")
+        XCTAssertEqual(helper.displayedState, .running)
+        await control.resumeStatus(at: 1); await old.value
+    }
+
+    func testOldRefreshCannotPresentDisabledStateDuringFirstEnable() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: {}), hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh(); await control.pauseStatus(at: 2)
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await old.value; XCTFail("Old health not held"); return
+        }
+        await helper.setEnabled(false)
+        registration.registrationResult = .enabled
+        await control.pauseStatus(at: 3)
+        let enable = Task { await helper.setEnabled(true) }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 3) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 3) else {
+            await control.resumeStatus(); await old.value; await enable.value; XCTFail("New health not held"); return
+        }
+        await control.resumeStatus(at: 2); await old.value
+        XCTAssertFalse(helper.hasPresentedStatus, "A stale completion must not present the disabled snapshot")
+        await control.resumeStatus(at: 3); await enable.value
+        XCTAssertTrue(helper.hasPresentedStatus)
+        XCTAssertEqual(helper.displayedState, .running)
+    }
+
     func testFirstEnableKeepsIndicatorHiddenUntilHealthCompletes() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         let registration = HelperRegistrationFake(); registration.registrationResult = .enabled
@@ -1694,6 +1784,19 @@ private enum HelperControlError: Error { case unavailable }
         status = .notRegistered
     }
     func openApprovalSettings() {}
+}
+private actor PeerPreferencesBarrier {
+    let configurations: ConfigurationStore
+    let url: URL
+    private var waiting: [CheckedContinuation<Void, Never>] = []
+    private var released = false
+    var count: Int { waiting.count }
+    init(configurations: ConfigurationStore, url: URL) { self.configurations = configurations; self.url = url }
+    func load() async throws -> MobileSyncPreferences {
+        if !released { await withCheckedContinuation { waiting.append($0) } }
+        return try await configurations.loadGlobalPreferences(at: url).mobileSync
+    }
+    func release() { released = true; let pending = waiting; waiting.removeAll(); pending.forEach { $0.resume() } }
 }
 private actor HelperControlFake: SyncHelperControlAccess {
     private var unavailable = false
