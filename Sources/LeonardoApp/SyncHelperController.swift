@@ -11,6 +11,8 @@ final class SyncHelperController {
     private(set) var state = State.disabled
     private(set) var enabled = false
     private(set) var busy = false
+    private(set) var checking = false
+    private var activeRefreshes = 0
     private(set) var upgrading = false
     private(set) var sharing: RunningDirectService?
     private(set) var supportsRubricExchange = false
@@ -55,6 +57,7 @@ final class SyncHelperController {
     }
 
     var online: Bool { state == .running && !installation.blocksOperations }
+    var checkingStatus: Bool { checking || busy }
     var statusText: String {
         switch state {
         case .notInstalled: L10n.text("Sync helper is not installed")
@@ -67,6 +70,12 @@ final class SyncHelperController {
     }
 
     func refresh() async {
+        activeRefreshes += 1
+        checking = true
+        defer {
+            activeRefreshes -= 1
+            checking = activeRefreshes > 0
+        }
         await refreshOnce()
         // An update may briefly invalidate the first authenticated connection.
         // Retry health without treating an unknown live process as disposable.
@@ -86,13 +95,12 @@ final class SyncHelperController {
             let settings = try await configurations.loadGlobalPreferences(at: preferencesURL)
             guard expected == revision else { return }
             enabled = settings.mobileSync.helperEnabled || settings.mobileSync.helperUpgradeToken != nil
-            error = nil
             guard hasExecutable() else {
-                state = .notInstalled; sharing = nil; supportsRubricExchange = false; return
+                error = nil; state = .notInstalled; sharing = nil; supportsRubricExchange = false; return
             }
-            guard enabled else { state = .disabled; sharing = nil; supportsRubricExchange = false; return }
+            guard enabled else { error = nil; state = .disabled; sharing = nil; supportsRubricExchange = false; return }
             switch service.status {
-            case .requiresApproval: state = .approvalRequired; sharing = nil; supportsRubricExchange = false
+            case .requiresApproval: error = nil; state = .approvalRequired; sharing = nil; supportsRubricExchange = false
             case .enabled:
                 let status = try await client.status()
                 guard expected == revision else { return }
@@ -103,12 +111,13 @@ final class SyncHelperController {
                                            current: status.buildIdentity)
                     return
                 }
+                error = nil
                 applyStatus(status)
             case .notFound, .notRegistered:
                 if expectedBuildIdentity != nil {
                     await reconcileUpgrade(pending: settings.mobileSync.helperUpgradeToken, current: nil)
-                } else { state = .failed; sharing = nil; supportsRubricExchange = false }
-            @unknown default: state = .failed; sharing = nil; supportsRubricExchange = false
+                } else { error = nil; state = .failed; sharing = nil; supportsRubricExchange = false }
+            @unknown default: error = nil; state = .failed; sharing = nil; supportsRubricExchange = false
             }
         } catch {
             guard expected == revision else { return }
@@ -214,12 +223,19 @@ final class SyncHelperController {
             return
         }
         nextUpgradeAttempt = .distantPast
+        // Retain the diagnostic until a live health response replaces it.
         // Only a subsequent live identity/health response can report running.
         state = .starting
     }
 
     private func confirmStartupReadiness() async {
         guard enabled, state == .starting, !busy, startup.attempts > 0 else { return }
+        activeRefreshes += 1
+        checking = true
+        defer {
+            activeRefreshes -= 1
+            checking = activeRefreshes > 0
+        }
         let expected = revision
         for attempt in 0..<startup.attempts {
             do {

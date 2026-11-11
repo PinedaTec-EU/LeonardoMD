@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-10T23:46:59.437609+00:00",
+  "capture": {
+    "captured_at": "2026-11-10T23:46:12.277000+00:00",
+    "route": "/native/user-guide/es",
+    "screen": "Leonardo guide: Synchronization / Connect to other computers; helper disabled; isolated configuration",
+    "browser_name": "Native AppKit / SwiftUI NSHostingView",
+    "browser_version": "Not applicable: native view, no browser engine",
+    "state": "Synchronization / Connect to other computers; helper disabled; isolated configuration; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "viewport_css": {
+      "width": 532,
+      "height": 490
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1064,
+    "height_px": 980,
+    "sha256": "756139298e347f03984e40cb330514c17e4665a0f71cd38f8ff869376937e5ed"
+  },
+  "source": {
+    "revision_at_collection": "ac1cefbf45a71c4211c5d7622b07d8b77e244ddc",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

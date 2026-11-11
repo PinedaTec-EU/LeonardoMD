@@ -579,13 +579,13 @@ These operations are manual. Pull is fast-forward only and protects dirty worktr
 
 ## 14. Share from this Mac: Little Leonardo and other computers
 
-![Synchronization → Share from this Mac; the common service and sharing are off in this example.](guide/en/assets/sync-sharing-v12.png)
+![Synchronization → Share from this Mac; the common service and sharing are off in this example.](guide/en/assets/sync-sharing-v13.png)
 
 *Synchronization → Share from this Mac; the common service and sharing are off in this example.*
 
 Little Leonardo is a **read-only companion**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Synchronization → Share from this Mac**. The same page serves Little Leonardo and other Macs; a Mac can share some content and independently connect to another Mac for other content. The service requires a Developer ID signed distribution; local ad-hoc builds cannot enable it.
 
-1. Enable **Leonardo Sync** using the single common control above both pages. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. Wait for **Sync helper running**.
+1. Enable **Leonardo Sync** using the single common control above both pages. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. The indicator beside the switch is gray while checking, green when the helper is running, and red when it is offline. The status text provides details. Wait for **Sync helper running**.
 2. Enable **Share saved files from this Mac** on a network you intend to use. Review the selected local address; Automatic can choose an available address.
 3. Choose **Share current project**, then select the folders/documents you want or the entire project. Confirm the selection; unrelated content is not implicitly shared.
 4. Create an invitation. Its QR and copied link are two ways to open the same invitation: scan the QR in Little Leonardo or paste the link under **Connect to other computers** on another Mac. Compare the verification codes and approve the pending device on this source Mac. Device rows state **read-only** (Little Leonardo or compatible clients) or **LeonardoMD on Mac · changes require review**. The label follows the granted capability, not the device name.
@@ -747,7 +747,7 @@ If a safe stop cannot be confirmed, installation is postponed rather than forcib
 
 ## 15. Connect to other computers and offline copies
 
-![Synchronization → Connect to other computers before pairing or importing a project.](guide/en/assets/sync-connections-v12.png)
+![Synchronization → Connect to other computers before pairing or importing a project.](guide/en/assets/sync-connections-v13.png)
 
 *Synchronization → Connect to other computers before pairing or importing a project.*
 

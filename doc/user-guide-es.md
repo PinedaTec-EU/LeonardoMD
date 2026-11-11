@@ -589,13 +589,13 @@ Las operaciones son manuales. Pull solo permite avance rápido y protege árbole
 
 ## 14. Compartir desde este Mac: Little Leonardo y otros equipos
 
-![Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.](guide/es/assets/sync-sharing-v12.png)
+![Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.](guide/es/assets/sync-sharing-v13.png)
 
 *Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.*
 
 Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Sincronización → Compartir desde este Mac** en la instancia principal. Esta página sirve a Little Leonardo y a otros Macs; un Mac puede compartir contenido y, de forma independiente, conectarse a otro para acceder a otro contenido. El servicio requiere una distribución firmada con Developer ID; las compilaciones locales con firma ad-hoc no pueden habilitarlo.
 
-1. Activa **Leonardo Sync** con el único control común situado encima de ambas páginas. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. Espera a **Servicio de sincronización en ejecución**.
+1. Activa **Leonardo Sync** con el único control común situado encima de ambas páginas. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. El indicador junto al interruptor aparece gris mientras se comprueba, verde cuando el servicio está en ejecución y rojo cuando está desconectado. El texto de estado ofrece más detalles. Espera a **Servicio de sincronización en ejecución**.
 2. Activa **Compartir archivos guardados de este Mac** en una red que quieras utilizar. Revisa la dirección local; Automática puede seleccionar una disponible.
 3. Elige **Compartir el proyecto actual** y selecciona carpetas/documentos o todo el proyecto. Confirma la selección; el resto del contenido no se comparte implícitamente.
 4. Crea una invitación. Su QR y el enlace copiado permiten abrir la misma invitación: escanea el QR en Little Leonardo o pega el enlace en **Conectarme a otros equipos** en otro Mac. Compara los códigos y aprueba el dispositivo pendiente en este Mac de origen. Las filas indican **solo lectura** (Little Leonardo o clientes compatibles) o **LeonardoMD en Mac · cambios sujetos a revisión**. La etiqueta depende del permiso concedido, no del nombre del equipo.
@@ -766,7 +766,7 @@ Si no se puede confirmar la parada segura, se aplaza la instalación en vez de t
 
 ## 15. Conectarme a otros equipos y copias sin conexión
 
-![Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.](guide/es/assets/sync-connections-v12.png)
+![Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.](guide/es/assets/sync-connections-v13.png)
 
 *Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.*
 

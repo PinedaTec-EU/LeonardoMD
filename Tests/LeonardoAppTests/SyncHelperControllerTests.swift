@@ -18,6 +18,184 @@ final class SyncHelperControllerTests: XCTestCase {
             hasExecutable: { true }, verifyPackage: {})
     }
 
+    func testStatusIndicatorStatesDuringHealthCheck() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        await control.pauseStatus()
+        let controller = upgrading(fixture, registration, control)
+        let refresh = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldStatus
+        guard held else {
+            await control.resumeStatus(); await refresh.value
+            XCTFail("Status check did not reach the controlled barrier"); return
+        }
+        XCTAssertTrue(controller.checking)
+        try await captureStatusIndicator(controller, state: "checking")
+        await control.resumeStatus(); await refresh.value
+        XCTAssertFalse(controller.checking)
+        XCTAssertTrue(controller.online)
+        try await captureStatusIndicator(controller, state: "online")
+    }
+
+    private func captureStatusIndicator(_ controller: SyncHelperController, state: String) async throws {
+        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
+        let destination = URL(fileURLWithPath: output)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        LanguageSettings.shared.language = .english
+        let host = NSHostingView(rootView: VStack(alignment: .leading, spacing: 12) {
+            SyncHelperPreferencesSection(controller: controller)
+            Divider()
+            Text("Share from this Mac")
+        }.toggleStyle(PremiumSwitchStyle()).padding(16).frame(width: 532, height: 260, alignment: .topLeading)
+            .background(Color(nsColor: .windowBackgroundColor)))
+        try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 260),
+            to: destination.appendingPathComponent("status-\(state).png"), language: "en",
+            state: "Synthetic helper status: \(state)", route: "/native/preferences/synchronization",
+            screen: "Synchronization helper status")
+    }
+
+    func testStatusSectionHeightDoesNotChangeWithDiagnosticOrApproval() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let controller = upgrading(fixture, registration, control)
+        await controller.refresh()
+        func sectionHeight() -> CGFloat {
+            let host = NSHostingView(rootView: SyncHelperPreferencesSection(controller: controller).frame(width: 532))
+            host.layoutSubtreeIfNeeded()
+            return host.fittingSize.height
+        }
+        let baseline = sectionHeight()
+        controller.error = "Previous error"
+        XCTAssertEqual(sectionHeight(), baseline, "A one-line diagnostic must not move the following controls")
+        controller.error = String(repeating: "A long diagnostic message. ", count: 20)
+        XCTAssertEqual(sectionHeight(), baseline, "A wrapped diagnostic must not move the following controls")
+        registration.status = .requiresApproval
+        await controller.refresh()
+        XCTAssertEqual(controller.state, .approvalRequired)
+        XCTAssertEqual(sectionHeight(), baseline, "The authorization action must not move the following controls")
+    }
+
+    func testApprovalTransitionKeepsSpaceForLoginItemsAction() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let controller = upgrading(fixture, registration, control)
+        await controller.refresh()
+        XCTAssertTrue(controller.online)
+        try await captureStatusIndicator(controller, state: "approval-before")
+        registration.status = .requiresApproval
+        await controller.refresh()
+        XCTAssertEqual(controller.state, .approvalRequired)
+        XCTAssertFalse(controller.checkingStatus)
+        try await captureStatusIndicator(controller, state: "approval-required")
+    }
+
+    func testMissingRegistrationPreservesErrorDuringRecovery() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake()
+        registration.storedStatus = .enabled
+        registration.statusSequence = [.notRegistered]
+        let control = HelperControlFake(); await control.pauseReload()
+        let controller = upgrading(fixture, registration, control)
+        controller.error = "Previous error"
+        let refresh = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldReload { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldReload
+        XCTAssertTrue(held)
+        XCTAssertEqual(controller.error, "Previous error")
+        await control.resumeReload(); await refresh.value
+        XCTAssertEqual(controller.error, "Previous error")
+    }
+
+    func testRecoveryRetainsDiagnosticUntilHealthCompletes() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake()
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        await control.pauseStatus()
+        let controller = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 1),
+            hasExecutable: { true }, verifyPackage: {})
+        controller.error = "Previous error"
+        let refresh = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldStatus
+        XCTAssertTrue(held)
+        XCTAssertTrue(controller.checkingStatus)
+        XCTAssertEqual(controller.error, "Previous error")
+        try await captureStatusIndicator(controller, state: "recovery-checking")
+        await control.resumeStatus(); await refresh.value
+        XCTAssertTrue(controller.online)
+        XCTAssertNil(controller.error)
+        XCTAssertFalse(controller.checkingStatus)
+        try await captureStatusIndicator(controller, state: "recovery-online")
+    }
+
+    func testRecoveryRetainsDiagnosticUntilFailedHealthReturns() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake()
+        let control = HelperControlFake(); await control.failStatus(at: 1); await control.pauseStatus()
+        let controller = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 1),
+            hasExecutable: { true }, verifyPackage: {})
+        controller.error = "Previous error"
+        let refresh = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTAssertTrue(controller.checkingStatus)
+        XCTAssertEqual(controller.error, "Previous error")
+        try await captureStatusIndicator(controller, state: "recovery-before-failure")
+        await control.resumeStatus(); await refresh.value
+        XCTAssertEqual(controller.state, .failed)
+        XCTAssertNotNil(controller.error)
+        XCTAssertFalse(controller.checkingStatus)
+        try await captureStatusIndicator(controller, state: "recovery-failed")
+    }
+
+    func testRefreshPreservesErrorWhileChecking() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        await control.pauseStatus()
+        let controller = upgrading(fixture, registration, control)
+        controller.error = "Previous error"
+        let refresh = Task { await controller.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldStatus
+        XCTAssertTrue(held)
+        XCTAssertTrue(controller.checking)
+        XCTAssertEqual(controller.error, "Previous error")
+        await control.resumeStatus(); await refresh.value
+        XCTAssertFalse(controller.checking)
+        XCTAssertNil(controller.error)
+        XCTAssertTrue(controller.online)
+    }
+
     func testUpdatePreparationParksServiceUntilNextProcessOrCancellation() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
@@ -236,6 +414,27 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(controller.online)
         XCTAssertEqual(registration.unregistrations, 1)
         XCTAssertEqual(registration.registrations, 1)
+    }
+
+    func testHeldStatusRetainsItsOriginalSnapshot() async throws {
+        let control = HelperControlFake()
+        let original = RunningDirectService(endpoint: URL(string: "https://127.0.0.1:40881")!,
+            certificateFingerprint: Data(repeating: 1, count: 32))
+        let current = RunningDirectService(endpoint: URL(string: "https://127.0.0.1:40882")!,
+            certificateFingerprint: Data(repeating: 2, count: 32))
+        await control.setSharing(original)
+        await control.pauseStatus()
+        let pending = Task { try await control.status() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let held = await control.hasHeldStatus
+        XCTAssertTrue(held)
+        await control.setSharing(current)
+        await control.resumeStatus()
+        let response = try await pending.value
+        XCTAssertEqual(response.sharing?.endpoint, original.endpoint)
     }
 
     func testLateReadinessCannotOverwriteANewerHealthyRefresh() async throws {
@@ -891,7 +1090,12 @@ final class SyncHelperControllerTests: XCTestCase {
 }
 private enum HelperControlError: Error { case unavailable }
 @MainActor private final class HelperRegistrationFake: SyncHelperRegistration {
-    var status = SMAppService.Status.notRegistered
+    var storedStatus = SMAppService.Status.notRegistered
+    var statusSequence: [SMAppService.Status] = []
+    var status: SMAppService.Status {
+        get { statusSequence.isEmpty ? storedStatus : statusSequence.removeFirst() }
+        set { storedStatus = newValue }
+    }
     var registrations = 0
     var unregistrations = 0
     var failUnregister = false
@@ -931,10 +1135,11 @@ private actor HelperControlFake: SyncHelperControlAccess {
     func status() async throws -> SyncHelperStatus {
         statusCalls += 1
         let scheduledFailure = failingStatusCalls.remove(statusCalls) != nil
-        if unavailable || scheduledFailure { throw HelperControlError.unavailable }
-        if !buildIdentities.isEmpty { buildIdentity = buildIdentities.removeFirst() }
+        let shouldFail = unavailable || scheduledFailure
+        if !shouldFail, !buildIdentities.isEmpty { buildIdentity = buildIdentities.removeFirst() }
         let reply = SyncHelperStatus(enabled: true, sharing: sharing, buildIdentity: buildIdentity)
         if paused || pausedStatusCall == statusCalls { await withCheckedContinuation { heldStatus = $0 } }
+        if shouldFail { throw HelperControlError.unavailable }
         return reply
     }
     func reload() async throws -> SyncHelperStatus {
