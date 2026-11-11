@@ -117,7 +117,7 @@ final class SyncHelperController {
         revision += 1
         let expected = revision
         await refreshOnceBody(expected: expected)
-        if expected == revision, state == .failed { lastFailureRevision = expected }
+        if expected == revision, state != .running { lastFailureRevision = expected }
     }
 
     private func presentCurrentState() {
@@ -421,9 +421,25 @@ final class SyncHelperController {
             }
             throw error
         }
+        if expected == revision {
+            if let expectedBuildIdentity, let identity = status.buildIdentity,
+               status.enabled, !identity.needsReplacement(by: expectedBuildIdentity) {
+                // This response does not invalidate an older successful preflight.
+            } else { lastFailureRevision = expected }
+        }
         // Consent can change while authenticated health is in flight. Re-read
         // before the adapter is allowed to send even its first peer request.
-        let current = try await loadPeerPreferences()
+        let current: MobileSyncPreferences
+        do { current = try await loadPeerPreferences() }
+        catch {
+            if expected == revision && !Task.isCancelled {
+                lastFailureRevision = expected; presentationRevision += 1
+                state = .failed; sharing = nil; supportsRubricExchange = false
+                self.error = L10n.text(error.localizedDescription)
+                presentCurrentState()
+            }
+            throw error
+        }
         guard permitsPeerOperations(current), status.enabled,
               let expectedBuildIdentity, let identity = status.buildIdentity,
               !identity.needsReplacement(by: expectedBuildIdentity) else {
@@ -450,7 +466,7 @@ final class SyncHelperController {
     }
 
     private func permitsPeerOperations(_ settings: MobileSyncPreferences) -> Bool {
-        !busy && !upgrading && !installation.blocksOperations && state != .starting && settings.helperEnabled &&
+        hasExecutable() && !busy && !upgrading && !installation.blocksOperations && state != .starting && settings.helperEnabled &&
             settings.helperUpgradeToken == nil && service.status == .enabled
     }
 
