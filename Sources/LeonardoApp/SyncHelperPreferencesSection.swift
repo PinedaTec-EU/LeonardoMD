@@ -30,15 +30,18 @@ struct SyncHelperPreferencesSection: View {
                 Text(L10n.text("Required to share and connect. When off, both directions are offline even with LeonardoMD open. Starts after login and keeps sharing saved files when you close the editor."))
                     .font(.caption).foregroundStyle(.secondary)
                 Button(L10n.text("Open Login Items settings")) { controller.openApprovalSettings() }
-                    .opacity(controller.state == .approvalRequired ? 1 : 0)
-                    .disabled(controller.state != .approvalRequired)
-                    .accessibilityHidden(controller.state != .approvalRequired)
+                    .opacity(controller.displayedState == .approvalRequired ? 1 : 0)
+                    .disabled(controller.displayedState != .approvalRequired)
+                    .accessibilityHidden(controller.displayedState != .approvalRequired)
                 Text(controller.displayedError ?? " ")
                     .font(.caption).foregroundStyle(.secondary)
                     .lineLimit(2)
                     .frame(height: 30, alignment: .topLeading)
                     .help(controller.displayedError ?? "")
                     .accessibilityHidden(controller.displayedError == nil)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                Task { await controller.refreshAfterActivation() }
             }
     }
 }

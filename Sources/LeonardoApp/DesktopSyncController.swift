@@ -62,6 +62,7 @@ final class DesktopSyncController {
     private let rubricCaptures: RubricCaptureStore
     private let now: RubricClock
     private var initialized = false
+    private var consentFailureChecked = false
     private static var rubricRequesterName: String {
         let name = Host.current().localizedName?.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let name, !name.isEmpty else { return "LeonardoMD" }
@@ -70,7 +71,7 @@ final class DesktopSyncController {
 
     init(preferencesURL: URL = AppSession.preferencesURL, configurations: ConfigurationStore = .shared,
          runtime: (any DesktopSyncRuntimeAccess)? = nil, helper: SyncHelperController? = nil,
-         now: @escaping RubricClock = Date.init) {
+         usesHelper: Bool? = nil, now: @escaping RubricClock = Date.init) {
         self.preferencesURL = preferencesURL
         self.helper = helper ?? SyncHelperController(preferencesURL: preferencesURL)
         self.configurations = configurations
@@ -79,7 +80,7 @@ final class DesktopSyncController {
         self.now = now
         rubricCaptures = RubricCaptureStore(url: root.appendingPathComponent("RubricCaptures/captures.json"), now: now)
         self.runtime = runtime ?? SyncHelperClient()
-        usesHelper = runtime == nil
+        self.usesHelper = usesHelper ?? (runtime == nil)
     }
 
     var rubricCaptureRecords: [RubricCaptureRecord] { rubricCaptures.records }
@@ -209,11 +210,19 @@ final class DesktopSyncController {
         await update(updated)
     }
 
+    private func updateRunningFromHelper() {
+        let current = helper.sharing
+        if running?.endpoint != current?.endpoint || running?.certificateFingerprint != current?.certificateFingerprint {
+            invitationURL = nil
+        }
+        running = current
+    }
+
     func refreshConsent(refreshHelper: Bool = true) async {
         guard !InstanceRuntime.isAdditional, !busy else { return }
         if usesHelper {
             if refreshHelper { await helper.refresh() }
-            running = helper.sharing
+            updateRunningFromHelper()
             guard helper.online else {
                 running = nil; invitationURL = nil; incoming = []; consent = PairingRegistry(); return
             }
@@ -223,13 +232,13 @@ final class DesktopSyncController {
             incoming = running == nil ? [] : try await runtime.incomingProposals()
             rubricCaptures.refresh()
             await recoverRubricCaptures()
+            consentFailureChecked = false
         } catch {
             self.error = error.localizedDescription
-            // A failed operation is a reason to check the helper even though
-            // the preferences page does not poll its health continuously.
-            if usesHelper && !refreshHelper {
+            if usesHelper && !refreshHelper && !consentFailureChecked {
+                consentFailureChecked = true
                 await helper.refresh()
-                running = helper.sharing
+                updateRunningFromHelper()
             }
         }
     }
@@ -279,9 +288,23 @@ final class DesktopSyncController {
     }
 
     func createQR() async {
-        guard let running, !busy else { return }
+        guard !busy else { return }
+        busy = true
+        defer { busy = false }
+        if usesHelper {
+            await helper.refresh()
+            updateRunningFromHelper()
+            guard helper.online else { invitationURL = nil; return }
+        }
+        guard let running else { invitationURL = nil; return }
+        invitationURL = nil
         do {
             let invitation = try await runtime.createInvitation()
+            if usesHelper {
+                guard helper.online, let current = helper.sharing,
+                      current.endpoint == running.endpoint,
+                      current.certificateFingerprint == running.certificateFingerprint else { return }
+            }
             invitationURL = try DirectPairingQR(endpoint: running.endpoint,
                 certificateFingerprint: running.certificateFingerprint, invitation: invitation).encodedURL()
         } catch { self.error = error.localizedDescription }

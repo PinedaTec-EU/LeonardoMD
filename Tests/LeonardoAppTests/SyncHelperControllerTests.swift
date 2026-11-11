@@ -5,6 +5,8 @@ import ServiceManagement
 import XCTest
 import LeonardoCore
 import LeonardoDesktopSync
+import LeonardoSync
+import LeonardoSyncTransport
 @testable import LeonardoApp
 
 @MainActor
@@ -86,6 +88,117 @@ final class SyncHelperControllerTests: XCTestCase {
         await controller.refresh()
         XCTAssertEqual(controller.state, .approvalRequired)
         XCTAssertEqual(sectionHeight(), baseline, "The authorization action must not move the following controls")
+    }
+
+    func testReturningFromApprovalRefreshesOnlyWhileApprovalIsRequired() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .requiresApproval
+        let control = HelperControlFake()
+        let controller = fixture.controller(registration, control)
+        await controller.refresh()
+        XCTAssertEqual(controller.state, .approvalRequired)
+        registration.status = .enabled
+        await controller.refreshAfterActivation()
+        XCTAssertTrue(controller.online)
+        let calls = await control.statusCalls
+        await controller.refreshAfterActivation()
+        let callsAfterUnrelatedActivation = await control.statusCalls
+        XCTAssertEqual(callsAfterUnrelatedActivation, calls, "Healthy service must not be checked on every activation")
+    }
+
+    func testRegistrationRequiringApprovalOffersSettingsImmediately() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); registration.registrationResult = .requiresApproval
+        let controller = fixture.controller(registration, HelperControlFake())
+        await controller.setEnabled(true)
+        XCTAssertEqual(controller.state, .approvalRequired)
+    }
+
+    func testFailedLocalHealthDuringPeerOperationUpdatesDisplayedState() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let controller = upgrading(fixture, registration, control)
+        await controller.refresh()
+        XCTAssertTrue(controller.online)
+        await control.setUnavailable()
+        do { try await controller.requireReadyHelper(); XCTFail("Expected local helper failure") }
+        catch { XCTAssertEqual(controller.state, .failed); XCTAssertFalse(controller.online) }
+    }
+
+    func testLateLocalHealthFailureDoesNotReplaceNewerHealthyResult() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let controller = upgrading(fixture, registration, control)
+        await controller.refresh()
+        await control.failStatus(at: 2); await control.pauseStatus(at: 2)
+        let stale = Task { try await controller.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus else {
+            await control.resumeStatus(); _ = try? await stale.value
+            XCTFail("Status check did not reach the barrier"); return
+        }
+        await controller.refresh()
+        XCTAssertTrue(controller.online)
+        await control.resumeStatus(); _ = try? await stale.value
+        XCTAssertTrue(controller.online, "A stale failure must not overwrite newer health")
+    }
+
+    func testConsentFailureChecksHealthOncePerFailureEpisode() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let helper = fixture.controller(registration, control)
+        await helper.refresh()
+        let runtime = StatusRefreshRuntime()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                                           runtime: runtime, helper: helper, usesHelper: true)
+        await runtime.setConsentFailure(true)
+        for _ in 0..<3 { await source.refreshConsent(refreshHelper: false) }
+        let firstCalls = await control.statusCalls
+        XCTAssertEqual(firstCalls, 2, "Initial health and one check for the error episode")
+        await runtime.setConsentFailure(false)
+        await source.refreshConsent(refreshHelper: false)
+        await runtime.setConsentFailure(true)
+        await source.refreshConsent(refreshHelper: false)
+        let nextCalls = await control.statusCalls
+        XCTAssertEqual(nextCalls, 3, "A new failure after recovery triggers one new check")
+    }
+
+    func testNewInvitationUsesLatestHelperEndpoint() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let a = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+        let b = RunningDirectService(endpoint: URL(string: "https://192.168.1.5:40882")!, certificateFingerprint: Data(repeating: 5, count: 32))
+        await control.setSharing(a)
+        let helper = fixture.controller(registration, control)
+        await helper.refresh()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                                           runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true)
+        await source.createQR()
+        let first = try DirectPairingQR.decode(XCTUnwrap(source.invitationURL), now: Date())
+        XCTAssertEqual(first.endpoint, a.endpoint)
+        await control.setSharing(b)
+        await helper.refresh()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.invitationURL, "A changed endpoint must discard the previous invitation")
+        await source.createQR()
+        let second = try DirectPairingQR.decode(XCTUnwrap(source.invitationURL), now: Date())
+        XCTAssertEqual(second.endpoint, b.endpoint)
+        XCTAssertEqual(second.certificateFingerprint, b.certificateFingerprint)
+        await control.setUnavailable()
+        await source.createQR()
+        XCTAssertNil(source.invitationURL)
     }
 
     func testApprovalTransitionKeepsSpaceForLoginItemsAction() async throws {
@@ -1099,10 +1212,11 @@ private enum HelperControlError: Error { case unavailable }
         get { statusSequence.isEmpty ? storedStatus : statusSequence.removeFirst() }
         set { storedStatus = newValue }
     }
+    var registrationResult = SMAppService.Status.enabled
     var registrations = 0
     var unregistrations = 0
     var failUnregister = false
-    func register() { registrations += 1; status = .enabled }
+    func register() { registrations += 1; status = registrationResult }
     func unregister() async throws {
         if failUnregister { throw HelperControlError.unavailable }
         unregistrations += 1
@@ -1151,4 +1265,29 @@ private actor HelperControlFake: SyncHelperControlAccess {
         if unavailable { throw HelperControlError.unavailable }
         return SyncHelperStatus(enabled: false, sharing: nil)
     }
+}
+
+private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
+    private var consentFailure = false
+    func setConsentFailure(_ value: Bool) { consentFailure = value }
+    func start(host: String, port: UInt16, projects: [SharedProjectSource], allowPrivateOverlay: Bool) async throws -> RunningDirectService { throw DesktopRuntimeError.notRunning }
+    func stop() async throws {}
+    func consentState() async throws -> PairingRegistry {
+        if consentFailure { throw DesktopRuntimeError.notRunning }
+        return PairingRegistry()
+    }
+    func incomingProposals() async throws -> [DesktopPeerIncomingProposal] { [] }
+    func createInvitation() async throws -> PairingInvitation {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        return try registry.createInvitation(now: Date())
+    }
+    func reviewIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposalReview { throw DesktopRuntimeError.notRunning }
+    func applyIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload, review: DesktopPeerProposalReview, decisions: [String: ReconciliationChoice], projectRoot: URL, currentSource: CorpusSnapshot, currentDisk: CorpusSnapshot) async throws -> DesktopPeerAcceptanceResult { throw DesktopRuntimeError.notRunning }
+    func approve(requestID: UUID, code: String, projectIDs: Set<UUID>) async throws { throw DesktopRuntimeError.notRunning }
+    func reject(requestID: UUID) async throws { throw DesktopRuntimeError.notRunning }
+    func revoke(deviceID: UUID) async throws { throw DesktopRuntimeError.notRunning }
+    func createRubricRequest(deviceID: UUID, requestID: UUID, requesterName: String, labelHint: String?) async throws -> LeonardoSync.RubricRequest { throw DesktopRuntimeError.notRunning }
+    func cancelRubricRequest(requestID: UUID) async throws -> LeonardoSync.RubricRequest { throw DesktopRuntimeError.notRunning }
+    func rubricResponse(requestID: UUID) async throws -> LeonardoSync.RubricResponse? { throw DesktopRuntimeError.notRunning }
+    func rubricStatus(requestID: UUID) async throws -> RubricExchangeStatus { throw DesktopRuntimeError.notRunning }
 }

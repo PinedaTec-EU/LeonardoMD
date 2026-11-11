@@ -92,6 +92,6 @@ replaced blocks installation. Initial authenticated identity failure blocks
 preparation before preference changes; it never assumes that helper is older.
 
 Synchronization preferences preserve the previous helper error while a health
-query is in flight. The common switch displays gray during checking/starting,
-green for online, and red otherwise; the status remains available to assistive
-technology. See `SyncHelperPreferencesSection` and `SyncHelperController`.
+query is in flight. The common switch preserves its previous indicator during checking,
+shows green when online and red when unavailable, and hides it when disabled;
+the status remains available to assistive technology. See `SyncHelperPreferencesSection` and `SyncHelperController`.

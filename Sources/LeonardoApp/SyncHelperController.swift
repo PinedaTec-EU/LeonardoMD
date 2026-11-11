@@ -161,6 +161,7 @@ final class SyncHelperController {
             if enabled {
                 state = .starting
                 if service.status != .enabled { try service.register() }
+                if service.status == .requiresApproval { state = .approvalRequired }
             } else {
                 state = .disabled
                 // Persist denial before shutdown. Even failed unregistration cannot
@@ -327,11 +328,24 @@ final class SyncHelperController {
 
     func openApprovalSettings() { service.openApprovalSettings() }
 
+    func refreshAfterActivation() async {
+        guard state == .approvalRequired, !checking else { return }
+        await refresh()
+    }
+
     func requireReadyHelper() async throws {
         let expected = revision
         let settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
         guard permitsPeerOperations(settings) else { throw offlineFailure() }
-        let status = try await client.status()
+        let status: SyncHelperStatus
+        do { status = try await client.status() }
+        catch {
+            if expected == revision && !Task.isCancelled {
+                state = .failed; sharing = nil; supportsRubricExchange = false
+                self.error = L10n.text(error.localizedDescription)
+            }
+            throw error
+        }
         // Consent can change while authenticated health is in flight. Re-read
         // before the adapter is allowed to send even its first peer request.
         let current = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
