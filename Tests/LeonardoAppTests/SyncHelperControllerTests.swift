@@ -160,6 +160,43 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(helper.online, "An overlapping no-op check must not cancel renewal readiness")
     }
 
+    func testSupersededRetryKeepsConfirmedStatusWhilePeerHealthIsHeld() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let barrier = StartupPauseBarrier()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: { await barrier.pause() }), hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        XCTAssertEqual(helper.displayedState, .running)
+        await control.failStatus(at: 2)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await barrier.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await barrier.isHeld else {
+            await barrier.release(); await refresh.value; XCTFail("Retry not held"); return
+        }
+        await control.pauseStatus(at: 3)
+        let peer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 3) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 3) else {
+            await barrier.release(); await control.resumeStatus(); await refresh.value; _ = try? await peer.value
+            XCTFail("Peer health not held"); return
+        }
+        await barrier.release(); await refresh.value
+        XCTAssertFalse(helper.checking)
+        XCTAssertEqual(helper.displayedState, .running, "A superseded transient error must stay hidden")
+        await control.resumeStatus(at: 3); try await peer.value
+        XCTAssertEqual(helper.displayedState, .running)
+    }
+
     func testRegistrationChangesPresentDuringFirstHeldHealth() async throws {
         for registrationState: SMAppService.Status in [.requiresApproval, .notRegistered] {
             let fixture = try ControllerFixture(); defer { fixture.remove() }
@@ -1496,6 +1533,7 @@ final class SyncHelperControllerTests: XCTestCase {
         let stopped = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
         XCTAssertFalse(stopped.mobileSync.helperEnabled)
         XCTAssertNotNil(stopped.mobileSync.helperUpgradeToken)
+        controller.error = "Previous transient failure"
         await controller.setEnabled(false)
         await control.resumeReload()
         await refresh.value
@@ -1503,6 +1541,8 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertFalse(settings.mobileSync.helperEnabled)
         XCTAssertNil(settings.mobileSync.helperUpgradeToken)
         XCTAssertFalse(controller.online)
+        XCTAssertNil(controller.displayedError, "Disabling must clear a previous transient error")
+        XCTAssertNil(controller.error)
         XCTAssertEqual(registration.registrations, 1)
     }
 
@@ -1838,6 +1878,15 @@ private enum HelperControlError: Error { case unavailable }
         status = .notRegistered
     }
     func openApprovalSettings() {}
+}
+private actor StartupPauseBarrier {
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var released = false
+    var isHeld: Bool { continuation != nil }
+    func pause() async {
+        if !released { await withCheckedContinuation { continuation = $0 } }
+    }
+    func release() { released = true; continuation?.resume(); continuation = nil }
 }
 private actor PeerPreferencesBarrier {
     let configurations: ConfigurationStore

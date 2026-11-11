@@ -73,8 +73,8 @@ final class SyncHelperController {
     var needsAutomaticRecovery: Bool {
         state == .failed || state == .starting
     }
-    var displayedState: State { checking ? stateBeforeRefresh : state }
-    var displayedError: String? { checking ? errorBeforeRefresh : error }
+    var displayedState: State { stateBeforeRefresh }
+    var displayedError: String? { errorBeforeRefresh }
     var showsApprovalAction: Bool { displayedState == .approvalRequired }
     var statusText: String {
         switch displayedState {
@@ -89,7 +89,6 @@ final class SyncHelperController {
 
     func refresh() async {
         guard !busy, !installation.blocksOperations else { return }
-        if activeRefreshes == 0 { stateBeforeRefresh = state; errorBeforeRefresh = error }
         activeRefreshes += 1
         checking = true
         presentationRevision += 1
@@ -167,7 +166,7 @@ final class SyncHelperController {
             // An explicit denial cancels the durable upgrade token even while
             // graceful shutdown is suspended. It must never be restored later.
             guard !enabled else { return }
-            lifecycleRevision += 1; revision += 1; presentationRevision += 1; self.enabled = false; state = .disabled; stateBeforeRefresh = .disabled; errorBeforeRefresh = nil; sharing = nil
+            lifecycleRevision += 1; revision += 1; presentationRevision += 1; self.enabled = false; state = .disabled; error = nil; stateBeforeRefresh = .disabled; errorBeforeRefresh = nil; sharing = nil
             supportsRubricExchange = false
             do { try await configurations.setSyncHelperEnabled(false, at: preferencesURL) }
             catch { state = .failed; self.error = L10n.text(error.localizedDescription); presentCurrentState() }
@@ -339,6 +338,7 @@ final class SyncHelperController {
             try await installation.prepare()
             busy = false
             sharing = nil; supportsRubricExchange = false; state = .starting
+            presentCurrentState()
             logger.info("sync_helper_parked_for_update")
             return true
         } catch {
@@ -347,6 +347,7 @@ final class SyncHelperController {
                 await refresh() // Join completed before restoring existing consent.
             } else {
                 state = .failed; self.error = L10n.text(error.localizedDescription)
+                presentCurrentState()
                 logger.error("sync_helper_update_preparation_failed")
             }
             return false
