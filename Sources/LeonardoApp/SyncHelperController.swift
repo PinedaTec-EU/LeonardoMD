@@ -32,6 +32,7 @@ final class SyncHelperController {
     private var presentationRevision = 0
     private var lastSuccessfulRefreshRevision = 0
     private var lastFailureRevision = 0
+    private var lastSuccessfulHealthRevision = 0
     private let expectedBuildIdentity: SyncHelperBuildIdentity?
     private static let upgradeRetryInterval: TimeInterval = 30
     static let errorRecoveryInterval: TimeInterval = 30
@@ -140,6 +141,7 @@ final class SyncHelperController {
             case .requiresApproval: error = nil; state = .approvalRequired; sharing = nil; supportsRubricExchange = false
             case .enabled:
                 let status = try await client.status()
+                observeHealth(status, revision: expected, requiresIdentity: false)
                 guard expected == revision else { return }
                 if let expectedBuildIdentity,
                    settings.mobileSync.helperUpgradeToken != nil ||
@@ -158,6 +160,7 @@ final class SyncHelperController {
             @unknown default: error = nil; state = .failed; sharing = nil; supportsRubricExchange = false
             }
         } catch {
+            if !Task.isCancelled { observeHealthFailure(revision: expected) }
             guard expected == revision else { return }
             state = .failed; sharing = nil; supportsRubricExchange = false; self.error = L10n.text(error.localizedDescription)
         }
@@ -384,6 +387,12 @@ final class SyncHelperController {
 
     @discardableResult private func reconcileRegistration() -> Bool {
         guard enabled, !busy, !upgrading, !installation.blocksOperations else { return false }
+        guard hasExecutable() else {
+            lifecycleRevision += 1; revision += 1; presentationRevision += 1
+            state = .notInstalled; error = nil; sharing = nil; supportsRubricExchange = false
+            presentCurrentState()
+            return true
+        }
         switch service.status {
         case .requiresApproval:
             lifecycleRevision += 1; revision += 1; presentationRevision += 1; state = .approvalRequired; error = nil
@@ -398,12 +407,44 @@ final class SyncHelperController {
         }
     }
 
+    private func observeHealthFailure(revision: Int) {
+        if revision > lastSuccessfulHealthRevision { lastFailureRevision = max(lastFailureRevision, revision) }
+    }
+
+    private func observeHealth(_ status: SyncHelperStatus, revision: Int, requiresIdentity: Bool) {
+        let compatible: Bool
+        if let expectedBuildIdentity {
+            compatible = status.buildIdentity.map { !$0.needsReplacement(by: expectedBuildIdentity) } ?? false
+        } else { compatible = !requiresIdentity }
+        if status.enabled && compatible { lastSuccessfulHealthRevision = max(lastSuccessfulHealthRevision, revision) }
+        else { observeHealthFailure(revision: revision) }
+    }
+
+    private func presentDeniedConsent(_ settings: MobileSyncPreferences) {
+        lifecycleRevision += 1; revision += 1; presentationRevision += 1
+        enabled = settings.helperEnabled || settings.helperUpgradeToken != nil
+        state = enabled ? .starting : .disabled
+        error = nil; sharing = nil; supportsRubricExchange = false
+        presentCurrentState()
+    }
+
     func requireReadyHelper() async throws {
         let initialRevision = lifecycleRevision
-        let settings = try await loadPeerPreferences()
+        let initialHealthRevision = revision
+        let settings: MobileSyncPreferences
+        do { settings = try await loadPeerPreferences() }
+        catch {
+            if initialRevision == lifecycleRevision && initialHealthRevision == revision && !busy && !Task.isCancelled {
+                revision += 1; presentationRevision += 1
+                lastFailureRevision = revision; state = .failed; sharing = nil; supportsRubricExchange = false
+                self.error = L10n.text(error.localizedDescription); presentCurrentState()
+            }
+            throw error
+        }
         guard permitsPeerOperations(settings) else {
-            if initialRevision == lifecycleRevision && settings.helperEnabled && settings.helperUpgradeToken == nil {
-                reconcileRegistration()
+            if initialRevision == lifecycleRevision && !busy {
+                if !settings.helperEnabled || settings.helperUpgradeToken != nil { presentDeniedConsent(settings) }
+                else { reconcileRegistration() }
             }
             throw offlineFailure()
         }
@@ -413,6 +454,7 @@ final class SyncHelperController {
         let status: SyncHelperStatus
         do { status = try await client.status() }
         catch {
+            if !Task.isCancelled { observeHealthFailure(revision: expected) }
             if expected == revision && !Task.isCancelled {
                 presentationRevision += 1
                 state = .failed; sharing = nil; supportsRubricExchange = false
@@ -421,17 +463,13 @@ final class SyncHelperController {
             }
             throw error
         }
-        if expected == revision {
-            if let expectedBuildIdentity, let identity = status.buildIdentity,
-               status.enabled, !identity.needsReplacement(by: expectedBuildIdentity) {
-                // This response does not invalidate an older successful preflight.
-            } else { lastFailureRevision = expected }
-        }
+        observeHealth(status, revision: expected, requiresIdentity: true)
         // Consent can change while authenticated health is in flight. Re-read
         // before the adapter is allowed to send even its first peer request.
         let current: MobileSyncPreferences
         do { current = try await loadPeerPreferences() }
         catch {
+            if !Task.isCancelled { observeHealthFailure(revision: expected) }
             if expected == revision && !Task.isCancelled {
                 lastFailureRevision = expected; presentationRevision += 1
                 state = .failed; sharing = nil; supportsRubricExchange = false
@@ -443,8 +481,9 @@ final class SyncHelperController {
         guard permitsPeerOperations(current), status.enabled,
               let expectedBuildIdentity, let identity = status.buildIdentity,
               !identity.needsReplacement(by: expectedBuildIdentity) else {
-            if expected == revision && current.helperEnabled && current.helperUpgradeToken == nil && !busy {
-                if !reconcileRegistration() {
+            if expected == revision && !busy {
+                if !current.helperEnabled || current.helperUpgradeToken != nil { presentDeniedConsent(current) }
+                else if !reconcileRegistration() {
                     presentationRevision += 1
                     state = .failed; sharing = nil; supportsRubricExchange = false
                     error = L10n.text("Offline · sync helper unavailable")
