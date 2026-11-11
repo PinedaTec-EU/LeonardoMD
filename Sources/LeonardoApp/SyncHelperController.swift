@@ -168,10 +168,12 @@ final class SyncHelperController {
             return
         }
         if !enabled { stateBeforeRefresh = .disabled; errorBeforeRefresh = nil }
-        hasPresentedStatus = true
+        if enabled && !self.enabled { hasPresentedStatus = false }
         revision += 1; presentationRevision += 1 // Invalidate prior health and presentation.
         let presentation = presentationRevision
-        defer { if presentation == presentationRevision { presentCurrentState() } }
+        defer {
+            if presentation == presentationRevision { presentCurrentState(); hasPresentedStatus = true }
+        }
         nextUpgradeAttempt = .distantPast
         let reconcileExisting = enabled && service.status == .enabled && expectedBuildIdentity != nil
         busy = true; error = nil
@@ -387,19 +389,22 @@ final class SyncHelperController {
     }
 
     func requireReadyHelper() async throws {
-        let expected = revision
+        let initialRevision = revision
         let settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
         guard permitsPeerOperations(settings) else {
-            if expected == revision && settings.helperEnabled && settings.helperUpgradeToken == nil {
+            if initialRevision == revision && settings.helperEnabled && settings.helperUpgradeToken == nil {
                 reconcileRegistration()
             }
             throw offlineFailure()
         }
+        guard initialRevision == revision else { throw offlineFailure() }
+        revision += 1
+        let expected = revision
         let status: SyncHelperStatus
         do { status = try await client.status() }
         catch {
             if expected == revision && !Task.isCancelled {
-                revision += 1; presentationRevision += 1
+                presentationRevision += 1
                 state = .failed; sharing = nil; supportsRubricExchange = false
                 self.error = L10n.text(error.localizedDescription)
                 presentCurrentState()
@@ -414,7 +419,7 @@ final class SyncHelperController {
               !identity.needsReplacement(by: expectedBuildIdentity) else {
             if expected == revision && current.helperEnabled && current.helperUpgradeToken == nil && !busy {
                 if !reconcileRegistration() {
-                    revision += 1; presentationRevision += 1
+                    presentationRevision += 1
                     state = .failed; sharing = nil; supportsRubricExchange = false
                     error = L10n.text("Offline · sync helper unavailable")
                     presentCurrentState()
@@ -428,7 +433,7 @@ final class SyncHelperController {
             guard online, enabled else { throw offlineFailure() }
             return
         }
-        revision += 1; presentationRevision += 1
+        presentationRevision += 1
         enabled = true
         applyStatus(status)
         presentCurrentState()
