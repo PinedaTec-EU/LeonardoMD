@@ -273,7 +273,16 @@ final class SyncHelperControllerTests: XCTestCase {
         do { try await helper.requireReadyHelper(); XCTFail("Middle health must fail") } catch {}
         try await helper.requireReadyHelper()
         XCTAssertTrue(helper.online)
+        await helper.refresh() // A later healthy check does not invalidate authorized recovery.
+        await control.pauseStatus(at: 6)
+        let pending = Task { await helper.refresh() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 6) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 6) else {
+            await control.resumeStatus(); await preferences.release(); _ = try? await older.value; await pending.value
+            XCTFail("Later health not held"); return
+        }
         await preferences.release(); try await older.value
+        await control.resumeStatus(at: 6); await pending.value
         XCTAssertTrue(helper.online)
     }
 

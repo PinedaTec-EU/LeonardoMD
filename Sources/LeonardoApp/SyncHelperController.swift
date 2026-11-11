@@ -498,8 +498,7 @@ final class SyncHelperController {
         guard expected == revision else {
             // A newer healthy refresh owns the displayed endpoint/capabilities.
             // Keep it, while still allowing operations confirmed by that state.
-            let recovered = lastAuthorizedHealthRevision > lastFailureRevision &&
-                lastAuthorizedHealthRevision == revision && online && enabled
+            let recovered = lastAuthorizedHealthRevision > lastFailureRevision && online && enabled
             guard initialRevision == lifecycleRevision, lastFailureRevision <= expected || recovered else { throw offlineFailure() }
             return
         }
