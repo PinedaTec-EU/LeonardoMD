@@ -49,3 +49,5 @@ still require readable composited pixels under
 [#406](https://github.com/PinedaTec-EU/LeonardoMD/issues/406).
 
 Joint acceptance now uses Guide33, main1147, compact common iOS reader, explicit source/document controls and joint-* native proof. See doc/validation/on-demand-sync/README.md for exact source mappings and limitations.
+
+Little Leonardo distribution builds declare `ITSAppUsesNonExemptEncryption` as Boolean false, matching the classification used for TestFlight 1279. The distribution verifier rejects missing or non-Boolean declarations; reassess if cryptography or linked libraries change. See `doc/mobile/rubric-exchange.md`.

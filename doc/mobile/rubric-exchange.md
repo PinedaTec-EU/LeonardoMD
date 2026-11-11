@@ -221,3 +221,7 @@ owner internal group and verify installation from TestFlight. Keep
 device permissions, pairing, offline reading, request/draw/send, Mac review,
 save/insert/restart and terminal/retry/revocation checks are recorded. Simulator
 Home rendering limitations do not establish physical icon appearance.
+
+### iOS export compliance
+
+Little Leonardo declares `ITSAppUsesNonExemptEncryption = false` in its generated Info.plist, consistent with the classification used for TestFlight build 1279. The distribution verifier requires a Boolean false in the packaged app. Reassess this declaration before release whenever cryptographic functionality or linked dependencies change, including third-party libraries; Apple may require a different declaration or documentation. See [Apple’s guidance](https://developer.apple.com/documentation/security/complying-with-encryption-export-regulations).
