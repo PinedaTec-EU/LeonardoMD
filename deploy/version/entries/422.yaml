@@ -1,4 +1,4 @@
 {
-  "build": 34,
+  "build": 36,
   "summary": "Synchronization preferences keep their layout steady during refresh and show whether the service is checking, online, or unavailable beside the main switch."
 }
