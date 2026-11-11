@@ -63,6 +63,10 @@ final class DesktopSyncController {
     private let now: RubricClock
     private var initialized = false
     private var consentFailureChecked = false
+    private var lastNetworkAddresses: Set<String>?
+    private var nextHelperRecovery = Date.distantPast
+    private static let helperRecoveryInterval: TimeInterval = 30
+    var networkAddresses: @MainActor (Bool) -> [String] = { LocalNetworkInterfaces.addresses(allowPrivateOverlay: $0) }
     private static var rubricRequesterName: String {
         let name = Host.current().localizedName?.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let name, !name.isEmpty else { return "LeonardoMD" }
@@ -118,7 +122,7 @@ final class DesktopSyncController {
     /// LAN addresses are listed first. Overlay addresses appear only after the
     /// user explicitly enables the private-overlay preference.
     var addresses: [String] {
-        LocalNetworkInterfaces.addresses(allowPrivateOverlay: settings.privateOverlayEnabled)
+        networkAddresses(settings.privateOverlayEnabled)
     }
 
     func initialize() async {
@@ -221,7 +225,14 @@ final class DesktopSyncController {
     func refreshConsent(refreshHelper: Bool = true) async {
         guard !InstanceRuntime.isAdditional, !busy else { return }
         if usesHelper {
-            if refreshHelper { await helper.refresh() }
+            let currentAddresses = Set(addresses)
+            let networkChanged = lastNetworkAddresses.map { $0 != currentAddresses } ?? false
+            lastNetworkAddresses = currentAddresses
+            let recoveryDue = helper.state == .failed && now() >= nextHelperRecovery
+            if refreshHelper || networkChanged || recoveryDue {
+                nextHelperRecovery = now().addingTimeInterval(Self.helperRecoveryInterval)
+                await helper.refresh()
+            }
             updateRunningFromHelper()
             guard helper.online else {
                 running = nil; invitationURL = nil; incoming = []; consent = PairingRegistry(); return
@@ -237,6 +248,7 @@ final class DesktopSyncController {
             self.error = error.localizedDescription
             if usesHelper && !refreshHelper && !consentFailureChecked {
                 consentFailureChecked = true
+                nextHelperRecovery = now().addingTimeInterval(Self.helperRecoveryInterval)
                 await helper.refresh()
                 updateRunningFromHelper()
             }

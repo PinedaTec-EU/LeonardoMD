@@ -329,14 +329,35 @@ final class SyncHelperController {
     func openApprovalSettings() { service.openApprovalSettings() }
 
     func refreshAfterActivation() async {
-        guard state == .approvalRequired, !checking else { return }
+        guard !checking else { return }
+        if reconcileRegistration() { return }
+        guard state == .approvalRequired else { return }
         await refresh()
+    }
+
+    @discardableResult private func reconcileRegistration() -> Bool {
+        guard enabled, !busy, !upgrading, !installation.blocksOperations else { return false }
+        switch service.status {
+        case .requiresApproval:
+            revision += 1; state = .approvalRequired; error = nil
+            sharing = nil; supportsRubricExchange = false
+            return true
+        case .notFound, .notRegistered:
+            revision += 1; state = .failed; sharing = nil; supportsRubricExchange = false
+            return true
+        default: return false
+        }
     }
 
     func requireReadyHelper() async throws {
         let expected = revision
         let settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
-        guard permitsPeerOperations(settings) else { throw offlineFailure() }
+        guard permitsPeerOperations(settings) else {
+            if expected == revision && settings.helperEnabled && settings.helperUpgradeToken == nil {
+                reconcileRegistration()
+            }
+            throw offlineFailure()
+        }
         let status: SyncHelperStatus
         do { status = try await client.status() }
         catch {
@@ -352,6 +373,12 @@ final class SyncHelperController {
         guard permitsPeerOperations(current), status.enabled,
               let expectedBuildIdentity, let identity = status.buildIdentity,
               !identity.needsReplacement(by: expectedBuildIdentity) else {
+            if expected == revision && current.helperEnabled && current.helperUpgradeToken == nil && !busy {
+                if !reconcileRegistration() {
+                    state = .failed; sharing = nil; supportsRubricExchange = false
+                    error = L10n.text("Offline · sync helper unavailable")
+                }
+            }
             throw offlineFailure()
         }
         guard expected == revision else {

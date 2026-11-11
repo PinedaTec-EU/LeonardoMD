@@ -185,11 +185,14 @@ final class SyncHelperControllerTests: XCTestCase {
         await helper.refresh()
         let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
                                            runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true)
+        var addresses = ["192.168.1.4"]
+        source.networkAddresses = { _ in addresses }
+        await source.refreshConsent(refreshHelper: false)
         await source.createQR()
         let first = try DirectPairingQR.decode(XCTUnwrap(source.invitationURL), now: Date())
         XCTAssertEqual(first.endpoint, a.endpoint)
         await control.setSharing(b)
-        await helper.refresh()
+        addresses = ["192.168.1.5"]
         await source.refreshConsent(refreshHelper: false)
         XCTAssertNil(source.invitationURL, "A changed endpoint must discard the previous invitation")
         await source.createQR()
@@ -199,6 +202,59 @@ final class SyncHelperControllerTests: XCTestCase {
         await control.setUnavailable()
         await source.createQR()
         XCTAssertNil(source.invitationURL)
+    }
+
+    func testOfflineHelperRecoversWhileSharingPageRemainsOpen() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let helper = fixture.controller(registration, control)
+        await helper.refresh()
+        let runtime = StatusRefreshRuntime(); let clock = StatusTestClock()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                                           runtime: runtime, helper: helper, usesHelper: true, now: { clock.read() })
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        await runtime.setConsentFailure(true); await control.setUnavailable()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertFalse(helper.online)
+        let calls = await control.statusCalls
+        await runtime.setConsentFailure(false); await control.setUnavailable(false)
+        await source.refreshConsent(refreshHelper: false)
+        let callsBeforeRetry = await control.statusCalls
+        XCTAssertEqual(callsBeforeRetry, calls, "A failed service must not be probed every tick")
+        clock.advance(31)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertTrue(helper.online, "The open page must recover after a bounded retry")
+    }
+
+    func testRevokedApprovalIsShownOnReturnAndOnPeerAttempt() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control)
+        await helper.refresh(); XCTAssertTrue(helper.online)
+        registration.status = .requiresApproval
+        await helper.refreshAfterActivation()
+        XCTAssertEqual(helper.state, .approvalRequired)
+        registration.status = .enabled
+        await helper.refresh(); XCTAssertTrue(helper.online)
+        registration.status = .requiresApproval
+        do { try await helper.requireReadyHelper(); XCTFail("Revoked approval must block the operation") }
+        catch { XCTAssertEqual(helper.state, .approvalRequired) }
+    }
+
+    func testNegativeLocalHealthResponseReplacesPreviouslyHealthyState() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control)
+        await helper.refresh(); XCTAssertTrue(helper.online)
+        await control.setStatusEnabled(false)
+        do { try await helper.requireReadyHelper(); XCTFail("Disabled helper must block the operation") }
+        catch { XCTAssertEqual(helper.state, .failed); XCTAssertFalse(helper.online) }
     }
 
     func testApprovalTransitionKeepsSpaceForLoginItemsAction() async throws {
@@ -1226,6 +1282,7 @@ private enum HelperControlError: Error { case unavailable }
 }
 private actor HelperControlFake: SyncHelperControlAccess {
     private var unavailable = false
+    private var statusEnabled = true
     private var buildIdentity: SyncHelperBuildIdentity?
     private var buildIdentities: [SyncHelperBuildIdentity?] = []
     private var sharing: RunningDirectService?
@@ -1247,6 +1304,7 @@ private actor HelperControlFake: SyncHelperControlAccess {
     private var heldStatus: CheckedContinuation<Void, Never>?
     var hasHeldStatus: Bool { heldStatus != nil }
     func setUnavailable(_ value: Bool = true) { unavailable = value }
+    func setStatusEnabled(_ value: Bool) { statusEnabled = value }
     func pauseStatus() { paused = true }
     func resumeStatus() { paused = false; heldStatus?.resume(); heldStatus = nil }
     func status() async throws -> SyncHelperStatus {
@@ -1254,7 +1312,7 @@ private actor HelperControlFake: SyncHelperControlAccess {
         let scheduledFailure = failingStatusCalls.remove(statusCalls) != nil
         let shouldFail = unavailable || scheduledFailure
         if !shouldFail, !buildIdentities.isEmpty { buildIdentity = buildIdentities.removeFirst() }
-        let reply = SyncHelperStatus(enabled: true, sharing: sharing, buildIdentity: buildIdentity)
+        let reply = SyncHelperStatus(enabled: statusEnabled, sharing: sharing, buildIdentity: buildIdentity)
         if paused || pausedStatusCall == statusCalls { await withCheckedContinuation { heldStatus = $0 } }
         if shouldFail { throw HelperControlError.unavailable }
         return reply
@@ -1290,4 +1348,11 @@ private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
     func cancelRubricRequest(requestID: UUID) async throws -> LeonardoSync.RubricRequest { throw DesktopRuntimeError.notRunning }
     func rubricResponse(requestID: UUID) async throws -> LeonardoSync.RubricResponse? { throw DesktopRuntimeError.notRunning }
     func rubricStatus(requestID: UUID) async throws -> RubricExchangeStatus { throw DesktopRuntimeError.notRunning }
+}
+
+private final class StatusTestClock: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = Date(timeIntervalSince1970: 1_000)
+    func read() -> Date { lock.lock(); defer { lock.unlock() }; return value }
+    func advance(_ seconds: TimeInterval) { lock.lock(); defer { lock.unlock() }; value.addTimeInterval(seconds) }
 }
