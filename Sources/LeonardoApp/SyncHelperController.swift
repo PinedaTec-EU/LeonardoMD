@@ -68,6 +68,7 @@ final class SyncHelperController {
     }
     var displayedState: State { checking ? stateBeforeRefresh : state }
     var displayedError: String? { checking ? errorBeforeRefresh : error }
+    var showsApprovalAction: Bool { displayedState == .approvalRequired }
     var statusText: String {
         switch displayedState {
         case .notInstalled: L10n.text("Sync helper is not installed")
@@ -103,6 +104,9 @@ final class SyncHelperController {
         guard !busy, !installation.blocksOperations else { return }
         revision += 1
         let expected = revision
+        defer {
+            if expected == revision { stateBeforeRefresh = state; errorBeforeRefresh = error }
+        }
         do {
             let settings = try await configurations.loadGlobalPreferences(at: preferencesURL)
             guard expected == revision else { return }
@@ -356,10 +360,12 @@ final class SyncHelperController {
         switch service.status {
         case .requiresApproval:
             revision += 1; state = .approvalRequired; error = nil
+            stateBeforeRefresh = state; errorBeforeRefresh = nil
             sharing = nil; supportsRubricExchange = false
             return true
         case .notFound, .notRegistered:
             revision += 1; state = .failed; sharing = nil; supportsRubricExchange = false
+            stateBeforeRefresh = state; errorBeforeRefresh = error
             return true
         default: return false
         }

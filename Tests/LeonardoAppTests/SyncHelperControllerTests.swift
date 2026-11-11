@@ -210,8 +210,14 @@ final class SyncHelperControllerTests: XCTestCase {
         }
         registration.status = .requiresApproval; await helper.refreshAfterActivation()
         XCTAssertEqual(helper.state, .approvalRequired)
+        XCTAssertEqual(helper.displayedState, .approvalRequired, "A confirmed revocation must be visible while old health is held")
+        XCTAssertTrue(helper.showsApprovalAction)
+        XCTAssertEqual(helper.statusText, L10n.text("Offline · approve the sync helper in System Settings"))
+        XCTAssertNil(helper.displayedError)
         registration.status = .enabled; await helper.refreshAfterActivation()
         XCTAssertTrue(helper.online, "Reapproval starts a fresh check even while the old one is held")
+        XCTAssertEqual(helper.displayedState, .running)
+        XCTAssertFalse(helper.showsApprovalAction)
         await control.resumeStatus(at: 2); await old.value
         XCTAssertTrue(helper.online)
     }
