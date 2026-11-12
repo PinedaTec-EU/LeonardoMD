@@ -45,8 +45,8 @@ struct MobileSharedHostDisclosureRow: View {
                         .font(.caption).foregroundStyle(MobileClassic.secondary)
                 }
             }
-            .accessibilityIdentifier("shared-host-\(connection.connectionID)")
         }
+        .accessibilityIdentifier("shared-host-\(connection.connectionID)")
         .listRowBackground(MobileClassic.paper)
     }
 
@@ -160,8 +160,8 @@ private struct MobileSharedProjectTreeRow: View {
                 projectMenu
             }
             .contentShape(Rectangle())
-            .accessibilityIdentifier("shared-project-\(descriptor.id)")
         }
+        .accessibilityIdentifier("shared-project-\(descriptor.id)")
         .listRowBackground(MobileClassic.paper)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button("Eliminar de este dispositivo", role: .destructive) {

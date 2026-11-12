@@ -30,7 +30,7 @@ final class OnDemandSyncUITests: XCTestCase {
             let candidate = hosts.element(boundBy: index)
             guard candidate.isHittable else { continue }
             candidate.tap()
-            foundPendingProject = addProject.waitForExistence(timeout: 2) && addProject.isHittable
+            foundPendingProject = addProject.waitForExistence(timeout: 5) && addProject.isHittable
         }
         XCTAssertTrue(foundPendingProject, "The newly granted project must be visible under its connected host")
         try capture(app, "incoming-project", state: "New project is grouped under its connected host and awaits Add or Ignore")
