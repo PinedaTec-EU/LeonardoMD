@@ -603,10 +603,6 @@ If the helper becomes unavailable while a source review is open, the review stay
 
 *Synthetic incoming change; the review remains open, but its Apply action is disabled until synchronization recovers.*
 
-![Incoming proposal retained while the sync helper recovers; Review changes is disabled.](assets/sync-review-unavailable.png)
-
-*Native production component with a synthetic proposal; it illustrates a disabled review action, not a live paired device or packaged-app acceptance.*
-
 ### Recognize a project's role
 
 The project icon shows the same project identity on macOS and iOS. Its small role indicator describes the device you are looking at, not the current network state:

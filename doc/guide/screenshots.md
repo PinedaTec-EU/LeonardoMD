@@ -11,7 +11,6 @@ provenance is recorded in each locale’s `assets/illustrations.provenance.json`
 | `en/es/assets/home.png` | `e457e86` | Actual Welcome component; isolated empty favorites/recents |
 | `en/es/assets/palette.png` | `e457e86` | Actual palette editor; initial valid global palette |
 | `en/es/assets/sync-sharing-v14.png` | #428 capture context and metadata | Synchronization → Share from this Mac; one common service control; disabled helper/sharing; isolated empty content |
-| `en/es/assets/sync-review-unavailable.png` | #428 capture context and metadata; original components retained in `doc/validation/sync-helper/428-quiet-status-v31/` | Synthetic incoming proposal remains visible while helper health is unavailable; Review changes is disabled; component-only evidence |
 | `en/es/assets/sync-review-draft-unavailable.png` | #428 capture context and metadata; original components retained in `doc/validation/sync-helper/428-quiet-status-v32/` | Synthetic source review remains open while helper health is unavailable; Apply decisions is disabled; component-only evidence |
 | `en/es/assets/sync-connections-v14.png` | #428 capture context and metadata | Synchronization → Connect to other computers; same common service control; disabled Connect; isolated empty connections/copies |
 | `en/es/assets/project-identities.png` | `175791211` | Actual macOS project-identity component at 400×160; local, outgoing selected-content and received roles; same meanings apply on iOS; synthetic role data, not a paired-device capture |

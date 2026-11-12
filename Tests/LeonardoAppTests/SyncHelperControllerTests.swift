@@ -2425,6 +2425,7 @@ final class SyncHelperControllerTests: XCTestCase {
             try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 960, height: 660),
                 to: destination.appendingPathComponent("review-draft-unavailable-\(suffix).png"), language: suffix,
                 state: "Synthetic source review retained while sync helper is unavailable; Apply decisions disabled",
+                pixelScale: 0.75,
                 route: "/native/preferences/synchronization/review", screen: "Incoming source review")
         }
     }

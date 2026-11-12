@@ -2,19 +2,19 @@
   "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
   "browser_version" : "Not applicable: native view, no browser engine",
   "capture_mode" : "element",
-  "captured_at" : "2026-11-12T01:50:55.292Z",
+  "captured_at" : "2026-11-12T02:42:12.382Z",
   "data_provenance" : "synthetic",
   "native_viewport_points" : {
-    "height" : 100,
+    "height" : 260,
     "width" : 532
   },
   "os" : "Version 27.0.1 (Build 26A434)",
   "route" : "\/native\/preferences\/synchronization",
-  "screen" : "Incoming proposal actions",
-  "source_sha" : "f61934426119d2fb16e28bd8c84deb900e995e25",
-  "state" : "Synthetic incoming proposal retained during helper retry; review action disabled by live health; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "screen" : "Synchronization helper status",
+  "source_sha" : "fcfd1858abcb1df78afd43da676366c3e8e0c8b4",
+  "state" : "Synthetic helper status: checking; viewport_css is the measured native-point equivalent; CSS is not applicable",
   "viewport_css" : {
-    "height" : 100,
+    "height" : 260,
     "width" : 532
   }
 }

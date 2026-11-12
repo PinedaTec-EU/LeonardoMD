@@ -43,7 +43,7 @@ final class BundledUserGuideTests: XCTestCase {
             let document = try LeonardoFormatParser.parse(source)
             XCTAssertFalse(document.isForm)
             XCTAssertEqual(document.metadata.fields.count, 0)
-            let expectedImageCount = language == .spanish ? 23 : 22
+            let expectedImageCount = language == .spanish ? 22 : 21
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:
                 workspace.directoryURL.appendingPathComponent("assets").path).count, expectedImageCount)
             let artwork = language == .english ? ["journey", "package", "import", "export"] : ["recorrido", "paquete", "importar", "exportar"]
@@ -172,7 +172,7 @@ final class BundledUserGuideTests: XCTestCase {
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Live \(name) example; built-in extension enabled")
                 }
-                for name in ["palette", "activation", "sync-sharing-v14", "sync-review-unavailable"] {
+                for name in ["palette", "activation", "sync-sharing-v14", "sync-review-draft-unavailable"] {
                     _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("section-\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Detailed chapter with original \(name) screenshot; all images loaded")

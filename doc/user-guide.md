@@ -593,9 +593,11 @@ Little Leonardo is a **read-only companion**. Desktop sharing and device trust a
 
 **Review changes** requires the local sharing service to be available. **Allow connection**, **Reject** and **Revoke** require a healthy sync helper. An affected action stays disabled while its requirement is unavailable. Paired devices remain listed when sharing from this Mac is off.
 
-![Incoming proposal retained while the sync helper recovers; Review changes is disabled.](guide/en/assets/sync-review-unavailable.png)
+If the helper becomes unavailable while a source review is open, the review stays open with its choices intact. **Apply decisions** remains disabled until synchronization and sharing are available again. Before applying, LeonardoMD checks that the incoming proposal and source still match the review; reopen it if either changed.
 
-*Native production component with a synthetic proposal; it illustrates a disabled review action, not a live paired device or packaged-app acceptance.*
+![An incoming source review stays open while the sync helper is unavailable; Apply decisions is disabled.](guide/en/assets/sync-review-draft-unavailable.png)
+
+*Synthetic incoming change; the review remains open, but its Apply action is disabled until synchronization recovers.*
 
 ### Recognize a project's role
 

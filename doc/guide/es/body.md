@@ -613,10 +613,6 @@ Si el asistente deja de estar disponible mientras tienes abierta una revisión d
 
 *Cambio recibido sintético; la revisión permanece abierta, pero la acción Aplicar se desactiva hasta que se recupere la sincronización.*
 
-![Propuesta recibida mientras se recupera el asistente; Revisar cambios está desactivado.](assets/sync-review-unavailable.png)
-
-*Componente de producción con una propuesta sintética; muestra una acción de revisión desactivada, no un dispositivo emparejado real ni la aceptación de la app empaquetada.*
-
 ### Reconocer el papel de un proyecto
 
 El icono de proyecto muestra la misma identidad en macOS e iOS. Su pequeño indicador de procedencia describe el dispositivo que estás mirando, no el estado actual de la red:

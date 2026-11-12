@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "collected_at": "2026-11-11T10:22:54.788664+00:00",
+  "collected_at": "2026-11-12T03:21:45.846258+00:00",
   "capture": {
-    "captured_at": "2026-11-11T10:22:33.391000+00:00",
+    "captured_at": "2026-11-12T03:21:26.315000+00:00",
     "route": "/native/user-guide/es",
     "screen": "Leonardo guide: Synchronization / Connect to other computers; helper disabled; isolated configuration",
     "browser_name": "Native AppKit / SwiftUI NSHostingView",
@@ -17,12 +17,12 @@
   },
   "image": {
     "format": "png",
-    "width_px": 1064,
-    "height_px": 980,
-    "sha256": "0ebe111897b96b5507c54feab89bd5d8422e9ff006eccfeefe02b2fff24dc1e1"
+    "width_px": 957,
+    "height_px": 882,
+    "sha256": "f8cd3b6a492cee616e8de5eea22d62aa3c505a3c065633f92c228de52c0c846e"
   },
   "source": {
-    "revision_at_collection": "3ac29b63e9790e9cd2c323072e3b4e75bbe54b41",
+    "revision_at_collection": "fcfd1858abcb1df78afd43da676366c3e8e0c8b4",
     "tracked_changes_present": true,
     "untracked_files_present": true
   }
