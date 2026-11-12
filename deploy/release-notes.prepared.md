@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1339
+
+- #434 Added: in-editor search and premium controls ([#40](https://github.com/PinedaTec-EU/LeonardoMD/pull/40))
+
+<p>Added literal and regex search across open documents in this window, with highlights, counts and wrapping navigation. Applied premium fields to project search, commit and naming, switches to hidden-file controls, and joined preference tabs.</p>
+
+Source: `90869224491fd202c573bc882dba01e16e094da8`. Delta: `{"build": 6}`.
+
 ## 0.3.1333
 
 - #417 Updated: select extensions from recommendations ([#418](https://github.com/PinedaTec-EU/LeonardoMD/pull/418))
