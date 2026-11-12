@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-12T16:49:12.067896+00:00",
+  "capture": {
+    "captured_at": "2026-11-12T16:47:07.506000+00:00",
+    "route": "/native/preferences/synchronization/review",
+    "screen": "Incoming source review",
+    "browser_name": "Native AppKit / SwiftUI NSHostingView",
+    "browser_version": "Not applicable: native view, no browser engine",
+    "state": "The same custom source review stays open while live helper health is unavailable; Apply is disabled; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "viewport_css": {
+      "width": 960,
+      "height": 660
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 720,
+    "height_px": 495,
+    "sha256": "af210e01611434ca74742c8a2795217553992a08e6b91b8a5c2ff2a90fd58c29"
+  },
+  "source": {
+    "revision_at_collection": "9c970868ebcc53180867a12853cf9aa078b164d1",
+    "tracked_changes_present": false,
+    "untracked_files_present": false
+  }
+}
