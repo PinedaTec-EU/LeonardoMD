@@ -11,6 +11,54 @@ import LeonardoDesktopSync
 /// It does not launch another packaged process or claim physical VPN coverage.
 @MainActor
 final class DesktopPeerNativeAcceptanceTests: XCTestCase {
+    func testAcceptedRemoteProjectCatalogueRemainsBrowseableAfterOfflineRestart() async throws {
+        let fixture = try NativePeerAcceptanceFixture()
+        defer { fixture.cleanup() }
+        await fixture.owner.initialize()
+        await fixture.owner.update(fixture.enabledSettings)
+        let running = try XCTUnwrap(fixture.owner.running, fixture.owner.error ?? "Missing service")
+        do {
+            await fixture.peer.initialize()
+            let enrolled = await fixture.peer.enroll(address: running.endpoint.absoluteString, name: "Synthetic MacBook")
+            XCTAssertTrue(enrolled, fixture.peer.error ?? "Enrollment failed")
+            let connection = try XCTUnwrap(fixture.peer.connections.first)
+            await fixture.owner.refreshConsent()
+            let request = try XCTUnwrap(fixture.owner.consent.requests.first)
+            await fixture.owner.approve(request, projects: [fixture.shared.id])
+            await fixture.peer.refresh(connection.id)
+            await fixture.peer.addRemoteProject(connectionID: connection.id, projectID: fixture.shared.id)
+            let downloadID = DesktopPeerController.downloadID(connectionID: connection.id, projectID: fixture.shared.id)
+            await fixture.peer.downloads.retain(id: downloadID, path: "docs/note.md", isFolder: false, keep: true)
+            let retained = try XCTUnwrap(fixture.peer.downloads.projects.first(where: { $0.id == downloadID }))
+            let cachedRevision = try XCTUnwrap(retained.downloads["docs/note.md"]?.revision)
+            let catalogueRevision = try XCTUnwrap(retained.catalogue.files.first(where: { $0.path == "docs/note.md" })?.revision)
+            XCTAssertEqual(cachedRevision, catalogueRevision)
+
+            fixture.peer.updateInterval(0)
+            fixture.peer.stop()
+            var disabled = fixture.enabledSettings
+            disabled.enabled = false
+            await fixture.owner.update(disabled)
+
+            let restarted = DesktopPeerController(preferencesURL: fixture.peerPreferences, library: fixture.peerLibrary,
+                                                   revoker: fixture.peerRevoker, defaults: fixture.defaults,
+                                                   helper: fixture.peer.helper)
+            await restarted.initialize()
+            defer { restarted.stop() }
+            let restoredConnection = try XCTUnwrap(restarted.connections.first)
+            XCTAssertNil(restarted.available[restoredConnection.id], "Offline startup must not imply a fresh remote response")
+            XCTAssertEqual(restarted.acceptedProjectDescriptors(for: restoredConnection).map(\.id), [fixture.shared.id])
+            let cached = try XCTUnwrap(restarted.downloads.projects.first(where: { $0.id == downloadID }))
+            XCTAssertEqual(cached.descriptor.name, fixture.shared.name)
+            let opened = try await restarted.downloads.open(id: downloadID, path: "docs/note.md")
+            XCTAssertEqual(opened.content, Data("baseline".utf8))
+            XCTAssertNil(restarted.error)
+        } catch {
+            await fixture.owner.stop()
+            throw error
+        }
+    }
+
     func testNativeControllersReconcileOfflineCopiesAndRevokeOpenEditors() async throws {
         let fixture = try NativePeerAcceptanceFixture()
         defer { fixture.cleanup() }
@@ -122,12 +170,15 @@ final class DesktopPeerNativeAcceptanceTests: XCTestCase {
 private final class NativePeerAcceptanceFixture {
     let root: URL
     let source: URL
+    let peerPreferences: URL
     let shared: MobileSharedProject
     let owner: DesktopSyncController
     let peer: DesktopPeerController
+    let peerLibrary: DesktopPeerLibrary
+    let peerRevoker: DesktopPeerEditorRevoker
     let ownerEditor: AppSession
     let peerTabs: DocumentTabs
-    private let defaults: UserDefaults
+    let defaults: UserDefaults
     private let defaultsSuite: String
     private let oldSessions: @MainActor () -> [AppSession]
     var enabledSettings: MobileSyncPreferences {
@@ -142,7 +193,7 @@ private final class NativePeerAcceptanceFixture {
         try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         shared = MobileSharedProject(rootURL: source, name: "Synthetic Studio", folders: ["docs"], documents: ["loose.md"])
         let ownerPreferences = root.appendingPathComponent("Owner/preferences.json")
-        let peerPreferences = root.appendingPathComponent("Peer/preferences.json")
+        peerPreferences = root.appendingPathComponent("Peer/preferences.json")
         ownerEditor = AppSession(preferencesURL: ownerPreferences)
         peerTabs = DocumentTabs(preferencesURL: peerPreferences)
         let credentials = NativePeerAcceptanceCredentials()
@@ -151,15 +202,15 @@ private final class NativePeerAcceptanceFixture {
         let peerRoot = peerPreferences.deletingLastPathComponent().appendingPathComponent("DesktopPeers")
         let working = peerRoot.appendingPathComponent("Working")
         let copies = FileDesktopPeerCopyStore(root: peerRoot.appendingPathComponent("Copies"))
-        let revoker = DesktopPeerEditorRevoker()
-        let library = DesktopPeerLibrary(
+        peerRevoker = DesktopPeerEditorRevoker()
+        peerLibrary = DesktopPeerLibrary(
             connections: FileDesktopPeerConnectionStore(root: peerRoot.appendingPathComponent("Connections")),
             copies: copies, workspace: DesktopPeerWorkspace(root: working, copies: copies),
-            credentials: credentials, remote: DesktopPeerHTTPSRemote(), revoker: revoker,
+            credentials: credentials, remote: DesktopPeerHTTPSRemote(), revoker: peerRevoker,
             outbox: FileDesktopPeerOutboxStore(root: peerRoot.appendingPathComponent("Outbox")),
             receiptApplier: DesktopPeerReceiptApplier(workingRoot: working, copies: copies,
                 intents: FileDesktopPeerReceiptIntentStore(root: peerRoot.appendingPathComponent("ReceiptIntents"))))
-        peer = DesktopPeerController(preferencesURL: peerPreferences, library: library, revoker: revoker, defaults: defaults)
+        peer = DesktopPeerController(preferencesURL: peerPreferences, library: peerLibrary, revoker: peerRevoker, defaults: defaults)
         oldSessions = NativeReconciliationLease.shared.sessions
         let editor = ownerEditor, tabs = peerTabs
         NativeReconciliationLease.shared.sessions = { [editor] + tabs.tabs.map(\.session) }
@@ -170,7 +221,7 @@ private final class NativePeerAcceptanceFixture {
                 return OpenDocumentBuffer(path: "docs/note.md", text: tab.session.content)
             }
         }
-        revoker.close = { ids in
+        peerRevoker.close = { ids in
             let directories = ids.map { working.appendingPathComponent($0.uuidString) }
             await NativeReconciliationLease.shared.waitUntilReleased(directories)
             await tabs.revokeWorkspaces(directories)

@@ -213,9 +213,7 @@ struct DesktopPeerRemoteProjectsView: View {
     }
 
     private func acceptedProjects(_ connection: DesktopPeerConnection) -> some View {
-        let projects = (controller.available[connection.id] ?? []).filter {
-            controller.reviewStore.acceptsProject(connectionID: connection.id, projectID: $0.id)
-        }
+        let projects = controller.acceptedProjectDescriptors(for: connection)
         return VStack(alignment: .leading, spacing: 8) {
             sectionTitle(L10n.text("Projects on this computer"), count: projects.count)
             if projects.isEmpty {

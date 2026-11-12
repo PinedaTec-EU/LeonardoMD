@@ -1,8 +1,8 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v63-en.mdlz` and `Guide-v63-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v64-en.mdlz` and `Guide-v64-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v63/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v64/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
@@ -12,9 +12,10 @@ and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
-Guide v63 refreshes the Little Leonardo host → project → file hierarchy and
-updates existing user-owned copies without overwriting earlier guide revisions.
-Earlier v62 working copies remain untouched.
+Guide v64 explains how accepted projects retain their last saved catalogue for
+browsing after an offline restart, alongside the current Little Leonardo host →
+project → file hierarchy. It updates existing user-owned copies without
+overwriting earlier guide revisions. Earlier v63 working copies remain untouched.
 
 File → Import with your agent opens `AgentImport-v3-en.mdlz` or
 `AgentImport-v3-es.mdlz` in the same tab/package flow, with personal copies under
