@@ -357,6 +357,17 @@ private extension DynamicTypeSize {
 }
 
 final class MobileDirectConnectionStoreTests: XCTestCase {
+    func testSharedFileStatusPrioritizesLiveTransferAndDownloadFailure() {
+        XCTAssertEqual(MobileSharedFileStatus.resolve(isDownloading: true, hasFailed: true,
+            isAvailableOffline: false, isRetained: true, isDownloaded: false), .downloading)
+        XCTAssertEqual(MobileSharedFileStatus.resolve(isDownloading: false, hasFailed: true,
+            isAvailableOffline: false, isRetained: true, isDownloaded: false), .failed)
+        XCTAssertEqual(MobileSharedFileStatus.resolve(isDownloading: false, hasFailed: false,
+            isAvailableOffline: true, isRetained: true, isDownloaded: true), .availableOffline)
+        XCTAssertEqual(MobileSharedFileStatus.resolve(isDownloading: false, hasFailed: false,
+            isAvailableOffline: false, isRetained: true, isDownloaded: false), .offlinePending)
+    }
+
     func testIgnoredProjectStaysDismissedUntilItsGrantChanges() throws {
         let projectID = UUID()
         let scope = try CorpusScope(folder: "")

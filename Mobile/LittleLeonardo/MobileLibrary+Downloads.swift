@@ -2,6 +2,22 @@ import Foundation
 import LeonardoSync
 
 extension MobileLibrary {
+    func setSharedContentOffline(id: UUID, path: String, isFolder: Bool, keep: Bool) async {
+        guard !connecting else { return }
+        downloads.error = nil
+        error = nil
+        await downloads.retain(id: id, path: path, isFolder: isFolder, keep: keep)
+        if let failure = downloads.error { error = failure }
+    }
+
+    func releaseSharedContent(id: UUID, path: String, isFolder: Bool) async {
+        guard !connecting else { return }
+        downloads.error = nil
+        error = nil
+        await downloads.release(id: id, path: path, isFolder: isFolder)
+        if let failure = downloads.error { error = failure }
+    }
+
     func synchronize() async {
         guard !connecting else { return }
         connecting = true

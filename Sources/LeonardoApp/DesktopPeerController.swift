@@ -190,8 +190,15 @@ final class DesktopPeerController {
             try await downloads.restore(allowedIDs: allowed)
             let catalogue = try await library.catalogue(connectionID: connectionID, projectID: projectID)
             guard let shared = available[connectionID]?.first(where: { $0.id == projectID }) else { throw SyncError.revoked }
+            guard !reviewStore.ignoredProject(connectionID: connectionID, projectID: projectID) else {
+                throw SyncError.revoked
+            }
             try await downloads.update(id: Self.downloadID(connectionID: connectionID, projectID: projectID),
                                        descriptor: shared, catalogue: catalogue)
+            guard !reviewStore.ignoredProject(connectionID: connectionID, projectID: projectID) else {
+                try await downloads.remove(id: Self.downloadID(connectionID: connectionID, projectID: projectID))
+                return
+            }
             reviewStore.acceptProject(connectionID: connectionID, projectID: projectID)
         } catch {
             self.error = error.localizedDescription
@@ -200,9 +207,16 @@ final class DesktopPeerController {
     }
 
     func ignoreRemoteProject(connectionID: UUID, projectID: UUID) {
-        guard !InstanceRuntime.isAdditional else { return }
+        guard Self.canIgnoreRemoteProject(isAdditional: InstanceRuntime.isAdditional,
+                                          busy: busy,
+                                          projectIsAvailable: available[connectionID]?.contains(where: { $0.id == projectID }) == true)
+        else { return }
         guard let descriptor = available[connectionID]?.first(where: { $0.id == projectID }) else { return }
         reviewStore.ignoreProject(connectionID: connectionID, descriptor: descriptor)
+    }
+
+    static func canIgnoreRemoteProject(isAdditional: Bool, busy: Bool, projectIsAvailable: Bool) -> Bool {
+        !isAdditional && !busy && projectIsAvailable
     }
 
     func setConnectionName(_ name: String, connectionID: UUID) {

@@ -157,7 +157,7 @@ struct DesktopPeerRemoteProjectsView: View {
                         }.disabled(!controller.helper.online || controller.busy)
                         Button(L10n.text("Ignore")) {
                             controller.ignoreRemoteProject(connectionID: connection.id, projectID: project.id)
-                        }
+                        }.disabled(controller.busy)
                     }
                     .padding(.vertical, 5)
                     Divider()

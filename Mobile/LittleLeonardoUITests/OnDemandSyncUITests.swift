@@ -11,7 +11,6 @@ final class OnDemandSyncUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.buttons["open-sync-settings"].waitForExistence(timeout: 15))
         app.buttons["open-sync-settings"].tap()
-        try capture(app, "storage-initial", state: "Visible MiB label and explicit Apply action before editing")
         editLimit("128", app: app)
         XCTAssertTrue(app.buttons["apply-cache-limit"].waitForExistence(timeout: 5))
         app.buttons["apply-cache-limit"].tap()
@@ -19,19 +18,34 @@ final class OnDemandSyncUITests: XCTestCase {
         editLimit("128\n", app: app)
         app.buttons["Cerrar"].tap()
         try enroll(app)
+
+        let projectID = try readyProjectID()
+        let hosts = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "shared-host-"))
+        XCTAssertTrue(hosts.firstMatch.waitForExistence(timeout: 15), "The connected Mac must appear as a host group")
+        let incoming = element("incoming-project-" + projectID, app: app)
+        let addProject = incoming.buttons["Añadir"]
+        var foundPendingProject = addProject.isHittable
+        for index in 0..<hosts.count where !foundPendingProject {
+            let candidate = hosts.element(boundBy: index)
+            guard candidate.isHittable else { continue }
+            candidate.tap()
+            foundPendingProject = addProject.waitForExistence(timeout: 2) && addProject.isHittable
+        }
+        XCTAssertTrue(foundPendingProject, "The newly granted project must be visible under its connected host")
+        try capture(app, "incoming-project", state: "New project is grouped under its connected host and awaits Add or Ignore")
+        XCTAssertTrue(addProject.isHittable)
+        XCTAssertTrue(incoming.buttons["Ignorar"].exists)
+        addProject.tap()
+        let project = element("shared-project-" + projectID, app: app)
+        XCTAssertTrue(project.waitForExistence(timeout: 20), "Adding must reveal the expandable project row")
         try phase("assert-metadata")
-        let receivedProjectID = try readyProjectID()
-        let project = app.buttons["open-project-" + receivedProjectID]
-        XCTAssertTrue(project.waitForExistence(timeout: 20),
-                      "The received project must remain reachable through its stable outer navigation identifier")
         project.tap()
-        let referenceFolder = folder("reference", app: app)
-        XCTAssertTrue(referenceFolder.waitForExistence(timeout: 10))
-        referenceFolder.tap()
-        let remote = row("reference/remote.md", app: app)
+        let remote = fileRow(projectID, "reference/remote.md", app: app)
         assertStatus(remote, "Solo remoto")
-        try capture(app, "catalogue-remote", state: "Authenticated catalogue; no file body requested")
-        row("reference/readme.md", app: app).tap()
+        try capture(app, "catalogue-remote", state: "Added project shows its host hierarchy and catalogue without fetching file bodies")
+
+        fileRow(projectID, "reference/readme.md", app: app).tap()
         XCTAssertTrue(app.webViews.firstMatch.staticTexts["Cached reference"].waitForExistence(timeout: 15))
         let web = app.webViews.firstMatch
         let heading = web.staticTexts["Cached reference"].firstMatch
@@ -45,62 +59,68 @@ final class OnDemandSyncUITests: XCTestCase {
         app.buttons["Ver documento"].tap()
         XCTAssertTrue(app.webViews.firstMatch.staticTexts["Cached reference"].waitForExistence(timeout: 10))
         try phase("assert-single-file")
-        try capture(app, "document", state: "One requested file rendered through compact Classic preview after source/preview round-trip")
+        try capture(app, "document", state: "One explicitly opened file rendered through compact Classic preview")
         app.navigationBars.buttons.element(boundBy: 0).tap()
-        assertStatus(row("reference/readme.md", app: app), "En caché")
-        app.buttons["download-parent-folder"].tap()
-        folder("notes", app: app).tap()
-        let agenda = row("notes/agenda.md", app: app)
-        agenda.press(forDuration: 1)
+        assertStatus(fileRow(projectID, "reference/readme.md", app: app), "En caché")
+
+        let agenda = fileRow(projectID, "notes/agenda.md", app: app)
+        let agendaMenu = element("shared-file-actions-" + projectID + "-notes/agenda.md", app: app)
+        XCTAssertTrue(agendaMenu.waitForExistence(timeout: 10))
+        agendaMenu.tap()
         XCTAssertTrue(app.buttons["Mantener sin conexión"].waitForExistence(timeout: 5))
-        try capture(app, "context-menu", state: "Native long-press menu on a remote file")
+        try capture(app, "context-menu", state: "File ellipsis menu exposes offline retention and local-space release")
         app.buttons["Mantener sin conexión"].tap()
         assertStatus(agenda, "Disponible sin conexión")
-        app.buttons["download-parent-folder"].tap()
-        let notesFolder = folder("notes", app: app)
-        XCTAssertTrue(notesFolder.waitForExistence(timeout: 5))
-        notesFolder.press(forDuration: 1)
+
+        let projectMenu = element("shared-project-actions-" + projectID, app: app)
+        projectMenu.tap()
+        XCTAssertTrue(app.buttons["Mantener sin conexión"].waitForExistence(timeout: 5))
         app.buttons["Mantener sin conexión"].tap()
-        notesFolder.tap()
-        assertStatus(row("notes/decisions.md", app: app), "Offline pendiente")
-        try capture(app, "catalogue-mixed", state: "Remote, cached, offline, partially retained and failed/pending download states")
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(element("remote-file-download-failure-" + projectID + "-notes/decisions.md", app: app)
+            .waitForExistence(timeout: 15), "A failed retained download must be visible on its file row")
+        try capture(app, "catalogue-mixed", state: "Project retention downloads current files and applies to future files; pending transfer remains visible")
+
         app.buttons["open-sync-settings"].tap()
         XCTAssertEqual(app.textFields["temporary-cache-limit"].value as? String, "128")
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Sin conexión (separado)")).firstMatch.exists)
-        try capture(app, "storage-separate", state: "128MiB temporary budget; retained folder and independent offline/pending accounting")
+        try capture(app, "storage-separate", state: "128MiB temporary budget; retained project and independent offline/pending accounting")
         app.buttons["clear-temporary-cache"].tap()
-        try capture(app, "storage-cleared", state: "Temporary cleanup leaves retained content and its pending rule intact")
+        try capture(app, "storage-cleared", state: "Temporary cleanup leaves retained content and its project rule intact")
         app.buttons["Cerrar"].tap()
-        project.tap()
-        folder("reference", app: app).tap()
-        assertStatus(row("reference/readme.md", app: app), "Solo remoto")
-        app.buttons["download-parent-folder"].tap()
-        folder("notes", app: app).tap()
-        assertStatus(row("notes/agenda.md", app: app), "Disponible sin conexión")
+        assertStatus(fileRow(projectID, "reference/readme.md", app: app), "Disponible sin conexión")
+        assertStatus(fileRow(projectID, "notes/agenda.md", app: app), "Disponible sin conexión")
+
         try phase("allow-pending")
-        assertStatus(row("notes/decisions.md", app: app), "Disponible sin conexión", timeout: 80)
-        assertStatus(row("notes/future.md", app: app), "Disponible sin conexión")
-        try capture(app, "catalogue-recovered", state: "Automatic refresh retried the failed file and retained a future folder descendant without a manual sync")
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        let received = app.buttons["open-project-" + receivedProjectID]
-        XCTAssertTrue(received.waitForExistence(timeout: 10))
-        try capture(app, "project-before-delete", state: "Received project remains an ordinary row in the same list as the local Demo project")
-        received.swipeLeft()
-        XCTAssertTrue(received.exists, "A swipe alone must not delete the received project")
-        let delete = app.buttons["delete-project-" + receivedProjectID]
+        assertStatus(fileRow(projectID, "notes/decisions.md", app: app), "Disponible sin conexión", timeout: 80)
+        let future = fileRow(projectID, "notes/future.md", app: app)
+        assertStatus(future, "Disponible sin conexión")
+        try capture(app, "catalogue-recovered", state: "Failed transfer recovered and project retention automatically downloaded a newly shared file")
+
+        let currentProject = element("shared-project-" + projectID, app: app)
+        XCTAssertTrue(currentProject.waitForExistence(timeout: 10))
+        try capture(app, "project-before-delete", state: "Accepted project remains nested under its linked Mac")
+        currentProject.swipeLeft()
+        XCTAssertTrue(currentProject.exists, "A swipe alone must not delete the received project")
+        let delete = element("delete-shared-project-" + projectID, app: app)
         XCTAssertTrue(delete.waitForExistence(timeout: 5))
-        try capture(app, "project-swipe-delete", state: "Swipe reveals Delete; explicit button tap is still required")
+        try capture(app, "project-swipe-delete", state: "Swipe reveals an explicit local removal action")
         delete.tap()
-        XCTAssertTrue(received.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(currentProject.waitForNonExistence(timeout: 10))
         app.terminate()
         app.launch()
         XCTAssertTrue(app.buttons["open-sync-settings"].waitForExistence(timeout: 15))
-        XCTAssertFalse(received.exists)
         app.buttons["Sincronizar"].firstMatch.tap()
-        XCTAssertFalse(received.waitForExistence(timeout: 10), "Authorized refresh must not restore a locally removed project")
+        XCTAssertFalse(element("shared-project-" + projectID, app: app).waitForExistence(timeout: 10),
+                       "Authorized refresh must not restore a locally removed project")
         XCTAssertTrue(app.buttons["open-demo-project"].exists)
-        try capture(app, "project-deleted-after-refresh", state: "Received project stays absent after app relaunch and authenticated synchronization; local Demo remains")
+        try capture(app, "project-deleted-after-refresh", state: "Locally removed project stays absent after relaunch and authenticated sync; Demo remains")
+    }
+
+    @MainActor private func element(_ identifier: String, app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+    }
+    @MainActor private func fileRow(_ projectID: String, _ path: String, app: XCUIApplication) -> XCUIElement {
+        element("shared-file-" + projectID + "-" + path, app: app)
     }
 
     @MainActor private func enroll(_ app: XCUIApplication) throws {
@@ -120,16 +140,10 @@ final class OnDemandSyncUITests: XCTestCase {
         }
         try phase("approve")
         app.buttons["Sincronizar"].firstMatch.tap()
-        let projectID = try readyProjectID()
-        XCTAssertTrue(app.buttons["open-project-" + projectID].waitForExistence(timeout: 20),
-                      "Enrollment must expose the received project through its stable outer navigation identifier")
-    }
-
-    @MainActor private func row(_ path: String, app: XCUIApplication) -> XCUIElement {
-        app.buttons["download-file-" + path]
-    }
-    @MainActor private func folder(_ path: String, app: XCUIApplication) -> XCUIElement {
-        app.buttons["download-folder-" + path]
+        let connectedHost = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "shared-host-")).firstMatch
+        XCTAssertTrue(connectedHost.waitForExistence(timeout: 20),
+                      "Enrollment must expose the connected Mac as a host group")
     }
     @MainActor private func editLimit(_ text: String, app: XCUIApplication) {
         let field = app.textFields["temporary-cache-limit"]
