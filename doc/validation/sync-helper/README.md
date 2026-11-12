@@ -1,10 +1,11 @@
 # Sync helper validation
 
 Current PR #428 correction captures are in
-[`428-quiet-status-v31/`](428-quiet-status-v31/README.md). They cover the
-confirmed status through recovery, retained sync rows and the actions disabled
-when helper health is unavailable. These are native component captures, not
-fresh packaged-app startup or signed-service acceptance.
+[`428-quiet-status-v32/`](428-quiet-status-v32/README.md). They cover confirmed
+status through recovery, a superseding peer preflight, retained sync rows, an
+open source review with Apply disabled, and a confirmed error while the switch
+is off. These are native component captures, not fresh packaged-app startup or
+signed-service acceptance.
 
 ## Owner-authorized installed-service acceptance
 

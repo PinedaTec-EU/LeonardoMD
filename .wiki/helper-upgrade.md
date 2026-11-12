@@ -93,7 +93,7 @@ preparation before preference changes; it never assumes that helper is older.
 
 Synchronization preferences preserve the previous helper error while a health
 query is in flight. The common switch preserves its previous indicator during checking,
-shows green when online and red when unavailable, and hides it when disabled;
+shows green when online and red when unavailable, and hides it when ordinarily disabled;
 the status remains available to assistive technology. While the service is in an
 error state, preferences retry health at a bounded interval; a change in local
 addresses refreshes the sharing endpoint and discards an obsolete invitation.
@@ -107,3 +107,14 @@ gated on live helper health. A confirmed terminal failure clears that stale
 presentation, and a network-address change still invalidates an obsolete QR.
 See `DesktopSyncController.updateRunningFromHelper()` and
 `DesktopSyncController.refreshConsent(refreshHelper:)`.
+
+Issue #421 follow-up keeps peer preflights counted as active helper checks even
+when they supersede an older refresh. Until the current health result is
+presented, the sharing page continues to use its confirmed endpoint and keeps
+same-endpoint invitations and consent rows; live actions still require
+`helper.online`. Terminal helper failure clears stale sharing rows but leaves an
+open source-review sheet and its in-view choices intact. Apply is disabled until
+synchronization and sharing recover, and the runtime compares the pending
+proposal with the review again before applying. The common status indicator is
+red for a confirmed failure even when a failed shutdown leaves the switch off;
+ordinary disabled state still hides it. Bilingual Help is Guide v59.

@@ -326,7 +326,6 @@ final class DesktopSyncController {
         invitationNetworkAddresses = nil
         incoming = []
         consent = PairingRegistry()
-        reviewing = nil
     }
 
     private var preservingConfirmedSharingDuringCheck: Bool {

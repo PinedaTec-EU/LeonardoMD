@@ -2,6 +2,9 @@ import SwiftUI
 
 struct SyncHelperPreferencesSection: View {
     @Bindable var controller: SyncHelperController
+    private var showsStatusIndicator: Bool {
+        controller.hasPresentedStatus && (controller.enabled || controller.displayedState == .failed)
+    }
     private var showsDiagnostic: Bool {
         switch controller.displayedState {
         case .notInstalled, .approvalRequired, .failed: true
@@ -18,8 +21,8 @@ struct SyncHelperPreferencesSection: View {
                         Circle()
                             .fill(controller.displayedState == .running ? Color.green : Color.red)
                             .frame(width: 9, height: 9)
-                            .opacity(controller.hasPresentedStatus && controller.enabled ? 1 : 0)
-                            .accessibilityHidden(!controller.hasPresentedStatus || !controller.enabled)
+                            .opacity(showsStatusIndicator ? 1 : 0)
+                            .accessibilityHidden(!showsStatusIndicator)
                             .accessibilityLabel(controller.statusText)
                         Text(L10n.text("Enable Leonardo Sync"))
                     }

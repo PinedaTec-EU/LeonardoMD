@@ -591,6 +591,7 @@
   "Connect to other computers": "Connect to other computers",
   "Synchronization role": "Synchronization role",
   "Enable Leonardo Sync": "Enable Leonardo Sync",
+  "Enable synchronization and sharing to apply review decisions.": "Enable synchronization and sharing to apply review decisions.",
   "Required to share and connect. When off, both directions are offline even with LeonardoMD open. Starts after login and keeps sharing saved files when you close the editor.": "Required to share and connect. When off, both directions are offline even with LeonardoMD open. Starts after login and keeps sharing saved files when you close the editor.",
   "Choose saved content from this Mac for Little Leonardo and other computers. Connecting to another computer does not require sharing your own files.": "Choose saved content from this Mac for Little Leonardo and other computers. Connecting to another computer does not require sharing your own files.",
   "Content shared from this Mac": "Content shared from this Mac",

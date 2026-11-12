@@ -607,6 +607,12 @@ Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dis
 
 **Revisar cambios** requiere que el servicio de uso compartido local esté disponible. **Permitir la conexión**, **Rechazar** y **Revocar** requieren que el asistente de sincronización esté en buen estado. La acción afectada permanece desactivada mientras falte ese requisito. Los dispositivos emparejados siguen en la lista aunque compartir desde este Mac esté desactivado.
 
+Si el asistente deja de estar disponible mientras tienes abierta una revisión del Mac de origen, la revisión permanece abierta con sus decisiones. **Aplicar decisiones** sigue desactivado hasta que la sincronización y el uso compartido vuelvan a estar disponibles. Antes de aplicar, LeonardoMD comprueba que la propuesta recibida y el origen sigan coincidiendo con la revisión; vuelve a abrirla si alguno ha cambiado.
+
+![La revisión de un cambio recibido sigue abierta cuando el asistente no está disponible; Aplicar decisiones está desactivado.](assets/sync-review-draft-unavailable.png)
+
+*Cambio recibido sintético; la revisión permanece abierta, pero la acción Aplicar se desactiva hasta que se recupere la sincronización.*
+
 ![Propuesta recibida mientras se recupera el asistente; Revisar cambios está desactivado.](assets/sync-review-unavailable.png)
 
 *Componente de producción con una propuesta sintética; muestra una acción de revisión desactivada, no un dispositivo emparejado real ni la aceptación de la app empaquetada.*

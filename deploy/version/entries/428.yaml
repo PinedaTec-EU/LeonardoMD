@@ -1,4 +1,4 @@
 {
-  "build": 137,
-  "summary": "Synchronization keeps its last status during checks, avoids repeated healthy-service checks, and removes obsolete invitations after network changes."
+  "build": 139,
+  "summary": "Synchronization keeps status steady during checks, reduces healthy helper polling, preserves invitations and review drafts during recovery, and gates peer actions on live helper health."
 }

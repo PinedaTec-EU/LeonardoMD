@@ -13,6 +13,7 @@ final class SyncHelperController {
     private(set) var busy = false
     private(set) var checking = false
     private var activeRefreshes = 0
+    private var activePeerPreflights = 0
     private var stateBeforeRefresh = State.disabled
     private var errorBeforeRefresh: String?
     private var sharingBeforeRefresh: RunningDirectService?
@@ -72,7 +73,7 @@ final class SyncHelperController {
     }
 
     var online: Bool { state == .running && !installation.blocksOperations }
-    var checkingStatus: Bool { checking || busy }
+    var checkingStatus: Bool { checking || activePeerPreflights > 0 || busy }
     var needsAutomaticRecovery: Bool {
         state == .failed || state == .starting || (enabled && !hasPresentedStatus)
     }
@@ -451,6 +452,8 @@ final class SyncHelperController {
     }
 
     func requireReadyHelper() async throws {
+        activePeerPreflights += 1
+        defer { activePeerPreflights -= 1 }
         let initialRevision = lifecycleRevision
         let initialHealthRevision = revision
         let settings: MobileSyncPreferences

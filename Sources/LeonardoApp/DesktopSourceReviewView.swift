@@ -54,13 +54,17 @@ struct DesktopSourceReviewView: View {
                 } else { Text(L10n.text("No changes")).frame(maxWidth: .infinity, maxHeight: .infinity) }
             }
             if let error = controller.error { Text(error).foregroundStyle(.red).textSelection(.enabled) }
+            if !controller.sharingAvailable {
+                Text(L10n.text("Enable synchronization and sharing to apply review decisions."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             HStack {
                 Button(L10n.text("Cancel")) { dismiss() }.keyboardShortcut(.cancelAction)
                 Spacer()
                 Text("\(decisions.count)/\(differences.count)").monospacedDigit().foregroundStyle(.secondary)
                 Button(L10n.text("Apply decisions")) {
                     Task { if await controller.applyReview(value, decisions: decisions) { dismiss() } }
-                }.disabled(decisions.count != differences.count)
+                }.disabled(decisions.count != differences.count || !controller.sharingAvailable)
             }
         }.padding(24).frame(minWidth: 860, idealWidth: 960, minHeight: 560, idealHeight: 660)
             .disabled(controller.busy).interactiveDismissDisabled(controller.busy)

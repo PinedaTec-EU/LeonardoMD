@@ -195,8 +195,10 @@ final class SyncHelperControllerTests: XCTestCase {
         }
         await barrier.release(); await refresh.value
         XCTAssertFalse(helper.checking)
+        XCTAssertTrue(helper.checkingStatus, "A superseding peer preflight remains an active helper-health check")
         XCTAssertEqual(helper.displayedState, .running, "A superseded transient error must stay hidden")
         await control.resumeStatus(at: 3); try await peer.value
+        XCTAssertFalse(helper.checkingStatus)
         XCTAssertEqual(helper.displayedState, .running)
     }
 
@@ -1713,12 +1715,10 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(held)
         XCTAssertTrue(controller.checkingStatus)
         XCTAssertEqual(controller.error, "Previous error")
-        try await captureStatusIndicator(controller, state: "recovery-checking")
         await control.resumeStatus(); await refresh.value
         XCTAssertTrue(controller.online)
         XCTAssertNil(controller.error)
         XCTAssertFalse(controller.checkingStatus)
-        try await captureStatusIndicator(controller, state: "recovery-online")
     }
 
     func testRecoveryRetainsDiagnosticUntilFailedHealthReturns() async throws {
@@ -2072,8 +2072,9 @@ final class SyncHelperControllerTests: XCTestCase {
             sha256: String(repeating: "a", count: 64))
         let proposal = DesktopPeerIncomingProposal(deviceID: UUID(), deviceName: "Second Mac", upload: upload)
         await runtime.setIncomingProposals([proposal])
+        let fixedNow = Date(timeIntervalSince1970: 1_000)
         let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
-            runtime: runtime, helper: helper, usesHelper: true)
+            runtime: runtime, helper: helper, usesHelper: true, now: { fixedNow })
         source.networkAddresses = { _ in ["192.168.1.4"] }
 
         await source.initialize()
@@ -2110,8 +2111,11 @@ final class SyncHelperControllerTests: XCTestCase {
 
         let proposalSelection = try CorpusSelection(folders: [""], documents: [])
         let snapshot = CorpusSnapshot(revision: "base", files: [])
+        let proposed = CorpusSnapshot(revision: "incoming", files: [
+            CorpusFile(path: "notes.md", content: Data("# Pending incoming edit".utf8))
+        ])
         let reviewedProposal = try DesktopPeerProposal(projectID: project.id, selection: proposalSelection,
-            base: snapshot, proposed: snapshot)
+            base: snapshot, proposed: proposed)
         let review = DesktopSourceReview(item: proposal,
             review: try DesktopPeerProposalReview(proposal: reviewedProposal, source: snapshot))
         await source.reviewProposal(proposal)
@@ -2137,6 +2141,7 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(source.consent.requests, [request])
         XCTAssertEqual(source.incoming.map(\.id), [proposal.id])
 
+        source.reviewing = review
         let terminalFailure = await control.statusCalls + 1
         await control.failStatus(at: terminalFailure)
         await control.failStatus(at: terminalFailure + 1)
@@ -2147,6 +2152,102 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertNil(source.invitationURL)
         XCTAssertTrue(source.consent.requests.isEmpty)
         XCTAssertTrue(source.incoming.isEmpty)
+        XCTAssertEqual(source.reviewing?.id, review.id)
+        let terminalApply = await source.applyReview(review, decisions: [:])
+        XCTAssertFalse(terminalApply, "An open review must not apply while the helper is offline")
+        XCTAssertEqual(source.reviewing?.id, review.id,
+            "A terminal health failure must not dismiss the in-progress review")
+        let actionsAfterTerminalFailure = await runtime.recordedActionsValue
+        XCTAssertEqual(actionsAfterTerminalFailure.apply, 0)
+        try await captureUnavailableSourceReview(review, controller: source)
+    }
+
+    func testSharingPollPreservesInvitationAcrossSupersededPeerHealthCheck() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let project = MobileSharedProject(rootURL: fixture.root, name: "Fictional project")
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true, projects: [project])
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!,
+            certificateFingerprint: Data(repeating: 4, count: 32))
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.setSharing(service)
+        let pause = StartupPauseBarrier()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: { await pause.pause() }), hasExecutable: { true }, verifyPackage: {})
+        let runtime = StatusRefreshRuntime(); await runtime.setStartedService(service)
+        var consent = PairingRegistry(); consent.setEnabled(true)
+        let request = try consent.requestPairing(deviceName: "Little Leonardo QA",
+            credential: String(repeating: "a", count: 64), serverFingerprint: Data(repeating: 1, count: 32), now: Date())
+        await runtime.setConsentState(consent)
+        let upload = try DesktopPeerUpload(proposalID: UUID(), projectID: project.id, byteCount: 1,
+            sha256: String(repeating: "a", count: 64))
+        let proposal = DesktopPeerIncomingProposal(deviceID: UUID(), deviceName: "Second Mac", upload: upload)
+        await runtime.setIncomingProposals([proposal])
+        let fixedNow = Date(timeIntervalSince1970: 1_000)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true, now: { fixedNow })
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+
+        await source.initialize()
+        await source.refreshConsent(refreshHelper: false)
+        await source.createQR()
+        let invitation = try XCTUnwrap(source.invitationURL)
+        XCTAssertEqual(source.consent.requests, [request])
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id])
+
+        let failedCall = await control.statusCalls + 1
+        await control.failStatus(at: failedCall)
+        let retry = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await pause.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await pause.isHeld else {
+            await pause.release(); await retry.value
+            XCTFail("The superseded helper retry did not reach its barrier"); return
+        }
+
+        await control.pauseStatus(at: failedCall + 1)
+        let peer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: failedCall + 1) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: failedCall + 1) else {
+            await pause.release(); await retry.value
+            await control.resumeStatus(at: failedCall + 1); _ = try? await peer.value
+            XCTFail("The peer preflight did not reach its held health check"); return
+        }
+
+        await pause.release(); await retry.value
+        XCTAssertFalse(helper.checking, "The superseded refresh itself has ended")
+        XCTAssertTrue(helper.checkingStatus, "The peer preflight remains an active health check")
+        XCTAssertFalse(helper.online, "Live operations stay gated until the peer health reply arrives")
+        XCTAssertEqual(helper.displayedState, .running)
+
+        let callsDuringPeerCheck = await control.statusCalls
+        await source.refreshConsent(refreshHelper: false)
+        let callsAfterPeerPoll = await control.statusCalls
+        XCTAssertEqual(callsAfterPeerPoll, callsDuringPeerCheck,
+            "The ordinary poll must respect the recovery cooldown")
+        XCTAssertEqual(source.running?.endpoint, service.endpoint)
+        XCTAssertEqual(source.invitationURL, invitation,
+            "A superseding peer preflight must not erase a confirmed invitation")
+        XCTAssertEqual(source.consent.requests, [request])
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id])
+
+        await control.resumeStatus(at: failedCall + 1)
+        try await peer.value
+        XCTAssertTrue(helper.online)
+        XCTAssertFalse(helper.checkingStatus)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.running?.endpoint, service.endpoint)
+        XCTAssertEqual(source.invitationURL, invitation, "Same-endpoint recovery retains the existing QR")
+        XCTAssertEqual(source.consent.requests, [request])
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id])
     }
 
     func testPairedDevicesRemainVisibleDuringRetryWhenSharingIsOff() async throws {
@@ -2305,6 +2406,26 @@ final class SyncHelperControllerTests: XCTestCase {
                 to: destination.appendingPathComponent("consent-actions-unavailable-\(suffix).png"), language: suffix,
                 state: "Synthetic confirmed pairing request during helper retry; approval disabled by live health",
                 route: "/native/preferences/synchronization/pairing", screen: "Pairing consent actions")
+        }
+    }
+
+    private func captureUnavailableSourceReview(_ value: DesktopSourceReview,
+                                                controller: DesktopSyncController) async throws {
+        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
+        let destination = URL(fileURLWithPath: output)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let suffix = language.rawValue
+            let host = NSHostingView(rootView: DesktopSourceReviewView(controller: controller, value: value)
+                .buttonStyle(PremiumButtonStyle())
+                .background(Color(nsColor: .windowBackgroundColor)))
+            try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 960, height: 660),
+                to: destination.appendingPathComponent("review-draft-unavailable-\(suffix).png"), language: suffix,
+                state: "Synthetic source review retained while sync helper is unavailable; Apply decisions disabled",
+                route: "/native/preferences/synchronization/review", screen: "Incoming source review")
         }
     }
 
@@ -2957,9 +3078,12 @@ final class SyncHelperControllerTests: XCTestCase {
         await controller.setEnabled(false)
         XCTAssertFalse(controller.enabled)
         XCTAssertEqual(controller.state, .failed)
+        XCTAssertEqual(controller.displayedState, .failed)
+        XCTAssertTrue(controller.hasPresentedStatus)
         XCTAssertEqual(registration.status, .enabled, "Do not kill an unconfirmed in-flight helper write")
         let persisted = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
         XCTAssertFalse(persisted.mobileSync.helperEnabled)
+        try await captureStatusIndicator(controller, state: "disabled-failure")
     }
 
     func testDeadHelperCanBeUnregisteredWithoutAnXPCAcknowledgement() async throws {

@@ -10,7 +10,7 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let oldCopies = (2..<54).flatMap { revision in
+        let oldCopies = (2..<59).flatMap { revision in
             AppLanguage.allCases.map { language in
                 root.appendingPathComponent("User Guides/v\(revision)/\(language.rawValue)/Guide-v\(revision)-\(language.rawValue).mdlz")
             }
@@ -26,7 +26,7 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v58/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v59/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
             let legacyImport = root.appendingPathComponent("Agent Import Guides/v2/\(language.rawValue)/AgentImport-v2-\(language.rawValue).mdlz")
             try FileManager.default.createDirectory(at: legacyImport.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -43,7 +43,7 @@ final class BundledUserGuideTests: XCTestCase {
             let document = try LeonardoFormatParser.parse(source)
             XCTAssertFalse(document.isForm)
             XCTAssertEqual(document.metadata.fields.count, 0)
-            let expectedImageCount = language == .spanish ? 22 : 21
+            let expectedImageCount = language == .spanish ? 23 : 22
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:
                 workspace.directoryURL.appendingPathComponent("assets").path).count, expectedImageCount)
             let artwork = language == .english ? ["journey", "package", "import", "export"] : ["recorrido", "paquete", "importar", "exportar"]

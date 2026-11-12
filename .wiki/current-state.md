@@ -18,6 +18,8 @@ Core, App, render contracts and real WebKit checks run through `swift test`; the
 
 Do not use the image-generated concept as validation evidence. Real application captures and exact-head checks belong in the PR.
 
+Synchronization Preferences follow-up [#421](https://github.com/PinedaTec-EU/LeonardoMD/issues/421) retains confirmed helper state through superseding peer preflights, preserves same-endpoint invitations and open review drafts across outages, gates applying until healthy, and shows confirmed failure status even after a failed disable. Current candidate and pending packaged/hosted acceptance remain on [PR #428](https://github.com/PinedaTec-EU/LeonardoMD/pull/428).
+
 Shared skill discovery uses `AGENTS.md` and the generated `.skills/index.md`, which owns the current adapter selection and links to the sibling `ai-skills-shared` canonical source. The original projection was validated for [#11](https://github.com/PinedaTec-EU/LeonardoMD/issues/11); release-ledger and recurring release skills were added for [#38](https://github.com/PinedaTec-EU/LeonardoMD/issues/38). Do not maintain a second adapter count in the wiki.
 
 Document mode and preferences scope use `PremiumSelection` with the shared button surface. `PremiumSwitchStyle` follows `leonardoAccent` for active states, including extensions and preferences. Tracking: [#4](https://github.com/PinedaTec-EU/LeonardoMD/issues/4).

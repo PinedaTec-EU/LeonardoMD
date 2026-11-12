@@ -84,9 +84,10 @@ manual1215 recovery.
 
 - #412 signed-update service preparation: chapter 14 in both locales explains the pre-install drain, preserved consent/access, cancellation, safe-install veto and the legacy migration limitation. Guide51; signed installed A→B acceptance remains pending by owner instruction.
 
-PR #428: Guide v58 EN/ES clarifies that helper checks keep the last confirmed
+PR #428: Guide v59 EN/ES clarifies that helper checks keep the last confirmed
 indicator without a temporary gray state or “Sync helper running” line, and
-explains why affected review/consent actions can be disabled while keeping
-paired devices visible. `sync-review-unavailable.png` is a synthetic native
-component capture in both locales. Existing v57 personal guide copies and their
-practice answers remain untouched; package resources move to v58.
+explains how peer actions are gated while a source review stays open across an
+outage. The `sync-review-unavailable.png` and
+`sync-review-draft-unavailable.png` images are synthetic native component
+captures in both locales. Existing v58 personal guide copies and their practice
+answers remain untouched; package resources move to v59.
