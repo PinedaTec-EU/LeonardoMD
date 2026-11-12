@@ -131,6 +131,9 @@ final class SyncHelperController {
     }
 
     private func presentCurrentState() {
+        // Internal lifecycle work can pause peer actions before a fresh health
+        // result arrives. Keep the last confirmed presentation until it settles.
+        if state == .starting && hasPresentedStatus { return }
         if state == .failed { lastFailureRevision = revision }
         hasPresentedStatus = true
         stateBeforeRefresh = state
@@ -495,8 +498,15 @@ final class SyncHelperController {
     private func presentDeniedConsent(_ settings: MobileSyncPreferences) {
         lifecycleRevision += 1; revision += 1; presentationRevision += 1
         enabled = settings.helperEnabled || settings.helperUpgradeToken != nil
+        sharing = nil; supportsRubricExchange = false
+        // A denied peer preflight must not erase a failed shutdown while the
+        // registration still exists. A later refresh clears it only after stop.
+        if state == .failed, error != nil, service.status == .enabled {
+            presentCurrentState()
+            return
+        }
         state = enabled ? .starting : .disabled
-        error = nil; sharing = nil; supportsRubricExchange = false
+        error = nil
         presentCurrentState()
     }
 

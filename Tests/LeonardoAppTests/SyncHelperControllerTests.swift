@@ -719,11 +719,18 @@ final class SyncHelperControllerTests: XCTestCase {
             let registration = HelperRegistrationFake(); registration.status = .enabled
             let control = HelperControlFake(); await control.setBuildIdentity(replacement)
             let helper = upgrading(fixture, registration, control); await helper.refresh()
+            let previousStatusCalls = await control.statusCalls
             if upgradePending { _ = try await fixture.configurations.beginSyncHelperUpgrade(UUID(), at: fixture.preferences) }
             else { try await fixture.configurations.setSyncHelperEnabled(false, at: fixture.preferences) }
             do { try await helper.requireReadyHelper(); XCTFail("Consent must block operation") } catch {}
-            XCTAssertEqual(helper.displayedState, upgradePending ? .starting : .disabled)
+            XCTAssertEqual(helper.state, upgradePending ? .starting : .disabled)
+            XCTAssertEqual(helper.displayedState, upgradePending ? .running : .disabled,
+                "A pending renewal keeps the previous confirmed presentation")
+            XCTAssertNil(helper.displayedError)
             XCTAssertFalse(helper.online)
+            let currentStatusCalls = await control.statusCalls
+            XCTAssertEqual(currentStatusCalls, previousStatusCalls, "Pending consent blocks peer health requests")
+            if upgradePending { try await captureStatusIndicator(helper, state: "renewal-pending") }
         }
     }
 
@@ -3296,12 +3303,31 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(controller.error, shutdownError)
         try await captureStatusIndicator(controller, state: "disabled-failure")
 
+        let statusCallsBeforePreflight = await control.statusCalls
+        let reloadsBeforePreflight = await control.reloads
+        do {
+            try await controller.requireReadyHelper()
+            XCTFail("A denied peer preflight must not proceed while the helper stop is unconfirmed")
+        } catch is SyncHelperFailure {} catch { XCTFail("Unexpected preflight error: \(error)") }
+        XCTAssertEqual(controller.state, .failed)
+        XCTAssertEqual(controller.displayedState, .failed)
+        XCTAssertEqual(controller.error, shutdownError)
+        XCTAssertEqual(controller.displayedError, shutdownError)
+        XCTAssertTrue(controller.needsAutomaticRecovery)
+        XCTAssertEqual(registration.status, .enabled)
+        let statusCallsAfterPreflight = await control.statusCalls
+        let reloadsAfterPreflight = await control.reloads
+        XCTAssertEqual(statusCallsAfterPreflight, statusCallsBeforePreflight)
+        XCTAssertEqual(reloadsAfterPreflight, reloadsBeforePreflight)
+        try await captureStatusIndicator(controller, state: "disabled-failure-preflight")
+
         activeHelper = nil
         await control.setUnavailable(false)
         await controller.refresh()
         XCTAssertEqual(registration.status, .notRegistered)
         XCTAssertEqual(controller.state, .disabled)
         XCTAssertNil(controller.error, "Clear the shutdown diagnostic only after the helper is confirmed stopped")
+        try await captureStatusIndicator(controller, state: "disabled-recovered")
     }
 
     func testDeadHelperCanBeUnregisteredWithoutAnXPCAcknowledgement() async throws {

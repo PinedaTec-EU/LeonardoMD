@@ -3,7 +3,8 @@ import SwiftUI
 struct SyncHelperPreferencesSection: View {
     @Bindable var controller: SyncHelperController
     private var showsStatusIndicator: Bool {
-        controller.hasPresentedStatus && (controller.enabled || controller.displayedState == .failed)
+        let state = controller.displayedState
+        return controller.hasPresentedStatus && (state == .running || state == .notInstalled || state == .failed)
     }
     private var showsDiagnostic: Bool {
         switch controller.displayedState {
