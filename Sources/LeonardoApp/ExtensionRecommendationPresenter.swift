@@ -59,7 +59,7 @@ struct ExtensionRecommendationDialog: View {
 
     init(request: ExtensionRecommendation,
          initialChoice: ExtensionRecommendationChoice = .init(),
-         respond: @escaping (ExtensionRecommendationChoice) -> Void) {
+         respond: @escaping (ExtensionRecommendationChoice, ExtensionRecommendationAction) -> Void) {
         self.request = request
         self.respond = respond
         _choice = State(initialValue: initialChoice)
