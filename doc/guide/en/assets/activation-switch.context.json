@@ -2,7 +2,7 @@
   "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
   "browser_version" : "Not applicable: native view, no browser engine",
   "capture_mode" : "element",
-  "captured_at" : "2026-11-10T15:50:25.856Z",
+  "captured_at" : "2026-11-12T12:24:49.617Z",
   "data_provenance" : "synthetic",
   "native_viewport_points" : {
     "height" : 600,
@@ -10,9 +10,9 @@
   },
   "os" : "Version 27.0.1 (Build 26A434)",
   "route" : "\/native\/extensions\/dialog-en-global",
-  "screen" : "Extension consent, global scope",
-  "source_sha" : "6b4db4dfba5f3ec106e3e7343bb81a9edbf74750",
-  "state" : "Extension consent, global scope; language en; synthetic fixture; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "screen" : "Extension selection, global scope",
+  "source_sha" : "4b0eacc829b944858fe63e5334c123d5a9b39fbb",
+  "state" : "Extension selection, global scope; Mermaid and Charts selected; synthetic document; language en; synthetic fixture; viewport_css is the measured native-point equivalent; CSS is not applicable",
   "viewport_css" : {
     "height" : 600,
     "width" : 538

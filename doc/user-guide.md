@@ -521,9 +521,9 @@ These extensions are included with Leonardo, work locally and are initially disa
 
 **A disabled extension cannot display its specialized content correctly.** Its source stays as code, notation or ordinary Markdown. Disabling changes interpretation, not authored bytes. PDF uses the rendered document: enable required extensions and inspect Preview before exporting. Mermaid diagrams render as they approach the viewport; allow them to finish before checking the result.
 
-![Leonardo asks before activating detected built-in extensions](guide/en/assets/activation-switch.png)
+![Leonardo asks which detected built-in extensions to enable](guide/en/assets/activation-switch.png)
 
-*English activation component, synthetic document. This example shows global activation; a project dialog identifies project scope. No third-party plugins are proposed.*
+*English dialog component with Mermaid and Charts selected in a synthetic document. A project dialog identifies project scope. No third-party plugins are proposed.*
 
 Detection recommends only Leonardo's five built-in extensions. It is a recommendation, not a full syntax validator: code examples that merely describe syntax do not require activation. Each switch selects one extension for **Enable selected**; **Not now** discards those selections and prevents another recommendation during the current opening. The separate global switch hides recommendations across documents. **Preferences → Extensions → Reset extension warnings** restores them and clears older per-extension suppressions without changing enabled extensions. Check the scope shown in the dialog before enabling.
 

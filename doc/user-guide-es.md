@@ -531,9 +531,9 @@ Estas extensiones vienen con Leonardo, trabajan localmente y empiezan desactivad
 
 **Una extensión desactivada no puede mostrar correctamente su contenido especializado.** La fuente permanece como código, notación o Markdown ordinario. Desactivar cambia la interpretación, no los bytes escritos. PDF usa el documento renderizado: activa las extensiones necesarias y comprueba Vista previa antes de exportar. Los diagramas Mermaid se renderizan al acercarse a la zona visible; espera a que terminen antes de revisarlos.
 
-![Leonardo pide permiso antes de activar extensiones incluidas detectadas](guide/es/assets/activation-switch.png)
+![Leonardo pregunta qué extensiones integradas detectadas se quieren activar](guide/es/assets/activation-switch.png)
 
-*Componente de activación en español con un documento ficticio. Este ejemplo muestra activación global; el diálogo de proyecto identifica ese ámbito. No propone plugins de terceros.*
+*Componente de diálogo en español con Mermaid y Gráficos seleccionados en un documento ficticio. El diálogo de proyecto identifica su ámbito. No propone plugins de terceros.*
 
 La detección recomienda solo las cinco extensiones propias de Leonardo. Es una recomendación, no una validación completa: los ejemplos de código que solo describen sintaxis no necesitan activación. Cada interruptor selecciona una extensión para **Activar seleccionadas**; **Ahora no** descarta la selección y evita repetir durante la apertura actual. El interruptor global oculta las recomendaciones para todos los documentos. **Preferencias → Extensiones → Restablecer avisos de extensiones** las recupera y elimina las antiguas supresiones por extensión, sin cambiar las extensiones activadas. Comprueba el ámbito indicado antes de activar.
 
