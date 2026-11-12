@@ -11,7 +11,7 @@
   "os" : "Version 27.0.1 (Build 26A434)",
   "route" : "\/native\/preferences\/synchronization\/pairing",
   "screen" : "Pairing consent actions",
-  "source_sha" : "9ed2690f0c6ab66c0801e23373a879810f937962",
+  "source_sha" : "9ed2690f8e84085260a633e5d43743e6b5f186a1",
   "state" : "Synthetic confirmed pairing request during helper retry; approval disabled by live health; viewport_css is the measured native-point equivalent; CSS is not applicable",
   "viewport_css" : {
     "height" : 60,

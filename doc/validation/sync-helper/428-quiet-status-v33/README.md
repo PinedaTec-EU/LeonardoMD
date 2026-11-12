@@ -1,6 +1,6 @@
 # Quiet synchronization status captures — v33
 
-These native AppKit/SwiftUI component captures were produced from clean source commit `9ed2690f0c6ab66c0801e23373a879810f937962`. Each capture includes its observed context and a metadata sidecar with pixel dimensions and SHA-256.
+These native AppKit/SwiftUI component captures were produced from clean source commit `9ed2690f8e84085260a633e5d43743e6b5f186a1`. Each capture includes its observed context and a metadata sidecar with pixel dimensions and SHA-256.
 
 The focused `SyncHelperControllerTests` run passed 119 tests with one optional capture skipped. A full `swift test --skip-build` run passed. The capture rerun of the shutdown and sharing-recovery cases passed two tests with zero failures.
 
