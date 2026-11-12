@@ -2286,22 +2286,25 @@ final class SyncHelperControllerTests: XCTestCase {
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
         let previous = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = previous }
-        LanguageSettings.shared.language = .english
-        let review = NSHostingView(rootView: IncomingProposalRow(item: proposal, controller: controller)
-            .padding(16).frame(width: 532, height: 100, alignment: .topLeading)
-            .background(Color(nsColor: .windowBackgroundColor)))
-        try await GuideCaptureSupport.captureNative(review, size: NSSize(width: 532, height: 100),
-            to: destination.appendingPathComponent("incoming-review-unavailable.png"), language: "en",
-            state: "Synthetic incoming proposal retained during helper retry; Review changes disabled by live health",
-            route: "/native/preferences/synchronization", screen: "Incoming proposal actions")
-        let consent = NSHostingView(rootView: PairingConsentActions(controller: controller,
-            projects: [projectID], captureOnly: false, confirmed: true, onCancel: {}, onAllow: {})
-            .padding(16).frame(width: 420, height: 60, alignment: .topLeading)
-            .background(Color(nsColor: .windowBackgroundColor)).buttonStyle(PremiumButtonStyle()))
-        try await GuideCaptureSupport.captureNative(consent, size: NSSize(width: 420, height: 60),
-            to: destination.appendingPathComponent("consent-actions-unavailable.png"), language: "en",
-            state: "Synthetic confirmed pairing request during helper retry; Allow connection disabled by live health",
-            route: "/native/preferences/synchronization/pairing", screen: "Pairing consent actions")
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let suffix = language.rawValue
+            let review = NSHostingView(rootView: IncomingProposalRow(item: proposal, controller: controller)
+                .padding(16).frame(width: 532, height: 100, alignment: .topLeading)
+                .background(Color(nsColor: .windowBackgroundColor)))
+            try await GuideCaptureSupport.captureNative(review, size: NSSize(width: 532, height: 100),
+                to: destination.appendingPathComponent("incoming-review-unavailable-\(suffix).png"), language: suffix,
+                state: "Synthetic incoming proposal retained during helper retry; review action disabled by live health",
+                route: "/native/preferences/synchronization", screen: "Incoming proposal actions")
+            let consent = NSHostingView(rootView: PairingConsentActions(controller: controller,
+                projects: [projectID], captureOnly: false, confirmed: true, onCancel: {}, onAllow: {})
+                .padding(16).frame(width: 420, height: 60, alignment: .topLeading)
+                .background(Color(nsColor: .windowBackgroundColor)).buttonStyle(PremiumButtonStyle()))
+            try await GuideCaptureSupport.captureNative(consent, size: NSSize(width: 420, height: 60),
+                to: destination.appendingPathComponent("consent-actions-unavailable-\(suffix).png"), language: suffix,
+                state: "Synthetic confirmed pairing request during helper retry; approval disabled by live health",
+                route: "/native/preferences/synchronization/pairing", screen: "Pairing consent actions")
+        }
     }
 
     private func captureUnavailablePairedDevice(_ device: PairedDevice,
@@ -2311,14 +2314,17 @@ final class SyncHelperControllerTests: XCTestCase {
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
         let previous = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = previous }
-        LanguageSettings.shared.language = .english
-        let host = NSHostingView(rootView: AuthorizedDeviceRow(device: device, controller: controller)
-            .padding(16).frame(width: 532, height: 100, alignment: .topLeading)
-            .background(Color(nsColor: .windowBackgroundColor)))
-        try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 100),
-            to: destination.appendingPathComponent("paired-device-sharing-off.png"), language: "en",
-            state: "Synthetic paired device retained while local sharing is off and helper health retry is active; Revoke disabled",
-            route: "/native/preferences/synchronization", screen: "Authorized device row")
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let suffix = language.rawValue
+            let host = NSHostingView(rootView: AuthorizedDeviceRow(device: device, controller: controller)
+                .padding(16).frame(width: 532, height: 100, alignment: .topLeading)
+                .background(Color(nsColor: .windowBackgroundColor)))
+            try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 100),
+                to: destination.appendingPathComponent("paired-device-sharing-off-\(suffix).png"), language: suffix,
+                state: "Synthetic paired device retained while local sharing is off and helper health retry is active; revoke disabled",
+                route: "/native/preferences/synchronization", screen: "Authorized device row")
+        }
     }
 
     func testFirstStatusFailureRetriesHealthBeforeReconciliation() async throws {
