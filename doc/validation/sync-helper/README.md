@@ -1,11 +1,12 @@
 # Sync helper validation
 
 The latest PR #428 evidence refresh is in
-[`428-quiet-status-v42/`](428-quiet-status-v42/README.md). It records current-source
-native captures of the retained status during a health check and after recovery,
-plus the focused regression for automatic consent-poll errors. The source fix is
-`c9d8c53cea8ec437be5e62a6c2e7101b0c0051ea`; the capture/build source is
-`95c69884b051273da52e982148289fa191ad972f`. The preceding
+[`428-quiet-status-v43/`](428-quiet-status-v43/README.md). It records the
+retained status during a pending health check and after recovery from the
+reconciled source `2c59e4af16b2d96a3fed58c692a0faba1bbe3110`. The focused
+automatic consent-poll regression is covered by the full suite. The earlier
+[`v42 record`](428-quiet-status-v42/README.md) retains the prior original images.
+The preceding
 [`v40 record`](428-quiet-status-v40/README.md) contains packaged Guide v59 Help
 and practice-form acceptance in both languages.
 
