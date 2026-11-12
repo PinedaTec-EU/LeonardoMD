@@ -1,4 +1,4 @@
 {
   "summary": "Little Leonardo groups remote projects by linked Mac, lets users review new projects and files and manage offline copies; macOS restores accepted catalogues after offline restart, ignored grants return only when the host changes them, and sync status stays stable.",
-  "build": 28
+  "build": 30
 }
