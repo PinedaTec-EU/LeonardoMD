@@ -38,10 +38,12 @@ final class DesktopPeerNativeAcceptanceTests: XCTestCase {
         let enrolled = await fixture.peer.enroll(address: running.endpoint.absoluteString, name: "Synthetic MacBook")
         XCTAssertTrue(enrolled, fixture.peer.error ?? "Enrollment failed")
         let connection = try XCTUnwrap(fixture.peer.connections.first)
+        fixture.peer.setConnectionName("Synthetic MacBook", connectionID: connection.id)
         await fixture.owner.refreshConsent()
         let request = try XCTUnwrap(fixture.owner.consent.requests.first)
         await fixture.owner.approve(request, projects: [fixture.shared.id, incoming.id])
         await fixture.peer.refresh(connection.id)
+        XCTAssertEqual(fixture.peer.reviewStore.hostName(for: connection), "Synthetic MacBook")
         XCTAssertEqual(Set(fixture.peer.available[connection.id, default: []].map(\.id)), [fixture.shared.id, incoming.id])
 
         await fixture.peer.addRemoteProject(connectionID: connection.id, projectID: fixture.shared.id)
