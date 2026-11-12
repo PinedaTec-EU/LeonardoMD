@@ -352,6 +352,8 @@ Drag the sidebar divider to adjust width. **Follow active file in sidebar** in G
 
 Use the project search field to find filenames and body content. Open a result normally, or use its context menu to keep it in a new tab. Search works in the open project; it is not a Mac-wide index.
 
+To find text in the source of open documents, choose **Edit → Find…** or click the magnifying glass beside the tabs (**⌘F**). Literal text search is the default and ignores case; turn on **Match case** when capitalization matters. Turn on `.*` for a regular expression, such as `\bTODO\b` to find the whole word “TODO”. Choose **This document** or **All open documents** in this window. Leonardo highlights each occurrence, shows the total count and distinguishes the current match. Use the arrows, **Find Next** (⌘G) and **Find Previous** (⇧⌘G) to move through matches; navigation selects the text and activates its tab. A malformed regular expression shows an inline error. Press Escape or close the search bar to finish. This searches document text already open in tabs; project search above finds filenames and content elsewhere in the open project.
+
 Tags come from YAML frontmatter in ordinary Markdown. For example:
 
 ```yaml
@@ -805,6 +807,7 @@ The installed package channel and your subscription are separate. Beta subscript
 | ⇧⌘W | Close window |
 | ⌘1 / ⌘2 / ⌘3 | Preview / Edit / Split |
 | ⌘4 | Fill form when available |
+| ⌘F / ⌘G / ⇧⌘G | Find / next / previous match |
 | ⇧⌘F / ⌥⌘I | Focus / document outline |
 | ⌘S | Save |
 | ⌘Z / ⇧⌘Z | Undo / Redo |

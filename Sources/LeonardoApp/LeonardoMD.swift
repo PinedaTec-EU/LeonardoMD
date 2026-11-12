@@ -365,6 +365,9 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         Task { await activeDocuments?.openUserGuide(topic: .agentImport) }
     }
     @objc private func openProject() { activeSession?.chooseProject() }
+    @objc private func find() { activeDocuments?.presentSearch() }
+    @objc private func findNext() { activeDocuments?.navigateSearch(by: 1) }
+    @objc private func findPrevious() { activeDocuments?.navigateSearch(by: -1) }
     private var focusedTextEditor: NSTextView? {
         guard let editor = NSApp.keyWindow?.firstResponder as? NSTextView,
               editor.accessibilityIdentifier() != "markdown-editor" else { return nil }
@@ -441,6 +444,10 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         add(L10n.text("Export PDF…"), action: #selector(exportPDF), key: "e", modifiers: [.command, .shift], to: file)
         add(L10n.text("Close window"), action: #selector(NSWindow.performClose(_:)), key: "w", modifiers: [.command, .shift], to: file)
         let editMenu = submenu(L10n.text("Edit"), in: menu)
+        add(L10n.text("Find…"), action: #selector(find), key: "f", to: editMenu)
+        add(L10n.text("Find Next"), action: #selector(findNext), key: "g", to: editMenu)
+        add(L10n.text("Find Previous"), action: #selector(findPrevious), key: "g", modifiers: [.command, .shift], to: editMenu)
+        editMenu.addItem(.separator())
         add(L10n.text("Undo"), action: #selector(undoDocument), key: "z", to: editMenu)
         add(L10n.text("Redo"), action: #selector(redoDocument), key: "z", modifiers: [.command, .shift], to: editMenu)
         for (title, selector, key) in [ (L10n.text("Cut"), "cut:", "x"), (L10n.text("Copy"), "copy:", "c"), (L10n.text("Paste"), "paste:", "v"), (L10n.text("Select all"), "selectAll:", "a")] {
