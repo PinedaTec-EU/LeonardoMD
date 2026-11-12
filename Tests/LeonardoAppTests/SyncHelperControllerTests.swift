@@ -1452,15 +1452,52 @@ final class SyncHelperControllerTests: XCTestCase {
         let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
                                            runtime: runtime, helper: helper, usesHelper: true)
         await runtime.setConsentFailure(true)
-        for _ in 0..<3 { await source.refreshConsent(refreshHelper: false) }
+        await control.pauseStatus(at: 2)
+        let firstPoll = Task { await source.refreshConsent(refreshHelper: false) }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await firstPoll.value
+            XCTFail("Health recovery was not held")
+            return
+        }
+        XCTAssertNil(source.error, "Do not present an automatic consent failure while helper recovery is pending")
+        await control.resumeStatus(at: 2)
+        await firstPoll.value
+        XCTAssertNil(source.error, "One failed poll remains provisional after health recovers")
         let firstCalls = await control.statusCalls
         XCTAssertEqual(firstCalls, 2, "Initial health and one check for the error episode")
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNotNil(source.error, "Report a second consecutive automatic failure")
         await runtime.setConsentFailure(false)
         await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.error, "A successful poll clears the automatic failure diagnostic")
+
         await runtime.setConsentFailure(true)
         await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.error, "Keep the first failure of a new episode provisional")
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNotNil(source.error, "Report the persistent failure once")
+        source.error = nil // Dismiss the alert.
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.error, "Do not re-present a dismissed failure during the same episode")
+
+        source.error = "Explicit action failed"
+        await runtime.setConsentFailure(false)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.error, "Explicit action failed", "Automatic recovery must not clear an explicit action error")
+        source.error = nil
+
+        await runtime.setConsentFailure(true)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.error)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNotNil(source.error)
+        source.error = nil
         let nextCalls = await control.statusCalls
-        XCTAssertEqual(nextCalls, 3, "A new failure after recovery triggers one new check")
+        XCTAssertEqual(nextCalls, 4, "Each new automatic failure episode triggers one health check")
     }
 
     func testPersistentConsentFailureRechecksHealthAfterInterval() async throws {

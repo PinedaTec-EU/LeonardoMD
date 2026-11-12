@@ -57,7 +57,16 @@ final class DesktopSyncController {
     private(set) var incoming: [DesktopPeerIncomingProposal] = []
     var reviewing: DesktopSourceReview?
     private let lease = NativeReconciliationLease.shared
-    var error: String?
+    // Automatic poll errors are independent so recovery cannot erase an explicit action error.
+    private var actionError: String?
+    private var automaticConsentError: String?
+    var error: String? {
+        get { actionError ?? automaticConsentError }
+        set {
+            actionError = newValue
+            automaticConsentError = nil
+        }
+    }
     private(set) var invitationURL: URL?
     var buffers: @MainActor (URL) async throws -> [OpenDocumentBuffer] = { _ in [] }
     private let configurations: ConfigurationStore
@@ -69,6 +78,8 @@ final class DesktopSyncController {
     private let now: RubricClock
     private var initialized = false
     private var consentFailureChecked = false
+    private var automaticConsentFailureCount = 0
+    private var automaticConsentFailureReported = false
     private var lastNetworkAddresses: Set<String>?
     private var lastEndpointAvailable: Bool?
     private var networkRefreshPending = false
@@ -315,19 +326,31 @@ final class DesktopSyncController {
             await recoverRubricCaptures()
             guard refreshRevision == consentRefreshRevision else { return }
             consentFailureChecked = false
+            automaticConsentFailureCount = 0
+            automaticConsentFailureReported = false
+            automaticConsentError = nil
         } catch {
             guard refreshRevision == consentRefreshRevision else { return }
-            self.error = error.localizedDescription
             if checkedHelper { consentFailureChecked = true }
-            if usesHelper && !refreshHelper && !checkedHelper && (!consentFailureChecked || now() >= nextHelperRecovery) {
-                consentFailureChecked = true
-                nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
-                await helper.refresh()
-                guard refreshRevision == consentRefreshRevision else { return }
-                updateRunningFromHelper()
-                if !helper.online && !preservingConfirmedSharingPresentation {
-                    clearSharingPresentationAfterTerminalFailure()
+            if usesHelper && !refreshHelper {
+                automaticConsentFailureCount += 1
+                if !checkedHelper && (!consentFailureChecked || now() >= nextHelperRecovery) {
+                    consentFailureChecked = true
+                    nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
+                    await helper.refresh()
+                    guard refreshRevision == consentRefreshRevision else { return }
+                    updateRunningFromHelper()
+                    if !helper.online && !preservingConfirmedSharingPresentation {
+                        clearSharingPresentationAfterTerminalFailure()
+                    }
                 }
+                // Let one failed two-second poll recover before presenting a modal.
+                if automaticConsentFailureCount >= 2 && !automaticConsentFailureReported {
+                    automaticConsentError = error.localizedDescription
+                    automaticConsentFailureReported = true
+                }
+            } else {
+                self.error = error.localizedDescription
             }
         }
     }
