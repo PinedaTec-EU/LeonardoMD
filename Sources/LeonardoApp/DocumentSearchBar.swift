@@ -10,7 +10,7 @@ struct DocumentSearchBar: View {
     var body: some View {
         HStack(spacing: 8) {
             TextField(L10n.text("Find in open documents"), text: $search.query)
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(PremiumTextFieldStyle(compact: true))
                 .frame(minWidth: 150, maxWidth: 320)
                 .focused($queryFocused)
                 .onSubmit(onNext)
