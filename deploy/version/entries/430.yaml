@@ -1,4 +1,4 @@
 {
   "summary": "Little Leonardo groups remote projects by their linked Mac, lets users review new projects and files, keep or clear local copies, and keeps synchronization status visually stable; ignored grants return for review only when the host changes the grant.",
-  "build": 18
+  "build": 20
 }
