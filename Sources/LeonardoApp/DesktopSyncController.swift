@@ -299,6 +299,7 @@ final class DesktopSyncController {
             let refreshedConsent = try await runtime.consentState()
             guard refreshRevision == consentRefreshRevision else { return }
             consent = refreshedConsent
+            clearDisplayedInvitationIfInvalid(in: refreshedConsent)
             let refreshedIncoming = running == nil ? [] : try await runtime.incomingProposals()
             guard refreshRevision == consentRefreshRevision else { return }
             incoming = refreshedIncoming
@@ -329,6 +330,17 @@ final class DesktopSyncController {
         invitationNetworkAddresses = nil
         incoming = []
         consent = PairingRegistry()
+    }
+
+    private func clearDisplayedInvitationIfInvalid(in registry: PairingRegistry) {
+        guard let url = invitationURL else { return }
+        let currentTime = now()
+        guard let qr = try? DirectPairingQR.decode(url, now: currentTime),
+              registry.hasValidInvitation(qr.invitation, now: currentTime) else {
+            invitationURL = nil
+            invitationNetworkAddresses = nil
+            return
+        }
     }
 
     private var preservingConfirmedSharingPresentation: Bool {

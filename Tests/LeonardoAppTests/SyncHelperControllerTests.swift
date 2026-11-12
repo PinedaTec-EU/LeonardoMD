@@ -2513,6 +2513,66 @@ final class SyncHelperControllerTests: XCTestCase {
             state: "The same selected 1/1 custom text remains after helper recovery; Apply enabled")
     }
 
+    func testRecoveredHelperRestartClearsInvalidatedInvitationAtSameEndpoint() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true,
+            projects: [MobileSharedProject(rootURL: fixture.root, name: "Fictional project")])
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!,
+            certificateFingerprint: Data(repeating: 4, count: 32))
+        await control.setBuildIdentity(replacement)
+        await control.setSharing(service)
+        let pause = StartupPauseBarrier()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: { await pause.pause() }), hasExecutable: { true }, verifyPackage: {})
+        let runtime = StatusRefreshRuntime(); await runtime.setStartedService(service)
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        await runtime.setConsentState(registry)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+
+        await source.initialize()
+        await source.refreshConsent(refreshHelper: false)
+        await source.createQR()
+        let displayedInvitation = try XCTUnwrap(source.invitationURL)
+        let qr = try DirectPairingQR.decode(displayedInvitation, now: Date())
+        let currentRegistry = try await runtime.consentState()
+        XCTAssertTrue(currentRegistry.hasValidInvitation(qr.invitation, now: Date()))
+
+        let failedStatusCall = await control.statusCalls + 1
+        await control.failStatus(at: failedStatusCall)
+        let refresh = Task { await source.refreshConsent(refreshHelper: true) }
+        for _ in 0..<5_000 {
+            if await pause.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await pause.isHeld else {
+            await pause.release(); await refresh.value
+            XCTFail("The retry did not reach the health-check barrier"); return
+        }
+        XCTAssertFalse(helper.online)
+        XCTAssertTrue(helper.checkingStatus)
+        XCTAssertTrue(source.sharingPresentationAvailable)
+        XCTAssertEqual(source.invitationURL, displayedInvitation,
+            "The last confirmed QR remains visible while helper recovery is still unresolved")
+
+        await runtime.simulateHelperRestart()
+        await pause.release()
+        await refresh.value
+        XCTAssertTrue(helper.online)
+        XCTAssertEqual(source.running?.endpoint, service.endpoint)
+        XCTAssertNil(source.invitationURL,
+            "A recovered same-endpoint service must remove a QR that its live registry invalidated")
+        XCTAssertTrue(source.consent.requests.isEmpty,
+            "Consent rows cleared by the service restart must match the recovered registry")
+    }
+
     func testSharingPollPreservesInvitationAcrossSupersededPeerHealthCheck() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         let project = MobileSharedProject(rootURL: fixture.root, name: "Fictional project")
@@ -3755,8 +3815,12 @@ private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
     }
     func createInvitation() async throws -> PairingInvitation {
         if invitationPaused { await withCheckedContinuation { heldInvitation = $0 } }
-        var registry = PairingRegistry(); registry.setEnabled(true)
-        return try registry.createInvitation(now: Date())
+        consent.setEnabled(true)
+        return try consent.createInvitation(now: Date())
+    }
+    func simulateHelperRestart() {
+        consent.setEnabled(false)
+        consent.setEnabled(true)
     }
     func reviewIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposalReview {
         recordedActions.review += 1
