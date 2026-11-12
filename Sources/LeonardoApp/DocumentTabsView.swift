@@ -29,8 +29,8 @@ struct DocumentTabsView: View {
                     WorkspaceView(
                         session: tab.session,
                         isActiveTab: tab.id == documents.activeID,
-                        searchMatches: documents.search.ranges(for: tab.id),
-                        activeSearchSelection: documents.search.selection(for: tab.id)
+                        searchMatches: documents.search.isVisible ? documents.search.ranges(for: tab.id) : [],
+                        activeSearchSelection: documents.search.isVisible ? documents.search.selection(for: tab.id) : nil
                     )
                         .opacity(tab.id == documents.activeID ? 1 : 0)
                         .allowsHitTesting(tab.id == documents.activeID && !documents.closing)

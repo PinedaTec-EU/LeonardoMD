@@ -7,7 +7,8 @@ extension DocumentTabs {
 
     func presentSearch() {
         guard !closing else { return }
-        if let editor = NSApp.keyWindow?.firstResponder as? NSTextView,
+        if search.query.isEmpty,
+           let editor = NSApp.keyWindow?.firstResponder as? NSTextView,
            editor.accessibilityIdentifier() == "markdown-editor" {
             let selection = editor.selectedRange()
             let source = activeSession.content as NSString
@@ -16,19 +17,21 @@ extension DocumentTabs {
             }
         }
         search.isVisible = true
-        refreshSearch()
+        if search.query.isEmpty { refreshSearch() }
     }
 
     func dismissSearch() {
         search.isVisible = false
-        search.query = ""
     }
 
     func navigateSearch(by offset: Int) {
         guard offset == -1 || offset == 1, !closing else { return }
         guard search.isVisible else {
-            presentSearch()
-            return
+            if search.query.isEmpty {
+                presentSearch()
+                return
+            }
+            search.isVisible = true
         }
         guard let match = search.navigate(by: offset),
               let target = tabs.first(where: { $0.id == match.tabID }) else { return }
