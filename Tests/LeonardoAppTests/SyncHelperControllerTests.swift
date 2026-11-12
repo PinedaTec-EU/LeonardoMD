@@ -1119,7 +1119,9 @@ final class SyncHelperControllerTests: XCTestCase {
         await source.reviewProposal(proposal)
         let appliedBeforeRecovery = await source.applyReview(review, decisions: ["notes.md": .local])
         XCTAssertFalse(appliedBeforeRecovery)
-        await source.approve(request, projects: [project.id])
+        let blockedApproval = await source.approve(request, projects: [project.id])
+        XCTAssertEqual(blockedApproval, .unavailable,
+            "A queued Allow action must report that health prevented approval so the sheet stays open")
         await source.reject(request.id)
         await source.revoke(UUID())
         let actionsBeforeRecovery = await runtime.recordedActionsValue
@@ -1138,7 +1140,9 @@ final class SyncHelperControllerTests: XCTestCase {
         await source.refreshConsent(refreshHelper: false)
         XCTAssertTrue(helper.online)
         XCTAssertTrue(source.sharingAvailable)
-        await source.approve(request, projects: [project.id])
+        let retriedApproval = await source.approve(request, projects: [project.id])
+        XCTAssertEqual(retriedApproval, .completed,
+            "A confirmed successful approval can dismiss the sheet after health recovers")
         let actionsAfterRecovery = await runtime.recordedActionsValue
         XCTAssertEqual(actionsAfterRecovery.approve, 1, "A confirmed healthy response restores eligible actions")
     }
@@ -2453,7 +2457,9 @@ final class SyncHelperControllerTests: XCTestCase {
         let appliedReview = await source.applyReview(review, decisions: [:])
         XCTAssertFalse(appliedReview,
             "A review opened before failure must not apply while live helper health is down")
-        await source.approve(request, projects: [project.id])
+        let blockedApproval = await source.approve(request, projects: [project.id])
+        XCTAssertEqual(blockedApproval, .unavailable,
+            "The consent dialog must keep its selection when helper health blocks Allow")
         await source.reject(request.id)
         await source.revoke(UUID())
         let blockedActions = await runtime.recordedActionsValue
@@ -3940,7 +3946,7 @@ private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
     }
     func approve(requestID: UUID, code: String, projectIDs: Set<UUID>) async throws {
         recordedActions.approve += 1
-        throw DesktopRuntimeError.notRunning
+        _ = try consent.approve(requestID: requestID, comparisonCode: code, projects: projectIDs, now: Date())
     }
     func reject(requestID: UUID) async throws {
         recordedActions.reject += 1

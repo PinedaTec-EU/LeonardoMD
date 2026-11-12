@@ -23,6 +23,12 @@ enum RubricCaptureAvailability: Equatable {
     }
 }
 
+enum DesktopConsentActionOutcome: Equatable {
+    case completed
+    case unavailable
+    case failed
+}
+
 enum RubricCaptureError: LocalizedError {
     case unavailable(RubricCaptureAvailability)
     case missingRequest
@@ -447,23 +453,28 @@ final class DesktopSyncController {
         } catch { self.error = error.localizedDescription }
     }
 
-    func approve(_ request: PairingRequest, projects: Set<UUID>) async {
+    @discardableResult
+    func approve(_ request: PairingRequest, projects: Set<UUID>) async -> DesktopConsentActionOutcome {
         await consentAction {
             try await runtime.approve(requestID: request.id, code: request.comparisonCode, projectIDs: projects)
         }
     }
-    func reject(_ id: UUID) async { await consentAction { try await runtime.reject(requestID: id) } }
-    func revoke(_ id: UUID) async { await consentAction { try await runtime.revoke(deviceID: id) } }
+    func reject(_ id: UUID) async { _ = await consentAction { try await runtime.reject(requestID: id) } }
+    func revoke(_ id: UUID) async { _ = await consentAction { try await runtime.revoke(deviceID: id) } }
 
-    private func consentAction(_ action: () async throws -> Void) async {
-        guard !InstanceRuntime.isAdditional, !busy, consentActionsAvailable else { return }
+    private func consentAction(_ action: () async throws -> Void) async -> DesktopConsentActionOutcome {
+        guard !InstanceRuntime.isAdditional, !busy, consentActionsAvailable else { return .unavailable }
         busy = true
+        error = nil
         defer { busy = false }
-        do {
-            try await action()
-            consent = try await runtime.consentState()
+        do { try await action() }
+        catch {
+            self.error = error.localizedDescription
+            return .failed
         }
+        do { consent = try await runtime.consentState() }
         catch { self.error = error.localizedDescription }
+        return .completed
     }
 
     func stop() async {

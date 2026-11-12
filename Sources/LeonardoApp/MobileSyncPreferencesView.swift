@@ -203,7 +203,9 @@ struct PairingConsentView: View {
             }
             PairingConsentActions(controller: controller, projects: projects,
                 captureOnly: captureOnly, confirmed: confirmed, onCancel: { dismiss() }, onAllow: {
-                    Task { await controller.approve(request, projects: projects); if controller.error == nil { dismiss() } }
+                    Task {
+                        if await controller.approve(request, projects: projects) == .completed { dismiss() }
+                    }
                 })
         }.padding(24).frame(width: 420).buttonStyle(PremiumButtonStyle()).toggleStyle(PremiumSwitchStyle())
     }
