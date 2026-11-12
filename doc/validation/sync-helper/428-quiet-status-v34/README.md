@@ -24,4 +24,13 @@ The `status-checking` and `status-online` PNGs are byte-identical (SHA-256 `3d35
 | [status-disabled-failure.png](./status-disabled-failure.png) · [context](./status-disabled-failure.context.json) · [metadata](./status-disabled-failure.metadata.json) | Synchronization helper status (disabled failure) | 532×260 | 1064×520 | 2026-11-12T05:51:08.371000+00:00 | `5ec0b24f838574d61ecbad117818077d57afe16af32e1c72b16baa0bc4106e2e` |
 | [status-online.png](./status-online.png) · [context](./status-online.context.json) · [metadata](./status-online.metadata.json) | Synchronization helper status (online) | 532×260 | 1064×520 | 2026-11-12T05:52:09.879000+00:00 | `3d3505854df2f47ae898a58f1ed03d83ce21a8e78728366d1718f3a8609e480f` |
 
-Reproduce with the source-bound test executable using the three test filters above and `LEONARDO_SYNC_STATUS_EVIDENCE=<output-directory>`. The captures are component evidence; they do not establish a fresh packaged-app window, bilingual Help/practice acceptance, signed live-helper health, or hosted beta installation/update/relaunch. Those checks remain pending.
+Reproduce from commit `a37a1fd4e6a08f7b11fe3b006516b9d0d2c0517e` with its already-built test executable. Set `EVIDENCE_SHA` and `LEONARDO_SYNC_STATUS_EVIDENCE` for every invocation, then run the three focused tests:
+
+```bash
+EVIDENCE_SHA=a37a1fd4e6a08f7b11fe3b006516b9d0d2c0517e LEONARDO_SYNC_STATUS_EVIDENCE=/path/to/output \
+  swift test --skip-build --filter SyncHelperControllerTests.testStatusIndicatorStatesDuringHealthCheck
+EVIDENCE_SHA=a37a1fd4e6a08f7b11fe3b006516b9d0d2c0517e LEONARDO_SYNC_STATUS_EVIDENCE=/path/to/output \
+  swift test --skip-build --filter SyncHelperControllerTests.testSharingPollPreservesConfirmedStateDuringRetryAndClearsAfterTerminalFailure
+EVIDENCE_SHA=a37a1fd4e6a08f7b11fe3b006516b9d0d2c0517e LEONARDO_SYNC_STATUS_EVIDENCE=/path/to/output \
+  swift test --skip-build --filter SyncHelperControllerTests.testDisableDoesNotKillHelperWhenGracefulStopCannotBeConfirmed
+``` The captures are component evidence; they do not establish a fresh packaged-app window, bilingual Help/practice acceptance, signed live-helper health, or hosted beta installation/update/relaunch. Those checks remain pending.
