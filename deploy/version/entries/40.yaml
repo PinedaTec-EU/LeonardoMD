@@ -1,4 +1,4 @@
 {
   "build": 4,
-  "summary": "Added literal and regular-expression search across documents open in the current window, with highlighted matches, occurrence counts, wraparound navigation, and the shared premium text-field style. Applied premium controls to project search, Git commit and naming inputs, hidden-file settings, and joined General/Extensions tabs while preserving Synchronization and Updates."
+  "summary": "Added literal and regex search across open documents in this window, with highlights, counts and wrapping navigation. Applied premium fields to project search, commit and naming, switches to hidden-file controls, and joined preference tabs."
 }
