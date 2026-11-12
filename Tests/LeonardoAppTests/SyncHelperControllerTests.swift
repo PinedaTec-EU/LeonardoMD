@@ -20,6 +20,136 @@ final class SyncHelperControllerTests: XCTestCase {
             hasExecutable: { true }, verifyPackage: {})
     }
 
+    func testIndependentAutomaticStopCannotUndoNewEnable() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        let registration = HelperRegistrationFake()
+        registration.status = .enabled
+        let control = HelperControlFake()
+        await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control)
+        try await fixture.configurations.setSyncHelperEnabled(false, at: fixture.preferences)
+        await control.pauseReload()
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldReload { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldReload else {
+            await control.resumeReload(); await old.value
+            XCTFail("Old stop did not reach its acknowledgement barrier"); return
+        }
+        let enable = Task { await helper.setEnabled(true) }
+        for _ in 0..<5000 {
+            if helper.enabled { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTAssertTrue(helper.enabled, "The new consent must persist while the obsolete stop is held")
+        await control.resumeReload()
+        await old.value
+        await enable.value
+        let saved = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertTrue(saved.mobileSync.helperEnabled)
+        XCTAssertEqual(registration.unregistrations, 0, "Outdated stop must not unregister the re-enabled helper")
+        XCTAssertEqual(registration.status, .enabled, "Newly authorized registration must survive")
+        XCTAssertTrue(helper.online, "Newly authorized live health must survive")
+    }
+
+    func testExplicitDisableCancelsReenableWaitingForAutomaticStop() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        let registration = HelperRegistrationFake()
+        registration.status = .enabled
+        let control = HelperControlFake()
+        await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control)
+        try await fixture.configurations.setSyncHelperEnabled(false, at: fixture.preferences)
+        await control.pauseReload()
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldReload { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldReload else {
+            await control.resumeReload(); await old.value
+            XCTFail("Old stop did not reach its acknowledgement barrier"); return
+        }
+        let enable = Task { await helper.setEnabled(true) }
+        for _ in 0..<5000 {
+            if helper.enabled { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTAssertTrue(helper.enabled, "The pending enable must become visible before the old stop resumes")
+        await helper.setEnabled(false)
+        await control.resumeReload()
+        await old.value
+        await enable.value
+        let saved = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertFalse(saved.mobileSync.helperEnabled)
+        XCTAssertFalse(helper.enabled)
+        XCTAssertFalse(helper.online)
+        XCTAssertEqual(registration.status, .notRegistered)
+    }
+
+    func testIndependentSupersededFailureAndLaterCancellationMustRecover() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake()
+        registration.status = .enabled
+        let control = HelperControlFake()
+        await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control)
+        await helper.refresh()
+        XCTAssertTrue(helper.online)
+        await control.failStatus(at: 2)
+        await control.pauseStatus()
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await old.value; XCTFail("Older health not held"); return
+        }
+        let newer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 3) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 3) else {
+            await control.resumeStatus(); await old.value; _ = try? await newer.value
+            XCTFail("Newer health not held"); return
+        }
+        await control.resumeStatus(at: 2)
+        await old.value
+        newer.cancel()
+        await control.resumeStatus()
+        do { try await newer.value; XCTFail("Cancelled peer should not proceed") }
+        catch is CancellationError {} catch { XCTFail("Unexpected failure: \(error)") }
+        XCTAssertTrue(helper.online || helper.needsAutomaticRecovery, "An observed outage must either recover or be scheduled for a retry")
+        await helper.refreshIfRecoverable()
+        XCTAssertTrue(helper.online, "The now healthy helper must recover on the automatic poll")
+    }
+
+    func testIndependentCompatibleReadinessMustAuthorizeActions() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake()
+        registration.status = .enabled
+        let control = HelperControlFake()
+        let oldIdentity = SyncHelperBuildIdentity(build: 100, bundlePath: "/Applications/LeonardoMD.app")
+        await control.setBuildIdentities([oldIdentity, oldIdentity, replacement])
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: {}), hasExecutable: { true },
+            verifyPackage: { throw HelperControlError.unavailable })
+        await helper.refresh()
+        XCTAssertEqual(helper.state, .running, "Control obtained compatible authorized readiness")
+        XCTAssertTrue(helper.online, "A compatible authorized readiness result must make actions available")
+    }
+
     func testStatusIndicatorStatesDuringHealthCheck() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)

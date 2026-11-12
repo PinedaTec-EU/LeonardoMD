@@ -118,3 +118,12 @@ synchronization and sharing recover, and the runtime compares the pending
 proposal with the review again before applying. The common status indicator is
 red for a confirmed failure even when a failed shutdown leaves the switch off;
 ordinary disabled state still hides it. Bilingual Help is Guide v59.
+
+Three additional #421 lifecycle regressions are covered on PR #428. A confirmed
+health failure that outlives a cancelled peer preflight keeps automatic
+recovery scheduled even while the last confirmed presentation remains green.
+A compatible startup-health reply retires a failure from the same revision
+before enabling gated actions. An automatic stop checks lifecycle ownership
+again before unregistering; a newer enable waits for an in-flight stop and then
+confirms or restores registration, while a later explicit disable still owns
+the final stop.

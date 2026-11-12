@@ -14,6 +14,8 @@ final class SyncHelperController {
     private(set) var checking = false
     private var activeRefreshes = 0
     private var activePeerPreflights = 0
+    private var activeStopOperations = 0
+    private var pendingStopWaiters: [CheckedContinuation<Void, Never>] = []
     private var stateBeforeRefresh = State.disabled
     private var errorBeforeRefresh: String?
     private var sharingBeforeRefresh: RunningDirectService?
@@ -77,7 +79,8 @@ final class SyncHelperController {
     }
     var checkingStatus: Bool { checking || activePeerPreflights > 0 || busy }
     var needsAutomaticRecovery: Bool {
-        state == .failed || state == .starting || (enabled && !hasPresentedStatus)
+        state == .failed || state == .starting || (enabled && !hasPresentedStatus) ||
+            (enabled && state == .running && lastAuthorizedHealthRevision <= lastFailureRevision)
     }
     var displayedState: State { stateBeforeRefresh }
     var displayedError: String? { errorBeforeRefresh }
@@ -144,7 +147,10 @@ final class SyncHelperController {
                 error = nil; state = .notInstalled; sharing = nil; supportsRubricExchange = false; return
             }
             guard enabled else {
-                if service.status == .enabled { try await unregisterAfterStop() }
+                if service.status == .enabled {
+                    try await unregisterAfterStop(expectedRevision: expected, expectedLifecycle: expectedLifecycle)
+                }
+                guard expected == revision, expectedLifecycle == lifecycleRevision else { return }
                 error = nil; state = .disabled; sharing = nil; supportsRubricExchange = false
                 return
             }
@@ -178,7 +184,7 @@ final class SyncHelperController {
                 error = nil
                 applyStatus(status)
                 if status.enabled {
-                    lastAuthorizedHealthRevision = max(lastAuthorizedHealthRevision, expected)
+                    authorizeHealth(revision: expected)
                     lastSuccessfulRefreshRevision = expected
                 }
             case .notFound, .notRegistered:
@@ -228,6 +234,11 @@ final class SyncHelperController {
             self.enabled = enabled; sharing = nil
             if enabled {
                 state = .starting
+                await waitForPendingStopOperations()
+                guard presentation == presentationRevision else {
+                    busy = false
+                    return
+                }
                 if service.status != .enabled { try service.register() }
                 if service.status == .requiresApproval { state = .approvalRequired }
             } else {
@@ -329,7 +340,7 @@ final class SyncHelperController {
                 guard status.enabled, let expectedBuildIdentity, let identity = status.buildIdentity,
                       !identity.needsReplacement(by: expectedBuildIdentity) else { continue }
                 applyStatus(status)
-                lastAuthorizedHealthRevision = max(lastAuthorizedHealthRevision, expected)
+                authorizeHealth(revision: expected)
                 logger.info("sync_helper_readiness_confirmed build=\(identity.build, privacy: .public)")
                 return
             } catch {
@@ -365,9 +376,30 @@ final class SyncHelperController {
         error = status.enabled ? status.error : L10n.text("Offline · sync helper unavailable")
     }
 
-    private func unregisterAfterStop() async throws {
+    private func waitForPendingStopOperations() async {
+        while activeStopOperations > 0 {
+            await withCheckedContinuation { pendingStopWaiters.append($0) }
+        }
+    }
+
+    private func finishStopOperation() {
+        activeStopOperations -= 1
+        guard activeStopOperations == 0 else { return }
+        let waiters = pendingStopWaiters
+        pendingStopWaiters.removeAll()
+        waiters.forEach { $0.resume() }
+    }
+
+    private func unregisterAfterStop(expectedRevision: Int? = nil,
+                                     expectedLifecycle: Int? = nil) async throws {
+        await waitForPendingStopOperations()
+        activeStopOperations += 1
+        defer { finishStopOperation() }
         try await SyncHelperStopBarrier.stopAndUnregister(service: service, client: client,
-            preferencesURL: preferencesURL)
+            preferencesURL: preferencesURL, shouldUnregister: {
+                ((expectedRevision == nil || expectedRevision == self.revision) &&
+                    (expectedLifecycle == nil || expectedLifecycle == self.lifecycleRevision)) || !self.enabled
+            })
     }
 
     func prepareForApplicationUpdate() async -> Bool {
@@ -443,6 +475,13 @@ final class SyncHelperController {
 
     private func observeHealthFailure(revision: Int) {
         lastFailureRevision = max(lastFailureRevision, revision)
+    }
+
+    private func authorizeHealth(revision: Int) {
+        lastAuthorizedHealthRevision = max(lastAuthorizedHealthRevision, revision)
+        if lastFailureRevision <= revision {
+            lastFailureRevision = min(lastFailureRevision, revision - 1)
+        }
     }
 
     private func observeHealth(_ status: SyncHelperStatus, revision: Int, requiresIdentity: Bool) {
@@ -543,12 +582,12 @@ final class SyncHelperController {
             // Keep it, while still allowing operations confirmed by that state.
             let recovered = lastAuthorizedHealthRevision > lastFailureRevision
             guard initialRevision == lifecycleRevision, lastFailureRevision <= expected || recovered else { throw offlineFailure() }
-            lastAuthorizedHealthRevision = max(lastAuthorizedHealthRevision, expected)
+            authorizeHealth(revision: expected)
             return
         }
         presentationRevision += 1
         enabled = true
-        lastAuthorizedHealthRevision = expected
+        authorizeHealth(revision: expected)
         applyStatus(status)
         presentCurrentState()
     }
