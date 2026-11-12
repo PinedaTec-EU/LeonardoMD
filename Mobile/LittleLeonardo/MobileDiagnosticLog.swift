@@ -15,13 +15,12 @@ enum MobileDiagnosticOperation: String {
 }
 
 @MainActor
-struct MobileErrorNotice: Identifiable {
+struct MobileErrorNotice {
     static let alertTitle = "No se pudo completar la operación"
 
     let referenceCode: String
     let message: String
 
-    var id: String { referenceCode }
     var inlineMessage: String { "\(message) Código: \(referenceCode)" }
     var alertMessage: String { inlineMessage }
 
