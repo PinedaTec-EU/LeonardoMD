@@ -164,9 +164,9 @@ private struct MobileSharedProjectTreeRow: View {
                 projectMenu
             }
             .contentShape(Rectangle())
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("shared-project-\(descriptor.id)")
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("shared-project-\(descriptor.id)")
         .listRowBackground(MobileClassic.paper)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button("Eliminar de este dispositivo", role: .destructive) {
@@ -311,6 +311,7 @@ private struct MobileSharedProjectTreeRow: View {
             .accessibilityIdentifier("shared-file-actions-\(descriptor.id)-\(entry.path)")
         }
         .padding(.vertical, 3)
+        .accessibilityElement(children: .contain)
         .listRowBackground(MobileClassic.paper)
     }
 
