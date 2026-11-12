@@ -1,11 +1,15 @@
 # Sync helper validation
 
 Current PR #428 correction captures are in
-[`428-quiet-status-v33/`](428-quiet-status-v33/README.md). They cover confirmed
-status through recovery, immediate peer-action gating, retained sync rows, an
-edited 1/1 review draft through outage and recovery, and a shutdown diagnostic
-retained until stop is confirmed. These are native component captures, not
-fresh packaged-app startup or signed-service acceptance.
+[`428-quiet-status-v36/`](428-quiet-status-v36/README.md), bound to product and
+test source `843c54baf6263cb672e9c130a31b4db9ce004c38`. They cover the last
+confirmed green status during cancelled-check recovery and pending helper
+renewal, plus bilingual incoming-proposal and pairing-consent rows that remain
+visible while peer actions are disabled by live health. The same-endpoint QR,
+consent rows and incoming proposal are also asserted through recovery in the
+regression tests. These are native component captures, not fresh packaged-app
+startup or signed-service acceptance. Earlier evidence folders retain their
+original source and are historical checkpoints.
 
 ## Owner-authorized installed-service acceptance
 
