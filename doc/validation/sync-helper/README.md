@@ -1,11 +1,11 @@
 # Sync helper validation
 
 Current PR #428 correction captures are in
-[`428-quiet-status-v32/`](428-quiet-status-v32/README.md). They cover confirmed
-status through recovery, a superseding peer preflight, retained sync rows, an
-open source review with Apply disabled, and a confirmed error while the switch
-is off. These are native component captures, not fresh packaged-app startup or
-signed-service acceptance.
+[`428-quiet-status-v33/`](428-quiet-status-v33/README.md). They cover confirmed
+status through recovery, immediate peer-action gating, retained sync rows, an
+edited 1/1 review draft through outage and recovery, and a shutdown diagnostic
+retained until stop is confirmed. These are native component captures, not
+fresh packaged-app startup or signed-service acceptance.
 
 ## Owner-authorized installed-service acceptance
 
