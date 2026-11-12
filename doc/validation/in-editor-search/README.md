@@ -19,9 +19,10 @@ and [#434](https://github.com/PinedaTec-EU/LeonardoMD/issues/434), recorded on
 - Extensions while reviewing both guides: Mermaid, Math and Charts enabled;
   Citations and Markdown extras disabled. Math was temporarily disabled to
   inspect its fallback, then restored to enabled.
-- The product code was PR head `c38d821f`; the disposable app also included
-  guide revision 62 and its resource-path updates. The successful build was
-  recorded in PR #40's compilation delta.
+- Search implementation revision: `c38d821f`. The disposable app included
+  the Guide v62 packages and their resource-path updates from PR head
+  `a18fe1eb`; the successful build was recorded in PR #40's compilation
+  delta.
 
 ## Search interaction
 
@@ -57,10 +58,26 @@ opened from chapter 4 of the packaged guide, edited with fictional values,
 saved with ⌘S, closed, and reopened from the guide. The saved name, goal and
 checkbox state were present after reopening.
 
-## Capture limitation
+## Visual evidence
 
-Semantic accessibility observations were available for the full acceptance
-flow. ScreenCaptureKit later returned
-`SCStreamErrorDomain Code=-3811` during screenshot capture, so no screenshot
-file is attached to this record. An earlier transient capture showed the yellow
-occurrence highlights, but was not persisted as a repository artifact.
+The fresh QA process PID `38064` displayed the English Guide v62 in its native
+window with the literal query `Leonardo`, **This document** scope, and
+case-insensitive matching. The captured state shows `1 of 117`, the previous
+and next controls, and yellow occurrence highlights in the guide source.
+
+![Native Find bar, count, navigation and highlighted guide occurrences](search-in-guide-v62-en.png)
+
+The original window capture and its metadata are in
+[`search-in-guide-v62-en.png`](search-in-guide-v62-en.png) and
+[`search-in-guide-v62-en.capture.json`](search-in-guide-v62-en.capture.json).
+The capture is from the real QA application, version `0.3.1333` stable, build
+`1333`, bundle `eu.pinedatec.LeonardoMD.qa.5a8aa4a28bbf4fc3ad5d2584633f108b`.
+The app was running the search implementation from `c38d821f` with the Guide
+v62 packages and resource paths from `a18fe1eb`.
+
+This is a native macOS window capture. The shared browser metadata helper
+requires a browser version and CSS viewport, which the native host does not
+expose; neither is fabricated here. The adjacent native sidecar records the
+observed AppKit window/content dimensions and explicitly marks browser/CSS
+fields as not applicable. The screen shows bundled, product-authored help and
+no user-authored document content.
