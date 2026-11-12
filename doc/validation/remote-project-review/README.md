@@ -3,7 +3,7 @@
 ## Candidate identity
 
 - Product source used to build and capture the candidate: `d64a6b841687c4e1b2fee965a49cd909b7ff2168`.
-- Current PR head `4f3c4387d7d3fc9e5b9bbf8fdfc09273233376f5` differs from that product source only in `deploy/version/entries/430.yaml`, which records build allocation 32.
+- Candidate build and capture were recorded while PR head was `4f3c4387d7d3fc9e5b9bbf8fdfc09273233376f5`; that head differed from the product source only in `deploy/version/entries/430.yaml`, which recorded build allocation 32. The later PR head integrates released main `0.3.1339` and these evidence records; it does not change the captured product UI.
 - App: disposable packaged `LeonardoMDQA.app`; bundle ID `eu.pinedatec.LeonardoMD.qa.05e1e57c74784ba5b66330ccb8e7e1b0`.
 - Fresh native process PID `32804`; executable `LeonardoMD`; version/build `0.3.1333 / 1333`.
 - OS: macOS `27.0.1` (build `26A434`). The first window became ready in this process; the packaged app launched independently from the previous QA process.
@@ -34,4 +34,4 @@ Each capture includes its test-generated `.context.json` and a `.metadata.json` 
 
 `swift test --filter 'DesktopPeerNativeAcceptanceTests|SyncHelperControllerTests/testStatusIndicatorStatesDuringHealthCheck'` passed 4 tests: three native acceptance tests and the #421 checking-state test. The run included the pinned-HTTPS offline-catalogue restart regression and native review captures.
 
-`python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py'` passed 3 tests. `git diff --check` passed after the evidence record was assembled. CI for PR head `4f3c4387d7d3fc9e5b9bbf8fdfc09273233376f5` passed both test jobs, `validate`, and evidence compilation; `request-policy` was skipped by workflow conditions.
+`python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py'` passed 3 tests. `git diff --check` passed after the evidence record was assembled. CI passed both test jobs, `validate`, and evidence compilation for PR head `4f3c4387d7d3fc9e5b9bbf8fdfc09273233376f5`; `request-policy` was skipped by workflow conditions. The current PR head is validated separately by its own checks.
