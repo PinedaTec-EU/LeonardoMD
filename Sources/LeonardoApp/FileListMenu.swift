@@ -8,6 +8,7 @@ struct FileListMenu: View {
         Menu {
             Toggle(L10n.text("Show all files"), isOn: $session.showAllFiles)
             Toggle(L10n.text("Show hidden files"), isOn: $session.showHidden)
+                .toggleStyle(PremiumSwitchStyle())
             Menu(L10n.text("Sort")) {
                 Toggle(L10n.text("Folders first"), isOn: $session.foldersFirst)
                 Divider()
