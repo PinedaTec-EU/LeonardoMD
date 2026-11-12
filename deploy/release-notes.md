@@ -397,4 +397,10 @@
 - [#422](https://github.com/PinedaTec-EU/LeonardoMD/pull/422) — #421 Fixed: stabilize synchronization status refresh — build +36
   <p>Synchronization preferences keep their layout steady during refresh and show whether the service is checking, online, or unavailable beside the main switch.</p>
 - Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.3.1316)
+
+<!-- release-ledger:event:v1:eyJhY2NlcHRlZF9hdCI6IjIwMjYtMTEtMTJUMTU6MzY6NDdaIiwiYWNjZXB0ZWRfZXZlbnRfcmVwb3NpdG9yeSI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwiY2hhbmdlcyI6W3siZGVsdGEiOnsiYnVpbGQiOjE3fSwiZnJvbV92ZXJzaW9uIjoiMC4zLjEzMTYiLCJraW5kIjoicHVsbF9yZXF1ZXN0IiwibWVyZ2Vfc2hhIjoiYzg5N2UzN2Y0M2IzZjMwMWQyNDg0NGQwMTdhYTA3YTQ2NjZlNWRkYiIsIm51bWJlciI6NDE4LCJzdW1tYXJ5IjoiQ2hvb3NlIHdoaWNoIGRldGVjdGVkIGJ1aWx0LWluIGV4dGVuc2lvbnMgdG8gZW5hYmxlLCBzdXBwcmVzcyBmdXR1cmUgcmVjb21tZW5kYXRpb25zIGdsb2JhbGx5LCBhbmQgcmVzZXQgd2FybmluZ3Mgd2l0aG91dCBjaGFuZ2luZyBhY3RpdmF0aW9uIHByZWZlcmVuY2VzLiIsInRpdGxlIjoiIzQxNyBVcGRhdGVkOiBzZWxlY3QgZXh0ZW5zaW9ucyBmcm9tIHJlY29tbWVuZGF0aW9ucyIsInRvX3ZlcnNpb24iOiIwLjMuMTMzMyJ9XSwiZW52aXJvbm1lbnQiOiJyZWxlYXNlIiwiZXZlbnRfaWQiOiJnaXRodWJfcmVsZWFzZTo0NDMxNDc4NzciLCJldmVudF9raW5kIjoiZ2l0aHViX3JlbGVhc2UiLCJldmlkZW5jZV91cmwiOiJodHRwczovL2dpdGh1Yi5jb20vUGluZWRhVGVjLUVVL0xlb25hcmRvTUQvcmVsZWFzZXMvdGFnL3YwLjMuMTMzMyIsInJlcG9zaXRvcnkiOiJQaW5lZGFUZWMtRVUvTGVvbmFyZG9NRCIsInNvdXJjZV9yZWYiOiJ2MC4zLjEzMzMiLCJzb3VyY2Vfc2hhIjoiNjIyMDFmYjIyM2MwMWJiMTUzNWY3MTM2ZTM3OTljMGFkMDBhZTkzMyIsInRhcmdldCI6IlBpbmVkYVRlYy1FVS9MZW9uYXJkb01EIiwidmVyc2lvbiI6IjAuMy4xMzMzIn0 -->
+### 0.3.1333
+- [#418](https://github.com/PinedaTec-EU/LeonardoMD/pull/418) — #417 Updated: select extensions from recommendations — build +17
+  <p>Choose which detected built-in extensions to enable, suppress future recommendations globally, and reset warnings without changing activation preferences.</p>
+- Accepted evidence: [verified event](https://github.com/PinedaTec-EU/LeonardoMD/releases/tag/v0.3.1333)
 <!-- release-ledger:end -->
