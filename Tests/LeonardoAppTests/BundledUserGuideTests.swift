@@ -160,7 +160,10 @@ final class BundledUserGuideTests: XCTestCase {
             _ = try await web.evaluateJavaScript("document.querySelector('.mermaid-placeholder').scrollIntoView({block:'center'})")
             try await waitFor("document.querySelector('.mermaid-placeholder svg') !== null", in: web)
             _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
-            if let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
+            // WKWebView snapshots are a separate opt-in from broad native
+            // component captures. Keep long-running snapshot teardown out of
+            // ordinary CI rendering while retaining both locale assertions.
+            if let output = ProcessInfo.processInfo.environment["LEONARDO_BUNDLED_GUIDE_CAPTURE_EVIDENCE"] {
                 let directory = URL(fileURLWithPath: output).appendingPathComponent("user-guide")
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
                 let encodedSource = try XCTUnwrap(String(data: JSONEncoder().encode(session.content), encoding: .utf8))
@@ -246,7 +249,7 @@ final class BundledUserGuideTests: XCTestCase {
             XCTAssertTrue(text.contains(language == .english ? "Import with your agent" : "Importar con tu agente"))
             XCTAssertTrue(text.contains("leonardo-format"))
             XCTAssertTrue(text.contains(language == .english ? "Request to copy" : "Encargo que puedes copiar"))
-            if let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
+            if let output = ProcessInfo.processInfo.environment["LEONARDO_BUNDLED_GUIDE_CAPTURE_EVIDENCE"] {
                 let directory = URL(fileURLWithPath: output).appendingPathComponent("agent-import")
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
                 try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("overview-\(language.rawValue).png"),
