@@ -69,6 +69,7 @@ final class DesktopSyncController {
     private var nextNetworkRefresh = Date.distantPast
     private var invitationNetworkAddresses: Set<String>?
     private var nextHelperRecovery = Date.distantPast
+    private var consentRefreshRevision = 0
     var networkAddresses: @MainActor (Bool) -> [String] = { LocalNetworkInterfaces.addresses(allowPrivateOverlay: $0) }
     var isLocalAddress: @MainActor (String) -> Bool = { LocalNetworkInterfaces.containsLocalAddress($0) }
     private static var rubricRequesterName: String {
@@ -94,7 +95,11 @@ final class DesktopSyncController {
     var rubricCaptureRecords: [RubricCaptureRecord] { rubricCaptures.records }
 
     var sharingAvailable: Bool {
-        settings.enabled && (usesHelper ? helper.sharing != nil : running != nil)
+        settings.enabled && (usesHelper ? helper.online && helper.sharing != nil : running != nil)
+    }
+
+    var consentActionsAvailable: Bool {
+        usesHelper ? helper.online : running != nil
     }
 
     var sharingPresentationAvailable: Bool {
@@ -235,6 +240,9 @@ final class DesktopSyncController {
     }
 
     func refreshConsent(refreshHelper: Bool = true) async {
+        guard !InstanceRuntime.isAdditional, !busy else { return }
+        consentRefreshRevision &+= 1
+        let refreshRevision = consentRefreshRevision
         let currentAddresses = Set(addresses)
         if invitationURL != nil && invitationNetworkAddresses != currentAddresses {
             invitationURL = nil; invitationNetworkAddresses = nil
@@ -243,7 +251,6 @@ final class DesktopSyncController {
         if usesHelper && !endpointAvailable {
             running = nil; invitationURL = nil; invitationNetworkAddresses = nil
         }
-        guard !InstanceRuntime.isAdditional, !busy else { return }
         var checkedHelper = false
         if usesHelper {
             let networkChanged = (lastNetworkAddresses.map { $0 != currentAddresses } ?? true) ||
@@ -262,13 +269,17 @@ final class DesktopSyncController {
                 if networkDue || (refreshHelper && networkRefreshPending) {
                     nextNetworkRefresh = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
                     let confirmed = await helper.refreshForInvitation()
+                    guard refreshRevision == consentRefreshRevision else { return }
                     let host = helper.sharing?.endpoint.host
                     if Set(addresses) != currentAddresses {
                         nextNetworkRefresh = .distantPast
                     } else if confirmed && (host.map { isCurrentHost($0, addresses: currentAddresses) } ?? true) {
                         networkRefreshPending = false
                     }
-                } else { await helper.refresh() }
+                } else {
+                    await helper.refresh()
+                    guard refreshRevision == consentRefreshRevision else { return }
+                }
             }
             updateRunningFromHelper()
             guard helper.online else {
@@ -277,29 +288,49 @@ final class DesktopSyncController {
                 // last confirmed rows and QR stable during that retry, while
                 // sharingAvailable continues to gate operations on live health.
                 if preservingConfirmedSharingDuringCheck { return }
-                running = nil; invitationURL = nil; incoming = []; consent = PairingRegistry(); return
+                clearSharingPresentationAfterTerminalFailure()
+                return
             }
         }
         do {
-            consent = try await runtime.consentState()
-            incoming = running == nil ? [] : try await runtime.incomingProposals()
+            let refreshedConsent = try await runtime.consentState()
+            guard refreshRevision == consentRefreshRevision else { return }
+            consent = refreshedConsent
+            let refreshedIncoming = running == nil ? [] : try await runtime.incomingProposals()
+            guard refreshRevision == consentRefreshRevision else { return }
+            incoming = refreshedIncoming
             rubricCaptures.refresh()
             await recoverRubricCaptures()
+            guard refreshRevision == consentRefreshRevision else { return }
             consentFailureChecked = false
         } catch {
+            guard refreshRevision == consentRefreshRevision else { return }
             self.error = error.localizedDescription
             if checkedHelper { consentFailureChecked = true }
             if usesHelper && !refreshHelper && !checkedHelper && (!consentFailureChecked || now() >= nextHelperRecovery) {
                 consentFailureChecked = true
                 nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
                 await helper.refresh()
+                guard refreshRevision == consentRefreshRevision else { return }
                 updateRunningFromHelper()
+                if !helper.online && !preservingConfirmedSharingDuringCheck {
+                    clearSharingPresentationAfterTerminalFailure()
+                }
             }
         }
     }
 
+    private func clearSharingPresentationAfterTerminalFailure() {
+        running = nil
+        invitationURL = nil
+        invitationNetworkAddresses = nil
+        incoming = []
+        consent = PairingRegistry()
+        reviewing = nil
+    }
+
     private var preservingConfirmedSharingDuringCheck: Bool {
-        helper.checkingStatus && helper.displayedState == .running && helper.displayedSharing != nil
+        helper.checkingStatus && helper.displayedState == .running
     }
 
     private var helperSharingForPresentation: RunningDirectService? {
@@ -307,7 +338,7 @@ final class DesktopSyncController {
     }
 
     func reviewProposal(_ item: DesktopPeerIncomingProposal) async {
-        guard !InstanceRuntime.isAdditional, !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy, sharingAvailable else { return }
         busy = true; error = nil
         defer { busy = false }
         do {
@@ -322,7 +353,8 @@ final class DesktopSyncController {
     }
 
     func applyReview(_ value: DesktopSourceReview, decisions: [String: ReconciliationChoice]) async -> Bool {
-        guard !busy, let project = settings.projects.first(where: { $0.id == value.item.upload.projectID }) else { return false }
+        guard sharingAvailable, !busy,
+              let project = settings.projects.first(where: { $0.id == value.item.upload.projectID }) else { return false }
         busy = true; error = nil
         defer { busy = false }
         do {
@@ -399,7 +431,7 @@ final class DesktopSyncController {
     func revoke(_ id: UUID) async { await consentAction { try await runtime.revoke(deviceID: id) } }
 
     private func consentAction(_ action: () async throws -> Void) async {
-        guard !InstanceRuntime.isAdditional, !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy, consentActionsAvailable else { return }
         busy = true
         defer { busy = false }
         do {

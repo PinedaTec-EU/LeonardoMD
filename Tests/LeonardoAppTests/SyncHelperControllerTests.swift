@@ -2096,6 +2096,7 @@ final class SyncHelperControllerTests: XCTestCase {
             XCTFail("The transient health retry did not reach its barrier"); return
         }
         XCTAssertFalse(source.sharingAvailable, "Operations must wait for confirmed live helper health")
+        XCTAssertFalse(source.consentActionsAvailable, "Consent actions must wait for confirmed live helper health")
         XCTAssertTrue(source.sharingPresentationAvailable)
 
         let callsDuringRetry = await control.statusCalls
@@ -2106,6 +2107,27 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(source.invitationURL, invitation, "A transient helper response must not discard a valid QR")
         XCTAssertEqual(source.consent.requests, [request], "Pending approval rows must remain visible during retry")
         XCTAssertEqual(source.incoming.map(\.id), [proposal.id], "Incoming rows must remain visible during retry")
+
+        let proposalSelection = try CorpusSelection(folders: [""], documents: [])
+        let snapshot = CorpusSnapshot(revision: "base", files: [])
+        let reviewedProposal = try DesktopPeerProposal(projectID: project.id, selection: proposalSelection,
+            base: snapshot, proposed: snapshot)
+        let review = DesktopSourceReview(item: proposal,
+            review: try DesktopPeerProposalReview(proposal: reviewedProposal, source: snapshot))
+        await source.reviewProposal(proposal)
+        let appliedReview = await source.applyReview(review, decisions: [:])
+        XCTAssertFalse(appliedReview,
+            "A review opened before failure must not apply while live helper health is down")
+        await source.approve(request, projects: [project.id])
+        await source.reject(request.id)
+        await source.revoke(UUID())
+        let blockedActions = await runtime.recordedActionsValue
+        XCTAssertEqual(blockedActions.review, 0)
+        XCTAssertEqual(blockedActions.apply, 0)
+        XCTAssertEqual(blockedActions.approve, 0)
+        XCTAssertEqual(blockedActions.reject, 0)
+        XCTAssertEqual(blockedActions.revoke, 0)
+        try await captureUnavailableSyncActions(projectID: project.id, proposal: proposal, controller: source)
 
         await pause.release(); await refresh.value
         XCTAssertTrue(helper.online)
@@ -2127,6 +2149,119 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(source.incoming.isEmpty)
     }
 
+    func testPairedDevicesRemainVisibleDuringRetryWhenSharingIsOff() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: false, helperEnabled: true)
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let pause = StartupPauseBarrier()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: { await pause.pause() }), hasExecutable: { true }, verifyPackage: {})
+        let runtime = StatusRefreshRuntime()
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let request = try registry.requestPairing(deviceName: "Already paired Mac",
+            credential: String(repeating: "b", count: 64), serverFingerprint: Data(repeating: 2, count: 32), now: Date())
+        let device = try registry.approve(requestID: request.id, comparisonCode: request.comparisonCode,
+            projects: [UUID()], now: Date())
+        await runtime.setConsentState(registry)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+
+        await source.initialize()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertTrue(helper.online)
+        XCTAssertNil(helper.displayedSharing, "Sharing is disabled while the helper remains enabled")
+        XCTAssertEqual(source.consent.devices, [device])
+
+        let failureCall = await control.statusCalls + 1
+        await control.failStatus(at: failureCall)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await pause.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await pause.isHeld else {
+            await pause.release(); await refresh.value
+            XCTFail("The helper retry did not reach its barrier"); return
+        }
+
+        XCTAssertEqual(helper.displayedState, .running)
+        XCTAssertFalse(source.consentActionsAvailable)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.consent.devices, [device],
+            "A healthy helper with sharing switched off must retain saved paired devices during retry")
+        try await captureUnavailablePairedDevice(device, controller: source)
+
+        await pause.release(); await refresh.value
+        XCTAssertTrue(helper.online)
+        XCTAssertEqual(source.consent.devices, [device])
+    }
+
+    func testTerminalConsentHealthFailureClearsRowsAndDiscardsLateProposalReply() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let project = MobileSharedProject(rootURL: fixture.root, name: "Fictional project")
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true, projects: [project])
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!,
+            certificateFingerprint: Data(repeating: 4, count: 32))
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.setSharing(service)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: {}), hasExecutable: { true }, verifyPackage: {})
+        let runtime = StatusRefreshRuntime(); await runtime.setStartedService(service)
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let request = try registry.requestPairing(deviceName: "Little Leonardo QA",
+            credential: String(repeating: "c", count: 64), serverFingerprint: Data(repeating: 3, count: 32), now: Date())
+        await runtime.setConsentState(registry)
+        let upload = try DesktopPeerUpload(proposalID: UUID(), projectID: project.id, byteCount: 1,
+            sha256: String(repeating: "c", count: 64))
+        let proposal = DesktopPeerIncomingProposal(deviceID: UUID(), deviceName: "Second Mac", upload: upload)
+        await runtime.setIncomingProposals([proposal])
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+
+        await source.initialize()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.consent.requests, [request])
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id])
+
+        await runtime.pauseIncomingRead()
+        let stalePoll = Task { await source.refreshConsent(refreshHelper: false) }
+        for _ in 0..<5000 {
+            if await runtime.hasHeldIncomingRead { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await runtime.hasHeldIncomingRead else {
+            await runtime.resumeIncomingRead(); await stalePoll.value
+            XCTFail("The proposal read did not reach its barrier"); return
+        }
+
+        await runtime.setConsentFailure(true)
+        let failureCall = await control.statusCalls + 1
+        await control.failStatus(at: failureCall)
+        await control.failStatus(at: failureCall + 1)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertFalse(helper.online)
+        XCTAssertTrue(source.consent.requests.isEmpty,
+            "A confirmed health failure after a consent read error must clear rows before returning")
+        XCTAssertTrue(source.incoming.isEmpty)
+
+        await runtime.resumeIncomingRead()
+        await stalePoll.value
+        XCTAssertTrue(source.incoming.isEmpty,
+            "A proposal response from an older poll must not restore rows after terminal cleanup")
+        XCTAssertTrue(source.consent.requests.isEmpty)
+    }
+
     private func captureSharedProjectRow(_ project: MobileSharedProject, controller: DesktopSyncController, state: String) async throws {
         guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
         let destination = URL(fileURLWithPath: output)
@@ -2141,6 +2276,49 @@ final class SyncHelperControllerTests: XCTestCase {
             to: destination.appendingPathComponent("project-\(state).png"), language: "en",
             state: "Synthetic shared project: \(state)", route: "/native/preferences/synchronization",
             screen: "Shared project status")
+    }
+
+    private func captureUnavailableSyncActions(projectID: UUID,
+                                               proposal: DesktopPeerIncomingProposal,
+                                               controller: DesktopSyncController) async throws {
+        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
+        let destination = URL(fileURLWithPath: output)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        LanguageSettings.shared.language = .english
+        let review = NSHostingView(rootView: IncomingProposalRow(item: proposal, controller: controller)
+            .padding(16).frame(width: 532, height: 100, alignment: .topLeading)
+            .background(Color(nsColor: .windowBackgroundColor)))
+        try await GuideCaptureSupport.captureNative(review, size: NSSize(width: 532, height: 100),
+            to: destination.appendingPathComponent("incoming-review-unavailable.png"), language: "en",
+            state: "Synthetic incoming proposal retained during helper retry; Review changes disabled by live health",
+            route: "/native/preferences/synchronization", screen: "Incoming proposal actions")
+        let consent = NSHostingView(rootView: PairingConsentActions(controller: controller,
+            projects: [projectID], captureOnly: false, confirmed: true, onCancel: {}, onAllow: {})
+            .padding(16).frame(width: 420, height: 60, alignment: .topLeading)
+            .background(Color(nsColor: .windowBackgroundColor)).buttonStyle(PremiumButtonStyle()))
+        try await GuideCaptureSupport.captureNative(consent, size: NSSize(width: 420, height: 60),
+            to: destination.appendingPathComponent("consent-actions-unavailable.png"), language: "en",
+            state: "Synthetic confirmed pairing request during helper retry; Allow connection disabled by live health",
+            route: "/native/preferences/synchronization/pairing", screen: "Pairing consent actions")
+    }
+
+    private func captureUnavailablePairedDevice(_ device: PairedDevice,
+                                               controller: DesktopSyncController) async throws {
+        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
+        let destination = URL(fileURLWithPath: output)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        LanguageSettings.shared.language = .english
+        let host = NSHostingView(rootView: AuthorizedDeviceRow(device: device, controller: controller)
+            .padding(16).frame(width: 532, height: 100, alignment: .topLeading)
+            .background(Color(nsColor: .windowBackgroundColor)))
+        try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 100),
+            to: destination.appendingPathComponent("paired-device-sharing-off.png"), language: "en",
+            state: "Synthetic paired device retained while local sharing is off and helper health retry is active; Revoke disabled",
+            route: "/native/preferences/synchronization", screen: "Authorized device row")
     }
 
     func testFirstStatusFailureRetriesHealthBeforeReconciliation() async throws {
@@ -2995,16 +3173,37 @@ private actor HelperControlFake: SyncHelperControlAccess {
     }
 }
 
+private struct StatusRefreshRuntimeActions: Equatable, Sendable {
+    var review = 0
+    var apply = 0
+    var approve = 0
+    var reject = 0
+    var revoke = 0
+}
+
 private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
     private var consentFailure = false
     private var invitationPaused = false
     private var heldInvitation: CheckedContinuation<Void, Never>?
+    private var incomingReadPaused = false
+    private var heldIncomingRead: CheckedContinuation<[DesktopPeerIncomingProposal], Never>?
+    private var heldIncomingResponse: [DesktopPeerIncomingProposal] = []
     private var consent = PairingRegistry()
     private var incoming: [DesktopPeerIncomingProposal] = []
     private var startedService: RunningDirectService?
+    private var recordedActions = StatusRefreshRuntimeActions()
     var hasHeldInvitation: Bool { heldInvitation != nil }
+    var hasHeldIncomingRead: Bool { heldIncomingRead != nil }
+    var recordedActionsValue: StatusRefreshRuntimeActions { recordedActions }
     func pauseInvitation() { invitationPaused = true }
     func resumeInvitation() { invitationPaused = false; heldInvitation?.resume(); heldInvitation = nil }
+    func pauseIncomingRead() { incomingReadPaused = true }
+    func resumeIncomingRead() {
+        incomingReadPaused = false
+        heldIncomingRead?.resume(returning: heldIncomingResponse)
+        heldIncomingRead = nil
+        heldIncomingResponse = []
+    }
     func setConsentFailure(_ value: Bool) { consentFailure = value }
     func setConsentState(_ value: PairingRegistry) { consent = value }
     func setIncomingProposals(_ value: [DesktopPeerIncomingProposal]) { incoming = value }
@@ -3018,17 +3217,41 @@ private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
         if consentFailure { throw DesktopRuntimeError.notRunning }
         return consent
     }
-    func incomingProposals() async throws -> [DesktopPeerIncomingProposal] { incoming }
+    func incomingProposals() async throws -> [DesktopPeerIncomingProposal] {
+        guard incomingReadPaused else { return incoming }
+        let response = incoming
+        return await withCheckedContinuation { continuation in
+            heldIncomingResponse = response
+            heldIncomingRead = continuation
+        }
+    }
     func createInvitation() async throws -> PairingInvitation {
         if invitationPaused { await withCheckedContinuation { heldInvitation = $0 } }
         var registry = PairingRegistry(); registry.setEnabled(true)
         return try registry.createInvitation(now: Date())
     }
-    func reviewIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposalReview { throw DesktopRuntimeError.notRunning }
-    func applyIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload, review: DesktopPeerProposalReview, decisions: [String: ReconciliationChoice], projectRoot: URL, currentSource: CorpusSnapshot, currentDisk: CorpusSnapshot) async throws -> DesktopPeerAcceptanceResult { throw DesktopRuntimeError.notRunning }
-    func approve(requestID: UUID, code: String, projectIDs: Set<UUID>) async throws { throw DesktopRuntimeError.notRunning }
-    func reject(requestID: UUID) async throws { throw DesktopRuntimeError.notRunning }
-    func revoke(deviceID: UUID) async throws { throw DesktopRuntimeError.notRunning }
+    func reviewIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposalReview {
+        recordedActions.review += 1
+        throw DesktopRuntimeError.notRunning
+    }
+    func applyIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload, review: DesktopPeerProposalReview,
+                               decisions: [String: ReconciliationChoice], projectRoot: URL,
+                               currentSource: CorpusSnapshot, currentDisk: CorpusSnapshot) async throws -> DesktopPeerAcceptanceResult {
+        recordedActions.apply += 1
+        throw DesktopRuntimeError.notRunning
+    }
+    func approve(requestID: UUID, code: String, projectIDs: Set<UUID>) async throws {
+        recordedActions.approve += 1
+        throw DesktopRuntimeError.notRunning
+    }
+    func reject(requestID: UUID) async throws {
+        recordedActions.reject += 1
+        throw DesktopRuntimeError.notRunning
+    }
+    func revoke(deviceID: UUID) async throws {
+        recordedActions.revoke += 1
+        throw DesktopRuntimeError.notRunning
+    }
     func createRubricRequest(deviceID: UUID, requestID: UUID, requesterName: String, labelHint: String?) async throws -> LeonardoSync.RubricRequest { throw DesktopRuntimeError.notRunning }
     func cancelRubricRequest(requestID: UUID) async throws -> LeonardoSync.RubricRequest { throw DesktopRuntimeError.notRunning }
     func rubricResponse(requestID: UUID) async throws -> LeonardoSync.RubricResponse? { throw DesktopRuntimeError.notRunning }
