@@ -36,7 +36,7 @@ extension MobileLibrary {
                         connection.selectionMigrationCompleted = true
                     }
                     connection.acceptedProjectIDs.formIntersection(granted)
-                    connection.ignoredProjectIDs.formIntersection(granted)
+                    connection.reconcileIgnoredProjectGrants(with: status.projects)
                     connection.newFilePaths = connection.newFilePaths.filter { granted.contains($0.key) }
                     connection.projectIDs = granted
                     connection.projectDescriptors = status.projects.sorted {
@@ -112,6 +112,7 @@ extension MobileLibrary {
         guard !connecting,
               let connection = connections.first(where: { $0.connectionID == connectionID }),
               !connection.revoked, connection.projectIDs.contains(projectID),
+              !connection.ignoredProjectIDs.contains(projectID),
               connection.projectDescriptors.contains(where: { $0.id == projectID }) else { return }
         var updated = connection
         updated.acceptedProjectIDs.insert(projectID)

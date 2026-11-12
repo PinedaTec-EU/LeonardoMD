@@ -1,10 +1,10 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v56-en.mdlz` and `Guide-v56-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v57-en.mdlz` and `Guide-v57-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v56/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v57/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
-remain unchanged. Existing guide copies and practice answers are never overwritten.
+remain unchanged. Existing v56 copies and practice answers are never overwritten.
 
 `en/body.md` and `es/body.md` are the editorial sources. The 19 chapters cover
 macOS workflows and Little Leonardo's host → project → file library, with live Mermaid/KaTeX/Vega examples, literal citation

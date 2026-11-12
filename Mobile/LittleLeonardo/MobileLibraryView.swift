@@ -473,10 +473,7 @@ private struct MobileIncomingSharedProjectRow: View {
                     .font(.caption).foregroundStyle(MobileClassic.secondary)
             }
             Spacer(minLength: 4)
-            if ignored {
-                Button("Añadir") { addProject() }
-                    .buttonStyle(.bordered).disabled(library.connecting)
-            } else {
+            if !ignored {
                 Button("Añadir") { addProject() }
                     .buttonStyle(.borderedProminent).tint(MobileClassic.heading)
                     .foregroundStyle(MobileClassic.paper).disabled(library.connecting)

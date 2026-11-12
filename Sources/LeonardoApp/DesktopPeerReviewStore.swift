@@ -10,7 +10,32 @@ final class DesktopPeerReviewStore {
         var hostName: String?
         var acceptedProjects: Set<UUID> = []
         var ignoredProjects: Set<UUID> = []
+        var ignoredProjectDescriptors: [UUID: SharedProjectDescriptor] = [:]
         var newFilePaths: [UUID: Set<String>] = [:]
+
+        private enum CodingKeys: String, CodingKey {
+            case hostName, acceptedProjects, ignoredProjects, ignoredProjectDescriptors, newFilePaths
+        }
+
+        init(hostName: String? = nil, acceptedProjects: Set<UUID> = [], ignoredProjects: Set<UUID> = [],
+             ignoredProjectDescriptors: [UUID: SharedProjectDescriptor] = [:],
+             newFilePaths: [UUID: Set<String>] = [:]) {
+            self.hostName = hostName
+            self.acceptedProjects = acceptedProjects
+            self.ignoredProjects = ignoredProjects
+            self.ignoredProjectDescriptors = ignoredProjectDescriptors
+            self.newFilePaths = newFilePaths
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            hostName = try container.decodeIfPresent(String.self, forKey: .hostName)
+            acceptedProjects = try container.decodeIfPresent(Set<UUID>.self, forKey: .acceptedProjects) ?? []
+            ignoredProjects = try container.decodeIfPresent(Set<UUID>.self, forKey: .ignoredProjects) ?? []
+            ignoredProjectDescriptors = try container.decodeIfPresent(
+                [UUID: SharedProjectDescriptor].self, forKey: .ignoredProjectDescriptors) ?? [:]
+            newFilePaths = try container.decodeIfPresent([UUID: Set<String>].self, forKey: .newFilePaths) ?? [:]
+        }
     }
 
     private struct State: Codable {
@@ -59,14 +84,17 @@ final class DesktopPeerReviewStore {
         var connection = state.connections[connectionID] ?? ConnectionState()
         connection.acceptedProjects.insert(projectID)
         connection.ignoredProjects.remove(projectID)
+        connection.ignoredProjectDescriptors[projectID] = nil
         state.connections[connectionID] = connection
         save()
     }
 
-    func ignoreProject(connectionID: UUID, projectID: UUID) {
+    func ignoreProject(connectionID: UUID, descriptor: SharedProjectDescriptor) {
+        let projectID = descriptor.id
         guard !acceptsProject(connectionID: connectionID, projectID: projectID) else { return }
         var connection = state.connections[connectionID] ?? ConnectionState()
         connection.ignoredProjects.insert(projectID)
+        connection.ignoredProjectDescriptors[projectID] = descriptor
         state.connections[connectionID] = connection
         save()
     }
@@ -91,11 +119,27 @@ final class DesktopPeerReviewStore {
         save()
     }
 
-    func reconcileProjects(_ projectIDs: Set<UUID>, connectionID: UUID) {
+    func reconcileProjects(_ descriptors: [SharedProjectDescriptor], connectionID: UUID) {
         guard var connection = state.connections[connectionID] else { return }
+        let projectIDs = Set(descriptors.map(\.id))
         connection.acceptedProjects.formIntersection(projectIDs)
         connection.ignoredProjects.formIntersection(projectIDs)
         connection.newFilePaths = connection.newFilePaths.filter { projectIDs.contains($0.key) }
+        for projectID in Array(connection.ignoredProjects) {
+            guard let current = descriptors.first(where: { $0.id == projectID }) else { continue }
+            guard let previous = connection.ignoredProjectDescriptors[projectID] else {
+                // Preserve older ignore choices while establishing a baseline for future grant changes.
+                connection.ignoredProjectDescriptors[projectID] = current
+                continue
+            }
+            guard !previous.representsSameGrant(as: current) else { continue }
+            connection.ignoredProjects.remove(projectID)
+            connection.ignoredProjectDescriptors[projectID] = nil
+        }
+        let ignoredProjectIDs = connection.ignoredProjects
+        connection.ignoredProjectDescriptors = connection.ignoredProjectDescriptors.filter {
+            ignoredProjectIDs.contains($0.key)
+        }
         state.connections[connectionID] = connection
         save()
     }

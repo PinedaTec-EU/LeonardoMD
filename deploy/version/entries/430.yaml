@@ -1,4 +1,4 @@
 {
-  "summary": "Little Leonardo groups projects by their linked Mac, adds local review for new projects and files, and adds per-project and per-file offline retention and cache cleanup; synchronization status stays steady.",
-  "build": 7
+  "summary": "Little Leonardo groups remote projects by their linked Mac, lets users review new projects and files, keep or clear local copies, and keeps synchronization status visually stable; ignored grants return for review only when the host changes the grant.",
+  "build": 18
 }

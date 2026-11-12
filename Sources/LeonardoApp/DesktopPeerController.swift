@@ -142,7 +142,7 @@ final class DesktopPeerController {
             let status = try await library.refresh(connectionID: id)
             available[id] = status.projects
             if status.access != .pending {
-                reviewStore.reconcileProjects(Set(status.projects.map(\.id)), connectionID: id)
+                reviewStore.reconcileProjects(status.projects, connectionID: id)
             }
             try await reload()
             try await restoreDownloads()
@@ -174,6 +174,7 @@ final class DesktopPeerController {
 
     func addRemoteProject(connectionID: UUID, projectID: UUID) async {
         guard !InstanceRuntime.isAdditional, !busy,
+              !reviewStore.ignoredProject(connectionID: connectionID, projectID: projectID),
               available[connectionID]?.contains(where: { $0.id == projectID }) == true else { return }
         busy = true; defer { busy = false }
         error = nil
@@ -200,7 +201,8 @@ final class DesktopPeerController {
 
     func ignoreRemoteProject(connectionID: UUID, projectID: UUID) {
         guard !InstanceRuntime.isAdditional else { return }
-        reviewStore.ignoreProject(connectionID: connectionID, projectID: projectID)
+        guard let descriptor = available[connectionID]?.first(where: { $0.id == projectID }) else { return }
+        reviewStore.ignoreProject(connectionID: connectionID, descriptor: descriptor)
     }
 
     func setConnectionName(_ name: String, connectionID: UUID) {

@@ -91,6 +91,18 @@ struct MobileDirectConnection: Codable, Identifiable {
             || revoked != other.revoked
             || pendingPurgeProjectIDs != other.pendingPurgeProjectIDs
     }
+
+    mutating func reconcileIgnoredProjectGrants(with currentDescriptors: [SharedProjectDescriptor]) {
+        let currentIDs = Set(currentDescriptors.map(\.id))
+        ignoredProjectIDs.formIntersection(currentIDs)
+        for projectID in Array(ignoredProjectIDs) {
+            guard let previous = projectDescriptors.first(where: { $0.id == projectID }),
+                  let current = currentDescriptors.first(where: { $0.id == projectID }) else { continue }
+            if !previous.representsSameGrant(as: current) {
+                ignoredProjectIDs.remove(projectID)
+            }
+        }
+    }
 }
 
 /// Atomic, owner-only persistence for mobile connection snapshots.

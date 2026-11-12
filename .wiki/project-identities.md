@@ -30,6 +30,11 @@ The bilingual project/synchronization help explains the same-project source and
 recipient example, partial sharing and offline behavior. See
 `doc/guide/feature-coverage.md` for the maintained help entry.
 
+Ignored incoming projects cannot be accepted again from the local review row.
+The receiver compares the previous project descriptor with the current one;
+scope or selection changes under the same UUID return the grant to pending
+review, while a display-name change alone does not. Tracking: [#432](https://github.com/PinedaTec-EU/LeonardoMD/issues/432).
+
 Reconciliation after [#407](https://github.com/PinedaTec-EU/LeonardoMD/issues/407) preserves the one sorted project hierarchy, stable open/delete/restore accessibility identifiers, swipe-plus-tap deletion, both cache boundaries and Demo restoration. Keep the on-demand browser/reader and `compactFirstHeading`; never restore the eager received-file list from the old icon branch.
 
 The current #400 acceptance record is `doc/validation/project-identities/reconciled-408/README.md` (Guide42). Historical Guide28 captures are not proof for the reconciled candidate. Automated macOS/iOS checks and actual packaged Help42 acceptance pass. Use the current input mapping and final exact-head CI/strict judge; never reuse the historical Guide28 acceptance.
