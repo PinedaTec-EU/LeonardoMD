@@ -1,0 +1,20 @@
+{
+  "captured_at": "2026-11-07T19:44:43.278Z",
+  "route": "/native/help/guide27/en-chart",
+  "source_revision": "66c9e644a3203e1725f466973e1940acff61e61f",
+  "browser": {
+    "name": "Native macOS / WKWebView",
+    "version": "not exposed by CUA"
+  },
+  "capture_mode": "viewport",
+  "locale": "en",
+  "state": "Guide27 EN live Vega-Lite chart; viewport is image-pixel equivalent, native points/CSS unavailable",
+  "browser_name": "Native macOS SwiftUI / WKWebView",
+  "browser_version": "Not exposed by CUA",
+  "data_provenance": "synthetic",
+  "viewport_css": {
+    "width": 2520,
+    "height": 1700
+  },
+  "screen": "Guide27 EN live Vega-Lite chart"
+}

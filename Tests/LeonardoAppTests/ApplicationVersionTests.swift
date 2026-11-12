@@ -3,22 +3,20 @@ import XCTest
 
 @MainActor
 final class ApplicationVersionTests: XCTestCase {
-    func testShowsRuntimeVersionAndBuild() {
+    func testInstalledChannelsAndDevelopmentFallback() {
         let previous = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = previous }
         LanguageSettings.shared.language = .english
-        let version = ApplicationVersion(info: [
-            "CFBundleShortVersionString": "2.3.4", "CFBundleVersion": "57"
-        ])
-        XCTAssertEqual(version.displayText, "Version 2.3.4 · build 57")
-    }
-
-    func testShowsVersionWhenBuildIsMissing() {
-        let previous = LanguageSettings.shared.language
-        defer { LanguageSettings.shared.language = previous }
-        LanguageSettings.shared.language = .english
+        for channel in ["stable", "beta", "alpha"] {
+            let version = ApplicationVersion(info: [
+                "CFBundleShortVersionString": "2.3.57", "CFBundleVersion": "57",
+                "LeonardoUpdateChannel": channel
+            ])
+            XCTAssertEqual(version.displayText, "Version 2.3.57 · \(channel)")
+            XCTAssertEqual(version.build, "57")
+        }
         XCTAssertEqual(ApplicationVersion(info: ["CFBundleShortVersionString": "1.2.0"]).displayText,
-                       "Version 1.2.0")
+                       "Version 1.2.0 · development")
     }
 
     func testMissingOrInvalidMetadataDoesNotInventVersion() {
@@ -29,7 +27,20 @@ final class ApplicationVersionTests: XCTestCase {
                                     ["CFBundleShortVersionString": "  "],
                                     ["CFBundleShortVersionString": 12]] {
             XCTAssertEqual(ApplicationVersion(info: info).displayText,
-                           "Version unavailable · development build")
+                           "Version unavailable · development")
         }
+        XCTAssertEqual(ApplicationVersion(info: ["LeonardoUpdateChannel": "beta"]).displayText,
+                       "Version unavailable · beta")
+    }
+
+    func testSpanishIdentityAndWhitespaceFallback() {
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        LanguageSettings.shared.language = .spanish
+        XCTAssertEqual(ApplicationVersion(info: [
+            "CFBundleShortVersionString": " 1.2.3 ", "LeonardoUpdateChannel": " beta "
+        ]).displayText, "Versión 1.2.3 · beta")
+        XCTAssertEqual(ApplicationVersion(info: ["LeonardoUpdateChannel": "  "]).displayText,
+                       "Versión no disponible · desarrollo")
     }
 }

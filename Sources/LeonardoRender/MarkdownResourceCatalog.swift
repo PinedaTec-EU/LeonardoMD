@@ -8,14 +8,32 @@ enum MarkdownResource: String, CaseIterable {
     case mermaid = "mermaid.min.js"
     case katex = "katex.min.js"
     case katexStyles = "katex.min.css"
+    case formStyles = "leonardo-forms.css"
     case previewStyles = "preview.css"
+    case previewEditing = "preview-editing.js"
+    case tableLayout = "table-layout.js"
+    case tableResizing = "table-resizing.js"
+    case tableResizeStyles = "table-resizing.css"
+    case leonardoCalendar = "leonardo-calendar.js"
+    case leonardoForms = "leonardo-forms.js"
+    case leonardoLayout = "leonardo-layout.js"
+    case leonardoObjects = "leonardo-objects.js"
+    case imageLoading = "image-loading.js"
+    case extensionEngines = "extension-engines.js"
+    case vegaEngine = "vega-engine.min.js"
+    case vegaCharts = "vega-charts.js"
+    case citationEngine = "citation-engine.min.js"
+    case citations = "leonardo-citations.js"
+    case markdownExtras = "markdown-extras.js"
+    case markdownExtraStyles = "markdown-extras.css"
+    case extensionDetection = "extension-detection.js"
     case runtime = "renderer-runtime.js"
 
     var mimeType: String {
         switch self {
-        case .katexStyles, .previewStyles:
+        case .katexStyles, .previewStyles, .formStyles, .tableResizeStyles, .markdownExtraStyles:
             return "text/css"
-        case .marked, .dompurify, .highlight, .mermaid, .katex, .runtime:
+        case .extensionDetection, .extensionEngines, .vegaEngine, .vegaCharts, .citationEngine, .citations, .markdownExtras, .marked, .dompurify, .highlight, .mermaid, .katex, .previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .leonardoObjects, .imageLoading, .runtime:
             return "text/javascript"
         }
     }
@@ -27,7 +45,7 @@ enum MarkdownResourceCatalog {
             .marked,
             .dompurify,
             .highlight,
-            .previewStyles
+            .previewStyles, .formStyles, .tableResizeStyles
         ]
         if configuration.allowsMath {
             resources.append(contentsOf: [.katex, .katexStyles])
@@ -35,7 +53,19 @@ enum MarkdownResourceCatalog {
         if configuration.allowsMermaid {
             resources.append(.mermaid)
         }
-        resources.append(.runtime)
+        if configuration.allowsVegaLite || configuration.allowsCitations {
+            resources.append(.extensionEngines)
+        }
+        if configuration.allowsVegaLite {
+            resources.append(contentsOf: [.vegaEngine, .vegaCharts])
+        }
+        if configuration.allowsCitations {
+            resources.append(contentsOf: [.citationEngine, .citations])
+        }
+        if configuration.allowsMarkdownExtensions {
+            resources.append(contentsOf: [.markdownExtras, .markdownExtraStyles])
+        }
+        resources.append(contentsOf: [.previewEditing, .tableLayout, .tableResizing, .leonardoCalendar, .leonardoForms, .leonardoLayout, .leonardoObjects, .imageLoading, .extensionDetection, .runtime])
         return resources
     }
 

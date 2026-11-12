@@ -37,6 +37,8 @@ class ReleaseLedgerTests(unittest.TestCase):
         self.git("init", "-b", "main")
         self.git("config", "user.name", "Ledger fixture")
         self.git("config", "user.email", "fixture@example.invalid")
+        result = self.engine("export-changes", LEDGER_OUTPUT_PATH=version["changes_output_path"])
+        self.assertEqual(result.returncode, 0, result.stderr)
         self.base = self.commit("Seed fixture")
 
     def git(self, *arguments):
@@ -57,7 +59,8 @@ class ReleaseLedgerTests(unittest.TestCase):
         if entry:
             directory = self.root / "deploy/version/entries"
             directory.mkdir(exist_ok=True)
-            (directory / "101.yaml").write_text(json.dumps(delta or {"build": 1}))
+            (directory / "101.yaml").write_text(json.dumps({**(delta or {"build": 1}),
+                "summary": "Source fixture demonstrates a reviewed user-facing change."}))
         return self.commit("#38 Added: source fixture")
 
     def validate_source(self, head):
@@ -91,6 +94,10 @@ class ReleaseLedgerTests(unittest.TestCase):
         self.assertFalse((self.root / "deploy/version/entries/101.yaml").exists())
         state = json.loads((self.root / "deploy/version/version.yaml").read_text())
         self.assertEqual(state["applied"][0]["pr"], 101)
+        self.assertEqual(state["applied"][0]["summary"], "Source fixture demonstrates a reviewed user-facing change.")
+        changes = json.loads((self.root / "deploy/release-changes.json").read_text())
+        self.assertEqual(changes["version"], "0.1.57")
+        self.assertEqual(changes["changes"][0]["summary"], state["applied"][0]["summary"])
         order.write_text('{"schema_version":1,"pull_requests":[]}')
         result = self.engine("materialize", LEDGER_INTEGRATION_ORDER_PATH=str(order))
         self.assertEqual(result.returncode, 0, result.stderr)

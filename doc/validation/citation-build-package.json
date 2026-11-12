@@ -1,0 +1,24 @@
+{
+  "name": "leonardomd-citation-vendor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@citation-js/core": "0.9.0",
+    "@citation-js/plugin-bibtex": "0.9.0",
+    "@citation-js/plugin-csl": "0.9.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  },
+  "entrySource": "import { Cite } from '@citation-js/core'; import '@citation-js/plugin-bibtex'; import '@citation-js/plugin-csl'; globalThis.LeonardoCitationEngine = Object.freeze({ Cite });",
+  "compiler": "esbuild 0.25.12",
+  "options": [
+    "--bundle",
+    "--format=iife",
+    "--platform=browser",
+    "--target=safari17",
+    "--minify",
+    "--legal-comments=eof"
+  ]
+}

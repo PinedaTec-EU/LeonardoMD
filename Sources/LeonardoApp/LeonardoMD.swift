@@ -1,6 +1,8 @@
 import AppKit
 import SwiftUI
 import OSLog
+import LeonardoSync
+import LeonardoCore
 
 @main
 @MainActor
@@ -11,21 +13,36 @@ struct LeonardoMD {
         diagnostics.record(.applicationInitializing)
         let application = NSApplication.shared
         diagnostics.record(.applicationInitialized)
+        // Register the process endpoint before an installer can discover us.
+        var startupGate: ProcessFileLock?
+        do { startupGate = try ProcessFileLock(at: UpdateInstanceTermination.gateURL, mode: .shared) }
+        catch {
+            NSLog("LeonardoMD launch deferred while update/startup coordination is active")
+            exit(EXIT_FAILURE)
+        }
         let instance = SingleInstance()
         let role: SingleInstance.Role
-        do { role = try instance.claim() }
+        do {
+            role = try instance.claim(
+                additionalRequested: CommandLine.arguments.contains(InstancePreferences.launchArgument),
+                allowsMultipleInstances: InstancePreferences.shared.allowsMultipleInstances)
+        }
         catch {
             NSLog("LeonardoMD could not establish single-instance ownership: %@", String(describing: error))
             exit(EXIT_FAILURE)
         }
+        InstanceRuntime.isAdditional = role != .primary
         let delegate = ApplicationDelegate(diagnostics: diagnostics, instance: instance, role: role)
         application.delegate = delegate
         diagnostics.record(.delegateInstalled)
-        let activationConfigured = application.setActivationPolicy(role == .primary ? .regular : .prohibited)
+        let activationConfigured = application.setActivationPolicy(role != .secondary ? .regular : .prohibited)
         diagnostics.record(.activationPolicyRequested, activationPolicy: .init(
             switchSucceeded: activationConfigured, actualPolicy: application.activationPolicy().rawValue
         ))
         diagnostics.record(.eventLoopStarting)
+        // ARC may otherwise shorten an unread local's lifetime in optimized builds.
+        withExtendedLifetime(startupGate) { }
+        startupGate = nil
         application.run()
         diagnostics.record(.eventLoopReturned)
         instance.stop()
@@ -34,19 +51,28 @@ struct LeonardoMD {
 }
 
 @MainActor
-final class ApplicationDelegate: NSObject, NSApplicationDelegate {
-    private let updates = ApplicationUpdates()
+final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
+    private let updates = ApplicationUpdates.shared
+    private lazy var recentMenus = RecentItemsMenu(session: { [weak self] in self?.activeSession }, openDocument: { [weak self] url in
+        Task { @MainActor [weak self] in await self?.openExternalDocument(url) }
+    })
+    private lazy var favoritesMenu = FavoritesMenu(session: { [weak self] in self?.activeSession })
     private var windows: [DocumentWindow] = []
     private let diagnostics: StartupDiagnostics
     private var recordedFirstWindow = false
-    private lazy var aboutWindow = AboutWindow()
+    private lazy var aboutWindow = AboutWindow(onReleaseNotes: { [weak self] in
+        self?.showReleaseNotes()
+    })
+    private lazy var releaseNotes = ReleaseNotesController()
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "application")
     private let launchStarted = ContinuousClock.now
     private let instance: SingleInstance
-    private let role: SingleInstance.Role
+    private var role: SingleInstance.Role
     private var pendingLaunches: [[URL]] = []
     private var processingLaunches = false
     private var launched = false
+    private var terminationPending = false
+    private let updateQuitEndpoint = UpdateQuitEndpoint()
     private static let closeCheckInterval: Duration = .milliseconds(50)
 
     init(diagnostics: StartupDiagnostics, instance: SingleInstance, role: SingleInstance.Role) {
@@ -55,6 +81,17 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         self.role = role
         super.init()
         instance.receive = { [weak self] urls in self?.enqueueLaunch(urls) }
+        if role != .secondary {
+            updateQuitEndpoint.quit = { [weak self] in
+                guard let self, self.dismissUpdatePreferences() else {
+                    self?.updateQuitEndpoint.cancelled()
+                    return
+                }
+                NSApp.terminate(nil)
+            }
+            do { try updateQuitEndpoint.start() }
+            catch { logger.error("update_quit_endpoint_unavailable") }
+        }
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -66,11 +103,11 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         launched = true
         let arguments = CommandLine.arguments.dropFirst().filter { !$0.hasPrefix("-") }.map { URL(fileURLWithPath: $0) }
         if !arguments.isEmpty { pendingLaunches.append(arguments) }
-        guard role == .primary else { forwardPendingLaunches(); return }
+        guard role != .secondary else { forwardPendingLaunches(); return }
         diagnostics.record(.menuConfiguring)
         NotificationCenter.default.addObserver(self, selector: #selector(languageChanged), name: LanguageSettings.didChange, object: nil)
         configureMenu()
-        updates.start()
+        if role == .primary { startPrincipalServices() }
         diagnostics.record(.menuConfigured)
         if windows.isEmpty { newEmptyWindow() }
         processPendingLaunches()
@@ -81,33 +118,73 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         logger.info("application_window_ready duration_ms=\(milliseconds, privacy: .public)")
     }
 
+    private func startPrincipalServices() {
+        updates.start()
+        DesktopSyncController.shared.buffers = { [weak self] root in
+            try await NativeReconciliationLease.shared.captureBuffers(in: root,
+                from: self?.windows.flatMap { $0.documents.tabs.map(\.session) } ?? [])
+        }
+        NativeReconciliationLease.shared.sessions = { [weak self] in
+            self?.windows.flatMap { $0.documents.tabs.map(\.session) } ?? []
+        }
+        DesktopPeerController.shared.buffers = DesktopSyncController.shared.buffers
+        DesktopPeerController.shared.revoker.close = { [weak self] ids in
+            let root = DesktopPeerController.shared.workingRoot
+            let folders = ids.map { root.appendingPathComponent($0.uuidString, isDirectory: true) }
+            await NativeReconciliationLease.shared.waitUntilReleased(folders)
+            for window in self?.windows ?? [] { await window.documents.revokeWorkspaces(folders) }
+        }
+        Task { await DesktopPeerController.shared.initialize() }
+        Task { await DesktopSyncController.shared.initialize() }
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
+        updateQuitEndpoint.stop()
         NotificationCenter.default.removeObserver(self)
         diagnostics.record(.applicationWillTerminate)
+        if role == .primary { DesktopPeerController.shared.stop() }
     }
 
     func application(_ sender: NSApplication, open urls: [URL]) {
-        enqueueLaunch(urls)
+        if role == .additional {
+            routeAdditionalExternalOpen(urls)
+        } else { enqueueLaunch(urls) }
+    }
+
+    private func routeAdditionalExternalOpen(_ urls: [URL]) {
+        Task {
+            do {
+                if try instance.claim() == .primary {
+                    role = .primary
+                    InstanceRuntime.isAdditional = false
+                    startPrincipalServices()
+                    enqueueLaunch(urls)
+                } else {
+                    try await SingleInstance.forward(urls)
+                }
+            } catch { activeSession?.report(error) }
+        }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        enqueueLaunch([])
+        if role == .additional { routeAdditionalExternalOpen([]) }
+        else { enqueueLaunch([]) }
         return false
     }
 
     private func enqueueLaunch(_ urls: [URL]) {
         pendingLaunches.append(urls)
-        guard launched else { return }
-        if role == .primary { processPendingLaunches() }
+        guard launched, !terminationPending else { return }
+        if role != .secondary { processPendingLaunches() }
         else { forwardPendingLaunches() }
     }
 
     private func processPendingLaunches() {
-        guard !processingLaunches else { return }
+        guard !processingLaunches, !terminationPending else { return }
         processingLaunches = true
         Task {
             defer { processingLaunches = false }
-            while !pendingLaunches.isEmpty {
+            while !terminationPending && !pendingLaunches.isEmpty {
                 let urls = pendingLaunches.removeFirst()
                 if windows.isEmpty { newEmptyWindow() }
                 bringWindowsToFront()
@@ -115,14 +192,26 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
                 // Loading can suspend while another application takes focus.
                 bringWindowsToFront()
             }
+            if role == .primary, !terminationPending, let controller = windows.last, let window = controller.window {
+                let continueStartup = { [weak window] in
+                    guard let window, window.isVisible else { return }
+                    MarkdownAssociations.shared.presentStartupPrompt(on: window)
+                }
+                if !releaseNotes.presentAtStartup(on: window, session: controller.session, afterClosing: continueStartup) { continueStartup() }
+            }
         }
     }
 
     private func openExternalDocument(_ url: URL) async {
         guard url.isFileURL else { return }
         while true {
+            if terminationPending {
+                try? await Task.sleep(for: Self.closeCheckInterval)
+                continue
+            }
             if windows.isEmpty { newEmptyWindow() }
             if let existing = windows.first(where: { $0.documents.activateDocument(url) }) {
+                NSDocumentController.shared.noteNewRecentDocumentURL(url)
                 existing.window?.deminiaturize(nil)
                 existing.window?.makeKeyAndOrderFront(nil)
                 return
@@ -161,21 +250,75 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard !terminationPending else { return .terminateLater }
+        let reportingSession = activeSession
+        terminationPending = true
         Task {
             var canTerminate = true
             for window in windows {
-                if await !window.documents.prepareClose() { canTerminate = false }
+                if await !window.documents.prepareClose() { canTerminate = false; break }
             }
+            if canTerminate, role == .primary {
+                canTerminate = await UpdateInstanceTermination.shared.closeOtherInstances()
+                if !canTerminate {
+                    reportInstallationCancellation(on: reportingSession)
+                }
+            }
+            if canTerminate, role == .primary {
+                canTerminate = await UpdateInstanceTermination.shared.prepareHelperForQuit {
+                    await DesktopSyncController.shared.helper.prepareForApplicationUpdate()
+                }
+                if !canTerminate { reportHelperUpdateCancellation(on: reportingSession) }
+            }
+            if canTerminate {
+                if role == .primary { await DesktopSyncController.shared.stop() }
+                for window in windows { await window.documents.finishPreparedClose() }
+            }
+            else {
+                windows.forEach { $0.documents.cancelPreparedClose() }
+                updateQuitEndpoint.cancelled()
+                UpdateInstanceTermination.shared.cancelTermination()
+                if role == .primary { await DesktopSyncController.shared.helper.cancelApplicationUpdate() }
+            }
+            terminationPending = canTerminate
+            if !canTerminate, role == .primary { processPendingLaunches() }
             sender.reply(toApplicationShouldTerminate: canTerminate)
         }
         return .terminateLater
     }
 
+    func reportInstallationCancellation(on session: AppSession? = nil) {
+        (session ?? activeSession)?.errorMessage = L10n.text("Installation cancelled because another LeonardoMD instance did not close. Finish or cancel its pending work, then retry the update.")
+    }
+
+    func reportHelperUpdateCancellation(on session: AppSession? = nil) {
+        (session ?? activeSession)?.errorMessage = L10n.text("Installation postponed because Leonardo Sync could not stop safely. Check Preferences > Synchronization and retry when the service is available.")
+    }
+
+    /// Dismiss only Preferences; unsaved-document and Git sheets own their decisions.
+    @discardableResult
+    func dismissUpdatePreferences() -> Bool {
+        // Check every window before changing any presentation binding.
+        guard windows.allSatisfy({ UpdatePreferencesDismissal.canDismiss(parent: $0.window) }) else { return false }
+        return windows.allSatisfy { controller in
+            UpdatePreferencesDismissal.dismiss(sessions: controller.documents.tabs.map(\.session),
+                parent: controller.window)
+        }
+    }
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+
+    @objc private func newInstance() {
+        Task {
+            do { try await InstancePreferences.shared.launch() }
+            catch { activeSession?.report(error) }
+        }
+    }
 
     @objc func newEmptyWindow() { newWindow(url: nil) }
 
     func newWindow(url: URL?) {
+        guard !terminationPending else { return }
         let isFirstWindow = !recordedFirstWindow
         recordedFirstWindow = true
         if isFirstWindow { diagnostics.record(.firstWindowCreating) }
@@ -191,7 +334,19 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         if let url { Task { await controller.session.open(url) } }
     }
 
-    @objc private func showAbout() { aboutWindow.present() }
+    @objc private func showAbout() {
+        guard let parent = informationSheetParent else { return }
+        aboutWindow.present(on: parent)
+    }
+    @objc private func showReleaseNotes() {
+        guard let parent = informationSheetParent else { return }
+        guard let controller = windows.first(where: { $0.window === parent }) else { return }
+        releaseNotes.presentManually(on: parent, session: controller.session)
+    }
+
+    private var informationSheetParent: NSWindow? {
+        windows.first { $0.window === NSApp.mainWindow }?.window ?? windows.last?.window
+    }
 
     @objc private func newTab() { activeDocuments?.addTab() }
     @objc private func closeTab() {
@@ -199,13 +354,55 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         Task { await documents.close(id) }
     }
     @objc private func openDocument() { activeSession?.chooseDocument() }
+    @objc private func openUserGuide() {
+        guard !terminationPending else { return }
+        if windows.isEmpty { newEmptyWindow() }
+        Task { await activeDocuments?.openUserGuide() }
+    }
+    @objc private func openAgentImportGuide() {
+        guard !terminationPending else { return }
+        if windows.isEmpty { newEmptyWindow() }
+        Task { await activeDocuments?.openUserGuide(topic: .agentImport) }
+    }
     @objc private func openProject() { activeSession?.chooseProject() }
+    private var focusedTextEditor: NSTextView? {
+        guard let editor = NSApp.keyWindow?.firstResponder as? NSTextView,
+              editor.accessibilityIdentifier() != "markdown-editor" else { return nil }
+        return editor
+    }
+
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(newInstance) {
+            return !terminationPending && !UpdateInstanceTermination.shared.installationPending
+                && InstancePreferences.shared.allowsMultipleInstances
+        }
+        if menuItem.action == #selector(undoDocument) {
+            if let editor = focusedTextEditor { return editor.undoManager?.canUndo == true }
+            return activeSession?.canUndoDocument == true
+        }
+        if menuItem.action == #selector(redoDocument) {
+            if let editor = focusedTextEditor { return editor.undoManager?.canRedo == true }
+            return activeSession?.canRedoDocument == true
+        }
+        return true
+    }
+
+    @objc private func undoDocument() {
+        if let editor = focusedTextEditor { editor.undoManager?.undo(); return }
+        Task { await activeSession?.undoDocument() }
+    }
+    @objc private func redoDocument() {
+        if let editor = focusedTextEditor { editor.undoManager?.redo(); return }
+        Task { await activeSession?.redoDocument() }
+    }
     @objc private func save() { Task { await activeSession?.save() } }
+    @objc private func exportMarkdown() { activeSession?.exportMarkdown() }
     @objc private func exportPDF() { activeSession?.exportPDF() }
     @objc private func focus() { activeSession?.focus.toggle() }
-    @objc private func preview() { activeSession?.mode = .preview }
-    @objc private func edit() { activeSession?.mode = .edit }
-    @objc private func split() { activeSession?.mode = .split }
+    @objc private func preview() { Task { await activeSession?.setDocumentMode(.preview) } }
+    @objc private func edit() { Task { await activeSession?.setDocumentMode(.edit) } }
+    @objc private func split() { Task { await activeSession?.setDocumentMode(.split) } }
+    @objc private func fill() { Task { await activeSession?.setDocumentMode(.fill) } }
     @objc private func outline() { activeSession?.showInspector.toggle() }
     @objc private func preferences() { activeSession?.showPreferences = true }
     @objc private func bringWindowsToFront() {
@@ -217,7 +414,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
     private var activeDocuments: DocumentTabs? {
         windows.first { $0.window === NSApp.mainWindow }?.documents ?? windows.last?.documents
     }
-    private var activeSession: AppSession? { activeDocuments?.activeSession }
+    private var activeSession: AppSession? { terminationPending ? nil : activeDocuments?.activeSession }
 
     @objc private func languageChanged() { configureMenu() }
 
@@ -226,32 +423,43 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         let app = submenu("LeonardoMD", in: menu)
         add(L10n.text("About LeonardoMD"), action: #selector(showAbout), to: app)
         add(L10n.text("Preferences…"), action: #selector(preferences), key: ",", to: app)
-        updates.addMenuItems(to: app)
+        add(L10n.text("Release notes…"), action: #selector(showReleaseNotes), to: app)
         app.addItem(.separator())
         add(L10n.text("Quit LeonardoMD"), action: #selector(NSApplication.terminate(_:)), key: "q", to: app)
         let file = submenu(L10n.text("File"), in: menu)
         add(L10n.text("New window"), action: #selector(newEmptyWindow), key: "n", to: file)
+        add(L10n.text("New instance"), action: #selector(newInstance), to: file)
         add(L10n.text("New tab"), action: #selector(newTab), key: "t", to: file)
         add(L10n.text("Close tab"), action: #selector(closeTab), key: "w", to: file)
         add(L10n.text("Open document…"), action: #selector(openDocument), key: "o", to: file)
+        add(L10n.text("Import with your agent…"), action: #selector(openAgentImportGuide), to: file)
         add(L10n.text("Open project…"), action: #selector(openProject), key: "o", modifiers: [.command, .shift], to: file)
+        recentMenus.add(to: file)
+        favoritesMenu.add(to: file)
         add(L10n.text("Save"), action: #selector(save), key: "s", to: file)
+        add(L10n.text("Export Markdown…"), action: #selector(exportMarkdown), key: "", to: file)
         add(L10n.text("Export PDF…"), action: #selector(exportPDF), key: "e", modifiers: [.command, .shift], to: file)
         add(L10n.text("Close window"), action: #selector(NSWindow.performClose(_:)), key: "w", modifiers: [.command, .shift], to: file)
         let editMenu = submenu(L10n.text("Edit"), in: menu)
-        for (title, selector, key) in [(L10n.text("Undo"), "undo:", "z"), (L10n.text("Redo"), "redo:", "Z"), (L10n.text("Cut"), "cut:", "x"), (L10n.text("Copy"), "copy:", "c"), (L10n.text("Paste"), "paste:", "v"), (L10n.text("Select all"), "selectAll:", "a")] {
+        add(L10n.text("Undo"), action: #selector(undoDocument), key: "z", to: editMenu)
+        add(L10n.text("Redo"), action: #selector(redoDocument), key: "z", modifiers: [.command, .shift], to: editMenu)
+        for (title, selector, key) in [ (L10n.text("Cut"), "cut:", "x"), (L10n.text("Copy"), "copy:", "c"), (L10n.text("Paste"), "paste:", "v"), (L10n.text("Select all"), "selectAll:", "a")] {
             add(title, action: NSSelectorFromString(selector), key: key, to: editMenu)
         }
         let view = submenu(L10n.text("View"), in: menu)
         add(L10n.text("Preview"), action: #selector(preview), key: "1", to: view)
         add(L10n.text("Edit"), action: #selector(edit), key: "2", to: view)
         add(L10n.text("Split"), action: #selector(split), key: "3", to: view)
+        add(L10n.text("Fill form"), action: #selector(fill), key: "4", to: view)
         add(L10n.text("Focus mode"), action: #selector(focus), key: "f", modifiers: [.command, .shift], to: view)
         add(L10n.text("Document outline"), action: #selector(outline), key: "i", modifiers: [.command, .option], to: view)
         let window = submenu(L10n.text("Window"), in: menu)
         add(L10n.text("Minimize"), action: #selector(NSWindow.performMiniaturize(_:)), key: "m", to: window)
         add(L10n.text("Zoom"), action: #selector(NSWindow.performZoom(_:)), to: window)
         add(L10n.text("Bring all to front"), action: #selector(bringWindowsToFront), to: window)
+        let help = submenu(L10n.text("Help"), in: menu)
+        add(L10n.text("Leonardo user guide…"), action: #selector(openUserGuide), to: help)
+        NSApp.helpMenu = help
         NSApp.windowsMenu = window
         NSApp.mainMenu = menu
     }
@@ -284,9 +492,10 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
         window.title = "LeonardoMD"
         window.titlebarAppearsTransparent = true
         window.minSize = NSSize(width: 960, height: 560)
-        window.center()
+        WindowFramePersistence.restore(window)
         super.init(window: window)
         window.delegate = self
+        documents.presentationWindow = window
         window.contentView = NSHostingView(rootView: DocumentTabsView(documents: documents))
         documents.updateWindow = { [weak window] title, url, dirty in
             window?.title = title
@@ -296,15 +505,25 @@ final class DocumentWindow: NSWindowController, NSWindowDelegate {
     }
     required init?(coder: NSCoder) { nil }
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        if closeAfterSave || !documents.hasPendingWork { return true }
+        if closeAfterSave { return true }
         Task {
             guard await documents.prepareClose() else { return }
+            await documents.finishPreparedClose()
             closeAfterSave = true
             sender.performClose(nil)
         }
         return false
     }
+    func windowDidMove(_ notification: Notification) { persistWindowFrame() }
+    func windowDidResize(_ notification: Notification) { persistWindowFrame() }
+
+    private func persistWindowFrame() {
+        guard let window, !window.styleMask.contains(.fullScreen), !window.isMiniaturized else { return }
+        WindowFramePersistence.save(window)
+    }
+
     func windowWillClose(_ notification: Notification) {
+        persistWindowFrame()
         documents.stop()
         onClose?()
     }

@@ -2,33 +2,96 @@ import AppKit
 import SwiftUI
 import Observation
 import LeonardoCore
+import LeonardoSync
+import LeonardoDesktopSync
 import LeonardoRender
 import OSLog
 
 @MainActor @Observable
 final class AppSession {
-    var workspaceURL: URL?
-    var workspaceProjects: [ProjectDescriptor] = []
-    var showWorkspace = false
-    var documentURL: URL?
+    var documentURL: URL? {
+        didSet {
+            if documentURL != oldValue {
+                clearGraphicSelection()
+                editHistory = DocumentEditHistory()
+                extensionRecommendations.resetOpening()
+            }
+        }
+    }
+    /// The logical document format is independent from the bytes currently
+    /// loaded into the editor. For an internally opened `.mdlz`, `documentURL`
+    /// points at the extracted `.mdlf`/`.mdlr` while `documentSourceURL`
+    /// remains the package shown to the user and used by the window chrome.
+    var documentKind: AppDocumentKind = .markdown
+    var documentStorage: AppDocumentStorage = .localFile
+    var documentSourceURL: URL?
+    /// The extracted workspace backing an open MDLZ.  A workspace with a
+    /// package URL is temporary and must be discarded when the tab closes;
+    /// an explicitly extracted workspace has a nil package URL and belongs to
+    /// the user, so it is left in place.
+    var packageWorkspace: LeonardoPackageWorkspace?
+    let extensionRecommendations: ExtensionRecommendations
+    var leonardoFormatWarning = false
+    private let formatPreferences = LeonardoFormatPreferences.shared
+    var packageOpenPreference: LeonardoPackageOpenPreference {
+        get { formatPreferences.packageOpenPreference }
+        set { formatPreferences.packageOpenPreference = newValue }
+    }
+    var migrateMarkdownOnSave: Bool {
+        get { formatPreferences.migrateMarkdownOnSave }
+        set { formatPreferences.migrateMarkdownOnSave = newValue }
+    }
     var projectURL: URL?
-    var content = ""
-    var mode: DocumentMode = .preview
+    var projectFileTree = ProjectFileTree()
+    var openProjectDocumentInTab: ((URL, Int?) async -> Void)?
+    private var documentContent = ""
+    var content: String {
+        get { documentContent }
+        set {
+            guard !isSyncSuspended || syncUpdatingBuffer else { return }
+            documentContent = newValue
+            editHistory = DocumentEditHistory()
+        }
+    }
+    var editHistory = DocumentEditHistory()
+    var syncUpdatingBuffer = false
+    var isSyncSuspended: Bool { NativeReconciliationLease.shared.holds(documentURL) || NativeReconciliationLease.shared.holds(projectURL) }
+    var isClosing = false
+    var isCapturingPreview = false
+    var isProtected = true { didSet { if isProtected { clearGraphicSelection() } } }
+    var canEditDocument: Bool { documentURL != nil && !isProtected && !isClosing && !isCapturingPreview && !isSyncSuspended && !busy && !stopped }
+    @ObservationIgnored weak var presentationWindow: NSWindow?
+    var unsavedChangesDecision: @MainActor (String) async -> UnsavedChangesDecision = { _ in .cancel }
+    var confirmDiscardForReload: @MainActor () async -> Bool = { false }
+    var hasRelatedFileOperation: @MainActor () -> Bool = { false }
+
+    var mode: DocumentMode = .preview { didSet { if oldValue != mode { clearGraphicSelection() } } }
     var focus = false
+    var rubricLibrary = RubricLibrary.shared
+    var rubricRequest: RubricRequest?
+    var selectedGraphicID: String?
+    var showsGraphicInspector = false
+    var selectedLeonardoFieldID: String?
     var showInspector = false
     var showPreferences = false
     var showGit = false
+    var showAllFiles = false
+    var foldersFirst = true
+    var fileSortDescending = false
+    var colorLeonardoFiles: Bool { projectConfiguration.colorLeonardoFiles ?? globalPreferences.colorLeonardoFiles }
     var showHidden = false
     var showFrontmatter = UserDefaults.standard.bool(forKey: "showFrontmatter")
     var confirmExternalLinks = UserDefaults.standard.object(forKey: "confirmExternalLinks") as? Bool ?? true
     var pendingExternalURL: URL?
     var errorMessage: String?
-    var externalConflict = false
+    var externalConflict = false { didSet { if externalConflict { clearGraphicSelection() } } }
     var busy = false
     var saving = false
+    var fileOperationCount = 0
     var saveStatus = "Local file"
     var editorScroll = 0.0
     var requestedLine: Int?
+    var requestedLineRevision = 0
     var rootEntries: [NavigationEntry] = []
     var treeRevision = 0
     var searchQuery = ""
@@ -42,8 +105,26 @@ final class AppSession {
     var activateExistingDocument: ((URL, Int?) -> Bool)?
     var openDroppedDocuments: (([URL]) async -> Void)?
     var updateWindow: ((String, URL?, Bool) -> Void)?
+    /// Package opening is supplied by the package transport owner. Keeping the
+    /// boundary as a session closure prevents AppSession from knowing whether
+    /// the bytes came from a ZIP implementation, a future document provider,
+    /// or a user-selected extraction directory.
+    var openGuidePractice: @MainActor (GuidePracticeRequest) async -> GuidePracticeResult = { _ in .notApplicable }
+    var openUserGuide: @MainActor () async -> Void = {}
+    var openPackageDocument: @MainActor (URL, LeonardoPackageOpenPreference) async -> Bool = { _, _ in false }
+    /// The format owner supplies the canonical MD -> MDLF migration. The app
+    /// owns the preference and prompt, but never invents a second serializer.
+    var migrateMarkdownDocument: @MainActor () async -> Bool = { false }
+    var authorizePath: @MainActor (URL, DesktopPeerPathIntent) async throws -> Void = { url, intent in
+        try NativeReconciliationLease.shared.check(url, intent: intent)
+        try await DesktopPeerController.shared.authorize(url, intent: intent)
+        try NativeReconciliationLease.shared.check(url, intent: intent)
+    }
+    var entryFilter: @MainActor (URL) async throws -> (@Sendable (URL, Bool) -> Bool) = { url in
+        try await DesktopPeerController.shared.entryFilter(in: url)
+    }
     let documents = DocumentStore()
-    let files = LocalProjectRepository()
+    let files: LocalProjectRepository
     let configurations = ConfigurationStore.shared
     var globalBaseline = GlobalPreferences.default
     var projectBaseline = ProjectConfiguration.default
@@ -56,6 +137,13 @@ final class AppSession {
     let renderer = MarkdownPreviewController()
     var snapshot: DocumentSnapshot?
     var saveTask: Task<Void, Never>?
+    @ObservationIgnored var pendingDocumentAccesses: [UUID: PendingDocumentAccess] = [:]
+    @ObservationIgnored var packageWorkspaceDisposalTask: Task<Void, Never>?
+    @ObservationIgnored var pendingPackageWorkspaceDisposals: [(workspace: LeonardoPackageWorkspace, waitForIO: Bool)] = []
+    /// Test-only synchronization point for deterministic cancellation coverage.
+    /// Production leaves this nil; package transport still checks cancellation
+    /// immediately before its archive commit.
+    @ObservationIgnored var beforePackageArchiveCommitForTesting: (@Sendable () -> Void)?
     var searchTask: Task<Void, Never>?
     var monitorTask: Task<Void, Never>?
     var initialized = false
@@ -63,14 +151,39 @@ final class AppSession {
     var stopped = false
     let globalPreferencesURL: URL
     @ObservationIgnored let openSystemURL: @MainActor (URL) -> Void
-    static let readableDocumentExtensions: Set<String> = ["md", "markdown", "txt"]
+    static let readableDocumentExtensions: Set<String> = ["md", "markdown", "txt", "mdlf", "mdlr"]
+    static let packageDocumentExtensions: Set<String> = ["mdlz"]
+    static let supportedDocumentExtensions: Set<String> = readableDocumentExtensions.union(packageDocumentExtensions)
+
+    static func documentKind(for url: URL) -> AppDocumentKind {
+        AppDocumentKind.classify(url)
+    }
 
     init(
         preferencesURL: URL = AppSession.preferencesURL,
+        files: LocalProjectRepository = LocalProjectRepository(),
+        extensionWarningPreferences: ExtensionWarningPreferences = .shared,
         openSystemURL: @escaping @MainActor (URL) -> Void = { NSWorkspace.shared.open($0) }
     ) {
+        self.extensionRecommendations = ExtensionRecommendations(preferences: extensionWarningPreferences)
+        self.files = files
         globalPreferencesURL = preferencesURL
         self.openSystemURL = openSystemURL
+        let existingAuthorization = authorizePath
+        authorizePath = { url, intent in
+            // Suspended operations must not acquire path ownership as a side effect.
+            try NativeReconciliationLease.shared.check(url, intent: intent)
+            // Browsing a workspace does not reserve all its projects. Editing
+            // a project reserves its root explicitly in openProject.
+            if intent != .directory { try InstancePathOwnership.shared.claim(url) }
+            try await existingAuthorization(url, intent)
+        }
+        unsavedChangesDecision = { [weak self] filename in
+            await UnsavedChangesPrompt.show(filename, on: self?.presentationWindow)
+        }
+        confirmDiscardForReload = { [weak self] in
+            await NativeDialog.confirmReload(on: self?.presentationWindow)
+        }
     }
 
     let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "session")
@@ -79,7 +192,7 @@ final class AppSession {
     var isDirty: Bool { snapshot != nil && content != snapshot?.content }
     var wordCount: Int { content.split { $0.isWhitespace }.count }
     var recentProjects: [URL] { globalPreferences.recentProjectPaths }
-    var resolved: ResolvedPreferences { projectURL == nil ? ProjectConfiguration.default.resolved(using: globalPreferences) : projectConfiguration.resolved(using: globalPreferences) }
+    var resolved: ResolvedPreferences { resolvedSessionPreferences }
     var features: MarkdownFeatures { resolved.markdown }
     var gitEnabled: Bool { projectURL != nil && projectConfiguration.git.enabled }
     var palette: PaletteDefinition {
@@ -133,9 +246,16 @@ final class AppSession {
         }
     }
 
-    func open(_ url: URL) async {
+    func open(_ url: URL, packagePreference: LeonardoPackageOpenPreference? = nil) async {
+        guard !isClosing, !stopped else { return }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
         await initialize()
-        if activateExistingDocument?(url, nil) == true { return }
+        guard !isClosing, !stopped else { return }
+        if activateExistingDocument?(url, nil) == true {
+            NSDocumentController.shared.noteNewRecentDocumentURL(url)
+            return
+        }
         var directory: ObjCBool = false
         if FileManager.default.fileExists(atPath: url.path, isDirectory: &directory), directory.boolValue {
             await openProject(url)
@@ -147,29 +267,73 @@ final class AppSession {
             rootEntries = []
             resetSearch()
             focus = false
-            await openDocument(url)
+            await openDocument(url, packagePreference: packagePreference)
         }
     }
 
-    func openDocument(_ url: URL, line: Int? = nil) async {
-        if activateExistingDocument?(url, line) == true { return }
+    func openDocument(_ url: URL, line: Int? = nil, packagePreference: LeonardoPackageOpenPreference? = nil) async {
+        guard !isClosing, !stopped, !isSyncSuspended else { return }
+        let access = beginDocumentAccess(to: url)
+        defer { finishDocumentAccess(access) }
+        do { try await authorizePath(url, .document) } catch { report(error); return }
+        guard documentAccessIsActive(access), !isClosing else { return }
+        if activateExistingDocument?(url, line) == true {
+            NSDocumentController.shared.noteNewRecentDocumentURL(url)
+            return
+        }
         let started = ContinuousClock.now
-        guard Self.readableDocumentExtensions.contains(url.pathExtension.lowercased()) else {
+        let kind = Self.documentKind(for: url)
+        guard Self.supportedDocumentExtensions.contains(url.pathExtension.lowercased()) else {
             openSystemURL(url)
             return
         }
         guard await prepareNavigation() else { return }
-        guard !busy else { return }
+        guard !busy, !isClosing, documentAccessIsActive(access) else { return }
+        // Keep an existing temporary package workspace alive until the next
+        // document has loaded successfully. A cancelled package dialog or a
+        // failed read must leave the current tab usable.
+        let previousPackageWorkspace = packageWorkspace
+        if kind == .leonardoPackage {
+            busy = true
+            defer { busy = false }
+            guard await openPackageDocument(url, packagePreference ?? packageOpenPreference) else {
+                // The package adapter returns false for both cancellation and
+                // a reported transport error. Do not turn a cancelled panel
+                // into a new alert; the adapter has already reported errors.
+                return
+            }
+            if let previousPackageWorkspace {
+                await disposePackageWorkspace(previousPackageWorkspace)
+            }
+            return
+        }
         busy = true
         defer { busy = false }
         do {
             let loaded = try await documents.read(url)
-            guard !stopped else { return }
+            guard documentAccessIsActive(access), !isClosing, !isSyncSuspended, !NativeReconciliationLease.shared.holds(url) else { return }
+            // A declared Leonardo suffix opts into the versioned parser. Do
+            // this before mutating session state so a future or malformed
+            // document leaves the currently open tab intact.
+            if kind.isLeonardo {
+                _ = try LeonardoFormatParser.parse(loaded.content)
+            }
+            if let previousPackageWorkspace {
+                discardPackageWorkspace()
+                await waitForPackageWorkspaceDisposal()
+                guard documentAccessIsActive(access), !isClosing, !isSyncSuspended else { return }
+            }
+            NSDocumentController.shared.noteNewRecentDocumentURL(url)
+            isProtected = true
             documentURL = url
+            documentSourceURL = nil
+            documentKind = kind
+            documentStorage = .localFile
+            leonardoFormatWarning = kind == .markdown && Self.containsLeonardoMarkers(loaded.content)
             snapshot = loaded
             content = loaded.content
             editorScroll = 0
-            mode = line == nil ? DocumentMode(rawValue: resolved.defaultMode.rawValue) ?? .preview : .edit
+            mode = line == nil ? kind.defaultMode(global: resolved.defaultMode) : .edit
             requestedLine = line
             externalConflict = false
             saveStatus = "Saved · local file"
@@ -181,46 +345,23 @@ final class AppSession {
     }
 
     func contentChanged() {
-        guard snapshot != nil else { return }
+        guard !stopped, !isSyncSuspended, snapshot != nil else { return }
         saveStatus = isDirty ? "Pending changes" : "Saved · local file"
         updateTitle()
         saveTask?.cancel()
-        guard isDirty, !externalConflict else { return }
-        saveTask = Task { [weak self] in
-            do { try await Task.sleep(for: .milliseconds(700)) } catch { return }
-            await self?.save()
-        }
-    }
-
-    func save() async {
-        guard !saving, isDirty, let snapshot, let url = documentURL, !externalConflict else { return }
-        saving = true
-        saveStatus = "Saving…"
-        let draft = content
-        logger.info("document_save_started")
-        do {
-            self.snapshot = try await documents.save(draft, to: url, expectedFingerprint: snapshot.fingerprint)
-            saveStatus = isDirty ? "Pending changes" : "Saved · local file"
-            logger.info("document_save_completed")
-        } catch DocumentStoreError.conflict {
-            externalConflict = true
-            saveStatus = "External conflict · edits protected"
-        } catch { report(error) }
-        saving = false
-        updateTitle()
-        if isDirty && !externalConflict { contentChanged() }
     }
 
     func prepareNavigation(allowGitOperation: Bool = false) async -> Bool {
+        guard !isSyncSuspended else { return false }
         guard !gitBusy || allowGitOperation else {
             errorMessage = L10n.text("Wait for this project's Git operation to finish before switching documents.")
             return false
         }
         while let pending = settingsTask { await pending.value }
         saveTask?.cancel()
-        // Wait for a current autosave to finish before changing the document identity.
-        while saving { try? await Task.sleep(for: .milliseconds(20)) }
-        await save()
+        // Wait for a current save to finish before changing the document identity.
+        while saving || saveTask != nil { try? await Task.sleep(for: .milliseconds(20)) }
+        guard await flushPreviewEdits(), await resolveUnsavedChanges() else { return false }
         if isDirty {
             if externalConflict { errorMessage = L10n.text("Resolve the external change by reloading or saving a copy before opening another document.") }
             return false
@@ -228,72 +369,30 @@ final class AppSession {
         return true
     }
 
-    func reloadFromDisk() async {
-        guard let url = documentURL else { return }
-        if isDirty {
-            let alert = NSAlert()
-            alert.messageText = L10n.text("Discard your edits and reload the file?")
-            alert.addButton(withTitle: L10n.text("Reload"))
-            alert.addButton(withTitle: L10n.text("Cancel"))
-            guard alert.runModal() == .alertFirstButtonReturn else { return }
-        }
-        let previousContent = content
-        do {
-            let loaded = try await documents.read(url)
-            guard documentURL == url else { return }
-            guard content == previousContent else {
-                externalConflict = true
-                saveStatus = "External conflict · edits protected"
-                return
-            }
-            snapshot = loaded
-            content = loaded.content
-            externalConflict = false
-            saveStatus = "Saved · local file"
-            updateTitle()
-        } catch { externalConflict = true; report(error) }
-    }
-
-    func checkExternalChanges() async {
-        if settingsTask == nil { do {
-            let preferences = try await configurations.loadGlobalPreferences(at: globalPreferencesURL)
-            if settingsTask == nil {
-                globalPreferences = preferences
-                globalBaseline = preferences
-                showHidden = preferences.showHiddenFiles
-            }
-            if let root = projectURL {
-                let project = try await configurations.loadProjectConfiguration(for: root)
-                if settingsTask == nil, projectURL == root { projectConfiguration = project; projectBaseline = project }
-            }
-        } catch { logger.error("preferences_refresh_failed") } }
-        if workspaceURL != nil { await refreshWorkspace() }
-        guard !saving, let snapshot else {
-            if projectURL != nil { await refreshTree() }
-            return
-        }
-        var changed = false
-        if !externalConflict { changed = await documents.hasChanged(snapshot) }
-        guard self.snapshot?.url == snapshot.url, self.snapshot?.fingerprint == snapshot.fingerprint else { return }
-        if changed {
-            if isDirty { externalConflict = true; saveStatus = "External conflict · edits protected" }
-            else { await reloadFromDisk() }
-        }
-        if projectURL != nil { await refreshTree() }
-    }
 
     func stop() {
         stopped = true
         pendingExternalURL = nil
         saveTask?.cancel()
+        discardPackageWorkspace()
         searchTask?.cancel()
         monitorTask?.cancel()
     }
     func report(_ error: Error) {
-        errorMessage = String(describing: error)
+        if error is InstancePathOwnership.InUse {
+            errorMessage = L10n.text("This document or project is in use by another LeonardoMD instance. Close that instance before opening it here.")
+        } else if case DesktopRuntimeError.busy = error {
+            errorMessage = L10n.text("Synchronization is applying changes. Try again when it finishes.")
+        } else if let syncError = error as? SyncError, syncError == .outsideScope {
+            errorMessage = L10n.text("This item is outside the content selected on the source Mac.")
+        } else if let syncError = error as? SyncError, syncError == .revoked {
+            errorMessage = L10n.text("Access to this linked copy was revoked.")
+        } else { errorMessage = String(describing: error) }
         logger.error("operation_failed category=\(String(reflecting: type(of: error)), privacy: .public)")
     }
-    func updateTitle() { updateWindow?(documentURL?.lastPathComponent ?? projectURL?.lastPathComponent ?? "LeonardoMD", documentURL, isDirty) }
+    func updateTitle() {
+        updateWindow?(displayDocumentURL?.lastPathComponent ?? projectURL?.lastPathComponent ?? "LeonardoMD", displayDocumentURL, isDirty)
+    }
 }
 
 extension Color {

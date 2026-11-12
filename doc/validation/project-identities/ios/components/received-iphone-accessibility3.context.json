@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T21:18:33Z",
+  "route": "/native/ios/project-identities/received-iphone-accessibility3",
+  "screen": "MobileProjectIdentityLabel received; accessibility3",
+  "browser_name": "Native UIKit/SwiftUI UIHostingController; no browser",
+  "browser_version": "Not applicable: native view",
+  "viewport_css": {
+    "width": 390,
+    "height": 246
+  },
+  "capture_mode": "element",
+  "data_provenance": "synthetic",
+  "state": "received from another device; accessibility3; viewport_css is the measured native-point equivalent; CSS is not applicable"
+}

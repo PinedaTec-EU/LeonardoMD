@@ -1,0 +1,16 @@
+---
+{
+  "format": "mdlf",
+  "formatVersion": 1,
+  "fields": {
+    "name": {
+      "type": "text",
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]*$"
+    }
+  },
+  "values": { "name": "Ada.Lovelace" }
+}
+---
+# Name
+
+{{field:name}}

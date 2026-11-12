@@ -83,10 +83,12 @@ public actor ConfigurationStore {
         baseline: GlobalPreferences,
         at fileURL: URL
     ) throws -> GlobalPreferences {
-        let current = try loadGlobalPreferences(at: fileURL)
-        let merged = mergeGlobalPreferences(current: current, updated: updated, baseline: baseline)
-        try saveGlobalPreferences(merged, at: fileURL)
-        return merged
+        return try ProcessFileLock.transaction(for: fileURL) {
+            let current = try loadGlobalPreferences(at: fileURL)
+            let merged = mergeGlobalPreferences(current: current, updated: updated, baseline: baseline)
+            try saveGlobalPreferences(merged, at: fileURL)
+            return merged
+        }
     }
 
     /// Merges a session snapshot into the latest project configuration and persists it once.
@@ -99,10 +101,12 @@ public actor ConfigurationStore {
         baseline: ProjectConfiguration,
         for projectRoot: URL
     ) throws -> ProjectConfiguration {
-        let current = try loadProjectConfiguration(for: projectRoot)
-        let merged = mergeProjectConfiguration(current: current, updated: updated, baseline: baseline)
-        try saveProjectConfiguration(merged, for: projectRoot)
-        return merged
+        return try ProcessFileLock.transaction(for: Self.projectConfigurationURL(for: projectRoot)) {
+            let current = try loadProjectConfiguration(for: projectRoot)
+            let merged = mergeProjectConfiguration(current: current, updated: updated, baseline: baseline)
+            try saveProjectConfiguration(merged, for: projectRoot)
+            return merged
+        }
     }
 
     public func loadLocalPreferences<T: Decodable>(
@@ -174,6 +178,12 @@ public actor ConfigurationStore {
             updated: updated.customTokens,
             baseline: baseline.customTokens
         )
+        if updated.colorLeonardoFiles != baseline.colorLeonardoFiles {
+            merged.colorLeonardoFiles = updated.colorLeonardoFiles
+        }
+        if updated.followActiveFile != baseline.followActiveFile {
+            merged.followActiveFile = updated.followActiveFile
+        }
         if updated.paperEffect != baseline.paperEffect {
             merged.paperEffect = updated.paperEffect
         }
@@ -185,12 +195,19 @@ public actor ConfigurationStore {
         if updated.showHiddenFiles != baseline.showHiddenFiles {
             merged.showHiddenFiles = updated.showHiddenFiles
         }
+        if updated.mobileSync.helperEnabled != baseline.mobileSync.helperEnabled { merged.mobileSync.helperEnabled = updated.mobileSync.helperEnabled }
+        if updated.mobileSync.enabled != baseline.mobileSync.enabled { merged.mobileSync.enabled = updated.mobileSync.enabled }
+        if updated.mobileSync.host != baseline.mobileSync.host { merged.mobileSync.host = updated.mobileSync.host }
+        if updated.mobileSync.port != baseline.mobileSync.port { merged.mobileSync.port = updated.mobileSync.port }
+        if updated.mobileSync.projects != baseline.mobileSync.projects { merged.mobileSync.projects = updated.mobileSync.projects }
         if updated.recentWorkspacePaths != baseline.recentWorkspacePaths {
-            merged.recentWorkspacePaths = updated.recentWorkspacePaths
+            merged.recentWorkspacePaths = mergeRecents(current: current.recentWorkspacePaths, updated: updated.recentWorkspacePaths, baseline: baseline.recentWorkspacePaths)
         }
         if updated.recentProjectPaths != baseline.recentProjectPaths {
-            merged.recentProjectPaths = updated.recentProjectPaths
+            merged.recentProjectPaths = mergeRecents(current: current.recentProjectPaths, updated: updated.recentProjectPaths, baseline: baseline.recentProjectPaths)
         }
+        merged.favorites = FavoriteItem.merging(current: current.favorites,
+                                               updated: updated.favorites, baseline: baseline.favorites)
         return merged
     }
 
@@ -214,6 +231,9 @@ public actor ConfigurationStore {
             updated: updated.customTokens,
             baseline: baseline.customTokens
         )
+        if updated.colorLeonardoFiles != baseline.colorLeonardoFiles {
+            merged.colorLeonardoFiles = updated.colorLeonardoFiles
+        }
         if updated.paperEffect != baseline.paperEffect {
             merged.paperEffect = updated.paperEffect
         }
@@ -231,6 +251,11 @@ public actor ConfigurationStore {
         return merged
     }
 
+    private func mergeRecents(current: [URL], updated: [URL], baseline: [URL]) -> [URL] {
+        let removed = Set(baseline).subtracting(updated)
+        return Array((updated + current.filter { !removed.contains($0) && !updated.contains($0) }).prefix(12))
+    }
+
     private func mergeMarkdownFeatures(
         current: MarkdownFeatures,
         updated: MarkdownFeatures,
@@ -242,6 +267,15 @@ public actor ConfigurationStore {
         }
         if updated.mathEnabled != baseline.mathEnabled {
             merged.mathEnabled = updated.mathEnabled
+        }
+        if updated.vegaLiteEnabled != baseline.vegaLiteEnabled {
+            merged.vegaLiteEnabled = updated.vegaLiteEnabled
+        }
+        if updated.citationsEnabled != baseline.citationsEnabled {
+            merged.citationsEnabled = updated.citationsEnabled
+        }
+        if updated.markdownExtensionsEnabled != baseline.markdownExtensionsEnabled {
+            merged.markdownExtensionsEnabled = updated.markdownExtensionsEnabled
         }
         if updated.defaultMode != baseline.defaultMode {
             merged.defaultMode = updated.defaultMode
@@ -264,17 +298,7 @@ public actor ConfigurationStore {
             // Creating an override from no override is an intentional complete value.
             return updated
         }
-        var merged = current ?? baseline
-        if updated.mermaidEnabled != baseline.mermaidEnabled {
-            merged.mermaidEnabled = updated.mermaidEnabled
-        }
-        if updated.mathEnabled != baseline.mathEnabled {
-            merged.mathEnabled = updated.mathEnabled
-        }
-        if updated.defaultMode != baseline.defaultMode {
-            merged.defaultMode = updated.defaultMode
-        }
-        return merged
+        return mergeMarkdownFeatures(current: current ?? baseline, updated: updated, baseline: baseline)
     }
 
     private func mergePaletteTokenOverrides(

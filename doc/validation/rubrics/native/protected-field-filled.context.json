@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-11-04T22:59:39.062Z",
+  "route": "/native/rubrics/form-filled",
+  "screen": "Protected MDLR after native field drawing and save",
+  "browser_name": "Native AppKit/SwiftUI with embedded WKWebView",
+  "browser_version": "Not exposed by Computer Use",
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "Source padlock remains protected; Fill mode; field answer saved; no library write; native point dimensions unavailable via capture API",
+  "built_source_commit": "59b6b148fdae5b0f6789e119c0d6c965462846d7",
+  "pid": 56028,
+  "image": {
+    "sha256": "d2ec93e1ab66786a71aae558dd62929f5319b9d1354e1714c655b23904bf550e",
+    "width_px": 2520,
+    "height_px": 1700
+  }
+}

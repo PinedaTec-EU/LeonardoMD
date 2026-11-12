@@ -1,0 +1,24 @@
+{
+  "attachment_export_manifest": {
+    "configurationName": "Test Scheme Action",
+    "deviceId": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B",
+    "deviceName": "LittleLeonardo Rubric342 QA 20261105",
+    "exportedFileName": "C48FCE6A-920F-4949-A6B9-5CEFB0E20A39.png",
+    "isAssociatedWithFailure": false,
+    "suggestedHumanReadableName": "Little Leonardo synchronization failure diagnostic_0_C75A3E11-A5E3-44B8-A662-D0BAE40F41BA.png",
+    "timestamp": 1794012136.235
+  },
+  "capture_mode": "XCTest screenshot attachment; original PNG exported with xcresulttool; no pixel edits",
+  "captured_at": "2026-11-07T00:42:16.235Z",
+  "data_provenance": "synthetic loopback DesktopDirectRuntime fixture; no owner document or credential",
+  "image_bytes": 232693,
+  "image_sha256": "104a3941dc570cfcacd010c91665143f5c8fd94971519228fa0477700a97ae12",
+  "limitations": "Validates the native diagnostic display/recovery flow; it does not reproduce the owner’s interrupted 338,658-byte physical snapshot or establish its root cause.",
+  "platform": "iOS 27.0 Simulator",
+  "result_bundle": "/private/tmp/leonardo-380-direct-v23.xcresult",
+  "simulator_id": "A5A73B11-EE27-40AC-ABAB-CADF1B85143B",
+  "source_sha": "0055c1640340235037b3c1ef56780cf9a95e4af6",
+  "state": "During the controlled status-failure phase after stopping the loopback HTTPS fixture; alert shows `[LL1 op=status domain=NSURLErrorDomain code=-1004 http=? bytes=0/?]`. The same run verified restart, recovery, and revocation.",
+  "test": "PairingUITests/testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation",
+  "test_result": "passed 1/1 in 34.728 seconds"
+}

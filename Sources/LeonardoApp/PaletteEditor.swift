@@ -89,6 +89,7 @@ struct PaletteEditor: View {
     }
     private func writePalette(_ url: URL) {
         do {
+            try InstancePathOwnership.shared.claim(url)
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             try encoder.encode(overrides).write(to: url, options: [.atomic])

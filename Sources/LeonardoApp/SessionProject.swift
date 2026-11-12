@@ -1,13 +1,20 @@
 import AppKit
-import SwiftUI
 import Foundation
+import SwiftUI
 import UniformTypeIdentifiers
 import LeonardoCore
 
 extension AppSession {
     func chooseDocument() {
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.plainText, UTType(filenameExtension: "md") ?? .plainText]
+        panel.allowedContentTypes = [.plainText] + AppDocumentKind.allCases.compactMap { kind in
+            switch kind {
+            case .markdown: return nil
+            case .leonardoTemplate: return UTType(filenameExtension: "mdlf")
+            case .leonardoResponse: return UTType(filenameExtension: "mdlr")
+            case .leonardoPackage: return UTType(filenameExtension: "mdlz")
+            }
+        } + [UTType(filenameExtension: "md") ?? .plainText]
         panel.allowsMultipleSelection = false
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
@@ -21,23 +28,44 @@ extension AppSession {
         panel.prompt = L10n.text("Open project")
         presentFilePanel(panel) { [weak self] url in Task { await self?.openProject(url) } }
     }
-    func openProject(_ url: URL) async {
+    @discardableResult
+    func openProject(_ url: URL, retainingCurrentDocument: Bool = false) async -> Bool {
+        guard !isClosing, !stopped else { return false }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
+        do {
+            try InstancePathOwnership.shared.claim(url)
+            try await authorizePath(url, .directory)
+        } catch { report(error); return false }
+        guard !stopped, !isClosing else { return false }
         await initialize()
-        guard await prepareNavigation() else { return }
-        guard !busy else { return }
+        let rootPath = url.standardizedFileURL.resolvingSymlinksInPath().path
+        let retainsDocument = retainingCurrentDocument && displayDocumentURL.map {
+            $0.standardizedFileURL.resolvingSymlinksInPath().path.hasPrefix(rootPath == "/" ? "/" : rootPath + "/")
+        } == true
+        if !retainsDocument {
+            guard await prepareNavigation() else { return false }
+        }
+        guard !busy, !isClosing, !stopped else { return false }
         busy = true
         defer { busy = false }
         do {
             _ = try await files.project(at: url)
             let configuration = try await configurations.loadProjectConfiguration(for: url)
+            guard !isClosing, !stopped else { return false }
+            await refreshFavoriteAssociations()
+            guard !isClosing, !stopped else { return false }
             projectURL = url
             git = GitRepository(rootURL: url)
             projectConfiguration = configuration
             projectBaseline = configuration
             resetSearch()
             focus = false
-            if let documentURL, !documentURL.path.hasPrefix(url.path + "/") {
-                self.documentURL = nil; snapshot = nil; content = ""
+            if let currentDocument = displayDocumentURL,
+               !currentDocument.standardizedFileURL.resolvingSymlinksInPath().path.hasPrefix(rootPath == "/" ? "/" : rootPath + "/") {
+                discardPackageWorkspace()
+                self.documentURL = nil; documentSourceURL = nil; snapshot = nil; content = ""
+                documentKind = .markdown; documentStorage = .localFile; leonardoFormatWarning = false
             }
             globalPreferences.recentProjectPaths.removeAll { $0 == url }
             globalPreferences.recentProjectPaths.insert(url, at: 0)
@@ -46,10 +74,14 @@ extension AppSession {
             await refreshTree()
             await refreshGit()
             updateTitle()
-        } catch { report(error) }
+            return true
+        } catch { report(error); return false }
     }
     func detachProject() async {
-        guard await prepareNavigation() else { return }
+        guard !isClosing, !stopped else { return }
+        fileOperationCount += 1
+        defer { fileOperationCount -= 1 }
+        guard await prepareNavigation(), !isClosing, !stopped else { return }
         projectURL = nil
         projectConfiguration = .default
         projectBaseline = .default
@@ -70,13 +102,23 @@ extension AppSession {
     func children(of url: URL) async -> [NavigationEntry] {
         guard let root = projectURL else { return [] }
         do {
-            return try await files.children(of: url, in: root, showHidden: showHidden)
+            let include = try await entryFilter(url)
+            let nodes = try await files.children(of: url, in: root, showHidden: showHidden)
+            guard !stopped, projectURL == root else { return [] }
+            return nodes.filter { include($0.url, $0.isDirectory) }
                 .map { NavigationEntry(url: $0.url, isDirectory: $0.isDirectory) }
+                .filter { showAllFiles || $0.isDirectory || AppDocumentKind.isSupportedExtension($0.url.pathExtension) }
+                .sorted { left, right in
+                    if foldersFirst, left.isDirectory != right.isDirectory { return left.isDirectory }
+                    let order = left.name.localizedStandardCompare(right.name)
+                    return fileSortDescending ? order == .orderedDescending : order == .orderedAscending
+                }
         } catch { report(error); return [] }
     }
     func refreshTree() async {
         guard let root = projectURL else { return }
         let entries = await children(of: root)
+        guard !stopped, projectURL == root else { return }
         if entries != rootEntries { rootEntries = entries }
         treeRevision += 1
     }
@@ -91,9 +133,11 @@ extension AppSession {
             self.searchResults = []
             do {
                 let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
-                let stream = await self.files.searchStream(in: project, query: query, showHidden: self.showHidden)
+                let include = try await self.entryFilter(root)
+                guard !self.stopped, !Task.isCancelled else { return }
+                let stream = await self.files.searchStream(in: project, query: query, showHidden: self.showHidden, include: include)
                 for try await results in stream {
-                    guard !Task.isCancelled, self.projectURL == root, self.searchQuery == query else { return }
+                    guard !self.stopped, !Task.isCancelled, self.projectURL == root, self.searchQuery == query else { return }
                     self.searchResults += results.map { SearchResult(url: $0.url, line: $0.lineNumber ?? 1, snippet: $0.snippet) }
                 }
             } catch { if !Task.isCancelled { self.report(error) } }
@@ -101,12 +145,20 @@ extension AppSession {
         }
     }
     func createItem(directory: Bool, parent: URL? = nil) {
-        guard let root = projectURL,
-              let name = prompt(title: directory ? L10n.text("New folder") : L10n.text("New Markdown"), initial: directory ? L10n.text("Folder") : L10n.text("New note filename")) else { return }
-        let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
-        let parentPath = relative(parent ?? root)
+        guard let root = projectURL else { return }
+        let identity = SessionFileOperationIdentity(sourceURL: parent ?? root, session: self)
         Task {
+            guard identity.isCurrent(in: self),
+                  let name = await prompt(title: directory ? L10n.text("New folder") : L10n.text("New Markdown"), initial: directory ? L10n.text("Folder") : L10n.text("New note filename")) else { return }
+            guard identity.isCurrent(in: self) else { return }
+            let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
+            let parentPath = relative(parent ?? root)
+            fileOperationCount += 1
+            defer { fileOperationCount -= 1 }
             do {
+                let filename = !directory && URL(fileURLWithPath: name).pathExtension.isEmpty ? name + ".md" : name
+                try await authorizePath((parent ?? root).appendingPathComponent(filename), directory ? .directoryMutation : .document)
+                guard identity.isCurrent(in: self) else { return }
                 if directory { _ = try await files.createFolder(named: name, in: project, at: parentPath) }
                 else {
                     let node = try await files.createMarkdown(named: name, in: project, at: parentPath)
@@ -117,11 +169,23 @@ extension AppSession {
             } catch { report(error) }
         }
     }
-    func rename(_ url: URL) {
-        guard let root = projectURL, let name = prompt(title: L10n.text("Rename"), initial: url.lastPathComponent) else { return }
-        Task {
-            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
+    @discardableResult
+    func rename(_ url: URL) -> Task<Void, Never>? {
+        guard let root = projectURL else { return nil }
+        let identity = SessionFileOperationIdentity(sourceURL: url, session: self)
+        return Task {
+            guard identity.isCurrent(in: self), let name = await prompt(title: L10n.text("Rename"), initial: url.lastPathComponent) else { return }
+            guard identity.isCurrent(in: self) else { return }
+            fileOperationCount += 1
+            defer { fileOperationCount -= 1 }
+            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true,
+                  identity.isCurrent(in: self) else { return }
             do {
+                let intent: DesktopPeerPathIntent = (try url.resourceValues(forKeys: [.isDirectoryKey])).isDirectory == true ? .directoryMutation : .document
+                try await authorizePath(url, intent)
+                guard identity.isCurrent(in: self) else { return }
+                try await authorizePath(url.deletingLastPathComponent().appendingPathComponent(name), intent)
+                guard identity.isCurrent(in: self) else { return }
                 let node = try await files.rename(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root), to: name)
                 await updateMovedDocument(from: url, to: node.url)
                 await relatedPathMoved?(url, node.url)
@@ -130,18 +194,33 @@ extension AppSession {
         }
     }
     func move(_ url: URL) {
+        let identity = SessionFileOperationIdentity(sourceURL: url, session: self)
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.directoryURL = projectURL
         panel.prompt = L10n.text("Move here")
-        presentFilePanel(panel) { [weak self] destination in self?.move(url, into: destination) }
+        presentFilePanel(panel) { [weak self] destination in
+            guard let self, identity.isCurrent(in: self) else { return }
+            self.move(identity.sourceURL, into: destination)
+        }
     }
-    func move(_ url: URL, into parent: URL) {
-        guard let root = projectURL else { return }
-        Task {
-            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
+    @discardableResult
+    func move(_ url: URL, into parent: URL) -> Task<Void, Never>? {
+        guard let root = projectURL else { return nil }
+        let identity = SessionFileOperationIdentity(sourceURL: url, session: self)
+        return Task {
+            guard identity.isCurrent(in: self) else { return }
+            fileOperationCount += 1
+            defer { fileOperationCount -= 1 }
+            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true,
+                  identity.isCurrent(in: self) else { return }
             do {
+                let intent: DesktopPeerPathIntent = (try url.resourceValues(forKeys: [.isDirectoryKey])).isDirectory == true ? .directoryMutation : .document
+                try await authorizePath(url, intent)
+                guard identity.isCurrent(in: self) else { return }
+                try await authorizePath(parent.appendingPathComponent(url.lastPathComponent), intent)
+                guard identity.isCurrent(in: self) else { return }
                 let node = try await files.move(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root), to: relative(parent))
                 await updateMovedDocument(from: url, to: node.url)
                 await relatedPathMoved?(url, node.url)
@@ -150,34 +229,19 @@ extension AppSession {
         }
     }
     func updateMovedDocument(from source: URL, to destination: URL) async {
-        guard let current = documentURL else { return }
         let previousMode = mode
-        if current == source { await openDocument(destination) }
-        else if current.path.hasPrefix(source.path + "/") {
-            let suffix = String(current.path.dropFirst(source.path.count + 1))
-            await openDocument(destination.appendingPathComponent(suffix))
+        // Package tabs edit an extracted temporary document, so documentURL
+        // is outside the moved project. Remap the package identity first;
+        // regular documents continue through the existing reopen path.
+        remapPackageIdentity(from: source, to: destination)
+        if let current = documentURL {
+            if current == source { await openDocument(destination) }
+            else if current.path.hasPrefix(source.path + "/") {
+                let suffix = String(current.path.dropFirst(source.path.count + 1))
+                await openDocument(destination.appendingPathComponent(suffix))
+            }
         }
         mode = previousMode
-    }
-    func delete(_ url: URL) {
-        guard let root = projectURL else { return }
-        let alert = NSAlert()
-        alert.messageText = L10n.format("Delete %@?", url.lastPathComponent)
-        alert.informativeText = L10n.text("This operation deletes the item from disk.")
-        alert.addButton(withTitle: L10n.text("Cancel"))
-        alert.addButton(withTitle: L10n.text("Delete"))
-        guard alert.runModal() == .alertSecondButtonReturn else { return }
-        Task {
-            guard await prepareNavigation(), await prepareRelatedFileOperation?(url) ?? true else { return }
-            do {
-                try await files.delete(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root))
-                if let current = documentURL, current == url || current.path.hasPrefix(url.path + "/") {
-                    documentURL = nil; snapshot = nil; content = ""; updateTitle()
-                }
-                relatedPathDeleted?(url)
-                await refreshTree()
-            } catch { report(error) }
-        }
     }
     func acceptDrop(_ providers: [NSItemProvider], into parent: URL) -> Bool {
         guard DocumentDropProviders.canLoad(providers) else { return false }
@@ -199,7 +263,7 @@ extension AppSession {
         guard url.standardizedFileURL.path.hasPrefix(root.standardizedFileURL.path + "/") else { return "../" }
         return String(url.standardizedFileURL.path.dropFirst(root.standardizedFileURL.path.count + 1))
     }
-    func prompt(title: String, initial: String) -> String? {
+    func prompt(title: String, initial: String) async -> String? {
         let alert = NSAlert()
         alert.messageText = title
         let value = PremiumNameValue(initial)
@@ -209,6 +273,7 @@ extension AppSession {
         alert.accessoryView = input
         alert.addButton(withTitle: L10n.text("Save"))
         alert.addButton(withTitle: L10n.text("Cancel"))
-        return alert.runModal() == .alertFirstButtonReturn ? value.text : nil
+        alert.window.initialFirstResponder = input
+        return await NativeDialog.present(alert, on: presentationWindow) == .alertFirstButtonReturn ? value.text : nil
     }
 }

@@ -1,0 +1,27 @@
+{
+  "historical_component_source": "654a9f45f49070dfbc4998cd6145a3b3b9994712",
+  "integrated_product_source": "2ac7b7c5fb0566fea95b1652d3cd4766f3694cf8",
+  "unchanged_inputs": [
+    {
+      "path": "Sources/LeonardoApp/SyncHelperController.swift",
+      "blob": "7bdf043c6ccfca7880c89ec165b8f5fbaf7b1c95"
+    },
+    {
+      "path": "Sources/LeonardoApp/SyncHelperStartupPolicy.swift",
+      "blob": "464d6a2755bd6cf67d56a2cac64ebcd12a638c4b"
+    },
+    {
+      "path": "Sources/LeonardoApp/SyncHelperPreferencesSection.swift",
+      "blob": "f251252af4823ed0a3baf55b42d76d454a74b416"
+    },
+    {
+      "path": "Sources/LeonardoApp/HelperGatedPeerRemote.swift",
+      "blob": "26883a3a781ada2f876a0515365f17b9a311edec"
+    },
+    {
+      "path": "Tests/LeonardoAppTests/SyncHelperControllerTests.swift",
+      "blob": "b2c9091d2cf41da3e1de7f5fab9b5b864c0adc8b"
+    }
+  ],
+  "help": "Fresh Help45 evidence replaces Help40 for current package content; no executable identity is relabeled."
+}

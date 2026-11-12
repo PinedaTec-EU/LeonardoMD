@@ -53,9 +53,8 @@ stateDiagram-v2
 ## Notas Técnicas
 
 - La integración Git debe ser una capa aislada para poder sustituir implementación.
-- Opciones a evaluar:
-  - Invocar `git` CLI del sistema.
-  - Usar libgit2/LibGit2Sharp si encaja con el stack.
+- La integración de escritorio usa `git` CLI del sistema y sus credenciales existentes.
+- No se mantiene un motor Git propio ni una integración Git móvil; iOS es de solo lectura. Véase [retirada y recuperación](../mobile/git-retirement.md).
 - La UI debe evitar exponer complejidad innecesaria, pero sin ocultar estados críticos.
 
 ## Riesgos

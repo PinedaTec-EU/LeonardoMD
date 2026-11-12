@@ -5,20 +5,49 @@ import LeonardoRender
 
 extension AppSession {
     var preview: some View {
-        MarkdownPreview(
+        let previewDocumentURL = documentURL
+        let previewSource = content
+        renderer.onDetectedExtensions = { [weak self] source, used in
+            guard let self, self.documentURL == previewDocumentURL, self.content == source, !self.stopped else { return }
+            self.extensionRecommendations.detectedSource = source
+            self.extensionRecommendations.detected = Set(used.compactMap(BuiltInExtension.init(rawValue:)))
+        }
+        renderer.onTableResize = { [weak self] expected, resize in
+            guard let self, self.documentURL == previewDocumentURL else { return false }
+            return await self.resizePreviewTable(expected: expected, resize: resize)
+        }
+        renderer.onEdit = { [weak self] expected, replacement in
+            guard let self, self.documentURL == previewDocumentURL else { return false }
+            return self.editDocument(expected: expected, replacement: replacement)
+        }
+        renderer.onFormEdit = { [weak self] expected, changes in
+            guard let self, self.documentURL == previewDocumentURL else { return nil }
+            return self.updateLeonardoFields(expected: expected, changes: changes)
+        }
+        renderer.onObjectAction = { [weak self] expected, object, remove, fieldID in
+            guard let self, self.documentURL == previewDocumentURL else { return false }
+            return self.handleGraphicAction(expected: expected, object: object, remove: remove, fieldID: fieldID)
+        }
+        renderer.onGraphicSelection = { [weak self] expected, id, inspect in
+            guard let self, self.documentURL == previewDocumentURL else { return }
+            self.receiveGraphicSelection(expected: expected, id: id, inspect: inspect)
+        }
+        renderer.onFieldHelp = { [weak self] fieldID in
+            guard let self, self.documentURL == previewDocumentURL else { return }
+            self.showLeonardoFieldHelp(fieldID)
+        }
+        return MarkdownPreview(
             content: content,
             baseURL: documentURL?.deletingLastPathComponent(),
             configuration: renderConfiguration,
             controller: renderer,
-            onLinkActivation: { url in Task { await self.followLink(url) } },
+            onLinkActivation: { url in Task { await self.followPreviewLink(GuidePracticeRequest(destination: url, document: previewDocumentURL, source: previewSource)) } },
             onScrollProgress: { fraction in
                 if self.mode == .split { self.editorScroll = fraction }
             },
             onTagActivation: { self.search(tag: $0) }
         )
-        .onChange(of: editorScroll) { _, fraction in
-            if self.mode == .split { self.renderer.scroll(toFraction: fraction) }
-        }
+        .id(documentURL)
     }
     func search(tag: String) {
         guard !stopped, projectURL != nil else { return }
@@ -37,14 +66,33 @@ extension AppSession {
         case .parchment: effect = .parchment
         }
         let background = resolved.paperEffect == .white ? "#F8F8F5" : tokens.surface
-        return MarkdownPreviewConfiguration(
+        let localAssetRoot: URL?
+        switch documentStorage {
+        case .package, .extracted:
+            localAssetRoot = packageWorkspace?.directoryURL
+        case .localFile:
+            localAssetRoot = projectURL
+        }
+        var configuration = MarkdownPreviewConfiguration(
             allowsMermaid: features.mermaidEnabled,
             allowsMath: features.mathEnabled,
+            allowsVegaLite: features.vegaLiteEnabled,
+            allowsCitations: features.citationsEnabled,
+            allowsMarkdownExtensions: features.markdownExtensionsEnabled,
             frontMatter: showFrontmatter ? .metadata : .hidden,
             externalLinkPolicy: .callbackOnly,
             appearance: MarkdownAppearance(backgroundHex: background, textHex: tokens.text, headingHex: tokens.heading, accentHex: tokens.accent, codeBackgroundHex: tokens.codeBackground, paperEffect: effect),
-            localAssetRoot: projectURL
+            localAssetRoot: localAssetRoot
         )
+        configuration.allowsLeonardoFormat = documentKind.isLeonardo
+        // Form filling is a separate interaction channel. A protected MDLR
+        // remains writable through its declared fields while source editing
+        // stays locked behind the toolbar padlock.
+        configuration.allowsEditing = canEditDocument && mode != .fill
+        configuration.allowsFormFilling = canFillLeonardoForm
+        configuration.selectedGraphicID = selectedGraphic?.id
+        configuration.formLabels = TranslationCatalog.catalogs[LanguageSettings.shared.language] ?? [:]
+        return configuration
     }
     func followLink(_ url: URL) async {
         guard !stopped else { return }
@@ -52,7 +100,7 @@ extension AppSession {
             renderer.scroll(to: fragment)
             return
         }
-        if url.isFileURL, Self.readableDocumentExtensions.contains(url.pathExtension.lowercased()) {
+        if url.isFileURL, Self.supportedDocumentExtensions.contains(url.pathExtension.lowercased()) {
             await openDocument(url)
         } else if url.isFileURL || confirmExternalLinks {
             // Document-authored local links always require approval before a
@@ -77,6 +125,7 @@ extension AppSession {
     }
     private func exportPDF(to destination: URL, documentURL: URL) {
         Task {
+            guard await flushPreviewEdits() else { return }
             let previousMode = mode
             defer { mode = previousMode }
             do {
@@ -90,8 +139,14 @@ extension AppSession {
                 }
                 renderer.update(content: content, baseURL: documentURL.deletingLastPathComponent(), configuration: renderConfiguration)
                 let data = try await renderer.exportPDF()
+                try await authorizePath(destination, .document)
                 try data.write(to: destination, options: [.atomic])
-            } catch { report(error) }
+            } catch {
+                report(error)
+                if let localized = error as? LocalizedError, let message = localized.errorDescription {
+                    errorMessage = L10n.text(message)
+                }
+            }
         }
     }
 }

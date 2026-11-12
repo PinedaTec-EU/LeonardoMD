@@ -3,27 +3,49 @@ import AppKit
 
 struct WorkspaceView: View {
     @Bindable var session: AppSession
+    let isActiveTab: Bool
+
+    init(session: AppSession, isActiveTab: Bool = true) {
+        self.session = session
+        self.isActiveTab = isActiveTab
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            toolbar
+            DocumentToolbar(session: session)
             Divider()
-            HStack(spacing: 0) {
-                if session.presentation.showsSidebar {
-                    ProjectSidebar(session: session)
-                    Divider()
+            if session.presentation.showsSidebar {
+                HSplitView {
+                    ProjectSidebar(session: session, isActiveTab: isActiveTab)
+                        .frame(minWidth: 220, idealWidth: 250, maxWidth: 600)
+                    workspaceDocument.frame(minWidth: 440)
                 }
-                documentArea.frame(maxWidth: .infinity, maxHeight: .infinity).disabled(session.busy)
-                if session.presentation.showsInspector {
-                    Divider()
-                    DocumentInspector(session: session)
-                }
+            } else {
+                workspaceDocument
             }
             Divider()
             statusBar
         }
+        .modifier(ExtensionRecommendationPresenter(session: session, isActiveTab: isActiveTab))
         .modifier(SessionAppearance(session: session))
         .background(session.surfaceColor)
-        .sheet(isPresented: $session.showWorkspace) { WorkspaceManager(session: session).modifier(SessionAppearance(session: session)) }
+        .sheet(item: $session.rubricRequest) { request in
+            RubricEditor(request: request, library: session.rubricLibrary, clearField: request.fieldID.map { field in
+                { session.documentURL == request.documentURL && session.updateLeonardoFields(expected: request.source, changes: [field: .null]) != nil }
+            }, syncController: DesktopSyncController.shared,
+            saveRemote: { capture, label in
+                guard let response = capture.response else { return nil }
+                return session.saveRubricToLibrary(label: label, rubric: response.rubric, sourceRequestID: capture.id)
+            }, completeRemote: { capture, label in
+                guard let response = capture.response else { return false }
+                guard capture.matchesInsertionContext(documentURL: request.documentURL,
+                    source: request.source, fieldID: request.fieldID) else { return false }
+                return session.finishRubric(request, label: label, rubric: response.rubric,
+                    saveToLibrary: true, sourceRequestID: capture.id)
+            }) { label, rubric, save in
+                session.finishRubric(request, label: label, rubric: rubric, saveToLibrary: save)
+            }.modifier(SessionAppearance(session: session))
+        }
         .sheet(isPresented: $session.showPreferences) { PreferencesView(session: session).modifier(SessionAppearance(session: session)) }
         .sheet(isPresented: $session.showGit) { GitPanel(session: session).modifier(SessionAppearance(session: session)) }
         .alert("LeonardoMD", isPresented: Binding(get: { session.errorMessage != nil }, set: { if !$0 { session.errorMessage = nil } })) {
@@ -51,71 +73,45 @@ struct WorkspaceView: View {
         .task { await session.initialize() }
     }
 
-    private var toolbar: some View {
-        HStack(spacing: 12) {
-            Menu {
-                Button(L10n.text("Open document…")) { session.chooseDocument() }
-                Button(L10n.text("Open project…")) { session.chooseProject() }
-                Button(L10n.text("Workspaces…")) { session.showWorkspace = true }
-                if session.projectURL == nil, let url = session.documentURL {
-                    Button(L10n.text("Open folder as project")) { Task { await session.openProject(url.deletingLastPathComponent()) } }
-                }
-                if session.projectURL != nil {
-                    Button(L10n.text("View only this document")) { Task { await session.detachProject() } }
-                }
-                if !session.recentProjects.isEmpty {
-                    Divider()
-                    ForEach(session.recentProjects, id: \.self) { url in
-                        Button(url.lastPathComponent) { Task { await session.openProject(url) } }
-                    }
-                }
-            } label: { Image(systemName: "folder").padding(8).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.primary.opacity(0.1))).shadow(color: .black.opacity(0.08), radius: 3, y: 2) }.menuStyle(.borderlessButton).frame(width: 38)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(session.documentURL?.lastPathComponent ?? "LeonardoMD").font(.headline).lineLimit(1)
-                Text(session.projectURL == nil ? L10n.text("Document viewer") : session.projectURL!.lastPathComponent)
-                    .font(.caption).foregroundStyle(.secondary)
+    private var workspaceDocument: some View {
+        HStack(spacing: 0) {
+            documentArea.frame(maxWidth: .infinity, maxHeight: .infinity).disabled(session.busy)
+            if session.showsGraphicInspector, let graphic = session.selectedGraphic {
+                Divider()
+                GraphicInspector(session: session, graphic: graphic)
+            } else if session.presentation.showsInspector {
+                Divider()
+                DocumentInspector(session: session)
             }
-            Spacer(minLength: 8)
-            if session.documentURL != nil {
-                PremiumSelection(selection: $session.mode, options: DocumentMode.allCases, title: { $0.title })
-                    .accessibilityLabel(L10n.text("Mode"))
-                    .accessibilityIdentifier("document-mode")
-                Button { session.focus.toggle() } label: { Image(systemName: session.focus ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right") }
-                    .help(session.focus ? L10n.text("Exit focus mode") : L10n.text("Focus mode"))
-                    .accessibilityIdentifier("focus-mode")
-                Button { session.exportPDF() } label: { Image(systemName: "square.and.arrow.up") }.help(L10n.text("Export PDF"))
-            }
-            Button { session.showInspector.toggle() } label: { Label(L10n.text("Outline"), systemImage: "list.bullet") }
-                .accessibilityIdentifier("document-outline-button")
         }
-        .buttonStyle(PremiumButtonStyle(compact: true))
-        .padding(.horizontal, 20).padding(.vertical, 12)
-        .background(.bar)
     }
 
     @ViewBuilder private var documentArea: some View {
         if session.documentURL == nil {
-            VStack(spacing: 18) {
-                Image(systemName: "doc.richtext").font(.system(size: 54, weight: .light)).foregroundStyle(session.accentColor)
-                Text(L10n.text("Your documents, your way.")).font(.largeTitle.weight(.semibold))
-                Text(L10n.text("Open a Markdown file to read it instantly\nor a folder to work with a project."))
-                    .multilineTextAlignment(.center).foregroundStyle(.secondary)
-                HStack {
-                    Button(L10n.text("Open document…")) { session.chooseDocument() }.buttonStyle(PremiumButtonStyle(prominent: true))
-                    Button(L10n.text("Open project…")) { session.chooseProject() }.buttonStyle(PremiumButtonStyle())
-                }
-                Button(L10n.text("Manage workspaces…")) { session.showWorkspace = true }.buttonStyle(PremiumButtonStyle())
-                Text(L10n.text("Local · No account · Optional extensions")).font(.caption).foregroundStyle(.secondary)
-            }.frame(maxWidth: .infinity, maxHeight: .infinity)
+            WelcomeView(session: session)
         } else {
             VStack(spacing: 0) {
                 if session.externalConflict {
                     HStack {
-                        Label(L10n.text("The file changed outside LeonardoMD. Your edits are protected."), systemImage: "exclamationmark.triangle")
+                        Label(L10n.text("The file changed outside LeonardoMD. Reload it or save your edits as a copy?"), systemImage: "exclamationmark.triangle")
                         Spacer()
                         Button(L10n.text("Reload")) { Task { await session.reloadFromDisk() } }
                         Button(L10n.text("Save copy…")) { session.saveCopy() }
                     }.padding(12).background(Color.orange.opacity(0.14))
+                }
+                if session.leonardoFormatWarning {
+                    HStack(spacing: 10) {
+                        Label(L10n.text("This Markdown contains Leonardo document markers."), systemImage: "doc.badge.gearshape")
+                        Spacer()
+                        Button(L10n.text("Save as MDLF…")) {
+                            Task {
+                                if await session.migrateMarkdownNow() { session.leonardoFormatWarning = false }
+                            }
+                        }
+                        Button(L10n.text("Dismiss")) { session.leonardoFormatWarning = false }
+                    }
+                    .padding(12)
+                    .background(session.accentColor.opacity(0.12))
                 }
                 switch session.mode {
                 case .preview: session.preview
@@ -125,22 +121,32 @@ struct WorkspaceView: View {
                         editor.frame(minWidth: 220)
                         session.preview.frame(minWidth: 220)
                     }
+                case .fill: session.preview
                 }
             }
         }
     }
     private var editor: some View {
-        MarkdownEditor(text: $session.content, scrollFraction: $session.editorScroll, requestedLine: session.requestedLine)
+        MarkdownEditor(text: Binding(get: { session.content }, set: { _ = session.editDocument(expected: session.content, replacement: $0) }), scrollFraction: $session.editorScroll, requestedLine: session.requestedLine, requestedLineRevision: session.requestedLineRevision, usesDocumentHistory: true, onUserScroll: { fraction in
+            if session.mode == .split { session.renderer.scroll(toFraction: fraction) }
+        })
             .id(session.documentURL)
-            .onChange(of: session.content) { _, _ in session.contentChanged() }
+            .disabled(!session.canEditDocument)
     }
     private var statusBar: some View {
         HStack {
+            Text(ApplicationUpdates.shared.versionDisplayText)
+                .accessibilityIdentifier("status-version")
+            Divider().frame(height: 12)
             if session.busy { ProgressView().controlSize(.mini) }
             Label(L10n.text(session.saveStatus), systemImage: session.isDirty ? "circle.fill" : "checkmark.circle")
             Spacer()
             Text(session.focus ? L10n.text("Focus") : session.projectURL == nil ? L10n.text("Standalone document") : L10n.text("Project"))
-            Text("Markdown · UTF-8")
+            Label(session.documentFormatLabel, systemImage: session.documentStatusIcon)
+                .foregroundStyle(session.documentStatusColor)
+            Label(session.documentStorageLabel, systemImage: session.documentStorageIcon)
+                .foregroundStyle(session.documentStorageColor)
+            Text("UTF-8")
             Text(L10n.format("%d words", session.wordCount))
         }.font(.caption).foregroundStyle(.secondary).padding(.horizontal, 18).padding(.vertical, 8)
     }

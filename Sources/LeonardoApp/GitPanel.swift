@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 import LeonardoCore
 
@@ -6,6 +7,11 @@ struct GitPanel: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selected: Set<String> = []
     @State private var message = ""
+
+    init(session: AppSession) {
+        self.session = session
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -17,69 +23,79 @@ struct GitPanel: View {
             Text(session.gitSummary).foregroundStyle(.secondary)
             if session.gitStatus?.state == .noRepository {
                 Text(L10n.text("This project does not have a Git repository yet."))
-                Button(L10n.text("Initialize Git")) { session.performGit(.initialize) }.buttonStyle(PremiumButtonStyle(prominent: true))
+                Button(L10n.text("Initialize Git")) { session.performGit(.initialize) }
+                    .buttonStyle(PremiumButtonStyle(prominent: true))
             } else {
+                localGitControls
+            }
+        }
+        .buttonStyle(PremiumButtonStyle(compact: true))
+        .padding(24)
+        .frame(width: 820, height: 700)
+        .disabled(session.gitBusy)
+        .task {
+            await session.refreshGit()
+        }
+    }
+
+    private var localGitControls: some View {
+        Group {
+            HStack {
+                Button(L10n.text("Fetch")) { session.performGit(.fetch) }
+                Button(L10n.text("Pull")) { session.performGit(.pull) }
+                Button(L10n.text("Push")) { session.performGit(.push) }
+                Spacer()
+                Button(L10n.text("Refresh")) { Task { await session.refreshGit() } }
+            }
+            Text(L10n.text("Changes")).font(.headline)
+            List(session.gitStatus?.changes ?? []) { change in
                 HStack {
-                    Button(L10n.text("Fetch")) { session.performGit(.fetch) }
-                    Button(L10n.text("Pull")) { session.performGit(.pull) }
-                    Button(L10n.text("Push")) { session.performGit(.push) }
-                    Spacer()
-                    Button(L10n.text("Refresh")) { Task { await session.refreshGit() } }
-                }
-                Text(L10n.text("Changes")).font(.headline)
-                List(session.gitStatus?.changes ?? []) { change in
-                    HStack {
-                        // Batch selection for a later staging action, rather than a boolean setting.
-                        Toggle(isOn: Binding(get: { selected.contains(change.path) }, set: { value in
-                            if value { selected.insert(change.path) } else { selected.remove(change.path) }
-                        })) { Text(change.path) }.toggleStyle(.checkbox)
-                        if change.isStaged { Text(L10n.text("Staged")).font(.caption).foregroundStyle(.secondary) }
-                        if change.status == .conflicted {
-                            Button(L10n.text("Open conflict")) {
-                                if let root = session.projectURL {
-                                    Task {
-                                        let url = root.appendingPathComponent(change.path)
-                                        await session.openDocument(url)
-                                        if session.documentURL == url { session.mode = .edit }
-                                        dismiss()
-                                    }
+                    // Batch selection for a later staging action, rather than a boolean setting.
+                    Toggle(isOn: Binding(get: { selected.contains(change.path) }, set: { value in
+                        if value { selected.insert(change.path) } else { selected.remove(change.path) }
+                    })) { Text(change.path) }.toggleStyle(.checkbox)
+                    if change.isStaged { Text(L10n.text("Staged")).font(.caption).foregroundStyle(.secondary) }
+                    if change.status == .conflicted {
+                        Button(L10n.text("Open conflict")) {
+                            if let root = session.projectURL {
+                                Task {
+                                    let url = root.appendingPathComponent(change.path)
+                                    await session.openDocument(url)
+                                    if session.documentURL == url { session.mode = .edit }
+                                    dismiss()
                                 }
                             }
                         }
                     }
-                }.frame(minHeight: 120)
-                HStack {
-                    Button(L10n.text("Stage selected")) { session.performGit(.stage(Array(selected))) }.disabled(selected.isEmpty)
-                    Button(L10n.text("Stage all")) { session.performGit(.stageAll) }
                 }
-                HStack {
-                    TextField(L10n.text("Commit message"), text: $message)
-                        .textFieldStyle(PremiumTextFieldStyle(compact: true))
-                    Button(L10n.text("Commit")) { session.performGit(.commit(message)); message = "" }.disabled(message.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
-                Divider()
-                Text(L10n.text("Recent history")).font(.headline)
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 8) {
-                        ForEach(session.gitHistory) { commit in
-                            HStack {
-                                Text(commit.shortHash).font(.system(.caption, design: .monospaced))
-                                Text(commit.subject).lineLimit(1)
-                                Spacer()
-                                Text(commit.author).font(.caption).foregroundStyle(.secondary)
-                            }
+            }.frame(minHeight: 100, maxHeight: 170)
+            HStack {
+                Button(L10n.text("Stage selected")) { session.performGit(.stage(Array(selected))) }.disabled(selected.isEmpty)
+                Button(L10n.text("Stage all")) { session.performGit(.stageAll) }
+            }
+            HStack {
+                TextField(L10n.text("Commit message"), text: $message)
+                    .textFieldStyle(PremiumTextFieldStyle(compact: true))
+                Button(L10n.text("Commit")) { session.performGit(.commit(message)); message = "" }
+                    .disabled(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+            Text(L10n.text("Recent history")).font(.headline)
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 8) {
+                    ForEach(session.gitHistory) { commit in
+                        HStack {
+                            Text(commit.shortHash).font(.system(.caption, design: .monospaced))
+                            Text(commit.subject).lineLimit(1)
+                            Spacer()
+                            Text(commit.author).font(.caption).foregroundStyle(.secondary)
                         }
                     }
-                }.frame(height: 130)
-            }
-            Text(L10n.text("Uses Git and credentials configured on your Mac. Pull requires a clean working tree; resolve conflicts manually."))
-                .font(.caption).foregroundStyle(.secondary)
-        }.buttonStyle(PremiumButtonStyle(compact: true)).padding(24).frame(width: 720, height: 620)
-            .disabled(session.gitBusy)
-            .task { await session.refreshGit() }
+                }
+            }.frame(height: 90)
+        }
     }
-}
 
+}
 enum GitAction {
     case initialize, fetch, pull, push, stage([String]), stageAll, commit(String)
     var name: String {
@@ -112,8 +128,9 @@ extension AppSession {
             gitHistory = (try? await git.history(limit: 20)) ?? []
         } catch { report(error) }
     }
+
     func performGit(_ action: GitAction) {
-        guard !gitBusy, let git else { return }
+        guard !isClosing, !isSyncSuspended, !gitBusy, let git else { return }
         gitBusy = true
         logger.info("git_operation_started operation=\(action.name, privacy: .public)")
         Task {
@@ -142,3 +159,4 @@ extension AppSession {
         }
     }
 }
+#endif

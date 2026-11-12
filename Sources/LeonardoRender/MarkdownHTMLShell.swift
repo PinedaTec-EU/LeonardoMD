@@ -1,4 +1,5 @@
 import Foundation
+import LeonardoCore
 
 enum MarkdownHTMLShell {
     static let resourceScheme = "leonardo-resource"
@@ -26,6 +27,10 @@ enum MarkdownHTMLShell {
         let mathScript = configuration.allowsMath
             ? "<script src=\"\(resourceURL(.katex))\"></script>"
             : ""
+        let extensionScripts = extensionScripts(configuration: configuration, resourceURL: resourceURL)
+        let extraStylesheet = configuration.allowsMarkdownExtensions
+            ? "<link rel=\"stylesheet\" href=\"\(resourceURL(.markdownExtraStyles))\">"
+            : ""
         let documentBase = documentBaseHref(baseURL: baseURL, configuration: configuration)
             .map { "<base href=\"\($0)\">" } ?? ""
 
@@ -35,10 +40,13 @@ enum MarkdownHTMLShell {
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
-          <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src \(documentScheme): data: http: https:; style-src 'unsafe-inline' \(resourceScheme):; script-src 'unsafe-inline' \(resourceScheme):; font-src \(resourceScheme): data:; connect-src 'none';">
+          <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src \(documentScheme): data:\(configuration.allowsRemoteImages ? " http: https:" : ""); style-src 'unsafe-inline' \(resourceScheme):; script-src 'unsafe-inline' \(resourceScheme):; font-src \(resourceScheme): data:; connect-src 'none';">
           \(documentBase)
           <link rel="stylesheet" href="\(resourceURL(.previewStyles))">
+          <link rel="stylesheet" href="\(resourceURL(.formStyles))">
+          <link rel="stylesheet" href="\(resourceURL(.tableResizeStyles))">
           \(mathStylesheet)
+          \(extraStylesheet)
           <script src="\(resourceURL(.marked))"></script>
           <script src="\(resourceURL(.dompurify))"></script>
           <script src="\(resourceURL(.highlight))"></script>
@@ -48,10 +56,32 @@ enum MarkdownHTMLShell {
         <body>
           <main id="leonardo-markdown" class="markdown-body" aria-live="polite"></main>
           <script id="leonardo-payload" type="application/json">\(encodedPayload)</script>
+          <script src="\(resourceURL(.previewEditing))"></script>
+          <script src="\(resourceURL(.tableLayout))"></script>
+          <script src="\(resourceURL(.tableResizing))"></script>
+          <script src="\(resourceURL(.leonardoCalendar))"></script>
+          <script src="\(resourceURL(.leonardoForms))"></script>
+          <script src="\(resourceURL(.leonardoLayout))"></script>
+          <script src="\(resourceURL(.leonardoObjects))"></script>
+          <script src="\(resourceURL(.imageLoading))"></script>
+          \(extensionScripts)
+          <script src="\(resourceURL(.extensionDetection))"></script>
           <script src="\(resourceURL(.runtime))"></script>
         </body>
         </html>
         """
+    }
+
+    private static func extensionScripts(
+        configuration: MarkdownPreviewConfiguration,
+        resourceURL: (MarkdownResource) -> String
+    ) -> String {
+        var modules: [MarkdownResource] = []
+        if configuration.allowsVegaLite || configuration.allowsCitations { modules.append(.extensionEngines) }
+        if configuration.allowsVegaLite { modules.append(.vegaCharts) }
+        if configuration.allowsCitations { modules.append(.citations) }
+        if configuration.allowsMarkdownExtensions { modules.append(.markdownExtras) }
+        return modules.map { "<script src=\"\(resourceURL($0))\"></script>" }.joined(separator: "\n")
     }
 
     static func payloadJSON(
@@ -59,14 +89,30 @@ enum MarkdownHTMLShell {
         baseURL: URL?,
         configuration: MarkdownPreviewConfiguration
     ) throws -> String {
-        let document = MarkdownDocumentParser.parse(content)
+        let leonardo = configuration.allowsLeonardoFormat ? try LeonardoFormatParser.parse(content) : nil
+        // Only retained author front matter belongs in this panel. MDLF's
+        // structural JSON stays out of the generic Markdown metadata path.
+        let document = leonardo.map(LeonardoMarkdownMigration.previewMetadata) ?? MarkdownDocumentParser.parse(content)
         let payload = MarkdownRenderPayload(
-            markdown: document.body,
+            markdown: leonardo?.body ?? document.body,
+            leonardo: leonardo?.metadata,
+            source: content,
+            allowsEditing: configuration.allowsEditing,
+            allowsFormFilling: configuration.allowsFormFilling,
+            selectedGraphicID: configuration.selectedGraphicID.map(LeonardoJSONValue.string) ?? .null,
+            formLabels: configuration.formLabels,
+            formDiagnostics: leonardo.map { document in
+                Dictionary(grouping: LeonardoFormatValidator.validate(document, context: .draft).filter { $0.fieldID != nil }, by: { $0.fieldID! }).mapValues { $0.map(\.message) }
+            } ?? [:],
             frontMatter: document.frontMatter,
             tags: document.tags,
             showFrontMatter: configuration.frontMatter == .metadata,
             allowsMermaid: configuration.allowsMermaid,
             allowsMath: configuration.allowsMath,
+            allowsVegaLite: configuration.allowsVegaLite,
+            allowsCitations: configuration.allowsCitations,
+            allowsMarkdownExtensions: configuration.allowsMarkdownExtensions,
+            compactFirstHeading: configuration.compactFirstHeading,
             debounceMilliseconds: configuration.renderDebounce.milliseconds,
             appearance: configuration.appearance.sanitizedPayload,
             baseURL: baseURL?.absoluteString
@@ -99,11 +145,22 @@ enum MarkdownHTMLShell {
 
 private struct MarkdownRenderPayload: Encodable {
     let markdown: String
+    let leonardo: LeonardoMetadata?
+    let source: String
+    let allowsEditing: Bool
+    let allowsFormFilling: Bool
+    let selectedGraphicID: LeonardoJSONValue
+    let formLabels: [String: String]
+    let formDiagnostics: [String: [String]]
     let frontMatter: [String: String]
     let tags: [String]
     let showFrontMatter: Bool
     let allowsMermaid: Bool
     let allowsMath: Bool
+    let allowsVegaLite: Bool
+    let allowsCitations: Bool
+    let allowsMarkdownExtensions: Bool
+    let compactFirstHeading: Bool
     let debounceMilliseconds: Int
     let appearance: MarkdownAppearancePayload
     let baseURL: String?

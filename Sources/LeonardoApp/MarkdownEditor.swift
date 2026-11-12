@@ -6,6 +6,9 @@ struct MarkdownEditor: NSViewRepresentable {
     @Binding var text: String
     @Binding var scrollFraction: Double
     var requestedLine: Int?
+    var requestedLineRevision = 0
+    var usesDocumentHistory = false
+    var onUserScroll: ((Double) -> Void)?
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -18,7 +21,7 @@ struct MarkdownEditor: NSViewRepresentable {
         editor.isAutomaticDashSubstitutionEnabled = false
         editor.isAutomaticTextReplacementEnabled = false
         editor.isContinuousSpellCheckingEnabled = false
-        editor.allowsUndo = true
+        editor.allowsUndo = !usesDocumentHistory
         editor.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
         editor.textContainerInset = NSSize(width: 24, height: 24)
         editor.autoresizingMask = [.width]
@@ -38,6 +41,11 @@ struct MarkdownEditor: NSViewRepresentable {
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         context.coordinator.parent = self
         guard let editor = scroll.documentView as? NSTextView else { return }
+        context.coordinator.applyingScroll = true
+        defer {
+            context.coordinator.programmaticOrigin = scroll.contentView.bounds.minY
+            context.coordinator.applyingScroll = false
+        }
         editor.isEditable = context.environment.isEnabled
         if editor.string != text {
             let selection = editor.selectedRange()
@@ -50,8 +58,10 @@ struct MarkdownEditor: NSViewRepresentable {
             scroll.contentView.scroll(to: NSPoint(x: 0, y: available * scrollFraction))
             scroll.reflectScrolledClipView(scroll.contentView)
         }
-        if let line = requestedLine, line != context.coordinator.lastLine {
+        context.coordinator.expectedText = text
+        if let line = requestedLine, line != context.coordinator.lastLine || requestedLineRevision != context.coordinator.lastLineRevision {
             context.coordinator.lastLine = line
+            context.coordinator.lastLineRevision = requestedLineRevision
             let lines = text.components(separatedBy: "\n")
             let offset = lines.prefix(max(0, line - 1)).reduce(0) { $0 + ($1 as NSString).length + 1 }
             let range = NSRange(location: min(offset, (text as NSString).length), length: 0)
@@ -62,13 +72,47 @@ struct MarkdownEditor: NSViewRepresentable {
 
     @MainActor final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: MarkdownEditor
+        var expectedText: String
         var lastLine: Int?
+        var lastLineRevision: Int?
+        var applyingScroll = false
+        var programmaticOrigin: CGFloat?
         var lastScrollFraction = 0.0
         var scrollObserver: NSObjectProtocol?
-        init(_ parent: MarkdownEditor) { self.parent = parent }
+        init(_ parent: MarkdownEditor) { self.parent = parent; expectedText = parent.text }
+        func textView(_ editor: NSTextView, shouldChangeTextIn range: NSRange, replacementString: String?) -> Bool {
+            guard parent.text == expectedText else {
+                restoreSharedDraft(in: editor)
+                return false
+            }
+            return true
+        }
+        private func restoreSharedDraft(in editor: NSTextView) {
+            let selection = editor.selectedRange()
+            expectedText = parent.text
+            editor.string = expectedText
+            editor.setSelectedRange(NSRange(location: min(selection.location, (expectedText as NSString).length), length: 0))
+        }
         func textDidChange(_ notification: Notification) {
             guard let editor = notification.object as? NSTextView else { return }
+            guard parent.text == expectedText else { restoreSharedDraft(in: editor); return }
             parent.text = editor.string
+            expectedText = parent.text
+            if editor.string != expectedText { restoreSharedDraft(in: editor) }
+        }
+        private func isUserScroll(in scroll: NSScrollView) -> Bool {
+            guard let event = NSApp.currentEvent, event.window === scroll.window else { return false }
+            switch event.type {
+            case .scrollWheel:
+                return scroll.bounds.contains(scroll.convert(event.locationInWindow, from: nil))
+            case .leftMouseDown, .leftMouseDragged:
+                guard let scroller = scroll.verticalScroller else { return false }
+                return scroller.bounds.contains(scroller.convert(event.locationInWindow, from: nil))
+            case .keyDown:
+                return scroll.window?.firstResponder === scroll.documentView
+            default:
+                return false
+            }
         }
         func observe(_ scroll: NSScrollView) {
             scrollObserver = NotificationCenter.default.addObserver(
@@ -80,6 +124,11 @@ struct MarkdownEditor: NSViewRepresentable {
                     let fraction = min(1, max(0, scroll.contentView.bounds.minY / available))
                     self.lastScrollFraction = fraction
                     self.parent.scrollFraction = fraction
+                    if !self.applyingScroll, self.programmaticOrigin != scroll.contentView.bounds.minY,
+                       self.isUserScroll(in: scroll) {
+                        self.parent.onUserScroll?(fraction)
+                    }
+                    self.programmaticOrigin = scroll.contentView.bounds.minY
                 }
             }
         }

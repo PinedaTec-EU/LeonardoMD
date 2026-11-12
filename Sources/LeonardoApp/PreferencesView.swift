@@ -6,7 +6,16 @@ struct PreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var projectScope = false
     @State private var editingPalette = false
-    @State private var section = PreferencesSection.general
+    @State private var selectedTab: String
+    private let associations: MarkdownAssociations
+    private let updates: ApplicationUpdates
+
+    init(session: AppSession, updates: ApplicationUpdates = .shared, associations: MarkdownAssociations = .shared, selectedTab: String = "general") {
+        self.session = session
+        self.updates = updates
+        self.associations = associations
+        _selectedTab = State(initialValue: selectedTab)
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
@@ -14,54 +23,119 @@ struct PreferencesView: View {
                 Spacer()
                 Button(L10n.text("Done")) { dismiss() }.keyboardShortcut(.defaultAction)
             }
-            HStack {
-                @Bindable var languages = LanguageSettings.shared
-                Picker(L10n.text("Language"), selection: $languages.language) {
-                    ForEach(AppLanguage.allCases) { language in
-                        Text(language.nativeName).tag(language)
+            PremiumTabPanel(selection: $selectedTab, options: ["general", "extensions", "sync", "updates"],
+                            title: { preferencesTabTitle(for: $0) }) {
+                switch selectedTab {
+                case "extensions":
+                    VStack(spacing: 0) {
+                        scopeHeader()
+                        ExtensionPreferences(session: session, projectScope: projectScope)
                     }
-                }.accessibilityIdentifier("interface-language")
-            }
-            Text(L10n.text("Interface language applies to all windows."))
-                .font(.caption).foregroundStyle(.secondary)
-            if session.projectURL != nil {
-                PremiumSelection(selection: $projectScope, options: [false, true], title: { $0 ? L10n.text("This project") : L10n.text("Global") })
-                    .accessibilityLabel(L10n.text("Scope"))
-            }
-            PremiumTabPanel(selection: $section, options: PreferencesSection.allCases, title: { $0.title }) {
-                switch section {
-                case .general:
+                case "sync":
+                    macPreferences("Service and device settings belong to this Mac.") {
+                        SynchronizationPreferencesView(session: session)
+                    }
+                case "updates":
+                    macPreferences("Update preferences apply to all windows on this Mac.") {
+                        UpdatePreferencesView(updates: updates)
+                    }
+                default:
                     generalPreferences
-                case .extensions:
-                    ExtensionPreferences(session: session, projectScope: projectScope)
                 }
             }
-            Text(projectScope ? L10n.text("Saved in .leonardomd/project.json. Contains no credentials.") : L10n.text("Global preferences apply to the standalone viewer and projects that inherit them."))
-                .font(.caption).foregroundStyle(.secondary)
         }.buttonStyle(PremiumButtonStyle()).padding(24).frame(width: 580, height: 620)
+        .background(UpdatePreferencesWindowIdentity())
         .onAppear { projectScope = session.projectURL != nil }
+        .onChange(of: session.projectURL) { _, root in
+            if root == nil { projectScope = false }
+        }
         .sheet(isPresented: $editingPalette) { PaletteEditor(session: session, projectScope: projectScope).modifier(SessionAppearance(session: session)) }
     }
 
-    private var generalPreferences: some View {
-            Form {
-                Picker(L10n.text("Palette"), selection: Binding(get: { projectScope ? session.projectConfiguration.palette?.rawValue ?? "inherit" : session.globalPreferences.palette.rawValue }, set: { session.setPalette($0, project: projectScope) })) {
-                    if projectScope { Text(L10n.text("Inherit global")).tag("inherit") }
-                    ForEach(PaletteCatalog.all) { palette in Text(palette.displayName).tag(palette.id.rawValue) }
-                }
-                Picker(L10n.text("Paper effect"), selection: Binding(get: { projectScope ? session.projectConfiguration.paperEffect?.rawValue ?? "inherit" : session.globalPreferences.paperEffect.rawValue }, set: { session.setPaper($0, project: projectScope) })) {
-                    if projectScope { Text(L10n.text("Inherit global")).tag("inherit") }
-                    ForEach(PaperEffect.allCases, id: \.self) { effect in Text(effect.title).tag(effect.rawValue) }
-                }
-                Button(L10n.text("Customize / import palette…")) { editingPalette = true }
-                Toggle(L10n.text("Show front matter"), isOn: $session.showFrontmatter)
-                Toggle(L10n.text("Confirm external links"), isOn: $session.confirmExternalLinks)
-                Toggle(L10n.text("Show hidden files"), isOn: $session.showHidden)
-                if projectScope {
-                    Toggle(L10n.text("Enable Git tools"), isOn: Binding(get: { session.gitEnabled }, set: { session.setGitEnabled($0) }))
-                }
-            }.formStyle(.grouped).toggleStyle(PremiumSwitchStyle())
+    private func macPreferences<Content: View>(_ explanation: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if InstanceRuntime.isAdditional {
+                Text(L10n.text("Synchronization and updates are managed by the principal instance. Open these preferences there."))
+                    .foregroundStyle(.secondary).padding().frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                content().frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            Text(L10n.text(explanation)).font(.caption).foregroundStyle(.secondary)
+                .padding(.horizontal, 16).padding(.bottom, 12)
+        }
     }
+
+    private func preferencesTabTitle(for tab: String) -> String {
+        switch tab {
+        case "extensions": L10n.text("Extensions")
+        case "sync": L10n.text("Synchronization")
+        case "updates": L10n.text("Updates")
+        default: L10n.text("General")
+        }
+    }
+
+    private func scopeHeader(_ title: String? = nil) -> some View {
+        PreferencesScopeHeader(title: title, projectURL: session.projectURL, projectScope: $projectScope)
+    }
+
+    private var generalPreferences: some View {
+        VStack(spacing: 0) {
+            scopeHeader()
+            Form {
+                Section(L10n.text("Appearance")) {
+                    appearancePreferences
+                    FileColorPreferences(session: session, projectScope: projectScope)
+                    if projectScope {
+                        Text(L10n.text("Saved in .leonardomd/project.json. Contains no credentials."))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Section(L10n.text("On this Mac")) {
+                    InstancePreferencesView()
+                    Toggle(L10n.text("Follow active file in sidebar"), isOn: Binding(
+                        get: { session.globalPreferences.followActiveFile },
+                        set: { session.globalPreferences.followActiveFile = $0; session.persistSettings() }
+                    )).accessibilityIdentifier("preferences-follow-active-file")
+                    @Bindable var languages = LanguageSettings.shared
+                    Picker(L10n.text("Language"), selection: $languages.language) {
+                        ForEach(AppLanguage.allCases) { language in
+                            Text(language.nativeName).tag(language)
+                        }
+                    }.accessibilityIdentifier("interface-language")
+                    Text(L10n.text("Interface language applies to all windows."))
+                        .font(.caption).foregroundStyle(.secondary)
+                    Picker(L10n.text("Open MDLZ packages"), selection: Binding(get: { session.packageOpenPreference }, set: { session.packageOpenPreference = $0 })) {
+                        ForEach(LeonardoPackageOpenPreference.allCases) { preference in
+                            Text(preference.title).tag(preference)
+                        }
+                    }
+                    Toggle(L10n.text("Save Markdown as MDLF"), isOn: Binding(get: { session.migrateMarkdownOnSave }, set: { session.migrateMarkdownOnSave = $0 }))
+                    Toggle(L10n.text("Show front matter"), isOn: $session.showFrontmatter)
+                    Toggle(L10n.text("Confirm external links"), isOn: $session.confirmExternalLinks)
+                    Toggle(L10n.text("Show hidden files"), isOn: $session.showHidden)
+                }
+                MarkdownAssociationPreferences(associations: associations)
+            }.formStyle(.grouped).toggleStyle(PremiumSwitchStyle())
+        }
+    }
+
+    private var appearancePreferences: some View {
+        Group {
+            Picker(L10n.text("Palette"), selection: Binding(get: { projectScope ? session.projectConfiguration.palette?.rawValue ?? "inherit" : session.globalPreferences.palette.rawValue }, set: { session.setPalette($0, project: projectScope) })) {
+                if projectScope { Text(L10n.text("Inherit global")).tag("inherit") }
+                ForEach(PaletteCatalog.all) { palette in Text(palette.displayName).tag(palette.id.rawValue) }
+            }.accessibilityIdentifier("preferences-palette")
+            Picker(L10n.text("Paper effect"), selection: Binding(get: { projectScope ? session.projectConfiguration.paperEffect?.rawValue ?? "inherit" : session.globalPreferences.paperEffect.rawValue }, set: { session.setPaper($0, project: projectScope) })) {
+                if projectScope { Text(L10n.text("Inherit global")).tag("inherit") }
+                ForEach(PaperEffect.allCases, id: \.self) { effect in Text(effect.title).tag(effect.rawValue) }
+            }.accessibilityIdentifier("preferences-paper")
+            Button(L10n.text("Customize / import palette…")) { editingPalette = true }
+            if projectScope {
+                Toggle(L10n.text("Enable Git tools"), isOn: Binding(get: { session.gitEnabled }, set: { session.setGitEnabled($0) }))
+            }
+        }
+    }
+
 }
 
 extension PaperEffect {
@@ -73,17 +147,6 @@ extension PaperEffect {
         case .grid: L10n.text("Grid")
         case .microgrid: L10n.text("Microgrid")
         case .parchment: L10n.text("Parchment")
-        }
-    }
-}
-
-private enum PreferencesSection: CaseIterable {
-    case general, extensions
-
-    @MainActor var title: String {
-        switch self {
-        case .general: L10n.text("General")
-        case .extensions: L10n.text("Extensions")
         }
     }
 }

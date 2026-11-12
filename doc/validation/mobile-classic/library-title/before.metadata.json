@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-07T00:27:53.597353+00:00",
+  "capture": {
+    "captured_at": "2026-11-07T00:24:46.592163+00:00",
+    "route": "/LittleLeonardo/library",
+    "screen": "Library title before",
+    "browser_name": "Native iOS Simulator, SwiftUI/UIKit; no browser",
+    "browser_version": "iOS27.0 (24A434), SDK27.1",
+    "state": "Portrait empty paired-project library; real bundled demos; product source 5d0e9efe0f6ffea4d029a2060cdfd098625f3c3b",
+    "viewport_css": {
+      "width": 402,
+      "height": 874
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "9ff6099bd6e9b176ac5ac6bfcc11a904f8883cd65dd676272c8d6d94be9d08a2"
+  },
+  "source": {
+    "revision_at_collection": "a8a0555b0c09de32bc19a6871a8b2ed917814b42",
+    "tracked_changes_present": false,
+    "untracked_files_present": true
+  }
+}

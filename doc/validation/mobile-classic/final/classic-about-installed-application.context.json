@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T10:57:20.612000+00:00",
+  "route": "/LittleLeonardo/classic-about-installed-application",
+  "screen": "Classic About installed application",
+  "browser_name": "Native iOS Simulator SwiftUI/UIKit; no browser",
+  "browser_version": "iOS 27.0 (24A434); SDK27.1",
+  "viewport_css": {
+    "width": 402,
+    "height": 874
+  },
+  "capture_mode": "viewport",
+  "state": "Classic About installed application; synthetic QA; native points in viewport_css; source 11a6ddd537a7c3a014b3e21a7062b6aca4346655",
+  "data_provenance": "synthetic"
+}

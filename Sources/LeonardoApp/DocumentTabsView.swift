@@ -18,7 +18,7 @@ struct DocumentTabsView: View {
             Divider()
             ZStack {
                 ForEach(documents.tabs) { tab in
-                    WorkspaceView(session: tab.session)
+                    WorkspaceView(session: tab.session, isActiveTab: tab.id == documents.activeID)
                         .opacity(tab.id == documents.activeID ? 1 : 0)
                         .allowsHitTesting(tab.id == documents.activeID && !documents.closing)
                         .disabled(tab.id != documents.activeID || documents.closing)
@@ -45,6 +45,12 @@ struct DocumentTabsView: View {
                 .help(L10n.text("New tab (⌘T)"))
                 .accessibilityLabel(L10n.text("New tab"))
                 .accessibilityIdentifier("new-document-tab")
+            Button { documents.activeSession.showPreferences = true } label: {
+                Image(systemName: "gearshape").padding(6)
+            }
+            .help(L10n.text("Preferences…"))
+            .accessibilityLabel(L10n.text("Preferences"))
+            .accessibilityIdentifier("tab-bar-preferences")
         }
         .coordinateSpace(name: TabReordering.coordinateSpace)
         .onPreferenceChange(TabFramesPreference.self) { tabFrames = $0 }
@@ -81,8 +87,10 @@ struct DocumentTabsView: View {
             }
             Button { documents.select(tab.id) } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: tab.session.isDirty ? "circle.fill" : "doc.text")
+                    Image(systemName: tab.session.isDirty ? "circle.fill" : tab.session.documentStatusIcon)
+                        .foregroundStyle(tab.session.isDirty ? Color.secondary : tab.session.documentStatusColor)
                     Text(tab.title).lineLimit(1)
+                    if tab.session.isDirty { Text(L10n.text("Unsaved")).font(.caption2) }
                 }.frame(minWidth: 100, maxWidth: 200, alignment: .leading)
             }
             .help(tab.location?.path ?? L10n.text("Open a document or project in this tab"))

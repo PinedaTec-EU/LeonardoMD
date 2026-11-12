@@ -1,0 +1,22 @@
+Test Suite 'All tests' passed at 2026-11-10 20:37:06.993.
+	 Executed 25 tests, with 0 failures (0 unexpected) in 32.785 (32.792) seconds
+Test Suite 'All tests' passed at 2026-11-10 20:37:07.331.
+	 Executed 100 tests, with 0 failures (0 unexpected) in 0.249 (0.259) seconds
+Test Suite 'All tests' passed at 2026-11-10 20:37:11.188.
+	 Executed 23 tests, with 1 test skipped and 0 failures (0 unexpected) in 3.780 (3.787) seconds
+Test Suite 'All tests' passed at 2026-11-10 20:37:23.282.
+	 Executed 46 tests, with 0 failures (0 unexpected) in 12.007 (12.017) seconds
+Test Suite 'All tests' passed at 2026-11-10 20:37:25.375.
+	 Executed 61 tests, with 5 tests skipped and 0 failures (0 unexpected) in 1.997 (2.009) seconds
+Test Suite 'All tests' passed at 2026-11-10 20:37:27.295.
+	 Executed 120 tests, with 0 failures (0 unexpected) in 1.831 (1.843) seconds
+Test Suite 'All tests' passed at 2026-11-10 20:38:14.630.
+	 Executed 418 tests, with 35 tests skipped and 0 failures (0 unexpected) in 47.009 (47.045) seconds
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+✔ Test run with 44 tests in 7 suites passed after 0.462 seconds.
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+✔ Test run with 28 tests in 2 suites passed after 0.116 seconds.
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+Recorded successful compilation for PR #420: build delta 6

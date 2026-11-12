@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-07",
+  "generatedAt": "2026-10-29",
   "packages": [
     {
       "name": "marked",
@@ -111,6 +111,115 @@
       },
       "licenseFile": "katex-0.18.2.txt",
       "fontLicense": "The bundled KaTeX fonts are covered by the KaTeX license."
+    },
+    {
+      "name": "vega",
+      "version": "6.4.0",
+      "license": "BSD-3-Clause",
+      "source": "https://registry.npmjs.org/vega/-/vega-6.4.0.tgz",
+      "npm": {
+        "tarball": "https://registry.npmjs.org/vega/-/vega-6.4.0.tgz",
+        "integrity": "sha512-rHXCq2LpEWCLMjXBEj7hocY9G0/i5TGYRayGGSj06VTF4+l2IG2Z7oeZKCjWbUh/7hTE/mVhbaOPB72wCElh6g=="
+      },
+      "files": {},
+      "licenseFile": "vega-6.4.0.txt"
+    },
+    {
+      "name": "vega-lite",
+      "version": "6.5.0",
+      "license": "BSD-3-Clause",
+      "source": "https://registry.npmjs.org/vega-lite/-/vega-lite-6.5.0.tgz",
+      "npm": {
+        "tarball": "https://registry.npmjs.org/vega-lite/-/vega-lite-6.5.0.tgz",
+        "integrity": "sha512-fMXF6s0MrIg0UTWnLIfeFtgSLzVhyzSKobzGrh5rhS+mL6FOYFG3m7ouJ4U23gj65EK+gl9FIIT5w7wLNaAzkA=="
+      },
+      "files": {
+        "vega-engine.min.js": "660e3d4e219612a13cca5a339d7ded61f49c7334cd43938d53d09c54be7c7ee8"
+      },
+      "licenseFile": "vega-lite-6.5.0.txt",
+      "build": {
+        "compiler": "esbuild 0.25.12",
+        "manifest": "doc/validation/vega-build-package.json",
+        "lockFile": "doc/validation/vega-build-lock.json",
+        "lockSHA256": "1f293b6b52fea3f1c3dee11d96ccd5b429f5dca8661b6b7c6825d347af5ce9ae",
+        "options": [
+          "--bundle",
+          "--format=iife",
+          "--platform=browser",
+          "--target=safari17",
+          "--minify",
+          "--legal-comments=eof"
+        ]
+      }
+    },
+    {
+      "name": "vega-interpreter",
+      "version": "2.3.2",
+      "license": "BSD-3-Clause",
+      "source": "https://registry.npmjs.org/vega-interpreter/-/vega-interpreter-2.3.2.tgz",
+      "npm": {
+        "tarball": "https://registry.npmjs.org/vega-interpreter/-/vega-interpreter-2.3.2.tgz",
+        "integrity": "sha512-JDAoi3taFcCDLujZG84TNNUXdkAZ5WsSHssx8lWVYaxb9Slsjk7v7PtRIYXpSlUwLaKGRBqoJ9KDs36Z0eMEIw=="
+      },
+      "files": {},
+      "licenseFile": "vega-interpreter-2.3.2.txt"
+    },
+    {
+      "name": "Citation.js browser engine",
+      "version": "0.9.0",
+      "license": "MIT (Citation.js); CPAL-1.0 selected for citeproc; BSD-3-Clause (moo)",
+      "source": "https://registry.npmjs.org/@citation-js/core/-/core-0.9.0.tgz",
+      "files": {
+        "citation-engine.min.js": "6e11ac0a77a1a371d16a4af0fee92795325bb9c298a698fe65500c08f681d4e2",
+        "citeproc-2.4.63-source.txt": "55abba1a8b8b48c14323fd053f9646013b4b7a0c977938064ecf5195a502b9f1",
+        "citeproc-2.4.63-notice.txt": "b96ca8e1716f93449b480083c7510c18d129fa9afa4644d62c6347c06177ce30",
+        "cpal-1.0.txt": "54cef60295bdffd5d41904338632538db1f3cdcd4c5f7ea5bb021d04eef14d92"
+      },
+      "licenseFile": "citation-engine-licenses.txt",
+      "build": {
+        "compiler": "esbuild 0.25.12",
+        "entry": "doc/validation/citation-build-entry.js",
+        "manifest": "doc/validation/citation-build-package.json",
+        "lockFile": "doc/validation/citation-build-lock.json",
+        "lockSHA256": "ecf111d8a9dbf5bcbe95777e08593b96cc920f2a4ef7dd1dd1ff2c5e69c3e10e",
+        "options": [
+          "--bundle",
+          "--format=iife",
+          "--platform=browser",
+          "--target=safari17",
+          "--minify",
+          "--legal-comments=eof"
+        ]
+      },
+      "npmPackages": [
+        {
+          "name": "@citation-js/core",
+          "version": "0.9.0",
+          "tarball": "https://registry.npmjs.org/@citation-js/core/-/core-0.9.0.tgz",
+          "integrity": "sha512-IIIfDFirx8B7eYiYIg412If3WVJAefJUS7IsAnkW3YSuThHK4fW9Ibog6wCqmT6pfXW1VM9wfGPFvO2J5k859A=="
+        },
+        {
+          "name": "@citation-js/plugin-bibtex",
+          "version": "0.9.0",
+          "tarball": "https://registry.npmjs.org/@citation-js/plugin-bibtex/-/plugin-bibtex-0.9.0.tgz",
+          "integrity": "sha512-9n8EVP/kq+v7VuoWVI+p8SRE3KikQYd2c78NSRq9btC4b3XzuBA3qFI3uF6xyxbNLPtY7+Y4BQDayta2yrl1zQ=="
+        },
+        {
+          "name": "@citation-js/plugin-csl",
+          "version": "0.9.0",
+          "tarball": "https://registry.npmjs.org/@citation-js/plugin-csl/-/plugin-csl-0.9.0.tgz",
+          "integrity": "sha512-P0uxGr/rE9LaT5mY0T+Xh6JqDc+rdA7U3HDR/tLkiJ1ITRszQVhV9wBaOLc7vwCD+vuwh+m0Bha13hlgZEB7Ng=="
+        }
+      ],
+      "citeproc": {
+        "version": "2.4.63",
+        "selectedLicense": "CPAL-1.0",
+        "sourceFile": "citeproc-2.4.63-source.txt",
+        "noticeFile": "citeproc-2.4.63-notice.txt",
+        "licenseFile": "cpal-1.0.txt",
+        "modifications": "No source changes; esbuild bundles and minifies the original source on 2026-10-29.",
+        "upstreamPackageLicense": "CPAL-1.0 OR AGPL-1.0 in npm metadata; upstream LICENSE text offers CPAL-1.0-or-later OR AGPL-3.0-or-later."
+      }
     }
   ]
 }

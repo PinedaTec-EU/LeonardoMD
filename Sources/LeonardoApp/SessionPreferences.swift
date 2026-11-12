@@ -13,6 +13,21 @@ extension AppSession {
         updated.mathEnabled = value
         setFeatures(updated, project: project)
     }
+    func setVegaLite(_ value: Bool, project: Bool? = nil) {
+        var updated = (project ?? (projectURL != nil)) ? features : globalPreferences.markdown
+        updated.vegaLiteEnabled = value
+        setFeatures(updated, project: project)
+    }
+    func setCitations(_ value: Bool, project: Bool? = nil) {
+        var updated = (project ?? (projectURL != nil)) ? features : globalPreferences.markdown
+        updated.citationsEnabled = value
+        setFeatures(updated, project: project)
+    }
+    func setMarkdownExtensions(_ value: Bool, project: Bool? = nil) {
+        var updated = (project ?? (projectURL != nil)) ? features : globalPreferences.markdown
+        updated.markdownExtensionsEnabled = value
+        setFeatures(updated, project: project)
+    }
     func setFeatures(_ features: MarkdownFeatures, project: Bool? = nil) {
         if !(project ?? (projectURL != nil)) || projectURL == nil { globalPreferences.markdown = features }
         else {
@@ -66,38 +81,10 @@ extension AppSession {
             } catch { report(error) }
         }
     }
-    func saveCopy() {
-        guard let url = documentURL else { return }
-        let panel = NSSavePanel()
-        panel.nameFieldStringValue = url.deletingPathExtension().lastPathComponent + L10n.text("Copy filename suffix")
-        presentFilePanel(panel) { [weak self] destination in self?.saveCopy(to: destination, sourceURL: url) }
-    }
-    private func saveCopy(to destination: URL, sourceURL url: URL) {
-        guard documentURL == url else { return }
-        guard destination.standardizedFileURL.resolvingSymlinksInPath() != url.standardizedFileURL.resolvingSymlinksInPath() else {
-            errorMessage = L10n.text("Choose another file to keep both versions.")
-            return
-        }
-        let draft = content
-        Task {
-            do {
-                _ = try await documents.save(draft, to: destination)
-                guard documentURL == url, content == draft else {
-                    errorMessage = L10n.text("The copy was saved. Later changes remain in the original document.")
-                    return
-                }
-                // The original remains protected; open the saved copy as a standalone document.
-                snapshot = nil
-                content = ""
-                externalConflict = false
-                await open(destination)
-            } catch { report(error) }
-        }
-    }
     func jumpToHeading(_ line: Int) {
+        guard headings.contains(where: { $0.line == line }) else { return }
         requestedLine = line
-        let total = max(1, content.components(separatedBy: "\n").count - 1)
-        editorScroll = min(1, Double(line - 1) / Double(total))
-        renderer.scroll(toFraction: editorScroll)
+        requestedLineRevision &+= 1
+        renderer.scroll(toSourceLine: line)
     }
 }

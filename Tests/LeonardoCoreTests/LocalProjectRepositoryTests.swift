@@ -3,6 +3,23 @@ import XCTest
 @testable import LeonardoCore
 
 final class LocalProjectRepositoryTests: XCTestCase {
+    func testLeonardoTextDocumentsAreNavigableAndSearchableWithoutReadingArchives() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let repository = LocalProjectRepository()
+        let project = try await repository.project(at: root)
+        for name in ["template.mdlf", "response.mdlr", "transport.mdlz"] {
+            try "unique-form-content".write(to: root.appendingPathComponent(name), atomically: true, encoding: .utf8)
+        }
+        let entries = try await repository.children(of: root, in: root)
+        for name in ["template.mdlf", "response.mdlr"] {
+            XCTAssertEqual(entries.first(where: { $0.url.lastPathComponent == name })?.kind, .markdown)
+        }
+        let matches = try await repository.search(in: project, query: "unique-form-content")
+        XCTAssertEqual(Set(matches.map(\.relativePath)), Set(["template.mdlf", "response.mdlr"]))
+    }
+
     func testProjectThroughTmpAliasEnumeratesAndMutatesCanonicalChildren() async throws {
         let root = URL(fileURLWithPath: "/tmp").appendingPathComponent("leonardo-alias-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

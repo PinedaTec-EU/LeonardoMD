@@ -77,21 +77,33 @@ public struct SearchMatch: Codable, Hashable, Identifiable, Sendable {
 public struct MarkdownFeatures: Codable, Hashable, Sendable {
     public var mermaidEnabled: Bool
     public var mathEnabled: Bool
+    public var vegaLiteEnabled: Bool
+    public var citationsEnabled: Bool
+    public var markdownExtensionsEnabled: Bool
     public var defaultMode: MarkdownMode
 
     public init(
         mermaidEnabled: Bool = false,
         mathEnabled: Bool = false,
+        vegaLiteEnabled: Bool = false,
+        citationsEnabled: Bool = false,
+        markdownExtensionsEnabled: Bool = false,
         defaultMode: MarkdownMode = .preview
     ) {
         self.mermaidEnabled = mermaidEnabled
         self.mathEnabled = mathEnabled
+        self.vegaLiteEnabled = vegaLiteEnabled
+        self.citationsEnabled = citationsEnabled
+        self.markdownExtensionsEnabled = markdownExtensionsEnabled
         self.defaultMode = defaultMode
     }
 
     enum CodingKeys: String, CodingKey {
         case mermaidEnabled
         case mathEnabled
+        case vegaLiteEnabled
+        case citationsEnabled
+        case markdownExtensionsEnabled
         case defaultMode
     }
 
@@ -99,6 +111,9 @@ public struct MarkdownFeatures: Codable, Hashable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         mermaidEnabled = try container.decodeIfPresent(Bool.self, forKey: .mermaidEnabled) ?? false
         mathEnabled = try container.decodeIfPresent(Bool.self, forKey: .mathEnabled) ?? false
+        vegaLiteEnabled = try container.decodeIfPresent(Bool.self, forKey: .vegaLiteEnabled) ?? false
+        citationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .citationsEnabled) ?? false
+        markdownExtensionsEnabled = try container.decodeIfPresent(Bool.self, forKey: .markdownExtensionsEnabled) ?? false
         defaultMode = try container.decodeIfPresent(MarkdownMode.self, forKey: .defaultMode) ?? .preview
     }
 }
@@ -124,6 +139,7 @@ public struct ProjectConfiguration: Codable, Hashable, Sendable {
     public var name: String?
     public var palette: PaletteID?
     public var customTokens: PaletteTokenOverrides?
+    public var colorLeonardoFiles: Bool?
     public var paperEffect: PaperEffect?
     public var git: GitProjectConfiguration
     public var markdown: MarkdownFeatures?
@@ -142,6 +158,7 @@ public struct ProjectConfiguration: Codable, Hashable, Sendable {
         name: String? = nil,
         palette: PaletteID? = nil,
         customTokens: PaletteTokenOverrides? = nil,
+        colorLeonardoFiles: Bool? = nil,
         paperEffect: PaperEffect? = nil,
         git: GitProjectConfiguration = GitProjectConfiguration(),
         markdown: MarkdownFeatures? = nil,
@@ -151,6 +168,7 @@ public struct ProjectConfiguration: Codable, Hashable, Sendable {
         self.name = name
         self.palette = palette
         self.customTokens = customTokens
+        self.colorLeonardoFiles = colorLeonardoFiles
         self.paperEffect = paperEffect
         self.git = git
         if let markdown {
@@ -190,6 +208,7 @@ public struct ProjectConfiguration: Codable, Hashable, Sendable {
         case name
         case palette
         case customTokens
+        case colorLeonardoFiles
         case paperEffect
         case git
         case markdown
@@ -205,6 +224,7 @@ public struct ProjectConfiguration: Codable, Hashable, Sendable {
         name = try container.decodeIfPresent(String.self, forKey: .name)
         palette = try container.decodeIfPresent(PaletteID.self, forKey: .palette)
         customTokens = try container.decodeIfPresent(PaletteTokenOverrides.self, forKey: .customTokens)
+        colorLeonardoFiles = try container.decodeIfPresent(Bool.self, forKey: .colorLeonardoFiles)
         paperEffect = try container.decodeIfPresent(PaperEffect.self, forKey: .paperEffect)
         git = try container.decodeIfPresent(GitProjectConfiguration.self, forKey: .git) ?? GitProjectConfiguration()
         markdown = try container.decodeIfPresent(MarkdownFeatures.self, forKey: .markdown)
@@ -217,30 +237,46 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
     public var schemaVersion: Int
     public var palette: PaletteID
     public var customTokens: PaletteTokenOverrides?
+    public var colorLeonardoFiles: Bool
+    public var followActiveFile: Bool
     public var paperEffect: PaperEffect
     public var markdown: MarkdownFeatures
     public var showHiddenFiles: Bool
-    public var recentWorkspacePaths: [URL]
-    public var recentProjectPaths: [URL]
+    public var favorites: [FavoriteItem]
+    public var recentWorkspacePaths: [URL] {
+        didSet { recentWorkspacePaths = Self.uniqueRecentPaths(recentWorkspacePaths) }
+    }
+    public var recentProjectPaths: [URL] {
+        didSet { recentProjectPaths = Self.uniqueRecentPaths(recentProjectPaths) }
+    }
+    public var mobileSync: MobileSyncPreferences
 
     public init(
         schemaVersion: Int = GlobalPreferences.currentSchemaVersion,
         palette: PaletteID = .paperWhite,
         customTokens: PaletteTokenOverrides? = nil,
+        colorLeonardoFiles: Bool = true,
+        followActiveFile: Bool = true,
         paperEffect: PaperEffect = .white,
         markdown: MarkdownFeatures = MarkdownFeatures(),
         showHiddenFiles: Bool = false,
+        favorites: [FavoriteItem] = [],
         recentWorkspacePaths: [URL] = [],
-        recentProjectPaths: [URL] = []
+        recentProjectPaths: [URL] = [],
+        mobileSync: MobileSyncPreferences = MobileSyncPreferences()
     ) {
         self.schemaVersion = schemaVersion
         self.palette = palette
         self.customTokens = customTokens
+        self.colorLeonardoFiles = colorLeonardoFiles
+        self.followActiveFile = followActiveFile
         self.paperEffect = paperEffect
         self.markdown = markdown
         self.showHiddenFiles = showHiddenFiles
-        self.recentWorkspacePaths = recentWorkspacePaths
-        self.recentProjectPaths = recentProjectPaths
+        self.favorites = favorites
+        self.recentWorkspacePaths = Self.uniqueRecentPaths(recentWorkspacePaths)
+        self.recentProjectPaths = Self.uniqueRecentPaths(recentProjectPaths)
+        self.mobileSync = mobileSync
     }
 
     public static let `default` = GlobalPreferences()
@@ -249,11 +285,15 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         case schemaVersion
         case palette
         case customTokens
+        case colorLeonardoFiles
+        case followActiveFile
         case paperEffect
         case markdown
         case showHiddenFiles
+        case favorites
         case recentWorkspacePaths
         case recentProjectPaths
+        case mobileSync
     }
 
     public init(from decoder: Decoder) throws {
@@ -265,11 +305,15 @@ public struct GlobalPreferences: Codable, Hashable, Sendable {
         schemaVersion = version
         palette = try container.decodeIfPresent(PaletteID.self, forKey: .palette) ?? .paperWhite
         customTokens = try container.decodeIfPresent(PaletteTokenOverrides.self, forKey: .customTokens)
+        colorLeonardoFiles = try container.decodeIfPresent(Bool.self, forKey: .colorLeonardoFiles) ?? true
+        followActiveFile = try container.decodeIfPresent(Bool.self, forKey: .followActiveFile) ?? true
         paperEffect = try container.decodeIfPresent(PaperEffect.self, forKey: .paperEffect) ?? .white
         markdown = try container.decodeIfPresent(MarkdownFeatures.self, forKey: .markdown) ?? MarkdownFeatures()
         showHiddenFiles = try container.decodeIfPresent(Bool.self, forKey: .showHiddenFiles) ?? false
-        recentWorkspacePaths = try container.decodeIfPresent([URL].self, forKey: .recentWorkspacePaths) ?? []
-        recentProjectPaths = try container.decodeIfPresent([URL].self, forKey: .recentProjectPaths) ?? []
+        favorites = try container.decodeIfPresent([FavoriteItem].self, forKey: .favorites) ?? []
+        recentWorkspacePaths = Self.uniqueRecentPaths(try container.decodeIfPresent([URL].self, forKey: .recentWorkspacePaths) ?? [])
+        recentProjectPaths = Self.uniqueRecentPaths(try container.decodeIfPresent([URL].self, forKey: .recentProjectPaths) ?? [])
+        mobileSync = try container.decodeIfPresent(MobileSyncPreferences.self, forKey: .mobileSync) ?? MobileSyncPreferences()
     }
 }
 

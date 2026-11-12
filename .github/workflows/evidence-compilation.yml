@@ -1,0 +1,81 @@
+name: Validate evidence compilation counts
+
+on:
+  pull_request_target:
+    types: [opened, ready_for_review, synchronize, reopened, edited]
+    branches: [main]
+  issue_comment:
+    types: [created, edited, deleted]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request to recheck
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+
+concurrency:
+  group: evidence-compilation-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Only the trusted default branch is executed. Candidate files/comments are data.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Read immutable candidate ledger and author evidence
+        id: snapshot
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const number = Number(context.payload.pull_request?.number || context.payload.issue?.number || context.payload.inputs?.pr_number);
+            const {data: pr} = await github.rest.pulls.get({...context.repo, pull_number: number});
+            if (pr.state !== 'open' || pr.base.ref !== 'main' || pr.head.repo.full_name !== context.payload.repository.full_name) {
+              core.setOutput('eligible', 'false');
+              return;
+            }
+            core.setOutput('eligible', 'true');
+            core.setOutput('head', pr.head.sha);
+            let entry = null;
+            try {
+              const {data} = await github.rest.repos.getContent({...context.repo, path: `deploy/version/entries/${number}.yaml`, ref: pr.head.sha});
+              if (data.encoding !== 'base64' || data.type !== 'file') throw new Error('Unexpected ledger response');
+              entry = JSON.parse(Buffer.from(data.content, 'base64').toString('utf8'));
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+            const comments = await github.paginate(github.rest.issues.listComments, {...context.repo, issue_number: number, per_page: 100});
+            fs.writeFileSync('/tmp/evidence-snapshot.json', JSON.stringify({head: pr.head.sha, author: pr.user.login, entry, comments}));
+      - name: Compare evidence counts with the exact-head ledger
+        id: compare
+        if: steps.snapshot.outputs.eligible == 'true'
+        continue-on-error: true
+        run: python3 scripts/evidence_compilation.py check /tmp/evidence-snapshot.json
+      - name: Publish exact-head check
+        if: always() && steps.snapshot.outputs.head != ''
+        uses: actions/github-script@v7
+        env:
+          REVIEWED_HEAD: ${{ steps.snapshot.outputs.head }}
+          SNAPSHOT_OUTCOME: ${{ steps.snapshot.outcome }}
+          COMPARE_OUTCOME: ${{ steps.compare.outcome }}
+        with:
+          script: |
+            const passed = process.env.SNAPSHOT_OUTCOME === 'success' && process.env.COMPARE_OUTCOME === 'success';
+            await github.rest.checks.create({...context.repo,
+              name: 'evidence-compilation-count', head_sha: process.env.REVIEWED_HEAD,
+              status: 'completed', conclusion: passed ? 'success' : 'failure',
+              details_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              output: {title: passed ? 'Evidence counts match the ledger' : 'Evidence count validation failed',
+                summary: 'Validates current-head author evidence counts only; does not replace visual evidence or release policy review. See the workflow log for details.'}});
+            if (!passed) core.setFailed('Evidence compilation validation failed');

@@ -1,0 +1,7 @@
+{
+  "body_unchanged": true,
+  "objects_only_change": "First inserted rubric stroke colors changed to #FFFFFF",
+  "second_object_unchanged": true,
+  "metadata_normalization": "Existing serializer adds layout defaults and empty tables/images on save",
+  "source_commit": "237d586c37544aab55db4b711b652d391b25269d"
+}

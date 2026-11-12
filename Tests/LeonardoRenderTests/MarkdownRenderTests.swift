@@ -1,9 +1,123 @@
 import Foundation
 import CryptoKit
 import Testing
+import LeonardoCore
 @testable import LeonardoRender
 
 struct MarkdownRenderTests {
+    @Test func offlineLegalResourcesReuseVendoredDisclosures() throws {
+        let notices = try #require(MarkdownLegalResources.noticesURL)
+        #expect(try String(contentsOf: notices, encoding: .utf8).contains("Bundled rendering assets"))
+        let resources = MarkdownLegalResources.licenseURLs
+        #expect(resources.contains { $0.lastPathComponent == "katex-0.18.2.txt" })
+        #expect(resources.contains { $0.lastPathComponent == "cpal-1.0.txt" })
+        #expect(resources.contains { $0.lastPathComponent == "citeproc-2.4.63-source.txt" })
+        #expect(resources.allSatisfy { FileManager.default.fileExists(atPath: $0.path) })
+    }
+
+    @Test
+    func leonardoEnvelopeIsNotGenericPreviewMetadata() throws {
+        let source = "---\n{\"format\":\"mdlf\",\"formatVersion\":1,\"layout\":{\"background\":{\"image\":\"assets/logo.svg\"}}}\n---\n# Invoice\n"
+        var configuration = MarkdownPreviewConfiguration(frontMatter: .metadata)
+        configuration.allowsLeonardoFormat = true
+        let data = Data(try MarkdownHTMLShell.payloadJSON(content: source, baseURL: nil, configuration: configuration).utf8)
+        let payload = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect((payload["frontMatter"] as? [String: String])?.isEmpty == true)
+        #expect((payload["tags"] as? [String])?.isEmpty == true)
+        #expect(payload["markdown"] as? String == "# Invoice\n")
+        #expect(payload["source"] as? String == source)
+        let metadata = try #require(payload["leonardo"] as? [String: Any])
+        let layout = try #require(metadata["layout"] as? [String: Any])
+        let background = try #require(layout["background"] as? [String: Any])
+        #expect(background["image"] as? String == "assets/logo.svg")
+    }
+
+    @Test
+    func standardMarkdownRetainsGenericPreviewMetadata() throws {
+        let source = "---\ntitle: Invoice\ntags: [billing]\n---\n# Invoice\n"
+        let configuration = MarkdownPreviewConfiguration(frontMatter: .metadata)
+        let data = Data(try MarkdownHTMLShell.payloadJSON(content: source, baseURL: nil, configuration: configuration).utf8)
+        let payload = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect((payload["frontMatter"] as? [String: String])?["title"] == "Invoice")
+        #expect(payload["tags"] as? [String] == ["billing"])
+        #expect(payload["leonardo"] == nil)
+    }
+
+    @Test
+    func nativeMDLFMetadataStaysHiddenAndDoesNotLeakToStandardMarkdown() throws {
+        let source = try LeonardoFormatParser.serialize(LeonardoDocument(
+            body: "# Body", metadata: LeonardoMetadata(document: LeonardoDocumentDescriptor(title: "Native document"))
+        ))
+        var configuration = MarkdownPreviewConfiguration(frontMatter: .metadata)
+        configuration.allowsLeonardoFormat = true
+        let json = try MarkdownHTMLShell.payloadJSON(content: source, baseURL: nil, configuration: configuration)
+        let payload = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+        #expect((payload["frontMatter"] as? [String: String])?.isEmpty == true)
+        configuration.allowsLeonardoFormat = false
+        let standard = try MarkdownHTMLShell.payloadJSON(content: "---\ntitle: Plain\n---\n# Plain", baseURL: nil, configuration: configuration)
+        let plain = try #require(JSONSerialization.jsonObject(with: Data(standard.utf8)) as? [String: Any])
+        #expect(plain["frontMatter"] as? [String: String] == ["title": "Plain"])
+        #expect(plain["markdown"] as? String == "# Plain")
+    }
+
+    @Test
+    func migratedPreviewUsesAuthorMetadataAndNeverJSONEnvelopeProperties() throws {
+        let original = "---\ntitle: Article\nauthor: José\ntags: [Swift, docs]\n---\n# Edited body\n"
+        let document = LeonardoMarkdownMigration.convert(original, fallbackTitle: "filename")
+        let content = try LeonardoFormatParser.serialize(document)
+        var configuration = MarkdownPreviewConfiguration(frontMatter: .metadata)
+        configuration.allowsLeonardoFormat = true
+        let json = try MarkdownHTMLShell.payloadJSON(content: content, baseURL: nil, configuration: configuration)
+        let payload = try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+        let metadata = try #require(payload["frontMatter"] as? [String: String])
+        #expect(metadata["title"] == "Article")
+        #expect(metadata["author"] == "José")
+        #expect(metadata["formatVersion"] == nil)
+        #expect(payload["markdown"] as? String == "# Edited body\n")
+        #expect(payload["tags"] as? [String] == ["Swift", "docs"])
+    }
+
+    @Test
+    func memoryAssetsOnlyServeSelectedImagePaths() throws {
+        let bytes = Data([1, 2, 3])
+        let assets = MarkdownMemoryAssets(files: ["docs/images/diagrama ñ.png": bytes, "private.txt": bytes])
+        #expect(assets.data(for: try #require(URL(string: "leonardo-document://local/docs/images/diagrama%20%C3%B1.png"))) == bytes)
+        for value in ["https://local/docs/images/diagrama%20%C3%B1.png", "leonardo-document://outside/docs/images/diagrama%20%C3%B1.png",
+                      "leonardo-document://local/private.txt", "leonardo-document://local/missing.png",
+                      "leonardo-document://local/docs/../private.png"] {
+            #expect(assets.data(for: try #require(URL(string: value))) == nil)
+        }
+    }
+
+    @Test
+    func offlinePreviewDisallowsRemoteImageLoads() throws {
+        let html = try MarkdownHTMLShell.make(content: "![remote](https://example.invalid/image.png)", baseURL: nil,
+            configuration: MarkdownPreviewConfiguration(allowsRemoteImages: false))
+        #expect(html.contains("img-src leonardo-document: data:;"))
+        #expect(!html.contains("img-src leonardo-document: data: http:"))
+    }
+
+    @Test
+    func compactFirstHeadingSpacingIsOptIn() throws {
+        let defaultJSON = try MarkdownHTMLShell.payloadJSON(
+            content: "# Heading", baseURL: nil, configuration: .default)
+        let defaultPayload = try #require(JSONSerialization.jsonObject(with: Data(defaultJSON.utf8)) as? [String: Any])
+        #expect(defaultPayload["compactFirstHeading"] as? Bool == false)
+
+        var compactConfiguration = MarkdownPreviewConfiguration(appearance: .leonardoClassic)
+        compactConfiguration.compactFirstHeading = true
+        let compactJSON = try MarkdownHTMLShell.payloadJSON(
+            content: "# Heading", baseURL: nil, configuration: compactConfiguration)
+        let compactPayload = try #require(JSONSerialization.jsonObject(with: Data(compactJSON.utf8)) as? [String: Any])
+        #expect(compactPayload["compactFirstHeading"] as? Bool == true)
+
+        let stylesheet = String(
+            data: MarkdownResourceCatalog.data(for: .previewStyles) ?? Data(), encoding: .utf8) ?? ""
+        #expect(stylesheet.contains(".markdown-body.compact-first-heading"))
+        #expect(stylesheet.contains("padding-top: 16px"))
+        #expect(stylesheet.contains("margin-top: 0"))
+    }
+
     @Test
     func packagedAssetsMatchRecordedHashesIncludingEmbeddedSanitizer() throws {
         let metadata = try #require(MarkdownResourceCatalog.url(forFile: "THIRD_PARTY_SOURCES.json"))
@@ -95,7 +209,6 @@ struct MarkdownRenderTests {
         #expect(runtime.contains("htmlLabels: false"))
         #expect(runtime.contains("securityLevel: \"strict\""))
         #expect(runtime.contains("installHeadingAnchors"))
-        #expect(runtime.contains("image.loading = \"lazy\""))
         #expect(runtime.contains("image.loading = \"eager\""))
     }
 

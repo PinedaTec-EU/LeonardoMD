@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-07T12:46:42.973177+00:00",
+  "capture": {
+    "captured_at": "2026-11-07T12:40:17.171000+00:00",
+    "route": "/LittleLeonardo/english-gallery-2",
+    "screen": "English gallery 2",
+    "browser_name": "Native iOS Simulator SwiftUI/UIKit; no browser",
+    "browser_version": "iOS 27.0 (24A434); SDK27.1",
+    "state": "English gallery 2; synthetic QA; native points in viewport_css; source 99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "viewport_css": {
+      "width": 402,
+      "height": 874
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1206,
+    "height_px": 2622,
+    "sha256": "a6d3f69fe3366f7ecdddc25334591e8c1ea87c8a438a93dff0aa04889eadef23"
+  },
+  "source": {
+    "revision_at_collection": "99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

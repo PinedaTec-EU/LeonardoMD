@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Record one successful Swift compilation command in its source PR delta."""
+"""Record one successful Swift or Xcode compilation command in its source PR delta."""
 import argparse
 import fcntl
 import json
@@ -11,24 +11,36 @@ from pathlib import Path
 SEGMENTS = {"release", "feature", "build"}
 
 
-def read_delta(path: Path) -> dict[str, int]:
+def read_delta(path: Path) -> dict:
     if not path.exists():
         return {}
     delta = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(delta, dict) or set(delta) - SEGMENTS:
-        raise ValueError("Entry must contain only release, feature and build deltas")
-    if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0 for value in delta.values()):
+    if not isinstance(delta, dict) or set(delta) - SEGMENTS - {"summary"}:
+        raise ValueError("Entry must contain only release, feature and build deltas and an optional summary")
+    if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0 for key, value in delta.items() if key in SEGMENTS):
         raise ValueError("Entry deltas must be positive integers")
+    if "summary" in delta:
+        import unicodedata
+        text = delta["summary"]
+        if (not isinstance(text, str) or not text or text != text.strip() or len(text) > 280
+                or any(unicodedata.category(char) in {"Cc", "Cs", "Zl", "Zp"} for char in text)):
+            raise ValueError("Summary must be 1–280 single-line plain-text characters")
     return delta
 
 
 def compile_and_record(root: Path, pr: int, command: list[str]) -> int:
     if pr <= 0:
         raise ValueError("PR number must be positive")
-    if (len(command) < 2 or Path(command[0]).name != "swift"
-            or command[1] not in {"build", "test", "run"}
-            or {"--show-bin-path", "--skip-build", "--help", "-h", "--version"} & set(command[2:])):
-        raise ValueError("Use a compiling swift build, test or run command")
+    executable = Path(command[0]).name if command else ""
+    swift = (len(command) >= 2 and executable == "swift"
+             and command[1] in {"build", "test", "run"}
+             and not {"--show-bin-path", "--skip-build", "--help", "-h", "--version"} & set(command[2:]))
+    xcode = (executable == "xcodebuild"
+             and bool({"build", "test", "build-for-testing", "archive"} & set(command[1:]))
+             and not {"-list", "-showBuildSettings", "-showdestinations", "-showsdks", "-version", "-help",
+                      "-resolvePackageDependencies", "test-without-building"} & set(command[1:]))
+    if not swift and not xcode:
+        raise ValueError("Use a compiling swift build/test/run or xcodebuild build/test/archive command")
     entry = root / "deploy/version/entries" / f"{pr}.yaml"
     read_delta(entry)  # Reject malformed existing data before compiling.
     result = subprocess.run(command, cwd=root)
@@ -49,7 +61,7 @@ def compile_and_record(root: Path, pr: int, command: list[str]) -> int:
             os.replace(temporary, entry)
         finally:
             temporary.unlink(missing_ok=True)
-    print(f"Recorded successful Swift compilation for PR #{pr}: build delta {delta['build']}")
+    print(f"Recorded successful compilation for PR #{pr}: build delta {delta['build']}")
     return 0
 
 

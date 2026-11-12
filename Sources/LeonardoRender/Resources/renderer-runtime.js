@@ -26,6 +26,8 @@
   let scrollScheduled = false;
   let interactionsInstalled = false;
   let diagramSequence = 0;
+  let renderGeneration = 0;
+  let extensionWork = Promise.resolve();
 
   function postMessage(name, body) {
     const handler = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[name];
@@ -43,6 +45,10 @@
     document.body.dataset.paperEffect = appearance.paperEffect || "plain";
   }
 
+  function setReaderSpacing(compact) {
+    root.classList.toggle("compact-first-heading", compact === true);
+  }
+
   function hash(value) {
     let result = 2166136261;
     for (let index = 0; index < value.length; index += 1) {
@@ -56,7 +62,7 @@
     return window.DOMPurify.sanitize(value, {
       USE_PROFILES: { html: true },
       FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form"],
-      FORBID_ATTR: ["srcdoc", "action", "formaction"]
+      FORBID_ATTR: ["srcdoc", "action", "formaction", "contenteditable"]
     });
   }
 
@@ -170,7 +176,10 @@
             trust: false
           });
           span.innerHTML = window.DOMPurify.sanitize(rendered, {
-            USE_PROFILES: { html: true, mathMl: true },
+            USE_PROFILES: { html: true, mathMl: true, svg: true },
+            // Generated KaTeX geometry only; raw document SVG remains disallowed.
+            FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "foreignobject", "image", "use", "animate", "set"],
+            FORBID_ATTR: ["href", "xlink:href", "src"],
             ADD_TAGS: ["math", "semantics", "mrow", "annotation"]
           });
         } catch (_) {
@@ -308,10 +317,15 @@
   }
 
   async function renderAllDiagrams() {
+    await extensionWork;
     if (features.mermaid && window.mermaid) {
       const diagrams = Array.from(root.querySelectorAll(".mermaid-placeholder"));
       await Promise.all(diagrams.map((element) => renderDiagram(element)));
     }
+    await waitForDocumentAssets();
+    window.LeonardoObjects?.refresh();
+    await waitForDocumentAssets();
+    await window.LeonardoImages.preparePDF(root);
     await waitForDocumentAssets();
   }
 
@@ -332,6 +346,7 @@
     root.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target.closest("a[href]") : null;
       if (!target) return;
+      if (payload.allowsEditing && event.target.closest('[contenteditable="plaintext-only"]')) { event.preventDefault(); return; }
       event.preventDefault();
       postMessage("leonardoLink", { href: target.getAttribute("href") || "" });
     });
@@ -344,29 +359,65 @@
 
   function renderDocument() {
     const renderStart = performance.now();
+    const generation = ++renderGeneration;
     setAppearance(payload.appearance);
+    setReaderSpacing(payload.compactFirstHeading);
     if (diagramObserver) diagramObserver.disconnect();
     diagramTimers.forEach((timer) => window.clearTimeout(timer));
     diagramTimers.clear();
     document.querySelectorAll("body > .front-matter, body > .document-tags").forEach((panel) => panel.remove());
     try {
-      const rendered = window.marked.parse(payload.markdown || "", { gfm: true, breaks: false });
+      window.LeonardoTableResizing.cancel();
+      window.LeonardoEditing.begin(payload);
+      window.LeonardoEditing.body = payload.markdown || "";
+      const rendered = window.LeonardoTables.render(payload.markdown || "", !payload.leonardo);
       root.innerHTML = sanitizeHTML(rendered);
+      const usedExtensions = window.LeonardoExtensionDetection.used(root, splitMath, window.LeonardoTables.documentTokens);
+      const renderedSource = payload.source;
+      window.LeonardoTables.prepare(root);
+      window.LeonardoLayout?.apply(root, payload);
+      window.LeonardoObjects?.apply(root, payload);
+      window.LeonardoTableResizing.prepare(root, payload);
       installHeadingAnchors();
       root.querySelectorAll("img").forEach((image) => {
-        image.loading = "lazy";
+        image.loading = image.closest(".leonardo-document-background, .leonardo-object") ? "eager" : "lazy";
         image.decoding = "async";
       });
+      window.LeonardoImages.prepare(root);
       renderFrontMatter();
       renderTags();
       highlightCode();
       renderMath();
       prepareMermaid();
-      installInteractions();
-      postMessage("leonardoReady", {
-        mermaid: features.mermaid,
-        math: features.math,
-        durationMs: performance.now() - renderStart
+      const work = [];
+      const engineLoader = window.LeonardoExtensionEngines;
+      if (payload.allowsVegaLite && window.LeonardoCharts) {
+        work.push(window.LeonardoCharts.render(root, payload, { loadEngine: () => engineLoader.load("charts") }));
+      }
+      if (payload.allowsCitations && window.LeonardoCitations) {
+        work.push(window.LeonardoCitations.render(root, payload, { loadEngine: () => engineLoader.load("citations") }));
+      }
+      extensionWork = Promise.all(work).then(() => {
+        if (generation !== renderGeneration) return;
+        window.LeonardoObjects?.refresh();
+        installHeadingAnchors();
+        window.LeonardoEditing.prepare(root);
+        installInteractions();
+        postMessage("leonardoReady", {
+          mermaid: features.mermaid,
+          math: features.math,
+          durationMs: performance.now() - renderStart,
+          source: renderedSource, usedExtensions
+        });
+      }).catch(() => {
+        if (generation !== renderGeneration) return;
+        const error = document.createElement("aside");
+        error.setAttribute("role", "note");
+        error.textContent = "A document extension could not be rendered. The source is available in the editor.";
+        root.appendChild(error);
+        window.LeonardoEditing.prepare(root);
+        installInteractions();
+        postMessage("leonardoReady", { mermaid: features.mermaid, math: features.math, source: renderedSource, usedExtensions });
       });
     } catch (_) {
       root.textContent = "The Markdown preview could not be rendered.";
@@ -375,15 +426,22 @@
 
   window.LeonardoPreview = {
     setAppearance,
+    setEditable(value) { payload.allowsEditing = value; window.LeonardoEditing.setEditable(root, value); window.LeonardoTableResizing.setEditable(value); window.LeonardoObjects?.setEditable(value); },
     updateContent(nextPayload) {
       if (!nextPayload || typeof nextPayload.markdown !== "string") return;
-      payload = Object.assign(payload, nextPayload);
+      payload = Object.assign(payload, nextPayload, { leonardo: nextPayload.leonardo || null });
       renderDocument();
     },
     renderAllDiagrams,
     scrollToAnchor(anchor) {
       const element = document.getElementById(anchor);
       if (element) element.scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+    scrollToSourceLine(line) {
+      const heading = window.LeonardoTables.headingForSourceLine(root, line);
+      if (!heading) return false;
+      heading.scrollIntoView({ behavior: "auto", block: "start" });
+      return true;
     },
     scrollToFraction(fraction) {
       const maximum = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);

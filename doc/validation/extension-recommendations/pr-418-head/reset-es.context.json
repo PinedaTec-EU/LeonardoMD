@@ -1,0 +1,20 @@
+{
+  "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
+  "browser_version" : "Not applicable: native view, no browser engine",
+  "capture_mode" : "element",
+  "captured_at" : "2026-11-12T13:38:42.959Z",
+  "data_provenance" : "synthetic",
+  "native_viewport_points" : {
+    "height" : 820,
+    "width" : 560
+  },
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "route" : "\/native\/extensions\/reset-es",
+  "screen" : "Extension preferences and warning reset",
+  "source_sha" : "86e3e4258ce7a007df4f1f0a8ae46726378fd6b3",
+  "state" : "Extension preferences; Mermaid, Math, Charts, Citations, and Markdown extras are disabled; reset-warning action is visible; language es; synthetic fixture; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "viewport_css" : {
+    "height" : 820,
+    "width" : 560
+  }
+}

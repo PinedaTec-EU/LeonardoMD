@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-10-31T10:31:16.871975+00:00",
+  "capture": {
+    "captured_at": "2026-10-31T10:30:59.896000+00:00",
+    "route": "/native/user-guide/en",
+    "screen": "Leonardo guide: Detailed chapter with original palette screenshot; all images loaded",
+    "browser_name": "Native WKWebView; User-Agent reports engine compatibility versions",
+    "browser_version": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)",
+    "state": "Detailed chapter with original palette screenshot; all images loaded; language en",
+    "viewport_css": {
+      "width": 1100,
+      "height": 517
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 2200,
+    "height_px": 1034,
+    "sha256": "c7bfaeb70f2c45fb7849a712dd84703be16242892cec6542facefbefeebe7071"
+  },
+  "source": {
+    "revision_at_collection": "9f4a27f4b681be3592b5f02a1b52aae3bf0608de",
+    "tracked_changes_present": false,
+    "untracked_files_present": false
+  }
+}

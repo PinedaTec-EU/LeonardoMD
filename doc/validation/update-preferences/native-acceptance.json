@@ -1,0 +1,101 @@
+{
+  "issue": 202,
+  "source_commit": "93ced7788fb7bf7d649abe082f5842288a8aa26d",
+  "fixture_base_tag": "v0.1.797",
+  "fixture_base_sha": "1dd186843a5e5ac74fa50aba4b154dcfff55128e",
+  "fixture_type": "Local backport of the four exact production files; canonical version/build 0.1.797/797, no fake version or safety bypass. Not a public release.",
+  "production_file_sha256": {
+    "Sources/LeonardoApp/LeonardoMD.swift": "6c1be8409828a074f237be11be30f41a7348ec46df73e8cfa9c6b5fce712e5b6",
+    "Sources/LeonardoApp/CoordinatedUpdateUserDriver.swift": "31ea4679d3b1d950a189afe525bec51800341697f48c0f5ae26161e024c8ecab",
+    "Sources/LeonardoApp/SparkleUpdateDriver.swift": "c2202c8419179ee9e6d6fd353ddf5623745b6cc8a3053a33bd0a847f7844c8ad",
+    "Sources/LeonardoApp/UpdatePreferencesDismissal.swift": "a0b220bd859aa1dd27c9e00293e7719e3416370e575062ea88528f4a549abec7"
+  },
+  "feed": "https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.2.826/appcast.xml",
+  "feed_override_reason": "Public 829 canonical archive URL returned HTTP504 twice in Sparkle; archived official 826 feed used without changing production code or signing keys.",
+  "signing": "Developer ID Application; hardened runtime; same signing team AU2Z3P42U7 and pinned Sparkle key; deep strict verification, notarization Accepted, stapled and Gatekeeper accepted.",
+  "notary_submission": "870bde73-fe73-49b3-be26-8cfcd832dc17",
+  "fixture_zip_sha256": "ac5eff7d56c21bacb44e6cd5af458f8c490cfcff804b65b6c62aa5961837f4cf",
+  "target": {
+    "tag": "v0.2.826",
+    "source": "ead812de171986a79e88340100d241bb52ce09e4",
+    "archive_sha256": "9a33bb4d452ddabe4d718755c4bd25029256b8945055ffde5ee59a5f39a68b0b",
+    "archive_size": 23585725
+  },
+  "cases": {
+    "final-saved": {
+      "source": {
+        "utc": "2026-11-05T14:24:02.767513+00:00",
+        "version": "0.1.797",
+        "build": "797",
+        "executable_sha256": "54021001fd4d9b9aad8cd5fabe019492f5a6dfbce448c04fc676e82648bd7b0f",
+        "observed_before_cua_rebind": true,
+        "document_sha256": "ee436adbd51d4808f54d6869e80db19b9382b02d3ac5cb9b3bfbffe519c4cd56",
+        "saved_marker_present": false,
+        "pids": [
+          94156
+        ]
+      },
+      "target": {
+        "utc": "2026-11-05T14:24:41.690146+00:00",
+        "version": "0.2.826",
+        "build": "826",
+        "executable_sha256": "ed2200c9c1fea26da669eae5e62608714cbbeca6a64c6d8099f0937c14dc8c2d",
+        "observed_before_cua_rebind": true,
+        "document_sha256": "ee436adbd51d4808f54d6869e80db19b9382b02d3ac5cb9b3bfbffe519c4cd56",
+        "saved_marker_present": false,
+        "pids": [
+          95433
+        ]
+      }
+    },
+    "final-draft": {
+      "source": {
+        "utc": "2026-11-05T14:22:01.405141+00:00",
+        "version": "0.1.797",
+        "build": "797",
+        "executable_sha256": "54021001fd4d9b9aad8cd5fabe019492f5a6dfbce448c04fc676e82648bd7b0f",
+        "observed_before_cua_rebind": true,
+        "document_sha256": "95f6dc0ee0fb61eb8db4d01e595b90192aba9e00c81ceaa5891df6436c5a3951",
+        "saved_marker_present": false,
+        "pids": [
+          92473
+        ]
+      },
+      "cancelled": {
+        "utc": "2026-11-05T14:22:36.227624+00:00",
+        "version": "0.1.797",
+        "build": "797",
+        "executable_sha256": "54021001fd4d9b9aad8cd5fabe019492f5a6dfbce448c04fc676e82648bd7b0f",
+        "observed_before_cua_rebind": true,
+        "document_sha256": "95f6dc0ee0fb61eb8db4d01e595b90192aba9e00c81ceaa5891df6436c5a3951",
+        "saved_marker_present": false,
+        "pids": [
+          92473
+        ]
+      },
+      "target": {
+        "utc": "2026-11-05T14:22:54.100803+00:00",
+        "version": "0.2.826",
+        "build": "826",
+        "executable_sha256": "ed2200c9c1fea26da669eae5e62608714cbbeca6a64c6d8099f0937c14dc8c2d",
+        "observed_before_cua_rebind": true,
+        "document_sha256": "2e81f38b3016be8be35617f5267c9782d251ca69d3953fb4c96b481086988ee4",
+        "saved_marker_present": true,
+        "pids": [
+          93794
+        ]
+      }
+    }
+  },
+  "original_app": {
+    "version": "0.1.797",
+    "executable_sha256": "38ad72045cb55312ec06282ec1b12e9998edaaee0a3cf96e36ef447dc72dd07a",
+    "unchanged": true,
+    "original_document_reopened_read_only": true
+  },
+  "manual_quit_during_final_installation": false,
+  "manual_preferences_close_during_final_installation": false,
+  "relaunch_observed_before_any_cua_getApp": true,
+  "sharing_and_sync_helper_remained_disabled": true,
+  "release_notes_presentation_baseline_restored": true
+}

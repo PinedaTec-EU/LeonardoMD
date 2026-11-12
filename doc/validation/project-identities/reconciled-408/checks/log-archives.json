@@ -1,0 +1,26 @@
+{
+  "swift-full.log": {
+    "raw_sha256": "f5a76abd480ff2c847e18f0dca4e33ca3c91ccda9eea9a5046bee78fec4ae27d",
+    "raw_bytes": 262338,
+    "archive": "swift-full.log.gz",
+    "archive_sha256": "4b9a6871943baa87f75cc9f887ef587253a3f5ec86f51cf8bad926521d680f0f"
+  },
+  "macos-captures.log": {
+    "raw_sha256": "d545f1c2182dbec37eaf0b167a1c5ea36d580f37dde597e942c78a2f9864c2d1",
+    "raw_bytes": 3898,
+    "archive": "macos-captures.log.gz",
+    "archive_sha256": "b2a6ad7ac9669ea8c6df75d0edb98716ed637970308a59f1139d0f51f0e63ca4"
+  },
+  "swift-focused.log": {
+    "raw_sha256": "1f231d4462dc928a5289f623694e04fb5f54459131bf305850db1969646ad263",
+    "raw_bytes": 28640,
+    "archive": "swift-focused.log.gz",
+    "archive_sha256": "01359b60ddadc4e842bd9b674593db3575d13c7378a23c5fb5bcda7308736bb8"
+  },
+  "python.log": {
+    "raw_sha256": "94c0e7f8ef4fc9684369e17dd994fca700795007c3ce8d1a66ef127d2564c410",
+    "raw_bytes": 1943,
+    "archive": "python.log.gz",
+    "archive_sha256": "8ff0c319b4b12637894784fbcc76c3d886782b4895490374c86639e6177f3651"
+  }
+}

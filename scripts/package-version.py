@@ -6,6 +6,13 @@ import re
 from pathlib import Path
 
 
+class UniqueKeyDictionary(dict):
+    def __setitem__(self, key, value):
+        if key in self:
+            raise ValueError(f"Duplicate plist key: {key}")
+        super().__setitem__(key, value)
+
+
 def package_version(version_path: Path, template_path: Path, output_path: Path) -> None:
     version = version_path.read_text(encoding="utf-8").strip()
     if not re.fullmatch(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)", version):
@@ -14,7 +21,7 @@ def package_version(version_path: Path, template_path: Path, output_path: Path) 
     if not 1 <= build <= 9999:
         raise ValueError("build must be between 1 and 9999 for the macOS build number")
     with template_path.open("rb") as handle:
-        metadata = plistlib.load(handle)
+        metadata = plistlib.load(handle, dict_type=UniqueKeyDictionary)
     if "CFBundleShortVersionString" in metadata or "CFBundleVersion" in metadata:
         raise ValueError("The plist template must not maintain independent version fields")
     metadata["CFBundleShortVersionString"] = version

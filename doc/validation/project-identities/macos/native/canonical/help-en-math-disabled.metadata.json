@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "generator": "shared capture metadata assembly; native CUA geometry unavailable fallback",
+  "collected_at": "2026-11-07T21:12:58.391Z",
+  "capture": {
+    "captured_at": "2026-11-07T21:11:31.222Z",
+    "route": "/native/project-identities/help-en-math-disabled",
+    "screen": "Final instance Help EN, Math disabled: literal delimiters and TeX retained; code stays literal",
+    "browser_name": "Native packaged AppKit/WKWebView",
+    "browser_version": null,
+    "state": null,
+    "viewport_css": null,
+    "native_viewport_points": null,
+    "capture_mode": "element",
+    "data_provenance": "synthetic",
+    "limitations": "CUA exposes native screenshot pixels and accessibility; CSS viewport, native point geometry and engine version unavailable."
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "511a3b52d0f65d88d665351ac672d03e11dd9402fa3cf016ab1c8c8651e0e6fa"
+  },
+  "source": {
+    "revision_at_collection": "490086a6829f30cab3e5a7c6fe6e03a75f90e22d",
+    "tracked_changes_present": null,
+    "untracked_files_present": null
+  }
+}

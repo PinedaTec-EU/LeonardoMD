@@ -1,0 +1,112 @@
+---
+{
+  "format": "mdlf",
+  "formatVersion": 1,
+  "document": {
+    "title": "Fictional inspection",
+    "revision": 1
+  },
+  "layout": {
+    "page": {
+      "size": "a4"
+    },
+    "objects": [
+      {
+        "id": "inspection-rubric",
+        "label": "Fictional inspection rubric",
+        "rubric": {
+          "strokes": [
+            {
+              "color": "#194D80",
+              "width": 5,
+              "style": "brush",
+              "points": [
+                {
+                  "x": 40,
+                  "y": 140
+                },
+                {
+                  "x": 70,
+                  "y": 100
+                },
+                {
+                  "x": 100,
+                  "y": 50
+                },
+                {
+                  "x": 120,
+                  "y": 30
+                },
+                {
+                  "x": 110,
+                  "y": 100
+                },
+                {
+                  "x": 90,
+                  "y": 150
+                },
+                {
+                  "x": 130,
+                  "y": 120
+                },
+                {
+                  "x": 180,
+                  "y": 90
+                },
+                {
+                  "x": 220,
+                  "y": 120
+                },
+                {
+                  "x": 270,
+                  "y": 90
+                },
+                {
+                  "x": 310,
+                  "y": 100
+                },
+                {
+                  "x": 360,
+                  "y": 70
+                },
+                {
+                  "x": 400,
+                  "y": 100
+                },
+                {
+                  "x": 460,
+                  "y": 70
+                },
+                {
+                  "x": 520,
+                  "y": 85
+                },
+                {
+                  "x": 560,
+                  "y": 50
+                }
+              ]
+            }
+          ]
+        },
+        "page": 0,
+        "x": 300,
+        "y": 640,
+        "width": 240,
+        "height": 80,
+        "z": 1
+      }
+    ]
+  },
+  "fields": {
+    "signed": {
+      "type": "rubric",
+      "rubricSize": {
+        "width": 180,
+        "height": 60
+      }
+    }
+  }
+}
+---
+Synthetic document

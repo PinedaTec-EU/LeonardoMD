@@ -3,6 +3,52 @@ import XCTest
 @testable import LeonardoCore
 
 final class ConfigurationStoreTests: XCTestCase {
+    func testFollowActiveFileDefaultsAndMergesAcrossWindows() async throws {
+        let defaults = try JSONDecoder().decode(GlobalPreferences.self, from: Data("{}".utf8))
+        XCTAssertTrue(defaults.followActiveFile)
+        let directory = try TemporaryDirectory()
+        let store = ConfigurationStore()
+        let url = directory.url.appendingPathComponent("preferences.json")
+        var changed = defaults
+        changed.followActiveFile = false
+        _ = try await store.mergeGlobalPreferences(updated: changed, baseline: defaults, at: url)
+        var other = defaults
+        other.showHiddenFiles = true
+        let merged = try await store.mergeGlobalPreferences(updated: other, baseline: defaults, at: url)
+        XCTAssertFalse(merged.followActiveFile)
+        XCTAssertTrue(merged.showHiddenFiles)
+        let loaded = try await store.loadGlobalPreferences(at: url)
+        XCTAssertFalse(loaded.followActiveFile)
+    }
+
+    func testFileColorMergesPreserveOtherWindowsAndProjectInheritance() async throws {
+        let directory = try TemporaryDirectory()
+        let store = ConfigurationStore()
+        let url = directory.url.appendingPathComponent("preferences.json")
+        let baseline = GlobalPreferences()
+        var colors = baseline
+        colors.colorLeonardoFiles = false
+        _ = try await store.mergeGlobalPreferences(updated: colors, baseline: baseline, at: url)
+        var otherWindow = baseline
+        otherWindow.showHiddenFiles = true
+        let merged = try await store.mergeGlobalPreferences(updated: otherWindow, baseline: baseline, at: url)
+        XCTAssertFalse(merged.colorLeonardoFiles)
+        XCTAssertTrue(merged.showHiddenFiles)
+        let projectBaseline = ProjectConfiguration()
+        var projectColors = projectBaseline
+        projectColors.colorLeonardoFiles = false
+        _ = try await store.mergeProjectConfiguration(updated: projectColors, baseline: projectBaseline, for: directory.url)
+        var projectOther = projectBaseline
+        projectOther.paperEffect = .grid
+        let project = try await store.mergeProjectConfiguration(updated: projectOther, baseline: projectBaseline, for: directory.url)
+        XCTAssertEqual(project.colorLeonardoFiles, false)
+        XCTAssertEqual(project.paperEffect, .grid)
+        var inherited = project
+        inherited.colorLeonardoFiles = nil
+        let reset = try await store.mergeProjectConfiguration(updated: inherited, baseline: project, for: directory.url)
+        XCTAssertNil(reset.colorLeonardoFiles)
+    }
+
     func testProjectConfigurationRoundTripsAndIgnoresUnknownFields() async throws {
         let directory = try TemporaryDirectory()
         let projectRoot = directory.url.appendingPathComponent("Project", isDirectory: true)
@@ -75,6 +121,7 @@ final class ConfigurationStoreTests: XCTestCase {
         firstUpdate.palette = .leonardoClassic
         firstUpdate.customTokens?.accent = "#8C3F22"
         firstUpdate.markdown.mermaidEnabled = true
+        firstUpdate.markdown.vegaLiteEnabled = true
         _ = try await store.mergeGlobalPreferences(
             updated: firstUpdate,
             baseline: baseline,
@@ -85,6 +132,8 @@ final class ConfigurationStoreTests: XCTestCase {
         secondUpdate.showHiddenFiles = true
         secondUpdate.customTokens?.heading = "#550000"
         secondUpdate.markdown.mathEnabled = true
+        secondUpdate.markdown.citationsEnabled = true
+        secondUpdate.markdown.markdownExtensionsEnabled = true
         secondUpdate.markdown.defaultMode = .split
         let merged = try await store.mergeGlobalPreferences(
             updated: secondUpdate,
@@ -98,7 +147,64 @@ final class ConfigurationStoreTests: XCTestCase {
         XCTAssertEqual(merged.customTokens?.heading, "#550000")
         XCTAssertTrue(merged.markdown.mermaidEnabled)
         XCTAssertTrue(merged.markdown.mathEnabled)
+        XCTAssertTrue(merged.markdown.vegaLiteEnabled)
+        XCTAssertTrue(merged.markdown.citationsEnabled)
+        XCTAssertTrue(merged.markdown.markdownExtensionsEnabled)
         XCTAssertEqual(merged.markdown.defaultMode, .split)
+    }
+
+    func testLegacyGlobalPreferencesDoNotEnableMobileService() async throws {
+        let directory = try TemporaryDirectory()
+        let url = directory.url.appendingPathComponent("preferences.json")
+        try Data("{}".utf8).write(to: url)
+        let preferences = try await ConfigurationStore.shared.loadGlobalPreferences(at: url)
+        XCTAssertFalse(preferences.mobileSync.helperEnabled)
+        XCTAssertFalse(preferences.mobileSync.enabled)
+        XCTAssertNil(preferences.mobileSync.host)
+        XCTAssertTrue(preferences.mobileSync.projects.isEmpty)
+        XCTAssertEqual(preferences.mobileSync.port, 40882)
+    }
+
+    func testLegacyMobileSyncSettingsKeepPrivateOverlayDisabledAndRoundTripExplicitOptIn() throws {
+        let legacy = try JSONDecoder().decode(MobileSyncPreferences.self, from: Data(#"{"enabled":true,"host":"192.168.1.7"}"#.utf8))
+        XCTAssertTrue(legacy.enabled)
+        XCTAssertFalse(legacy.privateOverlayEnabled)
+
+        var optedIn = legacy
+        optedIn.privateOverlayEnabled = true
+        let encoded = try JSONEncoder().encode(optedIn)
+        let reopened = try JSONDecoder().decode(MobileSyncPreferences.self, from: encoded)
+        XCTAssertTrue(reopened.privateOverlayEnabled)
+    }
+
+    func testStaleWindowProjectSelectionPreservesExplicitServiceConsent() async throws {
+        let directory = try TemporaryDirectory()
+        let url = directory.url.appendingPathComponent("preferences.json")
+        let baseline = GlobalPreferences()
+        let store = ConfigurationStore.shared
+        try await store.saveGlobalPreferences(baseline, at: url)
+        var serviceWindow = baseline
+        serviceWindow.mobileSync.helperEnabled = true
+        serviceWindow.mobileSync.enabled = true
+        serviceWindow.mobileSync.host = "192.168.1.7"
+        _ = try await store.mergeGlobalPreferences(updated: serviceWindow, baseline: baseline, at: url)
+        let shared = MobileSharedProject(rootURL: directory.url, name: "Fixture")
+        var projectWindow = baseline
+        projectWindow.mobileSync.projects = [shared]
+        projectWindow.mobileSync.port = 40883
+        let merged = try await store.mergeGlobalPreferences(updated: projectWindow, baseline: baseline, at: url)
+        XCTAssertTrue(merged.mobileSync.helperEnabled)
+        XCTAssertTrue(merged.mobileSync.enabled)
+        XCTAssertEqual(merged.mobileSync.host, "192.168.1.7")
+        XCTAssertEqual(merged.mobileSync.port, 40883)
+        XCTAssertEqual(merged.mobileSync.projects, [shared])
+        var disabled = merged
+        disabled.mobileSync.helperEnabled = false
+        disabled.mobileSync.enabled = false
+        let stopped = try await store.mergeGlobalPreferences(updated: disabled, baseline: merged, at: url)
+        XCTAssertFalse(stopped.mobileSync.helperEnabled)
+        XCTAssertFalse(stopped.mobileSync.enabled)
+        XCTAssertEqual(stopped.mobileSync.projects, [shared])
     }
 
     func testProjectMergePreservesIndependentGitAndMarkdownChanges() async throws {
@@ -118,6 +224,7 @@ final class ConfigurationStoreTests: XCTestCase {
         firstUpdate.git.enabled = true
         var firstMarkdown = try XCTUnwrap(firstUpdate.markdown)
         firstMarkdown.mermaidEnabled = true
+        firstMarkdown.vegaLiteEnabled = true
         firstUpdate.markdown = firstMarkdown
         _ = try await store.mergeProjectConfiguration(
             updated: firstUpdate,
@@ -130,6 +237,8 @@ final class ConfigurationStoreTests: XCTestCase {
         secondUpdate.palette = .leonardoClassic
         var secondMarkdown = try XCTUnwrap(secondUpdate.markdown)
         secondMarkdown.mathEnabled = true
+        secondMarkdown.citationsEnabled = true
+        secondMarkdown.markdownExtensionsEnabled = true
         secondMarkdown.defaultMode = .split
         secondUpdate.markdown = secondMarkdown
         let merged = try await store.mergeProjectConfiguration(
@@ -143,6 +252,9 @@ final class ConfigurationStoreTests: XCTestCase {
         XCTAssertTrue(merged.git.enabled)
         XCTAssertTrue(merged.markdown?.mermaidEnabled == true)
         XCTAssertTrue(merged.markdown?.mathEnabled == true)
+        XCTAssertTrue(merged.markdown?.vegaLiteEnabled == true)
+        XCTAssertTrue(merged.markdown?.citationsEnabled == true)
+        XCTAssertTrue(merged.markdown?.markdownExtensionsEnabled == true)
         XCTAssertEqual(merged.markdown?.defaultMode, .split)
     }
 }
