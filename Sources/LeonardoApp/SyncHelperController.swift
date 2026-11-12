@@ -72,7 +72,9 @@ final class SyncHelperController {
             verifyPackage: verifyPackage)
     }
 
-    var online: Bool { state == .running && !installation.blocksOperations }
+    var online: Bool {
+        state == .running && !installation.blocksOperations && lastAuthorizedHealthRevision > lastFailureRevision
+    }
     var checkingStatus: Bool { checking || activePeerPreflights > 0 || busy }
     var needsAutomaticRecovery: Bool {
         state == .failed || state == .starting || (enabled && !hasPresentedStatus)
@@ -141,7 +143,11 @@ final class SyncHelperController {
             guard hasExecutable() else {
                 error = nil; state = .notInstalled; sharing = nil; supportsRubricExchange = false; return
             }
-            guard enabled else { error = nil; state = .disabled; sharing = nil; supportsRubricExchange = false; return }
+            guard enabled else {
+                if service.status == .enabled { try await unregisterAfterStop() }
+                error = nil; state = .disabled; sharing = nil; supportsRubricExchange = false
+                return
+            }
             switch service.status {
             case .requiresApproval: error = nil; state = .approvalRequired; sharing = nil; supportsRubricExchange = false
             case .enabled:
@@ -171,7 +177,10 @@ final class SyncHelperController {
                 }
                 error = nil
                 applyStatus(status)
-                if status.enabled { lastSuccessfulRefreshRevision = expected }
+                if status.enabled {
+                    lastAuthorizedHealthRevision = max(lastAuthorizedHealthRevision, expected)
+                    lastSuccessfulRefreshRevision = expected
+                }
             case .notFound, .notRegistered:
                 if expectedBuildIdentity != nil {
                     await reconcileUpgrade(pending: settings.mobileSync.helperUpgradeToken, current: nil)
@@ -320,6 +329,7 @@ final class SyncHelperController {
                 guard status.enabled, let expectedBuildIdentity, let identity = status.buildIdentity,
                       !identity.needsReplacement(by: expectedBuildIdentity) else { continue }
                 applyStatus(status)
+                lastAuthorizedHealthRevision = max(lastAuthorizedHealthRevision, expected)
                 logger.info("sync_helper_readiness_confirmed build=\(identity.build, privacy: .public)")
                 return
             } catch {

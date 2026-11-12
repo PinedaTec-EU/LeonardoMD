@@ -795,14 +795,42 @@ final class SyncHelperControllerTests: XCTestCase {
 
     func testNewerNegativePeerHealthBlocksOlderPeerBeforeConsentReload() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
-        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let project = MobileSharedProject(rootURL: fixture.root, name: "Fictional project")
+        var preferencesValue = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferencesValue.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true, projects: [project])
+        try await fixture.configurations.saveGlobalPreferences(preferencesValue, at: fixture.preferences)
         let registration = HelperRegistrationFake(); registration.status = .enabled
         let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!,
+            certificateFingerprint: Data(repeating: 4, count: 32))
+        await control.setSharing(service)
         let preferences = PeerIndexedPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
         let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
             service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
             loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
-        await helper.refresh()
+        let runtime = StatusRefreshRuntime(); await runtime.setStartedService(service)
+        var consent = PairingRegistry(); consent.setEnabled(true)
+        let request = try consent.requestPairing(deviceName: "Other Mac",
+            credential: String(repeating: "a", count: 64), serverFingerprint: Data(repeating: 1, count: 32), now: Date())
+        await runtime.setConsentState(consent)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        await source.initialize()
+        XCTAssertTrue(source.sharingAvailable)
+
+        let upload = try DesktopPeerUpload(proposalID: UUID(), projectID: project.id, byteCount: 1,
+            sha256: String(repeating: "a", count: 64))
+        let proposal = DesktopPeerIncomingProposal(deviceID: UUID(), deviceName: "Second Mac", upload: upload)
+        let selection = try CorpusSelection(folders: [""], documents: [])
+        let base = CorpusSnapshot(revision: "base", files: [])
+        let proposed = CorpusSnapshot(revision: "incoming", files: [
+            CorpusFile(path: "notes.md", content: Data("# Incoming edit".utf8))
+        ])
+        let proposalReview = try DesktopPeerProposalReview(
+            proposal: DesktopPeerProposal(projectID: project.id, selection: selection, base: base, proposed: proposed),
+            source: base)
+        let review = DesktopSourceReview(item: proposal, review: proposalReview)
         let older = Task { try await helper.requireReadyHelper() }
         for _ in 0..<5000 {
             if await preferences.isHeld(2) { break }
@@ -821,11 +849,34 @@ final class SyncHelperControllerTests: XCTestCase {
             await preferences.releaseAll(); _ = try? await older.value; _ = try? await newer.value
             XCTFail("Newer consent not held"); return
         }
+        XCTAssertFalse(helper.online, "A current negative health response must revoke operational availability immediately")
+        XCTAssertFalse(source.sharingAvailable)
+        XCTAssertFalse(source.consentActionsAvailable)
+        await source.reviewProposal(proposal)
+        let appliedBeforeRecovery = await source.applyReview(review, decisions: ["notes.md": .local])
+        XCTAssertFalse(appliedBeforeRecovery)
+        await source.approve(request, projects: [project.id])
+        await source.reject(request.id)
+        await source.revoke(UUID())
+        let actionsBeforeRecovery = await runtime.recordedActionsValue
+        XCTAssertEqual(actionsBeforeRecovery.review, 0)
+        XCTAssertEqual(actionsBeforeRecovery.apply, 0)
+        XCTAssertEqual(actionsBeforeRecovery.approve, 0)
+        XCTAssertEqual(actionsBeforeRecovery.reject, 0)
+        XCTAssertEqual(actionsBeforeRecovery.revoke, 0)
         await preferences.release(2)
         do { try await older.value; XCTFail("Newer negative health must block older success") } catch {}
         await preferences.release(4)
         do { try await newer.value; XCTFail("Negative health must block the operation") } catch {}
         XCTAssertEqual(helper.displayedState, .failed)
+        await control.setStatusEnabled(true)
+        await helper.refresh()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertTrue(helper.online)
+        XCTAssertTrue(source.sharingAvailable)
+        await source.approve(request, projects: [project.id])
+        let actionsAfterRecovery = await runtime.recordedActionsValue
+        XCTAssertEqual(actionsAfterRecovery.approve, 1, "A confirmed healthy response restores eligible actions")
     }
 
     func testPeerAttemptShowsMissingHelperWithoutExplicitRefresh() async throws {
@@ -2118,6 +2169,10 @@ final class SyncHelperControllerTests: XCTestCase {
             base: snapshot, proposed: proposed)
         let review = DesktopSourceReview(item: proposal,
             review: try DesktopPeerProposalReview(proposal: reviewedProposal, source: snapshot))
+        let decision = ReconciliationChoice.content(Data("# Reviewed local draft\n\nKeep this edited text.".utf8))
+        XCTAssertEqual(review.review.comparison.differences.count, 1)
+        XCTAssertEqual(review.review.comparison.differences.first?.path, "notes.md")
+        review.draft.decisions["notes.md"] = decision
         await source.reviewProposal(proposal)
         let appliedReview = await source.applyReview(review, decisions: [:])
         XCTAssertFalse(appliedReview,
@@ -2142,6 +2197,8 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(source.incoming.map(\.id), [proposal.id])
 
         source.reviewing = review
+        XCTAssertFalse(DesktopSourceReviewView(controller: source, value: review).applyDisabled,
+            "A complete review can be applied while helper health is confirmed")
         let terminalFailure = await control.statusCalls + 1
         await control.failStatus(at: terminalFailure)
         await control.failStatus(at: terminalFailure + 1)
@@ -2153,13 +2210,31 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(source.consent.requests.isEmpty)
         XCTAssertTrue(source.incoming.isEmpty)
         XCTAssertEqual(source.reviewing?.id, review.id)
+        XCTAssertTrue(source.reviewing?.draft === review.draft,
+            "The active review must retain its draft object through a terminal helper failure")
+        XCTAssertEqual(source.reviewing?.draft.decisions["notes.md"], decision,
+            "The selected custom text must survive the helper failure")
+        XCTAssertTrue(DesktopSourceReviewView(controller: source, value: review).applyDisabled,
+            "Apply must disable during the outage even though the 1/1 decision stays visible")
         let terminalApply = await source.applyReview(review, decisions: [:])
         XCTAssertFalse(terminalApply, "An open review must not apply while the helper is offline")
         XCTAssertEqual(source.reviewing?.id, review.id,
             "A terminal health failure must not dismiss the in-progress review")
         let actionsAfterTerminalFailure = await runtime.recordedActionsValue
         XCTAssertEqual(actionsAfterTerminalFailure.apply, 0)
-        try await captureUnavailableSourceReview(review, controller: source)
+        try await captureSourceReview(review, controller: source, name: "review-draft-unavailable",
+            state: "Selected custom text remains 1/1 while the sync helper is unavailable; Apply disabled")
+
+        await control.setStatusEnabled(true)
+        await source.refreshConsent(refreshHelper: true)
+        XCTAssertTrue(helper.online)
+        XCTAssertTrue(source.sharingAvailable)
+        XCTAssertTrue(source.reviewing?.draft === review.draft)
+        XCTAssertEqual(source.reviewing?.draft.decisions["notes.md"], decision)
+        XCTAssertFalse(DesktopSourceReviewView(controller: source, value: review).applyDisabled,
+            "Apply must become available after a confirmed recovery")
+        try await captureSourceReview(review, controller: source, name: "review-draft-recovered",
+            state: "The same selected 1/1 custom text remains after helper recovery; Apply enabled")
     }
 
     func testSharingPollPreservesInvitationAcrossSupersededPeerHealthCheck() async throws {
@@ -2409,8 +2484,8 @@ final class SyncHelperControllerTests: XCTestCase {
         }
     }
 
-    private func captureUnavailableSourceReview(_ value: DesktopSourceReview,
-                                                controller: DesktopSyncController) async throws {
+    private func captureSourceReview(_ value: DesktopSourceReview, controller: DesktopSyncController,
+                                    name: String, state: String) async throws {
         guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
         let destination = URL(fileURLWithPath: output)
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
@@ -2423,8 +2498,8 @@ final class SyncHelperControllerTests: XCTestCase {
                 .buttonStyle(PremiumButtonStyle())
                 .background(Color(nsColor: .windowBackgroundColor)))
             try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 960, height: 660),
-                to: destination.appendingPathComponent("review-draft-unavailable-\(suffix).png"), language: suffix,
-                state: "Synthetic source review retained while sync helper is unavailable; Apply decisions disabled",
+                to: destination.appendingPathComponent("\(name)-\(suffix).png"), language: suffix,
+                state: state,
                 pixelScale: 0.75,
                 route: "/native/preferences/synchronization/review", screen: "Incoming source review")
         }
@@ -3074,7 +3149,7 @@ final class SyncHelperControllerTests: XCTestCase {
         let controller = fixture.controller(registration, control)
         await controller.setEnabled(true)
         await control.setUnavailable()
-        let activeHelper = try ProcessFileLock(at: fixture.root.appendingPathComponent("MobileSync/helper.lock"))
+        var activeHelper: ProcessFileLock? = try ProcessFileLock(at: fixture.root.appendingPathComponent("MobileSync/helper.lock"))
         defer { withExtendedLifetime(activeHelper) {} }
         await controller.setEnabled(false)
         XCTAssertFalse(controller.enabled)
@@ -3082,9 +3157,21 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(controller.displayedState, .failed)
         XCTAssertTrue(controller.hasPresentedStatus)
         XCTAssertEqual(registration.status, .enabled, "Do not kill an unconfirmed in-flight helper write")
+        let shutdownError = try XCTUnwrap(controller.error)
         let persisted = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
         XCTAssertFalse(persisted.mobileSync.helperEnabled)
+        await controller.refresh()
+        XCTAssertEqual(controller.state, .failed,
+            "Automatic checks must not clear the diagnostic while a live helper still holds the shutdown lock")
+        XCTAssertEqual(controller.error, shutdownError)
         try await captureStatusIndicator(controller, state: "disabled-failure")
+
+        activeHelper = nil
+        await control.setUnavailable(false)
+        await controller.refresh()
+        XCTAssertEqual(registration.status, .notRegistered)
+        XCTAssertEqual(controller.state, .disabled)
+        XCTAssertNil(controller.error, "Clear the shutdown diagnostic only after the helper is confirmed stopped")
     }
 
     func testDeadHelperCanBeUnregisteredWithoutAnXPCAcknowledgement() async throws {

@@ -726,10 +726,27 @@ final class DesktopSyncController {
     }
 }
 
-struct DesktopSourceReview: Identifiable {
+@MainActor @Observable
+final class DesktopSourceReviewDraft {
+    var decisions: [String: ReconciliationChoice]
+
+    init(decisions: [String: ReconciliationChoice] = [:]) {
+        self.decisions = decisions
+    }
+}
+
+@MainActor struct DesktopSourceReview: Identifiable {
     let item: DesktopPeerIncomingProposal
     let review: DesktopPeerProposalReview
-    var id: String { item.id }
+    let draft: DesktopSourceReviewDraft
+    nonisolated var id: String { item.id }
+
+    init(item: DesktopPeerIncomingProposal, review: DesktopPeerProposalReview,
+         draft: DesktopSourceReviewDraft = DesktopSourceReviewDraft()) {
+        self.item = item
+        self.review = review
+        self.draft = draft
+    }
 }
 
 private enum NativeSourceReviewError: Error { case ambiguousBuffers }

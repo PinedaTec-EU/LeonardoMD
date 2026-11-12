@@ -7,9 +7,17 @@ struct DesktopSourceReviewView: View {
     let value: DesktopSourceReview
     @Environment(\.dismiss) private var dismiss
     @State private var selected: String?
-    @State private var decisions: [String: ReconciliationChoice] = [:]
+    @Bindable private var draft: DesktopSourceReviewDraft
+
+    init(controller: DesktopSyncController, value: DesktopSourceReview) {
+        self._controller = Bindable(wrappedValue: controller)
+        self.value = value
+        self._draft = Bindable(wrappedValue: value.draft)
+    }
+
     private var differences: [ReconciliationDifference] { value.review.comparison.differences }
     private var difference: ReconciliationDifference? { differences.first { $0.path == selected } }
+    var applyDisabled: Bool { draft.decisions.count != differences.count || !controller.sharingAvailable }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(L10n.text("Review incoming changes")).font(.title2.bold())
@@ -21,7 +29,7 @@ struct DesktopSourceReviewView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(entry.path).lineLimit(2)
                         if entry.hasConflict { Text(L10n.text("Conflict")).font(.caption).foregroundStyle(.orange) }
-                        if decisions[entry.path] != nil { Text(L10n.text("Decision selected")).font(.caption).foregroundStyle(.secondary) }
+                        if draft.decisions[entry.path] != nil { Text(L10n.text("Decision selected")).font(.caption).foregroundStyle(.secondary) }
                     }.tag(entry.path)
                 }.frame(minWidth: 180, idealWidth: 220, maxWidth: 300)
                 if let difference {
@@ -35,13 +43,13 @@ struct DesktopSourceReviewView: View {
                         if ["md", "markdown", "txt"].contains(URL(fileURLWithPath: difference.path).pathExtension.lowercased()) {
                             Button(L10n.text("Edit merged result")) {
                                 let initial = difference.remote?.content ?? difference.local?.content ?? Data()
-                                decisions[difference.path] = .content(initial)
+                                draft.decisions[difference.path] = .content(initial)
                             }
-                            if case .content(let bytes) = decisions[difference.path] {
+                            if case .content(let bytes) = draft.decisions[difference.path] {
                                 TextEditor(text: Binding(get: {
-                                    if case .content(let current) = decisions[difference.path] { return String(data: current, encoding: .utf8) ?? "" }
+                                    if case .content(let current) = draft.decisions[difference.path] { return String(data: current, encoding: .utf8) ?? "" }
                                     return String(data: bytes, encoding: .utf8) ?? ""
-                                }, set: { decisions[difference.path] = .content(Data($0.utf8)) }))
+                                }, set: { draft.decisions[difference.path] = .content(Data($0.utf8)) }))
                                     .font(.system(.caption, design: .monospaced)).frame(height: 140)
                             }
                         }
@@ -61,18 +69,18 @@ struct DesktopSourceReviewView: View {
             HStack {
                 Button(L10n.text("Cancel")) { dismiss() }.keyboardShortcut(.cancelAction)
                 Spacer()
-                Text("\(decisions.count)/\(differences.count)").monospacedDigit().foregroundStyle(.secondary)
+                Text("\(draft.decisions.count)/\(differences.count)").monospacedDigit().foregroundStyle(.secondary)
                 Button(L10n.text("Apply decisions")) {
-                    Task { if await controller.applyReview(value, decisions: decisions) { dismiss() } }
-                }.disabled(decisions.count != differences.count || !controller.sharingAvailable)
+                    Task { if await controller.applyReview(value, decisions: draft.decisions) { dismiss() } }
+                }.disabled(applyDisabled)
             }
         }.padding(24).frame(minWidth: 860, idealWidth: 960, minHeight: 560, idealHeight: 660)
             .disabled(controller.busy).interactiveDismissDisabled(controller.busy)
             .onAppear { selected = differences.first?.path }
     }
     private func decision(_ title: String, _ choice: ReconciliationChoice, path: String) -> some View {
-        Button { decisions[path] = choice } label: {
-            Label(title, systemImage: decisions[path] == choice ? "checkmark.circle.fill" : "circle")
+        Button { draft.decisions[path] = choice } label: {
+            Label(title, systemImage: draft.decisions[path] == choice ? "checkmark.circle.fill" : "circle")
         }
     }
     private func version(_ title: String, _ file: CorpusFile?) -> some View {
