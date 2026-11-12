@@ -72,9 +72,14 @@ class PackageUserGuideTests(unittest.TestCase):
                 self.assertEqual(set(form['fields']), set(form['values']))
                 self.assertEqual(len(form['fields']), 3)
                 self.assertIn(f'/doc/guide/{language}/practice.mdlr', web_source)
-                name = f'Guide-v62-{language}.mdlz'
-                self.assertEqual((output / name).read_bytes(), (ROOT / 'Sources/LeonardoApp/Resources' / name).read_bytes())
-                with zipfile.ZipFile(output / name) as archive:
+                guides = sorted(output.glob(f'Guide-v*-{language}.mdlz'))
+                self.assertEqual(len(guides), 1, f'Expected one generated guide package for {language}')
+                guide = guides[0]
+                match = re.fullmatch(rf'Guide-v(\d+)-{language}\.mdlz', guide.name)
+                self.assertIsNotNone(match, f'Unexpected guide package name: {guide.name}')
+                revision = int(match.group(1))
+                self.assertEqual(guide.read_bytes(), (ROOT / 'Sources/LeonardoApp/Resources' / guide.name).read_bytes())
+                with zipfile.ZipFile(guide) as archive:
                     expected_images = 21 if language == 'es' else 20
                     self.assertEqual(len(archive.namelist()), expected_images + 1)
                     # Conservative 16-bit RGBA source envelope catches image
@@ -89,9 +94,9 @@ class PackageUserGuideTests(unittest.TestCase):
                     source = archive.read('guide.mdlf').decode('utf-8')
                     metadata = json.loads(source.split('---\n')[1])
                     self.assertEqual(metadata['formatVersion'], 1)
-                    self.assertEqual(metadata['document']['revision'], 62)
+                    self.assertEqual(metadata['document']['revision'], revision)
                     maintenance = (ROOT / 'doc/guide/README.md').read_text()
-                    self.assertIn(name, maintenance)
+                    self.assertIn(guide.name, maintenance)
                     self.assertIn(f"User Guides/v{metadata['document']['revision']}/", maintenance)
 
                     self.assertIn('assets/cover.png', source)
