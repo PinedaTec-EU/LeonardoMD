@@ -91,7 +91,7 @@ $$
 
 </details>
 
-**You choose when to enable.** Leonardo groups detected disabled built-in extensions into one dialog. **Not now** avoids repeating that recommendation during the current opening. Select **Do not ask again for this extension** to remember your choice on this Mac. **Preferences → Extensions → Reset extension warnings** allows recommendations again without changing enabled extensions. The dialog states whether activation affects the project or your global preferences.
+**You choose what to enable.** Leonardo groups detected disabled built-in extensions into one dialog. Each row's switch selects that extension; **Enable selected** applies only your selections in the scope shown. **Not now** discards the selection. The separate **Do not show this warning again** switch suppresses recommendations for all documents on this Mac. Restore them in **Preferences → Extensions → Reset extension warnings**; this does not change enabled extensions.
 
 ## 1. Open, read and edit
 
@@ -521,11 +521,11 @@ These extensions are included with Leonardo, work locally and are initially disa
 
 **A disabled extension cannot display its specialized content correctly.** Its source stays as code, notation or ordinary Markdown. Disabling changes interpretation, not authored bytes. PDF uses the rendered document: enable required extensions and inspect Preview before exporting. Mermaid diagrams render as they approach the viewport; allow them to finish before checking the result.
 
-![Leonardo asks before activating detected built-in extensions](guide/en/assets/activation.png)
+![Leonardo asks which detected built-in extensions to enable](guide/en/assets/activation-switch.png)
 
-*Actual English activation dialog, synthetic document. This example shows global activation; a project dialog identifies project scope. No third-party plugins are proposed.*
+*English dialog component with Mermaid and Charts selected in a synthetic document. A project dialog identifies project scope. No third-party plugins are proposed.*
 
-Detection recommends only Leonardo's five built-in extensions. It is a recommendation, not a full syntax validator: code examples that merely describe syntax do not require activation. **Not now** suppresses repetition for the current opening. **Do not ask again for this extension** remembers that extension's choice on this Mac. Check the dialog's stated scope before accepting activation.
+Detection recommends only Leonardo's five built-in extensions. It is a recommendation, not a full syntax validator: code examples that merely describe syntax do not require activation. Each switch selects one extension for **Enable selected**; **Not now** discards those selections and prevents another recommendation during the current opening. The separate global switch hides recommendations across documents. **Preferences → Extensions → Reset extension warnings** restores them and clears older per-extension suppressions without changing enabled extensions. Check the scope shown in the dialog before enabling.
 
 ![Extensions preferences with the warning reset action](guide/en/assets/warnings.png)
 
