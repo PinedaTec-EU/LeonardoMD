@@ -23,9 +23,11 @@ final class DocumentTabs {
     private var stopped = false
     private var preparedForClose = false
     private let preferencesURL: URL
+    let search = DocumentSearch()
 
     init(preferencesURL: URL = AppSession.preferencesURL) {
         self.preferencesURL = preferencesURL
+        search.criteriaDidChangeHandler = { [weak self] in self?.refreshSearch() }
         addTab()
     }
 
@@ -39,6 +41,7 @@ final class DocumentTabs {
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         let session = AppSession(preferencesURL: preferencesURL)
         session.presentationWindow = presentationWindow
+        session.documentContentDidChange = { [weak self] in self?.refreshSearch() }
         let tab = DocumentTab(session: session)
         session.openUserGuide = { [weak self] in await self?.openUserGuide() }
         configureLeonardoTransport(for: session)
@@ -66,6 +69,7 @@ final class DocumentTabs {
         session.updateWindow = { [weak self] _, _, _ in self?.updateTitle() }
         tabs.append(tab)
         activeID = tab.id
+        refreshSearch()
         updateTitle()
         return tab.id
     }
@@ -74,6 +78,7 @@ final class DocumentTabs {
         guard !closing, !stopped, tabs.contains(where: { $0.id == id }) else { return }
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         activeID = id
+        refreshSearch()
         updateTitle()
     }
 
@@ -85,6 +90,7 @@ final class DocumentTabs {
               let destination = tabs.firstIndex(where: { $0.id == targetID }) else { return false }
         let tab = tabs.remove(at: source)
         tabs.insert(tab, at: destination)
+        refreshSearch()
         return true
     }
 
@@ -154,6 +160,7 @@ final class DocumentTabs {
         } else if activeID == id {
             activeID = tabs[min(index, tabs.count - 1)].id
         }
+        refreshSearch()
         updateTitle()
     }
 
@@ -232,6 +239,7 @@ final class DocumentTabs {
                 activeID = tabs[0].id
             }
         } else if activeID.map(ids.contains) == true { activeID = tabs[0].id }
+        refreshSearch()
         updateTitle()
         for tab in affected { await tab.session.finishRevocation() }
         for (session, ids) in pending { await session.waitForDocumentAccesses(ids) }

@@ -1,0 +1,4 @@
+{
+  "build": 6,
+  "summary": "Added literal and regex search across open documents in this window, with highlights, counts and wrapping navigation. Applied premium fields to project search, commit and naming, switches to hidden-file controls, and joined preference tabs."
+}
