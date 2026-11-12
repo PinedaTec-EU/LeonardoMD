@@ -7,11 +7,14 @@ import LeonardoCore
 
 @MainActor
 final class ExtensionRecommendationTests: XCTestCase {
-    private func fixture() throws -> (AppSession, ExtensionRecommendations, ExtensionWarningPreferences, UserDefaults) {
+    private func fixture(legacySuppressed: Set<BuiltInExtension> = []) throws -> (AppSession, ExtensionRecommendations, ExtensionWarningPreferences, UserDefaults) {
         let suite = "ExtensionRecommendations-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        if !legacySuppressed.isEmpty {
+            defaults.set(legacySuppressed.map(\.rawValue).sorted(), forKey: "suppressedBuiltInExtensionWarnings")
+        }
         let preferences = ExtensionWarningPreferences(defaults: defaults)
         let state = ExtensionRecommendations(preferences: preferences)
         let session = AppSession(preferencesURL: directory.appendingPathComponent("preferences.json"),
@@ -38,31 +41,49 @@ final class ExtensionRecommendationTests: XCTestCase {
         state.prepare(for: session, eligible: true)
         let request = try XCTUnwrap(state.prompt)
         XCTAssertEqual(request.extensions, [.mermaid, .charts])
-        state.respond(to: request, activate: false, suppress: [], session: session)
+        state.respond(to: request, choice: .init(), session: session)
         state.prepare(for: session, eligible: true)
         XCTAssertNil(state.prompt)
         XCTAssertFalse(session.features.mermaidEnabled)
     }
 
-    func testSuppressionPersistsPerExtensionAndResetReoffersWithoutChangingFlags() throws {
+    func testGlobalWarningChoicePersistsWhenNotNowDoesNotEnable() throws {
         let (session, state, preferences, defaults) = try fixture()
         defer { session.stop() }
         state.prepare(for: session, eligible: true)
         let request = try XCTUnwrap(state.prompt)
-        state.respond(to: request, activate: false, suppress: [.mermaid], session: session)
-        XCTAssertEqual(ExtensionWarningPreferences(defaults: defaults).suppressed, [.mermaid])
+        state.respond(to: request, choice: .init(suppressWarnings: true), session: session)
+        XCTAssertTrue(preferences.suppressAllWarnings)
+        XCTAssertTrue(ExtensionWarningPreferences(defaults: defaults).suppressAllWarnings)
+        XCTAssertFalse(session.features.mermaidEnabled)
+        state.prepare(for: session, eligible: true)
+        XCTAssertNil(state.prompt)
         state.resetOpening()
         state.detectedSource = session.content
-        state.detected = [.mermaid, .charts]
+        state.detected = [.mermaid, .math, .charts]
         state.prepare(for: session, eligible: true)
-        XCTAssertEqual(state.prompt?.extensions, [.charts])
-        state.respond(to: try XCTUnwrap(state.prompt), activate: false, suppress: [], session: session)
-        let previous = session.features
-        preferences.reset()
+        XCTAssertNil(state.prompt)
+    }
+
+    func testResetClearsGlobalAndLegacyWarningStateWithoutChangingExtensions() throws {
+        let (session, state, preferences, defaults) = try fixture(legacySuppressed: [.math])
+        defer { session.stop() }
         state.prepare(for: session, eligible: true)
         XCTAssertEqual(state.prompt?.extensions, [.mermaid, .charts])
+        let previous = session.features
+        preferences.setSuppressAllWarnings(true)
+        state.prepare(for: session, eligible: true)
+        XCTAssertNil(state.prompt)
+        preferences.reset()
+        state.resetOpening()
+        state.detectedSource = session.content
+        state.detected = [.mermaid, .math, .charts]
+        state.prepare(for: session, eligible: true)
+        XCTAssertEqual(state.prompt?.extensions, [.mermaid, .math, .charts])
         XCTAssertEqual(session.features, previous)
-        XCTAssertTrue(ExtensionWarningPreferences(defaults: defaults).suppressed.isEmpty)
+        XCTAssertFalse(ExtensionWarningPreferences(defaults: defaults).suppressAllWarnings)
+        XCTAssertTrue(ExtensionWarningPreferences(defaults: defaults).legacySuppressed.isEmpty)
+        XCTAssertNil(defaults.object(forKey: "suppressedBuiltInExtensionWarnings"))
     }
 
     func testProjectActivationPreservesGlobalAndUnrelatedFlags() throws {
@@ -73,9 +94,9 @@ final class ExtensionRecommendationTests: XCTestCase {
         state.prepare(for: session, eligible: true)
         let request = try XCTUnwrap(state.prompt)
         XCTAssertEqual(request.project, session.projectURL)
-        state.respond(to: request, activate: true, suppress: [], session: session)
+        state.respond(to: request, choice: .init(enabledExtensions: [.mermaid, .charts]), session: session)
         XCTAssertTrue(session.features.mermaidEnabled)
-        XCTAssertTrue(session.features.mathEnabled)
+        XCTAssertFalse(session.features.mathEnabled)
         XCTAssertTrue(session.features.vegaLiteEnabled)
         XCTAssertTrue(session.features.citationsEnabled)
         XCTAssertFalse(session.globalPreferences.markdown.mermaidEnabled)
@@ -88,9 +109,10 @@ final class ExtensionRecommendationTests: XCTestCase {
         state.prepare(for: session, eligible: true)
         let request = try XCTUnwrap(state.prompt)
         session.projectURL = session.globalPreferencesURL.deletingLastPathComponent().appendingPathComponent("different-project")
-        state.respond(to: request, activate: true, suppress: [.mermaid], session: session)
+        state.respond(to: request, choice: .init(enabledExtensions: [.mermaid], suppressWarnings: true), session: session)
         XCTAssertFalse(session.features.mermaidEnabled)
-        XCTAssertTrue(preferences.suppressed.isEmpty)
+        XCTAssertFalse(preferences.suppressAllWarnings)
+        XCTAssertTrue(preferences.legacySuppressed.isEmpty)
         state.resetOpening()
         state.detected = [.mermaid]
         state.detectedSource = "old source"
@@ -111,16 +133,16 @@ final class ExtensionRecommendationTests: XCTestCase {
         state.prepare(for: session, eligible: true)
         let request = try XCTUnwrap(state.prompt)
         session.content = "different source"
-        state.respond(to: request, activate: true, suppress: [.charts], session: session)
+        state.respond(to: request, choice: .init(enabledExtensions: [.charts], suppressWarnings: true), session: session)
         XCTAssertFalse(session.features.vegaLiteEnabled)
-        XCTAssertTrue(preferences.suppressed.isEmpty)
+        XCTAssertFalse(preferences.suppressAllWarnings)
     }
 
     func testStandaloneActivationAndNewOpening() throws {
         let (session, state, _, _) = try fixture()
         defer { session.stop() }
         state.prepare(for: session, eligible: true)
-        state.respond(to: try XCTUnwrap(state.prompt), activate: true, suppress: [], session: session)
+        state.respond(to: try XCTUnwrap(state.prompt), choice: .init(enabledExtensions: [.mermaid]), session: session)
         XCTAssertTrue(session.globalPreferences.markdown.mermaidEnabled)
         XCTAssertNil(session.projectConfiguration.markdown)
         state.resetOpening()
@@ -166,7 +188,7 @@ final class ExtensionRecommendationTests: XCTestCase {
         }
         let request = try XCTUnwrap(session.extensionRecommendations.prompt)
         XCTAssertFalse(window.sheets.isEmpty, "Consent is a native attached sheet")
-        session.extensionRecommendations.respond(to: request, activate: false, suppress: [], session: session)
+        session.extensionRecommendations.respond(to: request, choice: .init(), session: session)
     }
 
 }

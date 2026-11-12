@@ -24,13 +24,13 @@ final class ExtensionRecommendationVisualTests: XCTestCase {
                 let request = ExtensionRecommendation(document: URL(fileURLWithPath: "/tmp/guide.mdlf"),
                     project: project ? URL(fileURLWithPath: "/tmp/example-project") : nil,
                     source: "synthetic fixture", extensions: [.mermaid, .math, .charts, .citations, .extras])
-                let view = NSHostingView(rootView: ExtensionRecommendationDialog(request: request, respond: { _, _ in })
+                let view = NSHostingView(rootView: ExtensionRecommendationDialog(request: request, respond: { _ in })
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(session.surfaceColor).modifier(SessionAppearance(session: session)))
                 let size = NSSize(width: 538, height: 600)
                 let name = "dialog-\(language.rawValue)-\(project ? "project" : "global").png"
                 try await capture(view, size: size, to: directory.appendingPathComponent(name),
-                                  language: language.rawValue, screen: "Extension consent, \(project ? "project" : "global") scope")
+                                  language: language.rawValue, screen: "Extension selection, \(project ? "project" : "global") scope")
             }
             let view = NSHostingView(rootView: ExtensionPreferences(session: session, projectScope: false)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

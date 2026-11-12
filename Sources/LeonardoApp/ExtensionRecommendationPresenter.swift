@@ -19,7 +19,8 @@ struct ExtensionRecommendationPresenter: ViewModifier {
         let eligible: Bool
         let features: MarkdownFeatures
         let detected: Set<BuiltInExtension>
-        let suppressed: Set<BuiltInExtension>
+        let legacySuppressed: Set<BuiltInExtension>
+        let suppressAllWarnings: Bool
         let resetRevision: Int
     }
     private var observationKey: ObservationKey {
@@ -27,7 +28,9 @@ struct ExtensionRecommendationPresenter: ViewModifier {
         return ObservationKey(document: session.documentURL, project: session.projectURL,
                               source: session.content, detectedSource: state.detectedSource,
                               eligible: eligible, features: session.features,
-                              detected: state.detected, suppressed: state.preferences.suppressed,
+                              detected: state.detected,
+                              legacySuppressed: state.preferences.legacySuppressed,
+                              suppressAllWarnings: state.preferences.suppressAllWarnings,
                               resetRevision: state.preferences.resetRevision)
     }
     func body(content: Content) -> some View {
@@ -40,9 +43,8 @@ struct ExtensionRecommendationPresenter: ViewModifier {
                 get: { session.extensionRecommendations.prompt },
                 set: { session.extensionRecommendations.prompt = $0 }
             )) { request in
-                ExtensionRecommendationDialog(request: request) { activate, suppress in
-                    session.extensionRecommendations.respond(to: request, activate: activate,
-                                                             suppress: suppress, session: session)
+                ExtensionRecommendationDialog(request: request) { choice in
+                    session.extensionRecommendations.respond(to: request, choice: choice, session: session)
                 }
                 .modifier(SessionAppearance(session: session))
             }
@@ -51,8 +53,8 @@ struct ExtensionRecommendationPresenter: ViewModifier {
 
 struct ExtensionRecommendationDialog: View {
     let request: ExtensionRecommendation
-    let respond: (Bool, Set<BuiltInExtension>) -> Void
-    @State private var suppressed: Set<BuiltInExtension> = []
+    let respond: (ExtensionRecommendationChoice) -> Void
+    @State private var choice = ExtensionRecommendationChoice()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -60,26 +62,55 @@ struct ExtensionRecommendationDialog: View {
                 .font(.title2.bold())
             Text(L10n.text("This document uses disabled built-in extensions. Enable them to view its content correctly."))
             Text(L10n.text(request.project == nil
-                ? "Activation changes your global extension preferences."
-                : "Activation creates or updates this project's extension preferences."))
+                ? "Activation scope: global preferences"
+                : "Activation scope: this project"))
                 .font(.callout).foregroundStyle(.secondary)
             ForEach(request.extensions) { item in
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(L10n.text(item.title)).font(.headline)
-                    Toggle(L10n.text("Do not ask again for this extension"), isOn: Binding(
-                        get: { suppressed.contains(item) },
-                        set: { if $0 { suppressed.insert(item) } else { suppressed.remove(item) } }
-                    )).toggleStyle(PremiumSwitchStyle())
-                        .accessibilityIdentifier("suppress-" + item.rawValue)
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(L10n.text(item.title)).font(.headline)
+                        Text(L10n.text(item.purpose)).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Toggle(isOn: selectionBinding(for: item)) { EmptyView() }
+                        .labelsHidden()
+                        .toggleStyle(PremiumSwitchStyle())
+                        .accessibilityLabel(Text(L10n.text(item.title)))
+                        .accessibilityValue(Text(L10n.text(choice.enabledExtensions.contains(item) ? "Selected" : "Not selected")))
+                        .accessibilityHint(Text(L10n.text("Select this extension to enable it")))
+                        .accessibilityIdentifier("enable-" + item.rawValue)
                 }
+                .padding(.vertical, 3)
             }
+            Divider()
+            Toggle(L10n.text("Do not show this warning again"), isOn: Binding(
+                get: { choice.suppressWarnings },
+                set: { choice.suppressWarnings = $0 }
+            ))
+            .toggleStyle(PremiumSwitchStyle())
+            .accessibilityIdentifier("suppress-extension-warnings")
             HStack {
                 Spacer()
-                Button(L10n.text("Not now")) { respond(false, suppressed) }.keyboardShortcut(.cancelAction)
-                Button(L10n.text("Enable extensions")) { respond(true, suppressed) }.keyboardShortcut(.defaultAction)
+                Button(L10n.text("Not now")) { respond(choice) }.keyboardShortcut(.cancelAction)
+                Button(L10n.text("Enable selected")) { respond(choice) }
+                    .disabled(choice.enabledExtensions.isEmpty)
+                    .keyboardShortcut(.defaultAction)
+                    .accessibilityIdentifier("enable-selected-extensions")
             }
         }
         .padding(24).frame(width: 490)
         .accessibilityIdentifier("extension-recommendation-dialog")
+    }
+
+    private func selectionBinding(for item: BuiltInExtension) -> Binding<Bool> {
+        Binding(
+            get: { choice.enabledExtensions.contains(item) },
+            set: { isEnabled in
+                if isEnabled {
+                    choice.enabledExtensions.insert(item)
+                } else {
+                    choice.enabledExtensions.remove(item)
+                }
+            }
+        )
     }
 }
