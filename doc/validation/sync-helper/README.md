@@ -1,9 +1,11 @@
 # Sync helper validation
 
 The latest PR #428 evidence refresh is in
-[`428-quiet-status-v41/`](428-quiet-status-v41/README.md). It records the focused
-regression for automatic consent-poll errors and source fix
-`c9d8c53cea8ec437be5e62a6c2e7101b0c0051ea`. The preceding
+[`428-quiet-status-v42/`](428-quiet-status-v42/README.md). It records current-source
+native captures of the retained status during a health check and after recovery,
+plus the focused regression for automatic consent-poll errors. The source fix is
+`c9d8c53cea8ec437be5e62a6c2e7101b0c0051ea`; the capture/build source is
+`95c69884b051273da52e982148289fa191ad972f`. The preceding
 [`v40 record`](428-quiet-status-v40/README.md) contains packaged Guide v59 Help
 and practice-form acceptance in both languages.
 
@@ -13,7 +15,7 @@ test source `9c970868ebcc53180867a12853cf9aa078b164d1`. They cover retained
 red/green status through health checks and recovery, stable section height,
 pairing and consent controls, incoming proposals, paired-device rows, and open
 source-review drafts. Those captures do not depict the automatic consent-poll
-alert; v41 records the controller regression for that behavior. These native
+alert; v41 and v42 record the controller regression for that behavior. These native
 component captures do not claim signed-service or hosted beta acceptance. The
 earlier v36 folder and other evidence folders retain their original sources as
 historical checkpoints.
