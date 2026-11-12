@@ -63,7 +63,8 @@ extension MobileLibrary {
             } catch SyncError.revoked {
                 continue
             } catch {
-                self.error = error.localizedDescription
+                presentError(error, operation: .synchronization,
+                             message: "No se pudo sincronizar el proyecto. Comprueba la conexión e inténtalo de nuevo.")
             }
         }
         comparisonCode = connections.first(where: { $0.comparisonCode != nil })?.comparisonCode

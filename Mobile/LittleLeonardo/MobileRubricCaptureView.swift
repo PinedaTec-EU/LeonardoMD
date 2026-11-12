@@ -310,8 +310,14 @@ struct MobileRubricCaptureView: View {
                 phase = .drawing
             } catch {
                 phase = .awaitingApproval
-                failure = terminalBlocked ? nil
-                    : "No se pudo aceptar la solicitud. Puedes intentarlo de nuevo."
+                if terminalBlocked {
+                    failure = nil
+                } else {
+                    failure = MobileErrorNotice.record(
+                        error,
+                        operation: .rubric,
+                        message: "No se pudo aceptar la solicitud. Puedes intentarlo de nuevo.").inlineMessage
+                }
             }
         }
     }
@@ -321,7 +327,12 @@ struct MobileRubricCaptureView: View {
         failure = nil
         Task {
             do { try await library.rejectRubricRequest(request); dismiss() }
-            catch { failure = "No se pudo rechazar la solicitud." }
+            catch {
+                failure = MobileErrorNotice.record(
+                    error,
+                    operation: .rubric,
+                    message: "No se pudo rechazar la solicitud.").inlineMessage
+            }
         }
     }
 
@@ -349,7 +360,10 @@ struct MobileRubricCaptureView: View {
             do {
                 try await write.value
             } catch {
-                failure = "No se pudo guardar el borrador local. Inténtalo de nuevo antes de enviar."
+                failure = MobileErrorNotice.record(
+                    error,
+                    operation: .rubric,
+                    message: "No se pudo guardar el borrador local. Inténtalo de nuevo antes de enviar.").inlineMessage
             }
         }
     }
@@ -366,10 +380,16 @@ struct MobileRubricCaptureView: View {
                 if isTerminal(error) {
                     await library.blockRubricDraft(request: request,
                                                    message: "La solicitud ya no admite envíos; pide una nueva solicitud.")
-                    failure = "Este vínculo ya no admite la solicitud. Cierra esta tarjeta y pide una nueva."
+                    failure = MobileErrorNotice.record(
+                        error,
+                        operation: .rubric,
+                        message: "Este vínculo ya no admite la solicitud. Pide una nueva solicitud.").inlineMessage
                 } else {
                     frozen = library.rubricDraft(for: request)?.response != nil
-                    failure = "No se pudo enviar. El dibujo está guardado y puedes reintentarlo."
+                    failure = MobileErrorNotice.record(
+                        error,
+                        operation: .rubric,
+                        message: "No se pudo enviar. El dibujo está guardado y puedes reintentarlo.").inlineMessage
                 }
             }
         }
@@ -379,7 +399,13 @@ struct MobileRubricCaptureView: View {
         failure = nil; phase = .sending
         Task {
             do { _ = try await library.retryRubricDraft(draft); phase = .submitted }
-            catch { phase = .drawing; failure = "El envío sigue pendiente. Comprueba la conexión e inténtalo de nuevo." }
+            catch {
+                phase = .drawing
+                failure = MobileErrorNotice.record(
+                    error,
+                    operation: .rubric,
+                    message: "El envío sigue pendiente. Comprueba la conexión e inténtalo de nuevo.").inlineMessage
+            }
         }
     }
 

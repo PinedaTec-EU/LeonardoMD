@@ -10,7 +10,7 @@ final class MobileLibrary {
     var projects: [OfflineProject] = []
     private(set) var pendingRubricRequests: [RubricRequest] = []
     private(set) var recoverableRubricDrafts: [MobileRubricDraft] = []
-    var error: String?
+    var error: MobileErrorNotice?
     var connecting = false
     var comparisonCode: String?
     let projectLifecycle: MobileProjectLifecycle
@@ -50,6 +50,12 @@ final class MobileLibrary {
         projectLifecycle = MobileProjectLifecycle(url: root.deletingLastPathComponent()
             .appendingPathComponent("project-removals.json"))
         downloads = DownloadLibrary(cache: OnDemandCache(root: root.deletingLastPathComponent().appendingPathComponent("Downloads")))
+        downloads.errorPresentation = { error in
+            MobileErrorNotice.record(
+                error,
+                operation: .downloads,
+                message: "No se pudo descargar el contenido. Comprueba la conexión e inténtalo de nuevo.").inlineMessage
+        }
         connectionStore = MobileDirectConnectionStore(url: root.deletingLastPathComponent()
             .appendingPathComponent("connections.json"))
         self.credentials = credentials
@@ -162,7 +168,10 @@ final class MobileLibrary {
 
     private func finishDeniedTicket(_ ticket: MobileRevocationTicket) {
         do { try revocationClient.finish(ticket, outcome: .denied) }
-        catch { self.error = error.localizedDescription }
+        catch {
+            presentError(error, operation: .revocation,
+                         message: "No se pudo guardar la decisión de acceso.")
+        }
     }
 
     func commitConnection(_ connection: MobileDirectConnection,
@@ -238,11 +247,17 @@ final class MobileLibrary {
                 || zip(storedConnections, protectedConnections).contains { $0.0.hasChanges(from: $0.1) }
             if repairedMissingCredential || recoveredSnapshotChanged {
                 do { try connectionStore.save(protectedConnections) }
-                catch { self.error = "No se pudo guardar la revocación recuperada: \(error.localizedDescription)" }
+                catch {
+                    presentError(error, operation: .revocation,
+                                 message: "No se pudo guardar la recuperación del vínculo.")
+                }
             }
             await retryPendingRevocationPurges()
             await reconcileRubricDrafts()
-        } catch { self.error = error.localizedDescription }
+        } catch {
+            presentError(error, operation: .library,
+                         message: "No se pudo actualizar la biblioteca. Inténtalo de nuevo.")
+        }
     }
 
     func currentFile(projectID: UUID, path: String) -> CorpusFile? {
@@ -260,7 +275,10 @@ final class MobileLibrary {
             let qr = try DirectPairingQR.decode(url, now: now())
             let client = try DirectEnrollmentClient(qr: qr)
             try await enroll(client: client, endpoint: qr.endpoint, fingerprint: qr.certificateFingerprint, deviceName: deviceName)
-        } catch { self.error = error.localizedDescription }
+        } catch {
+            presentError(error, operation: .pairing,
+                         message: "No se pudo conectar con LeonardoMD. Comprueba el enlace e inténtalo de nuevo.")
+        }
     }
 
     func connectManual(host: String, port: String, deviceName: String) async {
@@ -277,7 +295,10 @@ final class MobileLibrary {
             let fingerprint = try await ServerIdentityProbe.fingerprint(endpoint: endpoint)
             let client = try DirectEnrollmentClient(endpoint: endpoint, certificateFingerprint: fingerprint)
             try await enroll(client: client, endpoint: endpoint, fingerprint: fingerprint, deviceName: deviceName)
-        } catch { self.error = error.localizedDescription }
+        } catch {
+            presentError(error, operation: .pairing,
+                         message: "No se pudo conectar con LeonardoMD. Comprueba la dirección e inténtalo de nuevo.")
+        }
     }
 
     private func enroll(client: DirectEnrollmentClient, endpoint: URL, fingerprint: Data, deviceName: String) async throws {
@@ -320,7 +341,8 @@ final class MobileLibrary {
         revoked.pendingPurgeProjectIDs.formUnion(previous.projectIDs)
         var nextConnections = connections
         nextConnections[index] = revoked
-        var failures: [String] = []
+        var failures: [Error] = []
+        var purgeWasDeferred = false
         authorizationGenerations.confirmDenied(connectionID: revoked.connectionID,
                                                 projectIDs: previous.projectIDs)
         do {
@@ -329,14 +351,10 @@ final class MobileLibrary {
             } else {
                 try revocationClient.recordDenied(for: revoked)
             }
-        } catch {
-            failures.append("No se pudo registrar el bloqueo durable del vínculo: \(error.localizedDescription)")
-        }
+        } catch { failures.append(error) }
         do {
             try connectionStore.save(nextConnections)
-        } catch {
-            failures.append("No se pudo guardar el vínculo revocado: \(error.localizedDescription)")
-        }
+        } catch { failures.append(error) }
         invalidateCacheAndAuthorization()
         for id in revoked.pendingPurgeProjectIDs where !hasActiveProjectOwner(id, excluding: token.connectionID) {
             downloads.deny(id: id)
@@ -350,17 +368,19 @@ final class MobileLibrary {
         }
         do {
             try await credentials.remove(deviceID: revoked.deviceID)
-        } catch {
-            failures.append("No se pudo retirar la credencial revocada: \(error.localizedDescription)")
-        }
+        } catch { failures.append(error) }
         let revokedToken = self.token(for: revoked)
         do {
             try await removeDirectProjects(revoked.pendingPurgeProjectIDs, expected: revokedToken)
             guard isCurrentCacheOperation(revokedToken),
                   let currentIndex = connectionIndex(for: revokedToken) else {
-                failures.append("Se pospuso la limpieza de la caché revocada para proteger una reconexión")
+                purgeWasDeferred = true
                 await blockRubricDrafts(for: revoked, message: message)
-                if !failures.isEmpty { self.error = failures.joined(separator: " ") }
+                if !failures.isEmpty || purgeWasDeferred {
+                    presentErrors(failures, operation: .revocation,
+                                  message: "No se pudo completar la limpieza del vínculo.",
+                                  fallbackCategory: purgeWasDeferred ? "cache_cleanup_deferred" : nil)
+                }
                 return
             }
             var cleaned = connections
@@ -370,14 +390,14 @@ final class MobileLibrary {
             do {
                 try connectionStore.save(cleaned)
                 connections = cleaned
-            } catch {
-                failures.append("No se pudo confirmar la limpieza de la caché revocada: \(error.localizedDescription)")
-            }
-        } catch {
-            failures.append("No se pudo eliminar la caché directa revocada: \(error.localizedDescription)")
-        }
+            } catch { failures.append(error) }
+        } catch { failures.append(error) }
         await blockRubricDrafts(for: revoked, message: message)
-        if !failures.isEmpty { self.error = failures.joined(separator: " ") }
+        if !failures.isEmpty || purgeWasDeferred {
+            presentErrors(failures, operation: .revocation,
+                          message: "No se pudo completar la limpieza del vínculo.",
+                          fallbackCategory: purgeWasDeferred ? "cache_cleanup_deferred" : nil)
+        }
     }
 
     private func retryPendingRevocationPurges() async {
@@ -394,7 +414,8 @@ final class MobileLibrary {
                 try connectionStore.save(nextConnections)
                 connections = nextConnections
             } catch {
-                self.error = "No se pudo reintentar la limpieza de la caché revocada: \(error.localizedDescription)"
+                presentError(error, operation: .revocation,
+                             message: "No se pudo completar la limpieza del vínculo.")
             }
         }
     }
@@ -684,7 +705,7 @@ final class MobileLibrary {
         } catch {
             let blocked = isTerminalRubricFailure(error)
             let state: MobileRubricDraftState = blocked ? .blocked : .pendingSend
-            let failureMessage = error.localizedDescription
+            let failureMessage = "No se pudo enviar la rúbrica. Puedes volver a intentarlo."
             let failureWrite = rubricDraftWrites.enqueue { [weak self] in
                 guard let self, let latest = try await self.latestRubricDraft(for: pending.request) else { return }
                 guard latest.state != .blocked, latest.state != .submitted,
@@ -718,7 +739,10 @@ final class MobileLibrary {
             await self.refreshDrafts()
         }
         do { try await write.value }
-        catch { self.error = error.localizedDescription }
+        catch {
+            presentError(error, operation: .rubric,
+                         message: "No se pudo actualizar la solicitud de rúbrica.")
+        }
     }
 
     private func blockRubricDrafts(for connection: MobileDirectConnection, message: String) async {
@@ -733,7 +757,10 @@ final class MobileLibrary {
             await self.refreshDrafts()
         }
         do { try await write.value }
-        catch { self.error = error.localizedDescription }
+        catch {
+            presentError(error, operation: .rubric,
+                         message: "No se pudo actualizar el borrador de rúbrica.")
+        }
     }
 
     /// Reconcile local records independently from the server's pending list.
@@ -856,7 +883,8 @@ final class MobileLibrary {
         do {
             recoverableRubricDrafts = try await draftStore.all(now: now())
         } catch {
-            self.error = error.localizedDescription
+            presentError(error, operation: .rubric,
+                         message: "No se pudo actualizar el borrador de rúbrica.")
         }
     }
 

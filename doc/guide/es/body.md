@@ -682,20 +682,22 @@ borrador bloqueado, enviado o pendiente de reintento no permite seguir dibujando
 
 ### Si se interrumpe la sincronización móvil
 
-Ante un fallo de red, el aviso existente puede incluir una línea de diagnóstico
-breve, por ejemplo:
+Ante un fallo, el aviso muestra un mensaje breve, un código de referencia único
+como `LL-0123456789AB` y una sola acción **Aceptar**. Abre **Ajustes de
+sincronización → Ver log** para consultar las entradas de error locales
+recientes. El mismo código identifica la entrada correspondiente; un error de
+red puede incluir un diagnóstico acotado como este:
 
-`[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
+`ref=LL-0123456789AB op=synchronization transport=[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
 
-Comparte esa línea o una captura al pedir ayuda. Indica si falló una consulta de
-estado o una instantánea, el estado HTTP si llegó, los bytes de respuesta
-recibidos y esperados, y el dominio/código de error del sistema. No incluye la
-dirección o ruta del servidor, credencial de emparejamiento, identificadores de
-dispositivo/proyecto ni contenido de archivos. Una cabecera HTTP 200 no
-significa que terminara el cuerpo. Un total esperado `?` significa que el
-servidor no informó de la longitud. Las copias descargadas sin conexión siguen
-disponibles; comprueba que el Mac de origen sea accesible y que Leonardo Sync
-esté activo, y vuelve a intentar la sincronización.
+El registro permanece en este dispositivo y no se envía automáticamente. No
+incluye la dirección o ruta del servidor, credenciales de emparejamiento,
+identificadores de dispositivo/proyecto ni contenido de documentos o imágenes.
+Puedes seleccionar y copiar una línea si decides compartirla al pedir ayuda.
+Una cabecera HTTP 200 no significa que terminara el cuerpo. Un total esperado
+`?` significa que el servidor no informó de la longitud. Las copias descargadas
+sin conexión siguen disponibles; comprueba que el Mac de origen sea accesible y
+que Leonardo Sync esté activo, y vuelve a intentar la sincronización.
 
 ### Responder a una solicitud de rúbrica en iOS
 

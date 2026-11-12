@@ -10,12 +10,17 @@ public struct RemoteDocumentPreview: View {
     let spanish: Bool
     let appearance: MarkdownAppearance
     let compactFirstHeading: Bool
+    let failurePresentation: (@MainActor (Error) -> String)?
     @State private var presentation = RemoteDocumentPreviewState()
     @State private var source = false
     @State private var linked: RemoteFileEntry?
     private let virtualRoot = URL(fileURLWithPath: "/LeonardoRemote", isDirectory: true)
-    public init(library: DownloadLibrary, projectID: UUID, entry: RemoteFileEntry, spanish: Bool = false, appearance: MarkdownAppearance = .default, compactFirstHeading: Bool = false) {
-        self.library = library; self.projectID = projectID; self.entry = entry; self.spanish = spanish; self.appearance = appearance; self.compactFirstHeading = compactFirstHeading
+    public init(library: DownloadLibrary, projectID: UUID, entry: RemoteFileEntry, spanish: Bool = false,
+                appearance: MarkdownAppearance = .default, compactFirstHeading: Bool = false,
+                failurePresentation: (@MainActor (Error) -> String)? = nil) {
+        self.library = library; self.projectID = projectID; self.entry = entry; self.spanish = spanish
+        self.appearance = appearance; self.compactFirstHeading = compactFirstHeading
+        self.failurePresentation = failurePresentation
     }
     private var project: CachedRemoteProject? { library.projects.first { $0.id == projectID } }
     private var currentEntry: RemoteFileEntry? { project?.catalogue.files.first { $0.path == entry.path } }
@@ -54,7 +59,9 @@ public struct RemoteDocumentPreview: View {
         .toolbar { Button(source ? t("Show document", "Ver documento") : t("Show source", "Ver texto")) { source.toggle() } }
         .task(id: request) { await load() }
         .navigationDestination(item: $linked) { target in
-            RemoteDocumentPreview(library: library, projectID: projectID, entry: target, spanish: spanish, appearance: appearance, compactFirstHeading: compactFirstHeading)
+            RemoteDocumentPreview(library: library, projectID: projectID, entry: target, spanish: spanish,
+                                  appearance: appearance, compactFirstHeading: compactFirstHeading,
+                                  failurePresentation: failurePresentation)
         }
     }
     @ViewBuilder private var content: some View {
@@ -89,19 +96,27 @@ public struct RemoteDocumentPreview: View {
                         guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue else { return }
                         presentation.receiveImage(image.file.content, path: path, ticket: ticket)
                         if let failure = image.updateFailure {
-                            presentation.fail(path + ": " + failure, ticket: ticket)
+                            let message = failurePresentation == nil ? path + ": " + failure : failure
+                            presentation.fail(message, ticket: ticket)
                         }
                     }
                     catch {
                         guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue else { return }
-                        presentation.fail(error.localizedDescription, ticket: ticket)
+                        presentation.fail(presentFailure(error, path: path), ticket: ticket)
                     }
                 }
             }
         } catch {
             guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue else { return }
-            presentation.fail(error.localizedDescription, ticket: ticket)
+            presentation.fail(presentFailure(error, path: entry.path), ticket: ticket)
         }
+    }
+
+    private func presentFailure(_ error: Error, path: String) -> String {
+        if let recorded = library.failures[DownloadLibrary.key(id: projectID, path: path)] {
+            return recorded
+        }
+        return failurePresentation?(error) ?? error.localizedDescription
     }
     private func followLink(_ url: URL) {
         guard let path = RemoteDocumentResources.path(url: url, virtualRoot: virtualRoot),

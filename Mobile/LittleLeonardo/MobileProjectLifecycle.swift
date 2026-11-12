@@ -69,7 +69,10 @@ extension MobileLibrary {
             try await self.store.remove(id: id)
         }
         do { try await mutation.value }
-        catch { self.error = error.localizedDescription }
+        catch {
+            presentError(error, operation: .library,
+                         message: "No se pudo quitar el proyecto de este dispositivo.")
+        }
     }
 }
 
@@ -103,7 +106,10 @@ extension MobileLibrary {
         switch project {
         case .demo:
             do { try projectLifecycle.deleteDemo() }
-            catch { self.error = error.localizedDescription }
+            catch {
+                presentError(error, operation: .practice,
+                             message: "No se pudo quitar la demo.")
+            }
         case .downloaded(let project): await deleteProject(project.id)
         }
     }
