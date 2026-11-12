@@ -2295,6 +2295,7 @@ final class SyncHelperControllerTests: XCTestCase {
             try await GuideCaptureSupport.captureNative(review, size: NSSize(width: 532, height: 100),
                 to: destination.appendingPathComponent("incoming-review-unavailable-\(suffix).png"), language: suffix,
                 state: "Synthetic incoming proposal retained during helper retry; review action disabled by live health",
+                pixelScale: 1,
                 route: "/native/preferences/synchronization", screen: "Incoming proposal actions")
             let consent = NSHostingView(rootView: PairingConsentActions(controller: controller,
                 projects: [projectID], captureOnly: false, confirmed: true, onCancel: {}, onAllow: {})

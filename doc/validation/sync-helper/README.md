@@ -1,5 +1,11 @@
 # Sync helper validation
 
+Current PR #428 correction captures are in
+[`428-quiet-status-v31/`](428-quiet-status-v31/README.md). They cover the
+confirmed status through recovery, retained sync rows and the actions disabled
+when helper health is unavailable. These are native component captures, not
+fresh packaged-app startup or signed-service acceptance.
+
 ## Owner-authorized installed-service acceptance
 
 Source: `5858c47a9762ba6567a7589721bfba71afbbfdb1`. An immutable Developer ID

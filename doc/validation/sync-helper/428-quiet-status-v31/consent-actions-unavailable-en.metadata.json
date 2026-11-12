@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-12T01:51:46.229983+00:00",
+  "capture": {
+    "captured_at": "2026-11-12T01:42:44.650000+00:00",
+    "route": "/native/preferences/synchronization/pairing",
+    "screen": "Pairing consent actions",
+    "browser_name": "Native AppKit / SwiftUI NSHostingView",
+    "browser_version": "Not applicable: native view, no browser engine",
+    "state": "Synthetic confirmed pairing request during helper retry; approval disabled by live health; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "viewport_css": {
+      "width": 420,
+      "height": 60
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 840,
+    "height_px": 120,
+    "sha256": "47f0d4b6f5d02b52bf691a1f545fc67de26969fa2cd933a9e432b16e43aad442"
+  },
+  "source": {
+    "revision_at_collection": "8927d506a8d0f9c5f2fdf94500c920bffa5b1d7e",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

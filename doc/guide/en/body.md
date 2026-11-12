@@ -589,11 +589,17 @@ These operations are manual. Pull is fast-forward only and protects dirty worktr
 
 Little Leonardo is a **read-only companion**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Synchronization → Share from this Mac**. The same page serves Little Leonardo and other Macs; a Mac can share some content and independently connect to another Mac for other content. The service requires a Developer ID signed distribution; local ad-hoc builds cannot enable it.
 
-1. Enable **Leonardo Sync** using the single common control above both pages. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. When enabled, the indicator beside the switch is green when the helper is running and red when it is unavailable. It keeps its previous state while the service is checked. If there is a problem, the status text provides details.
+1. Enable **Leonardo Sync** using the single common control above both pages. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. A confirmed healthy helper shows a green indicator; an actual failure shows red with a diagnostic. While checking, the indicator keeps its previous state and no temporary gray state or “Sync helper running” line appears.
 2. Enable **Share saved files from this Mac** on a network you intend to use. Review the selected local address; Automatic can choose an available address.
 3. Choose **Share current project**, then select the folders/documents you want or the entire project. Confirm the selection; unrelated content is not implicitly shared.
 4. Create an invitation. If the network changes, the old QR and link may disappear; once the local address is available again, create and share a new invitation. Its QR and copied link are two ways to open the same invitation: scan the QR in Little Leonardo or paste the link under **Connect to other computers** on another Mac. Compare the verification codes and approve the pending device on this source Mac. Device rows state **read-only** (Little Leonardo or compatible clients) or **LeonardoMD on Mac · changes require review**. The label follows the granted capability, not the device name.
 5. Import the shared content on the companion and verify it before relying on an offline copy. Use Revoke on the Mac to remove a device's future access.
+
+**Review changes** requires the local sharing service to be available. **Allow connection**, **Reject** and **Revoke** require a healthy sync helper. An affected action stays disabled while its requirement is unavailable. Paired devices remain listed when sharing from this Mac is off.
+
+![Incoming proposal retained while the sync helper recovers; Review changes is disabled.](assets/sync-review-unavailable.png)
+
+*Native production component with a synthetic proposal; it illustrates a disabled review action, not a live paired device or packaged-app acceptance.*
 
 ### Recognize a project's role
 

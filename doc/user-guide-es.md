@@ -595,11 +595,17 @@ Las operaciones son manuales. Pull solo permite avance rápido y protege árbole
 
 Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Sincronización → Compartir desde este Mac** en la instancia principal. Esta página sirve a Little Leonardo y a otros Macs; un Mac puede compartir contenido y, de forma independiente, conectarse a otro para acceder a otro contenido. El servicio requiere una distribución firmada con Developer ID; las compilaciones locales con firma ad-hoc no pueden habilitarlo.
 
-1. Activa **Leonardo Sync** con el único control común situado encima de ambas páginas. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. Cuando está activado, el indicador junto al interruptor aparece verde si el servicio está en ejecución y rojo si no está disponible. Conserva su estado anterior durante la comprobación. Si hay un problema, el texto de estado ofrece más detalles.
+1. Activa **Leonardo Sync** con el único control común situado encima de ambas páginas. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. El indicador verde confirma que el asistente funciona; un fallo real lo muestra en rojo con su diagnóstico. Durante la comprobación conserva el estado anterior: no aparece un estado gris temporal ni la línea «Servicio de sincronización en ejecución».
 2. Activa **Compartir archivos guardados de este Mac** en una red que quieras utilizar. Revisa la dirección local; Automática puede seleccionar una disponible.
 3. Elige **Compartir el proyecto actual** y selecciona carpetas/documentos o todo el proyecto. Confirma la selección; el resto del contenido no se comparte implícitamente.
 4. Crea una invitación. Si cambia la red, el QR y el enlace anteriores pueden desaparecer; cuando la dirección local vuelva a estar disponible, crea y comparte una invitación nueva. Su QR y el enlace copiado permiten abrir la misma invitación: escanea el QR en Little Leonardo o pega el enlace en **Conectarme a otros equipos** en otro Mac. Compara los códigos y aprueba el dispositivo pendiente en este Mac de origen. Las filas indican **solo lectura** (Little Leonardo o clientes compatibles) o **LeonardoMD en Mac · cambios sujetos a revisión**. La etiqueta depende del permiso concedido, no del nombre del equipo.
 5. Importa el contenido compartido en el compañero y compruébalo antes de depender de una copia sin conexión. Usa Revocar en el Mac para retirar acceso futuro a un dispositivo.
+
+**Revisar cambios** requiere que el servicio de uso compartido local esté disponible. **Permitir la conexión**, **Rechazar** y **Revocar** requieren que el asistente de sincronización esté en buen estado. La acción afectada permanece desactivada mientras falte ese requisito. Los dispositivos emparejados siguen en la lista aunque compartir desde este Mac esté desactivado.
+
+![Propuesta recibida mientras se recupera el asistente; Revisar cambios está desactivado.](guide/es/assets/sync-review-unavailable.png)
+
+*Componente de producción con una propuesta sintética; muestra una acción de revisión desactivada, no un dispositivo emparejado real ni la aceptación de la app empaquetada.*
 
 ### Reconocer el papel de un proyecto
 
