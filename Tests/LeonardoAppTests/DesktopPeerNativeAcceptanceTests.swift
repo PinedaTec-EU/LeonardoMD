@@ -1,6 +1,7 @@
 import XCTest
 import AppKit
 import SwiftUI
+import ServiceManagement
 import LeonardoCore
 import LeonardoSync
 import LeonardoSyncTransport
@@ -11,6 +12,63 @@ import LeonardoDesktopSync
 /// It does not launch another packaged process or claim physical VPN coverage.
 @MainActor
 final class DesktopPeerNativeAcceptanceTests: XCTestCase {
+    func testRemoteProjectsReviewScreenShowsHostProjectAndNewFile() async throws {
+        let fixture = try NativePeerAcceptanceFixture(peerHelperFactory: { preferences in
+            SyncHelperController(preferencesURL: preferences, configurations: ConfigurationStore(),
+                service: NativeReviewCaptureRegistration(), client: NativeReviewCaptureControl(),
+                expectedBuildIdentity: nil, startup: .init(attempts: 0), hasExecutable: { true }, verifyPackage: {})
+        })
+        defer { fixture.cleanup() }
+        fixture.peer.updateInterval(0)
+        try await ConfigurationStore().setSyncHelperEnabled(true, at: fixture.peerPreferences)
+        await fixture.peer.helper.refresh()
+        XCTAssertTrue(fixture.peer.helper.online)
+
+        let incomingRoot = fixture.root.appendingPathComponent("Incoming", isDirectory: true)
+        try FileManager.default.createDirectory(at: incomingRoot, withIntermediateDirectories: true)
+        let incoming = MobileSharedProject(rootURL: incomingRoot, name: "Incoming Research", folders: ["docs"])
+        try fixture.write(incomingRoot, "docs/brief.md", "newly shared project")
+        var settings = fixture.enabledSettings
+        settings.projects.append(incoming)
+        await fixture.owner.initialize()
+        await fixture.owner.update(settings)
+        let running = try XCTUnwrap(fixture.owner.running, fixture.owner.error ?? "Missing service")
+
+        await fixture.peer.initialize()
+        let enrolled = await fixture.peer.enroll(address: running.endpoint.absoluteString, name: "Synthetic MacBook")
+        XCTAssertTrue(enrolled, fixture.peer.error ?? "Enrollment failed")
+        let connection = try XCTUnwrap(fixture.peer.connections.first)
+        await fixture.owner.refreshConsent()
+        let request = try XCTUnwrap(fixture.owner.consent.requests.first)
+        await fixture.owner.approve(request, projects: [fixture.shared.id, incoming.id])
+        await fixture.peer.refresh(connection.id)
+        XCTAssertEqual(Set(fixture.peer.available[connection.id, default: []].map(\.id)), [fixture.shared.id, incoming.id])
+
+        await fixture.peer.addRemoteProject(connectionID: connection.id, projectID: fixture.shared.id)
+        try fixture.write(fixture.source, "docs/future.md", "newly shared file")
+        await fixture.peer.refresh(connection.id)
+        XCTAssertTrue(fixture.peer.reviewStore.acceptsProject(connectionID: connection.id, projectID: fixture.shared.id))
+        XCTAssertFalse(fixture.peer.reviewStore.acceptsProject(connectionID: connection.id, projectID: incoming.id))
+        XCTAssertTrue(fixture.peer.reviewStore.pendingFilePaths(connectionID: connection.id, projectID: fixture.shared.id)
+            .contains("docs/future.md"))
+
+        guard let evidenceRoot = ProcessInfo.processInfo.environment["LEONARDO_REMOTE_PROJECTS_EVIDENCE"] else { return }
+        let destination = URL(fileURLWithPath: evidenceRoot, isDirectory: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let previousLanguage = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previousLanguage }
+        LanguageSettings.shared.language = .english
+        let view = DesktopPeerRemoteProjectsView(controller: fixture.peer)
+            .frame(width: 920, height: 620, alignment: .topLeading)
+            .padding(16)
+            .background(Color(nsColor: .windowBackgroundColor))
+        let host = NSHostingView(rootView: view)
+        try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 952, height: 652),
+            to: destination.appendingPathComponent("remote-project-review.png"), language: "en",
+            state: "Synthetic MacBook; Incoming Research awaits Add or Ignore; docs/future.md awaits review; accepted project remains browseable",
+            route: "/native/remote-projects", screen: "Remote projects grouped by connected Mac")
+    }
+
     func testAcceptedRemoteProjectCatalogueRemainsBrowseableAfterOfflineRestart() async throws {
         let fixture = try NativePeerAcceptanceFixture()
         defer { fixture.cleanup() }
@@ -185,7 +243,7 @@ private final class NativePeerAcceptanceFixture {
         MobileSyncPreferences(enabled: true, host: "127.0.0.1", port: 0, projects: [shared])
     }
 
-    init() throws {
+    init(peerHelperFactory: (@MainActor (URL) -> SyncHelperController)? = nil) throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defaultsSuite = "NativePeerAcceptance." + root.lastPathComponent
         defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsSuite))
@@ -210,7 +268,8 @@ private final class NativePeerAcceptanceFixture {
             outbox: FileDesktopPeerOutboxStore(root: peerRoot.appendingPathComponent("Outbox")),
             receiptApplier: DesktopPeerReceiptApplier(workingRoot: working, copies: copies,
                 intents: FileDesktopPeerReceiptIntentStore(root: peerRoot.appendingPathComponent("ReceiptIntents"))))
-        peer = DesktopPeerController(preferencesURL: peerPreferences, library: peerLibrary, revoker: peerRevoker, defaults: defaults)
+        peer = DesktopPeerController(preferencesURL: peerPreferences, library: peerLibrary, revoker: peerRevoker,
+                                     defaults: defaults, helper: peerHelperFactory?(peerPreferences))
         oldSessions = NativeReconciliationLease.shared.sessions
         let editor = ownerEditor, tabs = peerTabs
         NativeReconciliationLease.shared.sessions = { [editor] + tabs.tabs.map(\.session) }
@@ -248,6 +307,19 @@ private final class NativePeerAcceptanceFixture {
         defaults.removePersistentDomain(forName: defaultsSuite)
         try? FileManager.default.removeItem(at: root)
     }
+}
+
+@MainActor
+private final class NativeReviewCaptureRegistration: SyncHelperRegistration {
+    var status: SMAppService.Status = .enabled
+    func register() throws {}
+    func unregister() async throws {}
+    func openApprovalSettings() {}
+}
+
+private struct NativeReviewCaptureControl: SyncHelperControlAccess {
+    func status() async throws -> SyncHelperStatus { SyncHelperStatus(enabled: true, sharing: nil) }
+    func reload() async throws -> SyncHelperStatus { SyncHelperStatus(enabled: true, sharing: nil) }
 }
 
 private actor NativePeerAcceptanceCredentials: DeviceCredentialStore {
