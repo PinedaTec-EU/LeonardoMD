@@ -2834,7 +2834,10 @@ final class SyncHelperControllerTests: XCTestCase {
     }
     func remove() { try? FileManager.default.removeItem(at: root) }
 }
-private enum HelperControlError: Error { case unavailable }
+private enum HelperControlError: LocalizedError {
+    case unavailable
+    var errorDescription: String? { "Sync helper health check failed." }
+}
 @MainActor private final class HelperRegistrationFake: SyncHelperRegistration {
     var storedStatus = SMAppService.Status.notRegistered
     var statusSequence: [SMAppService.Status] = []
