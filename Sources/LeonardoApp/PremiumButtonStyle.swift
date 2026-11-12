@@ -37,7 +37,6 @@ struct PremiumButtonStyle: ButtonStyle {
         @Environment(\.colorScheme) private var colorScheme
         @State private var hovered = false
         @Environment(\.leonardoAccent) private var accent
-        private var edge: Color { colorScheme == .dark ? .white.opacity(0.18) : .black.opacity(0.10) }
         var body: some View {
             configuration.label
                 .font(.system(size: compact ? 12 : 13, weight: .semibold))
@@ -45,18 +44,9 @@ struct PremiumButtonStyle: ButtonStyle {
                 .padding(.horizontal, compact ? 10 : 15)
                 .padding(.vertical, compact ? 7 : 10)
                 .background {
-                    RoundedRectangle(cornerRadius: compact ? 8 : 10)
-                        .fill(.regularMaterial)
-                    RoundedRectangle(cornerRadius: compact ? 8 : 10)
-                        .fill(prominent ? accent.gradient : (selected ? accent.opacity(0.14) : Color.clear).gradient)
-                    RoundedRectangle(cornerRadius: compact ? 8 : 10)
-                        .fill(LinearGradient(colors: [.white.opacity(hovered ? 0.22 : 0.12), .clear, .black.opacity(configuration.isPressed ? 0.12 : 0.035)], startPoint: .top, endPoint: .bottom))
+                    PremiumControlBackground(compact: compact, prominent: prominent, selected: selected,
+                                             highlighted: hovered, pressed: configuration.isPressed)
                 }
-                .overlay {
-                    RoundedRectangle(cornerRadius: compact ? 8 : 10)
-                        .strokeBorder(prominent ? .white.opacity(0.22) : (hovered || selected) ? accent.opacity(0.45) : edge, lineWidth: 1)
-                }
-                .shadow(color: .black.opacity(configuration.isPressed ? 0.03 : colorScheme == .dark ? 0.24 : 0.10), radius: configuration.isPressed ? 1 : 4, x: 0, y: configuration.isPressed ? 1 : 2)
                 .scaleEffect(configuration.isPressed ? 0.98 : 1)
                 .brightness(hovered && enabled ? 0.025 : 0)
                 .opacity(enabled ? 1 : 0.42)

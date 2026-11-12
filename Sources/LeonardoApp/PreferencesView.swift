@@ -23,21 +23,25 @@ struct PreferencesView: View {
                 Spacer()
                 Button(L10n.text("Done")) { dismiss() }.keyboardShortcut(.defaultAction)
             }
-            TabView(selection: $selectedTab) {
-                generalPreferences.tag("general").tabItem { Label(L10n.text("General"), systemImage: "gearshape") }
-                VStack(spacing: 0) {
-                    scopeHeader("Extensions")
-                    ExtensionPreferences(session: session, projectScope: projectScope)
+            PremiumTabPanel(selection: $selectedTab, options: ["general", "extensions", "sync", "updates"],
+                            title: { preferencesTabTitle(for: $0) }) {
+                switch selectedTab {
+                case "extensions":
+                    VStack(spacing: 0) {
+                        scopeHeader()
+                        ExtensionPreferences(session: session, projectScope: projectScope)
+                    }
+                case "sync":
+                    macPreferences("Service and device settings belong to this Mac.") {
+                        SynchronizationPreferencesView(session: session)
+                    }
+                case "updates":
+                    macPreferences("Update preferences apply to all windows on this Mac.") {
+                        UpdatePreferencesView(updates: updates)
+                    }
+                default:
+                    generalPreferences
                 }
-                .tag("extensions").tabItem { Label(L10n.text("Extensions"), systemImage: "puzzlepiece.extension") }
-                macPreferences("Service and device settings belong to this Mac.") {
-                    SynchronizationPreferencesView(session: session)
-                }
-                    .tag("sync").tabItem { Label(L10n.text("Synchronization"), systemImage: "arrow.triangle.2.circlepath.circle") }
-                macPreferences("Update preferences apply to all windows on this Mac.") {
-                    UpdatePreferencesView(updates: updates)
-                }
-                    .tag("updates").tabItem { Label(L10n.text("Updates"), systemImage: "arrow.triangle.2.circlepath") }
             }
         }.buttonStyle(PremiumButtonStyle()).padding(24).frame(width: 580, height: 620)
         .background(UpdatePreferencesWindowIdentity())
@@ -61,13 +65,22 @@ struct PreferencesView: View {
         }
     }
 
-    private func scopeHeader(_ title: String) -> some View {
+    private func preferencesTabTitle(for tab: String) -> String {
+        switch tab {
+        case "extensions": L10n.text("Extensions")
+        case "sync": L10n.text("Synchronization")
+        case "updates": L10n.text("Updates")
+        default: L10n.text("General")
+        }
+    }
+
+    private func scopeHeader(_ title: String? = nil) -> some View {
         PreferencesScopeHeader(title: title, projectURL: session.projectURL, projectScope: $projectScope)
     }
 
     private var generalPreferences: some View {
         VStack(spacing: 0) {
-            scopeHeader("General")
+            scopeHeader()
             Form {
                 Section(L10n.text("Appearance")) {
                     appearancePreferences

@@ -33,7 +33,7 @@ struct ProjectSidebar: View {
                     .accessibilityLabel(L10n.text("Open another project"))
             }
             TextField(L10n.text("Search files and content"), text: $session.searchQuery)
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(PremiumTextFieldStyle(compact: true))
                 .accessibilityIdentifier("project-search")
                 .onChange(of: session.searchQuery) { _, _ in session.scheduleSearch() }
             HStack {

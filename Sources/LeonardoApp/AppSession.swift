@@ -45,12 +45,15 @@ final class AppSession {
     var projectFileTree = ProjectFileTree()
     var openProjectDocumentInTab: ((URL, Int?) async -> Void)?
     private var documentContent = ""
+    @ObservationIgnored var documentContentDidChange: (@MainActor () -> Void)?
     var content: String {
         get { documentContent }
         set {
             guard !isSyncSuspended || syncUpdatingBuffer else { return }
+            let changed = documentContent != newValue
             documentContent = newValue
             editHistory = DocumentEditHistory()
+            if changed { documentContentDidChange?() }
         }
     }
     var editHistory = DocumentEditHistory()

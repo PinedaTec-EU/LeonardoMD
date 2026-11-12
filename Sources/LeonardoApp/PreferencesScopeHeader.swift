@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Scope is part of the selected pane, so it cannot move the tab navigation.
 struct PreferencesScopeHeader: View {
-    let title: String
+    let title: String?
     let projectURL: URL?
     @Binding var projectScope: Bool
 
@@ -16,7 +16,7 @@ struct PreferencesScopeHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(L10n.text(title)).font(.title3.bold())
+                if let title { Text(L10n.text(title)).font(.title3.bold()) }
                 Spacer()
                 if projectURL != nil {
                     PremiumSelection(selection: $projectScope, options: [false, true],
