@@ -99,3 +99,11 @@ error state, preferences retry health at a bounded interval; a change in local
 addresses refreshes the sharing endpoint and discards an obsolete invitation.
 Approval changes are reconciled when the app becomes active. See
 `SyncHelperPreferencesSection` and `SyncHelperController`.
+
+The sharing page uses the last confirmed helper endpoint for presentation while
+a status refresh is still in flight. This keeps a same-endpoint QR, consent
+requests and incoming rows stable during a transient retry; operations remain
+gated on live helper health. A confirmed terminal failure clears that stale
+presentation, and a network-address change still invalidates an obsolete QR.
+See `DesktopSyncController.updateRunningFromHelper()` and
+`DesktopSyncController.refreshConsent(refreshHelper:)`.

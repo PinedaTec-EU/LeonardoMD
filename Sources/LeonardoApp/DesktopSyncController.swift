@@ -223,7 +223,7 @@ final class DesktopSyncController {
     }
 
     private func updateRunningFromHelper() {
-        let advertised = helper.sharing
+        let advertised = helperSharingForPresentation
         let current: RunningDirectService?
         if networkRefreshPending, let host = advertised?.endpoint.host,
            !isCurrentHost(host, addresses: Set(addresses)) { current = nil }
@@ -239,7 +239,7 @@ final class DesktopSyncController {
         if invitationURL != nil && invitationNetworkAddresses != currentAddresses {
             invitationURL = nil; invitationNetworkAddresses = nil
         }
-        let endpointAvailable = helper.sharing?.endpoint.host.map { isCurrentHost($0, addresses: currentAddresses) } ?? true
+        let endpointAvailable = helperSharingForPresentation?.endpoint.host.map { isCurrentHost($0, addresses: currentAddresses) } ?? true
         if usesHelper && !endpointAvailable {
             running = nil; invitationURL = nil; invitationNetworkAddresses = nil
         }
@@ -272,6 +272,11 @@ final class DesktopSyncController {
             }
             updateRunningFromHelper()
             guard helper.online else {
+                // A failed in-flight health request is not a terminal service
+                // result until presentation catches up. Keep the sharing page's
+                // last confirmed rows and QR stable during that retry, while
+                // sharingAvailable continues to gate operations on live health.
+                if preservingConfirmedSharingDuringCheck { return }
                 running = nil; invitationURL = nil; incoming = []; consent = PairingRegistry(); return
             }
         }
@@ -291,6 +296,14 @@ final class DesktopSyncController {
                 updateRunningFromHelper()
             }
         }
+    }
+
+    private var preservingConfirmedSharingDuringCheck: Bool {
+        helper.checkingStatus && helper.displayedState == .running && helper.displayedSharing != nil
+    }
+
+    private var helperSharingForPresentation: RunningDirectService? {
+        preservingConfirmedSharingDuringCheck ? helper.displayedSharing : helper.sharing
     }
 
     func reviewProposal(_ item: DesktopPeerIncomingProposal) async {
