@@ -1,3 +1,0 @@
-# Quiet sync status capture
-
-Synthetic native production-component captures from code revision `cc1c84b9ab6279c71bc5b0db86946a85520c0346`. Only the compilation ledger was modified during capture. The green indicator before, during and after a healthy check has identical SHA-256 `3d3505854df2f47ae898a58f1ed03d83ce21a8e78728366d1718f3a8609e480f`. The shared project row before, during a transient failure and after recovery has identical SHA-256 `f9a1754404e0d1cdee7a65bb48c3cfb07aee0ef63a14664f6b3fea87bfcea2c6`. Approval and failure captures show the reserved recovery action and diagnostic. These are component captures, not signed-helper or packaged-process acceptance. Subsequent evidence and ledger changes do not change product code.
