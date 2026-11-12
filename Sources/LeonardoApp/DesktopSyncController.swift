@@ -283,11 +283,10 @@ final class DesktopSyncController {
             }
             updateRunningFromHelper()
             guard helper.online else {
-                // A failed in-flight health request is not a terminal service
-                // result until presentation catches up. Keep the sharing page's
-                // last confirmed rows and QR stable during that retry, while
-                // sharingAvailable continues to gate operations on live health.
-                if preservingConfirmedSharingDuringCheck { return }
+                // Keep the last confirmed sharing state while a health check or
+                // scheduled recovery is still unresolved. Peer operations remain
+                // gated by live health; a published failure clears this snapshot.
+                if preservingConfirmedSharingPresentation { return }
                 clearSharingPresentationAfterTerminalFailure()
                 return
             }
@@ -313,7 +312,7 @@ final class DesktopSyncController {
                 await helper.refresh()
                 guard refreshRevision == consentRefreshRevision else { return }
                 updateRunningFromHelper()
-                if !helper.online && !preservingConfirmedSharingDuringCheck {
+                if !helper.online && !preservingConfirmedSharingPresentation {
                     clearSharingPresentationAfterTerminalFailure()
                 }
             }
@@ -328,12 +327,13 @@ final class DesktopSyncController {
         consent = PairingRegistry()
     }
 
-    private var preservingConfirmedSharingDuringCheck: Bool {
-        helper.checkingStatus && helper.displayedState == .running
+    private var preservingConfirmedSharingPresentation: Bool {
+        helper.displayedState == .running &&
+            (helper.checkingStatus || helper.needsAutomaticRecovery)
     }
 
     private var helperSharingForPresentation: RunningDirectService? {
-        preservingConfirmedSharingDuringCheck ? helper.displayedSharing : helper.sharing
+        preservingConfirmedSharingPresentation ? helper.displayedSharing : helper.sharing
     }
 
     func reviewProposal(_ item: DesktopPeerIncomingProposal) async {
