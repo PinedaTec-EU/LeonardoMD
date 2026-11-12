@@ -3,20 +3,16 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
-            <title>0.3.1316</title>
-            <pubDate>Wed, 11 Nov 2026 10:56:48 +0100</pubDate>
+            <title>0.3.1333</title>
+            <pubDate>Thu, 12 Nov 2026 16:34:28 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
-            <sparkle:version>1316</sparkle:version>
-            <sparkle:shortVersionString>0.3.1316</sparkle:shortVersionString>
+            <sparkle:version>1333</sparkle:version>
+            <sparkle:shortVersionString>0.3.1333</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown">Synchronization preferences keep their layout steady during refresh and show whether the service is checking, online, or unavailable beside the main switch. The full diagnostic remains available when it is longer than the visible space.
-
-Synchronized folders are now navigable and show only the files and folders in the current location.
-
-The update preparation introduced in earlier betas continues to preserve sync access when replacing the Mac application. A service already unreachable after an older application replacement may still need controlled recovery.
+            <description sparkle:format="markdown">Choose which detected built-in extensions to enable, suppress future recommendations globally, and reset warnings without changing activation preferences.
 </description>
-            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1316/LeonardoMD-0.3.1316.zip" length="24820430" type="application/octet-stream" sparkle:edSignature="bAXjpb/ueDMABIz2mAYyGxSk6beIaVhqD4Cge76derjJxyyY9byuwesjiLKsgi0ByIEoEL2rIrZducB779KBDQ==" />
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1333/LeonardoMD-0.3.1333.zip" length="24846834" type="application/octet-stream" sparkle:edSignature="GKz12raOn1i8LgZVPIvDSIlAUfDHA/HUb8Bmff4Iud6xegjllM12beeDw+zkPKqowFet0VCC8DIW0E3V1Jh+DQ==" />
         </item>
     <item leonardo:channel="stable">
             <title>0.1.765</title>
