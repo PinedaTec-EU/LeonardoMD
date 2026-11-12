@@ -17,4 +17,9 @@ never reads unopened project files.
 - Navigating from Preview/Fill flushes renderer edits before exposing the source
   editor. Regex compilation failure clears matches and reports an inline error.
 
-Canonical feature: [#434](https://github.com/PinedaTec-EU/LeonardoMD/issues/434).
+The bundled Spanish and English guides document the literal/regex modes,
+window scope, result navigation and keyboard shortcuts. Native package acceptance
+is recorded in [in-editor search validation](../doc/validation/in-editor-search/README.md).
+
+Canonical feature: [#39](https://github.com/PinedaTec-EU/LeonardoMD/issues/39),
+[#434](https://github.com/PinedaTec-EU/LeonardoMD/issues/434).
