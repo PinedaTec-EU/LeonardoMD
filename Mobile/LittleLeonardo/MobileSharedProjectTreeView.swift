@@ -46,6 +46,7 @@ struct MobileSharedHostDisclosureRow: View {
                 }
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("shared-host-\(connection.connectionID)")
         .listRowBackground(MobileClassic.paper)
     }
@@ -99,6 +100,7 @@ private struct MobileIncomingSharedProjectRow: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("incoming-project-\(descriptor.id)")
     }
 
@@ -163,6 +165,7 @@ private struct MobileSharedProjectTreeRow: View {
             }
             .contentShape(Rectangle())
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("shared-project-\(descriptor.id)")
         .listRowBackground(MobileClassic.paper)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
