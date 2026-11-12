@@ -69,22 +69,8 @@ struct MobileSyncPreferencesView: View {
     }
     }
 
-    @ViewBuilder private var invitation: some View {
-        if let running = controller.running {
-            Text(L10n.text("Invite a device")).font(.headline)
-            Text(L10n.text("Open the invitation link on another Mac, or scan its QR in Little Leonardo. Compare the codes and approve access here."))
-                .font(.caption).foregroundStyle(.secondary)
-            Text(running.endpoint.absoluteString).textSelection(.enabled)
-            Button(L10n.text("Create pairing QR")) { Task { await controller.createQR() } }
-            if let url = controller.invitationURL, let image = qrImage(url.absoluteString) {
-                Button(L10n.text("Copy pairing link")) {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(url.absoluteString, forType: .string)
-                }
-                Image(nsImage: image).interpolation(.none).resizable().frame(width: 170, height: 170)
-                    .accessibilityLabel(L10n.text("Device invitation QR"))
-            }
-    }
+    private var invitation: some View {
+        DesktopPairingInvitationSection(controller: controller)
     }
 
     @ViewBuilder private var pendingConnections: some View {
@@ -120,6 +106,30 @@ struct MobileSyncPreferencesView: View {
     }
     }
 
+
+}
+
+struct DesktopPairingInvitationSection: View {
+    @Bindable var controller: DesktopSyncController
+
+    var body: some View {
+        if let running = controller.running {
+            Text(L10n.text("Invite a device")).font(.headline)
+            Text(L10n.text("Open the invitation link on another Mac, or scan its QR in Little Leonardo. Compare the codes and approve access here."))
+                .font(.caption).foregroundStyle(.secondary)
+            Text(running.endpoint.absoluteString).textSelection(.enabled)
+            Button(L10n.text("Create pairing QR")) { Task { await controller.createQR() } }
+                .disabled(!controller.pairingInvitationAvailable)
+            if let url = controller.invitationURL, let image = qrImage(url.absoluteString) {
+                Button(L10n.text("Copy pairing link")) {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(url.absoluteString, forType: .string)
+                }
+                Image(nsImage: image).interpolation(.none).resizable().frame(width: 170, height: 170)
+                    .accessibilityLabel(L10n.text("Device invitation QR"))
+            }
+        }
+    }
 
     private func qrImage(_ value: String) -> NSImage? {
         let filter = CIFilter.qrCodeGenerator()

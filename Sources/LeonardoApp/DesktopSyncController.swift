@@ -98,6 +98,10 @@ final class DesktopSyncController {
         settings.enabled && (usesHelper ? helper.online && helper.sharing != nil : running != nil)
     }
 
+    var pairingInvitationAvailable: Bool {
+        usesHelper ? helper.online && helper.sharing != nil : running != nil
+    }
+
     var consentActionsAvailable: Bool {
         usesHelper ? helper.online : running != nil
     }
@@ -391,17 +395,24 @@ final class DesktopSyncController {
 
     func createQR() async {
         guard !busy else { return }
+        let invitationAddresses = Set(addresses)
+        if invitationURL != nil && invitationNetworkAddresses != invitationAddresses {
+            invitationURL = nil; invitationNetworkAddresses = nil
+        }
+        guard pairingInvitationAvailable else { return }
         busy = true
         defer { busy = false }
-        let invitationAddresses = Set(addresses)
-        invitationURL = nil; invitationNetworkAddresses = nil
         if usesHelper {
             await helper.refresh()
             updateRunningFromHelper()
-            guard helper.online else { invitationURL = nil; return }
+            guard helper.online else { return }
         }
-        guard let running else { invitationURL = nil; return }
+        guard let running else {
+            invitationURL = nil; invitationNetworkAddresses = nil
+            return
+        }
         invitationURL = nil
+        invitationNetworkAddresses = nil
         do {
             let invitation = try await runtime.createInvitation()
             if usesHelper {

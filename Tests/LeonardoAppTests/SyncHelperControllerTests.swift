@@ -108,23 +108,43 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertFalse(helper.checkingStatus)
         await source.refreshConsent(refreshHelper: false)
         XCTAssertFalse(source.sharingAvailable)
+        XCTAssertFalse(source.pairingInvitationAvailable,
+            "Pairing requires a currently confirmed helper and sharing service")
         XCTAssertTrue(source.sharingPresentationAvailable, "The last confirmed sharing remains visible while recovery is pending")
         XCTAssertEqual(source.running?.endpoint, service.endpoint)
         XCTAssertEqual(source.invitationURL, invitation, "The last confirmed invitation must survive the recovery interval")
         XCTAssertEqual(source.consent.requests, [request], "Consent rows must survive the recovery interval")
         XCTAssertEqual(source.incoming.map(\.id), [proposal.id], "Incoming proposal rows must survive the recovery interval")
+        let statusCallsBeforeRejectedQR = await control.statusCalls
+        await source.createQR()
+        let statusCallsAfterRejectedQR = await control.statusCalls
+        XCTAssertEqual(statusCallsAfterRejectedQR, statusCallsBeforeRejectedQR,
+            "QR creation must not start a health check while live helper health is unavailable")
+        XCTAssertEqual(source.invitationURL, invitation,
+            "A rejected QR action must preserve the current invitation during recovery")
         try await captureStatusIndicator(helper,
             state: pendingRenewal ? "sharing-renewal-pending" : "sharing-cancelled-recovery")
         if pendingRenewal {
-            try await captureUnavailableSyncActions(projectID: project.id, proposal: proposal, controller: source)
+            try await captureSyncActionState(projectID: project.id, proposal: proposal,
+                controller: source, state: "unavailable")
         }
 
         if pendingRenewal { _ = try await fixture.configurations.finishSyncHelperUpgrade(token, at: fixture.preferences) }
         await helper.refreshIfRecoverable()
         await source.refreshConsent(refreshHelper: false)
         XCTAssertTrue(helper.online)
+        XCTAssertTrue(source.pairingInvitationAvailable,
+            "Pairing actions become available after helper health recovers")
         XCTAssertEqual(source.running?.endpoint, service.endpoint)
         XCTAssertEqual(source.invitationURL, invitation, "Same-endpoint recovery must preserve the QR")
+        XCTAssertEqual(source.consent.requests, [request], "Consent rows must remain through recovery")
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id], "Incoming rows must remain through recovery")
+        await source.createQR()
+        XCTAssertNotNil(source.invitationURL, "A healthy helper can create an invitation after recovery")
+        if pendingRenewal {
+            try await captureSyncActionState(projectID: project.id, proposal: proposal,
+                controller: source, state: "recovered")
+        }
     }
 
     func testIndependentAutomaticStopCannotUndoNewEnable() async throws {
@@ -2380,30 +2400,6 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(source.incoming.map(\.id), [proposal.id])
         XCTAssertTrue(source.sharingAvailable)
 
-        let failedCall = await control.statusCalls + 1
-        await control.failStatus(at: failedCall)
-        let refresh = Task { await source.refreshConsent(refreshHelper: true) }
-        for _ in 0..<5000 {
-            if await pause.isHeld { break }
-            try await Task.sleep(for: .milliseconds(1))
-        }
-        guard await pause.isHeld else {
-            await pause.release(); await refresh.value
-            XCTFail("The transient health retry did not reach its barrier"); return
-        }
-        XCTAssertFalse(source.sharingAvailable, "Operations must wait for confirmed live helper health")
-        XCTAssertFalse(source.consentActionsAvailable, "Consent actions must wait for confirmed live helper health")
-        XCTAssertTrue(source.sharingPresentationAvailable)
-
-        let callsDuringRetry = await control.statusCalls
-        await source.refreshConsent(refreshHelper: false)
-        let callsAfterPoll = await control.statusCalls
-        XCTAssertEqual(callsAfterPoll, callsDuringRetry, "The two-second poll must respect the retry backoff")
-        XCTAssertEqual(source.running?.endpoint, service.endpoint)
-        XCTAssertEqual(source.invitationURL, invitation, "A transient helper response must not discard a valid QR")
-        XCTAssertEqual(source.consent.requests, [request], "Pending approval rows must remain visible during retry")
-        XCTAssertEqual(source.incoming.map(\.id), [proposal.id], "Incoming rows must remain visible during retry")
-
         let proposalSelection = try CorpusSelection(folders: [""], documents: [])
         let snapshot = CorpusSnapshot(revision: "base", files: [])
         let proposed = CorpusSnapshot(revision: "incoming", files: [
@@ -2417,6 +2413,42 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(review.review.comparison.differences.count, 1)
         XCTAssertEqual(review.review.comparison.differences.first?.path, "notes.md")
         review.draft.decisions["notes.md"] = decision
+        source.reviewing = review
+        XCTAssertFalse(DesktopSourceReviewView(controller: source, value: review).applyDisabled,
+            "An open, complete review can be applied before health fails")
+        try await captureSourceReview(review, controller: source, name: "source-review-online-before-retry",
+            state: "The same custom source review is open and Apply is enabled before the helper health retry")
+
+        let failedCall = await control.statusCalls + 1
+        await control.failStatus(at: failedCall)
+        let refresh = Task { await source.refreshConsent(refreshHelper: true) }
+        for _ in 0..<5000 {
+            if await pause.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await pause.isHeld else {
+            await pause.release(); await refresh.value
+            XCTFail("The transient health retry did not reach its barrier"); return
+        }
+        XCTAssertFalse(source.sharingAvailable, "Operations must wait for confirmed live helper health")
+        XCTAssertFalse(source.pairingInvitationAvailable,
+            "Pairing invitation creation must wait for confirmed helper health")
+        XCTAssertFalse(source.consentActionsAvailable, "Consent actions must wait for confirmed live helper health")
+        XCTAssertTrue(source.sharingPresentationAvailable)
+
+        let callsDuringRetry = await control.statusCalls
+        await source.refreshConsent(refreshHelper: false)
+        let callsAfterPoll = await control.statusCalls
+        XCTAssertEqual(callsAfterPoll, callsDuringRetry, "The two-second poll must respect the retry backoff")
+        XCTAssertEqual(source.running?.endpoint, service.endpoint)
+        XCTAssertEqual(source.invitationURL, invitation, "A transient helper response must not discard a valid QR")
+        XCTAssertEqual(source.consent.requests, [request], "Pending approval rows must remain visible during retry")
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id], "Incoming rows must remain visible during retry")
+        XCTAssertEqual(source.reviewing?.id, review.id, "The active review must remain open during recovery")
+        XCTAssertTrue(DesktopSourceReviewView(controller: source, value: review).applyDisabled,
+            "Apply must disable while the helper health is unavailable")
+        try await captureSourceReview(review, controller: source, name: "source-review-unavailable",
+            state: "The same custom source review stays open while live helper health is unavailable; Apply is disabled")
         await source.reviewProposal(proposal)
         let appliedReview = await source.applyReview(review, decisions: [:])
         XCTAssertFalse(appliedReview,
@@ -2430,19 +2462,19 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(blockedActions.approve, 0)
         XCTAssertEqual(blockedActions.reject, 0)
         XCTAssertEqual(blockedActions.revoke, 0)
-        try await captureUnavailableSyncActions(projectID: project.id, proposal: proposal, controller: source)
-
         await pause.release(); await refresh.value
         XCTAssertTrue(helper.online)
         XCTAssertTrue(source.sharingAvailable)
+        XCTAssertTrue(source.pairingInvitationAvailable)
         XCTAssertEqual(source.running?.endpoint, service.endpoint)
         XCTAssertEqual(source.invitationURL, invitation, "Recovery on the same endpoint must retain the QR")
         XCTAssertEqual(source.consent.requests, [request])
         XCTAssertEqual(source.incoming.map(\.id), [proposal.id])
 
-        source.reviewing = review
         XCTAssertFalse(DesktopSourceReviewView(controller: source, value: review).applyDisabled,
             "A complete review can be applied while helper health is confirmed")
+        try await captureSourceReview(review, controller: source, name: "source-review-recovered",
+            state: "The same custom source review remains open after same-endpoint recovery; Apply is enabled")
         let terminalFailure = await control.statusCalls + 1
         await control.failStatus(at: terminalFailure)
         await control.failStatus(at: terminalFailure + 1)
@@ -2702,23 +2734,33 @@ final class SyncHelperControllerTests: XCTestCase {
             screen: "Shared project status")
     }
 
-    private func captureUnavailableSyncActions(projectID: UUID,
-                                               proposal: DesktopPeerIncomingProposal,
-                                               controller: DesktopSyncController) async throws {
+    private func captureSyncActionState(projectID: UUID,
+                                       proposal: DesktopPeerIncomingProposal,
+                                       controller: DesktopSyncController,
+                                       state: String) async throws {
         guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
         let destination = URL(fileURLWithPath: output)
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
         let previous = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = previous }
+        let availability = state == "unavailable" ? "helper health unavailable; pairing actions are disabled" :
+            "helper health recovered; pairing actions are enabled"
         for language in AppLanguage.allCases {
             LanguageSettings.shared.language = language
             let suffix = language.rawValue
-            let review = NSHostingView(rootView: IncomingProposalRow(item: proposal, controller: controller)
+            let invitation = NSHostingView(rootView: DesktopPairingInvitationSection(controller: controller)
+                .padding(16).frame(width: 640, height: 300, alignment: .topLeading)
+                .background(Color(nsColor: .windowBackgroundColor)))
+            try await GuideCaptureSupport.captureNative(invitation, size: NSSize(width: 640, height: 300),
+                to: destination.appendingPathComponent("pairing-invitation-\(state)-\(suffix).png"), language: suffix,
+                state: "Synthetic pairing invitation, QR and copy controls; \(availability)",
+                route: "/native/preferences/synchronization", screen: "Pairing invitation controls")
+            let incoming = NSHostingView(rootView: IncomingProposalRow(item: proposal, controller: controller)
                 .padding(16).frame(width: 532, height: 100, alignment: .topLeading)
                 .background(Color(nsColor: .windowBackgroundColor)))
-            try await GuideCaptureSupport.captureNative(review, size: NSSize(width: 532, height: 100),
-                to: destination.appendingPathComponent("incoming-review-unavailable-\(suffix).png"), language: suffix,
-                state: "Synthetic incoming proposal retained during helper retry; review action disabled by live health",
+            try await GuideCaptureSupport.captureNative(incoming, size: NSSize(width: 532, height: 100),
+                to: destination.appendingPathComponent("incoming-review-\(state)-\(suffix).png"), language: suffix,
+                state: "Synthetic incoming proposal retained; \(availability)",
                 pixelScale: 1,
                 route: "/native/preferences/synchronization", screen: "Incoming proposal actions")
             let consent = NSHostingView(rootView: PairingConsentActions(controller: controller,
@@ -2726,8 +2768,8 @@ final class SyncHelperControllerTests: XCTestCase {
                 .padding(16).frame(width: 420, height: 60, alignment: .topLeading)
                 .background(Color(nsColor: .windowBackgroundColor)).buttonStyle(PremiumButtonStyle()))
             try await GuideCaptureSupport.captureNative(consent, size: NSSize(width: 420, height: 60),
-                to: destination.appendingPathComponent("consent-actions-unavailable-\(suffix).png"), language: suffix,
-                state: "Synthetic confirmed pairing request during helper retry; approval disabled by live health",
+                to: destination.appendingPathComponent("consent-actions-\(state)-\(suffix).png"), language: suffix,
+                state: "Synthetic confirmed pairing request; \(availability)",
                 route: "/native/preferences/synchronization/pairing", screen: "Pairing consent actions")
         }
     }
