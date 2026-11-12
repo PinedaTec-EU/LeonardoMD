@@ -37,9 +37,7 @@ extension DocumentTabs {
               let target = tabs.first(where: { $0.id == match.tabID }) else { return }
 
         if activeID != target.id {
-            activeID = target.id
-            updateTitle()
-            refreshSearch()
+            select(target.id)
         }
 
         let session = target.session
