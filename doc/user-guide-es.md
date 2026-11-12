@@ -91,7 +91,7 @@ $$
 
 </details>
 
-**Tú decides cuándo activar.** Leonardo reúne en un diálogo las extensiones integradas que detecta deshabilitadas. **Ahora no** evita repetir esa recomendación durante la apertura actual. Marca **No volver a preguntar por esta extensión** para guardar tu elección en este Mac. **Preferencias → Extensiones → Restablecer avisos de extensiones** permite volver a preguntar, sin cambiar las extensiones activadas. El diálogo indica si la activación afecta al proyecto o a tus preferencias globales.
+**Tú eliges qué activar.** Leonardo reúne en un diálogo las extensiones integradas deshabilitadas que detecta. El interruptor de cada fila selecciona esa extensión; **Activar seleccionadas** aplica solo tu selección en el ámbito indicado. **Ahora no** descarta la selección. El interruptor global **No volver a mostrar este aviso** oculta las recomendaciones para todos los documentos de este Mac. Puedes recuperarlas en **Preferencias → Extensiones → Restablecer avisos de extensiones**; esto no cambia las extensiones activadas.
 
 ## 1. Abrir, leer y editar
 
@@ -531,11 +531,11 @@ Estas extensiones vienen con Leonardo, trabajan localmente y empiezan desactivad
 
 **Una extensión desactivada no puede mostrar correctamente su contenido especializado.** La fuente permanece como código, notación o Markdown ordinario. Desactivar cambia la interpretación, no los bytes escritos. PDF usa el documento renderizado: activa las extensiones necesarias y comprueba Vista previa antes de exportar. Los diagramas Mermaid se renderizan al acercarse a la zona visible; espera a que terminen antes de revisarlos.
 
-![Leonardo pide permiso antes de activar extensiones incluidas detectadas](guide/es/assets/activation.png)
+![Leonardo pregunta qué extensiones integradas detectadas se quieren activar](guide/es/assets/activation-switch.png)
 
-*Diálogo real en español con un documento ficticio. Este ejemplo muestra activación global; el diálogo de proyecto identifica ese ámbito. No propone plugins de terceros.*
+*Componente de diálogo en español con Mermaid y Gráficos seleccionados en un documento ficticio. El diálogo de proyecto identifica su ámbito. No propone plugins de terceros.*
 
-La detección recomienda solo las cinco extensiones propias de Leonardo. Es una recomendación, no una validación completa: los ejemplos de código que solo describen sintaxis no necesitan activación. **Ahora no** evita repetir durante la apertura actual. **No volver a preguntar por esta extensión** recuerda tu elección en este Mac. Comprueba el ámbito indicado antes de aceptar la activación.
+La detección recomienda solo las cinco extensiones propias de Leonardo. Es una recomendación, no una validación completa: los ejemplos de código que solo describen sintaxis no necesitan activación. Cada interruptor selecciona una extensión para **Activar seleccionadas**; **Ahora no** descarta la selección y evita repetir durante la apertura actual. El interruptor global oculta las recomendaciones para todos los documentos. **Preferencias → Extensiones → Restablecer avisos de extensiones** las recupera y elimina las antiguas supresiones por extensión, sin cambiar las extensiones activadas. Comprueba el ámbito indicado antes de activar.
 
 ![Preferencias de extensiones con la acción de restablecer avisos](guide/es/assets/warnings.png)
 

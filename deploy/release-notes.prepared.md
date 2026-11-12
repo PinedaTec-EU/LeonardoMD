@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1333
+
+- #417 Updated: select extensions from recommendations ([#418](https://github.com/PinedaTec-EU/LeonardoMD/pull/418))
+
+<p>Choose which detected built-in extensions to enable, suppress future recommendations globally, and reset warnings without changing activation preferences.</p>
+
+Source: `c897e37f43b3f301d24844d017aa07a4666e5ddb`. Delta: `{"build": 17}`.
+
 ## 0.3.1316
 
 - #421 Fixed: stabilize synchronization status refresh ([#422](https://github.com/PinedaTec-EU/LeonardoMD/pull/422))

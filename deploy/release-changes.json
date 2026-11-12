@@ -1049,6 +1049,16 @@
       "pr": 422,
       "summary": "Synchronization preferences keep their layout steady during refresh and show whether the service is checking, online, or unavailable beside the main switch.",
       "to_version": "0.3.1316"
+    },
+    {
+      "delta": {
+        "build": 17
+      },
+      "from_version": "0.3.1316",
+      "merge_sha": "c897e37f43b3f301d24844d017aa07a4666e5ddb",
+      "pr": 418,
+      "summary": "Choose which detected built-in extensions to enable, suppress future recommendations globally, and reset warnings without changing activation preferences.",
+      "to_version": "0.3.1333"
     }
   ],
   "initial_version": "0.1.56",
@@ -1059,5 +1069,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1316"
+  "version": "0.3.1333"
 }

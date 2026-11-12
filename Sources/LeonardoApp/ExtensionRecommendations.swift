@@ -5,22 +5,27 @@ import LeonardoCore
 @MainActor @Observable
 final class ExtensionWarningPreferences {
     static let shared = ExtensionWarningPreferences()
-    private static let key = "suppressedBuiltInExtensionWarnings"
+    private static let legacyKey = "suppressedBuiltInExtensionWarnings"
+    private static let suppressAllKey = "suppressAllBuiltInExtensionWarnings"
     private let defaults: UserDefaults
-    private(set) var suppressed: Set<BuiltInExtension>
+    private(set) var legacySuppressed: Set<BuiltInExtension>
+    private(set) var suppressAllWarnings: Bool
     private(set) var resetRevision = 0
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        suppressed = Set((defaults.stringArray(forKey: Self.key) ?? []).compactMap(BuiltInExtension.init(rawValue:)))
+        legacySuppressed = Set((defaults.stringArray(forKey: Self.legacyKey) ?? []).compactMap(BuiltInExtension.init(rawValue:)))
+        suppressAllWarnings = defaults.bool(forKey: Self.suppressAllKey)
     }
-    func suppress(_ extensions: Set<BuiltInExtension>) {
-        suppressed.formUnion(extensions)
-        defaults.set(suppressed.map(\.rawValue).sorted(), forKey: Self.key)
+    func setSuppressAllWarnings(_ suppress: Bool) {
+        suppressAllWarnings = suppress
+        defaults.set(suppress, forKey: Self.suppressAllKey)
     }
     func reset() {
-        suppressed = []
-        defaults.removeObject(forKey: Self.key)
+        legacySuppressed = []
+        suppressAllWarnings = false
+        defaults.removeObject(forKey: Self.legacyKey)
+        defaults.removeObject(forKey: Self.suppressAllKey)
         resetRevision += 1
     }
 }
@@ -31,6 +36,16 @@ struct ExtensionRecommendation: Identifiable {
     let project: URL?
     let source: String
     let extensions: [BuiltInExtension]
+}
+
+struct ExtensionRecommendationChoice: Equatable {
+    var enabledExtensions: Set<BuiltInExtension> = []
+    var suppressWarnings = false
+}
+
+enum ExtensionRecommendationAction {
+    case notNow
+    case enableSelected
 }
 
 @MainActor @Observable
@@ -57,31 +72,35 @@ final class ExtensionRecommendations {
             offered = []
             resetRevision = preferences.resetRevision
         }
-        if let prompt, !matches(prompt, session: session) || !eligible
+        if let prompt, preferences.suppressAllWarnings || !matches(prompt, session: session) || !eligible
             || prompt.extensions.contains(where: {
-                session.features[keyPath: $0.flag] || preferences.suppressed.contains($0)
+                session.features[keyPath: $0.flag] || preferences.legacySuppressed.contains($0)
             }) {
             self.prompt = nil
         }
-        guard eligible, detectedSource == session.content, prompt == nil, let document = session.documentURL else { return }
+        guard eligible, !preferences.suppressAllWarnings,
+              detectedSource == session.content, prompt == nil,
+              let document = session.documentURL else { return }
         let missing = BuiltInExtension.allCases.filter {
             detected.contains($0) && !session.features[keyPath: $0.flag]
-                && !preferences.suppressed.contains($0) && !offered.contains($0)
+                && !preferences.legacySuppressed.contains($0) && !offered.contains($0)
         }
         guard !missing.isEmpty else { return }
         offered.formUnion(missing)
         prompt = ExtensionRecommendation(document: document, project: session.projectURL,
                                          source: session.content, extensions: missing)
     }
-    func respond(to request: ExtensionRecommendation, activate: Bool,
-                 suppress: Set<BuiltInExtension>, session: AppSession) {
+    func respond(to request: ExtensionRecommendation, choice: ExtensionRecommendationChoice,
+                 action: ExtensionRecommendationAction, session: AppSession) {
         guard prompt?.id == request.id else { return }
         prompt = nil
         guard matches(request, session: session), !session.busy, !session.isSyncSuspended else { return }
-        preferences.suppress(suppress.intersection(request.extensions))
-        guard activate else { return }
+        preferences.setSuppressAllWarnings(choice.suppressWarnings)
+        guard case .enableSelected = action else { return }
+        let selected = choice.enabledExtensions.intersection(request.extensions)
+        guard !selected.isEmpty else { return }
         var features = session.features
-        for item in request.extensions where detected.contains(item) {
+        for item in selected where detected.contains(item) {
             features[keyPath: item.flag] = true
         }
         session.setFeatures(features, project: request.project != nil)
