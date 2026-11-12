@@ -26,7 +26,7 @@ extension DocumentTabs {
 
     func navigateSearch(by offset: Int) {
         guard offset == -1 || offset == 1, !closing else { return }
-        guard search.isVisible else {
+        if !search.isVisible {
             if search.query.isEmpty {
                 presentSearch()
                 return
