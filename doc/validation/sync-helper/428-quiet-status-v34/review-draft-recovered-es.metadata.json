@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-12T05:52:23.568145+00:00",
+  "capture": {
+    "captured_at": "2026-11-12T05:51:05.623000+00:00",
+    "route": "/native/preferences/synchronization/review",
+    "screen": "Incoming source review",
+    "browser_name": "Native AppKit / SwiftUI NSHostingView",
+    "browser_version": "Not applicable: native view, no browser engine",
+    "state": "The same selected 1/1 custom text remains after helper recovery; Apply enabled; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "viewport_css": {
+      "width": 960,
+      "height": 660
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 720,
+    "height_px": 495,
+    "sha256": "7ef227a3737856fe128ceea40e42e721a3cb32362e4236e25ae86306cb0fad4f"
+  },
+  "source": {
+    "revision_at_collection": "a37a1fd4e6a08f7b11fe3b006516b9d0d2c0517e",
+    "tracked_changes_present": false,
+    "untracked_files_present": false
+  }
+}

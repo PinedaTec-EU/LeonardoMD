@@ -1,0 +1,27 @@
+# Quiet synchronization status captures — v34
+
+These native AppKit/SwiftUI component captures were produced with the test executable built from clean product source commit `a37a1fd4e6a08f7b11fe3b006516b9d0d2c0517e`. That commit includes the final helper lifecycle and authorization fixes. Each capture has an observed-context file and a sidecar binding its dimensions, SHA-256, capture time and source revision. The metadata collection checkout was clean. All images use synthetic data.
+
+Three focused capture tests passed:
+
+- `SyncHelperControllerTests.testStatusIndicatorStatesDuringHealthCheck`
+- `SyncHelperControllerTests.testSharingPollPreservesConfirmedStateDuringRetryAndClearsAfterTerminalFailure`
+- `SyncHelperControllerTests.testDisableDoesNotKillHelperWhenGracefulStopCannotBeConfirmed`
+
+The `status-checking` and `status-online` PNGs are byte-identical (SHA-256 `3d3505854df2f47ae898a58f1ed03d83ce21a8e78728366d1718f3a8609e480f`), including the green indicator, switch and fixed layout. The review captures retain the same selected custom text and 1/1 decision while offline; Apply is disabled until confirmed recovery. The shutdown capture retains its red indicator and diagnostic with the switch off.
+
+| Capture | Screen / locale | Native viewport points | Pixels | Captured (UTC) | SHA-256 |
+| --- | --- | ---: | ---: | --- | --- |
+| [consent-actions-unavailable-en.png](./consent-actions-unavailable-en.png) · [context](./consent-actions-unavailable-en.context.json) · [metadata](./consent-actions-unavailable-en.metadata.json) | Pairing consent actions (en) | 420×60 | 840×120 | 2026-11-12T05:51:03.500000+00:00 | `47f0d4b6f5d02b52bf691a1f545fc67de26969fa2cd933a9e432b16e43aad442` |
+| [consent-actions-unavailable-es.png](./consent-actions-unavailable-es.png) · [context](./consent-actions-unavailable-es.context.json) · [metadata](./consent-actions-unavailable-es.metadata.json) | Pairing consent actions (es) | 420×60 | 840×120 | 2026-11-12T05:51:04.172000+00:00 | `fe90ebdff440fec9974e114becd9708b18383ec0e56171985a285271f815474b` |
+| [incoming-review-unavailable-en.png](./incoming-review-unavailable-en.png) · [context](./incoming-review-unavailable-en.context.json) · [metadata](./incoming-review-unavailable-en.metadata.json) | Incoming proposal actions (en) | 532×100 | 532×100 | 2026-11-12T05:51:03.171000+00:00 | `5c93f532ca2082042ee905047a94cdb24e2df96a7dbc13292a0385ca3e82f4fc` |
+| [incoming-review-unavailable-es.png](./incoming-review-unavailable-es.png) · [context](./incoming-review-unavailable-es.context.json) · [metadata](./incoming-review-unavailable-es.metadata.json) | Incoming proposal actions (es) | 532×100 | 532×100 | 2026-11-12T05:51:03.843000+00:00 | `4582b4e5b4439363cf3fd11eff8e82d9695dabb382356e7f260d808776773cc5` |
+| [review-draft-recovered-en.png](./review-draft-recovered-en.png) · [context](./review-draft-recovered-en.context.json) · [metadata](./review-draft-recovered-en.metadata.json) | Incoming source review (en) | 960×660 | 720×495 | 2026-11-12T05:51:05.274000+00:00 | `d3305de81fcaf9a738ada06da157094315435cc8a22820e949a2d3b711149492` |
+| [review-draft-recovered-es.png](./review-draft-recovered-es.png) · [context](./review-draft-recovered-es.context.json) · [metadata](./review-draft-recovered-es.metadata.json) | Incoming source review (es) | 960×660 | 720×495 | 2026-11-12T05:51:05.623000+00:00 | `7ef227a3737856fe128ceea40e42e721a3cb32362e4236e25ae86306cb0fad4f` |
+| [review-draft-unavailable-en.png](./review-draft-unavailable-en.png) · [context](./review-draft-unavailable-en.context.json) · [metadata](./review-draft-unavailable-en.metadata.json) | Incoming source review (en) | 960×660 | 720×495 | 2026-11-12T05:51:04.541000+00:00 | `af210e01611434ca74742c8a2795217553992a08e6b91b8a5c2ff2a90fd58c29` |
+| [review-draft-unavailable-es.png](./review-draft-unavailable-es.png) · [context](./review-draft-unavailable-es.context.json) · [metadata](./review-draft-unavailable-es.metadata.json) | Incoming source review (es) | 960×660 | 720×495 | 2026-11-12T05:51:04.905000+00:00 | `e83864684e8bd08db9bc40ef16bfbc6c5297ee850d0c363e56ce2f619b888372` |
+| [status-checking.png](./status-checking.png) · [context](./status-checking.context.json) · [metadata](./status-checking.metadata.json) | Synchronization helper status (checking) | 532×260 | 1064×520 | 2026-11-12T05:52:09.534000+00:00 | `3d3505854df2f47ae898a58f1ed03d83ce21a8e78728366d1718f3a8609e480f` |
+| [status-disabled-failure.png](./status-disabled-failure.png) · [context](./status-disabled-failure.context.json) · [metadata](./status-disabled-failure.metadata.json) | Synchronization helper status (disabled failure) | 532×260 | 1064×520 | 2026-11-12T05:51:08.371000+00:00 | `5ec0b24f838574d61ecbad117818077d57afe16af32e1c72b16baa0bc4106e2e` |
+| [status-online.png](./status-online.png) · [context](./status-online.context.json) · [metadata](./status-online.metadata.json) | Synchronization helper status (online) | 532×260 | 1064×520 | 2026-11-12T05:52:09.879000+00:00 | `3d3505854df2f47ae898a58f1ed03d83ce21a8e78728366d1718f3a8609e480f` |
+
+Reproduce with the source-bound test executable using the three test filters above and `LEONARDO_SYNC_STATUS_EVIDENCE=<output-directory>`. The captures are component evidence; they do not establish a fresh packaged-app window, bilingual Help/practice acceptance, signed live-helper health, or hosted beta installation/update/relaunch. Those checks remain pending.
