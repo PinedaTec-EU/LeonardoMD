@@ -1,14 +1,18 @@
 # Sync helper validation
 
-Latest current-head captures for PR #428 are in
+The latest PR #428 evidence refresh is in
+[`428-quiet-status-v40/`](428-quiet-status-v40/README.md). It records packaged
+Guide v59 Help and practice-form acceptance in both languages. The native
+Preferences state captures remain in
 [`428-quiet-status-v39/`](428-quiet-status-v39/README.md), bound to product and
-test source `9c970868ebcc53180867a12853cf9aa078b164d1`. They cover the retained
-red/green status during health checks and recovery, stable section height,
-pairing and consent controls, incoming proposals, paired-device rows, and open
-source-review drafts. English and Spanish component captures include original
-context and hash metadata. They are native component captures, not fresh
-packaged-app startup or signed-service acceptance. The earlier v36 folder and
-other evidence folders retain their original sources as historical checkpoints.
+test source `9c970868ebcc53180867a12853cf9aa078b164d1`; the later PR head changes
+only capture-test expectations and the release ledger, not product source.
+The v39 captures cover retained red/green status through health checks and
+recovery, stable section height, pairing and consent controls, incoming
+proposals, paired-device rows, and open source-review drafts. These native
+component captures do not claim signed-service or hosted beta acceptance. The
+earlier v36 folder and other evidence folders retain their original sources as
+historical checkpoints.
 
 ## Owner-authorized installed-service acceptance
 
