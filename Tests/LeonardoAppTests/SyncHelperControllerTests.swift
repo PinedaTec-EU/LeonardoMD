@@ -2561,6 +2561,7 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(source.sharingPresentationAvailable)
         XCTAssertEqual(source.invitationURL, displayedInvitation,
             "The last confirmed QR remains visible while helper recovery is still unresolved")
+        try await capturePairingInvitationState(source, state: "valid-qr-retained-during-recovery")
 
         await runtime.simulateHelperRestart()
         await pause.release()
@@ -2571,6 +2572,72 @@ final class SyncHelperControllerTests: XCTestCase {
             "A recovered same-endpoint service must remove a QR that its live registry invalidated")
         XCTAssertTrue(source.consent.requests.isEmpty,
             "Consent rows cleared by the service restart must match the recovered registry")
+        try await capturePairingInvitationState(source, state: "invalidated-qr-removed-after-restart")
+    }
+
+    func testStaleConsentResponseCannotClearInvitationCreatedWhileWaiting() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: false,
+            projects: [MobileSharedProject(rootURL: fixture.root, name: "Fictional project")])
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!,
+            certificateFingerprint: Data(repeating: 4, count: 32))
+        let runtime = StatusRefreshRuntime(); await runtime.setStartedService(service)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, usesHelper: false)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        await source.initialize()
+        XCTAssertTrue(source.pairingInvitationAvailable)
+
+        await runtime.pauseConsentRead()
+        let staleRefresh = Task { await source.refreshConsent(refreshHelper: false) }
+        for _ in 0..<5_000 {
+            if await runtime.hasHeldConsentRead { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await runtime.hasHeldConsentRead else {
+            await runtime.resumeConsentRead(); await staleRefresh.value
+            XCTFail("The old consent snapshot did not reach its barrier"); return
+        }
+
+        await source.createQR()
+        let createdInvitation = try XCTUnwrap(source.invitationURL)
+        let decoded = try DirectPairingQR.decode(createdInvitation, now: Date())
+        let currentRegistry = await runtime.currentConsentState()
+        XCTAssertTrue(currentRegistry.hasValidInvitation(decoded.invitation, now: Date()))
+
+        await runtime.resumeConsentRead()
+        await staleRefresh.value
+        XCTAssertEqual(source.invitationURL, createdInvitation,
+            "An older registry snapshot must not clear an invitation created while it was waiting")
+
+        await runtime.pauseConsentRead()
+        let replacementRefresh = Task { await source.refreshConsent(refreshHelper: false) }
+        for _ in 0..<5_000 {
+            if await runtime.hasHeldConsentRead { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await runtime.hasHeldConsentRead else {
+            await runtime.resumeConsentRead(); await replacementRefresh.value
+            XCTFail("The old invitation snapshot did not reach its barrier"); return
+        }
+        let oldInvitationState = await runtime.heldConsentState()
+        XCTAssertTrue(oldInvitationState?.hasValidInvitation(decoded.invitation, now: Date()) == true,
+            "The delayed response must represent the invitation that is being replaced")
+
+        await source.createQR()
+        let replacementInvitation = try XCTUnwrap(source.invitationURL)
+        XCTAssertNotEqual(replacementInvitation, createdInvitation)
+        let decodedReplacement = try DirectPairingQR.decode(replacementInvitation, now: Date())
+        let currentRegistryAfterReplacement = await runtime.currentConsentState()
+        XCTAssertTrue(currentRegistryAfterReplacement.hasValidInvitation(decodedReplacement.invitation, now: Date()))
+
+        await runtime.resumeConsentRead()
+        await replacementRefresh.value
+        XCTAssertEqual(source.invitationURL, replacementInvitation,
+            "A delayed registry response for the previous QR must not clear its replacement")
     }
 
     func testSharingPollPreservesInvitationAcrossSupersededPeerHealthCheck() async throws {
@@ -2831,6 +2898,28 @@ final class SyncHelperControllerTests: XCTestCase {
                 to: destination.appendingPathComponent("consent-actions-\(state)-\(suffix).png"), language: suffix,
                 state: "Synthetic confirmed pairing request; \(availability)",
                 route: "/native/preferences/synchronization/pairing", screen: "Pairing consent actions")
+        }
+    }
+
+    private func capturePairingInvitationState(_ controller: DesktopSyncController,
+                                               state: String) async throws {
+        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
+        let destination = URL(fileURLWithPath: output)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        let visibleState = controller.invitationURL == nil ? "invalidated invitation removed" :
+            "valid invitation QR retained"
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let suffix = language.rawValue
+            let host = NSHostingView(rootView: DesktopPairingInvitationSection(controller: controller)
+                .padding(16).frame(width: 640, height: 300, alignment: .topLeading)
+                .background(Color(nsColor: .windowBackgroundColor)))
+            try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 640, height: 300),
+                to: destination.appendingPathComponent("pairing-\(state)-\(suffix).png"), language: suffix,
+                state: "\(state); \(visibleState)", route: "/native/preferences/synchronization",
+                screen: "Pairing invitation recovery")
         }
     }
 
@@ -3771,6 +3860,9 @@ private struct StatusRefreshRuntimeActions: Equatable, Sendable {
 
 private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
     private var consentFailure = false
+    private var consentReadPaused = false
+    private var heldConsentRead: (snapshot: PairingRegistry,
+                                  continuation: CheckedContinuation<PairingRegistry, Never>)?
     private var invitationPaused = false
     private var heldInvitation: CheckedContinuation<Void, Never>?
     private var incomingReadPaused = false
@@ -3780,9 +3872,19 @@ private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
     private var incoming: [DesktopPeerIncomingProposal] = []
     private var startedService: RunningDirectService?
     private var recordedActions = StatusRefreshRuntimeActions()
+    var hasHeldConsentRead: Bool { heldConsentRead != nil }
     var hasHeldInvitation: Bool { heldInvitation != nil }
     var hasHeldIncomingRead: Bool { heldIncomingRead != nil }
     var recordedActionsValue: StatusRefreshRuntimeActions { recordedActions }
+    func pauseConsentRead() { consentReadPaused = true }
+    func resumeConsentRead() {
+        consentReadPaused = false
+        guard let read = heldConsentRead else { return }
+        heldConsentRead = nil
+        read.continuation.resume(returning: read.snapshot)
+    }
+    func currentConsentState() -> PairingRegistry { consent }
+    func heldConsentState() -> PairingRegistry? { heldConsentRead?.snapshot }
     func pauseInvitation() { invitationPaused = true }
     func resumeInvitation() { invitationPaused = false; heldInvitation?.resume(); heldInvitation = nil }
     func pauseIncomingRead() { incomingReadPaused = true }
@@ -3803,7 +3905,11 @@ private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
     func stop() async throws {}
     func consentState() async throws -> PairingRegistry {
         if consentFailure { throw DesktopRuntimeError.notRunning }
-        return consent
+        let snapshot = consent
+        guard consentReadPaused else { return snapshot }
+        return await withCheckedContinuation { continuation in
+            heldConsentRead = (snapshot, continuation)
+        }
     }
     func incomingProposals() async throws -> [DesktopPeerIncomingProposal] {
         guard incomingReadPaused else { return incoming }
