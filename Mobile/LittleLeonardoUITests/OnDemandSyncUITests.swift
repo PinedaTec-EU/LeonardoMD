@@ -23,8 +23,8 @@ final class OnDemandSyncUITests: XCTestCase {
         let hosts = app.descendants(matching: .any)
             .matching(NSPredicate(format: "identifier BEGINSWITH %@", "shared-host-"))
         XCTAssertTrue(hosts.firstMatch.waitForExistence(timeout: 15), "The connected Mac must appear as a host group")
-        let incoming = element("incoming-project-" + projectID, app: app)
-        let addProject = incoming.buttons["Añadir"]
+        let addProject = app.buttons["incoming-project-add-" + projectID]
+        let ignoreProject = app.buttons["incoming-project-ignore-" + projectID]
         var foundPendingProject = addProject.isHittable
         for index in 0..<hosts.count where !foundPendingProject {
             let candidate = hosts.element(boundBy: index)
@@ -35,7 +35,7 @@ final class OnDemandSyncUITests: XCTestCase {
         XCTAssertTrue(foundPendingProject, "The newly granted project must be visible under its connected host")
         try capture(app, "incoming-project", state: "New project is grouped under its connected host and awaits Add or Ignore")
         XCTAssertTrue(addProject.isHittable)
-        XCTAssertTrue(incoming.buttons["Ignorar"].exists)
+        XCTAssertTrue(ignoreProject.isHittable)
         addProject.tap()
         let project = element("shared-project-" + projectID, app: app)
         XCTAssertTrue(project.waitForExistence(timeout: 20), "Adding must reveal the expandable project row")

@@ -90,10 +90,12 @@ private struct MobileIncomingSharedProjectRow: View {
                 Button("Añadir") { addProject() }
                     .buttonStyle(.borderedProminent).tint(MobileClassic.heading)
                     .foregroundStyle(MobileClassic.paper).disabled(library.connecting)
+                    .accessibilityIdentifier("incoming-project-add-\(descriptor.id)")
                 Button("Ignorar") {
                     library.ignoreSharedProject(connectionID: connection.connectionID, projectID: descriptor.id)
                 }
                 .buttonStyle(.bordered).disabled(library.connecting)
+                .accessibilityIdentifier("incoming-project-ignore-\(descriptor.id)")
             }
         }
         .padding(.vertical, 4)
