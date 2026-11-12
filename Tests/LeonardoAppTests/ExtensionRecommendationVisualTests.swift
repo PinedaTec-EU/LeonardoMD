@@ -24,13 +24,16 @@ final class ExtensionRecommendationVisualTests: XCTestCase {
                 let request = ExtensionRecommendation(document: URL(fileURLWithPath: "/tmp/guide.mdlf"),
                     project: project ? URL(fileURLWithPath: "/tmp/example-project") : nil,
                     source: "synthetic fixture", extensions: [.mermaid, .math, .charts, .citations, .extras])
-                let view = NSHostingView(rootView: ExtensionRecommendationDialog(request: request, respond: { _ in })
+                let selected = ExtensionRecommendationChoice(enabledExtensions: [.mermaid, .charts])
+                let view = NSHostingView(rootView: ExtensionRecommendationDialog(request: request,
+                    initialChoice: selected, respond: { _ in })
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(session.surfaceColor).modifier(SessionAppearance(session: session)))
                 let size = NSSize(width: 538, height: 600)
                 let name = "dialog-\(language.rawValue)-\(project ? "project" : "global").png"
                 try await capture(view, size: size, to: directory.appendingPathComponent(name),
-                                  language: language.rawValue, screen: "Extension selection, \(project ? "project" : "global") scope")
+                                  language: language.rawValue, screen: "Extension selection, \(project ? "project" : "global") scope",
+                                  detail: "Mermaid and Charts selected; synthetic document")
             }
             let view = NSHostingView(rootView: ExtensionPreferences(session: session, projectScope: false)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -43,11 +46,12 @@ final class ExtensionRecommendationVisualTests: XCTestCase {
             to: directory.appendingPathComponent("provenance.txt"), atomically: true, encoding: .utf8)
     }
 
-    private func capture(_ view: NSView, size: NSSize, to url: URL, language: String, screen: String) async throws {
+    private func capture(_ view: NSView, size: NSSize, to url: URL, language: String, screen: String,
+                         detail: String = "") async throws {
         var context: [String: Any] = [
             "route": "/native/extensions/\(url.deletingPathExtension().lastPathComponent)",
             "screen": screen,
-            "state": "\(screen); language \(language); synthetic fixture; viewport_css is the measured native-point equivalent; CSS is not applicable",
+            "state": "\(screen); \(detail); language \(language); synthetic fixture; viewport_css is the measured native-point equivalent; CSS is not applicable",
             "capture_mode": "element", "data_provenance": "synthetic",
             "browser_name": "Native AppKit / SwiftUI NSHostingView",
             "browser_version": "Not applicable: native view, no browser engine",

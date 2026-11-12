@@ -54,7 +54,15 @@ struct ExtensionRecommendationPresenter: ViewModifier {
 struct ExtensionRecommendationDialog: View {
     let request: ExtensionRecommendation
     let respond: (ExtensionRecommendationChoice) -> Void
-    @State private var choice = ExtensionRecommendationChoice()
+    @State private var choice: ExtensionRecommendationChoice
+
+    init(request: ExtensionRecommendation,
+         initialChoice: ExtensionRecommendationChoice = .init(),
+         respond: @escaping (ExtensionRecommendationChoice) -> Void) {
+        self.request = request
+        self.respond = respond
+        _choice = State(initialValue: initialChoice)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
