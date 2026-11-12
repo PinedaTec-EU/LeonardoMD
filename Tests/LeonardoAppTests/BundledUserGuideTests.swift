@@ -175,8 +175,10 @@ final class BundledUserGuideTests: XCTestCase {
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Live \(name) example; built-in extension enabled")
                 }
-                for name in ["palette", "activation", "sync-sharing-v14", "sync-review-draft-unavailable"] {
-                    _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
+                for name in ["palette", "activation-switch", "sync-sharing-v14", "sync-review-draft-unavailable"] {
+                    let selector = "img[src$=\"/\(name).png\"]"
+                    try await waitFor("document.querySelector('\(selector)') !== null && document.querySelector('\(selector)').naturalWidth > 0", in: web)
+                    _ = try await web.evaluateJavaScript("document.querySelector('\(selector)').scrollIntoView({block:'center'})")
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("section-\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Detailed chapter with original \(name) screenshot; all images loaded")
                 }
@@ -186,9 +188,8 @@ final class BundledUserGuideTests: XCTestCase {
                 let illustrations = language == .english ? ["journey", "package", "import", "export"] : ["recorrido", "paquete", "importar", "exportar"]
                 for name in illustrations {
                     _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
-                    let imageCount = language == .spanish ? 21 : 20
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("premium-\(name)-\(language.rawValue).png"),
-                        language: language.rawValue, state: "Main guide; generated premium \(name) illustration; all \(imageCount) images admitted under standard limits")
+                        language: language.rawValue, state: "Main guide; generated premium \(name) illustration; all \(expectedImageCount) guide images loaded")
                 }
                 _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
                 try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("guide-\(language.rawValue).png"),
