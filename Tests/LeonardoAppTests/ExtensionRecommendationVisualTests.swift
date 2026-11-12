@@ -26,7 +26,7 @@ final class ExtensionRecommendationVisualTests: XCTestCase {
                     source: "synthetic fixture", extensions: [.mermaid, .math, .charts, .citations, .extras])
                 let selected = ExtensionRecommendationChoice(enabledExtensions: [.mermaid, .charts])
                 let view = NSHostingView(rootView: ExtensionRecommendationDialog(request: request,
-                    initialChoice: selected, respond: { _ in })
+                    initialChoice: selected, respond: { _, _ in })
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(session.surfaceColor).modifier(SessionAppearance(session: session)))
                 let size = NSSize(width: 538, height: 600)

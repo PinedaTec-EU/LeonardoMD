@@ -43,6 +43,11 @@ struct ExtensionRecommendationChoice: Equatable {
     var suppressWarnings = false
 }
 
+enum ExtensionRecommendationAction {
+    case notNow
+    case enableSelected
+}
+
 @MainActor @Observable
 final class ExtensionRecommendations {
     var detected: Set<BuiltInExtension> = []
@@ -85,11 +90,13 @@ final class ExtensionRecommendations {
         prompt = ExtensionRecommendation(document: document, project: session.projectURL,
                                          source: session.content, extensions: missing)
     }
-    func respond(to request: ExtensionRecommendation, choice: ExtensionRecommendationChoice, session: AppSession) {
+    func respond(to request: ExtensionRecommendation, choice: ExtensionRecommendationChoice,
+                 action: ExtensionRecommendationAction, session: AppSession) {
         guard prompt?.id == request.id else { return }
         prompt = nil
         guard matches(request, session: session), !session.busy, !session.isSyncSuspended else { return }
         preferences.setSuppressAllWarnings(choice.suppressWarnings)
+        guard case .enableSelected = action else { return }
         let selected = choice.enabledExtensions.intersection(request.extensions)
         guard !selected.isEmpty else { return }
         var features = session.features

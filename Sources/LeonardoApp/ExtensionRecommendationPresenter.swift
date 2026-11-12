@@ -43,8 +43,9 @@ struct ExtensionRecommendationPresenter: ViewModifier {
                 get: { session.extensionRecommendations.prompt },
                 set: { session.extensionRecommendations.prompt = $0 }
             )) { request in
-                ExtensionRecommendationDialog(request: request) { choice in
-                    session.extensionRecommendations.respond(to: request, choice: choice, session: session)
+                ExtensionRecommendationDialog(request: request) { choice, action in
+                    session.extensionRecommendations.respond(to: request, choice: choice,
+                                                              action: action, session: session)
                 }
                 .modifier(SessionAppearance(session: session))
             }
@@ -53,7 +54,7 @@ struct ExtensionRecommendationPresenter: ViewModifier {
 
 struct ExtensionRecommendationDialog: View {
     let request: ExtensionRecommendation
-    let respond: (ExtensionRecommendationChoice) -> Void
+    let respond: (ExtensionRecommendationChoice, ExtensionRecommendationAction) -> Void
     @State private var choice: ExtensionRecommendationChoice
 
     init(request: ExtensionRecommendation,
@@ -98,8 +99,8 @@ struct ExtensionRecommendationDialog: View {
             .accessibilityIdentifier("suppress-extension-warnings")
             HStack {
                 Spacer()
-                Button(L10n.text("Not now")) { respond(choice) }.keyboardShortcut(.cancelAction)
-                Button(L10n.text("Enable selected")) { respond(choice) }
+                Button(L10n.text("Not now")) { respond(choice, .notNow) }.keyboardShortcut(.cancelAction)
+                Button(L10n.text("Enable selected")) { respond(choice, .enableSelected) }
                     .disabled(choice.enabledExtensions.isEmpty)
                     .keyboardShortcut(.defaultAction)
                     .accessibilityIdentifier("enable-selected-extensions")

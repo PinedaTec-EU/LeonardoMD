@@ -41,7 +41,7 @@ final class ExtensionRecommendationTests: XCTestCase {
         state.prepare(for: session, eligible: true)
         let request = try XCTUnwrap(state.prompt)
         XCTAssertEqual(request.extensions, [.mermaid, .charts])
-        state.respond(to: request, choice: .init(), session: session)
+        state.respond(to: request, choice: .init(enabledExtensions: [.mermaid]), action: .notNow, session: session)
         state.prepare(for: session, eligible: true)
         XCTAssertNil(state.prompt)
         XCTAssertFalse(session.features.mermaidEnabled)
@@ -52,7 +52,9 @@ final class ExtensionRecommendationTests: XCTestCase {
         defer { session.stop() }
         state.prepare(for: session, eligible: true)
         let request = try XCTUnwrap(state.prompt)
-        state.respond(to: request, choice: .init(suppressWarnings: true), session: session)
+        state.respond(to: request,
+                      choice: .init(enabledExtensions: [.mermaid], suppressWarnings: true),
+                      action: .notNow, session: session)
         XCTAssertTrue(preferences.suppressAllWarnings)
         XCTAssertTrue(ExtensionWarningPreferences(defaults: defaults).suppressAllWarnings)
         XCTAssertFalse(session.features.mermaidEnabled)
@@ -94,7 +96,8 @@ final class ExtensionRecommendationTests: XCTestCase {
         state.prepare(for: session, eligible: true)
         let request = try XCTUnwrap(state.prompt)
         XCTAssertEqual(request.project, session.projectURL)
-        state.respond(to: request, choice: .init(enabledExtensions: [.mermaid, .charts]), session: session)
+        state.respond(to: request, choice: .init(enabledExtensions: [.mermaid, .charts]),
+                      action: .enableSelected, session: session)
         XCTAssertTrue(session.features.mermaidEnabled)
         XCTAssertFalse(session.features.mathEnabled)
         XCTAssertTrue(session.features.vegaLiteEnabled)
@@ -109,7 +112,8 @@ final class ExtensionRecommendationTests: XCTestCase {
         state.prepare(for: session, eligible: true)
         let request = try XCTUnwrap(state.prompt)
         session.projectURL = session.globalPreferencesURL.deletingLastPathComponent().appendingPathComponent("different-project")
-        state.respond(to: request, choice: .init(enabledExtensions: [.mermaid], suppressWarnings: true), session: session)
+        state.respond(to: request, choice: .init(enabledExtensions: [.mermaid], suppressWarnings: true),
+                      action: .enableSelected, session: session)
         XCTAssertFalse(session.features.mermaidEnabled)
         XCTAssertFalse(preferences.suppressAllWarnings)
         XCTAssertTrue(preferences.legacySuppressed.isEmpty)
@@ -133,7 +137,8 @@ final class ExtensionRecommendationTests: XCTestCase {
         state.prepare(for: session, eligible: true)
         let request = try XCTUnwrap(state.prompt)
         session.content = "different source"
-        state.respond(to: request, choice: .init(enabledExtensions: [.charts], suppressWarnings: true), session: session)
+        state.respond(to: request, choice: .init(enabledExtensions: [.charts], suppressWarnings: true),
+                      action: .enableSelected, session: session)
         XCTAssertFalse(session.features.vegaLiteEnabled)
         XCTAssertFalse(preferences.suppressAllWarnings)
     }
@@ -142,7 +147,8 @@ final class ExtensionRecommendationTests: XCTestCase {
         let (session, state, _, _) = try fixture()
         defer { session.stop() }
         state.prepare(for: session, eligible: true)
-        state.respond(to: try XCTUnwrap(state.prompt), choice: .init(enabledExtensions: [.mermaid]), session: session)
+        state.respond(to: try XCTUnwrap(state.prompt), choice: .init(enabledExtensions: [.mermaid]),
+                      action: .enableSelected, session: session)
         XCTAssertTrue(session.globalPreferences.markdown.mermaidEnabled)
         XCTAssertNil(session.projectConfiguration.markdown)
         state.resetOpening()
@@ -188,7 +194,7 @@ final class ExtensionRecommendationTests: XCTestCase {
         }
         let request = try XCTUnwrap(session.extensionRecommendations.prompt)
         XCTAssertFalse(window.sheets.isEmpty, "Consent is a native attached sheet")
-        session.extensionRecommendations.respond(to: request, choice: .init(), session: session)
+        session.extensionRecommendations.respond(to: request, choice: .init(), action: .notNow, session: session)
     }
 
 }
