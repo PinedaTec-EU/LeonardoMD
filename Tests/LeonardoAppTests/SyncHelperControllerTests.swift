@@ -1575,21 +1575,13 @@ final class SyncHelperControllerTests: XCTestCase {
         let runtime = StatusRefreshRuntime()
         let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
                                            runtime: runtime, helper: helper, usesHelper: true)
+        let inFlightError = MainActorFlag()
+        await control.observeStatusCalls { call in
+            if call == 2 { inFlightError.value = source.error != nil }
+        }
         await runtime.setConsentFailure(true)
-        await control.pauseStatus(at: 2)
-        let firstPoll = Task { await source.refreshConsent(refreshHelper: false) }
-        for _ in 0..<5000 {
-            if await control.hasHeldStatus(at: 2) { break }
-            try await Task.sleep(for: .milliseconds(1))
-        }
-        guard await control.hasHeldStatus(at: 2) else {
-            await control.resumeStatus(); await firstPoll.value
-            XCTFail("Health recovery was not held")
-            return
-        }
-        XCTAssertNil(source.error, "Do not present an automatic consent failure while helper recovery is pending")
-        await control.resumeStatus(at: 2)
-        await firstPoll.value
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertFalse(inFlightError.value, "Do not present an automatic consent failure while helper recovery is pending")
         XCTAssertNil(source.error, "One failed poll remains provisional after health recovers")
         let firstCalls = await control.statusCalls
         XCTAssertEqual(firstCalls, 2, "Initial health and one check for the error episode")
@@ -4060,6 +4052,7 @@ private actor HelperControlFake: SyncHelperControlAccess {
     private var buildIdentities: [SyncHelperBuildIdentity?] = []
     private var sharing: RunningDirectService?
     private var pausedStatusCall: Int?
+    private var statusCallObserver: (@MainActor @Sendable (Int) -> Void)?
     private var failingStatusCalls: Set<Int> = []
     private(set) var statusCalls = 0
     private var reloadPaused = false
@@ -4067,6 +4060,7 @@ private actor HelperControlFake: SyncHelperControlAccess {
     var hasHeldReload: Bool { heldReload != nil }
     func setSharing(_ value: RunningDirectService) { sharing = value }
     func setBuildIdentities(_ values: [SyncHelperBuildIdentity?]) { buildIdentities = values }
+    func observeStatusCalls(_ observer: (@MainActor @Sendable (Int) -> Void)?) { statusCallObserver = observer }
     func pauseStatus(at call: Int) { pausedStatusCall = call }
     func failStatus(at call: Int) { failingStatusCalls.insert(call) }
     func setBuildIdentity(_ value: SyncHelperBuildIdentity) { buildIdentity = value }
@@ -4090,6 +4084,9 @@ private actor HelperControlFake: SyncHelperControlAccess {
         if !shouldFail, !buildIdentities.isEmpty { buildIdentity = buildIdentities.removeFirst() }
         let reply = SyncHelperStatus(enabled: statusEnabled, sharing: sharing, error: statusError, buildIdentity: buildIdentity)
         let call = statusCalls
+        let observer = statusCallObserver
+        statusCallObserver = nil
+        if let observer { await observer(call) }
         if paused || pausedStatusCall == call { await withCheckedContinuation { heldStatuses[call] = $0 } }
         if shouldFail { throw HelperControlError.unavailable }
         return reply
