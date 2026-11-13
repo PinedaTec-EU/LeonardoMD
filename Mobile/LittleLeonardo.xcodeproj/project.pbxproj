@@ -10,6 +10,8 @@
 		407100000000000000000001 /* MobileProjectLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407000000000000000000001 /* MobileProjectLifecycle.swift */; };
 		384000000000000000000200 /* LeonardoSyncUI in Frameworks */ = {isa = PBXBuildFile; productRef = 384000000000000000000201; };
 		384000000000000000000100 /* MobileLibrary+Downloads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 384000000000000000000000; };
+		A44200000000000000000001 /* MobileLibrary+Connections.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44200000000000000000003; };
+		A44200000000000000000002 /* MobileConnectionDisplayNameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44200000000000000000004; };
 		15243E6517E367904B34E1C3 /* PairingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88DCAC3D27E3676EFE8737FB /* PairingUITests.swift */; };
 		22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */; };
 		A7B6C5D4E3F2019A88776655 /* MobileRubricSubmissionGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */; };
@@ -68,6 +70,8 @@
 /* Begin PBXFileReference section */
 		407000000000000000000001 /* MobileProjectLifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileProjectLifecycle.swift; sourceTree = "<group>"; };
 		384000000000000000000000 /* MobileLibrary+Downloads.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MobileLibrary+Downloads.swift"; sourceTree = "<group>"; };
+		A44200000000000000000003 /* MobileLibrary+Connections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MobileLibrary+Connections.swift"; sourceTree = "<group>"; };
+		A44200000000000000000004 /* MobileConnectionDisplayNameTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileConnectionDisplayNameTests.swift; sourceTree = "<group>"; };
 		0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LittleLeonardoApp.swift; sourceTree = "<group>"; };
 		5B83DAE858F9656CCDF4D6B1 /* LittleLeonardo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LittleLeonardo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7849226B36C61649B125BDDC /* MobileLibraryView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileLibraryView.swift; sourceTree = "<group>"; };
@@ -168,6 +172,7 @@
 		8B071E7E1B6969A26E0658E0 /* LittleLeonardoTests */ = {
 			isa = PBXGroup;
 			children = (
+				A44200000000000000000004 /* MobileConnectionDisplayNameTests.swift */,
 				C4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift */,
 				D38100000000000000000003 /* MobileDemoStoreTests.swift */,
 				D39700000000000000000001 /* MobileReaderSpacingTests.swift */,
@@ -211,6 +216,7 @@
 				D38100000000000000000000 /* MobileDemoStore.swift */,
 				407000000000000000000001 /* MobileProjectLifecycle.swift */,
 				D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */,
+				A44200000000000000000003 /* MobileLibrary+Connections.swift */,
 				384000000000000000000000 /* MobileLibrary+Downloads.swift */,
 				A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */,
 				7849226B36C61649B125BDDC /* MobileLibraryView.swift */,
@@ -369,6 +375,7 @@
 				D38110000000000000000000 /* MobileDemoStore.swift in Sources */,
 				407100000000000000000001 /* MobileProjectLifecycle.swift in Sources */,
 				22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */,
+				A44200000000000000000001 /* MobileLibrary+Connections.swift in Sources */,
 				384000000000000000000100 /* MobileLibrary+Downloads.swift in Sources */,
 				A7B6C5D4E3F2019A88776655 /* MobileRubricSubmissionGate.swift in Sources */,
 				2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */,
@@ -397,6 +404,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A44200000000000000000002 /* MobileConnectionDisplayNameTests.swift in Sources */,
 				B4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift in Sources */,
 				D38110000000000000000003 /* MobileDemoStoreTests.swift in Sources */,
 				D39710000000000000000001 /* MobileReaderSpacingTests.swift in Sources */,

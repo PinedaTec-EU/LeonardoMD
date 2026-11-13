@@ -16,7 +16,7 @@ final class MobileLibrary {
     let projectLifecycle: MobileProjectLifecycle
     let downloads: DownloadLibrary
     let store: OfflineCorpusStore
-    private let connectionStore: MobileDirectConnectionStore
+    let connectionStore: MobileDirectConnectionStore
     private let credentials: any DeviceCredentialStore
     private let revocationClient: MobileRevocationClient
     private let draftStore: MobileRubricDraftStore
@@ -173,11 +173,13 @@ final class MobileLibrary {
                                   expected token: ConnectionToken) throws -> ConnectionToken? {
         guard isCurrentCacheOperation(token), let index = connectionIndex(for: token) else { return nil }
         var nextConnections = connections
-        nextConnections[index] = connection
+        var committedConnection = connection
+        committedConnection.displayName = nextConnections[index].displayName
+        nextConnections[index] = committedConnection
         try connectionStore.save(nextConnections)
         invalidateCache()
         connections = nextConnections
-        return self.token(for: connection)
+        return self.token(for: committedConnection)
     }
 
     func reload() async {
@@ -225,7 +227,16 @@ final class MobileLibrary {
                                                                          excludedProjectIDs: projectLifecycle.deletedProjectIDs,
                                                                          credentials: credentials, corpus: store)
             guard cacheEpoch == loadCacheEpoch, authorizationEpoch == loadAuthorizationEpoch else { return }
-            connections = protectedConnections
+            var latestConnections = protectedConnections
+            for index in latestConnections.indices {
+                guard let current = connections.first(where: {
+                    $0.connectionID == latestConnections[index].connectionID
+                        && $0.deviceID == latestConnections[index].deviceID
+                        && $0.fingerprint == latestConnections[index].fingerprint
+                }) else { continue }
+                latestConnections[index].displayName = current.displayName
+            }
+            connections = latestConnections
             comparisonCode = loadedComparisonCode
             recoverableRubricDrafts = loadedDrafts
             projects = loaded.filter { !projectLifecycle.isDeleted($0.id) }
