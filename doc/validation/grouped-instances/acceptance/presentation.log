@@ -1,0 +1,5 @@
+# Verbatim records transcribed from the live log-tool output during acceptance.
+# Later log-show queries no longer returned the info-level records; this is not
+# a fresh unified-log export or a claim of longer retention.
+2026-11-13 10:56:13.569 I  LeonardoMD[95948:98ef5ce] [eu.pinedatec.LeonardoMD:instance-presentation] instance_presentation_changed pid=95948 policy=0 success=true
+2026-11-13 10:56:27.818 I  LeonardoMD[7354:9902069] [eu.pinedatec.LeonardoMD:instance-presentation] instance_presentation_changed pid=7354 policy=1 success=true

@@ -1,0 +1,4 @@
+{
+  "build": 9,
+  "summary": "Optionally group independent LeonardoMD processes under one Dock and app-switcher entry, with an instance selector in every window and automatic replacement of the visible representative when it exits."
+}

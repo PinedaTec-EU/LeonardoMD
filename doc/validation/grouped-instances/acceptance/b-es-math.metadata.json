@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-13T10:15:33.962649+00:00",
+  "capture": {
+    "captured_at": "2026-11-13T09:52:05.090000+00:00",
+    "route": "QA441/acceptance/b-es-math",
+    "screen": "b-es-math",
+    "browser_name": "Native AppKit / WKWebView",
+    "browser_version": "Not exposed by CUA; native packaged app",
+    "state": "PID 95948; Guide v71 Spanish; Math/Mermaid/Charts enabled; accessory process; native screenshot pixels used in compatibility viewport fields, CSS viewport not applicable",
+    "viewport_css": {
+      "width": 2520,
+      "height": 1700
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "7a951aef12dc789c351efdead680c99f7d6db5baf283328b747b7d9654e6f911"
+  },
+  "source": {
+    "revision_at_collection": "a72636b771fa157f9a8cbfa70827f7e7c2e6e3dc",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

@@ -82,6 +82,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         super.init()
         instance.receive = { [weak self] urls in self?.enqueueLaunch(urls) }
         if role != .secondary {
+            updateQuitEndpoint.activate = { [weak self] in self?.bringWindowsToFront() }
             updateQuitEndpoint.quit = { [weak self] in
                 guard let self, self.dismissUpdatePreferences() else {
                     self?.updateQuitEndpoint.cancelled()
@@ -112,6 +113,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         if windows.isEmpty { newEmptyWindow() }
         processPendingLaunches()
         NSApp.activate(ignoringOtherApps: true)
+        if updateQuitEndpoint.isStarted { InstancePresentation.shared.start() }
         diagnostics.record(.applicationReady)
         let elapsed = launchStarted.duration(to: .now).components
         let milliseconds = Double(elapsed.seconds) * 1000 + Double(elapsed.attoseconds) / 1e15
@@ -139,6 +141,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        InstancePresentation.shared.stop()
         updateQuitEndpoint.stop()
         NotificationCenter.default.removeObserver(self)
         diagnostics.record(.applicationWillTerminate)
@@ -469,6 +472,10 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemVali
         NSApp.helpMenu = help
         NSApp.windowsMenu = window
         NSApp.mainMenu = menu
+    }
+
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        InstancePresentation.shared.dockMenu()
     }
 
     private func submenu(_ title: String, in parent: NSMenu) -> NSMenu {
