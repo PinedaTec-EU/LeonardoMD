@@ -1099,6 +1099,16 @@
       "pr": 441,
       "summary": "Optionally group independent LeonardoMD processes under one Dock and app-switcher entry, with an instance selector in every window and automatic replacement of the visible representative when it exits.",
       "to_version": "0.3.1596"
+    },
+    {
+      "delta": {
+        "build": 6
+      },
+      "from_version": "0.3.1596",
+      "merge_sha": "ed1795164972948b8792557d9c0f87ea41d67a5a",
+      "pr": 446,
+      "summary": "Existing LeonardoMD installations now receive the corrected synchronization guidance in a new Help copy while saved guide copies and practice answers remain intact.",
+      "to_version": "0.3.1602"
     }
   ],
   "initial_version": "0.1.56",
@@ -1109,5 +1119,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1596"
+  "version": "0.3.1602"
 }
