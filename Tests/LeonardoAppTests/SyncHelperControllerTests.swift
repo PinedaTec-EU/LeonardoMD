@@ -5,17 +5,41 @@ import ServiceManagement
 import XCTest
 import LeonardoCore
 import LeonardoDesktopSync
+import LeonardoSync
+import LeonardoSyncTransport
 @testable import LeonardoApp
 
 @MainActor
 final class SyncHelperControllerTests: XCTestCase {
     private let replacement = SyncHelperBuildIdentity(build: 200, bundlePath: "/Applications/LeonardoMD.app")
 
-    func testStatusSubtitleHidesHealthyRunningLineAndKeepsInitialCheckSpace() {
-        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: true, isInitialCheck: false,
-            status: "Sync helper running", checking: "Checking synchronization status"), " ")
-        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: false, isInitialCheck: true,
-            status: "Offline", checking: "Checking synchronization status"), "Checking synchronization status")
+    func testStatusSubtitleHidesHealthyLineAndKeepsOnlyConfirmedDiagnostic() {
+        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: true, diagnostic: "Offline"), " ")
+        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: false, diagnostic: nil), " ")
+        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: false, diagnostic: "Offline"), "Offline")
+    }
+
+    func testPreferencesRefreshesOnOpenAndOnlyOnExplicitRefreshes() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let runtime = StatusRefreshRuntime()
+        let controller = DesktopSyncController(preferencesURL: fixture.preferences,
+            configurations: fixture.configurations, runtime: runtime, usesHelper: false)
+        await controller.refreshPreferencesOnOpen()
+        let readsAfterFirstOpen = await runtime.consentReadCountValue
+        XCTAssertEqual(readsAfterFirstOpen, 1, "First open initializes and reads consent once")
+
+        await controller.refreshPreferencesOnOpen()
+        let readsAfterReopen = await runtime.consentReadCountValue
+        XCTAssertEqual(readsAfterReopen, 2, "Reopening Preferences refreshes consent once")
+        try await Task.sleep(for: .seconds(2.2))
+        let readsWithoutInteraction = await runtime.consentReadCountValue
+        XCTAssertEqual(readsWithoutInteraction, 2,
+            "Leaving Preferences open must not trigger periodic consent reads")
+
+        await controller.refreshConsent(refreshHelper: false)
+        let readsAfterManualRefresh = await runtime.consentReadCountValue
+        XCTAssertEqual(readsAfterManualRefresh, 3,
+            "The explicit refresh path remains available")
     }
 
     private func upgrading(_ fixture: ControllerFixture, _ registration: HelperRegistrationFake,
@@ -25,13 +49,405 @@ final class SyncHelperControllerTests: XCTestCase {
             hasExecutable: { true }, verifyPackage: {})
     }
 
+    func testSharingPresentationSurvivesCancelledHealthOwnerUntilRecovery() async throws {
+        try await verifySharingPresentationDuringRecovery(pendingRenewal: false)
+    }
+
+    func testSharingPresentationSurvivesPendingRenewalUntilRecovery() async throws {
+        try await verifySharingPresentationDuringRecovery(pendingRenewal: true)
+    }
+
+    private func verifySharingPresentationDuringRecovery(pendingRenewal: Bool) async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        let project = MobileSharedProject(rootURL: fixture.root, name: "Fictional project")
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true, projects: [project])
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!,
+            certificateFingerprint: Data(repeating: 4, count: 32))
+        await control.setBuildIdentity(replacement)
+        await control.setSharing(service)
+        let helper = upgrading(fixture, registration, control)
+        let runtime = StatusRefreshRuntime()
+        await runtime.setStartedService(service)
+
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let request = try registry.requestPairing(deviceName: "Synthetic peer",
+            credential: String(repeating: "a", count: 64), serverFingerprint: Data(repeating: 1, count: 32), now: Date())
+        await runtime.setConsentState(registry)
+        let upload = try DesktopPeerUpload(proposalID: UUID(), projectID: project.id,
+            byteCount: 1, sha256: String(repeating: "a", count: 64))
+        let proposal = DesktopPeerIncomingProposal(deviceID: UUID(), deviceName: "Synthetic peer", upload: upload)
+        await runtime.setIncomingProposals([proposal])
+
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true, now: { Date(timeIntervalSince1970: 1_000) })
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        await source.initialize()
+        await source.refreshConsent(refreshHelper: false)
+        await source.createQR()
+        let invitation = try XCTUnwrap(source.invitationURL)
+        XCTAssertEqual(source.consent.requests, [request])
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id])
+
+        let token = UUID()
+        if pendingRenewal {
+            _ = try await fixture.configurations.beginSyncHelperUpgrade(token, at: fixture.preferences)
+            do { try await helper.requireReadyHelper(); XCTFail("Pending renewal should block peer operations") }
+            catch {}
+        } else {
+            let failedCall = await control.statusCalls + 1
+            await control.failStatus(at: failedCall)
+            await control.pauseStatus()
+            let older = Task { await helper.refresh() }
+            for _ in 0..<5_000 {
+                if await control.hasHeldStatus(at: failedCall) { break }
+                try await Task.sleep(for: .milliseconds(1))
+            }
+            guard await control.hasHeldStatus(at: failedCall) else {
+                await control.resumeStatus(); await older.value
+                XCTFail("The failing health check did not reach its barrier"); return
+            }
+
+            let newer = Task { try await helper.requireReadyHelper() }
+            for _ in 0..<5_000 {
+                if await control.hasHeldStatus(at: failedCall + 1) { break }
+                try await Task.sleep(for: .milliseconds(1))
+            }
+            guard await control.hasHeldStatus(at: failedCall + 1) else {
+                await control.resumeStatus(); await older.value; _ = try? await newer.value
+                XCTFail("The peer preflight did not reach its health barrier"); return
+            }
+
+            await control.resumeStatus(at: failedCall)
+            await older.value
+            newer.cancel()
+            await control.resumeStatus()
+            do { try await newer.value; XCTFail("A cancelled peer preflight must not proceed") }
+            catch is CancellationError {}
+        }
+
+        XCTAssertEqual(helper.displayedState, .running)
+        XCTAssertFalse(helper.online, "Live peer operations remain gated during recovery")
+        XCTAssertTrue(helper.needsAutomaticRecovery)
+        XCTAssertFalse(helper.checkingStatus)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertFalse(source.sharingAvailable)
+        XCTAssertFalse(source.pairingInvitationAvailable,
+            "Pairing requires a currently confirmed helper and sharing service")
+        XCTAssertTrue(source.sharingPresentationAvailable, "The last confirmed sharing remains visible while recovery is pending")
+        XCTAssertEqual(source.running?.endpoint, service.endpoint)
+        XCTAssertEqual(source.invitationURL, invitation, "The last confirmed invitation must survive the recovery interval")
+        XCTAssertEqual(source.consent.requests, [request], "Consent rows must survive the recovery interval")
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id], "Incoming proposal rows must survive the recovery interval")
+        let statusCallsBeforeRejectedQR = await control.statusCalls
+        await source.createQR()
+        let statusCallsAfterRejectedQR = await control.statusCalls
+        XCTAssertEqual(statusCallsAfterRejectedQR, statusCallsBeforeRejectedQR,
+            "QR creation must not start a health check while live helper health is unavailable")
+        XCTAssertEqual(source.invitationURL, invitation,
+            "A rejected QR action must preserve the current invitation during recovery")
+        try await captureStatusIndicator(helper,
+            state: pendingRenewal ? "sharing-renewal-pending" : "sharing-cancelled-recovery")
+        if pendingRenewal {
+            try await captureSyncActionState(projectID: project.id, proposal: proposal,
+                controller: source, state: "unavailable")
+        }
+
+        if pendingRenewal { _ = try await fixture.configurations.finishSyncHelperUpgrade(token, at: fixture.preferences) }
+        await helper.refreshIfRecoverable()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertTrue(helper.online)
+        XCTAssertTrue(source.pairingInvitationAvailable,
+            "Pairing actions become available after helper health recovers")
+        XCTAssertEqual(source.running?.endpoint, service.endpoint)
+        XCTAssertEqual(source.invitationURL, invitation, "Same-endpoint recovery must preserve the QR")
+        XCTAssertEqual(source.consent.requests, [request], "Consent rows must remain through recovery")
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id], "Incoming rows must remain through recovery")
+        await source.createQR()
+        XCTAssertNotNil(source.invitationURL, "A healthy helper can create an invitation after recovery")
+        if pendingRenewal {
+            try await captureSyncActionState(projectID: project.id, proposal: proposal,
+                controller: source, state: "recovered")
+        }
+    }
+
+    func testIndependentAutomaticStopCannotUndoNewEnable() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        let registration = HelperRegistrationFake()
+        registration.status = .enabled
+        let control = HelperControlFake()
+        await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control)
+        try await fixture.configurations.setSyncHelperEnabled(false, at: fixture.preferences)
+        await control.pauseReload()
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldReload { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldReload else {
+            await control.resumeReload(); await old.value
+            XCTFail("Old stop did not reach its acknowledgement barrier"); return
+        }
+        let enable = Task { await helper.setEnabled(true) }
+        for _ in 0..<5000 {
+            if helper.enabled { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTAssertTrue(helper.enabled, "The new consent must persist while the obsolete stop is held")
+        await control.resumeReload()
+        await old.value
+        await enable.value
+        let saved = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertTrue(saved.mobileSync.helperEnabled)
+        XCTAssertEqual(registration.unregistrations, 0, "Outdated stop must not unregister the re-enabled helper")
+        XCTAssertEqual(registration.status, .enabled, "Newly authorized registration must survive")
+        XCTAssertTrue(helper.online, "Newly authorized live health must survive")
+    }
+
+    func testExplicitDisableCancelsReenableWaitingForAutomaticStop() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        let registration = HelperRegistrationFake()
+        registration.status = .enabled
+        let control = HelperControlFake()
+        await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control)
+        try await fixture.configurations.setSyncHelperEnabled(false, at: fixture.preferences)
+        await control.pauseReload()
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldReload { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldReload else {
+            await control.resumeReload(); await old.value
+            XCTFail("Old stop did not reach its acknowledgement barrier"); return
+        }
+        let enable = Task { await helper.setEnabled(true) }
+        for _ in 0..<5000 {
+            if helper.enabled { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTAssertTrue(helper.enabled, "The pending enable must become visible before the old stop resumes")
+        let disable = Task { await helper.setEnabled(false) }
+        for _ in 0..<5_000 {
+            let saved = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+            if !saved.mobileSync.helperEnabled { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let savedBeforeStopCompletes = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertFalse(savedBeforeStopCompletes.mobileSync.helperEnabled,
+            "The explicit disable must become durable while the earlier stop is still in flight")
+        await control.resumeReload()
+        await old.value
+        await enable.value
+        await disable.value
+        let saved = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertFalse(saved.mobileSync.helperEnabled)
+        XCTAssertFalse(helper.enabled)
+        XCTAssertFalse(helper.online)
+        XCTAssertEqual(registration.status, .notRegistered)
+    }
+
+    func testExplicitDisableRemainsAuthoritativeWhenEnableWriteIsHeldBeforeStorage() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        let configurations = fixture.configurations
+        let preferences = fixture.preferences
+        let writeBarrier = HelperPreferenceWriteBarrier()
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let helper = SyncHelperController(preferencesURL: preferences, configurations: configurations,
+            service: registration, client: control, expectedBuildIdentity: nil,
+            startup: .init(attempts: 0),
+            persistEnabledPreference: { enabled, url in
+                await writeBarrier.pauseNextWrite()
+                try await configurations.setSyncHelperEnabled(enabled, at: url)
+            }, hasExecutable: { true }, verifyPackage: {})
+
+        let enable = Task { await helper.setEnabled(true) }
+        for _ in 0..<5_000 {
+            if await writeBarrier.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await writeBarrier.isHeld else {
+            await writeBarrier.resume()
+            await enable.value
+            XCTFail("Enable write did not reach its continuation barrier")
+            return
+        }
+        let beforeRelease = try await configurations.loadGlobalPreferences(at: preferences)
+        XCTAssertFalse(beforeRelease.mobileSync.helperEnabled,
+            "The held enable intent has not reached the durable store")
+
+        let disableStarted = MainActorFlag()
+        let disableFinished = MainActorFlag()
+        let disable = Task { @MainActor in
+            disableStarted.value = true
+            await helper.setEnabled(false)
+            disableFinished.value = true
+        }
+        for _ in 0..<5_000 {
+            if disableStarted.value { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTAssertTrue(disableStarted.value)
+        try await Task.sleep(for: .milliseconds(5))
+        XCTAssertFalse(disableFinished.value,
+            "The newer denial waits behind the still-running enable write")
+
+        await writeBarrier.resume()
+        await enable.value
+        await disable.value
+
+        let final = try await configurations.loadGlobalPreferences(at: preferences)
+        XCTAssertFalse(final.mobileSync.helperEnabled,
+            "The stale enable write must finish before the later durable denial")
+        XCTAssertFalse(helper.enabled)
+        XCTAssertEqual(helper.state, .disabled)
+        XCTAssertEqual(registration.status, .notRegistered,
+            "The superseding denial still owns the helper stop")
+        XCTAssertFalse(helper.busy)
+    }
+
+    func testSecondDisableOwnsStopWhenFirstDisableWriteIsSuspended() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        let configurations = fixture.configurations
+        let preferences = fixture.preferences
+        try await configurations.setSyncHelperEnabled(true, at: preferences)
+        let writeBarrier = HelperPreferenceWriteBarrier()
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let helper = SyncHelperController(preferencesURL: preferences, configurations: configurations,
+            service: registration, client: control, expectedBuildIdentity: nil,
+            startup: .init(attempts: 0),
+            persistEnabledPreference: { enabled, url in
+                await writeBarrier.pauseNextWrite()
+                try await configurations.setSyncHelperEnabled(enabled, at: url)
+            }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        XCTAssertTrue(helper.enabled)
+        XCTAssertTrue(helper.online)
+        await writeBarrier.armNextWrite()
+
+        let firstDisable = Task { @MainActor in await helper.setEnabled(false) }
+        for _ in 0..<5_000 {
+            if await writeBarrier.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await writeBarrier.isHeld else {
+            await writeBarrier.resume()
+            await firstDisable.value
+            XCTFail("The first disable write did not reach its barrier")
+            return
+        }
+
+        let secondStarted = MainActorFlag()
+        let secondFinished = MainActorFlag()
+        let secondDisable = Task { @MainActor in
+            secondStarted.value = true
+            await helper.setEnabled(false)
+            secondFinished.value = true
+        }
+        for _ in 0..<5_000 {
+            if secondStarted.value { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTAssertTrue(secondStarted.value)
+        try await Task.sleep(for: .milliseconds(5))
+        XCTAssertFalse(secondFinished.value,
+            "The second denial waits for the first durable write before it owns shutdown")
+
+        await writeBarrier.resume()
+        await firstDisable.value
+        await secondDisable.value
+
+        let final = try await configurations.loadGlobalPreferences(at: preferences)
+        XCTAssertFalse(final.mobileSync.helperEnabled)
+        XCTAssertFalse(helper.enabled)
+        XCTAssertEqual(helper.state, .disabled)
+        XCTAssertEqual(registration.status, .notRegistered,
+            "The newer denial must perform shutdown after the superseded disable returns")
+        XCTAssertEqual(registration.unregistrations, 1)
+        XCTAssertFalse(helper.busy)
+    }
+
+    func testIndependentSupersededFailureAndLaterCancellationMustRecover() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake()
+        registration.status = .enabled
+        let control = HelperControlFake()
+        await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control)
+        await helper.refresh()
+        XCTAssertTrue(helper.online)
+        await control.failStatus(at: 2)
+        await control.pauseStatus()
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await old.value; XCTFail("Older health not held"); return
+        }
+        let newer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 3) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 3) else {
+            await control.resumeStatus(); await old.value; _ = try? await newer.value
+            XCTFail("Newer health not held"); return
+        }
+        await control.resumeStatus(at: 2)
+        await old.value
+        newer.cancel()
+        await control.resumeStatus()
+        do { try await newer.value; XCTFail("Cancelled peer should not proceed") }
+        catch is CancellationError {} catch { XCTFail("Unexpected failure: \(error)") }
+        XCTAssertTrue(helper.online || helper.needsAutomaticRecovery, "An observed outage must either recover or be scheduled for a retry")
+        await helper.refreshIfRecoverable()
+        XCTAssertTrue(helper.online, "The now healthy helper must recover on the automatic poll")
+    }
+
+    func testIndependentCompatibleReadinessMustAuthorizeActions() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake()
+        registration.status = .enabled
+        let control = HelperControlFake()
+        let oldIdentity = SyncHelperBuildIdentity(build: 100, bundlePath: "/Applications/LeonardoMD.app")
+        await control.setBuildIdentities([oldIdentity, oldIdentity, replacement])
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: {}), hasExecutable: { true },
+            verifyPackage: { throw HelperControlError.unavailable })
+        await helper.refresh()
+        XCTAssertEqual(helper.state, .running, "Control obtained compatible authorized readiness")
+        XCTAssertTrue(helper.online, "A compatible authorized readiness result must make actions available")
+    }
+
     func testStatusIndicatorStatesDuringHealthCheck() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
         let registration = HelperRegistrationFake(); registration.status = .enabled
         let control = HelperControlFake(); await control.setBuildIdentity(replacement)
-        await control.pauseStatus()
         let controller = upgrading(fixture, registration, control)
+        await controller.refresh()
+        XCTAssertEqual(controller.displayedState, .running)
+        await control.pauseStatus()
         let refresh = Task { await controller.refresh() }
         for _ in 0..<5000 {
             if await control.hasHeldStatus { break }
@@ -43,11 +459,17 @@ final class SyncHelperControllerTests: XCTestCase {
             XCTFail("Status check did not reach the controlled barrier"); return
         }
         XCTAssertTrue(controller.checking)
+        XCTAssertEqual(controller.displayedState, .running, "A background check must preserve the last visible status")
         try await captureStatusIndicator(controller, state: "checking")
         await control.resumeStatus(); await refresh.value
         XCTAssertFalse(controller.checking)
         XCTAssertTrue(controller.online)
         try await captureStatusIndicator(controller, state: "online")
+        await control.setStatusEnabled(false)
+        await controller.refresh()
+        XCTAssertEqual(controller.displayedState, .failed)
+        XCTAssertNotNil(controller.displayedError)
+        try await captureStatusIndicator(controller, state: "error")
     }
 
     private func captureStatusIndicator(_ controller: SyncHelperController, state: String) async throws {
@@ -82,14 +504,1757 @@ final class SyncHelperControllerTests: XCTestCase {
             return host.fittingSize.height
         }
         let baseline = sectionHeight()
-        controller.error = "Previous error"
+        await control.setStatusError("Previous error"); await controller.refresh()
+        XCTAssertEqual(controller.displayedError, "Previous error")
         XCTAssertEqual(sectionHeight(), baseline, "A one-line diagnostic must not move the following controls")
-        controller.error = String(repeating: "A long diagnostic message. ", count: 20)
+        let longError = String(repeating: "A long diagnostic message. ", count: 20)
+        await control.setStatusError(longError); await controller.refresh()
+        XCTAssertEqual(controller.displayedError, longError)
         XCTAssertEqual(sectionHeight(), baseline, "A wrapped diagnostic must not move the following controls")
         registration.status = .requiresApproval
         await controller.refresh()
         XCTAssertEqual(controller.state, .approvalRequired)
         XCTAssertEqual(sectionHeight(), baseline, "The authorization action must not move the following controls")
+    }
+
+    func testReturningFromApprovalRefreshesOnlyWhileApprovalIsRequired() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .requiresApproval
+        let control = HelperControlFake()
+        let controller = fixture.controller(registration, control)
+        await controller.refresh()
+        XCTAssertEqual(controller.state, .approvalRequired)
+        registration.status = .enabled
+        await controller.refreshAfterActivation()
+        XCTAssertTrue(controller.online)
+        let calls = await control.statusCalls
+        await controller.refreshAfterActivation()
+        let callsAfterUnrelatedActivation = await control.statusCalls
+        XCTAssertEqual(callsAfterUnrelatedActivation, calls, "Healthy service must not be checked on every activation")
+    }
+
+    func testRegistrationRequiringApprovalOffersSettingsImmediately() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); registration.registrationResult = .requiresApproval
+        let controller = fixture.controller(registration, HelperControlFake())
+        await controller.setEnabled(true)
+        XCTAssertEqual(controller.state, .approvalRequired)
+    }
+
+    func testEnableApprovalIsVisibleWhileOldHealthIsHeld() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); let helper = fixture.controller(registration, control)
+        await helper.refresh(); await control.pauseStatus(at: 2)
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await old.value; XCTFail("Health not held"); return
+        }
+        await helper.setEnabled(false)
+        registration.registrationResult = .requiresApproval
+        await helper.setEnabled(true)
+        XCTAssertEqual(helper.displayedState, .approvalRequired)
+        XCTAssertTrue(helper.showsApprovalAction)
+        await control.resumeStatus(at: 2); await old.value
+        XCTAssertEqual(helper.displayedState, .approvalRequired)
+    }
+
+    func testConcurrentRefreshDoesNotInterruptRenewalReadiness() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentities([nil, replacement])
+        await control.pauseReload()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: {}), hasExecutable: { true }, verifyPackage: {})
+        let renewal = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldReload { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldReload else {
+            await control.resumeReload(); await renewal.value; XCTFail("Renewal not held"); return
+        }
+        await helper.refresh()
+        await control.resumeReload(); await renewal.value
+        XCTAssertTrue(helper.online, "An overlapping no-op check must not cancel renewal readiness")
+    }
+
+    func testSupersededRetryKeepsConfirmedStatusWhilePeerHealthIsHeld() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let barrier = StartupPauseBarrier()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: { await barrier.pause() }), hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        XCTAssertEqual(helper.displayedState, .running)
+        await control.failStatus(at: 2)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await barrier.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await barrier.isHeld else {
+            await barrier.release(); await refresh.value; XCTFail("Retry not held"); return
+        }
+        await control.pauseStatus(at: 3)
+        let peer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 3) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 3) else {
+            await barrier.release(); await control.resumeStatus(); await refresh.value; _ = try? await peer.value
+            XCTFail("Peer health not held"); return
+        }
+        await barrier.release(); await refresh.value
+        XCTAssertFalse(helper.checking)
+        XCTAssertTrue(helper.checkingStatus, "A superseding peer preflight remains an active helper-health check")
+        XCTAssertEqual(helper.displayedState, .running, "A superseded transient error must stay hidden")
+        await control.resumeStatus(at: 3); try await peer.value
+        XCTAssertFalse(helper.checkingStatus)
+        XCTAssertEqual(helper.displayedState, .running)
+    }
+
+    func testRegistrationChangesPresentDuringFirstHeldHealth() async throws {
+        for registrationState: SMAppService.Status in [.requiresApproval, .notRegistered] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.pauseStatus()
+            let helper = upgrading(fixture, registration, control)
+            let refresh = Task { await helper.refresh() }
+            for _ in 0..<5000 {
+                if await control.hasHeldStatus { break }
+                try await Task.sleep(for: .milliseconds(1))
+            }
+            guard await control.hasHeldStatus else {
+                await control.resumeStatus(); await refresh.value; XCTFail("Initial health not held"); return
+            }
+            registration.status = registrationState
+            await helper.refreshAfterActivation()
+            XCTAssertTrue(helper.hasPresentedStatus)
+            XCTAssertEqual(helper.displayedState, registrationState == .requiresApproval ? .approvalRequired : .failed)
+            await control.resumeStatus(); await refresh.value
+            XCTAssertTrue(helper.hasPresentedStatus)
+        }
+    }
+
+    func testPeerPreflightKeepsInitialStatusHiddenUntilItsHealthReturns() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.pauseStatus()
+        let helper = upgrading(fixture, registration, control)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 1) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 1) else {
+            await control.resumeStatus(); await refresh.value; XCTFail("Initial health not held"); return
+        }
+        let peer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await refresh.value; _ = try? await peer.value
+            XCTFail("Peer health not held"); return
+        }
+        await control.resumeStatus(at: 1); await refresh.value
+        XCTAssertFalse(helper.hasPresentedStatus, "A superseded initial health response must not show disabled")
+        await control.resumeStatus(at: 2); try await peer.value
+        XCTAssertTrue(helper.hasPresentedStatus)
+        XCTAssertEqual(helper.displayedState, .running)
+    }
+
+    func testCancelledLastPeerPreflightAllowsInitialStateRecovery() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.pauseStatus()
+        let helper = upgrading(fixture, registration, control)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 1) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 1) else { await control.resumeStatus(); await refresh.value; XCTFail("Initial health not held"); return }
+        let peer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 2) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await refresh.value; _ = try? await peer.value; XCTFail("Peer health not held"); return
+        }
+        await control.resumeStatus(at: 1); await refresh.value
+        peer.cancel(); await control.resumeStatus(at: 2)
+        do { try await peer.value; XCTFail("Cancelled peer must not start work") } catch is CancellationError {} catch { XCTFail("Unexpected error: \(error)") }
+        XCTAssertFalse(helper.hasPresentedStatus)
+        XCTAssertTrue(helper.needsAutomaticRecovery, "A cancelled last owner must leave initial health recoverable")
+        await control.resumeStatus(); await helper.refreshIfRecoverable()
+        XCTAssertEqual(helper.displayedState, .running)
+        XCTAssertFalse(helper.needsAutomaticRecovery)
+    }
+
+    func testCancelledInitialRefreshDoesNotPublishUnverifiedHealth() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.pauseStatus()
+        let helper = upgrading(fixture, registration, control)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 { if await control.hasHeldStatus { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus else {
+            await control.resumeStatus(); await refresh.value; XCTFail("Health not held"); return
+        }
+        registration.status = .requiresApproval; refresh.cancel()
+        await control.resumeStatus(); await refresh.value
+        XCTAssertFalse(helper.hasPresentedStatus, "A cancelled response must not publish unverified health")
+        await helper.refreshAfterActivation()
+        XCTAssertEqual(helper.displayedState, .approvalRequired)
+    }
+
+    func testCancelledPeerWithRealHealthErrorStillBlocksOlderPeer() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let preferences = PeerFinalPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        let older = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await preferences.isHeld { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await preferences.isHeld else {
+            await preferences.release(); _ = try? await older.value; XCTFail("Final consent not held"); return
+        }
+        await control.failStatus(at: 3); await control.pauseStatus(at: 3)
+        let newer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 3) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 3) else {
+            await control.resumeStatus(); await preferences.release(); _ = try? await older.value; _ = try? await newer.value
+            XCTFail("Newer health not held"); return
+        }
+        newer.cancel(); await control.resumeStatus(at: 3); _ = try? await newer.value
+        XCTAssertEqual(helper.displayedState, .failed, "A real failure must remain visible even when its caller was cancelled")
+        XCTAssertTrue(helper.needsAutomaticRecovery, "A real failure must permit recovery polling")
+        await preferences.release()
+        do { try await older.value; XCTFail("A real newer failure must block older health even after cancellation") } catch {}
+    }
+
+    func testCancelledPeerDoesNotStartAfterLateHealthyReply() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control); await helper.refresh()
+        await control.pauseStatus(at: 2)
+        let peer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 2) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); _ = try? await peer.value; XCTFail("Health not held"); return
+        }
+        peer.cancel(); await control.resumeStatus(at: 2)
+        do { try await peer.value; XCTFail("Cancelled peer must not begin work") } catch is CancellationError {} catch { XCTFail("Unexpected error: \(error)") }
+        XCTAssertTrue(helper.online)
+    }
+
+    func testCancelledRefreshPublishesRealOfflineReply() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); let helper = fixture.controller(registration, control)
+        await helper.refresh(); await control.setStatusEnabled(false); await control.pauseStatus(at: 2)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 2) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await refresh.value; XCTFail("Health not held"); return
+        }
+        refresh.cancel(); await control.resumeStatus(at: 2); await refresh.value
+        XCTAssertEqual(helper.displayedState, .failed)
+        XCTAssertTrue(helper.needsAutomaticRecovery)
+    }
+
+    func testCancelledFailureStillShowsRequiredApproval() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control); await helper.refresh()
+        await control.failStatus(at: 2); await control.pauseStatus(at: 2)
+        let peer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 2) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 2) else { await control.resumeStatus(); _ = try? await peer.value; XCTFail("Health not held"); return }
+        peer.cancel(); registration.status = .requiresApproval
+        await control.resumeStatus(at: 2); _ = try? await peer.value
+        XCTAssertEqual(helper.displayedState, .approvalRequired)
+        XCTAssertTrue(helper.showsApprovalAction)
+    }
+
+    func testCancelledRefreshShowsIncompatibleIdentity() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control); await helper.refresh()
+        await control.setBuildIdentity(SyncHelperBuildIdentity(build: 100, bundlePath: "/Applications/LeonardoMD.app"))
+        await control.pauseStatus(at: 2)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 2) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 2) else { await control.resumeStatus(); await refresh.value; XCTFail("Health not held"); return }
+        refresh.cancel(); await control.resumeStatus(at: 2); await refresh.value
+        XCTAssertEqual(helper.displayedState, .failed)
+        XCTAssertTrue(helper.needsAutomaticRecovery)
+    }
+
+    func testCancelledPeerStillPresentsRevokedConsent() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control); await helper.refresh()
+        await control.pauseStatus(at: 2)
+        let peer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 2) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 2) else { await control.resumeStatus(); _ = try? await peer.value; XCTFail("Health not held"); return }
+        peer.cancel(); try await fixture.configurations.setSyncHelperEnabled(false, at: fixture.preferences)
+        await control.resumeStatus(at: 2); _ = try? await peer.value
+        XCTAssertEqual(helper.displayedState, .disabled)
+    }
+
+    func testMiddleFailureBlocksOlderPeerWhileNewerConsentIsPending() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let preferences = PeerSelectedPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        let first = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await preferences.isHeld(2) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await preferences.isHeld(2) else {
+            await preferences.releaseAll(); _ = try? await first.value; XCTFail("First consent not held"); return
+        }
+        await control.failStatus(at: 3); await control.pauseStatus(at: 3)
+        let middle = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 3) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 3) else {
+            await control.resumeStatus(); await preferences.releaseAll(); _ = try? await first.value; _ = try? await middle.value
+            XCTFail("Middle health not held"); return
+        }
+        let newest = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await preferences.isHeld(5) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await preferences.isHeld(5) else {
+            await control.resumeStatus(); await preferences.releaseAll(); _ = try? await first.value
+            _ = try? await middle.value; _ = try? await newest.value; XCTFail("Newest consent not held"); return
+        }
+        await control.resumeStatus(at: 3); _ = try? await middle.value
+        await preferences.release(2)
+        do { try await first.value; XCTFail("Unapproved recovery must not bypass newer failure") } catch {}
+        await preferences.release(5); try await newest.value
+    }
+
+    func testInvitationIsDiscardedWhenNetworkChangesDuringCreation() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+        await control.setSharing(service)
+        let helper = fixture.controller(registration, control); await helper.refresh()
+        let runtime = StatusRefreshRuntime(); await runtime.pauseInvitation()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                                           runtime: runtime, helper: helper, usesHelper: true)
+        var addresses = ["192.168.1.4"]; source.networkAddresses = { _ in addresses }
+        let create = Task { await source.createQR() }
+        for _ in 0..<5000 { if await runtime.hasHeldInvitation { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await runtime.hasHeldInvitation else {
+            await runtime.resumeInvitation(); await create.value; XCTFail("Invitation not held"); return
+        }
+        addresses = ["192.168.1.5"]
+        await source.refreshConsent(refreshHelper: false) // Busy creation intentionally skips this tick.
+        await runtime.resumeInvitation(); await create.value
+        XCTAssertNil(source.invitationURL, "Never publish an invitation for a superseded address set")
+    }
+
+    func testSupersededAuthorizedRecoveryRemainsValidDuringAnotherRefresh() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let preferences = PeerSelectedPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        let first = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await preferences.isHeld(2) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await preferences.isHeld(2) else {
+            await preferences.releaseAll(); _ = try? await first.value; XCTFail("First consent not held"); return
+        }
+        await control.failStatus(at: 3)
+        do { try await helper.requireReadyHelper(); XCTFail("Middle health must fail") } catch {}
+        let recovery = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await preferences.isHeld(5) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await preferences.isHeld(5) else {
+            await preferences.releaseAll(); _ = try? await first.value; _ = try? await recovery.value
+            XCTFail("Recovery consent not held"); return
+        }
+        await control.pauseStatus(at: 5)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 5) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 5) else {
+            await control.resumeStatus(); await preferences.releaseAll(); _ = try? await first.value
+            _ = try? await recovery.value; await refresh.value; XCTFail("Refresh not held"); return
+        }
+        await preferences.release(5); try await recovery.value
+        await preferences.release(2); try await first.value
+        await control.resumeStatus(at: 5); await refresh.value
+        XCTAssertTrue(helper.online)
+    }
+
+    func testOlderPeerCanProceedAfterNewerFullyAuthorizedRecovery() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let preferences = PeerFinalPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        let older = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await preferences.isHeld { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await preferences.isHeld else {
+            await preferences.release(); _ = try? await older.value; XCTFail("Final consent not held"); return
+        }
+        await control.failStatus(at: 3)
+        do { try await helper.requireReadyHelper(); XCTFail("Middle health must fail") } catch {}
+        try await helper.requireReadyHelper()
+        XCTAssertTrue(helper.online)
+        await helper.refresh() // A later healthy check does not invalidate authorized recovery.
+        await control.pauseStatus(at: 6)
+        let pending = Task { await helper.refresh() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 6) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 6) else {
+            await control.resumeStatus(); await preferences.release(); _ = try? await older.value; await pending.value
+            XCTFail("Later health not held"); return
+        }
+        await preferences.release(); try await older.value
+        await control.resumeStatus(at: 6); await pending.value
+        XCTAssertTrue(helper.online)
+    }
+
+    func testThreePeerChecksHonorMiddleFailureWhileNewestIsPending() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let preferences = PeerFinalPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        let first = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await preferences.isHeld { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await preferences.isHeld else {
+            await preferences.release(); _ = try? await first.value; XCTFail("First final consent not held"); return
+        }
+        await control.failStatus(at: 3); await control.pauseStatus(at: 3)
+        let middle = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 3) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 3) else {
+            await preferences.release(); await control.resumeStatus(); _ = try? await first.value; _ = try? await middle.value
+            XCTFail("Middle health not held"); return
+        }
+        await control.pauseStatus(at: 4)
+        let newest = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 4) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 4) else {
+            await preferences.release(); await control.resumeStatus(); _ = try? await first.value
+            _ = try? await middle.value; _ = try? await newest.value; XCTFail("Newest health not held"); return
+        }
+        await control.resumeStatus(at: 3); _ = try? await middle.value
+        await preferences.release()
+        do { try await first.value; XCTFail("The middle failure must invalidate first health") } catch {}
+        await control.resumeStatus(at: 4); try await newest.value
+        XCTAssertTrue(helper.online)
+    }
+
+    func testInitialConsentReadFailureShowsRecoverableFailure() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let preferences = FailingFinalPeerPreferences(configurations: fixture.configurations, url: fixture.preferences, failAt: 1)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        do { try await helper.requireReadyHelper(); XCTFail("Unreadable consent must block operation") } catch {}
+        XCTAssertEqual(helper.displayedState, .failed); XCTAssertTrue(helper.needsAutomaticRecovery)
+    }
+
+    func testPeerAttemptPresentsDeniedOrPendingConsent() async throws {
+        for upgradePending in [false, true] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+            let helper = upgrading(fixture, registration, control); await helper.refresh()
+            let previousStatusCalls = await control.statusCalls
+            if upgradePending { _ = try await fixture.configurations.beginSyncHelperUpgrade(UUID(), at: fixture.preferences) }
+            else { try await fixture.configurations.setSyncHelperEnabled(false, at: fixture.preferences) }
+            do { try await helper.requireReadyHelper(); XCTFail("Consent must block operation") } catch {}
+            XCTAssertEqual(helper.state, upgradePending ? .starting : .disabled)
+            XCTAssertEqual(helper.displayedState, upgradePending ? .running : .disabled,
+                "A pending renewal keeps the previous confirmed presentation")
+            XCTAssertNil(helper.displayedError)
+            XCTAssertFalse(helper.online)
+            let currentStatusCalls = await control.statusCalls
+            XCTAssertEqual(currentStatusCalls, previousStatusCalls, "Pending consent blocks peer health requests")
+            if upgradePending { try await captureStatusIndicator(helper, state: "renewal-pending") }
+        }
+    }
+
+    func testColdPeerAttemptReconcilesApprovalWithoutRefresh() async throws {
+        for delayed in [false, true] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = delayed ? .enabled : .requiresApproval
+            let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+            let helper = upgrading(fixture, registration, control)
+            if delayed { await control.failStatus(at: 1); await control.pauseStatus(at: 1) }
+            let peer = Task { try await helper.requireReadyHelper() }
+            if delayed {
+                for _ in 0..<5000 { if await control.hasHeldStatus(at: 1) { break }; try await Task.sleep(for: .milliseconds(1)) }
+                guard await control.hasHeldStatus(at: 1) else {
+                    await control.resumeStatus(); _ = try? await peer.value; XCTFail("Health not held"); return
+                }
+                registration.status = .requiresApproval; await control.resumeStatus(at: 1)
+            }
+            do { try await peer.value; XCTFail("Approval must block the operation") } catch {}
+            XCTAssertTrue(helper.enabled); XCTAssertEqual(helper.displayedState, .approvalRequired)
+            XCTAssertTrue(helper.showsApprovalAction)
+        }
+    }
+
+    func testPeerFailureReconcilesApprovalEvenWhenSuperseded() async throws {
+        for superseded in [false, true] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+            let helper = upgrading(fixture, registration, control); await helper.refresh()
+            await control.failStatus(at: 2); await control.pauseStatus()
+            let peer = Task { try await helper.requireReadyHelper() }
+            for _ in 0..<5000 { if await control.hasHeldStatus(at: 2) { break }; try await Task.sleep(for: .milliseconds(1)) }
+            guard await control.hasHeldStatus(at: 2) else {
+                await control.resumeStatus(); _ = try? await peer.value; XCTFail("Peer health not held"); return
+            }
+            let refresh = superseded ? Task { await helper.refresh() } : nil
+            if superseded {
+                for _ in 0..<5000 { if await control.hasHeldStatus(at: 3) { break }; try await Task.sleep(for: .milliseconds(1)) }
+                guard await control.hasHeldStatus(at: 3) else {
+                    await control.resumeStatus(); _ = try? await peer.value; await refresh?.value
+                    XCTFail("Concurrent refresh not held"); return
+                }
+            }
+            registration.status = .requiresApproval
+            await control.resumeStatus(at: 2); _ = try? await peer.value
+            XCTAssertEqual(helper.displayedState, .approvalRequired); XCTAssertTrue(helper.showsApprovalAction)
+            await control.resumeStatus(); await refresh?.value
+            XCTAssertEqual(helper.displayedState, .approvalRequired)
+        }
+    }
+
+    func testFailedHealthDuringStartupOrRefreshReconcilesApproval() async throws {
+        for startup in [false, true] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            let registration = HelperRegistrationFake(); registration.registrationResult = .enabled
+            let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+            if !startup { try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences); registration.status = .enabled }
+            let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                service: registration, client: control, expectedBuildIdentity: replacement,
+                startup: .init(attempts: 1, pause: {}), hasExecutable: { true }, verifyPackage: {})
+            if !startup { await helper.refresh() }
+            let call = startup ? 1 : 2
+            await control.failStatus(at: call); await control.pauseStatus(at: call)
+            let pending = Task { if startup { await helper.setEnabled(true) } else { await helper.refresh() } }
+            for _ in 0..<5000 { if await control.hasHeldStatus(at: call) { break }; try await Task.sleep(for: .milliseconds(1)) }
+            guard await control.hasHeldStatus(at: call) else {
+                await control.resumeStatus(); await pending.value; XCTFail("Health not held"); return
+            }
+            registration.status = .requiresApproval
+            await control.resumeStatus(at: call); await pending.value
+            XCTAssertEqual(helper.displayedState, .approvalRequired); XCTAssertTrue(helper.showsApprovalAction)
+        }
+    }
+
+    func testRegistrationRevocationOrMissingHelperWinsOverConcurrentRefresh() async throws {
+        for missing in [false, true] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+            let preferences = PeerFinalPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+            let executable = HelperExecutableFlag()
+            let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+                loadPeerPreferences: { try await preferences.load() }, hasExecutable: { executable.exists }, verifyPackage: {})
+            await helper.refresh()
+            let peer = Task { try await helper.requireReadyHelper() }
+            for _ in 0..<5000 { if await preferences.isHeld { break }; try await Task.sleep(for: .milliseconds(1)) }
+            guard await preferences.isHeld else {
+                await preferences.release(); _ = try? await peer.value; XCTFail("Final consent not held"); return
+            }
+            await control.pauseStatus(at: 3)
+            let refresh = Task { await helper.refresh() }
+            for _ in 0..<5000 { if await control.hasHeldStatus(at: 3) { break }; try await Task.sleep(for: .milliseconds(1)) }
+            guard await control.hasHeldStatus(at: 3) else {
+                await preferences.release(); await control.resumeStatus(); _ = try? await peer.value; await refresh.value
+                XCTFail("Refresh not held"); return
+            }
+            if missing { executable.remove() } else { registration.status = .requiresApproval }
+            await preferences.release(); _ = try? await peer.value
+            XCTAssertEqual(helper.displayedState, missing ? .notInstalled : .approvalRequired)
+            await control.resumeStatus(at: 3); await refresh.value
+            XCTAssertEqual(helper.displayedState, missing ? .notInstalled : .approvalRequired)
+            XCTAssertEqual(helper.showsApprovalAction, !missing)
+        }
+    }
+
+    func testRefreshRechecksRegistrationAfterHealthReturns() async throws {
+        for missing in [false, true] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+            let executable = HelperExecutableFlag()
+            let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+                hasExecutable: { executable.exists }, verifyPackage: {})
+            await helper.refresh(); await control.pauseStatus(at: 2)
+            let refresh = Task { await helper.refresh() }
+            for _ in 0..<5000 { if await control.hasHeldStatus(at: 2) { break }; try await Task.sleep(for: .milliseconds(1)) }
+            guard await control.hasHeldStatus(at: 2) else {
+                await control.resumeStatus(); await refresh.value; XCTFail("Refresh not held"); return
+            }
+            if missing { executable.remove() } else { registration.status = .requiresApproval }
+            await control.resumeStatus(at: 2); await refresh.value
+            XCTAssertEqual(helper.displayedState, missing ? .notInstalled : .approvalRequired)
+        }
+    }
+
+    func testFinalConsentRevocationWinsOverConcurrentPeerHealth() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let preferences = PeerFinalPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        let older = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await preferences.isHeld { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await preferences.isHeld else {
+            await preferences.release(); _ = try? await older.value; XCTFail("Final consent not held"); return
+        }
+        await control.failStatus(at: 3); await control.pauseStatus(at: 3)
+        let newer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 3) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 3) else {
+            await preferences.release(); await control.resumeStatus(); _ = try? await older.value; _ = try? await newer.value
+            XCTFail("Concurrent health not held"); return
+        }
+        try await fixture.configurations.setSyncHelperEnabled(false, at: fixture.preferences)
+        await preferences.release(); _ = try? await older.value
+        XCTAssertFalse(helper.enabled); XCTAssertEqual(helper.displayedState, .disabled)
+        await control.resumeStatus(at: 3); _ = try? await newer.value
+        XCTAssertFalse(helper.enabled); XCTAssertEqual(helper.displayedState, .disabled)
+        XCTAssertNil(helper.displayedError)
+    }
+
+    func testPeerFinalConsentRevocationUpdatesDisplayedState() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let preferences = PeerFinalPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        let peer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 { if await preferences.isHeld { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await preferences.isHeld else {
+            await preferences.release(); _ = try? await peer.value; XCTFail("Final consent not held"); return
+        }
+        try await fixture.configurations.setSyncHelperEnabled(false, at: fixture.preferences)
+        await preferences.release()
+        do { try await peer.value; XCTFail("Revoked consent must block operation") } catch {}
+        XCTAssertEqual(helper.displayedState, .disabled); XCTAssertFalse(helper.online)
+    }
+
+    func testFailedFinalConsentReadShowsRecoverableFailure() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let preferences = FailingFinalPeerPreferences(configurations: fixture.configurations, url: fixture.preferences)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        do { try await helper.requireReadyHelper(); XCTFail("Unreadable consent must block operation") } catch {}
+        XCTAssertEqual(helper.displayedState, .failed)
+        XCTAssertTrue(helper.needsAutomaticRecovery)
+        XCTAssertNotNil(helper.displayedError)
+    }
+
+    func testNewerNegativePeerHealthBlocksOlderPeerBeforeConsentReload() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let project = MobileSharedProject(rootURL: fixture.root, name: "Fictional project")
+        var preferencesValue = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferencesValue.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true, projects: [project])
+        try await fixture.configurations.saveGlobalPreferences(preferencesValue, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!,
+            certificateFingerprint: Data(repeating: 4, count: 32))
+        await control.setSharing(service)
+        let preferences = PeerIndexedPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
+        let runtime = StatusRefreshRuntime(); await runtime.setStartedService(service)
+        var consent = PairingRegistry(); consent.setEnabled(true)
+        let request = try consent.requestPairing(deviceName: "Other Mac",
+            credential: String(repeating: "a", count: 64), serverFingerprint: Data(repeating: 1, count: 32), now: Date())
+        await runtime.setConsentState(consent)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        await source.initialize()
+        XCTAssertTrue(source.sharingAvailable)
+
+        let upload = try DesktopPeerUpload(proposalID: UUID(), projectID: project.id, byteCount: 1,
+            sha256: String(repeating: "a", count: 64))
+        let proposal = DesktopPeerIncomingProposal(deviceID: UUID(), deviceName: "Second Mac", upload: upload)
+        let selection = try CorpusSelection(folders: [""], documents: [])
+        let base = CorpusSnapshot(revision: "base", files: [])
+        let proposed = CorpusSnapshot(revision: "incoming", files: [
+            CorpusFile(path: "notes.md", content: Data("# Incoming edit".utf8))
+        ])
+        let proposalReview = try DesktopPeerProposalReview(
+            proposal: DesktopPeerProposal(projectID: project.id, selection: selection, base: base, proposed: proposed),
+            source: base)
+        let review = DesktopSourceReview(item: proposal, review: proposalReview)
+        let older = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await preferences.isHeld(2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await preferences.isHeld(2) else {
+            await preferences.releaseAll(); _ = try? await older.value; XCTFail("Older consent not held"); return
+        }
+        await control.setStatusEnabled(false)
+        let newer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await preferences.isHeld(4) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await preferences.isHeld(4) else {
+            await preferences.releaseAll(); _ = try? await older.value; _ = try? await newer.value
+            XCTFail("Newer consent not held"); return
+        }
+        XCTAssertFalse(helper.online, "A current negative health response must revoke operational availability immediately")
+        XCTAssertFalse(source.sharingAvailable)
+        XCTAssertFalse(source.consentActionsAvailable)
+        await source.reviewProposal(proposal)
+        let appliedBeforeRecovery = await source.applyReview(review, decisions: ["notes.md": .local])
+        XCTAssertFalse(appliedBeforeRecovery)
+        let blockedApproval = await source.approve(request, projects: [project.id])
+        XCTAssertEqual(blockedApproval, .unavailable,
+            "A queued Allow action must report that health prevented approval so the sheet stays open")
+        await source.reject(request.id)
+        await source.revoke(UUID())
+        let actionsBeforeRecovery = await runtime.recordedActionsValue
+        XCTAssertEqual(actionsBeforeRecovery.review, 0)
+        XCTAssertEqual(actionsBeforeRecovery.apply, 0)
+        XCTAssertEqual(actionsBeforeRecovery.approve, 0)
+        XCTAssertEqual(actionsBeforeRecovery.reject, 0)
+        XCTAssertEqual(actionsBeforeRecovery.revoke, 0)
+        await preferences.release(2)
+        do { try await older.value; XCTFail("Newer negative health must block older success") } catch {}
+        await preferences.release(4)
+        do { try await newer.value; XCTFail("Negative health must block the operation") } catch {}
+        XCTAssertEqual(helper.displayedState, .failed)
+        await control.setStatusEnabled(true)
+        await helper.refresh()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertTrue(helper.online)
+        XCTAssertTrue(source.sharingAvailable)
+        let retriedApproval = await source.approve(request, projects: [project.id])
+        XCTAssertEqual(retriedApproval, .completed,
+            "A confirmed successful approval can dismiss the sheet after health recovers")
+        let actionsAfterRecovery = await runtime.recordedActionsValue
+        XCTAssertEqual(actionsAfterRecovery.approve, 1, "A confirmed healthy response restores eligible actions")
+    }
+
+    func testPeerAttemptShowsMissingHelperWithoutExplicitRefresh() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let executable = HelperExecutableFlag()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            hasExecutable: { executable.exists }, verifyPackage: {})
+        await helper.refresh(); XCTAssertEqual(helper.displayedState, .running)
+        executable.remove()
+        do { try await helper.requireReadyHelper(); XCTFail("Missing helper must block the operation") } catch {}
+        XCTAssertEqual(helper.displayedState, .notInstalled)
+        XCTAssertFalse(helper.online)
+    }
+
+    func testMissingHelperBlocksOlderPeerAfterItsHealthResponse() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let preferences = PeerFinalPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let executable = HelperExecutableFlag()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { executable.exists }, verifyPackage: {})
+        await helper.refresh()
+        let peer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await preferences.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await preferences.isHeld else {
+            await preferences.release(); _ = try? await peer.value; XCTFail("Final consent not held"); return
+        }
+        executable.remove(); await helper.refresh()
+        XCTAssertEqual(helper.displayedState, .notInstalled)
+        await preferences.release()
+        do { try await peer.value; XCTFail("Missing helper must block older success") } catch {}
+    }
+
+    func testNewerOperationalFailureBlocksOlderPeerBeforeRetryCompletes() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let preferences = PeerFinalPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let retry = StartupPauseBarrier()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: { await retry.pause() }),
+            loadPeerPreferences: { try await preferences.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        let peer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await preferences.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await preferences.isHeld else {
+            await preferences.release(); _ = try? await peer.value; XCTFail("Final consent not held"); return
+        }
+        await control.failStatus(at: 3)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await retry.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await retry.isHeld else {
+            await retry.release(); await preferences.release(); await refresh.value; _ = try? await peer.value
+            XCTFail("Retry not held"); return
+        }
+        XCTAssertEqual(helper.displayedState, .running, "Transient failure stays visually hidden")
+        await preferences.release()
+        do { try await peer.value; XCTFail("A newer observed failure must block the older health response") } catch {}
+        await retry.release(); await refresh.value
+        XCTAssertTrue(helper.online)
+    }
+
+    func testConcurrentHealthyPeerPreflightsSucceedWithoutCachedHealth() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.pauseStatus()
+        let helper = upgrading(fixture, registration, control)
+        let first = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 1) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 1) else {
+            await control.resumeStatus(); _ = try? await first.value; XCTFail("First health not held"); return
+        }
+        let second = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); _ = try? await first.value; _ = try? await second.value
+            XCTFail("Second health not held"); return
+        }
+        await control.resumeStatus(at: 1)
+        try await first.value
+        XCTAssertFalse(helper.hasPresentedStatus, "An older success must not publish over a newer check")
+        await control.resumeStatus(at: 2); try await second.value
+        XCTAssertTrue(helper.online)
+    }
+
+    func testConcurrentPeerPreflightsDoNotInvalidateEachOther() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let barrier = PeerPreferencesBarrier(configurations: fixture.configurations, url: fixture.preferences)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            loadPeerPreferences: { try await barrier.load() }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh(); await control.pauseStatus()
+        let first = Task { try await helper.requireReadyHelper() }
+        let second = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await barrier.count == 2 { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await barrier.count == 2 else {
+            await barrier.release(); await control.resumeStatus(); _ = try? await first.value; _ = try? await second.value
+            XCTFail("Preflights did not reach the barrier"); return
+        }
+        await barrier.release()
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2), await control.hasHeldStatus(at: 3) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let firstReachedHealth = await control.hasHeldStatus(at: 2)
+        let secondReachedHealth = await control.hasHeldStatus(at: 3)
+        let bothReachedHealth = firstReachedHealth && secondReachedHealth
+        await control.resumeStatus()
+        XCTAssertTrue(bothReachedHealth, "Both healthy preflights must reach the helper")
+        try await first.value; try await second.value
+        XCTAssertTrue(helper.online)
+    }
+
+    func testValidRefreshPresentsWhileOlderRefreshIsStillHeld() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.pauseStatus(at: 1)
+        let helper = upgrading(fixture, registration, control)
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 1) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 1) else {
+            await control.resumeStatus(); await old.value; XCTFail("Old health not held"); return
+        }
+        await helper.refresh()
+        XCTAssertTrue(helper.checking)
+        XCTAssertTrue(helper.hasPresentedStatus, "The latest confirmed health must be presented immediately")
+        XCTAssertEqual(helper.displayedState, .running)
+        await control.resumeStatus(at: 1); await old.value
+    }
+
+    func testOldRefreshCannotPresentDisabledStateDuringFirstEnable() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: {}), hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh(); await control.pauseStatus(at: 2)
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await old.value; XCTFail("Old health not held"); return
+        }
+        await helper.setEnabled(false)
+        registration.registrationResult = .enabled
+        await control.pauseStatus(at: 3)
+        let enable = Task { await helper.setEnabled(true) }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 3) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 3) else {
+            await control.resumeStatus(); await old.value; await enable.value; XCTFail("New health not held"); return
+        }
+        await control.resumeStatus(at: 2); await old.value
+        XCTAssertFalse(helper.hasPresentedStatus, "A stale completion must not present the disabled snapshot")
+        await control.resumeStatus(at: 3); await enable.value
+        XCTAssertTrue(helper.hasPresentedStatus)
+        XCTAssertEqual(helper.displayedState, .running)
+    }
+
+    func testFirstEnableKeepsIndicatorHiddenUntilHealthCompletes() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let registration = HelperRegistrationFake(); registration.registrationResult = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.pauseStatus()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: {}), hasExecutable: { true }, verifyPackage: {})
+        let enable = Task { await helper.setEnabled(true) }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus else {
+            await control.resumeStatus(); await enable.value; XCTFail("Health not held"); return
+        }
+        XCTAssertTrue(helper.enabled)
+        XCTAssertFalse(helper.hasPresentedStatus, "The disabled state must not become an enabled error")
+        await control.resumeStatus(); await enable.value
+        XCTAssertTrue(helper.hasPresentedStatus)
+        XCTAssertEqual(helper.displayedState, .running)
+    }
+
+    func testConcurrentPeerHealthUsesLatestStartedResult() async throws {
+        for failureCall in [2, 3] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+            let helper = upgrading(fixture, registration, control)
+            await helper.refresh()
+            await control.failStatus(at: failureCall); await control.pauseStatus()
+            let first = Task { try await helper.requireReadyHelper() }
+            for _ in 0..<5000 {
+                if await control.hasHeldStatus(at: 2) { break }
+                try await Task.sleep(for: .milliseconds(1))
+            }
+            guard await control.hasHeldStatus(at: 2) else {
+                await control.resumeStatus(); _ = try? await first.value; XCTFail("First health not held"); return
+            }
+            let second = Task { try await helper.requireReadyHelper() }
+            for _ in 0..<5000 {
+                if await control.hasHeldStatus(at: 3) { break }
+                try await Task.sleep(for: .milliseconds(1))
+            }
+            guard await control.hasHeldStatus(at: 3) else {
+                await control.resumeStatus(); _ = try? await first.value; _ = try? await second.value
+                XCTFail("Second health not held"); return
+            }
+            await control.resumeStatus(at: 2); _ = try? await first.value
+            await control.resumeStatus(at: 3)
+            if failureCall == 3 {
+                do { try await second.value; XCTFail("Expected failure") } catch {}
+                XCTAssertEqual(helper.displayedState, .failed)
+            } else {
+                try await second.value
+                XCTAssertEqual(helper.displayedState, .running)
+            }
+        }
+    }
+
+    func testFailedLocalHealthDuringPeerOperationUpdatesDisplayedState() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let controller = upgrading(fixture, registration, control)
+        await controller.refresh()
+        XCTAssertTrue(controller.online)
+        await control.setUnavailable()
+        do { try await controller.requireReadyHelper(); XCTFail("Expected local helper failure") }
+        catch { XCTAssertEqual(controller.state, .failed); XCTAssertFalse(controller.online) }
+    }
+
+    func testLateLocalHealthFailureDoesNotReplaceNewerHealthyResult() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let controller = upgrading(fixture, registration, control)
+        await controller.refresh()
+        await control.failStatus(at: 2); await control.pauseStatus(at: 2)
+        let stale = Task { try await controller.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus else {
+            await control.resumeStatus(); _ = try? await stale.value
+            XCTFail("Status check did not reach the barrier"); return
+        }
+        await controller.refresh()
+        XCTAssertTrue(controller.online)
+        await control.resumeStatus(); _ = try? await stale.value
+        XCTAssertTrue(controller.online, "A stale failure must not overwrite newer health")
+    }
+
+    func testConsentFailureChecksHealthOncePerFailureEpisode() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let helper = fixture.controller(registration, control)
+        await helper.refresh()
+        let runtime = StatusRefreshRuntime()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                                           runtime: runtime, helper: helper, usesHelper: true)
+        let inFlightError = MainActorFlag()
+        await control.observeStatusCalls { call in
+            if call == 2 { inFlightError.value = source.error != nil }
+        }
+        await runtime.setConsentFailure(true)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertFalse(inFlightError.value, "Do not present an automatic consent failure while helper recovery is pending")
+        XCTAssertNil(source.error, "One failed poll remains provisional after health recovers")
+        let firstCalls = await control.statusCalls
+        XCTAssertEqual(firstCalls, 2, "Initial health and one check for the error episode")
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNotNil(source.error, "Report a second consecutive automatic failure")
+        await runtime.setConsentFailure(false)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.error, "A successful poll clears the automatic failure diagnostic")
+
+        await runtime.setConsentFailure(true)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.error, "Keep the first failure of a new episode provisional")
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNotNil(source.error, "Report the persistent failure once")
+        source.acknowledgeDisplayedError()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.error, "Do not re-present a dismissed failure during the same episode")
+
+        source.error = "Explicit action failed"
+        await runtime.setConsentFailure(false)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.error, "Explicit action failed", "Automatic recovery must not clear an explicit action error")
+
+        // Clearing an explicit action error reveals, but does not acknowledge,
+        // an automatic diagnostic queued behind it.
+        await runtime.setConsentFailure(true)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.error, "Explicit action failed")
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.error, "Explicit action failed")
+        source.error = nil
+        XCTAssertNotNil(source.error, "Clearing an explicit action error must reveal the queued consent diagnostic")
+        source.acknowledgeDisplayedError()
+        XCTAssertNil(source.error, "Dismissing the consent diagnostic must acknowledge only that diagnostic")
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.error, "An acknowledged diagnostic is not re-presented during the same episode")
+        let nextCalls = await control.statusCalls
+        XCTAssertEqual(nextCalls, 4, "Each new automatic failure episode triggers one health check")
+    }
+
+    func testInitialAutomaticConsentReadFailureIsProvisionalAndRecoveryKeepsActionError() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let helper = fixture.controller(registration, control)
+        let runtime = StatusRefreshRuntime()
+        await runtime.failNextConsentRead()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences,
+            configurations: fixture.configurations, runtime: runtime, helper: helper, usesHelper: true)
+
+        await source.initialize()
+
+        XCTAssertNil(source.error, "The first automatic consent read during initialization stays provisional")
+        XCTAssertTrue(source.projectSettingsLoaded)
+        source.error = "Explicit action failed"
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.error, "Explicit action failed",
+            "A successful automatic consent read clears only its own diagnostic")
+    }
+
+    func testConsentAndIncomingReadFailuresUseSeparateRecoveryEpisodes() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true)
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!,
+            certificateFingerprint: Data(repeating: 4, count: 32))
+        await control.setSharing(service)
+        let helper = fixture.controller(registration, control)
+        let runtime = StatusRefreshRuntime(); await runtime.setStartedService(service)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences,
+            configurations: fixture.configurations, runtime: runtime, helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        source.isLocalAddress = { _ in true }
+
+        await source.initialize()
+        XCTAssertNotNil(source.running)
+
+        await runtime.setConsentFailure(true)
+        await source.refreshConsent(refreshHelper: false)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNotNil(source.error, "Two consecutive consent-read failures are reported")
+
+        await runtime.setConsentFailure(false)
+        await runtime.failNextIncomingRead()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.error,
+            "A successful consent read clears the old consent error before incoming proposals are read")
+
+        await runtime.setConsentFailure(true)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.error,
+            "An incoming-proposal failure does not count as a consent-read failure")
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNotNil(source.error, "The new consent episode reports only after its second failure")
+
+        source.error = "Explicit action failed"
+        await runtime.setConsentFailure(false)
+        await runtime.failNextIncomingRead()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.error, "Explicit action failed",
+            "Automatic consent and incoming-read recovery must not erase an explicit action error")
+        await runtime.failNextIncomingRead()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.error, "Explicit action failed")
+        source.acknowledgeDisplayedError()
+        XCTAssertNotNil(source.error, "Dismissing an explicit alert must reveal the queued incoming-proposal diagnostic")
+        source.acknowledgeDisplayedError()
+        XCTAssertNil(source.error, "Dismissing the incoming diagnostic must acknowledge that message")
+        await runtime.failNextIncomingRead()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.error, "A dismissed incoming diagnostic is not re-presented during the same episode")
+    }
+
+    func testPersistentConsentFailureRechecksHealthAfterInterval() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); let helper = fixture.controller(registration, control)
+        await helper.refresh()
+        let runtime = StatusRefreshRuntime(); let clock = StatusTestClock()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true, now: { clock.read() })
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        await runtime.setConsentFailure(true)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertTrue(helper.online)
+        await control.setUnavailable()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertTrue(helper.online, "The retry is bounded")
+        clock.advance(31)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertFalse(helper.online, "A later outage must not remain green indefinitely")
+    }
+
+    func testApprovalGrantedAgainWhileOlderHealthIsHeld() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); let helper = fixture.controller(registration, control)
+        await helper.refresh(); await control.pauseStatus(at: 2)
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await old.value; XCTFail("Health not held"); return
+        }
+        registration.status = .requiresApproval; await helper.refreshAfterActivation()
+        XCTAssertEqual(helper.state, .approvalRequired)
+        XCTAssertEqual(helper.displayedState, .approvalRequired, "A confirmed revocation must be visible while old health is held")
+        XCTAssertTrue(helper.showsApprovalAction)
+        XCTAssertEqual(helper.statusText, L10n.text("Offline · approve the sync helper in System Settings"))
+        XCTAssertNil(helper.displayedError)
+        registration.status = .enabled; await helper.refreshAfterActivation()
+        XCTAssertTrue(helper.online, "Reapproval starts a fresh check even while the old one is held")
+        XCTAssertEqual(helper.displayedState, .running)
+        XCTAssertFalse(helper.showsApprovalAction)
+        await control.resumeStatus(at: 2); await old.value
+        XCTAssertTrue(helper.online)
+    }
+
+    func testInvitationCanBePublishedWhileOlderHealthIsHeld() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let endpoint = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+        await control.setSharing(endpoint)
+        let helper = fixture.controller(registration, control); await helper.refresh()
+        await control.pauseStatus(at: 2)
+        let old = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 2) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 2) else {
+            await control.resumeStatus(); await old.value; XCTFail("Health not held"); return
+        }
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        await source.createQR()
+        XCTAssertNotNil(source.invitationURL, "An older pending check must not invalidate a freshly confirmed invitation")
+        await control.resumeStatus(at: 2); await old.value
+    }
+
+    func testNegativeHealthRecoversInBothPreferenceRoles() async throws {
+        for sharing in [true, false] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            let control = HelperControlFake(); let helper = fixture.controller(registration, control)
+            await helper.refresh()
+            await control.setStatusEnabled(false); await helper.refresh()
+            XCTAssertEqual(helper.state, .failed)
+            XCTAssertTrue(helper.needsAutomaticRecovery)
+            await control.setStatusEnabled(true)
+            if sharing {
+                let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                    runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true)
+                await source.refreshConsent(refreshHelper: false)
+            } else { await helper.refreshIfRecoverable() }
+            XCTAssertTrue(helper.online)
+        }
+    }
+
+    func testActivationReconcilesRevocationDuringHeldHealth() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); let helper = fixture.controller(registration, control)
+        await helper.refresh(); await control.pauseStatus(at: 2)
+        let pending = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus else {
+            await control.resumeStatus(); await pending.value
+            XCTFail("Status did not reach the barrier"); return
+        }
+        registration.status = .requiresApproval
+        await helper.refreshAfterActivation()
+        await control.resumeStatus(); await pending.value
+        XCTAssertEqual(helper.state, .approvalRequired)
+    }
+
+    func testFirstNetworkPollRefreshesEndpointAfterInitialization() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let a = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+        let b = RunningDirectService(endpoint: URL(string: "https://192.168.1.5:40882")!, certificateFingerprint: Data(repeating: 5, count: 32))
+        await control.setSharing(a)
+        let helper = fixture.controller(registration, control)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true)
+        var addresses = ["192.168.1.4"]; source.networkAddresses = { _ in addresses }
+        await source.initialize()
+        addresses = ["192.168.1.5"]; await control.setSharing(b)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.running?.endpoint, b.endpoint)
+    }
+
+    func testNetworkChangeHidesStaleEndpointAndRetriesUntilCurrent() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); let clock = StatusTestClock()
+        let a = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+        let b = RunningDirectService(endpoint: URL(string: "https://192.168.1.5:40882")!, certificateFingerprint: Data(repeating: 5, count: 32))
+        await control.setSharing(a)
+        let helper = fixture.controller(registration, control)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true, now: { clock.read() })
+        var addresses = ["192.168.1.4"]; source.networkAddresses = { _ in addresses }
+        await helper.refresh(); await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.running?.endpoint, a.endpoint)
+        addresses = ["192.168.1.5"]; await control.pauseStatus(at: 3)
+        let poll = Task { await source.refreshConsent(refreshHelper: false) }
+        for _ in 0..<5000 { if await control.hasHeldStatus(at: 3) { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus(at: 3) else { await control.resumeStatus(); await poll.value; XCTFail("Network check not held"); return }
+        XCTAssertNil(source.running, "A retired endpoint must disappear before awaiting health")
+        await control.resumeStatus(at: 3); await poll.value
+        XCTAssertNil(source.running, "A helper still advertising the old endpoint remains hidden")
+        await control.setSharing(b)
+        await source.refreshConsent(refreshHelper: true)
+        XCTAssertEqual(source.running?.endpoint, b.endpoint, "An explicit check may recover without waiting for the retry interval")
+    }
+
+    func testInvitationAcceptsOnlyCurrentlyLocalExplicitHost() async throws {
+        for host in ["127.0.0.1", "::1"] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+            preferences.mobileSync = MobileSyncPreferences(helperEnabled: true, host: host)
+            try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            let control = HelperControlFake()
+            let urlHost = host.contains(":") ? "[\(host)]" : host
+            let service = RunningDirectService(endpoint: URL(string: "https://\(urlHost):40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+            await control.setSharing(service)
+            let helper = fixture.controller(registration, control)
+            let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true)
+            source.networkAddresses = { _ in ["192.168.1.4"] }
+            var local = true; source.isLocalAddress = { _ in local }
+            await source.initialize(); await source.createQR()
+            XCTAssertNotNil(source.invitationURL, "Explicit local host \(host) must be accepted")
+            local = false; await source.createQR()
+            XCTAssertNil(source.invitationURL, "An explicit host that disappeared must be rejected")
+        }
+    }
+
+    func testPollInvalidatesExplicitHostWithoutIPv4ChangeAndRecovers() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(helperEnabled: true, host: "::1")
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let service = RunningDirectService(endpoint: URL(string: "https://[::1]:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+        await control.setSharing(service)
+        let helper = fixture.controller(registration, control)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        var local = true; source.isLocalAddress = { _ in local }
+        await source.initialize(); await source.refreshConsent(refreshHelper: false); await source.createQR()
+        XCTAssertNotNil(source.invitationURL); XCTAssertNotNil(source.running)
+        local = false
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.invitationURL, "An invitation for a removed explicit host must disappear")
+        XCTAssertNil(source.running, "The removed endpoint must not remain visible")
+        local = true
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.running?.endpoint, service.endpoint, "Recovery must not require an IPv4 change")
+    }
+
+    func testNewInvitationSurvivesFirstNetworkPollAfterAddressChange() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let a = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+        let b = RunningDirectService(endpoint: URL(string: "https://192.168.1.5:40882")!, certificateFingerprint: Data(repeating: 5, count: 32))
+        await control.setSharing(a)
+        let helper = fixture.controller(registration, control); await helper.refresh()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                                           runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true)
+        var addresses = ["192.168.1.4"]; source.networkAddresses = { _ in addresses }
+        await source.refreshConsent(refreshHelper: false); await source.createQR()
+        XCTAssertNotNil(source.invitationURL)
+        addresses = ["192.168.1.5"]; await control.setSharing(b)
+        await source.createQR()
+        let fresh = try XCTUnwrap(source.invitationURL)
+        XCTAssertEqual(try DirectPairingQR.decode(fresh, now: Date()).endpoint, b.endpoint)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.invitationURL, fresh, "A poll must preserve an invitation created for the current network")
+    }
+
+    func testRegeneratingInvitationClearsPreviousBeforeHealthCheck() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+        await control.setSharing(service)
+        let helper = fixture.controller(registration, control); await helper.refresh()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                                           runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true)
+        var addresses = ["192.168.1.4"]; source.networkAddresses = { _ in addresses }
+        await source.createQR(); XCTAssertNotNil(source.invitationURL)
+        await control.pauseStatus(); addresses = ["192.168.1.5"]
+        let create = Task { await source.createQR() }
+        for _ in 0..<5000 { if await control.hasHeldStatus { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus else {
+            await control.resumeStatus(); await create.value; XCTFail("Health not held"); return
+        }
+        XCTAssertNil(source.invitationURL, "An earlier invitation must disappear before waiting for health")
+        await control.resumeStatus(); await create.value
+        XCTAssertNil(source.invitationURL, "A helper still advertising the old address must not publish a new QR")
+    }
+
+    func testNewInvitationUsesLatestHelperEndpoint() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let a = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+        let b = RunningDirectService(endpoint: URL(string: "https://192.168.1.5:40882")!, certificateFingerprint: Data(repeating: 5, count: 32))
+        await control.setSharing(a)
+        let helper = fixture.controller(registration, control)
+        await helper.refresh()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                                           runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true)
+        var addresses = ["192.168.1.4"]
+        source.networkAddresses = { _ in addresses }
+        await source.refreshConsent(refreshHelper: false)
+        await source.createQR()
+        let first = try DirectPairingQR.decode(XCTUnwrap(source.invitationURL), now: Date())
+        XCTAssertEqual(first.endpoint, a.endpoint)
+        await control.setSharing(b)
+        addresses = ["192.168.1.5"]
+        await control.pauseStatus()
+        let refresh = Task { await source.refreshConsent(refreshHelper: false) }
+        for _ in 0..<5000 { if await control.hasHeldStatus { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await control.hasHeldStatus else {
+            await control.resumeStatus(); await refresh.value; XCTFail("Network health not held"); return
+        }
+        XCTAssertNil(source.invitationURL, "The old invitation must disappear before health returns")
+        await control.resumeStatus(); await refresh.value
+        XCTAssertNil(source.invitationURL, "A changed endpoint must discard the previous invitation")
+        await source.createQR()
+        let second = try DirectPairingQR.decode(XCTUnwrap(source.invitationURL), now: Date())
+        XCTAssertEqual(second.endpoint, b.endpoint)
+        XCTAssertEqual(second.certificateFingerprint, b.certificateFingerprint)
+        await control.setUnavailable()
+        await source.createQR()
+        XCTAssertNil(source.invitationURL)
+    }
+
+    func testOfflineHelperRecoversWhileSharingPageRemainsOpen() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let helper = fixture.controller(registration, control)
+        await helper.refresh()
+        let runtime = StatusRefreshRuntime(); let clock = StatusTestClock()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                                           runtime: runtime, helper: helper, usesHelper: true, now: { clock.read() })
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        await runtime.setConsentFailure(true); await control.setUnavailable()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertFalse(helper.online)
+        let calls = await control.statusCalls
+        await runtime.setConsentFailure(false); await control.setUnavailable(false)
+        await source.refreshConsent(refreshHelper: false)
+        let callsBeforeRetry = await control.statusCalls
+        XCTAssertEqual(callsBeforeRetry, calls, "A failed service must not be probed every tick")
+        clock.advance(31)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertTrue(helper.online, "The open page must recover after a bounded retry")
+    }
+
+    func testRevokedApprovalIsShownOnReturnAndOnPeerAttempt() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control)
+        await helper.refresh(); XCTAssertTrue(helper.online)
+        registration.status = .requiresApproval
+        await helper.refreshAfterActivation()
+        XCTAssertEqual(helper.state, .approvalRequired)
+        registration.status = .enabled
+        await helper.refresh(); XCTAssertTrue(helper.online)
+        registration.status = .requiresApproval
+        do { try await helper.requireReadyHelper(); XCTFail("Revoked approval must block the operation") }
+        catch { XCTAssertEqual(helper.state, .approvalRequired) }
+    }
+
+    func testNegativeLocalHealthResponseReplacesPreviouslyHealthyState() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control)
+        await helper.refresh(); XCTAssertTrue(helper.online)
+        await control.setStatusEnabled(false)
+        do { try await helper.requireReadyHelper(); XCTFail("Disabled helper must block the operation") }
+        catch { XCTAssertEqual(helper.state, .failed); XCTAssertFalse(helper.online) }
+    }
+
+    func testErrorRecoveryChecksOnlyFailedHelperAndRestoresOnlineStatus() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let helper = fixture.controller(registration, control)
+        await helper.refresh(); XCTAssertTrue(helper.online)
+        let healthyCalls = await control.statusCalls
+        await helper.refreshIfRecoverable()
+        let unchangedCalls = await control.statusCalls
+        XCTAssertEqual(unchangedCalls, healthyCalls, "Healthy helpers are not periodically checked")
+        await control.setUnavailable()
+        await helper.refresh(); XCTAssertEqual(helper.state, .failed)
+        await control.setUnavailable(false)
+        await helper.refreshIfRecoverable()
+        XCTAssertTrue(helper.online, "The connections page can recover without reopening")
+    }
+
+    func testNewerPeerFailureCannotBeOverwrittenByOlderRefresh() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control)
+        await helper.refresh(); XCTAssertTrue(helper.online)
+        await control.pauseStatus(at: 2); await control.failStatus(at: 3)
+        let stale = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus else {
+            await control.resumeStatus(); await stale.value
+            XCTFail("Refresh did not reach the barrier"); return
+        }
+        do { try await helper.requireReadyHelper(); XCTFail("Expected local helper failure") } catch {}
+        XCTAssertEqual(helper.displayedState, .failed)
+        XCTAssertNotNil(helper.displayedError)
+        await control.resumeStatus(); await stale.value
+        XCTAssertEqual(helper.state, .failed)
+        XCTAssertFalse(helper.online, "An older success must not erase a newer failure")
+    }
+
+    func testNewerPeerSuccessCannotBeOverwrittenByOlderRefreshFailure() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let helper = upgrading(fixture, registration, control)
+        await helper.refresh(); XCTAssertTrue(helper.online)
+        await control.pauseStatus(at: 2); await control.failStatus(at: 2)
+        let stale = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus else {
+            await control.resumeStatus(); await stale.value
+            XCTFail("Refresh did not reach the barrier"); return
+        }
+        try await helper.requireReadyHelper()
+        await control.resumeStatus(); await stale.value
+        XCTAssertTrue(helper.online, "An older failure must not erase a newer success")
+    }
+
+    func testInvitationIsDiscardedIfEndpointChangesDuringCreation() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let a = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+        let b = RunningDirectService(endpoint: URL(string: "https://192.168.1.5:40882")!, certificateFingerprint: Data(repeating: 5, count: 32))
+        await control.setSharing(a)
+        let helper = fixture.controller(registration, control); await helper.refresh()
+        let runtime = StatusRefreshRuntime(); await runtime.pauseInvitation()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                                           runtime: runtime, helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        let create = Task { await source.createQR() }
+        for _ in 0..<5000 {
+            if await runtime.hasHeldInvitation { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await runtime.hasHeldInvitation else {
+            await runtime.resumeInvitation(); await create.value
+            XCTFail("Invitation did not reach the barrier"); return
+        }
+        await control.setSharing(b)
+        await runtime.resumeInvitation(); await create.value
+        XCTAssertNil(source.invitationURL, "Never publish a token with the previous endpoint")
+        XCTAssertEqual(source.running?.endpoint, b.endpoint)
+    }
+
+    func testInvitationDiscardedWhenFinalHealthIsSuperseded() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let a = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!, certificateFingerprint: Data(repeating: 4, count: 32))
+        let b = RunningDirectService(endpoint: URL(string: "https://192.168.1.5:40882")!, certificateFingerprint: Data(repeating: 5, count: 32))
+        await control.setSharing(a)
+        let helper = fixture.controller(registration, control); await helper.refresh()
+        let runtime = StatusRefreshRuntime(); await runtime.pauseInvitation()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        let create = Task { await source.createQR() }
+        for _ in 0..<5000 {
+            if await runtime.hasHeldInvitation { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await runtime.hasHeldInvitation else {
+            await runtime.resumeInvitation(); await create.value
+            XCTFail("Invitation did not reach the barrier"); return
+        }
+        await control.setSharing(b); await control.pauseStatus(at: 3)
+        await runtime.resumeInvitation()
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 3) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 3) else {
+            await control.resumeStatus(); await create.value
+            XCTFail("Final status did not reach the barrier"); return
+        }
+        await control.pauseStatus(at: 4)
+        let newer = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: 4) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: 4) else {
+            await control.resumeStatus(); await create.value; await newer.value
+            XCTFail("Superseding status did not reach the barrier"); return
+        }
+        await control.resumeStatus(at: 3); await create.value
+        XCTAssertNil(source.invitationURL, "A superseded final check cannot validate an invitation")
+        await control.resumeStatus(at: 4); await newer.value
+    }
+
+    func testPendingRenewalRetriesFromBothPreferenceRoles() async throws {
+        for sharing in [true, false] {
+            let fixture = try ControllerFixture(); defer { fixture.remove() }
+            try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+            let registration = HelperRegistrationFake(); registration.status = .enabled
+            registration.failUnregister = true
+            let control = HelperControlFake(); await control.setBuildIdentities([nil, nil, nil, replacement])
+            let clock = StatusTestClock()
+            let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                service: registration, client: control, expectedBuildIdentity: replacement,
+                now: { clock.read() }, startup: .init(attempts: 1, pause: {}),
+                hasExecutable: { true }, verifyPackage: {})
+            await helper.refresh()
+            XCTAssertEqual(helper.state, .starting)
+            XCTAssertTrue(helper.needsAutomaticRecovery)
+            registration.failUnregister = false
+            clock.advance(30)
+            if sharing {
+                let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+                    runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true, now: { clock.read() })
+                source.networkAddresses = { _ in ["192.168.1.4"] }
+                await source.refreshConsent(refreshHelper: false)
+            } else {
+                await helper.refreshIfRecoverable()
+            }
+            let settings = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+            XCTAssertNil(settings.mobileSync.helperUpgradeToken)
+            XCTAssertEqual(registration.unregistrations, 1)
+            XCTAssertTrue(helper.online, "Both preference roles must recover pending renewal")
+        }
     }
 
     func testApprovalTransitionKeepsSpaceForLoginItemsAction() async throws {
@@ -148,36 +2313,43 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertTrue(held)
         XCTAssertTrue(controller.checkingStatus)
         XCTAssertEqual(controller.error, "Previous error")
-        try await captureStatusIndicator(controller, state: "recovery-checking")
         await control.resumeStatus(); await refresh.value
         XCTAssertTrue(controller.online)
         XCTAssertNil(controller.error)
         XCTAssertFalse(controller.checkingStatus)
-        try await captureStatusIndicator(controller, state: "recovery-online")
     }
 
     func testRecoveryRetainsDiagnosticUntilFailedHealthReturns() async throws {
         let fixture = try ControllerFixture(); defer { fixture.remove() }
         try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
-        let registration = HelperRegistrationFake()
-        let control = HelperControlFake(); await control.failStatus(at: 1); await control.pauseStatus()
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
         let controller = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
-            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 1),
+            service: registration, client: control, expectedBuildIdentity: replacement, startup: .init(attempts: 0),
             hasExecutable: { true }, verifyPackage: {})
-        controller.error = "Previous error"
+        await controller.refresh()
+        XCTAssertTrue(controller.online)
+        await control.failStatus(at: 2)
+        await controller.refresh()
+        XCTAssertEqual(controller.displayedState, .failed)
+        XCTAssertNotNil(controller.displayedError)
+        try await captureStatusIndicator(controller, state: "recovery-error")
+
+        await control.pauseStatus(at: 3)
         let refresh = Task { await controller.refresh() }
         for _ in 0..<5000 {
             if await control.hasHeldStatus { break }
             try await Task.sleep(for: .milliseconds(1))
         }
         XCTAssertTrue(controller.checkingStatus)
-        XCTAssertEqual(controller.error, "Previous error")
-        try await captureStatusIndicator(controller, state: "recovery-before-failure")
+        XCTAssertEqual(controller.displayedState, .failed)
+        XCTAssertNotNil(controller.displayedError)
+        try await captureStatusIndicator(controller, state: "recovery-checking")
         await control.resumeStatus(); await refresh.value
-        XCTAssertEqual(controller.state, .failed)
-        XCTAssertNotNil(controller.error)
+        XCTAssertTrue(controller.online)
+        XCTAssertNil(controller.displayedError)
         XCTAssertFalse(controller.checkingStatus)
-        try await captureStatusIndicator(controller, state: "recovery-failed")
+        try await captureStatusIndicator(controller, state: "recovery-online")
     }
 
     func testRefreshPreservesErrorWhileChecking() async throws {
@@ -405,6 +2577,676 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertFalse(settings.helperEnabled)
         XCTAssertNil(settings.helperUpgradeToken)
         XCTAssertEqual(registration.registrations, 0)
+    }
+
+    func testTransientFailureRemainsHiddenUntilRefreshCompletes() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let pause = StatusPause()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: { await pause.wait() }),
+            hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh(); XCTAssertTrue(helper.online)
+        await control.failStatus(at: 2)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await pause.isWaiting { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await pause.isWaiting else {
+            await pause.resume(); await refresh.value; XCTFail("Retry did not pause"); return
+        }
+        XCTAssertEqual(helper.displayedState, .running)
+        XCTAssertNil(helper.displayedError)
+        await pause.resume(); await refresh.value
+        XCTAssertTrue(helper.online)
+    }
+
+    func testSharedProjectPresentationStaysStableDuringTransientRetry() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true,
+            projects: [MobileSharedProject(rootURL: fixture.root, name: "Fictional project")])
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        await control.setSharing(RunningDirectService(endpoint: URL(string: "https://127.0.0.1:40882")!, certificateFingerprint: Data(repeating: 4, count: 32)))
+        let pause = StatusPause()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: { await pause.wait() }), hasExecutable: { true }, verifyPackage: {})
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: StatusRefreshRuntime(), helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["127.0.0.1"] }
+        await source.initialize()
+        XCTAssertEqual(source.settings.projects.count, 1)
+        XCTAssertTrue(source.sharingPresentationAvailable)
+        let project = try XCTUnwrap(source.settings.projects.first)
+        try await captureSharedProjectRow(project, controller: source, state: "before")
+        await control.failStatus(at: 2)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 { if await pause.isWaiting { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await pause.isWaiting else { await pause.resume(); await refresh.value; XCTFail("Retry did not pause"); return }
+        XCTAssertFalse(source.sharingAvailable, "Operations must see the real failure")
+        XCTAssertTrue(source.sharingPresentationAvailable, "A retry must not add a transient paused line to shared projects")
+        try await captureSharedProjectRow(project, controller: source, state: "retrying")
+        await pause.resume(); await refresh.value
+        XCTAssertTrue(source.sharingAvailable)
+        XCTAssertTrue(source.sharingPresentationAvailable)
+        try await captureSharedProjectRow(project, controller: source, state: "recovered")
+        await control.setUnavailable()
+        let failed = Task { await helper.refresh() }
+        for _ in 0..<5000 { if await pause.isWaiting { break }; try await Task.sleep(for: .milliseconds(1)) }
+        guard await pause.isWaiting else { await pause.resume(); await failed.value; XCTFail("Failure retry did not pause"); return }
+        XCTAssertTrue(source.sharingPresentationAvailable)
+        await pause.resume(); await failed.value
+        XCTAssertFalse(source.sharingPresentationAvailable, "A confirmed failure must be visible after retries finish")
+    }
+
+    func testSharingPollPreservesConfirmedStateDuringRetryAndClearsAfterTerminalFailure() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let project = MobileSharedProject(rootURL: fixture.root, name: "Fictional project")
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true, projects: [project])
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!,
+            certificateFingerprint: Data(repeating: 4, count: 32))
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.setSharing(service)
+        let pause = StartupPauseBarrier()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: { await pause.pause() }), hasExecutable: { true }, verifyPackage: {})
+        let runtime = StatusRefreshRuntime(); await runtime.setStartedService(service)
+        var consent = PairingRegistry(); consent.setEnabled(true)
+        let request = try consent.requestPairing(deviceName: "Little Leonardo QA",
+            credential: String(repeating: "a", count: 64), serverFingerprint: Data(repeating: 1, count: 32), now: Date())
+        await runtime.setConsentState(consent)
+        let upload = try DesktopPeerUpload(proposalID: UUID(), projectID: project.id, byteCount: 1,
+            sha256: String(repeating: "a", count: 64))
+        let proposal = DesktopPeerIncomingProposal(deviceID: UUID(), deviceName: "Second Mac", upload: upload)
+        await runtime.setIncomingProposals([proposal])
+        let fixedNow = Date(timeIntervalSince1970: 1_000)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true, now: { fixedNow })
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+
+        await source.initialize()
+        await source.refreshConsent(refreshHelper: false)
+        await source.createQR()
+        let invitation = try XCTUnwrap(source.invitationURL)
+        XCTAssertEqual(source.consent.requests, [request])
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id])
+        XCTAssertTrue(source.sharingAvailable)
+
+        let proposalSelection = try CorpusSelection(folders: [""], documents: [])
+        let snapshot = CorpusSnapshot(revision: "base", files: [])
+        let proposed = CorpusSnapshot(revision: "incoming", files: [
+            CorpusFile(path: "notes.md", content: Data("# Pending incoming edit".utf8))
+        ])
+        let reviewedProposal = try DesktopPeerProposal(projectID: project.id, selection: proposalSelection,
+            base: snapshot, proposed: proposed)
+        let review = DesktopSourceReview(item: proposal,
+            review: try DesktopPeerProposalReview(proposal: reviewedProposal, source: snapshot))
+        let decision = ReconciliationChoice.content(Data("# Reviewed local draft\n\nKeep this edited text.".utf8))
+        XCTAssertEqual(review.review.comparison.differences.count, 1)
+        XCTAssertEqual(review.review.comparison.differences.first?.path, "notes.md")
+        review.draft.decisions["notes.md"] = decision
+        source.reviewing = review
+        XCTAssertFalse(DesktopSourceReviewView(controller: source, value: review).applyDisabled,
+            "An open, complete review can be applied before health fails")
+        try await captureSourceReview(review, controller: source, name: "source-review-online-before-retry",
+            state: "The same custom source review is open and Apply is enabled before the helper health retry")
+
+        let failedCall = await control.statusCalls + 1
+        await control.failStatus(at: failedCall)
+        let refresh = Task { await source.refreshConsent(refreshHelper: true) }
+        for _ in 0..<5000 {
+            if await pause.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await pause.isHeld else {
+            await pause.release(); await refresh.value
+            XCTFail("The transient health retry did not reach its barrier"); return
+        }
+        XCTAssertFalse(source.sharingAvailable, "Operations must wait for confirmed live helper health")
+        XCTAssertFalse(source.pairingInvitationAvailable,
+            "Pairing invitation creation must wait for confirmed helper health")
+        XCTAssertFalse(source.consentActionsAvailable, "Consent actions must wait for confirmed live helper health")
+        XCTAssertTrue(source.sharingPresentationAvailable)
+
+        let callsDuringRetry = await control.statusCalls
+        await source.refreshConsent(refreshHelper: false)
+        let callsAfterPoll = await control.statusCalls
+        XCTAssertEqual(callsAfterPoll, callsDuringRetry, "The two-second poll must respect the retry backoff")
+        XCTAssertEqual(source.running?.endpoint, service.endpoint)
+        XCTAssertEqual(source.invitationURL, invitation, "A transient helper response must not discard a valid QR")
+        XCTAssertEqual(source.consent.requests, [request], "Pending approval rows must remain visible during retry")
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id], "Incoming rows must remain visible during retry")
+        XCTAssertEqual(source.reviewing?.id, review.id, "The active review must remain open during recovery")
+        XCTAssertTrue(DesktopSourceReviewView(controller: source, value: review).applyDisabled,
+            "Apply must disable while the helper health is unavailable")
+        try await captureSourceReview(review, controller: source, name: "source-review-unavailable",
+            state: "The same custom source review stays open while live helper health is unavailable; Apply is disabled")
+        await source.reviewProposal(proposal)
+        let appliedReview = await source.applyReview(review, decisions: [:])
+        XCTAssertFalse(appliedReview,
+            "A review opened before failure must not apply while live helper health is down")
+        let blockedApproval = await source.approve(request, projects: [project.id])
+        XCTAssertEqual(blockedApproval, .unavailable,
+            "The consent dialog must keep its selection when helper health blocks Allow")
+        await source.reject(request.id)
+        await source.revoke(UUID())
+        let blockedActions = await runtime.recordedActionsValue
+        XCTAssertEqual(blockedActions.review, 0)
+        XCTAssertEqual(blockedActions.apply, 0)
+        XCTAssertEqual(blockedActions.approve, 0)
+        XCTAssertEqual(blockedActions.reject, 0)
+        XCTAssertEqual(blockedActions.revoke, 0)
+        await pause.release(); await refresh.value
+        XCTAssertTrue(helper.online)
+        XCTAssertTrue(source.sharingAvailable)
+        XCTAssertTrue(source.pairingInvitationAvailable)
+        XCTAssertEqual(source.running?.endpoint, service.endpoint)
+        XCTAssertEqual(source.invitationURL, invitation, "Recovery on the same endpoint must retain the QR")
+        XCTAssertEqual(source.consent.requests, [request])
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id])
+
+        XCTAssertFalse(DesktopSourceReviewView(controller: source, value: review).applyDisabled,
+            "A complete review can be applied while helper health is confirmed")
+        try await captureSourceReview(review, controller: source, name: "source-review-recovered",
+            state: "The same custom source review remains open after same-endpoint recovery; Apply is enabled")
+        let terminalFailure = await control.statusCalls + 1
+        await control.failStatus(at: terminalFailure)
+        await control.failStatus(at: terminalFailure + 1)
+        await source.refreshConsent(refreshHelper: true)
+        XCTAssertFalse(helper.online)
+        XCTAssertFalse(source.sharingPresentationAvailable, "A confirmed terminal failure must end the old presentation")
+        XCTAssertNil(source.running)
+        XCTAssertNil(source.invitationURL)
+        XCTAssertTrue(source.consent.requests.isEmpty)
+        XCTAssertTrue(source.incoming.isEmpty)
+        XCTAssertEqual(source.reviewing?.id, review.id)
+        XCTAssertTrue(source.reviewing?.draft === review.draft,
+            "The active review must retain its draft object through a terminal helper failure")
+        XCTAssertEqual(source.reviewing?.draft.decisions["notes.md"], decision,
+            "The selected custom text must survive the helper failure")
+        XCTAssertTrue(DesktopSourceReviewView(controller: source, value: review).applyDisabled,
+            "Apply must disable during the outage even though the 1/1 decision stays visible")
+        let terminalApply = await source.applyReview(review, decisions: [:])
+        XCTAssertFalse(terminalApply, "An open review must not apply while the helper is offline")
+        XCTAssertEqual(source.reviewing?.id, review.id,
+            "A terminal health failure must not dismiss the in-progress review")
+        let actionsAfterTerminalFailure = await runtime.recordedActionsValue
+        XCTAssertEqual(actionsAfterTerminalFailure.apply, 0)
+        try await captureSourceReview(review, controller: source, name: "review-draft-unavailable",
+            state: "Selected custom text remains 1/1 while the sync helper is unavailable; Apply disabled")
+
+        await control.setStatusEnabled(true)
+        await source.refreshConsent(refreshHelper: true)
+        XCTAssertTrue(helper.online)
+        XCTAssertTrue(source.sharingAvailable)
+        XCTAssertTrue(source.reviewing?.draft === review.draft)
+        XCTAssertEqual(source.reviewing?.draft.decisions["notes.md"], decision)
+        XCTAssertFalse(DesktopSourceReviewView(controller: source, value: review).applyDisabled,
+            "Apply must become available after a confirmed recovery")
+        try await captureSourceReview(review, controller: source, name: "review-draft-recovered",
+            state: "The same selected 1/1 custom text remains after helper recovery; Apply enabled")
+    }
+
+    func testRecoveredHelperRestartClearsInvalidatedInvitationAtSameEndpoint() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true,
+            projects: [MobileSharedProject(rootURL: fixture.root, name: "Fictional project")])
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!,
+            certificateFingerprint: Data(repeating: 4, count: 32))
+        await control.setBuildIdentity(replacement)
+        await control.setSharing(service)
+        let pause = StartupPauseBarrier()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: { await pause.pause() }), hasExecutable: { true }, verifyPackage: {})
+        let runtime = StatusRefreshRuntime(); await runtime.setStartedService(service)
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        await runtime.setConsentState(registry)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+
+        await source.initialize()
+        await source.refreshConsent(refreshHelper: false)
+        await source.createQR()
+        let displayedInvitation = try XCTUnwrap(source.invitationURL)
+        let qr = try DirectPairingQR.decode(displayedInvitation, now: Date())
+        let currentRegistry = try await runtime.consentState()
+        XCTAssertTrue(currentRegistry.hasValidInvitation(qr.invitation, now: Date()))
+
+        let failedStatusCall = await control.statusCalls + 1
+        await control.failStatus(at: failedStatusCall)
+        let refresh = Task { await source.refreshConsent(refreshHelper: true) }
+        for _ in 0..<5_000 {
+            if await pause.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await pause.isHeld else {
+            await pause.release(); await refresh.value
+            XCTFail("The retry did not reach the health-check barrier"); return
+        }
+        XCTAssertFalse(helper.online)
+        XCTAssertTrue(helper.checkingStatus)
+        XCTAssertTrue(source.sharingPresentationAvailable)
+        XCTAssertEqual(source.invitationURL, displayedInvitation,
+            "The last confirmed QR remains visible while helper recovery is still unresolved")
+        try await capturePairingInvitationState(source, state: "valid-qr-retained-during-recovery")
+
+        await runtime.simulateHelperRestart()
+        await pause.release()
+        await refresh.value
+        XCTAssertTrue(helper.online)
+        XCTAssertEqual(source.running?.endpoint, service.endpoint)
+        XCTAssertNil(source.invitationURL,
+            "A recovered same-endpoint service must remove a QR that its live registry invalidated")
+        XCTAssertTrue(source.consent.requests.isEmpty,
+            "Consent rows cleared by the service restart must match the recovered registry")
+        try await capturePairingInvitationState(source, state: "invalidated-qr-removed-after-restart")
+    }
+
+    func testStaleConsentResponseCannotClearInvitationCreatedWhileWaiting() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: false,
+            projects: [MobileSharedProject(rootURL: fixture.root, name: "Fictional project")])
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!,
+            certificateFingerprint: Data(repeating: 4, count: 32))
+        let runtime = StatusRefreshRuntime(); await runtime.setStartedService(service)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, usesHelper: false)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        await source.initialize()
+        XCTAssertTrue(source.pairingInvitationAvailable)
+
+        await runtime.pauseConsentRead()
+        let staleRefresh = Task { await source.refreshConsent(refreshHelper: false) }
+        for _ in 0..<5_000 {
+            if await runtime.hasHeldConsentRead { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await runtime.hasHeldConsentRead else {
+            await runtime.resumeConsentRead(); await staleRefresh.value
+            XCTFail("The old consent snapshot did not reach its barrier"); return
+        }
+
+        await source.createQR()
+        let createdInvitation = try XCTUnwrap(source.invitationURL)
+        let decoded = try DirectPairingQR.decode(createdInvitation, now: Date())
+        let currentRegistry = await runtime.currentConsentState()
+        XCTAssertTrue(currentRegistry.hasValidInvitation(decoded.invitation, now: Date()))
+
+        await runtime.resumeConsentRead()
+        await staleRefresh.value
+        XCTAssertEqual(source.invitationURL, createdInvitation,
+            "An older registry snapshot must not clear an invitation created while it was waiting")
+
+        await runtime.pauseConsentRead()
+        let replacementRefresh = Task { await source.refreshConsent(refreshHelper: false) }
+        for _ in 0..<5_000 {
+            if await runtime.hasHeldConsentRead { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await runtime.hasHeldConsentRead else {
+            await runtime.resumeConsentRead(); await replacementRefresh.value
+            XCTFail("The old invitation snapshot did not reach its barrier"); return
+        }
+        let oldInvitationState = await runtime.heldConsentState()
+        XCTAssertTrue(oldInvitationState?.hasValidInvitation(decoded.invitation, now: Date()) == true,
+            "The delayed response must represent the invitation that is being replaced")
+
+        await source.createQR()
+        let replacementInvitation = try XCTUnwrap(source.invitationURL)
+        XCTAssertNotEqual(replacementInvitation, createdInvitation)
+        let decodedReplacement = try DirectPairingQR.decode(replacementInvitation, now: Date())
+        let currentRegistryAfterReplacement = await runtime.currentConsentState()
+        XCTAssertTrue(currentRegistryAfterReplacement.hasValidInvitation(decodedReplacement.invitation, now: Date()))
+
+        await runtime.resumeConsentRead()
+        await replacementRefresh.value
+        XCTAssertEqual(source.invitationURL, replacementInvitation,
+            "A delayed registry response for the previous QR must not clear its replacement")
+    }
+
+    func testSharingPollPreservesInvitationAcrossSupersededPeerHealthCheck() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let project = MobileSharedProject(rootURL: fixture.root, name: "Fictional project")
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true, projects: [project])
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!,
+            certificateFingerprint: Data(repeating: 4, count: 32))
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.setSharing(service)
+        let pause = StartupPauseBarrier()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: { await pause.pause() }), hasExecutable: { true }, verifyPackage: {})
+        let runtime = StatusRefreshRuntime(); await runtime.setStartedService(service)
+        var consent = PairingRegistry(); consent.setEnabled(true)
+        let request = try consent.requestPairing(deviceName: "Little Leonardo QA",
+            credential: String(repeating: "a", count: 64), serverFingerprint: Data(repeating: 1, count: 32), now: Date())
+        await runtime.setConsentState(consent)
+        let upload = try DesktopPeerUpload(proposalID: UUID(), projectID: project.id, byteCount: 1,
+            sha256: String(repeating: "a", count: 64))
+        let proposal = DesktopPeerIncomingProposal(deviceID: UUID(), deviceName: "Second Mac", upload: upload)
+        await runtime.setIncomingProposals([proposal])
+        let fixedNow = Date(timeIntervalSince1970: 1_000)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true, now: { fixedNow })
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+
+        await source.initialize()
+        await source.refreshConsent(refreshHelper: false)
+        await source.createQR()
+        let invitation = try XCTUnwrap(source.invitationURL)
+        XCTAssertEqual(source.consent.requests, [request])
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id])
+
+        let failedCall = await control.statusCalls + 1
+        await control.failStatus(at: failedCall)
+        let retry = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await pause.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await pause.isHeld else {
+            await pause.release(); await retry.value
+            XCTFail("The superseded helper retry did not reach its barrier"); return
+        }
+
+        await control.pauseStatus(at: failedCall + 1)
+        let peer = Task { try await helper.requireReadyHelper() }
+        for _ in 0..<5000 {
+            if await control.hasHeldStatus(at: failedCall + 1) { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldStatus(at: failedCall + 1) else {
+            await pause.release(); await retry.value
+            await control.resumeStatus(at: failedCall + 1); _ = try? await peer.value
+            XCTFail("The peer preflight did not reach its held health check"); return
+        }
+
+        await pause.release(); await retry.value
+        XCTAssertFalse(helper.checking, "The superseded refresh itself has ended")
+        XCTAssertTrue(helper.checkingStatus, "The peer preflight remains an active health check")
+        XCTAssertFalse(helper.online, "Live operations stay gated until the peer health reply arrives")
+        XCTAssertEqual(helper.displayedState, .running)
+
+        let callsDuringPeerCheck = await control.statusCalls
+        await source.refreshConsent(refreshHelper: false)
+        let callsAfterPeerPoll = await control.statusCalls
+        XCTAssertEqual(callsAfterPeerPoll, callsDuringPeerCheck,
+            "The ordinary poll must respect the recovery cooldown")
+        XCTAssertEqual(source.running?.endpoint, service.endpoint)
+        XCTAssertEqual(source.invitationURL, invitation,
+            "A superseding peer preflight must not erase a confirmed invitation")
+        XCTAssertEqual(source.consent.requests, [request])
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id])
+
+        await control.resumeStatus(at: failedCall + 1)
+        try await peer.value
+        XCTAssertTrue(helper.online)
+        XCTAssertFalse(helper.checkingStatus)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.running?.endpoint, service.endpoint)
+        XCTAssertEqual(source.invitationURL, invitation, "Same-endpoint recovery retains the existing QR")
+        XCTAssertEqual(source.consent.requests, [request])
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id])
+    }
+
+    func testPairedDevicesRemainVisibleDuringRetryWhenSharingIsOff() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: false, helperEnabled: true)
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement)
+        let pause = StartupPauseBarrier()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: { await pause.pause() }), hasExecutable: { true }, verifyPackage: {})
+        let runtime = StatusRefreshRuntime()
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let request = try registry.requestPairing(deviceName: "Already paired Mac",
+            credential: String(repeating: "b", count: 64), serverFingerprint: Data(repeating: 2, count: 32), now: Date())
+        let device = try registry.approve(requestID: request.id, comparisonCode: request.comparisonCode,
+            projects: [UUID()], now: Date())
+        await runtime.setConsentState(registry)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+
+        await source.initialize()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertTrue(helper.online)
+        XCTAssertNil(helper.displayedSharing, "Sharing is disabled while the helper remains enabled")
+        XCTAssertEqual(source.consent.devices, [device])
+
+        let failureCall = await control.statusCalls + 1
+        await control.failStatus(at: failureCall)
+        let refresh = Task { await helper.refresh() }
+        for _ in 0..<5000 {
+            if await pause.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await pause.isHeld else {
+            await pause.release(); await refresh.value
+            XCTFail("The helper retry did not reach its barrier"); return
+        }
+
+        XCTAssertEqual(helper.displayedState, .running)
+        XCTAssertFalse(source.consentActionsAvailable)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.consent.devices, [device],
+            "A healthy helper with sharing switched off must retain saved paired devices during retry")
+        try await captureUnavailablePairedDevice(device, controller: source)
+
+        await pause.release(); await refresh.value
+        XCTAssertTrue(helper.online)
+        XCTAssertEqual(source.consent.devices, [device])
+    }
+
+    func testTerminalConsentHealthFailureClearsRowsAndDiscardsLateProposalReply() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let project = MobileSharedProject(rootURL: fixture.root, name: "Fictional project")
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true, projects: [project])
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!,
+            certificateFingerprint: Data(repeating: 4, count: 32))
+        let control = HelperControlFake(); await control.setBuildIdentity(replacement); await control.setSharing(service)
+        let helper = SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            service: registration, client: control, expectedBuildIdentity: replacement,
+            startup: .init(attempts: 1, pause: {}), hasExecutable: { true }, verifyPackage: {})
+        let runtime = StatusRefreshRuntime(); await runtime.setStartedService(service)
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let request = try registry.requestPairing(deviceName: "Little Leonardo QA",
+            credential: String(repeating: "c", count: 64), serverFingerprint: Data(repeating: 3, count: 32), now: Date())
+        await runtime.setConsentState(registry)
+        let upload = try DesktopPeerUpload(proposalID: UUID(), projectID: project.id, byteCount: 1,
+            sha256: String(repeating: "c", count: 64))
+        let proposal = DesktopPeerIncomingProposal(deviceID: UUID(), deviceName: "Second Mac", upload: upload)
+        await runtime.setIncomingProposals([proposal])
+        let source = DesktopSyncController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
+            runtime: runtime, helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+
+        await source.initialize()
+        await source.refreshConsent(refreshHelper: false)
+        await source.createQR()
+        XCTAssertNotNil(source.invitationURL)
+        XCTAssertEqual(source.consent.requests, [request])
+        XCTAssertEqual(source.incoming.map(\.id), [proposal.id])
+
+        await runtime.pauseIncomingRead()
+        let stalePoll = Task { await source.refreshConsent(refreshHelper: false) }
+        for _ in 0..<5000 {
+            if await runtime.hasHeldIncomingRead { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await runtime.hasHeldIncomingRead else {
+            await runtime.resumeIncomingRead(); await stalePoll.value
+            XCTFail("The proposal read did not reach its barrier"); return
+        }
+
+        await runtime.setConsentFailure(true)
+        let failureCall = await control.statusCalls + 1
+        await control.failStatus(at: failureCall)
+        await control.failStatus(at: failureCall + 1)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertFalse(helper.online)
+        XCTAssertTrue(source.consent.requests.isEmpty,
+            "A confirmed health failure after a consent read error must clear rows before returning")
+        XCTAssertTrue(source.incoming.isEmpty)
+        XCTAssertNil(source.running, "A confirmed helper failure clears obsolete sharing")
+        XCTAssertNil(source.invitationURL, "A confirmed helper failure invalidates the old invitation")
+
+        await runtime.resumeIncomingRead()
+        await stalePoll.value
+        XCTAssertTrue(source.incoming.isEmpty,
+            "A proposal response from an older poll must not restore rows after terminal cleanup")
+        XCTAssertTrue(source.consent.requests.isEmpty)
+    }
+
+    private func captureSharedProjectRow(_ project: MobileSharedProject, controller: DesktopSyncController, state: String) async throws {
+        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
+        let destination = URL(fileURLWithPath: output)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        LanguageSettings.shared.language = .english
+        let host = NSHostingView(rootView: SharedProjectRow(project: project, controller: controller)
+            .padding(16).frame(width: 532, height: 100, alignment: .topLeading)
+            .background(Color(nsColor: .windowBackgroundColor)))
+        try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 100),
+            to: destination.appendingPathComponent("project-\(state).png"), language: "en",
+            state: "Synthetic shared project: \(state)", route: "/native/preferences/synchronization",
+            screen: "Shared project status")
+    }
+
+    private func captureSyncActionState(projectID: UUID,
+                                       proposal: DesktopPeerIncomingProposal,
+                                       controller: DesktopSyncController,
+                                       state: String) async throws {
+        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
+        let destination = URL(fileURLWithPath: output)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        let availability = state == "unavailable" ? "helper health unavailable; pairing actions are disabled" :
+            "helper health recovered; pairing actions are enabled"
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let suffix = language.rawValue
+            let invitation = NSHostingView(rootView: DesktopPairingInvitationSection(controller: controller)
+                .padding(16).frame(width: 640, height: 300, alignment: .topLeading)
+                .background(Color(nsColor: .windowBackgroundColor)))
+            try await GuideCaptureSupport.captureNative(invitation, size: NSSize(width: 640, height: 300),
+                to: destination.appendingPathComponent("pairing-invitation-\(state)-\(suffix).png"), language: suffix,
+                state: "Synthetic pairing invitation, QR and copy controls; \(availability)",
+                route: "/native/preferences/synchronization", screen: "Pairing invitation controls")
+            let incoming = NSHostingView(rootView: IncomingProposalRow(item: proposal, controller: controller)
+                .padding(16).frame(width: 532, height: 100, alignment: .topLeading)
+                .background(Color(nsColor: .windowBackgroundColor)))
+            try await GuideCaptureSupport.captureNative(incoming, size: NSSize(width: 532, height: 100),
+                to: destination.appendingPathComponent("incoming-review-\(state)-\(suffix).png"), language: suffix,
+                state: "Synthetic incoming proposal retained; \(availability)",
+                pixelScale: 1,
+                route: "/native/preferences/synchronization", screen: "Incoming proposal actions")
+            let consent = NSHostingView(rootView: PairingConsentActions(controller: controller,
+                projects: [projectID], captureOnly: false, confirmed: true, onCancel: {}, onAllow: {})
+                .padding(16).frame(width: 420, height: 60, alignment: .topLeading)
+                .background(Color(nsColor: .windowBackgroundColor)).buttonStyle(PremiumButtonStyle()))
+            try await GuideCaptureSupport.captureNative(consent, size: NSSize(width: 420, height: 60),
+                to: destination.appendingPathComponent("consent-actions-\(state)-\(suffix).png"), language: suffix,
+                state: "Synthetic confirmed pairing request; \(availability)",
+                route: "/native/preferences/synchronization/pairing", screen: "Pairing consent actions")
+        }
+    }
+
+    private func capturePairingInvitationState(_ controller: DesktopSyncController,
+                                               state: String) async throws {
+        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
+        let destination = URL(fileURLWithPath: output)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        let visibleState = controller.invitationURL == nil ? "invalidated invitation removed" :
+            "valid invitation QR retained"
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let suffix = language.rawValue
+            let host = NSHostingView(rootView: DesktopPairingInvitationSection(controller: controller)
+                .padding(16).frame(width: 640, height: 300, alignment: .topLeading)
+                .background(Color(nsColor: .windowBackgroundColor)))
+            try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 640, height: 300),
+                to: destination.appendingPathComponent("pairing-\(state)-\(suffix).png"), language: suffix,
+                state: "\(state); \(visibleState)", route: "/native/preferences/synchronization",
+                screen: "Pairing invitation recovery")
+        }
+    }
+
+    private func captureSourceReview(_ value: DesktopSourceReview, controller: DesktopSyncController,
+                                    name: String, state: String) async throws {
+        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
+        let destination = URL(fileURLWithPath: output)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let suffix = language.rawValue
+            let host = NSHostingView(rootView: DesktopSourceReviewView(controller: controller, value: value)
+                .buttonStyle(PremiumButtonStyle())
+                .background(Color(nsColor: .windowBackgroundColor)))
+            try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 960, height: 660),
+                to: destination.appendingPathComponent("\(name)-\(suffix).png"), language: suffix,
+                state: state,
+                pixelScale: 0.75,
+                route: "/native/preferences/synchronization/review", screen: "Incoming source review")
+        }
+    }
+
+    private func captureUnavailablePairedDevice(_ device: PairedDevice,
+                                               controller: DesktopSyncController) async throws {
+        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_STATUS_EVIDENCE"] else { return }
+        let destination = URL(fileURLWithPath: output)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let suffix = language.rawValue
+            let host = NSHostingView(rootView: AuthorizedDeviceRow(device: device, controller: controller)
+                .padding(16).frame(width: 532, height: 100, alignment: .topLeading)
+                .background(Color(nsColor: .windowBackgroundColor)))
+            try await GuideCaptureSupport.captureNative(host, size: NSSize(width: 532, height: 100),
+                to: destination.appendingPathComponent("paired-device-sharing-off-\(suffix).png"), language: suffix,
+                state: "Synthetic paired device retained while local sharing is off and helper health retry is active; revoke disabled",
+                route: "/native/preferences/synchronization", screen: "Authorized device row")
+        }
     }
 
     func testFirstStatusFailureRetriesHealthBeforeReconciliation() async throws {
@@ -772,14 +3614,83 @@ final class SyncHelperControllerTests: XCTestCase {
         let stopped = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
         XCTAssertFalse(stopped.mobileSync.helperEnabled)
         XCTAssertNotNil(stopped.mobileSync.helperUpgradeToken)
-        await controller.setEnabled(false)
+        controller.error = "Previous transient failure"
+        let disable = Task { await controller.setEnabled(false) }
+        for _ in 0..<5_000 {
+            let saved = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+            if !saved.mobileSync.helperEnabled && saved.mobileSync.helperUpgradeToken == nil { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let savedBeforeStopCompletes = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertFalse(savedBeforeStopCompletes.mobileSync.helperEnabled)
+        XCTAssertNil(savedBeforeStopCompletes.mobileSync.helperUpgradeToken,
+            "Manual disable must cancel the upgrade while the automatic stop is still in flight")
         await control.resumeReload()
         await refresh.value
+        await disable.value
         let settings = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
         XCTAssertFalse(settings.mobileSync.helperEnabled)
         XCTAssertNil(settings.mobileSync.helperUpgradeToken)
         XCTAssertFalse(controller.online)
+        XCTAssertNil(controller.displayedError, "Disabling must clear a previous transient error")
+        XCTAssertNil(controller.error)
         XCTAssertEqual(registration.registrations, 1)
+    }
+
+    func testInterruptedUpgradeCannotReleaseBusyOwnedByExplicitDisable() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let writeBarrier = HelperPreferenceWriteBarrier()
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        await control.setBuildIdentity(SyncHelperBuildIdentity(build: 199, bundlePath: "/Applications/Old/LeonardoMD.app"))
+        await control.pauseReload()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences,
+            configurations: fixture.configurations, service: registration, client: control,
+            expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            persistEnabledPreference: { enabled, url in
+                await writeBarrier.pauseNextWrite()
+                try await fixture.configurations.setSyncHelperEnabled(enabled, at: url)
+            }, hasExecutable: { true }, verifyPackage: {})
+
+        let renewal = Task { await helper.refresh() }
+        for _ in 0..<5_000 {
+            if await control.hasHeldReload { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldReload else {
+            await control.resumeReload(); await renewal.value
+            XCTFail("The automatic renewal did not reach its stop barrier")
+            return
+        }
+        XCTAssertTrue(helper.busy)
+        XCTAssertTrue(helper.upgrading)
+
+        let disable = Task { await helper.setEnabled(false) }
+        for _ in 0..<5_000 {
+            if await writeBarrier.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await writeBarrier.isHeld else {
+            await control.resumeReload(); await renewal.value; await disable.value
+            XCTFail("The explicit disable did not reach its preference-write barrier")
+            return
+        }
+        XCTAssertTrue(helper.busy, "The disable owns the lifecycle while its durable write is pending")
+
+        await control.resumeReload()
+        await renewal.value
+        XCTAssertTrue(helper.busy,
+            "The obsolete renewal must not release the busy state owned by the explicit disable")
+
+        await writeBarrier.resume()
+        await disable.value
+        let final = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertFalse(final.mobileSync.helperEnabled)
+        XCTAssertFalse(helper.busy)
+        XCTAssertFalse(helper.upgrading)
+        XCTAssertFalse(helper.enabled)
+        XCTAssertEqual(registration.status, .notRegistered)
     }
 
     func testStaleHealthyReplyCannotClearASupersedingUpgradeToken() async throws {
@@ -1028,14 +3939,48 @@ final class SyncHelperControllerTests: XCTestCase {
         let controller = fixture.controller(registration, control)
         await controller.setEnabled(true)
         await control.setUnavailable()
-        let activeHelper = try ProcessFileLock(at: fixture.root.appendingPathComponent("MobileSync/helper.lock"))
+        var activeHelper: ProcessFileLock? = try ProcessFileLock(at: fixture.root.appendingPathComponent("MobileSync/helper.lock"))
         defer { withExtendedLifetime(activeHelper) {} }
         await controller.setEnabled(false)
         XCTAssertFalse(controller.enabled)
         XCTAssertEqual(controller.state, .failed)
+        XCTAssertEqual(controller.displayedState, .failed)
+        XCTAssertTrue(controller.hasPresentedStatus)
         XCTAssertEqual(registration.status, .enabled, "Do not kill an unconfirmed in-flight helper write")
+        let shutdownError = try XCTUnwrap(controller.error)
         let persisted = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
         XCTAssertFalse(persisted.mobileSync.helperEnabled)
+        await controller.refresh()
+        XCTAssertEqual(controller.state, .failed,
+            "Automatic checks must not clear the diagnostic while a live helper still holds the shutdown lock")
+        XCTAssertEqual(controller.error, shutdownError)
+        try await captureStatusIndicator(controller, state: "disabled-failure")
+
+        let statusCallsBeforePreflight = await control.statusCalls
+        let reloadsBeforePreflight = await control.reloads
+        do {
+            try await controller.requireReadyHelper()
+            XCTFail("A denied peer preflight must not proceed while the helper stop is unconfirmed")
+        } catch is SyncHelperFailure {} catch { XCTFail("Unexpected preflight error: \(error)") }
+        XCTAssertEqual(controller.state, .failed)
+        XCTAssertEqual(controller.displayedState, .failed)
+        XCTAssertEqual(controller.error, shutdownError)
+        XCTAssertEqual(controller.displayedError, shutdownError)
+        XCTAssertTrue(controller.needsAutomaticRecovery)
+        XCTAssertEqual(registration.status, .enabled)
+        let statusCallsAfterPreflight = await control.statusCalls
+        let reloadsAfterPreflight = await control.reloads
+        XCTAssertEqual(statusCallsAfterPreflight, statusCallsBeforePreflight)
+        XCTAssertEqual(reloadsAfterPreflight, reloadsBeforePreflight)
+        try await captureStatusIndicator(controller, state: "disabled-failure-preflight")
+
+        activeHelper = nil
+        await control.setUnavailable(false)
+        await controller.refresh()
+        XCTAssertEqual(registration.status, .notRegistered)
+        XCTAssertEqual(controller.state, .disabled)
+        XCTAssertNil(controller.error, "Clear the shutdown diagnostic only after the helper is confirmed stopped")
+        try await captureStatusIndicator(controller, state: "disabled-recovered")
     }
 
     func testDeadHelperCanBeUnregisteredWithoutAnXPCAcknowledgement() async throws {
@@ -1095,7 +4040,28 @@ final class SyncHelperControllerTests: XCTestCase {
     }
     func remove() { try? FileManager.default.removeItem(at: root) }
 }
-private enum HelperControlError: Error { case unavailable }
+private actor HelperPreferenceWriteBarrier {
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var shouldPauseNextWrite = true
+    var isHeld: Bool { continuation != nil }
+    func armNextWrite() { shouldPauseNextWrite = true }
+    func pauseNextWrite() async {
+        guard shouldPauseNextWrite else { return }
+        shouldPauseNextWrite = false
+        await withCheckedContinuation { continuation = $0 }
+    }
+    func resume() {
+        continuation?.resume()
+        continuation = nil
+    }
+}
+@MainActor private final class MainActorFlag {
+    var value = false
+}
+private enum HelperControlError: LocalizedError {
+    case unavailable
+    var errorDescription: String? { "Sync helper health check failed." }
+}
 @MainActor private final class HelperRegistrationFake: SyncHelperRegistration {
     var storedStatus = SMAppService.Status.notRegistered
     var statusSequence: [SMAppService.Status] = []
@@ -1103,10 +4069,11 @@ private enum HelperControlError: Error { case unavailable }
         get { statusSequence.isEmpty ? storedStatus : statusSequence.removeFirst() }
         set { storedStatus = newValue }
     }
+    var registrationResult = SMAppService.Status.enabled
     var registrations = 0
     var unregistrations = 0
     var failUnregister = false
-    func register() { registrations += 1; status = .enabled }
+    func register() { registrations += 1; status = registrationResult }
     func unregister() async throws {
         if failUnregister { throw HelperControlError.unavailable }
         unregistrations += 1
@@ -1114,12 +4081,103 @@ private enum HelperControlError: Error { case unavailable }
     }
     func openApprovalSettings() {}
 }
+private actor FailingFinalPeerPreferences {
+    let configurations: ConfigurationStore
+    let url: URL
+    private var calls = 0
+    let failAt: Int
+    init(configurations: ConfigurationStore, url: URL, failAt: Int = 2) {
+        self.configurations = configurations; self.url = url; self.failAt = failAt
+    }
+    func load() async throws -> MobileSyncPreferences {
+        calls += 1
+        if calls == failAt { throw HelperControlError.unavailable }
+        return try await configurations.loadGlobalPreferences(at: url).mobileSync
+    }
+}
+private final class HelperExecutableFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = true
+    var exists: Bool { lock.lock(); defer { lock.unlock() }; return value }
+    func remove() { lock.lock(); defer { lock.unlock() }; value = false }
+}
+private actor PeerSelectedPreferencesBarrier {
+    let configurations: ConfigurationStore
+    let url: URL
+    private var calls = 0
+    private var waiting: [Int: CheckedContinuation<Void, Never>] = [:]
+    init(configurations: ConfigurationStore, url: URL) { self.configurations = configurations; self.url = url }
+    func isHeld(_ call: Int) -> Bool { waiting[call] != nil }
+    func load() async throws -> MobileSyncPreferences {
+        calls += 1; let call = calls
+        if call == 2 || call == 5 { await withCheckedContinuation { waiting[call] = $0 } }
+        return try await configurations.loadGlobalPreferences(at: url).mobileSync
+    }
+    func release(_ call: Int) { waiting.removeValue(forKey: call)?.resume() }
+    func releaseAll() { let pending = waiting.values; waiting.removeAll(); pending.forEach { $0.resume() } }
+}
+private actor PeerIndexedPreferencesBarrier {
+    let configurations: ConfigurationStore
+    let url: URL
+    private var calls = 0
+    private var waiting: [Int: CheckedContinuation<Void, Never>] = [:]
+    init(configurations: ConfigurationStore, url: URL) { self.configurations = configurations; self.url = url }
+    func isHeld(_ call: Int) -> Bool { waiting[call] != nil }
+    func load() async throws -> MobileSyncPreferences {
+        calls += 1
+        let call = calls
+        if call == 2 || call == 4 { await withCheckedContinuation { waiting[call] = $0 } }
+        return try await configurations.loadGlobalPreferences(at: url).mobileSync
+    }
+    func release(_ call: Int) { waiting.removeValue(forKey: call)?.resume() }
+    func releaseAll() { let pending = waiting.values; waiting.removeAll(); pending.forEach { $0.resume() } }
+}
+private actor PeerFinalPreferencesBarrier {
+    let configurations: ConfigurationStore
+    let url: URL
+    private var calls = 0
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var released = false
+    var isHeld: Bool { continuation != nil }
+    init(configurations: ConfigurationStore, url: URL) { self.configurations = configurations; self.url = url }
+    func load() async throws -> MobileSyncPreferences {
+        calls += 1
+        if calls == 2 && !released { await withCheckedContinuation { continuation = $0 } }
+        return try await configurations.loadGlobalPreferences(at: url).mobileSync
+    }
+    func release() { released = true; continuation?.resume(); continuation = nil }
+}
+private actor StartupPauseBarrier {
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var released = false
+    var isHeld: Bool { continuation != nil }
+    func pause() async {
+        if !released { await withCheckedContinuation { continuation = $0 } }
+    }
+    func release() { released = true; continuation?.resume(); continuation = nil }
+}
+private actor PeerPreferencesBarrier {
+    let configurations: ConfigurationStore
+    let url: URL
+    private var waiting: [CheckedContinuation<Void, Never>] = []
+    private var released = false
+    var count: Int { waiting.count }
+    init(configurations: ConfigurationStore, url: URL) { self.configurations = configurations; self.url = url }
+    func load() async throws -> MobileSyncPreferences {
+        if !released { await withCheckedContinuation { waiting.append($0) } }
+        return try await configurations.loadGlobalPreferences(at: url).mobileSync
+    }
+    func release() { released = true; let pending = waiting; waiting.removeAll(); pending.forEach { $0.resume() } }
+}
 private actor HelperControlFake: SyncHelperControlAccess {
     private var unavailable = false
+    private var statusEnabled = true
+    private var statusError: String?
     private var buildIdentity: SyncHelperBuildIdentity?
     private var buildIdentities: [SyncHelperBuildIdentity?] = []
     private var sharing: RunningDirectService?
     private var pausedStatusCall: Int?
+    private var statusCallObserver: (@MainActor @Sendable (Int) -> Void)?
     private var failingStatusCalls: Set<Int> = []
     private(set) var statusCalls = 0
     private var reloadPaused = false
@@ -1127,6 +4185,7 @@ private actor HelperControlFake: SyncHelperControlAccess {
     var hasHeldReload: Bool { heldReload != nil }
     func setSharing(_ value: RunningDirectService) { sharing = value }
     func setBuildIdentities(_ values: [SyncHelperBuildIdentity?]) { buildIdentities = values }
+    func observeStatusCalls(_ observer: (@MainActor @Sendable (Int) -> Void)?) { statusCallObserver = observer }
     func pauseStatus(at call: Int) { pausedStatusCall = call }
     func failStatus(at call: Int) { failingStatusCalls.insert(call) }
     func setBuildIdentity(_ value: SyncHelperBuildIdentity) { buildIdentity = value }
@@ -1134,18 +4193,26 @@ private actor HelperControlFake: SyncHelperControlAccess {
     func resumeReload() { reloadPaused = false; heldReload?.resume(); heldReload = nil }
     private(set) var reloads = 0
     private var paused = false
-    private var heldStatus: CheckedContinuation<Void, Never>?
-    var hasHeldStatus: Bool { heldStatus != nil }
+    private var heldStatuses: [Int: CheckedContinuation<Void, Never>] = [:]
+    var hasHeldStatus: Bool { !heldStatuses.isEmpty }
+    func hasHeldStatus(at call: Int) -> Bool { heldStatuses[call] != nil }
     func setUnavailable(_ value: Bool = true) { unavailable = value }
+    func setStatusEnabled(_ value: Bool) { statusEnabled = value }
+    func setStatusError(_ value: String?) { statusError = value }
     func pauseStatus() { paused = true }
-    func resumeStatus() { paused = false; heldStatus?.resume(); heldStatus = nil }
+    func resumeStatus() { paused = false; let pending = heldStatuses.values; heldStatuses.removeAll(); pending.forEach { $0.resume() } }
+    func resumeStatus(at call: Int) { heldStatuses.removeValue(forKey: call)?.resume() }
     func status() async throws -> SyncHelperStatus {
         statusCalls += 1
         let scheduledFailure = failingStatusCalls.remove(statusCalls) != nil
         let shouldFail = unavailable || scheduledFailure
         if !shouldFail, !buildIdentities.isEmpty { buildIdentity = buildIdentities.removeFirst() }
-        let reply = SyncHelperStatus(enabled: true, sharing: sharing, buildIdentity: buildIdentity)
-        if paused || pausedStatusCall == statusCalls { await withCheckedContinuation { heldStatus = $0 } }
+        let reply = SyncHelperStatus(enabled: statusEnabled, sharing: sharing, error: statusError, buildIdentity: buildIdentity)
+        let call = statusCalls
+        let observer = statusCallObserver
+        statusCallObserver = nil
+        if let observer { await observer(call) }
+        if paused || pausedStatusCall == call { await withCheckedContinuation { heldStatuses[call] = $0 } }
         if shouldFail { throw HelperControlError.unavailable }
         return reply
     }
@@ -1155,4 +4222,139 @@ private actor HelperControlFake: SyncHelperControlAccess {
         if unavailable { throw HelperControlError.unavailable }
         return SyncHelperStatus(enabled: false, sharing: nil)
     }
+}
+
+private struct StatusRefreshRuntimeActions: Equatable, Sendable {
+    var review = 0
+    var apply = 0
+    var approve = 0
+    var reject = 0
+    var revoke = 0
+}
+
+private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
+    private var consentFailure = false
+    private var failNextConsent = false
+    private var failNextIncoming = false
+    private var consentReadCount = 0
+    private var consentReadPaused = false
+    private var heldConsentRead: (snapshot: PairingRegistry,
+                                  continuation: CheckedContinuation<PairingRegistry, Never>)?
+    private var invitationPaused = false
+    private var heldInvitation: CheckedContinuation<Void, Never>?
+    private var incomingReadPaused = false
+    private var heldIncomingRead: CheckedContinuation<[DesktopPeerIncomingProposal], Never>?
+    private var heldIncomingResponse: [DesktopPeerIncomingProposal] = []
+    private var consent = PairingRegistry()
+    private var incoming: [DesktopPeerIncomingProposal] = []
+    private var startedService: RunningDirectService?
+    private var recordedActions = StatusRefreshRuntimeActions()
+    var consentReadCountValue: Int { consentReadCount }
+    var hasHeldConsentRead: Bool { heldConsentRead != nil }
+    var hasHeldInvitation: Bool { heldInvitation != nil }
+    var hasHeldIncomingRead: Bool { heldIncomingRead != nil }
+    var recordedActionsValue: StatusRefreshRuntimeActions { recordedActions }
+    func pauseConsentRead() { consentReadPaused = true }
+    func resumeConsentRead() {
+        consentReadPaused = false
+        guard let read = heldConsentRead else { return }
+        heldConsentRead = nil
+        read.continuation.resume(returning: read.snapshot)
+    }
+    func currentConsentState() -> PairingRegistry { consent }
+    func heldConsentState() -> PairingRegistry? { heldConsentRead?.snapshot }
+    func pauseInvitation() { invitationPaused = true }
+    func resumeInvitation() { invitationPaused = false; heldInvitation?.resume(); heldInvitation = nil }
+    func pauseIncomingRead() { incomingReadPaused = true }
+    func resumeIncomingRead() {
+        incomingReadPaused = false
+        heldIncomingRead?.resume(returning: heldIncomingResponse)
+        heldIncomingRead = nil
+        heldIncomingResponse = []
+    }
+    func setConsentFailure(_ value: Bool) { consentFailure = value }
+    func failNextConsentRead() { failNextConsent = true }
+    func failNextIncomingRead() { failNextIncoming = true }
+    func setConsentState(_ value: PairingRegistry) { consent = value }
+    func setIncomingProposals(_ value: [DesktopPeerIncomingProposal]) { incoming = value }
+    func setStartedService(_ value: RunningDirectService) { startedService = value }
+    func start(host: String, port: UInt16, projects: [SharedProjectSource], allowPrivateOverlay: Bool) async throws -> RunningDirectService {
+        guard let startedService else { throw DesktopRuntimeError.notRunning }
+        return startedService
+    }
+    func stop() async throws {}
+    func consentState() async throws -> PairingRegistry {
+        consentReadCount += 1
+        if failNextConsent {
+            failNextConsent = false
+            throw DesktopRuntimeError.notRunning
+        }
+        if consentFailure { throw DesktopRuntimeError.notRunning }
+        let snapshot = consent
+        guard consentReadPaused else { return snapshot }
+        return await withCheckedContinuation { continuation in
+            heldConsentRead = (snapshot, continuation)
+        }
+    }
+    func incomingProposals() async throws -> [DesktopPeerIncomingProposal] {
+        if failNextIncoming {
+            failNextIncoming = false
+            throw DesktopRuntimeError.notRunning
+        }
+        guard incomingReadPaused else { return incoming }
+        let response = incoming
+        return await withCheckedContinuation { continuation in
+            heldIncomingResponse = response
+            heldIncomingRead = continuation
+        }
+    }
+    func createInvitation() async throws -> PairingInvitation {
+        if invitationPaused { await withCheckedContinuation { heldInvitation = $0 } }
+        consent.setEnabled(true)
+        return try consent.createInvitation(now: Date())
+    }
+    func simulateHelperRestart() {
+        consent.setEnabled(false)
+        consent.setEnabled(true)
+    }
+    func reviewIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload) async throws -> DesktopPeerProposalReview {
+        recordedActions.review += 1
+        throw DesktopRuntimeError.notRunning
+    }
+    func applyIncomingProposal(deviceID: UUID, upload: DesktopPeerUpload, review: DesktopPeerProposalReview,
+                               decisions: [String: ReconciliationChoice], projectRoot: URL,
+                               currentSource: CorpusSnapshot, currentDisk: CorpusSnapshot) async throws -> DesktopPeerAcceptanceResult {
+        recordedActions.apply += 1
+        throw DesktopRuntimeError.notRunning
+    }
+    func approve(requestID: UUID, code: String, projectIDs: Set<UUID>) async throws {
+        recordedActions.approve += 1
+        _ = try consent.approve(requestID: requestID, comparisonCode: code, projects: projectIDs, now: Date())
+    }
+    func reject(requestID: UUID) async throws {
+        recordedActions.reject += 1
+        throw DesktopRuntimeError.notRunning
+    }
+    func revoke(deviceID: UUID) async throws {
+        recordedActions.revoke += 1
+        throw DesktopRuntimeError.notRunning
+    }
+    func createRubricRequest(deviceID: UUID, requestID: UUID, requesterName: String, labelHint: String?) async throws -> LeonardoSync.RubricRequest { throw DesktopRuntimeError.notRunning }
+    func cancelRubricRequest(requestID: UUID) async throws -> LeonardoSync.RubricRequest { throw DesktopRuntimeError.notRunning }
+    func rubricResponse(requestID: UUID) async throws -> LeonardoSync.RubricResponse? { throw DesktopRuntimeError.notRunning }
+    func rubricStatus(requestID: UUID) async throws -> RubricExchangeStatus { throw DesktopRuntimeError.notRunning }
+}
+
+private final class StatusTestClock: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = Date(timeIntervalSince1970: 1_000)
+    func read() -> Date { lock.lock(); defer { lock.unlock() }; return value }
+    func advance(_ seconds: TimeInterval) { lock.lock(); defer { lock.unlock() }; value.addTimeInterval(seconds) }
+}
+
+private actor StatusPause {
+    private var continuation: CheckedContinuation<Void, Never>?
+    var isWaiting: Bool { continuation != nil }
+    func wait() async { await withCheckedContinuation { continuation = $0 } }
+    func resume() { continuation?.resume(); continuation = nil }
 }

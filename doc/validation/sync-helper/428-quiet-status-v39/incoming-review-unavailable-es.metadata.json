@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-12T16:49:10.519481+00:00",
+  "capture": {
+    "captured_at": "2026-11-12T16:47:00.849000+00:00",
+    "route": "/native/preferences/synchronization",
+    "screen": "Incoming proposal actions",
+    "browser_name": "Native AppKit / SwiftUI NSHostingView",
+    "browser_version": "Not applicable: native view, no browser engine",
+    "state": "Synthetic incoming proposal retained; helper health unavailable; pairing actions are disabled; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "viewport_css": {
+      "width": 532,
+      "height": 100
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 532,
+    "height_px": 100,
+    "sha256": "9a93a098de6bb0934035b866771b31a6048d67eb61b001407cd6dad5f627efba"
+  },
+  "source": {
+    "revision_at_collection": "9c970868ebcc53180867a12853cf9aa078b164d1",
+    "tracked_changes_present": false,
+    "untracked_files_present": false
+  }
+}

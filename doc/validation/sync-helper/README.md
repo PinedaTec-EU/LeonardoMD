@@ -1,5 +1,31 @@
 # Sync helper validation
 
+The latest PR #428 status and error presentation evidence is in
+[`428-quiet-status-v46/`](428-quiet-status-v46/README.md), bound to integrated
+product source `4264d8fb7ee1c1f176ae0f734a28d14637b8a701`. It shows the last
+confirmed green state retained while checking, the same green state after a
+successful check, and a red persistent error without duplicated diagnostics.
+The focused controller test confirms refresh-on-open and explicit refresh with
+no periodic consent reads while Preferences remains open. The earlier
+[`v43 record`](428-quiet-status-v43/README.md) remains an original checkpoint;
+[`v44`](428-quiet-status-v44/README.md) records the earlier Guide v67 candidate.
+The earlier
+[`v42 record`](428-quiet-status-v42/README.md) retains the prior original images.
+The preceding
+[`v40 record`](428-quiet-status-v40/README.md) contains packaged Guide v59 Help
+and practice-form acceptance in both languages.
+
+The native Preferences captures remain in
+[`428-quiet-status-v39/`](428-quiet-status-v39/README.md), bound to product and
+test source `9c970868ebcc53180867a12853cf9aa078b164d1`. They cover retained
+red/green status through health checks and recovery, stable section height,
+pairing and consent controls, incoming proposals, paired-device rows, and open
+source-review drafts. Those captures do not depict the former two-second
+consent-poll alert; v41 and v42 retain the earlier controller recovery checkpoints. These native
+component captures do not claim signed-service or hosted beta acceptance. The
+earlier v36 folder and other evidence folders retain their original sources as
+historical checkpoints.
+
 ## Owner-authorized installed-service acceptance
 
 Source: `5858c47a9762ba6567a7589721bfba71afbbfdb1`. An immutable Developer ID

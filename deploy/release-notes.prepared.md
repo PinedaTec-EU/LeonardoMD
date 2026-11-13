@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1587
+
+- #421 Fixed: Keep synchronization status stable and quiet ([#428](https://github.com/PinedaTec-EU/LeonardoMD/pull/428))
+
+<p>Synchronization keeps status steady during checks, refreshes linked devices on open or on demand, preserves invitations and review drafts during recovery, and gates peer actions on live helper health.</p>
+
+Source: `970c903ef1175920c0bc1cf6511c9433c188c575`. Delta: `{"build": 216}`.
+
 ## 0.3.1371
 
 - #429 Added: review remote projects and files by host ([#430](https://github.com/PinedaTec-EU/LeonardoMD/pull/430))

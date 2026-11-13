@@ -92,6 +92,50 @@ replaced blocks installation. Initial authenticated identity failure blocks
 preparation before preference changes; it never assumes that helper is older.
 
 Synchronization preferences preserve the previous helper error while a health
-query is in flight. The common switch displays gray during checking/starting,
-green for online, and red otherwise; the status remains available to assistive
-technology. See `SyncHelperPreferencesSection` and `SyncHelperController`.
+query is in flight. The common switch preserves its last confirmed presentation
+while internal startup or renewal checks temporarily gate peer actions. It shows
+green for confirmed health, red for a confirmed failure and no transient red
+state while checking; ordinary disabled and approval-required states do not show
+a failure dot. The status remains available to assistive technology. While the
+service is in an error state, preferences retry health at a bounded interval; a
+change in local addresses refreshes the sharing endpoint and discards an
+obsolete invitation. A denied peer preflight cannot clear a failed shutdown
+while the registration remains live; only confirmed stop clears that diagnostic.
+Approval changes are reconciled when the app becomes active. See
+`SyncHelperPreferencesSection` and `SyncHelperController`.
+
+The sharing page uses the last confirmed helper endpoint for presentation while
+a status refresh is still in flight. This keeps a same-endpoint QR, consent
+requests and incoming rows stable during a transient retry; operations remain
+gated on live helper health. A confirmed terminal failure clears that stale
+presentation, and a network-address change still invalidates an obsolete QR.
+See `DesktopSyncController.updateRunningFromHelper()` and
+`DesktopSyncController.refreshConsent(refreshHelper:)`.
+
+Issue #421 follow-up keeps peer preflights counted as active helper checks even
+when they supersede an older refresh. Until the current health result is
+presented, the sharing page continues to use its confirmed endpoint and keeps
+same-endpoint invitations and consent rows; live actions still require
+`helper.online`. Terminal helper failure clears stale sharing rows but leaves an
+open source-review sheet and its in-view choices intact. Apply is disabled until
+synchronization and sharing recover, and the runtime compares the pending
+proposal with the review again before applying. The common status indicator is
+red for a confirmed failure even when a failed shutdown leaves the switch off;
+ordinary disabled state still hides it. Current bilingual Help sources and
+package revision are maintained in [doc/guide/README.md](../doc/guide/README.md);
+older validation checkpoints remain historical evidence.
+
+Three additional #421 lifecycle regressions are covered on PR #428. A confirmed
+health failure that outlives a cancelled peer preflight keeps automatic
+recovery scheduled even while the last confirmed presentation remains green.
+A compatible startup-health reply retires a failure from the same revision
+before enabling gated actions. An automatic stop checks lifecycle ownership
+again before unregistering; a newer enable waits for an in-flight stop and then
+confirms or restores registration, while a later explicit disable still owns
+the final stop.
+
+An automatic renewal may release `busy` only while its captured lifecycle
+revision is still current. If an explicit disable takes ownership during a
+held renewal, the older renewal must leave controls locked until the ordered
+preference write and helper stop finish. Regression:
+`testInterruptedUpgradeCannotReleaseBusyOwnedByExplicitDisable`.

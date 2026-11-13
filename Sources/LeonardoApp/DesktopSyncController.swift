@@ -23,6 +23,12 @@ enum RubricCaptureAvailability: Equatable {
     }
 }
 
+enum DesktopConsentActionOutcome: Equatable {
+    case completed
+    case unavailable
+    case failed
+}
+
 enum RubricCaptureError: LocalizedError {
     case unavailable(RubricCaptureAvailability)
     case missingRequest
@@ -51,7 +57,14 @@ final class DesktopSyncController {
     private(set) var incoming: [DesktopPeerIncomingProposal] = []
     var reviewing: DesktopSourceReview?
     private let lease = NativeReconciliationLease.shared
-    var error: String?
+    private let pollingDiagnostics = DesktopSyncPollingDiagnostics()
+    var error: String? {
+        get { pollingDiagnostics.error }
+        set { pollingDiagnostics.setActionError(newValue) }
+    }
+    func acknowledgeDisplayedError() {
+        pollingDiagnostics.acknowledgeDisplayedError()
+    }
     private(set) var invitationURL: URL?
     var buffers: @MainActor (URL) async throws -> [OpenDocumentBuffer] = { _ in [] }
     private let configurations: ConfigurationStore
@@ -62,6 +75,15 @@ final class DesktopSyncController {
     private let rubricCaptures: RubricCaptureStore
     private let now: RubricClock
     private var initialized = false
+    private var lastNetworkAddresses: Set<String>?
+    private var lastEndpointAvailable: Bool?
+    private var networkRefreshPending = false
+    private var nextNetworkRefresh = Date.distantPast
+    private var invitationNetworkAddresses: Set<String>?
+    private var nextHelperRecovery = Date.distantPast
+    private var consentRefreshRevision = 0
+    var networkAddresses: @MainActor (Bool) -> [String] = { LocalNetworkInterfaces.addresses(allowPrivateOverlay: $0) }
+    var isLocalAddress: @MainActor (String) -> Bool = { LocalNetworkInterfaces.containsLocalAddress($0) }
     private static var rubricRequesterName: String {
         let name = Host.current().localizedName?.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let name, !name.isEmpty else { return "LeonardoMD" }
@@ -70,7 +92,7 @@ final class DesktopSyncController {
 
     init(preferencesURL: URL = AppSession.preferencesURL, configurations: ConfigurationStore = .shared,
          runtime: (any DesktopSyncRuntimeAccess)? = nil, helper: SyncHelperController? = nil,
-         now: @escaping RubricClock = Date.init) {
+         usesHelper: Bool? = nil, now: @escaping RubricClock = Date.init) {
         self.preferencesURL = preferencesURL
         self.helper = helper ?? SyncHelperController(preferencesURL: preferencesURL)
         self.configurations = configurations
@@ -79,13 +101,25 @@ final class DesktopSyncController {
         self.now = now
         rubricCaptures = RubricCaptureStore(url: root.appendingPathComponent("RubricCaptures/captures.json"), now: now)
         self.runtime = runtime ?? SyncHelperClient()
-        usesHelper = runtime == nil
+        self.usesHelper = usesHelper ?? (runtime == nil)
     }
 
     var rubricCaptureRecords: [RubricCaptureRecord] { rubricCaptures.records }
 
     var sharingAvailable: Bool {
-        settings.enabled && (usesHelper ? helper.sharing != nil : running != nil)
+        settings.enabled && (usesHelper ? helper.online && helper.sharing != nil : running != nil)
+    }
+
+    var pairingInvitationAvailable: Bool {
+        usesHelper ? helper.online && helper.sharing != nil : running != nil
+    }
+
+    var consentActionsAvailable: Bool {
+        usesHelper ? helper.online : running != nil
+    }
+
+    var sharingPresentationAvailable: Bool {
+        settings.enabled && (usesHelper ? helper.displayedSharing != nil : running != nil)
     }
 
     func rubricCapture(id: UUID) -> RubricCaptureRecord? { rubricCaptures.record(id: id) }
@@ -117,11 +151,15 @@ final class DesktopSyncController {
     /// LAN addresses are listed first. Overlay addresses appear only after the
     /// user explicitly enables the private-overlay preference.
     var addresses: [String] {
-        LocalNetworkInterfaces.addresses(allowPrivateOverlay: settings.privateOverlayEnabled)
+        networkAddresses(settings.privateOverlayEnabled)
     }
 
     func initialize() async {
-        guard !InstanceRuntime.isAdditional, !initialized, !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy else { return }
+        if initialized {
+            if usesHelper { await helper.refresh() }
+            return
+        }
         busy = true
         defer { busy = false }
         do {
@@ -130,11 +168,28 @@ final class DesktopSyncController {
             projectSettingsLoaded = true
             if usesHelper { await helper.refresh() }
             if settings.enabled && (!usesHelper || helper.online) { try await start() }
-            if !usesHelper || helper.online { consent = try await runtime.consentState() }
+            if !usesHelper || helper.online {
+                do {
+                    consent = try await runtime.consentState()
+                    clearAutomaticConsentFailure()
+                } catch {
+                    await recordAutomaticConsentFailure(error, helperAlreadyChecked: usesHelper)
+                }
+            }
             rubricCaptures.refresh()
             await recoverRubricCaptures()
             initialized = true
         } catch { self.error = error.localizedDescription }
+    }
+
+    func refreshPreferencesOnOpen() async {
+        let alreadyInitialized = initialized
+        await initialize()
+        if alreadyInitialized {
+            // Initialization reads consent on first open. On later visits,
+            // refresh the list without repeating the helper health check.
+            await refreshConsent(refreshHelper: false)
+        }
     }
 
     func update(_ updated: MobileSyncPreferences) async {
@@ -205,25 +260,170 @@ final class DesktopSyncController {
         await update(updated)
     }
 
-    func refreshConsent() async {
+    private func updateRunningFromHelper() {
+        let advertised = helperSharingForPresentation
+        let current: RunningDirectService?
+        if networkRefreshPending, let host = advertised?.endpoint.host,
+           !isCurrentHost(host, addresses: Set(addresses)) { current = nil }
+        else { current = advertised }
+        if running?.endpoint != current?.endpoint || running?.certificateFingerprint != current?.certificateFingerprint {
+            invitationURL = nil
+        }
+        running = current
+    }
+
+    func refreshConsent(refreshHelper: Bool = true) async {
         guard !InstanceRuntime.isAdditional, !busy else { return }
+        consentRefreshRevision &+= 1
+        let refreshRevision = consentRefreshRevision
+        let currentAddresses = Set(addresses)
+        if invitationURL != nil && invitationNetworkAddresses != currentAddresses {
+            invitationURL = nil; invitationNetworkAddresses = nil
+        }
+        let endpointAvailable = helperSharingForPresentation?.endpoint.host.map { isCurrentHost($0, addresses: currentAddresses) } ?? true
+        if usesHelper && !endpointAvailable {
+            running = nil; invitationURL = nil; invitationNetworkAddresses = nil
+        }
+        var checkedHelper = false
         if usesHelper {
-            await helper.refresh()
-            running = helper.sharing
+            let networkChanged = (lastNetworkAddresses.map { $0 != currentAddresses } ?? true) ||
+                (lastEndpointAvailable.map { $0 != endpointAvailable } ?? false)
+            lastNetworkAddresses = currentAddresses
+            lastEndpointAvailable = endpointAvailable
+            if networkChanged {
+                networkRefreshPending = true; nextNetworkRefresh = .distantPast
+                updateRunningFromHelper()
+            }
+            let recoveryDue = helper.needsAutomaticRecovery && now() >= nextHelperRecovery
+            let networkDue = networkRefreshPending && now() >= nextNetworkRefresh
+            if refreshHelper || networkDue || recoveryDue {
+                checkedHelper = true
+                nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
+                if networkDue || (refreshHelper && networkRefreshPending) {
+                    nextNetworkRefresh = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
+                    let confirmed = await helper.refreshForInvitation()
+                    guard refreshRevision == consentRefreshRevision else { return }
+                    let host = helper.sharing?.endpoint.host
+                    if Set(addresses) != currentAddresses {
+                        nextNetworkRefresh = .distantPast
+                    } else if confirmed && (host.map { isCurrentHost($0, addresses: currentAddresses) } ?? true) {
+                        networkRefreshPending = false
+                    }
+                } else {
+                    await helper.refresh()
+                    guard refreshRevision == consentRefreshRevision else { return }
+                }
+            }
+            updateRunningFromHelper()
             guard helper.online else {
-                running = nil; invitationURL = nil; incoming = []; consent = PairingRegistry(); return
+                // Keep the last confirmed sharing state while a health check or
+                // scheduled recovery is still unresolved. Peer operations remain
+                // gated by live health; a published failure clears this snapshot.
+                if preservingConfirmedSharingPresentation { return }
+                clearSharingPresentationAfterTerminalFailure()
+                return
             }
         }
+        let displayedInvitationBeforeRead = invitationURL
+        let refreshedConsent: PairingRegistry
         do {
-            consent = try await runtime.consentState()
-            incoming = running == nil ? [] : try await runtime.incomingProposals()
-            rubricCaptures.refresh()
-            await recoverRubricCaptures()
-        } catch { self.error = error.localizedDescription }
+            refreshedConsent = try await runtime.consentState()
+        } catch {
+            guard refreshRevision == consentRefreshRevision else { return }
+            if usesHelper && !refreshHelper {
+                await recordAutomaticConsentFailure(error, helperAlreadyChecked: checkedHelper,
+                                                    refreshRevision: refreshRevision)
+            } else {
+                self.error = error.localizedDescription
+            }
+            return
+        }
+        guard refreshRevision == consentRefreshRevision else { return }
+        consent = refreshedConsent
+        clearDisplayedInvitationIfInvalid(in: refreshedConsent,
+            ifStillDisplaying: displayedInvitationBeforeRead)
+        clearAutomaticConsentFailure()
+
+        let refreshedIncoming: [DesktopPeerIncomingProposal]
+        do {
+            refreshedIncoming = running == nil ? [] : try await runtime.incomingProposals()
+        } catch {
+            guard refreshRevision == consentRefreshRevision else { return }
+            if usesHelper && !refreshHelper {
+                pollingDiagnostics.recordIncomingFailure(error)
+            } else {
+                self.error = error.localizedDescription
+            }
+            return
+        }
+        guard refreshRevision == consentRefreshRevision else { return }
+        incoming = refreshedIncoming
+        pollingDiagnostics.clearIncomingFailure()
+        rubricCaptures.refresh()
+        await recoverRubricCaptures()
+        guard refreshRevision == consentRefreshRevision else { return }
+    }
+
+    private func clearAutomaticConsentFailure() {
+        pollingDiagnostics.clearConsentFailure()
+    }
+
+    private func recordAutomaticConsentFailure(_ error: Error,
+                                               helperAlreadyChecked: Bool,
+                                               refreshRevision: Int? = nil) async {
+        if helperAlreadyChecked {
+            pollingDiagnostics.markConsentHealthCheckAttempted()
+            if now() >= nextHelperRecovery {
+                nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
+            }
+        }
+        pollingDiagnostics.beginConsentFailure()
+        if usesHelper && !helperAlreadyChecked &&
+            (!pollingDiagnostics.consentHealthCheckAttempted || now() >= nextHelperRecovery) {
+            pollingDiagnostics.markConsentHealthCheckAttempted()
+            nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
+            await helper.refresh()
+            if let refreshRevision, refreshRevision != consentRefreshRevision { return }
+            updateRunningFromHelper()
+            if !helper.online && !preservingConfirmedSharingPresentation {
+                clearSharingPresentationAfterTerminalFailure()
+            }
+        }
+        // Let one failed two-second poll recover before presenting a modal.
+        pollingDiagnostics.reportConsentFailureIfPersistent(error)
+    }
+
+    private func clearSharingPresentationAfterTerminalFailure() {
+        running = nil
+        invitationURL = nil
+        invitationNetworkAddresses = nil
+        incoming = []
+        consent = PairingRegistry()
+    }
+
+    private func clearDisplayedInvitationIfInvalid(in registry: PairingRegistry,
+                                                   ifStillDisplaying observedURL: URL?) {
+        guard let observedURL, invitationURL == observedURL else { return }
+        let currentTime = now()
+        guard let qr = try? DirectPairingQR.decode(observedURL, now: currentTime),
+              registry.hasValidInvitation(qr.invitation, now: currentTime) else {
+            invitationURL = nil
+            invitationNetworkAddresses = nil
+            return
+        }
+    }
+
+    private var preservingConfirmedSharingPresentation: Bool {
+        helper.displayedState == .running &&
+            (helper.checkingStatus || helper.needsAutomaticRecovery)
+    }
+
+    private var helperSharingForPresentation: RunningDirectService? {
+        preservingConfirmedSharingPresentation ? helper.displayedSharing : helper.sharing
     }
 
     func reviewProposal(_ item: DesktopPeerIncomingProposal) async {
-        guard !InstanceRuntime.isAdditional, !busy else { return }
+        guard !InstanceRuntime.isAdditional, !busy, sharingAvailable else { return }
         busy = true; error = nil
         defer { busy = false }
         do {
@@ -238,7 +438,8 @@ final class DesktopSyncController {
     }
 
     func applyReview(_ value: DesktopSourceReview, decisions: [String: ReconciliationChoice]) async -> Bool {
-        guard !busy, let project = settings.projects.first(where: { $0.id == value.item.upload.projectID }) else { return false }
+        guard sharingAvailable, !busy,
+              let project = settings.projects.first(where: { $0.id == value.item.upload.projectID }) else { return false }
         busy = true; error = nil
         defer { busy = false }
         do {
@@ -266,32 +467,75 @@ final class DesktopSyncController {
         return false
     }
 
+    private func isCurrentHost(_ host: String, addresses: Set<String>) -> Bool {
+        if addresses.contains(host) { return true }
+        guard let configured = settings.host,
+              configured.trimmingCharacters(in: CharacterSet(charactersIn: "[]")) == host.trimmingCharacters(in: CharacterSet(charactersIn: "[]")),
+              LocalNetworkAddress.isAllowed(host, allowPrivateOverlay: settings.privateOverlayEnabled) else { return false }
+        return isLocalAddress(host)
+    }
+
     func createQR() async {
-        guard let running, !busy else { return }
+        guard !busy else { return }
+        let invitationAddresses = Set(addresses)
+        if invitationURL != nil && invitationNetworkAddresses != invitationAddresses {
+            invitationURL = nil; invitationNetworkAddresses = nil
+        }
+        guard pairingInvitationAvailable else { return }
+        busy = true
+        defer { busy = false }
+        if usesHelper {
+            await helper.refresh()
+            updateRunningFromHelper()
+            guard helper.online else { return }
+        }
+        guard let running else {
+            invitationURL = nil; invitationNetworkAddresses = nil
+            return
+        }
+        invitationURL = nil
+        invitationNetworkAddresses = nil
         do {
             let invitation = try await runtime.createInvitation()
+            if usesHelper {
+                let confirmed = await helper.refreshForInvitation()
+                updateRunningFromHelper()
+                guard confirmed, let current = helper.sharing,
+                      current.endpoint == running.endpoint,
+                      current.certificateFingerprint == running.certificateFingerprint else { return }
+            }
+            guard Set(addresses) == invitationAddresses else { return }
+            if usesHelper {
+                guard let host = running.endpoint.host, isCurrentHost(host, addresses: invitationAddresses) else { return }
+            }
             invitationURL = try DirectPairingQR(endpoint: running.endpoint,
                 certificateFingerprint: running.certificateFingerprint, invitation: invitation).encodedURL()
+            invitationNetworkAddresses = invitationAddresses
         } catch { self.error = error.localizedDescription }
     }
 
-    func approve(_ request: PairingRequest, projects: Set<UUID>) async {
+    @discardableResult
+    func approve(_ request: PairingRequest, projects: Set<UUID>) async -> DesktopConsentActionOutcome {
         await consentAction {
             try await runtime.approve(requestID: request.id, code: request.comparisonCode, projectIDs: projects)
         }
     }
-    func reject(_ id: UUID) async { await consentAction { try await runtime.reject(requestID: id) } }
-    func revoke(_ id: UUID) async { await consentAction { try await runtime.revoke(deviceID: id) } }
+    func reject(_ id: UUID) async { _ = await consentAction { try await runtime.reject(requestID: id) } }
+    func revoke(_ id: UUID) async { _ = await consentAction { try await runtime.revoke(deviceID: id) } }
 
-    private func consentAction(_ action: () async throws -> Void) async {
-        guard !InstanceRuntime.isAdditional, !busy else { return }
+    private func consentAction(_ action: () async throws -> Void) async -> DesktopConsentActionOutcome {
+        guard !InstanceRuntime.isAdditional, !busy, consentActionsAvailable else { return .unavailable }
         busy = true
+        error = nil
         defer { busy = false }
-        do {
-            try await action()
-            consent = try await runtime.consentState()
+        do { try await action() }
+        catch {
+            self.error = error.localizedDescription
+            return .failed
         }
+        do { consent = try await runtime.consentState() }
         catch { self.error = error.localizedDescription }
+        return .completed
     }
 
     func stop() async {
@@ -580,10 +824,27 @@ final class DesktopSyncController {
     }
 }
 
-struct DesktopSourceReview: Identifiable {
+@MainActor @Observable
+final class DesktopSourceReviewDraft {
+    var decisions: [String: ReconciliationChoice]
+
+    init(decisions: [String: ReconciliationChoice] = [:]) {
+        self.decisions = decisions
+    }
+}
+
+@MainActor struct DesktopSourceReview: Identifiable {
     let item: DesktopPeerIncomingProposal
     let review: DesktopPeerProposalReview
-    var id: String { item.id }
+    let draft: DesktopSourceReviewDraft
+    nonisolated var id: String { item.id }
+
+    init(item: DesktopPeerIncomingProposal, review: DesktopPeerProposalReview,
+         draft: DesktopSourceReviewDraft = DesktopSourceReviewDraft()) {
+        self.item = item
+        self.review = review
+        self.draft = draft
+    }
 }
 
 private enum NativeSourceReviewError: Error { case ambiguousBuffers }
