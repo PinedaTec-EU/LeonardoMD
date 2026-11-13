@@ -7,7 +7,7 @@ struct MobileDemoView: View {
     private let store = MobileDemoStore()
     @State private var content = ""
     @State private var source = false
-    @State private var error: String?
+    @State private var error: MobileErrorNotice?
     @State private var fieldHelp: String?
     @State private var saved = false
     @State private var confirmingReset = false
@@ -45,8 +45,22 @@ struct MobileDemoView: View {
                 Task {
                     if await controller.flushEdits() {
                         do { try store.save(content, language: language); saved = true }
-                        catch { self.error = error.localizedDescription }
-                    } else { error = "No se pudo guardar / Could not save. Inténtalo de nuevo / Try again." }
+                        catch {
+                            self.error = MobileErrorNotice.record(
+                                error,
+                                operation: .practice,
+                                message: errorMessage("Could not save the practice. Try again.",
+                                                     "No se pudo guardar la práctica. Inténtalo de nuevo."),
+                                spanish: language == .es)
+                        }
+                    } else {
+                        error = MobileErrorNotice.record(
+                            operation: .practice,
+                            message: errorMessage("Could not save the changes. Try again.",
+                                                  "No se pudieron guardar los cambios. Inténtalo de nuevo."),
+                            category: "practice_flush_failed",
+                            spanish: language == .es)
+                    }
                 }
             }.disabled(content.isEmpty).accessibilityIdentifier("demo-save")
             Menu {
@@ -81,10 +95,23 @@ struct MobileDemoView: View {
                     content = replacement
                     saved = false
                     return replacement
-                } catch { self.error = error.localizedDescription; return nil }
+                } catch {
+                    self.error = MobileErrorNotice.record(
+                        error,
+                        operation: .practice,
+                        message: errorMessage("Could not save the practice.", "No se pudo guardar la práctica."),
+                        spanish: language == .es)
+                    return nil
+                }
             }
             do { content = try store.load(language) }
-            catch { self.error = error.localizedDescription }
+            catch {
+                self.error = MobileErrorNotice.record(
+                    error,
+                    operation: .practice,
+                    message: errorMessage("Could not open the practice.", "No se pudo abrir la práctica."),
+                    spanish: language == .es)
+            }
         }
         .onDisappear {
             controller.onFormEdit = nil
@@ -98,7 +125,13 @@ struct MobileDemoView: View {
                 Task {
                     guard await controller.flushEdits() else { return }
                     do { content = try store.reset(language); saved = false }
-                    catch { self.error = error.localizedDescription }
+                    catch {
+                        self.error = MobileErrorNotice.record(
+                            error,
+                            operation: .practice,
+                            message: errorMessage("Could not reset the practice.", "No se pudo restablecer la práctica."),
+                            spanish: language == .es)
+                    }
                 }
             }
         } message: { Text("Solo afecta al idioma seleccionado. / Only affects the selected language.") }
@@ -108,9 +141,13 @@ struct MobileDemoView: View {
                 Button("Cerrar / Close") { fieldHelp = nil }
             }.classicSurface().presentationDetents([.medium])
         }
-        .alert("Demo", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
-            Button("Aceptar / OK") { error = nil }
-        } message: { Text(error ?? "") }
+        .alert(MobileErrorNotice.alertTitle(spanish: language == .es), isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
+            Button(MobileErrorNotice.acceptLabel(spanish: language == .es)) { error = nil }
+        } message: { Text(error?.alertMessage ?? "") }
+    }
+
+    private func errorMessage(_ english: String, _ spanish: String) -> String {
+        language == .es ? spanish : english
     }
 }
 

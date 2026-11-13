@@ -33,6 +33,7 @@ public final class DownloadLibrary {
     }
     private var tasks: [String: ActiveDownload] = [:]
     public var fetch: @MainActor (UUID, RemoteFileEntry) async throws -> CorpusFile = { _, _ in throw SyncError.revoked }
+    public var errorPresentation: (@MainActor (Error) -> String)?
 
     public init(cache: any RemoteDownloadCache) { self.cache = cache }
     public static func key(id: UUID, path: String) -> String { id.uuidString + ":" + path }
@@ -134,12 +135,14 @@ public final class DownloadLibrary {
         }
         catch {
             try requireEntry(id: id, entry: entry, generation: generation)
-            failures[Self.key(id: id, path: entry.path)] = error.localizedDescription
+            let key = Self.key(id: id, path: entry.path)
+            let message = failures[key] ?? errorMessage(for: error)
+            failures[key] = message
             if let denial = error as? any RemoteContentAccessDenied, denial.deniesRemoteContent { throw error }
             if deniedPaths[id, default: []].contains(entry.path) { throw error }
             if let previous = try await cache.read(id: id, entry: entry, allowStale: true) {
                 try requireEntry(id: id, entry: entry, generation: generation)
-                return RemoteDownloadResult(file: previous, updateFailure: error.localizedDescription)
+                return RemoteDownloadResult(file: previous, updateFailure: message)
             }
             throw error
         }
@@ -164,7 +167,7 @@ public final class DownloadLibrary {
             try await cache.setRetained(id: id, path: path, isFolder: isFolder, keep: keep)
             try await refreshAll()
             if keep { await downloadRetained(id: id) }
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = errorMessage(for: error) }
     }
 
     public func downloadRetained(id: UUID) async {
@@ -180,23 +183,23 @@ public final class DownloadLibrary {
 
     public func setLimit(bytes: Int) async {
         do { try await cache.setLimit(bytes: bytes); try await refreshAll() }
-        catch { self.error = error.localizedDescription }
+        catch { self.error = errorMessage(for: error) }
     }
     public func clearTemporary() async {
         do { try await cache.clearTemporary(); try await refreshAll() }
-        catch { self.error = error.localizedDescription }
+        catch { self.error = errorMessage(for: error) }
     }
     public func release(id: UUID, path: String, isFolder: Bool) async {
         do {
             guard allowed.contains(id) else { throw SyncError.revoked }
             try await cache.release(id: id, path: path, isFolder: isFolder); try await refreshAll()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = errorMessage(for: error) }
     }
     public func removeRule(id: UUID, ruleID: String) async {
         do {
             guard allowed.contains(id) else { throw SyncError.revoked }
             try await cache.removeRetentionRule(id: id, ruleID: ruleID); try await refreshAll()
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = errorMessage(for: error) }
     }
     private func refreshAll() async throws {
         projects = try await cache.projects().filter { allowed.contains($0.id) }
@@ -208,5 +211,9 @@ public final class DownloadLibrary {
         let value = try await cache.usage()
         guard usageRevision == expected else { return }
         usage = value
+    }
+
+    private func errorMessage(for error: Error) -> String {
+        errorPresentation?(error) ?? error.localizedDescription
     }
 }

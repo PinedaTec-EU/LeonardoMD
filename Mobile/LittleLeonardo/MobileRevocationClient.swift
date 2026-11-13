@@ -71,7 +71,7 @@ struct MobileRevocationClient: Sendable {
         onDenied: (MobileRevocationTicket) async -> Void,
         projectID: UUID? = nil,
         filePath: String? = nil,
-        onCurrentStatus: (MobileAuthenticatedContext) async throws -> MobileAuthenticatedContext? = { _ in nil },
+        onCurrentStatus: @escaping (MobileAuthenticatedContext) async throws -> MobileAuthenticatedContext? = { _ in nil },
         operation: (MobileAuthenticatedContext) async throws -> T,
         status: @escaping @Sendable (DirectEnrollmentClient, UUID, String) async throws -> DirectDeviceStatus = {
             client, deviceID, credential in

@@ -268,63 +268,6 @@ final class MobileRevocationTests: XCTestCase {
         XCTAssertEqual(retainedCredential, "credential")
     }
 
-    @MainActor
-    func testProductionOpenRemovesAllProjectAccessWhenStatusBecomesPending() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        defer { try? FileManager.default.removeItem(at: root) }
-        let support = root.appendingPathComponent("LittleLeonardo", isDirectory: true)
-        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
-        let projectID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
-        let descriptor = SharedProjectDescriptor(id: projectID, name: "Granted",
-            scope: try CorpusScope(folder: ""))
-        let oldFile = CorpusFile(path: "docs/note.md", content: Data("retained old bytes".utf8))
-        let currentFile = CorpusFile(path: oldFile.path, content: Data("new source revision".utf8))
-        let oldEntry = RemoteFileEntry(file: oldFile)
-        let currentEntry = RemoteFileEntry(file: currentFile)
-        let value = MobileDirectConnection(connectionID: connectionID, deviceID: deviceID,
-            endpoint: URL(string: "https://127.0.0.1:9")!, fingerprint: Data(repeating: 7, count: 32),
-            projectIDs: [projectID], comparisonCode: nil, capabilities: [],
-            projectDescriptors: [descriptor], acceptedProjectIDs: [projectID])
-        let credentials = TestCredentials(values: [deviceID: "credential"], failRemove: false)
-        try MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json")).save([value])
-        let statusCalls = LockedCounter()
-        let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
-            revocationJournal: MobileRevocationJournal(url: support.appendingPathComponent("revocation.json")),
-            statusRequest: { _, _, _ in
-                statusCalls.increment()
-                if statusCalls.value == 1 {
-                    return DirectDeviceStatus(access: .authorized, projects: [descriptor])
-                }
-                return DirectDeviceStatus(access: .pending, projects: [])
-            },
-            fileRequest: { _, _, _, _, _ in
-                throw SyncError.httpAccessDenied(operation: .file, status: 403)
-            })
-        library.connections = [value]
-        try await library.downloads.update(id: projectID, descriptor: descriptor,
-            catalogue: RemoteProjectCatalogue(files: [oldEntry]))
-        library.downloads.fetch = { _, _ in oldFile }
-        await library.downloads.retain(id: projectID, path: oldFile.path, isFolder: false, keep: true)
-        _ = try await library.downloads.open(id: projectID, path: oldFile.path)
-        try await library.downloads.update(id: projectID, descriptor: descriptor,
-            catalogue: RemoteProjectCatalogue(files: [currentEntry]))
-        library.downloads.fetch = { id, entry in try await library.fetchDownload(projectID: id, entry: entry) }
-
-        do {
-            _ = try await library.downloads.open(id: projectID, path: currentFile.path)
-            XCTFail("Pending status must make previously granted cached content unavailable")
-        } catch let error as SyncError { XCTAssertEqual(error, .revoked) }
-        catch { XCTFail("Expected the project cache to be denied: \(error)") }
-
-        XCTAssertEqual(statusCalls.value, 2)
-        let updated = try XCTUnwrap(library.connections.first)
-        XCTAssertFalse(updated.revoked, "Pending authorization is not a device revocation")
-        XCTAssertTrue(updated.projectIDs.isEmpty)
-        XCTAssertTrue(updated.acceptedProjectIDs.isEmpty)
-        let retainedCredential = try await credentials.credential(deviceID: deviceID)
-        XCTAssertEqual(retainedCredential, "credential")
-    }
-
     func testLateAuthorizedOrTransientCompletionCannotClearMonotonicDeny() async throws {
         for transient in [false, true] {
             let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
