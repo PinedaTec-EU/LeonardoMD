@@ -218,6 +218,53 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(registration.status, .notRegistered)
     }
 
+    func testExplicitDisableRemainsAuthoritativeWhenEnableWriteHasNotResumed() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        let configurations = fixture.configurations
+        let preferences = fixture.preferences
+        let writeBarrier = HelperPreferenceWriteBarrier()
+        let registration = HelperRegistrationFake()
+        let control = HelperControlFake()
+        let helper = SyncHelperController(preferencesURL: preferences, configurations: configurations,
+            service: registration, client: control, expectedBuildIdentity: nil,
+            startup: .init(attempts: 0),
+            persistEnabledPreference: { enabled, url in
+                try await configurations.setSyncHelperEnabled(enabled, at: url)
+                if enabled { await writeBarrier.pauseAfterEnableWrite() }
+            }, hasExecutable: { true }, verifyPackage: {})
+
+        let enable = Task { await helper.setEnabled(true) }
+        for _ in 0..<5_000 {
+            if await writeBarrier.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await writeBarrier.isHeld else {
+            await writeBarrier.resume()
+            await enable.value
+            XCTFail("Enable write did not reach its continuation barrier")
+            return
+        }
+        let enabledBeforeDisable = try await configurations.loadGlobalPreferences(at: preferences)
+        XCTAssertTrue(enabledBeforeDisable.mobileSync.helperEnabled)
+
+        await helper.setEnabled(false)
+        let denied = try await configurations.loadGlobalPreferences(at: preferences)
+        XCTAssertFalse(denied.mobileSync.helperEnabled)
+        XCTAssertFalse(helper.enabled)
+        XCTAssertEqual(helper.state, .disabled)
+
+        await writeBarrier.resume()
+        await enable.value
+
+        let final = try await configurations.loadGlobalPreferences(at: preferences)
+        XCTAssertFalse(final.mobileSync.helperEnabled,
+            "The stale enable continuation must not restore consent after explicit disable")
+        XCTAssertFalse(helper.enabled)
+        XCTAssertEqual(helper.state, .disabled)
+        XCTAssertFalse(helper.busy)
+    }
+
     func testIndependentSupersededFailureAndLaterCancellationMustRecover() async throws {
         let fixture = try ControllerFixture()
         defer { fixture.remove() }
@@ -3731,6 +3778,19 @@ final class SyncHelperControllerTests: XCTestCase {
             service: registration, client: control, expectedBuildIdentity: nil, startup: .init(attempts: 0), hasExecutable: { true }, verifyPackage: {})
     }
     func remove() { try? FileManager.default.removeItem(at: root) }
+}
+private actor HelperPreferenceWriteBarrier {
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var released = false
+    var isHeld: Bool { continuation != nil }
+    func pauseAfterEnableWrite() async {
+        if !released { await withCheckedContinuation { continuation = $0 } }
+    }
+    func resume() {
+        released = true
+        continuation?.resume()
+        continuation = nil
+    }
 }
 private enum HelperControlError: LocalizedError {
     case unavailable

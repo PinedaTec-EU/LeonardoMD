@@ -28,6 +28,7 @@ final class SyncHelperController {
     private let service: any SyncHelperRegistration
     private let client: any SyncHelperControlAccess
     private let configurations: ConfigurationStore
+    private let persistEnabledPreference: @Sendable (Bool, URL) async throws -> Void
     private let hasExecutable: @Sendable () -> Bool
     private let verifyPackage: @Sendable () throws -> Void
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "sync-helper-control")
@@ -53,6 +54,7 @@ final class SyncHelperController {
          now: @escaping @MainActor () -> Date = Date.init,
          startup: SyncHelperStartupPolicy = .init(),
          loadPeerPreferences: (@Sendable () async throws -> MobileSyncPreferences)? = nil,
+         persistEnabledPreference: (@Sendable (Bool, URL) async throws -> Void)? = nil,
          hasExecutable: @escaping @Sendable () -> Bool = {
              FileManager.default.isExecutableFile(atPath: Bundle.main.bundleURL
                  .appendingPathComponent("Contents/MacOS/" + SyncHelperContract.executableName).path)
@@ -65,6 +67,9 @@ final class SyncHelperController {
         self.now = now
         self.expectedBuildIdentity = expectedBuildIdentity
         self.preferencesURL = preferencesURL; self.configurations = configurations
+        self.persistEnabledPreference = persistEnabledPreference ?? { enabled, url in
+            try await configurations.setSyncHelperEnabled(enabled, at: url)
+        }
         self.loadPeerPreferences = loadPeerPreferences ?? {
             try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
         }
@@ -213,7 +218,7 @@ final class SyncHelperController {
             guard !enabled else { return }
             lifecycleRevision += 1; revision += 1; presentationRevision += 1; self.enabled = false; state = .disabled; error = nil; stateBeforeRefresh = .disabled; errorBeforeRefresh = nil; sharingBeforeRefresh = nil; sharing = nil
             supportsRubricExchange = false
-            do { try await configurations.setSyncHelperEnabled(false, at: preferencesURL) }
+            do { try await persistEnabledPreference(false, preferencesURL) }
             catch { state = .failed; self.error = L10n.text(error.localizedDescription); presentCurrentState() }
             return
         }
@@ -233,7 +238,11 @@ final class SyncHelperController {
                 guard hasExecutable() else { throw SyncHelperFailure(L10n.text("Sync helper is not installed")) }
                 try verifyPackage()
             }
-            try await configurations.setSyncHelperEnabled(enabled, at: preferencesURL)
+            try await persistEnabledPreference(enabled, preferencesURL)
+            guard presentation == presentationRevision else {
+                busy = false
+                return
+            }
             self.enabled = enabled; sharing = nil
             if enabled {
                 state = .starting
@@ -251,6 +260,10 @@ final class SyncHelperController {
                 try await unregisterAfterStop()
             }
         } catch {
+            guard presentation == presentationRevision else {
+                busy = false
+                return
+            }
             state = .failed; self.error = L10n.text(error.localizedDescription)
             logger.error("sync_helper_lifecycle_failed")
         }
@@ -302,7 +315,7 @@ final class SyncHelperController {
     private func completeUpgrade(_ token: UUID, expected: Int) async throws {
         let restored = try await configurations.finishSyncHelperUpgrade(token, at: preferencesURL)
         guard expected == revision else {
-            try await configurations.setSyncHelperEnabled(false, at: preferencesURL)
+            try await persistEnabledPreference(false, preferencesURL)
             try await unregisterAfterStop()
             enabled = false; state = .disabled; return
         }
