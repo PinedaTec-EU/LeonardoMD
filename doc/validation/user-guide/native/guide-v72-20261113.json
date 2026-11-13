@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "issue": 378,
+  "pull_request": 446,
+  "tested_source_commit": "d14e272cdabe01a63d24050f70b97a8507fa9579",
+  "compilation_build_delta": 2,
+  "fresh_process": {
+    "launched": true,
+    "first_window_observed": "Welcome",
+    "qa_pid": 55851,
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.943325b4e6b14732a350d6bdf5154c95",
+    "bundle_executable": "LeonardoMD",
+    "version": "0.3.1587",
+    "build": "1587",
+    "launch_arguments": [
+      "--new-instance",
+      "-allowMultipleInstances",
+      "YES"
+    ],
+    "xctest_dependency": false,
+    "codesign_verified": true,
+    "still_running_after_validation": true
+  },
+  "guide_resources": [
+    {
+      "locale": "en",
+      "help_menu_opened": true,
+      "working_copy": "~/Library/Application Support/LeonardoMD/User Guides/v72/en/Guide-v72-en.mdlz",
+      "bundle_sha256": "8a802b232217aa2ba5b649e5615a96b51dcd9ab10afe32a46bc29b47de2bf5b6",
+      "working_copy_sha256": "8a802b232217aa2ba5b649e5615a96b51dcd9ab10afe32a46bc29b47de2bf5b6",
+      "hashes_match": true
+    },
+    {
+      "locale": "es",
+      "help_menu_opened": true,
+      "working_copy": "~/Library/Application Support/LeonardoMD/User Guides/v72/es/Guide-v72-es.mdlz",
+      "bundle_sha256": "df03777e3775a31d84de70ae6a7dc6a67f5237c77fef9dbe02483250e897854e",
+      "working_copy_sha256": "df03777e3775a31d84de70ae6a7dc6a67f5237c77fef9dbe02483250e897854e",
+      "hashes_match": true
+    }
+  ],
+  "live_help_checks": {
+    "inspection": "actual packaged LeonardoMD WKWebView accessibility tree",
+    "content": [
+      "local images and cover",
+      "Mermaid rendered image",
+      "Vega-Lite chart image",
+      "tables",
+      "one-line display equation",
+      "inline N(epsilon)",
+      "multiline underbraces with x/y labels",
+      "long-arrow/cancellation equation",
+      "tagged box-counting equation with subscript B and tag (1)",
+      "literal code examples"
+    ],
+    "math_enabled": {
+      "en": true,
+      "es": true,
+      "rendered_display_equations_observed": true,
+      "equation_tag_observed": "(1)",
+      "katex_error_observed": false,
+      "literal_delimiters_in_rendered_math_nodes": false
+    },
+    "math_disabled": {
+      "tested": true,
+      "source_notation_and_code_remained_literal": true
+    }
+  },
+  "practice_round_trip": {
+    "locale": "es",
+    "opened_from_guide": true,
+    "filled_with_synthetic_qa_values": true,
+    "saved": true,
+    "closed_and_reopened": true,
+    "saved_values_observed_after_reopen": true,
+    "existing_personal_file_restored_byte_for_byte": true,
+    "original_and_restored_sha256": "dcaef10188834457094ecbafa8ff3ceb1996b6188d79ca02869821c9082321c7"
+  },
+  "settings_restored": {
+    "interface_language": "English",
+    "math_extension": "on"
+  },
+  "evidence_method": "Live CUA accessibility observations; no screenshots were captured for this run.",
+  "remaining_release_acceptance": [
+    "exact-head CI and independent review",
+    "beta publication and hosted beta install/update/relaunch acceptance"
+  ]
+}
