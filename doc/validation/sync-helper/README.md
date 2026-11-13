@@ -1,10 +1,14 @@
 # Sync helper validation
 
-The latest PR #428 evidence refresh is in
-[`428-quiet-status-v43/`](428-quiet-status-v43/README.md). It records the
-retained status during a pending health check and after recovery from the
-reconciled source `2c59e4af16b2d96a3fed58c692a0faba1bbe3110`. The focused
-automatic consent-poll regression is covered by the full suite. The earlier
+The latest PR #428 status and error presentation evidence is in
+[`428-quiet-status-v45/`](428-quiet-status-v45/README.md), bound to integrated
+product source `29759ce4f4027b4f2e22c44ee7ea17c48d7eb4d8`. It shows the last
+confirmed green state retained while checking, the same green state after a
+successful check, and a red persistent error without duplicated diagnostics.
+The full Swift suite covers automatic consent-poll recovery. The earlier
+[`v43 record`](428-quiet-status-v43/README.md) remains an original checkpoint;
+[`v44`](428-quiet-status-v44/README.md) records the earlier Guide v67 candidate.
+The earlier
 [`v42 record`](428-quiet-status-v42/README.md) retains the prior original images.
 The preceding
 [`v40 record`](428-quiet-status-v40/README.md) contains packaged Guide v59 Help
