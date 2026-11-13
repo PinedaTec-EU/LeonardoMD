@@ -17,9 +17,20 @@ final class DesktopSyncPollingDiagnostics {
     var error: String? { actionError ?? consentError ?? incomingError }
 
     func setActionError(_ message: String?) {
+        guard let message else {
+            // The alert binding writes nil when the currently visible alert is
+            // dismissed. Clear only that alert so lower-priority diagnostics
+            // remain available to be presented next.
+            if actionError != nil {
+                actionError = nil
+            } else if consentError != nil {
+                consentError = nil
+            } else if incomingError != nil {
+                incomingError = nil
+            }
+            return
+        }
         actionError = message
-        consentError = nil
-        incomingError = nil
     }
 
     func markConsentHealthCheckAttempted() {

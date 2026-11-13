@@ -245,6 +245,7 @@ final class SyncHelperController {
             }
             guard presentation == presentationRevision else { return }
             busy = false
+            upgrading = false
             presentCurrentState()
             hasPresentedStatus = true
             return
@@ -308,8 +309,17 @@ final class SyncHelperController {
         nextUpgradeAttempt = currentTime.addingTimeInterval(Self.upgradeRetryInterval)
         lifecycleRevision += 1; revision += 1
         let expected = revision
+        let expectedLifecycle = lifecycleRevision
         busy = true; upgrading = true
-        defer { busy = false; upgrading = false }
+        defer {
+            // A user-initiated disable can take ownership while this renewal is
+            // suspended. Its queued preference write and stop own `busy` until
+            // completion, so the obsolete renewal must not unlock controls.
+            if expectedLifecycle == lifecycleRevision {
+                busy = false
+                upgrading = false
+            }
+        }
         let token = pending ?? UUID()
         do {
             try verifyPackage()

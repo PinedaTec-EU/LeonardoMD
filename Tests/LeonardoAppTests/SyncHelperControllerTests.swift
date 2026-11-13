@@ -1613,14 +1613,20 @@ final class SyncHelperControllerTests: XCTestCase {
         await runtime.setConsentFailure(false)
         await source.refreshConsent(refreshHelper: false)
         XCTAssertEqual(source.error, "Explicit action failed", "Automatic recovery must not clear an explicit action error")
-        source.error = nil
 
+        // The alert dismiss binding writes nil. A persistent automatic failure
+        // that accumulated behind the explicit alert must then be shown once.
         await runtime.setConsentFailure(true)
         await source.refreshConsent(refreshHelper: false)
-        XCTAssertNil(source.error)
+        XCTAssertEqual(source.error, "Explicit action failed")
         await source.refreshConsent(refreshHelper: false)
-        XCTAssertNotNil(source.error)
+        XCTAssertEqual(source.error, "Explicit action failed")
         source.error = nil
+        XCTAssertNotNil(source.error, "Dismissing the explicit alert must reveal the queued consent diagnostic")
+        source.error = nil
+        XCTAssertNil(source.error, "Dismissing the consent diagnostic must acknowledge only that diagnostic")
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.error, "An acknowledged diagnostic is not re-presented during the same episode")
         let nextCalls = await control.statusCalls
         XCTAssertEqual(nextCalls, 4, "Each new automatic failure episode triggers one health check")
     }
@@ -1690,6 +1696,16 @@ final class SyncHelperControllerTests: XCTestCase {
         await source.refreshConsent(refreshHelper: false)
         XCTAssertEqual(source.error, "Explicit action failed",
             "Automatic consent and incoming-read recovery must not erase an explicit action error")
+        await runtime.failNextIncomingRead()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.error, "Explicit action failed")
+        source.error = nil
+        XCTAssertNotNil(source.error, "Dismissing an explicit alert must reveal the queued incoming-proposal diagnostic")
+        source.error = nil
+        XCTAssertNil(source.error, "Dismissing the incoming diagnostic must acknowledge that message")
+        await runtime.failNextIncomingRead()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.error, "A dismissed incoming diagnostic is not re-presented during the same episode")
     }
 
     func testPersistentConsentFailureRechecksHealthAfterInterval() async throws {
@@ -3585,6 +3601,62 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertNil(controller.displayedError, "Disabling must clear a previous transient error")
         XCTAssertNil(controller.error)
         XCTAssertEqual(registration.registrations, 1)
+    }
+
+    func testInterruptedUpgradeCannotReleaseBusyOwnedByExplicitDisable() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let writeBarrier = HelperPreferenceWriteBarrier()
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        await control.setBuildIdentity(SyncHelperBuildIdentity(build: 199, bundlePath: "/Applications/Old/LeonardoMD.app"))
+        await control.pauseReload()
+        let helper = SyncHelperController(preferencesURL: fixture.preferences,
+            configurations: fixture.configurations, service: registration, client: control,
+            expectedBuildIdentity: replacement, startup: .init(attempts: 0),
+            persistEnabledPreference: { enabled, url in
+                await writeBarrier.pauseNextWrite()
+                try await fixture.configurations.setSyncHelperEnabled(enabled, at: url)
+            }, hasExecutable: { true }, verifyPackage: {})
+
+        let renewal = Task { await helper.refresh() }
+        for _ in 0..<5_000 {
+            if await control.hasHeldReload { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await control.hasHeldReload else {
+            await control.resumeReload(); await renewal.value
+            XCTFail("The automatic renewal did not reach its stop barrier")
+            return
+        }
+        XCTAssertTrue(helper.busy)
+        XCTAssertTrue(helper.upgrading)
+
+        let disable = Task { await helper.setEnabled(false) }
+        for _ in 0..<5_000 {
+            if await writeBarrier.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await writeBarrier.isHeld else {
+            await control.resumeReload(); await renewal.value; await disable.value
+            XCTFail("The explicit disable did not reach its preference-write barrier")
+            return
+        }
+        XCTAssertTrue(helper.busy, "The disable owns the lifecycle while its durable write is pending")
+
+        await control.resumeReload()
+        await renewal.value
+        XCTAssertTrue(helper.busy,
+            "The obsolete renewal must not release the busy state owned by the explicit disable")
+
+        await writeBarrier.resume()
+        await disable.value
+        let final = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertFalse(final.mobileSync.helperEnabled)
+        XCTAssertFalse(helper.busy)
+        XCTAssertFalse(helper.upgrading)
+        XCTAssertFalse(helper.enabled)
+        XCTAssertEqual(registration.status, .notRegistered)
     }
 
     func testStaleHealthyReplyCannotClearASupersedingUpgradeToken() async throws {
