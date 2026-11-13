@@ -16,6 +16,7 @@ Read [current state](current-state.md), then the relevant source target. Human p
 - [Native release notes](release-notes.md)
 
 - [Document Undo and Redo](document-undo.md)
+- [Find in open documents](document-search.md) — window-scoped literal/regex search, tab navigation and source-only highlights.
 
 - [Mobile Git architecture reevaluation](../doc/adr/0002-reevaluate-mobile-git-engine.md) — owner-selected iOS read-only and macOS/Windows desktop-sync direction; runtime migration pending.
 - [Local image resource policy](image-resources.md)

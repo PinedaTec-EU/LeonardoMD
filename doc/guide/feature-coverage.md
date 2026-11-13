@@ -1,6 +1,6 @@
 # User-help feature coverage
 
-Source audit: 5 November 2026. This maps the implemented macOS surfaces to the
+Source audit: 12 November 2026. This maps the implemented macOS surfaces to the
 same numbered chapters in `en/body.md` and `es/body.md`. It is a maintenance map,
 not a promise that every feature is in the current stable distribution. Check
 release notes for the installed build. Future feature PRs maintain this map and
@@ -18,7 +18,7 @@ both locales under `.skills/leonardo-user-guide/SKILL.md`.
 | File → Import with your agent opens a localized standalone Leonardo guide; PDF conversion is performed by the user’s external agent | `BundledUserGuide.swift`, `LeonardoMD.swift`, `scripts/package-user-guide.py` | 6 | Shared bilingual chapter; premium illustrative PDF → agent/skill → editable document image and copyable request |
 | Recents, favorites, project theme association and unavailable paths | `SavedItemsView.swift` | 7 | Home capture (empty initial state) |
 | Tree, CRUD, tab identity, filters, sort, follow-active and Focus | `ProjectSidebar.swift`, `DocumentTabs.swift`, `SessionPreferences.swift` | 8 | Stepwise instructions; keyboard table |
-| Filename/content search, exact tag filter and heading outline | `ProjectSidebar.swift`, `DocumentInspector.swift`, `../LeonardoCore/FrontMatterTags.swift` | 9 | YAML and search examples |
+| Project filename/content search, document-source search across current/all open tabs, literal and regex matching, exact tag filter and heading outline | `ProjectSidebar.swift`, `DocumentSearch.swift`, `DocumentTabsSearch.swift`, `DocumentInspector.swift`, `../LeonardoCore/FrontMatterTags.swift` | 9, 17 | YAML, search modes/scopes and keyboard shortcuts |
 | Source/preview/split editing, shared undo, table widths, file conflict recovery | `MarkdownEditor.swift`, `SessionTableResizing.swift`, `SessionConflictCopy.swift`, `WorkspaceView.swift` | 10 | Recovery choices explained; source examples |
 | Global/project/Mac scope, palettes/contrast, associations, instances | `PreferencesView.swift`, `PaletteEditor.swift`, `MarkdownAssociationPreferences.swift`, `InstancePreferencesView.swift` | 11 | Palette capture, scope table |
 | All five opt-in engines, actual Mermaid/KaTeX/Vega examples and citation/extras syntax | `ExtensionPreferences.swift`, `../LeonardoRender/Resources/` | Live demonstrations, 12 | Three live outputs; literal citation/footnote/callout examples |

@@ -8,6 +8,8 @@ struct MarkdownEditor: NSViewRepresentable {
     var requestedLine: Int?
     var requestedLineRevision = 0
     var usesDocumentHistory = false
+    var searchMatches: [NSRange] = []
+    var activeSearchSelection: DocumentSearchSelection?
     var onUserScroll: ((Double) -> Void)?
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -68,6 +70,17 @@ struct MarkdownEditor: NSViewRepresentable {
             editor.setSelectedRange(range)
             editor.scrollRangeToVisible(range)
         }
+        context.coordinator.updateSearchHighlights(searchMatches, activeRange: activeSearchSelection?.range, in: editor)
+        if let activeSearchSelection,
+           context.coordinator.lastSearchSelectionRevision != activeSearchSelection.revision {
+            let length = (editor.string as NSString).length
+            let range = activeSearchSelection.range
+            if range.location <= length, range.length <= length - range.location {
+                editor.setSelectedRange(range)
+                editor.scrollRangeToVisible(range)
+            }
+            context.coordinator.lastSearchSelectionRevision = activeSearchSelection.revision
+        }
     }
 
     @MainActor final class Coordinator: NSObject, NSTextViewDelegate {
@@ -79,6 +92,9 @@ struct MarkdownEditor: NSViewRepresentable {
         var programmaticOrigin: CGFloat?
         var lastScrollFraction = 0.0
         var scrollObserver: NSObjectProtocol?
+        var highlightedSearchRanges: [NSRange]?
+        var highlightedActiveRange: NSRange?
+        var lastSearchSelectionRevision: Int?
         init(_ parent: MarkdownEditor) { self.parent = parent; expectedText = parent.text }
         func textView(_ editor: NSTextView, shouldChangeTextIn range: NSRange, replacementString: String?) -> Bool {
             guard parent.text == expectedText else {
@@ -99,6 +115,34 @@ struct MarkdownEditor: NSViewRepresentable {
             parent.text = editor.string
             expectedText = parent.text
             if editor.string != expectedText { restoreSharedDraft(in: editor) }
+        }
+        func updateSearchHighlights(_ ranges: [NSRange], activeRange: NSRange?, in editor: NSTextView) {
+            guard ranges != highlightedSearchRanges || activeRange != highlightedActiveRange,
+                  let layoutManager = editor.layoutManager else { return }
+            let length = (editor.string as NSString).length
+            guard length > 0 else {
+                highlightedSearchRanges = ranges
+                highlightedActiveRange = activeRange
+                return
+            }
+            let fullRange = NSRange(location: 0, length: length)
+            layoutManager.removeTemporaryAttribute(.backgroundColor, forCharacterRange: fullRange)
+            for range in ranges where range.location <= length && range.length <= length - range.location && range.length > 0 {
+                layoutManager.addTemporaryAttribute(.backgroundColor,
+                    value: NSColor.systemYellow.withAlphaComponent(0.48), forCharacterRange: range)
+            }
+            if let activeRange,
+               activeRange.location <= length, activeRange.length <= length - activeRange.location {
+                let visibleRange = activeRange.length == 0 && activeRange.location < length
+                    ? NSRange(location: activeRange.location, length: 1) : activeRange
+                if visibleRange.length > 0 {
+                    layoutManager.addTemporaryAttribute(.backgroundColor,
+                        value: NSColor.systemOrange.withAlphaComponent(0.72), forCharacterRange: visibleRange)
+                }
+            }
+            layoutManager.invalidateDisplay(forCharacterRange: fullRange)
+            highlightedSearchRanges = ranges
+            highlightedActiveRange = activeRange
         }
         private func isUserScroll(in scroll: NSScrollView) -> Bool {
             guard let event = NSApp.currentEvent, event.window === scroll.window else { return false }

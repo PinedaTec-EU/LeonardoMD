@@ -354,6 +354,8 @@ Arrastra el separador para ajustar el ancho. **Seguir el archivo activo en la ba
 
 Busca nombres de archivo y contenido en el buscador del proyecto. Abre un resultado normalmente o usa su menú contextual para conservarlo en otra pestaña. La búsqueda trabaja en el proyecto abierto; no es un índice de todo el Mac.
 
+Para buscar texto en el código fuente de los documentos abiertos, elige **Edición → Buscar…** o pulsa la lupa junto a las pestañas (**⌘F**). Por defecto busca texto literal sin distinguir mayúsculas; activa **Distinguir mayúsculas** cuando importe la capitalización. Activa `.*` para usar una expresión regular, como `\bTODO\b` para buscar la palabra completa «TODO». Elige **Este documento** o **Todos los documentos abiertos** de esta ventana. Leonardo resalta cada coincidencia, muestra el total y distingue la actual. Usa las flechas, **Buscar siguiente** (⌘G) y **Buscar anterior** (⇧⌘G) para recorrerlas; la navegación selecciona el texto y activa su pestaña. Una expresión regular no válida muestra un aviso en línea. Pulsa Esc o cierra la barra para terminar. Esto busca el texto de los documentos abiertos en pestañas; el buscador del proyecto anterior encuentra nombres y contenido de otros archivos del proyecto abierto.
+
 Las etiquetas proceden del frontmatter YAML del Markdown ordinario. Por ejemplo:
 
 ```yaml
@@ -826,6 +828,7 @@ El canal del paquete instalado y tu suscripción son independientes. Beta puede 
 | ⇧⌘W | Cerrar ventana |
 | ⌘1 / ⌘2 / ⌘3 | Lectura / Editar / Dividida |
 | ⌘4 | Rellenar formulario cuando esté disponible |
+| ⌘F / ⌘G / ⇧⌘G | Buscar / coincidencia siguiente / anterior |
 | ⇧⌘F / ⌥⌘I | Foco / índice |
 | ⌘S | Guardar |
 | ⌘Z / ⇧⌘Z | Deshacer / Rehacer |
