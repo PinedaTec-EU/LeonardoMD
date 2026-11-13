@@ -41,7 +41,12 @@ extension AppSession {
 
     func flushPreviewEdits() async -> Bool {
         guard await renderer.flushEdits() else {
-            errorMessage = L10n.text("Preview edits could not be synchronized. Try again before closing.")
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = L10n.text("Could not apply preview edits")
+            alert.informativeText = L10n.text("The latest changes in Preview were not applied. Keep the document open and try again.")
+            alert.addButton(withTitle: L10n.text("OK"))
+            _ = await NativeDialog.present(alert, on: presentationWindow)
             return false
         }
         return true

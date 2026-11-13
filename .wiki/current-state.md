@@ -4,6 +4,8 @@ Sync helper extraction [#319](https://github.com/PinedaTec-EU/LeonardoMD/issues/
 
 Synchronization preferences [#421](https://github.com/PinedaTec-EU/LeonardoMD/issues/421), [PR #428](https://github.com/PinedaTec-EU/LeonardoMD/pull/428): the helper indicator keeps its last confirmed state during transient health checks; healthy status is not polled repeatedly while Preferences stays open. Preferences refreshes on entry/reentry and on explicit request. Pairing invitations survive retries but are revalidated against the refreshed live registry after recovery; a successful helper restart clears an invalidated QR even when its network endpoint is unchanged. New QR creation still requires live helper health.
 
+Native preview-flush failures use a dedicated one-button AppKit warning sheet with concise recovery copy in English and Spanish. Generic session errors still use the workspace alert. Tracking: [#447](https://github.com/PinedaTec-EU/LeonardoMD/issues/447); implementation: `AppSession.flushPreviewEdits()` in `Sources/LeonardoApp/SessionEditing.swift`.
+
 The PR #428 candidate also keeps automatic consent-poll failures provisional
 through the first retry, reports a persistent failure once per episode, and
 clears that diagnostic on successful recovery without erasing explicit action
