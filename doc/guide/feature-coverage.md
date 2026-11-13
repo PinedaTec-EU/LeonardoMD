@@ -1,7 +1,7 @@
 # User-help feature coverage
 
-Source audit: 12 November 2026. This maps the implemented macOS surfaces to the
-same numbered chapters in `en/body.md` and `es/body.md`. It is a maintenance map,
+Source audit: 12 November 2026. This maps implemented macOS and Little Leonardo
+surfaces to the same numbered chapters in `en/body.md` and `es/body.md`. It is a maintenance map,
 not a promise that every feature is in the current stable distribution. Check
 release notes for the installed build. Future feature PRs maintain this map and
 both locales under `.skills/leonardo-user-guide/SKILL.md`.
@@ -57,11 +57,14 @@ Page objects/rubrics (#193): `DocumentToolbar.swift`, `SessionGraphics.swift`, `
 Sync helper (#319): chapters 14–15 cover per-user installation/approval, the required master switch in both directions, saved-file snapshots, offline status with the editor open, after-login recovery, editor-independent sharing and manual incoming review. Current Guide v20 retains these helper instructions in a separate personal copy.
 
 Synchronization roles (#337): chapters 14–15 now route through one Synchronization category, one service control and separate sharing/consuming pages. Refreshed EN/ES production-component images show both pages with isolated disabled settings; capability labels and invite QR/link equivalence are explained. Guide v20 opens a new personal copy; existing older guide copies and separate practice answers are preserved.
+
+Remote project review (#429), ignored-grant reconciliation (#432), stable helper status (#421), and offline catalogue restoration (#436): chapters 14–15 explain host naming, explicit project acceptance, ignored projects remaining dismissed until the host removes or changes scope/selection, new-file notices, on-demand open/retention, preserved pre-review projects, stable status display, manual linked-device refresh, and browsing the last saved catalogue for accepted projects after an offline restart. macOS keeps its source-host controls; Little Leonardo groups connections by host and expands accepted projects into files with per-project/file menus. Local acceptance remains separate from host authorization. Guide v66 creates a new personal copy for this changed help while preserving existing guide copies and practice answers.
 Update termination (#202): chapter 16 documents automatic Preferences dismissal before install approval, retained Save/Git decisions, cancellation/retry, and the older-source bootstrap workaround. Introduced in Guide v12 and retained in current Guide v23; previous personal copies are preserved.
 
 Display-math regression coverage ([#272](https://github.com/PinedaTec-EU/LeonardoMD/issues/272)): both guides include one-line underbraces and a multiline tagged box-counting equation. Native help QA must inspect enabled rendering and disabled/code fallback in every tested instance.
 
 | Metadata-first browsing, navigable folder hierarchy, retention and cache management | `DownloadLibrary`, `OnDemandCache`, `LeonardoSyncUI` | 15 | Bilingual storage table; immediate-child folder navigation; explicit draft/apply budget; remote/cached/offline states; editable-copy boundary |
+| Host attribution, review of new projects/files, stable status and quieter linked-device refresh | `DesktopPeerRemoteProjectsView`, `DesktopPeerReviewStore`, `MobileSyncPreferencesView`, `MobileSharedProjectTreeView`, `MobileDirectConnectionStore` | 14–15 | Mac host preferences; Little Leonardo host → project → file disclosure; add/ignore decisions; ellipsis actions; transfer progress/failure; swipe removal from this device; on-demand open vs offline retention and local space release; preserved existing projects; manual device refresh |
 
 Extensible Math and outline navigation ([#274](https://github.com/PinedaTec-EU/LeonardoMD/issues/274), [#364](https://github.com/PinedaTec-EU/LeonardoMD/issues/364)): live braces, radical, long arrow and cancellation marks; chapter 9 explains repeated titles and Split navigation. Native tests verify geometry, active-content rejection, original source-line identity and preview/editor feedback.
 

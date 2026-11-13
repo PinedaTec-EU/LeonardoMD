@@ -11,6 +11,13 @@ import LeonardoDesktopSync
 final class SyncHelperControllerTests: XCTestCase {
     private let replacement = SyncHelperBuildIdentity(build: 200, bundlePath: "/Applications/LeonardoMD.app")
 
+    func testStatusSubtitleHidesHealthyRunningLineAndKeepsInitialCheckSpace() {
+        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: true, isInitialCheck: false,
+            status: "Sync helper running", checking: "Checking synchronization status"), " ")
+        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: false, isInitialCheck: true,
+            status: "Offline", checking: "Checking synchronization status"), "Checking synchronization status")
+    }
+
     private func upgrading(_ fixture: ControllerFixture, _ registration: HelperRegistrationFake,
                            _ control: HelperControlFake) -> SyncHelperController {
         SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,

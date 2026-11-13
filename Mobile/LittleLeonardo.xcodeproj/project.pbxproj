@@ -14,6 +14,7 @@
 		22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */; };
 		A7B6C5D4E3F2019A88776655 /* MobileRubricSubmissionGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */; };
 		2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7849226B36C61649B125BDDC /* MobileLibraryView.swift */; };
+		9A4D10000000000000000001 /* MobileSharedProjectTreeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A4D00000000000000000001 /* MobileSharedProjectTreeView.swift */; };
 		3E6C7AD17D9D0EDFB5E779BA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
 		46EBC1E01C1296D54919D7A0 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C13EDFD74D289513F03789EC /* Foundation.framework */; };
 		636F71B3D4E9A41FC1842500 /* LeonardoSyncTransport in Frameworks */ = {isa = PBXBuildFile; productRef = 00F8AB50590ED36AF1934837 /* LeonardoSyncTransport */; };
@@ -70,6 +71,7 @@
 		0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LittleLeonardoApp.swift; sourceTree = "<group>"; };
 		5B83DAE858F9656CCDF4D6B1 /* LittleLeonardo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LittleLeonardo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7849226B36C61649B125BDDC /* MobileLibraryView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileLibraryView.swift; sourceTree = "<group>"; };
+		9A4D00000000000000000001 /* MobileSharedProjectTreeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileSharedProjectTreeView.swift; sourceTree = "<group>"; };
 		88DCAC3D27E3676EFE8737FB /* PairingUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PairingUITests.swift; sourceTree = "<group>"; };
 		C13EDFD74D289513F03789EC /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		C53CBBB8313118CB2CF6782A /* LittleLeonardoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LittleLeonardoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -212,6 +214,7 @@
 				384000000000000000000000 /* MobileLibrary+Downloads.swift */,
 				A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */,
 				7849226B36C61649B125BDDC /* MobileLibraryView.swift */,
+				9A4D00000000000000000001 /* MobileSharedProjectTreeView.swift */,
 				70CAB6D3C2D948039788E971 /* MobileRecoveryDocument.swift */,
 				EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */,
 				B342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift */,
@@ -369,6 +372,7 @@
 				384000000000000000000100 /* MobileLibrary+Downloads.swift in Sources */,
 				A7B6C5D4E3F2019A88776655 /* MobileRubricSubmissionGate.swift in Sources */,
 				2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */,
+				9A4D10000000000000000001 /* MobileSharedProjectTreeView.swift in Sources */,
 				FC0D3FAC5AD74CCF9D75A451 /* MobileRecoveryDocument.swift in Sources */,
 				DA52AFC54A29A9980B0601CC /* MobileQRScanner.swift in Sources */,
 				A342C4F1B0D24E73A1F7C8D9 /* MobileRubricCaptureView.swift in Sources */,

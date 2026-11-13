@@ -34,12 +34,14 @@ final class DesktopPeerController {
     let revoker: DesktopPeerEditorRevoker
     let library: any DesktopPeerLibraryAccess
     let downloads: DownloadLibrary
+    let reviewStore: DesktopPeerReviewStore
 
     init(preferencesURL: URL = AppSession.preferencesURL,
          library: (any DesktopPeerLibraryAccess)? = nil,
          revoker: DesktopPeerEditorRevoker = DesktopPeerEditorRevoker(),
          defaults: UserDefaults = .standard, helper: SyncHelperController? = nil) {
         self.defaults = defaults
+        reviewStore = DesktopPeerReviewStore(defaults: defaults)
         let sharedHelper = helper ?? SyncHelperController(preferencesURL: preferencesURL)
         self.helper = sharedHelper
         let savedInterval = defaults.integer(forKey: "desktopPeerSyncMinutes")
@@ -139,15 +141,101 @@ final class DesktopPeerController {
             try authorizeStorage()
             let status = try await library.refresh(connectionID: id)
             available[id] = status.projects
+            if status.access != .pending {
+                reviewStore.reconcileProjects(status.projects, connectionID: id)
+            }
             try await reload()
             try await restoreDownloads()
-            for descriptor in status.projects {
+            for descriptor in status.projects where reviewStore.acceptsProject(connectionID: id, projectID: descriptor.id) {
+                let downloadID = Self.downloadID(connectionID: id, projectID: descriptor.id)
+                let previousProject = downloads.projects.first(where: { $0.id == downloadID })
+                let previousPaths = Set(previousProject?.catalogue.files.map(\.path) ?? [])
                 let catalogue = try await library.catalogue(connectionID: id, projectID: descriptor.id)
-                try await downloads.update(id: Self.downloadID(connectionID: id, projectID: descriptor.id),
-                    descriptor: descriptor, catalogue: catalogue)
+                try await downloads.update(id: downloadID, descriptor: descriptor, catalogue: catalogue)
+                let currentPaths = Set(catalogue.files.map(\.path))
+                if previousProject != nil {
+                    reviewStore.recordNewFiles(Array(currentPaths.subtracting(previousPaths)).sorted(),
+                        connectionID: id, projectID: descriptor.id)
+                }
+                reviewStore.reconcileFiles(currentPaths, connectionID: id, projectID: descriptor.id)
             }
         } catch { self.error = error.localizedDescription; try? await reload(); try? await restoreDownloads() }
         for project in downloads.projects { await downloads.downloadRetained(id: project.id) }
+    }
+
+    func refreshAllConnections() async {
+        guard !InstanceRuntime.isAdditional else { return }
+        await helper.refresh()
+        guard helper.online else { return }
+        for connection in connections where !connection.revoked {
+            await refresh(connection.id)
+        }
+    }
+
+    func addRemoteProject(connectionID: UUID, projectID: UUID) async {
+        guard !InstanceRuntime.isAdditional, !busy,
+              !reviewStore.ignoredProject(connectionID: connectionID, projectID: projectID),
+              available[connectionID]?.contains(where: { $0.id == projectID }) == true else { return }
+        busy = true; defer { busy = false }
+        error = nil
+        do {
+            try authorizeStorage()
+            let allowed = Set(connections.filter { !$0.revoked }.flatMap { connection in
+                connection.grants.keys.compactMap { candidate in
+                    reviewStore.acceptsProject(connectionID: connection.id, projectID: candidate)
+                        || (connection.id == connectionID && candidate == projectID)
+                        ? Self.downloadID(connectionID: connection.id, projectID: candidate) : nil
+                }
+            })
+            try await downloads.restore(allowedIDs: allowed)
+            let catalogue = try await library.catalogue(connectionID: connectionID, projectID: projectID)
+            guard let shared = available[connectionID]?.first(where: { $0.id == projectID }) else { throw SyncError.revoked }
+            guard !reviewStore.ignoredProject(connectionID: connectionID, projectID: projectID) else {
+                throw SyncError.revoked
+            }
+            try await downloads.update(id: Self.downloadID(connectionID: connectionID, projectID: projectID),
+                                       descriptor: shared, catalogue: catalogue)
+            guard !reviewStore.ignoredProject(connectionID: connectionID, projectID: projectID) else {
+                try await downloads.remove(id: Self.downloadID(connectionID: connectionID, projectID: projectID))
+                return
+            }
+            reviewStore.acceptProject(connectionID: connectionID, projectID: projectID)
+        } catch {
+            self.error = error.localizedDescription
+            try? await restoreDownloads()
+        }
+    }
+
+    func ignoreRemoteProject(connectionID: UUID, projectID: UUID) {
+        guard Self.canIgnoreRemoteProject(isAdditional: InstanceRuntime.isAdditional,
+                                          busy: busy,
+                                          projectIsAvailable: available[connectionID]?.contains(where: { $0.id == projectID }) == true)
+        else { return }
+        guard let descriptor = available[connectionID]?.first(where: { $0.id == projectID }) else { return }
+        reviewStore.ignoreProject(connectionID: connectionID, descriptor: descriptor)
+    }
+
+    static func canIgnoreRemoteProject(isAdditional: Bool, busy: Bool, projectIsAvailable: Bool) -> Bool {
+        !isAdditional && !busy && projectIsAvailable
+    }
+
+    func setConnectionName(_ name: String, connectionID: UUID) {
+        guard !InstanceRuntime.isAdditional else { return }
+        reviewStore.setHostName(name, for: connectionID)
+    }
+
+    func dismissNewFile(connectionID: UUID, projectID: UUID, path: String) {
+        guard !InstanceRuntime.isAdditional else { return }
+        reviewStore.dismissNewFile(path, connectionID: connectionID, projectID: projectID)
+    }
+
+    func keepNewFileOffline(connectionID: UUID, projectID: UUID, path: String) async {
+        guard !InstanceRuntime.isAdditional else { return }
+        let downloadID = Self.downloadID(connectionID: connectionID, projectID: projectID)
+        downloads.error = nil
+        await downloads.retain(id: downloadID, path: path, isFolder: false, keep: true)
+        if let failure = downloads.error { error = failure }
+        else { reviewStore.dismissNewFile(path, connectionID: connectionID, projectID: projectID) }
     }
 
     func importProject(connectionID: UUID, projectID: UUID) async {

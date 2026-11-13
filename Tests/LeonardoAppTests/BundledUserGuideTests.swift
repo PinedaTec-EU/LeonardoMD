@@ -10,7 +10,7 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let oldCopies = (2..<62).flatMap { revision in
+        let oldCopies = (2..<66).flatMap { revision in
             AppLanguage.allCases.map { language in
                 root.appendingPathComponent("User Guides/v\(revision)/\(language.rawValue)/Guide-v\(revision)-\(language.rawValue).mdlz")
             }
@@ -26,7 +26,7 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v62/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v66/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
             let legacyImport = root.appendingPathComponent("Agent Import Guides/v2/\(language.rawValue)/AgentImport-v2-\(language.rawValue).mdlz")
             try FileManager.default.createDirectory(at: legacyImport.deletingLastPathComponent(), withIntermediateDirectories: true)

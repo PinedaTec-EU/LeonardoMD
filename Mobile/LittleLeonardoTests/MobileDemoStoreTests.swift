@@ -355,3 +355,53 @@ private extension DynamicTypeSize {
         }
     }
 }
+
+final class MobileDirectConnectionStoreTests: XCTestCase {
+    func testSharedFileStatusPrioritizesLiveTransferAndDownloadFailure() {
+        XCTAssertEqual(MobileSharedFileStatus.resolve(isDownloading: true, hasFailed: true,
+            isAvailableOffline: false, isRetained: true, isDownloaded: false), .downloading)
+        XCTAssertEqual(MobileSharedFileStatus.resolve(isDownloading: false, hasFailed: true,
+            isAvailableOffline: false, isRetained: true, isDownloaded: false), .failed)
+        XCTAssertEqual(MobileSharedFileStatus.resolve(isDownloading: false, hasFailed: false,
+            isAvailableOffline: true, isRetained: true, isDownloaded: true), .availableOffline)
+        XCTAssertEqual(MobileSharedFileStatus.resolve(isDownloading: false, hasFailed: false,
+            isAvailableOffline: false, isRetained: true, isDownloaded: false), .offlinePending)
+    }
+
+    func testIgnoredProjectStaysDismissedUntilItsGrantChanges() throws {
+        let projectID = UUID()
+        let scope = try CorpusScope(folder: "")
+        let selection = try CorpusSelection(folders: [], documents: ["docs/one.md"])
+        let original = SharedProjectDescriptor(id: projectID, name: "Notes", scope: scope, selection: selection)
+        let renamed = SharedProjectDescriptor(id: projectID, name: "Renamed notes", scope: scope, selection: selection)
+        let changedGrant = SharedProjectDescriptor(id: projectID, name: "Renamed notes",
+            scope: scope, selection: try CorpusSelection(folders: [], documents: ["docs/two.md"]))
+        var connection = MobileDirectConnection(deviceID: UUID(), endpoint: URL(string: "https://mac.local")!,
+            fingerprint: Data(repeating: 1, count: 32), projectIDs: [projectID], comparisonCode: nil,
+            capabilities: [])
+        connection.projectDescriptors = [original]
+        connection.ignoredProjectIDs.insert(projectID)
+
+        connection.reconcileIgnoredProjectGrants(with: [renamed])
+        XCTAssertTrue(connection.ignoredProjectIDs.contains(projectID), "A label change does not change access")
+
+        connection.projectDescriptors = [renamed]
+        connection.reconcileIgnoredProjectGrants(with: [changedGrant])
+        XCTAssertFalse(connection.ignoredProjectIDs.contains(projectID),
+                       "A changed host selection must return the project to review")
+    }
+
+    func testIgnoredProjectIsClearedWhenHostRemovesItsGrant() throws {
+        let projectID = UUID()
+        let descriptor = SharedProjectDescriptor(id: projectID, name: "Notes", scope: try CorpusScope(folder: ""))
+        var connection = MobileDirectConnection(deviceID: UUID(), endpoint: URL(string: "https://mac.local")!,
+            fingerprint: Data(repeating: 1, count: 32), projectIDs: [projectID], comparisonCode: nil,
+            capabilities: [])
+        connection.projectDescriptors = [descriptor]
+        connection.ignoredProjectIDs.insert(projectID)
+
+        connection.reconcileIgnoredProjectGrants(with: [])
+
+        XCTAssertFalse(connection.ignoredProjectIDs.contains(projectID))
+    }
+}
