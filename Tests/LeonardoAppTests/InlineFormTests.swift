@@ -9,6 +9,70 @@ import LeonardoCore
 
 @MainActor
 final class InlineFormTests: XCTestCase {
+    func testCloseFlushesPendingFormAnswersBeforeSaving() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().appendingPathComponent("doc/format/examples/form-showcase/service-request.mdlr")
+        let source = directory.appendingPathComponent("request.mdlr")
+        try FileManager.default.copyItem(at: fixture, to: source)
+
+        let tabs = DocumentTabs(preferencesURL: directory.appendingPathComponent("preferences.json"))
+        let tabID = try XCTUnwrap(tabs.activeID)
+        let session = tabs.activeSession
+        session.authorizePath = { _, _ in }
+        await session.openDocument(source)
+        await session.setDocumentMode(.fill)
+
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1200, height: 800),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.makeKeyAndOrderFront(nil)
+        tabs.presentationWindow = window
+        let host = NSHostingView(rootView: DocumentTabsView(documents: tabs))
+        window.contentView = host
+        defer {
+            if let sheet = window.attachedSheet { window.endSheet(sheet, returnCode: .alertFirstButtonReturn) }
+            tabs.stop()
+            window.close()
+        }
+
+        let web = try await webView(in: host)
+        try await waitFor("document.querySelector('[data-field-input=\"name\"]') !== null", in: web)
+        XCTAssertTrue(session.renderConfiguration.allowsFormFilling)
+        _ = try await web.evaluateJavaScript("""
+        (() => {
+          const input = document.querySelector('[data-field-input="name"]');
+          input.value = 'Close snapshot answer';
+          input.dispatchEvent(new InputEvent('input', {bubbles: true, isComposing: true}));
+        })()
+        """)
+        XCTAssertFalse(session.isDirty, "The test value must remain DOM-only before close flushes it")
+
+        var askedToSave = false
+        session.unsavedChangesDecision = { _ in
+            askedToSave = true
+            XCTAssertTrue(session.isClosing)
+            XCTAssertFalse(session.canFillLeonardoForm)
+            XCTAssertTrue(session.renderConfiguration.allowsFormFilling,
+                          "The form renderer must stay available for the authorized close snapshot")
+            return .save
+        }
+        let closeTask = Task { @MainActor in await tabs.close(tabID) }
+        for _ in 0..<500 where !askedToSave && window.attachedSheet == nil {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let recoveryAlertAppeared = window.attachedSheet != nil
+        if let sheet = window.attachedSheet { window.endSheet(sheet, returnCode: .alertFirstButtonReturn) }
+        await closeTask.value
+
+        XCTAssertFalse(recoveryAlertAppeared, "A valid form snapshot must not show the Preview recovery warning")
+        XCTAssertTrue(askedToSave, "Closing must route the synchronized form answer through the ordinary save decision")
+        let saved = try LeonardoFormatParser.parse(String(contentsOf: source, encoding: .utf8))
+        XCTAssertEqual(saved.metadata.values["name"], .string("Close snapshot answer"))
+    }
+
     func testMarkdownExportFlushesPendingInlineAnswersWithoutSavingOriginal() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

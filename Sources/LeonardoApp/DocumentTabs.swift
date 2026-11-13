@@ -144,7 +144,10 @@ final class DocumentTabs {
         defer { closing = false }
         let session = tabs[index].session
         session.isClosing = true
-        defer { if !session.stopped { session.isClosing = false } }
+        defer {
+            session.isClosePreviewSyncPending = false
+            if !session.stopped { session.isClosing = false }
+        }
         guard await session.waitForCloseOperations() else { return }
         let previewResolution = await session.resolvePreviewEditsBeforeClose()
         guard previewResolution != .keepOpen else { return }
@@ -209,7 +212,10 @@ final class DocumentTabs {
     }
 
     private func releaseClosePreparation() {
-        tabs.forEach { $0.session.isClosing = false }
+        tabs.forEach {
+            $0.session.isClosePreviewSyncPending = false
+            $0.session.isClosing = false
+        }
         preparedForClose = false
         closing = false
     }

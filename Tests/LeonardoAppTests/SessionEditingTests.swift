@@ -19,6 +19,32 @@ final class SessionEditingTests: XCTestCase {
         return (root, session)
     }
 
+    private func installEditablePreview(_ session: AppSession, in window: NSWindow) async throws -> (MarkdownPreviewHost, WKWebView) {
+        let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 900, height: 650))
+        window.contentView = host
+        session.renderer.onEdit = { [weak session] expected, replacement in
+            guard let session else { return false }
+            return session.editPreviewDocument(expected: expected, replacement: replacement)
+        }
+        session.renderer.onFormEdit = { [weak session] expected, changes in
+            guard let session else { return nil }
+            return session.updatePreviewLeonardoFields(expected: expected, changes: changes)
+        }
+        session.renderer.onTableResize = { [weak session] expected, resize in
+            guard let session else { return false }
+            return await session.resizePreviewTable(expected: expected, resize: resize)
+        }
+        session.renderer.attach(host)
+
+        let ready = expectation(description: "Editable Preview ready")
+        host.onReady = { if $0 { ready.fulfill() } }
+        host.apply(content: session.content, baseURL: nil, configuration: session.renderConfiguration,
+                   onLinkActivation: nil, onScrollProgress: nil)
+        await fulfillment(of: [ready], timeout: 10)
+        let webView = try XCTUnwrap(host.subviews.compactMap { $0 as? WKWebView }.first)
+        return (host, webView)
+    }
+
     func testProtectionDefaultsAndRelockingRetainManualDraft() async throws {
         let (root, session) = try await fixture()
         defer { session.stop(); try? FileManager.default.removeItem(at: root) }
@@ -101,27 +127,14 @@ final class SessionEditingTests: XCTestCase {
         let session = tabs.activeSession
         await session.open(file)
         await session.toggleProtection()
+        XCTAssertTrue(session.editDocument(expected: "# Original", replacement: "# Native draft"))
 
-        let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 900, height: 650))
-        owner.contentView = host
-        session.renderer.onEdit = { expected, replacement in
-            session.editDocument(expected: expected, replacement: replacement)
-        }
-        session.renderer.attach(host)
+        let (host, webView) = try await installEditablePreview(session, in: owner)
         defer { host.teardown() }
-
-        let ready = expectation(description: "Editable Preview ready")
-        host.onReady = { if $0 { ready.fulfill() } }
-        var configuration = MarkdownPreviewConfiguration.default
-        configuration.allowsEditing = true
-        host.apply(content: session.content, baseURL: nil, configuration: configuration,
-                   onLinkActivation: nil, onScrollProgress: nil)
-        await fulfillment(of: [ready], timeout: 10)
-
-        let webView = try XCTUnwrap(host.subviews.compactMap { $0 as? WKWebView }.first)
         _ = try await webView.evaluateJavaScript("window.LeonardoEditing.currentSource = null")
         let flushSucceeded = await session.renderer.flushEdits()
         XCTAssertFalse(flushSucceeded, "The fixture must reproduce a failed Preview flush")
+        session.unsavedChangesDecision = { _ in .save }
 
         let closed = expectation(description: "Close completes after explicit Preview discard")
         Task {
@@ -138,6 +151,77 @@ final class SessionEditingTests: XCTestCase {
         XCTAssertNil(owner.attachedSheet, "Closing must not repeat the failed Preview synchronization warning")
         XCTAssertEqual(tabs.tabs.count, 1, "The closed tab is replaced with the normal blank tab")
         XCTAssertNil(tabs.activeSession.documentURL)
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "# Native draft",
+                       "Explicit Preview discard must preserve and save independently dirty source content")
+    }
+
+    func testCloseFlushesPendingPreviewSourceBeforeSavingForTabsAndWindows() async throws {
+        for preparesWindowClose in [false, true] {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            let file = root.appendingPathComponent("note.md")
+            try "# Original".write(to: file, atomically: true, encoding: .utf8)
+
+            let tabs = DocumentTabs(preferencesURL: root.appendingPathComponent("settings.json"))
+            let owner = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 650),
+                                 styleMask: [.titled], backing: .buffered, defer: false)
+            owner.isReleasedWhenClosed = false
+            owner.makeKeyAndOrderFront(nil)
+            tabs.presentationWindow = owner
+            defer {
+                if let sheet = owner.attachedSheet { owner.endSheet(sheet, returnCode: .alertFirstButtonReturn) }
+                tabs.cancelPreparedClose()
+                tabs.stop()
+                owner.close()
+                try? FileManager.default.removeItem(at: root)
+            }
+
+            let tabID = try XCTUnwrap(tabs.activeID)
+            let session = tabs.activeSession
+            await session.open(file)
+            await session.toggleProtection()
+            let (host, webView) = try await installEditablePreview(session, in: owner)
+            defer { host.teardown() }
+
+            let pendingSource = "# Original\n\nEdited only in Preview before close."
+            let encodedSource = try JSONEncoder().encode(pendingSource)
+            let sourceLiteral = try XCTUnwrap(String(data: encodedSource, encoding: .utf8))
+            _ = try await webView.evaluateJavaScript(
+                "window.LeonardoEditing.currentSource = () => \(sourceLiteral); true"
+            )
+            XCTAssertEqual(session.content, "# Original", "The test change must remain DOM-only until close flushes it")
+
+            var askedToSave = false
+            session.unsavedChangesDecision = { _ in
+                askedToSave = true
+                XCTAssertTrue(session.isClosing, "The session close lock must remain held after the snapshot")
+                XCTAssertFalse(session.canEditDocument)
+                XCTAssertTrue(session.renderConfiguration.allowsEditing,
+                              "Renderer configuration must remain available for the authorized close snapshot")
+                XCTAssertFalse(session.editDocument(expected: session.content, replacement: "# Late native edit"))
+                XCTAssertFalse(session.editPreviewDocument(expected: session.content, replacement: "# Late Preview edit"),
+                                "The renderer close-snapshot exception must end before the save decision")
+                return .save
+            }
+
+            let closeTask = Task { @MainActor in
+                if preparesWindowClose { return await tabs.prepareClose() }
+                await tabs.close(tabID)
+                return true
+            }
+            for _ in 0..<500 where !askedToSave && owner.attachedSheet == nil {
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            let recoveryAlertAppeared = owner.attachedSheet != nil
+            if let sheet = owner.attachedSheet { owner.endSheet(sheet, returnCode: .alertFirstButtonReturn) }
+            let closeApproved = await closeTask.value
+
+            XCTAssertFalse(recoveryAlertAppeared, "A valid pending Preview source must not show the recovery warning")
+            XCTAssertTrue(askedToSave, "The close flow must offer the synchronized edit to the normal save decision")
+            XCTAssertTrue(closeApproved)
+            XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), pendingSource)
+            if preparesWindowClose { tabs.cancelPreparedClose() }
+        }
     }
 
     func testCapturePreviewSynchronizationWarningsInBothLanguages() async throws {

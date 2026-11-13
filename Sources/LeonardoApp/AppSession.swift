@@ -60,9 +60,11 @@ final class AppSession {
     var syncUpdatingBuffer = false
     var isSyncSuspended: Bool { NativeReconciliationLease.shared.holds(documentURL) || NativeReconciliationLease.shared.holds(projectURL) }
     var isClosing = false
+    var isClosePreviewSyncPending = false
     var isCapturingPreview = false
     var isProtected = true { didSet { if isProtected { clearGraphicSelection() } } }
-    var canEditDocument: Bool { documentURL != nil && !isProtected && !isClosing && !isCapturingPreview && !isSyncSuspended && !busy && !stopped }
+    var canEditDocumentIgnoringClose: Bool { documentURL != nil && !isProtected && !isCapturingPreview && !isSyncSuspended && !busy && !stopped }
+    var canEditDocument: Bool { canEditDocumentIgnoringClose && !isClosing }
     @ObservationIgnored weak var presentationWindow: NSWindow?
     var unsavedChangesDecision: @MainActor (String) async -> UnsavedChangesDecision = { _ in .cancel }
     var confirmDiscardForReload: @MainActor () async -> Bool = { false }

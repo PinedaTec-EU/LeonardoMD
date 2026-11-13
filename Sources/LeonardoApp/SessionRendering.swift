@@ -18,11 +18,11 @@ extension AppSession {
         }
         renderer.onEdit = { [weak self] expected, replacement in
             guard let self, self.documentURL == previewDocumentURL else { return false }
-            return self.editDocument(expected: expected, replacement: replacement)
+            return self.editPreviewDocument(expected: expected, replacement: replacement)
         }
         renderer.onFormEdit = { [weak self] expected, changes in
             guard let self, self.documentURL == previewDocumentURL else { return nil }
-            return self.updateLeonardoFields(expected: expected, changes: changes)
+            return self.updatePreviewLeonardoFields(expected: expected, changes: changes)
         }
         renderer.onObjectAction = { [weak self] expected, object, remove, fieldID in
             guard let self, self.documentURL == previewDocumentURL else { return false }
@@ -88,8 +88,10 @@ extension AppSession {
         // Form filling is a separate interaction channel. A protected MDLR
         // remains writable through its declared fields while source editing
         // stays locked behind the toolbar padlock.
-        configuration.allowsEditing = canEditDocument && mode != .fill
-        configuration.allowsFormFilling = canFillLeonardoForm
+        // Keep renderer-side state available for the close path's final snapshot;
+        // callbacks still enforce the session close lock except during that flush.
+        configuration.allowsEditing = canEditDocumentIgnoringClose && mode != .fill
+        configuration.allowsFormFilling = canFillLeonardoFormIgnoringClose
         configuration.selectedGraphicID = selectedGraphic?.id
         configuration.formLabels = TranslationCatalog.catalogs[LanguageSettings.shared.language] ?? [:]
         return configuration

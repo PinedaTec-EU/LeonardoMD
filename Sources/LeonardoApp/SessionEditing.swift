@@ -66,7 +66,10 @@ extension AppSession {
     }
 
     func resolvePreviewEditsBeforeClose() async -> PreviewCloseResolution {
-        guard !(await renderer.flushEdits()) else { return .readyToClose }
+        isClosePreviewSyncPending = true
+        let synchronized = await renderer.flushEdits()
+        isClosePreviewSyncPending = false
+        guard !synchronized else { return .readyToClose }
 
         let alert = Self.previewEditsCloseWarning()
 
@@ -110,6 +113,15 @@ extension AppSession {
     @discardableResult
     func editDocument(expected: String, replacement: String) -> Bool {
         guard canEditDocument, content == expected else { return false }
+        applyDocumentEdit(replacement, form: false)
+        return true
+    }
+
+    /// The close preparation gate permits the renderer's final snapshot only;
+    /// native editing remains blocked while the session is closing.
+    func editPreviewDocument(expected: String, replacement: String) -> Bool {
+        let canApplyCloseSnapshot = isClosing && isClosePreviewSyncPending && canEditDocumentIgnoringClose
+        guard canEditDocument || canApplyCloseSnapshot, content == expected else { return false }
         applyDocumentEdit(replacement, form: false)
         return true
     }
