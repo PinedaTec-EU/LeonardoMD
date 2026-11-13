@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "pull_request": 369,
+  "capture_source_commit": "cd1492005e5178c5e7e7b87bf3a0e305b7ab2e18",
+  "reviewed_source_at_capture": "cd1492005e5178c5e7e7b87bf3a0e305b7ab2e18",
+  "base_commit": "8711e44aae3babc5beb914bb6b3e69dfe2715e96",
+  "git_tree_inputs_at_capture": {
+    "Sources": "8fd9a19d8d4620984c876934fcf75d32a528525e",
+    "Tests": "410d78229ffce5fd0a94329054cc2f15b5a68099",
+    "Mobile": "78a355679732c1d8786201b4d680c0f616f05a1f",
+    "Package.swift": "d286a11e2f6083f0fa2c1e9cd0f2fa0682093dc3",
+    "Package.resolved": "b67272e588be3d1079b56d556cf662ddfa9a656b",
+    "version.nfo": "8ebaeb0a04053f9c4cd0e842b32fa784caeaf372",
+    "scripts": "cab30ef61e92b23252c2ede1210ef6cc610d69b2",
+    "deploy/version/entries/369.yaml": "8e415a76f09fd768b9070f10472cd3d4043af6b5"
+  },
+  "capture_test": "Tests/LeonardoAppTests/PeerSyncErrorMessageTests.swift::testCaptureProductionAccessDeniedAlert",
+  "capture_command": "EVIDENCE_SHA=cd1492005e5178c5e7e7b87bf3a0e305b7ab2e18 LEONARDO_SYNC_ERROR_EVIDENCE=/tmp/leonardo-sync-error-403-369-cd149200 python3 scripts/compile-and-record.py --pr-number 369 -- swift test --disable-automatic-resolution --filter PeerSyncErrorMessageTests.testCaptureProductionAccessDeniedAlert",
+  "pre_capture_build_delta": 46,
+  "compiler_recorded_build_delta": 47,
+  "capture_runtime": "Production DesktopPeerPreferencesView hosted in an AppKit/SwiftUI window; synthetic unresolved HTTP 403 access denial showing [LL1 op=file http=403]. Vision OCR verified localized recovery, operation, status and button in English and Spanish.",
+  "screen_geometry": {
+    "window_points": {
+      "width": 600,
+      "height": 532
+    },
+    "png_pixels": {
+      "width": 1200,
+      "height": 1064
+    }
+  },
+  "notes": [
+    "The capture command built source cd1492005e5178c5e7e7b87bf3a0e305b7ab2e18 with the PR entry at build delta 46; the successful recorder advanced deploy/version/entries/369.yaml to 47 in ledger-only commit 6611db684b8f25513ffa8fe348cfb9a48ff583db.",
+    "Metadata was generated at the ledger-only commit. No tracked source changes were present; screenshot, context and metadata files were untracked evidence at collection.",
+    "This native desktop component capture is not Little Leonardo simulator, physical-device or TestFlight acceptance."
+  ]
+}

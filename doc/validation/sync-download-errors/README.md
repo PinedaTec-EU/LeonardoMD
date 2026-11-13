@@ -8,17 +8,20 @@ historical. The retained bilingual HTTP 413 screenshots in
 show the separate size-limit alert. The new bilingual HTTP 403 recovery
 screenshots are in
 [http403-access-denied-caf23aeb-20261113](http403-access-denied-caf23aeb-20261113/README.md)
-and show the neutral denial path from source
-`caf23aeb5e4ed4198ddd31eeb057b760b2a00737`. The Guide v76 packaged-app record
-is in `../user-guide/native/guide-v76-20261113.json`; it includes the Spanish
-Math-on equation/tag check and Spanish practice/save round-trip completed in
-the QA instance on 2026-11-13.
+are retained as the earlier status-only state. The latest bilingual HTTP 403
+captures are in
+[http403-access-denied-cd149200-20261113](http403-access-denied-cd149200-20261113/README.md)
+and show the bounded operation/status reference from source
+`cd1492005e5178c5e7e7b87bf3a0e305b7ab2e18`. The Guide v76 packaged-app
+record is in `../user-guide/native/guide-v76-20261113.json`; it includes the
+Spanish Math-on equation/tag check and Spanish practice/save round-trip
+completed in the QA instance on 2026-11-13.
 
 ## Candidate identity
 
-- The captured alert source is `44c1ae4d6ddc17af5dda791eb45b3a0036a78157`; the Guide v76 validation source is `6b83c502bbe5c9b67b7ebf75ee1fb79acab98caf`.
-- The current PR build delta is recorded in `deploy/version/entries/369.yaml`. These source-bound artifacts predate the pending HTTP 403 correction; they are not represented as captures from its final head.
-- The capture manifest binds `Sources`, `Tests`, package manifests, scripts, version and PR entry to the alert source. Verify that historical binding with:
+- The HTTP 413 alert source is `44c1ae4d6ddc17af5dda791eb45b3a0036a78157`; the Guide v76 validation source is `6b83c502bbe5c9b67b7ebf75ee1fb79acab98caf`.
+- The latest HTTP 403 capture source is `cd1492005e5178c5e7e7b87bf3a0e305b7ab2e18`; the compiler-recorded PR build delta is 47.
+- The historical 413 capture manifest binds `Sources`, `Tests`, package manifests, scripts, version and PR entry to its source. Verify that historical binding with:
 
 ```sh
 python3 - <<'PYVERIFY'
@@ -51,28 +54,29 @@ swift test --skip-build --filter PeerSyncErrorMessageTests.testCaptureProduction
 
 ## HTTP 403 recovery captures
 
-The production macOS synchronization preferences showed the localized neutral
-access-denied alert when a synthetic HTTP 403 could not yet be classified as a
-device revocation or a removed project grant. Both captures show the source-Mac
-authorization and refresh recovery guidance and the confirmation button. They
-contain no device, project, credential or document details. The opt-in native
-capture test passed for both languages and its OCR assertions verified the
-localized recovery and button.
+The latest production macOS synchronization-preferences captures show the
+localized neutral recovery plus the bounded reference
+`[LL1 op=file http=403]` when the source denies a file request but fresh STATUS
+does not identify a revocation or grant change. The alert does not guess which
+authorization changed. OCR verified the recovery, operation, HTTP status and
+confirmation button in both languages. They contain no device, project,
+credential or document details. The former status-only captures remain linked
+above as historical evidence.
 
 | Locale | Native window | Capture and metadata | SHA-256 |
 |---|---:|---|---|
-| English | 600 × 532 pt | [image](http403-access-denied-caf23aeb-20261113/access-denied-en.png) · [metadata](http403-access-denied-caf23aeb-20261113/access-denied-en.json) · [context](http403-access-denied-caf23aeb-20261113/access-denied-en.context.json) | `7485d699bb73b893d792383c0c4e47c2443f238d966a0bf539d7d67828f29526` |
-| Spanish | 600 × 532 pt | [image](http403-access-denied-caf23aeb-20261113/access-denied-es.png) · [metadata](http403-access-denied-caf23aeb-20261113/access-denied-es.json) · [context](http403-access-denied-caf23aeb-20261113/access-denied-es.context.json) | `036377a6e81866edafa4a7a367041ab79cd2646583a455b7c2bee0f75d5a91ae` |
+| English | 600 × 532 pt | [image](http403-access-denied-cd149200-20261113/access-denied-en.png) · [metadata](http403-access-denied-cd149200-20261113/access-denied-en.json) · [context](http403-access-denied-cd149200-20261113/access-denied-en.context.json) | `26d81115b4484a41184905f710b880a7ce05f745c71810d6b90d7dc5b26973a7` |
+| Spanish | 600 × 532 pt | [image](http403-access-denied-cd149200-20261113/access-denied-es.png) · [metadata](http403-access-denied-cd149200-20261113/access-denied-es.json) · [context](http403-access-denied-cd149200-20261113/access-denied-es.context.json) | `596dca8614aecb14452dd6143df668b2bdca6d015447ec4ddfcb039941735d99` |
 
 The 1200 × 1064 px captures were rendered by
 `PeerSyncErrorMessageTests.testCaptureProductionAccessDeniedAlert` in the
 production `DesktopPeerPreferencesView` using source commit
-`caf23aeb5e4ed4198ddd31eeb057b760b2a00737`. See
-[build-inputs.json](http403-access-denied-caf23aeb-20261113/build-inputs.json)
-for tree bindings and the compiler-recorded build delta `44`. The PR head may
-advance for validation records; verify the source tree binding before treating
-these as current-head evidence. These are desktop captures, not Little Leonardo
-simulator or TestFlight acceptance.
+`cd1492005e5178c5e7e7b87bf3a0e305b7ab2e18`. See
+[build-inputs.json](http403-access-denied-cd149200-20261113/build-inputs.json)
+for tree bindings and the compiler-recorded build delta `47`. The artifact
+commit is evidence-only; the manifest maps it back to the exact capture source.
+These are desktop captures, not Little Leonardo simulator or TestFlight
+acceptance.
 
 ## Packaged Help acceptance
 
@@ -82,7 +86,7 @@ The final Spanish checks ran on 2026-11-13 in QA bundle `eu.pinedatec.LeonardoMD
 
 ## Scope and automated coverage
 
-The snapshot route preserves structured HTTP 413 limit responses and sanitized source-read diagnostics. Catalogue and file routes keep empty HTTP 413 responses. When a project request returns HTTP 403, the client refreshes authenticated status: confirmed device revocation triggers local cleanup, a withdrawn project grant remains project-scoped, and an unknown cause stays a neutral access denial. Swift regressions cover those races, malformed/older response bodies, partial-read behavior, scope filtering, privacy and localized user guidance. Deterministic package tests cover both guides.
+The snapshot route preserves structured HTTP 413 limit responses and sanitized source-read diagnostics. Catalogue and file routes keep empty HTTP 413 responses. When a project request returns HTTP 403, mobile and desktop clients refresh authenticated status: confirmed device revocation triggers local cleanup, a withdrawn project grant remains project-scoped, a removed file selection stays outside scope, and an unknown cause preserves its operation/status without claiming revocation. Mobile access denials never return retained stale bytes as a successful open; confirmed desktop device revocation immediately hides every reader cache for that connection. Swift regressions cover those races, malformed/older response bodies, partial-read behavior, scope filtering, privacy and localized user guidance. Deterministic package tests cover both guides.
 
 This PR keeps the whole-snapshot transfer limit. It does not claim to identify the original HTTP 500 cause or to fix the physical large-image synchronization tracked by #380. It also does not claim Little Leonardo simulator or TestFlight acceptance; issue #368 remains open for the owner's original import failure.
 
