@@ -46,6 +46,7 @@
 		D38110000000000000000004 /* MobileDemoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000004 /* MobileDemoUITests.swift */; };
 		D38510000000000000000001 /* OnDemandSyncUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38500000000000000000001 /* OnDemandSyncUITests.swift */; };
 		D39710000000000000000001 /* MobileReaderSpacingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39700000000000000000001 /* MobileReaderSpacingTests.swift */; };
+		F435C0DE0000000000000002 /* MobileDiagnosticLogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F435C0DE0000000000000001 /* MobileDiagnosticLogTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -102,6 +103,7 @@
 		D38100000000000000000004 /* MobileDemoUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDemoUITests.swift; sourceTree = "<group>"; };
 		D38500000000000000000001 /* OnDemandSyncUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnDemandSyncUITests.swift; sourceTree = "<group>"; };
 		D39700000000000000000001 /* MobileReaderSpacingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileReaderSpacingTests.swift; sourceTree = "<group>"; };
+		F435C0DE0000000000000001 /* MobileDiagnosticLogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDiagnosticLogTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -171,6 +173,7 @@
 				C4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift */,
 				D38100000000000000000003 /* MobileDemoStoreTests.swift */,
 				D39700000000000000000001 /* MobileReaderSpacingTests.swift */,
+				F435C0DE0000000000000001 /* MobileDiagnosticLogTests.swift */,
 			);
 			name = LittleLeonardoTests;
 			path = LittleLeonardoTests;
@@ -400,6 +403,7 @@
 				B4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift in Sources */,
 				D38110000000000000000003 /* MobileDemoStoreTests.swift in Sources */,
 				D39710000000000000000001 /* MobileReaderSpacingTests.swift in Sources */,
+				F435C0DE0000000000000002 /* MobileDiagnosticLogTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

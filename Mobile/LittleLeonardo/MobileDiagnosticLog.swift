@@ -27,32 +27,35 @@ struct MobileErrorNotice {
     static func record(
         _ error: Error,
         operation: MobileDiagnosticOperation,
-        message: String = "Inténtalo de nuevo. Si vuelve a ocurrir, indica este código."
+        message: String = "Inténtalo de nuevo. Si vuelve a ocurrir, indica este código.",
+        diagnosticLog: MobileDiagnosticLog? = nil
     ) -> MobileErrorNotice {
-        record([error], operation: operation, message: message)
+        record([error], operation: operation, message: message, diagnosticLog: diagnosticLog)
     }
 
     static func record(
         _ errors: [Error],
         operation: MobileDiagnosticOperation,
         message: String = "Inténtalo de nuevo. Si vuelve a ocurrir, indica este código.",
-        fallbackCategory: String? = nil
+        fallbackCategory: String? = nil,
+        diagnosticLog: MobileDiagnosticLog? = nil
     ) -> MobileErrorNotice {
         let notice = MobileErrorNotice(referenceCode: makeReferenceCode(), message: message)
+        let log = diagnosticLog ?? .shared
         if errors.isEmpty {
-            MobileDiagnosticLog.shared.record(
+            log.record(
                 referenceCode: notice.referenceCode,
                 operation: operation,
                 category: fallbackCategory ?? "unspecified")
         } else {
             for error in errors {
-                MobileDiagnosticLog.shared.record(
+                log.record(
                     referenceCode: notice.referenceCode,
                     operation: operation,
                     error: error)
             }
             if let fallbackCategory {
-                MobileDiagnosticLog.shared.record(
+                log.record(
                     referenceCode: notice.referenceCode,
                     operation: operation,
                     category: fallbackCategory)
@@ -64,9 +67,15 @@ struct MobileErrorNotice {
     static func record(
         operation: MobileDiagnosticOperation,
         message: String,
-        category: String
+        category: String,
+        diagnosticLog: MobileDiagnosticLog? = nil
     ) -> MobileErrorNotice {
-        record([], operation: operation, message: message, fallbackCategory: category)
+        record(
+            [],
+            operation: operation,
+            message: message,
+            fallbackCategory: category,
+            diagnosticLog: diagnosticLog)
     }
 
     private static func makeReferenceCode() -> String {
@@ -81,6 +90,11 @@ final class MobileDiagnosticLog {
     private static let maximumEntries = 120
     private static let maximumFileBytes = 64 * 1_024
     private let fileManager = FileManager.default
+    private let fileURLOverride: URL?
+
+    init(fileURL: URL? = nil) {
+        fileURLOverride = fileURL
+    }
 
     func recentEntries() -> [String] {
         guard let url = logFileURL,
@@ -123,7 +137,8 @@ final class MobileDiagnosticLog {
     }
 
     private var logFileURL: URL? {
-        fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+        if let fileURLOverride { return fileURLOverride }
+        return fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
             .appendingPathComponent("LittleLeonardo", isDirectory: true)
             .appendingPathComponent("error-log.txt", isDirectory: false)
     }
