@@ -117,6 +117,10 @@ final class MobileLibrary {
             let previousProjects = protected[index].projectIDs
             protected[index].capabilities = []
             protected[index].projectIDs = []
+            protected[index].acceptedProjectIDs = []
+            protected[index].ignoredProjectIDs = []
+            protected[index].projectDescriptors = []
+            protected[index].newFilePaths = [:]
             protected[index].comparisonCode = nil
             protected[index].revoked = true
             protected[index].pendingPurgeProjectIDs.formUnion(previousProjects)
@@ -231,7 +235,8 @@ final class MobileLibrary {
             }
             try await downloads.restore(allowedIDs: Set(projects.filter { project in
                 !project.isRecoveryArchive && protectedConnections.contains {
-                    !$0.revoked && !visibleQuarantine.contains($0.connectionID) && $0.projectIDs.contains(project.id)
+                    !$0.revoked && !visibleQuarantine.contains($0.connectionID)
+                        && $0.projectIDs.contains(project.id) && $0.acceptedProjectIDs.contains(project.id)
                 }
             }.map(\.id)))
             let recoveredSnapshotChanged = storedConnections.count != protectedConnections.count
@@ -315,6 +320,10 @@ final class MobileLibrary {
         var revoked = previous
         revoked.capabilities = []
         revoked.projectIDs = []
+        revoked.acceptedProjectIDs = []
+        revoked.ignoredProjectIDs = []
+        revoked.projectDescriptors = []
+        revoked.newFilePaths = [:]
         revoked.comparisonCode = nil
         revoked.revoked = true
         revoked.pendingPurgeProjectIDs.formUnion(previous.projectIDs)

@@ -2,6 +2,11 @@ import SwiftUI
 
 struct SyncHelperPreferencesSection: View {
     @Bindable var controller: SyncHelperController
+    static func statusSubtitle(isRunning: Bool, diagnostic: String?) -> String {
+        guard !isRunning, let diagnostic else { return " " }
+        return diagnostic
+    }
+
     private var showsStatusIndicator: Bool {
         let state = controller.displayedState
         return controller.hasPresentedStatus && (state == .running || state == .notInstalled || state == .failed)
@@ -29,8 +34,10 @@ struct SyncHelperPreferencesSection: View {
                     }
                 }
                     .disabled(controller.busy && (!controller.upgrading || !controller.enabled))
-                Text(showsDiagnostic ? controller.statusText : " ")
+                Text(Self.statusSubtitle(isRunning: controller.displayedState == .running,
+                                         diagnostic: showsDiagnostic ? controller.statusText : nil))
                     .lineLimit(1).foregroundStyle(.secondary)
+                    .frame(height: 18, alignment: .leading)
                 Text(L10n.text("Required to share and connect. When off, both directions are offline even with LeonardoMD open. Starts after login and keeps sharing saved files when you close the editor."))
                     .font(.caption).foregroundStyle(.secondary)
                 Button(L10n.text("Open Login Items settings")) { controller.openApprovalSettings() }

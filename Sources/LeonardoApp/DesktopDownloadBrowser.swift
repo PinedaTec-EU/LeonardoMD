@@ -8,6 +8,15 @@ struct DesktopDownloadBrowser: View {
     @State private var selected: RemoteFileEntry?
     @Environment(\.dismiss) private var dismiss
     private var spanish: Bool { LanguageSettings.shared.language == .spanish }
+
+    init(library: DownloadLibrary, projectID: UUID, initialPath: String? = nil) {
+        self.library = library
+        self.projectID = projectID
+        _selected = State(initialValue: initialPath.flatMap { path in
+            library.projects.first(where: { $0.id == projectID })?.catalogue.files.first(where: { $0.path == path })
+        })
+    }
+
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 0) {

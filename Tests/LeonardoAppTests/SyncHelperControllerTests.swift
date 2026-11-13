@@ -13,6 +13,12 @@ import LeonardoSyncTransport
 final class SyncHelperControllerTests: XCTestCase {
     private let replacement = SyncHelperBuildIdentity(build: 200, bundlePath: "/Applications/LeonardoMD.app")
 
+    func testStatusSubtitleHidesHealthyLineAndKeepsOnlyConfirmedDiagnostic() {
+        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: true, diagnostic: "Offline"), " ")
+        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: false, diagnostic: nil), " ")
+        XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: false, diagnostic: "Offline"), "Offline")
+    }
+
     private func upgrading(_ fixture: ControllerFixture, _ registration: HelperRegistrationFake,
                            _ control: HelperControlFake) -> SyncHelperController {
         SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,

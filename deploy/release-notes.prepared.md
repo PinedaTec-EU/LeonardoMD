@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1371
+
+- #429 Added: review remote projects and files by host ([#430](https://github.com/PinedaTec-EU/LeonardoMD/pull/430))
+
+<p>Little Leonardo groups remote projects by linked Mac, lets users review new projects and files and manage offline copies; macOS restores accepted catalogues after offline restart, ignored grants return only when the host changes them, and sync status stays stable.</p>
+
+Source: `cd662ca817e698fe37058eae9ab6b002bc0c4c36`. Delta: `{"build": 32}`.
+
 ## 0.3.1339
 
 - #434 Added: in-editor search and premium controls ([#40](https://github.com/PinedaTec-EU/LeonardoMD/pull/40))

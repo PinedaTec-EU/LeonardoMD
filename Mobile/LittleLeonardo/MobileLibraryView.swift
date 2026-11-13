@@ -41,6 +41,12 @@ private struct OptionalAccessibilityIdentifier: ViewModifier {
     }
 }
 
+private struct MobileRemoteFileRoute: Hashable, Identifiable {
+    let projectID: UUID
+    let entry: RemoteFileEntry
+    var id: String { projectID.uuidString + ":" + entry.path }
+}
+
 struct MobileProjectIdentityLabel: View {
     let name: String
     let identity: ProjectIdentity
@@ -99,6 +105,7 @@ struct MobileLibraryView: View {
     @State private var manualPairing = false
     @State private var host = ""
     @State private var port = "40882"
+    @State private var selectedRemoteFile: MobileRemoteFileRoute?
     @State private var presentedRubricRequest: RubricRequest?
     @AppStorage("directSyncIntervalMinutes") private var syncInterval = 1
     @Environment(\.scenePhase) private var scenePhase
@@ -108,41 +115,25 @@ struct MobileLibraryView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Proyectos / Projects") {
-                    ForEach(library.libraryProjects) { project in
-                        NavigationLink {
-                            switch project {
-                            case .demo: MobileDemoProjectView()
-                            case .downloaded(let cached):
-                                MobileProjectView(library: library, projectID: cached.id)
-                            }
-                        } label: {
-                            VStack(alignment: .leading, spacing: 5) {
-                                MobileProjectIdentityLabel(name: project.name,
-                                                           identity: project.projectIdentity,
-                                                           accessibilityIdentifier: nil)
-                                if project.projectIdentity == .recoveryArchive {
-                                    Text("Archivo de recuperación · Solo lectura")
-                                        .font(.caption).foregroundStyle(MobileClassic.secondary)
-                                } else if project.projectIdentity == .received {
-                                    Text("Consulta desde LeonardoMD · Solo lectura")
-                                        .font(.caption).foregroundStyle(MobileClassic.secondary)
-                                }
-                            }
-                        }
-                        // Keep the stable navigation contract on the outer link;
-                        // the descriptive identity label is intentionally a child.
-                        .accessibilityElement(children: .combine)
-                        .accessibilityIdentifier(project.id == "bundled-demo" ? "open-demo-project" : "open-project-\(project.id)")
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button("Eliminar / Delete", role: .destructive) {
-                                Task { await library.deleteLibraryProject(project) }
-                            }
-                            .disabled(library.connecting)
-                            .accessibilityIdentifier(project.id == "bundled-demo" ? "delete-demo-project" : "delete-project-\(project.id)")
-                        }
+                Section("Mac conectados") {
+                    let activeConnections = library.connections.filter { !$0.revoked }
+                    if activeConnections.isEmpty {
+                        Text("Los proyectos compartidos aparecerán aquí al conectar un Mac.")
+                            .font(.subheadline).foregroundStyle(MobileClassic.secondary)
                     }
-                    if library.libraryProjects.isEmpty {
+                    ForEach(activeConnections) { connection in
+                        MobileSharedHostDisclosureRow(library: library, connection: connection,
+                            descriptors: sharedProjectDescriptors(for: connection)) { descriptor, entry in
+                                selectedRemoteFile = MobileRemoteFileRoute(projectID: descriptor.id, entry: entry)
+                            }
+                    }
+                }
+
+                Section("En este dispositivo") {
+                    ForEach(localLibraryProjects) { project in
+                        MobileLocalLibraryProjectRow(library: library, project: project)
+                    }
+                    if localLibraryProjects.isEmpty && library.connections.allSatisfy(\.revoked) {
                         VStack(spacing: 16) {
                             MobileBrand(size: 64)
                             Text("Tus documentos, contigo").font(.title2.bold()).foregroundStyle(MobileClassic.heading)
@@ -158,55 +149,14 @@ struct MobileLibraryView: View {
             .classicSurface()
             .navigationTitle("Biblioteca")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(item: $selectedRemoteFile) { route in
+                RemoteDocumentPreview(library: library.downloads, projectID: route.projectID,
+                    entry: route.entry, spanish: true, appearance: .leonardoClassic,
+                    compactFirstHeading: true).classicSurface()
+            }
             .refreshable { await library.synchronize(); await library.reload() }
-            .toolbar {
-                Button("Conectar", systemImage: "qrcode") { presentedSheet = .direct }
-                    .disabled(library.connecting)
-                    .accessibilityIdentifier("open-pairing")
-                Button("Ajustes de sincronización", systemImage: "gearshape") { presentedSheet = .settings }
-                    .accessibilityIdentifier("open-sync-settings")
-                Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
-                    Task { await library.synchronize() }
-                }.disabled(library.connecting)
-                if let request = library.pendingRubricRequests.first {
-                    Button("Solicitud de rúbrica", systemImage: "signature") {
-                        presentedRubricRequest = request
-                    }.accessibilityIdentifier("open-rubric-request")
-                } else if let draft = activeRubricDraft {
-                    Button("Borrador de rúbrica", systemImage: "signature") {
-                        presentedRubricRequest = draft.request
-                    }.accessibilityIdentifier("open-rubric-draft")
-                }
-            }
-            .safeAreaInset(edge: .bottom) {
-                if let request = library.pendingRubricRequests.first {
-                    Button {
-                        presentedRubricRequest = request
-                    } label: {
-                        Label("Solicitud de rúbrica de \(request.requesterName)", systemImage: "signature")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper)
-                    .padding(.horizontal)
-                    .accessibilityIdentifier("rubric-request-banner")
-                } else if let draft = activeRubricDraft {
-                    Button {
-                        presentedRubricRequest = draft.request
-                    } label: {
-                        Label("Recuperar rúbrica de \(draft.request.requesterName)", systemImage: "arrow.clockwise")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper)
-                    .padding(.horizontal)
-                    .accessibilityIdentifier("rubric-draft-banner")
-                } else if let code = library.comparisonCode {
-                    VStack {
-                        Text("Código de conexión: \(code)").font(.headline.monospacedDigit())
-                        Text("Comprueba que coincide en LeonardoMD, autoriza los proyectos y pulsa Sincronizar.")
-                            .font(.caption)
-                    }.padding().background(MobileClassic.inset)
-                }
-            }
+            .toolbar { libraryToolbar }
+            .safeAreaInset(edge: .bottom) { bottomAccessory }
             .sheet(item: $presentedSheet) { destination in
                 switch destination {
                 case .direct: directConnectionSheet
@@ -302,6 +252,28 @@ struct MobileLibraryView: View {
         }
     }
 
+    private var localLibraryProjects: [MobileLibraryProject] {
+        library.libraryProjects.filter { project in
+            switch project {
+            case .demo: true
+            case .downloaded(let value): value.isRecoveryArchive
+            }
+        }
+    }
+
+    private func sharedProjectDescriptors(for connection: MobileDirectConnection) -> [SharedProjectDescriptor] {
+        var descriptors = connection.projectDescriptors.filter {
+            connection.projectIDs.contains($0.id) && !library.projectLifecycle.isDeleted($0.id)
+        }
+        let known = Set(descriptors.map(\.id))
+        for project in library.projects where connection.projectIDs.contains(project.id)
+            && connection.acceptedProjectIDs.contains(project.id)
+            && !library.projectLifecycle.isDeleted(project.id) && !known.contains(project.id) {
+            descriptors.append(SharedProjectDescriptor(id: project.id, name: project.name, scope: project.scope))
+        }
+        return descriptors.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
     private var syncFrequency: some View {
         Group {
             Picker("Sincronización automática", selection: $syncInterval) {
@@ -309,6 +281,58 @@ struct MobileLibraryView: View {
                 ForEach([1, 5, 15, 30, 60], id: \.self) { Text("Cada \($0) min").tag($0) }
             }
             Text("La sincronización automática funciona mientras la app está activa.").font(.caption)
+        }
+    }
+
+    @ToolbarContentBuilder private var libraryToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .topBarTrailing) {
+            Button("Conectar", systemImage: "qrcode") { presentedSheet = .direct }
+                .disabled(library.connecting)
+                .accessibilityIdentifier("open-pairing")
+            Button("Ajustes de sincronización", systemImage: "gearshape") { presentedSheet = .settings }
+                .accessibilityIdentifier("open-sync-settings")
+            Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
+                Task { await library.synchronize() }
+            }.disabled(library.connecting)
+            if let request = library.pendingRubricRequests.first {
+                Button("Solicitud de rúbrica", systemImage: "signature") {
+                    presentedRubricRequest = request
+                }.accessibilityIdentifier("open-rubric-request")
+            } else if let draft = activeRubricDraft {
+                Button("Borrador de rúbrica", systemImage: "signature") {
+                    presentedRubricRequest = draft.request
+                }.accessibilityIdentifier("open-rubric-draft")
+            }
+        }
+    }
+
+    @ViewBuilder private var bottomAccessory: some View {
+        if let request = library.pendingRubricRequests.first {
+            Button {
+                presentedRubricRequest = request
+            } label: {
+                Label("Solicitud de rúbrica de \(request.requesterName)", systemImage: "signature")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper)
+            .padding(.horizontal)
+            .accessibilityIdentifier("rubric-request-banner")
+        } else if let draft = activeRubricDraft {
+            Button {
+                presentedRubricRequest = draft.request
+            } label: {
+                Label("Recuperar rúbrica de \(draft.request.requesterName)", systemImage: "arrow.clockwise")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper)
+            .padding(.horizontal)
+            .accessibilityIdentifier("rubric-draft-banner")
+        } else if let code = library.comparisonCode {
+            VStack {
+                Text("Código de conexión: \(code)").font(.headline.monospacedDigit())
+                Text("Comprueba que coincide en LeonardoMD, autoriza los proyectos y pulsa Sincronizar.")
+                    .font(.caption)
+            }.padding().background(MobileClassic.inset)
         }
     }
 
@@ -336,6 +360,47 @@ struct MobileLibraryView: View {
                 .navigationTitle("Sincronización")
                 .toolbar { Button("Cerrar") { presentedSheet = nil } }
         }
+    }
+}
+
+private struct MobileLocalLibraryProjectRow: View {
+    @Bindable var library: MobileLibrary
+    let project: MobileLibraryProject
+
+    var body: some View {
+        NavigationLink(destination: destination) {
+            VStack(alignment: .leading, spacing: 5) {
+                MobileProjectIdentityLabel(name: project.name, identity: project.projectIdentity,
+                                           accessibilityIdentifier: nil)
+                if isRecoveryArchive {
+                    Text("Archivo de recuperación · Solo lectura")
+                        .font(.caption).foregroundStyle(MobileClassic.secondary)
+                }
+            }
+        }
+        // Keep the stable navigation contract on the outer link; the identity
+        // label remains a child of the navigable row.
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(project.id == "bundled-demo" ? "open-demo-project" : "open-project-\(project.id)")
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button("Eliminar / Delete", role: .destructive) {
+                Task { await library.deleteLibraryProject(project) }
+            }
+            .disabled(library.connecting)
+            .accessibilityIdentifier(project.id == "bundled-demo" ? "delete-demo-project" : "delete-project-\(project.id)")
+        }
+    }
+
+    @ViewBuilder private var destination: some View {
+        switch project {
+        case .demo: MobileDemoProjectView()
+        case .downloaded(let cached): MobileProjectView(library: library, projectID: cached.id)
+        }
+    }
+
+    private var isRecoveryArchive: Bool {
+        guard case .downloaded(let cached) = project else { return false }
+        return cached.isRecoveryArchive
     }
 }
 

@@ -99,11 +99,21 @@ struct MobileSyncPreferencesView: View {
     }
 
     @ViewBuilder private var authorizedDevices: some View {
-        Section(L10n.text("Devices with access to this Mac")) {
+        Section {
             ForEach(controller.consent.devices) { device in
                 AuthorizedDeviceRow(device: device, controller: controller)
             }
-    }
+        } header: {
+            HStack {
+                Text(L10n.text("Devices with access to this Mac"))
+                Spacer()
+                Button(L10n.text("Refresh linked devices"), systemImage: "arrow.clockwise") {
+                    Task { await controller.refreshConsent() }
+                }
+                .buttonStyle(.borderless)
+                .disabled(controller.busy)
+            }
+        }
     }
 
 
