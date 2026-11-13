@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/447",
+  "pull_request": "https://github.com/PinedaTec-EU/LeonardoMD/pull/448",
+  "source_revision": "21c17142d179ccc0ebe2c9ec68ad31df6252c417",
+  "base_revision": "8711e44aae3babc5beb914bb6b3e69dfe2715e96",
+  "date": "2026-11-13",
+  "application": {
+    "platform": "macOS packaged QA app",
+    "launch_method": "./launch.sh --qa",
+    "fresh_process": true,
+    "pid": 8844,
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.9f42ce38c3b6481fb15706acaf832071",
+    "version": "0.3.1602",
+    "build": 1602,
+    "executable": "LeonardoMD",
+    "first_window_ready": true,
+    "startup_events": ["first_window_shown", "application_ready"],
+    "dependency_check": "otool -L showed AppKit, SwiftUI and WebKit; XCTest.framework absent",
+    "bundle_verification": "scripts/qa-bundle.py --verify-only passed"
+  },
+  "help": {
+    "same_application_instance": true,
+    "entry_point": "Native Help menu",
+    "guides": [
+      {"locale": "en", "menu_item": "Help > Leonardo User Guide", "package": "Guide-v76-en.mdlz"},
+      {"locale": "es", "menu_item": "Ayuda > Guía de Leonardo", "package": "Guide-v76-es.mdlz"}
+    ],
+    "inspected_examples": ["Mermaid", "inline math", "display math", "chart", "table", "local image"],
+    "math_enabled": {
+      "equations_rendered": true,
+      "tagged_equation_1_rendered": true,
+      "katex_errors": false,
+      "literal_delimiters": false
+    },
+    "math_disabled_fallback": {
+      "locale_checked": "en",
+      "math_source_remained_literal": true,
+      "code_examples_remained_literal": true
+    },
+    "practice_round_trip": [
+      {
+        "locale": "en",
+        "synthetic_name": "Codex QA smoke",
+        "synthetic_goal": "Verify the bilingual help workflow and saved practice answers.",
+        "share_ready": true,
+        "saved_closed_reopened_values_persisted": true
+      },
+      {
+        "locale": "es",
+        "synthetic_name": "Codex QA smoke ES",
+        "synthetic_goal": "Comprobar que la guía española guarda y recupera respuestas ficticias.",
+        "share_ready": true,
+        "saved_closed_reopened_values_persisted": true
+      }
+    ],
+    "retained_guide_screenshots": false,
+    "note": "Both guides and live examples were inspected in the running packaged app. Only the native alert component captures are retained as image files."
+  },
+  "automated_validation": {
+    "swift_command": "scripts/compile-and-record.py --pr-number 448 -- swift test --disable-automatic-resolution",
+    "xctest": {"executed": 526, "skipped": 36, "failures": 0},
+    "swift_testing": {"executed": 44, "failures": 0},
+    "package_tests": {"executed": 28, "failures": 0},
+    "recorded_build_delta": 9,
+    "guide_package_command": "python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py' -v",
+    "guide_package_tests": {"executed": 3, "failures": 0},
+    "compile_warning": "Non-failing Network.framework exhaustive-switch warning for .wifiAware in Sources/LeonardoSyncTransport/HTTPSResponseDiagnostics.swift; file is outside this PR's change."
+  },
+  "alert_captures": [
+    "preview-alert-en-retry.png",
+    "preview-alert-en-close.png",
+    "preview-alert-es-retry.png",
+    "preview-alert-es-close.png"
+  ],
+  "capture_scope": "Production AppSession NSAlert builders rendered by opt-in SessionEditingTests.testCapturePreviewSynchronizationWarningsInBothLanguages; synthetic content; native alert component only, not a full application-window capture.",
+  "delivery_gates": {
+    "exact_head_ci": "pending PR checks",
+    "independent_judgment": "pending"
+  }
+}
