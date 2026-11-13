@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-08T12:17:46.581102+00:00",
+  "capture": {
+    "captured_at": "2026-11-08T12:07:35.062000+00:00",
+    "route": "/native/packaged-help/guide29/es/es-mermaid-mean",
+    "screen": "LeonardoMD QA bundled Guide29",
+    "browser_name": "Native macOS application WKWebView",
+    "browser_version": "Packaged WKWebView; browser version not exposed",
+    "state": "Mermaid y Matemáticas activados; diagrama real, media e inline math; código de fórmula permanece literal; same QA PID81719; native captured-pixel viewport, CSS not applicable",
+    "viewport_css": {
+      "width": 2520,
+      "height": 1700
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "adc2a7ce6d41babd6bd6c6a6a37bc36695257d11732c5177343f242e892c099d"
+  },
+  "source": {
+    "revision_at_collection": "b9c5bb7a1cb46d5d989d78de833fae57e402a9c5",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

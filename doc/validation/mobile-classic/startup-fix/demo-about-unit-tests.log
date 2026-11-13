@@ -1,0 +1,687 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun /tmp/leonardo-386-derived/Build/Products/LittleLeonardo_iphonesimulator27.1-arm64.xctestrun -destination "platform=iOS Simulator,id=926C886F-52D8-4766-B84D-1A5D8C218080" "-only-testing:LittleLeonardoTests" "-only-testing:LittleLeonardoUITests/MobileDemoUITests" "-only-testing:LittleLeonardoUITests/PairingUITests/testClassicLibrarySettingsAndInstalledAbout" -resultBundlePath /tmp/ll393-demo-about-units.xcresult
+
+Writing result bundle at path:
+	/tmp/ll393-demo-about-units.xcresult
+
+2026-11-07 13:39:50.852 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:39:52.455238+0100 LittleLeonardoUITests-Runner[73567:105206306] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-11-07 13:39:54.910.
+Test Suite 'LittleLeonardoUITests.xctest' started at 2026-11-07 13:39:54.910.
+Test Suite 'MobileDemoUITests' started at 2026-11-07 13:39:54.910.
+Test Case '-[LittleLeonardoUITests.MobileDemoUITests testOfflineDemoRendersAndRetainsPracticeAcrossRelaunch]' started.
+    t =     0.00s Start Test at 2026-11-07 13:39:54.913
+    t =     0.02s Set Up
+    t =     0.02s Open eu.pinedatec.LittleLeonardo
+    t =     0.02s     Launch eu.pinedatec.LittleLeonardo
+2026-11-07 13:39:54.984 xcodebuild[73552:105206008] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-11-07 13:39:54.984 xcodebuild[73552:105206008] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-11-07 13:39:54.989 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+objc[73567]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x105ba0398) and /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x106a94310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =     0.69s         Setting up automation session
+    t =     2.91s         Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     4.46s Waiting 15.0s for "open-demo-en" Button to exist
+    t =     5.50s     Checking `Expect predicate `existsNoRetry == 1` for object "open-demo-en" Button`
+    t =     5.50s         Checking existence of `"open-demo-en" Button`
+    t =     5.61s Tap "open-demo-en" Button
+    t =     5.61s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     5.61s     Find the "open-demo-en" Button
+    t =     5.64s     Check for interrupting elements affecting "open-demo-en" Button
+    t =     5.67s     Synthesize event
+    t =     5.99s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     6.45s Waiting 15.0s for WebView (First Match) to exist
+    t =     7.48s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     7.48s         Checking existence of `WebView (First Match)`
+    t =     7.51s Tap "demo-options" Button
+    t =     7.51s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     7.52s     Find the "demo-options" Button
+    t =     7.54s     Check for interrupting elements affecting "demo-options" Button
+    t =     7.56s     Synthesize event
+    t =     7.86s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.00s Tap "demo-reset" Button
+    t =     9.00s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.01s     Find the "demo-reset" Button
+    t =     9.10s     Check for interrupting elements affecting "demo-reset" Button
+    t =     9.14s     Synthesize event
+    t =     9.43s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    10.76s Tap "Restablecer / Reset" Button
+    t =    10.76s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    10.76s     Find the "Restablecer / Reset" Button
+    t =    10.84s     Check for interrupting elements affecting "Restablecer / Reset" Button
+    t =    10.89s     Synthesize event
+    t =    11.19s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    11.52s Waiting 15.0s for "Welcome to Little Leonardo" StaticText to exist
+    t =    12.56s     Checking `Expect predicate `existsNoRetry == 1` for object "Welcome to Little Leonardo" StaticText`
+    t =    12.56s         Checking existence of `"Welcome to Little Leonardo" StaticText`
+    t =    12.64s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    12.75s Added attachment named 'English welcome'
+    t =    12.75s Waiting 15.0s for WebView (First Match) to exist
+    t =    13.78s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =    13.78s         Checking existence of `WebView (First Match)`
+    t =    13.82s Checking existence of `TextField (First Match)`
+    t =    13.87s Find the TextField (First Match)
+    t =    13.93s Swipe up WebView (First Match)
+    t =    13.93s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    13.93s     Find the WebView (First Match)
+    t =    13.95s     Check for interrupting elements affecting WebView
+    t =    13.99s     Synthesize event
+    t =    14.44s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    16.53s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    16.63s Added attachment named 'English gallery 0'
+    t =    16.63s Checking existence of `"Practice name" TextField`
+    t =    16.68s Find the "Practice name" TextField
+    t =    16.73s Swipe up WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    16.73s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    16.73s     Find the WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    16.75s     Check for interrupting elements affecting WebView
+    t =    16.79s     Synthesize event
+    t =    17.24s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    19.33s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    19.45s Added attachment named 'English gallery 1'
+    t =    19.45s Checking existence of `"Practice name" TextField`
+    t =    19.50s Find the "Practice name" TextField
+    t =    19.55s Swipe up WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    19.55s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    19.56s     Find the WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    19.58s     Check for interrupting elements affecting WebView
+    t =    19.62s     Synthesize event
+    t =    20.07s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    22.16s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    22.26s Added attachment named 'English gallery 2'
+    t =    22.26s Checking existence of `"Practice name" TextField`
+    t =    22.31s Find the "Practice name" TextField
+    t =    22.37s Swipe up WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    22.37s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    22.37s     Find the WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    22.40s     Check for interrupting elements affecting WebView
+    t =    22.45s     Synthesize event
+    t =    22.90s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    25.00s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    25.10s Added attachment named 'English gallery 3'
+    t =    25.10s Checking existence of `"Practice name" TextField`
+    t =    25.14s Find the "Practice name" TextField
+    t =    25.20s Checking existence of `"Practice name" TextField`
+    t =    25.25s Find the "Practice name" TextField
+    t =    25.30s Find the "Practice name" TextField
+    t =    25.35s Checking existence of `"Help for Practice name" Button`
+    t =    25.41s Tap "Help for Practice name" Button
+    t =    25.41s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    25.41s     Find the "Help for Practice name" Button
+    t =    25.48s     Check for interrupting elements affecting "Help for Practice name" Button
+    t =    25.53s     Synthesize event
+    t =    25.83s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    26.23s Waiting 5.0s for "Local practice: use fictional details. Tap Save to confirm your answers." StaticText to exist
+    t =    27.26s     Checking `Expect predicate `existsNoRetry == 1` for object "Local practice: use fictional details. Tap Save to confirm your answers." StaticText`
+    t =    27.26s         Checking existence of `"Local practice: use fictional details. Tap Save to confirm your answers." StaticText`
+    t =    27.35s Tap "Cerrar / Close" Button
+    t =    27.35s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    27.36s     Find the "Cerrar / Close" Button
+    t =    27.42s     Check for interrupting elements affecting "Cerrar / Close" Button
+    t =    27.46s     Synthesize event
+    t =    27.76s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    28.13s Tap "Practice name" TextField
+    t =    28.13s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    28.14s     Find the "Practice name" TextField
+    t =    28.18s     Check for interrupting elements affecting "Practice name" TextField
+    t =    28.23s     Synthesize event
+    t =    28.52s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    29.05s Type 'Offline review sam...' into "Practice name" TextField
+    t =    29.05s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    29.05s     Find the "Practice name" TextField
+    t =    29.15s     Check for interrupting elements affecting "Practice name" TextField
+    t =    29.20s     Synthesize event
+    t =    29.76s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    29.76s Tap "demo-save" Button
+    t =    29.76s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    29.77s     Find the "demo-save" Button
+    t =    29.84s     Check for interrupting elements affecting "demo-save" Button
+    t =    29.89s     Synthesize event
+    t =    30.20s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    31.18s Waiting 10.0s for "Guardado en este dispositivo / Saved on this device" StaticText to exist
+    t =    32.20s     Checking `Expect predicate `existsNoRetry == 1` for object "Guardado en este dispositivo / Saved on this device" StaticText`
+    t =    32.20s         Checking existence of `"Guardado en este dispositivo / Saved on this device" StaticText`
+    t =    32.29s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    32.41s Added attachment named 'English saved practice'
+    t =    32.41s Terminate eu.pinedatec.LittleLeonardo:73653
+2026-11-07 13:40:27.340 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:40:27.343 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:40:27.347 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =    33.47s Open eu.pinedatec.LittleLeonardo
+    t =    33.47s     Launch eu.pinedatec.LittleLeonardo
+2026-11-07 13:40:28.388 xcodebuild[73552:105206008] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-11-07 13:40:28.388 xcodebuild[73552:105206008] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-11-07 13:40:28.398 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =    33.69s         Setting up automation session
+    t =    35.58s         Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    36.91s Waiting 15.0s for "open-demo-en" Button to exist
+    t =    37.93s     Checking `Expect predicate `existsNoRetry == 1` for object "open-demo-en" Button`
+    t =    37.93s         Checking existence of `"open-demo-en" Button`
+    t =    38.02s Tap "open-demo-en" Button
+    t =    38.02s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    38.02s     Find the "open-demo-en" Button
+    t =    38.06s     Check for interrupting elements affecting "open-demo-en" Button
+    t =    38.09s     Synthesize event
+    t =    38.40s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    38.84s Waiting 15.0s for WebView (First Match) to exist
+    t =    39.86s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =    39.86s         Checking existence of `WebView (First Match)`
+    t =    39.89s Waiting 15.0s for WebView (First Match) to exist
+    t =    40.92s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =    40.92s         Checking existence of `WebView (First Match)`
+    t =    40.95s Checking existence of `TextField (First Match)`
+    t =    41.04s Find the TextField (First Match)
+    t =    41.13s Swipe up WebView (First Match)
+    t =    41.13s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    41.14s     Find the WebView (First Match)
+    t =    41.16s     Check for interrupting elements affecting WebView
+    t =    41.20s     Synthesize event
+    t =    41.64s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    43.76s Checking existence of `"Practice name" TextField`
+    t =    43.81s Find the "Practice name" TextField
+    t =    43.86s Swipe up WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    43.86s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    43.86s     Find the WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    43.88s     Check for interrupting elements affecting WebView
+    t =    43.92s     Synthesize event
+    t =    44.37s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    46.47s Checking existence of `"Practice name" TextField`
+    t =    46.52s Find the "Practice name" TextField
+    t =    46.58s Swipe up WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    46.58s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    46.58s     Find the WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    46.60s     Check for interrupting elements affecting WebView
+    t =    46.65s     Synthesize event
+    t =    47.09s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    49.20s Checking existence of `"Practice name" TextField`
+    t =    49.26s Find the "Practice name" TextField
+    t =    49.44s Swipe up WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    49.44s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    49.44s     Find the WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    49.47s     Check for interrupting elements affecting WebView
+    t =    49.51s     Synthesize event
+    t =    49.95s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    52.06s Checking existence of `"Practice name" TextField`
+    t =    52.11s Find the "Practice name" TextField
+    t =    52.17s Checking existence of `"Practice name" TextField`
+    t =    52.22s Find the "Practice name" TextField
+    t =    52.28s Find the "Practice name" TextField
+    t =    52.33s Tap Button (Element at index 0)
+    t =    52.33s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    52.33s     Find the Button (Element at index 0)
+    t =    52.37s     Check for interrupting elements affecting "BackButton" Button
+    t =    52.41s     Synthesize event
+    t =    52.71s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    53.02s Waiting 15.0s for "open-demo-es" Button to exist
+    t =    54.05s     Checking `Expect predicate `existsNoRetry == 1` for object "open-demo-es" Button`
+    t =    54.05s         Checking existence of `"open-demo-es" Button`
+    t =    54.09s Tap "open-demo-es" Button
+    t =    54.09s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    54.09s     Find the "open-demo-es" Button
+    t =    54.12s     Check for interrupting elements affecting "open-demo-es" Button
+    t =    54.15s     Synthesize event
+    t =    54.44s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    54.79s Waiting 15.0s for WebView (First Match) to exist
+    t =    55.80s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =    55.80s         Checking existence of `WebView (First Match)`
+    t =    55.82s Waiting 15.0s for "Bienvenido a Little Leonardo" StaticText to exist
+    t =    56.84s     Checking `Expect predicate `existsNoRetry == 1` for object "Bienvenido a Little Leonardo" StaticText`
+    t =    56.84s         Checking existence of `"Bienvenido a Little Leonardo" StaticText`
+    t =    56.92s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    57.01s Added attachment named 'Spanish welcome'
+    t =    57.02s Tear Down
+Test Case '-[LittleLeonardoUITests.MobileDemoUITests testOfflineDemoRendersAndRetainsPracticeAcrossRelaunch]' passed (57.466 seconds).
+Test Case '-[LittleLeonardoUITests.MobileDemoUITests testSpanishSourceRoundTripKeepsFormEditableAndAnswersSeparate]' started.
+    t =     0.00s Start Test at 2026-11-07 13:40:52.380
+    t =     0.03s Set Up
+    t =     0.03s Open eu.pinedatec.LittleLeonardo
+    t =     0.03s     Launch eu.pinedatec.LittleLeonardo
+    t =     0.03s         Terminate eu.pinedatec.LittleLeonardo:74270
+2026-11-07 13:40:52.423 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:40:52.423 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:40:52.424 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:40:53.447 xcodebuild[73552:105206008] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-11-07 13:40:53.447 xcodebuild[73552:105206008] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-11-07 13:40:53.452 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =     1.28s         Setting up automation session
+    t =     3.36s         Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     4.90s Waiting 15.0s for "open-demo-es" Button to exist
+    t =     5.92s     Checking `Expect predicate `existsNoRetry == 1` for object "open-demo-es" Button`
+    t =     5.92s         Checking existence of `"open-demo-es" Button`
+    t =     6.01s Tap "open-demo-es" Button
+    t =     6.01s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     6.01s     Find the "open-demo-es" Button
+    t =     6.05s     Check for interrupting elements affecting "open-demo-es" Button
+    t =     6.08s     Synthesize event
+    t =     6.38s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     6.84s Waiting 15.0s for WebView (First Match) to exist
+    t =     7.86s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     7.87s         Checking existence of `WebView (First Match)`
+    t =     7.98s Tap "demo-options" Button
+    t =     7.98s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     7.98s     Find the "demo-options" Button
+    t =     8.00s     Check for interrupting elements affecting "demo-options" Button
+    t =     8.02s     Synthesize event
+    t =     8.32s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.24s Tap "demo-reset" Button
+    t =     9.24s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.24s     Find the "demo-reset" Button
+    t =     9.42s     Check for interrupting elements affecting "demo-reset" Button
+    t =     9.47s     Synthesize event
+    t =     9.76s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    10.80s Tap "Restablecer / Reset" Button
+    t =    10.80s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    10.81s     Find the "Restablecer / Reset" Button
+    t =    10.88s     Check for interrupting elements affecting "Restablecer / Reset" Button
+    t =    10.92s     Synthesize event
+    t =    11.21s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    11.56s Waiting 15.0s for WebView (First Match) to exist
+    t =    12.58s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =    12.58s         Checking existence of `WebView (First Match)`
+    t =    12.61s Checking existence of `TextField (First Match)`
+    t =    12.66s Find the TextField (First Match)
+    t =    12.72s Swipe up WebView (First Match)
+    t =    12.72s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    12.72s     Find the WebView (First Match)
+    t =    12.74s     Check for interrupting elements affecting WebView
+    t =    12.78s     Synthesize event
+    t =    13.23s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    15.36s Checking existence of `"Nombre de prueba" TextField`
+    t =    15.42s Find the "Nombre de prueba" TextField
+    t =    15.47s Swipe up WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    15.47s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    15.48s     Find the WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    15.50s     Check for interrupting elements affecting WebView
+    t =    15.54s     Synthesize event
+    t =    15.98s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    18.09s Checking existence of `"Nombre de prueba" TextField`
+    t =    18.14s Find the "Nombre de prueba" TextField
+    t =    18.20s Swipe up WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    18.20s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    18.20s     Find the WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    18.23s     Check for interrupting elements affecting WebView
+    t =    18.27s     Synthesize event
+    t =    18.71s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    20.82s Checking existence of `"Nombre de prueba" TextField`
+    t =    20.88s Find the "Nombre de prueba" TextField
+    t =    20.94s Swipe up WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    20.94s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    20.94s     Find the WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    20.96s     Check for interrupting elements affecting WebView
+    t =    21.00s     Synthesize event
+    t =    21.45s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    23.56s Checking existence of `"Nombre de prueba" TextField`
+    t =    23.62s Find the "Nombre de prueba" TextField
+    t =    23.68s Checking existence of `"Nombre de prueba" TextField`
+    t =    23.72s Find the "Nombre de prueba" TextField
+    t =    23.77s Find the "Nombre de prueba" TextField
+    t =    23.82s Tap "Nombre de prueba" TextField
+    t =    23.82s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    23.82s     Find the "Nombre de prueba" TextField
+    t =    23.87s     Check for interrupting elements affecting "Nombre de prueba" TextField
+    t =    23.92s     Synthesize event
+    t =    24.21s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    24.30s Type 'Spanish source sam...' into "Nombre de prueba" TextField
+    t =    24.30s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    24.67s     Find the "Nombre de prueba" TextField
+    t =    24.77s     Check for interrupting elements affecting "Nombre de prueba" TextField
+    t =    24.83s     Synthesize event
+    t =    25.39s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    25.53s Tap "demo-save" Button
+    t =    25.53s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    25.53s     Find the "demo-save" Button
+    t =    25.61s     Check for interrupting elements affecting "demo-save" Button
+    t =    25.66s     Synthesize event
+    t =    25.96s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    26.81s Waiting 10.0s for "Guardado en este dispositivo / Saved on this device" StaticText to exist
+    t =    27.82s     Checking `Expect predicate `existsNoRetry == 1` for object "Guardado en este dispositivo / Saved on this device" StaticText`
+    t =    27.82s         Checking existence of `"Guardado en este dispositivo / Saved on this device" StaticText`
+    t =    27.92s Tap "demo-options" Button
+    t =    27.92s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    27.92s     Find the "demo-options" Button
+    t =    28.00s     Check for interrupting elements affecting "demo-options" Button
+    t =    28.05s     Synthesize event
+    t =    28.34s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    29.14s Tap "demo-source" Button
+    t =    29.14s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    29.14s     Find the "demo-source" Button
+    t =    29.23s     Check for interrupting elements affecting "demo-source" Button
+    t =    29.28s     Synthesize event
+    t =    29.57s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    30.61s Waiting 10.0s for StaticText (First Match) to exist
+    t =    31.63s     Checking `Expect predicate `existsNoRetry == 1` for object StaticText (First Match)`
+    t =    31.63s         Checking existence of `StaticText (First Match)`
+    t =    31.68s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    31.76s Added attachment named 'Spanish source with saved values'
+    t =    31.76s Tap "demo-options" Button
+    t =    31.76s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    31.76s     Find the "demo-options" Button
+    t =    31.78s     Check for interrupting elements affecting "demo-options" Button
+    t =    31.80s     Synthesize event
+    t =    32.09s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    32.88s Tap "demo-source" Button
+    t =    32.88s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    32.89s     Find the "demo-source" Button
+    t =    32.91s     Check for interrupting elements affecting "demo-source" Button
+    t =    32.93s     Synthesize event
+    t =    33.22s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    34.25s Waiting 15.0s for WebView (First Match) to exist
+    t =    35.28s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =    35.28s         Checking existence of `WebView (First Match)`
+    t =    35.30s Checking existence of `TextField (First Match)`
+    t =    35.38s Find the TextField (First Match)
+    t =    35.45s Swipe up WebView (First Match)
+    t =    35.45s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    35.45s     Find the WebView (First Match)
+    t =    35.48s     Check for interrupting elements affecting WebView
+    t =    35.52s     Synthesize event
+    t =    35.96s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    38.09s Checking existence of `"Nombre de prueba" TextField`
+    t =    38.16s Find the "Nombre de prueba" TextField
+    t =    38.21s Swipe up WebView at {{0.0, 116.0}, {402.0, 685.7}}
+    t =    38.21s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    38.21s     Find the WebView at {{0.0, 116.0}, {402.0, 685.7}}
+    t =    38.23s     Check for interrupting elements affecting WebView
+    t =    38.27s     Synthesize event
+    t =    38.71s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    40.84s Checking existence of `"Nombre de prueba" TextField`
+    t =    40.90s Find the "Nombre de prueba" TextField
+    t =    40.95s Swipe up WebView at {{0.0, 116.0}, {402.0, 685.7}}
+    t =    40.95s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    40.96s     Find the WebView at {{0.0, 116.0}, {402.0, 685.7}}
+    t =    40.98s     Check for interrupting elements affecting WebView
+    t =    41.02s     Synthesize event
+    t =    41.47s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    43.58s Checking existence of `"Nombre de prueba" TextField`
+    t =    43.94s Find the "Nombre de prueba" TextField
+    t =    44.01s Swipe up WebView at {{0.0, 116.0}, {402.0, 685.7}}
+    t =    44.01s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    44.01s     Find the WebView at {{0.0, 116.0}, {402.0, 685.7}}
+    t =    44.04s     Check for interrupting elements affecting WebView
+    t =    44.08s     Synthesize event
+    t =    44.52s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    46.66s Checking existence of `"Nombre de prueba" TextField`
+    t =    46.71s Find the "Nombre de prueba" TextField
+    t =    46.76s Checking existence of `"Nombre de prueba" TextField`
+    t =    46.81s Find the "Nombre de prueba" TextField
+    t =    46.87s Find the "Nombre de prueba" TextField
+    t =    46.92s Tap "Nombre de prueba" TextField
+    t =    46.92s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    46.92s     Find the "Nombre de prueba" TextField
+    t =    46.97s     Check for interrupting elements affecting "Nombre de prueba" TextField
+    t =    47.01s     Synthesize event
+    t =    47.30s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    47.61s Type ' after source' into "Nombre de prueba" TextField
+    t =    47.61s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    47.61s     Find the "Nombre de prueba" TextField
+    t =    47.70s     Check for interrupting elements affecting "Nombre de prueba" TextField
+    t =    47.76s     Synthesize event
+    t =    48.18s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    48.48s Find the "Nombre de prueba" TextField
+    t =    48.58s Tap "demo-save" Button
+    t =    48.58s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    48.58s     Find the "demo-save" Button
+    t =    48.67s     Check for interrupting elements affecting "demo-save" Button
+    t =    48.71s     Synthesize event
+    t =    49.01s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    49.72s Waiting 10.0s for "Guardado en este dispositivo / Saved on this device" StaticText to exist
+    t =    50.75s     Checking `Expect predicate `existsNoRetry == 1` for object "Guardado en este dispositivo / Saved on this device" StaticText`
+    t =    50.75s         Checking existence of `"Guardado en este dispositivo / Saved on this device" StaticText`
+    t =    50.86s Terminate eu.pinedatec.LittleLeonardo:74654
+2026-11-07 13:41:43.247 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:41:43.247 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:41:43.247 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =    51.89s Open eu.pinedatec.LittleLeonardo
+    t =    51.89s     Launch eu.pinedatec.LittleLeonardo
+2026-11-07 13:41:44.272 xcodebuild[73552:105206008] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-11-07 13:41:44.272 xcodebuild[73552:105206008] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-11-07 13:41:44.276 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =    52.10s         Setting up automation session
+    t =    54.04s         Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    55.53s Waiting 15.0s for "open-demo-es" Button to exist
+    t =    56.54s     Checking `Expect predicate `existsNoRetry == 1` for object "open-demo-es" Button`
+    t =    56.54s         Checking existence of `"open-demo-es" Button`
+    t =    56.62s Tap "open-demo-es" Button
+    t =    56.62s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    56.63s     Find the "open-demo-es" Button
+    t =    56.66s     Check for interrupting elements affecting "open-demo-es" Button
+    t =    56.69s     Synthesize event
+    t =    57.00s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    57.45s Waiting 15.0s for WebView (First Match) to exist
+    t =    58.47s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =    58.47s         Checking existence of `WebView (First Match)`
+    t =    58.50s Waiting 15.0s for WebView (First Match) to exist
+    t =    59.52s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =    59.52s         Checking existence of `WebView (First Match)`
+    t =    59.54s Checking existence of `TextField (First Match)`
+    t =    59.61s Find the TextField (First Match)
+    t =    59.67s Swipe up WebView (First Match)
+    t =    59.67s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    59.67s     Find the WebView (First Match)
+    t =    59.69s     Check for interrupting elements affecting WebView
+    t =    59.73s     Synthesize event
+    t =    60.17s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    62.29s Checking existence of `"Nombre de prueba" TextField`
+    t =    62.35s Find the "Nombre de prueba" TextField
+    t =    62.41s Swipe up WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    62.41s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    62.41s     Find the WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    62.43s     Check for interrupting elements affecting WebView
+    t =    62.47s     Synthesize event
+    t =    62.91s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    65.03s Checking existence of `"Nombre de prueba" TextField`
+    t =    65.09s Find the "Nombre de prueba" TextField
+    t =    65.14s Swipe up WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    65.14s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    65.14s     Find the WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    65.16s     Check for interrupting elements affecting WebView
+    t =    65.20s     Synthesize event
+    t =    65.65s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    67.77s Checking existence of `"Nombre de prueba" TextField`
+    t =    67.85s Find the "Nombre de prueba" TextField
+    t =    68.05s Swipe up WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    68.05s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    68.05s     Find the WebView at {{0.0, 116.0}, {402.0, 724.0}}
+    t =    68.08s     Check for interrupting elements affecting WebView
+    t =    68.13s     Synthesize event
+    t =    68.58s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    70.71s Checking existence of `"Nombre de prueba" TextField`
+    t =    70.75s Find the "Nombre de prueba" TextField
+    t =    70.81s Checking existence of `"Nombre de prueba" TextField`
+    t =    70.86s Find the "Nombre de prueba" TextField
+    t =    70.91s Find the "Nombre de prueba" TextField
+    t =    70.96s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    71.05s Added attachment named 'Spanish persisted practice after source'
+    t =    71.05s Tear Down
+Test Case '-[LittleLeonardoUITests.MobileDemoUITests testSpanishSourceRoundTripKeepsFormEditableAndAnswersSeparate]' passed (71.581 seconds).
+Test Suite 'MobileDemoUITests' passed at 2026-11-07 13:42:03.962.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 129.048 (129.051) seconds
+Test Suite 'PairingUITests' started at 2026-11-07 13:42:03.963.
+Test Case '-[LittleLeonardoUITests.PairingUITests testClassicLibrarySettingsAndInstalledAbout]' started.
+    t =     0.00s Start Test at 2026-11-07 13:42:03.966
+    t =     0.02s Set Up
+    t =     0.03s Open eu.pinedatec.LittleLeonardo
+    t =     0.03s     Launch eu.pinedatec.LittleLeonardo
+    t =     0.03s         Terminate eu.pinedatec.LittleLeonardo:75578
+2026-11-07 13:42:04.001 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:42:04.001 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:42:04.001 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:42:05.089 xcodebuild[73552:105206008] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-11-07 13:42:05.089 xcodebuild[73552:105206008] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-11-07 13:42:05.095 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =     1.33s         Setting up automation session
+    t =     3.31s         Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     4.79s Waiting 15.0s for "open-sync-settings" Button to exist
+    t =     5.81s     Checking `Expect predicate `existsNoRetry == 1` for object "open-sync-settings" Button`
+    t =     5.81s         Checking existence of `"open-sync-settings" Button`
+    t =     5.93s Waiting 5.0s for "Biblioteca" NavigationBar to exist
+    t =     6.94s     Checking `Expect predicate `existsNoRetry == 1` for object "Biblioteca" NavigationBar`
+    t =     6.94s         Checking existence of `"Biblioteca" NavigationBar`
+    t =     6.99s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =     7.09s Added attachment named 'Classic library'
+    t =     7.09s Tap "open-sync-settings" Button
+    t =     7.09s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     7.09s     Find the "open-sync-settings" Button
+    t =     7.12s     Check for interrupting elements affecting "open-sync-settings" Button
+    t =     7.15s     Synthesize event
+    t =     7.47s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     7.92s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =     8.03s Added attachment named 'Classic synchronization settings'
+    t =     8.04s Waiting 5.0s for "open-about" Button to exist
+    t =     9.08s     Checking `Expect predicate `existsNoRetry == 1` for object "open-about" Button`
+    t =     9.08s         Checking existence of `"open-about" Button`
+    t =     9.13s Tap "open-about" Button
+    t =     9.13s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.14s     Find the "open-about" Button
+    t =     9.19s     Check for interrupting elements affecting "open-about" Button
+    t =     9.24s     Synthesize event
+    t =     9.54s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =     9.88s Waiting 5.0s for "Little Leonardo" StaticText to exist
+    t =    10.91s     Checking `Expect predicate `existsNoRetry == 1` for object "Little Leonardo" StaticText`
+    t =    10.91s         Checking existence of `"Little Leonardo" StaticText`
+    t =    10.96s Waiting 5.0s for "about-version" Any to exist
+    t =    11.98s     Checking `Expect predicate `existsNoRetry == 1` for object "about-version" Any`
+    t =    11.98s         Checking existence of `"about-version" Any`
+    t =    12.10s Tap "Ayuda" Button
+    t =    12.10s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    12.11s     Find the "Ayuda" Button
+    t =    12.15s     Check for interrupting elements affecting "Ayuda" Button
+    t =    12.20s     Synthesize event
+    t =    12.50s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    12.81s Waiting 5.0s for "Conecta tu Mac" StaticText to exist
+    t =    13.82s     Checking `Expect predicate `existsNoRetry == 1` for object "Conecta tu Mac" StaticText`
+    t =    13.82s         Checking existence of `"Conecta tu Mac" StaticText`
+    t =    13.87s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    13.97s Added attachment named 'Classic offline help'
+    t =    13.97s Tap "Acerca de" Button
+    t =    13.97s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    13.98s     Find the "Acerca de" Button
+    t =    14.01s     Check for interrupting elements affecting "BackButton" Button
+    t =    14.05s     Synthesize event
+    t =    14.35s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    14.64s Tap "Privacidad" Button
+    t =    14.64s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    14.65s     Find the "Privacidad" Button
+    t =    14.69s     Check for interrupting elements affecting "Privacidad" Button
+    t =    14.74s     Synthesize event
+    t =    15.04s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    15.34s Waiting 5.0s for "Datos en este dispositivo" StaticText to exist
+    t =    16.39s     Checking `Expect predicate `existsNoRetry == 1` for object "Datos en este dispositivo" StaticText`
+    t =    16.39s         Checking existence of `"Datos en este dispositivo" StaticText`
+    t =    16.43s Tap "Acerca de" Button
+    t =    16.43s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    16.43s     Find the "Acerca de" Button
+    t =    16.47s     Check for interrupting elements affecting "BackButton" Button
+    t =    16.51s     Synthesize event
+    t =    16.80s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    17.07s Tap "Licencias" Button
+    t =    17.07s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    17.08s     Find the "Licencias" Button
+    t =    17.12s     Check for interrupting elements affecting "Licencias" Button
+    t =    17.16s     Synthesize event
+    t =    17.45s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    17.77s Waiting 5.0s for StaticText (First Match) to exist
+    t =    18.77s     Checking `Expect predicate `existsNoRetry == 1` for object StaticText (First Match)`
+    t =    18.77s         Checking existence of `StaticText (First Match)`
+    t =    18.85s Tap "Acerca de" Button
+    t =    18.85s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    18.85s     Find the "Acerca de" Button
+    t =    18.89s     Check for interrupting elements affecting "BackButton" Button
+    t =    18.92s     Synthesize event
+    t =    19.22s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    19.49s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    19.60s Added attachment named 'Classic About installed application'
+    t =    19.60s Tap "Cerrar" Button
+    t =    19.60s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    19.60s     Find the "Cerrar" Button
+    t =    19.64s     Check for interrupting elements affecting "Cerrar" Button
+    t =    19.69s     Synthesize event
+    t =    19.98s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    20.32s Tap "open-pairing" Button
+    t =    20.32s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    20.33s     Find the "open-pairing" Button
+    t =    20.36s     Check for interrupting elements affecting "open-pairing" Button
+    t =    20.40s     Synthesize event
+    t =    20.70s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    21.12s Waiting 5.0s for "pairing-method" SegmentedControl to exist
+    t =    22.14s     Checking `Expect predicate `existsNoRetry == 1` for object "pairing-method" SegmentedControl`
+    t =    22.14s         Checking existence of `"pairing-method" SegmentedControl`
+    t =    22.21s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    22.31s Added attachment named 'Classic QR pairing'
+    t =    22.31s Tap "IP y puerto" Button
+    t =    22.31s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    22.31s     Find the "IP y puerto" Button
+    t =    22.36s     Check for interrupting elements affecting "IP y puerto" Button
+    t =    22.40s     Synthesize event
+    t =    22.69s     Wait for eu.pinedatec.LittleLeonardo to idle
+    t =    24.32s Find the Target Application 'eu.pinedatec.LittleLeonardo'
+    t =    24.43s Added attachment named 'Classic manual pairing'
+    t =    24.43s Tear Down
+Test Case '-[LittleLeonardoUITests.PairingUITests testClassicLibrarySettingsAndInstalledAbout]' passed (24.732 seconds).
+Test Suite 'PairingUITests' passed at 2026-11-07 13:42:28.699.
+	 Executed 1 test, with 0 failures (0 unexpected) in 24.732 (24.736) seconds
+Test Suite 'LittleLeonardoUITests.xctest' passed at 2026-11-07 13:42:28.699.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 153.780 (153.789) seconds
+Test Suite 'Selected tests' passed at 2026-11-07 13:42:28.700.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 153.780 (153.790) seconds
+2026-11-07 13:42:28.724 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:42:28.724 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:42:28.724 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:42:28.735 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:42:28.735 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:42:28.736 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:42:29.007 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:42:30.179624+0100 LittleLeonardo[76712:105233218] [API] cannot add handler to 0 from 0 - dropping
+2026-11-07 13:42:30.181232+0100 LittleLeonardo[76712:105233218] [XPCErrors] non-launching port is incompatible with service identifier "com.apple.PointerUI.pointeruid.default-service"
+Test Suite 'All tests' started at 2026-11-07 13:42:30.595.
+Test Suite 'LittleLeonardoTests.xctest' started at 2026-11-07 13:42:30.596.
+Test Suite 'MobileDemoStoreTests' started at 2026-11-07 13:42:30.596.
+Test Case '-[LittleLeonardoTests.MobileDemoStoreTests testBootstrapPreservesAnswersAndResetOnlyAffectsSelectedLocale]' started.
+Test Case '-[LittleLeonardoTests.MobileDemoStoreTests testBootstrapPreservesAnswersAndResetOnlyAffectsSelectedLocale]' passed (0.025 seconds).
+Test Case '-[LittleLeonardoTests.MobileDemoStoreTests testBothBundledTemplatesHaveRealFieldsAndOfflineExamples]' started.
+Test Case '-[LittleLeonardoTests.MobileDemoStoreTests testBothBundledTemplatesHaveRealFieldsAndOfflineExamples]' passed (0.005 seconds).
+Test Case '-[LittleLeonardoTests.MobileDemoStoreTests testMalformedPersonalCopyIsNotOverwrittenAtBootstrap]' started.
+Test Case '-[LittleLeonardoTests.MobileDemoStoreTests testMalformedPersonalCopyIsNotOverwrittenAtBootstrap]' passed (0.008 seconds).
+Test Suite 'MobileDemoStoreTests' passed at 2026-11-07 13:42:30.636.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.038 (0.040) seconds
+Test Suite 'MobileRevocationTests' started at 2026-11-07 13:42:30.636.
+Test Case '-[LittleLeonardoTests.MobileRevocationTests testCrashMarkerSurvivesTransientRestartAndClearsOnlyAfterAuthorizedStatus]' started.
+Test Case '-[LittleLeonardoTests.MobileRevocationTests testCrashMarkerSurvivesTransientRestartAndClearsOnlyAfterAuthorizedStatus]' passed (0.006 seconds).
+Test Case '-[LittleLeonardoTests.MobileRevocationTests testDeniedMarkerHidesOnlyItsConnectionAndLateAuthorizationCannotClearIt]' started.
+Test Case '-[LittleLeonardoTests.MobileRevocationTests testDeniedMarkerHidesOnlyItsConnectionAndLateAuthorizationCannotClearIt]' passed (0.002 seconds).
+Test Case '-[LittleLeonardoTests.MobileRevocationTests testLateAuthorizedOrTransientCompletionCannotClearMonotonicDeny]' started.
+Test Case '-[LittleLeonardoTests.MobileRevocationTests testLateAuthorizedOrTransientCompletionCannotClearMonotonicDeny]' passed (0.018 seconds).
+Test Case '-[LittleLeonardoTests.MobileRevocationTests testLiveOperationReloadRetainsOfflineCacheButNewSessionQuarantinesIt]' started.
+Test Case '-[LittleLeonardoTests.MobileRevocationTests testLiveOperationReloadRetainsOfflineCacheButNewSessionQuarantinesIt]' passed (0.016 seconds).
+Test Case '-[LittleLeonardoTests.MobileRevocationTests testPreflightPersistenceFailureMakesZeroNetworkCalls]' started.
+Test Case '-[LittleLeonardoTests.MobileRevocationTests testPreflightPersistenceFailureMakesZeroNetworkCalls]' passed (0.001 seconds).
+Test Case '-[LittleLeonardoTests.MobileRevocationTests testTransientCompletionDoesNotDenyConnection]' started.
+Test Case '-[LittleLeonardoTests.MobileRevocationTests testTransientCompletionDoesNotDenyConnection]' passed (0.002 seconds).
+Test Case '-[LittleLeonardoTests.MobileRevocationTests testWriteAheadMarkerSurvivesNormalPersistenceFailuresOnReload]' started.
+Test Case '-[LittleLeonardoTests.MobileRevocationTests testWriteAheadMarkerSurvivesNormalPersistenceFailuresOnReload]' passed (0.022 seconds).
+Test Suite 'MobileRevocationTests' passed at 2026-11-07 13:42:30.703.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.065 (0.067) seconds
+Test Suite 'MobileRubricIdentityTests' started at 2026-11-07 13:42:30.703.
+Test Case '-[LittleLeonardoTests.MobileRubricIdentityTests testSameUUIDDifferentPeerDoesNotProjectOrTouchNetwork]' started.
+Test Case '-[LittleLeonardoTests.MobileRubricIdentityTests testSameUUIDDifferentPeerDoesNotProjectOrTouchNetwork]' passed (0.005 seconds).
+Test Case '-[LittleLeonardoTests.MobileRubricIdentityTests testSubmissionGateSharesOnlyExactImmutableOperation]' started.
+Test Case '-[LittleLeonardoTests.MobileRubricIdentityTests testSubmissionGateSharesOnlyExactImmutableOperation]' passed (0.001 seconds).
+Test Suite 'MobileRubricIdentityTests' passed at 2026-11-07 13:42:30.710.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.006 (0.006) seconds
+Test Suite 'LittleLeonardoTests.xctest' passed at 2026-11-07 13:42:30.710.
+	 Executed 12 tests, with 0 failures (0 unexpected) in 0.109 (0.114) seconds
+Test Suite 'All tests' passed at 2026-11-07 13:42:30.710.
+	 Executed 12 tests, with 0 failures (0 unexpected) in 0.109 (0.115) seconds
+2026-11-07 13:42:30.718 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:42:30.718 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:42:30.719 xcodebuild[73552:105206008] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-07 13:42:30.975 xcodebuild[73552:105206008] [MT] IDETestOperationsObserverDebug: 160.151 elapsed -- Testing started completed.
+2026-11-07 13:42:30.975 xcodebuild[73552:105206008] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-07 13:42:30.975 xcodebuild[73552:105206008] [MT] IDETestOperationsObserverDebug: 160.151 sec, +160.151 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/ll393-demo-about-units.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-06T19:15:54.167183+00:00",
+  "route": "/native/synchronization/downloads/en",
+  "screen": "Shared production catalogue and storage controls",
+  "browser_name": "Native AppKit / SwiftUI NSHostingView",
+  "browser_version": "Not applicable: native view, no browser engine",
+  "viewport_css": {
+    "width": 1180,
+    "height": 640
+  },
+  "capture_mode": "element",
+  "data_provenance": "synthetic",
+  "state": "Remote-only, cached, available offline, partial folder and failed pending download. Native-point equivalent; timestamp from original PNG filesystem write. Built/tested source 278fa8f5df3102c4cf48b932cc8ba9937dbdd9f2"
+}

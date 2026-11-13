@@ -6,13 +6,20 @@ import Sparkle
 @MainActor
 final class CoordinatedUpdateUserDriver: SPUStandardUserDriver {
     private let termination: UpdateInstanceTermination
+    private let prepareHelper: @MainActor () async -> Bool
     private let dismissPreferences: @MainActor () -> Bool
 
     init(termination: UpdateInstanceTermination = .shared,
+         prepareHelper: @escaping @MainActor () async -> Bool = {
+             let ready = await DesktopSyncController.shared.helper.prepareForApplicationUpdate()
+             if !ready { (NSApp.delegate as? ApplicationDelegate)?.reportHelperUpdateCancellation() }
+             return ready
+         },
          dismissPreferences: @escaping @MainActor () -> Bool = {
              (NSApp.delegate as? ApplicationDelegate)?.dismissUpdatePreferences() ?? false
          }) {
         self.termination = termination
+        self.prepareHelper = prepareHelper
         self.dismissPreferences = dismissPreferences
         super.init(hostBundle: .main, delegate: nil)
     }
@@ -66,7 +73,9 @@ final class CoordinatedUpdateUserDriver: SPUStandardUserDriver {
         }
         // Sparkle may request termination as soon as this reply is delivered.
         // willInstallUpdate is a later notification and cannot unblock AppKit.
-        if stage != .notDownloaded, !dismissPreferences() { return .dismiss }
+        if stage != .notDownloaded {
+            guard dismissPreferences(), await prepareHelper() else { return .dismiss }
+        }
         return .install
     }
 }

@@ -5,6 +5,16 @@ import LeonardoCore
 @testable import LeonardoRender
 
 struct MarkdownRenderTests {
+    @Test func offlineLegalResourcesReuseVendoredDisclosures() throws {
+        let notices = try #require(MarkdownLegalResources.noticesURL)
+        #expect(try String(contentsOf: notices, encoding: .utf8).contains("Bundled rendering assets"))
+        let resources = MarkdownLegalResources.licenseURLs
+        #expect(resources.contains { $0.lastPathComponent == "katex-0.18.2.txt" })
+        #expect(resources.contains { $0.lastPathComponent == "cpal-1.0.txt" })
+        #expect(resources.contains { $0.lastPathComponent == "citeproc-2.4.63-source.txt" })
+        #expect(resources.allSatisfy { FileManager.default.fileExists(atPath: $0.path) })
+    }
+
     @Test
     func leonardoEnvelopeIsNotGenericPreviewMetadata() throws {
         let source = "---\n{\"format\":\"mdlf\",\"formatVersion\":1,\"layout\":{\"background\":{\"image\":\"assets/logo.svg\"}}}\n---\n# Invoice\n"
@@ -85,6 +95,27 @@ struct MarkdownRenderTests {
             configuration: MarkdownPreviewConfiguration(allowsRemoteImages: false))
         #expect(html.contains("img-src leonardo-document: data:;"))
         #expect(!html.contains("img-src leonardo-document: data: http:"))
+    }
+
+    @Test
+    func compactFirstHeadingSpacingIsOptIn() throws {
+        let defaultJSON = try MarkdownHTMLShell.payloadJSON(
+            content: "# Heading", baseURL: nil, configuration: .default)
+        let defaultPayload = try #require(JSONSerialization.jsonObject(with: Data(defaultJSON.utf8)) as? [String: Any])
+        #expect(defaultPayload["compactFirstHeading"] as? Bool == false)
+
+        var compactConfiguration = MarkdownPreviewConfiguration(appearance: .leonardoClassic)
+        compactConfiguration.compactFirstHeading = true
+        let compactJSON = try MarkdownHTMLShell.payloadJSON(
+            content: "# Heading", baseURL: nil, configuration: compactConfiguration)
+        let compactPayload = try #require(JSONSerialization.jsonObject(with: Data(compactJSON.utf8)) as? [String: Any])
+        #expect(compactPayload["compactFirstHeading"] as? Bool == true)
+
+        let stylesheet = String(
+            data: MarkdownResourceCatalog.data(for: .previewStyles) ?? Data(), encoding: .utf8) ?? ""
+        #expect(stylesheet.contains(".markdown-body.compact-first-heading"))
+        #expect(stylesheet.contains("padding-top: 16px"))
+        #expect(stylesheet.contains("margin-top: 0"))
     }
 
     @Test

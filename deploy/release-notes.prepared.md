@@ -2,6 +2,166 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1339
+
+- #434 Added: in-editor search and premium controls ([#40](https://github.com/PinedaTec-EU/LeonardoMD/pull/40))
+
+<p>Added literal and regex search across open documents in this window, with highlights, counts and wrapping navigation. Applied premium fields to project search, commit and naming, switches to hidden-file controls, and joined preference tabs.</p>
+
+Source: `90869224491fd202c573bc882dba01e16e094da8`. Delta: `{"build": 6}`.
+
+## 0.3.1333
+
+- #417 Updated: select extensions from recommendations ([#418](https://github.com/PinedaTec-EU/LeonardoMD/pull/418))
+
+<p>Choose which detected built-in extensions to enable, suppress future recommendations globally, and reset warnings without changing activation preferences.</p>
+
+Source: `c897e37f43b3f301d24844d017aa07a4666e5ddb`. Delta: `{"build": 17}`.
+
+## 0.3.1316
+
+- #421 Fixed: stabilize synchronization status refresh ([#422](https://github.com/PinedaTec-EU/LeonardoMD/pull/422))
+
+<p>Synchronization preferences keep their layout steady during refresh and show whether the service is checking, online, or unavailable beside the main switch.</p>
+
+Source: `0e8b4c3e408478741edd3848e8b33c3bb328acbe`. Delta: `{"build": 36}`.
+
+## 0.3.1280
+
+- #425 Added: declare iOS export compliance ([#426](https://github.com/PinedaTec-EU/LeonardoMD/pull/426))
+
+<p>Include the encryption compliance declaration in Little Leonardo builds.</p>
+
+Source: `b257f584ad22dfcce226373b99a6d8e8f3a69c3d`. Delta: `{"build": 1}`.
+
+## 0.3.1279
+
+- #423 Fixed: make synchronized folders navigable ([#424](https://github.com/PinedaTec-EU/LeonardoMD/pull/424))
+
+<p>Navigate synchronized folders and see only the files and folders in the current location.</p>
+
+Source: `d93a51fa7e8bd457e5616b75d44d9cf431034016`. Delta: `{"build": 3}`.
+
+## 0.3.1276
+
+- #412 Fixed: prepare sync helper before signed application replacement ([#420](https://github.com/PinedaTec-EU/LeonardoMD/pull/420))
+
+<p>Updates now pause the sharing service safely before replacing the Mac application, preserving existing access for the next launch. Installation waits if a safe stop cannot be confirmed.</p>
+
+Source: `094d373804134c785eacfa316381f7eddbb4dc2d`. Delta: `{"build": 6}`.
+
+## 0.3.1270
+
+- #412 Fixed: renew outdated sync helper after app updates ([#413](https://github.com/PinedaTec-EU/LeonardoMD/pull/413))
+
+<p>Automatically renew outdated sync services after Mac application updates while preserving device access and pending work.</p>
+
+Source: `20498060ed7009be164a72913c11aacb838a18ef`. Delta: `{"build": 24}`.
+
+## 0.3.1246
+
+- #399 Added: identify local shared and received projects on macOS and iOS ([#400](https://github.com/PinedaTec-EU/LeonardoMD/pull/400))
+
+<p>Projects now show a common icon and distinguish local content, sharing from this device and content received from another device on Mac, iPhone and iPad.</p>
+
+Source: `54c00e421adcaaadaba3de56a8e3d6465ad73ad3`. Delta: `{"build": 13}`.
+
+## 0.3.1233
+
+- #407 Added: unify mobile projects and persistent deletion ([#408](https://github.com/PinedaTec-EU/LeonardoMD/pull/408))
+
+<p>Little Leonardo lists Demo alongside other projects, supports swipe-and-tap local project removal, and restores Demo from Settings while retaining practice answers.</p>
+
+Source: `050aed806bb3733918a64b839d7034b73f07b8d5`. Delta: `{"build": 18}`.
+
+## 0.3.1215
+
+- #384 Added: on-demand synchronization and offline retention ([#385](https://github.com/PinedaTec-EU/LeonardoMD/pull/385))
+
+<p>Browse shared projects without bulk downloads, open files on demand, and manage temporary cache separately from files and folders kept offline.</p>
+
+Source: `7e9af9c5f02bc5874bffac7bf4f15951a0abb385`. Delta: `{"build": 68}`.
+
+## 0.3.1147
+
+- #397 Fixed: compact iOS Classic reader heading spacing ([#405](https://github.com/PinedaTec-EU/LeonardoMD/pull/405))
+
+<p>Reduces excess space before the first heading in Little Leonardo&#x27;s synchronized Markdown reader. Desktop and later headings keep their spacing. Adds native iOS layout checks and updates both bundled guides.</p>
+
+Source: `cd6b08f0b9851fd5510880bc3c0696c979ae0fee`. Delta: `{"build": 11}`.
+
+## 0.3.1136
+
+- #394 Fixed: recover rubric queries during helper configuration ([#398](https://github.com/PinedaTec-EU/LeonardoMD/pull/398))
+
+<p>Recover rubric status queries automatically while preserving request identity and access, and restore CI downloads with verified pinned Sparkle artifacts.</p>
+
+Source: `f69ad38b5d28501b8bb35c45a5dbd7296d5551fe`. Delta: `{"build": 9}`.
+
+## 0.3.1127
+
+- #380 Updated: complete TLS shutdown and trace response termination ([#392](https://github.com/PinedaTec-EU/LeonardoMD/pull/392))
+
+<p>Shared-project HTTPS responses finish the TLS write stream before teardown, with bounded cleanup and privacy-safe server completion diagnostics.</p>
+
+Source: `955919459b13b2f9fd8c14eefd95e7de53254668`. Delta: `{"build": 14}`.
+
+## 0.3.1113
+
+- #386 Updated: apply Classic mobile design and rotating rubric canvas ([#387](https://github.com/PinedaTec-EU/LeonardoMD/pull/387))
+
+<p>Little Leonardo uses Classic colors and branded startup, adds offline About, help, privacy and license pages, and expands rubric drawing in landscape while restoring portrait controls without changing the drawing.</p>
+
+Source: `6e9f40a5fe94ae76b316023b3a8983a6dc35da5c`. Delta: `{"build": 31}`.
+
+## 0.3.1082
+
+- #380 Added: expose bounded HTTPS failure diagnostics ([#382](https://github.com/PinedaTec-EU/LeonardoMD/pull/382))
+
+<p>Adds privacy-safe HTTPS diagnostics for iOS sync failures, preserving URL errors, pinning, redirects and bounds. A real TLS cutoff test checks partial byte counts; the alert and bilingual Guide v23 explain the code. Physical root cause remains unconfirmed.</p>
+
+Source: `203bd697b21421006b23fae70b30245ef77e15fa`. Delta: `{"build": 25}`.
+
+## 0.3.1057
+
+- #381 Added: bundle offline Little Leonardo demo and practice ([#383](https://github.com/PinedaTec-EU/LeonardoMD/pull/383))
+
+<p>Little Leonardo includes an offline bilingual demo with format examples and a locally saved practice form.</p>
+
+Source: `99ac3204d49f25210e74ea7d93211b695b96f186`. Delta: `{"build": 12}`.
+
+## 0.3.1045
+
+- #274 Fixed: render extensible math and navigate outline headings precisely ([#377](https://github.com/PinedaTec-EU/LeonardoMD/pull/377))
+
+<p>Extensible math symbols render complete shapes, and outline selections open the matching heading even when rendered content has different heights.</p>
+
+Source: `d4ca398e85f949c83d623bdf3b2bee0bacb94909`. Delta: `{"build": 23}`.
+
+## 0.3.1022
+
+- #375 Update: blend help illustrations into Leonardo Classic ([#376](https://github.com/PinedaTec-EU/LeonardoMD/pull/376))
+
+<p>Help illustrations now blend into the document background with transparent Leonardo Classic artwork and localized captions, while new guide revisions preserve existing personal copies.</p>
+
+Source: `1fd3c3410a812d8043800fce325aa21404a21100`. Delta: `{"build": 5}`.
+
+## 0.3.1017
+
+- #343 Added: package owner-only iOS distribution ([#371](https://github.com/PinedaTec-EU/LeonardoMD/pull/371))
+
+<p>Adds owner-only iOS archive/export and Apple validation with canonical versioning, privacy metadata and branded assets; binds archives to clean committed source, documents #367&#x27;s immutable rubric request identity, and keeps keychain signing process-scoped.</p>
+
+Source: `b9a6e57a16133ef286fce4e6f60fc061f855a0b2`. Delta: `{"build": 7}`.
+
+## 0.3.1010
+
+- #272 Fixed: preserve display math and require native help QA ([#363](https://github.com/PinedaTec-EU/LeonardoMD/pull/363))
+
+<p>Display formulas retain their TeX syntax, and both user guides include recurring math regression examples with mandatory help checks in tested app instances.</p>
+
+Source: `63ff472f527ac5f552897726a61ec2cf2ecee735`. Delta: `{"build": 10}`.
+
 ## 0.3.1000
 
 - #342 Added: iOS rubric capture flow ([#352](https://github.com/PinedaTec-EU/LeonardoMD/pull/352))

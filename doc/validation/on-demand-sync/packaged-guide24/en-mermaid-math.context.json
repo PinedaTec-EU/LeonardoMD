@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T08:34:29.679Z",
+  "route": "/native/help/en",
+  "screen": "en-mermaid-math",
+  "browser_name": "Native LeonardoMD AppKit / WKWebView",
+  "browser_version": "Not exposed by native CUA",
+  "viewport_css": {
+    "width": 2520,
+    "height": 1700
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "Actual Help workflow; Math/Mermaid/Charts enabled; code literal. Native screenshot pixel equivalent in viewport_css; CSS and native-point dimensions unavailable from CUA. Source d8487bc; Guide24; baseline0.3.1057"
+}

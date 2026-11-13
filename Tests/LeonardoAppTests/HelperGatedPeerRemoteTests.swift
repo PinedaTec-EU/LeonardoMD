@@ -28,7 +28,7 @@ final class HelperGatedPeerRemoteTests: XCTestCase {
     }
 }
 private enum GateProbeError: Error { case offline, unused }
-private actor GateProbeState {
+actor GateProbeState {
     var online: Bool
     let disableDuringProbe: Bool
     private(set) var calls = 0
@@ -36,7 +36,7 @@ private actor GateProbeState {
     func check() throws { guard online else { throw GateProbeError.offline } }
     func probe() -> Data { calls += 1; if disableDuringProbe { online = false }; return Data([1]) }
 }
-private struct GateProbeRemote: DesktopPeerRemote {
+struct GateProbeRemote: DesktopPeerRemote {
     let state: GateProbeState
     func probe(endpoint: URL) async throws -> Data { await state.probe() }
     func begin(endpoint: URL, fingerprint: Data, invitation: PairingInvitation?, name: String, credential: String, now: Date) async throws -> PairingChallenge { throw GateProbeError.unused }

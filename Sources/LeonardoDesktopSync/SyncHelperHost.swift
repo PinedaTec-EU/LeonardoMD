@@ -7,20 +7,30 @@ import LeonardoSyncTransport
 
 /// The helper exclusively owns the source transport, identity and consent store.
 /// Configuration comes from the app's canonical file, never an arbitrary IPC path.
+public protocol SyncHelperPreferencesAccess: Sendable {
+    func loadGlobalPreferences(at fileURL: URL) async throws -> GlobalPreferences
+}
+
+extension ConfigurationStore: SyncHelperPreferencesAccess {}
+
 public actor SyncHelperHost {
+    private let buildIdentity: SyncHelperBuildIdentity?
     private let preferencesURL: URL
-    private let configurations: ConfigurationStore
+    private let configurations: any SyncHelperPreferencesAccess
     private let runtime: DesktopDirectRuntime
     private let applications: SyncHelperApplicationLease
     private var sharing: RunningDirectService?
     private var failure: String?
     private var configuring = false
+    private var configurationWaiters: [CheckedContinuation<Void, Never>] = []
     private var lastSettings: MobileSyncPreferences?
     private var lastHost: String?
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "sync-helper")
 
     public init(preferencesURL: URL = SyncHelperContract.preferencesURL,
-                configurations: ConfigurationStore = ConfigurationStore(), runtime: DesktopDirectRuntime? = nil) {
+                configurations: any SyncHelperPreferencesAccess = ConfigurationStore(), runtime: DesktopDirectRuntime? = nil,
+                buildIdentity: SyncHelperBuildIdentity? = nil) {
+        self.buildIdentity = buildIdentity
         self.preferencesURL = preferencesURL; self.configurations = configurations
         applications = SyncHelperApplicationLease(root: preferencesURL.deletingLastPathComponent().appendingPathComponent("MobileSync/LocalApplications"))
         self.runtime = runtime ?? DesktopDirectRuntime(
@@ -29,8 +39,9 @@ public actor SyncHelperHost {
     }
 
     public func reload() async throws {
-        guard !configuring else { throw DesktopRuntimeError.busy }
-        configuring = true; defer { configuring = false }
+        await acquireConfiguration()
+        defer { releaseConfiguration() }
+        try Task.checkCancellation()
         do {
             let settings = try await configurations.loadGlobalPreferences(at: preferencesURL).mobileSync
             // Reconcile failed/unavailable interfaces on subsequent ticks, including wake.
@@ -64,13 +75,29 @@ public actor SyncHelperHost {
         }
     }
 
+    // Every caller re-reads consent after acquiring the barrier. Sharing an old
+    // reload result could let a queued command miss a newly persisted denial.
+    // Queue cancellation is cooperative: it is observed after the current owner
+    // releases the barrier. A suspended predecessor also keeps cancelled waiters
+    // suspended; they skip settings reads and release their turn once resumed.
+    private func acquireConfiguration() async {
+        if configuring {
+            await withCheckedContinuation { configurationWaiters.append($0) }
+        } else { configuring = true }
+    }
+
+    private func releaseConfiguration() {
+        if configurationWaiters.isEmpty { configuring = false }
+        else { configurationWaiters.removeFirst().resume() }
+    }
+
     public func perform(_ command: SyncHelperCommand) async throws -> Data {
         try await reload()
         switch command {
         case .status:
-            return try encode(SyncHelperStatus(enabled: lastSettings?.helperEnabled == true, sharing: sharing, error: failure))
+            return try encode(SyncHelperStatus(enabled: lastSettings?.helperEnabled == true, sharing: sharing, error: failure, buildIdentity: buildIdentity))
         case .reload:
-            return try encode(SyncHelperStatus(enabled: lastSettings?.helperEnabled == true, sharing: sharing, error: failure))
+            return try encode(SyncHelperStatus(enabled: lastSettings?.helperEnabled == true, sharing: sharing, error: failure, buildIdentity: buildIdentity))
         case .stopSharing:
             try await runtime.stop(); sharing = nil; lastSettings = nil
             return try encode(true)

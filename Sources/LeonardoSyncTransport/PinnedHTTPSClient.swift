@@ -43,13 +43,26 @@ public final class PinnedHTTPSClient: NSObject, URLSessionDelegate, URLSessionTa
         configuration.httpShouldSetCookies = false
         let session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
         defer { session.invalidateAndCancel() }
-        let (bytes, response) = try await session.bytes(for: request, delegate: self)
+        let operation = HTTPSFailureDiagnostics.Operation(path: path)
+        let (bytes, response): (URLSession.AsyncBytes, URLResponse)
+        do {
+            (bytes, response) = try await session.bytes(for: request, delegate: self)
+        } catch {
+            throw HTTPSFailureDiagnostics.annotate(error, operation: operation, httpStatusCode: nil,
+                                                   receivedBodyBytes: 0, expectedBodyBytes: nil)
+        }
         guard let response = response as? HTTPURLResponse, response.url == url else { throw TransportError.unexpectedResponse }
         guard response.expectedContentLength <= maximumResponseBytes else { throw TransportError.responseTooLarge }
+        let expectedBodyBytes = response.expectedContentLength >= 0 ? response.expectedContentLength : nil
         var data = Data()
-        for try await byte in bytes {
-            guard data.count < maximumResponseBytes else { throw TransportError.responseTooLarge }
-            data.append(byte)
+        do {
+            for try await byte in bytes {
+                guard data.count < maximumResponseBytes else { throw TransportError.responseTooLarge }
+                data.append(byte)
+            }
+        } catch {
+            throw HTTPSFailureDiagnostics.annotate(error, operation: operation, httpStatusCode: response.statusCode,
+                                                   receivedBodyBytes: data.count, expectedBodyBytes: expectedBodyBytes)
         }
         return HTTPResponse(status: response.statusCode, body: data)
     }

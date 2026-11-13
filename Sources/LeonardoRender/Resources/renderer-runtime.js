@@ -45,6 +45,10 @@
     document.body.dataset.paperEffect = appearance.paperEffect || "plain";
   }
 
+  function setReaderSpacing(compact) {
+    root.classList.toggle("compact-first-heading", compact === true);
+  }
+
   function hash(value) {
     let result = 2166136261;
     for (let index = 0; index < value.length; index += 1) {
@@ -172,7 +176,10 @@
             trust: false
           });
           span.innerHTML = window.DOMPurify.sanitize(rendered, {
-            USE_PROFILES: { html: true, mathMl: true },
+            USE_PROFILES: { html: true, mathMl: true, svg: true },
+            // Generated KaTeX geometry only; raw document SVG remains disallowed.
+            FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "foreignobject", "image", "use", "animate", "set"],
+            FORBID_ATTR: ["href", "xlink:href", "src"],
             ADD_TAGS: ["math", "semantics", "mrow", "annotation"]
           });
         } catch (_) {
@@ -354,6 +361,7 @@
     const renderStart = performance.now();
     const generation = ++renderGeneration;
     setAppearance(payload.appearance);
+    setReaderSpacing(payload.compactFirstHeading);
     if (diagramObserver) diagramObserver.disconnect();
     diagramTimers.forEach((timer) => window.clearTimeout(timer));
     diagramTimers.clear();
@@ -428,6 +436,12 @@
     scrollToAnchor(anchor) {
       const element = document.getElementById(anchor);
       if (element) element.scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+    scrollToSourceLine(line) {
+      const heading = window.LeonardoTables.headingForSourceLine(root, line);
+      if (!heading) return false;
+      heading.scrollIntoView({ behavior: "auto", block: "start" });
+      return true;
     },
     scrollToFraction(fraction) {
       const maximum = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);

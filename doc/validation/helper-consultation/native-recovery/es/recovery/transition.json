@@ -1,0 +1,17 @@
+{
+  "build" : "SwiftPM debug XCTest component; source version 0.3.1127",
+  "create_calls" : 0,
+  "language" : "es",
+  "manual_retry_actions" : 0,
+  "original_request_id" : "F5C9E58E-9BE6-49CB-9392-D301C4BD9CE3",
+  "packaged_process_acceptance" : false,
+  "physical_device_acceptance" : false,
+  "queries" : [
+    "F5C9E58E-9BE6-49CB-9392-D301C4BD9CE3",
+    "F5C9E58E-9BE6-49CB-9392-D301C4BD9CE3"
+  ],
+  "response_received" : true,
+  "scenario" : "recovery",
+  "source_sha" : "b9c5bb7a1cb46d5d989d78de833fae57e402a9c5",
+  "test_process_id" : 78513
+}

@@ -869,6 +869,206 @@
       "pr": 352,
       "summary": "iOS captures rubrics requested by a linked Mac with explicit consent, durable drafts, preview and HTTPS retry. Interrupted acceptance recovers safely and revoked links stay blocked after restart. Guides and Mac consent are available in English and Spanish.",
       "to_version": "0.3.1000"
+    },
+    {
+      "delta": {
+        "build": 10
+      },
+      "from_version": "0.3.1000",
+      "merge_sha": "63ff472f527ac5f552897726a61ec2cf2ecee735",
+      "pr": 363,
+      "summary": "Display formulas retain their TeX syntax, and both user guides include recurring math regression examples with mandatory help checks in tested app instances.",
+      "to_version": "0.3.1010"
+    },
+    {
+      "delta": {
+        "build": 7
+      },
+      "from_version": "0.3.1010",
+      "merge_sha": "b9a6e57a16133ef286fce4e6f60fc061f855a0b2",
+      "pr": 371,
+      "summary": "Adds owner-only iOS archive/export and Apple validation with canonical versioning, privacy metadata and branded assets; binds archives to clean committed source, documents #367's immutable rubric request identity, and keeps keychain signing process-scoped.",
+      "to_version": "0.3.1017"
+    },
+    {
+      "delta": {
+        "build": 5
+      },
+      "from_version": "0.3.1017",
+      "merge_sha": "1fd3c3410a812d8043800fce325aa21404a21100",
+      "pr": 376,
+      "summary": "Help illustrations now blend into the document background with transparent Leonardo Classic artwork and localized captions, while new guide revisions preserve existing personal copies.",
+      "to_version": "0.3.1022"
+    },
+    {
+      "delta": {
+        "build": 23
+      },
+      "from_version": "0.3.1022",
+      "merge_sha": "d4ca398e85f949c83d623bdf3b2bee0bacb94909",
+      "pr": 377,
+      "summary": "Extensible math symbols render complete shapes, and outline selections open the matching heading even when rendered content has different heights.",
+      "to_version": "0.3.1045"
+    },
+    {
+      "delta": {
+        "build": 12
+      },
+      "from_version": "0.3.1045",
+      "merge_sha": "99ac3204d49f25210e74ea7d93211b695b96f186",
+      "pr": 383,
+      "summary": "Little Leonardo includes an offline bilingual demo with format examples and a locally saved practice form.",
+      "to_version": "0.3.1057"
+    },
+    {
+      "delta": {
+        "build": 25
+      },
+      "from_version": "0.3.1057",
+      "merge_sha": "203bd697b21421006b23fae70b30245ef77e15fa",
+      "pr": 382,
+      "summary": "Adds privacy-safe HTTPS diagnostics for iOS sync failures, preserving URL errors, pinning, redirects and bounds. A real TLS cutoff test checks partial byte counts; the alert and bilingual Guide v23 explain the code. Physical root cause remains unconfirmed.",
+      "to_version": "0.3.1082"
+    },
+    {
+      "delta": {
+        "build": 31
+      },
+      "from_version": "0.3.1082",
+      "merge_sha": "6e9f40a5fe94ae76b316023b3a8983a6dc35da5c",
+      "pr": 387,
+      "summary": "Little Leonardo uses Classic colors and branded startup, adds offline About, help, privacy and license pages, and expands rubric drawing in landscape while restoring portrait controls without changing the drawing.",
+      "to_version": "0.3.1113"
+    },
+    {
+      "delta": {
+        "build": 14
+      },
+      "from_version": "0.3.1113",
+      "merge_sha": "955919459b13b2f9fd8c14eefd95e7de53254668",
+      "pr": 392,
+      "summary": "Shared-project HTTPS responses finish the TLS write stream before teardown, with bounded cleanup and privacy-safe server completion diagnostics.",
+      "to_version": "0.3.1127"
+    },
+    {
+      "delta": {
+        "build": 9
+      },
+      "from_version": "0.3.1127",
+      "merge_sha": "f69ad38b5d28501b8bb35c45a5dbd7296d5551fe",
+      "pr": 398,
+      "summary": "Recover rubric status queries automatically while preserving request identity and access, and restore CI downloads with verified pinned Sparkle artifacts.",
+      "to_version": "0.3.1136"
+    },
+    {
+      "delta": {
+        "build": 11
+      },
+      "from_version": "0.3.1136",
+      "merge_sha": "cd6b08f0b9851fd5510880bc3c0696c979ae0fee",
+      "pr": 405,
+      "summary": "Reduces excess space before the first heading in Little Leonardo's synchronized Markdown reader. Desktop and later headings keep their spacing. Adds native iOS layout checks and updates both bundled guides.",
+      "to_version": "0.3.1147"
+    },
+    {
+      "delta": {
+        "build": 68
+      },
+      "from_version": "0.3.1147",
+      "merge_sha": "7e9af9c5f02bc5874bffac7bf4f15951a0abb385",
+      "pr": 385,
+      "summary": "Browse shared projects without bulk downloads, open files on demand, and manage temporary cache separately from files and folders kept offline.",
+      "to_version": "0.3.1215"
+    },
+    {
+      "delta": {
+        "build": 18
+      },
+      "from_version": "0.3.1215",
+      "merge_sha": "050aed806bb3733918a64b839d7034b73f07b8d5",
+      "pr": 408,
+      "summary": "Little Leonardo lists Demo alongside other projects, supports swipe-and-tap local project removal, and restores Demo from Settings while retaining practice answers.",
+      "to_version": "0.3.1233"
+    },
+    {
+      "delta": {
+        "build": 13
+      },
+      "from_version": "0.3.1233",
+      "merge_sha": "54c00e421adcaaadaba3de56a8e3d6465ad73ad3",
+      "pr": 400,
+      "summary": "Projects now show a common icon and distinguish local content, sharing from this device and content received from another device on Mac, iPhone and iPad.",
+      "to_version": "0.3.1246"
+    },
+    {
+      "delta": {
+        "build": 24
+      },
+      "from_version": "0.3.1246",
+      "merge_sha": "20498060ed7009be164a72913c11aacb838a18ef",
+      "pr": 413,
+      "summary": "Automatically renew outdated sync services after Mac application updates while preserving device access and pending work.",
+      "to_version": "0.3.1270"
+    },
+    {
+      "delta": {
+        "build": 6
+      },
+      "from_version": "0.3.1270",
+      "merge_sha": "094d373804134c785eacfa316381f7eddbb4dc2d",
+      "pr": 420,
+      "summary": "Updates now pause the sharing service safely before replacing the Mac application, preserving existing access for the next launch. Installation waits if a safe stop cannot be confirmed.",
+      "to_version": "0.3.1276"
+    },
+    {
+      "delta": {
+        "build": 3
+      },
+      "from_version": "0.3.1276",
+      "merge_sha": "d93a51fa7e8bd457e5616b75d44d9cf431034016",
+      "pr": 424,
+      "summary": "Navigate synchronized folders and see only the files and folders in the current location.",
+      "to_version": "0.3.1279"
+    },
+    {
+      "delta": {
+        "build": 1
+      },
+      "from_version": "0.3.1279",
+      "merge_sha": "b257f584ad22dfcce226373b99a6d8e8f3a69c3d",
+      "pr": 426,
+      "summary": "Include the encryption compliance declaration in Little Leonardo builds.",
+      "to_version": "0.3.1280"
+    },
+    {
+      "delta": {
+        "build": 36
+      },
+      "from_version": "0.3.1280",
+      "merge_sha": "0e8b4c3e408478741edd3848e8b33c3bb328acbe",
+      "pr": 422,
+      "summary": "Synchronization preferences keep their layout steady during refresh and show whether the service is checking, online, or unavailable beside the main switch.",
+      "to_version": "0.3.1316"
+    },
+    {
+      "delta": {
+        "build": 17
+      },
+      "from_version": "0.3.1316",
+      "merge_sha": "c897e37f43b3f301d24844d017aa07a4666e5ddb",
+      "pr": 418,
+      "summary": "Choose which detected built-in extensions to enable, suppress future recommendations globally, and reset warnings without changing activation preferences.",
+      "to_version": "0.3.1333"
+    },
+    {
+      "delta": {
+        "build": 6
+      },
+      "from_version": "0.3.1333",
+      "merge_sha": "90869224491fd202c573bc882dba01e16e094da8",
+      "pr": 40,
+      "summary": "Added literal and regex search across open documents in this window, with highlights, counts and wrapping navigation. Applied premium fields to project search, commit and naming, switches to hidden-file controls, and joined preference tabs.",
+      "to_version": "0.3.1339"
     }
   ],
   "initial_version": "0.1.56",
@@ -879,5 +1079,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1000"
+  "version": "0.3.1339"
 }

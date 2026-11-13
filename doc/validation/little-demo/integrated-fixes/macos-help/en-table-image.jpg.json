@@ -1,0 +1,18 @@
+{
+  "capture_type": "original native app-window JPEG screenshot through CUA",
+  "capture_write_time": "2026-11-06T23:37:28.516120+00:00",
+  "screen": "en-table-image",
+  "build_source": "5d19e71c264feb9db8ea146e373996f192ecf473",
+  "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.4c8a5134244740e3b879d722db8e0a91",
+  "pid": 17838,
+  "version": "0.3.1045",
+  "build": "1045",
+  "locale": "English",
+  "state": "Fictional bundled help/practice; engines disabled where named disabled; other engine captures use Mermaid/Math/Charts on. Table/image screenshots do not depend on these engines.",
+  "image": {
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "e6f71596fb85e72edd9e37f6ae0117d5b3adc510c52a89525ec41b784dbb8700"
+  },
+  "missing_context": "Native app CUA exposes no browser version or CSS viewport. Actual screenshot pixels and native identity replace unavailable browser-only capture metadata; no browser validation is claimed."
+}

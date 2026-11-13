@@ -1,0 +1,95 @@
+Window: "Guide-v22-en.mdlz", App: LeonardoMD QA.
+0 standard window Guide-v22-en.mdlz, Secondary Actions: Raise, URL: file:///Users/jmr.pineda/Library/Application%20Support/LeonardoMD/User%20Guides/v22/en/Guide-v22-en.mdlz
+	1 container
+		2 scroll area
+			3 button Description: New tab, Help: Open a document or project in this tab
+			4 button Description: Close tab New tab, ID: xmark
+			5 unknown Description: Reorder tab Guide-v22-en.mdlz, Help: Drag to reorder tab
+			6 button (selected) Description: Guide-v22-en.mdlz, Help: /Users/jmr.pineda/Library/Application Support/LeonardoMD/User Guides/v22/en/Guide-v22-en.mdlz
+			7 button Description: Close tab Guide-v22-en.mdlz, ID: xmark
+		8 button Description: New tab, Help: New tab (⌘T), ID: new-document-tab
+		9 button Description: Preferences, Help: Preferences…, ID: tab-bar-preferences
+		10 menu button Move, ID: folder
+		11 text Guide-v22-en.mdlz
+		12 image Description: Rich Text Document, ID: doc.richtext
+		13 text Leonardo document ·
+		14 image Description: Archive, ID: archivebox
+		15 text Package · saves to .mdlz · en
+		16 button Description: Document protection, Help: Protected · click to enable editing, Value: Read only, ID: document-protection
+		17 button (disabled) Description: Undo, Help: Undo (⌘Z), ID: document-undo
+		18 button (disabled) Description: Redo, Help: Redo (⇧⌘Z), ID: document-redo
+		19 button (disabled) Description: Save, Help: Save (⌘S)
+		20 menu button Mode, Value: Preview, ID: document-mode
+		21 menu button Insert, ID: document-insert
+		22 menu button Export, ID: document-export
+		23 menu button More
+		24 text In this document
+		25 scroll area Secondary Actions: Scroll Up, Scroll Down
+			26 button Your Leonardo guide
+			27 button A document you can see
+			28 button Explain a journey · Mermaid
+			29 button Make an idea precise · Math
+			30 button Display formulas · regression examples
+			31 button Compare at a glance · Charts
+			32 button 1. Open, read and edit
+			33 button 2. Choose a format
+			34 button 3. Convert Markdown to Leonardo
+			35 button 4. Practise with a form
+			36 button Field types and validation
+			37 button 5. Export and share
+			38 button 6. Plugins and AI agents
+			39 button Get the skill
+			40 button Claude for macOS or web
+			41 button Claude Code
+			42 button Codex
+			43 button Prompts to copy
+			44 button Import with your agent
+			45 button What you need
+			46 button Prepare and convert
+			47 button Request to copy
+			48 button Review and adjust in Leonardo
+			49 button 7. Home, recent items and favorites
+			50 button 8. Projects, navigation and tabs
+			51 button 9. Search, tags and document outline
+			52 button 10. Editing, tables and recovery
+			53 button Images, rubrics and page placement
+			54 button 11. Preferences: choose the right scope
+			55 button 12. The five built-in extensions
+			56 button Local citation example
+			57 button Footnotes and callouts
+			58 button 13. Git: an explicit desktop workflow
+			59 button 14. Share from this Mac: Little Leonardo and other computers
+			60 button Answer a rubric request on iOS
+			61 button 15. Connect to other computers and offline copies
+			62 button 16. Updates and release notes
+			63 button 17. Keyboard reference
+			64 button 18. Availability, privacy and limits
+			65 button 19. Troubleshooting
+			66 button Little Leonardo: bundled demo and local practice
+			67 scroll bar (settable, float) 0
+				68 value indicator (settable, float) 0
+				69 increment arrow button
+				70 decrement arrow button
+				71 increment page button
+				72 decrement page button
+		73 text Value: Version 0.3.1045 · stable Saved · package, ID: status-version
+		74 image (selected) Description: Selected, ID: checkmark.circle
+		75 text Standalone document Leonardo document
+		76 image Description: Rich Text Document, ID: doc.richtext
+		77 text Package · saves to .mdlz
+		78 image Description: Archive, ID: archivebox
+		79 text UTF-8 8,167 words
+	80 close button
+	81 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	82 minimize button
+	83 image Guide-v22-en.mdlz
+	84 text Guide-v22-en.mdlz
+85 menu bar
+	86 LeonardoMD QA
+	87 File
+	88 Edit
+	89 View
+	90 Window
+	91 Help
+
+The focused UI element is 0 standard window Guide-v22-en.mdlz, Secondary Actions: Raise, URL: file:///Users/jmr.pineda/Library/Application%20Support/LeonardoMD/User%20Guides/v22/en/Guide-v22-en.mdlz

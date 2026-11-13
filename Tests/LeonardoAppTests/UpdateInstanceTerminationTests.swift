@@ -27,6 +27,22 @@ final class UpdateInstanceTerminationTests: XCTestCase {
         }
     }
 
+    func testInstallOnQuitRequiresHelperDrainButOrdinaryQuitDoesNot() async {
+        let termination = UpdateInstanceTermination(peers: { [] })
+        var calls = 0
+        let ordinary = await termination.prepareHelperForQuit { calls += 1; return false }
+        XCTAssertTrue(ordinary)
+        XCTAssertEqual(calls, 0)
+        termination.requiresHelperPreparationOnQuit = true
+        let blocked = await termination.prepareHelperForQuit { calls += 1; return false }
+        XCTAssertFalse(blocked)
+        XCTAssertEqual(calls, 1)
+        let safe = await termination.prepareHelperForQuit { true }
+        XCTAssertTrue(safe)
+        termination.resolveInstallation()
+        XCTAssertFalse(termination.requiresHelperPreparationOnQuit)
+    }
+
     func testWaitsForActualExitOfEveryInstance() async throws {
         let first = Peer(1), second = Peer(2)
         first.exitsOnQuit = true
@@ -251,7 +267,7 @@ final class UpdateInstanceTerminationTests: XCTestCase {
             additional.running ? [additional.adapter] : []
         }, lockURL: root.appendingPathComponent("gate"))
         defer { termination.resolveInstallation() }
-        let userDriver = CoordinatedUpdateUserDriver(termination: termination)
+        let userDriver = CoordinatedUpdateUserDriver(termination: termination, prepareHelper: { true })
         // Model Sparkle's documented first-process monitor at its user-driver
         // boundary. This order would monitor the additional process if armed early.
         var monitored: Peer?
@@ -279,7 +295,7 @@ final class UpdateInstanceTerminationTests: XCTestCase {
         peer.acceptsQuit = false
         let gate = root.appendingPathComponent("gate")
         let termination = UpdateInstanceTermination(peers: { [peer.adapter] }, lockURL: gate)
-        let driver = CoordinatedUpdateUserDriver(termination: termination)
+        let driver = CoordinatedUpdateUserDriver(termination: termination, prepareHelper: { true })
         let choice = await driver.preparedChoice(.install, stage: .notDownloaded)
         XCTAssertEqual(choice, .dismiss)
         XCTAssertFalse(termination.installerBoundToPrimary)
@@ -293,7 +309,7 @@ final class UpdateInstanceTerminationTests: XCTestCase {
         let gate = root.appendingPathComponent("gate")
         let termination = UpdateInstanceTermination(peers: { [] }, lockURL: gate)
         defer { termination.resolveInstallation() }
-        let driver = CoordinatedUpdateUserDriver(termination: termination, dismissPreferences: { true })
+        let driver = CoordinatedUpdateUserDriver(termination: termination, prepareHelper: { true }, dismissPreferences: { true })
         let download = await driver.preparedChoice(.install, stage: .notDownloaded)
         XCTAssertEqual(download, .install)
         XCTAssertThrowsError(try ProcessFileLock(at: gate, mode: .shared))
@@ -309,7 +325,7 @@ final class UpdateInstanceTerminationTests: XCTestCase {
         let peer = Peer(103)
         let termination = UpdateInstanceTermination(peers: { [peer.adapter] },
             lockURL: root.appendingPathComponent("gate"))
-        let driver = CoordinatedUpdateUserDriver(termination: termination)
+        let driver = CoordinatedUpdateUserDriver(termination: termination, prepareHelper: { true })
         for stage in [SPUUserUpdateStage.downloaded, .installing] {
             let choice = await driver.preparedChoice(.install, stage: stage)
             XCTAssertEqual(choice, .skip)
@@ -341,7 +357,7 @@ final class UpdateInstanceTerminationTests: XCTestCase {
         let peer = Peer(104)
         let gate = root.appendingPathComponent("gate")
         let termination = UpdateInstanceTermination(peers: { peer.running ? [peer.adapter] : [] }, lockURL: gate)
-        let driver = CoordinatedUpdateUserDriver(termination: termination)
+        let driver = CoordinatedUpdateUserDriver(termination: termination, prepareHelper: { true })
         let approval = Task { await driver.preparedChoice(.install, stage: .notDownloaded) }
         try await waitUntil { peer.requests > 0 }
         termination.cancelTermination()

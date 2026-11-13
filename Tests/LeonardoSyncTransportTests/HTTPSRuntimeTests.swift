@@ -30,25 +30,139 @@ final class HTTPSRuntimeTests: XCTestCase {
             do {
                 _ = try await bounded.request(method: "GET", path: "/v1/status", credential: String(repeating: "a", count: 64))
                 XCTFail("Oversized response must not be accumulated")
-            } catch { XCTAssertEqual(error as? TransportError, .responseTooLarge) }
+            } catch {
+                XCTAssertEqual(error as? TransportError, .responseTooLarge)
+                XCTAssertNil(HTTPSFailureDiagnostics.from(error), "Response bounds keep their existing typed error")
+            }
             let unauthorized = try await client.request(method: "GET", path: "/v1/status")
             XCTAssertEqual(unauthorized.status, 401)
             let wrong = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: Data(repeating: 0, count: 32))
             do {
                 _ = try await wrong.request(method: "GET", path: "/v1/status")
                 XCTFail("Wrong certificate pin must not receive a response")
-            } catch { XCTAssertTrue(error is URLError) }
+            } catch {
+                XCTAssertTrue(error is URLError)
+                if let diagnostics = HTTPSFailureDiagnostics.from(error) {
+                    XCTAssertEqual(diagnostics.operation, .status)
+                    XCTAssertNil(diagnostics.httpStatusCode)
+                    XCTAssertEqual(diagnostics.receivedBodyBytes, 0)
+                    XCTAssertNil(diagnostics.expectedBodyBytes)
+                    XCTAssertEqual(diagnostics.errorCode, (error as NSError).code)
+                }
+            }
             await server.stop()
             let readyAfterStop = await server.isReady
             XCTAssertFalse(readyAfterStop)
         } catch { await server.stop(); throw error }
     }
 
+    func testRealTLSLargeResponseSurvivesConcurrentRequests() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture identity import requires memory-only Security import") }
+        let identity = try makeIdentity()
+        let largeBody = Data(repeating: 0x5A, count: 1 * 1_024 * 1_024)
+        let server = LANHTTPSListener(identity: identity) { request in
+            switch request.path {
+            case "/v1/snapshot": return HTTPResponse(status: 200, body: largeBody)
+            case "/v1/status": return HTTPResponse(status: 200, body: Data("{\"status\":\"authorized\"}".utf8))
+            default: return HTTPResponse(status: 404)
+            }
+        }
+        let port = try await server.start(host: "127.0.0.1")
+        do {
+            let client = try PinnedHTTPSClient(endpoint: URL(string: "https://127.0.0.1:\(port)")!,
+                                               certificateFingerprint: identity.certificateFingerprint)
+            for _ in 0..<8 {
+                async let snapshot = client.request(method: "GET", path: "/v1/snapshot")
+                async let status = client.request(method: "GET", path: "/v1/status")
+                let (snapshotResponse, statusResponse) = try await (snapshot, status)
+                XCTAssertEqual(snapshotResponse.status, 200)
+                XCTAssertEqual(snapshotResponse.body, largeBody)
+                XCTAssertEqual(statusResponse.status, 200)
+                XCTAssertEqual(statusResponse.body, Data("{\"status\":\"authorized\"}".utf8))
+            }
+            await server.stop()
+        } catch {
+            await server.stop()
+            throw error
+        }
+    }
+
+    func testPinnedHTTPSLargeResponseSurvivesConstrainedTCPWindow() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture identity import requires memory-only Security import") }
+        let identity = try makeIdentity()
+        let largeBody = Data(repeating: 0x3C, count: 16 * 1_024 * 1_024)
+        let server = LANHTTPSListener(identity: identity) { _ in HTTPResponse(status: 200, body: largeBody) }
+        let port = try await server.start(host: "127.0.0.1")
+        let proxy = try TLSBackpressureProxy(destinationPort: port)
+        defer { proxy.stop() }
+        do {
+            let client = try PinnedHTTPSClient(
+                endpoint: URL(string: "https://127.0.0.1:\(proxy.port)")!,
+                certificateFingerprint: identity.certificateFingerprint)
+            let response = try await client.request(method: "GET", path: "/v1/snapshot")
+            XCTAssertEqual(response.status, 200)
+            XCTAssertEqual(response.body, largeBody)
+            await server.stop()
+        } catch {
+            await server.stop()
+            throw error
+        }
+    }
+
+    func testInterruptedPinnedTLSBodyReportsBoundedPartialTransferContext() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture identity import requires memory-only Security import") }
+        let identity = try makeIdentity()
+        let sensitiveMarker = Data("RESPONSE_CONTENT_MUST_NOT_ENTER_DIAGNOSTICS".utf8)
+        let responseBody = sensitiveMarker + Data(repeating: 0x6A, count: 2 * 1_024 * 1_024)
+        let server = LANHTTPSListener(identity: identity) { _ in HTTPResponse(status: 200, body: responseBody) }
+        let port = try await server.start(host: "127.0.0.1")
+        let wireCutoff = 128 * 1_024
+        let proxy = try TLSBackpressureProxy(destinationPort: port, responseWireByteLimit: wireCutoff)
+        defer { proxy.stop() }
+
+        let endpoint = URL(string: "https://127.0.0.1:\(proxy.port)")!
+        let credential = String(repeating: "d", count: 64)
+        let deviceID = UUID()
+        let projectID = UUID()
+        let path = "/v1/devices/\(deviceID.uuidString)/projects/\(projectID.uuidString)/snapshot"
+        let client = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: identity.certificateFingerprint)
+        do {
+            _ = try await client.request(method: "GET", path: path, credential: credential)
+            XCTFail("The TLS relay must interrupt the response before its declared body is complete")
+        } catch {
+            XCTAssertTrue(error is URLError, "The existing URL error type remains visible")
+            let underlying = error as NSError
+            XCTAssertEqual(underlying.domain, NSURLErrorDomain)
+            let diagnostics = try XCTUnwrap(HTTPSFailureDiagnostics.from(error))
+            XCTAssertEqual(diagnostics.operation, .snapshot)
+            XCTAssertEqual(diagnostics.errorDomain, underlying.domain)
+            XCTAssertEqual(diagnostics.errorCode, underlying.code)
+            XCTAssertEqual(diagnostics.httpStatusCode, 200)
+            XCTAssertGreaterThan(diagnostics.receivedBodyBytes, 0)
+            XCTAssertLessThan(diagnostics.receivedBodyBytes, responseBody.count)
+            XCTAssertEqual(diagnostics.expectedBodyBytes, Int64(responseBody.count))
+
+            let code = diagnostics.compactCode
+            print("OBSERVED_TRUNCATED_TLS_DIAGNOSTIC=\(code)")
+            XCTAssertFalse(code.contains(endpoint.absoluteString))
+            XCTAssertFalse(code.contains(path))
+            XCTAssertFalse(code.contains(deviceID.uuidString))
+            XCTAssertFalse(code.contains(projectID.uuidString))
+            XCTAssertFalse(code.contains(credential))
+            XCTAssertFalse(code.contains(String(data: sensitiveMarker, encoding: .utf8)!))
+        }
+        await server.stop()
+    }
+
     func testPairingSnapshotAndRevocationOverRealHTTPS() async throws {
         guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
         let identity = try makeIdentity()
         let project = SharedProjectDescriptor(id: UUID(), name: "Docs", scope: try CorpusScope(folder: "docs"))
-        let snapshot = CorpusSnapshot(revision: "unsaved-r1", files: [CorpusFile(path: "docs/a.md", content: Data("unsaved buffer".utf8), isUnsavedBuffer: true)])
+        let largeImage = Data(repeating: 0x4D, count: 338_658)
+        let snapshot = CorpusSnapshot(revision: "unsaved-r1", files: [
+            CorpusFile(path: "docs/a.md", content: Data("unsaved buffer".utf8), isUnsavedBuffer: true),
+            CorpusFile(path: "docs/assets/large.png", content: largeImage, isUnsavedBuffer: false)
+        ])
         let authority = try DirectSyncAuthority(registry: PairingRegistry(),
             projects: [SharedProjectSource(descriptor: project) { snapshot }],
             serverFingerprint: identity.certificateFingerprint, persist: { _ in })
@@ -72,9 +186,12 @@ final class HTTPSRuntimeTests: XCTestCase {
             let denied = try await client.request(method: "GET", path: snapshotPath, credential: credential)
             XCTAssertEqual(denied.status, 401)
             try await authority.approve(requestID: challenge.id, code: challenge.comparisonCode, projectIDs: [project.id], now: fixedNow)
-            let fetched = try await client.request(method: "GET", path: snapshotPath, credential: credential)
-            XCTAssertEqual(fetched.status, 200)
-            XCTAssertEqual(try JSONDecoder().decode(CorpusSnapshot.self, from: fetched.body), snapshot)
+            async let fetched = client.request(method: "GET", path: snapshotPath, credential: credential)
+            async let refreshedStatus = client.request(method: "GET", path: statusPath, credential: credential)
+            let (snapshotResponse, statusResponse) = try await (fetched, refreshedStatus)
+            XCTAssertEqual(snapshotResponse.status, 200)
+            XCTAssertEqual(statusResponse.status, 200)
+            XCTAssertEqual(try JSONDecoder().decode(CorpusSnapshot.self, from: snapshotResponse.body), snapshot)
             try await authority.revoke(deviceID: challenge.id)
             let revoked = try await client.request(method: "GET", path: statusPath, credential: credential)
             XCTAssertEqual(try JSONDecoder().decode(DirectDeviceStatus.self, from: revoked.body).access, .revoked)
@@ -147,6 +264,98 @@ final class HTTPSRuntimeTests: XCTestCase {
             try await authority.revoke(deviceID: enrollment.deviceID)
             do { _ = try await client.rubricRequests(deviceID: enrollment.deviceID, credential: credential); XCTFail("Revoked client must not read requests") }
             catch { XCTAssertEqual(error as? SyncError, .revoked) }
+            await server.stop()
+        } catch { await server.stop(); throw error }
+    }
+
+    func testTLSResponseDeliversCompleteBodyAndCloseNotify() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
+        let identity = try makeIdentity()
+        let body = Data(repeating: 0x5A, count: 492_904)
+        let server = LANHTTPSListener(identity: identity) { _ in HTTPResponse(status: 200, body: body) }
+        let port = try await server.start(host: "127.0.0.1")
+        do {
+            let result = try await TLSClosureProbe.read(port: port, fingerprint: identity.certificateFingerprint)
+            XCTAssertFalse(result.timedOut, "A Connection: close response must finish without waiting for a client timeout")
+            XCTAssertEqual(result.exitCode, 0, result.diagnostics)
+            XCTAssertTrue(result.response.suffix(body.count) == body, "Every declared body byte must arrive")
+            XCTAssertTrue(result.diagnostics.contains("TLS_CLOSE_NOTIFY"),
+                          "The peer must observe a TLS close_notify, not a ragged TLS EOF: \(result.diagnostics)")
+            await server.stop()
+        } catch { await server.stop(); throw error }
+    }
+
+    func testSlowTLSReaderReceivesAllBytesBeforeCleanClose() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
+        let identity = try makeIdentity()
+        let body = Data(repeating: 0x7E, count: 2 * 1_024 * 1_024)
+        let server = LANHTTPSListener(identity: identity) { _ in HTTPResponse(status: 200, body: body) }
+        let port = try await server.start(host: "127.0.0.1")
+        do {
+            let result = try await TLSClosureProbe.read(port: port, fingerprint: identity.certificateFingerprint, slowReader: true)
+            XCTAssertFalse(result.timedOut)
+            XCTAssertEqual(result.exitCode, 0, result.diagnostics)
+            XCTAssertTrue(result.response.suffix(body.count) == body,
+                          "Slow consumption must not lose queued body bytes: received \(result.response.count) wire-plaintext bytes")
+            XCTAssertTrue(result.diagnostics.contains("TLS_CLOSE_NOTIFY"), result.diagnostics)
+            await server.stop()
+        } catch { await server.stop(); throw error }
+    }
+
+    func testPeersHoldingWriteSideOpenDoNotExhaustConnectionSlots() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
+        let identity = try makeIdentity()
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let release = root.appendingPathComponent("release")
+        let server = LANHTTPSListener(identity: identity) { _ in HTTPResponse(status: 200, body: Data("ok".utf8)) }
+        let port = try await server.start(host: "127.0.0.1")
+        let held = (0..<16).map { index in
+            Task {
+                try await TLSClosureProbe.read(port: port, fingerprint: identity.certificateFingerprint,
+                    readyFile: root.appendingPathComponent("ready-\(index)"), holdOpenUntil: release)
+            }
+        }
+        do {
+            let deadline = Date().addingTimeInterval(20)
+            while (0..<16).contains(where: { !FileManager.default.fileExists(atPath: root.appendingPathComponent("ready-\($0)").path) }),
+                  Date() < deadline { try await Task.sleep(for: .milliseconds(20)) }
+            let ready = (0..<16).allSatisfy { FileManager.default.fileExists(atPath: root.appendingPathComponent("ready-\($0)").path) }
+            XCTAssertTrue(ready, "Every synthetic peer must receive its response before withholding its own close")
+            try await Task.sleep(for: .seconds(6))
+            let client = try PinnedHTTPSClient(endpoint: URL(string: "https://127.0.0.1:\(port)")!,
+                                               certificateFingerprint: identity.certificateFingerprint)
+            let response = try await client.request(method: "GET", path: "/v1/status")
+            XCTAssertEqual(response.body, Data("ok".utf8), "A held-open peer must not monopolize an admission slot")
+            try Data().write(to: release)
+            for task in held {
+                let result = try await task.value
+                XCTAssertFalse(result.timedOut)
+                XCTAssertEqual(result.exitCode, 0, result.diagnostics)
+            }
+            await server.stop()
+        } catch {
+            try? Data().write(to: release)
+            await server.stop()
+            for task in held { _ = try? await task.value }
+            throw error
+        }
+    }
+
+    func testSecondRequestDuringCloseCannotReachHandler() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
+        let identity = try makeIdentity()
+        let counter = HTTPSClosureRequestCounter()
+        let server = LANHTTPSListener(identity: identity) { _ in await counter.response() }
+        let port = try await server.start(host: "127.0.0.1")
+        do {
+            let result = try await TLSClosureProbe.read(port: port,
+                fingerprint: identity.certificateFingerprint, sendSecondRequest: true)
+            XCTAssertFalse(result.timedOut)
+            let handled = await counter.count
+            XCTAssertEqual(handled, 1, "Teardown must not route another HTTP request")
+            XCTAssertEqual(String(decoding: result.response, as: UTF8.self).components(separatedBy: "HTTP/1.1 ").count - 1, 1)
             await server.stop()
         } catch { await server.stop(); throw error }
     }
@@ -268,6 +477,14 @@ final class HTTPSRuntimeTests: XCTestCase {
         try process.run()
         process.waitUntilExit()
         guard process.terminationStatus == 0 else { throw TransportError.invalidIdentity }
+    }
+
+}
+private actor HTTPSClosureRequestCounter {
+    private(set) var count = 0
+    func response() -> HTTPResponse {
+        count += 1
+        return HTTPResponse(status: 200, body: Data("first and only response".utf8))
     }
 }
 #endif

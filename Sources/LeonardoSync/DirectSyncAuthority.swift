@@ -281,6 +281,42 @@ public actor DirectSyncAuthority {
         return snapshot
     }
 
+    public func catalogue(deviceID: UUID, credential: String, projectID: UUID) async throws -> RemoteProjectCatalogue {
+        try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
+        guard let source = projects[projectID] else { throw PairingError.invalidProject }
+        let epoch = sourceEpoch
+        let catalogue: RemoteProjectCatalogue
+        if let root = source.rootURL {
+            let selection = try source.descriptor.selection ?? CorpusSelection(folders: [source.descriptor.scope.folder], documents: [])
+            catalogue = try await ProjectCorpusReader().catalogue(root: root, selection: selection)
+        } else {
+            catalogue = try await RemoteProjectCatalogue(snapshot: source.snapshot())
+        }
+        try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
+        guard epoch == sourceEpoch else { throw DirectAuthorityError.busy }
+        try catalogue.validate(descriptor: source.descriptor)
+        return catalogue
+    }
+
+    public func file(deviceID: UUID, credential: String, projectID: UUID,
+                     request: RemoteFileRequest) async throws -> CorpusFile {
+        try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
+        guard let source = projects[projectID] else { throw PairingError.invalidProject }
+        try source.descriptor.scope.validate(request.path)
+        try source.descriptor.selection?.validate(request.path)
+        let epoch = sourceEpoch
+        let snapshot: CorpusSnapshot
+        if let root = source.rootURL {
+            snapshot = try await ProjectCorpusReader().snapshot(root: root,
+                selection: CorpusSelection(folders: [], documents: [request.path]))
+        } else { snapshot = try await source.snapshot() }
+        try checkAccess(deviceID: deviceID, credential: credential, projectID: projectID)
+        guard epoch == sourceEpoch else { throw DirectAuthorityError.busy }
+        guard let file = snapshot.files.first(where: { $0.path == request.path }),
+              RemoteFileEntry(file: file).revision == request.revision else { throw SyncError.publicationPending }
+        return file
+    }
+
     private func checkAccess(deviceID: UUID, credential: String, projectID: UUID) throws {
         guard !changing else { throw DirectAuthorityError.busy }
         guard try registry.access(deviceID: deviceID, credential: credential, projectID: projectID) == .authorized else {

@@ -9,6 +9,8 @@ This guide is a reading document in the Leonardo format inside an **MDLZ** packa
 
 ![A document journey: write, fill and share](assets/journey.png)
 
+Illustrative workflow: **Write · MDLF → Fill · MDLR → Share · MDLZ**.
+
 
 ## A document you can see
 
@@ -47,6 +49,22 @@ $$\bar{x}=\frac{x_1+x_2+x_3}{3}$$
 
 For 2, 4 and 6, the mean is 4. Source: `$$\bar{x}=\frac{x_1+x_2+x_3}{3}$$`. This is a presentation formula; it does not calculate form fields.
 
+Inline notation also works: $N(\varepsilon)$ counts the boxes.
+
+### Display formulas · regression examples
+
+**Requires Math.** Check that these examples display as equations, including the number (1), rather than literal `$$` or backslash commands. With Math disabled, the source notation remains visible. Code examples intentionally stay literal.
+
+$$ \underbrace{a}_{x} + \underbrace{b}_{y} $$
+
+Check the curved brace strokes as well as the letters and labels. Radicals, long arrows and cancellation marks should also keep their complete shapes:
+
+$$ \sqrt{x+1} \xrightarrow{n\to\infty} \cancel{x} $$
+
+$$
+D_B(F) := \lim_{\varepsilon \to 0^{+}} \frac{\ln N(\varepsilon)}{\ln (1/\varepsilon)}, \qquad N(\varepsilon) = \text{number of intersecting boxes of side } \varepsilon\tag{1}
+$$
+
 ### Compare at a glance · Charts
 
 **Requires Charts (Vega-Lite) to be enabled.** Fictional document progress data; all data is included in the package.
@@ -77,7 +95,7 @@ For 2, 4 and 6, the mean is 4. Source: `$$\bar{x}=\frac{x_1+x_2+x_3}{3}$$`. This
 
 </details>
 
-**You choose when to enable.** Leonardo groups detected disabled built-in extensions into one dialog. **Not now** avoids repeating that recommendation during the current opening. Select **Do not ask again for this extension** to remember your choice on this Mac. **Preferences → Extensions → Reset extension warnings** allows recommendations again without changing enabled extensions. The dialog states whether activation affects the project or your global preferences.
+**You choose what to enable.** Leonardo groups detected disabled built-in extensions into one dialog. Each row's switch selects that extension; **Enable selected** applies only your selections in the scope shown. **Not now** discards the selection. The separate **Do not show this warning again** switch suppresses recommendations for all documents on this Mac. Restore them in **Preferences → Extensions → Reset extension warnings**; this does not change enabled extensions.
 
 ## 1. Open, read and edit
 
@@ -102,6 +120,8 @@ Use **Save** (⌘S) to persist changes. Undo and Redo apply to document edits. C
 | `.mdlz` | ZIP with one MDLF or MDLR and resources under `assets/` | Sharing documents with their local images |
 
 ![Illustrative diagram: one MDLF or MDLR document, local resources, definitions and answers in an MDLZ package](assets/package.png)
+
+Illustrative diagram: **one MDLF or MDLR document + local resources (`assets/`) + definitions and answers inside that document**.
 
 Definitions and answers belong inside the root document; they are not additional root files.
 
@@ -167,6 +187,8 @@ not silently change its field identifier or invalidate previous answers.
 ## 5. Export and share
 
 ![Choose an export for its recipient](assets/export.png)
+
+Illustrative alternatives: **MDLZ to edit or fill · Markdown to read · PDF for fixed pages**.
 
 | Need | Action | Result and limits |
 | --- | --- | --- |
@@ -240,6 +262,8 @@ Review the output in Leonardo. A valid file can still contain wrong answers. Ins
 **File → Import with your agent…** opens this help inside Leonardo. It does not select, convert or send a PDF. You choose the agent and supply a copy of the file for it to convert.
 
 ![Illustrative diagram: original PDF → your agent and the skill → editable Leonardo document](assets/import.png)
+
+Illustrative workflow: **original PDF → your agent + the Leonardo Format skill → editable Leonardo document**.
 
 #### What you need
 
@@ -332,6 +356,8 @@ Drag the sidebar divider to adjust width. **Follow active file in sidebar** in G
 
 Use the project search field to find filenames and body content. Open a result normally, or use its context menu to keep it in a new tab. Search works in the open project; it is not a Mac-wide index.
 
+To find text in the source of open documents, choose **Edit → Find…** or click the magnifying glass beside the tabs (**⌘F**). Literal text search is the default and ignores case; turn on **Match case** when capitalization matters. Turn on `.*` for a regular expression, such as `\bTODO\b` to find the whole word “TODO”. Choose **This document** or **All open documents** in this window. Leonardo highlights each occurrence, shows the total count and distinguishes the current match. Use the arrows, **Find Next** (⌘G) and **Find Previous** (⇧⌘G) to move through matches; navigation selects the text and activates its tab. A malformed regular expression shows an inline error. Press Escape or close the search bar to finish. This searches document text already open in tabs; project search above finds filenames and content elsewhere in the open project.
+
 Tags come from YAML frontmatter in ordinary Markdown. For example:
 
 ```yaml
@@ -342,7 +368,7 @@ tags: [Swift, "Design Systems"]
 
 Search `tag:swift` or `tag:"Design Systems"` for exact, case-insensitive tag matches. A partial word or a body mention is not a tag match. The lightweight parser accepts a string, inline list or block list, not all YAML features. Empty tags disappear and case-insensitive duplicates collapse.
 
-Clickable tag pills remain visible even when the frontmatter table is hidden. In a project, clicking a pill fills search and reveals navigation if Focus was active. In a standalone file, tags do not create a project. **View → Document outline** (⌥⌘I) opens heading navigation; choose a heading to jump within this document. The inspector helps navigate; form answers are entered inside the page.
+Clickable tag pills remain visible even when the frontmatter table is hidden. In a project, clicking a pill fills search and reveals navigation if Focus was active. In a standalone file, tags do not create a project. **View → Document outline** (⌥⌘I) opens heading navigation; choose a heading to jump within this document. The preview goes to that heading even when images, tables or diagrams appear above it. Repeated titles keep their own destination. In Split, the editor selects the corresponding source line; choose the same heading again to return after scrolling. The inspector helps navigate; form answers are entered inside the page.
 
 ## 10. Editing, tables and recovery
 
@@ -425,9 +451,9 @@ returned drawing remains available to save in the library. After saving, use
 the local library instead of blocking a new request. Use **Refresh linked
 devices** when a newly upgraded companion is not yet listed. Older companions
 that do not advertise rubric capture stay unsupported until their companion
-update. If Leonardo Sync reports an outdated helper, disable and re-enable
-**Leonardo Sync** in Preferences so the bundled helper is registered again,
-then retry the request. Same-ID Retry is limited to the short lost-acknowledgement
+update. After updating the Mac app, its main instance renews an outdated helper
+automatically before reporting sync ready. Wait for the service to finish starting
+or complete any macOS approval, then retry the same request. Same-ID Retry is limited to the short lost-acknowledgement
 window. If the helper reports that the request is expired or missing, or that
 window has passed, Leonardo keeps a local tombstone and **Request again** creates
 a fresh request ID; it never silently recreates the old request. If you cancel
@@ -501,11 +527,11 @@ These extensions are included with Leonardo, work locally and are initially disa
 
 **A disabled extension cannot display its specialized content correctly.** Its source stays as code, notation or ordinary Markdown. Disabling changes interpretation, not authored bytes. PDF uses the rendered document: enable required extensions and inspect Preview before exporting. Mermaid diagrams render as they approach the viewport; allow them to finish before checking the result.
 
-![Leonardo asks before activating detected built-in extensions](assets/activation.png)
+![Leonardo asks which detected built-in extensions to enable](assets/activation-switch.png)
 
-*Actual English activation dialog, synthetic document. This example shows global activation; a project dialog identifies project scope. No third-party plugins are proposed.*
+*English dialog component with Mermaid and Charts selected in a synthetic document. A project dialog identifies project scope. No third-party plugins are proposed.*
 
-Detection recommends only Leonardo's five built-in extensions. It is a recommendation, not a full syntax validator: code examples that merely describe syntax do not require activation. **Not now** suppresses repetition for the current opening. **Do not ask again for this extension** remembers that extension's choice on this Mac. Check the dialog's stated scope before accepting activation.
+Detection recommends only Leonardo's five built-in extensions. It is a recommendation, not a full syntax validator: code examples that merely describe syntax do not require activation. Each switch selects one extension for **Enable selected**; **Not now** discards those selections and prevents another recommendation during the current opening. The separate global switch hides recommendations across documents. **Preferences → Extensions → Reset extension warnings** restores them and clears older per-extension suppressions without changing enabled extensions. Check the scope shown in the dialog before enabling.
 
 ![Extensions preferences with the warning reset action](assets/warnings.png)
 
@@ -559,17 +585,35 @@ These operations are manual. Pull is fast-forward only and protects dirty worktr
 
 ## 14. Share from this Mac: Little Leonardo and other computers
 
-![Synchronization → Share from this Mac; the common service and sharing are off in this example.](assets/sync-sharing-v12.png)
+![Synchronization → Share from this Mac; the common service and sharing are off in this example.](assets/sync-sharing-v13.png)
 
 *Synchronization → Share from this Mac; the common service and sharing are off in this example.*
 
 Little Leonardo is a **read-only companion**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Synchronization → Share from this Mac**. The same page serves Little Leonardo and other Macs; a Mac can share some content and independently connect to another Mac for other content. The service requires a Developer ID signed distribution; local ad-hoc builds cannot enable it.
 
-1. Enable **Leonardo Sync** using the single common control above both pages. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. Wait for **Sync helper running**.
+1. Enable **Leonardo Sync** using the single common control above both pages. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. The indicator beside the switch is gray while checking, green when the helper is running, and red when it is offline. The status text provides details. Wait for **Sync helper running**.
 2. Enable **Share saved files from this Mac** on a network you intend to use. Review the selected local address; Automatic can choose an available address.
 3. Choose **Share current project**, then select the folders/documents you want or the entire project. Confirm the selection; unrelated content is not implicitly shared.
 4. Create an invitation. Its QR and copied link are two ways to open the same invitation: scan the QR in Little Leonardo or paste the link under **Connect to other computers** on another Mac. Compare the verification codes and approve the pending device on this source Mac. Device rows state **read-only** (Little Leonardo or compatible clients) or **LeonardoMD on Mac · changes require review**. The label follows the granted capability, not the device name.
 5. Import the shared content on the companion and verify it before relying on an offline copy. Use Revoke on the Mac to remove a device's future access.
+
+### Recognize a project's role
+
+The project icon shows the same project identity on macOS and iOS. Its small role indicator describes the device you are looking at, not the current network state:
+
+| What you see on this device | Label and visual cue | Meaning |
+| --- | --- | --- |
+| A local project | **Local** · project icon | The project belongs to this device and is not configured to share content outward. |
+| A project shared from this device | **Shared from this device** · project icon + people indicator | This device is configured to share selected content. Access by each receiving device still requires its own invitation and authorization; the label does not claim that a recipient is currently authorized. |
+| A project received from another device | **Received from another device** · project icon + network indicator | The project is remote from this device. The source's sharing is implicit, so it does not receive a second sharing badge. |
+
+![macOS examples of project identity and role indicators; the same meanings apply on iOS.](assets/project-identities.png)
+
+*macOS production-component examples; the same role meanings apply on iOS.*
+
+For example, a project named **Trip** is **Shared from this device** on the Mac configured to serve selected content. The same **Trip** is **Received from another device** on the receiving Mac, iPhone or iPad after that device is invited and authorized. An iOS copy remains received even when it is available offline; storing its files locally does not turn it into a locally owned project. A recovery archive is identified separately as read-only and does not imply a live remote connection. If you share only selected folders or documents, the text names that scope; the project icon does not mean that the entire project is exposed. Connectivity, synchronization progress and read-only access are separate states.
+
+On iPhone and iPad, the bundled **Demo** is a **Local** project. Its Spanish and English files are documents inside that project. A received project keeps its origin while each file independently shows **Remote only**, **Cached** or **Available offline**; the project icon does not mean that every file has been downloaded.
 
 For rubric capture without document access, do not choose **Share current project**.
 In the pending-connection review, leave every project toggle off. When the sheet
@@ -583,6 +627,63 @@ support, **Insert → New rubric… → Use a linked Little Leonardo** lists tha
 one device. The companion only draws and returns the rubric; it cannot edit the
 document. A helper, service or capability problem is shown as an actionable
 offline/unsupported state.
+
+While waiting for a returned rubric, Leonardo automatically repeats temporary
+status-query failures for the **same request**. Leave the editor open; a brief
+failure does not require Retry or send a second drawing request. A received
+response appears for review automatically.
+
+![Automatically recovered rubric ready for review](assets/rubric-automatic-recovery.png)
+
+*Production editor component with a synthetic returned drawing after a temporary query failure.*
+
+If several consecutive queries fail, the editor shows the original error and
+**Retry**. Check the connection and helper, then use Retry to refresh that same
+request. Rejected, cancelled or expired requests are terminal; follow the
+request's displayed action rather than waiting for automatic recovery. Closing
+the editor stops its status polling and prevents a late response from being
+shown in the closed editor. To cancel the remote drawing request itself, use
+**Cancel request** before closing.
+
+![Persistent query failure with Retry](assets/rubric-persistent-error.png)
+
+*Production editor component with a synthetic persistent error; no device or private drawing is used.*
+
+### Classic appearance, startup and About in Little Leonardo
+
+Little Leonardo uses the **Leonardo Classic** colors: parchment paper,
+burgundy headings and oxide actions, including the bundled demo, its source view and field help. The demo remains accessible in the library before connecting a Mac. Startup displays the brand while the local library is prepared,
+without an added delay. Open **Ajustes de sincronización → Acerca de Little
+Leonardo** (sync settings → About) to check the installed version and build and open offline Help, Privacy and
+Licenses pages.
+
+Open a synchronized Markdown document and choose **Ver documento** (preview) to read it. The first heading begins close to the navigation bar, with a compact reading margin; the remaining sections retain their usual spacing. **Ver texto** shows the source without changing the synchronized document.
+
+After **Aceptar y dibujar** (accept and draw), the page suggests rotating the
+device. Landscape presents a full-screen canvas with ink color, style, width,
+**Deshacer** (undo) and **Limpiar** (clear). Returning to portrait restores the
+normal page and preserves the drawing's proportions. With rotation lock enabled,
+use **Ampliar lienzo** (expand canvas), then **Volver** (back). Rotating never
+sends or clears the rubric. Preview and **Enviar rúbrica** (send rubric) remain
+explicit actions; a blocked, submitted or frozen retry draft cannot be edited.
+
+![Full-screen landscape rubric canvas in Leonardo Classic. Actual simulator capture with a synthetic request and Spanish interface; reduced thumbnail.](assets/ios-rubric-classic-landscape.png)
+
+### If mobile synchronization is interrupted
+
+For a network failure, the existing alert may include a compact diagnostic
+line, for example:
+
+`[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
+
+Share that line or a screenshot when asking for help. It identifies whether a
+status or snapshot request failed, the HTTP status when received, response
+bytes received versus expected, and the system error domain/code. It contains
+no server address or path, pairing credential, device/project identifier, or
+file content. An HTTP 200 header does not mean the response body finished. A
+`?` expected count means the server did not provide a body length. Previously
+downloaded offline copies remain available; check that the source Mac is
+reachable and Leonardo Sync is enabled, then retry synchronization.
 
 ### Answer a rubric request on iOS
 
@@ -644,19 +745,52 @@ The helper shares **saved files only**, including while the editor is open. Save
 
 The Mac must be reachable for transfers. A private overlay VPN requires the explicit setting and a compatible reachable address; it does not make a public cloud service. Do not assume pairing works across arbitrary networks. Revocation stops future authorized access; it cannot erase copies already downloaded. The iOS companion does not offer Git editing or send document edits back to the Mac. Do not confuse desktop proposal review with mobile editing.
 
+### Updating the background synchronization service
+
+When you choose **Install and relaunch**, the updater first pauses Leonardo Sync while the current signed application can still communicate with it. It waits for active writes to finish and confirms the service is stopped before replacing the application. The new application resumes the service with the same device access, shared projects and TLS identity; do not pair the iPhone again. Downloading alone does not pause sharing. If you cancel quitting, the current application resumes the service. An interrupted installation keeps the existing consent for recovery on the next launch. Turning off **Enable Leonardo Sync** cancels that consent and remains respected. If macOS requests approval, use **Open Login Items settings** and approve the existing service there.
+
+If a safe stop cannot be confirmed, installation is postponed rather than forcibly terminating a potentially active writer. This preparation requires an application version that includes it before the update begins. Versions up to 0.3.1270 can already have an old service that no longer accepts authenticated communication after replacement; this correction does not retroactively make that state safe to terminate. Leave pairings and permissions intact and arrange a controlled recovery before testing a later update. Replacing the application outside its built-in updater does not run this preparation.
+
 ## 15. Connect to other computers and offline copies
 
-![Synchronization → Connect to other computers before pairing or importing a project.](assets/sync-connections-v12.png)
+![Synchronization → Connect to other computers before pairing or importing a project.](assets/sync-connections-v13.png)
 
 *Synchronization → Connect to other computers before pairing or importing a project.*
 
 Use **Preferences → Synchronization → Connect to other computers** in the principal instance. Enable **Leonardo Sync** with the common control on both Macs. On the source Mac, open **Share from this Mac**, enable sharing and select the intended content. On this receiving Mac, choose **Connect to another Mac** and paste the source invitation link or HTTPS address with a name for this device. Compare the codes and approve on the source before importing. Your own **Share saved files from this Mac** can stay off: consuming content does not publish yours. Neither role is a global master/client mode.
 
-Import an available project to create an offline copy. Open it locally, then use manual synchronization or select a synchronization interval. Network reachability is still required for transfers. A disconnected copy remains a local working copy; it is not evidence that the source has your latest edits.
+Choose **Create editable copy** to explicitly download an entire editable project. Open it locally, then use manual synchronization or select a synchronization interval. Network reachability is still required for transfers. Its files are stored locally on this Mac, but the project remains **Received from another device**; offline availability does not change its origin or prove that the source has your latest edits.
 
 **If importing or synchronizing fails**, the error identifies whether refreshing source access or downloading the project failed, with the HTTP status and a recovery action. Updated source Macs also report whether the selection exceeds the project size, per-file size or file-count limit, with the observed quantity and limit. “At least” is the amount encountered before stopping, not a complete project inventory; a file path is relative to the shared project. The current whole-project transfer supports up to 200 MiB per project, 20 MiB per file and 10,000 files. On the source Mac, reduce the shared selection and retry; nothing is silently omitted to fit. A source-read error means you should check the disk, permissions and availability of cloud files on that Mac. It does not prove the project is too large. Older source versions may provide only an HTTP status; update both Macs for detailed diagnostics.
 
 To return edits, **Compare changes**, inspect Base / This Mac / Other Mac versions, then **Send changes for review**. Retry pending proposals when connectivity returns. Edits made after submission remain local until another submission. The source Mac reviews incoming proposals; sending is not automatic acceptance. Resolve conflict markers deliberately and verify the result before accepting. Keep local work until the source confirms the expected outcome.
+
+### On-demand downloads and offline storage
+
+| Action | Download | Storage |
+|---|---|---|
+| Browse the catalogue | File/folder names | Catalogue only |
+| Open a file | File and referenced local images | Temporary cache, within your limit |
+| Keep offline | Selected files/folders and referenced images | Separate retained storage |
+
+After pairing, the app refreshes the authorized file/folder list without downloading content. On Mac, choose **Browse files** beside a shared project; on iOS, open the project. The catalogue starts at the project root and shows only that level's immediate files and folders. Select a folder to enter it; use **Parent folder** to move back up. The project itself is available from the actions menu rather than appearing as a duplicate folder row. Opening a file downloads that file and its referenced local images. Already downloaded files open from cache. Only saved source files are shared. Use **Show source / Show document** (iOS: **Ver texto / Ver documento**) to switch between read-only source and preview without another download. Little Leonardo keeps the first heading close to the navigation bar; later sections retain their usual spacing.
+
+Use the context menu (right-click on Mac; long-press on iOS):
+
+- **Keep offline** downloads and retains the selection. A folder includes future descendants. Referenced local images are retained with the document.
+- **Stop keeping offline** makes copies eligible for cache cleanup without deleting originals. A child can be excluded from a retained folder.
+- **Release local space** removes temporary downloaded copies; retained offline content remains protected.
+
+The list distinguishes **Remote only**, **Cached**, **Offline pending** and **Available offline**, with progress and failure indicators. Folder counts show downloaded files versus total files. A selection is available offline only after all required downloads finish. Failures retry during the next automatic refresh; the last retained version remains readable if an update fails. The reader shows an explicit previous-copy warning, the download error and **Retry** above that copy. Failed referenced images also show an error, even when the document text is readable.
+
+In **Synchronization → Storage and cache**, enter the temporary limit as a whole number of MiB and choose **Apply cache limit** (Return also applies it). Text being edited does not change the saved budget. Inspect temporary/offline usage and pending downloads, clear temporary cache or stop retaining a selection. The default limit is 256 MiB; zero disables temporary retention. Least recently used temporary files are removed first. Offline files are stored separately and do not count toward this limit; they require enough free device space. Cleanup never deletes editable desktop copies or rubric drafts.
+
+Automatic refresh defaults to every minute while the receiving app is active; an existing interval preference is preserved. iOS also refreshes on foreground activation and pauses while suspended. Transfers need a reachable source Mac. Offline, only previously downloaded content opens. Confirmed revocation removes access to the managed reader cache.
+
+On Mac, **Create editable copy** explicitly downloads the complete working copy for editing and the existing proposal/review workflow. These copies are separate from the automatically cleaned reader cache. Browsing or keeping files offline does not send edits.
+
+
+If the source Mac has an older Leonardo Sync service, the app asks you to update LeonardoMD and Leonardo Sync on that Mac. A missing on-demand service is distinct from a network failure; it never triggers a bulk-download fallback or changes pairing.
 
 ## 16. Updates and release notes
 
@@ -679,6 +813,7 @@ The installed package channel and your subscription are separate. Beta subscript
 | ⇧⌘W | Close window |
 | ⌘1 / ⌘2 / ⌘3 | Preview / Edit / Split |
 | ⌘4 | Fill form when available |
+| ⌘F / ⌘G / ⇧⌘G | Find / next / previous match |
 | ⇧⌘F / ⌥⌘I | Focus / document outline |
 | ⌘S | Save |
 | ⌘Z / ⇧⌘Z | Undo / Redo |
@@ -704,3 +839,13 @@ An extension's activation does not install an AI skill, connect an AI account or
 - **Unsupported version:** preserve the file and update the reader/plugin. Do not change its version number to force acceptance.
 
 This guide covers current macOS workflows. External service labels were checked on **30 October 2026** and may change. See the [web user guide](https://github.com/PinedaTec-EU/LeonardoMD/blob/main/doc/user-guide.md), [format contract](https://github.com/PinedaTec-EU/LeonardoMD/blob/main/doc/format/README.md) and [published releases](https://github.com/PinedaTec-EU/LeonardoMD/releases).
+
+
+## Little Leonardo: bundled demo and local practice
+
+The library contains one list of projects. Open **Demo**, then choose **Demo-es.mdlr · Español** or **Demo-en.mdlr · English**. Each document becomes a personal practice copy when first opened. No account, Mac or camera/local-network permission is needed. The demo includes a local cover, table, Mermaid, formulas and a chart with bundled data; these engines are enabled in the demo. The form uses real Leonardo fields. Enter fictional details, tap **Guardar / Save**, wait for confirmation, then reopen to check your answers. They stay on this device, separate from synchronized read-only projects, and are never sent to the Mac. Uninstalling removes the copies.
+
+Under **Opciones / Options**, **Ver texto / View source** shows Markdown and metadata; **Restablecer / Reset** asks for confirmation and resets only the selected language's practice. If saving fails, keep the screen open and retry; do not assume answers are saved without confirmation. For real projects, return to **Conectar** and follow the synchronization chapter. Practice does not enable general synchronized-project editing or replace Mac rubric requests.
+
+
+To remove any project from this device, swipe its row left and tap **Eliminar / Delete**. Swiping alone never deletes. Mac originals remain untouched and removed downloaded projects stay excluded from synchronization. The Demo project disappears like any other project. Recover it at any time from **Ajustes de sincronización → Recuperar demo / Restore demo**; saved answers are retained. It stays removed across restarts and app updates with the same demo content revision. A newer bundled demo content revision makes Demo available again, using new practice copies while retaining earlier copies. This recovery does not reset answers; use **Restablecer / Reset** inside a language document for that.

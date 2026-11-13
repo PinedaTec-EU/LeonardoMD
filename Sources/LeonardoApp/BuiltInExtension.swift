@@ -17,6 +17,15 @@ enum BuiltInExtension: String, CaseIterable, Identifiable {
         case .extras: "Markdown extras"
         }
     }
+    var purpose: String {
+        switch self {
+        case .mermaid: "Diagrams inside your documents"
+        case .math: "Formulas with KaTeX"
+        case .charts: "Inline data visualizations inside your documents"
+        case .citations: "Bibliographies and references with Citation.js"
+        case .extras: "Footnotes and GitHub-style callouts"
+        }
+    }
     var flag: WritableKeyPath<MarkdownFeatures, Bool> {
         switch self {
         case .mermaid: \.mermaidEnabled

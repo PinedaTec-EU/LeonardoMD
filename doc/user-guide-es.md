@@ -45,6 +45,22 @@ $$\bar{x}=\frac{x_1+x_2+x_3}{3}$$
 
 Para 2, 4 y 6, la media es 4. Fuente: `$$\bar{x}=\frac{x_1+x_2+x_3}{3}$$`. Es una fórmula de presentación; no calcula campos del formulario.
 
+La notación en línea también funciona: $N(\varepsilon)$ cuenta las cajas.
+
+### Fórmulas de bloque · ejemplos de regresión
+
+**Requiere Matemáticas.** Comprueba que estos ejemplos aparecen como ecuaciones, incluido el número (1), sin `$$` ni comandos con barra invertida visibles. Con Matemáticas desactivadas se conserva la notación fuente. Los ejemplos de código permanecen literales a propósito.
+
+$$ \underbrace{a}_{x} + \underbrace{b}_{y} $$
+
+Comprueba los trazos curvos de las llaves además de las letras y etiquetas. Las raíces, las flechas largas y las marcas de cancelación también deben conservar su forma completa:
+
+$$ \sqrt{x+1} \xrightarrow{n\to\infty} \cancel{x} $$
+
+$$
+D_B(F) := \lim_{\varepsilon \to 0^{+}} \frac{\ln N(\varepsilon)}{\ln (1/\varepsilon)}, \qquad N(\varepsilon) = \text{número de cajas que intersecan, de lado } \varepsilon\tag{1}
+$$
+
 ### Compara de un vistazo · Gráficos
 
 **Requiere Gráficos (Vega-Lite) activado.** Datos ficticios de avance de un documento; todos los datos están dentro del paquete.
@@ -75,7 +91,7 @@ Para 2, 4 y 6, la media es 4. Fuente: `$$\bar{x}=\frac{x_1+x_2+x_3}{3}$$`. Es un
 
 </details>
 
-**Tú decides cuándo activar.** Leonardo reúne en un diálogo las extensiones integradas que detecta deshabilitadas. **Ahora no** evita repetir esa recomendación durante la apertura actual. Marca **No volver a preguntar por esta extensión** para guardar tu elección en este Mac. **Preferencias → Extensiones → Restablecer avisos de extensiones** permite volver a preguntar, sin cambiar las extensiones activadas. El diálogo indica si la activación afecta al proyecto o a tus preferencias globales.
+**Tú eliges qué activar.** Leonardo reúne en un diálogo las extensiones integradas deshabilitadas que detecta. El interruptor de cada fila selecciona esa extensión; **Activar seleccionadas** aplica solo tu selección en el ámbito indicado. **Ahora no** descarta la selección. El interruptor global **No volver a mostrar este aviso** oculta las recomendaciones para todos los documentos de este Mac. Puedes recuperarlas en **Preferencias → Extensiones → Restablecer avisos de extensiones**; esto no cambia las extensiones activadas.
 
 ## 1. Abrir, leer y editar
 
@@ -100,6 +116,8 @@ Usa **Guardar** (⌘S) para persistir cambios. Deshacer y Rehacer actúan sobre 
 | `.mdlz` | ZIP con un único MDLF o MDLR y recursos en `assets/` | Compartir un documento con sus imágenes locales |
 
 ![Diagrama ilustrativo: un documento MDLF o MDLR, recursos locales, definición y respuestas en un paquete MDLZ](guide/es/assets/paquete.png)
+
+Diagrama ilustrativo: **un documento MDLF o MDLR + recursos locales (`assets/`) + definiciones y respuestas dentro de ese documento**.
 
 La definición y las respuestas pertenecen al documento raíz; no son archivos raíz adicionales.
 
@@ -166,6 +184,8 @@ invalidar respuestas anteriores.
 ## 5. Exportar y compartir
 
 ![Elegir una exportación según el destinatario](guide/es/assets/exportar.png)
+
+Alternativas ilustrativas: **MDLZ para editar o rellenar · Markdown para leer · PDF para páginas fijas**.
 
 | Necesidad | Acción | Resultado y límites |
 | --- | --- | --- |
@@ -239,6 +259,8 @@ Revisa el resultado en Leonardo antes de usarlo. Un archivo válido puede conten
 **Archivo → Importar con tu agente…** abre esta ayuda en Leonardo. No selecciona, convierte ni envía ningún PDF. Tú eliges el agente y le entregas una copia del archivo para que realice la conversión.
 
 ![Diagrama ilustrativo: PDF original → tu agente y la skill → documento Leonardo editable](guide/es/assets/importar.png)
+
+Flujo ilustrativo: **PDF original → tu agente + la skill Leonardo Format → documento Leonardo editable**.
 
 #### Qué necesitas
 
@@ -332,6 +354,8 @@ Arrastra el separador para ajustar el ancho. **Seguir el archivo activo en la ba
 
 Busca nombres de archivo y contenido en el buscador del proyecto. Abre un resultado normalmente o usa su menú contextual para conservarlo en otra pestaña. La búsqueda trabaja en el proyecto abierto; no es un índice de todo el Mac.
 
+Para buscar texto en el código fuente de los documentos abiertos, elige **Edición → Buscar…** o pulsa la lupa junto a las pestañas (**⌘F**). Por defecto busca texto literal sin distinguir mayúsculas; activa **Distinguir mayúsculas** cuando importe la capitalización. Activa `.*` para usar una expresión regular, como `\bTODO\b` para buscar la palabra completa «TODO». Elige **Este documento** o **Todos los documentos abiertos** de esta ventana. Leonardo resalta cada coincidencia, muestra el total y distingue la actual. Usa las flechas, **Buscar siguiente** (⌘G) y **Buscar anterior** (⇧⌘G) para recorrerlas; la navegación selecciona el texto y activa su pestaña. Una expresión regular no válida muestra un aviso en línea. Pulsa Esc o cierra la barra para terminar. Esto busca el texto de los documentos abiertos en pestañas; el buscador del proyecto anterior encuentra nombres y contenido de otros archivos del proyecto abierto.
+
 Las etiquetas proceden del frontmatter YAML del Markdown ordinario. Por ejemplo:
 
 ```yaml
@@ -342,7 +366,7 @@ tags: [Swift, "Design Systems"]
 
 Busca `tag:swift` o `tag:"Design Systems"` para coincidencias exactas sin distinguir mayúsculas. Una palabra parcial o una mención en el cuerpo no es una etiqueta. El analizador ligero acepta una cadena, una lista en línea o una lista en bloque, pero no todas las construcciones YAML. Omite etiquetas vacías y agrupa duplicados sin distinguir mayúsculas.
 
-Las etiquetas pulsables siguen visibles aunque ocultes la tabla de metadatos. En un proyecto, pulsarlas rellena la búsqueda y revela la navegación si estaba activo el modo foco. En un archivo independiente no crean un proyecto. **Vista → Índice del documento** (⌥⌘I) abre la navegación por encabezados; elige uno para saltar dentro del documento. El inspector sirve para navegar; las respuestas del formulario se escriben en la página.
+Las etiquetas pulsables siguen visibles aunque ocultes la tabla de metadatos. En un proyecto, pulsarlas rellena la búsqueda y revela la navegación si estaba activo el modo foco. En un archivo independiente no crean un proyecto. **Vista → Índice del documento** (⌥⌘I) abre la navegación por encabezados; elige uno para saltar dentro del documento. La vista previa llega a ese encabezado aunque tenga imágenes, tablas o diagramas por encima. Los títulos repetidos conservan su propio destino. En Dividir, el editor selecciona la línea de origen correspondiente; vuelve a elegir el mismo encabezado para regresar tras desplazarte. El inspector sirve para navegar; las respuestas del formulario se escriben en la página.
 
 ## 10. Edición, tablas y recuperación
 
@@ -430,10 +454,10 @@ en la biblioteca. Después de guardar, usa **Pedir otra rúbrica** para capturar
 otra respuesta; las guardadas permanecen en la biblioteca local y no bloquean
 una nueva petición. Usa **Actualizar dispositivos enlazados** si un compañero
 recién actualizado aún no aparece. Los compañeros antiguos que no anuncian captura de rúbricas
-siguen sin estar disponibles hasta actualizar el compañero. Si Leonardo Sync
-indica que el asistente está desactualizado, desactiva y vuelve a activar
-**Leonardo Sync** en Preferencias para registrar de nuevo el asistente incluido
-y vuelve a pedir la rúbrica. Reintentar con el mismo ID solo está permitido
+siguen sin estar disponibles hasta actualizar el compañero. Tras actualizar la aplicación del Mac, su instancia principal renueva el servicio
+anterior automáticamente antes de mostrar la sincronización como disponible.
+Espera a que termine de arrancar o completa la aprobación de macOS y reintenta
+la misma petición. Reintentar con el mismo ID solo está permitido
 durante la breve ventana de confirmación perdida. Si el asistente indica que la
 petición ha caducado o ya no existe, o esa ventana ha pasado, Leonardo conserva
 un registro local y **Pedir de nuevo** crea un ID nuevo; nunca recrea en silencio
@@ -509,11 +533,11 @@ Estas extensiones vienen con Leonardo, trabajan localmente y empiezan desactivad
 
 **Una extensión desactivada no puede mostrar correctamente su contenido especializado.** La fuente permanece como código, notación o Markdown ordinario. Desactivar cambia la interpretación, no los bytes escritos. PDF usa el documento renderizado: activa las extensiones necesarias y comprueba Vista previa antes de exportar. Los diagramas Mermaid se renderizan al acercarse a la zona visible; espera a que terminen antes de revisarlos.
 
-![Leonardo pide permiso antes de activar extensiones incluidas detectadas](guide/es/assets/activation.png)
+![Leonardo pregunta qué extensiones integradas detectadas se quieren activar](guide/es/assets/activation-switch.png)
 
-*Diálogo real en español con un documento ficticio. Este ejemplo muestra activación global; el diálogo de proyecto identifica ese ámbito. No propone plugins de terceros.*
+*Componente de diálogo en español con Mermaid y Gráficos seleccionados en un documento ficticio. El diálogo de proyecto identifica su ámbito. No propone plugins de terceros.*
 
-La detección recomienda solo las cinco extensiones propias de Leonardo. Es una recomendación, no una validación completa: los ejemplos de código que solo describen sintaxis no necesitan activación. **Ahora no** evita repetir durante la apertura actual. **No volver a preguntar por esta extensión** recuerda tu elección en este Mac. Comprueba el ámbito indicado antes de aceptar la activación.
+La detección recomienda solo las cinco extensiones propias de Leonardo. Es una recomendación, no una validación completa: los ejemplos de código que solo describen sintaxis no necesitan activación. Cada interruptor selecciona una extensión para **Activar seleccionadas**; **Ahora no** descarta la selección y evita repetir durante la apertura actual. El interruptor global oculta las recomendaciones para todos los documentos. **Preferencias → Extensiones → Restablecer avisos de extensiones** las recupera y elimina las antiguas supresiones por extensión, sin cambiar las extensiones activadas. Comprueba el ámbito indicado antes de activar.
 
 ![Preferencias de extensiones con la acción de restablecer avisos](guide/es/assets/warnings.png)
 
@@ -567,17 +591,35 @@ Las operaciones son manuales. Pull solo permite avance rápido y protege árbole
 
 ## 14. Compartir desde este Mac: Little Leonardo y otros equipos
 
-![Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.](guide/es/assets/sync-sharing-v12.png)
+![Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.](guide/es/assets/sync-sharing-v13.png)
 
 *Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.*
 
 Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Sincronización → Compartir desde este Mac** en la instancia principal. Esta página sirve a Little Leonardo y a otros Macs; un Mac puede compartir contenido y, de forma independiente, conectarse a otro para acceder a otro contenido. El servicio requiere una distribución firmada con Developer ID; las compilaciones locales con firma ad-hoc no pueden habilitarlo.
 
-1. Activa **Leonardo Sync** con el único control común situado encima de ambas páginas. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. Espera a **Servicio de sincronización en ejecución**.
+1. Activa **Leonardo Sync** con el único control común situado encima de ambas páginas. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. El indicador junto al interruptor aparece gris mientras se comprueba, verde cuando el servicio está en ejecución y rojo cuando está desconectado. El texto de estado ofrece más detalles. Espera a **Servicio de sincronización en ejecución**.
 2. Activa **Compartir archivos guardados de este Mac** en una red que quieras utilizar. Revisa la dirección local; Automática puede seleccionar una disponible.
 3. Elige **Compartir el proyecto actual** y selecciona carpetas/documentos o todo el proyecto. Confirma la selección; el resto del contenido no se comparte implícitamente.
 4. Crea una invitación. Su QR y el enlace copiado permiten abrir la misma invitación: escanea el QR en Little Leonardo o pega el enlace en **Conectarme a otros equipos** en otro Mac. Compara los códigos y aprueba el dispositivo pendiente en este Mac de origen. Las filas indican **solo lectura** (Little Leonardo o clientes compatibles) o **LeonardoMD en Mac · cambios sujetos a revisión**. La etiqueta depende del permiso concedido, no del nombre del equipo.
 5. Importa el contenido compartido en el compañero y compruébalo antes de depender de una copia sin conexión. Usa Revocar en el Mac para retirar acceso futuro a un dispositivo.
+
+### Reconocer el papel de un proyecto
+
+El icono de proyecto muestra la misma identidad en macOS e iOS. Su pequeño indicador de procedencia describe el dispositivo que estás mirando, no el estado actual de la red:
+
+| Lo que ves en este dispositivo | Etiqueta y señal visual | Significado |
+| --- | --- | --- |
+| Un proyecto local | **Local** · icono de proyecto | El proyecto pertenece a este dispositivo y no está configurado para compartir contenido hacia fuera. |
+| Un proyecto compartido desde este dispositivo | **Compartido desde este equipo** · icono de proyecto + indicador de personas | Este dispositivo está configurado para compartir contenido seleccionado. Cada dispositivo receptor necesita su propia invitación y autorización; la etiqueta no afirma que ya exista un receptor autorizado. |
+| Un proyecto recibido de otro dispositivo | **Recibido de otro equipo** · icono de proyecto + indicador de red | El proyecto es remoto para este dispositivo. El uso compartido del origen está implícito, por eso no lleva una segunda marca de compartir. |
+
+![Ejemplos de macOS de identidad e indicadores de procedencia del proyecto; los mismos significados se aplican en iOS.](guide/es/assets/project-identities.png)
+
+*Ejemplos de componentes de producción de macOS; los mismos significados del papel se aplican en iOS.*
+
+Por ejemplo, un proyecto llamado **Viaje** aparece como **Compartido desde este equipo** en el Mac configurado para servir el contenido seleccionado. El mismo **Viaje** aparece como **Recibido de otro equipo** en el Mac, iPhone o iPad receptor después de invitarlo y autorizarlo. La copia de iOS sigue siendo recibida aunque esté disponible sin conexión; guardar sus archivos localmente no la convierte en un proyecto propio. Un archivo de recuperación se identifica aparte como solo lectura y no implica una conexión remota activa. Si compartes solo carpetas o documentos seleccionados, el texto explica ese alcance; el icono no significa que todo el proyecto esté expuesto. La conectividad, el progreso de sincronización y el acceso de solo lectura son estados independientes.
+
+En el iPhone y el iPad, **Demo** es un proyecto **Local** incluido en la app. Sus ficheros en español e inglés son documentos dentro de ese proyecto. Un proyecto recibido conserva su procedencia mientras cada fichero muestra por separado **Solo remoto**, **En caché** o **Disponible sin conexión**; el icono del proyecto no significa que todos sus ficheros estén descargados.
 
 Para capturar solo una rúbrica, sin acceso a documentos, no elijas **Compartir
 el proyecto actual**. En la revisión de la conexión pendiente deja sin marcar
@@ -593,6 +635,65 @@ Leonardo enlazado** muestra ese dispositivo. El compañero solo dibuja y
 devuelve la rúbrica; no puede editar el documento. Si falla el asistente, el
 servicio o la capacidad, se muestra un estado de desconexión o incompatibilidad
 con una acción clara.
+
+Mientras espera la rúbrica, Leonardo repite automáticamente las consultas de
+estado que fallan temporalmente para **la misma solicitud**. Deja abierto el
+editor: un fallo breve no necesita Reintentar ni envía otra petición de dibujo.
+La respuesta recibida aparece automáticamente para revisarla.
+
+![Rúbrica recuperada automáticamente y lista para revisar](guide/es/assets/rubric-automatic-recovery.png)
+
+*Componente real del editor con un dibujo sintético recibido tras un fallo temporal de consulta.*
+
+Si fallan varias consultas consecutivas, el editor muestra el error original y
+**Reintentar**. Comprueba la conexión y el asistente y pulsa Reintentar para
+actualizar esa misma solicitud. Las solicitudes rechazadas, canceladas o
+caducadas han terminado: sigue la acción indicada en vez de esperar una
+recuperación automática. Cerrar el editor detiene sus consultas de estado e
+impide mostrar una respuesta tardía en el editor cerrado. Para cancelar también
+la petición de dibujo en el dispositivo, pulsa **Cancelar solicitud** antes de
+cerrar.
+
+![Fallo persistente de consulta con Reintentar](guide/es/assets/rubric-persistent-error.png)
+
+*Componente real del editor con un error persistente sintético; no se utiliza un dispositivo ni un dibujo privado.*
+
+### Aspecto Classic, arranque y Acerca de en Little Leonardo
+
+Little Leonardo usa los colores de **Leonardo Classic**: papel pergamino,
+títulos burdeos y acciones óxido, también en la demo incluida, su vista de texto y la ayuda de los campos. La demo está disponible en Biblioteca antes de conectar un Mac. Al arrancar aparece la marca mientras se prepara la
+biblioteca local, sin una espera añadida. En **Ajustes de sincronización →
+Acerca de Little Leonardo** puedes consultar la versión y compilación instaladas, así como abrir Ayuda,
+Privacidad y Licencias sin conexión.
+
+Abre un documento Markdown sincronizado y elige **Ver documento** para leerlo. El primer título comienza cerca de la barra de navegación, con un margen de lectura compacto; las demás secciones mantienen su separación habitual. **Ver texto** muestra el código fuente sin modificar el documento sincronizado.
+
+Tras **Aceptar y dibujar**, la página recomienda girar el dispositivo. En
+horizontal se muestra el lienzo a pantalla completa con color, trazo, grosor,
+**Deshacer** y **Limpiar**. Al volver a vertical reaparece la página normal y el
+dibujo conserva sus proporciones. Si tienes bloqueada la rotación, pulsa
+**Ampliar lienzo** y después **Volver**. El giro nunca envía ni borra la rúbrica.
+La vista previa y **Enviar rúbrica** siguen siendo acciones explícitas; un
+borrador bloqueado, enviado o pendiente de reintento no permite seguir dibujando.
+
+![Lienzo de rúbrica a pantalla completa en horizontal, con los colores Leonardo Classic. Captura real del simulador con una solicitud sintética; miniatura reducida.](guide/es/assets/ios-rubric-classic-landscape.png)
+
+### Si se interrumpe la sincronización móvil
+
+Ante un fallo de red, el aviso existente puede incluir una línea de diagnóstico
+breve, por ejemplo:
+
+`[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
+
+Comparte esa línea o una captura al pedir ayuda. Indica si falló una consulta de
+estado o una instantánea, el estado HTTP si llegó, los bytes de respuesta
+recibidos y esperados, y el dominio/código de error del sistema. No incluye la
+dirección o ruta del servidor, credencial de emparejamiento, identificadores de
+dispositivo/proyecto ni contenido de archivos. Una cabecera HTTP 200 no
+significa que terminara el cuerpo. Un total esperado `?` significa que el
+servidor no informó de la longitud. Las copias descargadas sin conexión siguen
+disponibles; comprueba que el Mac de origen sea accesible y que Leonardo Sync
+esté activo, y vuelve a intentar la sincronización.
 
 ### Responder a una solicitud de rúbrica en iOS
 
@@ -659,19 +760,52 @@ El servicio comparte **solo archivos guardados**, también con el editor abierto
 
 El Mac debe estar accesible para transferir. Una VPN privada superpuesta requiere su ajuste explícito y una dirección compatible accesible; no convierte el sistema en un servicio público en la nube. No presupongas conectividad entre redes cualesquiera. Revocar impide acceso autorizado futuro; no borra copias ya descargadas. El compañero iOS no ofrece edición Git ni devuelve ediciones de documentos al Mac. La revisión de propuestas del escritorio no es edición móvil.
 
+### Actualizar el servicio de sincronización en segundo plano
+
+Al elegir **Instalar y reiniciar**, el actualizador pausa primero Leonardo Sync mientras la aplicación firmada actual todavía puede comunicarse con él. Espera a que terminen las escrituras activas y confirma la parada del servicio antes de sustituir la aplicación. La aplicación nueva reanuda el servicio con los mismos accesos, proyectos compartidos e identidad TLS; no vuelvas a emparejar el iPhone. Descargar por sí solo no pausa la sincronización. Si cancelas la salida, la aplicación actual reanuda el servicio. Una instalación interrumpida conserva el consentimiento existente para recuperarlo en la siguiente apertura. Desactivar **Activar Leonardo Sync** cancela ese consentimiento y se respeta. Si macOS pide aprobación, usa **Abrir ajustes de ítems de inicio** y aprueba allí el servicio existente.
+
+Si no se puede confirmar la parada segura, se aplaza la instalación en vez de terminar por la fuerza un proceso que podría estar escribiendo. Esta preparación requiere que la aplicación de origen ya la incluya antes de empezar la actualización. Las versiones hasta 0.3.1270 pueden tener un servicio antiguo que ya no acepta comunicación autenticada tras sustituir la aplicación; esta corrección no convierte retroactivamente ese estado en seguro para terminarlo. Conserva los emparejamientos y permisos y acuerda una recuperación controlada antes de probar una actualización posterior. Sustituir la aplicación fuera de su actualizador integrado no ejecuta esta preparación.
+
 ## 15. Conectarme a otros equipos y copias sin conexión
 
-![Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.](guide/es/assets/sync-connections-v12.png)
+![Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.](guide/es/assets/sync-connections-v13.png)
 
 *Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.*
 
 Usa **Preferencias → Sincronización → Conectarme a otros equipos** en la instancia principal. Activa **Leonardo Sync** con el control común en ambos Macs. En el de origen, abre **Compartir desde este Mac**, activa compartir y selecciona el contenido. En este Mac receptor, pulsa **Conectarme a otro Mac** y pega la invitación o dirección HTTPS del origen junto con un nombre para este dispositivo. Compara los códigos y aprueba en el origen antes de importar. Puedes mantener desactivado **Compartir archivos guardados de este Mac**: acceder al contenido de otro no publica el tuyo. Ninguna función es un modo global de máster o cliente.
 
-Importa un proyecto disponible para crear una copia sin conexión. Ábrela localmente y usa sincronización manual o elige un intervalo. Las transferencias siguen necesitando conectividad. Una copia desconectada es trabajo local; no demuestra que el origen tenga tus últimos cambios.
+Pulsa **Crear copia editable** para descargar explícitamente una copia completa del proyecto. Ábrela localmente y usa sincronización manual o elige un intervalo. Las transferencias siguen necesitando conectividad. Sus archivos se guardan localmente en este Mac, pero el proyecto sigue siendo **Recibido de otro equipo**; estar disponible sin conexión no cambia su origen ni demuestra que el origen tenga tus últimos cambios.
 
 **Si falla la importación o la sincronización**, el error distingue si falló la actualización del acceso al origen o la descarga del proyecto, e indica el estado HTTP y una acción para recuperarte. Los Macs de origen actualizados también distinguen entre el límite de tamaño del proyecto, el de cada archivo y el de cantidad de archivos, con la cantidad detectada y el límite. «Al menos» es la cantidad encontrada antes de detenerse, no un inventario completo; la ruta del archivo es relativa al proyecto compartido. La transferencia actual del proyecto completo admite hasta 200 MiB por proyecto, 20 MiB por archivo y 10.000 archivos. Reduce la selección compartida en el Mac de origen y vuelve a intentarlo; no se omite contenido silenciosamente para que quepa. Un error de lectura del origen requiere comprobar el disco, los permisos y la disponibilidad de los archivos de la nube en ese Mac. No demuestra que el proyecto sea demasiado grande. Las versiones anteriores del origen pueden ofrecer solo el estado HTTP; actualiza ambos Macs para obtener un diagnóstico detallado.
 
 Para devolver ediciones, **Comparar cambios**, revisa las versiones Base / Este Mac / Otro Mac y después **Enviar cambios para revisar**. Reintenta propuestas pendientes al recuperar conexión. Las ediciones posteriores al envío siguen locales hasta otra propuesta. El Mac de origen revisa las propuestas entrantes; enviar no significa aceptación automática. Resuelve marcadores de conflicto deliberadamente y verifica el resultado antes de aceptar. Conserva el trabajo local hasta confirmar el resultado esperado en origen.
+
+### Descarga bajo demanda y almacenamiento sin conexión
+
+| Acción | Descarga | Almacenamiento |
+|---|---|---|
+| Consultar el catálogo | Nombres de archivos y carpetas | Solo catálogo |
+| Abrir un archivo | Archivo e imágenes locales referenciadas | Caché temporal, dentro de tu límite |
+| Mantener sin conexión | Archivos/carpetas elegidos e imágenes referenciadas | Almacenamiento retenido separado |
+
+Tras vincular los dispositivos, la app actualiza la lista de archivos y carpetas autorizados sin descargar contenido. En Mac, pulsa **Explorar archivos** junto al proyecto; en iOS, abre el proyecto. El catálogo empieza en la raíz del proyecto y muestra solo los archivos y carpetas inmediatos de ese nivel. Pulsa una carpeta para entrar en ella y usa **Carpeta superior** para volver atrás. El proyecto se gestiona desde el menú de acciones, en lugar de aparecer como una fila de carpeta duplicada. Abrir un archivo descarga ese archivo y sus imágenes locales referenciadas. Los archivos ya descargados se abren desde la caché. Solo se comparten archivos guardados en el origen. Usa **Ver texto / Ver documento** para alternar entre el texto de solo lectura y la previsualización sin otra descarga. Little Leonardo mantiene el primer título cerca de la barra de navegación; las secciones posteriores conservan su espaciado habitual.
+
+Usa el menú contextual (clic derecho en Mac; pulsación prolongada en iOS):
+
+- **Mantener sin conexión** descarga y conserva la selección. Una carpeta incluye futuros descendientes. Las imágenes locales referenciadas se conservan con el documento.
+- **Dejar de mantener sin conexión** permite limpiar las copias como caché, sin eliminar originales. Puedes excluir un archivo de una carpeta conservada offline.
+- **Liberar espacio local** elimina copias temporales descargadas; conserva el contenido offline protegido.
+
+La lista distingue **Solo remoto**, **En caché**, **Offline pendiente** y **Disponible sin conexión**, con progreso e indicadores de error. Las carpetas muestran archivos descargados y total. La selección está disponible offline cuando terminan todas las descargas necesarias. Los fallos se reintentan en la siguiente actualización automática; la última versión conservada sigue legible si falla una actualización. El lector muestra sobre esa copia un aviso explícito de copia anterior, el error de descarga y **Reintentar**. Los errores de imágenes referenciadas también se muestran aunque el texto del documento sea legible.
+
+En **Sincronización → Almacenamiento y caché**, escribe el límite temporal como un número entero de MiB y pulsa **Aplicar límite de caché** (Intro también lo aplica). El texto que estás editando no cambia el límite guardado. Consulta el uso temporal/offline y las descargas pendientes, limpia la caché o deja de conservar una selección. El límite inicial es 256 MiB; cero desactiva la conservación temporal. Primero se eliminan los archivos temporales usados hace más tiempo. Los archivos offline se almacenan aparte y no cuentan para el límite; necesitan espacio libre suficiente. La limpieza nunca borra copias editables de escritorio ni borradores de rúbricas.
+
+La actualización automática inicial es cada minuto mientras la app receptora está activa; se conserva un intervalo previamente elegido. iOS actualiza también al entrar en primer plano y pausa durante la suspensión. Las transferencias requieren un Mac origen accesible. Sin conexión solo se abre contenido previamente descargado. La revocación confirmada retira el acceso a la caché de consulta gestionada.
+
+En Mac, **Crear copia editable** descarga explícitamente una copia completa para editar y utilizar el flujo existente de propuestas y revisión. Estas copias están separadas de la caché de consulta que se limpia automáticamente. Explorar o mantener archivos offline no envía cambios.
+
+
+Si el Mac de origen usa un servicio Leonardo Sync anterior, la app pide actualizar LeonardoMD y Leonardo Sync en ese Mac. La falta del servicio bajo demanda se distingue de un fallo de red; no provoca una descarga masiva ni cambia el emparejamiento.
 
 ## 16. Actualizaciones y notas de versión
 
@@ -694,6 +828,7 @@ El canal del paquete instalado y tu suscripción son independientes. Beta puede 
 | ⇧⌘W | Cerrar ventana |
 | ⌘1 / ⌘2 / ⌘3 | Lectura / Editar / Dividida |
 | ⌘4 | Rellenar formulario cuando esté disponible |
+| ⌘F / ⌘G / ⇧⌘G | Buscar / coincidencia siguiente / anterior |
 | ⇧⌘F / ⌥⌘I | Foco / índice |
 | ⌘S | Guardar |
 | ⌘Z / ⇧⌘Z | Deshacer / Rehacer |
@@ -719,3 +854,13 @@ Activar una extensión no instala una skill de IA, conecta una cuenta ni autoriz
 - **Versión no compatible:** conserva el archivo y actualiza el lector o plugin; no cambies el número de versión para forzar la lectura.
 
 La guía cubre los flujos actuales de macOS. Los nombres de servicios externos se comprobaron el **30 de octubre de 2026** y pueden cambiar. Puedes consultar la [guía web del producto](https://github.com/PinedaTec-EU/LeonardoMD/blob/main/doc/user-guide.md), el [contrato de formato](https://github.com/PinedaTec-EU/LeonardoMD/blob/main/doc/format/README.md) y las [versiones publicadas](https://github.com/PinedaTec-EU/LeonardoMD/releases).
+
+
+## Little Leonardo: demo incluida y práctica local
+
+La biblioteca muestra una única lista de proyectos. Abre **Demo** y elige **Demo-es.mdlr · Español** o **Demo-en.mdlr · English**. Cada documento se convierte en una copia personal de práctica al abrirlo por primera vez. No requiere cuenta, Mac ni permisos de cámara/red local. Incluye una portada local, tabla, Mermaid, fórmulas y un gráfico con datos incluidos; estos motores están activados en la demo. El formulario usa campos Leonardo reales. Escribe datos ficticios, pulsa **Guardar / Save**, espera el aviso y vuelve a abrir para comprobar las respuestas. Se conservan en este dispositivo, separadas de los proyectos sincronizados de solo lectura. No se envían al Mac. Desinstalar elimina las copias.
+
+En **Opciones / Options**, **Ver texto / View source** muestra Markdown y metadatos; **Restablecer / Reset** pide confirmación y reinicia únicamente la práctica del idioma seleccionado. Si aparece un error de guardado, conserva la pantalla y reintenta; no des por guardadas las respuestas sin confirmación. Para conectar tus proyectos reales, vuelve a **Conectar** y sigue el capítulo de sincronización. La práctica no habilita edición general de los proyectos sincronizados ni sustituye las solicitudes de rúbrica del Mac.
+
+
+Para quitar cualquier proyecto de este dispositivo, desliza su fila hacia la izquierda y pulsa **Eliminar / Delete**. Deslizar por sí solo nunca elimina. Los originales del Mac se conservan y los proyectos descargados eliminados quedan excluidos de la sincronización. El proyecto Demo desaparece igual que los demás. Puedes recuperarlo en **Ajustes de sincronización → Recuperar demo / Restore demo** en cualquier momento; conserva las respuestas guardadas. La eliminación persiste al reiniciar y al actualizar la app con la misma revisión del contenido de la demo. Una revisión nueva de ese contenido vuelve a mostrar Demo, con nuevas copias de práctica y conservando las anteriores. Recuperar no restablece respuestas; para eso usa **Restablecer / Reset** dentro del documento del idioma.

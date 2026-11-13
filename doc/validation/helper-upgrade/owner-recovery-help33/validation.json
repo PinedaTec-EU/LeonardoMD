@@ -1,0 +1,60 @@
+{
+  "source": "945d05aa71f71790b75497f81d3493a708c7ab8e",
+  "pid": 41520,
+  "version": "0.3.1215",
+  "guide": 33,
+  "help": {
+    "en": {
+      "personal_sha256": "7fddd19b7657bfa229083a145575dd8c0a77d6b53e68909023449a3bd95367a0",
+      "bundle_sha256": "7fddd19b7657bfa229083a145575dd8c0a77d6b53e68909023449a3bd95367a0",
+      "mermaid": true,
+      "inline_one_line_multiline_math": true,
+      "underbraces_radicals_arrows_cancellation_tag1": true,
+      "math_off_literal_fallback_and_code": true,
+      "chart_images_table": true
+    },
+    "es": {
+      "personal_sha256": "95364f9989395fa4e44d167e6d4867670cbf346d22b1462c3a2a58e06f4c0f31",
+      "bundle_sha256": "95364f9989395fa4e44d167e6d4867670cbf346d22b1462c3a2a58e06f4c0f31",
+      "mermaid": true,
+      "inline_one_line_multiline_math": true,
+      "underbraces_radicals_arrows_cancellation_tag1": true,
+      "math_off_literal_fallback_and_code": true,
+      "chart_images_table": true
+    }
+  },
+  "practice": {
+    "en": {
+      "fictional_values": {
+        "practiceGoal": "Keep existing device access",
+        "practiceName": "Helper412 recovery QA",
+        "practiceReady": true
+      },
+      "saved_closed_reopened": true
+    },
+    "es": {
+      "fictional_values": {
+        "practiceGoal": "Keep existing device access",
+        "practiceName": "Helper412 recovery QA",
+        "practiceReady": true
+      },
+      "saved_closed_reopened": true
+    }
+  },
+  "restored": [
+    {
+      "file": "Practice-v1-en.mdlr",
+      "original_existed": true,
+      "exact": true
+    },
+    {
+      "file": "Practice-v1-es.mdlr",
+      "original_existed": true,
+      "exact": true
+    }
+  ],
+  "final_locale": "English",
+  "final_math": "ON",
+  "normal_quit": true,
+  "helper48295_preserved": true
+}

@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import SwiftUI
 import UniformTypeIdentifiers
 import LeonardoCore
 
@@ -265,12 +266,14 @@ extension AppSession {
     func prompt(title: String, initial: String) async -> String? {
         let alert = NSAlert()
         alert.messageText = title
-        let input = NSTextField(string: initial)
-        input.frame = NSRect(x: 0, y: 0, width: 300, height: 24)
+        let value = PremiumNameValue(initial)
+        let input = NSHostingView(rootView: PremiumNameInput(value: value)
+            .modifier(SessionAppearance(session: self)))
+        input.frame = NSRect(x: 0, y: 0, width: 312, height: 52)
         alert.accessoryView = input
         alert.addButton(withTitle: L10n.text("Save"))
         alert.addButton(withTitle: L10n.text("Cancel"))
         alert.window.initialFirstResponder = input
-        return await NativeDialog.present(alert, on: presentationWindow) == .alertFirstButtonReturn ? input.stringValue : nil
+        return await NativeDialog.present(alert, on: presentationWindow) == .alertFirstButtonReturn ? value.text : nil
     }
 }

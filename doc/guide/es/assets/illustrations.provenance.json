@@ -1,38 +1,49 @@
 {
   "kind": "AI-generated illustrative artwork, not a UI screenshot",
   "generator": "built-in image_gen",
-  "style_reference": "exec-8f85f370-ebf3-458d-a1ae-c4aac664db3a.png",
-  "created_on": "2026-11-05",
-  "issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/334",
-  "packaging": "Aspect-preserving sips resize to 1200 pixels wide; original generated artwork retained in Codex image library. No screenshot retouching.",
+  "created_on": "2026-11-06",
+  "issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/375",
+  "palette": {
+    "heading": "#7A1114",
+    "accent": "#8C3F22",
+    "border": "#9C8052",
+    "paper": "#E7D6AD",
+    "ink": "#11100D"
+  },
+  "prompt": "Regenerate reference as Leonardo Classic paper-relief illustration, true transparent alpha background, no panels, no title or localized captions; keep only format badges and original diagram subjects/order.",
+  "packaging": "Aspect-preserving sips resize to 1200\u00d7400; alpha retained. Shared artwork across locales; explanatory captions remain localized document text.",
   "images": {
-    "importar.png": {
-      "original_image_id": "exec-e4d4e81a-e059-48d8-a911-ddf9a616c01a.png",
-      "original_sha256": "a8ca04ab5a7cf3ba747c51aa62c1a2a0592b5030d18b08549f1c2295118459d0",
-      "asset_sha256": "fa73c5b7186374e129d48a753d4515698a123159a008fcaaebb4ce333dc2bddf",
-      "width": 1200,
-      "height": 400
-    },
     "recorrido.png": {
-      "original_image_id": "exec-181ba935-f63a-4cb4-a09c-345209b674c1.png",
-      "original_sha256": "90469733914ee8f2aa5e508d8f0eae104cba63b5470260abd7737021f17870b8",
-      "asset_sha256": "d0a92f94020d7ed35f3fa6991382dcf59f8b5877d01c50227fcae4276371709e",
+      "original_image_id": "exec-a8d09d8e-cfb9-4e0d-85a8-cddcc3fc4677.png",
+      "original_sha256": "7dbd4e8e2ca03ac119cbe87fe4435f8e23a9fff11ae089c86b9cb288438834a0",
+      "asset_sha256": "168ec2a62e8faf0ddeb3e895a25bd024b9fc8ec826a53dc9c91b19b38addc090",
       "width": 1200,
-      "height": 400
+      "height": 400,
+      "transparent": true
     },
     "paquete.png": {
-      "original_image_id": "exec-bb1095fa-021c-4b5b-8a7b-85565a3471c0.png",
-      "original_sha256": "a39899f4f27d264cab193b1edba5ef81352d16bbd46016e6d1f247ba6b4392b8",
-      "asset_sha256": "facf4c47ec0b6d1edf4363752c22679505d60082603e266ebd72ae00a6bc9021",
+      "original_image_id": "exec-5effd05a-e727-431e-ba44-02fd401dab8a.png",
+      "original_sha256": "979267d2be2e5764f566123ae872baf1f21b4feb1ce11381ad5fd142ea166acc",
+      "asset_sha256": "ea5b4ceffa5f31cdfea32e600b853bd306cb27546a7fbd2efa567374e9e3725d",
       "width": 1200,
-      "height": 400
+      "height": 400,
+      "transparent": true
     },
     "exportar.png": {
-      "original_image_id": "exec-ee70e63b-3743-4d88-abbb-ac9152336f17.png",
-      "original_sha256": "1bbd894a60488721c1440e8413f6a402e4ba6b814c2498cdd267c056ffd2d54f",
-      "asset_sha256": "9b0ae39e1af639dc1b042d1942441474f146b75c7046a6a295861b31ee4ec905",
+      "original_image_id": "exec-431028bd-e446-4419-92fb-93c8da527da4.png",
+      "original_sha256": "83a2466c238a699a7b3f6bdee4a5464803e044eae86700c5b1aca01a021de989",
+      "asset_sha256": "3f3dd29eed987a57be5fd0c88e0277e4662846984045698ffa8387b976a6beb3",
       "width": 1200,
-      "height": 400
+      "height": 400,
+      "transparent": true
+    },
+    "importar.png": {
+      "original_image_id": "exec-e32732cb-6049-4f86-a0e4-1794259284d2.png",
+      "original_sha256": "31040e8d263076a4c0cd1f96d999e644d42ead7067adf1fe535916aae7f36399",
+      "asset_sha256": "2b48d463017c39ad718c84f05a95919d9eff31a56bd1e61769b41edf90f8a949",
+      "width": 1200,
+      "height": 400,
+      "transparent": true
     }
   }
 }

@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T13:31:11.347Z",
+  "route": "/native/cache-controls-en",
+  "screen": "cache-controls-en",
+  "browser_name": "Native AppKit/WKWebView",
+  "browser_version": "Not exposed by CUA",
+  "viewport_css": {
+    "width": 1160,
+    "height": 1240
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "256 to128 MiB, clear empty temporary cache, separate offline counters; screenshot-pixel equivalent dimensions; source b24087574b32eadb1c14f55d9a467dc1507d340f; baseline0.3.1113; Guide26; ad-hoc QA helper unavailable expected, external helper untouched"
+}

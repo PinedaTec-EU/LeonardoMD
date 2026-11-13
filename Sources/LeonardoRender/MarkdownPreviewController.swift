@@ -59,6 +59,10 @@ public final class MarkdownPreviewController: ObservableObject {
         host?.scroll(to: anchor)
     }
 
+    public func scroll(toSourceLine line: Int) {
+        host?.scroll(toSourceLine: line)
+    }
+
     public func scroll(toFraction fraction: Double) {
         host?.scroll(toFraction: fraction)
     }

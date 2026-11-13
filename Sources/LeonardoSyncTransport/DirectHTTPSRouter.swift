@@ -71,6 +71,17 @@ public struct DirectHTTPSRouter: Sendable {
                 return try json(await authority.submitRubricResponse(deviceID: deviceID, credential: credential,
                                                                       response: response, now: now()))
             }
+            if path.count == 7, path[4] == "projects", let projectID = UUID(uuidString: String(path[5])) {
+                if request.method == "GET", path[6] == "catalogue" {
+                    return try json(await authority.catalogue(deviceID: deviceID, credential: credential, projectID: projectID))
+                }
+                if request.method == "POST", path[6] == "file" {
+                    guard request.body.count <= 8 * 1_024 else { return HTTPResponse(status: 413) }
+                    let input = try JSONDecoder().decode(RemoteFileRequest.self, from: request.body)
+                    return try json(await authority.file(deviceID: deviceID, credential: credential,
+                                                         projectID: projectID, request: input))
+                }
+            }
             if request.method == "GET", path.count == 7, path[4] == "projects", path[6] == "snapshot", let projectID = UUID(uuidString: String(path[5])) {
                 return try await snapshotResponse(deviceID: deviceID, credential: credential, projectID: projectID)
             }

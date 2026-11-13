@@ -1,0 +1,24 @@
+{
+  "browser_name": "Native AppKit / SwiftUI NSHostingView",
+  "browser_version": "Not applicable: native view, no browser engine",
+  "capture_mode": "element",
+  "captured_at": "2026-11-10T14:27:44.248Z",
+  "data_provenance": "synthetic",
+  "native_viewport_points": {
+    "height": 300,
+    "width": 900
+  },
+  "os": "Version 27.0.1 (Build 26A434)",
+  "route": "/native/synchronization/helper/disabled",
+  "screen": "Production helper preference section",
+  "source_sha": "355cd71af45694a4976687640b66be2eeb579417",
+  "state": "Owner explicitly disabled during upgrade; stop completed without replacement or re-enabling; native_viewport_points is measured by the fixture; CSS is not applicable",
+  "viewport_css": null,
+  "capture_surface": "native",
+  "viewport_measurement": "NSSize measured by the native fixture; CSS is not applicable",
+  "metadata_correction": {
+    "at": "2026-11-10T15:49:41.144480+00:00",
+    "source_revision": "b1feaf1994f036428d9564a3ad74dd7018ed4752",
+    "reason": "Remove bitmap/native-point equivalents from the browser-only viewport_css field; preserve original capture timestamps, source identity and image bytes."
+  }
+}

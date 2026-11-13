@@ -10,7 +10,11 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let oldCopies = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map { root.appendingPathComponent("User Guides/v\($0)/en/Guide-v\($0)-en.mdlz") }
+        let oldCopies = (2..<63).flatMap { revision in
+            AppLanguage.allCases.map { language in
+                root.appendingPathComponent("User Guides/v\(revision)/\(language.rawValue)/Guide-v\(revision)-\(language.rawValue).mdlz")
+            }
+        }
         let oldAnswers = Data("previous guide and saved answers".utf8)
         for oldCopy in oldCopies {
             try FileManager.default.createDirectory(at: oldCopy.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -22,23 +26,35 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v16/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v63/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
-            let legacyImport = root.appendingPathComponent("Agent Import Guides/v1/\(language.rawValue)/AgentImport-v1-\(language.rawValue).mdlz")
+            let legacyImport = root.appendingPathComponent("Agent Import Guides/v2/\(language.rawValue)/AgentImport-v2-\(language.rawValue).mdlz")
             try FileManager.default.createDirectory(at: legacyImport.deletingLastPathComponent(), withIntermediateDirectories: true)
             try oldAnswers.write(to: legacyImport)
             let importCopy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root, topic: .agentImport)
-            XCTAssertTrue(importCopy.path.contains("Agent Import Guides/v2/"))
+            XCTAssertTrue(importCopy.path.contains("Agent Import Guides/v3/"))
             XCTAssertEqual(try Data(contentsOf: legacyImport), oldAnswers)
             var workspace = try LeonardoPackageTransport.open(copy)
             defer { LeonardoPackageTransport.discard(workspace) }
             let source = try String(contentsOf: workspace.documentURL, encoding: .utf8)
+            XCTAssertTrue(source.contains("[LL1 op=snapshot"), "The combined guide must retain the HTTPS diagnostic example")
+            XCTAssertTrue(source.contains("Demo-es.mdlr") && source.contains("Demo-en.mdlr"), "The combined guide must explain the demo project documents")
+            XCTAssertTrue(source.contains("Recuperar demo / Restore demo"), "Both guides must explain demo recovery")
             let document = try LeonardoFormatParser.parse(source)
             XCTAssertFalse(document.isForm)
             XCTAssertEqual(document.metadata.fields.count, 0)
-            let expectedImageCount = language == .spanish ? 17 : 16
+            let expectedImageCount = language == .spanish ? 21 : 20
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:
                 workspace.directoryURL.appendingPathComponent("assets").path).count, expectedImageCount)
+            let artwork = language == .english ? ["journey", "package", "import", "export"] : ["recorrido", "paquete", "importar", "exportar"]
+            for name in artwork {
+                let imageURL = workspace.directoryURL.appendingPathComponent("assets/\(name).png")
+                let bitmap = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: imageURL)))
+                XCTAssertTrue(bitmap.hasAlpha, name)
+                XCTAssertEqual(bitmap.pixelsWide, 1200)
+                XCTAssertEqual(bitmap.pixelsHigh, 400)
+                XCTAssertEqual(try XCTUnwrap(bitmap.colorAt(x: 0, y: 0)).alphaComponent, 0, name)
+            }
             // Personal annotations remain independent of the bundled template.
             try (source + "\nPersonal note: Ada\n").write(to: workspace.documentURL, atomically: true, encoding: .utf8)
             workspace = try LeonardoPackageTransport.save(workspace)
@@ -114,6 +130,7 @@ final class BundledUserGuideTests: XCTestCase {
             await session.open(copy, packagePreference: .package)
             XCTAssertEqual(session.documentStorage, .package)
             XCTAssertNil(session.errorMessage)
+            session.setPalette(PaletteID.leonardoClassic.rawValue, project: false)
             session.setMermaid(true, project: false)
             session.setMath(true, project: false)
             session.setVegaLite(true, project: false)
@@ -127,39 +144,50 @@ final class BundledUserGuideTests: XCTestCase {
             window.orderFront(nil)
             defer { window.close() }
             let web = try await findWebView(in: hosting)
-            let expectedImageCount = language == .spanish ? 17 : 16
+            let expectedImageCount = language == .spanish ? 21 : 20
             try await waitFor("document.images.length === \(expectedImageCount)", in: web)
             for index in 0..<expectedImageCount {
                 _ = try await web.evaluateJavaScript("document.images[\(index)].scrollIntoView({block:'center'})")
                 try await waitFor("document.images[\(index)].naturalWidth > 0", in: web)
             }
             try await waitFor("document.querySelectorAll('[data-field-input]').length === 0 && document.querySelector('a[href$=\"/practice.mdlr\"]') !== null", in: web)
-            try await waitFor("document.querySelector('.katex') !== null && document.querySelector('.katex-error') === null", in: web)
+            try await waitFor("document.querySelectorAll('.katex-display').length === 4 && document.querySelectorAll('.katex svg path[d]').length >= 4 && document.querySelector('.katex svg line') !== null && document.querySelector('.katex-error') === null && document.querySelector('.katex-tag') !== null", in: web)
+            let regression = try XCTUnwrap(session.headings.first { $0.title.contains("regression examples") || $0.title.contains("ejemplos de regresión") })
+            session.jumpToHeading(regression.line)
+            try await waitFor("Math.abs(window.LeonardoTables.headingForSourceLine(document.querySelector('#leonardo-markdown'), \(regression.line)).getBoundingClientRect().top) < 2", in: web)
             try await waitFor("document.querySelector('.vega-lite-placeholder svg') !== null", in: web)
+            try await waitFor("Array.from(document.querySelectorAll('p')).some(node => node.textContent.includes('[LL1 op=snapshot'))", in: web)
             _ = try await web.evaluateJavaScript("document.querySelector('.mermaid-placeholder').scrollIntoView({block:'center'})")
             try await waitFor("document.querySelector('.mermaid-placeholder svg') !== null", in: web)
             _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
-            if let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
+            // WKWebView snapshots are a separate opt-in from the broad native
+            // component captures. Keep long-running snapshot teardown out of
+            // the ordinary CI rendering test while retaining the assertions
+            // above for both packaged guide locales.
+            if let output = ProcessInfo.processInfo.environment["LEONARDO_BUNDLED_GUIDE_CAPTURE_EVIDENCE"] {
                 let directory = URL(fileURLWithPath: output).appendingPathComponent("user-guide")
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
                 let encodedSource = try XCTUnwrap(String(data: JSONEncoder().encode(session.content), encoding: .utf8))
                 try await waitFor("window.LeonardoEditing.currentSource() === \(encodedSource)", in: web)
-                for (name, selector) in [("diagram", ".mermaid-placeholder"), ("math", ".katex"), ("chart", ".vega-lite-placeholder")] {
+                for (name, selector) in [("diagram", ".mermaid-placeholder"), ("math", ".katex"), ("math-regression", ".math-rendered:has(.katex-tag)"), ("chart", ".vega-lite-placeholder")] {
                     _ = try await web.evaluateJavaScript("document.querySelector('\(selector)').scrollIntoView({block:'center'})")
-                    let readySelector = name == "math" ? selector : selector + " svg"
+                    let readySelector = name.hasPrefix("math") ? selector : selector + " svg"
                     try await waitFor("document.querySelector('\(readySelector)') !== null", in: web)
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Live \(name) example; built-in extension enabled")
                 }
-                for name in ["palette", "activation", "sync-sharing-v12"] {
+                for name in ["palette", "activation", "sync-sharing-v13"] {
                     _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("section-\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Detailed chapter with original \(name) screenshot; all images loaded")
                 }
+                _ = try await web.evaluateJavaScript("Array.from(document.querySelectorAll('p')).find(node => node.textContent.includes('[LL1 op=snapshot')).scrollIntoView({block:'center'})")
+                try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("transport-diagnostic-\(language.rawValue).png"),
+                    language: language.rawValue, state: "Interrupted HTTPS response guidance; diagnostic code contains no request identifiers")
                 let illustrations = language == .english ? ["journey", "package", "import", "export"] : ["recorrido", "paquete", "importar", "exportar"]
                 for name in illustrations {
                     _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
-                    let imageCount = language == .spanish ? 17 : 16
+                    let imageCount = language == .spanish ? 21 : 20
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("premium-\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Main guide; generated premium \(name) illustration; all \(imageCount) images admitted under standard limits")
                 }
@@ -196,8 +224,8 @@ final class BundledUserGuideTests: XCTestCase {
             XCTAssertFalse(session === original)
             XCTAssertNil(session.errorMessage)
             XCTAssertEqual(session.mode, .preview)
-            XCTAssertEqual(session.displayDocumentURL?.lastPathComponent, "AgentImport-v2-\(language.rawValue).mdlz")
-            XCTAssertTrue(session.displayDocumentURL?.path.contains("Agent Import Guides/v2/") == true)
+            XCTAssertEqual(session.displayDocumentURL?.lastPathComponent, "AgentImport-v3-\(language.rawValue).mdlz")
+            XCTAssertTrue(session.displayDocumentURL?.path.contains("Agent Import Guides/v3/") == true)
             XCTAssertFalse(session.leonardoDocument?.isForm ?? true)
             let copy = try XCTUnwrap(session.displayDocumentURL)
             let bytes = try Data(contentsOf: copy)
@@ -222,7 +250,7 @@ final class BundledUserGuideTests: XCTestCase {
             XCTAssertTrue(text.contains(language == .english ? "Import with your agent" : "Importar con tu agente"))
             XCTAssertTrue(text.contains("leonardo-format"))
             XCTAssertTrue(text.contains(language == .english ? "Request to copy" : "Encargo que puedes copiar"))
-            if let output = ProcessInfo.processInfo.environment["LEONARDO_VISUAL_EVIDENCE"] {
+            if let output = ProcessInfo.processInfo.environment["LEONARDO_BUNDLED_GUIDE_CAPTURE_EVIDENCE"] {
                 let directory = URL(fileURLWithPath: output).appendingPathComponent("agent-import")
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
                 try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("overview-\(language.rawValue).png"),

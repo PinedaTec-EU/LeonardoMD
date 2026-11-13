@@ -1,0 +1,13 @@
+{
+  "CFBundleIdentifier": "eu.pinedatec.LittleLeonardo",
+  "CFBundleShortVersionString": "0.3.1082",
+  "CFBundleVersion": "1082",
+  "CFBundleExecutable": "LittleLeonardo",
+  "product_source": "a7f58b6a076855fa8cc7a2486b136891e4e88139",
+  "device": "926C886F-52D8-4766-B84D-1A5D8C218080",
+  "configuration": "Release, ENABLE_TESTABILITY=YES, ONLY_ACTIVE_ARCH=YES",
+  "installed_executable_sha256": "434813857e65a714af643d30a75c98885fb86f6ee1c990cebe026707f8ef4d94",
+  "info_plist_sha256": "12ba57245a7d5a14042b6d822a0281277460b8a388292c7f757a26ff529ca703",
+  "test_result": "1/1 pass24.948s",
+  "note": "Canonical accepted baseline metadata supplied through xcodebuild; no product source or version.nfo mutation. Earlier Debug capture correctly displayed Desarrollo because no version metadata was supplied."
+}

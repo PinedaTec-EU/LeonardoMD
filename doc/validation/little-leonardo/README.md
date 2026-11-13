@@ -82,6 +82,79 @@ The previous ten-mode recovery matrix remains bound to its c8 source; it was not
 
 ## Reproduction and limits
 
+### #380 native HTTPS diagnostic fixture
+
+`MobileDirectAcceptanceFixtureTests.testServeNativeMobileAcceptanceFixture`
+starts a synthetic `DesktopDirectRuntime` on loopback port `46993`. Give each
+run a fresh, owned root whose `.qa-fixture-owned` file contains exactly
+`LittleLeonardoDirectQA\n`; the fixture rejects an existing `ready.json`.
+Set `LEONARDO_MOBILE_DIRECT_QA_ROOT` for the recorded host `swift test` command
+and wait for that root's `ready.json` before starting iOS UI automation.
+
+The iOS XCTest runner does not inherit shell environment variables. After the
+final `build-for-testing`, patch the generated `.xctestrun` dictionary
+`LittleLeonardoUITests.EnvironmentVariables` with `LEONARDO_DIRECT_QA=1`,
+`LEONARDO_DIRECT_QA_PORT=46993`, `LEONARDO_DIRECT_QA_HOST=127.0.0.1`, and
+`LEONARDO_DIRECT_QA_PHASE_FILE=<fresh-root>/phase.txt`. Rebuilds replace that
+patch. For bounded simulator runs use `-collect-test-diagnostics never`.
+When reusing the owned A5 simulator after a previous direct-LAN fixture, first
+preserve its test app data and reset only the `eu.pinedatec.LittleLeonardo`
+bundle; a stale peer can make unrelated refresh/revocation assertions fail.
+
+#### #380 transport diagnostic validation
+
+The initial diagnostic checkpoint is source `0d9ec261dc6656a77fc852277addf40802c03255`
+at compilation build delta 20. The focused `LeonardoSyncTransportTests` run
+passes 17 tests, including
+`HTTPSRuntimeTests.testInterruptedPinnedTLSBodyReportsBoundedPartialTransferContext()`;
+that real TLS cutoff verifies a partial byte count without changing pinning or
+transport bounds. The English/Spanish native guide and practice checks pass 7
+tests, and the guide packaging checks pass 3 tests.
+
+`PairingUITests/testNativeDirectEnrollmentRefreshOfflineRetentionRetryAndRevocation()`
+passes 1/1 on the owned iPhone 18 Pro Simulator (iOS 27.0, build 24A434; delta
+20). [The raw alert capture](ios-https-diagnostic-alert-20261106.png) shows the
+existing alert with `[LL1 op=status domain=NSURLErrorDomain code=-1004 http=?
+bytes=0/?]`. The loopback fixture intentionally stops for the status-failure
+step and then verifies recovery. This proves the alert display and recovery
+flow; it does not reproduce the owner's interrupted large snapshot. Full run,
+fixture scope, timestamps and SHA-256 values are in
+[the evidence manifest](https-diagnostic-evidence-20261106.json).
+
+The [English](user-guide-https-diagnostic-en-20261106.png) and
+[Spanish](user-guide-https-diagnostic-es-20261106.png) screenshots are the
+original native WKWebView captures from that checkpoint. Their context sidecars bind
+each locale to the same source and capture session. The follow-up run's PNG for
+each locale has the same SHA-256 as its initial-run image; decoded pixel checks
+also find the inline-code background in all four files. This invalidates the
+apparent missing-line capture discrepancy recorded in [#388](https://github.com/PinedaTec-EU/LeonardoMD/issues/388);
+no product rendering failure or capture-code change is claimed.
+
+The owner's 338,658-byte image still fails on the physical iPhone after a
+normal Mac editor restart. Its cause is unconfirmed; these diagnostics do not
+resolve #380 and no TestFlight build is claimed.
+
+#### #380 Guide v22 after merging PR #377
+
+The combined source is `7ab7adadc2c46ebf96416f9658b1edf790ea654b`, based on
+materialized PR #377 source `843670bcd3d5548242f04f11226e06487b3e790b`.
+Guide v22 keeps the new interrupted-transfer example and includes the merged
+math/outline help. Python packaging checks pass 3/3; the native guide and
+practice suite passes 7/7 at build delta 21. A source-bound `--skip-build`
+capture run passes those same seven tests, and the practice evidence run passes
+1/1 after filling, saving, closing and reopening the form.
+
+The [current English](user-guide-https-diagnostic-en-20261106-7ab7ada.png) and
+[Spanish](user-guide-https-diagnostic-es-20261106-7ab7ada.png) frames show the
+diagnostic example in the merged Guide v22. [Practice action and saved form
+captures](https-diagnostic-evidence-20261106-7ab7ada.json) record both locales
+with original context sidecars and source hashes. The preceding source-0d iOS
+alert capture remains representative: `Sources/LeonardoSyncTransport`,
+`Mobile/LittleLeonardo`, and their transport/UI test inputs are unchanged through
+the merge. The preceding guide captures remain historical for the pre-merge
+guide; use these new frames for the combined content. The physical large-image
+failure remains unconfirmed.
+
 Compile delta193 passes 340 XCTest cases (ten optional skips) and twelve renderer tests. Native Git acceptance also passes with the corrected fixture (138.046 seconds UI, 143.760 seconds server), independently verifying both publications, deletion, ancestry, excluded-blob omission and `git fsck`; the provenance manifest records this repetition separately from the retained captures. Delta193 adds only fail-fast guards to the separate publication regression; the native fixture and mobile/shared sources are unchanged. The real SSH fixture gives both upload-pack and receive-pack a 60-second post-EOF deadline, followed by a bounded cleanup check, within the unchanged 120-second transport timeout. A stalled session returns a specific remote-command diagnostic with session/PID, input/output bytes and separate termination/stream state; incomplete cleanup is reported explicitly. The controlled faults use a two-second deadline.
 
 `testRealGitPublicationFaultPreservesPreparedJournalForExactRetry` fails one real SSH publication, verifies the remote ref and journal bytes are unchanged and the child/streams are closed, reloads the journal, then sends the identical commit/request exactly once. It verifies the resulting ref, file bytes and `git fsck` before persisting the published corpus and removing the journal. This exercises the shared durable-publication components; journal orchestration is composed explicitly by the test. The original intermittent stall is not conclusively attributed; [#121](https://github.com/PinedaTec-EU/LeonardoMD/issues/121) is addressed by a reproducible, specific failure guarantee rather than an unexplained rerun.
@@ -89,3 +162,44 @@ Compile delta193 passes 340 XCTest cases (ten optional skips) and twelve rendere
 `LEONARDO_LOCALIZATION_EVIDENCE=<owned-output> swift test --skip-build --filter 'DesktopGitControllerTests|DesktopPeerNativeAcceptanceTests|LocalizationVisualTests.testCaptureIncomingSourceReviewInBothLanguages|LocalizationVisualTests.testCaptureDesktopPeerPreferencesInBothLanguages|LocalizationVisualTests.testCaptureScopedSharingInBothLanguages|LocalizationVisualTests.testCaptureDisabledMobileServiceInBothLanguages'` captures desktop evidence after compilation. Native iOS tests require signed build-for-testing and explicitly owned server fixtures documented in `doc/mobile/little-leonardo.md`.
 
 These fixtures establish native controller/UI behavior; they do not claim a fresh packaged desktop process, physical QR camera, two physical Macs or live VPN. Git filtering depends on server support and fails closed without a full clone fallback. Unreachable revoked peers retain their cache until next contact.
+
+#### #380 Guide v23 after integrating PR #383
+
+Producer source `0055c1640340235037b3c1ef56780cf9a95e4af6` integrates the
+offline demo from PR #383 with the #380 HTTPS diagnostic example in Guide v23.
+The corresponding release materialization is `0.3.1057`. Packaging checks
+pass 3/3, and the native bilingual Guide/practice checks pass 7/7 at build
+delta 24. The iOS Simulator build-for-testing passes at delta 25; the focused
+direct-enrollment UI test passes 1/1 on the owned iPhone 18 Pro Simulator
+(iOS 27.0). Its `--skip-build` host fixture passes 1/1. The existing
+17-test HTTPS transport result is source-equivalent and was not rerun for this
+Guide/demo integration.
+
+The real QA bundle contains the v23 Guide resources byte-for-byte, uses the
+`LeonardoMD` executable, has no XCTest dependency, and omits superseded v22
+bundles. Packaged Help acceptance is **passed** in actual QA process PID15291
+(version/build 0.3.1057/1057, producer `0055c164`). Both guides were opened
+through the real Help workflow in that same instance. Both working copies
+matched the bundle hashes. Live Mermaid, charts, images and tables render;
+one-line and multiline display formulas, underscores/underbraces, radical,
+long arrow, cancellation and the tagged box-counting equation (1) render
+without KaTeX errors. Math-disabled fallback preserves source, and code examples
+remain literal. Both separate practice forms were filled with fictional text,
+multiline and checkbox values, saved, closed and reopened through chapter 4;
+all answers persisted. Both live LL1 help paragraphs were inspected.
+
+The [manifest](https-diagnostic-evidence-20261107-v23.json) binds eleven new
+original JPEG window captures and context sidecars under
+[packaged-help](guide-v23/packaged-help). These supplement the historical
+opening capture and native component tests. Native CUA does not expose a CSS
+viewport or browser version; these are explicitly unavailable rather than
+inferred from image pixels. Original images are unmodified at measured
+5120×2880 or 2520×1700 pixels. The producer source is unchanged by the
+subsequent evidence/ledger checkpoint; no artifact is restamped.
+
+After QA, the original English language and Math-on settings were restored,
+then the app quit normally. Both pre-existing practice files were restored
+byte-identical; synthetic answers were archived privately. The real sync helper,
+pairing and grants were untouched. The owner's 338,658-byte physical image
+still fails; its cause remains unconfirmed, and no new TestFlight build is
+claimed by this pre-integration evidence.

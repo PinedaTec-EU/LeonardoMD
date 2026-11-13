@@ -15,10 +15,23 @@ struct DocumentTabsView: View {
     var body: some View {
         VStack(spacing: 0) {
             tabBar
+            if documents.search.isVisible {
+                DocumentSearchBar(
+                    search: documents.search,
+                    onPrevious: { documents.navigateSearch(by: -1) },
+                    onNext: { documents.navigateSearch(by: 1) },
+                    onClose: { documents.dismissSearch() }
+                )
+            }
             Divider()
             ZStack {
                 ForEach(documents.tabs) { tab in
-                    WorkspaceView(session: tab.session, isActiveTab: tab.id == documents.activeID)
+                    WorkspaceView(
+                        session: tab.session,
+                        isActiveTab: tab.id == documents.activeID,
+                        searchMatches: documents.search.isVisible ? documents.search.ranges(for: tab.id) : [],
+                        activeSearchSelection: documents.search.isVisible ? documents.search.selection(for: tab.id) : nil
+                    )
                         .opacity(tab.id == documents.activeID ? 1 : 0)
                         .allowsHitTesting(tab.id == documents.activeID && !documents.closing)
                         .disabled(tab.id != documents.activeID || documents.closing)
@@ -41,6 +54,10 @@ struct DocumentTabsView: View {
             }
             .scrollIndicators(.hidden)
             .scrollClipDisabled()
+            Button { documents.presentSearch() } label: { Image(systemName: "magnifyingglass").padding(6) }
+                .help(L10n.text("Find in open documents (⌘F)"))
+                .accessibilityLabel(L10n.text("Find"))
+                .accessibilityIdentifier("document-find")
             Button { documents.addTab() } label: { Image(systemName: "plus").padding(6) }
                 .help(L10n.text("New tab (⌘T)"))
                 .accessibilityLabel(L10n.text("New tab"))

@@ -74,6 +74,30 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         return try await refresh(connection).status
     }
 
+    public func catalogue(connectionID: UUID, projectID: UUID) async throws -> RemoteProjectCatalogue {
+        try enter(); defer { changing = false }
+        let refreshed = try await refresh(requireConnection(connectionID))
+        guard refreshed.status.access == .authorized,
+              let descriptor = refreshed.status.projects.first(where: { $0.id == projectID }) else {
+            throw DesktopPeerLibraryError.unauthorizedProject
+        }
+        return try await remote.catalogue(descriptor, connection: refreshed.connection,
+                                           credential: await requireCredential(refreshed.connection))
+    }
+
+    public func file(connectionID: UUID, projectID: UUID, entry: RemoteFileEntry) async throws -> CorpusFile {
+        try enter(); defer { changing = false }
+        let refreshed = try await refresh(requireConnection(connectionID))
+        guard refreshed.status.access == .authorized,
+              let descriptor = refreshed.status.projects.first(where: { $0.id == projectID }) else {
+            throw DesktopPeerLibraryError.unauthorizedProject
+        }
+        try descriptor.scope.validate(entry.path)
+        try descriptor.selection?.validate(entry.path)
+        return try await remote.file(entry, projectID: projectID, connection: refreshed.connection,
+                                      credential: await requireCredential(refreshed.connection))
+    }
+
     public func importProject(connectionID: UUID, projectID: UUID) async throws -> DesktopPeerCopy {
         try enter(); defer { changing = false }
         let refreshed = try await refresh(requireConnection(connectionID))

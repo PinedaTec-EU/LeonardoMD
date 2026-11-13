@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T12:43:23.318100+00:00",
+  "route": "/LittleLeonardo/rubric-landscape",
+  "screen": "Landscape full-window live canvas; one synthetic ink stroke",
+  "browser_name": "Native iOS Simulator SwiftUI/UIKit; no browser",
+  "browser_version": "iOS 27.0 (24A434); SDK27.1",
+  "viewport_css": {
+    "width": 874,
+    "height": 402
+  },
+  "capture_mode": "viewport",
+  "state": "Landscape full-window live canvas; one synthetic ink stroke; synthetic QA; native points in viewport_css; source 99cdd46d74f2a34d698a2e158104a9f2e129c7d4",
+  "data_provenance": "synthetic"
+}

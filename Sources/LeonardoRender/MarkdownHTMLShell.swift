@@ -112,6 +112,7 @@ enum MarkdownHTMLShell {
             allowsVegaLite: configuration.allowsVegaLite,
             allowsCitations: configuration.allowsCitations,
             allowsMarkdownExtensions: configuration.allowsMarkdownExtensions,
+            compactFirstHeading: configuration.compactFirstHeading,
             debounceMilliseconds: configuration.renderDebounce.milliseconds,
             appearance: configuration.appearance.sanitizedPayload,
             baseURL: baseURL?.absoluteString
@@ -159,6 +160,7 @@ private struct MarkdownRenderPayload: Encodable {
     let allowsVegaLite: Bool
     let allowsCitations: Bool
     let allowsMarkdownExtensions: Bool
+    let compactFirstHeading: Bool
     let debounceMilliseconds: Int
     let appearance: MarkdownAppearancePayload
     let baseURL: String?

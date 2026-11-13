@@ -75,6 +75,7 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
     func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem,
                  immediateInstallationBlock: @escaping () -> Void) -> Bool {
         UpdateInstanceTermination.shared.installationPending = true
+        UpdateInstanceTermination.shared.requiresHelperPreparationOnQuit = true
         return false // Sparkle retains its installer scheduling and retry behavior.
     }
 
@@ -87,6 +88,7 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
     }
 
     func userDidCancelDownload(_ updater: SPUUpdater) {
+        resumeHelperAfterCancelledInstallation()
         UpdateInstanceTermination.shared.resolveInstallation()
     }
 
@@ -106,11 +108,19 @@ final class SparkleUpdateDriver: NSObject, ApplicationUpdateDriver, SPUUpdaterDe
             // Skip, or dismissal of a fresh non-downloaded candidate, resolves a stale guard.
             pendingDecision.clear()
             UpdateInstanceTermination.shared.resolveInstallation()
+            resumeHelperAfterCancelledInstallation()
         }
         stateDidChange?()
     }
 
+    private func resumeHelperAfterCancelledInstallation() {
+        let helper = DesktopSyncController.shared.helper
+        let preparation = helper.installation.revision
+        Task { await helper.cancelApplicationUpdate(expectedPreparation: preparation) }
+    }
+
     func updater(_ updater: SPUUpdater, didAbortWithError error: Error) {
+        resumeHelperAfterCancelledInstallation()
         if !installerPreparationStarted { UpdateInstanceTermination.shared.resolveInstallation() }
         resolveCheck(error)
     }

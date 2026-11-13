@@ -20,20 +20,25 @@ struct ExtensionPreferences: View {
                     Text(L10n.text("Changing an extension creates a project-specific configuration."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
-                extensionCard(L10n.text("Mermaid"), identifier: "mermaid", description: L10n.text("Diagrams inside your documents"),
+                extensionCard(L10n.text(BuiltInExtension.mermaid.title), identifier: "mermaid",
+                              description: L10n.text(BuiltInExtension.mermaid.purpose),
                               symbol: "point.3.connected.trianglepath.dotted",
                               enabled: Binding(get: { features.mermaidEnabled },
                                                set: { session.setMermaid($0, project: projectScope) }))
-                extensionCard(L10n.text("Math"), identifier: "math", description: L10n.text("Formulas with KaTeX"), symbol: "sum",
+                extensionCard(L10n.text(BuiltInExtension.math.title), identifier: "math",
+                              description: L10n.text(BuiltInExtension.math.purpose), symbol: "sum",
                               enabled: Binding(get: { features.mathEnabled },
                                                set: { session.setMath($0, project: projectScope) }))
-                extensionCard(L10n.text("Charts (Vega-Lite)"), identifier: "vega-lite", description: L10n.text("Inline data visualizations inside your documents"), symbol: "chart.bar.xaxis",
+                extensionCard(L10n.text(BuiltInExtension.charts.title), identifier: "vega-lite",
+                              description: L10n.text(BuiltInExtension.charts.purpose), symbol: "chart.bar.xaxis",
                               enabled: Binding(get: { features.vegaLiteEnabled },
                                                set: { session.setVegaLite($0, project: projectScope) }))
-                extensionCard(L10n.text("Citations"), identifier: "citations", description: L10n.text("Bibliographies and references with Citation.js"), symbol: "text.book.closed",
+                extensionCard(L10n.text(BuiltInExtension.citations.title), identifier: "citations",
+                              description: L10n.text(BuiltInExtension.citations.purpose), symbol: "text.book.closed",
                               enabled: Binding(get: { features.citationsEnabled },
                                                set: { session.setCitations($0, project: projectScope) }))
-                extensionCard(L10n.text("Markdown extras"), identifier: "markdown-extensions", description: L10n.text("Footnotes and GitHub-style callouts"), symbol: "text.badge.plus",
+                extensionCard(L10n.text(BuiltInExtension.extras.title), identifier: "markdown-extensions",
+                              description: L10n.text(BuiltInExtension.extras.purpose), symbol: "text.badge.plus",
                               enabled: Binding(get: { features.markdownExtensionsEnabled },
                                                set: { session.setMarkdownExtensions($0, project: projectScope) }))
                 VStack(alignment: .leading, spacing: 6) {

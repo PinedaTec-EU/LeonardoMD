@@ -8,6 +8,59 @@ Architecture direction (owner-selected 2026-10-20): [ADR 0002](../adr/0002-reeva
 
 Current implementation: [Git retirement and legacy recovery](git-retirement.md), tracked in [#249](https://github.com/PinedaTec-EU/LeonardoMD/issues/249). iOS is read-only; editable direct synchronization is retained for desktops. The original Git implementation/checkpoints below are historical and do not describe currently available mobile editing or publication.
 
+## Interrupted HTTPS response diagnostics (#380)
+
+When a pinned HTTPS request fails, Little Leonardo keeps the normal localized
+error and adds a compact `[LL1 ...]` code to the existing alert. The code names
+the operation (`status`, `snapshot`, `catalogue` or `file`), `NSURLErrorDomain`
+code, HTTP status when available, and bytes received versus the declared body
+size. It excludes URLs, credentials, device/project identifiers and response
+content. Share the code or a screenshot with support; an HTTP 200 status can
+still accompany an interrupted response body. Cancellation and typed response
+size errors keep their existing behavior.
+
+The regression uses a real TLS listener and cuts the encrypted response after a
+bounded number of wire bytes. It confirms that a partial body reports received
+and expected sizes without exposing a sentinel from the response. An owned
+iPhone 18 Pro / iOS 27.0 Simulator run also captures the alert for a failed
+STATUS request, then verifies refresh, retry and revocation recovery. This
+checks that the existing iOS alert displays the diagnostic; it does not
+reproduce the owner's physical 338,658-byte image failure. That failure still
+has now been reported with `[LL1 op=snapshot domain=NSURLErrorDomain
+code=-1005 http=200 bytes=409481/492904]`. Diagnostic TestFlight1082 was
+delivered, but the physical cause and working transfer remain open in
+[#380](https://github.com/PinedaTec-EU/LeonardoMD/issues/380).
+
+### Server completion candidate and release acceptance
+
+[PR #392](https://github.com/PinedaTec-EU/LeonardoMD/pull/392) is an unvalidated
+physical-fix candidate. It marks the response as the final TLS write stream and
+allows the peer to close before teardown, bounded by five seconds. Existing
+15-second request and120-second response deadlines and service-stop cancellation
+remain. Its `[LLS1 ...]` server completion record contains only operation class,
+phase, reason, HTTP status, attempted body/encoded lengths, elapsed time and an
+allowlisted network error family/number. It contains no address, path, business
+identifier, credential, response content or arbitrary error description.
+`sendProcessed` means stack processing, and `peerClosed` means peer EOF; neither
+is proof that the receiving app validated or rendered the document.
+
+For a candidate advertised as resolving #380, require complete body/byte identity,
+strict TLS EOF, delayed consumption, concurrent reads, constrained windows,
+pin mismatch, revocation and deliberate truncation checks. Also verify bounded
+cleanup when peers withhold their own close. Before publishing a resolution,
+record the actual helper version/source, mobile build/OS, physical Wi-Fi path,
+original338,658-byte PNG identity, successful full transfer/rendering and repeated
+refresh with the normal foreground polling. Retain the owner acceptance URL.
+A simulator addressed through the Mac's LAN IP can still route over `lo0`; it
+is not physical Wi-Fi evidence. If the physical check is unavailable or fails,
+keep the candidate unvalidated and #380 open. A UI-only release must not claim
+that it fixes this transport bug.
+
+The original owner screenshot and source-scoped experiments are in
+[the response-lifetime evidence](../validation/https-response-lifetime/README.md).
+No helper replacement or physical success is established by the candidate's
+local checks.
+
 ## Current rubric response channel (#342)
 
 The read-only iOS companion now has one additional, capture-only response

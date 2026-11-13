@@ -60,6 +60,12 @@
     } },
     renderer: {
       table: sizedTable,
+      heading(token) {
+        const html = window.marked.Renderer.prototype.heading.call(this, token);
+        if (!Number.isSafeInteger(token.leonardoSourceLine)) return html;
+        return html.replace(/^<h([1-6])>/,
+          `<h$1 data-leonardo-source-line="${token.leonardoSourceLine}" data-leonardo-heading="${tableRenderKey}">`);
+      },
       html(token) {
         if (!allowsLegacyWidths && token.block === true && token.raw.trim() === "<!-- leonardo:page-break -->") return '<hr data-leonardo-page-break="true">';
         return window.marked.Renderer.prototype.html.call(this, token);
@@ -80,6 +86,33 @@
     }
   });
 
+  // Protect display TeX before Markdown interprets underscores, escapes or HTML.
+  // Custom tokens have no preview-edit ranges: edit formulas in source.
+  const displayMath = (source) => /^\$\$([\s\S]+?)\$\$/.exec(source);
+  parser.use({ extensions: [
+    {
+      name: "leonardoDisplayMathBlock", level: "block",
+      tokenizer(source) {
+        const match = /^ {0,3}\$\$([\s\S]+?)\$\$/.exec(source);
+        if (!match) return;
+        // Check the first closing delimiter separately: do not backtrack into
+        // another expression to satisfy the end-of-line requirement.
+        const ending = /^[ \t]*(?:\n|$)/.exec(source.slice(match[0].length));
+        if (ending) return { type: "leonardoDisplayMathBlock", raw: match[0] + ending[0], text: match[0].trim() };
+      },
+      renderer(token) { return `<p>${window.LeonardoEditing.escapeHTML(token.text)}</p>\n`; }
+    },
+    {
+      name: "leonardoDisplayMathInline", level: "inline",
+      start(source) { return source.indexOf("$$"); },
+      tokenizer(source) {
+        const match = displayMath(source);
+        if (match) return { type: "leonardoDisplayMathInline", raw: match[0], text: match[0] };
+      },
+      renderer(token) { return window.LeonardoEditing.escapeHTML(token.text); }
+    }
+  ] });
+
   window.LeonardoTables = {
     get documentTokens() { return documentTokens; },
     render(markdown, legacyWidths = true) {
@@ -92,6 +125,12 @@
       }
       const html = parser.parse(markdown);
       return extras ? extras.finish(html) : html;
+    },
+    headingForSourceLine(root, line) {
+      if (!Number.isSafeInteger(line) || line < 1) return null;
+      return Array.from(root.querySelectorAll("h1, h2, h3, h4, h5, h6")).find(heading =>
+        heading.dataset.leonardoHeading === tableRenderKey &&
+        Number(heading.dataset.leonardoSourceLine) === line) || null;
     },
     isMarkdownTable: table => table.dataset.leonardoGfm === tableRenderKey,
     sourceFor(table, root, markdown) {

@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-08T12:17:46.818304+00:00",
+  "capture": {
+    "captured_at": "2026-11-08T12:04:26.441000+00:00",
+    "route": "/native/packaged-help/guide29/en/en-practice-reopened",
+    "screen": "LeonardoMD QA bundled Guide29",
+    "browser_name": "Native macOS application WKWebView",
+    "browser_version": "Packaged WKWebView; browser version not exposed",
+    "state": "Practice closed after Save and reopened through the real guide action; fictional answers retained; same QA PID81719; native captured-pixel viewport, CSS not applicable",
+    "viewport_css": {
+      "width": 2520,
+      "height": 1700
+    },
+    "capture_mode": "viewport",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "jpeg",
+    "width_px": 2520,
+    "height_px": 1700,
+    "sha256": "a601e64b271b590a295581b45afce7b7b8d8bd0a5fe031747dc0c11188d7e44d"
+  },
+  "source": {
+    "revision_at_collection": "b9c5bb7a1cb46d5d989d78de833fae57e402a9c5",
+    "tracked_changes_present": true,
+    "untracked_files_present": true
+  }
+}

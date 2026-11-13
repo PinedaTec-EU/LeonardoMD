@@ -1,0 +1,20 @@
+{
+  "browser_name" : "Native AppKit \/ SwiftUI NSHostingView",
+  "browser_version" : "Not applicable: native view, no browser engine",
+  "capture_mode" : "element",
+  "captured_at" : "2026-11-10T13:31:50.301Z",
+  "data_provenance" : "synthetic",
+  "native_viewport_points" : {
+    "height" : 160,
+    "width" : 400
+  },
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "route" : "\/native\/project-identities",
+  "screen" : "Project identity instructional illustration",
+  "source_sha" : "33650e806efc05cfe462118da3e0b08c44b8f69f",
+  "state" : "Production project identity rows; local, outgoing selected content and received; viewport_css is the measured native-point equivalent; CSS is not applicable",
+  "viewport_css" : {
+    "height" : 160,
+    "width" : 400
+  }
+}

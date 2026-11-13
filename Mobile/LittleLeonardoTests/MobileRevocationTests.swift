@@ -207,6 +207,62 @@ final class MobileRevocationTests: XCTestCase {
     }
 
     @MainActor
+    func testDeletedMalformedCacheIsSkippedBeforeAuthorizationFilteringAndRecoveryLoad() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("LittleLeonardo", isDirectory: true)
+        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
+        let deletedID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
+        let authorizedID = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
+        let unavailableID = UUID(uuidString: "33333333-3333-3333-3333-333333333333")!
+        let recoveryID = UUID(uuidString: "44444444-4444-4444-4444-444444444444")!
+        let authorized = try OfflineProject(id: authorizedID, name: "Authorized", mode: .direct,
+            scope: CorpusScope(folder: ""), snapshot: CorpusSnapshot(revision: "r1",
+                files: [CorpusFile(path: "read.md", content: Data("authorized".utf8))]))
+        let unavailable = try OfflineProject(id: unavailableID, name: "Unavailable", mode: .direct,
+            scope: CorpusScope(folder: ""), snapshot: CorpusSnapshot(revision: "r1",
+                files: [CorpusFile(path: "read.md", content: Data("unavailable".utf8))]))
+        let seed = try OfflineProject(id: recoveryID, name: "Recovery", mode: .direct,
+            scope: CorpusScope(folder: ""), snapshot: CorpusSnapshot(revision: "r1",
+                files: [CorpusFile(path: "read.md", content: Data("recovery".utf8))]))
+        let corpus = OfflineCorpusStore(root: corpusRoot)
+        try await corpus.save(authorized)
+        try await corpus.save(unavailable)
+        let seedObject = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(seed))
+            as? [String: Any])
+        var recoveryObject = seedObject
+        recoveryObject["mode"] = SyncMode.legacyGit.rawValue
+        try JSONSerialization.data(withJSONObject: recoveryObject).write(
+            to: corpusRoot.appendingPathComponent(recoveryID.uuidString).appendingPathExtension("json"),
+            options: .atomic)
+        try FileManager.default.createDirectory(at: corpusRoot, withIntermediateDirectories: true)
+        try Data("malformed late cache".utf8).write(
+            to: corpusRoot.appendingPathComponent(deletedID.uuidString).appendingPathExtension("json"),
+            options: .atomic)
+
+        let active = connection(projectIDs: [authorizedID, deletedID])
+        let missingCredential = connection(id: otherConnectionID, device: otherDeviceID,
+                                           projectIDs: [unavailableID])
+        try MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json"))
+            .save([active, missingCredential])
+        let lifecycle = MobileProjectLifecycle(url: support.appendingPathComponent("project-removals.json"))
+        try lifecycle.deleteProject(deletedID)
+
+        let library = MobileLibrary(rootURL: corpusRoot,
+            credentials: TestCredentials(values: [deviceID: "credential"], failRemove: false),
+            revocationJournal: MobileRevocationJournal(url: support.appendingPathComponent("revocation.json")))
+        await library.reload()
+
+        XCTAssertNil(library.error)
+        XCTAssertTrue(library.projects.contains(where: { $0.id == authorizedID }))
+        XCTAssertTrue(library.projects.contains(where: { $0.id == recoveryID }),
+                      "An unrelated recovery archive must remain readable")
+        XCTAssertFalse(library.projects.contains(where: { $0.id == deletedID }))
+        XCTAssertFalse(library.projects.contains(where: { $0.id == unavailableID }),
+                       "Authorization filtering must still hide an unavailable direct project")
+    }
+
+    @MainActor
     func testWriteAheadMarkerSurvivesNormalPersistenceFailuresOnReload() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

@@ -45,12 +45,15 @@ final class AppSession {
     var projectFileTree = ProjectFileTree()
     var openProjectDocumentInTab: ((URL, Int?) async -> Void)?
     private var documentContent = ""
+    @ObservationIgnored var documentContentDidChange: (@MainActor () -> Void)?
     var content: String {
         get { documentContent }
         set {
             guard !isSyncSuspended || syncUpdatingBuffer else { return }
+            let changed = documentContent != newValue
             documentContent = newValue
             editHistory = DocumentEditHistory()
+            if changed { documentContentDidChange?() }
         }
     }
     var editHistory = DocumentEditHistory()
@@ -91,6 +94,7 @@ final class AppSession {
     var saveStatus = "Local file"
     var editorScroll = 0.0
     var requestedLine: Int?
+    var requestedLineRevision = 0
     var rootEntries: [NavigationEntry] = []
     var treeRevision = 0
     var searchQuery = ""

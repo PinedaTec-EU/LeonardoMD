@@ -47,3 +47,7 @@ context checks; `ExtensionWarningPreferences` owns global per-extension suppress
 and reset revision. The presenter waits for active-tab/dialog eligibility. Reset in
 Extensions re-arms recommendations without changing flags. Guide v4 is a separate
 personal copy and packages the approved About banner plus real engine examples.
+
+Display math ([#272](https://github.com/PinedaTec-EU/LeonardoMD/issues/272)) is protected by custom block/inline tokens in the existing Marked parser before Markdown transforms TeX. Tokens stay opaque to preview editing; disabled Math preserves literal notation. The current bilingual guides contain underbrace and tagged multiline regressions; [the canonical guide inventory](../doc/guide/feature-coverage.md) records their current revision. AGENTS.md requires both guides opened in every tested app instance; native component checks are supplementary.
+
+Extensible math ([#274](https://github.com/PinedaTec-EU/LeonardoMD/issues/274)) permits SVG geometry only in sanitized KaTeX output, with trust disabled and active/external SVG content rejected. Raw document SVG remains outside the HTML profile. Outline navigation ([#364](https://github.com/PinedaTec-EU/LeonardoMD/issues/364)) uses parser-bound source lines with per-render identities; it does not derive preview position from source length. The host waits for current rendering and rejects stale/replaced navigation requests. Only editor-originated scrolling drives preview fractions; programmatic outline jumps retain their rendered destination.

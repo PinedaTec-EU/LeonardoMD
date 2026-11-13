@@ -6,7 +6,7 @@ struct HelperGatedPeerRemote: DesktopPeerRemote {
     let remote: any DesktopPeerRemote
     let requireOnline: @Sendable () async throws -> Void
     init(remote: any DesktopPeerRemote = DesktopPeerHTTPSRemote(),
-         requireOnline: @escaping @Sendable () async throws -> Void = { try await SyncHelperController.requireOnline() }) {
+         requireOnline: @escaping @Sendable () async throws -> Void) {
         self.remote = remote; self.requireOnline = requireOnline
     }
     private func checked<T: Sendable>(_ operation: () async throws -> T) async throws -> T {
@@ -33,6 +33,12 @@ struct HelperGatedPeerRemote: DesktopPeerRemote {
     func acknowledge(_ proposal: DesktopPeerProposal, receipt: DesktopPeerProposalReceipt,
                      connection: DesktopPeerConnection, credential: String) async throws {
         try await checked { try await remote.acknowledge(proposal, receipt: receipt, connection: connection, credential: credential) }
+    }
+    func catalogue(_ descriptor: SharedProjectDescriptor, connection: DesktopPeerConnection, credential: String) async throws -> RemoteProjectCatalogue {
+        try await checked { try await remote.catalogue(descriptor, connection: connection, credential: credential) }
+    }
+    func file(_ entry: RemoteFileEntry, projectID: UUID, connection: DesktopPeerConnection, credential: String) async throws -> CorpusFile {
+        try await checked { try await remote.file(entry, projectID: projectID, connection: connection, credential: credential) }
     }
     func snapshot(_ descriptor: SharedProjectDescriptor, connection: DesktopPeerConnection, credential: String) async throws -> CorpusSnapshot {
         try await checked { try await remote.snapshot(descriptor, connection: connection, credential: credential) }

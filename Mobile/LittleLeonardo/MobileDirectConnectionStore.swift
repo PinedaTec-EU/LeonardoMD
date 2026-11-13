@@ -161,6 +161,7 @@ struct MobileDirectConnectionStore {
 
     func loadVisibleProjects(connections: [MobileDirectConnection],
                              quarantinedConnectionIDs: Set<UUID> = [],
+                             excludedProjectIDs: Set<UUID> = [],
                              credentials: DeviceCredentialStore,
                              corpus: OfflineCorpusStore) async throws -> [OfflineProject] {
         var activeProjectIDs = Set<UUID>()
@@ -184,6 +185,10 @@ struct MobileDirectConnectionStore {
         let hiddenProjectIDs = revokedProjectIDs.union(unavailableProjectIDs)
         var loaded: [OfflineProject] = []
         for id in try await corpus.projectIDs() {
+            // Device-local deletion is a tombstone, not a post-load display
+            // filter. A late or malformed cache must not be decoded before
+            // the user's removal intent is applied.
+            guard !excludedProjectIDs.contains(id) else { continue }
             guard !hiddenProjectIDs.contains(id) || activeProjectIDs.contains(id) else { continue }
             if let project = try await corpus.load(id: id) {
                 loaded.append(project)
