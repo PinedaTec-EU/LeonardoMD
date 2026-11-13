@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1602
+
+- #378 Fixed: give corrected Help a distinct personal-copy revision ([#446](https://github.com/PinedaTec-EU/LeonardoMD/pull/446))
+
+<p>Existing LeonardoMD installations now receive the corrected synchronization guidance in a new Help copy while saved guide copies and practice answers remain intact.</p>
+
+Source: `ed1795164972948b8792557d9c0f87ea41d67a5a`. Delta: `{"build": 6}`.
+
 ## 0.3.1596
 
 - #440 Added: optional grouped instance presentation ([#441](https://github.com/PinedaTec-EU/LeonardoMD/pull/441))
