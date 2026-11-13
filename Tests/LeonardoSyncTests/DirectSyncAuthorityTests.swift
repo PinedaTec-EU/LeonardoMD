@@ -2,6 +2,24 @@ import XCTest
 @testable import LeonardoSync
 
 final class DirectSyncAuthorityTests: XCTestCase {
+    func testGrantComparisonTracksScopeAndSelectionButIgnoresProjectName() throws {
+        let id = UUID()
+        let scope = try CorpusScope(folder: "")
+        let selection = try CorpusSelection(folders: [], documents: ["docs/one.md"])
+        let original = SharedProjectDescriptor(id: id, name: "Notes", scope: scope, selection: selection)
+        let renamed = SharedProjectDescriptor(id: id, name: "Renamed notes", scope: scope, selection: selection)
+        let changedScope = SharedProjectDescriptor(id: id, name: "Notes",
+            scope: try CorpusScope(folder: "archive"), selection: selection)
+        let changedSelection = SharedProjectDescriptor(id: id, name: "Notes", scope: scope,
+            selection: try CorpusSelection(folders: [], documents: ["docs/two.md"]))
+
+        XCTAssertTrue(original.representsSameGrant(as: renamed))
+        XCTAssertFalse(original.representsSameGrant(as: changedScope))
+        XCTAssertFalse(original.representsSameGrant(as: changedSelection))
+        XCTAssertFalse(original.representsSameGrant(as: SharedProjectDescriptor(
+            id: UUID(), name: "Notes", scope: scope, selection: selection)))
+    }
+
     func testSnapshotCannotBroadenSelectedDocumentsDespiteProjectApproval() async throws {
         var registry = PairingRegistry(); registry.setEnabled(true)
         let credential = String(repeating: "a", count: 64)

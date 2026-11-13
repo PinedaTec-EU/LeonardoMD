@@ -38,10 +38,7 @@ struct MobileSyncPreferencesView: View {
         }.formStyle(.grouped).toggleStyle(PremiumSwitchStyle()).disabled(controller.busy)
         .task {
             await controller.initialize()
-            while !Task.isCancelled {
-                await controller.refreshConsent()
-                do { try await Task.sleep(for: .seconds(2)) } catch { return }
-            }
+            await controller.refreshConsent()
         }
         .sheet(item: $controller.reviewing) { value in DesktopSourceReviewView(controller: controller, value: value) }
         .sheet(item: $approving) { request in PairingConsentView(controller: controller, request: request) }
@@ -130,7 +127,7 @@ struct MobileSyncPreferencesView: View {
     }
 
     @ViewBuilder private var authorizedDevices: some View {
-        Section(L10n.text("Devices with access to this Mac")) {
+        Section {
             ForEach(controller.consent.devices) { device in
                 HStack {
                     SyncDeviceIdentity(name: device.name, kind: device.kind)
@@ -139,7 +136,17 @@ struct MobileSyncPreferencesView: View {
                     else { Button(L10n.text("Revoke")) { Task { await controller.revoke(device.id) } } }
                 }
             }
-    }
+        } header: {
+            HStack {
+                Text(L10n.text("Devices with access to this Mac"))
+                Spacer()
+                Button(L10n.text("Refresh linked devices"), systemImage: "arrow.clockwise") {
+                    Task { await controller.refreshConsent() }
+                }
+                .buttonStyle(.borderless)
+                .disabled(controller.busy)
+            }
+        }
     }
 
 

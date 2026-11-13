@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-11-12T22:46:19.458626+00:00",
+  "capture": {
+    "captured_at": "2026-11-12T22:10:36.603Z",
+    "route": "/native/remote-projects",
+    "screen": "Remote projects grouped by connected Mac",
+    "browser_name": "Native AppKit / SwiftUI NSHostingView",
+    "browser_version": "Not applicable: native view, no browser engine",
+    "state": "Synthetic MacBook; Incoming Research awaits Add or Ignore; docs/future.md awaits review; accepted project remains browseable; viewport_css is the measured native-point equivalent; CSS is not applicable",
+    "viewport_css": {
+      "height": 652,
+      "width": 952
+    },
+    "capture_mode": "element",
+    "data_provenance": "synthetic"
+  },
+  "image": {
+    "format": "png",
+    "width_px": 1904,
+    "height_px": 1304,
+    "sha256": "0ac01830fa0495eebbe3c06be943ba88ca45df02ef5bd9a66a3e08f843c715d1"
+  },
+  "source": {
+    "revision_at_collection": "d64a6b841687c4e1b2fee965a49cd909b7ff2168",
+    "tracked_changes_present": false,
+    "untracked_files_present": true
+  }
+}

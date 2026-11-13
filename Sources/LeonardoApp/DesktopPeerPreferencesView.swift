@@ -8,73 +8,43 @@ struct DesktopPeerPreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var pairing = false
     @State private var reviewing: UUID?
-    @State private var browsing: UUID?
 
     var body: some View {
         Form {
-            Text(L10n.text("Access saved content shared by another computer. This Mac can also share its own content independently."))
-                .font(.callout).foregroundStyle(.secondary)
-            Picker(L10n.text("Synchronization interval"), selection: Binding(
-                get: { controller.syncIntervalMinutes }, set: { controller.updateInterval($0) })) {
-                ForEach(DesktopPeerController.intervals, id: \.self) { minutes in
-                    Text(minutes == 0 ? L10n.text("Manual") : String(format: L10n.text("Every %d minutes"), minutes)).tag(minutes)
-                }
-            }
-            Button(L10n.text("Connect to another Mac")) { pairing = true }.disabled(!controller.helper.online || controller.busy)
-            Text(L10n.text("Enable Leonardo Sync on this Mac and sharing on the other Mac, then compare the codes."))
-                .font(.caption).foregroundStyle(.secondary)
-            Section(L10n.text("Computers I connect to")) {
-                if controller.connections.isEmpty {
-                    Text(L10n.text("On the other Mac, open Synchronization → Share from this Mac and copy its invitation link."))
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(controller.connections, id: \.id) { connection in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(connection.endpoint.absoluteString).textSelection(.enabled)
-                                Text(L10n.text("LeonardoMD on Mac · changes require review")).font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if connection.revoked { Text(L10n.text("Revoked")) }
-                            else { Button(L10n.text("Sync")) { Task { await controller.refresh(connection.id) } }.disabled(!controller.helper.online || controller.busy) }
-                        }
-                        if let code = connection.comparisonCode {
-                            Text(code).font(.title2.monospaced()).textSelection(.enabled)
-                            Text(L10n.text("Approve this code on the other Mac before importing a project."))
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
-                        ForEach(controller.available[connection.id] ?? [], id: \.id) { project in
-                            HStack {
-                                ProjectIdentityLabel(name: project.name, identity: .received)
-                                Spacer()
-                                Button(L10n.text("Browse files")) {
-                                    browsing = DesktopPeerController.downloadID(connectionID: connection.id, projectID: project.id)
-                                }
-                                Button(L10n.text("Create editable copy")) { Task { await controller.importProject(connectionID: connection.id, projectID: project.id) } }.disabled(!controller.helper.online || controller.busy)
-                            }
-                        }
+            Section {
+                Text(L10n.text("Access saved content shared by another computer. This Mac can also share its own content independently."))
+                    .font(.callout).foregroundStyle(.secondary)
+                Picker(L10n.text("Synchronization interval"), selection: Binding(
+                    get: { controller.syncIntervalMinutes }, set: { controller.updateInterval($0) })) {
+                    ForEach(DesktopPeerController.intervals, id: \.self) { minutes in
+                        Text(minutes == 0 ? L10n.text("Manual") : String(format: L10n.text("Every %d minutes"), minutes)).tag(minutes)
                     }
                 }
-            }
-            Section(L10n.text("Projects available to browse")) {
-                ForEach(controller.downloads.projects) { project in
-                    HStack {
-                        ProjectIdentityLabel(name: project.descriptor.name, identity: .received)
-                        Spacer()
-                        Button(L10n.text("Browse files")) { browsing = project.id }
-                    }
+                HStack {
+                    Button(L10n.text("Connect to another Mac")) { pairing = true }
+                        .disabled(!controller.helper.online || controller.busy)
+                    Button(L10n.text("Update list"), systemImage: "arrow.clockwise") {
+                        Task { await controller.refreshAllConnections() }
+                    }.disabled(!controller.helper.online || controller.busy || controller.connections.isEmpty)
                 }
-                Text(L10n.text("Saved catalogues and downloaded files remain accessible without a connection."))
+                Text(L10n.text("Enable Leonardo Sync on this Mac and sharing on the other Mac, then compare the codes."))
                     .font(.caption).foregroundStyle(.secondary)
+            }
+            Section(L10n.text("Computers I connect to")) {
+                DesktopPeerRemoteProjectsView(controller: controller)
             }
             SyncCacheSettingsView(library: controller.downloads, spanish: LanguageSettings.shared.language == .spanish)
                 .disabled(!controller.storageAuthorized)
             Section(L10n.text("Offline copies")) {
                 ForEach(controller.copies, id: \.id) { copy in
                     VStack(alignment: .leading, spacing: 8) {
+                        let hostName = controller.connections.first { $0.id == copy.connectionID }
+                            .map { controller.reviewStore.hostName(for: $0) }
+                        let scope = DesktopProjectPresentation.scopeDescription(folders: copy.selection.folders)
+                        let sourceDetail = [hostName, scope].compactMap { $0 }.filter { !$0.isEmpty }
+                            .joined(separator: " · ")
                         ProjectIdentityLabel(name: copy.name, identity: .received,
-                                             detail: DesktopProjectPresentation.scopeDescription(folders: copy.selection.folders))
+                                             detail: sourceDetail.isEmpty ? nil : sourceDetail)
                             .font(.headline)
                         Text((copy.selection.folders + copy.selection.documents).joined(separator: ", "))
                             .font(.caption).foregroundStyle(.secondary)
@@ -95,16 +65,7 @@ struct DesktopPeerPreferencesView: View {
         }.formStyle(.grouped)
         .task {
             await controller.initialize()
-            for id in controller.connections.filter({ !$0.revoked }).map(\.id) { await controller.refresh(id) }
-            while !Task.isCancelled {
-                await controller.helper.refresh()
-                do { try await Task.sleep(for: .seconds(2)) } catch { return }
-            }
-        }
-        .sheet(isPresented: Binding(get: { browsing != nil }, set: { if !$0 { browsing = nil } })) {
-            if let id = browsing {
-                DesktopDownloadBrowser(library: controller.downloads, projectID: id)
-            }
+            await controller.refreshAllConnections()
         }
         .sheet(isPresented: $pairing) { DesktopPeerPairingView(controller: controller) }
         .sheet(isPresented: Binding(get: { reviewing != nil }, set: { if !$0 { reviewing = nil } })) {

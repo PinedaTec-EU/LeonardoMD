@@ -1069,6 +1069,16 @@
       "pr": 40,
       "summary": "Added literal and regex search across open documents in this window, with highlights, counts and wrapping navigation. Applied premium fields to project search, commit and naming, switches to hidden-file controls, and joined preference tabs.",
       "to_version": "0.3.1339"
+    },
+    {
+      "delta": {
+        "build": 32
+      },
+      "from_version": "0.3.1339",
+      "merge_sha": "cd662ca817e698fe37058eae9ab6b002bc0c4c36",
+      "pr": 430,
+      "summary": "Little Leonardo groups remote projects by linked Mac, lets users review new projects and files and manage offline copies; macOS restores accepted catalogues after offline restart, ignored grants return only when the host changes them, and sync status stays stable.",
+      "to_version": "0.3.1371"
     }
   ],
   "initial_version": "0.1.56",
@@ -1079,5 +1089,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1339"
+  "version": "0.3.1371"
 }

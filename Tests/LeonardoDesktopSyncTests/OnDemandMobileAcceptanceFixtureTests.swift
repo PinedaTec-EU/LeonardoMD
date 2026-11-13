@@ -19,7 +19,7 @@ final class OnDemandMobileAcceptanceFixtureTests: XCTestCase {
         for (path, text) in ["notes/agenda.md": "# Offline agenda\n\nRetained independently of temporary cache.\n",
                              "notes/decisions.md": "# Retried decisions\n\nAutomatic recovery completed.\n",
                              "reference/readme.md": "# Cached reference\n\nOnly this document downloads when opened.\n",
-                             "reference/remote.md": "# Remote reference\n\nNot requested by this fixture.\n"] {
+                             "reference/remote.md": "# Remote reference\n\nOnly downloaded after explicit project-level offline retention.\n"] {
             let file = sourceRoot.appendingPathComponent(path)
             try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
             try Data(text.utf8).write(to: file)
@@ -71,7 +71,8 @@ final class OnDemandMobileAcceptanceFixtureTests: XCTestCase {
                         XCTAssertEqual(audit.snapshots, 0)
                         XCTAssertGreaterThanOrEqual(audit.files["notes/decisions.md", default: 0], 2)
                         XCTAssertGreaterThanOrEqual(audit.files["notes/future.md", default: 0], 1)
-                        XCTAssertNil(audit.files["reference/remote.md"])
+                        XCTAssertEqual(audit.files["reference/remote.md"], 1,
+                                       "Project-level offline retention deliberately downloads all current files")
                         try write(audit.dictionary, root: root, name: "completed.json")
                         finished = true
                     default: break
