@@ -3,6 +3,23 @@ import AppKit
 // The decision is shared by navigation, tab/window close and application quit.
 enum UnsavedChangesDecision { case save, discard, cancel }
 
+enum PendingPreviewEditsPolicy {
+    case flush
+    case alreadyResolved
+    case discardAfterExplicitCloseConfirmation
+
+    var requiresFlush: Bool {
+        if case .flush = self { return true }
+        return false
+    }
+}
+
+enum PreviewCloseResolution: Equatable {
+    case readyToClose
+    case discardPreviewEdits
+    case keepOpen
+}
+
 enum UnsavedChangesPrompt {
     @MainActor static func show(_ filename: String, on window: NSWindow? = nil) async -> UnsavedChangesDecision {
         let alert = NSAlert()
@@ -52,6 +69,23 @@ extension AppSession {
         return true
     }
 
+    func resolvePreviewEditsBeforeClose() async -> PreviewCloseResolution {
+        guard !(await renderer.flushEdits()) else { return .readyToClose }
+
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = L10n.text("Could not apply preview edits")
+        alert.informativeText = L10n.text("Some edits are still only in Preview. Keep this document open to retry, or discard those Preview edits and close it.")
+        alert.addButton(withTitle: L10n.text("Keep Open")).keyEquivalent = "\u{1b}"
+        alert.addButton(withTitle: L10n.text("Discard Preview Changes")).hasDestructiveAction = true
+
+        switch await NativeDialog.present(alert, on: presentationWindow) {
+        case .alertFirstButtonReturn: return .keepOpen
+        case .alertSecondButtonReturn: return .discardPreviewEdits
+        default: return .keepOpen
+        }
+    }
+
     func setDocumentMode(_ value: DocumentMode) async {
         guard !stopped, !isClosing, !busy, !isSyncSuspended else { return }
         fileOperationCount += 1
@@ -70,12 +104,12 @@ extension AppSession {
         return true
     }
 
-    func resolveUnsavedChanges() async -> Bool {
+    func resolveUnsavedChanges(pendingPreviewEdits: PendingPreviewEditsPolicy = .flush) async -> Bool {
         guard isDirty else { return true }
         switch await unsavedChangesDecision(documentURL?.lastPathComponent ?? "LeonardoMD") {
         case .cancel: return false
         case .save:
-            await save(allowClosing: true)
+            await save(allowClosing: true, pendingPreviewEdits: pendingPreviewEdits)
             return !isDirty
         case .discard:
             guard let snapshot else { return false }

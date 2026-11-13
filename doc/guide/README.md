@@ -1,8 +1,8 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v74-en.mdlz` and `Guide-v74-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v76-en.mdlz` and `Guide-v76-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v74/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v76/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
@@ -12,7 +12,12 @@ and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
-Guide v74 combines current document search and remote project workflows with the latest synchronization status and helper-recovery guidance, plus optional grouped-instance instructions. Its distinct revision ensures installations with a saved v68, v71, v72 or v73 guide receive this content while preserving earlier guide copies and their separate practice answers; opening Help never replaces a saved copy.
+Guide v76 retains the latest document search, remote project, synchronization,
+helper-recovery and grouped-instance guidance from Guide v74. It adds bilingual
+chapter 10 recovery instructions for Preview edits that fail during tab, window
+or app closing. Revision v76 gives this content a free personal-copy path while
+preserving all existing guide copies and separate practice answers; opening Help
+never replaces a saved copy.
 
 File → Import with your agent opens `AgentImport-v3-en.mdlz` or
 `AgentImport-v3-es.mdlz` in the same tab/package flow, with personal copies under

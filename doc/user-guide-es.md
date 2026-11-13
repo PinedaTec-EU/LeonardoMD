@@ -372,6 +372,8 @@ Las etiquetas pulsables siguen visibles aunque ocultes la tabla de metadatos. En
 
 Desbloquea el candado para cambiar la estructura. Usa Vista previa para la edición de texto renderizado compatible, Editar para el Markdown/JSON exacto y Dividir para comparar ambos. El HTML sin procesar, las fórmulas y los diagramas se modifican en el código fuente. El desplazamiento entre fuente y vista previa se sincroniza aproximadamente. Ver un resultado aquí no garantiza que otro lector Markdown interprete el diseño de Leonardo.
 
+Si Leonardo no puede transferir al documento un cambio de Vista previa, mantenlo abierto e inténtalo de nuevo. Al cerrar una pestaña, una ventana o la app, también puedes elegir **Descartar cambios de Vista previa**; solo se pierden los cambios que no llegaron a aplicarse. Si hay otros cambios del documento sin guardar, seguirá apareciendo la decisión habitual: Guardar, Descartar o Cancelar.
+
 Usa Markdown ordinario para encabezados, listas, tareas, código, enlaces y tablas. Las imágenes relativas deben seguir accesibles desde el documento; MDLZ incluye recursos locales para transportarlos. Los enlaces externos pueden pedir confirmación según General. Las imágenes remotas requieren red; los recursos locales son preferibles para un documento portable sin conexión.
 
 Para una tabla, desbloquea y arrastra el borde de una columna en la vista previa. Leonardo conserva la información opcional de anchura en el código/metadatos. Otros lectores pueden ignorarla. Conserva el Markdown de la tabla y revisa la exportación; no alinees columnas insertando espacios dentro de sus valores.
