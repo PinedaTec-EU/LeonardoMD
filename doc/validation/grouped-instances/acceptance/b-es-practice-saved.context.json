@@ -1,0 +1,10 @@
+{
+  "captured_at": "2026-11-13T09:52:33.724Z",
+  "route": "QA441/acceptance/b-es-practice-saved",
+  "screen": "b-es-practice-saved",
+  "browser_name": "Native AppKit / WKWebView",
+  "browser_version": "Not exposed by CUA; native packaged app",
+  "capture_mode": "viewport",
+  "state": "PID 95948; Spanish practice; QA441 B ES saved; native screenshot pixels used in compatibility viewport fields, CSS viewport not applicable",
+  "data_provenance": "synthetic"
+}
