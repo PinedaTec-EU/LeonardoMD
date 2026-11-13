@@ -10,10 +10,10 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let resourceParts = try BundledUserGuide.resourceURL(language: .english)
-            .deletingPathExtension().lastPathComponent.split(separator: "-")
-        XCTAssertEqual(resourceParts.count, 3)
-        let currentRevision = try XCTUnwrap(Int(resourceParts[1].dropFirst()))
+        let englishResource = try BundledUserGuide.resourceURL(language: .english)
+        let revisionParts = englishResource.deletingPathExtension().lastPathComponent.split(separator: "-")
+        XCTAssertEqual(revisionParts.count, 3)
+        let currentRevision = try XCTUnwrap(Int(revisionParts[1].dropFirst()))
         let oldCopies = (2..<currentRevision).flatMap { revision in
             AppLanguage.allCases.map { language in
                 root.appendingPathComponent("User Guides/v\(revision)/\(language.rawValue)/Guide-v\(revision)-\(language.rawValue).mdlz")

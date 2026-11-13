@@ -1,8 +1,8 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v75-en.mdlz` and `Guide-v75-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v76-en.mdlz` and `Guide-v76-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v75/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v76/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
@@ -12,7 +12,7 @@ and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
-Guide v75 combines current document search, remote-project review and offline-catalogue guidance with grouped Dock/app-switcher instances, synchronization status and helper recovery. It explains project download failures and transfer limits, and distinguishes a removed project grant from a revoked device with the correct recovery steps. It creates a new personal copy without overwriting earlier guide revisions or practice answers, including v62–v74.
+Guide v76 combines current document search, remote-project review and offline-catalogue guidance with grouped Dock/app-switcher instances, synchronization status and helper recovery. It explains project download failures and transfer limits, distinguishes removed project grants from revoked devices with the correct recovery steps, and preserves saved copies through v75 and their separate practice answers.
 
 File → Import with your agent opens `AgentImport-v3-en.mdlz` or
 `AgentImport-v3-es.mdlz` in the same tab/package flow, with personal copies under
