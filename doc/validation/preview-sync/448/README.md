@@ -49,6 +49,6 @@ The isolated app language was restored to English and Math remained enabled. The
 - `LEONARDO_PREVIEW_ALERT_EVIDENCE=doc/validation/preview-sync/448 python3 scripts/compile-and-record.py --pr-number 448 -- swift test --disable-automatic-resolution --filter SessionEditingTests/testCapturePreviewSynchronizationWarningsInBothLanguages` passed: 1 executed, zero failures. Recorded build delta: 21.
 - `python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py' -v` passed all 3 deterministic Guide packaging checks.
 - The full compile produced non-failing warnings in unrelated existing code, including a `.wifiAware` exhaustiveness warning in `Sources/LeonardoSyncTransport/HTTPSResponseDiagnostics.swift`; none is in this PR's source changes.
-- Exact-head GitHub CI and the strict independent review are recorded separately on the PR and must match its published head.
+- Exact-head GitHub CI and a strict independent review are separate merge gates; both require a result for the published PR head.
 
 The four sidecars and this report are linked from the [PR #448 validation thread](https://github.com/PinedaTec-EU/LeonardoMD/pull/448). The machine-readable acceptance record is [native-acceptance.json](native-acceptance.json).
