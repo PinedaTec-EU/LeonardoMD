@@ -30,6 +30,12 @@ The native synthetic acceptance fixture ran against product source `d64a6b841687
 
 Each capture includes its test-generated `.context.json` and a `.metadata.json` sidecar with source revision, capture time, dimensions and image digest.
 
+The checking-state screenshot above is historical: it captures PR #430 source
+before the synchronization layout fix in PR #428. The integrated behavior
+keeps the last confirmed green indicator during a check and leaves the subtitle
+blank; current native evidence is recorded in
+[`sync-helper/428-quiet-status-v45`](../sync-helper/428-quiet-status-v45/README.md).
+
 ## Focused native checks
 
 `swift test --filter 'DesktopPeerNativeAcceptanceTests|SyncHelperControllerTests/testStatusIndicatorStatesDuringHealthCheck'` passed 4 tests: three native acceptance tests and the #421 checking-state test. The run included the pinned-HTTPS offline-catalogue restart regression and native review captures.

@@ -1,0 +1,4 @@
+{
+  "build": 216,
+  "summary": "Synchronization keeps status steady during checks, refreshes linked devices on open or on demand, preserves invitations and review drafts during recovery, and gates peer actions on live helper health."
+}

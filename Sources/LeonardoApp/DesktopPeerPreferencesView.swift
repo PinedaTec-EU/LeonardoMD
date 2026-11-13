@@ -67,6 +67,13 @@ struct DesktopPeerPreferencesView: View {
             await controller.initialize()
             await controller.refreshAllConnections()
         }
+        .task {
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(SyncHelperController.errorRecoveryInterval)) }
+                catch { return }
+                await controller.helper.refreshIfRecoverable()
+            }
+        }
         .sheet(isPresented: $pairing) { DesktopPeerPairingView(controller: controller) }
         .sheet(isPresented: Binding(get: { reviewing != nil }, set: { if !$0 { reviewing = nil } })) {
             if let id = reviewing, let comparison = controller.comparisons[id] {
