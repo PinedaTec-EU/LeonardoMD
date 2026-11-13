@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "issue": 378,
+  "pull_request": 446,
+  "tested_source_commit": "c0a88a412e0f68d3f8c82dac7a4a5847c86867e8",
+  "compilation_build_delta": 6,
+  "fresh_process": {
+    "launched": true,
+    "first_window_observed": "Welcome",
+    "qa_pid": 85491,
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.343b2a836aad4c03a8f2e026d1412dc6",
+    "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-8zlx4m77/LeonardoMDQA.app",
+    "bundle_executable": "LeonardoMD",
+    "version": "0.3.1596",
+    "build": "1596",
+    "launch_arguments": [
+      "--new-instance",
+      "-allowMultipleInstances",
+      "YES"
+    ],
+    "xctest_dependency": false,
+    "codesign_verified": true,
+    "still_running_after_validation": true
+  },
+  "guide_resources": [
+    {
+      "locale": "en",
+      "help_menu_opened": true,
+      "working_copy": "~/Library/Application Support/LeonardoMD/User Guides/v74/en/Guide-v74-en.mdlz",
+      "bundle_sha256": "6325dbc98dca934c0e79494f52ce727c084d0d8ec2875fa97bf65ffad372fd1d",
+      "working_copy_sha256": "6325dbc98dca934c0e79494f52ce727c084d0d8ec2875fa97bf65ffad372fd1d",
+      "hashes_match": true
+    },
+    {
+      "locale": "es",
+      "help_menu_opened": true,
+      "working_copy": "~/Library/Application Support/LeonardoMD/User Guides/v74/es/Guide-v74-es.mdlz",
+      "bundle_sha256": "f4222112aa3f56d594799a7aa296dea0c1a2c9e31159dc0d98b7aff4d6b5e839",
+      "working_copy_sha256": "f4222112aa3f56d594799a7aa296dea0c1a2c9e31159dc0d98b7aff4d6b5e839",
+      "hashes_match": true
+    }
+  ],
+  "preserved_older_personal_copies": [
+    {
+      "revision": 73,
+      "locale": "en",
+      "sha256": "09efdd7ea59b457437299261d9f2b5425b2c973b8baecb14786a45dc0b3a0dd6"
+    },
+    {
+      "revision": 73,
+      "locale": "es",
+      "sha256": "b61368ce7071d7f072da264bae95b3ca5840bcbb225ac9f1c90a199459ab2136"
+    }
+  ],
+  "live_help_checks": {
+    "inspection": "actual packaged LeonardoMD WKWebView accessibility tree",
+    "content": [
+      "local images and cover",
+      "Mermaid rendered image",
+      "Vega-Lite chart image",
+      "tables",
+      "one-line display equation",
+      "inline N(epsilon)",
+      "multiline underbraces with x/y labels",
+      "long-arrow/cancellation equation",
+      "tagged box-counting equation with subscript B and tag (1)",
+      "literal code examples"
+    ],
+    "extensions": {
+      "mermaid": "on",
+      "math": "on at end; also tested off in both locales",
+      "charts": "on",
+      "citations": "off",
+      "markdown_extras": "on"
+    },
+    "math_enabled": {
+      "en": true,
+      "es": true,
+      "rendered_display_equations_observed": true,
+      "equation_tag_observed": "(1)",
+      "katex_error_observed": false,
+      "literal_delimiters_in_rendered_math_nodes": false
+    },
+    "math_disabled": {
+      "tested_in_both_locales": true,
+      "source_notation_and_code_remained_literal": true
+    }
+  },
+  "practice_round_trip": {
+    "initial_shared_support_attempt": {
+      "locale": "es",
+      "attempted_from_guide": true,
+      "opened_in_candidate_process": false,
+      "filled": false,
+      "saved": false,
+      "closed_and_reopened": false,
+      "blocking_message": "Otra instancia de LeonardoMD está usando este documento o proyecto. Cierra esa instancia antes de abrirlo aquí.",
+      "action_taken": "Closed only the exact practice tab in the other QA instance after owner authorization; retry from the candidate guide remained blocked. Existing guide tabs were left open.",
+      "practice_file_modified": false,
+      "sha256_after_blocked_attempt": "dcaef10188834457094ecbafa8ff3ceb1996b6188d79ca02869821c9082321c7"
+    },
+    "isolated_disposable_home_retry": {
+      "attempted_from_guide": true,
+      "opened_in_candidate_process": true,
+      "filled": true,
+      "saved": true,
+      "closed_and_reopened": true,
+      "round_trip_values_match": true,
+      "locale": "es",
+      "synthetic_values": {
+        "practiceName": "QA aislada v74",
+        "practiceGoal": "Validar la persistencia del formulario en la copia aislada.",
+        "practiceReady": true
+      },
+      "qa_pid": 42191,
+      "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.v74isolated",
+      "bundle_path": "/tmp/LeonardoMD-QA-Isolated-v74.yqcquu/LeonardoMDQA.app",
+      "user_home": "/tmp/LeonardoMD-QA-Home.l8TFfr",
+      "launch_environment": [
+        "HOME",
+        "CFFIXED_USER_HOME"
+      ],
+      "practice_file": "/tmp/LeonardoMD-QA-Home.l8TFfr/Library/Application Support/LeonardoMD/Practice Forms/v1/es/Practice-v1-es.mdlr",
+      "practice_file_sha256_after_reopen": "d252be94ea864cd5c8289ad5476aa82d57c04d40b5c488fd1ed93c67d9baf47d",
+      "existing_shared_support_copy_sha256_unchanged": "dcaef10188834457094ecbafa8ff3ceb1996b6188d79ca02869821c9082321c7",
+      "other_user_instance_or_document_modified": false,
+      "round_trip_acceptance": "passed"
+    },
+    "round_trip_acceptance": "passed"
+  },
+  "settings_restored": {
+    "interface_language": "English",
+    "math_extension": "on"
+  },
+  "evidence_method": "Live CUA accessibility observations and command-line content hashes; no screenshots were captured for this run.",
+  "local_validations": [
+    {
+      "command": "python3 scripts/package-user-guide.py --web-output doc",
+      "result": "passed"
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py'",
+      "result": "3 passed"
+    },
+    {
+      "command": "swift test --disable-automatic-resolution --filter BundledUserGuideTests",
+      "result": "5 passed; recorded compilation build delta 5"
+    },
+    {
+      "command": "swift test --disable-automatic-resolution",
+      "result": "passed; full XCTest, Swift Testing, and 28 package tests; recorded compilation build delta 4"
+    },
+    {
+      "command": "./launch.sh --qa",
+      "result": "passed; fresh packaged app launched; recorded compilation build delta 6"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "remaining_release_acceptance": [
+    "exact-head CI and strict independent review after the evidence refresh",
+    "beta publication",
+    "hosted beta install/update/relaunch acceptance"
+  ],
+  "isolated_practice_process": {
+    "fresh_process": true,
+    "first_window_readiness_observed": true,
+    "startup_log_marker": "application_ready",
+    "qa_pid": 42191,
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.v74isolated",
+    "bundle_path": "/tmp/LeonardoMD-QA-Isolated-v74.yqcquu/LeonardoMDQA.app",
+    "bundle_executable": "LeonardoMD",
+    "version": "0.3.1596",
+    "build": "1596",
+    "xctest_dependency": false,
+    "codesign_verified_after_qa_identity_change": true,
+    "guide_locales_opened_through_help": [
+      "en",
+      "es"
+    ],
+    "dedicated_disposable_user_home": "/tmp/LeonardoMD-QA-Home.l8TFfr",
+    "user_instance_and_documents_untouched": true,
+    "evidence_method": "Live CUA accessibility inspection plus process and SHA-256 checks; no screenshot artifact retained.",
+    "tested_source_commit": "c0a88a412e0f68d3f8c82dac7a4a5847c86867e8"
+  },
+  "disposable_home_settings": {
+    "interface_language": "Español",
+    "math_extension": "on at end",
+    "scope": "CFFIXED_USER_HOME disposable QA profile; user profile unchanged"
+  }
+}
