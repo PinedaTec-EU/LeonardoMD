@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "issue": 368,
+  "pull_request": 369,
+  "tested_source_commit": "6b83c502bbe5c9b67b7ebf75ee1fb79acab98caf",
+  "compilation_build_delta": 39,
+  "fresh_process": {
+    "launched": true,
+    "first_window_observed": "Welcome",
+    "qa_pid": 62161,
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.514fb956b10e4a3fb82b8433b1cdfadd",
+    "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-0mey5zhl/LeonardoMDQA.app",
+    "bundle_executable": "LeonardoMD",
+    "version": "0.3.1602",
+    "build": "1602",
+    "launch_arguments": ["--new-instance", "-allowMultipleInstances", "YES"],
+    "xctest_dependency": false,
+    "codesign_verified": true,
+    "still_running_after_validation": true
+  },
+  "disposable_user_home": "/tmp/leonardo-guide-v76-qa-home",
+  "guide_resources": [
+    {
+      "locale": "en",
+      "help_menu_opened": true,
+      "working_copy": "~/Library/Application Support/LeonardoMD/User Guides/v76/en/Guide-v76-en.mdlz",
+      "bundle_sha256": "5e8ae8a5ad6ffb3682e2a0c7f1789531b47efeed2b53b171878a845d3067fc4e",
+      "working_copy_sha256": "5e8ae8a5ad6ffb3682e2a0c7f1789531b47efeed2b53b171878a845d3067fc4e",
+      "hashes_match": true
+    },
+    {
+      "locale": "es",
+      "help_menu_opened": true,
+      "working_copy": "~/Library/Application Support/LeonardoMD/User Guides/v76/es/Guide-v76-es.mdlz",
+      "bundle_sha256": "e65f4f77f641cf6fcff2cac9576fba70234a943eb05647f784d71e6748e5af2a",
+      "working_copy_sha256": "e65f4f77f641cf6fcff2cac9576fba70234a943eb05647f784d71e6748e5af2a",
+      "hashes_match": true
+    }
+  ],
+  "live_help_checks": {
+    "inspection": "Live native app accessibility tree in the same fresh process; screenshots were not retained.",
+    "content_observed": [
+      "local cover and document images",
+      "Mermaid rendered image",
+      "Vega-Lite chart image",
+      "accessible tables with rows and cells",
+      "one-line display equation",
+      "inline N(epsilon)",
+      "multiline underbraces with x/y labels",
+      "radical, long-arrow and cancellation equation",
+      "tagged box-counting equation with subscript B and tag (1)"
+    ],
+    "extensions_at_end": {
+      "mermaid": "on",
+      "math": "on",
+      "charts": "on",
+      "citations": "off",
+      "markdown_extras": "off"
+    },
+    "math_enabled": {
+      "locale": "en",
+      "rendered_display_equations_observed": true,
+      "equation_tag_observed": "(1)",
+      "katex_error_observed": false,
+      "literal_delimiters_in_rendered_math_nodes": false
+    },
+    "math_disabled": {
+      "locale": "es",
+      "source_notation_and_delimiters_visible": true,
+      "code_examples_separately_inspected": false
+    }
+  },
+  "practice_round_trip": {
+    "attempted_from_guide": true,
+    "opened": true,
+    "filled": true,
+    "saved": true,
+    "closed_and_reopened": true,
+    "round_trip_values_match": true,
+    "locale": "en",
+    "synthetic_values": {
+      "practiceName": "Guide v76 QA",
+      "practiceGoal": "Confirm the isolated guide practice form saves and reopens.",
+      "practiceReady": true
+    },
+    "practice_file": "~/Library/Application Support/LeonardoMD/Practice Forms/v1/en/Practice-v1-en.mdlr",
+    "practice_file_sha256_after_reopen": "5b914af748cff65eb9b6bae0b175f64c0008e1874bb1b53fdf6c5a361e0b6b9c",
+    "round_trip_acceptance": "passed"
+  },
+  "settings_changed_and_restored": {
+    "interface_language": "English",
+    "math_extension": "on",
+    "scope": "dedicated CFFIXED_USER_HOME; regular user preferences were not used"
+  },
+  "local_validations": [
+    {
+      "command": "python3 scripts/package-user-guide.py --web-output doc",
+      "result": "passed"
+    },
+    {
+      "command": "python3 scripts/tests/test_package_user_guide.py",
+      "result": "passed"
+    },
+    {
+      "command": "swift test --disable-automatic-resolution",
+      "result": "passed; full XCTest and Swift Testing suite"
+    },
+    {
+      "command": "./launch.sh --qa",
+      "result": "passed; fresh packaged application launched and first Welcome window observed"
+    },
+    {
+      "command": "codesign --verify --deep --strict",
+      "result": "passed"
+    },
+    {
+      "command": "otool -L LeonardoMD",
+      "result": "no XCTest.framework dependency"
+    }
+  ],
+  "remaining_release_acceptance": [
+    "separately inspect literal code examples with Math disabled",
+    "exact-head CI and strict independent review after the evidence update",
+    "Little Leonardo simulator capture and acceptance through the required XcodeBuildMCP tools",
+    "beta publication and hosted install/update/relaunch acceptance"
+  ],
+  "notes": [
+    "Guide v76 bundle and disposable working-copy hashes match in both locales.",
+    "No existing app process or shared user practice file was modified.",
+    "The initial native screenshot API output was only a small preview and no screenshot artifact was retained."
+  ]
+}
