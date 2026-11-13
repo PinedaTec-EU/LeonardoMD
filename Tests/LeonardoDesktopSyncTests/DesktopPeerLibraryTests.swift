@@ -369,6 +369,8 @@ final class DesktopPeerLibraryTests: XCTestCase {
         let retainedCredential = await fixture.credentials.credential(deviceID: connection.id)
         XCTAssertNotNil(retainedCredential)
         XCTAssertTrue(try XCTUnwrap(updated).copies.isEmpty)
+        let deniedProjectCaches = await fixture.revoker.readerDeniedProjects(for: connection.id)
+        XCTAssertEqual(deniedProjectCaches, [fixture.remote.project.id])
     }
 
     func testProjectGrantWithdrawalBetweenFilePreflightAndReadRemainsProjectScoped() async throws {
@@ -391,6 +393,8 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertTrue(try XCTUnwrap(updated).grants.isEmpty)
         let retainedCredential = await fixture.credentials.credential(deviceID: connection.id)
         XCTAssertNotNil(retainedCredential)
+        let deniedProjectCaches = await fixture.revoker.readerDeniedProjects(for: connection.id)
+        XCTAssertEqual(deniedProjectCaches, [fixture.remote.project.id])
     }
 
     func testFileRemovedFromSelectionBetweenPreflightAndReadIsReportedOutsideScope() async throws {
@@ -466,6 +470,9 @@ final class DesktopPeerLibraryTests: XCTestCase {
         let completed = try await fixture.connections.load(id: connection.id)
         XCTAssertTrue(try XCTUnwrap(completed).copies.isEmpty)
         XCTAssertTrue(try XCTUnwrap(completed).revoked)
+        let deniedReaderProjects = await fixture.revoker.readerDeniedProjects(for: connection.id)
+        XCTAssertEqual(deniedReaderProjects, [fixture.remote.project.id],
+                       "Reader caches must be denied before the fallible workspace purge")
     }
 
     func testServerDeviceIDReuseCannotReplaceAnotherConnectionsCredentialAccount() async throws {
@@ -511,7 +518,14 @@ private struct PeerLibraryFixture {
 
 private actor PeerRevokerFixture: DesktopPeerAccessRevoker {
     private(set) var closedIDs: Set<UUID> = []
+    private var deniedReaderProjects: [UUID: Set<UUID>] = [:]
+    func denyReaderCaches(connectionID: UUID, projectIDs: [UUID]) {
+        deniedReaderProjects[connectionID, default: []].formUnion(projectIDs)
+    }
     func closeCopies(_ ids: [UUID]) { closedIDs.formUnion(ids) }
+    func readerDeniedProjects(for connectionID: UUID) -> Set<UUID> {
+        deniedReaderProjects[connectionID, default: []]
+    }
 }
 
 private actor PeerMemoryCredentials: DeviceCredentialStore {

@@ -703,8 +703,11 @@ recibidos y esperados, y el dominio/código de error del sistema. No incluye la
 dirección o ruta del servidor, credencial de emparejamiento, identificadores de
 dispositivo/proyecto ni contenido de archivos. Una cabecera HTTP 200 no
 significa que terminara el cuerpo. Un total esperado `?` significa que el
-servidor no informó de la longitud. Las copias descargadas sin conexión siguen
-disponibles; comprueba que el Mac de origen sea accesible y que Leonardo Sync
+servidor no informó de la longitud. Una denegación de acceso explícita o un
+cambio de autorización confirmado impide abrir el contenido afectado desde una
+copia anterior; los demás proyectos autorizados siguen disponibles. Un fallo
+temporal de conexión sin denegación puede permitir abrir las copias conservadas
+sin conexión. Comprueba que el Mac de origen sea accesible y que Leonardo Sync
 esté activo, y vuelve a intentar la sincronización.
 
 ### Responder a una solicitud de rúbrica en iOS
@@ -814,7 +817,7 @@ Usa el menú contextual en Mac o el botón **…** en Little Leonardo:
 - **Dejar de mantener sin conexión** permite limpiar las copias como caché, sin eliminar originales. Puedes excluir un archivo de una carpeta conservada offline.
 - **Liberar espacio local** elimina copias temporales descargadas; conserva el contenido offline protegido. Para liberar esos archivos, elige primero **Dejar de mantener sin conexión**.
 
-La lista distingue **Solo remoto**, **En caché**, **Offline pendiente** y **Disponible sin conexión**, con progreso e indicadores de error. Las carpetas muestran archivos descargados y total. La selección está disponible offline cuando terminan todas las descargas necesarias. Los fallos se reintentan en la siguiente actualización automática; la última versión conservada sigue legible si falla una actualización. El lector muestra sobre esa copia un aviso explícito de copia anterior, el error de descarga y **Reintentar**. Los errores de imágenes referenciadas también se muestran aunque el texto del documento sea legible.
+La lista distingue **Solo remoto**, **En caché**, **Offline pendiente** y **Disponible sin conexión**, con progreso e indicadores de error. Las carpetas muestran archivos descargados y total. La selección está disponible offline cuando terminan todas las descargas necesarias. Los fallos se reintentan en la siguiente actualización automática. Si una actualización falla por una conexión temporal, la última versión conservada sigue legible con un aviso explícito de copia anterior, el error de descarga y **Reintentar**. Una denegación de acceso explícita no abre esa versión desactualizada. Los errores de imágenes referenciadas también se muestran aunque el texto del documento sea legible.
 
 En **Sincronización → Almacenamiento y caché**, escribe el límite temporal como un número entero de MiB y pulsa **Aplicar límite de caché** (Intro también lo aplica). El texto que estás editando no cambia el límite guardado. Consulta el uso temporal/offline y las descargas pendientes, limpia la caché o deja de conservar una selección. El límite inicial es 256 MiB; cero desactiva la conservación temporal. Primero se eliminan los archivos temporales usados hace más tiempo. Los archivos offline se almacenan aparte y no cuentan para el límite; necesitan espacio libre suficiente. La limpieza nunca borra copias editables de escritorio ni borradores de rúbricas.
 

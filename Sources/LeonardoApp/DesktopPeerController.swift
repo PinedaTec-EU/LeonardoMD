@@ -8,7 +8,11 @@ import LeonardoDesktopSync
 @MainActor
 final class DesktopPeerEditorRevoker: DesktopPeerAccessRevoker {
     var close: @MainActor ([UUID]) async -> Void = { _ in }
+    var denyDownloads: @MainActor (UUID, [UUID]) async -> Void = { _, _ in }
     func closeCopies(_ ids: [UUID]) async { await close(ids) }
+    func denyReaderCaches(connectionID: UUID, projectIDs: [UUID]) async {
+        await denyDownloads(connectionID, projectIDs)
+    }
 }
 
 @MainActor @Observable
@@ -47,9 +51,15 @@ final class DesktopPeerController {
         let savedInterval = defaults.integer(forKey: "desktopPeerSyncMinutes")
         syncIntervalMinutes = defaults.object(forKey: "desktopPeerSyncMinutes") == nil ? 1 : (Self.intervals.contains(savedInterval) ? savedInterval : 1)
         let root = preferencesURL.deletingLastPathComponent().appendingPathComponent("DesktopPeers", isDirectory: true)
-        downloads = DownloadLibrary(cache: OnDemandCache(root: root.appendingPathComponent("Downloads", isDirectory: true)))
+        let downloadLibrary = DownloadLibrary(cache: OnDemandCache(root: root.appendingPathComponent("Downloads", isDirectory: true)))
+        downloads = downloadLibrary
         workingRoot = root.appendingPathComponent("Working", isDirectory: true)
         self.revoker = revoker
+        revoker.denyDownloads = { connectionID, projectIDs in
+            for projectID in projectIDs {
+                downloadLibrary.deny(id: Self.downloadID(connectionID: connectionID, projectID: projectID))
+            }
+        }
         if let library { self.library = library }
         else {
             let copies = FileDesktopPeerCopyStore(root: root.appendingPathComponent("Copies", isDirectory: true))

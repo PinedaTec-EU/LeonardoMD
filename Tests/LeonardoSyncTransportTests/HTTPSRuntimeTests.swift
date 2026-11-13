@@ -56,6 +56,41 @@ final class HTTPSRuntimeTests: XCTestCase {
         } catch { await server.stop(); throw error }
     }
 
+    func testAuthenticatedStatus401And403RemainTypedAccessDenials() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture identity import requires memory-only Security import") }
+        let identity = try makeIdentity()
+        let unauthorizedID = UUID()
+        let forbiddenID = UUID()
+        let server = LANHTTPSListener(identity: identity) { request in
+            if request.path.hasSuffix("/devices/\(unauthorizedID.uuidString)/status") {
+                return HTTPResponse(status: 401)
+            }
+            if request.path.hasSuffix("/devices/\(forbiddenID.uuidString)/status") {
+                return HTTPResponse(status: 403)
+            }
+            return HTTPResponse(status: 404)
+        }
+        let port = try await server.start(host: "127.0.0.1")
+        let client = try DirectEnrollmentClient(endpoint: URL(string: "https://127.0.0.1:\(port)")!,
+                                                certificateFingerprint: identity.certificateFingerprint)
+
+        do {
+            for (deviceID, status) in [(unauthorizedID, 401), (forbiddenID, 403)] {
+                do {
+                    _ = try await client.status(deviceID: deviceID, credential: String(repeating: "a", count: 64))
+                    XCTFail("STATUS HTTP \(status) must not be treated as a transient download failure")
+                } catch let error as SyncError {
+                    XCTAssertEqual(error, .httpAccessDenied(operation: .status, status: status))
+                    XCTAssertTrue(error.isAccessDenied)
+                }
+            }
+            await server.stop()
+        } catch {
+            await server.stop()
+            throw error
+        }
+    }
+
     func testRealTLSLargeResponseSurvivesConcurrentRequests() async throws {
         guard #available(macOS 15, *) else { throw XCTSkip("Fixture identity import requires memory-only Security import") }
         let identity = try makeIdentity()

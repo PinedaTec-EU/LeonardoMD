@@ -1,4 +1,4 @@
 {
-  "build": 48,
+  "build": 52,
   "summary": "On-demand 403s recheck authorization, preserve unresolved operation/status and never return stale denied bytes; confirmed revocation hides affected reader caches."
 }

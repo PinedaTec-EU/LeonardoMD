@@ -79,6 +79,80 @@ import XCTest
         XCTAssertEqual(retained, fixture.file, "The denied request must not destroy an intentionally retained offline copy")
     }
 
+    func testStatusAndProjectDenialsNeverFallBackToRetainedBytes() async throws {
+        let denials: [SyncError] = [
+            .httpAccessDenied(operation: .status, status: 401),
+            .httpAccessDenied(operation: .status, status: 403),
+            .httpAccessDenied(operation: .file, status: 403),
+            .projectAccessDenied,
+            .outsideScope
+        ]
+        for denial in denials {
+            let fixture = try Fixture()
+            defer { fixture.removeFiles() }
+            let library = DownloadLibrary(cache: fixture.cache)
+            let oldEntry = RemoteFileEntry(file: fixture.file)
+            try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                     catalogue: RemoteProjectCatalogue(files: [oldEntry]))
+            library.fetch = { _, _ in fixture.file }
+            await library.retain(id: fixture.project.id, path: fixture.file.path, isFolder: false, keep: true)
+            _ = try await library.open(id: fixture.project.id, path: fixture.file.path)
+
+            let current = CorpusFile(path: fixture.file.path, content: Data("new source revision".utf8))
+            let currentEntry = RemoteFileEntry(file: current)
+            try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                     catalogue: RemoteProjectCatalogue(files: [currentEntry]))
+            library.fetch = { _, _ in throw denial }
+            do {
+                _ = try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+                XCTFail("\(denial) must not turn an older retained revision into a successful open")
+            } catch {
+                XCTAssertEqual(error as? SyncError, denial)
+            }
+        }
+    }
+
+    func testExplicitFileDenialSkipsOnlyThatPathCacheAndSuccessfulRetryClearsIt() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        let sibling = CorpusFile(path: "notes/sibling.md", content: Data("sibling cached".utf8))
+        let oldEntry = RemoteFileEntry(file: fixture.file)
+        let siblingEntry = RemoteFileEntry(file: sibling)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+            catalogue: RemoteProjectCatalogue(files: [oldEntry, siblingEntry]))
+        library.fetch = { _, entry in entry.path == fixture.file.path ? fixture.file : sibling }
+        await library.retain(id: fixture.project.id, path: fixture.file.path, isFolder: false, keep: true)
+        _ = try await library.open(id: fixture.project.id, path: fixture.file.path)
+        _ = try await library.open(id: fixture.project.id, path: sibling.path)
+
+        let current = CorpusFile(path: fixture.file.path, content: Data("authorized fresh content".utf8))
+        let currentEntry = RemoteFileEntry(file: current)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+            catalogue: RemoteProjectCatalogue(files: [currentEntry, siblingEntry]))
+        library.denyFile(id: fixture.project.id, path: current.path)
+        var fetches = 0
+        library.fetch = { _, _ in
+            fetches += 1
+            throw SyncError.publicationPending
+        }
+        do {
+            _ = try await library.open(id: fixture.project.id, path: current.path)
+            XCTFail("A path with an explicit denial must bypass its stale cache record")
+        } catch { XCTAssertEqual(error as? SyncError, .publicationPending) }
+        let siblingOpened = try await library.open(id: fixture.project.id, path: sibling.path)
+        XCTAssertEqual(siblingOpened, sibling, "A denial for one file must leave its sibling cache usable")
+        XCTAssertEqual(fetches, 1)
+
+        library.fetch = { _, _ in current }
+        let retried = try await library.open(id: fixture.project.id, path: current.path)
+        XCTAssertEqual(retried, current)
+        XCTAssertEqual(fetches, 1)
+        let cachedRetry = try await library.open(id: fixture.project.id, path: current.path)
+        XCTAssertEqual(cachedRetry, current, "A successful fresh response clears the per-path denial marker")
+        XCTAssertEqual(fetches, 1)
+    }
+
     func testOldDownloadCannotDeleteOrJoinAReauthorizedProject() async throws {
         let fixture = try Fixture()
         defer { fixture.removeFiles() }

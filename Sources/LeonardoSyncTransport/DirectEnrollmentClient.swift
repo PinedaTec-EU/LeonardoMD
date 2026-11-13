@@ -52,7 +52,12 @@ public struct DirectEnrollmentClient: Sendable {
 
     public func status(deviceID: UUID, credential: String) async throws -> DirectDeviceStatus {
         let response = try await client.request(method: "GET", path: "/v1/devices/\(deviceID.uuidString)/status", credential: credential)
-        guard response.status == 200 else { throw ProjectDownloadError(response: response, phase: .access) }
+        guard response.status == 200 else {
+            if response.status == 401 || response.status == 403 {
+                throw SyncError.httpAccessDenied(operation: .status, status: response.status)
+            }
+            throw ProjectDownloadError(response: response, phase: .access)
+        }
         return try JSONDecoder().decode(DirectDeviceStatus.self, from: response.body)
     }
 
@@ -114,24 +119,40 @@ public struct DirectEnrollmentClient: Sendable {
     public func withRevocationRecheck<T>(
         deviceID: UUID,
         credential: String,
+        projectID: UUID? = nil,
+        filePath: String? = nil,
         status: @escaping (DirectEnrollmentClient, UUID, String) async throws -> DirectDeviceStatus = {
             client, deviceID, credential in
             try await client.status(deviceID: deviceID, credential: credential)
         },
+        onCurrentStatus: @escaping (DirectDeviceStatus) async throws -> Void = { _ in },
         operation: () async throws -> T
     ) async throws -> T {
         do {
             return try await operation()
         } catch let denial as SyncError where denial.isAccessDenied {
+            let latest: DirectDeviceStatus
             do {
-                let latest = try await status(self, deviceID, credential)
-                if latest.access == .revoked { throw SyncError.revoked }
+                latest = try await status(self, deviceID, credential)
             } catch let rechecked as SyncError where rechecked == .revoked {
                 throw rechecked
             } catch is CancellationError {
                 throw CancellationError()
             } catch {
                 throw denial
+            }
+            if latest.access == .revoked { throw SyncError.revoked }
+            try await onCurrentStatus(latest)
+            guard latest.access == .authorized, let projectID else {
+                if projectID != nil { throw SyncError.projectAccessDenied }
+                throw denial
+            }
+            guard let descriptor = latest.projects.first(where: { $0.id == projectID }) else {
+                throw SyncError.projectAccessDenied
+            }
+            if let filePath {
+                try descriptor.scope.validate(filePath)
+                try descriptor.selection?.validate(filePath)
             }
             throw denial
         }

@@ -256,12 +256,21 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         switch status.access {
         case .pending:
             guard status.projects.isEmpty else { throw SyncError.invalidSnapshot }
-            return (connection, status)
-        case .revoked: connection.revoke()
+            let denied = Array(connection.grants.keys)
+            if !denied.isEmpty {
+                await revoker.denyReaderCaches(connectionID: connection.id, projectIDs: denied)
+                try connection.authorize([:])
+            }
+        case .revoked:
+            let denied = Array(connection.grants.keys)
+            if !denied.isEmpty { await revoker.denyReaderCaches(connectionID: connection.id, projectIDs: denied) }
+            connection.revoke()
         case .authorized:
             guard Set(status.projects.map(\.id)).count == status.projects.count else { throw SyncError.invalidSnapshot }
             var grants: [UUID: CorpusSelection] = [:]
             for project in status.projects { grants[project.id] = try selection(for: project) }
+            let denied = connection.grants.keys.filter { grants[$0] == nil }.sorted { $0.uuidString < $1.uuidString }
+            if !denied.isEmpty { await revoker.denyReaderCaches(connectionID: connection.id, projectIDs: denied) }
             try connection.authorize(grants)
         }
         // Denial is durable before cleanup: cached copies cannot reopen after an interrupted purge.
@@ -272,6 +281,10 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
 
     private func cleanupDenied(_ connection: inout DesktopPeerConnection) async throws {
         let denied = connection.copies.filter { connection.revoked || connection.grants[$0.key] == nil }
+        let deniedReaderProjects = Array(Set(denied.keys)).sorted { $0.uuidString < $1.uuidString }
+        if !deniedReaderProjects.isEmpty {
+            await revoker.denyReaderCaches(connectionID: connection.id, projectIDs: deniedReaderProjects)
+        }
         if !denied.isEmpty { await revoker.closeCopies(Array(denied.values)) }
         for (projectID, copyID) in connection.copies where connection.revoked || connection.grants[projectID] == nil {
             if let copy = try await copyStore.load(id: copyID) {

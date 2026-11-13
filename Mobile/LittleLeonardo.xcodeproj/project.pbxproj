@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		407100000000000000000001 /* MobileProjectLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407000000000000000000001 /* MobileProjectLifecycle.swift */; };
+		AD3690000000000000000001 /* MobileProjectGrantReconciliation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD3690000000000000000000 /* MobileProjectGrantReconciliation.swift */; };
 		384000000000000000000200 /* LeonardoSyncUI in Frameworks */ = {isa = PBXBuildFile; productRef = 384000000000000000000201; };
 		384000000000000000000100 /* MobileLibrary+Downloads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 384000000000000000000000; };
 		15243E6517E367904B34E1C3 /* PairingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88DCAC3D27E3676EFE8737FB /* PairingUITests.swift */; };
@@ -67,6 +68,7 @@
 
 /* Begin PBXFileReference section */
 		407000000000000000000001 /* MobileProjectLifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileProjectLifecycle.swift; sourceTree = "<group>"; };
+		AD3690000000000000000000 /* MobileProjectGrantReconciliation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileProjectGrantReconciliation.swift; sourceTree = "<group>"; };
 		384000000000000000000000 /* MobileLibrary+Downloads.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MobileLibrary+Downloads.swift"; sourceTree = "<group>"; };
 		0E0D2F85673A55171301542D /* LittleLeonardoApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LittleLeonardoApp.swift; sourceTree = "<group>"; };
 		5B83DAE858F9656CCDF4D6B1 /* LittleLeonardo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LittleLeonardo.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -211,6 +213,7 @@
 				D38100000000000000000000 /* MobileDemoStore.swift */,
 				407000000000000000000001 /* MobileProjectLifecycle.swift */,
 				D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */,
+				AD3690000000000000000000 /* MobileProjectGrantReconciliation.swift */,
 				384000000000000000000000 /* MobileLibrary+Downloads.swift */,
 				A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */,
 				7849226B36C61649B125BDDC /* MobileLibraryView.swift */,
@@ -369,6 +372,7 @@
 				D38110000000000000000000 /* MobileDemoStore.swift in Sources */,
 				407100000000000000000001 /* MobileProjectLifecycle.swift in Sources */,
 				22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */,
+				AD3690000000000000000001 /* MobileProjectGrantReconciliation.swift in Sources */,
 				384000000000000000000100 /* MobileLibrary+Downloads.swift in Sources */,
 				A7B6C5D4E3F2019A88776655 /* MobileRubricSubmissionGate.swift in Sources */,
 				2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */,

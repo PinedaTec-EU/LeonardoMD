@@ -140,6 +140,191 @@ final class MobileRevocationTests: XCTestCase {
         XCTAssertEqual(try journal.load().first?.state, .denied)
     }
 
+    @MainActor
+    func testProductionOpenKeepsOtherGrantedProjectAfterProjectWithdrawal() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("LittleLeonardo", isDirectory: true)
+        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
+        let firstProjectID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
+        let secondProjectID = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
+        let firstDescriptor = SharedProjectDescriptor(id: firstProjectID, name: "First",
+            scope: try CorpusScope(folder: ""))
+        let secondDescriptor = SharedProjectDescriptor(id: secondProjectID, name: "Second",
+            scope: try CorpusScope(folder: ""))
+        let firstFile = CorpusFile(path: "docs/first.md", content: Data("first retained".utf8))
+        let firstCurrentFile = CorpusFile(path: firstFile.path, content: Data("new source revision".utf8))
+        let secondFile = CorpusFile(path: "docs/second.md", content: Data("second retained".utf8))
+        let firstEntry = RemoteFileEntry(file: firstFile)
+        let firstCurrentEntry = RemoteFileEntry(file: firstCurrentFile)
+        let secondEntry = RemoteFileEntry(file: secondFile)
+        let descriptors = [firstDescriptor, secondDescriptor]
+        let value = MobileDirectConnection(connectionID: connectionID, deviceID: deviceID,
+            endpoint: URL(string: "https://127.0.0.1:9")!, fingerprint: Data(repeating: 7, count: 32),
+            projectIDs: [firstProjectID, secondProjectID], comparisonCode: nil,
+            capabilities: [], projectDescriptors: descriptors,
+            acceptedProjectIDs: [firstProjectID, secondProjectID])
+        let credentials = TestCredentials(values: [deviceID: "credential"], failRemove: false)
+        try MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json")).save([value])
+        let statusCalls = LockedCounter()
+        let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: MobileRevocationJournal(url: support.appendingPathComponent("revocation.json")),
+            statusRequest: { _, _, _ in
+                statusCalls.increment()
+                let projects = statusCalls.value == 1 ? descriptors : [secondDescriptor]
+                return DirectDeviceStatus(access: .authorized, projects: projects)
+            },
+            fileRequest: { _, _, _, _, _ in
+                throw SyncError.httpAccessDenied(operation: .file, status: 403)
+            })
+        library.connections = [value]
+        let firstOffline = try OfflineProject(id: firstProjectID, name: "First", mode: .direct,
+            scope: CorpusScope(folder: ""), snapshot: CorpusSnapshot(revision: "catalogue", files: []))
+        let secondOffline = try OfflineProject(id: secondProjectID, name: "Second", mode: .direct,
+            scope: CorpusScope(folder: ""), snapshot: CorpusSnapshot(revision: "catalogue", files: []))
+        library.projects = [firstOffline, secondOffline]
+        try await library.downloads.update(id: firstProjectID, descriptor: firstDescriptor,
+            catalogue: RemoteProjectCatalogue(files: [firstEntry]))
+        library.downloads.fetch = { _, entry in entry == firstEntry ? firstFile : secondFile }
+        await library.downloads.retain(id: firstProjectID, path: firstFile.path, isFolder: false, keep: true)
+        _ = try await library.downloads.open(id: firstProjectID, path: firstFile.path)
+        try await library.downloads.update(id: firstProjectID, descriptor: firstDescriptor,
+            catalogue: RemoteProjectCatalogue(files: [firstCurrentEntry]))
+        try await library.downloads.update(id: secondProjectID, descriptor: secondDescriptor,
+            catalogue: RemoteProjectCatalogue(files: [secondEntry]))
+        _ = try await library.downloads.open(id: secondProjectID, path: secondFile.path)
+        library.downloads.fetch = { id, entry in try await library.fetchDownload(projectID: id, entry: entry) }
+
+        do {
+            _ = try await library.downloads.open(id: firstProjectID, path: firstCurrentFile.path)
+            XCTFail("A project withdrawn between STATUS and file access must not open its retained bytes")
+        } catch let error as SyncError { XCTAssertEqual(error, .revoked) }
+        catch { XCTFail("Expected withdrawal to fail the in-flight cached open: \(error)") }
+
+        XCTAssertEqual(statusCalls.value, 2)
+        let updated = try XCTUnwrap(library.connections.first)
+        XCTAssertFalse(updated.revoked, "A project withdrawal must not revoke the whole device")
+        XCTAssertEqual(updated.projectIDs, [secondProjectID])
+        let retainedCredential = try await credentials.credential(deviceID: deviceID)
+        XCTAssertEqual(retainedCredential, "credential")
+        let remaining = try await library.downloads.open(id: secondProjectID, path: secondFile.path)
+        XCTAssertEqual(remaining, secondFile, "The other granted project remains available offline")
+    }
+
+    @MainActor
+    func testProductionOpenRemovesAllProjectAccessWhenStatusBecomesPending() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("LittleLeonardo", isDirectory: true)
+        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
+        let projectID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
+        let descriptor = SharedProjectDescriptor(id: projectID, name: "Granted",
+            scope: try CorpusScope(folder: ""))
+        let oldFile = CorpusFile(path: "docs/note.md", content: Data("retained old bytes".utf8))
+        let currentFile = CorpusFile(path: oldFile.path, content: Data("new source revision".utf8))
+        let oldEntry = RemoteFileEntry(file: oldFile)
+        let currentEntry = RemoteFileEntry(file: currentFile)
+        let value = MobileDirectConnection(connectionID: connectionID, deviceID: deviceID,
+            endpoint: URL(string: "https://127.0.0.1:9")!, fingerprint: Data(repeating: 7, count: 32),
+            projectIDs: [projectID], comparisonCode: nil, capabilities: [],
+            projectDescriptors: [descriptor], acceptedProjectIDs: [projectID])
+        let credentials = TestCredentials(values: [deviceID: "credential"], failRemove: false)
+        try MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json")).save([value])
+        let statusCalls = LockedCounter()
+        let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: MobileRevocationJournal(url: support.appendingPathComponent("revocation.json")),
+            statusRequest: { _, _, _ in
+                statusCalls.increment()
+                if statusCalls.value == 1 {
+                    return DirectDeviceStatus(access: .authorized, projects: [descriptor])
+                }
+                return DirectDeviceStatus(access: .pending, projects: [])
+            },
+            fileRequest: { _, _, _, _, _ in
+                throw SyncError.httpAccessDenied(operation: .file, status: 403)
+            })
+        library.connections = [value]
+        try await library.downloads.update(id: projectID, descriptor: descriptor,
+            catalogue: RemoteProjectCatalogue(files: [oldEntry]))
+        library.downloads.fetch = { _, _ in oldFile }
+        await library.downloads.retain(id: projectID, path: oldFile.path, isFolder: false, keep: true)
+        _ = try await library.downloads.open(id: projectID, path: oldFile.path)
+        try await library.downloads.update(id: projectID, descriptor: descriptor,
+            catalogue: RemoteProjectCatalogue(files: [currentEntry]))
+        library.downloads.fetch = { id, entry in try await library.fetchDownload(projectID: id, entry: entry) }
+
+        do {
+            _ = try await library.downloads.open(id: projectID, path: currentFile.path)
+            XCTFail("Pending status must make previously granted cached content unavailable")
+        } catch let error as SyncError { XCTAssertEqual(error, .revoked) }
+        catch { XCTFail("Expected the project cache to be denied: \(error)") }
+
+        XCTAssertEqual(statusCalls.value, 2)
+        let updated = try XCTUnwrap(library.connections.first)
+        XCTAssertFalse(updated.revoked, "Pending authorization is not a device revocation")
+        XCTAssertTrue(updated.projectIDs.isEmpty)
+        XCTAssertTrue(updated.acceptedProjectIDs.isEmpty)
+        let retainedCredential = try await credentials.credential(deviceID: deviceID)
+        XCTAssertEqual(retainedCredential, "credential")
+    }
+
+    @MainActor
+    func testProductionOpenRemovesAllProjectAccessWhenStatusBecomesPending() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("LittleLeonardo", isDirectory: true)
+        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
+        let projectID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
+        let descriptor = SharedProjectDescriptor(id: projectID, name: "Granted",
+            scope: try CorpusScope(folder: ""))
+        let oldFile = CorpusFile(path: "docs/note.md", content: Data("retained old bytes".utf8))
+        let currentFile = CorpusFile(path: oldFile.path, content: Data("new source revision".utf8))
+        let oldEntry = RemoteFileEntry(file: oldFile)
+        let currentEntry = RemoteFileEntry(file: currentFile)
+        let value = MobileDirectConnection(connectionID: connectionID, deviceID: deviceID,
+            endpoint: URL(string: "https://127.0.0.1:9")!, fingerprint: Data(repeating: 7, count: 32),
+            projectIDs: [projectID], comparisonCode: nil, capabilities: [],
+            projectDescriptors: [descriptor], acceptedProjectIDs: [projectID])
+        let credentials = TestCredentials(values: [deviceID: "credential"], failRemove: false)
+        try MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json")).save([value])
+        let statusCalls = LockedCounter()
+        let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: MobileRevocationJournal(url: support.appendingPathComponent("revocation.json")),
+            statusRequest: { _, _, _ in
+                statusCalls.increment()
+                if statusCalls.value == 1 {
+                    return DirectDeviceStatus(access: .authorized, projects: [descriptor])
+                }
+                return DirectDeviceStatus(access: .pending, projects: [])
+            },
+            fileRequest: { _, _, _, _, _ in
+                throw SyncError.httpAccessDenied(operation: .file, status: 403)
+            })
+        library.connections = [value]
+        try await library.downloads.update(id: projectID, descriptor: descriptor,
+            catalogue: RemoteProjectCatalogue(files: [oldEntry]))
+        library.downloads.fetch = { _, _ in oldFile }
+        await library.downloads.retain(id: projectID, path: oldFile.path, isFolder: false, keep: true)
+        _ = try await library.downloads.open(id: projectID, path: oldFile.path)
+        try await library.downloads.update(id: projectID, descriptor: descriptor,
+            catalogue: RemoteProjectCatalogue(files: [currentEntry]))
+        library.downloads.fetch = { id, entry in try await library.fetchDownload(projectID: id, entry: entry) }
+
+        do {
+            _ = try await library.downloads.open(id: projectID, path: currentFile.path)
+            XCTFail("Pending status must make previously granted cached content unavailable")
+        } catch let error as SyncError { XCTAssertEqual(error, .revoked) }
+        catch { XCTFail("Expected the project cache to be denied: \(error)") }
+
+        XCTAssertEqual(statusCalls.value, 2)
+        let updated = try XCTUnwrap(library.connections.first)
+        XCTAssertFalse(updated.revoked, "Pending authorization is not a device revocation")
+        XCTAssertTrue(updated.projectIDs.isEmpty)
+        XCTAssertTrue(updated.acceptedProjectIDs.isEmpty)
+        let retainedCredential = try await credentials.credential(deviceID: deviceID)
+        XCTAssertEqual(retainedCredential, "credential")
+    }
+
     func testLateAuthorizedOrTransientCompletionCannotClearMonotonicDeny() async throws {
         for transient in [false, true] {
             let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

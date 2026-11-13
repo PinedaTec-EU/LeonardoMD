@@ -693,9 +693,12 @@ status or snapshot request failed, the HTTP status when received, response
 bytes received versus expected, and the system error domain/code. It contains
 no server address or path, pairing credential, device/project identifier, or
 file content. An HTTP 200 header does not mean the response body finished. A
-`?` expected count means the server did not provide a body length. Previously
-downloaded offline copies remain available; check that the source Mac is
-reachable and Leonardo Sync is enabled, then retry synchronization.
+`?` expected count means the server did not provide a body length. An explicit
+access denial or confirmed authorization change prevents the affected content
+from opening from an older copy; other granted projects remain available. A
+temporary connection failure without an access denial may still allow retained
+offline copies. Check that the source Mac is reachable and Leonardo Sync is
+enabled, then retry synchronization.
 
 ### Answer a rubric request on iOS
 
@@ -799,7 +802,7 @@ Use the context menu on Mac or the **…** button in Little Leonardo:
 - **Stop keeping offline** makes copies eligible for cache cleanup without deleting originals. A child can be excluded from a retained folder.
 - **Release local space** removes temporary downloaded copies; retained offline content remains protected. To release those files too, first choose **Stop keeping offline**.
 
-The list distinguishes **Remote only**, **Cached**, **Offline pending** and **Available offline**, with progress and failure indicators. Folder counts show downloaded files versus total files. A selection is available offline only after all required downloads finish. Failures retry during the next automatic refresh; the last retained version remains readable if an update fails. The reader shows an explicit previous-copy warning, the download error and **Retry** above that copy. Failed referenced images also show an error, even when the document text is readable.
+The list distinguishes **Remote only**, **Cached**, **Offline pending** and **Available offline**, with progress and failure indicators. Folder counts show downloaded files versus total files. A selection is available offline only after all required downloads finish. Failures retry during the next automatic refresh. When an update fails for a temporary connection reason, the last retained version remains readable with a previous-copy warning, the download error and **Retry** above it. An explicit access denial does not open that stale version. Failed referenced images also show an error, even when the document text is readable.
 
 In **Synchronization → Storage and cache**, enter the temporary limit as a whole number of MiB and choose **Apply cache limit** (Return also applies it). Text being edited does not change the saved budget. Inspect temporary/offline usage and pending downloads, clear temporary cache or stop retaining a selection. The default limit is 256 MiB; zero disables temporary retention. Least recently used temporary files are removed first. Offline files are stored separately and do not count toward this limit; they require enough free device space. Cleanup never deletes editable desktop copies or rubric drafts.
 
