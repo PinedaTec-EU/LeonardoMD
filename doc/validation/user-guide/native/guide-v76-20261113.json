@@ -18,6 +18,19 @@
     "codesign_verified": true,
     "still_running_after_validation": true
   },
+  "follow_up_process": {
+    "launched": true,
+    "first_window_observed": "Welcome",
+    "qa_pid": 78620,
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.514fb956b10e4a3fb82b8433b1cdfadd",
+    "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-0mey5zhl/LeonardoMDQA.app",
+    "bundle_executable": "LeonardoMD",
+    "version": "0.3.1602",
+    "build": "1602",
+    "launch_arguments": ["--new-instance", "-allowMultipleInstances", "YES"],
+    "purpose": "Reopened the same packaged bundle and isolated home to inspect literal fenced code while Math was off; restored Math on and English.",
+    "still_running_after_validation": true
+  },
   "disposable_user_home": "/tmp/leonardo-guide-v76-qa-home",
   "guide_resources": [
     {
@@ -38,7 +51,7 @@
     }
   ],
   "live_help_checks": {
-    "inspection": "Live native app accessibility tree in the same fresh process; screenshots were not retained.",
+    "inspection": "Live native app accessibility trees from two sequential fresh processes using the same disposable user home; screenshots were not retained.",
     "content_observed": [
       "local cover and document images",
       "Mermaid rendered image",
@@ -65,9 +78,10 @@
       "literal_delimiters_in_rendered_math_nodes": false
     },
     "math_disabled": {
-      "locale": "es",
+      "locales_tested": ["en", "es"],
       "source_notation_and_delimiters_visible": true,
-      "code_examples_separately_inspected": false
+      "fenced_code_examples_remained_literal": true,
+      "observed_example": "The fenced BibTeX block remained visible as literal source text while Math was off."
     }
   },
   "practice_round_trip": {
@@ -85,7 +99,8 @@
     },
     "practice_file": "~/Library/Application Support/LeonardoMD/Practice Forms/v1/en/Practice-v1-en.mdlr",
     "practice_file_sha256_after_reopen": "5b914af748cff65eb9b6bae0b175f64c0008e1874bb1b53fdf6c5a361e0b6b9c",
-    "round_trip_acceptance": "passed"
+    "round_trip_acceptance": "passed",
+    "qa_pid": 62161
   },
   "settings_changed_and_restored": {
     "interface_language": "English",
@@ -110,6 +125,10 @@
       "result": "passed; fresh packaged application launched and first Welcome window observed"
     },
     {
+      "command": "CFFIXED_USER_HOME=/tmp/leonardo-guide-v76-qa-home open -n -a LeonardoMDQA.app --args --new-instance -allowMultipleInstances YES",
+      "result": "passed; reopened the same disposable packaged bundle as PID 78620 for the final literal-code check"
+    },
+    {
       "command": "codesign --verify --deep --strict",
       "result": "passed"
     },
@@ -119,7 +138,6 @@
     }
   ],
   "remaining_release_acceptance": [
-    "separately inspect literal code examples with Math disabled",
     "exact-head CI and strict independent review after the evidence update",
     "Little Leonardo simulator capture and acceptance through the required XcodeBuildMCP tools",
     "beta publication and hosted install/update/relaunch acceptance"
