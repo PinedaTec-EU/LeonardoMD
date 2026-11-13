@@ -57,19 +57,10 @@ final class DesktopSyncController {
     private(set) var incoming: [DesktopPeerIncomingProposal] = []
     var reviewing: DesktopSourceReview?
     private let lease = NativeReconciliationLease.shared
-    // Automatic poll errors are independent so recovery cannot erase an explicit action error.
-    private var actionError: String?
-    private var automaticConsentError: String?
-    private var automaticIncomingError: String?
-    private var automaticIncomingFailureCount = 0
-    private var automaticIncomingFailureReported = false
+    private let pollingDiagnostics = DesktopSyncPollingDiagnostics()
     var error: String? {
-        get { actionError ?? automaticConsentError ?? automaticIncomingError }
-        set {
-            actionError = newValue
-            automaticConsentError = nil
-            automaticIncomingError = nil
-        }
+        get { pollingDiagnostics.error }
+        set { pollingDiagnostics.setActionError(newValue) }
     }
     private(set) var invitationURL: URL?
     var buffers: @MainActor (URL) async throws -> [OpenDocumentBuffer] = { _ in [] }
@@ -81,9 +72,6 @@ final class DesktopSyncController {
     private let rubricCaptures: RubricCaptureStore
     private let now: RubricClock
     private var initialized = false
-    private var consentFailureChecked = false
-    private var automaticConsentFailureCount = 0
-    private var automaticConsentFailureReported = false
     private var lastNetworkAddresses: Set<String>?
     private var lastEndpointAvailable: Bool?
     private var networkRefreshPending = false
@@ -349,11 +337,7 @@ final class DesktopSyncController {
         } catch {
             guard refreshRevision == consentRefreshRevision else { return }
             if usesHelper && !refreshHelper {
-                automaticIncomingFailureCount += 1
-                if automaticIncomingFailureCount >= 2 && !automaticIncomingFailureReported {
-                    automaticIncomingError = error.localizedDescription
-                    automaticIncomingFailureReported = true
-                }
+                pollingDiagnostics.recordIncomingFailure(error)
             } else {
                 self.error = error.localizedDescription
             }
@@ -361,34 +345,29 @@ final class DesktopSyncController {
         }
         guard refreshRevision == consentRefreshRevision else { return }
         incoming = refreshedIncoming
-        automaticIncomingFailureCount = 0
-        automaticIncomingFailureReported = false
-        automaticIncomingError = nil
+        pollingDiagnostics.clearIncomingFailure()
         rubricCaptures.refresh()
         await recoverRubricCaptures()
         guard refreshRevision == consentRefreshRevision else { return }
     }
 
     private func clearAutomaticConsentFailure() {
-        consentFailureChecked = false
-        automaticConsentFailureCount = 0
-        automaticConsentFailureReported = false
-        automaticConsentError = nil
+        pollingDiagnostics.clearConsentFailure()
     }
 
     private func recordAutomaticConsentFailure(_ error: Error,
                                                helperAlreadyChecked: Bool,
                                                refreshRevision: Int? = nil) async {
         if helperAlreadyChecked {
-            consentFailureChecked = true
+            pollingDiagnostics.markConsentHealthCheckAttempted()
             if now() >= nextHelperRecovery {
                 nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
             }
         }
-        automaticConsentFailureCount += 1
+        pollingDiagnostics.beginConsentFailure()
         if usesHelper && !helperAlreadyChecked &&
-            (!consentFailureChecked || now() >= nextHelperRecovery) {
-            consentFailureChecked = true
+            (!pollingDiagnostics.consentHealthCheckAttempted || now() >= nextHelperRecovery) {
+            pollingDiagnostics.markConsentHealthCheckAttempted()
             nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
             await helper.refresh()
             if let refreshRevision, refreshRevision != consentRefreshRevision { return }
@@ -398,10 +377,7 @@ final class DesktopSyncController {
             }
         }
         // Let one failed two-second poll recover before presenting a modal.
-        if automaticConsentFailureCount >= 2 && !automaticConsentFailureReported {
-            automaticConsentError = error.localizedDescription
-            automaticConsentFailureReported = true
-        }
+        pollingDiagnostics.reportConsentFailureIfPersistent(error)
     }
 
     private func clearSharingPresentationAfterTerminalFailure() {
