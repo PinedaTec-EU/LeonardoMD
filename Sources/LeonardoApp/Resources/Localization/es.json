@@ -727,5 +727,12 @@
   "The local working copy exceeds a synchronization limit. Reduce the affected content or change the shared selection on the source Mac, then retry.": "La copia local supera un límite de sincronización. Reduce el contenido afectado o cambia la selección compartida en el Mac de origen y vuelve a intentarlo.",
   "Could not refresh source project access (HTTP %ld).": "No se pudo actualizar el acceso a los proyectos del origen (HTTP %ld).",
   "Check Leonardo Sync and pairing authorization on the source Mac, then refresh the connection and retry.": "Comprueba Leonardo Sync y la autorización del enlace en el Mac de origen; después actualiza la conexión y vuelve a intentarlo.",
-  "The source Mac no longer shares this project with this device. Ask its owner to restore access, refresh the project list, and retry.": "El Mac de origen ya no comparte este proyecto con este dispositivo. Pide al propietario que restablezca el acceso, actualiza la lista de proyectos y vuelve a intentarlo."
+  "The source Mac no longer shares this project with this device. Ask its owner to restore access, refresh the project list, and retry.": "El Mac de origen ya no comparte este proyecto con este dispositivo. Pide al propietario que restablezca el acceso, actualiza la lista de proyectos y vuelve a intentarlo.",
+  "Group instances in Dock and app switcher": "Agrupar instancias en el Dock y el selector de apps",
+  "Grouped processes share one Dock entry. Use Instances in any window to switch or quit. If the representative closes, another takes its place.": "Los procesos agrupados comparten una entrada en el Dock. Usa Instancias en cualquier ventana para cambiar o salir. Si el representante se cierra, otro ocupa su lugar.",
+  "Instances": "Instancias",
+  "Instance": "Instancia",
+  "Current": "Actual",
+  "Application menu": "Menú de la aplicación",
+  "Quit this instance": "Salir de esta instancia"
 }

@@ -1,0 +1,81 @@
+{
+  "build_source": "29b8493f97a4747068b02ae8c9111a61164e9a66",
+  "base": "2542a940c2b7c964ab4ed29cb72fefefb53f9c64",
+  "version": "0.3.1587",
+  "build": "1587",
+  "source_code_unchanged_after_build": true,
+  "profiles": {
+    "b": {
+      "pid": 95948,
+      "guides": {
+        "en": {
+          "bundle_sha256": "905940721f75453a0e91e97fbbbd1c0f9d3cc22e618369a73f6a0f1bd88eba73",
+          "working_sha256": "905940721f75453a0e91e97fbbbd1c0f9d3cc22e618369a73f6a0f1bd88eba73",
+          "bytes_identical": true,
+          "practice_sha256": "d5083f6274ceba7fe3102df0737fdae93a0174248b800504effe2107f2e17f50",
+          "saved_value": "QA441 B EN"
+        },
+        "es": {
+          "bundle_sha256": "38666f73283c674447cb720eccb6baeb0b20a40f5700a8f8e3491121107e6340",
+          "working_sha256": "38666f73283c674447cb720eccb6baeb0b20a40f5700a8f8e3491121107e6340",
+          "bytes_identical": true,
+          "practice_sha256": "68e1152ef6bb3215b1e83c4457c6892b50a4b97b140c575eb94c8f4213d5f1f0",
+          "saved_value": "QA441 B ES"
+        }
+      },
+      "practice_open_fill_save_close_reopen": true,
+      "both_locales_opened_from_real_Help": true,
+      "math_enabled_and_disabled_checked": true,
+      "bundle_id": "eu.pinedatec.LeonardoMD.qa.a794635da723448fb60b33db6cd0860f",
+      "executable_sha256": "fa9fd058bdecf92994451a51b3c278243f190a6bdce0a8b89b8bf537d864e18b",
+      "mapped_sections_sha256": "76cc78eb883e03e75e38b659f10f72870698a2d6de49cb1dc65e527cb8077935",
+      "executable": "LeonardoMD",
+      "packaging_verifier_passed": true,
+      "xctest_linked": false,
+      "terminated": true
+    },
+    "a2": {
+      "pid": 7354,
+      "guides": {
+        "en": {
+          "bundle_sha256": "905940721f75453a0e91e97fbbbd1c0f9d3cc22e618369a73f6a0f1bd88eba73",
+          "working_sha256": "905940721f75453a0e91e97fbbbd1c0f9d3cc22e618369a73f6a0f1bd88eba73",
+          "bytes_identical": true,
+          "practice_sha256": "73c3fe021354723ce0a65b3f3ab52d8f9917dba5febd849a7f377268e992dc25",
+          "saved_value": "QA441 A2 EN"
+        },
+        "es": {
+          "bundle_sha256": "38666f73283c674447cb720eccb6baeb0b20a40f5700a8f8e3491121107e6340",
+          "working_sha256": "38666f73283c674447cb720eccb6baeb0b20a40f5700a8f8e3491121107e6340",
+          "bytes_identical": true,
+          "practice_sha256": "56db7bfc62e9331cf4729b573f17a168cec363aaf8f22672c263ddd8ad5af649",
+          "saved_value": "QA441 A2 ES"
+        }
+      },
+      "practice_open_fill_save_close_reopen": true,
+      "both_locales_opened_from_real_Help": true,
+      "math_enabled_and_disabled_checked": true,
+      "bundle_id": "eu.pinedatec.LeonardoMD.qa.3a0bffd58ffc421f82471e787b12a646",
+      "executable_sha256": "40b6362de71d17c0342ab5473578229770236a126249dcfd0c7ccc023a6404d1",
+      "mapped_sections_sha256": "76cc78eb883e03e75e38b659f10f72870698a2d6de49cb1dc65e527cb8077935",
+      "executable": "LeonardoMD",
+      "packaging_verifier_passed": true,
+      "xctest_linked": false,
+      "terminated": true
+    }
+  },
+  "task_processes_exited": [
+    94348,
+    95948,
+    7354
+  ],
+  "shared_preferences_restored": {
+    "allowMultipleInstances": true,
+    "groupApplicationInstances": false
+  },
+  "device_hub_sessions_created": 0,
+  "built_executable_sha256": "2b47eb82b0a751c8524147f997483c48130ecc66fafa174a01e2e76cd9faa6c7",
+  "mapped_sections_sha256": "76cc78eb883e03e75e38b659f10f72870698a2d6de49cb1dc65e527cb8077935",
+  "mapped_sections_count": 38,
+  "signing_identity_variants": "Full Mach-O hashes differ because each QA bundle is re-signed with its distinct bundle identity; all mapped file-backed sections match the built product."
+}

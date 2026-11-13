@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-13T10:06:25.859Z",
+  "route": "QA441/acceptance/a2-en-math",
+  "screen": "a2-en-math",
+  "browser_name": "Native AppKit / WKWebView",
+  "browser_version": "Not exposed by CUA; native packaged app",
+  "capture_mode": "viewport",
+  "state": "PID 7354; Guide v71 English; engines enabled; native screenshot pixels used in compatibility viewport fields, CSS viewport not applicable",
+  "data_provenance": "synthetic",
+  "viewport_css": {
+    "width": 2520,
+    "height": 1700
+  }
+}

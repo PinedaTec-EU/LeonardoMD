@@ -727,5 +727,12 @@
   "The local working copy exceeds a synchronization limit. Reduce the affected content or change the shared selection on the source Mac, then retry.": "The local working copy exceeds a synchronization limit. Reduce the affected content or change the shared selection on the source Mac, then retry.",
   "Could not refresh source project access (HTTP %ld).": "Could not refresh source project access (HTTP %ld).",
   "Check Leonardo Sync and pairing authorization on the source Mac, then refresh the connection and retry.": "Check Leonardo Sync and pairing authorization on the source Mac, then refresh the connection and retry.",
-  "The source Mac no longer shares this project with this device. Ask its owner to restore access, refresh the project list, and retry.": "The source Mac no longer shares this project with this device. Ask its owner to restore access, refresh the project list, and retry."
+  "The source Mac no longer shares this project with this device. Ask its owner to restore access, refresh the project list, and retry.": "The source Mac no longer shares this project with this device. Ask its owner to restore access, refresh the project list, and retry.",
+  "Group instances in Dock and app switcher": "Group instances in Dock and app switcher",
+  "Grouped processes share one Dock entry. Use Instances in any window to switch or quit. If the representative closes, another takes its place.": "Grouped processes share one Dock entry. Use Instances in any window to switch or quit. If the representative closes, another takes its place.",
+  "Instances": "Instances",
+  "Instance": "Instance",
+  "Current": "Current",
+  "Application menu": "Application menu",
+  "Quit this instance": "Quit this instance"
 }

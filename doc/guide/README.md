@@ -1,8 +1,8 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v71-en.mdlz` and `Guide-v71-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v73-en.mdlz` and `Guide-v73-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v71/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v73/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
@@ -12,7 +12,7 @@ and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
-Guide v71 combines current document search, remote-project review and offline-catalogue guidance with current synchronization status and helper recovery. It also explains project download failures and transfer limits. It creates a new personal copy without overwriting earlier guide revisions or practice answers, including v62–v70.
+Guide v73 combines current document search, remote-project review and offline-catalogue guidance with grouped Dock/app-switcher instances, synchronization status and helper recovery. It also explains project download failures and transfer limits. It creates a new personal copy without overwriting earlier guide revisions or practice answers, including v62–v71.
 
 File → Import with your agent opens `AgentImport-v3-en.mdlz` or
 `AgentImport-v3-es.mdlz` in the same tab/package flow, with personal copies under
@@ -69,3 +69,5 @@ No system URL protocol or general document-command facility is introduced.
 Tracking: [#312](https://github.com/PinedaTec-EU/LeonardoMD/issues/312).
 
 Illustrations use real alpha transparency and the Classic red/oxide/ochre palette. Keep explanatory captions in the localized Markdown rather than baking them into artwork; the four artwork files are shared across locales. Verify transparency and readability on the document background when refreshing them. Tracking: [#375](https://github.com/PinedaTec-EU/LeonardoMD/issues/375).
+
+Guide v71 adds optional grouping of independent processes in Dock and the app switcher, with per-window instance selection and a native application menu. Existing personal copies remain untouched.
