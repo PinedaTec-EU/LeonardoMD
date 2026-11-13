@@ -15,7 +15,7 @@ python3 scripts/compile-and-record.py --pr-number 369 -- swift test \
   --filter PeerSyncErrorMessageTests.testCaptureProductionDownloadAlert
 ```
 
-The command started with PR build delta `36`; after the successful test, the canonical recorder advanced it to `37` in commit `958a57ea625faf6884a32a1ed2b51a63a1246c87`. That commit changes only `deploy/version/entries/369.yaml`. Subsequent commits add only this validation evidence. [build-inputs.json](build-inputs.json) binds the captured source's product, test, package, script and version inputs; verify those objects against the reviewed PR head before relying on the capture.
+The command started with PR build delta `36`; after the successful test, the canonical recorder advanced it to `37` in commit `958a57ea625faf6884a32a1ed2b51a63a1246c87`. That commit changes only the build counter in `deploy/version/entries/369.yaml`. A later bookkeeping commit aligned that entry's release summary with the PR body; the runtime, test, package, script and version inputs stayed unchanged. [build-inputs.json](build-inputs.json) binds those captured source inputs. Verify them against the reviewed PR head before relying on the capture.
 
 ## Captures
 
