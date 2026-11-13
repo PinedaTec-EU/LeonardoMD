@@ -1,0 +1,12 @@
+{
+  "capture_revision": "8ceafc430d51e26868199228ad4887fab1872662",
+  "input_objects": {
+    "Sources": "dad101d971bc037df067788e7a9937333a44b36a",
+    "Tests": "31bb9e47f5a48040e9f9a6d0aacdeb562ae52613",
+    "Package.swift": "d286a11e2f6083f0fa2c1e9cd0f2fa0682093dc3",
+    "Package.resolved": "b67272e588be3d1079b56d556cf662ddfa9a656b",
+    "scripts": "be08ce7af8def7499632b5df0eb130eb233006cc",
+    "version.nfo": "dd56a369361b9c9e7dd1fb41e1f50a98eb6025f0",
+    "deploy/version/entries/369.yaml": "a6b45d31a6f8fa4fa9aa95193ec55def01d9cdcb"
+  }
+}

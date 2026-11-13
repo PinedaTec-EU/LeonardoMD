@@ -2,6 +2,8 @@
 
 Tracking: [#368](https://github.com/PinedaTec-EU/LeonardoMD/issues/368), [PR #369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369).
 
+The current reconciled candidate evidence is in [candidate-8ceafc](candidate-8ceafc/README.md). The captures below are retained as the earlier `723894cde23c495f4913fc00f018f086d51eaff2` event; they are not evidence for the current head.
+
 ## Current evidence status
 
 After the owner unlocked the desktop and the branch incorporated main `0b06971`, fresh captures of the access-preflight/download diagnostic implementation passed, including OCR checks for the HTTP code and confirmation button. Earlier locked-session attempts produced no image and are not used as evidence. The canonical metadata and input binding below belong to this fresh verification event.
