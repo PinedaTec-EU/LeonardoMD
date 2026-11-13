@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-13T08:51:14.775Z",
+  "screen": "Grouped instance preference",
+  "route": "Preferences/General/On-this-Mac",
+  "browser_name": "Native AppKit",
+  "browser_version": "Not applicable; packaged LeonardoMD 0.3.1371",
+  "viewport_css": {
+    "width": 1160,
+    "height": 1240
+  },
+  "capture_mode": "element",
+  "state": "English; grouping enabled; native screenshot pixels in compatibility viewport fields; CSS viewport not applicable",
+  "data_provenance": "synthetic"
+}

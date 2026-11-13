@@ -501,7 +501,6 @@
   "Show all files": "Show all files",
   "Sort": "Sort",
   "Folders first": "Folders first",
-  "Name": "Name",
   "A–Z": "A–Z",
   "Z–A": "Z–A",
   "Filter and sort files": "Filter and sort files",
@@ -698,5 +697,12 @@
   "Searching…": "Searching…",
   "This document": "This document",
   "Type to search": "Type to search",
-  "Use regular expressions": "Use regular expressions"
+  "Use regular expressions": "Use regular expressions",
+  "Group instances in Dock and app switcher": "Group instances in Dock and app switcher",
+  "Grouped processes share one Dock entry. Use Instances in any window to switch or quit. If the representative closes, another takes its place.": "Grouped processes share one Dock entry. Use Instances in any window to switch or quit. If the representative closes, another takes its place.",
+  "Instances": "Instances",
+  "Instance": "Instance",
+  "Current": "Current",
+  "Application menu": "Application menu",
+  "Quit this instance": "Quit this instance"
 }

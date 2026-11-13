@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1596
+
+- #440 Added: optional grouped instance presentation ([#441](https://github.com/PinedaTec-EU/LeonardoMD/pull/441))
+
+<p>Optionally group independent LeonardoMD processes under one Dock and app-switcher entry, with an instance selector in every window and automatic replacement of the visible representative when it exits.</p>
+
+Source: `6f512c2e8f80e8cbdf33f090814790a742a7fb8c`. Delta: `{"build": 9}`.
+
 ## 0.3.1587
 
 - #421 Fixed: Keep synchronization status stable and quiet ([#428](https://github.com/PinedaTec-EU/LeonardoMD/pull/428))

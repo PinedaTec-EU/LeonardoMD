@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-13T09:48:35.810Z",
+  "route": "QA441/acceptance/b-en-math",
+  "screen": "b-en-math",
+  "browser_name": "Native AppKit / WKWebView",
+  "browser_version": "Not exposed by CUA; native packaged app",
+  "capture_mode": "viewport",
+  "state": "PID 95948; Guide v71 English; Math/Mermaid/Charts enabled; accessory process; native screenshot pixels used in compatibility viewport fields, CSS viewport not applicable",
+  "data_provenance": "synthetic",
+  "viewport_css": {
+    "width": 2520,
+    "height": 1700
+  }
+}

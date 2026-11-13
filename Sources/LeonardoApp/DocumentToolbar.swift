@@ -48,6 +48,7 @@ struct DocumentToolbar: View {
                 .font(.caption).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer(minLength: 8)
+            InstanceSwitcher(session: session)
             if session.documentURL != nil {
                 Button { Task { await session.toggleProtection() } } label: {
                     Image(systemName: session.isProtected ? "lock.fill" : "lock.open")

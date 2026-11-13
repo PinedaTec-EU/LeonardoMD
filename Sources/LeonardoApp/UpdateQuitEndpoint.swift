@@ -5,13 +5,16 @@ import CoreFoundation
 /// reports a document/Git veto immediately. Every actual quit uses NSApp.terminate.
 @MainActor
 final class UpdateQuitEndpoint {
-    enum Command: Int32 { case quit = 1, status = 2 }
+    enum Command: Int32 { case quit = 1, status = 2, presentation = 3, activate = 4 }
     enum State: UInt8 { case idle, closing, cancelled }
     nonisolated private static let queue = DispatchQueue(label: "eu.pinedatec.LeonardoMD.update-quit")
     private var port: CFMessagePort?
     private var source: CFRunLoopSource?
     private(set) var state = State.idle
+    var activate: (() -> Void)?
     var quit: (() -> Void)?
+
+    var isStarted: Bool { port != nil }
 
     func start(identity suppliedIdentity: UpdateProcessIdentity? = nil) throws {
         let identity = try suppliedIdentity ?? UpdateProcessIdentity.identify(.current)
@@ -29,6 +32,11 @@ final class UpdateQuitEndpoint {
                     // Return the acknowledgement before asking AppKit to terminate.
                     Task { @MainActor in endpoint.quit?() }
                 }
+                if command == .activate {
+                    Task { @MainActor in endpoint.activate?() }
+                }
+                // Only endpoints with an activation handler participate in grouping.
+                if command == .presentation && endpoint.activate == nil { return Data() }
                 return Data([endpoint.state.rawValue])
             }
             return Unmanaged.passRetained(reply as CFData)
@@ -48,6 +56,7 @@ final class UpdateQuitEndpoint {
         source = nil
         port = nil
         quit = nil
+        activate = nil
     }
 
     nonisolated static func send(_ command: Command, identity: UpdateProcessIdentity) async -> State? {

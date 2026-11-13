@@ -27,6 +27,26 @@ final class UpdateInstanceTerminationTests: XCTestCase {
         }
     }
 
+    func testPresentationProbeRequiresActivationHandlerAndActivationDoesNotQuit() async throws {
+        let identity = UpdateProcessIdentity(pid: getpid(), launchDate: Date(timeIntervalSinceReferenceDate: 440))
+        let endpoint = UpdateQuitEndpoint()
+        try endpoint.start(identity: identity)
+        defer { endpoint.stop() }
+        let unsupported = await UpdateQuitEndpoint.send(.presentation, identity: identity)
+        XCTAssertNil(unsupported)
+        let activated = expectation(description: "Activate the selected instance")
+        var quits = 0
+        endpoint.quit = { quits += 1 }
+        endpoint.activate = { activated.fulfill() }
+        let supported = await UpdateQuitEndpoint.send(.presentation, identity: identity)
+        XCTAssertEqual(supported, .idle)
+        let response = await UpdateQuitEndpoint.send(.activate, identity: identity)
+        XCTAssertEqual(response, .idle)
+        await fulfillment(of: [activated], timeout: 2)
+        XCTAssertEqual(quits, 0)
+        XCTAssertEqual(endpoint.state, .idle)
+    }
+
     func testInstallOnQuitRequiresHelperDrainButOrdinaryQuitDoesNot() async {
         let termination = UpdateInstanceTermination(peers: { [] })
         var calls = 0
