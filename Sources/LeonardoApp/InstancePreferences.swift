@@ -5,6 +5,7 @@ import Observation
 final class InstancePreferences {
     static let shared = InstancePreferences()
     static let preferenceKey = "allowMultipleInstances"
+    static let groupingKey = "groupApplicationInstances"
     static let launchArgument = "--new-instance"
     private let defaults: UserDefaults
     private var revision = 0
@@ -20,6 +21,23 @@ final class InstancePreferences {
             revision += 1
         }
     }
+
+    var groupsInstances: Bool {
+        get {
+            _ = revision
+            defaults.synchronize()
+            return defaults.bool(forKey: Self.groupingKey)
+        }
+        set {
+            defaults.set(newValue, forKey: Self.groupingKey)
+            defaults.synchronize()
+            revision += 1
+        }
+    }
+
+    func refreshObservation() { revision += 1 }
+
+    var groupingEnabled: Bool { allowsMultipleInstances && groupsInstances }
 
     init(defaults: UserDefaults? = UserDefaults(suiteName: "eu.pinedatec.LeonardoMD")) {
         // Foundation can reject the named suite during packaged application startup.

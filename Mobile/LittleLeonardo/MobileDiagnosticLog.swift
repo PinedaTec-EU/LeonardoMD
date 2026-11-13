@@ -242,7 +242,7 @@ extension MobileLibrary {
         operation: MobileDiagnosticOperation,
         message: String = "Inténtalo de nuevo. Si vuelve a ocurrir, indica este código."
     ) {
-        self.error = MobileErrorNotice.record(error, operation: operation, message: message)
+        self.error = MobileErrorNotice.record(error, operation: operation, message: message).alertMessage
     }
 
     func presentErrors(
@@ -255,7 +255,7 @@ extension MobileLibrary {
             errors,
             operation: operation,
             message: message,
-            fallbackCategory: fallbackCategory)
+            fallbackCategory: fallbackCategory).alertMessage
     }
 
 }

@@ -8,6 +8,11 @@ public struct SharedProjectDescriptor: Codable, Equatable, Sendable, Identifiabl
     public init(id: UUID, name: String, scope: CorpusScope, selection: CorpusSelection? = nil) {
         self.id = id; self.name = name; self.scope = scope; self.selection = selection
     }
+
+    /// Project labels may change without changing the host's authorization.
+    public func representsSameGrant(as other: SharedProjectDescriptor) -> Bool {
+        id == other.id && scope == other.scope && selection == other.selection
+    }
 }
 
 public struct SharedProjectSource: Sendable {

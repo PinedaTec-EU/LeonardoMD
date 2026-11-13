@@ -1,4 +1,4 @@
 {
   "summary": "Little Leonardo now shows short error messages with reference codes and keeps a bounded local log users can inspect from sync settings.",
-  "build": 1
+  "build": 2
 }

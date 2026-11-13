@@ -10,7 +10,11 @@ final class BundledUserGuideTests: XCTestCase {
     func testLocalizedResourcesOpenNativelyAndWorkingCopiesPreserveSavedAnswers() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        let oldCopies = (2..<63).flatMap { revision in
+        let englishResource = try BundledUserGuide.resourceURL(language: .english)
+        let revisionParts = englishResource.deletingPathExtension().lastPathComponent.split(separator: "-")
+        XCTAssertEqual(revisionParts.count, 3)
+        let currentRevision = try XCTUnwrap(Int(revisionParts[1].dropFirst()))
+        let oldCopies = (2..<currentRevision).flatMap { revision in
             AppLanguage.allCases.map { language in
                 root.appendingPathComponent("User Guides/v\(revision)/\(language.rawValue)/Guide-v\(revision)-\(language.rawValue).mdlz")
             }
@@ -26,7 +30,7 @@ final class BundledUserGuideTests: XCTestCase {
             let originalBytes = try Data(contentsOf: original)
             let copy = try BundledUserGuide.workingCopy(language: language, supportDirectory: root)
             XCTAssertNotEqual(copy, original)
-            XCTAssertTrue(copy.path.contains("User Guides/v63/"))
+            XCTAssertTrue(copy.path.contains("User Guides/v\(currentRevision)/"))
             XCTAssertEqual(try Data(contentsOf: copy), originalBytes)
             let legacyImport = root.appendingPathComponent("Agent Import Guides/v2/\(language.rawValue)/AgentImport-v2-\(language.rawValue).mdlz")
             try FileManager.default.createDirectory(at: legacyImport.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -43,7 +47,7 @@ final class BundledUserGuideTests: XCTestCase {
             let document = try LeonardoFormatParser.parse(source)
             XCTAssertFalse(document.isForm)
             XCTAssertEqual(document.metadata.fields.count, 0)
-            let expectedImageCount = language == .spanish ? 21 : 20
+            let expectedImageCount = language == .spanish ? 22 : 21
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:
                 workspace.directoryURL.appendingPathComponent("assets").path).count, expectedImageCount)
             let artwork = language == .english ? ["journey", "package", "import", "export"] : ["recorrido", "paquete", "importar", "exportar"]
@@ -144,7 +148,7 @@ final class BundledUserGuideTests: XCTestCase {
             window.orderFront(nil)
             defer { window.close() }
             let web = try await findWebView(in: hosting)
-            let expectedImageCount = language == .spanish ? 21 : 20
+            let expectedImageCount = language == .spanish ? 22 : 21
             try await waitFor("document.images.length === \(expectedImageCount)", in: web)
             for index in 0..<expectedImageCount {
                 _ = try await web.evaluateJavaScript("document.images[\(index)].scrollIntoView({block:'center'})")
@@ -160,10 +164,9 @@ final class BundledUserGuideTests: XCTestCase {
             _ = try await web.evaluateJavaScript("document.querySelector('.mermaid-placeholder').scrollIntoView({block:'center'})")
             try await waitFor("document.querySelector('.mermaid-placeholder svg') !== null", in: web)
             _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
-            // WKWebView snapshots are a separate opt-in from the broad native
+            // WKWebView snapshots are a separate opt-in from broad native
             // component captures. Keep long-running snapshot teardown out of
-            // the ordinary CI rendering test while retaining the assertions
-            // above for both packaged guide locales.
+            // ordinary CI rendering while retaining both locale assertions.
             if let output = ProcessInfo.processInfo.environment["LEONARDO_BUNDLED_GUIDE_CAPTURE_EVIDENCE"] {
                 let directory = URL(fileURLWithPath: output).appendingPathComponent("user-guide")
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -176,8 +179,10 @@ final class BundledUserGuideTests: XCTestCase {
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Live \(name) example; built-in extension enabled")
                 }
-                for name in ["palette", "activation", "sync-sharing-v13"] {
-                    _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
+                for name in ["palette", "activation-switch", "sync-sharing-v14", "sync-review-draft-unavailable"] {
+                    let selector = "img[src$=\"/\(name).png\"]"
+                    try await waitFor("document.querySelector('\(selector)') !== null && document.querySelector('\(selector)').naturalWidth > 0", in: web)
+                    _ = try await web.evaluateJavaScript("document.querySelector('\(selector)').scrollIntoView({block:'center'})")
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("section-\(name)-\(language.rawValue).png"),
                         language: language.rawValue, state: "Detailed chapter with original \(name) screenshot; all images loaded")
                 }
@@ -187,9 +192,8 @@ final class BundledUserGuideTests: XCTestCase {
                 let illustrations = language == .english ? ["journey", "package", "import", "export"] : ["recorrido", "paquete", "importar", "exportar"]
                 for name in illustrations {
                     _ = try await web.evaluateJavaScript("document.querySelector('img[src$=\"/\(name).png\"]').scrollIntoView({block:'center'})")
-                    let imageCount = language == .spanish ? 21 : 20
                     try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("premium-\(name)-\(language.rawValue).png"),
-                        language: language.rawValue, state: "Main guide; generated premium \(name) illustration; all \(imageCount) images admitted under standard limits")
+                        language: language.rawValue, state: "Main guide; generated premium \(name) illustration; all \(expectedImageCount) guide images loaded")
                 }
                 _ = try await web.evaluateJavaScript("window.scrollTo(0,0)")
                 try await GuideCaptureSupport.capture(web, to: directory.appendingPathComponent("guide-\(language.rawValue).png"),

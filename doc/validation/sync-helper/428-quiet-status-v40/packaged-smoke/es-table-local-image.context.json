@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-12T19:55:09.369Z",
+  "route": "/native/user-guide/es",
+  "screen": "LeonardoMD 0.3.1333 packaged QA window — es-table-local-image",
+  "browser_name": "Native macOS app with embedded WKWebView",
+  "browser_version": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)",
+  "viewport_css": {
+    "width": 1260,
+    "height": 850
+  },
+  "capture_mode": "viewport",
+  "state": "Guía española v59; tabla y recurso de imagen local del paquete renderizados.",
+  "data_provenance": "synthetic"
+}

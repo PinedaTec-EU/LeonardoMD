@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreImage.CIFilterBuiltins
 import LeonardoSync
+import LeonardoCore
 
 struct MobileSyncPreferencesView: View {
     let session: AppSession
@@ -37,19 +38,18 @@ struct MobileSyncPreferencesView: View {
             authorizedDevices
         }.formStyle(.grouped).toggleStyle(PremiumSwitchStyle()).disabled(controller.busy)
         .task {
-            await controller.initialize()
-            while !Task.isCancelled {
-                await controller.refreshConsent()
-                do { try await Task.sleep(for: .seconds(2)) } catch { return }
-            }
+            await controller.refreshPreferencesOnOpen()
         }
         .sheet(item: $controller.reviewing) { value in DesktopSourceReviewView(controller: controller, value: value) }
         .sheet(item: $approving) { request in PairingConsentView(controller: controller, request: request) }
         .sheet(isPresented: $selectingContent) {
             if let root = session.projectURL { SharedProjectSelectionView(root: root, controller: controller) }
         }
-        .alert(L10n.text("Synchronization error"), isPresented: Binding(get: { controller.error != nil }, set: { if !$0 { controller.error = nil } })) {
-            Button(L10n.text("OK")) { controller.error = nil }
+        .alert(L10n.text("Synchronization error"), isPresented: Binding(
+            get: { controller.error != nil },
+            set: { if !$0 { controller.acknowledgeDisplayedError() } }
+        )) {
+            Button(L10n.text("OK"), role: .cancel) {}
         } message: { Text(controller.error ?? "") }
     }
 
@@ -59,19 +59,7 @@ struct MobileSyncPreferencesView: View {
                 Button(L10n.text("Share current project")) { selectingContent = true }
             }
             ForEach(controller.settings.projects) { project in
-                HStack {
-                    VStack(alignment: .leading) {
-                        ProjectIdentityLabel(name: project.name, identity: .sharedFromThisDevice,
-                                             detail: DesktopProjectPresentation.scopeDescription(folders: project.folders))
-                        if !controller.sharingAvailable {
-                            Text(L10n.text("Sharing paused or unavailable")).font(.caption).foregroundStyle(.secondary)
-                        }
-                        Text((project.folders.map { $0.isEmpty ? L10n.text("Entire project") : $0 } + project.documents).joined(separator: ", "))
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button(L10n.text("Remove")) { Task { await controller.unshare(project.id) } }
-                }
+                SharedProjectRow(project: project, controller: controller)
             }
     }
     if controller.settings.projects.isEmpty {
@@ -80,22 +68,8 @@ struct MobileSyncPreferencesView: View {
     }
     }
 
-    @ViewBuilder private var invitation: some View {
-        if let running = controller.running {
-            Text(L10n.text("Invite a device")).font(.headline)
-            Text(L10n.text("Open the invitation link on another Mac, or scan its QR in Little Leonardo. Compare the codes and approve access here."))
-                .font(.caption).foregroundStyle(.secondary)
-            Text(running.endpoint.absoluteString).textSelection(.enabled)
-            Button(L10n.text("Create pairing QR")) { Task { await controller.createQR() } }
-            if let url = controller.invitationURL, let image = qrImage(url.absoluteString) {
-                Button(L10n.text("Copy pairing link")) {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(url.absoluteString, forType: .string)
-                }
-                Image(nsImage: image).interpolation(.none).resizable().frame(width: 170, height: 170)
-                    .accessibilityLabel(L10n.text("Device invitation QR"))
-            }
-    }
+    private var invitation: some View {
+        DesktopPairingInvitationSection(controller: controller)
     }
 
     @ViewBuilder private var pendingConnections: some View {
@@ -106,7 +80,9 @@ struct MobileSyncPreferencesView: View {
                     Text(request.comparisonCode).monospaced()
                     Spacer()
                     Button(L10n.text("Review")) { approving = request }
+                        .disabled(!controller.consentActionsAvailable)
                     Button(L10n.text("Reject")) { Task { await controller.reject(request.id) } }
+                        .disabled(!controller.consentActionsAvailable)
                 }
             }
     }
@@ -116,32 +92,53 @@ struct MobileSyncPreferencesView: View {
         Section(L10n.text("Incoming changes")) {
             if controller.incoming.isEmpty { Text(L10n.text("No proposals awaiting review")).foregroundStyle(.secondary) }
             ForEach(controller.incoming) { item in
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text(item.deviceName)
-                        Text(controller.settings.projects.first(where: { $0.id == item.upload.projectID })?.name ?? item.upload.projectID.uuidString)
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button(L10n.text("Review changes")) { Task { await controller.reviewProposal(item) } }
-                }
+                IncomingProposalRow(item: item, controller: controller)
             }
     }
     }
 
     @ViewBuilder private var authorizedDevices: some View {
-        Section(L10n.text("Devices with access to this Mac")) {
+        Section {
             ForEach(controller.consent.devices) { device in
-                HStack {
-                    SyncDeviceIdentity(name: device.name, kind: device.kind)
-                    Spacer()
-                    if device.revoked { Text(L10n.text("Revoked")).foregroundStyle(.secondary) }
-                    else { Button(L10n.text("Revoke")) { Task { await controller.revoke(device.id) } } }
-                }
+                AuthorizedDeviceRow(device: device, controller: controller)
             }
-    }
+        } header: {
+            HStack {
+                Text(L10n.text("Devices with access to this Mac"))
+                Spacer()
+                Button(L10n.text("Refresh linked devices"), systemImage: "arrow.clockwise") {
+                    Task { await controller.refreshConsent() }
+                }
+                .buttonStyle(.borderless)
+                .disabled(controller.busy)
+            }
+        }
     }
 
+
+}
+
+struct DesktopPairingInvitationSection: View {
+    @Bindable var controller: DesktopSyncController
+
+    var body: some View {
+        if let running = controller.running {
+            Text(L10n.text("Invite a device")).font(.headline)
+            Text(L10n.text("Open the invitation link on another Mac, or scan its QR in Little Leonardo. Compare the codes and approve access here."))
+                .font(.caption).foregroundStyle(.secondary)
+            Text(running.endpoint.absoluteString).textSelection(.enabled)
+            Button(L10n.text("Create pairing QR")) { Task { await controller.createQR() } }
+                .disabled(!controller.pairingInvitationAvailable)
+            if let url = controller.invitationURL, let image = qrImage(url.absoluteString) {
+                Button(L10n.text("Copy pairing link")) {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(url.absoluteString, forType: .string)
+                }
+                Image(nsImage: image).interpolation(.none).resizable().frame(width: 170, height: 170)
+                    .accessibilityLabel(L10n.text("Device invitation QR"))
+            }
+        }
+    }
 
     private func qrImage(_ value: String) -> NSImage? {
         let filter = CIFilter.qrCodeGenerator()
@@ -150,6 +147,41 @@ struct MobileSyncPreferencesView: View {
         guard let output = filter.outputImage,
               let image = CIContext().createCGImage(output, from: output.extent) else { return nil }
         return NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+    }
+}
+
+struct IncomingProposalRow: View {
+    let item: DesktopPeerIncomingProposal
+    @Bindable var controller: DesktopSyncController
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading) {
+                Text(item.deviceName)
+                Text(controller.settings.projects.first(where: { $0.id == item.upload.projectID })?.name ?? item.upload.projectID.uuidString)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button(L10n.text("Review changes")) { Task { await controller.reviewProposal(item) } }
+                .disabled(!controller.sharingAvailable)
+        }
+    }
+}
+
+struct AuthorizedDeviceRow: View {
+    let device: PairedDevice
+    @Bindable var controller: DesktopSyncController
+
+    var body: some View {
+        HStack {
+            SyncDeviceIdentity(name: device.name, kind: device.kind)
+            Spacer()
+            if device.revoked { Text(L10n.text("Revoked")).foregroundStyle(.secondary) }
+            else {
+                Button(L10n.text("Revoke")) { Task { await controller.revoke(device.id) } }
+                    .disabled(!controller.consentActionsAvailable)
+            }
+        }
     }
 }
 
@@ -178,13 +210,52 @@ struct PairingConsentView: View {
                     if $0 { projects.insert(project.id) } else { projects.remove(project.id) }
                 }))
             }
-            HStack {
-                Button(L10n.text("Cancel")) { dismiss() }
-                Spacer()
-                Button(L10n.text("Allow connection")) {
-                    Task { await controller.approve(request, projects: projects); if controller.error == nil { dismiss() } }
-                }.disabled(!confirmed || (!captureOnly && projects.isEmpty) || controller.busy)
-            }
+            PairingConsentActions(controller: controller, projects: projects,
+                captureOnly: captureOnly, confirmed: confirmed, onCancel: { dismiss() }, onAllow: {
+                    Task {
+                        if await controller.approve(request, projects: projects) == .completed { dismiss() }
+                    }
+                })
         }.padding(24).frame(width: 420).buttonStyle(PremiumButtonStyle()).toggleStyle(PremiumSwitchStyle())
+    }
+}
+
+struct PairingConsentActions: View {
+    let controller: DesktopSyncController
+    let projects: Set<UUID>
+    let captureOnly: Bool
+    let confirmed: Bool
+    let onCancel: () -> Void
+    let onAllow: () -> Void
+
+    var body: some View {
+        HStack {
+            Button(L10n.text("Cancel"), action: onCancel)
+            Spacer()
+            Button(L10n.text("Allow connection"), action: onAllow)
+                .disabled(!confirmed || (!captureOnly && projects.isEmpty) || controller.busy || !controller.consentActionsAvailable)
+        }
+    }
+}
+
+/// Shared by Preferences and native transition evidence.
+struct SharedProjectRow: View {
+    let project: MobileSharedProject
+    @Bindable var controller: DesktopSyncController
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading) {
+                ProjectIdentityLabel(name: project.name, identity: .sharedFromThisDevice,
+                                     detail: DesktopProjectPresentation.scopeDescription(folders: project.folders))
+                if !controller.sharingPresentationAvailable {
+                    Text(L10n.text("Sharing paused or unavailable")).font(.caption).foregroundStyle(.secondary)
+                }
+                Text((project.folders.map { $0.isEmpty ? L10n.text("Entire project") : $0 } + project.documents).joined(separator: ", "))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button(L10n.text("Remove")) { Task { await controller.unshare(project.id) } }
+        }
     }
 }

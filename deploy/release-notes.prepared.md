@@ -2,6 +2,38 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1602
+
+- #378 Fixed: give corrected Help a distinct personal-copy revision ([#446](https://github.com/PinedaTec-EU/LeonardoMD/pull/446))
+
+<p>Existing LeonardoMD installations now receive the corrected synchronization guidance in a new Help copy while saved guide copies and practice answers remain intact.</p>
+
+Source: `ed1795164972948b8792557d9c0f87ea41d67a5a`. Delta: `{"build": 6}`.
+
+## 0.3.1596
+
+- #440 Added: optional grouped instance presentation ([#441](https://github.com/PinedaTec-EU/LeonardoMD/pull/441))
+
+<p>Optionally group independent LeonardoMD processes under one Dock and app-switcher entry, with an instance selector in every window and automatic replacement of the visible representative when it exits.</p>
+
+Source: `6f512c2e8f80e8cbdf33f090814790a742a7fb8c`. Delta: `{"build": 9}`.
+
+## 0.3.1587
+
+- #421 Fixed: Keep synchronization status stable and quiet ([#428](https://github.com/PinedaTec-EU/LeonardoMD/pull/428))
+
+<p>Synchronization keeps status steady during checks, refreshes linked devices on open or on demand, preserves invitations and review drafts during recovery, and gates peer actions on live helper health.</p>
+
+Source: `970c903ef1175920c0bc1cf6511c9433c188c575`. Delta: `{"build": 216}`.
+
+## 0.3.1371
+
+- #429 Added: review remote projects and files by host ([#430](https://github.com/PinedaTec-EU/LeonardoMD/pull/430))
+
+<p>Little Leonardo groups remote projects by linked Mac, lets users review new projects and files and manage offline copies; macOS restores accepted catalogues after offline restart, ignored grants return only when the host changes them, and sync status stays stable.</p>
+
+Source: `cd662ca817e698fe37058eae9ab6b002bc0c4c36`. Delta: `{"build": 32}`.
+
 ## 0.3.1339
 
 - #434 Added: in-editor search and premium controls ([#40](https://github.com/PinedaTec-EU/LeonardoMD/pull/40))

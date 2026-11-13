@@ -3,6 +3,17 @@ import XCTest
 
 @MainActor
 final class DesktopPeerControllerTests: XCTestCase {
+    func testIgnoreDecisionIsRejectedWhileCatalogueAcceptanceIsBusy() {
+        XCTAssertFalse(DesktopPeerController.canIgnoreRemoteProject(isAdditional: false, busy: true,
+                                                                     projectIsAvailable: true))
+        XCTAssertTrue(DesktopPeerController.canIgnoreRemoteProject(isAdditional: false, busy: false,
+                                                                    projectIsAvailable: true))
+        XCTAssertFalse(DesktopPeerController.canIgnoreRemoteProject(isAdditional: true, busy: false,
+                                                                      projectIsAvailable: true))
+        XCTAssertFalse(DesktopPeerController.canIgnoreRemoteProject(isAdditional: false, busy: false,
+                                                                      projectIsAvailable: false))
+    }
+
     func testIntervalIsInstallationLocalAndRejectsUnsupportedValues() throws {
         let suite = UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

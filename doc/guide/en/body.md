@@ -513,6 +513,8 @@ Appearance offers palettes, paper effects and Leonardo file colors. **Customize*
 
 Enable **Allow multiple instances** before File → New instance. Each instance is a separate process; Finder opening belongs to the principal instance. Turning the preference off does not terminate existing processes. Synchronization and updates are managed in the principal instance.
 
+To share one Dock and ⌘Tab entry, enable **Group instances in Dock and app switcher** in Preferences → On this Mac. This local setting is available only with **Allow multiple instances** enabled and is off by default. Processes remain independent. Use **Instances** (the stacked-squares button in every window) or the Dock icon’s menu to select a process by its number. The selector marks the current process and provides Preferences and **Quit this instance**, including save confirmation. The adjacent **Application menu** button (three lines) opens the full application commands. Grouped processes without a Dock entry have no macOS menu bar; use Application menu for those commands. Closing the representative makes the oldest remaining cooperating process take its place within a few seconds; this does not transfer synchronization ownership. Disable grouping or multiple instances to restore separate Dock/⌘Tab entries without closing documents. The grouping choice is retained when multiple instances are disabled. Only running versions that support grouping participate; older versions retain their own entries.
+
 ## 12. The five built-in extensions
 
 These extensions are included with Leonardo, work locally and are initially disabled. They are separate from the `leonardo-format` skill for external AI agents. Enable only what you want in Preferences → Extensions, globally or for this project; project inheritance follows global settings.
@@ -585,17 +587,27 @@ These operations are manual. Pull is fast-forward only and protects dirty worktr
 
 ## 14. Share from this Mac: Little Leonardo and other computers
 
-![Synchronization → Share from this Mac; the common service and sharing are off in this example.](assets/sync-sharing-v13.png)
+![Synchronization → Share from this Mac; the common service and sharing are off in this example.](assets/sync-sharing-v14.png)
 
 *Synchronization → Share from this Mac; the common service and sharing are off in this example.*
 
 Little Leonardo is a **read-only companion**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Synchronization → Share from this Mac**. The same page serves Little Leonardo and other Macs; a Mac can share some content and independently connect to another Mac for other content. The service requires a Developer ID signed distribution; local ad-hoc builds cannot enable it.
 
-1. Enable **Leonardo Sync** using the single common control above both pages. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. The indicator beside the switch is gray while checking, green when the helper is running, and red when it is offline. The status text provides details. Wait for **Sync helper running**.
+1. Enable **Leonardo Sync** using the single common control above both pages. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. A confirmed healthy helper shows a green indicator; an actual failure shows red with a diagnostic. While checking, the indicator keeps its previous state and no temporary gray state or “Sync helper running” line appears.
 2. Enable **Share saved files from this Mac** on a network you intend to use. Review the selected local address; Automatic can choose an available address.
 3. Choose **Share current project**, then select the folders/documents you want or the entire project. Confirm the selection; unrelated content is not implicitly shared.
-4. Create an invitation. Its QR and copied link are two ways to open the same invitation: scan the QR in Little Leonardo or paste the link under **Connect to other computers** on another Mac. Compare the verification codes and approve the pending device on this source Mac. Device rows state **read-only** (Little Leonardo or compatible clients) or **LeonardoMD on Mac · changes require review**. The label follows the granted capability, not the device name.
+4. Create an invitation. If the network changes, the old QR and link may disappear; once the local address is available again, create and share a new invitation. Its QR and copied link are two ways to open the same invitation: scan the QR in Little Leonardo or paste the link under **Connect to other computers** on another Mac. Compare the verification codes and approve the pending device on this source Mac. Device rows state **read-only** (Little Leonardo or compatible clients) or **LeonardoMD on Mac · changes require review**. The label follows the granted capability, not the device name.
 5. Import the shared content on the companion and verify it before relying on an offline copy. Use Revoke on the Mac to remove a device's future access.
+
+**Review changes** requires the local sharing service to be available. **Allow connection**, **Reject** and **Revoke** require a healthy sync helper. An affected action stays disabled while its requirement is unavailable. Paired devices remain listed when sharing from this Mac is off.
+
+If the helper becomes unavailable while a source review is open, the review stays open with its choices intact. **Apply decisions** remains disabled until synchronization and sharing are available again. Before applying, LeonardoMD checks that the incoming proposal and source still match the review; reopen it if either changed.
+
+![An incoming source review stays open while the sync helper is unavailable; Apply decisions is disabled.](assets/sync-review-draft-unavailable.png)
+
+*Synthetic incoming change; the review remains open, but its Apply action is disabled until synchronization recovers.*
+
+The linked-device list refreshes when this page opens. Use **Refresh linked devices** for an on-demand update.
 
 ### Recognize a project's role
 
@@ -755,11 +767,17 @@ If a safe stop cannot be confirmed, installation is postponed rather than forcib
 
 ## 15. Connect to other computers and offline copies
 
-![Synchronization → Connect to other computers before pairing or importing a project.](assets/sync-connections-v13.png)
+![Synchronization → Connect to other computers before pairing or importing a project.](assets/sync-connections-v14.png)
 
 *Synchronization → Connect to other computers before pairing or importing a project.*
 
-Use **Preferences → Synchronization → Connect to other computers** in the principal instance. Enable **Leonardo Sync** with the common control on both Macs. On the source Mac, open **Share from this Mac**, enable sharing and select the intended content. On this receiving Mac, choose **Connect to another Mac** and paste the source invitation link or HTTPS address with a name for this device. Compare the codes and approve on the source before importing. Your own **Share saved files from this Mac** can stay off: consuming content does not publish yours. Neither role is a global master/client mode.
+Use **Preferences → Synchronization → Connect to other computers** in the principal instance. Enable **Leonardo Sync** with the common control on both Macs. On the source Mac, open **Share from this Mac**, enable sharing and select the intended content. On this receiving Mac, choose **Connect to another Mac** and paste the source invitation link or HTTPS address with a name for this device. Compare the codes and approve on the source before browsing. The connection appears under the source computer's host name; use its menu to save a clearer name on this Mac. Your own **Share saved files from this Mac** can stay off: consuming content does not publish yours. Neither role is a global master/client mode.
+
+Choose **Update list** to check for new projects or files, or use the selected synchronization interval. On macOS, new projects appear under **New projects to review** for the computer that shares them. **Add project** saves a remote reference; it does not download the project's files. **Ignore** dismisses that notice on this Mac without changing the source grant. The project stays dismissed until the source Mac removes it or changes its authorized scope or selection; after that change is refreshed, it returns for review. Projects that were already available before this review was introduced remain selected on upgrade.
+
+In Little Leonardo, open **Library** and expand a Mac to see its projects. The name comes from the host you connected to. Expand a project to see its files; its source Mac is already clear from the hierarchy. A new project offers **Add** and **Ignore**. Adding it saves the reference and loads its catalogue without downloading every file. Ignoring it keeps it dismissed on this device until the source Mac removes the grant or changes its authorized scope or selection. After that change is refreshed, the project appears for review again. Neither choice changes what the source Mac has authorized. Swipe an accepted project row to remove it from this device; this local choice does not revoke the Mac grant.
+
+After a project has been added, macOS shows newly shared files under **New files** and Little Leonardo marks each one **New file**. **Open** downloads the file if needed and shows transfer progress or failure. In its **…** menu, **Keep offline** downloads and retains it on this device; **Ignore new item** dismisses the notice, but the file remains available to open later. An existing **Keep offline** rule for a parent folder still covers new files under that folder. The project's **Keep offline** action also includes files shared in the future. To release a retained copy, first choose **Stop keeping offline**, then **Release local space**. These actions do not change the source computer's sharing or permissions.
 
 Choose **Create editable copy** to explicitly download an entire editable project. Open it locally, then use manual synchronization or select a synchronization interval. Network reachability is still required for transfers. Its files are stored locally on this Mac, but the project remains **Received from another device**; offline availability does not change its origin or prove that the source has your latest edits.
 
@@ -773,13 +791,13 @@ To return edits, **Compare changes**, inspect Base / This Mac / Other Mac versio
 | Open a file | File and referenced local images | Temporary cache, within your limit |
 | Keep offline | Selected files/folders and referenced images | Separate retained storage |
 
-After pairing, the app refreshes the authorized file/folder list without downloading content. On Mac, choose **Browse files** beside a shared project; on iOS, open the project. The catalogue starts at the project root and shows only that level's immediate files and folders. Select a folder to enter it; use **Parent folder** to move back up. The project itself is available from the actions menu rather than appearing as a duplicate folder row. Opening a file downloads that file and its referenced local images. Already downloaded files open from cache. Only saved source files are shared. Use **Show source / Show document** (iOS: **Ver texto / Ver documento**) to switch between read-only source and preview without another download. Little Leonardo keeps the first heading close to the navigation bar; later sections retain their usual spacing.
+After pairing, the app refreshes the authorized file/folder list without downloading content. On Mac, choose **Browse files** beside a shared project; in Little Leonardo, expand the Mac and project in **Library**. The catalogue starts at the project root. On Mac, select a folder to enter it and use **Parent folder** to move back up. Opening a file downloads it and its referenced local images; already downloaded files open from cache. If this Mac restarts while the source is unavailable, an accepted project remains listed with its last saved catalogue, so you can browse its names and open files already downloaded on this Mac. Other files need the source connection. New grants, catalogue changes and revocations are reflected after the next successful refresh. Only saved source files are shared. Use **Show source / Show document** (iOS: **Ver texto / Ver documento**) to switch between read-only source and preview without another download. Little Leonardo keeps the first heading close to the navigation bar; later sections retain their usual spacing.
 
-Use the context menu (right-click on Mac; long-press on iOS):
+Use the context menu on Mac or the **…** button in Little Leonardo:
 
-- **Keep offline** downloads and retains the selection. A folder includes future descendants. Referenced local images are retained with the document.
+- **Keep offline** downloads and retains the selection. At project level it includes current and future files; a folder includes future descendants. Referenced local images are retained with the document.
 - **Stop keeping offline** makes copies eligible for cache cleanup without deleting originals. A child can be excluded from a retained folder.
-- **Release local space** removes temporary downloaded copies; retained offline content remains protected.
+- **Release local space** removes temporary downloaded copies; retained offline content remains protected. To release those files too, first choose **Stop keeping offline**.
 
 The list distinguishes **Remote only**, **Cached**, **Offline pending** and **Available offline**, with progress and failure indicators. Folder counts show downloaded files versus total files. A selection is available offline only after all required downloads finish. Failures retry during the next automatic refresh; the last retained version remains readable if an update fails. The reader shows an explicit previous-copy warning, the download error and **Retry** above that copy. Failed referenced images also show an error, even when the document text is readable.
 
@@ -843,9 +861,9 @@ This guide covers current macOS workflows. External service labels were checked 
 
 ## Little Leonardo: bundled demo and local practice
 
-The library contains one list of projects. Open **Demo**, then choose **Demo-es.mdlr · Español** or **Demo-en.mdlr · English**. Each document becomes a personal practice copy when first opened. No account, Mac or camera/local-network permission is needed. The demo includes a local cover, table, Mermaid, formulas and a chart with bundled data; these engines are enabled in the demo. The form uses real Leonardo fields. Enter fictional details, tap **Guardar / Save**, wait for confirmation, then reopen to check your answers. They stay on this device, separate from synchronized read-only projects, and are never sent to the Mac. Uninstalling removes the copies.
+The library separates **Connected Macs** from items **On this device**. Expand a Mac to review its projects, then expand a project to see its files and use **…** to manage the cache. **Demo** appears under **On this device**: open it, then choose **Demo-es.mdlr · Español** or **Demo-en.mdlr · English**. Each document becomes a personal practice copy when first opened. No account, Mac or camera/local-network permission is needed. The demo includes a local cover, table, Mermaid, formulas and a chart with bundled data; these engines are enabled in the demo. The form uses real Leonardo fields. Enter fictional details, tap **Guardar / Save**, wait for confirmation, then reopen to check your answers. They stay on this device, separate from synchronized read-only projects, and are never sent to the Mac. Uninstalling removes the copies.
 
 Under **Opciones / Options**, **Ver texto / View source** shows Markdown and metadata; **Restablecer / Reset** asks for confirmation and resets only the selected language's practice. If saving fails, keep the screen open and retry; do not assume answers are saved without confirmation. For real projects, return to **Conectar** and follow the synchronization chapter. Practice does not enable general synchronized-project editing or replace Mac rubric requests.
 
 
-To remove any project from this device, swipe its row left and tap **Eliminar / Delete**. Swiping alone never deletes. Mac originals remain untouched and removed downloaded projects stay excluded from synchronization. The Demo project disappears like any other project. Recover it at any time from **Ajustes de sincronización → Recuperar demo / Restore demo**; saved answers are retained. It stays removed across restarts and app updates with the same demo content revision. A newer bundled demo content revision makes Demo available again, using new practice copies while retaining earlier copies. This recovery does not reset answers; use **Restablecer / Reset** inside a language document for that.
+To remove any project from this device, swipe its row left and tap **Eliminar / Delete**. For a received project, this removes it from this device’s library and prevents it from downloading again; it does not change the Mac grant or its files. Swiping alone never deletes. The Demo project disappears like any other project. Recover it at any time from **Ajustes de sincronización → Recuperar demo / Restore demo**; saved answers are retained. It stays removed across restarts and app updates with the same demo content revision. A newer bundled demo content revision makes Demo available again, using new practice copies while retaining earlier copies. This recovery does not reset answers; use **Restablecer / Reset** inside a language document for that.
