@@ -2,33 +2,67 @@
   "schema_version": 1,
   "issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/447",
   "pull_request": "https://github.com/PinedaTec-EU/LeonardoMD/pull/448",
-  "source_revision": "21c17142d179ccc0ebe2c9ec68ad31df6252c417",
-  "base_revision": "8711e44aae3babc5beb914bb6b3e69dfe2715e96",
   "date": "2026-11-13",
+  "source_revision": "9f679837788fc733f6667e9274c365b90b5b1716",
+  "corrected_source_commit": "28a0fa127f32a7922e23053795f061e98d42c1de",
+  "base_revision": "8711e44aae3babc5beb914bb6b3e69dfe2715e96",
+  "capture_source_mapping": "The native alert capture test ran at source_revision. Subsequent tracked changes are limited to the PR compilation counter, refreshed PNGs and their sidecars, QA documentation, and the wiki. No application source or test inputs changed after capture.",
   "application": {
-    "platform": "macOS packaged QA app",
-    "launch_method": "./launch.sh --qa",
+    "platform": "Packaged native macOS QA app",
+    "launch_command": "CFFIXED_USER_HOME=<isolated temp home> LEONARDO_SOURCE_PR=448 ./launch.sh --qa --args --new-instance -allowMultipleInstances YES",
     "fresh_process": true,
-    "pid": 8844,
-    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.9f42ce38c3b6481fb15706acaf832071",
+    "pid": 92461,
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.5b11a2952aaa4b9ea40defd3324c114b",
+    "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-bc_8ckno/LeonardoMDQA.app",
+    "isolated_home": "/private/tmp/leonardo-448-corrected-home.bOCg20yT",
     "version": "0.3.1602",
     "build": 1602,
     "executable": "LeonardoMD",
     "first_window_ready": true,
-    "startup_events": ["first_window_shown", "application_ready"],
+    "startup_events": [
+      "first_window_shown",
+      "application_ready"
+    ],
     "dependency_check": "otool -L showed AppKit, SwiftUI and WebKit; XCTest.framework absent",
     "bundle_verification": "scripts/qa-bundle.py --verify-only passed"
   },
   "help": {
     "same_application_instance": true,
-    "entry_point": "Native Help menu",
+    "entry_point": "Native macOS Help menu",
     "guides": [
-      {"locale": "en", "menu_item": "Help > Leonardo User Guide", "package": "Guide-v76-en.mdlz"},
-      {"locale": "es", "menu_item": "Ayuda > Guía de Leonardo", "package": "Guide-v76-es.mdlz"}
+      {
+        "locale": "en",
+        "menu_item": "Help > Leonardo user guide…",
+        "package": "Guide-v76-en.mdlz",
+        "bundle_resource_sha256": "85d3b5fbbb0669584e9264eed202e1bb233a7702f9b93b3d70e1dd87182a185e",
+        "opened_personal_copy_sha256": "85d3b5fbbb0669584e9264eed202e1bb233a7702f9b93b3d70e1dd87182a185e"
+      },
+      {
+        "locale": "es",
+        "menu_item": "Ayuda > Guía de Leonardo…",
+        "package": "Guide-v76-es.mdlz",
+        "bundle_resource_sha256": "2b1423efd816a0e8f9c6ef35d3ac31ef2f864486d78a137d8627658b6d015864",
+        "opened_personal_copy_sha256": "2b1423efd816a0e8f9c6ef35d3ac31ef2f864486d78a137d8627658b6d015864"
+      }
     ],
-    "inspected_examples": ["Mermaid", "inline math", "display math", "chart", "table", "local image"],
+    "inspected_examples": [
+      "local cover image",
+      "tables",
+      "Mermaid diagram",
+      "inline math",
+      "one-line $$ display formula",
+      "multiline $$ display formula",
+      "Markdown-sensitive underscores and underbraces",
+      "tagged box-counting equation (1)",
+      "Vega-Lite chart"
+    ],
+    "examples_rendered_in_both_locales": true,
     "math_enabled": {
-      "equations_rendered": true,
+      "locales": [
+        "en",
+        "es"
+      ],
+      "display_equations_rendered": true,
       "tagged_equation_1_rendered": true,
       "katex_errors": false,
       "literal_delimiters": false
@@ -36,46 +70,89 @@
     "math_disabled_fallback": {
       "locale_checked": "en",
       "math_source_remained_literal": true,
-      "code_examples_remained_literal": true
+      "code_examples_remained_literal": true,
+      "reenabled_after_check": true
     },
+    "chapter_10_recovery_copy_visually_checked_in_both_locales": true,
     "practice_round_trip": [
       {
         "locale": "en",
-        "synthetic_name": "Codex QA smoke",
-        "synthetic_goal": "Verify the bilingual help workflow and saved practice answers.",
-        "share_ready": true,
+        "synthetic_name": "QA Guide v76",
+        "synthetic_goal": "Check local practice form persistence.",
+        "ready_to_share": false,
         "saved_closed_reopened_values_persisted": true
       },
       {
         "locale": "es",
-        "synthetic_name": "Codex QA smoke ES",
-        "synthetic_goal": "Comprobar que la guía española guarda y recupera respuestas ficticias.",
-        "share_ready": true,
+        "synthetic_name": "Prueba v76",
+        "synthetic_goal": "Comprobar que las respuestas ficticias se guardan en la copia local.",
+        "ready_to_share": false,
         "saved_closed_reopened_values_persisted": true
       }
     ],
-    "retained_guide_screenshots": false,
-    "note": "Both guides and live examples were inspected in the running packaged app. Only the native alert component captures are retained as image files."
+    "application_language_restored_to": "English",
+    "math_extension_enabled_after_validation": true,
+    "retained_full_guide_screenshots": false,
+    "note": "Both guides, representative examples, tables and the separate practice forms were inspected in the running packaged app. The help screenshots were not retained as image files; the four retained PNGs are native alert component captures."
   },
   "automated_validation": {
-    "swift_command": "scripts/compile-and-record.py --pr-number 448 -- swift test --disable-automatic-resolution",
-    "xctest": {"executed": 526, "skipped": 36, "failures": 0},
-    "swift_testing": {"executed": 44, "failures": 0},
-    "package_tests": {"executed": 28, "failures": 0},
-    "recorded_build_delta": 9,
-    "guide_package_command": "python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py' -v",
-    "guide_package_tests": {"executed": 3, "failures": 0},
-    "compile_warning": "Non-failing Network.framework exhaustive-switch warning for .wifiAware in Sources/LeonardoSyncTransport/HTTPSResponseDiagnostics.swift; file is outside this PR's change."
+    "full_swift_command": "scripts/compile-and-record.py --pr-number 448 -- swift test --disable-automatic-resolution",
+    "full_swift_suite": {
+      "xctest": {
+        "executed": 528,
+        "skipped": 36,
+        "failures": 0
+      },
+      "swift_testing": {
+        "executed": 44,
+        "failures": 0
+      },
+      "package_tests": {
+        "executed": 28,
+        "failures": 0
+      },
+      "recorded_build_delta": 14
+    },
+    "focused_regressions": {
+      "suites": [
+        "SessionEditingTests",
+        "InlineFormTests"
+      ],
+      "executed": 16,
+      "optional_capture_skips": 2,
+      "failures": 0,
+      "recorded_build_delta": 13
+    },
+    "capture_test": {
+      "command": "LEONARDO_PREVIEW_ALERT_EVIDENCE=doc/validation/preview-sync/448 python3 scripts/compile-and-record.py --pr-number 448 -- swift test --disable-automatic-resolution --filter SessionEditingTests/testCapturePreviewSynchronizationWarningsInBothLanguages",
+      "executed": 1,
+      "failures": 0,
+      "recorded_build_delta": 17
+    },
+    "guide_package_command": "python3 -m unittest discover -s scripts/tests -p test_package_user_guide.py -v",
+    "guide_package_tests": {
+      "executed": 3,
+      "failures": 0
+    },
+    "compile_warning": "Non-failing Network.framework exhaustive-switch warning for .wifiAware in Sources/LeonardoSyncTransport/HTTPSResponseDiagnostics.swift; file is outside this PR."
   },
   "alert_captures": [
-    "preview-alert-en-retry.png",
-    "preview-alert-en-close.png",
-    "preview-alert-es-retry.png",
-    "preview-alert-es-close.png"
+    {
+      "file": "preview-alert-en-retry.png",
+      "metadata": "preview-alert-en-retry.png.metadata.json"
+    },
+    {
+      "file": "preview-alert-en-close.png",
+      "metadata": "preview-alert-en-close.png.metadata.json"
+    },
+    {
+      "file": "preview-alert-es-retry.png",
+      "metadata": "preview-alert-es-retry.png.metadata.json"
+    },
+    {
+      "file": "preview-alert-es-close.png",
+      "metadata": "preview-alert-es-close.png.metadata.json"
+    }
   ],
-  "capture_scope": "Production AppSession NSAlert builders rendered by opt-in SessionEditingTests.testCapturePreviewSynchronizationWarningsInBothLanguages; synthetic content; native alert component only, not a full application-window capture.",
-  "delivery_gates": {
-    "exact_head_ci": "pending PR checks",
-    "independent_judgment": "pending"
-  }
+  "capture_scope": "Production AppSession native NSAlert builders rendered by the opt-in SessionEditingTests.testCapturePreviewSynchronizationWarningsInBothLanguages XCTest; synthetic content; alert component only, not a full application-window capture."
 }

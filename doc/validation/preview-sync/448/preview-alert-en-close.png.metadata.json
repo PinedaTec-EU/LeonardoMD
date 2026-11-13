@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "collected_at": "2026-11-13T14:07:31.270410+00:00",
+  "collected_at": "2026-11-13T15:35:11.782211+00:00",
   "capture": {
-    "captured_at": "2026-11-13T13:38:09.069912+00:00",
+    "captured_at": "2026-11-13T15:32:39.792520+00:00",
     "route": "LeonardoMD / Preview editing / Preview synchronization failure during close",
     "screen": "Preview synchronization failure during close",
-    "browser_name": "Native macOS AppKit",
-    "browser_version": "Not applicable (native application)",
-    "state": "English native alert; Keep Open and destructive Discard Preview Changes; dark appearance; fictional content; 612×660 screenshot pixels at 2× Retina backing scale",
+    "browser_name": "Native macOS AppKit (no browser)",
+    "browser_version": "Not applicable; native LeonardoMD QA app 0.3.1602",
+    "state": "English native alert; Keep Open or explicitly discard unapplied Preview changes and close. Dark appearance; fictional document content; 612×660 pixels at 2× Retina backing scale.",
     "viewport_css": {
       "width": 306,
       "height": 330
@@ -19,11 +19,11 @@
     "format": "png",
     "width_px": 612,
     "height_px": 660,
-    "sha256": "c17a12a71b03b269d1cc828dcbc35cd94a8e759d0a988f19ae9c5b5e815b5170"
+    "sha256": "29f7355dfe2c160047fb5557828e35a7d1bc5adb7640805a0d31a0daa0f6e234"
   },
   "source": {
-    "revision_at_collection": "21c17142d179ccc0ebe2c9ec68ad31df6252c417",
-    "tracked_changes_present": false,
-    "untracked_files_present": true
+    "revision_at_collection": "9f679837788fc733f6667e9274c365b90b5b1716",
+    "tracked_changes_present": true,
+    "untracked_files_present": false
   }
 }
