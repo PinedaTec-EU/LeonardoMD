@@ -501,7 +501,6 @@
   "Show all files": "Mostrar todos los ficheros",
   "Sort": "Ordenar",
   "Folders first": "Carpetas siempre arriba",
-  "Name": "Nombre",
   "A–Z": "A–Z",
   "Z–A": "Z–A",
   "Filter and sort files": "Filtrar y ordenar ficheros",
@@ -698,5 +697,12 @@
   "Searching…": "Buscando…",
   "This document": "Este documento",
   "Type to search": "Escribe para buscar",
-  "Use regular expressions": "Usar expresiones regulares"
+  "Use regular expressions": "Usar expresiones regulares",
+  "Group instances in Dock and app switcher": "Agrupar instancias en el Dock y el selector de apps",
+  "Grouped processes share one Dock entry. Use Instances in any window to switch or quit. If the representative closes, another takes its place.": "Los procesos agrupados comparten una entrada en el Dock. Usa Instancias en cualquier ventana para cambiar o salir. Si el representante se cierra, otro ocupa su lugar.",
+  "Instances": "Instancias",
+  "Instance": "Instancia",
+  "Current": "Actual",
+  "Application menu": "Menú de la aplicación",
+  "Quit this instance": "Salir de esta instancia"
 }

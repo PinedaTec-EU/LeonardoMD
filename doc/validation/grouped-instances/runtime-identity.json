@@ -1,0 +1,22 @@
+{
+  "en": {
+    "bundled_sha256": "7c6a0027cbee1c373b314c8cb66add12fb7eaad3599af60c4f83eeb715265422",
+    "working_copy_sha256": "7c6a0027cbee1c373b314c8cb66add12fb7eaad3599af60c4f83eeb715265422",
+    "bytes_identical": true
+  },
+  "es": {
+    "bundled_sha256": "da4a7919047568f6895fae4cd4f3cf33f84f126c1d52dde035d79b52df0857b7",
+    "working_copy_sha256": "da4a7919047568f6895fae4cd4f3cf33f84f126c1d52dde035d79b52df0857b7",
+    "bytes_identical": true
+  },
+  "final_bundle": {
+    "bundle_id": "eu.pinedatec.LeonardoMD.qa.d09ab9dbe6fc46839a0df18ced07badc",
+    "version": "0.3.1371",
+    "build": "1371",
+    "executable": "LeonardoMD",
+    "executable_sha256": "2d31d8fbbc053d52bb72f3412a33c2587d41b86aebbf6cb7da5f3002bb1265e3",
+    "build_source": "34c132755081857f534c5ff862f09e4319a81e71",
+    "pid": 29348,
+    "termination_verified": true
+  }
+}
