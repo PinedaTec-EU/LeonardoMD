@@ -11,3 +11,10 @@ difference as `SyncError.revoked` versus
 recovery action. See [#368](https://github.com/PinedaTec-EU/LeonardoMD/issues/368),
 [`DesktopPeerLibrary.swift`](../Sources/LeonardoDesktopSync/DesktopPeerLibrary.swift),
 and [`PeerSyncErrorMessage.swift`](../Sources/LeonardoApp/PeerSyncErrorMessage.swift).
+
+An on-demand HTTP 403 triggers a fresh authenticated STATUS before classifying
+the denial. Confirmed device revocation hides every download cache owned by that
+connection immediately; a removed project or file selection invalidates only
+the requested project's cache. If STATUS is inconclusive, retain the original
+operation/status pair for support instead of guessing whether the device was
+revoked. A file no longer selected by the source is reported as outside scope.

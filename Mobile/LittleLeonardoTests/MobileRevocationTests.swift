@@ -103,6 +103,43 @@ final class MobileRevocationTests: XCTestCase {
         XCTAssertFalse(authorization.isDenied(connectionID: connectionID))
     }
 
+    @MainActor
+    func testOnDemandForbiddenResponseRechecksStatusBeforeRecordingRevocation() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let journal = MobileRevocationJournal(url: root.appendingPathComponent("revocation.json"))
+        let client = MobileRevocationClient(journal: journal)
+        let value = connection(projectIDs: [UUID()])
+        let token = MobileConnectionToken(connectionID: value.connectionID, deviceID: value.deviceID,
+                                          fingerprint: value.fingerprint, cacheEpoch: 0,
+                                          authorizationGeneration: 0)
+        let credentials = TestCredentials(values: [value.deviceID: "credential"], failRemove: false)
+        let statusCalls = LockedCounter()
+        let deniedCalls = LockedCounter()
+
+        do {
+            _ = try await client.withAuthenticatedConnection(value, token: token,
+                credentials: credentials, isCurrent: { true }, onDenied: { ticket in
+                    deniedCalls.increment()
+                    try? client.finish(ticket, outcome: .denied)
+                }, operation: { _ in
+                    throw SyncError.httpAccessDenied(operation: .file, status: 403)
+                }, status: { _, _, _ in
+                    statusCalls.increment()
+                    return DirectDeviceStatus(access: statusCalls.value == 1 ? .authorized : .revoked,
+                                              projects: [], capabilities: [.rubricExchangeV1])
+                }
+            )
+            XCTFail("A 403 followed by confirmed device revocation must stop the operation")
+        } catch let error as SyncError {
+            XCTAssertEqual(error, .revoked)
+        }
+
+        XCTAssertEqual(statusCalls.value, 2, "The 403 must trigger an authenticated STATUS recheck")
+        XCTAssertEqual(deniedCalls.value, 1, "Confirmed revocation must trigger durable cleanup once")
+        XCTAssertEqual(try journal.load().first?.state, .denied)
+    }
+
     func testLateAuthorizedOrTransientCompletionCannotClearMonotonicDeny() async throws {
         for transient in [false, true] {
             let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -536,6 +573,17 @@ private final class LockedFlag: @unchecked Sendable {
     var value: Bool {
         get { lock.withLock { storedValue } }
         set { lock.withLock { storedValue = newValue } }
+    }
+}
+
+private final class LockedCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedValue = 0
+
+    var value: Int { lock.withLock { storedValue } }
+
+    func increment() {
+        lock.withLock { storedValue += 1 }
     }
 }
 

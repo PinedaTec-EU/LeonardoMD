@@ -73,6 +73,18 @@ final class PeerSyncErrorMessageTests: XCTestCase {
         }
     }
 
+    func testKnownForbiddenResponseRetainsOperationAndStatusInBothLanguages() {
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let message = PeerSyncErrorMessage.text(SyncError.httpAccessDenied(operation: .file, status: 403))
+            XCTAssertTrue(message.contains(language == .spanish ? "denegado" : "denied"))
+            XCTAssertTrue(message.contains("[LL1 op=file http=403]"))
+            XCTAssertFalse(message.localizedCaseInsensitiveContains(language == .spanish ? "revocado" : "revoked"))
+        }
+    }
+
     func testOutsideSelectionErrorIsLocalizedWithoutSwiftEnumDetails() {
         let previous = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = previous }
@@ -125,7 +137,7 @@ final class PeerSyncErrorMessageTests: XCTestCase {
             window.orderFront(nil)
             defer { window.close() }
             try await Task.sleep(for: .seconds(1))
-            controller.error = PeerSyncErrorMessage.text(SyncError.accessDenied)
+            controller.error = PeerSyncErrorMessage.text(SyncError.httpAccessDenied(operation: .file, status: 403))
             for _ in 0..<30 {
                 if window.attachedSheet != nil { break }
                 try await Task.sleep(for: .milliseconds(100))
@@ -150,6 +162,8 @@ final class PeerSyncErrorMessageTests: XCTestCase {
             let visible = (recognition.results ?? []).compactMap { $0.topCandidates(1).first?.string }
             let recovery = language == .spanish ? "El Mac de origen ha denegado" : "The source Mac denied this request"
             XCTAssertTrue(visible.joined(separator: " ").contains(recovery), "Capture must show the localized neutral recovery")
+            XCTAssertTrue(visible.joined(separator: " ").contains("http=403"), "Capture must retain the known HTTP status")
+            XCTAssertTrue(visible.joined(separator: " ").contains("file"), "Capture must retain the operation")
             XCTAssertTrue(visible.contains(L10n.text("OK")), "The recovery dialog button must be visible")
             let context: [String: Any] = [
                 "captured_at": capturedAt,

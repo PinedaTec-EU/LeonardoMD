@@ -84,8 +84,9 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         do {
             return try await remote.catalogue(descriptor, connection: refreshed.connection,
                                              credential: await requireCredential(refreshed.connection))
-        } catch let error as SyncError where error == .accessDenied {
-            try await throwResolvedAccessDenial(connection: refreshed.connection, projectID: projectID)
+        } catch let error as SyncError where error.isAccessDenied {
+            try await throwResolvedAccessDenial(connection: refreshed.connection, projectID: projectID,
+                                                denial: error)
         }
     }
 
@@ -101,8 +102,9 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         do {
             return try await remote.file(entry, projectID: projectID, connection: refreshed.connection,
                                          credential: await requireCredential(refreshed.connection))
-        } catch let error as SyncError where error == .accessDenied {
-            try await throwResolvedAccessDenial(connection: refreshed.connection, projectID: projectID)
+        } catch let error as SyncError where error.isAccessDenied {
+            try await throwResolvedAccessDenial(connection: refreshed.connection, projectID: projectID,
+                                                filePath: entry.path, denial: error)
         }
     }
 
@@ -123,8 +125,9 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         let snapshot: CorpusSnapshot
         do {
             snapshot = try await remote.snapshot(descriptor, connection: connection, credential: secret)
-        } catch let error as SyncError where error == .accessDenied {
-            try await throwResolvedAccessDenial(connection: connection, projectID: projectID)
+        } catch let error as SyncError where error.isAccessDenied {
+            try await throwResolvedAccessDenial(connection: connection, projectID: projectID,
+                                                denial: error)
         }
         let copy = try DesktopPeerCopy(id: copyID, connectionID: connection.id, remoteProjectID: projectID,
                                       name: descriptor.name, selection: selection, snapshot: snapshot)
@@ -235,8 +238,9 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         let snapshot: CorpusSnapshot
         do {
             snapshot = try await remote.snapshot(descriptor, connection: refreshed.connection, credential: secret)
-        } catch let error as SyncError where error == .accessDenied {
-            try await throwResolvedAccessDenial(connection: refreshed.connection, projectID: copy.remoteProjectID)
+        } catch let error as SyncError where error.isAccessDenied {
+            try await throwResolvedAccessDenial(connection: refreshed.connection, projectID: copy.remoteProjectID,
+                                                denial: error)
         }
         return try DesktopPeerComparison(copy: copy, remote: snapshot, comparison: copy.compare(with: snapshot))
     }
@@ -283,21 +287,30 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
 
     /// A project request can race with a revoked device or a withdrawn project grant.
     /// Recheck the authenticated status and preserve the neutral 403 if the cause is unknown.
-    private func throwResolvedAccessDenial(connection: DesktopPeerConnection, projectID: UUID) async throws -> Never {
+    private func throwResolvedAccessDenial(connection: DesktopPeerConnection, projectID: UUID,
+                                           filePath: String? = nil, denial: SyncError) async throws -> Never {
         let latest: (connection: DesktopPeerConnection, status: DirectDeviceStatus)
         do {
             latest = try await refresh(connection)
         } catch is CancellationError {
             throw CancellationError()
         } catch {
-            throw SyncError.accessDenied
+            throw denial
         }
         if latest.status.access == .revoked { throw SyncError.revoked }
-        guard latest.status.access == .authorized else { throw SyncError.accessDenied }
-        guard latest.status.projects.contains(where: { $0.id == projectID }) else {
+        guard latest.status.access == .authorized else { throw denial }
+        guard let descriptor = latest.status.projects.first(where: { $0.id == projectID }) else {
             throw DesktopPeerLibraryError.unauthorizedProject
         }
-        throw SyncError.accessDenied
+        if let filePath {
+            do {
+                try descriptor.scope.validate(filePath)
+                try descriptor.selection?.validate(filePath)
+            } catch {
+                throw SyncError.outsideScope
+            }
+        }
+        throw denial
     }
 
     private func requireConnection(_ id: UUID) async throws -> DesktopPeerConnection {

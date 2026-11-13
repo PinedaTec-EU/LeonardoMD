@@ -65,13 +65,11 @@ extension DesktopPeerController {
             for projectID in connection.grants.keys where Self.downloadID(connectionID: connection.id, projectID: projectID) == id {
                 do { return try await library.file(connectionID: connection.id, projectID: projectID, entry: entry) }
                 catch {
-                    // Authenticated denial must immediately hide any displayed read-only copy.
+                    await invalidateDeniedDownloads(for: connection, projectID: projectID, error: error)
                     let syncError = error as? SyncError
                     let projectDenied = (error as? DesktopPeerLibraryError) == .unauthorizedProject
-                    if syncError == .revoked || syncError == .outsideScope || projectDenied {
-                        try await downloads.remove(id: id)
-                    }
-                    if syncError == .revoked || syncError == .outsideScope || syncError == .accessDenied || projectDenied {
+                    if syncError == .revoked || syncError == .outsideScope
+                        || syncError?.isAccessDenied == true || projectDenied {
                         throw PeerSyncPresentedError(PeerSyncErrorMessage.text(error))
                     }
                     throw error
@@ -79,6 +77,23 @@ extension DesktopPeerController {
             }
         }
         throw SyncError.revoked
+    }
+
+    func invalidateDeniedDownloads(for connection: DesktopPeerConnection, projectID: UUID, error: Error) async {
+        let syncError = error as? SyncError
+        let projectDenied = (error as? DesktopPeerLibraryError) == .unauthorizedProject
+        let projectIDs: [UUID]
+        if syncError == .revoked {
+            projectIDs = connection.grants.keys.sorted { $0.uuidString < $1.uuidString }
+        } else if syncError == .outsideScope || syncError?.isAccessDenied == true || projectDenied {
+            projectIDs = [projectID]
+        } else {
+            return
+        }
+
+        let downloadIDs = projectIDs.map { Self.downloadID(connectionID: connection.id, projectID: $0) }
+        for downloadID in downloadIDs { downloads.deny(id: downloadID) }
+        for downloadID in downloadIDs { try? await downloads.remove(id: downloadID) }
     }
 }
 

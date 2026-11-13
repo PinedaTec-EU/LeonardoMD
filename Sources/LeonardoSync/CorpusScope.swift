@@ -1,5 +1,11 @@
 import Foundation
 
+public enum RemoteSyncOperation: String, Equatable, Sendable {
+    case snapshot
+    case catalogue
+    case file
+}
+
 public enum SyncError: Error, Equatable, Sendable {
     case invalidPath
     case outsideScope
@@ -10,7 +16,16 @@ public enum SyncError: Error, Equatable, Sendable {
     case revoked
     /// A request was forbidden, but current device/project authorization has not been confirmed.
     case accessDenied
+    /// A request returned HTTP 403; retain the operation for support while authorization is rechecked.
+    case httpAccessDenied(operation: RemoteSyncOperation, status: Int)
     case publicationPending
+
+    public var isAccessDenied: Bool {
+        switch self {
+        case .accessDenied, .httpAccessDenied: true
+        default: false
+        }
+    }
 }
 
 /// A repository-relative folder. The empty path explicitly selects the repository root.

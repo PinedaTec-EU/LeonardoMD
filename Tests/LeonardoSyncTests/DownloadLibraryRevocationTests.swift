@@ -51,6 +51,34 @@ import XCTest
         XCTAssertTrue(library.projects.isEmpty)
     }
 
+    func testHTTPAccessDeniedDoesNotReturnRetainedStaleBytes() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        let oldEntry = RemoteFileEntry(file: fixture.file)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: RemoteProjectCatalogue(files: [oldEntry]))
+        library.fetch = { _, _ in fixture.file }
+        await library.retain(id: fixture.project.id, path: fixture.file.path, isFolder: false, keep: true)
+        _ = try await library.open(id: fixture.project.id, path: fixture.file.path)
+
+        let current = CorpusFile(path: fixture.file.path, content: Data("new source revision".utf8))
+        let currentEntry = RemoteFileEntry(file: current)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: RemoteProjectCatalogue(files: [currentEntry]))
+        library.fetch = { _, _ in
+            throw SyncError.httpAccessDenied(operation: .file, status: 403)
+        }
+        do {
+            _ = try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+            XCTFail("An HTTP 403 must not be converted into stale cached content")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .httpAccessDenied(operation: .file, status: 403))
+        }
+        let retained = try await fixture.cache.read(id: fixture.project.id, entry: currentEntry, allowStale: true)
+        XCTAssertEqual(retained, fixture.file, "The denied request must not destroy an intentionally retained offline copy")
+    }
+
     func testOldDownloadCannotDeleteOrJoinAReauthorizedProject() async throws {
         let fixture = try Fixture()
         defer { fixture.removeFiles() }

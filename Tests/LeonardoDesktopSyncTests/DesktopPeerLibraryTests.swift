@@ -393,6 +393,29 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertNotNil(retainedCredential)
     }
 
+    func testFileRemovedFromSelectionBetweenPreflightAndReadIsReportedOutsideScope() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "MacBook")
+        await fixture.remote.setAccess(.authorized)
+        await fixture.remote.setNextFileMutation(.narrowSelection)
+        let entry = RemoteFileEntry(file: CorpusFile(path: "docs/note.md", content: Data("remote".utf8)))
+
+        do {
+            _ = try await fixture.library.file(connectionID: connection.id, projectID: fixture.remote.project.id, entry: entry)
+            XCTFail("A file removed from the current selection must not receive a stale fallback")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .outsideScope)
+        }
+
+        let updated = try await fixture.connections.load(id: connection.id)
+        XCTAssertFalse(try XCTUnwrap(updated).revoked, "A narrowed file selection must not revoke the device")
+        XCTAssertEqual(try XCTUnwrap(updated).grants[fixture.remote.project.id],
+                       try CorpusSelection(folders: [], documents: ["docs/other.md"]))
+        let retainedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        XCTAssertNotNil(retainedCredential)
+    }
+
     func testUnresolvedCatalogueForbiddenResponseIsPreservedWhenProjectStillAppearsAuthorized() async throws {
         let fixture = try PeerLibraryFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
@@ -404,7 +427,7 @@ final class DesktopPeerLibraryTests: XCTestCase {
             _ = try await fixture.library.catalogue(connectionID: connection.id, projectID: fixture.remote.project.id)
             XCTFail("An unexplained forbidden response must remain an access denial")
         } catch {
-            XCTAssertEqual(error as? SyncError, .accessDenied)
+            XCTAssertEqual(error as? SyncError, .httpAccessDenied(operation: .catalogue, status: 403))
         }
 
         let stillAuthorized = try await fixture.connections.load(id: connection.id)
@@ -517,11 +540,13 @@ private enum PeerAccessMutation: Equatable, Sendable {
     case revokeDevice
     case withdrawProject
     case denyRequest
+    case narrowSelection
 }
 
 private actor PeerRemoteFixture: DesktopPeerRemote {
     let deviceID = UUID()
     let project: SharedProjectDescriptor
+    private var currentProject: SharedProjectDescriptor
     private var access = DeviceAccess.pending
     private var projectShared = true
     private var reachable = true
@@ -533,6 +558,7 @@ private actor PeerRemoteFixture: DesktopPeerRemote {
     init() throws {
         project = SharedProjectDescriptor(id: UUID(), name: "Shared notes", scope: try CorpusScope(folder: ""),
             selection: try CorpusSelection(folders: ["docs"], documents: []))
+        currentProject = project
     }
     func setAccess(_ value: DeviceAccess) { access = value }
     func setReachable(_ value: Bool) { reachable = value }
@@ -547,37 +573,41 @@ private actor PeerRemoteFixture: DesktopPeerRemote {
     func status(_ connection: DesktopPeerConnection, credential: String) async throws -> DirectDeviceStatus {
         try checkReachable()
         guard credentials.contains(credential) else { throw PairingError.invalidCredential }
-        return DirectDeviceStatus(access: access, projects: access == .authorized && projectShared ? [project] : [])
+        return DirectDeviceStatus(access: access, projects: access == .authorized && projectShared ? [currentProject] : [])
     }
     func snapshot(_ descriptor: SharedProjectDescriptor, connection: DesktopPeerConnection, credential: String) async throws -> CorpusSnapshot {
-        apply(nextSnapshotMutation)
+        try apply(nextSnapshotMutation)
         nextSnapshotMutation = nil
         try checkReachable()
-        guard access == .authorized, projectShared, credentials.contains(credential), descriptor.id == project.id else { throw SyncError.accessDenied }
+        guard access == .authorized, projectShared, credentials.contains(credential), descriptor.id == project.id else {
+            throw SyncError.httpAccessDenied(operation: .snapshot, status: 403)
+        }
         snapshotCount += 1
         let files = [CorpusFile(path: "docs/note.md", content: Data("remote".utf8))]
         return CorpusSnapshot(revision: CorpusRevision.make(files: files), files: files)
     }
     func catalogue(_ descriptor: SharedProjectDescriptor, connection: DesktopPeerConnection, credential: String) async throws -> RemoteProjectCatalogue {
-        apply(nextCatalogueMutation)
+        try apply(nextCatalogueMutation)
         let mutation = nextCatalogueMutation
         nextCatalogueMutation = nil
         try checkReachable()
         guard access == .authorized, projectShared, credentials.contains(credential), descriptor.id == project.id else {
-            throw SyncError.accessDenied
+            throw SyncError.httpAccessDenied(operation: .catalogue, status: 403)
         }
-        if mutation == .denyRequest { throw SyncError.accessDenied }
+        if mutation == .denyRequest { throw SyncError.httpAccessDenied(operation: .catalogue, status: 403) }
         return RemoteProjectCatalogue(files: [])
     }
     func file(_ entry: RemoteFileEntry, projectID: UUID, connection: DesktopPeerConnection, credential: String) async throws -> CorpusFile {
-        apply(nextFileMutation)
+        try apply(nextFileMutation)
         let mutation = nextFileMutation
         nextFileMutation = nil
         try checkReachable()
         guard access == .authorized, projectShared, credentials.contains(credential), projectID == project.id else {
-            throw SyncError.accessDenied
+            throw SyncError.httpAccessDenied(operation: .file, status: 403)
         }
-        if mutation == .denyRequest { throw SyncError.accessDenied }
+        if mutation == .denyRequest || mutation == .narrowSelection {
+            throw SyncError.httpAccessDenied(operation: .file, status: 403)
+        }
         throw DesktopPeerLibraryError.unknownCopy
     }
     private(set) var publications: [DesktopPeerProposal] = []
@@ -599,10 +629,13 @@ private actor PeerRemoteFixture: DesktopPeerRemote {
               receipts[proposal.id] == receipt else { throw SyncError.revoked }
     }
     private func checkReachable() throws { if !reachable { throw URLError(.notConnectedToInternet) } }
-    private func apply(_ mutation: PeerAccessMutation?) {
+    private func apply(_ mutation: PeerAccessMutation?) throws {
         switch mutation {
         case .revokeDevice: access = .revoked
         case .withdrawProject: projectShared = false
+        case .narrowSelection:
+            currentProject = SharedProjectDescriptor(id: project.id, name: project.name, scope: project.scope,
+                selection: try CorpusSelection(folders: [], documents: ["docs/other.md"]))
         case .denyRequest, nil: break
         }
     }

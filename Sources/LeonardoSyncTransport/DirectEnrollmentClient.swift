@@ -76,7 +76,9 @@ public struct DirectEnrollmentClient: Sendable {
         let response = try await client.request(method: "GET",
             path: "/v1/devices/\(deviceID.uuidString)/projects/\(descriptor.id.uuidString)/snapshot", credential: credential)
         guard response.status == 200 else {
-            if response.status == 403 { throw SyncError.accessDenied }
+            if response.status == 403 {
+                throw SyncError.httpAccessDenied(operation: .snapshot, status: response.status)
+            }
             throw ProjectDownloadError(response: response)
         }
         let snapshot = try JSONDecoder().decode(CorpusSnapshot.self, from: response.body)
@@ -88,7 +90,7 @@ public struct DirectEnrollmentClient: Sendable {
                           credential: String) async throws -> RemoteProjectCatalogue {
         let response = try await client.request(method: "GET",
             path: "/v1/devices/\(deviceID.uuidString)/projects/\(descriptor.id.uuidString)/catalogue", credential: credential)
-        try OnDemandResponseStatus.requireSuccess(response.status)
+        try OnDemandResponseStatus.requireSuccess(response.status, operation: .catalogue)
         let catalogue = try JSONDecoder().decode(RemoteProjectCatalogue.self, from: response.body)
         try catalogue.validate(descriptor: descriptor)
         return catalogue
@@ -99,10 +101,40 @@ public struct DirectEnrollmentClient: Sendable {
         let response = try await client.request(method: "POST",
             path: "/v1/devices/\(deviceID.uuidString)/projects/\(projectID.uuidString)/file", credential: credential,
             body: JSONEncoder().encode(RemoteFileRequest(path: entry.path, revision: entry.revision)))
-        try OnDemandResponseStatus.requireSuccess(response.status)
+        try OnDemandResponseStatus.requireSuccess(response.status, operation: .file)
         let file = try JSONDecoder().decode(CorpusFile.self, from: response.body)
         try entry.validate(file)
         return file
+    }
+
+    /// Rechecks authenticated device state after an on-demand 403 so revocation cleanup
+    /// runs before a caller can fall back to cached bytes. An inconclusive STATUS preserves
+    /// the original operation/status diagnostic.
+    @MainActor
+    public func withRevocationRecheck<T>(
+        deviceID: UUID,
+        credential: String,
+        status: @escaping (DirectEnrollmentClient, UUID, String) async throws -> DirectDeviceStatus = {
+            client, deviceID, credential in
+            try await client.status(deviceID: deviceID, credential: credential)
+        },
+        operation: () async throws -> T
+    ) async throws -> T {
+        do {
+            return try await operation()
+        } catch let denial as SyncError where denial.isAccessDenied {
+            do {
+                let latest = try await status(self, deviceID, credential)
+                if latest.access == .revoked { throw SyncError.revoked }
+            } catch let rechecked as SyncError where rechecked == .revoked {
+                throw rechecked
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                throw denial
+            }
+            throw denial
+        }
     }
 
     public func rubricRequests(deviceID: UUID, credential: String) async throws -> [RubricRequest] {

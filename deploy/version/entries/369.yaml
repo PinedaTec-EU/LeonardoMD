@@ -1,4 +1,4 @@
 {
-  "build": 44,
-  "summary": "Project download errors explain source and transfer-limit failures in English and Spanish; removed project grants and revoked devices receive distinct recovery steps."
+  "build": 46,
+  "summary": "On-demand 403s recheck authorization, preserve unresolved operation/status and never return stale denied bytes; confirmed revocation hides affected reader caches."
 }

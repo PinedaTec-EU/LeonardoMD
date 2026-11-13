@@ -15,10 +15,10 @@ public enum OnDemandTransportError: Error, Equatable, Sendable, LocalizedError {
 /// A missing catalogue/file route on an older source is not a network failure.
 /// Do not fall back to downloading the entire project or change its pairing.
 enum OnDemandResponseStatus {
-    static func requireSuccess(_ status: Int) throws {
+    static func requireSuccess(_ status: Int, operation: RemoteSyncOperation) throws {
         switch status {
         case 200: return
-        case 403: throw SyncError.accessDenied
+        case 403: throw SyncError.httpAccessDenied(operation: operation, status: status)
         case 404: throw OnDemandTransportError.sourceUpdateRequired
         case 409: throw SyncError.publicationPending
         default: throw TransportError.unexpectedResponse

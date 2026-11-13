@@ -92,7 +92,11 @@ struct MobileRevocationClient: Sendable {
             let context = MobileAuthenticatedContext(connection: connection, credential: credential,
                                                      client: client, status: status, token: token,
                                                      ticket: ticket)
-            let result = try await operation(context)
+            let result = try await client.withRevocationRecheck(
+                deviceID: connection.deviceID, credential: credential, status: status
+            ) {
+                try await operation(context)
+            }
             guard isCurrent() else {
                 await onDenied(ticket)
                 throw SyncError.revoked

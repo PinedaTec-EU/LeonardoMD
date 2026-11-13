@@ -123,6 +123,7 @@ public final class DownloadLibrary {
         catch {
             try requireEntry(id: id, entry: entry, generation: generation)
             failures[Self.key(id: id, path: entry.path)] = error.localizedDescription
+            if let denial = error as? SyncError, denial.isAccessDenied { throw error }
             if let previous = try await cache.read(id: id, entry: entry, allowStale: true) {
                 try requireEntry(id: id, entry: entry, generation: generation)
                 return RemoteDownloadResult(file: previous, updateFailure: error.localizedDescription)

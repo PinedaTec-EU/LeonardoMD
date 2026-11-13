@@ -8,8 +8,10 @@ enum PeerSyncErrorMessage {
         if let syncError = error as? SyncError, syncError == .revoked {
             return L10n.text("The source Mac revoked this device. Pair this device with the source Mac again and ask its owner to approve the connection.")
         }
-        if let syncError = error as? SyncError, syncError == .accessDenied {
-            return L10n.text("The source Mac denied this request. Check device and project authorization on the source Mac, refresh the project list, and retry.")
+        if let syncError = error as? SyncError, syncError.isAccessDenied {
+            let recovery = L10n.text("The source Mac denied this request. Check device and project authorization on the source Mac, refresh the project list, and retry.")
+            guard case let .httpAccessDenied(operation, status) = syncError else { return recovery }
+            return recovery + "\n\n[LL1 op=\(operation.rawValue) http=\(status)]"
         }
         if let syncError = error as? SyncError, syncError == .outsideScope {
             return L10n.text("This file is outside the content selected on the source Mac.")

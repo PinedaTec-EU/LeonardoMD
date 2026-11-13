@@ -360,6 +360,7 @@ final class HTTPSRuntimeTests: XCTestCase {
         } catch { await server.stop(); throw error }
     }
 
+    @MainActor
     func testProjectDownloadReportsSizeAndReadFailuresOverPinnedHTTPS() async throws {
         guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
         let identity = try makeIdentity()
@@ -442,12 +443,43 @@ final class HTTPSRuntimeTests: XCTestCase {
                 credential: credential, body: fileBody)
             XCTAssertEqual(fileResponse.status, 413)
             XCTAssertTrue(fileResponse.body.isEmpty, "File failures must not expose file diagnostics")
+
+            let unshared = SharedProjectDescriptor(id: UUID(), name: "Unshared", scope: try CorpusScope(folder: ""))
+            let unsharedEntry = RemoteFileEntry(file: CorpusFile(path: "docs/unknown.md", content: Data("remote".utf8)))
+            do {
+                _ = try await client.withRevocationRecheck(deviceID: enrollment.deviceID, credential: credential) {
+                    try await client.catalogue(unshared, deviceID: enrollment.deviceID, credential: credential)
+                }
+                XCTFail("A denied catalogue must retain its unresolved 403")
+            } catch let denial as SyncError {
+                XCTAssertEqual(denial, .httpAccessDenied(operation: .catalogue, status: 403))
+            }
+            do {
+                _ = try await client.withRevocationRecheck(deviceID: enrollment.deviceID, credential: credential) {
+                    try await client.file(unsharedEntry, projectID: unshared.id,
+                        deviceID: enrollment.deviceID, credential: credential)
+                }
+                XCTFail("A denied file must retain its unresolved 403")
+            } catch let denial as SyncError {
+                XCTAssertEqual(denial, .httpAccessDenied(operation: .file, status: 403))
+            }
+            let stillAuthorized = try await client.status(deviceID: enrollment.deviceID, credential: credential)
+            XCTAssertEqual(stillAuthorized.access, .authorized)
+
             try await authority.revoke(deviceID: enrollment.deviceID)
             do {
                 _ = try await client.project(oversized, deviceID: enrollment.deviceID, credential: credential)
-                XCTFail("Revoked recipients must not receive size or file diagnostics")
+                XCTFail("Revoked recipients must preserve the known denial operation and status")
             } catch let error as SyncError {
-                XCTAssertEqual(error, .accessDenied)
+                XCTAssertEqual(error, .httpAccessDenied(operation: .snapshot, status: 403))
+            }
+            do {
+                _ = try await client.withRevocationRecheck(deviceID: enrollment.deviceID, credential: credential) {
+                    try await client.project(oversized, deviceID: enrollment.deviceID, credential: credential)
+                }
+                XCTFail("The follow-up STATUS must detect a revocation after the on-demand denial")
+            } catch let error as SyncError {
+                XCTAssertEqual(error, .revoked)
             }
             try await authority.setEnabled(false)
             do {
