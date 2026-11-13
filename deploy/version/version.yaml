@@ -1079,9 +1079,19 @@
       "pr": 430,
       "summary": "Little Leonardo groups remote projects by linked Mac, lets users review new projects and files and manage offline copies; macOS restores accepted catalogues after offline restart, ignored grants return only when the host changes them, and sync status stays stable.",
       "to_version": "0.3.1371"
+    },
+    {
+      "delta": {
+        "build": 216
+      },
+      "from_version": "0.3.1371",
+      "merge_sha": "970c903ef1175920c0bc1cf6511c9433c188c575",
+      "pr": 428,
+      "summary": "Synchronization keeps status steady during checks, refreshes linked devices on open or on demand, preserves invitations and review drafts during recovery, and gates peer actions on live helper health.",
+      "to_version": "0.3.1587"
     }
   ],
-  "current_version": "0.3.1371",
+  "current_version": "0.3.1587",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
