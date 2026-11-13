@@ -84,10 +84,12 @@ manual1215 recovery.
 
 - #412 signed-update service preparation: chapter 14 in both locales explains the pre-install drain, preserved consent/access, cancellation, safe-install veto and the legacy migration limitation. Guide51; signed installed A→B acceptance remains pending by owner instruction.
 
-PR #428: Guide v63 EN/ES retains the latest search/help content from v62 and clarifies that helper checks keep the last confirmed
-indicator without a temporary gray state or “Sync helper running” line, and
-explains how peer actions are gated while a source review stays open across an
-outage. The `sync-review-draft-unavailable.png` image is a synthetic native
-component capture in both locales and replaces the older, narrower gated-action
-image to stay within the bundled image memory budget. Existing v58 personal guide
-copies and their practice answers remain untouched; package resources move to v63.
+PR #428 EN/ES retain the current search/help content and clarify that helper
+checks keep the last confirmed indicator without a temporary gray state or “Sync
+helper running” line, and explain how peer actions are gated while a source
+review stays open across an outage. The `sync-review-draft-unavailable.png`
+image is a synthetic native component capture in both locales and replaces the
+older, narrower gated-action image to stay within the bundled image memory
+budget. Existing personal guide copies and their practice answers remain
+untouched. Current sources, package revision and build instructions are tracked
+in [README.md](README.md).

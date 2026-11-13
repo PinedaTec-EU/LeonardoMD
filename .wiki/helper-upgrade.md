@@ -121,7 +121,9 @@ open source-review sheet and its in-view choices intact. Apply is disabled until
 synchronization and sharing recover, and the runtime compares the pending
 proposal with the review again before applying. The common status indicator is
 red for a confirmed failure even when a failed shutdown leaves the switch off;
-ordinary disabled state still hides it. Bilingual Help is Guide v59.
+ordinary disabled state still hides it. Current bilingual Help sources and
+package revision are maintained in [doc/guide/README.md](../doc/guide/README.md);
+older validation checkpoints remain historical evidence.
 
 Three additional #421 lifecycle regressions are covered on PR #428. A confirmed
 health failure that outlives a cancelled peer preflight keeps automatic

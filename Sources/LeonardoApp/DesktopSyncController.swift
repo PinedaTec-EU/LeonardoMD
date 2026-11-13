@@ -60,11 +60,15 @@ final class DesktopSyncController {
     // Automatic poll errors are independent so recovery cannot erase an explicit action error.
     private var actionError: String?
     private var automaticConsentError: String?
+    private var automaticIncomingError: String?
+    private var automaticIncomingFailureCount = 0
+    private var automaticIncomingFailureReported = false
     var error: String? {
-        get { actionError ?? automaticConsentError }
+        get { actionError ?? automaticConsentError ?? automaticIncomingError }
         set {
             actionError = newValue
             automaticConsentError = nil
+            automaticIncomingError = nil
         }
     }
     private(set) var invitationURL: URL?
@@ -173,7 +177,14 @@ final class DesktopSyncController {
             projectSettingsLoaded = true
             if usesHelper { await helper.refresh() }
             if settings.enabled && (!usesHelper || helper.online) { try await start() }
-            if !usesHelper || helper.online { consent = try await runtime.consentState() }
+            if !usesHelper || helper.online {
+                do {
+                    consent = try await runtime.consentState()
+                    clearAutomaticConsentFailure()
+                } catch {
+                    await recordAutomaticConsentFailure(error, helperAlreadyChecked: usesHelper)
+                }
+            }
             rubricCaptures.refresh()
             await recoverRubricCaptures()
             initialized = true
@@ -312,46 +323,84 @@ final class DesktopSyncController {
                 return
             }
         }
+        let displayedInvitationBeforeRead = invitationURL
+        let refreshedConsent: PairingRegistry
         do {
-            let displayedInvitationBeforeRead = invitationURL
-            let refreshedConsent = try await runtime.consentState()
-            guard refreshRevision == consentRefreshRevision else { return }
-            consent = refreshedConsent
-            clearDisplayedInvitationIfInvalid(in: refreshedConsent,
-                ifStillDisplaying: displayedInvitationBeforeRead)
-            let refreshedIncoming = running == nil ? [] : try await runtime.incomingProposals()
-            guard refreshRevision == consentRefreshRevision else { return }
-            incoming = refreshedIncoming
-            rubricCaptures.refresh()
-            await recoverRubricCaptures()
-            guard refreshRevision == consentRefreshRevision else { return }
-            consentFailureChecked = false
-            automaticConsentFailureCount = 0
-            automaticConsentFailureReported = false
-            automaticConsentError = nil
+            refreshedConsent = try await runtime.consentState()
         } catch {
             guard refreshRevision == consentRefreshRevision else { return }
-            if checkedHelper { consentFailureChecked = true }
             if usesHelper && !refreshHelper {
-                automaticConsentFailureCount += 1
-                if !checkedHelper && (!consentFailureChecked || now() >= nextHelperRecovery) {
-                    consentFailureChecked = true
-                    nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
-                    await helper.refresh()
-                    guard refreshRevision == consentRefreshRevision else { return }
-                    updateRunningFromHelper()
-                    if !helper.online && !preservingConfirmedSharingPresentation {
-                        clearSharingPresentationAfterTerminalFailure()
-                    }
-                }
-                // Let one failed two-second poll recover before presenting a modal.
-                if automaticConsentFailureCount >= 2 && !automaticConsentFailureReported {
-                    automaticConsentError = error.localizedDescription
-                    automaticConsentFailureReported = true
+                await recordAutomaticConsentFailure(error, helperAlreadyChecked: checkedHelper,
+                                                    refreshRevision: refreshRevision)
+            } else {
+                self.error = error.localizedDescription
+            }
+            return
+        }
+        guard refreshRevision == consentRefreshRevision else { return }
+        consent = refreshedConsent
+        clearDisplayedInvitationIfInvalid(in: refreshedConsent,
+            ifStillDisplaying: displayedInvitationBeforeRead)
+        clearAutomaticConsentFailure()
+
+        let refreshedIncoming: [DesktopPeerIncomingProposal]
+        do {
+            refreshedIncoming = running == nil ? [] : try await runtime.incomingProposals()
+        } catch {
+            guard refreshRevision == consentRefreshRevision else { return }
+            if usesHelper && !refreshHelper {
+                automaticIncomingFailureCount += 1
+                if automaticIncomingFailureCount >= 2 && !automaticIncomingFailureReported {
+                    automaticIncomingError = error.localizedDescription
+                    automaticIncomingFailureReported = true
                 }
             } else {
                 self.error = error.localizedDescription
             }
+            return
+        }
+        guard refreshRevision == consentRefreshRevision else { return }
+        incoming = refreshedIncoming
+        automaticIncomingFailureCount = 0
+        automaticIncomingFailureReported = false
+        automaticIncomingError = nil
+        rubricCaptures.refresh()
+        await recoverRubricCaptures()
+        guard refreshRevision == consentRefreshRevision else { return }
+    }
+
+    private func clearAutomaticConsentFailure() {
+        consentFailureChecked = false
+        automaticConsentFailureCount = 0
+        automaticConsentFailureReported = false
+        automaticConsentError = nil
+    }
+
+    private func recordAutomaticConsentFailure(_ error: Error,
+                                               helperAlreadyChecked: Bool,
+                                               refreshRevision: Int? = nil) async {
+        if helperAlreadyChecked {
+            consentFailureChecked = true
+            if now() >= nextHelperRecovery {
+                nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
+            }
+        }
+        automaticConsentFailureCount += 1
+        if usesHelper && !helperAlreadyChecked &&
+            (!consentFailureChecked || now() >= nextHelperRecovery) {
+            consentFailureChecked = true
+            nextHelperRecovery = now().addingTimeInterval(SyncHelperController.errorRecoveryInterval)
+            await helper.refresh()
+            if let refreshRevision, refreshRevision != consentRefreshRevision { return }
+            updateRunningFromHelper()
+            if !helper.online && !preservingConfirmedSharingPresentation {
+                clearSharingPresentationAfterTerminalFailure()
+            }
+        }
+        // Let one failed two-second poll recover before presenting a modal.
+        if automaticConsentFailureCount >= 2 && !automaticConsentFailureReported {
+            automaticConsentError = error.localizedDescription
+            automaticConsentFailureReported = true
         }
     }
 

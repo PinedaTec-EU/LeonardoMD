@@ -16,6 +16,8 @@ final class SyncHelperController {
     private var activePeerPreflights = 0
     private var activeStopOperations = 0
     private var pendingStopWaiters: [CheckedContinuation<Void, Never>] = []
+    private var enabledPreferenceWriteInProgress = false
+    private var enabledPreferenceWriteWaiters: [CheckedContinuation<Void, Never>] = []
     private var stateBeforeRefresh = State.disabled
     private var errorBeforeRefresh: String?
     private var sharingBeforeRefresh: RunningDirectService?
@@ -214,12 +216,37 @@ final class SyncHelperController {
         guard !InstanceRuntime.isAdditional, !enabled || !installation.blocksOperations else { return }
         if busy {
             // An explicit denial cancels the durable upgrade token even while
-            // graceful shutdown is suspended. It must never be restored later.
+            // another lifecycle operation is suspended. Queue the write after
+            // any in-flight intent and keep ownership of stopping the helper.
             guard !enabled else { return }
-            lifecycleRevision += 1; revision += 1; presentationRevision += 1; self.enabled = false; state = .disabled; error = nil; stateBeforeRefresh = .disabled; errorBeforeRefresh = nil; sharingBeforeRefresh = nil; sharing = nil
+            lifecycleRevision += 1
+            revision += 1
+            presentationRevision += 1
+            let presentation = presentationRevision
+            self.enabled = false
+            state = .disabled
+            error = nil
+            stateBeforeRefresh = .disabled
+            errorBeforeRefresh = nil
+            sharingBeforeRefresh = nil
+            sharing = nil
             supportsRubricExchange = false
-            do { try await persistEnabledPreference(false, preferencesURL) }
-            catch { state = .failed; self.error = L10n.text(error.localizedDescription); presentCurrentState() }
+            busy = true
+            do {
+                try await persistEnabledPreferenceInOrder(false)
+                guard presentation == presentationRevision else { return }
+                try await unregisterAfterStop()
+                guard presentation == presentationRevision else { return }
+            } catch {
+                guard presentation == presentationRevision else { return }
+                state = .failed
+                self.error = L10n.text(error.localizedDescription)
+                presentCurrentState()
+            }
+            guard presentation == presentationRevision else { return }
+            busy = false
+            presentCurrentState()
+            hasPresentedStatus = true
             return
         }
         if !enabled { stateBeforeRefresh = .disabled; errorBeforeRefresh = nil; sharingBeforeRefresh = nil }
@@ -238,9 +265,8 @@ final class SyncHelperController {
                 guard hasExecutable() else { throw SyncHelperFailure(L10n.text("Sync helper is not installed")) }
                 try verifyPackage()
             }
-            try await persistEnabledPreference(enabled, preferencesURL)
+            try await persistEnabledPreferenceInOrder(enabled)
             guard presentation == presentationRevision else {
-                busy = false
                 return
             }
             self.enabled = enabled; sharing = nil
@@ -248,7 +274,6 @@ final class SyncHelperController {
                 state = .starting
                 await waitForPendingStopOperations()
                 guard presentation == presentationRevision else {
-                    busy = false
                     return
                 }
                 if service.status != .enabled { try service.register() }
@@ -258,10 +283,10 @@ final class SyncHelperController {
                 // Persist denial before shutdown. Even failed unregistration cannot
                 // restore sharing on the helper's next configuration read/restart.
                 try await unregisterAfterStop()
+                guard presentation == presentationRevision else { return }
             }
         } catch {
             guard presentation == presentationRevision else {
-                busy = false
                 return
             }
             state = .failed; self.error = L10n.text(error.localizedDescription)
@@ -404,6 +429,22 @@ final class SyncHelperController {
         let waiters = pendingStopWaiters
         pendingStopWaiters.removeAll()
         waiters.forEach { $0.resume() }
+    }
+
+    private func persistEnabledPreferenceInOrder(_ enabled: Bool) async throws {
+        if enabledPreferenceWriteInProgress {
+            await withCheckedContinuation { enabledPreferenceWriteWaiters.append($0) }
+        } else {
+            enabledPreferenceWriteInProgress = true
+        }
+        defer {
+            if enabledPreferenceWriteWaiters.isEmpty {
+                enabledPreferenceWriteInProgress = false
+            } else {
+                enabledPreferenceWriteWaiters.removeFirst().resume()
+            }
+        }
+        try await persistEnabledPreference(enabled, preferencesURL)
     }
 
     private func unregisterAfterStop(expectedRevision: Int? = nil,

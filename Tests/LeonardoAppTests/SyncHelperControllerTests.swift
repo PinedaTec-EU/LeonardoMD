@@ -218,20 +218,20 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(registration.status, .notRegistered)
     }
 
-    func testExplicitDisableRemainsAuthoritativeWhenEnableWriteHasNotResumed() async throws {
+    func testExplicitDisableRemainsAuthoritativeWhenEnableWriteIsHeldBeforeStorage() async throws {
         let fixture = try ControllerFixture()
         defer { fixture.remove() }
         let configurations = fixture.configurations
         let preferences = fixture.preferences
         let writeBarrier = HelperPreferenceWriteBarrier()
-        let registration = HelperRegistrationFake()
+        let registration = HelperRegistrationFake(); registration.status = .enabled
         let control = HelperControlFake()
         let helper = SyncHelperController(preferencesURL: preferences, configurations: configurations,
             service: registration, client: control, expectedBuildIdentity: nil,
             startup: .init(attempts: 0),
             persistEnabledPreference: { enabled, url in
+                await writeBarrier.pauseNextWrite()
                 try await configurations.setSyncHelperEnabled(enabled, at: url)
-                if enabled { await writeBarrier.pauseAfterEnableWrite() }
             }, hasExecutable: { true }, verifyPackage: {})
 
         let enable = Task { await helper.setEnabled(true) }
@@ -245,23 +245,100 @@ final class SyncHelperControllerTests: XCTestCase {
             XCTFail("Enable write did not reach its continuation barrier")
             return
         }
-        let enabledBeforeDisable = try await configurations.loadGlobalPreferences(at: preferences)
-        XCTAssertTrue(enabledBeforeDisable.mobileSync.helperEnabled)
+        let beforeRelease = try await configurations.loadGlobalPreferences(at: preferences)
+        XCTAssertFalse(beforeRelease.mobileSync.helperEnabled,
+            "The held enable intent has not reached the durable store")
 
-        await helper.setEnabled(false)
-        let denied = try await configurations.loadGlobalPreferences(at: preferences)
-        XCTAssertFalse(denied.mobileSync.helperEnabled)
-        XCTAssertFalse(helper.enabled)
-        XCTAssertEqual(helper.state, .disabled)
+        let disableStarted = MainActorFlag()
+        let disableFinished = MainActorFlag()
+        let disable = Task { @MainActor in
+            disableStarted.value = true
+            await helper.setEnabled(false)
+            disableFinished.value = true
+        }
+        for _ in 0..<5_000 {
+            if disableStarted.value { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTAssertTrue(disableStarted.value)
+        try await Task.sleep(for: .milliseconds(5))
+        XCTAssertFalse(disableFinished.value,
+            "The newer denial waits behind the still-running enable write")
 
         await writeBarrier.resume()
         await enable.value
+        await disable.value
 
         let final = try await configurations.loadGlobalPreferences(at: preferences)
         XCTAssertFalse(final.mobileSync.helperEnabled,
-            "The stale enable continuation must not restore consent after explicit disable")
+            "The stale enable write must finish before the later durable denial")
         XCTAssertFalse(helper.enabled)
         XCTAssertEqual(helper.state, .disabled)
+        XCTAssertEqual(registration.status, .notRegistered,
+            "The superseding denial still owns the helper stop")
+        XCTAssertFalse(helper.busy)
+    }
+
+    func testSecondDisableOwnsStopWhenFirstDisableWriteIsSuspended() async throws {
+        let fixture = try ControllerFixture()
+        defer { fixture.remove() }
+        let configurations = fixture.configurations
+        let preferences = fixture.preferences
+        try await configurations.setSyncHelperEnabled(true, at: preferences)
+        let writeBarrier = HelperPreferenceWriteBarrier()
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let helper = SyncHelperController(preferencesURL: preferences, configurations: configurations,
+            service: registration, client: control, expectedBuildIdentity: nil,
+            startup: .init(attempts: 0),
+            persistEnabledPreference: { enabled, url in
+                await writeBarrier.pauseNextWrite()
+                try await configurations.setSyncHelperEnabled(enabled, at: url)
+            }, hasExecutable: { true }, verifyPackage: {})
+        await helper.refresh()
+        XCTAssertTrue(helper.enabled)
+        XCTAssertTrue(helper.online)
+        await writeBarrier.armNextWrite()
+
+        let firstDisable = Task { @MainActor in await helper.setEnabled(false) }
+        for _ in 0..<5_000 {
+            if await writeBarrier.isHeld { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        guard await writeBarrier.isHeld else {
+            await writeBarrier.resume()
+            await firstDisable.value
+            XCTFail("The first disable write did not reach its barrier")
+            return
+        }
+
+        let secondStarted = MainActorFlag()
+        let secondFinished = MainActorFlag()
+        let secondDisable = Task { @MainActor in
+            secondStarted.value = true
+            await helper.setEnabled(false)
+            secondFinished.value = true
+        }
+        for _ in 0..<5_000 {
+            if secondStarted.value { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTAssertTrue(secondStarted.value)
+        try await Task.sleep(for: .milliseconds(5))
+        XCTAssertFalse(secondFinished.value,
+            "The second denial waits for the first durable write before it owns shutdown")
+
+        await writeBarrier.resume()
+        await firstDisable.value
+        await secondDisable.value
+
+        let final = try await configurations.loadGlobalPreferences(at: preferences)
+        XCTAssertFalse(final.mobileSync.helperEnabled)
+        XCTAssertFalse(helper.enabled)
+        XCTAssertEqual(helper.state, .disabled)
+        XCTAssertEqual(registration.status, .notRegistered,
+            "The newer denial must perform shutdown after the superseded disable returns")
+        XCTAssertEqual(registration.unregistrations, 1)
         XCTAssertFalse(helper.busy)
     }
 
@@ -1545,6 +1622,73 @@ final class SyncHelperControllerTests: XCTestCase {
         source.error = nil
         let nextCalls = await control.statusCalls
         XCTAssertEqual(nextCalls, 4, "Each new automatic failure episode triggers one health check")
+    }
+
+    func testInitialAutomaticConsentReadFailureIsProvisionalAndRecoveryKeepsActionError() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        try await fixture.configurations.setSyncHelperEnabled(true, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let helper = fixture.controller(registration, control)
+        let runtime = StatusRefreshRuntime()
+        await runtime.failNextConsentRead()
+        let source = DesktopSyncController(preferencesURL: fixture.preferences,
+            configurations: fixture.configurations, runtime: runtime, helper: helper, usesHelper: true)
+
+        await source.initialize()
+
+        XCTAssertNil(source.error, "The first automatic consent read during initialization stays provisional")
+        XCTAssertTrue(source.projectSettingsLoaded)
+        source.error = "Explicit action failed"
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.error, "Explicit action failed",
+            "A successful automatic consent read clears only its own diagnostic")
+    }
+
+    func testConsentAndIncomingReadFailuresUseSeparateRecoveryEpisodes() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        var preferences = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        preferences.mobileSync = MobileSyncPreferences(enabled: true, helperEnabled: true)
+        try await fixture.configurations.saveGlobalPreferences(preferences, at: fixture.preferences)
+        let registration = HelperRegistrationFake(); registration.status = .enabled
+        let control = HelperControlFake()
+        let service = RunningDirectService(endpoint: URL(string: "https://192.168.1.4:40882")!,
+            certificateFingerprint: Data(repeating: 4, count: 32))
+        await control.setSharing(service)
+        let helper = fixture.controller(registration, control)
+        let runtime = StatusRefreshRuntime(); await runtime.setStartedService(service)
+        let source = DesktopSyncController(preferencesURL: fixture.preferences,
+            configurations: fixture.configurations, runtime: runtime, helper: helper, usesHelper: true)
+        source.networkAddresses = { _ in ["192.168.1.4"] }
+        source.isLocalAddress = { _ in true }
+
+        await source.initialize()
+        XCTAssertNotNil(source.running)
+
+        await runtime.setConsentFailure(true)
+        await source.refreshConsent(refreshHelper: false)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNotNil(source.error, "Two consecutive consent-read failures are reported")
+
+        await runtime.setConsentFailure(false)
+        await runtime.failNextIncomingRead()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.error,
+            "A successful consent read clears the old consent error before incoming proposals are read")
+
+        await runtime.setConsentFailure(true)
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNil(source.error,
+            "An incoming-proposal failure does not count as a consent-read failure")
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertNotNil(source.error, "The new consent episode reports only after its second failure")
+
+        source.error = "Explicit action failed"
+        await runtime.setConsentFailure(false)
+        await runtime.failNextIncomingRead()
+        await source.refreshConsent(refreshHelper: false)
+        XCTAssertEqual(source.error, "Explicit action failed",
+            "Automatic consent and incoming-read recovery must not erase an explicit action error")
     }
 
     func testPersistentConsentFailureRechecksHealthAfterInterval() async throws {
@@ -3781,16 +3925,21 @@ final class SyncHelperControllerTests: XCTestCase {
 }
 private actor HelperPreferenceWriteBarrier {
     private var continuation: CheckedContinuation<Void, Never>?
-    private var released = false
+    private var shouldPauseNextWrite = true
     var isHeld: Bool { continuation != nil }
-    func pauseAfterEnableWrite() async {
-        if !released { await withCheckedContinuation { continuation = $0 } }
+    func armNextWrite() { shouldPauseNextWrite = true }
+    func pauseNextWrite() async {
+        guard shouldPauseNextWrite else { return }
+        shouldPauseNextWrite = false
+        await withCheckedContinuation { continuation = $0 }
     }
     func resume() {
-        released = true
         continuation?.resume()
         continuation = nil
     }
+}
+@MainActor private final class MainActorFlag {
+    var value = false
 }
 private enum HelperControlError: LocalizedError {
     case unavailable
@@ -3963,6 +4112,8 @@ private struct StatusRefreshRuntimeActions: Equatable, Sendable {
 
 private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
     private var consentFailure = false
+    private var failNextConsent = false
+    private var failNextIncoming = false
     private var consentReadPaused = false
     private var heldConsentRead: (snapshot: PairingRegistry,
                                   continuation: CheckedContinuation<PairingRegistry, Never>)?
@@ -3998,6 +4149,8 @@ private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
         heldIncomingResponse = []
     }
     func setConsentFailure(_ value: Bool) { consentFailure = value }
+    func failNextConsentRead() { failNextConsent = true }
+    func failNextIncomingRead() { failNextIncoming = true }
     func setConsentState(_ value: PairingRegistry) { consent = value }
     func setIncomingProposals(_ value: [DesktopPeerIncomingProposal]) { incoming = value }
     func setStartedService(_ value: RunningDirectService) { startedService = value }
@@ -4007,6 +4160,10 @@ private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
     }
     func stop() async throws {}
     func consentState() async throws -> PairingRegistry {
+        if failNextConsent {
+            failNextConsent = false
+            throw DesktopRuntimeError.notRunning
+        }
         if consentFailure { throw DesktopRuntimeError.notRunning }
         let snapshot = consent
         guard consentReadPaused else { return snapshot }
@@ -4015,6 +4172,10 @@ private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
         }
     }
     func incomingProposals() async throws -> [DesktopPeerIncomingProposal] {
+        if failNextIncoming {
+            failNextIncoming = false
+            throw DesktopRuntimeError.notRunning
+        }
         guard incomingReadPaused else { return incoming }
         let response = incoming
         return await withCheckedContinuation { continuation in
