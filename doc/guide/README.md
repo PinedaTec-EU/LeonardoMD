@@ -1,8 +1,8 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v73-en.mdlz` and `Guide-v73-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v74-en.mdlz` and `Guide-v74-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v73/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v74/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
@@ -12,7 +12,7 @@ and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
-Guide v73 combines current document search and remote project workflows with the latest synchronization status and helper-recovery guidance, plus optional grouped-instance instructions. Its distinct revision ensures installations with a saved v68, v71 or v72 guide receive this content while preserving earlier guide copies and their separate practice answers; opening Help never replaces a saved copy.
+Guide v74 combines current document search and remote project workflows with the latest synchronization status and helper-recovery guidance, plus optional grouped-instance instructions. Its distinct revision ensures installations with a saved v68, v71, v72 or v73 guide receive this content while preserving earlier guide copies and their separate practice answers; opening Help never replaces a saved copy.
 
 File → Import with your agent opens `AgentImport-v3-en.mdlz` or
 `AgentImport-v3-es.mdlz` in the same tab/package flow, with personal copies under
@@ -70,4 +70,4 @@ Tracking: [#312](https://github.com/PinedaTec-EU/LeonardoMD/issues/312).
 
 Illustrations use real alpha transparency and the Classic red/oxide/ochre palette. Keep explanatory captions in the localized Markdown rather than baking them into artwork; the four artwork files are shared across locales. Verify transparency and readability on the document background when refreshing them. Tracking: [#375](https://github.com/PinedaTec-EU/LeonardoMD/issues/375).
 
-Guide v73 documents optional grouping of independent processes in Dock and the app switcher, with per-window instance selection and a native application menu. Existing personal copies remain untouched.
+Guide v74 documents optional grouping of independent processes in Dock and the app switcher, with per-window instance selection and a native application menu. Existing personal copies remain untouched.
