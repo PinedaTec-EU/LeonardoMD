@@ -207,10 +207,19 @@ final class SyncHelperControllerTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(1))
         }
         XCTAssertTrue(helper.enabled, "The pending enable must become visible before the old stop resumes")
-        await helper.setEnabled(false)
+        let disable = Task { await helper.setEnabled(false) }
+        for _ in 0..<5_000 {
+            let saved = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+            if !saved.mobileSync.helperEnabled { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let savedBeforeStopCompletes = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertFalse(savedBeforeStopCompletes.mobileSync.helperEnabled,
+            "The explicit disable must become durable while the earlier stop is still in flight")
         await control.resumeReload()
         await old.value
         await enable.value
+        await disable.value
         let saved = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
         XCTAssertFalse(saved.mobileSync.helperEnabled)
         XCTAssertFalse(helper.enabled)
@@ -3556,9 +3565,19 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertFalse(stopped.mobileSync.helperEnabled)
         XCTAssertNotNil(stopped.mobileSync.helperUpgradeToken)
         controller.error = "Previous transient failure"
-        await controller.setEnabled(false)
+        let disable = Task { await controller.setEnabled(false) }
+        for _ in 0..<5_000 {
+            let saved = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+            if !saved.mobileSync.helperEnabled && saved.mobileSync.helperUpgradeToken == nil { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let savedBeforeStopCompletes = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
+        XCTAssertFalse(savedBeforeStopCompletes.mobileSync.helperEnabled)
+        XCTAssertNil(savedBeforeStopCompletes.mobileSync.helperUpgradeToken,
+            "Manual disable must cancel the upgrade while the automatic stop is still in flight")
         await control.resumeReload()
         await refresh.value
+        await disable.value
         let settings = try await fixture.configurations.loadGlobalPreferences(at: fixture.preferences)
         XCTAssertFalse(settings.mobileSync.helperEnabled)
         XCTAssertNil(settings.mobileSync.helperUpgradeToken)
