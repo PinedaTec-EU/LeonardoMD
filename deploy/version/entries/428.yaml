@@ -1,4 +1,4 @@
 {
-  "build": 212,
-  "summary": "Synchronization keeps status steady during checks, reduces healthy helper polling, preserves invitations and review drafts during recovery, and gates peer actions on live helper health."
+  "build": 215,
+  "summary": "Synchronization keeps status steady during checks, refreshes linked devices on open or on demand, preserves invitations and review drafts during recovery, and gates peer actions on live helper health."
 }

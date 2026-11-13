@@ -38,19 +38,18 @@ struct MobileSyncPreferencesView: View {
             authorizedDevices
         }.formStyle(.grouped).toggleStyle(PremiumSwitchStyle()).disabled(controller.busy)
         .task {
-            await controller.initialize()
-            while !Task.isCancelled {
-                await controller.refreshConsent(refreshHelper: false)
-                do { try await Task.sleep(for: .seconds(2)) } catch { return }
-            }
+            await controller.refreshPreferencesOnOpen()
         }
         .sheet(item: $controller.reviewing) { value in DesktopSourceReviewView(controller: controller, value: value) }
         .sheet(item: $approving) { request in PairingConsentView(controller: controller, request: request) }
         .sheet(isPresented: $selectingContent) {
             if let root = session.projectURL { SharedProjectSelectionView(root: root, controller: controller) }
         }
-        .alert(L10n.text("Synchronization error"), isPresented: Binding(get: { controller.error != nil }, set: { if !$0 { controller.error = nil } })) {
-            Button(L10n.text("OK")) { controller.error = nil }
+        .alert(L10n.text("Synchronization error"), isPresented: Binding(
+            get: { controller.error != nil },
+            set: { if !$0 { controller.acknowledgeDisplayedError() } }
+        )) {
+            Button(L10n.text("OK"), role: .cancel) {}
         } message: { Text(controller.error ?? "") }
     }
 

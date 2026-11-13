@@ -19,6 +19,29 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertEqual(SyncHelperPreferencesSection.statusSubtitle(isRunning: false, diagnostic: "Offline"), "Offline")
     }
 
+    func testPreferencesRefreshesOnOpenAndOnlyOnExplicitRefreshes() async throws {
+        let fixture = try ControllerFixture(); defer { fixture.remove() }
+        let runtime = StatusRefreshRuntime()
+        let controller = DesktopSyncController(preferencesURL: fixture.preferences,
+            configurations: fixture.configurations, runtime: runtime, usesHelper: false)
+        await controller.refreshPreferencesOnOpen()
+        let readsAfterFirstOpen = await runtime.consentReadCountValue
+        XCTAssertEqual(readsAfterFirstOpen, 1, "First open initializes and reads consent once")
+
+        await controller.refreshPreferencesOnOpen()
+        let readsAfterReopen = await runtime.consentReadCountValue
+        XCTAssertEqual(readsAfterReopen, 2, "Reopening Preferences refreshes consent once")
+        try await Task.sleep(for: .seconds(2.2))
+        let readsWithoutInteraction = await runtime.consentReadCountValue
+        XCTAssertEqual(readsWithoutInteraction, 2,
+            "Leaving Preferences open must not trigger periodic consent reads")
+
+        await controller.refreshConsent(refreshHelper: false)
+        let readsAfterManualRefresh = await runtime.consentReadCountValue
+        XCTAssertEqual(readsAfterManualRefresh, 3,
+            "The explicit refresh path remains available")
+    }
+
     private func upgrading(_ fixture: ControllerFixture, _ registration: HelperRegistrationFake,
                            _ control: HelperControlFake) -> SyncHelperController {
         SyncHelperController(preferencesURL: fixture.preferences, configurations: fixture.configurations,
@@ -1616,7 +1639,7 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertNil(source.error, "Keep the first failure of a new episode provisional")
         await source.refreshConsent(refreshHelper: false)
         XCTAssertNotNil(source.error, "Report the persistent failure once")
-        source.error = nil // Dismiss the alert.
+        source.acknowledgeDisplayedError()
         await source.refreshConsent(refreshHelper: false)
         XCTAssertNil(source.error, "Do not re-present a dismissed failure during the same episode")
 
@@ -1625,16 +1648,16 @@ final class SyncHelperControllerTests: XCTestCase {
         await source.refreshConsent(refreshHelper: false)
         XCTAssertEqual(source.error, "Explicit action failed", "Automatic recovery must not clear an explicit action error")
 
-        // The alert dismiss binding writes nil. A persistent automatic failure
-        // that accumulated behind the explicit alert must then be shown once.
+        // Clearing an explicit action error reveals, but does not acknowledge,
+        // an automatic diagnostic queued behind it.
         await runtime.setConsentFailure(true)
         await source.refreshConsent(refreshHelper: false)
         XCTAssertEqual(source.error, "Explicit action failed")
         await source.refreshConsent(refreshHelper: false)
         XCTAssertEqual(source.error, "Explicit action failed")
         source.error = nil
-        XCTAssertNotNil(source.error, "Dismissing the explicit alert must reveal the queued consent diagnostic")
-        source.error = nil
+        XCTAssertNotNil(source.error, "Clearing an explicit action error must reveal the queued consent diagnostic")
+        source.acknowledgeDisplayedError()
         XCTAssertNil(source.error, "Dismissing the consent diagnostic must acknowledge only that diagnostic")
         await source.refreshConsent(refreshHelper: false)
         XCTAssertNil(source.error, "An acknowledged diagnostic is not re-presented during the same episode")
@@ -1710,9 +1733,9 @@ final class SyncHelperControllerTests: XCTestCase {
         await runtime.failNextIncomingRead()
         await source.refreshConsent(refreshHelper: false)
         XCTAssertEqual(source.error, "Explicit action failed")
-        source.error = nil
+        source.acknowledgeDisplayedError()
         XCTAssertNotNil(source.error, "Dismissing an explicit alert must reveal the queued incoming-proposal diagnostic")
-        source.error = nil
+        source.acknowledgeDisplayedError()
         XCTAssertNil(source.error, "Dismissing the incoming diagnostic must acknowledge that message")
         await runtime.failNextIncomingRead()
         await source.refreshConsent(refreshHelper: false)
@@ -4213,6 +4236,7 @@ private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
     private var consentFailure = false
     private var failNextConsent = false
     private var failNextIncoming = false
+    private var consentReadCount = 0
     private var consentReadPaused = false
     private var heldConsentRead: (snapshot: PairingRegistry,
                                   continuation: CheckedContinuation<PairingRegistry, Never>)?
@@ -4225,6 +4249,7 @@ private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
     private var incoming: [DesktopPeerIncomingProposal] = []
     private var startedService: RunningDirectService?
     private var recordedActions = StatusRefreshRuntimeActions()
+    var consentReadCountValue: Int { consentReadCount }
     var hasHeldConsentRead: Bool { heldConsentRead != nil }
     var hasHeldInvitation: Bool { heldInvitation != nil }
     var hasHeldIncomingRead: Bool { heldIncomingRead != nil }
@@ -4259,6 +4284,7 @@ private actor StatusRefreshRuntime: DesktopSyncRuntimeAccess {
     }
     func stop() async throws {}
     func consentState() async throws -> PairingRegistry {
+        consentReadCount += 1
         if failNextConsent {
             failNextConsent = false
             throw DesktopRuntimeError.notRunning

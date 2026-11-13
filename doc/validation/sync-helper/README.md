@@ -2,7 +2,7 @@
 
 The latest PR #428 status and error presentation evidence is in
 [`428-quiet-status-v45/`](428-quiet-status-v45/README.md), bound to integrated
-product source `29759ce4f4027b4f2e22c44ee7ea17c48d7eb4d8`. It shows the last
+product source `29759ce43a522a5329d6f3d071089cb97ff900b1`. It shows the last
 confirmed green state retained while checking, the same green state after a
 successful check, and a red persistent error without duplicated diagnostics.
 The full Swift suite covers automatic consent-poll recovery. The earlier

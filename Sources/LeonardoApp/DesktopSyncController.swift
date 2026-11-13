@@ -62,6 +62,9 @@ final class DesktopSyncController {
         get { pollingDiagnostics.error }
         set { pollingDiagnostics.setActionError(newValue) }
     }
+    func acknowledgeDisplayedError() {
+        pollingDiagnostics.acknowledgeDisplayedError()
+    }
     private(set) var invitationURL: URL?
     var buffers: @MainActor (URL) async throws -> [OpenDocumentBuffer] = { _ in [] }
     private let configurations: ConfigurationStore
@@ -177,6 +180,16 @@ final class DesktopSyncController {
             await recoverRubricCaptures()
             initialized = true
         } catch { self.error = error.localizedDescription }
+    }
+
+    func refreshPreferencesOnOpen() async {
+        let alreadyInitialized = initialized
+        await initialize()
+        if alreadyInitialized {
+            // Initialization reads consent on first open. On later visits,
+            // refresh the list without repeating the helper health check.
+            await refreshConsent(refreshHelper: false)
+        }
     }
 
     func update(_ updated: MobileSyncPreferences) async {
