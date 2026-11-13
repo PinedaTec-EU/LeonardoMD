@@ -2,6 +2,12 @@
 
 Tracking: [#368](https://github.com/PinedaTec-EU/LeonardoMD/issues/368), [PR #369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369).
 
+The earlier `b19ed7b` / Guide v73 capture set below is historical. The latest
+source-bound bilingual alert captures and updated Help acceptance are in
+[current-head-2026-11-13](current-head-2026-11-13/README.md), captured from
+source `e1ad1d2ada9e7a7b05066b26a229e038c416f069` after the latest source
+reconciliation.
+
 ## Candidate identity
 
 - Runtime, guide and capture source: `b19ed7b1f73c142914811c4b67678d610d3d498a`.
