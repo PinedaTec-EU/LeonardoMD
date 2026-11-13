@@ -87,17 +87,46 @@
     }
   },
   "practice_round_trip": {
-    "locale": "es",
-    "attempted_from_guide": true,
-    "opened_in_candidate_process": false,
-    "filled": false,
-    "saved": false,
-    "closed_and_reopened": false,
-    "blocking_message": "Otra instancia de LeonardoMD está usando este documento o proyecto. Cierra esa instancia antes de abrirlo aquí.",
-    "action_taken": "Closed only the exact practice tab in the other QA instance after owner authorization; retry from the candidate guide remained blocked. Existing guide tabs were left open.",
-    "practice_file_modified": false,
-    "sha256_after_blocked_attempt": "dcaef10188834457094ecbafa8ff3ceb1996b6188d79ca02869821c9082321c7",
-    "round_trip_acceptance": "pending"
+    "initial_shared_support_attempt": {
+      "locale": "es",
+      "attempted_from_guide": true,
+      "opened_in_candidate_process": false,
+      "filled": false,
+      "saved": false,
+      "closed_and_reopened": false,
+      "blocking_message": "Otra instancia de LeonardoMD está usando este documento o proyecto. Cierra esa instancia antes de abrirlo aquí.",
+      "action_taken": "Closed only the exact practice tab in the other QA instance after owner authorization; retry from the candidate guide remained blocked. Existing guide tabs were left open.",
+      "practice_file_modified": false,
+      "sha256_after_blocked_attempt": "dcaef10188834457094ecbafa8ff3ceb1996b6188d79ca02869821c9082321c7"
+    },
+    "isolated_disposable_home_retry": {
+      "attempted_from_guide": true,
+      "opened_in_candidate_process": true,
+      "filled": true,
+      "saved": true,
+      "closed_and_reopened": true,
+      "round_trip_values_match": true,
+      "locale": "es",
+      "synthetic_values": {
+        "practiceName": "QA aislada v74",
+        "practiceGoal": "Validar la persistencia del formulario en la copia aislada.",
+        "practiceReady": true
+      },
+      "qa_pid": 42191,
+      "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.v74isolated",
+      "bundle_path": "/tmp/LeonardoMD-QA-Isolated-v74.yqcquu/LeonardoMDQA.app",
+      "user_home": "/tmp/LeonardoMD-QA-Home.l8TFfr",
+      "launch_environment": [
+        "HOME",
+        "CFFIXED_USER_HOME"
+      ],
+      "practice_file": "/tmp/LeonardoMD-QA-Home.l8TFfr/Library/Application Support/LeonardoMD/Practice Forms/v1/es/Practice-v1-es.mdlr",
+      "practice_file_sha256_after_reopen": "d252be94ea864cd5c8289ad5476aa82d57c04d40b5c488fd1ed93c67d9baf47d",
+      "existing_shared_support_copy_sha256_unchanged": "dcaef10188834457094ecbafa8ff3ceb1996b6188d79ca02869821c9082321c7",
+      "other_user_instance_or_document_modified": false,
+      "round_trip_acceptance": "passed"
+    },
+    "round_trip_acceptance": "passed"
   },
   "settings_restored": {
     "interface_language": "English",
@@ -131,8 +160,34 @@
     }
   ],
   "remaining_release_acceptance": [
-    "practice form open/fill/save/reopen in the candidate process",
-    "exact-head CI and strict independent review",
-    "beta publication and hosted beta install/update/relaunch acceptance"
-  ]
+    "exact-head CI and strict independent review after the evidence refresh",
+    "beta publication",
+    "hosted beta install/update/relaunch acceptance"
+  ],
+  "isolated_practice_process": {
+    "fresh_process": true,
+    "first_window_readiness_observed": true,
+    "startup_log_marker": "application_ready",
+    "qa_pid": 42191,
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.v74isolated",
+    "bundle_path": "/tmp/LeonardoMD-QA-Isolated-v74.yqcquu/LeonardoMDQA.app",
+    "bundle_executable": "LeonardoMD",
+    "version": "0.3.1596",
+    "build": "1596",
+    "xctest_dependency": false,
+    "codesign_verified_after_qa_identity_change": true,
+    "guide_locales_opened_through_help": [
+      "en",
+      "es"
+    ],
+    "dedicated_disposable_user_home": "/tmp/LeonardoMD-QA-Home.l8TFfr",
+    "user_instance_and_documents_untouched": true,
+    "evidence_method": "Live CUA accessibility inspection plus process and SHA-256 checks; no screenshot artifact retained.",
+    "tested_source_commit": "c0a88a412e0f68d3f8c82dac7a4a5847c86867e8"
+  },
+  "disposable_home_settings": {
+    "interface_language": "Español",
+    "math_extension": "on at end",
+    "scope": "CFFIXED_USER_HOME disposable QA profile; user profile unchanged"
+  }
 }
