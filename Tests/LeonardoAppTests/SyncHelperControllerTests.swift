@@ -442,6 +442,11 @@ final class SyncHelperControllerTests: XCTestCase {
         XCTAssertFalse(controller.checking)
         XCTAssertTrue(controller.online)
         try await captureStatusIndicator(controller, state: "online")
+        await control.setStatusEnabled(false)
+        await controller.refresh()
+        XCTAssertEqual(controller.displayedState, .failed)
+        XCTAssertNotNil(controller.displayedError)
+        try await captureStatusIndicator(controller, state: "error")
     }
 
     private func captureStatusIndicator(_ controller: SyncHelperController, state: String) async throws {

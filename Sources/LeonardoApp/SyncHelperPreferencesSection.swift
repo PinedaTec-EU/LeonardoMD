@@ -17,6 +17,10 @@ struct SyncHelperPreferencesSection: View {
         case .disabled, .starting, .running: false
         }
     }
+    private var additionalError: String? {
+        guard let error = controller.displayedError else { return nil }
+        return showsDiagnostic && error == controller.statusText ? nil : error
+    }
 
     var body: some View {
             VStack(alignment: .leading, spacing: 6) {
@@ -44,12 +48,12 @@ struct SyncHelperPreferencesSection: View {
                     .opacity(controller.showsApprovalAction ? 1 : 0)
                     .disabled(!controller.showsApprovalAction)
                     .accessibilityHidden(!controller.showsApprovalAction)
-                Text(controller.displayedError ?? " ")
+                Text(additionalError ?? " ")
                     .font(.caption).foregroundStyle(.secondary)
                     .lineLimit(2)
                     .frame(height: 30, alignment: .topLeading)
-                    .help(controller.displayedError ?? "")
-                    .accessibilityHidden(controller.displayedError == nil)
+                    .help(additionalError ?? "")
+                    .accessibilityHidden(additionalError == nil)
             }
             .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
                 Task { await controller.refreshAfterActivation() }
