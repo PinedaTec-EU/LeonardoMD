@@ -1,0 +1,26 @@
+{
+  "build_source": "29b8493f97a4747068b02ae8c9111a61164e9a66",
+  "base": "2542a940c2b7c964ab4ed29cb72fefefb53f9c64",
+  "version": "0.3.1587",
+  "validated_process": 95948,
+  "pending_process": 7354,
+  "profile_isolation": "CFFIXED_USER_HOME isolates Foundation home/Application Support; per-Mac instance defaults remain shared with the normal account",
+  "guides": {
+    "en": {
+      "bundle_sha256": "905940721f75453a0e91e97fbbbd1c0f9d3cc22e618369a73f6a0f1bd88eba73",
+      "working_copy_sha256": "905940721f75453a0e91e97fbbbd1c0f9d3cc22e618369a73f6a0f1bd88eba73",
+      "identical": true,
+      "practice_sha256": "d5083f6274ceba7fe3102df0737fdae93a0174248b800504effe2107f2e17f50",
+      "expected_saved_value": "QA441 B EN",
+      "saved_value_in_file": true
+    },
+    "es": {
+      "bundle_sha256": "38666f73283c674447cb720eccb6baeb0b20a40f5700a8f8e3491121107e6340",
+      "working_copy_sha256": "38666f73283c674447cb720eccb6baeb0b20a40f5700a8f8e3491121107e6340",
+      "identical": true,
+      "practice_sha256": "68e1152ef6bb3215b1e83c4457c6892b50a4b97b140c575eb94c8f4213d5f1f0",
+      "expected_saved_value": "QA441 B ES",
+      "saved_value_in_file": true
+    }
+  }
+}
