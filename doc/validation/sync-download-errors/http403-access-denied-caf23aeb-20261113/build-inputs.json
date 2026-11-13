@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "pull_request": 369,
+  "capture_source_commit": "caf23aeb5e4ed4198ddd31eeb057b760b2a00737",
+  "reviewed_source_at_capture": "caf23aeb5e4ed4198ddd31eeb057b760b2a00737",
+  "base_commit": "8711e44aae3babc5beb914bb6b3e69dfe2715e96",
+  "git_tree_inputs_at_capture": {
+    "Sources": "a70e2106c1e5c213dcf10289fd7674678aa0348c",
+    "Tests": "7fcacd5575f26eeed936970ebefd4de80f1d603a",
+    "Package.swift": "d286a11e2f6083f0fa2c1e9cd0f2fa0682093dc3",
+    "Package.resolved": "b67272e588be3d1079b56d556cf662ddfa9a656b",
+    "version.nfo": "8ebaeb0a04053f9c4cd0e842b32fa784caeaf372",
+    "scripts": "cab30ef61e92b23252c2ede1210ef6cc610d69b2"
+  },
+  "capture_test": "Tests/LeonardoAppTests/PeerSyncErrorMessageTests.swift::testCaptureProductionAccessDeniedAlert",
+  "capture_command": "EVIDENCE_SHA=caf23aeb5e4ed4198ddd31eeb057b760b2a00737 LEONARDO_SYNC_ERROR_EVIDENCE=/tmp/leonardo-sync-error-403-369 python3 scripts/compile-and-record.py --pr-number 369 -- swift test --disable-automatic-resolution --filter PeerSyncErrorMessageTests.testCaptureProductionAccessDeniedAlert",
+  "compiler_recorded_build_delta": 44,
+  "capture_runtime": "macOS AppKit/SwiftUI NSWindow hosting the production DesktopPeerPreferencesView; synthetic unresolved HTTP 403 access denial. The dialog explains generic recovery without identifying a device, project, credential or document. This is desktop evidence, not Little Leonardo iOS acceptance.",
+  "screen_geometry": {
+    "window_points": {
+      "width": 600,
+      "height": 532
+    },
+    "png_pixels": {
+      "width": 1200,
+      "height": 1064
+    }
+  },
+  "notes": [
+    "The capture test built and rendered the source commit with the PR ledger at build delta 43; the successful compiler recorder then advanced deploy/version/entries/369.yaml to delta 44.",
+    "The source SHA in the original test context was a unique 8-character prefix and has been expanded to the verified full commit SHA."
+  ]
+}

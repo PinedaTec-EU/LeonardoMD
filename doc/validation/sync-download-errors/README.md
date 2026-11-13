@@ -3,12 +3,14 @@
 Tracking: [#368](https://github.com/PinedaTec-EU/LeonardoMD/issues/368), [PR #369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369).
 
 The `b19ed7b` / Guide v73 and `current-head-2026-11-13` capture sets are
-historical. The latest retained source-bound alert images are the macOS
-synthetic HTTP 413 captures in
-[exact-head-44c1ae4d-2026-11-13](exact-head-44c1ae4d-2026-11-13/README.md),
-recorded against source `44c1ae4d6ddc17af5dda791eb45b3a0036a78157`. They do
-not show the later HTTP 403 recovery paths. The Guide v76 packaged-app record is
-in `../user-guide/native/guide-v76-20261113.json`; it now includes the Spanish
+historical. The retained bilingual HTTP 413 screenshots in
+[exact-head-44c1ae4d-2026-11-13](exact-head-44c1ae4d-2026-11-13/README.md)
+show the separate size-limit alert. The new bilingual HTTP 403 recovery
+screenshots are in
+[http403-access-denied-caf23aeb-20261113](http403-access-denied-caf23aeb-20261113/README.md)
+and show the neutral denial path from source
+`caf23aeb5e4ed4198ddd31eeb057b760b2a00737`. The Guide v76 packaged-app record
+is in `../user-guide/native/guide-v76-20261113.json`; it includes the Spanish
 Math-on equation/tag check and Spanish practice/save round-trip completed in
 the QA instance on 2026-11-13.
 
@@ -46,6 +48,31 @@ EVIDENCE_SHA=b19ed7b1f73c142914811c4b67678d610d3d498a \
 LEONARDO_SYNC_ERROR_EVIDENCE=/tmp/leonardo-sync-errors \
 swift test --skip-build --filter PeerSyncErrorMessageTests.testCaptureProductionDownloadAlert
 ```
+
+## HTTP 403 recovery captures
+
+The production macOS synchronization preferences showed the localized neutral
+access-denied alert when a synthetic HTTP 403 could not yet be classified as a
+device revocation or a removed project grant. Both captures show the source-Mac
+authorization and refresh recovery guidance and the confirmation button. They
+contain no device, project, credential or document details. The opt-in native
+capture test passed for both languages and its OCR assertions verified the
+localized recovery and button.
+
+| Locale | Native window | Capture and metadata | SHA-256 |
+|---|---:|---|---|
+| English | 600 × 532 pt | [image](http403-access-denied-caf23aeb-20261113/access-denied-en.png) · [metadata](http403-access-denied-caf23aeb-20261113/access-denied-en.json) · [context](http403-access-denied-caf23aeb-20261113/access-denied-en.context.json) | `7485d699bb73b893d792383c0c4e47c2443f238d966a0bf539d7d67828f29526` |
+| Spanish | 600 × 532 pt | [image](http403-access-denied-caf23aeb-20261113/access-denied-es.png) · [metadata](http403-access-denied-caf23aeb-20261113/access-denied-es.json) · [context](http403-access-denied-caf23aeb-20261113/access-denied-es.context.json) | `036377a6e81866edafa4a7a367041ab79cd2646583a455b7c2bee0f75d5a91ae` |
+
+The 1200 × 1064 px captures were rendered by
+`PeerSyncErrorMessageTests.testCaptureProductionAccessDeniedAlert` in the
+production `DesktopPeerPreferencesView` using source commit
+`caf23aeb5e4ed4198ddd31eeb057b760b2a00737`. See
+[build-inputs.json](http403-access-denied-caf23aeb-20261113/build-inputs.json)
+for tree bindings and the compiler-recorded build delta `44`. The PR head may
+advance for validation records; verify the source tree binding before treating
+these as current-head evidence. These are desktop captures, not Little Leonardo
+simulator or TestFlight acceptance.
 
 ## Packaged Help acceptance
 
