@@ -116,6 +116,20 @@ final class PairingRegistryTests: XCTestCase {
         XCTAssertThrowsError(try registry.requestPairing(deviceName: "Other", credential: String(repeating: "b", count: 64), invitation: current, serverFingerprint: Data(repeating: 1, count: 32), now: now))
     }
 
+    func testInvitationValiditySurvivesRegistrySerializationAndTracksRestartAndExpiry() throws {
+        var registry = PairingRegistry(); registry.setEnabled(true)
+        let invitation = try registry.createInvitation(now: now)
+        let restored = try JSONDecoder().decode(PairingRegistry.self, from: JSONEncoder().encode(registry))
+        XCTAssertTrue(restored.hasValidInvitation(invitation, now: now))
+        XCTAssertFalse(restored.hasValidInvitation(invitation, now: invitation.expiresAt))
+
+        var restarted = restored
+        restarted.setEnabled(false)
+        restarted.setEnabled(true)
+        XCTAssertFalse(restarted.hasValidInvitation(invitation, now: now),
+            "A helper restart clears invitation credentials while preserving the enabled service")
+    }
+
     func testRevocationSurvivesPersistenceAndDisablePreservesDevices() throws {
         var registry = PairingRegistry(); registry.setEnabled(true)
         let request = try registry.requestPairing(deviceName: "Phone", credential: credential, serverFingerprint: Data(repeating: 1, count: 32), now: now)

@@ -523,6 +523,8 @@ Apariencia ofrece paletas, efectos de papel y colores de archivos Leonardo. **Pe
 
 Activa **Permitir múltiples instancias** antes de Archivo → Nueva instancia. Cada instancia es otro proceso; las aperturas del Finder corresponden a la principal. Desactivar el ajuste no termina procesos existentes. Sincronización y actualizaciones se gestionan en la instancia principal.
 
+Para compartir una entrada en el Dock y ⌘Tab, activa **Agrupar instancias en el Dock y el selector de apps** en Preferencias → En este Mac. Este ajuste local solo está disponible con **Permitir varias instancias** activado y está desactivado inicialmente. Los procesos siguen siendo independientes. Usa **Instancias** (el botón de cuadrados apilados de cada ventana) o el menú del icono del Dock para seleccionar un proceso por su número. El selector identifica el proceso actual y ofrece Preferencias y **Salir de esta instancia**, con confirmación de guardado. El botón contiguo **Menú de la aplicación** (tres líneas) abre todos los comandos de la aplicación. Los procesos agrupados sin entrada en el Dock no tienen barra de menús de macOS; usa Menú de la aplicación para esos comandos. Al cerrar el representante, el proceso compatible más antiguo ocupa su lugar en unos segundos; esto no transfiere la gestión de sincronización. Desactiva la agrupación o la multiinstancia para recuperar entradas separadas en Dock/⌘Tab sin cerrar documentos. La elección de agrupación se conserva al desactivar la multiinstancia. Solo participan versiones compatibles con la agrupación; las anteriores mantienen sus propias entradas.
+
 ## 12. Las cinco extensiones incluidas
 
 Estas extensiones vienen con Leonardo, trabajan localmente y empiezan desactivadas. Son distintas de la skill `leonardo-format` para agentes de IA externos. Activa lo que necesites en Preferencias → Extensiones, globalmente o para este proyecto; la herencia de proyecto sigue los valores globales.
@@ -595,17 +597,27 @@ Las operaciones son manuales. Pull solo permite avance rápido y protege árbole
 
 ## 14. Compartir desde este Mac: Little Leonardo y otros equipos
 
-![Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.](assets/sync-sharing-v13.png)
+![Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.](assets/sync-sharing-v14.png)
 
 *Sincronización → Compartir desde este Mac; el servicio común y compartir están desactivados en este ejemplo.*
 
 Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dispositivos son decisiones explícitas; abrir un documento no lo publica. Usa **Preferencias → Sincronización → Compartir desde este Mac** en la instancia principal. Esta página sirve a Little Leonardo y a otros Macs; un Mac puede compartir contenido y, de forma independiente, conectarse a otro para acceder a otro contenido. El servicio requiere una distribución firmada con Developer ID; las compilaciones locales con firma ad-hoc no pueden habilitarlo.
 
-1. Activa **Leonardo Sync** con el único control común situado encima de ambas páginas. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. Puede aparecer brevemente **Comprobando el estado de sincronización** mientras se verifica el servicio. Cuando está en ejecución, el punto permanece verde y se oculta el subtítulo de estado. Un punto rojo y su texto indican que está sin conexión; sigue cualquier acción de autorización que aparezca.
+1. Activa **Leonardo Sync** con el único control común situado encima de ambas páginas. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. El indicador verde confirma que el asistente funciona; un fallo real lo muestra en rojo con su diagnóstico. Durante la comprobación conserva el estado anterior: no aparece un estado gris temporal ni la línea «Servicio de sincronización en ejecución».
 2. Activa **Compartir archivos guardados de este Mac** en una red que quieras utilizar. Revisa la dirección local; Automática puede seleccionar una disponible.
 3. Elige **Compartir el proyecto actual** y selecciona carpetas/documentos o todo el proyecto. Confirma la selección; el resto del contenido no se comparte implícitamente.
-4. Crea una invitación. Su QR y el enlace copiado permiten abrir la misma invitación: escanea el QR en Little Leonardo o pega el enlace en **Conectarme a otros equipos** en otro Mac. Compara los códigos y aprueba el dispositivo pendiente en este Mac de origen. Las filas indican **solo lectura** (Little Leonardo o clientes compatibles) o **LeonardoMD en Mac · cambios sujetos a revisión**. La etiqueta depende del permiso concedido, no del nombre del equipo.
+4. Crea una invitación. Si cambia la red, el QR y el enlace anteriores pueden desaparecer; cuando la dirección local vuelva a estar disponible, crea y comparte una invitación nueva. Su QR y el enlace copiado permiten abrir la misma invitación: escanea el QR en Little Leonardo o pega el enlace en **Conectarme a otros equipos** en otro Mac. Compara los códigos y aprueba el dispositivo pendiente en este Mac de origen. Las filas indican **solo lectura** (Little Leonardo o clientes compatibles) o **LeonardoMD en Mac · cambios sujetos a revisión**. La etiqueta depende del permiso concedido, no del nombre del equipo.
 5. Importa el contenido compartido en el compañero y compruébalo antes de depender de una copia sin conexión. Usa Revocar en el Mac para retirar acceso futuro a un dispositivo.
+
+**Revisar cambios** requiere que el servicio de uso compartido local esté disponible. **Permitir la conexión**, **Rechazar** y **Revocar** requieren que el asistente de sincronización esté en buen estado. La acción afectada permanece desactivada mientras falte ese requisito. Los dispositivos emparejados siguen en la lista aunque compartir desde este Mac esté desactivado.
+
+Si el asistente deja de estar disponible mientras tienes abierta una revisión del Mac de origen, la revisión permanece abierta con sus decisiones. **Aplicar decisiones** sigue desactivado hasta que la sincronización y el uso compartido vuelvan a estar disponibles. Antes de aplicar, LeonardoMD comprueba que la propuesta recibida y el origen sigan coincidiendo con la revisión; vuelve a abrirla si alguno ha cambiado.
+
+![La revisión de un cambio recibido sigue abierta cuando el asistente no está disponible; Aplicar decisiones está desactivado.](assets/sync-review-draft-unavailable.png)
+
+*Cambio recibido sintético; la revisión permanece abierta, pero la acción Aplicar se desactiva hasta que se recupere la sincronización.*
+
+La lista de dispositivos enlazados se actualiza al abrir esta página. Pulsa **Actualizar dispositivos enlazados** para refrescarla cuando lo necesites.
 
 ### Reconocer el papel de un proyecto
 
@@ -760,8 +772,6 @@ permiso sobre documentos.*
 
 **Leonardo Sync es necesario en ambas direcciones.** Si está deshabilitado, detenido, pendiente de autorización de macOS o no disponible, el Mac queda sin conexión para sincronizar entre dispositivos aunque LeonardoMD esté abierto. Actívalo desde estas preferencias en cada Mac. El servicio se inicia al entrar en tu cuenta después de reiniciar y sigue compartiendo cuando cierras el editor; no sirve documentos antes de iniciar sesión ni despierta un Mac en reposo. Si no está disponible, revisa la autorización en segundo plano, la red, el disco compartido y los permisos de archivos, y vuelve a intentarlo.
 
-El estado común permanece junto a **Activar Leonardo Sync** mientras se comprueba. Tras el primer resultado, las comprobaciones siguientes mantienen ese estado hasta que cambie; solo se muestra un diagnóstico si hay un error. La lista de dispositivos se actualiza al abrir la página de uso compartido. Pulsa **Actualizar dispositivos enlazados** para comprobarla de nuevo cuando lo necesites.
-
 El servicio comparte **solo archivos guardados**, también con el editor abierto. Guarda los borradores antes de actualizar otro dispositivo. Las preferencias y autorizaciones son locales a este Mac y sobreviven al reinicio de la app o del servicio; deshabilitarlo las conserva. Puedes habilitar el servicio sin compartir proyectos para conectar con otro Mac. Las propuestas recibidas esperan una revisión explícita en LeonardoMD; el servicio no acepta escrituras automáticamente.
 
 El Mac debe estar accesible para transferir. Una VPN privada superpuesta requiere su ajuste explícito y una dirección compatible accesible; no convierte el sistema en un servicio público en la nube. No presupongas conectividad entre redes cualesquiera. Revocar impide acceso autorizado futuro; no borra copias ya descargadas. El compañero iOS no ofrece edición Git ni devuelve ediciones de documentos al Mac. La revisión de propuestas del escritorio no es edición móvil.
@@ -774,7 +784,7 @@ Si no se puede confirmar la parada segura, se aplaza la instalación en vez de t
 
 ## 15. Conectarme a otros equipos y copias sin conexión
 
-![Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.](assets/sync-connections-v13.png)
+![Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.](assets/sync-connections-v14.png)
 
 *Sincronización → Conectarme a otros equipos antes de emparejar o importar un proyecto.*
 

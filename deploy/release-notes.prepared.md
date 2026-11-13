@@ -2,6 +2,22 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1596
+
+- #440 Added: optional grouped instance presentation ([#441](https://github.com/PinedaTec-EU/LeonardoMD/pull/441))
+
+<p>Optionally group independent LeonardoMD processes under one Dock and app-switcher entry, with an instance selector in every window and automatic replacement of the visible representative when it exits.</p>
+
+Source: `6f512c2e8f80e8cbdf33f090814790a742a7fb8c`. Delta: `{"build": 9}`.
+
+## 0.3.1587
+
+- #421 Fixed: Keep synchronization status stable and quiet ([#428](https://github.com/PinedaTec-EU/LeonardoMD/pull/428))
+
+<p>Synchronization keeps status steady during checks, refreshes linked devices on open or on demand, preserves invitations and review drafts during recovery, and gates peer actions on live helper health.</p>
+
+Source: `970c903ef1175920c0bc1cf6511c9433c188c575`. Delta: `{"build": 216}`.
+
 ## 0.3.1371
 
 - #429 Added: review remote projects and files by host ([#430](https://github.com/PinedaTec-EU/LeonardoMD/pull/430))

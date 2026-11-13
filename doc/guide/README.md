@@ -1,8 +1,8 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v67-en.mdlz` and `Guide-v67-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v72-en.mdlz` and `Guide-v72-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v67/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v72/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
@@ -12,10 +12,7 @@ and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
-Guide v67 carries forward the remote project review and offline catalogue guidance,
-and documents Little Leonardo's editable local Mac names and conditional local
-project section. It creates a new personal copy without overwriting earlier
-guide revisions or practice answers, including v62–v66.
+Guide v72 adds editable local names for paired Macs in Little Leonardo, keeps IP addresses available as connection details, and explains why the empty local-project section is hidden. It creates a new personal copy while preserving earlier guide copies and practice answers through v71.
 
 File → Import with your agent opens `AgentImport-v3-en.mdlz` or
 `AgentImport-v3-es.mdlz` in the same tab/package flow, with personal copies under
@@ -72,3 +69,5 @@ No system URL protocol or general document-command facility is introduced.
 Tracking: [#312](https://github.com/PinedaTec-EU/LeonardoMD/issues/312).
 
 Illustrations use real alpha transparency and the Classic red/oxide/ochre palette. Keep explanatory captions in the localized Markdown rather than baking them into artwork; the four artwork files are shared across locales. Verify transparency and readability on the document background when refreshing them. Tracking: [#375](https://github.com/PinedaTec-EU/LeonardoMD/issues/375).
+
+Guide v71 adds optional grouping of independent processes in Dock and the app switcher, with per-window instance selection and a native application menu. Existing personal copies remain untouched.

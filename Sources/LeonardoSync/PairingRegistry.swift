@@ -99,6 +99,14 @@ public struct PairingRegistry: Codable, Sendable {
         return invitation
     }
 
+    /// Checks a displayed invitation against this live registry without consuming it.
+    public func hasValidInvitation(_ invitation: PairingInvitation, now: Date) -> Bool {
+        guard enabled, invitation.expiresAt > now,
+              let record = invitations[invitation.id], record.expiresAt == invitation.expiresAt,
+              record.expiresAt > now else { return false }
+        return Self.matches(record.digest, Self.digest(invitation.secret))
+    }
+
     public mutating func requestPairing(deviceName: String, credential: String,
                                        invitation: PairingInvitation? = nil, serverFingerprint: Data, now: Date,
                                        kind: PairingClientKind = .readOnly,

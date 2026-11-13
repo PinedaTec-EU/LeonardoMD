@@ -513,6 +513,8 @@ Appearance offers palettes, paper effects and Leonardo file colors. **Customize*
 
 Enable **Allow multiple instances** before File → New instance. Each instance is a separate process; Finder opening belongs to the principal instance. Turning the preference off does not terminate existing processes. Synchronization and updates are managed in the principal instance.
 
+To share one Dock and ⌘Tab entry, enable **Group instances in Dock and app switcher** in Preferences → On this Mac. This local setting is available only with **Allow multiple instances** enabled and is off by default. Processes remain independent. Use **Instances** (the stacked-squares button in every window) or the Dock icon’s menu to select a process by its number. The selector marks the current process and provides Preferences and **Quit this instance**, including save confirmation. The adjacent **Application menu** button (three lines) opens the full application commands. Grouped processes without a Dock entry have no macOS menu bar; use Application menu for those commands. Closing the representative makes the oldest remaining cooperating process take its place within a few seconds; this does not transfer synchronization ownership. Disable grouping or multiple instances to restore separate Dock/⌘Tab entries without closing documents. The grouping choice is retained when multiple instances are disabled. Only running versions that support grouping participate; older versions retain their own entries.
+
 ## 12. The five built-in extensions
 
 These extensions are included with Leonardo, work locally and are initially disabled. They are separate from the `leonardo-format` skill for external AI agents. Enable only what you want in Preferences → Extensions, globally or for this project; project inheritance follows global settings.
@@ -585,17 +587,27 @@ These operations are manual. Pull is fast-forward only and protects dirty worktr
 
 ## 14. Share from this Mac: Little Leonardo and other computers
 
-![Synchronization → Share from this Mac; the common service and sharing are off in this example.](assets/sync-sharing-v13.png)
+![Synchronization → Share from this Mac; the common service and sharing are off in this example.](assets/sync-sharing-v14.png)
 
 *Synchronization → Share from this Mac; the common service and sharing are off in this example.*
 
 Little Leonardo is a **read-only companion**. Desktop sharing and device trust are explicit; opening a document does not publish it. Use the principal Mac instance's **Preferences → Synchronization → Share from this Mac**. The same page serves Little Leonardo and other Macs; a Mac can share some content and independently connect to another Mac for other content. The service requires a Developer ID signed distribution; local ad-hoc builds cannot enable it.
 
-1. Enable **Leonardo Sync** using the single common control above both pages. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. A brief **Checking synchronization status** message may appear while the service is verified. When it is running, the dot stays green and the status subtitle is hidden. A red dot and status text indicate that it is offline; follow any approval action shown.
+1. Enable **Leonardo Sync** using the single common control above both pages. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. A confirmed healthy helper shows a green indicator; an actual failure shows red with a diagnostic. While checking, the indicator keeps its previous state and no temporary gray state or “Sync helper running” line appears.
 2. Enable **Share saved files from this Mac** on a network you intend to use. Review the selected local address; Automatic can choose an available address.
 3. Choose **Share current project**, then select the folders/documents you want or the entire project. Confirm the selection; unrelated content is not implicitly shared.
-4. Create an invitation. Its QR and copied link are two ways to open the same invitation: scan the QR in Little Leonardo or paste the link under **Connect to other computers** on another Mac. Compare the verification codes and approve the pending device on this source Mac. Device rows state **read-only** (Little Leonardo or compatible clients) or **LeonardoMD on Mac · changes require review**. The label follows the granted capability, not the device name.
+4. Create an invitation. If the network changes, the old QR and link may disappear; once the local address is available again, create and share a new invitation. Its QR and copied link are two ways to open the same invitation: scan the QR in Little Leonardo or paste the link under **Connect to other computers** on another Mac. Compare the verification codes and approve the pending device on this source Mac. Device rows state **read-only** (Little Leonardo or compatible clients) or **LeonardoMD on Mac · changes require review**. The label follows the granted capability, not the device name.
 5. Import the shared content on the companion and verify it before relying on an offline copy. Use Revoke on the Mac to remove a device's future access.
+
+**Review changes** requires the local sharing service to be available. **Allow connection**, **Reject** and **Revoke** require a healthy sync helper. An affected action stays disabled while its requirement is unavailable. Paired devices remain listed when sharing from this Mac is off.
+
+If the helper becomes unavailable while a source review is open, the review stays open with its choices intact. **Apply decisions** remains disabled until synchronization and sharing are available again. Before applying, LeonardoMD checks that the incoming proposal and source still match the review; reopen it if either changed.
+
+![An incoming source review stays open while the sync helper is unavailable; Apply decisions is disabled.](assets/sync-review-draft-unavailable.png)
+
+*Synthetic incoming change; the review remains open, but its Apply action is disabled until synchronization recovers.*
+
+The linked-device list refreshes when this page opens. Use **Refresh linked devices** for an on-demand update.
 
 ### Recognize a project's role
 
@@ -741,8 +753,6 @@ grant.
 
 **Leonardo Sync is required in both directions.** If it is disabled, stopped, awaiting macOS approval or unavailable, the Mac is offline for device synchronization even while LeonardoMD is open. Enable it from these preferences on each Mac. The service starts after you log in following a restart and keeps sharing when the editor closes; it does not serve documents before login or wake a sleeping Mac. If unavailable, check the background-item approval, network, shared disk and file permissions, then retry.
 
-The shared status stays beside **Enable Leonardo Sync** while a check runs. After the first result, later checks keep showing that result until it changes; diagnostic text appears when there is an error. The linked-device list refreshes when you open the sharing page. Use **Refresh linked devices** when you need to check it again.
-
 The helper shares **saved files only**, including while the editor is open. Save drafts before refreshing another device. Sharing preferences and device permissions are local to this Mac and survive restarting the app/helper; disabling the helper retains them. You can enable the helper without sharing any projects to connect to another Mac. Incoming proposals wait for explicit review in LeonardoMD; the helper does not accept writes automatically.
 
 The Mac must be reachable for transfers. A private overlay VPN requires the explicit setting and a compatible reachable address; it does not make a public cloud service. Do not assume pairing works across arbitrary networks. Revocation stops future authorized access; it cannot erase copies already downloaded. The iOS companion does not offer Git editing or send document edits back to the Mac. Do not confuse desktop proposal review with mobile editing.
@@ -755,7 +765,7 @@ If a safe stop cannot be confirmed, installation is postponed rather than forcib
 
 ## 15. Connect to other computers and offline copies
 
-![Synchronization → Connect to other computers before pairing or importing a project.](assets/sync-connections-v13.png)
+![Synchronization → Connect to other computers before pairing or importing a project.](assets/sync-connections-v14.png)
 
 *Synchronization → Connect to other computers before pairing or importing a project.*
 

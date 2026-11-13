@@ -7,7 +7,8 @@ import LeonardoDesktopSync
 @MainActor
 enum SyncHelperStopBarrier {
     static func stopAndUnregister(service: any SyncHelperRegistration,
-                                 client: any SyncHelperControlAccess, preferencesURL: URL) async throws {
+                                 client: any SyncHelperControlAccess, preferencesURL: URL,
+                                 shouldUnregister: @MainActor () -> Bool = { true }) async throws {
         var stoppedHelper: ProcessFileLock?
         defer { withExtendedLifetime(stoppedHelper) {} }
         if service.status == .enabled {
@@ -19,6 +20,7 @@ enum SyncHelperStopBarrier {
                     .appendingPathComponent("MobileSync/helper.lock"))
             }
         }
+        guard shouldUnregister() else { return }
         guard service.status != .notRegistered, service.status != .notFound else { return }
         try await service.unregister()
     }

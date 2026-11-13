@@ -501,7 +501,6 @@
   "Show all files": "Show all files",
   "Sort": "Sort",
   "Folders first": "Folders first",
-  "Name": "Name",
   "A–Z": "A–Z",
   "Z–A": "Z–A",
   "Filter and sort files": "Filter and sort files",
@@ -596,6 +595,7 @@
   "Connect to other computers": "Connect to other computers",
   "Synchronization role": "Synchronization role",
   "Enable Leonardo Sync": "Enable Leonardo Sync",
+  "Enable synchronization and sharing to apply review decisions.": "Enable synchronization and sharing to apply review decisions.",
   "Required to share and connect. When off, both directions are offline even with LeonardoMD open. Starts after login and keeps sharing saved files when you close the editor.": "Required to share and connect. When off, both directions are offline even with LeonardoMD open. Starts after login and keeps sharing saved files when you close the editor.",
   "Choose saved content from this Mac for Little Leonardo and other computers. Connecting to another computer does not require sharing your own files.": "Choose saved content from this Mac for Little Leonardo and other computers. Connecting to another computer does not require sharing your own files.",
   "Content shared from this Mac": "Content shared from this Mac",
@@ -697,5 +697,12 @@
   "Searching…": "Searching…",
   "This document": "This document",
   "Type to search": "Type to search",
-  "Use regular expressions": "Use regular expressions"
+  "Use regular expressions": "Use regular expressions",
+  "Group instances in Dock and app switcher": "Group instances in Dock and app switcher",
+  "Grouped processes share one Dock entry. Use Instances in any window to switch or quit. If the representative closes, another takes its place.": "Grouped processes share one Dock entry. Use Instances in any window to switch or quit. If the representative closes, another takes its place.",
+  "Instances": "Instances",
+  "Instance": "Instance",
+  "Current": "Current",
+  "Application menu": "Application menu",
+  "Quit this instance": "Quit this instance"
 }
