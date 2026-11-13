@@ -133,3 +133,9 @@ before enabling gated actions. An automatic stop checks lifecycle ownership
 again before unregistering; a newer enable waits for an in-flight stop and then
 confirms or restores registration, while a later explicit disable still owns
 the final stop.
+
+An automatic renewal may release `busy` only while its captured lifecycle
+revision is still current. If an explicit disable takes ownership during a
+held renewal, the older renewal must leave controls locked until the ordered
+preference write and helper stop finish. Regression:
+`testInterruptedUpgradeCannotReleaseBusyOwnedByExplicitDisable`.

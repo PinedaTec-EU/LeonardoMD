@@ -11,6 +11,13 @@ errors. The focused controller regression is recorded in
 [`v41 validation`](../doc/validation/sync-helper/428-quiet-status-v41/README.md);
 its source fix is `c9d8c53cea8ec437be5e62a6c2e7101b0c0051ea`.
 
+When an explicit-action alert hides a persistent consent or incoming-proposal
+diagnostic, dismissing the alert acknowledges only the visible message; the
+queued diagnostic is then presented once and remains suppressed for the same
+failure episode after dismissal. A successful read clears only its own
+diagnostic. See `DesktopSyncPollingDiagnostics.setActionError(_:)` and the
+controller regressions in `SyncHelperControllerTests`.
+
 Mobile Git retirement under [#249](https://github.com/PinedaTec-EU/LeonardoMD/issues/249): iOS is read-only with authorized direct refresh/offline cache. The proprietary Git target, publication UI and wakeup API are removed; old Git corpus data is preserved as read-only recovery/export state. Desktop direct-sync proposals/receipts and the system Git adapter remain. [Recovery and boundaries](../doc/mobile/git-retirement.md). Older Git checkpoints below are historical. Windows remains deferred under [#227](https://github.com/PinedaTec-EU/LeonardoMD/issues/227).
 
 Current mobile transport checkpoint ([#380](https://github.com/PinedaTec-EU/LeonardoMD/issues/380), accepted [PR #382](https://github.com/PinedaTec-EU/LeonardoMD/pull/382)): bounded, privacy-safe LL1 diagnostics expose operation/status/partial bytes. Physical transfer of the owner's original image remains unconfirmed. Signed transport candidate [PR #392](https://github.com/PinedaTec-EU/LeonardoMD/pull/392) is a separately coordinated experiment; passing TLS/simulator checks do not prove a physical fix. Accepted Classic1113 is separately available in OwnerInternal TestFlight and does not establish #380 acceptance. [PR #385](https://github.com/PinedaTec-EU/LeonardoMD/pull/385) combines accepted Classic Guide25, diagnostics and on-demand help into Guide27. Earlier Guide26 fresh packaged EN/ES smoke passed, with hashes matching bundled archives and scoped originals restored; later corrective client code requires renewed exact-source native acceptance. Current source-bound evidence and limits are maintained in [on-demand validation](../doc/validation/on-demand-sync/README.md).
