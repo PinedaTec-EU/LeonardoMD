@@ -16,31 +16,44 @@ enum MobileDiagnosticOperation: String {
 
 @MainActor
 struct MobileErrorNotice {
-    static let alertTitle = "No se pudo completar la operación"
+    static func alertTitle(spanish: Bool) -> String {
+        spanish ? "No se pudo completar la operación" : "The operation couldn’t be completed"
+    }
+
+    static func acceptLabel(spanish: Bool) -> String { spanish ? "Aceptar" : "OK" }
+    private static func defaultMessage(spanish: Bool) -> String {
+        spanish ? "Inténtalo de nuevo. Si vuelve a ocurrir, indica este código."
+            : "Try again. If it happens again, share this code."
+    }
 
     let referenceCode: String
     let message: String
+    let spanish: Bool
 
-    var inlineMessage: String { "\(message) Código: \(referenceCode)" }
+    var inlineMessage: String { "\(message) \(spanish ? "Código" : "Code"): \(referenceCode)" }
     var alertMessage: String { inlineMessage }
 
     static func record(
         _ error: Error,
         operation: MobileDiagnosticOperation,
-        message: String = "Inténtalo de nuevo. Si vuelve a ocurrir, indica este código.",
-        diagnosticLog: MobileDiagnosticLog? = nil
+        message: String? = nil,
+        diagnosticLog: MobileDiagnosticLog? = nil,
+        spanish: Bool = true
     ) -> MobileErrorNotice {
-        record([error], operation: operation, message: message, diagnosticLog: diagnosticLog)
+        record([error], operation: operation, message: message,
+               diagnosticLog: diagnosticLog, spanish: spanish)
     }
 
     static func record(
         _ errors: [Error],
         operation: MobileDiagnosticOperation,
-        message: String = "Inténtalo de nuevo. Si vuelve a ocurrir, indica este código.",
+        message: String? = nil,
         fallbackCategory: String? = nil,
-        diagnosticLog: MobileDiagnosticLog? = nil
+        diagnosticLog: MobileDiagnosticLog? = nil,
+        spanish: Bool = true
     ) -> MobileErrorNotice {
-        let notice = MobileErrorNotice(referenceCode: makeReferenceCode(), message: message)
+        let notice = MobileErrorNotice(referenceCode: makeReferenceCode(),
+                                       message: message ?? defaultMessage(spanish: spanish), spanish: spanish)
         let log = diagnosticLog ?? .shared
         if errors.isEmpty {
             log.record(
@@ -68,14 +81,16 @@ struct MobileErrorNotice {
         operation: MobileDiagnosticOperation,
         message: String,
         category: String,
-        diagnosticLog: MobileDiagnosticLog? = nil
+        diagnosticLog: MobileDiagnosticLog? = nil,
+        spanish: Bool = true
     ) -> MobileErrorNotice {
         record(
             [],
             operation: operation,
             message: message,
             fallbackCategory: category,
-            diagnosticLog: diagnosticLog)
+            diagnosticLog: diagnosticLog,
+            spanish: spanish)
     }
 
     private static func makeReferenceCode() -> String {
@@ -123,14 +138,20 @@ final class MobileDiagnosticLog {
         entries = bounded(entries)
 
         do {
-            try fileManager.createDirectory(
-                at: url.deletingLastPathComponent(),
-                withIntermediateDirectories: true)
+            let directoryURL = url.deletingLastPathComponent()
+            try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+            // Protect the containing directory before writing: atomic replacement
+            // creates a new file and may not preserve the old file's backup flag.
+            try excludeFromBackup(at: directoryURL)
             try Data((entries.joined(separator: "\n") + "\n").utf8).write(to: url, options: .atomic)
-            var values = URLResourceValues()
-            values.isExcludedFromBackup = true
-            var mutableURL = url
-            try? mutableURL.setResourceValues(values)
+            do {
+                try excludeFromBackup(at: url)
+            } catch {
+                // The directory is already excluded; remove the file if its own
+                // marker cannot be restored after an atomic replacement.
+                try? fileManager.removeItem(at: url)
+                throw error
+            }
         } catch {
             // Failure to retain diagnostics must never replace the original user-facing error.
         }
@@ -138,9 +159,16 @@ final class MobileDiagnosticLog {
 
     private var logFileURL: URL? {
         if let fileURLOverride { return fileURLOverride }
-        return fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+        return fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first?
             .appendingPathComponent("LittleLeonardo", isDirectory: true)
             .appendingPathComponent("error-log.txt", isDirectory: false)
+    }
+
+    private func excludeFromBackup(at url: URL) throws {
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        var mutableURL = url
+        try mutableURL.setResourceValues(values)
     }
 
     private func safeDiagnostic(for error: Error) -> String {
@@ -191,7 +219,7 @@ struct MobileErrorLogView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Se muestran las últimas entradas guardadas en este dispositivo. El código del aviso aparece en la misma línea. El registro no se envía automáticamente.")
+                    Text("Se guardan como máximo 120 entradas o 64 KiB en la caché local, excluida de copias de seguridad. iOS puede borrarla para liberar espacio. El código del aviso aparece en la misma línea; el registro no se envía automáticamente.")
                         .font(.footnote)
                         .foregroundStyle(MobileClassic.secondary)
                         .padding(.bottom, 8)

@@ -113,9 +113,7 @@ public struct RemoteDocumentPreview: View {
     }
 
     private func presentFailure(_ error: Error, path: String) -> String {
-        if let recorded = library.failures[DownloadLibrary.key(id: projectID, path: path)] {
-            return recorded
-        }
+        if let recorded = library.failures[DownloadLibrary.key(id: projectID, path: path)] { return recorded }
         return failurePresentation?(error) ?? error.localizedDescription
     }
     private func followLink(_ url: URL) {

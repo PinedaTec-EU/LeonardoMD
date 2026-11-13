@@ -152,7 +152,13 @@ struct MobileLibraryView: View {
             .navigationDestination(item: $selectedRemoteFile) { route in
                 RemoteDocumentPreview(library: library.downloads, projectID: route.projectID,
                     entry: route.entry, spanish: true, appearance: .leonardoClassic,
-                    compactFirstHeading: true).classicSurface()
+                    compactFirstHeading: true,
+                    failurePresentation: { error in
+                        MobileErrorNotice.record(
+                            error,
+                            operation: .downloads,
+                            message: "No se pudo descargar el documento. Comprueba la conexión e inténtalo de nuevo.").inlineMessage
+                    }).classicSurface()
             }
             .refreshable { await library.synchronize(); await library.reload() }
             .toolbar { libraryToolbar }
@@ -196,7 +202,7 @@ struct MobileLibraryView: View {
                 catch { return }
             }
         }
-        .alert(MobileErrorNotice.alertTitle, isPresented: Binding(
+        .alert(MobileErrorNotice.alertTitle(spanish: true), isPresented: Binding(
             get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
             Button("Aceptar") { library.error = nil }
         } message: { Text(library.error ?? "") }

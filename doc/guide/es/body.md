@@ -710,8 +710,12 @@ identificadores de dispositivo/proyecto ni contenido de documentos o imágenes.
 Puedes seleccionar y copiar una línea si decides compartirla al pedir ayuda.
 Una cabecera HTTP 200 no significa que terminara el cuerpo. Un total esperado
 `?` significa que el servidor no informó de la longitud. Las copias descargadas
-sin conexión siguen disponibles; comprueba que el Mac de origen sea accesible y
-que Leonardo Sync esté activo, y vuelve a intentar la sincronización.
+sin conexión siguen disponibles. Se conservan como máximo 120 entradas recientes
+o 64 KiB, lo que se alcance primero. Se guarda en la caché local de la app,
+excluida de las copias de seguridad antes de escribir; iOS puede borrarla para
+liberar espacio, así que el registro sirve para diagnosticar errores recientes,
+no como almacenamiento permanente. Comprueba que el Mac de origen sea accesible
+y que Leonardo Sync esté activo, y vuelve a intentar la sincronización.
 
 ### Responder a una solicitud de rúbrica en iOS
 

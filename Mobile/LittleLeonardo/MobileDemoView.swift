@@ -49,13 +49,17 @@ struct MobileDemoView: View {
                             self.error = MobileErrorNotice.record(
                                 error,
                                 operation: .practice,
-                                message: "No se pudo guardar la práctica. Inténtalo de nuevo.")
+                                message: errorMessage("Could not save the practice. Try again.",
+                                                     "No se pudo guardar la práctica. Inténtalo de nuevo."),
+                                spanish: language == .es)
                         }
                     } else {
                         error = MobileErrorNotice.record(
                             operation: .practice,
-                            message: "No se pudieron guardar los cambios. Inténtalo de nuevo.",
-                            category: "practice_flush_failed")
+                            message: errorMessage("Could not save the changes. Try again.",
+                                                  "No se pudieron guardar los cambios. Inténtalo de nuevo."),
+                            category: "practice_flush_failed",
+                            spanish: language == .es)
                     }
                 }
             }.disabled(content.isEmpty).accessibilityIdentifier("demo-save")
@@ -95,7 +99,8 @@ struct MobileDemoView: View {
                     self.error = MobileErrorNotice.record(
                         error,
                         operation: .practice,
-                        message: "No se pudo guardar la práctica.")
+                        message: errorMessage("Could not save the practice.", "No se pudo guardar la práctica."),
+                        spanish: language == .es)
                     return nil
                 }
             }
@@ -104,7 +109,8 @@ struct MobileDemoView: View {
                 self.error = MobileErrorNotice.record(
                     error,
                     operation: .practice,
-                    message: "No se pudo abrir la práctica.")
+                    message: errorMessage("Could not open the practice.", "No se pudo abrir la práctica."),
+                    spanish: language == .es)
             }
         }
         .onDisappear {
@@ -123,7 +129,8 @@ struct MobileDemoView: View {
                         self.error = MobileErrorNotice.record(
                             error,
                             operation: .practice,
-                            message: "No se pudo restablecer la práctica.")
+                            message: errorMessage("Could not reset the practice.", "No se pudo restablecer la práctica."),
+                            spanish: language == .es)
                     }
                 }
             }
@@ -134,9 +141,13 @@ struct MobileDemoView: View {
                 Button("Cerrar / Close") { fieldHelp = nil }
             }.classicSurface().presentationDetents([.medium])
         }
-        .alert(MobileErrorNotice.alertTitle, isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
-            Button("Aceptar / OK") { error = nil }
+        .alert(MobileErrorNotice.alertTitle(spanish: language == .es), isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
+            Button(MobileErrorNotice.acceptLabel(spanish: language == .es)) { error = nil }
         } message: { Text(error?.alertMessage ?? "") }
+    }
+
+    private func errorMessage(_ english: String, _ spanish: String) -> String {
+        language == .es ? spanish : english
     }
 }
 

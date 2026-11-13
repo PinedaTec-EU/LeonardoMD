@@ -696,6 +696,10 @@ server address or path, pairing credentials, device/project identifiers, and
 document or image content. Select and copy a line only if you choose to share
 it when asking for help. An HTTP 200 header does not mean the response body
 finished; a `?` expected count means the server did not provide a body length.
+It keeps up to 120 recent entries or 64 KiB, whichever limit is reached first.
+It is stored in the app's local cache, excluded from backups before writing;
+iOS may clear that cache to free space, so the log is for recent troubleshooting
+rather than permanent storage.
 Previously downloaded offline copies remain available; check that the source
 Mac is reachable and Leonardo Sync is enabled, then retry synchronization.
 
