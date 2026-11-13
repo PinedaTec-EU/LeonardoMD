@@ -28,6 +28,32 @@ Prevent the temporary QA startup failure tracked in [issue #80](https://github.c
 
 This is a preventive agent workflow rule; documenting it alone does not resolve issue #80 or establish that the original QA generator has been repaired.
 
+## Close task-owned QA instances after testing
+
+The lifecycle correction tracked in [issue #438](https://github.com/PinedaTec-EU/LeonardoMD/issues/438)
+applies to LeonardoMD and Device Hub validation for every issue:
+
+- Before launching, record the existing app processes and device sessions. Track
+  each instance created by this task using PID, start time and executable/bundle
+  path; for Device Hub also record session/device identifier and app identifier.
+  A familiar app name or QA bundle identifier alone does not establish ownership.
+- After collecting the required evidence (including both bundled-help smoke
+  tests), gracefully quit every app instance created by this task. Close each
+  Device Hub session opened by this task and stop its test app. Shut down a
+  simulator only if this task booted it and no other task now uses it; never
+  shut down or erase a physical device as cleanup.
+- Perform teardown after successful, failed or cancelled validation, before
+  handing off or closing the issue. If interrupted before cleanup, reconcile
+  the recorded identities and finish cleanup when work resumes.
+- Verify the exact processes have exited and the owned Device Hub sessions have
+  closed. Record the identities and teardown result in the canonical issue/PR.
+  A quit request or closing a viewer window alone is not proof of termination.
+- Preserve pre-existing/user-owned/other-task instances. Never use name-wide
+  kill commands or blanket device shutdown. If ownership is ambiguous, a quit
+  prompts about unsaved work, or the required control tool is unavailable,
+  report the retained identity and reason; do not force quit, discard work or
+  claim cleanup succeeded.
+
 ## User help maintenance
 
 PRs that add, remove or change a user-visible feature must update the Spanish
