@@ -25,7 +25,14 @@
       },
       "practice_open_fill_save_close_reopen": true,
       "both_locales_opened_from_real_Help": true,
-      "math_enabled_and_disabled_checked": true
+      "math_enabled_and_disabled_checked": true,
+      "bundle_id": "eu.pinedatec.LeonardoMD.qa.a794635da723448fb60b33db6cd0860f",
+      "executable_sha256": "fa9fd058bdecf92994451a51b3c278243f190a6bdce0a8b89b8bf537d864e18b",
+      "mapped_sections_sha256": "76cc78eb883e03e75e38b659f10f72870698a2d6de49cb1dc65e527cb8077935",
+      "executable": "LeonardoMD",
+      "packaging_verifier_passed": true,
+      "xctest_linked": false,
+      "terminated": true
     },
     "a2": {
       "pid": 7354,
@@ -47,7 +54,14 @@
       },
       "practice_open_fill_save_close_reopen": true,
       "both_locales_opened_from_real_Help": true,
-      "math_enabled_and_disabled_checked": true
+      "math_enabled_and_disabled_checked": true,
+      "bundle_id": "eu.pinedatec.LeonardoMD.qa.3a0bffd58ffc421f82471e787b12a646",
+      "executable_sha256": "40b6362de71d17c0342ab5473578229770236a126249dcfd0c7ccc023a6404d1",
+      "mapped_sections_sha256": "76cc78eb883e03e75e38b659f10f72870698a2d6de49cb1dc65e527cb8077935",
+      "executable": "LeonardoMD",
+      "packaging_verifier_passed": true,
+      "xctest_linked": false,
+      "terminated": true
     }
   },
   "task_processes_exited": [
@@ -59,5 +73,9 @@
     "allowMultipleInstances": true,
     "groupApplicationInstances": false
   },
-  "device_hub_sessions_created": 0
+  "device_hub_sessions_created": 0,
+  "built_executable_sha256": "2b47eb82b0a751c8524147f997483c48130ecc66fafa174a01e2e76cd9faa6c7",
+  "mapped_sections_sha256": "76cc78eb883e03e75e38b659f10f72870698a2d6de49cb1dc65e527cb8077935",
+  "mapped_sections_count": 38,
+  "signing_identity_variants": "Full Mach-O hashes differ because each QA bundle is re-signed with its distinct bundle identity; all mapped file-backed sections match the built product."
 }

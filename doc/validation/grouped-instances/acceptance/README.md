@@ -87,3 +87,10 @@ Math setting was restored on before teardown. No task-created Device Hub session
 exists. Pre-existing and other-task app/device sessions were preserved. No force
 quit was used. The temporary checkout/cache is removed after merge verification;
 synthetic profile data and disposable bundles can be retained as QA artifacts.
+
+The bundle verifier and `otool -L` passed for both real QA bundles without XCTest.
+Distinct ad-hoc identities necessarily change the complete signed Mach-O bytes;
+all 38 file-backed mapped sections hash identically to the built product.
+`identity.json` records both full signed hashes and that common section hash.
+The presentation and selector observations explicitly identify their provenance
+as verbatim transcriptions of the original live tool results, not fresh exports.
