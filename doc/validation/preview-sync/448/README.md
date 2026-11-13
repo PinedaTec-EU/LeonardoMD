@@ -1,53 +1,54 @@
-# Preview synchronization alert acceptance — PR #448
+# Preview synchronization recovery acceptance — PR #448
 
 ## Scope and source
 
-This report validates the native alert correction tracked by [issue #447](https://github.com/PinedaTec-EU/LeonardoMD/issues/447) and [PR #448](https://github.com/PinedaTec-EU/LeonardoMD/pull/448). The corrected close-flush source is in commit 28a0fa127f32a7922e23053795f061e98d42c1de; the current full capture source revision is 9f679837788fc733f6667e9274c365b90b5b1716, based on main at 8711e44aae3babc5beb914bb6b3e69dfe2715e96.
+This report records validation for [issue #447](https://github.com/PinedaTec-EU/LeonardoMD/issues/447) and [PR #448](https://github.com/PinedaTec-EU/LeonardoMD/pull/448). The validated application source is commit `0a463909c9f8abdf16e1a74b792f0ee4d7266a41`, based on `main` at `8711e44aae3babc5beb914bb6b3e69dfe2715e96` (Guide v74). It preserves v74, incorporates the bilingual recovery text in Guide v76, and leaves earlier personal copies intact.
 
-An ordinary Preview renderer synchronization failure now presents one native action. During a close blocked by the same failure, the app offers Keep Open for another retry or explicit discard of only unapplied Preview edits. Other unsaved document changes still use the regular Save, Discard or Cancel decision.
+An ordinary Preview synchronization failure now presents one native action. If closing reaches a failed Preview flush, the recovery alert names the affected document and offers Keep Open for retry or an explicit discard of only the unapplied Preview edits. Any other unsaved document changes still use the regular Save, Discard or Cancel decision. During close preparation, already queued Preview and form messages remain authorized through the final renderer snapshot; the gate then closes before the ordinary save decision. A failed inactive tab is selected before the alert appears and remains visible when the user keeps it open.
 
-The original reporter-provided screenshot remains attached to public issue #447. The component captures below are separate, fresh synthetic-data captures from the corrected source.
+The reporter-provided screenshot remains attached to public issue #447. The four captures below are separate implementation evidence from the production AppKit alert builders, rendered by the opt-in XCTest with fictional content.
 
 ## Native alert captures
 
-The four PNGs capture the production AppKit alert builders through the opt-in SessionEditingTests.testCapturePreviewSynchronizationWarningsInBothLanguages test. They show the alert component, not a full application window. The retry warning has exactly one action in both locales. The close warning offers the destructive discard action and Keep Open; Keep Open is the first/accessibility default and responds to Escape.
+The ordinary warning has one action in English and Spanish. The close warning names `sample.md`, explains that the unapplied Preview edits can be retried or discarded, and presents Keep Open and a visually destructive Preview-only discard action. The images are native alert components, not full application-window captures.
 
-| State | Capture | Metadata |
-| --- | --- | --- |
-| English, ordinary sync retry | [PNG](preview-alert-en-retry.png) | [JSON](preview-alert-en-retry.png.metadata.json) |
-| English, close recovery | [PNG](preview-alert-en-close.png) | [JSON](preview-alert-en-close.png.metadata.json) |
-| Spanish, ordinary sync retry | [PNG](preview-alert-es-retry.png) | [JSON](preview-alert-es-retry.png.metadata.json) |
-| Spanish, close recovery | [PNG](preview-alert-es-close.png) | [JSON](preview-alert-es-close.png.metadata.json) |
+| State | Capture | Sidecar | Captured (UTC) | AppKit viewport | Image pixels |
+| --- | --- | --- | --- | ---: | ---: |
+| English, ordinary retry | [PNG](preview-alert-en-retry.png) | [JSON](preview-alert-en-retry.png.metadata.json) | 2026-11-13 16:38:13.990482 | 306 × 280 pt | 612 × 560 |
+| English, close recovery | [PNG](preview-alert-en-close.png) | [JSON](preview-alert-en-close.png.metadata.json) | 2026-11-13 16:38:13.989980 | 306 × 330 pt | 612 × 660 |
+| Spanish, ordinary retry | [PNG](preview-alert-es-retry.png) | [JSON](preview-alert-es-retry.png.metadata.json) | 2026-11-13 16:38:13.991466 | 306 × 312 pt | 612 × 624 |
+| Spanish, close recovery | [PNG](preview-alert-es-close.png) | [JSON](preview-alert-es-close.png.metadata.json) | 2026-11-13 16:38:13.990986 | 314 × 362 pt | 628 × 724 |
 
-Each sidecar records the observed capture time, native AppKit surface, window-point viewport, Retina pixel dimensions, synthetic-data provenance, image hash and Git source revision. At collection, HEAD was 9f679837788fc733f6667e9274c365b90b5b1716. The sidecars report tracked changes because the successful capture invocation advanced the PR build counter to delta 17 and replaced the tracked capture images; no untracked files were present. Application sources and test inputs were unchanged from that HEAD. The subsequent evidence commit contains validation records, captures and ledger/wiki bookkeeping only.
+Each sidecar binds the current image hash and dimensions to its observed write/capture time, native screen, synthetic data, viewport points and source revision at collection. The capture source is `0a463909c9f8abdf16e1a74b792f0ee4d7266a41`. Later changes in the evidence commit are limited to the build ledger, captures and sidecars, this report, and `.wiki` notes; application code, guides, tests and build inputs are unchanged.
 
 ## Packaged application and Help acceptance
 
-The disposable app was launched with an isolated home using CFFIXED_USER_HOME=/private/tmp/leonardo-448-corrected-home.bOCg20yT and LEONARDO_SOURCE_PR=448 via ./launch.sh --qa --args --new-instance -allowMultipleInstances YES. Its real CFBundleExecutable was LeonardoMD; otool -L showed the expected AppKit, SwiftUI and WebKit dependencies and no XCTest.framework; scripts/qa-bundle.py --verify-only passed.
+`./launch.sh --qa` produced the real app bundle. `scripts/qa-bundle.py --verify-only` passed; `CFBundleExecutable` is `LeonardoMD`, and `otool -L` showed its AppKit, SwiftUI and WebKit dependencies without `XCTest.framework`.
 
-The QA bundle identifier was eu.pinedatec.LeonardoMD.qa.5b11a2952aaa4b9ea40defd3324c114b, app version 0.3.1602, build 1602. Fresh process PID 92461 reached first_window_shown and application_ready; it did not forward to an existing process.
+The isolated QA app was relaunched from that verified bundle as a fresh process using `CFFIXED_USER_HOME=/private/tmp/leonardo-448-final-home.Z0nRMl` and `LEONARDO_SOURCE_PR=448`. PID `77330` reached `first_window_shown` and `application_ready`; bundle identifier `eu.pinedatec.LeonardoMD.qa.6617357555e04ec9bcee181c0cc99adf`, bundle `/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-ayyin875/LeonardoMDQA.app`, version `0.3.1602`, build `1602`. The process did not forward to an existing app.
 
-In that same process, both bundled guides were opened through the native Help menu: Help → Leonardo user guide… opened Guide-v76-en.mdlz and Ayuda → Guía de Leonardo… opened Guide-v76-es.mdlz. The bundle resource and Help-opened personal copy matched byte-for-byte in each locale:
+In that same process, I opened both bundled guides through the native Help menu: Help → Leonardo user guide… opened `Guide-v76-en.mdlz`, and after temporarily changing the isolated interface language, Ayuda → Guía de Leonardo… opened `Guide-v76-es.mdlz`. Each Help-opened personal copy matched its bundled resource byte-for-byte:
 
-- English SHA-256: 85d3b5fbbb0669584e9264eed202e1bb233a7702f9b93b3d70e1dd87182a185e.
-- Spanish SHA-256: 2b1423efd816a0e8f9c6ef35d3ac31ef2f864486d78a137d8627658b6d015864.
+- English SHA-256: `85d3b5fbbb0669584e9264eed202e1bb233a7702f9b93b3d70e1dd87182a185e`.
+- Spanish SHA-256: `2b1423efd816a0e8f9c6ef35d3ac31ef2f864486d78a137d8627658b6d015864`.
 
-Both live guides showed their local cover image, table, Mermaid diagram and Vega-Lite chart. With Mermaid, Math and Charts enabled, the one-line and multiline display equations, inline math, Markdown-sensitive underscore/underbrace expressions and tagged box-counting equation (1) rendered; no KaTeX errors or literal delimiters appeared. Math was disabled in English to verify the literal-source fallback and code examples remaining literal, then re-enabled before completing the bilingual check. Chapter 10 in both locales visibly explains retry and discarding only unapplied Preview edits.
+Both live guides showed their local cover image, Mermaid diagram, tables and Vega-Lite chart. With Mermaid, Math and Charts enabled, the one-line and multiline display equations, inline math, underscore/underbrace expressions and tagged box-counting equation `(1)` rendered without literal delimiters or KaTeX errors. With Math disabled, the English guide retained formula source literally and code examples remained code; Math was re-enabled afterward. Chapter 10 in both locales explained the retry and Preview-only discard choice.
 
-The separate practice form was filled with fictional values, saved, closed and reopened from its guide button. The reopened values were intact and the Ready to share checkbox remained unchecked:
+The Spanish practice form was opened from the guide, saved, closed and reopened from the guide button in the same process. Its fictional answers persisted and Ready to share remained unchecked:
 
 | Locale | Name | Goal | Ready to share |
 | --- | --- | --- | --- |
-| English | QA Guide v76 | Check local practice form persistence. | No |
-| Spanish | Prueba v76 | Comprobar que las respuestas ficticias se guardan en la copia local. | No |
+| Spanish | `Prueba v76 final` | `Comprobar la persistencia al cerrar y volver a abrir la guía.` | No |
 
-The application preference was restored to English and Math remained enabled after validation. All QA preferences and answers were kept under the isolated temporary home; no user guide or practice copy in the normal home was used.
+The isolated app language was restored to English and Math remained enabled. The QA app was quit normally. The guide copies, practice form and preferences stayed under the isolated temporary home; the normal user home was not used.
 
 ## Automated validation
 
-- Full swift test --disable-automatic-resolution passed: 528 XCTest cases (36 skipped), 44 Swift Testing cases and 28 package tests, zero failures; recorder build delta 14.
-- Focused SessionEditingTests and InlineFormTests passed: 16 executed, 2 optional capture tests skipped; recorder build delta 13.
-- The bilingual native alert capture test passed: 1 executed, zero failures; recorder build delta 17.
-- python3 -m unittest discover -s scripts/tests -p test_package_user_guide.py -v passed all 3 deterministic guide packaging tests.
-- The compile emitted a non-failing Network.framework exhaustiveness warning for .wifiAware in Sources/LeonardoSyncTransport/HTTPSResponseDiagnostics.swift; that file is outside this PR.
-- git diff --check is rerun after preparing this evidence commit. Current-head CI and the fresh strict judge are tracked on the PR and must match the final pushed SHA.
+- Full `scripts/compile-and-record.py --pr-number 448 -- swift test --disable-automatic-resolution` passed at source `0a463909c9f8abdf16e1a74b792f0ee4d7266a41`: 530 XCTest (36 skipped), 44 Swift Testing and 28 package tests; zero failures. Recorded build delta: 22.
+- Focused `SessionEditingTests` and `InlineFormTests` passed: 18 executed, 2 optional capture cases skipped, zero failures. Recorded build delta: 20.
+- `LEONARDO_PREVIEW_ALERT_EVIDENCE=doc/validation/preview-sync/448 python3 scripts/compile-and-record.py --pr-number 448 -- swift test --disable-automatic-resolution --filter SessionEditingTests/testCapturePreviewSynchronizationWarningsInBothLanguages` passed: 1 executed, zero failures. Recorded build delta: 21.
+- `python3 -m unittest discover -s scripts/tests -p 'test_package_user_guide.py' -v` passed all 3 deterministic Guide packaging checks.
+- The full compile produced non-failing warnings in unrelated existing code, including a `.wifiAware` exhaustiveness warning in `Sources/LeonardoSyncTransport/HTTPSResponseDiagnostics.swift`; none is in this PR's source changes.
+- Exact-head GitHub CI and the strict independent review are recorded separately on the PR and must match its published head.
+
+The four sidecars and this report are linked from the [PR #448 validation thread](https://github.com/PinedaTec-EU/LeonardoMD/pull/448). The machine-readable acceptance record is [native-acceptance.json](native-acceptance.json).

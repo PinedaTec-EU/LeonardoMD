@@ -1,4 +1,4 @@
 {
   "summary": "Preview sync failures use one native alert. When closing, the alert identifies the affected document; users can keep its tab open to retry or discard its unapplied Preview edits. Both guides explain the choice.",
-  "build": 20
+  "build": 23
 }

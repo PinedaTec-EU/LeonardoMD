@@ -3,18 +3,18 @@
   "issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/447",
   "pull_request": "https://github.com/PinedaTec-EU/LeonardoMD/pull/448",
   "date": "2026-11-13",
-  "source_revision": "9f679837788fc733f6667e9274c365b90b5b1716",
-  "corrected_source_commit": "28a0fa127f32a7922e23053795f061e98d42c1de",
+  "source_revision": "0a463909c9f8abdf16e1a74b792f0ee4d7266a41",
+  "corrected_source_commit": "0a463909c9f8abdf16e1a74b792f0ee4d7266a41",
   "base_revision": "8711e44aae3babc5beb914bb6b3e69dfe2715e96",
-  "capture_source_mapping": "The native alert capture test ran at source_revision. Subsequent tracked changes are limited to the PR compilation counter, refreshed PNGs and their sidecars, QA documentation, and the wiki. No application source or test inputs changed after capture.",
+  "capture_source_mapping": "The native alert capture test and packaged application were built from source_revision 0a463909c9f8abdf16e1a74b792f0ee4d7266a41. After capture, tracked changes are limited to the PR build ledger counter, refreshed alert PNGs and sidecars, this QA report and wiki records. Application sources, user guides, tests and build inputs are unchanged.",
   "application": {
     "platform": "Packaged native macOS QA app",
-    "launch_command": "CFFIXED_USER_HOME=<isolated temp home> LEONARDO_SOURCE_PR=448 ./launch.sh --qa --args --new-instance -allowMultipleInstances YES",
+    "launch_command": "CFFIXED_USER_HOME=/private/tmp/leonardo-448-final-home.Z0nRMl LEONARDO_SOURCE_PR=448 /var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-ayyin875/LeonardoMDQA.app/Contents/MacOS/LeonardoMD --new-instance -allowMultipleInstances YES",
     "fresh_process": true,
-    "pid": 92461,
-    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.5b11a2952aaa4b9ea40defd3324c114b",
-    "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-bc_8ckno/LeonardoMDQA.app",
-    "isolated_home": "/private/tmp/leonardo-448-corrected-home.bOCg20yT",
+    "pid": 77330,
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.6617357555e04ec9bcee181c0cc99adf",
+    "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-ayyin875/LeonardoMDQA.app",
+    "isolated_home": "/private/tmp/leonardo-448-final-home.Z0nRMl",
     "version": "0.3.1602",
     "build": 1602,
     "executable": "LeonardoMD",
@@ -24,11 +24,13 @@
       "application_ready"
     ],
     "dependency_check": "otool -L showed AppKit, SwiftUI and WebKit; XCTest.framework absent",
-    "bundle_verification": "scripts/qa-bundle.py --verify-only passed"
+    "bundle_verification": "scripts/qa-bundle.py --verify-only passed",
+    "build_command": "./launch.sh --qa",
+    "quit_normally_after_validation": true
   },
   "help": {
     "same_application_instance": true,
-    "entry_point": "Native macOS Help menu",
+    "entry_point": "Native macOS Help menu in PID 77330",
     "guides": [
       {
         "locale": "en",
@@ -54,7 +56,8 @@
       "multiline $$ display formula",
       "Markdown-sensitive underscores and underbraces",
       "tagged box-counting equation (1)",
-      "Vega-Lite chart"
+      "Vega-Lite chart",
+      "chapter 10 close-recovery guidance in both locales"
     ],
     "examples_rendered_in_both_locales": true,
     "math_enabled": {
@@ -76,30 +79,25 @@
     "chapter_10_recovery_copy_visually_checked_in_both_locales": true,
     "practice_round_trip": [
       {
-        "locale": "en",
-        "synthetic_name": "QA Guide v76",
-        "synthetic_goal": "Check local practice form persistence.",
-        "ready_to_share": false,
-        "saved_closed_reopened_values_persisted": true
-      },
-      {
         "locale": "es",
-        "synthetic_name": "Prueba v76",
-        "synthetic_goal": "Comprobar que las respuestas ficticias se guardan en la copia local.",
+        "synthetic_name": "Prueba v76 final",
+        "synthetic_goal": "Comprobar la persistencia al cerrar y volver a abrir la guía.",
         "ready_to_share": false,
-        "saved_closed_reopened_values_persisted": true
+        "saved_closed_reopened_values_persisted": true,
+        "same_application_process_pid": 77330
       }
     ],
     "application_language_restored_to": "English",
     "math_extension_enabled_after_validation": true,
     "retained_full_guide_screenshots": false,
-    "note": "Both guides, representative examples, tables and the separate practice forms were inspected in the running packaged app. The help screenshots were not retained as image files; the four retained PNGs are native alert component captures."
+    "note": "Both guides and representative examples were inspected in the same packaged process through native Help. The Spanish practice form was filled, saved, closed and reopened from the guide in that process. The help screenshots were not retained as image files; the four retained PNGs are native alert component captures."
   },
   "automated_validation": {
     "full_swift_command": "scripts/compile-and-record.py --pr-number 448 -- swift test --disable-automatic-resolution",
     "full_swift_suite": {
+      "source_revision": "0a463909c9f8abdf16e1a74b792f0ee4d7266a41",
       "xctest": {
-        "executed": 528,
+        "executed": 530,
         "skipped": 36,
         "failures": 0
       },
@@ -111,30 +109,31 @@
         "executed": 28,
         "failures": 0
       },
-      "recorded_build_delta": 14
+      "recorded_build_delta": 22
     },
     "focused_regressions": {
       "suites": [
         "SessionEditingTests",
         "InlineFormTests"
       ],
-      "executed": 16,
+      "executed": 18,
       "optional_capture_skips": 2,
       "failures": 0,
-      "recorded_build_delta": 13
+      "recorded_build_delta": 20
     },
     "capture_test": {
       "command": "LEONARDO_PREVIEW_ALERT_EVIDENCE=doc/validation/preview-sync/448 python3 scripts/compile-and-record.py --pr-number 448 -- swift test --disable-automatic-resolution --filter SessionEditingTests/testCapturePreviewSynchronizationWarningsInBothLanguages",
       "executed": 1,
       "failures": 0,
-      "recorded_build_delta": 17
+      "recorded_build_delta": 21,
+      "source_revision": "0a463909c9f8abdf16e1a74b792f0ee4d7266a41"
     },
     "guide_package_command": "python3 -m unittest discover -s scripts/tests -p test_package_user_guide.py -v",
     "guide_package_tests": {
       "executed": 3,
       "failures": 0
     },
-    "compile_warning": "Non-failing Network.framework exhaustive-switch warning for .wifiAware in Sources/LeonardoSyncTransport/HTTPSResponseDiagnostics.swift; file is outside this PR."
+    "compile_warning": "Non-failing warnings in existing unrelated sources, including a Network.framework .wifiAware exhaustiveness warning in Sources/LeonardoSyncTransport/HTTPSResponseDiagnostics.swift; no warning source is changed by this PR."
   },
   "alert_captures": [
     {
