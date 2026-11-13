@@ -47,6 +47,20 @@ final class PeerSyncErrorMessageTests: XCTestCase {
         }
     }
 
+    func testRevokedDeviceErrorExplainsThatPairingMustBeRepeatedInBothLanguages() {
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        let revokedKey = "The source Mac revoked this device. Pair this device with the source Mac again and ask its owner to approve the connection."
+        let projectKey = "The source Mac no longer shares this project with this device. Ask its owner to restore access, refresh the project list, and retry."
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let message = PeerSyncErrorMessage.text(SyncError.revoked)
+            XCTAssertEqual(message, L10n.text(revokedKey))
+            XCTAssertNotEqual(message, L10n.text(projectKey))
+            XCTAssertFalse(message.localizedCaseInsensitiveContains("SyncError"))
+        }
+    }
+
     func testAccessPreflightFailureNamesItsPhaseAndHTTPStatus() {
         let previous = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = previous }

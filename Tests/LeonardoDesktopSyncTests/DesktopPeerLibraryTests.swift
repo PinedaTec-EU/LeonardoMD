@@ -247,7 +247,7 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertEqual(transfers, 2) // Import and explicit comparison; reopening/import retry does not redownload.
     }
 
-    func testRevocationBeforeSelectedProjectImportReturnsActionableErrorAndCleansCopy() async throws {
+    func testRevocationBeforeSelectedProjectImportReturnsRevokedErrorAndCleansCopy() async throws {
         let fixture = try PeerLibraryFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
         let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "MacBook")
@@ -263,7 +263,7 @@ final class DesktopPeerLibraryTests: XCTestCase {
             _ = try await fixture.library.importProject(connectionID: connection.id, projectID: fixture.remote.project.id)
             XCTFail("A withdrawn grant must not complete the selected import")
         } catch {
-            XCTAssertEqual(error as? DesktopPeerLibraryError, .unauthorizedProject)
+            XCTAssertEqual(error as? SyncError, .revoked)
         }
 
         let deniedConnection = try await fixture.connections.load(id: connection.id)
@@ -275,6 +275,24 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertNil(removedCredential)
         let closedCopies = await fixture.revoker.closedIDs
         XCTAssertTrue(closedCopies.contains(existingCopy.id))
+    }
+
+    func testMissingProjectGrantRemainsDistinctFromRevokedDevice() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "MacBook")
+        await fixture.remote.setAccess(.authorized)
+        let unsharedProjectID = UUID()
+
+        do {
+            _ = try await fixture.library.importProject(connectionID: connection.id, projectID: unsharedProjectID)
+            XCTFail("An unshared project must not be imported")
+        } catch {
+            XCTAssertEqual(error as? DesktopPeerLibraryError, .unauthorizedProject)
+        }
+
+        let stillAuthorized = try await fixture.connections.load(id: connection.id)
+        XCTAssertFalse(try XCTUnwrap(stillAuthorized).revoked)
     }
 
     func testRevocationIsDurableBeforeFailedPurgeAndRetriesWithoutNetworkOrCredential() async throws {

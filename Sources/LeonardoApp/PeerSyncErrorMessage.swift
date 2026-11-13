@@ -5,6 +5,9 @@ import LeonardoSync
 @MainActor
 enum PeerSyncErrorMessage {
     static func text(_ error: Error) -> String {
+        if let syncError = error as? SyncError, syncError == .revoked {
+            return L10n.text("The source Mac revoked this device. Pair this device with the source Mac again and ask its owner to approve the connection.")
+        }
         if let libraryError = error as? DesktopPeerLibraryError,
            libraryError == .unauthorizedProject {
             return L10n.text("The source Mac no longer shares this project with this device. Ask its owner to restore access, refresh the project list, and retry.")
