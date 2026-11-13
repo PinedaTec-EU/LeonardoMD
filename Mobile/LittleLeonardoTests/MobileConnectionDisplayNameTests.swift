@@ -27,8 +27,8 @@ final class MobileConnectionDisplayNameTests: XCTestCase {
         XCTAssertFalse(library.connections[0].showsEndpointAddressInHostRow)
         var staleOperationSnapshot = value
         staleOperationSnapshot.capabilityRefreshAttempted = true
-        XCTAssertNotNil(library.commitConnection(staleOperationSnapshot,
-                                                 expected: library.token(for: staleOperationSnapshot)))
+        XCTAssertNotNil(try library.commitConnection(staleOperationSnapshot,
+                                                     expected: library.token(for: staleOperationSnapshot)))
         XCTAssertEqual(library.connections[0].displayName, "MacBook Pro de Javier")
 
         let store = MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json"))
