@@ -1,11 +1,12 @@
 # Sync helper validation
 
 The latest PR #428 status and error presentation evidence is in
-[`428-quiet-status-v45/`](428-quiet-status-v45/README.md), bound to integrated
-product source `29759ce43a522a5329d6f3d071089cb97ff900b1`. It shows the last
+[`428-quiet-status-v46/`](428-quiet-status-v46/README.md), bound to integrated
+product source `4264d8fb7ee1c1f176ae0f734a28d14637b8a701`. It shows the last
 confirmed green state retained while checking, the same green state after a
 successful check, and a red persistent error without duplicated diagnostics.
-The full Swift suite covers automatic consent-poll recovery. The earlier
+The focused controller test confirms refresh-on-open and explicit refresh with
+no periodic consent reads while Preferences remains open. The earlier
 [`v43 record`](428-quiet-status-v43/README.md) remains an original checkpoint;
 [`v44`](428-quiet-status-v44/README.md) records the earlier Guide v67 candidate.
 The earlier
@@ -19,8 +20,8 @@ The native Preferences captures remain in
 test source `9c970868ebcc53180867a12853cf9aa078b164d1`. They cover retained
 red/green status through health checks and recovery, stable section height,
 pairing and consent controls, incoming proposals, paired-device rows, and open
-source-review drafts. Those captures do not depict the automatic consent-poll
-alert; v41 and v42 record the controller regression for that behavior. These native
+source-review drafts. Those captures do not depict the former two-second
+consent-poll alert; v41 and v42 retain the earlier controller recovery checkpoints. These native
 component captures do not claim signed-service or hosted beta acceptance. The
 earlier v36 folder and other evidence folders retain their original sources as
 historical checkpoints.
