@@ -3,6 +3,18 @@
     <channel>
         <title>LeonardoMD</title>
         <item leonardo:channel="beta">
+            <title>0.3.1602</title>
+            <pubDate>Fri, 13 Nov 2026 13:54:44 +0100</pubDate>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>1602</sparkle:version>
+            <sparkle:shortVersionString>0.3.1602</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown">Existing LeonardoMD installations now receive the corrected synchronization guidance in a new Help copy while saved guide copies and practice answers remain intact.
+</description>
+            <enclosure url="https://github.com/PinedaTec-EU/LeonardoMD/releases/download/v0.3.1602/LeonardoMD-0.3.1602.zip" length="25270692" type="application/octet-stream" sparkle:edSignature="Lj9Ad5C0oOD7t+RF3xaUKLD9U5KPREsVIGlsoDLaoVKO5s7KvfUJdT3xqv0FDQF8vgM2iod61gK9dChLXpFRDQ==" />
+        </item>
+    <item leonardo:channel="beta">
             <title>0.3.1339</title>
             <pubDate>Thu, 12 Nov 2026 23:12:08 +0100</pubDate>
             <sparkle:channel>beta</sparkle:channel>
