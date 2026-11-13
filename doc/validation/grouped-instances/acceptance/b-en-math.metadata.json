@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "collected_at": "2026-11-13T10:00:07.209497+00:00",
+  "collected_at": "2026-11-13T10:15:34.324028+00:00",
   "capture": {
     "captured_at": "2026-11-13T09:48:35.810000+00:00",
     "route": "QA441/acceptance/b-en-math",
@@ -22,7 +22,7 @@
     "sha256": "a2abe9f0201686aa179e680713f7de247ef87870f17e372891ace4b9e9540c25"
   },
   "source": {
-    "revision_at_collection": "0f8defc34be50828f92380c713c93c231e2dfe17",
+    "revision_at_collection": "a72636b771fa157f9a8cbfa70827f7e7c2e6e3dc",
     "tracked_changes_present": true,
     "untracked_files_present": true
   }

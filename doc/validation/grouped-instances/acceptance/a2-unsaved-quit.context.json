@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-13T10:06:56.602Z",
+  "route": "QA441/acceptance/a2-unsaved-quit",
+  "screen": "a2-unsaved-quit",
+  "browser_name": "Native AppKit / WKWebView",
+  "browser_version": "Not exposed by CUA; native packaged app",
+  "capture_mode": "viewport",
+  "state": "PID 7354; ordinary Quit shows Save/Discard/Cancel for synthetic unsaved form; native screenshot pixels used in compatibility viewport fields, CSS viewport not applicable",
+  "data_provenance": "synthetic",
+  "viewport_css": {
+    "width": 520,
+    "height": 444
+  }
+}
