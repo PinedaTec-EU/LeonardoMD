@@ -417,7 +417,7 @@
   "Your changes have not been saved. Discarding cannot be undone.": "Your changes have not been saved. Discarding cannot be undone.",
   "Could not apply preview edits": "Could not apply preview edits",
   "The latest changes in Preview were not applied. Keep the document open and try again.": "The latest changes in Preview were not applied. Keep the document open and try again.",
-  "Some edits are still only in Preview. Keep this document open to retry, or discard those Preview edits and close it.": "Some edits are still only in Preview. Keep this document open to retry, or discard those Preview edits and close it.",
+  "Some edits in %@ are still only in Preview. Keep it open and retry, or discard them and close the document.": "Some edits in %@ are still only in Preview. Keep it open and retry, or discard them and close the document.",
   "Keep Open": "Keep Open",
   "Discard Preview Changes": "Discard Preview Changes",
   "Form fields": "Form fields",

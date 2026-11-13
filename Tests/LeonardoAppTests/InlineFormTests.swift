@@ -41,14 +41,26 @@ final class InlineFormTests: XCTestCase {
         let web = try await webView(in: host)
         try await waitFor("document.querySelector('[data-field-input=\"name\"]') !== null", in: web)
         XCTAssertTrue(session.renderConfiguration.allowsFormFilling)
-        _ = try await web.evaluateJavaScript("""
-        (() => {
-          const input = document.querySelector('[data-field-input="name"]');
-          input.value = 'Close snapshot answer';
-          input.dispatchEvent(new InputEvent('input', {bubbles: true, isComposing: true}));
-        })()
-        """)
-        XCTAssertFalse(session.isDirty, "The test value must remain DOM-only before close flushes it")
+        XCTAssertFalse(session.isDirty, "The test value must remain absent before the queued form event")
+
+        if let current = session.settingsTask { await current.value }
+        var settingsContinuation: CheckedContinuation<Void, Never>?
+        let settingsStarted = expectation(description: "Settings write is suspended")
+        let settingsTask = Task { @MainActor in
+            await withCheckedContinuation { (pending: CheckedContinuation<Void, Never>) in
+                settingsContinuation = pending
+                settingsStarted.fulfill()
+            }
+            session.settingsTask = nil
+        }
+        session.settingsTask = settingsTask
+        await fulfillment(of: [settingsStarted], timeout: 2)
+        let releaseSettings: @MainActor () -> Void = {
+            let pending = settingsContinuation
+            settingsContinuation = nil
+            pending?.resume()
+        }
+        defer { releaseSettings() }
 
         var askedToSave = false
         session.unsavedChangesDecision = { _ in
@@ -60,6 +72,25 @@ final class InlineFormTests: XCTestCase {
             return .save
         }
         let closeTask = Task { @MainActor in await tabs.close(tabID) }
+        for _ in 0..<100 where !session.isClosing {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertTrue(session.isClosing)
+        XCTAssertTrue(session.isClosePreviewSyncPending,
+                      "A queued form event must remain authorized while the settings write drains")
+        _ = try await web.evaluateJavaScript("""
+        (() => {
+          const input = document.querySelector('[data-field-input="name"]');
+          input.value = 'Close snapshot answer';
+          input.dispatchEvent(new InputEvent('input', {bubbles: true, inputType: 'insertText'}));
+        })()
+        """)
+        for _ in 0..<100 where session.leonardoFieldText("name") != "Close snapshot answer" {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        let queuedFormWasApplied = session.leonardoFieldText("name") == "Close snapshot answer"
+        releaseSettings()
+        await settingsTask.value
         for _ in 0..<500 where !askedToSave && window.attachedSheet == nil {
             try await Task.sleep(for: .milliseconds(20))
         }
@@ -67,6 +98,7 @@ final class InlineFormTests: XCTestCase {
         if let sheet = window.attachedSheet { window.endSheet(sheet, returnCode: .alertFirstButtonReturn) }
         await closeTask.value
 
+        XCTAssertTrue(queuedFormWasApplied, "The in-flight form message must not be rejected during close preparation")
         XCTAssertFalse(recoveryAlertAppeared, "A valid form snapshot must not show the Preview recovery warning")
         XCTAssertTrue(askedToSave, "Closing must route the synchronized form answer through the ordinary save decision")
         let saved = try LeonardoFormatParser.parse(String(contentsOf: source, encoding: .utf8))

@@ -144,12 +144,15 @@ final class DocumentTabs {
         defer { closing = false }
         let session = tabs[index].session
         session.isClosing = true
+        session.isClosePreviewSyncPending = true
         defer {
             session.isClosePreviewSyncPending = false
             if !session.stopped { session.isClosing = false }
         }
         guard await session.waitForCloseOperations() else { return }
-        let previewResolution = await session.resolvePreviewEditsBeforeClose()
+        let previewResolution = await session.resolvePreviewEditsBeforeClose(documentName: tabs[index].title) {
+            selectForCloseRecovery(id)
+        }
         guard previewResolution != .keepOpen else { return }
         let previewPolicy: PendingPreviewEditsPolicy = previewResolution == .discardPreviewEdits
             ? .discardAfterExplicitCloseConfirmation
@@ -180,8 +183,11 @@ final class DocumentTabs {
         defer { if !approved { releaseClosePreparation() } }
         for tab in tabs {
             tab.session.isClosing = true
+            tab.session.isClosePreviewSyncPending = true
             guard await tab.session.waitForCloseOperations() else { return false }
-            let previewResolution = await tab.session.resolvePreviewEditsBeforeClose()
+            let previewResolution = await tab.session.resolvePreviewEditsBeforeClose(documentName: tab.title) {
+                selectForCloseRecovery(tab.id)
+            }
             guard previewResolution != .keepOpen else { return false }
             let previewPolicy: PendingPreviewEditsPolicy = previewResolution == .discardPreviewEdits
                 ? .discardAfterExplicitCloseConfirmation
@@ -218,6 +224,13 @@ final class DocumentTabs {
         }
         preparedForClose = false
         closing = false
+    }
+
+    private func selectForCloseRecovery(_ id: UUID) {
+        guard activeID != id, tabs.contains(where: { $0.id == id }) else { return }
+        activeID = id
+        refreshSearch()
+        updateTitle()
     }
 
     func reveal(_ id: UUID) {
