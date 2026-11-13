@@ -101,6 +101,10 @@ struct MobileDirectConnection: Codable, Identifiable {
         return stored.isEmpty ? suggestedDisplayName : stored
     }
 
+    func hasSameIdentity(as other: MobileDirectConnection) -> Bool {
+        connectionID == other.connectionID && deviceID == other.deviceID && fingerprint == other.fingerprint
+    }
+
     var showsEndpointAddressInHostRow: Bool {
         (displayName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
             && suggestedDisplayName == "Mac conectado"
@@ -220,6 +224,16 @@ struct MobileDirectConnectionStore {
             throw SyncError.invalidSnapshot
         }
         return try JSONDecoder().decode([MobileDirectConnection].self, from: Data(contentsOf: url))
+    }
+
+    static func preservingCurrentDisplayNames(in snapshot: [MobileDirectConnection],
+                                              current: [MobileDirectConnection]) -> [MobileDirectConnection] {
+        var reconciled = snapshot
+        for index in reconciled.indices {
+            guard let latest = current.first(where: { reconciled[index].hasSameIdentity(as: $0) }) else { continue }
+            reconciled[index].displayName = latest.displayName
+        }
+        return reconciled
     }
 
     /// A missing Keychain item is a durable loss of authorization, while a

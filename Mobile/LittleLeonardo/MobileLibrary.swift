@@ -43,13 +43,21 @@ final class MobileLibrary {
 
     init(now: @escaping @Sendable () -> Date = Date.init, rootURL: URL? = nil,
          credentials: any DeviceCredentialStore = SecureCredentialStore(),
-         revocationJournal: (any MobileRevocationJournalStore)? = nil) {
+         revocationJournal: (any MobileRevocationJournalStore)? = nil,
+         downloadCache: (any RemoteDownloadCache)? = nil) {
         let root = rootURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("LittleLeonardo/Corpus", isDirectory: true)
         store = OfflineCorpusStore(root: root)
         projectLifecycle = MobileProjectLifecycle(url: root.deletingLastPathComponent()
             .appendingPathComponent("project-removals.json"))
-        downloads = DownloadLibrary(cache: OnDemandCache(root: root.deletingLastPathComponent().appendingPathComponent("Downloads")))
+        let remoteDownloadCache: any RemoteDownloadCache
+        if let downloadCache {
+            remoteDownloadCache = downloadCache
+        } else {
+            remoteDownloadCache = OnDemandCache(root: root.deletingLastPathComponent()
+                .appendingPathComponent("Downloads"))
+        }
+        downloads = DownloadLibrary(cache: remoteDownloadCache)
         connectionStore = MobileDirectConnectionStore(url: root.deletingLastPathComponent()
             .appendingPathComponent("connections.json"))
         self.credentials = credentials
@@ -227,15 +235,8 @@ final class MobileLibrary {
                                                                          excludedProjectIDs: projectLifecycle.deletedProjectIDs,
                                                                          credentials: credentials, corpus: store)
             guard cacheEpoch == loadCacheEpoch, authorizationEpoch == loadAuthorizationEpoch else { return }
-            var latestConnections = protectedConnections
-            for index in latestConnections.indices {
-                guard let current = connections.first(where: {
-                    $0.connectionID == latestConnections[index].connectionID
-                        && $0.deviceID == latestConnections[index].deviceID
-                        && $0.fingerprint == latestConnections[index].fingerprint
-                }) else { continue }
-                latestConnections[index].displayName = current.displayName
-            }
+            let latestConnections = MobileDirectConnectionStore.preservingCurrentDisplayNames(
+                in: protectedConnections, current: connections)
             connections = latestConnections
             comparisonCode = loadedComparisonCode
             recoverableRubricDrafts = loadedDrafts
@@ -253,7 +254,9 @@ final class MobileLibrary {
             let recoveredSnapshotChanged = storedConnections.count != protectedConnections.count
                 || zip(storedConnections, protectedConnections).contains { $0.0.hasChanges(from: $0.1) }
             if repairedMissingCredential || recoveredSnapshotChanged {
-                do { try connectionStore.save(protectedConnections) }
+                let repairedConnections = MobileDirectConnectionStore.preservingCurrentDisplayNames(
+                    in: protectedConnections, current: connections)
+                do { try connectionStore.save(repairedConnections) }
                 catch { self.error = "No se pudo guardar la revocación recuperada: \(error.localizedDescription)" }
             }
             await retryPendingRevocationPurges()

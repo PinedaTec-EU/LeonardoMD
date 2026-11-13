@@ -8,11 +8,12 @@ final class MobileConnectionDisplayNameTests: XCTestCase {
     private let deviceID = UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB")!
     private let projectID = UUID(uuidString: "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC")!
 
-    private func connection(endpoint: String = "https://10.0.8.158:40882") -> MobileDirectConnection {
+    private func connection(endpoint: String = "https://10.0.8.158:40882",
+                            displayName: String? = nil) -> MobileDirectConnection {
         MobileDirectConnection(connectionID: connectionID, deviceID: deviceID,
             endpoint: URL(string: endpoint)!, fingerprint: Data(repeating: 7, count: 32),
             projectIDs: [projectID], comparisonCode: "123456",
-            capabilities: [.rubricExchangeV1], acceptedProjectIDs: [projectID])
+            capabilities: [.rubricExchangeV1], acceptedProjectIDs: [projectID], displayName: displayName)
     }
 
     func testRenamePersistsWithoutChangingConnectionIdentityOrGrants() throws {
@@ -44,6 +45,49 @@ final class MobileConnectionDisplayNameTests: XCTestCase {
         XCTAssertEqual(saved.capabilities, value.capabilities)
     }
 
+    func testRecoveryReloadPersistsLatestAliasAcrossAsyncCacheRestoreAndRelaunch() async throws {
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: support) }
+        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
+        let first = connection(displayName: "Mac antiguo")
+        let missingCredential = MobileDirectConnection(
+            connectionID: UUID(uuidString: "DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD")!,
+            deviceID: UUID(uuidString: "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE")!,
+            endpoint: URL(string: "https://10.0.8.159:40882")!,
+            fingerprint: Data(repeating: 8, count: 32), projectIDs: [UUID()],
+            comparisonCode: nil, capabilities: [], displayName: "Otro Mac")
+        let connectionStore = MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json"))
+        try connectionStore.save([first, missingCredential])
+
+        let credentials = DisplayNameRecoveryCredentials(values: [first.deviceID: "credential"])
+        let gate = ReloadGate()
+        let cache = ReloadGateDownloadCache(
+            cache: OnDemandCache(root: support.appendingPathComponent("Downloads", isDirectory: true)), gate: gate)
+        let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials, downloadCache: cache)
+        let reload = Task { await library.reload() }
+
+        await gate.waitUntilReached()
+        XCTAssertTrue(library.connections.first(where: { $0.connectionID == missingCredential.connectionID })?.revoked == true)
+        XCTAssertTrue(library.renameConnection(connectionID: first.connectionID, displayName: "Mac de Javier"))
+        await gate.open()
+        await reload.value
+
+        let saved = try XCTUnwrap(connectionStore.load().first(where: { $0.connectionID == first.connectionID }))
+        XCTAssertEqual(saved.displayName, "Mac de Javier")
+        let repaired = try XCTUnwrap(connectionStore.load().first(where: {
+            $0.connectionID == missingCredential.connectionID
+        }))
+        XCTAssertTrue(repaired.revoked)
+
+        let relaunched = MobileLibrary(rootURL: corpusRoot, credentials: credentials, downloadCache: cache)
+        await relaunched.reload()
+        XCTAssertEqual(relaunched.connections.first(where: { $0.connectionID == first.connectionID })?.displayName,
+                       "Mac de Javier")
+        XCTAssertTrue(relaunched.connections.first(where: {
+            $0.connectionID == missingCredential.connectionID
+        })?.revoked == true)
+    }
+
     func testIPUsesFriendlyFallbackAndOldConnectionDataStillDecodes() throws {
         let value = connection()
         XCTAssertEqual(value.suggestedDisplayName, "Mac conectado")
@@ -67,4 +111,84 @@ final class MobileConnectionDisplayNameTests: XCTestCase {
         XCTAssertEqual(value.suggestedDisplayName.lowercased(), "macbook pro de javier")
         XCTAssertFalse(value.showsEndpointAddressInHostRow)
     }
+}
+
+private actor ReloadGate {
+    private var reached = false
+    private var isOpen = false
+    private var entryContinuation: CheckedContinuation<Void, Never>?
+    private var releaseContinuation: CheckedContinuation<Void, Never>?
+
+    func pause() async {
+        reached = true
+        entryContinuation?.resume()
+        entryContinuation = nil
+        guard !isOpen else { return }
+        await withCheckedContinuation { releaseContinuation = $0 }
+    }
+
+    func waitUntilReached() async {
+        if reached { return }
+        await withCheckedContinuation { entryContinuation = $0 }
+    }
+
+    func open() {
+        isOpen = true
+        releaseContinuation?.resume()
+        releaseContinuation = nil
+    }
+}
+
+private actor ReloadGateDownloadCache: RemoteDownloadCache {
+    private let cache: OnDemandCache
+    private let gate: ReloadGate
+
+    init(cache: OnDemandCache, gate: ReloadGate) {
+        self.cache = cache
+        self.gate = gate
+    }
+
+    func projects() async throws -> [CachedRemoteProject] {
+        await gate.pause()
+        return try await cache.projects()
+    }
+
+    func update(id: UUID, descriptor: SharedProjectDescriptor, catalogue: RemoteProjectCatalogue) async throws {
+        try await cache.update(id: id, descriptor: descriptor, catalogue: catalogue)
+    }
+
+    func read(id: UUID, entry: RemoteFileEntry, allowStale: Bool) async throws -> CorpusFile? {
+        try await cache.read(id: id, entry: entry, allowStale: allowStale)
+    }
+
+    func store(id: UUID, entry: RemoteFileEntry, file: CorpusFile) async throws {
+        try await cache.store(id: id, entry: entry, file: file)
+    }
+
+    func setRetained(id: UUID, path: String, isFolder: Bool, keep: Bool) async throws {
+        try await cache.setRetained(id: id, path: path, isFolder: isFolder, keep: keep)
+    }
+
+    func removeRetentionRule(id: UUID, ruleID: String) async throws {
+        try await cache.removeRetentionRule(id: id, ruleID: ruleID)
+    }
+
+    func setLimit(bytes: Int) async throws { try await cache.setLimit(bytes: bytes) }
+    func clearTemporary() async throws { try await cache.clearTemporary() }
+
+    func release(id: UUID, path: String, isFolder: Bool) async throws {
+        try await cache.release(id: id, path: path, isFolder: isFolder)
+    }
+
+    func remove(id: UUID) async throws { try await cache.remove(id: id) }
+    func usage() async throws -> OnDemandCacheUsage { try await cache.usage() }
+}
+
+private actor DisplayNameRecoveryCredentials: DeviceCredentialStore {
+    private var values: [UUID: String]
+
+    init(values: [UUID: String]) { self.values = values }
+    func credential(deviceID: UUID) async throws -> String? { values[deviceID] }
+    func save(_ credential: String, deviceID: UUID) async throws { values[deviceID] = credential }
+    func remove(deviceID: UUID) async throws { values[deviceID] = nil }
 }
