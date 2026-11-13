@@ -55,6 +55,123 @@ final class SessionEditingTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: XCTUnwrap(session.documentURL), encoding: .utf8), "# Original")
     }
 
+    func testPreviewSynchronizationWarningsHaveSingleRetryActionAndCloseRecovery() {
+        let previousLanguage = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previousLanguage }
+
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let retry = AppSession.previewEditsSynchronizationWarning()
+            XCTAssertEqual(retry.alertStyle, .warning)
+            XCTAssertEqual(retry.messageText, L10n.text("Could not apply preview edits"))
+            XCTAssertEqual(retry.buttons.map(\.title), [L10n.text("OK")])
+            XCTAssertEqual(retry.informativeText,
+                           L10n.text("The latest changes in Preview were not applied. Keep the document open and try again."))
+
+            let close = AppSession.previewEditsCloseWarning()
+            XCTAssertEqual(close.alertStyle, .warning)
+            XCTAssertEqual(close.messageText, L10n.text("Could not apply preview edits"))
+            XCTAssertEqual(close.buttons.map(\.title), [L10n.text("Keep Open"), L10n.text("Discard Preview Changes")])
+            XCTAssertEqual(close.buttons.first?.keyEquivalent, "\u{1b}")
+            XCTAssertTrue(close.buttons.last?.hasDestructiveAction == true)
+            XCTAssertEqual(close.informativeText,
+                           L10n.text("Some edits are still only in Preview. Keep this document open to retry, or discard those Preview edits and close it."))
+        }
+    }
+
+    func testClosingAfterRendererFailureDiscardsWithoutRetryingFlush() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let file = root.appendingPathComponent("note.md")
+        try "# Original".write(to: file, atomically: true, encoding: .utf8)
+
+        let tabs = DocumentTabs(preferencesURL: root.appendingPathComponent("settings.json"))
+        let owner = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 650),
+                             styleMask: [.titled], backing: .buffered, defer: false)
+        owner.isReleasedWhenClosed = false
+        owner.makeKeyAndOrderFront(nil)
+        tabs.presentationWindow = owner
+        defer {
+            tabs.stop()
+            owner.close()
+            try? FileManager.default.removeItem(at: root)
+        }
+
+        let tabID = try XCTUnwrap(tabs.activeID)
+        let session = tabs.activeSession
+        await session.open(file)
+        await session.toggleProtection()
+
+        let host = MarkdownPreviewHost(frame: NSRect(x: 0, y: 0, width: 900, height: 650))
+        owner.contentView = host
+        session.renderer.onEdit = { expected, replacement in
+            session.editDocument(expected: expected, replacement: replacement)
+        }
+        session.renderer.attach(host)
+        defer { host.teardown() }
+
+        let ready = expectation(description: "Editable Preview ready")
+        host.onReady = { if $0 { ready.fulfill() } }
+        var configuration = MarkdownPreviewConfiguration.default
+        configuration.allowsEditing = true
+        host.apply(content: session.content, baseURL: nil, configuration: configuration,
+                   onLinkActivation: nil, onScrollProgress: nil)
+        await fulfillment(of: [ready], timeout: 10)
+
+        let webView = try XCTUnwrap(host.subviews.compactMap { $0 as? WKWebView }.first)
+        _ = try await webView.evaluateJavaScript("window.LeonardoEditing.currentSource = null")
+        let flushSucceeded = await session.renderer.flushEdits()
+        XCTAssertFalse(flushSucceeded, "The fixture must reproduce a failed Preview flush")
+
+        let closed = expectation(description: "Close completes after explicit Preview discard")
+        Task {
+            await tabs.close(tabID)
+            closed.fulfill()
+        }
+        for _ in 0..<100 where owner.attachedSheet == nil {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let closeSheet = try XCTUnwrap(owner.attachedSheet, "The close recovery choice should be presented once")
+        owner.endSheet(closeSheet, returnCode: .alertSecondButtonReturn)
+        await fulfillment(of: [closed], timeout: 5)
+
+        XCTAssertNil(owner.attachedSheet, "Closing must not repeat the failed Preview synchronization warning")
+        XCTAssertEqual(tabs.tabs.count, 1, "The closed tab is replaced with the normal blank tab")
+        XCTAssertNil(tabs.activeSession.documentURL)
+    }
+
+    func testCapturePreviewSynchronizationWarningsInBothLanguages() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LEONARDO_PREVIEW_ALERT_EVIDENCE"] else {
+            throw XCTSkip("Set LEONARDO_PREVIEW_ALERT_EVIDENCE to capture native preview warning states")
+        }
+        let directory = URL(fileURLWithPath: path, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let previousLanguage = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previousLanguage }
+
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let alerts = [
+                ("retry", AppSession.previewEditsSynchronizationWarning()),
+                ("close", AppSession.previewEditsCloseWarning()),
+            ]
+            for (name, alert) in alerts {
+                alert.layout()
+                alert.window.center()
+                alert.window.orderFrontRegardless()
+                try await Task.sleep(for: .milliseconds(250))
+                let capture = Process()
+                capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+                capture.arguments = ["-x", "-l", String(alert.window.windowNumber),
+                                    directory.appendingPathComponent("preview-alert-\(language.rawValue)-\(name).png").path]
+                try capture.run()
+                capture.waitUntilExit()
+                XCTAssertEqual(capture.terminationStatus, 0)
+                alert.window.orderOut(nil)
+            }
+        }
+    }
+
     func testInactiveTabCancelKeepsAllTabsAndDiscardClosesWithoutSaving() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

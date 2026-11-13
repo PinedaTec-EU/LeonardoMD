@@ -58,11 +58,7 @@ extension AppSession {
 
     func flushPreviewEdits() async -> Bool {
         guard await renderer.flushEdits() else {
-            let alert = NSAlert()
-            alert.alertStyle = .warning
-            alert.messageText = L10n.text("Could not apply preview edits")
-            alert.informativeText = L10n.text("The latest changes in Preview were not applied. Keep the document open and try again.")
-            alert.addButton(withTitle: L10n.text("OK"))
+            let alert = Self.previewEditsSynchronizationWarning()
             _ = await NativeDialog.present(alert, on: presentationWindow)
             return false
         }
@@ -72,18 +68,32 @@ extension AppSession {
     func resolvePreviewEditsBeforeClose() async -> PreviewCloseResolution {
         guard !(await renderer.flushEdits()) else { return .readyToClose }
 
-        let alert = NSAlert()
-        alert.alertStyle = .warning
-        alert.messageText = L10n.text("Could not apply preview edits")
-        alert.informativeText = L10n.text("Some edits are still only in Preview. Keep this document open to retry, or discard those Preview edits and close it.")
-        alert.addButton(withTitle: L10n.text("Keep Open")).keyEquivalent = "\u{1b}"
-        alert.addButton(withTitle: L10n.text("Discard Preview Changes")).hasDestructiveAction = true
+        let alert = Self.previewEditsCloseWarning()
 
         switch await NativeDialog.present(alert, on: presentationWindow) {
         case .alertFirstButtonReturn: return .keepOpen
         case .alertSecondButtonReturn: return .discardPreviewEdits
         default: return .keepOpen
         }
+    }
+
+    static func previewEditsSynchronizationWarning() -> NSAlert {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = L10n.text("Could not apply preview edits")
+        alert.informativeText = L10n.text("The latest changes in Preview were not applied. Keep the document open and try again.")
+        alert.addButton(withTitle: L10n.text("OK"))
+        return alert
+    }
+
+    static func previewEditsCloseWarning() -> NSAlert {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = L10n.text("Could not apply preview edits")
+        alert.informativeText = L10n.text("Some edits are still only in Preview. Keep this document open to retry, or discard those Preview edits and close it.")
+        alert.addButton(withTitle: L10n.text("Keep Open")).keyEquivalent = "\u{1b}"
+        alert.addButton(withTitle: L10n.text("Discard Preview Changes")).hasDestructiveAction = true
+        return alert
     }
 
     func setDocumentMode(_ value: DocumentMode) async {

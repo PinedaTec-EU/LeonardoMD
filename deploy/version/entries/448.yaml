@@ -1,4 +1,4 @@
 {
   "summary": "Preview sync failures now use a single native alert. During closing, users can keep the document open or discard unapplied Preview edits; both guides explain the choice.",
-  "build": 3
+  "build": 9
 }
