@@ -83,14 +83,14 @@ struct MobileRevocationClient: Sendable {
             }
             let client = try DirectEnrollmentClient(endpoint: connection.endpoint,
                                                      certificateFingerprint: connection.fingerprint)
-            let status = try await status(client, connection.deviceID, credential)
+            let initialStatus = try await status(client, connection.deviceID, credential)
             guard isCurrent() else {
                 await onDenied(ticket)
                 throw SyncError.revoked
             }
-            guard status.access != .revoked else { throw SyncError.revoked }
+            guard initialStatus.access != .revoked else { throw SyncError.revoked }
             let context = MobileAuthenticatedContext(connection: connection, credential: credential,
-                                                     client: client, status: status, token: token,
+                                                     client: client, status: initialStatus, token: token,
                                                      ticket: ticket)
             let result = try await client.withRevocationRecheck(
                 deviceID: connection.deviceID, credential: credential, status: status

@@ -34,6 +34,8 @@ jobs:
         run: swift test
       - name: Build iOS companion
         run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "generic/platform=iOS Simulator" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO build
+      - name: Test Little Leonardo revocation recheck
+        run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,name=iPhone 17 Pro" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO -only-testing:LittleLeonardoTests/MobileRevocationTests/testOnDemandForbiddenResponseRechecksStatusBeforeRecordingRevocation test
       - name: Validate update metadata
         run: python3 -m unittest discover -s Tests/Packaging
       - name: Record preview capture provenance
