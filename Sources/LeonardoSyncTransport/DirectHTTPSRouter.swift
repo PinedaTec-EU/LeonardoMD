@@ -83,7 +83,7 @@ public struct DirectHTTPSRouter: Sendable {
                 }
             }
             if request.method == "GET", path.count == 7, path[4] == "projects", path[6] == "snapshot", let projectID = UUID(uuidString: String(path[5])) {
-                return try json(await authority.snapshot(deviceID: deviceID, credential: credential, projectID: projectID))
+                return try await snapshotResponse(deviceID: deviceID, credential: credential, projectID: projectID)
             }
             if request.method == "GET", path.count == 9, path[4] == "projects", path[6] == "proposals", path[8] == "receipt",
                let projectID = UUID(uuidString: String(path[5])), let proposalID = UUID(uuidString: String(path[7])) {
@@ -127,6 +127,12 @@ public struct DirectHTTPSRouter: Sendable {
         catch SyncError.outsideScope { return HTTPResponse(status: 403) }
         catch SyncError.publicationPending { return HTTPResponse(status: 409) }
         catch SyncError.sizeLimitExceeded { return HTTPResponse(status: 413) }
+        catch let failure as CorpusReadFailure {
+            // Catalogue and on-demand file routes keep the previous HTTP size-limit contract.
+            // Snapshot downloads return scoped diagnostics; these routes expose only status.
+            logger.error("sync_resource_read_failed reason=\(failure.reason.rawValue, privacy: .public)")
+            return HTTPResponse(status: failure.reason == .sourceUnavailable ? 500 : 413)
+        }
         catch SyncError.invalidSnapshot { return HTTPResponse(status: 400) }
         catch RubricExchangeError.unsupported { return HTTPResponse(status: 404) }
         catch RubricExchangeError.notFound { return HTTPResponse(status: 404) }
@@ -137,6 +143,32 @@ public struct DirectHTTPSRouter: Sendable {
         catch RubricExchangeError.storageFailure { return HTTPResponse(status: 500) }
         catch is DecodingError { return HTTPResponse(status: 400) }
         catch { return HTTPResponse(status: 500) }
+    }
+
+    private func snapshotResponse(deviceID: UUID, credential: String, projectID: UUID) async throws -> HTTPResponse {
+        // Authorize before returning project-specific diagnostics. No source paths or sizes for denied clients.
+        _ = try await authority.snapshotDescriptor(deviceID: deviceID, credential: credential, projectID: projectID)
+        do {
+            return try json(await authority.snapshot(deviceID: deviceID, credential: credential, projectID: projectID))
+        } catch let failure as CorpusReadFailure {
+            let descriptor = try await authority.snapshotDescriptor(deviceID: deviceID, credential: credential, projectID: projectID)
+            let path = failure.path.flatMap { candidate -> String? in
+                guard (try? descriptor.scope.validate(candidate)) != nil else { return nil }
+                if let selection = descriptor.selection, (try? selection.validate(candidate)) == nil { return nil }
+                return candidate
+            }
+            let safe = CorpusReadFailure(reason: failure.reason, path: path, observed: failure.observed, limit: failure.limit)
+            logger.error("sync_snapshot_failed project=\(projectID, privacy: .public) reason=\(safe.reason.rawValue, privacy: .public)")
+            return try json(safe, status: safe.reason == .sourceUnavailable ? 500 : 413)
+        } catch let error as SyncError { throw error }
+        catch let error as PairingError { throw error }
+        catch let error as DirectAuthorityError { throw error }
+        catch {
+            _ = try await authority.snapshotDescriptor(deviceID: deviceID, credential: credential, projectID: projectID)
+            let underlying = error as NSError
+            logger.error("sync_snapshot_failed project=\(projectID, privacy: .public) category=source_read code=\(underlying.code, privacy: .public)")
+            return try json(CorpusReadFailure(reason: .sourceUnavailable), status: 500)
+        }
     }
 
     private func json<Value: Encodable>(_ value: Value, status: Int = 200) throws -> HTTPResponse {

@@ -696,20 +696,33 @@ borrador bloqueado, enviado o pendiente de reintento no permite seguir dibujando
 
 ### Si se interrumpe la sincronización móvil
 
-Ante un fallo de red, el aviso existente puede incluir una línea de diagnóstico
-breve, por ejemplo:
+Ante un fallo, el aviso muestra un mensaje breve, un código de referencia único
+como `LL-0123456789AB` y una sola acción **Aceptar**. Abre **Ajustes de
+sincronización → Ver log** para consultar las entradas de error locales
+recientes. El mismo código identifica la entrada correspondiente; un error de
+red puede incluir un diagnóstico acotado como este:
 
-`[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
+`ref=LL-0123456789AB op=synchronization transport=[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
 
-Comparte esa línea o una captura al pedir ayuda. Indica si falló una consulta de
-estado o una instantánea, el estado HTTP si llegó, los bytes de respuesta
-recibidos y esperados, y el dominio/código de error del sistema. No incluye la
-dirección o ruta del servidor, credencial de emparejamiento, identificadores de
-dispositivo/proyecto ni contenido de archivos. Una cabecera HTTP 200 no
-significa que terminara el cuerpo. Un total esperado `?` significa que el
-servidor no informó de la longitud. Las copias descargadas sin conexión siguen
-disponibles; comprueba que el Mac de origen sea accesible y que Leonardo Sync
-esté activo, y vuelve a intentar la sincronización.
+El registro permanece en este dispositivo y no se envía automáticamente. No
+incluye la dirección o ruta del servidor, credenciales de emparejamiento,
+identificadores de dispositivo/proyecto ni contenido de documentos o imágenes.
+Puedes seleccionar y copiar una línea si decides compartirla al pedir ayuda.
+Las copias offline de otros proyectos autorizados siguen disponibles. Se conservan como
+máximo 120 entradas recientes o 64 KiB, lo que se alcance primero. Se guarda
+en la caché local de la app,
+excluida de las copias de seguridad antes de escribir; iOS puede borrarla para
+liberar espacio, así que el registro sirve para diagnosticar errores recientes,
+no como almacenamiento permanente. Comprueba que el Mac de origen sea accesible
+La entrada correspondiente indica si falló una consulta de estado o una
+instantánea, el estado HTTP si llegó, los bytes recibidos y esperados, y el
+dominio/código de error del sistema. Una cabecera HTTP 200 no significa que
+terminara el cuerpo; un total esperado `?` significa que el servidor no informó
+de la longitud. Una denegación explícita o un cambio de autorización confirmado
+impide abrir el contenido afectado desde una copia anterior; los demás proyectos
+autorizados siguen disponibles. Un fallo temporal de conexión puede permitir
+abrir una copia conservada sin conexión. Comprueba que el Mac de origen sea
+accesible y que Leonardo Sync esté activo, y vuelve a intentar la sincronización.
 
 ### Responder a una solicitud de rúbrica en iOS
 
@@ -798,6 +811,8 @@ Cuando se añaden archivos a un proyecto aceptado, macOS los muestra en **Archiv
 
 Pulsa **Crear copia editable** para descargar explícitamente una copia completa del proyecto. Ábrela localmente y usa sincronización manual o elige un intervalo. Las transferencias siguen necesitando conectividad. Sus archivos se guardan localmente en este Mac, pero el proyecto sigue siendo **Recibido de otro equipo**; estar disponible sin conexión no cambia su origen ni demuestra que el origen tenga tus últimos cambios.
 
+**Si falla la importación o la sincronización**, el error distingue si falló la actualización del acceso al origen o la descarga del proyecto, e indica el estado HTTP y una acción para recuperarte. Si un proyecto ya no se comparte, pide a su propietario que restablezca el acceso y después actualiza la lista. Si el Mac de origen ha revocado este dispositivo, vuelve a enlazarlo y pide al propietario que apruebe la conexión. Los Macs de origen actualizados también distinguen entre el límite de tamaño del proyecto, el de cada archivo y el de cantidad de archivos, con la cantidad detectada y el límite. «Al menos» es la cantidad encontrada antes de detenerse, no un inventario completo; la ruta del archivo es relativa al proyecto compartido. La transferencia actual del proyecto completo admite hasta 200 MiB por proyecto, 20 MiB por archivo y 10.000 archivos. Reduce la selección compartida en el Mac de origen y vuelve a intentarlo; no se omite contenido silenciosamente para que quepa. Un error de lectura del origen requiere comprobar el disco, los permisos y la disponibilidad de los archivos de la nube en ese Mac. No demuestra que el proyecto sea demasiado grande. Las versiones anteriores del origen pueden ofrecer solo el estado HTTP; actualiza ambos Macs para obtener un diagnóstico detallado.
+
 Para devolver ediciones, **Comparar cambios**, revisa las versiones Base / Este Mac / Otro Mac y después **Enviar cambios para revisar**. Reintenta propuestas pendientes al recuperar conexión. Las ediciones posteriores al envío siguen locales hasta otra propuesta. El Mac de origen revisa las propuestas entrantes; enviar no significa aceptación automática. Resuelve marcadores de conflicto deliberadamente y verifica el resultado antes de aceptar. Conserva el trabajo local hasta confirmar el resultado esperado en origen.
 
 ### Descarga bajo demanda y almacenamiento sin conexión
@@ -816,7 +831,7 @@ Usa el menú contextual en Mac o el botón **…** en Little Leonardo:
 - **Dejar de mantener sin conexión** permite limpiar las copias como caché, sin eliminar originales. Puedes excluir un archivo de una carpeta conservada offline.
 - **Liberar espacio local** elimina copias temporales descargadas; conserva el contenido offline protegido. Para liberar esos archivos, elige primero **Dejar de mantener sin conexión**.
 
-La lista distingue **Solo remoto**, **En caché**, **Offline pendiente** y **Disponible sin conexión**, con progreso e indicadores de error. Las carpetas muestran archivos descargados y total. La selección está disponible offline cuando terminan todas las descargas necesarias. Los fallos se reintentan en la siguiente actualización automática; la última versión conservada sigue legible si falla una actualización. El lector muestra sobre esa copia un aviso explícito de copia anterior, el error de descarga y **Reintentar**. Los errores de imágenes referenciadas también se muestran aunque el texto del documento sea legible.
+La lista distingue **Solo remoto**, **En caché**, **Offline pendiente** y **Disponible sin conexión**, con progreso e indicadores de error. Las carpetas muestran archivos descargados y total. La selección está disponible offline cuando terminan todas las descargas necesarias. Los fallos se reintentan en la siguiente actualización automática. Si una actualización falla por una conexión temporal, la última versión conservada sigue legible con un aviso explícito de copia anterior, el error de descarga y **Reintentar**. Una denegación de acceso explícita no abre esa versión desactualizada. Los errores de imágenes referenciadas también se muestran aunque el texto del documento sea legible.
 
 En **Sincronización → Almacenamiento y caché**, escribe el límite temporal como un número entero de MiB y pulsa **Aplicar límite de caché** (Intro también lo aplica). El texto que estás editando no cambia el límite guardado. Consulta el uso temporal/offline y las descargas pendientes, limpia la caché o deja de conservar una selección. El límite inicial es 256 MiB; cero desactiva la conservación temporal. Primero se eliminan los archivos temporales usados hace más tiempo. Los archivos offline se almacenan aparte y no cuentan para el límite; necesitan espacio libre suficiente. La limpieza nunca borra copias editables de escritorio ni borradores de rúbricas.
 

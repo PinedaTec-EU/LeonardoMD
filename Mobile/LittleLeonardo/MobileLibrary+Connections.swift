@@ -19,7 +19,8 @@ extension MobileLibrary {
             connections = updated
             return true
         } catch {
-            self.error = "No se pudo guardar el nombre del Mac: \(error.localizedDescription)"
+            presentError(error, operation: .library,
+                         message: "No se pudo guardar el nombre del Mac. Inténtalo de nuevo.")
             return false
         }
     }

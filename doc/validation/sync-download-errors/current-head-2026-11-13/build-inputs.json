@@ -1,0 +1,26 @@
+{
+  "capture_revision": "e1ad1d2ada9e7a7b05066b26a229e038c416f069",
+  "command": "python3 scripts/compile-and-record.py --pr-number 369 -- swift test --filter PeerSyncErrorMessageTests.testCaptureProductionDownloadAlert",
+  "compiled_inputs": {
+    "Package.resolved": "b67272e588be3d1079b56d556cf662ddfa9a656b",
+    "Package.swift": "d286a11e2f6083f0fa2c1e9cd0f2fa0682093dc3",
+    "Sources": "adc5c55481af0ba4006c052bf1197c2a27a40d1e",
+    "Tests": "b85a513fa1d6e215f38d0028096f9ba3dfb6fb0b",
+    "scripts": "49e877bbcf9ed5fa5b2fb08192ecc1f01b027ccb",
+    "version.nfo": "a63d12b86c885f3fe4af10cd0187f4273f8fac23"
+  },
+  "evidence_commit": "958a57ea625faf6884a32a1ed2b51a63a1246c87",
+  "ledger": {
+    "build_delta_before_successful_command": 36,
+    "build_delta_recorded_after_success": 37,
+    "recording_commit_changes_only": "deploy/version/entries/369.yaml"
+  },
+  "result": "passed; 1 test, 0 failures",
+  "schema_version": 1,
+  "toolchain": {
+    "swift": "6.4.0.34.1",
+    "target": "arm64-apple-macosx27.0.0",
+    "xcode": "27.1 (27A9275)"
+  },
+  "version_at_capture": "0.3.1596"
+}

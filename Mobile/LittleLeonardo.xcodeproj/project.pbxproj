@@ -8,12 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		407100000000000000000001 /* MobileProjectLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407000000000000000000001 /* MobileProjectLifecycle.swift */; };
+		AD3690000000000000000001 /* MobileProjectGrantReconciliation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD3690000000000000000000 /* MobileProjectGrantReconciliation.swift */; };
 		384000000000000000000200 /* LeonardoSyncUI in Frameworks */ = {isa = PBXBuildFile; productRef = 384000000000000000000201; };
 		384000000000000000000100 /* MobileLibrary+Downloads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 384000000000000000000000; };
 		A44200000000000000000001 /* MobileLibrary+Connections.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44200000000000000000003; };
 		A44200000000000000000002 /* MobileConnectionDisplayNameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44200000000000000000004; };
 		15243E6517E367904B34E1C3 /* PairingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88DCAC3D27E3676EFE8737FB /* PairingUITests.swift */; };
 		22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */; };
+		5E9D61F2B8A34D49A3C0F7D1 /* MobileDiagnosticLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E9D61F2B8A34D49A3C0F7D2 /* MobileDiagnosticLog.swift */; };
 		A7B6C5D4E3F2019A88776655 /* MobileRubricSubmissionGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */; };
 		2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7849226B36C61649B125BDDC /* MobileLibraryView.swift */; };
 		9A4D10000000000000000001 /* MobileSharedProjectTreeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A4D00000000000000000001 /* MobileSharedProjectTreeView.swift */; };
@@ -48,6 +50,7 @@
 		D38110000000000000000004 /* MobileDemoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38100000000000000000004 /* MobileDemoUITests.swift */; };
 		D38510000000000000000001 /* OnDemandSyncUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38500000000000000000001 /* OnDemandSyncUITests.swift */; };
 		D39710000000000000000001 /* MobileReaderSpacingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39700000000000000000001 /* MobileReaderSpacingTests.swift */; };
+		F435C0DE0000000000000002 /* MobileDiagnosticLogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F435C0DE0000000000000001 /* MobileDiagnosticLogTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,6 +72,7 @@
 
 /* Begin PBXFileReference section */
 		407000000000000000000001 /* MobileProjectLifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileProjectLifecycle.swift; sourceTree = "<group>"; };
+		AD3690000000000000000000 /* MobileProjectGrantReconciliation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileProjectGrantReconciliation.swift; sourceTree = "<group>"; };
 		384000000000000000000000 /* MobileLibrary+Downloads.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MobileLibrary+Downloads.swift"; sourceTree = "<group>"; };
 		A44200000000000000000003 /* MobileLibrary+Connections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MobileLibrary+Connections.swift"; sourceTree = "<group>"; };
 		A44200000000000000000004 /* MobileConnectionDisplayNameTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileConnectionDisplayNameTests.swift; sourceTree = "<group>"; };
@@ -80,6 +84,7 @@
 		C13EDFD74D289513F03789EC /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		C53CBBB8313118CB2CF6782A /* LittleLeonardoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LittleLeonardoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileLibrary.swift; sourceTree = "<group>"; };
+		5E9D61F2B8A34D49A3C0F7D2 /* MobileDiagnosticLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileDiagnosticLog.swift; sourceTree = "<group>"; };
 		A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileRubricSubmissionGate.swift; sourceTree = "<group>"; };
 		EFE0C33CC641BFADB87F8A3B /* MobileQRScanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobileQRScanner.swift; sourceTree = "<group>"; };
 		70CAB6D3C2D948039788E971 /* MobileRecoveryDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRecoveryDocument.swift; sourceTree = "<group>"; };
@@ -106,6 +111,7 @@
 		D38100000000000000000004 /* MobileDemoUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDemoUITests.swift; sourceTree = "<group>"; };
 		D38500000000000000000001 /* OnDemandSyncUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnDemandSyncUITests.swift; sourceTree = "<group>"; };
 		D39700000000000000000001 /* MobileReaderSpacingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileReaderSpacingTests.swift; sourceTree = "<group>"; };
+		F435C0DE0000000000000001 /* MobileDiagnosticLogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDiagnosticLogTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -176,6 +182,7 @@
 				C4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift */,
 				D38100000000000000000003 /* MobileDemoStoreTests.swift */,
 				D39700000000000000000001 /* MobileReaderSpacingTests.swift */,
+				F435C0DE0000000000000001 /* MobileDiagnosticLogTests.swift */,
 			);
 			name = LittleLeonardoTests;
 			path = LittleLeonardoTests;
@@ -217,6 +224,8 @@
 				407000000000000000000001 /* MobileProjectLifecycle.swift */,
 				D8EF3BB6012E5F18E71FA7F6 /* MobileLibrary.swift */,
 				A44200000000000000000003 /* MobileLibrary+Connections.swift */,
+				AD3690000000000000000000 /* MobileProjectGrantReconciliation.swift */,
+				5E9D61F2B8A34D49A3C0F7D2 /* MobileDiagnosticLog.swift */,
 				384000000000000000000000 /* MobileLibrary+Downloads.swift */,
 				A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */,
 				7849226B36C61649B125BDDC /* MobileLibraryView.swift */,
@@ -376,6 +385,8 @@
 				407100000000000000000001 /* MobileProjectLifecycle.swift in Sources */,
 				22D6BE7F988B05DBBE06F007 /* MobileLibrary.swift in Sources */,
 				A44200000000000000000001 /* MobileLibrary+Connections.swift in Sources */,
+				AD3690000000000000000001 /* MobileProjectGrantReconciliation.swift in Sources */,
+				5E9D61F2B8A34D49A3C0F7D1 /* MobileDiagnosticLog.swift in Sources */,
 				384000000000000000000100 /* MobileLibrary+Downloads.swift in Sources */,
 				A7B6C5D4E3F2019A88776655 /* MobileRubricSubmissionGate.swift in Sources */,
 				2FC729B1D42BA8D7E2DFD319 /* MobileLibraryView.swift in Sources */,
@@ -408,6 +419,7 @@
 				B4C4A7E1D8F74D7E9A1D5C24 /* MobileRevocationTests.swift in Sources */,
 				D38110000000000000000003 /* MobileDemoStoreTests.swift in Sources */,
 				D39710000000000000000001 /* MobileReaderSpacingTests.swift in Sources */,
+				F435C0DE0000000000000002 /* MobileDiagnosticLogTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

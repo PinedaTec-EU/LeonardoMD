@@ -132,8 +132,11 @@ final class PairingUITests: XCTestCase {
         let failure = app.alerts["No se pudo completar la operación"]
         XCTAssertTrue(failure.waitForExistence(timeout: 15))
         XCTAssertTrue(failure.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS %@", "[LL1 op=status")).firstMatch.waitForExistence(timeout: 5),
-            "The native failure alert must expose the safe transport diagnostic")
+            NSPredicate(format: "label CONTAINS %@", "Código: LL-")).firstMatch.waitForExistence(timeout: 5),
+            "The native failure alert must expose only its short message and reference code")
+        XCTAssertFalse(failure.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "[LL1 op=status")).firstMatch.exists,
+            "Transport diagnostics belong in the local log, not the alert")
         let failureCapture = XCTAttachment(screenshot: app.screenshot())
         failureCapture.name = "Little Leonardo synchronization failure diagnostic"
         failureCapture.lifetime = .keepAlways
@@ -770,10 +773,13 @@ final class PairingUITests: XCTestCase {
         let failure = app.alerts["No se pudo completar la operación"]
         XCTAssertTrue(failure.waitForExistence(timeout: 30),
                       "A direct-cache deletion failure must be surfaced and kept retryable")
-        let failureBody = failure.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS[c] %@ OR label CONTAINS[c] %@", "caché", "cache")
+        let failureCode = failure.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "Código: LL-")
         ).firstMatch
-        XCTAssertTrue(failureBody.exists, "The retry alert must expose the cache-deletion failure detail")
+        XCTAssertTrue(failureCode.exists, "The retry alert must use the same short message and reference code")
+        XCTAssertFalse(failure.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS[c] %@ OR label CONTAINS[c] %@", "caché", "cache")
+        ).firstMatch.exists, "Cache cleanup details belong in Ver log")
         failure.buttons["Aceptar"].tap()
         app.terminate()
         try advanceDirectFixture("release-revocation-persistence")

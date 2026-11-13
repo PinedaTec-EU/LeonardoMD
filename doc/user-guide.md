@@ -679,19 +679,31 @@ explicit actions; a blocked, submitted or frozen retry draft cannot be edited.
 
 ### If mobile synchronization is interrupted
 
-For a network failure, the existing alert may include a compact diagnostic
-line, for example:
+For a network failure, the alert shows a short message, a unique reference code
+such as `LL-0123456789AB`, and one **OK** action. Open **Sync Settings → View log**
+to inspect recent local
+error entries. The same reference code marks the matching entry; a network
+entry may include a bounded diagnostic such as:
 
-`[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
+`ref=LL-0123456789AB op=synchronization transport=[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
 
-Share that line or a screenshot when asking for help. It identifies whether a
-status or snapshot request failed, the HTTP status when received, response
-bytes received versus expected, and the system error domain/code. It contains
-no server address or path, pairing credential, device/project identifier, or
-file content. An HTTP 200 header does not mean the response body finished. A
-`?` expected count means the server did not provide a body length. Previously
-downloaded offline copies remain available; check that the source Mac is
-reachable and Leonardo Sync is enabled, then retry synchronization.
+The log stays on this device and is not sent automatically. It excludes the
+server address or path, pairing credentials, device/project identifiers, and
+document or image content. Select and copy a line only if you choose to share
+it when asking for help.
+It keeps up to 120 recent entries or 64 KiB, whichever limit is reached first.
+It is stored in the app's local cache, excluded from backups before writing;
+iOS may clear that cache to free space, so the log is for recent troubleshooting
+rather than permanent storage.
+The matching entry identifies whether a status or snapshot request failed, the
+HTTP status when received, response bytes received versus expected, and the
+system error domain/code. An HTTP 200 header does not mean the response body
+finished; a `?` expected count means the server did not provide a body length.
+An explicit access denial or confirmed authorization change prevents affected
+content from opening from an older copy; other granted projects remain
+available. A temporary connection failure may still allow a retained offline
+copy. Check that the source Mac is reachable and Leonardo Sync is enabled, then
+retry synchronization.
 
 ### Answer a rubric request on iOS
 
@@ -775,6 +787,8 @@ After a project has been added, macOS shows newly shared files under **New files
 
 Choose **Create editable copy** to explicitly download an entire editable project. Open it locally, then use manual synchronization or select a synchronization interval. Network reachability is still required for transfers. Its files are stored locally on this Mac, but the project remains **Received from another device**; offline availability does not change its origin or prove that the source has your latest edits.
 
+**If importing or synchronizing fails**, the error identifies whether refreshing source access or downloading the project failed, with the HTTP status and a recovery action. A project that is no longer shared asks you to have its owner restore project access, then refresh the list. If the source Mac revoked this device, pair it again and ask the owner to approve the connection. Updated source Macs also report whether the selection exceeds the project size, per-file size or file-count limit, with the observed quantity and limit. “At least” is the amount encountered before stopping, not a complete project inventory; a file path is relative to the shared project. The current whole-project transfer supports up to 200 MiB per project, 20 MiB per file and 10,000 files. On the source Mac, reduce the shared selection and retry; nothing is silently omitted to fit. A source-read error means you should check the disk, permissions and availability of cloud files on that Mac. It does not prove the project is too large. Older source versions may provide only an HTTP status; update both Macs for detailed diagnostics.
+
 To return edits, **Compare changes**, inspect Base / This Mac / Other Mac versions, then **Send changes for review**. Retry pending proposals when connectivity returns. Edits made after submission remain local until another submission. The source Mac reviews incoming proposals; sending is not automatic acceptance. Resolve conflict markers deliberately and verify the result before accepting. Keep local work until the source confirms the expected outcome.
 
 ### On-demand downloads and offline storage
@@ -793,7 +807,7 @@ Use the context menu on Mac or the **…** button in Little Leonardo:
 - **Stop keeping offline** makes copies eligible for cache cleanup without deleting originals. A child can be excluded from a retained folder.
 - **Release local space** removes temporary downloaded copies; retained offline content remains protected. To release those files too, first choose **Stop keeping offline**.
 
-The list distinguishes **Remote only**, **Cached**, **Offline pending** and **Available offline**, with progress and failure indicators. Folder counts show downloaded files versus total files. A selection is available offline only after all required downloads finish. Failures retry during the next automatic refresh; the last retained version remains readable if an update fails. The reader shows an explicit previous-copy warning, the download error and **Retry** above that copy. Failed referenced images also show an error, even when the document text is readable.
+The list distinguishes **Remote only**, **Cached**, **Offline pending** and **Available offline**, with progress and failure indicators. Folder counts show downloaded files versus total files. A selection is available offline only after all required downloads finish. Failures retry during the next automatic refresh. When an update fails for a temporary connection reason, the last retained version remains readable with a previous-copy warning, the download error and **Retry** above it. An explicit access denial does not open that stale version. Failed referenced images also show an error, even when the document text is readable.
 
 In **Synchronization → Storage and cache**, enter the temporary limit as a whole number of MiB and choose **Apply cache limit** (Return also applies it). Text being edited does not change the saved budget. Inspect temporary/offline usage and pending downloads, clear temporary cache or stop retaining a selection. The default limit is 256 MiB; zero disables temporary retention. Least recently used temporary files are removed first. Offline files are stored separately and do not count toward this limit; they require enough free device space. Cleanup never deletes editable desktop copies or rubric drafts.
 

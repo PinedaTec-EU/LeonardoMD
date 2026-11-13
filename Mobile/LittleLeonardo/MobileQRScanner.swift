@@ -56,7 +56,11 @@ private struct MobileQRScanner: UIViewControllerRepresentable {
         scanner.delegate = context.coordinator
         do { try scanner.startScanning() }
         catch {
-            Task { @MainActor in context.coordinator.fail("No se pudo iniciar la cámara. Puedes pegar el enlace del QR.") }
+            let message = MobileErrorNotice.record(
+                error,
+                operation: .scanner,
+                message: "No se pudo iniciar la cámara. Puedes pegar el enlace del QR.").inlineMessage
+            Task { @MainActor in context.coordinator.fail(message) }
         }
         return scanner
     }
@@ -87,7 +91,11 @@ private struct MobileQRScanner: UIViewControllerRepresentable {
 
         func dataScanner(_ dataScanner: DataScannerViewController, becameUnavailableWithError error: DataScannerViewController.ScanningUnavailable) {
             dataScanner.stopScanning()
-            fail("La cámara dejó de estar disponible. Puedes cancelar y volver a intentarlo.")
+            let message = MobileErrorNotice.record(
+                error,
+                operation: .scanner,
+                message: "La cámara dejó de estar disponible. Puedes cancelar y volver a intentarlo.").inlineMessage
+            fail(message)
         }
 
         private func accept(_ item: RecognizedItem, scanner: DataScannerViewController) {

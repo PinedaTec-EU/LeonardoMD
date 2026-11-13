@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "pull_request": 369,
+  "capture_source_commit": "44c1ae4d6ddc17af5dda791eb45b3a0036a78157",
+  "reviewed_source_at_capture": "44c1ae4d6ddc17af5dda791eb45b3a0036a78157",
+  "base_commit": "0d72d795056610cfe9aae814b840bbd64ee9704f",
+  "git_tree_inputs_at_capture": {
+    "Sources": "05e78d3157746527b2725e4cf5a1070b7a38da83",
+    "Tests": "adaf34122450d66dcf27ecad561ec0dd363d39c9",
+    "Package.swift": "d286a11e2f6083f0fa2c1e9cd0f2fa0682093dc3",
+    "Package.resolved": "b67272e588be3d1079b56d556cf662ddfa9a656b",
+    "version.nfo": "8ebaeb0a04053f9c4cd0e842b32fa784caeaf372",
+    "scripts": "cab30ef61e92b23252c2ede1210ef6cc610d69b2"
+  },
+  "capture_test": "Tests/LeonardoAppTests/PeerSyncErrorMessageTests.swift::testCaptureProductionDownloadAlert",
+  "capture_command": "EVIDENCE_SHA=44c1ae4d6ddc17af5dda791eb45b3a0036a78157 LEONARDO_SYNC_ERROR_EVIDENCE=/tmp/leonardo-sync-error-evidence-20261113-369-current python3 scripts/compile-and-record.py --pr-number 369 -- swift test --disable-automatic-resolution --filter PeerSyncErrorMessageTests.testCaptureProductionDownloadAlert",
+  "compiler_recorded_build_delta": 40,
+  "capture_runtime": "macOS AppKit/SwiftUI NSWindow hosting the production DesktopPeerPreferencesView; synthetic HTTP 413 corpus-size failure; this is desktop evidence, not Little Leonardo iOS acceptance.",
+  "screen_geometry": {
+    "window_points": {
+      "width": 600,
+      "height": 532
+    },
+    "png_pixels": {
+      "width": 1200,
+      "height": 1064
+    }
+  }
+}

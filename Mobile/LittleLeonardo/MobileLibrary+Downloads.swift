@@ -113,7 +113,8 @@ extension MobileLibrary {
             } catch SyncError.revoked {
                 continue
             } catch {
-                self.error = error.localizedDescription
+                presentError(error, operation: .synchronization,
+                             message: "No se pudo sincronizar el proyecto. Comprueba la conexión e inténtalo de nuevo.")
             }
         }
         comparisonCode = connections.first(where: { $0.comparisonCode != nil })?.comparisonCode
@@ -137,7 +138,10 @@ extension MobileLibrary {
         do {
             guard try commitConnection(updated, expected: token(for: connection)) != nil else { return }
             await synchronize()
-        } catch { self.error = error.localizedDescription }
+        } catch {
+            presentError(error, operation: .library,
+                         message: "No se pudo aceptar el proyecto compartido.")
+        }
     }
 
     func ignoreSharedProject(connectionID: UUID, projectID: UUID) {
@@ -148,7 +152,10 @@ extension MobileLibrary {
         var updated = connection
         updated.ignoredProjectIDs.insert(projectID)
         do { _ = try commitConnection(updated, expected: token(for: connection)) }
-        catch { self.error = error.localizedDescription }
+        catch {
+            presentError(error, operation: .library,
+                         message: "No se pudo guardar la decisión sobre el proyecto.")
+        }
     }
 
     func dismissNewFile(connectionID: UUID, projectID: UUID, path: String) {
@@ -159,7 +166,10 @@ extension MobileLibrary {
         updated.newFilePaths[projectID]?.remove(path)
         if updated.newFilePaths[projectID]?.isEmpty == true { updated.newFilePaths[projectID] = nil }
         do { _ = try commitConnection(updated, expected: token(for: connection)) }
-        catch { self.error = error.localizedDescription }
+        catch {
+            presentError(error, operation: .library,
+                         message: "No se pudo actualizar la lista de archivos nuevos.")
+        }
     }
 
     func dismissNewFiles(connectionID: UUID, projectID: UUID) {
@@ -170,7 +180,10 @@ extension MobileLibrary {
         var updated = connection
         updated.newFilePaths[projectID] = nil
         do { _ = try commitConnection(updated, expected: token(for: connection)) }
-        catch { self.error = error.localizedDescription }
+        catch {
+            presentError(error, operation: .library,
+                         message: "No se pudo actualizar la lista de archivos nuevos.")
+        }
     }
 
     /// Removes only direct-sync caches after confirmed revocation. Legacy
@@ -201,8 +214,8 @@ extension MobileLibrary {
         }
     }
 
-    private func saveDirectProject(_ project: OfflineProject,
-                                   expected token: ConnectionToken) async throws -> Bool {
+    func saveDirectProject(_ project: OfflineProject,
+                           expected token: ConnectionToken) async throws -> Bool {
         let mutation = cacheMutations.enqueue { [weak self] in
             guard let self, self.isCurrentCacheOperation(token),
                   !self.projectLifecycle.isDeleted(project.id) else { return false }
@@ -230,22 +243,26 @@ extension MobileLibrary {
               }) else {
             throw SyncError.revoked
         }
-        return try await withAuthenticatedConnection(connection) { context in
-            guard context.status.access == .authorized,
-                  let descriptor = context.status.projects.first(where: { $0.id == projectID }),
-                  isCurrentCacheOperation(context.token) else { throw SyncError.revoked }
-            do {
+        do {
+            return try await withAuthenticatedConnection(connection, projectID: projectID, filePath: entry.path) { context in
+                guard context.status.access == .authorized else { throw SyncError.accessDenied }
+                guard let descriptor = context.status.projects.first(where: { $0.id == projectID }) else {
+                    throw SyncError.projectAccessDenied
+                }
+                guard isCurrentCacheOperation(context.token) else { throw SyncError.revoked }
                 try descriptor.scope.validate(entry.path)
                 try descriptor.selection?.validate(entry.path)
-            } catch {
-                try await downloads.remove(id: projectID)
-                throw error
+                let file = try await fileRequest(context.client, entry, projectID,
+                    connection.deviceID, context.credential)
+                guard isCurrentCacheOperation(context.token),
+                      !projectLifecycle.isDeleted(projectID) else { throw SyncError.revoked }
+                return file
             }
-            let file = try await context.client.file(entry, projectID: projectID,
-                deviceID: connection.deviceID, credential: context.credential)
-            guard isCurrentCacheOperation(context.token),
-                  !projectLifecycle.isDeleted(projectID) else { throw SyncError.revoked }
-            return file
+        } catch {
+            if let denial = error as? SyncError, denial.isAccessDenied {
+                downloads.denyFile(id: projectID, path: entry.path)
+            }
+            throw error
         }
     }
 }

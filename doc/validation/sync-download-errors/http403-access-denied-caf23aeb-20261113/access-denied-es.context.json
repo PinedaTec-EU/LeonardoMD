@@ -1,0 +1,14 @@
+{
+  "browser_name": "Native AppKit/SwiftUI window; no browser engine",
+  "browser_version": "Not applicable: native AppKit/SwiftUI",
+  "capture_mode": "viewport",
+  "captured_at": "2026-11-13T15:16:49Z",
+  "data_provenance": "synthetic",
+  "route": "/native/preferences/synchronization/connections",
+  "screen": "Production DesktopPeerPreferencesView unresolved access-denial alert; language es",
+  "state": "Synthetic HTTP 403 with authorization cause not yet resolved; no device, project, credential or document data; capture source caf23aeb5e4ed4198ddd31eeb057b760b2a00737",
+  "viewport_css": {
+    "height": 532,
+    "width": 600
+  }
+}
