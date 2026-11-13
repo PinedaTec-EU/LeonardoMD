@@ -127,6 +127,12 @@ public struct DirectHTTPSRouter: Sendable {
         catch SyncError.outsideScope { return HTTPResponse(status: 403) }
         catch SyncError.publicationPending { return HTTPResponse(status: 409) }
         catch SyncError.sizeLimitExceeded { return HTTPResponse(status: 413) }
+        catch let failure as CorpusReadFailure {
+            // Catalogue and on-demand file routes keep the previous HTTP size-limit contract.
+            // Snapshot downloads return scoped diagnostics; these routes expose only status.
+            logger.error("sync_resource_read_failed reason=\(failure.reason.rawValue, privacy: .public)")
+            return HTTPResponse(status: failure.reason == .sourceUnavailable ? 500 : 413)
+        }
         catch SyncError.invalidSnapshot { return HTTPResponse(status: 400) }
         catch RubricExchangeError.unsupported { return HTTPResponse(status: 404) }
         catch RubricExchangeError.notFound { return HTTPResponse(status: 404) }

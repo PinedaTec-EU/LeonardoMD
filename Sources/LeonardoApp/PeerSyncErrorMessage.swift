@@ -5,6 +5,10 @@ import LeonardoSync
 @MainActor
 enum PeerSyncErrorMessage {
     static func text(_ error: Error) -> String {
+        if let libraryError = error as? DesktopPeerLibraryError,
+           libraryError == .unauthorizedProject {
+            return L10n.text("The source Mac no longer shares this project with this device. Ask its owner to restore access, refresh the project list, and retry.")
+        }
         if let failure = error as? CorpusReadFailure {
             let key = failure.reason == .sourceUnavailable
                 ? "This Mac could not read a local working-copy file. Check the disk, file permissions and cloud-file availability, then retry."

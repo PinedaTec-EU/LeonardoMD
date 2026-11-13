@@ -369,6 +369,7 @@ final class HTTPSRuntimeTests: XCTestCase {
         let unsafe = SharedProjectDescriptor(id: UUID(), name: "Unsafe diagnostic", scope: try CorpusScope(folder: "docs"))
         let outsideGrant = SharedProjectDescriptor(id: UUID(), name: "Outside grant", scope: try CorpusScope(folder: ""),
             selection: try CorpusSelection(folders: ["docs"], documents: []))
+        let onDemandOversized = SharedProjectDescriptor(id: UUID(), name: "Large on-demand file", scope: try CorpusScope(folder: ""))
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -382,6 +383,9 @@ final class HTTPSRuntimeTests: XCTestCase {
             },
             SharedProjectSource(descriptor: outsideGrant) {
                 throw CorpusReadFailure(reason: .sourceUnavailable, path: "private/secret.md")
+            },
+            SharedProjectSource(descriptor: onDemandOversized) {
+                throw CorpusReadFailure(reason: .fileTooLarge, path: "image.png", observed: 8, limit: 4)
             },
             SharedProjectSource(descriptor: unavailable) {
                 throw NSError(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError,
@@ -398,7 +402,7 @@ final class HTTPSRuntimeTests: XCTestCase {
             let credential = String(repeating: "a", count: 64)
             let enrollment = try await client.begin(deviceName: "Receiving Mac", credential: credential, now: fixedNow, kind: .desktopPeer)
             try await authority.approve(requestID: enrollment.deviceID, code: enrollment.comparisonCode,
-                                        projectIDs: [oversized.id, unavailable.id, unsafe.id, outsideGrant.id], now: fixedNow)
+                                        projectIDs: [oversized.id, unavailable.id, unsafe.id, outsideGrant.id, onDemandOversized.id], now: fixedNow)
             for (descriptor, expectedStatus, reason) in [
                 (oversized, 413, CorpusReadFailure.Reason.corpusTooLarge), (unavailable, 500, .sourceUnavailable),
                 (unsafe, 500, .sourceUnavailable), (outsideGrant, 500, .sourceUnavailable)
@@ -426,6 +430,18 @@ final class HTTPSRuntimeTests: XCTestCase {
                     XCTAssertFalse(String(decoding: response.body, as: UTF8.self).contains("secret"))
                 }
             }
+            let wire = try PinnedHTTPSClient(endpoint: endpoint, certificateFingerprint: identity.certificateFingerprint)
+            let catalogueResponse = try await wire.request(method: "GET",
+                path: "/v1/devices/\(enrollment.deviceID.uuidString)/projects/\(onDemandOversized.id.uuidString)/catalogue",
+                credential: credential)
+            XCTAssertEqual(catalogueResponse.status, 413)
+            XCTAssertTrue(catalogueResponse.body.isEmpty, "Catalogue failures must not expose file diagnostics")
+            let fileBody = try JSONEncoder().encode(RemoteFileRequest(path: "image.png", revision: "sha256:" + String(repeating: "0", count: 64)))
+            let fileResponse = try await wire.request(method: "POST",
+                path: "/v1/devices/\(enrollment.deviceID.uuidString)/projects/\(onDemandOversized.id.uuidString)/file",
+                credential: credential, body: fileBody)
+            XCTAssertEqual(fileResponse.status, 413)
+            XCTAssertTrue(fileResponse.body.isEmpty, "File failures must not expose file diagnostics")
             try await authority.revoke(deviceID: enrollment.deviceID)
             do {
                 _ = try await client.project(oversized, deviceID: enrollment.deviceID, credential: credential)

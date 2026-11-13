@@ -247,6 +247,36 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertEqual(transfers, 2) // Import and explicit comparison; reopening/import retry does not redownload.
     }
 
+    func testRevocationBeforeSelectedProjectImportReturnsActionableErrorAndCleansCopy() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "MacBook")
+        await fixture.remote.setAccess(.authorized)
+        let selectedProjects = try await fixture.library.refresh(connectionID: connection.id)
+        XCTAssertEqual(selectedProjects.projects.map(\.id), [fixture.remote.project.id])
+        let existingCopy = try await fixture.library.importProject(connectionID: connection.id, projectID: fixture.remote.project.id)
+        let directory = try await fixture.library.open(copyID: existingCopy.id)
+
+        // The user selected this project while authorized; its grant is withdrawn before import is retried.
+        await fixture.remote.setAccess(.revoked)
+        do {
+            _ = try await fixture.library.importProject(connectionID: connection.id, projectID: fixture.remote.project.id)
+            XCTFail("A withdrawn grant must not complete the selected import")
+        } catch {
+            XCTAssertEqual(error as? DesktopPeerLibraryError, .unauthorizedProject)
+        }
+
+        let deniedConnection = try await fixture.connections.load(id: connection.id)
+        XCTAssertTrue(try XCTUnwrap(deniedConnection).revoked)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+        let removedCopy = try await fixture.copies.load(id: existingCopy.id)
+        XCTAssertNil(removedCopy)
+        let removedCredential = try await fixture.credentials.credential(deviceID: connection.id)
+        XCTAssertNil(removedCredential)
+        let closedCopies = await fixture.revoker.closedIDs
+        XCTAssertTrue(closedCopies.contains(existingCopy.id))
+    }
+
     func testRevocationIsDurableBeforeFailedPurgeAndRetriesWithoutNetworkOrCredential() async throws {
         let fixture = try PeerLibraryFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
@@ -304,6 +334,7 @@ private struct PeerLibraryFixture {
     let workspace: PeerWorkspaceProxy
     let credentials = PeerMemoryCredentials()
     let remote: PeerRemoteFixture
+    let revoker: PeerRevokerFixture
     let outbox: FileDesktopPeerOutboxStore
     let library: DesktopPeerLibrary
     init() throws {
@@ -313,8 +344,9 @@ private struct PeerLibraryFixture {
         workspace = PeerWorkspaceProxy(DesktopPeerWorkspace(root: root.appendingPathComponent("Working"), copies: copies))
         remote = try PeerRemoteFixture()
         outbox = FileDesktopPeerOutboxStore(root: root.appendingPathComponent("Outbox"))
+        revoker = PeerRevokerFixture()
         library = DesktopPeerLibrary(connections: connections, copies: copies, workspace: workspace,
-            credentials: credentials, remote: remote, revoker: PeerRevokerFixture(), outbox: outbox, now: { Date(timeIntervalSince1970: 1_000) })
+            credentials: credentials, remote: remote, revoker: revoker, outbox: outbox, now: { Date(timeIntervalSince1970: 1_000) })
     }
 }
 

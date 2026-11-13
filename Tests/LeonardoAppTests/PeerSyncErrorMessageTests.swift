@@ -35,6 +35,18 @@ final class PeerSyncErrorMessageTests: XCTestCase {
         XCTAssertFalse(message.contains("CorpusReadFailure error"))
     }
 
+    func testUnauthorizedProjectImportErrorExplainsRecoveryInBothLanguages() {
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        let key = "The source Mac no longer shares this project with this device. Ask its owner to restore access, refresh the project list, and retry."
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let message = PeerSyncErrorMessage.text(DesktopPeerLibraryError.unauthorizedProject)
+            XCTAssertEqual(message, L10n.text(key))
+            XCTAssertFalse(message.localizedCaseInsensitiveContains("unauthorizedProject"))
+        }
+    }
+
     func testAccessPreflightFailureNamesItsPhaseAndHTTPStatus() {
         let previous = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = previous }
