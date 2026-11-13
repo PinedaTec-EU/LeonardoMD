@@ -13,7 +13,11 @@
     "bundle_executable": "LeonardoMD",
     "version": "0.3.1602",
     "build": "1602",
-    "launch_arguments": ["--new-instance", "-allowMultipleInstances", "YES"],
+    "launch_arguments": [
+      "--new-instance",
+      "-allowMultipleInstances",
+      "YES"
+    ],
     "xctest_dependency": false,
     "codesign_verified": true,
     "still_running_after_validation": true
@@ -27,7 +31,11 @@
     "bundle_executable": "LeonardoMD",
     "version": "0.3.1602",
     "build": "1602",
-    "launch_arguments": ["--new-instance", "-allowMultipleInstances", "YES"],
+    "launch_arguments": [
+      "--new-instance",
+      "-allowMultipleInstances",
+      "YES"
+    ],
     "purpose": "Reopened the same packaged bundle and isolated home to inspect literal fenced code while Math was off; restored Math on and English.",
     "still_running_after_validation": true
   },
@@ -75,13 +83,54 @@
       "rendered_display_equations_observed": true,
       "equation_tag_observed": "(1)",
       "katex_error_observed": false,
-      "literal_delimiters_in_rendered_math_nodes": false
+      "literal_delimiters_in_rendered_math_nodes": false,
+      "locales_tested": [
+        "en",
+        "es"
+      ],
+      "tagged_equation_locales": [
+        "en",
+        "es"
+      ]
     },
     "math_disabled": {
-      "locales_tested": ["en", "es"],
+      "locales_tested": [
+        "en",
+        "es"
+      ],
       "source_notation_and_delimiters_visible": true,
       "fenced_code_examples_remained_literal": true,
       "observed_example": "The fenced BibTeX block remained visible as literal source text while Math was off."
+    },
+    "continued_spanish_follow_up": {
+      "date": "2026-11-13",
+      "app_bundle_identifier": "eu.pinedatec.LeonardoMD.qa.514fb956b10e4a3fb82b8433b1cdfadd",
+      "version": "0.3.1602",
+      "build": "1602",
+      "disposable_user_home": "/tmp/leonardo-guide-v76-qa-home",
+      "opened_through": "Help > Guía de Leonardo…",
+      "locale": "es",
+      "math_enabled": {
+        "one_line_display_equation_visible": true,
+        "multiline_underbrace_labels_visible": true,
+        "radical_arrow_cancellation_visible": true,
+        "tagged_box_counting_equation": "(1)",
+        "katex_error_observed": false,
+        "literal_delimiters_in_rendered_math_nodes": false
+      },
+      "math_disabled": {
+        "source_delimiters_visible": true,
+        "inline_and_display_fallback_visible": true,
+        "underbrace_and_tagged_equation_source_visible": true,
+        "fenced_code_example_literal": true
+      },
+      "device_hub_running": true,
+      "screenshot_artifacts_retained": false,
+      "settings_restored": {
+        "interface_language": "English",
+        "math_extension": "on",
+        "scope": "dedicated CFFIXED_USER_HOME"
+      }
     }
   },
   "practice_round_trip": {
@@ -145,6 +194,27 @@
   "notes": [
     "Guide v76 bundle and disposable working-copy hashes match in both locales.",
     "No existing app process or shared user practice file was modified.",
-    "The initial native screenshot API output was only a small preview and no screenshot artifact was retained."
-  ]
+    "The initial native screenshot API output was only a small preview and no screenshot artifact was retained.",
+    "Spanish Help guide was opened through the Help menu; Spanish practice answers persisted after closing and reopening the form."
+  ],
+  "spanish_practice_round_trip": {
+    "attempted_from_guide": true,
+    "opened": true,
+    "filled": true,
+    "saved": true,
+    "closed_and_reopened_from_guide": true,
+    "round_trip_values_match": true,
+    "locale": "es",
+    "synthetic_values": {
+      "practiceName": "QA Guía v76",
+      "practiceGoal": "Verificación de persistencia de respuestas en español.",
+      "practiceReady": true
+    },
+    "practice_file": "~/Library/Application Support/LeonardoMD/Practice Forms/v1/es/Practice-v1-es.mdlr",
+    "practice_file_sha256_after_reopen": "6b543d197f5195cb1f3906351a2d3b992b0c48e4f7548cf8b164bd92cb7ed487",
+    "round_trip_acceptance": "passed",
+    "app_bundle_identifier": "eu.pinedatec.LeonardoMD.qa.514fb956b10e4a3fb82b8433b1cdfadd",
+    "version": "0.3.1602",
+    "build": "1602"
+  }
 }

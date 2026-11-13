@@ -201,7 +201,7 @@ final class DesktopPeerController {
             }
             reviewStore.acceptProject(connectionID: connectionID, projectID: projectID)
         } catch {
-            self.error = error.localizedDescription
+            self.error = PeerSyncErrorMessage.text(error)
             try? await restoreDownloads()
         }
     }

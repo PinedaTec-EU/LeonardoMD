@@ -66,9 +66,13 @@ extension DesktopPeerController {
                 do { return try await library.file(connectionID: connection.id, projectID: projectID, entry: entry) }
                 catch {
                     // Authenticated denial must immediately hide any displayed read-only copy.
-                    if (error as? SyncError) == .revoked || (error as? SyncError) == .outsideScope
-                        || (error as? DesktopPeerLibraryError) == .unauthorizedProject {
+                    let syncError = error as? SyncError
+                    let projectDenied = (error as? DesktopPeerLibraryError) == .unauthorizedProject
+                    if syncError == .revoked || syncError == .outsideScope || projectDenied {
                         try await downloads.remove(id: id)
+                    }
+                    if syncError == .revoked || syncError == .outsideScope || syncError == .accessDenied || projectDenied {
+                        throw PeerSyncPresentedError(PeerSyncErrorMessage.text(error))
                     }
                     throw error
                 }
@@ -76,4 +80,9 @@ extension DesktopPeerController {
         }
         throw SyncError.revoked
     }
+}
+
+private struct PeerSyncPresentedError: LocalizedError {
+    let errorDescription: String?
+    init(_ message: String) { errorDescription = message }
 }

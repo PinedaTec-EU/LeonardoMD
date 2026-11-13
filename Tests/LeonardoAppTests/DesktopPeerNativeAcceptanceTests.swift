@@ -12,6 +12,39 @@ import LeonardoDesktopSync
 /// It does not launch another packaged process or claim physical VPN coverage.
 @MainActor
 final class DesktopPeerNativeAcceptanceTests: XCTestCase {
+    func testStaleAddProjectDisplaysLocalizedAuthorizationRecovery() async throws {
+        let fixture = try NativePeerAcceptanceFixture()
+        defer { fixture.cleanup() }
+        let previousLanguage = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previousLanguage }
+        LanguageSettings.shared.language = .english
+
+        await fixture.owner.initialize()
+        await fixture.owner.update(fixture.enabledSettings)
+        let running = try XCTUnwrap(fixture.owner.running, fixture.owner.error ?? "Missing service")
+        await fixture.peer.initialize()
+        let enrolled = await fixture.peer.enroll(address: running.endpoint.absoluteString, name: "Synthetic MacBook")
+        XCTAssertTrue(enrolled, fixture.peer.error ?? "Enrollment failed")
+        let connection = try XCTUnwrap(fixture.peer.connections.first)
+        await fixture.owner.refreshConsent()
+        let request = try XCTUnwrap(fixture.owner.consent.requests.first)
+        await fixture.owner.approve(request, projects: [fixture.shared.id])
+        await fixture.peer.refresh(connection.id)
+        XCTAssertEqual(fixture.peer.available[connection.id]?.map(\.id), [fixture.shared.id])
+
+        var noProjects = fixture.enabledSettings
+        noProjects.port = UInt16(try XCTUnwrap(running.endpoint.port))
+        noProjects.projects = []
+        await fixture.owner.update(noProjects)
+        XCTAssertEqual(fixture.peer.available[connection.id]?.map(\.id), [fixture.shared.id], "Keep the stale row to exercise its Add action")
+
+        await fixture.peer.addRemoteProject(connectionID: connection.id, projectID: fixture.shared.id)
+        let message = try XCTUnwrap(fixture.peer.error)
+        XCTAssertTrue(message.contains("no longer shares this project"), message)
+        XCTAssertFalse(message.localizedCaseInsensitiveContains("unauthorizedproject"), message)
+        XCTAssertFalse(message.localizedCaseInsensitiveContains("error 4"), message)
+    }
+
     func testRemoteProjectsReviewScreenShowsHostProjectAndNewFile() async throws {
         let fixture = try NativePeerAcceptanceFixture(peerHelperFactory: { preferences in
             SyncHelperController(preferencesURL: preferences, configurations: ConfigurationStore(),

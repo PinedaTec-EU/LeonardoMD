@@ -8,6 +8,12 @@ enum PeerSyncErrorMessage {
         if let syncError = error as? SyncError, syncError == .revoked {
             return L10n.text("The source Mac revoked this device. Pair this device with the source Mac again and ask its owner to approve the connection.")
         }
+        if let syncError = error as? SyncError, syncError == .accessDenied {
+            return L10n.text("The source Mac denied this request. Check device and project authorization on the source Mac, refresh the project list, and retry.")
+        }
+        if let syncError = error as? SyncError, syncError == .outsideScope {
+            return L10n.text("This file is outside the content selected on the source Mac.")
+        }
         if let libraryError = error as? DesktopPeerLibraryError,
            libraryError == .unauthorizedProject {
             return L10n.text("The source Mac no longer shares this project with this device. Ask its owner to restore access, refresh the project list, and retry.")

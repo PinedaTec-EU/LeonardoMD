@@ -10,7 +10,7 @@ final class OnDemandResponseStatusTests: XCTestCase {
             XCTAssertFalse($0.localizedDescription.isEmpty)
         }
         XCTAssertThrowsError(try OnDemandResponseStatus.requireSuccess(403)) {
-            XCTAssertEqual($0 as? SyncError, .revoked)
+            XCTAssertEqual($0 as? SyncError, .accessDenied)
         }
         XCTAssertThrowsError(try OnDemandResponseStatus.requireSuccess(409)) {
             XCTAssertEqual($0 as? SyncError, .publicationPending)

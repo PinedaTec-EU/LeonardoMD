@@ -2,23 +2,27 @@
 
 Tracking: [#368](https://github.com/PinedaTec-EU/LeonardoMD/issues/368), [PR #369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369).
 
-The earlier `b19ed7b` / Guide v73 capture set below is historical. The latest
-source-bound bilingual alert captures and updated Help acceptance are in
-[current-head-2026-11-13](current-head-2026-11-13/README.md), captured from
-source `e1ad1d2ada9e7a7b05066b26a229e038c416f069` after the latest source
-reconciliation.
+The `b19ed7b` / Guide v73 and `current-head-2026-11-13` capture sets are
+historical. The latest retained source-bound alert images are the macOS
+synthetic HTTP 413 captures in
+[exact-head-44c1ae4d-2026-11-13](exact-head-44c1ae4d-2026-11-13/README.md),
+recorded against source `44c1ae4d6ddc17af5dda791eb45b3a0036a78157`. They do
+not show the later HTTP 403 recovery paths. The Guide v76 packaged-app record is
+in `../user-guide/native/guide-v76-20261113.json`; it now includes the Spanish
+Math-on equation/tag check and Spanish practice/save round-trip completed in
+the QA instance on 2026-11-13.
 
 ## Candidate identity
 
-- Runtime, guide and capture source: `b19ed7b1f73c142914811c4b67678d610d3d498a`.
-- PR build delta: 32. Both packaged guides are Guide v73, regenerated from the combined Spanish and English sources after current `main` was merged.
-- The following commit updates validation records and screenshots only. [build-inputs.json](build-inputs.json) binds `Sources`, `Tests`, package manifests, scripts, version and the PR ledger entry to the captured source. Verify the binding at the reviewed head with:
+- The captured alert source is `44c1ae4d6ddc17af5dda791eb45b3a0036a78157`; the Guide v76 validation source is `6b83c502bbe5c9b67b7ebf75ee1fb79acab98caf`.
+- The current PR build delta is recorded in `deploy/version/entries/369.yaml`. These source-bound artifacts predate the pending HTTP 403 correction; they are not represented as captures from its final head.
+- The capture manifest binds `Sources`, `Tests`, package manifests, scripts, version and PR entry to the alert source. Verify that historical binding with:
 
 ```sh
 python3 - <<'PYVERIFY'
 import json, subprocess
 from pathlib import Path
-binding = json.loads(Path('doc/validation/sync-download-errors/build-inputs.json').read_text())
+binding = json.loads(Path('doc/validation/sync-download-errors/exact-head-44c1ae4d-2026-11-13/build-inputs.json').read_text())
 for path, expected in binding['input_objects'].items():
     actual = subprocess.check_output(['git', 'rev-parse', 'HEAD:' + path], text=True).strip()
     assert actual == expected, path
@@ -28,7 +32,7 @@ PYVERIFY
 
 ## Native captures
 
-The production macOS preferences view displayed a synthetic authorized HTTP 413 corpus-size failure. The English and Spanish screenshots show the HTTP status, observed and allowed sizes, affected relative file, recovery guidance and confirmation button. The complete 600×532-point native window is visible in each 1200×1064 image. The opt-in XCTest capture passed for both languages on the recorded source.
+The production macOS preferences view displayed a synthetic authorized HTTP 413 corpus-size failure. The English and Spanish screenshots show the HTTP status, observed and allowed sizes, affected relative file, recovery guidance and confirmation button. The complete 600×532-point native window is visible in each 1200×1064 image. The opt-in XCTest capture passed for both languages on source `44c1ae4d`.
 
 The capture is synthetic and uses the production `DesktopPeerPreferencesView` fixture through `swift test`; it is not a user project, live peer connection or packaged startup test. Context sidecars identify the native AppKit/SwiftUI route, viewport, locale, capture time and source. Canonical metadata sidecars bind both image SHA-256 values to the clean `b19ed7b` source checkout.
 
@@ -45,14 +49,14 @@ swift test --skip-build --filter PeerSyncErrorMessageTests.testCaptureProduction
 
 ## Packaged Help acceptance
 
-A fresh QA app process (`eu.pinedatec.LeonardoMD.qa.92ec8dd194434068b2b275db42584a1b`, version `0.3.1596`) opened the bundled Spanish and English Guide v73 through the real Help menu. Mermaid, inline and display math, one-line and multiline `$$`, the tagged box-counting equation `(1)`, charts, local images and tables rendered. With Math disabled, TeX stayed literal; code examples stayed literal and no KaTeX error or stray formula delimiter appeared. Math was restored afterward.
+The Guide v76 QA record identifies the fresh app processes, version `0.3.1602` / build `1602`, both bundled guide hashes and real Help opens. Live inspection covered the local cover and images, Mermaid, Vega-Lite, tables, one-line and multiline equations, Markdown-sensitive underbraces, radicals, arrows, cancellation and tagged box-counting equation `(1)` in both locales. English and Spanish Math-off views showed literal source fallback; a fenced BibTeX example stayed literal. The English and Spanish practice forms were each filled with fictional values, saved, closed, reopened from the corresponding guide and verified to retain their answers.
 
-The Spanish and English Help-linked practice forms were opened, filled, saved, closed and reopened in that same instance; their values and checkbox state persisted. Original practice values were restored and verified after the checks.
+The final Spanish checks ran on 2026-11-13 in QA bundle `eu.pinedatec.LeonardoMD.qa.514fb956b10e4a3fb82b8433b1cdfadd`, version/build `0.3.1602/1602`, in the dedicated home `/tmp/leonardo-guide-v76-qa-home`. The language and Math preferences were restored to English and on in that isolated home. Device Hub remained running. No screenshot artifact was retained from the CUA screenshots; the evidence is the observed packaged-app UI and persisted form file hash recorded in the JSON manifest. The macOS help smoke is complete; this does not establish Little Leonardo simulator or TestFlight acceptance.
 
 ## Scope and automated coverage
 
-The reader and router changes preserve structured HTTP 413 limit responses on whole-snapshot and on-demand routes, keep source read failures distinct and sanitized, and return HTTP 403 without project diagnostics after grant revocation. Swift regressions cover those routes, malformed/older response bodies, partial-read behavior, scope filtering, privacy and localized user guidance. Deterministic package tests cover both regenerated guides.
+The snapshot route preserves structured HTTP 413 limit responses and sanitized source-read diagnostics. Catalogue and file routes keep empty HTTP 413 responses. When a project request returns HTTP 403, the client refreshes authenticated status: confirmed device revocation triggers local cleanup, a withdrawn project grant remains project-scoped, and an unknown cause stays a neutral access denial. Swift regressions cover those races, malformed/older response bodies, partial-read behavior, scope filtering, privacy and localized user guidance. Deterministic package tests cover both guides.
 
-This PR keeps the whole-snapshot transfer limit. It does not claim to identify the original HTTP 500 cause or to fix the physical large-image synchronization tracked by #380. No physical two-Mac transfer or TestFlight acceptance is claimed here; issue #368 remains open for the owner's original import failure.
+This PR keeps the whole-snapshot transfer limit. It does not claim to identify the original HTTP 500 cause or to fix the physical large-image synchronization tracked by #380. It also does not claim Little Leonardo simulator or TestFlight acceptance; issue #368 remains open for the owner's original import failure.
 
 The prior [candidate-8ceafc](candidate-8ceafc/README.md) captures are retained as superseded history and are not used for current acceptance.

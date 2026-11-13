@@ -61,6 +61,29 @@ final class PeerSyncErrorMessageTests: XCTestCase {
         }
     }
 
+    func testUnresolvedForbiddenRequestDoesNotClaimTheDeviceWasRevoked() {
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let message = PeerSyncErrorMessage.text(SyncError.accessDenied)
+            XCTAssertTrue(message.contains(language == .spanish ? "denegado" : "denied"))
+            XCTAssertFalse(message.localizedCaseInsensitiveContains(language == .spanish ? "vuelve a enlazar" : "pair this device again"))
+            XCTAssertFalse(message.localizedCaseInsensitiveContains("SyncError"))
+        }
+    }
+
+    func testOutsideSelectionErrorIsLocalizedWithoutSwiftEnumDetails() {
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let message = PeerSyncErrorMessage.text(SyncError.outsideScope)
+            XCTAssertTrue(message.contains(language == .spanish ? "fuera del contenido" : "outside the content"))
+            XCTAssertFalse(message.localizedCaseInsensitiveContains("SyncError"))
+        }
+    }
+
     func testAccessPreflightFailureNamesItsPhaseAndHTTPStatus() {
         let previous = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = previous }
@@ -70,6 +93,79 @@ final class PeerSyncErrorMessageTests: XCTestCase {
             XCTAssertTrue(message.contains("HTTP 503"))
             XCTAssertTrue(message.contains(language == .spanish ? "acceso" : "access"))
             XCTAssertFalse(message.contains(language == .spanish ? "límite" : "limit"))
+        }
+    }
+
+    func testCaptureProductionAccessDeniedAlert() async throws {
+        guard let output = ProcessInfo.processInfo.environment["LEONARDO_SYNC_ERROR_EVIDENCE"] else {
+            throw XCTSkip("Opt-in production alert capture with synthetic unresolved 403")
+        }
+        let destination = URL(fileURLWithPath: output)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let preferences = root.appendingPathComponent("preferences.json")
+        let store = ConfigurationStore()
+        try await store.saveGlobalPreferences(GlobalPreferences(), at: preferences)
+        let previous = LanguageSettings.shared.language
+        defer { LanguageSettings.shared.language = previous }
+        for language in AppLanguage.allCases {
+            LanguageSettings.shared.language = language
+            let session = AppSession(preferencesURL: preferences)
+            defer { session.stop() }
+            let helper = SyncHelperController(preferencesURL: preferences, configurations: store, hasExecutable: { true })
+            let controller = DesktopPeerController(preferencesURL: preferences, helper: helper)
+            defer { controller.stop() }
+            let host = NSHostingView(rootView: DesktopPeerPreferencesView(session: session, controller: controller)
+                .frame(width: 600, height: 500))
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 600, height: 500),
+                                  styleMask: [.titled], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.contentView = host
+            window.orderFront(nil)
+            defer { window.close() }
+            try await Task.sleep(for: .seconds(1))
+            controller.error = PeerSyncErrorMessage.text(SyncError.accessDenied)
+            for _ in 0..<30 {
+                if window.attachedSheet != nil { break }
+                try await Task.sleep(for: .milliseconds(100))
+            }
+            let sheet = try XCTUnwrap(window.attachedSheet)
+            let view = try XCTUnwrap(sheet.contentView)
+            try await Task.sleep(for: .milliseconds(200))
+            view.layoutSubtreeIfNeeded()
+            view.display()
+            let image = destination.appendingPathComponent("access-denied-\(language.rawValue).png")
+            let capture = Process()
+            capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+            capture.arguments = ["-x", "-o", "-l", String(sheet.windowNumber), image.path]
+            let capturedAt = ISO8601DateFormatter().string(from: Date())
+            try capture.run()
+            capture.waitUntilExit()
+            XCTAssertEqual(capture.terminationStatus, 0, "Window capture requires local screen-recording permission")
+            let recognition = VNRecognizeTextRequest()
+            recognition.recognitionLevel = .accurate
+            recognition.recognitionLanguages = [language.rawValue]
+            try VNImageRequestHandler(url: image).perform([recognition])
+            let visible = (recognition.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+            let recovery = language == .spanish ? "El Mac de origen ha denegado" : "The source Mac denied this request"
+            XCTAssertTrue(visible.joined(separator: " ").contains(recovery), "Capture must show the localized neutral recovery")
+            XCTAssertTrue(visible.contains(L10n.text("OK")), "The recovery dialog button must be visible")
+            let context: [String: Any] = [
+                "captured_at": capturedAt,
+                "route": "/native/preferences/synchronization/connections",
+                "screen": "Production DesktopPeerPreferencesView unresolved access-denial alert; language \(language.rawValue)",
+                "browser_name": "Native AppKit/SwiftUI window; no browser engine",
+                "browser_version": "Not applicable: native AppKit/SwiftUI",
+                "viewport_css": ["width": Int(window.frame.width), "height": Int(window.frame.height)],
+                "capture_mode": "viewport", "data_provenance": "synthetic",
+                "state": "Synthetic HTTP 403 with authorization cause not yet resolved; no device, project, credential or document data; capture source \(ProcessInfo.processInfo.environment["EVIDENCE_SHA"] ?? "unbound")"
+            ]
+            try JSONSerialization.data(withJSONObject: context, options: [.prettyPrinted, .sortedKeys])
+                .write(to: image.deletingPathExtension().appendingPathExtension("context.json"))
+            window.endSheet(sheet)
+            sheet.orderOut(nil)
+            controller.error = nil
         }
     }
 

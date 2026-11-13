@@ -8,6 +8,8 @@ public enum SyncError: Error, Equatable, Sendable {
     case invalidSnapshot
     case sizeLimitExceeded
     case revoked
+    /// A request was forbidden, but current device/project authorization has not been confirmed.
+    case accessDenied
     case publicationPending
 }
 

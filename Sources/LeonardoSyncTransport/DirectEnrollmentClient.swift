@@ -75,7 +75,10 @@ public struct DirectEnrollmentClient: Sendable {
     public func project(_ descriptor: SharedProjectDescriptor, deviceID: UUID, credential: String) async throws -> OfflineProject {
         let response = try await client.request(method: "GET",
             path: "/v1/devices/\(deviceID.uuidString)/projects/\(descriptor.id.uuidString)/snapshot", credential: credential)
-        guard response.status == 200 else { throw ProjectDownloadError(response: response) }
+        guard response.status == 200 else {
+            if response.status == 403 { throw SyncError.accessDenied }
+            throw ProjectDownloadError(response: response)
+        }
         let snapshot = try JSONDecoder().decode(CorpusSnapshot.self, from: response.body)
         return try OfflineProject(id: descriptor.id, name: descriptor.name, mode: .direct,
                                   scope: descriptor.scope, snapshot: snapshot)

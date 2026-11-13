@@ -446,9 +446,8 @@ final class HTTPSRuntimeTests: XCTestCase {
             do {
                 _ = try await client.project(oversized, deviceID: enrollment.deviceID, credential: credential)
                 XCTFail("Revoked recipients must not receive size or file diagnostics")
-            } catch let error as ProjectDownloadError {
-                XCTAssertEqual(error.status, 403)
-                XCTAssertNil(error.failure)
+            } catch let error as SyncError {
+                XCTAssertEqual(error, .accessDenied)
             }
             try await authority.setEnabled(false)
             do {

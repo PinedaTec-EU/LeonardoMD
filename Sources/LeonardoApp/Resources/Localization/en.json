@@ -728,6 +728,8 @@
   "Could not refresh source project access (HTTP %ld).": "Could not refresh source project access (HTTP %ld).",
   "Check Leonardo Sync and pairing authorization on the source Mac, then refresh the connection and retry.": "Check Leonardo Sync and pairing authorization on the source Mac, then refresh the connection and retry.",
   "The source Mac revoked this device. Pair this device with the source Mac again and ask its owner to approve the connection.": "The source Mac revoked this device. Pair this device with the source Mac again and ask its owner to approve the connection.",
+  "The source Mac denied this request. Check device and project authorization on the source Mac, refresh the project list, and retry.": "The source Mac denied this request. Check device and project authorization on the source Mac, refresh the project list, and retry.",
+  "This file is outside the content selected on the source Mac.": "This file is outside the content selected on the source Mac.",
   "The source Mac no longer shares this project with this device. Ask its owner to restore access, refresh the project list, and retry.": "The source Mac no longer shares this project with this device. Ask its owner to restore access, refresh the project list, and retry.",
   "Group instances in Dock and app switcher": "Group instances in Dock and app switcher",
   "Grouped processes share one Dock entry. Use Instances in any window to switch or quit. If the representative closes, another takes its place.": "Grouped processes share one Dock entry. Use Instances in any window to switch or quit. If the representative closes, another takes its place.",
