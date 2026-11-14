@@ -29,7 +29,7 @@ jobs:
         run: python3 scripts/prime-sparkle-cache.py
       - name: Mark Swift test crash collection window
         run: python3 -c 'import os, pathlib, time; pathlib.Path(os.environ["RUNNER_TEMP"], "swift-test-started-at.txt").write_text(str(time.time()))'
-      - name: Isolate recurring FileList test
+      - name: Isolate recurring FileList suite
         id: isolated-file-list
         continue-on-error: true
         shell: bash
@@ -38,10 +38,10 @@ jobs:
           LEONARDO_VISUAL_EVIDENCE: ${{ github.workspace }}/visual-evidence
         run: |
           set +e
-          swift test --filter 'FileListTests.testColorDefaultsRoundTripAndInheritance' 2>&1 | tee "$RUNNER_TEMP/swift-test-isolated.log"
+          swift test --filter 'FileListTests' 2>&1 | tee "$RUNNER_TEMP/swift-test-isolated.log"
           status=${PIPESTATUS[0]}
           set -e
-          if grep -Fq "testColorDefaultsRoundTripAndInheritance" "$RUNNER_TEMP/swift-test-isolated.log"; then
+          if grep -Fq "FileListTests" "$RUNNER_TEMP/swift-test-isolated.log"; then
             echo 'executed=true' >> "$GITHUB_OUTPUT"
           else
             echo 'executed=false' >> "$GITHUB_OUTPUT"
@@ -53,7 +53,7 @@ jobs:
         env:
           EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           LEONARDO_VISUAL_EVIDENCE: ${{ github.workspace }}/visual-evidence
-        run: swift test
+        run: swift test --verbose
       - name: Summarize Swift test crash reports
         if: always()
         run: |
@@ -79,7 +79,7 @@ jobs:
           FULL_SUITE_OUTCOME: ${{ steps.full-suite.outcome }}
         run: |
           if [[ "$ISOLATED_OUTCOME" != "success" || "$ISOLATED_EXECUTED" != "true" || "$FULL_SUITE_OUTCOME" != "success" ]]; then
-            echo "::error::The isolated FileList case and full Swift test suite must both pass."
+            echo "::error::The isolated FileList suite and full Swift test suite must both pass."
             exit 1
           fi
       - name: Build iOS companion
