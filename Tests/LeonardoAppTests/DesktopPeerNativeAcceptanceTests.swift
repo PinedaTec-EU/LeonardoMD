@@ -14,7 +14,7 @@ import LeonardoDesktopSync
 final class DesktopPeerNativeAcceptanceTests: XCTestCase {
     func testStaleAddProjectDisplaysLocalizedAuthorizationRecovery() async throws {
         let fixture = try NativePeerAcceptanceFixture()
-        defer { fixture.cleanup() }
+        addTeardownBlock { @MainActor in await fixture.cleanup() }
         let previousLanguage = LanguageSettings.shared.language
         defer { LanguageSettings.shared.language = previousLanguage }
         LanguageSettings.shared.language = .english
@@ -51,7 +51,7 @@ final class DesktopPeerNativeAcceptanceTests: XCTestCase {
                 service: NativeReviewCaptureRegistration(), client: NativeReviewCaptureControl(),
                 expectedBuildIdentity: nil, startup: .init(attempts: 0), hasExecutable: { true }, verifyPackage: {})
         })
-        defer { fixture.cleanup() }
+        addTeardownBlock { @MainActor in await fixture.cleanup() }
         fixture.peer.updateInterval(0)
         try await ConfigurationStore().setSyncHelperEnabled(true, at: fixture.peerPreferences)
         await fixture.peer.helper.refresh()
@@ -106,7 +106,7 @@ final class DesktopPeerNativeAcceptanceTests: XCTestCase {
 
     func testAcceptedRemoteProjectCatalogueRemainsBrowseableAfterOfflineRestart() async throws {
         let fixture = try NativePeerAcceptanceFixture()
-        defer { fixture.cleanup() }
+        addTeardownBlock { @MainActor in await fixture.cleanup() }
         await fixture.owner.initialize()
         await fixture.owner.update(fixture.enabledSettings)
         let running = try XCTUnwrap(fixture.owner.running, fixture.owner.error ?? "Missing service")
@@ -154,7 +154,7 @@ final class DesktopPeerNativeAcceptanceTests: XCTestCase {
 
     func testNativeControllersReconcileOfflineCopiesAndRevokeOpenEditors() async throws {
         let fixture = try NativePeerAcceptanceFixture()
-        defer { fixture.cleanup() }
+        addTeardownBlock { @MainActor in await fixture.cleanup() }
         await fixture.owner.initialize()
         await fixture.owner.update(fixture.enabledSettings)
         let running = try XCTUnwrap(fixture.owner.running, fixture.owner.error ?? "Missing service")
@@ -336,7 +336,8 @@ private final class NativePeerAcceptanceFixture {
         try String(contentsOf: directory.appendingPathComponent(path), encoding: .utf8)
     }
 
-    func cleanup() {
+    func cleanup() async {
+        await owner.stop()
         ownerEditor.stop(); peerTabs.stop(); peer.stop()
         NativeReconciliationLease.shared.sessions = oldSessions
         defaults.removePersistentDomain(forName: defaultsSuite)
