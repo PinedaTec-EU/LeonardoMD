@@ -47,9 +47,39 @@ jobs:
             echo 'executed=false' >> "$GITHUB_OUTPUT"
           fi
           exit "$status"
+      - name: Isolate interrupted TLS diagnostic test
+        id: isolated-truncated-https
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          swift test --filter 'HTTPSRuntimeTests.testInterruptedPinnedTLSBodyReportsBoundedPartialTransferContext' 2>&1 | tee "$RUNNER_TEMP/swift-test-truncated-https.log"
+          status=${PIPESTATUS[0]}
+          set -e
+          if grep -Fq "testInterruptedPinnedTLSBodyReportsBoundedPartialTransferContext" "$RUNNER_TEMP/swift-test-truncated-https.log"; then
+            echo 'executed=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'executed=false' >> "$GITHUB_OUTPUT"
+          fi
+          exit "$status"
+      - name: Isolate project download diagnostics test
+        id: isolated-project-https
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          swift test --filter 'HTTPSRuntimeTests.testProjectDownloadReportsSizeAndReadFailuresOverPinnedHTTPS' 2>&1 | tee "$RUNNER_TEMP/swift-test-project-https.log"
+          status=${PIPESTATUS[0]}
+          set -e
+          if grep -Fq "testProjectDownloadReportsSizeAndReadFailuresOverPinnedHTTPS" "$RUNNER_TEMP/swift-test-project-https.log"; then
+            echo 'executed=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'executed=false' >> "$GITHUB_OUTPUT"
+          fi
+          exit "$status"
       - name: Build and test
         id: full-suite
-        if: steps.isolated-file-list.outcome == 'success' && steps.isolated-file-list.outputs.executed == 'true'
+        if: steps.isolated-file-list.outcome == 'success' && steps.isolated-file-list.outputs.executed == 'true' && steps.isolated-truncated-https.outcome == 'success' && steps.isolated-truncated-https.outputs.executed == 'true' && steps.isolated-project-https.outcome == 'success' && steps.isolated-project-https.outputs.executed == 'true'
         env:
           EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           LEONARDO_VISUAL_EVIDENCE: ${{ github.workspace }}/visual-evidence
@@ -76,10 +106,14 @@ jobs:
         env:
           ISOLATED_OUTCOME: ${{ steps.isolated-file-list.outcome }}
           ISOLATED_EXECUTED: ${{ steps.isolated-file-list.outputs.executed }}
+          TRUNCATED_HTTPS_OUTCOME: ${{ steps.isolated-truncated-https.outcome }}
+          TRUNCATED_HTTPS_EXECUTED: ${{ steps.isolated-truncated-https.outputs.executed }}
+          PROJECT_HTTPS_OUTCOME: ${{ steps.isolated-project-https.outcome }}
+          PROJECT_HTTPS_EXECUTED: ${{ steps.isolated-project-https.outputs.executed }}
           FULL_SUITE_OUTCOME: ${{ steps.full-suite.outcome }}
         run: |
-          if [[ "$ISOLATED_OUTCOME" != "success" || "$ISOLATED_EXECUTED" != "true" || "$FULL_SUITE_OUTCOME" != "success" ]]; then
-            echo "::error::The isolated FileList suite and full Swift test suite must both pass."
+          if [[ "$ISOLATED_OUTCOME" != "success" || "$ISOLATED_EXECUTED" != "true" || "$TRUNCATED_HTTPS_OUTCOME" != "success" || "$TRUNCATED_HTTPS_EXECUTED" != "true" || "$PROJECT_HTTPS_OUTCOME" != "success" || "$PROJECT_HTTPS_EXECUTED" != "true" || "$FULL_SUITE_OUTCOME" != "success" ]]; then
+            echo "::error::The isolated FileList suite, both isolated HTTPS regressions, and the full Swift test suite must pass."
             exit 1
           fi
       - name: Build iOS companion
