@@ -18,3 +18,10 @@ connection immediately; a removed project or file selection invalidates only
 the requested project's cache. If STATUS is inconclusive, retain the original
 operation/status pair for support instead of guessing whether the device was
 revoked. A file no longer selected by the source is reported as outside scope.
+
+Keep async callback defaults in the public generic
+`DirectEnrollmentClient.withRevocationRecheck` API as optional `nil` parameters
+and resolve the normal STATUS behavior in its library body. Xcode 26.3 / Swift
+6.2.4 can link incompatible context metadata for public async default-argument
+closures across modules, aborting the test process with signal 6; the regression
+is tracked by [#450](https://github.com/PinedaTec-EU/LeonardoMD/issues/450).
