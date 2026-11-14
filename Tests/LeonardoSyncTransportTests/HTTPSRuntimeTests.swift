@@ -395,6 +395,7 @@ final class HTTPSRuntimeTests: XCTestCase {
         } catch { await server.stop(); throw error }
     }
 
+    @MainActor
     func testProjectDownloadReportsSizeAndReadFailuresOverPinnedHTTPS() async throws {
         guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
         let identity = try makeIdentity()

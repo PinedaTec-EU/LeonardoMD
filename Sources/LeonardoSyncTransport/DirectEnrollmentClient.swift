@@ -121,11 +121,9 @@ public struct DirectEnrollmentClient: Sendable {
         credential: String,
         projectID: UUID? = nil,
         filePath: String? = nil,
-        status: @escaping (DirectEnrollmentClient, UUID, String) async throws -> DirectDeviceStatus = {
-            client, deviceID, credential in
-            try await client.status(deviceID: deviceID, credential: credential)
-        },
-        onCurrentStatus: @escaping (DirectDeviceStatus) async throws -> Void = { _ in },
+        // Resolve async defaults in the library body. Swift 6.2 may link mismatched context metadata for async default-argument closures across modules (LMB-B-450).
+        status: ((DirectEnrollmentClient, UUID, String) async throws -> DirectDeviceStatus)? = nil,
+        onCurrentStatus: ((DirectDeviceStatus) async throws -> Void)? = nil,
         operation: () async throws -> T
     ) async throws -> T {
         do {
@@ -133,7 +131,11 @@ public struct DirectEnrollmentClient: Sendable {
         } catch let denial as SyncError where denial.isAccessDenied {
             let latest: DirectDeviceStatus
             do {
-                latest = try await status(self, deviceID, credential)
+                if let status {
+                    latest = try await status(self, deviceID, credential)
+                } else {
+                    latest = try await self.status(deviceID: deviceID, credential: credential)
+                }
             } catch let rechecked as SyncError where rechecked == .revoked {
                 throw rechecked
             } catch is CancellationError {
@@ -142,7 +144,7 @@ public struct DirectEnrollmentClient: Sendable {
                 throw denial
             }
             if latest.access == .revoked { throw SyncError.revoked }
-            try await onCurrentStatus(latest)
+            try await onCurrentStatus?(latest)
             guard latest.access == .authorized, let projectID else {
                 if projectID != nil { throw SyncError.projectAccessDenied }
                 throw denial
