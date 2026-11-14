@@ -1,8 +1,8 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v74-en.mdlz` and `Guide-v74-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v76-en.mdlz` and `Guide-v76-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v74/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v76/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
@@ -71,3 +71,8 @@ Tracking: [#312](https://github.com/PinedaTec-EU/LeonardoMD/issues/312).
 Illustrations use real alpha transparency and the Classic red/oxide/ochre palette. Keep explanatory captions in the localized Markdown rather than baking them into artwork; the four artwork files are shared across locales. Verify transparency and readability on the document background when refreshing them. Tracking: [#375](https://github.com/PinedaTec-EU/LeonardoMD/issues/375).
 
 Guide v74 documents optional grouping of independent processes in Dock and the app switcher, with per-window instance selection and a native application menu. Existing personal copies remain untouched.
+
+Guide v76 clarifies how to find the matching entry for a Little Leonardo error
+reference and documents the diagnostic log's 120-entry/64 KiB limits, local
+cache location, backup exclusion and iOS cache-purge behavior. Earlier personal
+guide copies remain untouched.

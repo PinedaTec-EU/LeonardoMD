@@ -683,19 +683,25 @@ explicit actions; a blocked, submitted or frozen retry draft cannot be edited.
 
 ### If mobile synchronization is interrupted
 
-For a network failure, the existing alert may include a compact diagnostic
-line, for example:
+For a network failure, the alert shows a short message, a unique reference code
+such as `LL-0123456789AB`, and one **Aceptar** (OK) action. Open **Ajustes de
+sincronización → Ver log** (sync settings → View log) to inspect recent local
+error entries. The same reference code marks the matching entry; a network
+entry may include a bounded diagnostic such as:
 
-`[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
+`ref=LL-0123456789AB op=synchronization transport=[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
 
-Share that line or a screenshot when asking for help. It identifies whether a
-status or snapshot request failed, the HTTP status when received, response
-bytes received versus expected, and the system error domain/code. It contains
-no server address or path, pairing credential, device/project identifier, or
-file content. An HTTP 200 header does not mean the response body finished. A
-`?` expected count means the server did not provide a body length. Previously
-downloaded offline copies remain available; check that the source Mac is
-reachable and Leonardo Sync is enabled, then retry synchronization.
+The log stays on this device and is not sent automatically. It excludes the
+server address or path, pairing credentials, device/project identifiers, and
+document or image content. Select and copy a line only if you choose to share
+it when asking for help. An HTTP 200 header does not mean the response body
+finished; a `?` expected count means the server did not provide a body length.
+It keeps up to 120 recent entries or 64 KiB, whichever limit is reached first.
+It is stored in the app's local cache, excluded from backups before writing;
+iOS may clear that cache to free space, so the log is for recent troubleshooting
+rather than permanent storage.
+Previously downloaded offline copies remain available; check that the source
+Mac is reachable and Leonardo Sync is enabled, then retry synchronization.
 
 ### Answer a rubric request on iOS
 

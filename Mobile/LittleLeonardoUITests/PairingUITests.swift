@@ -131,15 +131,38 @@ final class PairingUITests: XCTestCase {
         app.buttons["document-sync"].tap()
         let failure = app.alerts["No se pudo completar la operación"]
         XCTAssertTrue(failure.waitForExistence(timeout: 15))
-        XCTAssertTrue(failure.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS %@", "[LL1 op=status")).firstMatch.waitForExistence(timeout: 5),
-            "The native failure alert must expose the safe transport diagnostic")
+        let codeLabel = failure.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "Código: LL-")).firstMatch
+        XCTAssertTrue(codeLabel.waitForExistence(timeout: 5),
+                      "The native failure alert must expose only its short message and reference code")
+        let referenceRange = codeLabel.label.range(
+            of: #"LL-[0-9A-F]{12}"#, options: .regularExpression)
+        let referenceCode = String(codeLabel.label[try XCTUnwrap(referenceRange)])
+        XCTAssertFalse(failure.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "[LL1 op=status")).firstMatch.exists,
+            "Transport diagnostics belong in the local log, not the alert")
         let failureCapture = XCTAttachment(screenshot: app.screenshot())
         failureCapture.name = "Little Leonardo synchronization failure diagnostic"
         failureCapture.lifetime = .keepAlways
         add(failureCapture)
         app.alerts.buttons["Aceptar"].tap()
         XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native direct updated"].exists)
+
+        app.navigationBars.buttons.firstMatch.tap()
+        app.navigationBars.buttons.firstMatch.tap()
+        let settingsButton = app.buttons["open-sync-settings"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
+        settingsButton.tap()
+        let logLink = app.descendants(matching: .any)["open-error-log"]
+        XCTAssertTrue(logLink.waitForExistence(timeout: 5))
+        logLink.tap()
+        XCTAssertTrue(app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", referenceCode)).firstMatch.waitForExistence(timeout: 5),
+            "Ver log must show the diagnostic entry matching the alert reference code")
+        app.buttons["Cerrar"].tap()
+        app.staticTexts["QA · Native Direct"].tap()
+        app.buttons["docs/read.md"].tap()
+        XCTAssertTrue(app.webViews.firstMatch.staticTexts["Native direct updated"].waitForExistence(timeout: 10))
 
         try advanceDirectFixture("restart")
         app.buttons["document-sync"].tap()
@@ -770,10 +793,13 @@ final class PairingUITests: XCTestCase {
         let failure = app.alerts["No se pudo completar la operación"]
         XCTAssertTrue(failure.waitForExistence(timeout: 30),
                       "A direct-cache deletion failure must be surfaced and kept retryable")
-        let failureBody = failure.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS[c] %@ OR label CONTAINS[c] %@", "caché", "cache")
+        let failureCode = failure.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "Código: LL-")
         ).firstMatch
-        XCTAssertTrue(failureBody.exists, "The retry alert must expose the cache-deletion failure detail")
+        XCTAssertTrue(failureCode.exists, "The retry alert must use the same short message and reference code")
+        XCTAssertFalse(failure.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS[c] %@ OR label CONTAINS[c] %@", "caché", "cache")
+        ).firstMatch.exists, "Cache cleanup details belong in Ver log")
         failure.buttons["Aceptar"].tap()
         app.terminate()
         try advanceDirectFixture("release-revocation-persistence")

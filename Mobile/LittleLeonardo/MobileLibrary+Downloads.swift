@@ -113,7 +113,8 @@ extension MobileLibrary {
             } catch SyncError.revoked {
                 continue
             } catch {
-                self.error = error.localizedDescription
+                presentError(error, operation: .synchronization,
+                             message: "No se pudo sincronizar el proyecto. Comprueba la conexión e inténtalo de nuevo.")
             }
         }
         comparisonCode = connections.first(where: { $0.comparisonCode != nil })?.comparisonCode
@@ -137,7 +138,10 @@ extension MobileLibrary {
         do {
             guard try commitConnection(updated, expected: token(for: connection)) != nil else { return }
             await synchronize()
-        } catch { self.error = error.localizedDescription }
+        } catch {
+            presentError(error, operation: .library,
+                         message: "No se pudo aceptar el proyecto compartido.")
+        }
     }
 
     func ignoreSharedProject(connectionID: UUID, projectID: UUID) {
@@ -148,7 +152,10 @@ extension MobileLibrary {
         var updated = connection
         updated.ignoredProjectIDs.insert(projectID)
         do { _ = try commitConnection(updated, expected: token(for: connection)) }
-        catch { self.error = error.localizedDescription }
+        catch {
+            presentError(error, operation: .library,
+                         message: "No se pudo guardar la decisión sobre el proyecto.")
+        }
     }
 
     func dismissNewFile(connectionID: UUID, projectID: UUID, path: String) {
@@ -159,7 +166,10 @@ extension MobileLibrary {
         updated.newFilePaths[projectID]?.remove(path)
         if updated.newFilePaths[projectID]?.isEmpty == true { updated.newFilePaths[projectID] = nil }
         do { _ = try commitConnection(updated, expected: token(for: connection)) }
-        catch { self.error = error.localizedDescription }
+        catch {
+            presentError(error, operation: .library,
+                         message: "No se pudo actualizar la lista de archivos nuevos.")
+        }
     }
 
     func dismissNewFiles(connectionID: UUID, projectID: UUID) {
@@ -170,7 +180,10 @@ extension MobileLibrary {
         var updated = connection
         updated.newFilePaths[projectID] = nil
         do { _ = try commitConnection(updated, expected: token(for: connection)) }
-        catch { self.error = error.localizedDescription }
+        catch {
+            presentError(error, operation: .library,
+                         message: "No se pudo actualizar la lista de archivos nuevos.")
+        }
     }
 
     /// Removes only direct-sync caches after confirmed revocation. Legacy

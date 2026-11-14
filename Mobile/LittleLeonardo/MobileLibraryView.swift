@@ -152,7 +152,13 @@ struct MobileLibraryView: View {
             .navigationDestination(item: $selectedRemoteFile) { route in
                 RemoteDocumentPreview(library: library.downloads, projectID: route.projectID,
                     entry: route.entry, spanish: true, appearance: .leonardoClassic,
-                    compactFirstHeading: true).classicSurface()
+                    compactFirstHeading: true,
+                    failurePresentation: { error in
+                        MobileErrorNotice.record(
+                            error,
+                            operation: .downloads,
+                            message: "No se pudo descargar el documento. Comprueba la conexión e inténtalo de nuevo.").inlineMessage
+                    }).classicSurface()
             }
             .refreshable { await library.synchronize(); await library.reload() }
             .toolbar { libraryToolbar }
@@ -196,7 +202,7 @@ struct MobileLibraryView: View {
                 catch { return }
             }
         }
-        .alert("No se pudo completar la operación", isPresented: Binding(
+        .alert(MobileErrorNotice.alertTitle(spanish: true), isPresented: Binding(
             get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
             Button("Aceptar") { library.error = nil }
         } message: { Text(library.error ?? "") }
@@ -343,7 +349,10 @@ struct MobileLibraryView: View {
                 Section("Proyectos / Projects") {
                     Button("Recuperar demo / Restore demo", systemImage: "arrow.counterclockwise") {
                         do { try library.projectLifecycle.restoreDemo() }
-                        catch { library.error = error.localizedDescription }
+                        catch {
+                            library.presentError(error, operation: .practice,
+                                                 message: "No se pudo recuperar la demo.")
+                        }
                     }
                     .disabled(library.projectLifecycle.demoIsVisible)
                     .accessibilityIdentifier("restore-demo-project")
@@ -354,6 +363,14 @@ struct MobileLibraryView: View {
                 Section {
                     Button("Acerca de Little Leonardo", systemImage: "info.circle") { presentedSheet = .about }
                         .accessibilityIdentifier("open-about")
+                }.listRowBackground(MobileClassic.inset)
+                Section("Diagnóstico") {
+                    NavigationLink {
+                        MobileErrorLogView()
+                    } label: {
+                        Label("Ver log", systemImage: "doc.text.magnifyingglass")
+                    }
+                        .accessibilityIdentifier("open-error-log")
                 }.listRowBackground(MobileClassic.inset)
             }
                 .classicSurface()
@@ -449,11 +466,26 @@ struct MobileProjectView: View {
             }
         }.classicSurface().navigationTitle(project?.name ?? "Proyecto")
         .navigationDestination(item: $selectedEntry) { entry in
-            RemoteDocumentPreview(library: library.downloads, projectID: projectID, entry: entry, spanish: true, appearance: .leonardoClassic, compactFirstHeading: true).classicSurface()
+            RemoteDocumentPreview(
+                library: library.downloads,
+                projectID: projectID,
+                entry: entry,
+                spanish: true,
+                appearance: .leonardoClassic,
+                compactFirstHeading: true,
+                failurePresentation: { error in
+                    MobileErrorNotice.record(
+                        error,
+                        operation: .downloads,
+                        message: "No se pudo cargar el documento. Comprueba la conexión e inténtalo de nuevo.").inlineMessage
+                }).classicSurface()
         }
         .fileExporter(isPresented: $exporting, document: project.map(MobileRecoveryDocument.init),
                       contentType: .json, defaultFilename: "LittleLeonardo-\(projectID.uuidString)-recovery") { result in
-            if case .failure(let error) = result { library.error = error.localizedDescription }
+            if case .failure(let error) = result {
+                library.presentError(error, operation: .export,
+                                     message: "No se pudo exportar el archivo de recuperación.")
+            }
         }
     }
 }
