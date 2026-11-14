@@ -1,0 +1,11 @@
+{
+  "captured_at": "2026-11-14T18:01:47Z",
+  "route": "/native/ios/library/expanded-host/incoming-project",
+  "screen": "Little Leonardo — Biblioteca con Mac remoto desplegado",
+  "browser_name": "Little Leonardo nativo en iPhone 18 Pro Max Simulator · iOS 27.0 · sin navegador",
+  "browser_version": "N/A — interfaz SwiftUI nativa",
+  "viewport_css": {"width": 368, "height": 800},
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "state": "SHA d171714b7eeffc1d32ffd243abb0cc403f338f19; alias MacBook Pro De Javier; Proyecto nuevo pendiente con Añadir e Ignorar; Demo local visible. La captura es el viewport nativo reportado por XcodeBuildMCP (368x800 px); CSS no aplica."
+}
