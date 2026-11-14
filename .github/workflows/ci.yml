@@ -27,13 +27,99 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 scripts/prime-sparkle-cache.py
-      - name: Build and test
+      - name: Mark Swift test crash collection window
+        run: python3 -c 'import os, pathlib, time; pathlib.Path(os.environ["RUNNER_TEMP"], "swift-test-started-at.txt").write_text(str(time.time()))'
+      - name: Isolate recurring FileList suite
+        id: isolated-file-list
+        continue-on-error: true
+        shell: bash
         env:
           EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           LEONARDO_VISUAL_EVIDENCE: ${{ github.workspace }}/visual-evidence
-        run: swift test
+        run: |
+          set +e
+          swift test --filter 'FileListTests' 2>&1 | tee "$RUNNER_TEMP/swift-test-isolated.log"
+          status=${PIPESTATUS[0]}
+          set -e
+          if grep -Fq "FileListTests" "$RUNNER_TEMP/swift-test-isolated.log"; then
+            echo 'executed=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'executed=false' >> "$GITHUB_OUTPUT"
+          fi
+          exit "$status"
+      - name: Isolate interrupted TLS diagnostic test
+        id: isolated-truncated-https
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          swift test --filter 'HTTPSRuntimeTests.testInterruptedPinnedTLSBodyReportsBoundedPartialTransferContext' 2>&1 | tee "$RUNNER_TEMP/swift-test-truncated-https.log"
+          status=${PIPESTATUS[0]}
+          set -e
+          if grep -Fq "testInterruptedPinnedTLSBodyReportsBoundedPartialTransferContext" "$RUNNER_TEMP/swift-test-truncated-https.log"; then
+            echo 'executed=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'executed=false' >> "$GITHUB_OUTPUT"
+          fi
+          exit "$status"
+      - name: Isolate project download diagnostics test
+        id: isolated-project-https
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          swift test --filter 'HTTPSRuntimeTests.testProjectDownloadReportsSizeAndReadFailuresOverPinnedHTTPS' 2>&1 | tee "$RUNNER_TEMP/swift-test-project-https.log"
+          status=${PIPESTATUS[0]}
+          set -e
+          if grep -Fq "testProjectDownloadReportsSizeAndReadFailuresOverPinnedHTTPS" "$RUNNER_TEMP/swift-test-project-https.log"; then
+            echo 'executed=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'executed=false' >> "$GITHUB_OUTPUT"
+          fi
+          exit "$status"
+      - name: Build and test
+        id: full-suite
+        if: steps.isolated-file-list.outcome == 'success' && steps.isolated-file-list.outputs.executed == 'true' && steps.isolated-truncated-https.outcome == 'success' && steps.isolated-truncated-https.outputs.executed == 'true' && steps.isolated-project-https.outcome == 'success' && steps.isolated-project-https.outputs.executed == 'true'
+        env:
+          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          LEONARDO_VISUAL_EVIDENCE: ${{ github.workspace }}/visual-evidence
+        run: swift test --verbose
+      - name: Summarize Swift test crash reports
+        if: always()
+        run: |
+          started_after="$(cat "$RUNNER_TEMP/swift-test-started-at.txt" 2>/dev/null || echo 0)"
+          report_directory="$(python3 -c 'from pathlib import Path; print(Path.home() / "Library/Logs/DiagnosticReports")')"
+          python3 scripts/summarize_swift_test_crashes.py \
+            --report-directory "$report_directory" \
+            --started-after "$started_after" \
+            --output "$RUNNER_TEMP/swift-test-diagnostics/summary.txt"
+      - name: Upload sanitized Swift test crash summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swift-test-crash-summary-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/swift-test-diagnostics/summary.txt
+          if-no-files-found: error
+          retention-days: 3
+      - name: Enforce Swift test results
+        if: always()
+        env:
+          ISOLATED_OUTCOME: ${{ steps.isolated-file-list.outcome }}
+          ISOLATED_EXECUTED: ${{ steps.isolated-file-list.outputs.executed }}
+          TRUNCATED_HTTPS_OUTCOME: ${{ steps.isolated-truncated-https.outcome }}
+          TRUNCATED_HTTPS_EXECUTED: ${{ steps.isolated-truncated-https.outputs.executed }}
+          PROJECT_HTTPS_OUTCOME: ${{ steps.isolated-project-https.outcome }}
+          PROJECT_HTTPS_EXECUTED: ${{ steps.isolated-project-https.outputs.executed }}
+          FULL_SUITE_OUTCOME: ${{ steps.full-suite.outcome }}
+        run: |
+          if [[ "$ISOLATED_OUTCOME" != "success" || "$ISOLATED_EXECUTED" != "true" || "$TRUNCATED_HTTPS_OUTCOME" != "success" || "$TRUNCATED_HTTPS_EXECUTED" != "true" || "$PROJECT_HTTPS_OUTCOME" != "success" || "$PROJECT_HTTPS_EXECUTED" != "true" || "$FULL_SUITE_OUTCOME" != "success" ]]; then
+            echo "::error::The isolated FileList suite, both isolated HTTPS regressions, and the full Swift test suite must pass."
+            exit 1
+          fi
       - name: Build iOS companion
         run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "generic/platform=iOS Simulator" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO build-for-testing
+      - name: Test Little Leonardo revocation recheck
+        run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,name=iPhone 17 Pro" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO -only-testing:LittleLeonardoTests/MobileRevocationTests/testOnDemandForbiddenResponseRechecksStatusBeforeRecordingRevocation test
       - name: Test Little Leonardo diagnostic log
         run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,name=iPhone 17 Pro" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO -only-testing:LittleLeonardoTests/MobileDiagnosticLogTests test
       - name: Validate update metadata

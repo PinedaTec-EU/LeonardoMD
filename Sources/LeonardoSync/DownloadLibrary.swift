@@ -22,6 +22,7 @@ public final class DownloadLibrary {
     public var error: String?
     private let cache: any RemoteDownloadCache
     private var allowed: Set<UUID> = []
+    private var deniedPaths: [UUID: Set<String>] = [:]
     private var generations: [UUID: UInt64] = [:]
     private var usageRevision: UInt64 = 0
     private struct ActiveDownload {
@@ -55,6 +56,7 @@ public final class DownloadLibrary {
 
     public func deny(id: UUID) {
         allowed.remove(id); generations[id, default: 0] &+= 1
+        deniedPaths[id] = nil
         usageRevision &+= 1
         projects.removeAll { $0.id == id }
         let prefix = id.uuidString + ":"
@@ -66,6 +68,12 @@ public final class DownloadLibrary {
         // cache hit) must start without the previous authorization's UI state.
         downloading = Set(downloading.filter { !$0.hasPrefix(prefix) })
         failures = failures.filter { !$0.key.hasPrefix(prefix) }
+    }
+
+    /// Prevent a path from being served from cache after an explicit access denial.
+    /// A later successful fetch clears the marker; sibling files remain available.
+    public func denyFile(id: UUID, path: String) {
+        deniedPaths[id, default: []].insert(path)
     }
 
     public func remove(id: UUID) async throws {
@@ -80,10 +88,12 @@ public final class DownloadLibrary {
         guard allowed.contains(id), let project = projects.first(where: { $0.id == id }),
               let entry = project.catalogue.files.first(where: { $0.path == path }) else { throw SyncError.revoked }
         let generation = generations[id, default: 0]
-        if let file = try await cache.read(id: id, entry: entry, allowStale: false) {
-            try requireEntry(id: id, entry: entry, generation: generation)
-            failures[Self.key(id: id, path: path)] = nil
-            return RemoteDownloadResult(file: file)
+        if !deniedPaths[id, default: []].contains(path) {
+            if let file = try await cache.read(id: id, entry: entry, allowStale: false) {
+                try requireEntry(id: id, entry: entry, generation: generation)
+                failures[Self.key(id: id, path: path)] = nil
+                return RemoteDownloadResult(file: file)
+            }
         }
         try requireEntry(id: id, entry: entry, generation: generation)
         let key = Self.key(id: id, path: path)
@@ -97,6 +107,8 @@ public final class DownloadLibrary {
         let task = Task { [self] in
             let file = try await fetch(id, entry)
             try requireEntry(id: id, entry: entry, generation: generation)
+            deniedPaths[id]?.remove(entry.path)
+            if deniedPaths[id]?.isEmpty == true { deniedPaths[id] = nil }
             try await cache.store(id: id, entry: entry, file: file)
             // The host owns revocation purge. An obsolete operation must never
             // delete a project that may already have a new authorization.
@@ -126,6 +138,8 @@ public final class DownloadLibrary {
             let key = Self.key(id: id, path: entry.path)
             let message = failures[key] ?? errorMessage(for: error)
             failures[key] = message
+            if let denial = error as? any RemoteContentAccessDenied, denial.deniesRemoteContent { throw error }
+            if deniedPaths[id, default: []].contains(entry.path) { throw error }
             if let previous = try await cache.read(id: id, entry: entry, allowStale: true) {
                 try requireEntry(id: id, entry: entry, generation: generation)
                 return RemoteDownloadResult(file: previous, updateFailure: message)

@@ -235,9 +235,9 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertEqual(comparison.comparison.differences.map(\.path), ["docs/note.md"])
         XCTAssertEqual(comparison.copy.files.first?.content, Data("active draft".utf8))
         XCTAssertEqual(comparison.remote.files.first?.content, Data("remote".utf8))
-        let secret = try await fixture.credentials.credential(deviceID: connection.id)
+        let secret = await fixture.credentials.credential(deviceID: connection.id)
         XCTAssertNotNil(secret)
-        let wrongAccount = try await fixture.credentials.credential(deviceID: connection.remoteDeviceID)
+        let wrongAccount = await fixture.credentials.credential(deviceID: connection.remoteDeviceID)
         XCTAssertNil(wrongAccount)
         let metadata = try String(contentsOf: fixture.connectionRoot.appendingPathComponent(connection.id.uuidString).appendingPathExtension("json"), encoding: .utf8)
         XCTAssertFalse(metadata.contains(try XCTUnwrap(secret)))
@@ -245,6 +245,199 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertEqual(repeated.id, copy.id)
         let transfers = await fixture.remote.snapshotCount
         XCTAssertEqual(transfers, 2) // Import and explicit comparison; reopening/import retry does not redownload.
+    }
+
+    func testRevocationBeforeSelectedProjectImportReturnsRevokedErrorAndCleansCopy() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "MacBook")
+        await fixture.remote.setAccess(.authorized)
+        let selectedProjects = try await fixture.library.refresh(connectionID: connection.id)
+        XCTAssertEqual(selectedProjects.projects.map(\.id), [fixture.remote.project.id])
+        let existingCopy = try await fixture.library.importProject(connectionID: connection.id, projectID: fixture.remote.project.id)
+        let directory = try await fixture.library.open(copyID: existingCopy.id)
+
+        // The user selected this project while authorized; its grant is withdrawn before import is retried.
+        await fixture.remote.setAccess(.revoked)
+        do {
+            _ = try await fixture.library.importProject(connectionID: connection.id, projectID: fixture.remote.project.id)
+            XCTFail("A withdrawn grant must not complete the selected import")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .revoked)
+        }
+
+        let deniedConnection = try await fixture.connections.load(id: connection.id)
+        XCTAssertTrue(try XCTUnwrap(deniedConnection).revoked)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+        let removedCopy = try await fixture.copies.load(id: existingCopy.id)
+        XCTAssertNil(removedCopy)
+        let removedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        XCTAssertNil(removedCredential)
+        let closedCopies = await fixture.revoker.closedIDs
+        XCTAssertTrue(closedCopies.contains(existingCopy.id))
+    }
+
+    func testMissingProjectGrantRemainsDistinctFromRevokedDevice() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "MacBook")
+        await fixture.remote.setAccess(.authorized)
+        let unsharedProjectID = UUID()
+
+        do {
+            _ = try await fixture.library.importProject(connectionID: connection.id, projectID: unsharedProjectID)
+            XCTFail("An unshared project must not be imported")
+        } catch {
+            XCTAssertEqual(error as? DesktopPeerLibraryError, .unauthorizedProject)
+        }
+
+        let stillAuthorized = try await fixture.connections.load(id: connection.id)
+        XCTAssertFalse(try XCTUnwrap(stillAuthorized).revoked)
+    }
+
+    func testDeviceRevocationBetweenCataloguePreflightAndRequestCleansCopy() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "MacBook")
+        await fixture.remote.setAccess(.authorized)
+        let copy = try await fixture.library.importProject(connectionID: connection.id, projectID: fixture.remote.project.id)
+        let directory = try await fixture.library.open(copyID: copy.id)
+        await fixture.remote.setNextCatalogueMutation(.revokeDevice)
+
+        do {
+            _ = try await fixture.library.catalogue(connectionID: connection.id, projectID: fixture.remote.project.id)
+            XCTFail("A revoked device must not receive the catalogue")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .revoked)
+        }
+
+        let revoked = try await fixture.connections.load(id: connection.id)
+        XCTAssertTrue(try XCTUnwrap(revoked).revoked)
+        let removedCopy = try await fixture.copies.load(id: copy.id)
+        let removedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        XCTAssertNil(removedCopy)
+        XCTAssertNil(removedCredential)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+        let closedCopies = await fixture.revoker.closedIDs
+        XCTAssertTrue(closedCopies.contains(copy.id))
+    }
+
+    func testDeviceRevocationBetweenComparePreflightAndSnapshotCleansCopy() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "MacBook")
+        await fixture.remote.setAccess(.authorized)
+        let copy = try await fixture.library.importProject(connectionID: connection.id, projectID: fixture.remote.project.id)
+        let directory = try await fixture.library.open(copyID: copy.id)
+        await fixture.remote.setNextSnapshotMutation(.revokeDevice)
+
+        do {
+            _ = try await fixture.library.compare(copyID: copy.id, buffers: [])
+            XCTFail("A revoked device must not complete a comparison snapshot")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .revoked)
+        }
+
+        let revoked = try await fixture.connections.load(id: connection.id)
+        XCTAssertTrue(try XCTUnwrap(revoked).revoked)
+        let removedCopy = try await fixture.copies.load(id: copy.id)
+        let removedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        XCTAssertNil(removedCopy)
+        XCTAssertNil(removedCredential)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+        let closedCopies = await fixture.revoker.closedIDs
+        XCTAssertTrue(closedCopies.contains(copy.id))
+    }
+
+    func testProjectGrantWithdrawalBetweenPreflightAndSnapshotRemainsProjectScoped() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "MacBook")
+        await fixture.remote.setAccess(.authorized)
+        await fixture.remote.setNextSnapshotMutation(.withdrawProject)
+
+        do {
+            _ = try await fixture.library.importProject(connectionID: connection.id, projectID: fixture.remote.project.id)
+            XCTFail("A withdrawn project must not complete the snapshot request")
+        } catch {
+            XCTAssertEqual(error as? DesktopPeerLibraryError, .unauthorizedProject)
+        }
+
+        let updated = try await fixture.connections.load(id: connection.id)
+        XCTAssertFalse(try XCTUnwrap(updated).revoked)
+        XCTAssertTrue(try XCTUnwrap(updated).grants.isEmpty)
+        let retainedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        XCTAssertNotNil(retainedCredential)
+        XCTAssertTrue(try XCTUnwrap(updated).copies.isEmpty)
+        let deniedProjectCaches = await fixture.revoker.readerDeniedProjects(for: connection.id)
+        XCTAssertEqual(deniedProjectCaches, [fixture.remote.project.id])
+    }
+
+    func testProjectGrantWithdrawalBetweenFilePreflightAndReadRemainsProjectScoped() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "MacBook")
+        await fixture.remote.setAccess(.authorized)
+        await fixture.remote.setNextFileMutation(.withdrawProject)
+        let entry = RemoteFileEntry(file: CorpusFile(path: "docs/note.md", content: Data("remote".utf8)))
+
+        do {
+            _ = try await fixture.library.file(connectionID: connection.id, projectID: fixture.remote.project.id, entry: entry)
+            XCTFail("A withdrawn project must not complete the file request")
+        } catch {
+            XCTAssertEqual(error as? DesktopPeerLibraryError, .unauthorizedProject)
+        }
+
+        let updated = try await fixture.connections.load(id: connection.id)
+        XCTAssertFalse(try XCTUnwrap(updated).revoked)
+        XCTAssertTrue(try XCTUnwrap(updated).grants.isEmpty)
+        let retainedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        XCTAssertNotNil(retainedCredential)
+        let deniedProjectCaches = await fixture.revoker.readerDeniedProjects(for: connection.id)
+        XCTAssertEqual(deniedProjectCaches, [fixture.remote.project.id])
+    }
+
+    func testFileRemovedFromSelectionBetweenPreflightAndReadIsReportedOutsideScope() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "MacBook")
+        await fixture.remote.setAccess(.authorized)
+        await fixture.remote.setNextFileMutation(.narrowSelection)
+        let entry = RemoteFileEntry(file: CorpusFile(path: "docs/note.md", content: Data("remote".utf8)))
+
+        do {
+            _ = try await fixture.library.file(connectionID: connection.id, projectID: fixture.remote.project.id, entry: entry)
+            XCTFail("A file removed from the current selection must not receive a stale fallback")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .outsideScope)
+        }
+
+        let updated = try await fixture.connections.load(id: connection.id)
+        XCTAssertFalse(try XCTUnwrap(updated).revoked, "A narrowed file selection must not revoke the device")
+        XCTAssertEqual(try XCTUnwrap(updated).grants[fixture.remote.project.id],
+                       try CorpusSelection(folders: [], documents: ["docs/other.md"]))
+        let retainedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        XCTAssertNotNil(retainedCredential)
+    }
+
+    func testUnresolvedCatalogueForbiddenResponseIsPreservedWhenProjectStillAppearsAuthorized() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "MacBook")
+        await fixture.remote.setAccess(.authorized)
+        await fixture.remote.setNextCatalogueMutation(.denyRequest)
+
+        do {
+            _ = try await fixture.library.catalogue(connectionID: connection.id, projectID: fixture.remote.project.id)
+            XCTFail("An unexplained forbidden response must remain an access denial")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .httpAccessDenied(operation: .catalogue, status: 403))
+        }
+
+        let stillAuthorized = try await fixture.connections.load(id: connection.id)
+        XCTAssertFalse(try XCTUnwrap(stillAuthorized).revoked)
+        let retainedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        XCTAssertNotNil(retainedCredential)
     }
 
     func testRevocationIsDurableBeforeFailedPurgeAndRetriesWithoutNetworkOrCredential() async throws {
@@ -272,11 +465,14 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
         let removed = try await fixture.copies.load(id: copy.id)
         XCTAssertNil(removed)
-        let credential = try await fixture.credentials.credential(deviceID: connection.id)
+        let credential = await fixture.credentials.credential(deviceID: connection.id)
         XCTAssertNil(credential)
         let completed = try await fixture.connections.load(id: connection.id)
         XCTAssertTrue(try XCTUnwrap(completed).copies.isEmpty)
         XCTAssertTrue(try XCTUnwrap(completed).revoked)
+        let deniedReaderProjects = await fixture.revoker.readerDeniedProjects(for: connection.id)
+        XCTAssertEqual(deniedReaderProjects, [fixture.remote.project.id],
+                       "Reader caches must be denied before the fallible workspace purge")
     }
 
     func testServerDeviceIDReuseCannotReplaceAnotherConnectionsCredentialAccount() async throws {
@@ -286,8 +482,8 @@ final class DesktopPeerLibraryTests: XCTestCase {
         let second = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil, invitation: nil, name: "Two")
         XCTAssertEqual(first.remoteDeviceID, second.remoteDeviceID)
         XCTAssertNotEqual(first.id, second.id)
-        let firstSecret = try await fixture.credentials.credential(deviceID: first.id)
-        let secondSecret = try await fixture.credentials.credential(deviceID: second.id)
+        let firstSecret = await fixture.credentials.credential(deviceID: first.id)
+        let secondSecret = await fixture.credentials.credential(deviceID: second.id)
         XCTAssertNotNil(firstSecret); XCTAssertNotNil(secondSecret)
         XCTAssertNotEqual(firstSecret, secondSecret)
         let connections = try await fixture.library.connections()
@@ -304,6 +500,7 @@ private struct PeerLibraryFixture {
     let workspace: PeerWorkspaceProxy
     let credentials = PeerMemoryCredentials()
     let remote: PeerRemoteFixture
+    let revoker: PeerRevokerFixture
     let outbox: FileDesktopPeerOutboxStore
     let library: DesktopPeerLibrary
     init() throws {
@@ -313,14 +510,22 @@ private struct PeerLibraryFixture {
         workspace = PeerWorkspaceProxy(DesktopPeerWorkspace(root: root.appendingPathComponent("Working"), copies: copies))
         remote = try PeerRemoteFixture()
         outbox = FileDesktopPeerOutboxStore(root: root.appendingPathComponent("Outbox"))
+        revoker = PeerRevokerFixture()
         library = DesktopPeerLibrary(connections: connections, copies: copies, workspace: workspace,
-            credentials: credentials, remote: remote, revoker: PeerRevokerFixture(), outbox: outbox, now: { Date(timeIntervalSince1970: 1_000) })
+            credentials: credentials, remote: remote, revoker: revoker, outbox: outbox, now: { Date(timeIntervalSince1970: 1_000) })
     }
 }
 
 private actor PeerRevokerFixture: DesktopPeerAccessRevoker {
     private(set) var closedIDs: Set<UUID> = []
+    private var deniedReaderProjects: [UUID: Set<UUID>] = [:]
+    func denyReaderCaches(connectionID: UUID, projectIDs: [UUID]) {
+        deniedReaderProjects[connectionID, default: []].formUnion(projectIDs)
+    }
     func closeCopies(_ ids: [UUID]) { closedIDs.formUnion(ids) }
+    func readerDeniedProjects(for connectionID: UUID) -> Set<UUID> {
+        deniedReaderProjects[connectionID, default: []]
+    }
 }
 
 private actor PeerMemoryCredentials: DeviceCredentialStore {
@@ -345,19 +550,35 @@ private actor PeerWorkspaceProxy: DesktopPeerWorkspaceAccess {
     }
 }
 
+private enum PeerAccessMutation: Equatable, Sendable {
+    case revokeDevice
+    case withdrawProject
+    case denyRequest
+    case narrowSelection
+}
+
 private actor PeerRemoteFixture: DesktopPeerRemote {
     let deviceID = UUID()
     let project: SharedProjectDescriptor
+    private var currentProject: SharedProjectDescriptor
     private var access = DeviceAccess.pending
+    private var projectShared = true
     private var reachable = true
     private var credentials: Set<String> = []
+    private var nextCatalogueMutation: PeerAccessMutation?
+    private var nextSnapshotMutation: PeerAccessMutation?
+    private var nextFileMutation: PeerAccessMutation?
     private(set) var snapshotCount = 0
     init() throws {
         project = SharedProjectDescriptor(id: UUID(), name: "Shared notes", scope: try CorpusScope(folder: ""),
             selection: try CorpusSelection(folders: ["docs"], documents: []))
+        currentProject = project
     }
     func setAccess(_ value: DeviceAccess) { access = value }
     func setReachable(_ value: Bool) { reachable = value }
+    func setNextCatalogueMutation(_ mutation: PeerAccessMutation) { nextCatalogueMutation = mutation }
+    func setNextSnapshotMutation(_ mutation: PeerAccessMutation) { nextSnapshotMutation = mutation }
+    func setNextFileMutation(_ mutation: PeerAccessMutation) { nextFileMutation = mutation }
     func probe(endpoint: URL) async throws -> Data { try checkReachable(); return Data(repeating: 1, count: 32) }
     func begin(endpoint: URL, fingerprint: Data, invitation: PairingInvitation?, name: String, credential: String, now: Date) async throws -> PairingChallenge {
         try checkReachable(); credentials.insert(credential)
@@ -366,14 +587,42 @@ private actor PeerRemoteFixture: DesktopPeerRemote {
     func status(_ connection: DesktopPeerConnection, credential: String) async throws -> DirectDeviceStatus {
         try checkReachable()
         guard credentials.contains(credential) else { throw PairingError.invalidCredential }
-        return DirectDeviceStatus(access: access, projects: access == .authorized ? [project] : [])
+        return DirectDeviceStatus(access: access, projects: access == .authorized && projectShared ? [currentProject] : [])
     }
     func snapshot(_ descriptor: SharedProjectDescriptor, connection: DesktopPeerConnection, credential: String) async throws -> CorpusSnapshot {
+        try apply(nextSnapshotMutation)
+        nextSnapshotMutation = nil
         try checkReachable()
-        guard access == .authorized, credentials.contains(credential), descriptor.id == project.id else { throw SyncError.revoked }
+        guard access == .authorized, projectShared, credentials.contains(credential), descriptor.id == project.id else {
+            throw SyncError.httpAccessDenied(operation: .snapshot, status: 403)
+        }
         snapshotCount += 1
         let files = [CorpusFile(path: "docs/note.md", content: Data("remote".utf8))]
         return CorpusSnapshot(revision: CorpusRevision.make(files: files), files: files)
+    }
+    func catalogue(_ descriptor: SharedProjectDescriptor, connection: DesktopPeerConnection, credential: String) async throws -> RemoteProjectCatalogue {
+        try apply(nextCatalogueMutation)
+        let mutation = nextCatalogueMutation
+        nextCatalogueMutation = nil
+        try checkReachable()
+        guard access == .authorized, projectShared, credentials.contains(credential), descriptor.id == project.id else {
+            throw SyncError.httpAccessDenied(operation: .catalogue, status: 403)
+        }
+        if mutation == .denyRequest { throw SyncError.httpAccessDenied(operation: .catalogue, status: 403) }
+        return RemoteProjectCatalogue(files: [])
+    }
+    func file(_ entry: RemoteFileEntry, projectID: UUID, connection: DesktopPeerConnection, credential: String) async throws -> CorpusFile {
+        try apply(nextFileMutation)
+        let mutation = nextFileMutation
+        nextFileMutation = nil
+        try checkReachable()
+        guard access == .authorized, projectShared, credentials.contains(credential), projectID == project.id else {
+            throw SyncError.httpAccessDenied(operation: .file, status: 403)
+        }
+        if mutation == .denyRequest || mutation == .narrowSelection {
+            throw SyncError.httpAccessDenied(operation: .file, status: 403)
+        }
+        throw DesktopPeerLibraryError.unknownCopy
     }
     private(set) var publications: [DesktopPeerProposal] = []
     private var receipts: [UUID: DesktopPeerProposalReceipt] = [:]
@@ -394,5 +643,15 @@ private actor PeerRemoteFixture: DesktopPeerRemote {
               receipts[proposal.id] == receipt else { throw SyncError.revoked }
     }
     private func checkReachable() throws { if !reachable { throw URLError(.notConnectedToInternet) } }
+    private func apply(_ mutation: PeerAccessMutation?) throws {
+        switch mutation {
+        case .revokeDevice: access = .revoked
+        case .withdrawProject: projectShared = false
+        case .narrowSelection:
+            currentProject = SharedProjectDescriptor(id: project.id, name: project.name, scope: project.scope,
+                selection: try CorpusSelection(folders: [], documents: ["docs/other.md"]))
+        case .denyRequest, nil: break
+        }
+    }
 }
 #endif

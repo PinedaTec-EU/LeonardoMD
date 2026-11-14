@@ -28,8 +28,21 @@ public enum DesktopPeerLibraryError: Error, Equatable, Sendable {
          acknowledgementUnavailable
 }
 
+extension DesktopPeerLibraryError: RemoteContentAccessDenied {
+    public var deniesRemoteContent: Bool { self == .unauthorizedProject }
+}
+
+public protocol RemoteContentAccessDenied: Error, Sendable {
+    var deniesRemoteContent: Bool { get }
+}
+
 public protocol DesktopPeerAccessRevoker: Sendable {
+    func denyReaderCaches(connectionID: UUID, projectIDs: [UUID]) async
     func closeCopies(_ ids: [UUID]) async
+}
+
+public extension DesktopPeerAccessRevoker {
+    func denyReaderCaches(connectionID: UUID, projectIDs: [UUID]) async {}
 }
 
 public protocol DesktopPeerLibraryAccess: Sendable {

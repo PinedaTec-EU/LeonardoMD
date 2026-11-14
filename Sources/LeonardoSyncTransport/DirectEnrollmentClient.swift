@@ -52,7 +52,12 @@ public struct DirectEnrollmentClient: Sendable {
 
     public func status(deviceID: UUID, credential: String) async throws -> DirectDeviceStatus {
         let response = try await client.request(method: "GET", path: "/v1/devices/\(deviceID.uuidString)/status", credential: credential)
-        guard response.status == 200 else { throw TransportError.unexpectedResponse }
+        guard response.status == 200 else {
+            if response.status == 401 || response.status == 403 {
+                throw SyncError.httpAccessDenied(operation: .status, status: response.status)
+            }
+            throw ProjectDownloadError(response: response, phase: .access)
+        }
         return try JSONDecoder().decode(DirectDeviceStatus.self, from: response.body)
     }
 
@@ -75,7 +80,12 @@ public struct DirectEnrollmentClient: Sendable {
     public func project(_ descriptor: SharedProjectDescriptor, deviceID: UUID, credential: String) async throws -> OfflineProject {
         let response = try await client.request(method: "GET",
             path: "/v1/devices/\(deviceID.uuidString)/projects/\(descriptor.id.uuidString)/snapshot", credential: credential)
-        guard response.status == 200 else { throw TransportError.unexpectedResponse }
+        guard response.status == 200 else {
+            if response.status == 403 {
+                throw SyncError.httpAccessDenied(operation: .snapshot, status: response.status)
+            }
+            throw ProjectDownloadError(response: response)
+        }
         let snapshot = try JSONDecoder().decode(CorpusSnapshot.self, from: response.body)
         return try OfflineProject(id: descriptor.id, name: descriptor.name, mode: .direct,
                                   scope: descriptor.scope, snapshot: snapshot)
@@ -85,7 +95,7 @@ public struct DirectEnrollmentClient: Sendable {
                           credential: String) async throws -> RemoteProjectCatalogue {
         let response = try await client.request(method: "GET",
             path: "/v1/devices/\(deviceID.uuidString)/projects/\(descriptor.id.uuidString)/catalogue", credential: credential)
-        try OnDemandResponseStatus.requireSuccess(response.status)
+        try OnDemandResponseStatus.requireSuccess(response.status, operation: .catalogue)
         let catalogue = try JSONDecoder().decode(RemoteProjectCatalogue.self, from: response.body)
         try catalogue.validate(descriptor: descriptor)
         return catalogue
@@ -96,10 +106,58 @@ public struct DirectEnrollmentClient: Sendable {
         let response = try await client.request(method: "POST",
             path: "/v1/devices/\(deviceID.uuidString)/projects/\(projectID.uuidString)/file", credential: credential,
             body: JSONEncoder().encode(RemoteFileRequest(path: entry.path, revision: entry.revision)))
-        try OnDemandResponseStatus.requireSuccess(response.status)
+        try OnDemandResponseStatus.requireSuccess(response.status, operation: .file)
         let file = try JSONDecoder().decode(CorpusFile.self, from: response.body)
         try entry.validate(file)
         return file
+    }
+
+    /// Rechecks authenticated device state after an on-demand 403 so revocation cleanup
+    /// runs before a caller can fall back to cached bytes. An inconclusive STATUS preserves
+    /// the original operation/status diagnostic.
+    @MainActor
+    public func withRevocationRecheck<T>(
+        deviceID: UUID,
+        credential: String,
+        projectID: UUID? = nil,
+        filePath: String? = nil,
+        // Resolve async defaults in the library body. Swift 6.2 may link mismatched context metadata for async default-argument closures across modules (LMB-B-450).
+        status: ((DirectEnrollmentClient, UUID, String) async throws -> DirectDeviceStatus)? = nil,
+        onCurrentStatus: ((DirectDeviceStatus) async throws -> Void)? = nil,
+        operation: () async throws -> T
+    ) async throws -> T {
+        do {
+            return try await operation()
+        } catch let denial as SyncError where denial.isAccessDenied {
+            let latest: DirectDeviceStatus
+            do {
+                if let status {
+                    latest = try await status(self, deviceID, credential)
+                } else {
+                    latest = try await self.status(deviceID: deviceID, credential: credential)
+                }
+            } catch let rechecked as SyncError where rechecked == .revoked {
+                throw rechecked
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                throw denial
+            }
+            if latest.access == .revoked { throw SyncError.revoked }
+            try await onCurrentStatus?(latest)
+            guard latest.access == .authorized, let projectID else {
+                if projectID != nil { throw SyncError.projectAccessDenied }
+                throw denial
+            }
+            guard let descriptor = latest.projects.first(where: { $0.id == projectID }) else {
+                throw SyncError.projectAccessDenied
+            }
+            if let filePath {
+                try descriptor.scope.validate(filePath)
+                try descriptor.selection?.validate(filePath)
+            }
+            throw denial
+        }
     }
 
     public func rubricRequests(deviceID: UUID, credential: String) async throws -> [RubricRequest] {

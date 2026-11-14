@@ -7,6 +7,9 @@ import LeonardoSyncTransport
 /// Read-only mobile application boundary. Desktop proposal/write APIs are not exposed.
 @MainActor @Observable
 final class MobileLibrary {
+    typealias DirectStatusRequest = @Sendable (DirectEnrollmentClient, UUID, String) async throws -> DirectDeviceStatus
+    typealias DirectFileRequest = @Sendable (DirectEnrollmentClient, RemoteFileEntry, UUID, UUID, String) async throws -> CorpusFile
+
     var projects: [OfflineProject] = []
     private(set) var pendingRubricRequests: [RubricRequest] = []
     private(set) var recoverableRubricDrafts: [MobileRubricDraft] = []
@@ -18,6 +21,8 @@ final class MobileLibrary {
     let store: OfflineCorpusStore
     private let connectionStore: MobileDirectConnectionStore
     private let credentials: any DeviceCredentialStore
+    private let statusRequest: DirectStatusRequest
+    let fileRequest: DirectFileRequest
     private let revocationClient: MobileRevocationClient
     private let draftStore: MobileRubricDraftStore
     private let rubricAcceptance: MobileRubricAcceptance
@@ -31,7 +36,7 @@ final class MobileLibrary {
     private var pendingRubricDraftWrite: Task<Void, Error>?
     private var cacheEpoch: UInt64 = 0
     private var authorizationEpoch: UInt64 = 0
-    private var authorizationGenerations = MobileAuthorizationGenerations()
+    var authorizationGenerations = MobileAuthorizationGenerations()
     typealias ConnectionToken = MobileConnectionToken
 
     private struct RubricContext {
@@ -43,7 +48,13 @@ final class MobileLibrary {
 
     init(now: @escaping @Sendable () -> Date = Date.init, rootURL: URL? = nil,
          credentials: any DeviceCredentialStore = SecureCredentialStore(),
-         revocationJournal: (any MobileRevocationJournalStore)? = nil) {
+         revocationJournal: (any MobileRevocationJournalStore)? = nil,
+         statusRequest: @escaping DirectStatusRequest = { client, deviceID, credential in
+             try await client.status(deviceID: deviceID, credential: credential)
+         },
+         fileRequest: @escaping DirectFileRequest = { client, entry, projectID, deviceID, credential in
+             try await client.file(entry, projectID: projectID, deviceID: deviceID, credential: credential)
+         }) {
         let root = rootURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("LittleLeonardo/Corpus", isDirectory: true)
         store = OfflineCorpusStore(root: root)
@@ -59,6 +70,8 @@ final class MobileLibrary {
         connectionStore = MobileDirectConnectionStore(url: root.deletingLastPathComponent()
             .appendingPathComponent("connections.json"))
         self.credentials = credentials
+        self.statusRequest = statusRequest
+        self.fileRequest = fileRequest
         self.revocationClient = MobileRevocationClient(journal: revocationJournal ?? MobileRevocationJournal(
             url: root.deletingLastPathComponent().appendingPathComponent("revocation-journal.json")))
         draftStore = MobileRubricDraftStore(url: root.deletingLastPathComponent()
@@ -73,7 +86,7 @@ final class MobileLibrary {
                         authorizationGeneration: authorizationGenerations[connection.connectionID])
     }
 
-    private func connectionIndex(for token: ConnectionToken) -> Int? {
+    func connectionIndex(for token: ConnectionToken) -> Int? {
         connections.firstIndex {
             $0.connectionID == token.connectionID && $0.deviceID == token.deviceID
                 && $0.fingerprint == token.fingerprint
@@ -88,7 +101,7 @@ final class MobileLibrary {
         cacheEpoch == token.cacheEpoch && hasCurrentIdentity(token)
     }
 
-    private func isCurrentAuthorization(_ token: ConnectionToken) -> Bool {
+    func isCurrentAuthorization(_ token: ConnectionToken) -> Bool {
         authorizationGenerations[token.connectionID] == token.authorizationGeneration
             && hasCurrentIdentity(token)
             && !authorizationGenerations.isDenied(connectionID: token.connectionID)
@@ -145,6 +158,8 @@ final class MobileLibrary {
     /// can receive a revocation use this boundary, including rubric sends.
     func withAuthenticatedConnection<T>(
         _ connection: MobileDirectConnection,
+        projectID: UUID? = nil,
+        filePath: String? = nil,
         operation: (MobileAuthenticatedContext) async throws -> T
     ) async throws -> T {
         let token = self.token(for: connection)
@@ -165,7 +180,15 @@ final class MobileLibrary {
                 await self.handleConfirmedRevocation(for: token, ticket: ticket,
                                                      message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
             },
-            operation: operation)
+            projectID: projectID,
+            filePath: filePath,
+            onCurrentStatus: { [weak self] context in
+                guard let self else { return nil }
+                return try await self.reconcileCurrentStatus(context, targetProjectID: projectID,
+                                                              targetFilePath: filePath)
+            },
+            operation: operation,
+            status: statusRequest)
         authorizationGenerations.clearQuarantine(connectionID: connection.connectionID)
         return result
     }
