@@ -6,7 +6,67 @@
   "source_revision": "0a463909c9f8abdf16e1a74b792f0ee4d7266a41",
   "corrected_source_commit": "0a463909c9f8abdf16e1a74b792f0ee4d7266a41",
   "base_revision": "8711e44aae3babc5beb914bb6b3e69dfe2715e96",
-  "capture_source_mapping": "The native alert capture test and packaged application were built from source_revision 0a463909c9f8abdf16e1a74b792f0ee4d7266a41. After capture, tracked changes are limited to the PR build ledger counter, refreshed alert PNGs and sidecars, this QA report and wiki records. Application sources, user guides, tests and build inputs are unchanged.",
+  "capture_source_mapping": "The native alert capture test and original packaged application were built from source_revision 0a463909c9f8abdf16e1a74b792f0ee4d7266a41. The later Guide v78 candidate changes the guide revision, resource names and personal-copy directory; it does not change the alert builders, so the captures remain evidence for those alert states only and do not establish Guide v78 acceptance.",
+  "candidate_guide_v78": {
+    "status": "native_inspection_pending_mac_unlock",
+    "revision": 78,
+    "personal_copy_directory": "User Guides/v78/<locale>/",
+    "packages": {
+      "en": {
+        "filename": "Guide-v78-en.mdlz",
+        "sha256": "02966714f9f77c6a615ba5a1236cb5687089fe02507ed9c9386384a92ebe8c53"
+      },
+      "es": {
+        "filename": "Guide-v78-es.mdlz",
+        "sha256": "2291b2dda56b4c2c88eb08d718529dceea6b7b1cda7ef1b717614582f30f43cc"
+      }
+    },
+    "qa_application": {
+      "fresh_process": true,
+      "pid": 35633,
+      "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.3197e052ff7746c3bc242afec0c516d2",
+      "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r6umng3/LeonardoMDQA.app",
+      "isolated_home": "/private/tmp/leonardo-448-v78-qa-home",
+      "version": "0.3.1602",
+      "build": 1602,
+      "executable": "LeonardoMD",
+      "first_window_ready": true,
+      "startup_events": ["first_window_shown", "application_ready"],
+      "bundle_verification": "scripts/qa-bundle.py --verify-only passed; otool -L showed no XCTest.framework",
+      "launch_command": "CFFIXED_USER_HOME=/private/tmp/leonardo-448-v78-qa-home <verified QA bundle>/Contents/MacOS/LeonardoMD --new-instance -allowMultipleInstances YES"
+    },
+    "preexisting_personal_copies_and_forms": {
+      "seeded_from": "The real #369 Guide v76 QA home; only guide copies and practice forms were copied into the isolated v78 QA home.",
+      "sha256_before_help_open": {
+        "v76_en": "5e8ae8a5ad6ffb3682e2a0c7f1789531b47efeed2b53b171878a845d3067fc4e",
+        "v76_es": "e65f4f77f641cf6fcff2cac9576fba70234a943eb05647f784d71e6748e5af2a",
+        "practice_en": "5b914af748cff65eb9b6bae0b175f64c0008e1874bb1b53fdf6c5a361e0b6b9c",
+        "practice_es": "6b543d197f5195cb1f3906351a2d3b992b0c48e4f7548cf8b164bd92cb7ed487"
+      },
+      "sha256_after_help_open": null
+    },
+    "visual_acceptance": {
+      "help_opened_en": false,
+      "help_opened_es": false,
+      "english_practice_round_trip": false,
+      "spanish_practice_round_trip": false,
+      "reason_pending": "The macOS session was locked when native UI inspection began. The existing v76 copies and practice forms were not edited."
+    },
+    "automated_validation": {
+      "full_swift_suite": {
+        "executed_xctest": 530,
+        "skipped_xctest": 36,
+        "executed_swift_testing": 44,
+        "executed_package_tests": 28,
+        "failures": 0,
+        "recorded_build_delta": 24
+      },
+      "guide_package_tests": {
+        "executed": 3,
+        "failures": 0
+      }
+    }
+  },
   "application": {
     "platform": "Packaged native macOS QA app",
     "launch_command": "CFFIXED_USER_HOME=/private/tmp/leonardo-448-final-home.Z0nRMl LEONARDO_SOURCE_PR=448 /var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-ayyin875/LeonardoMDQA.app/Contents/MacOS/LeonardoMD --new-instance -allowMultipleInstances YES",

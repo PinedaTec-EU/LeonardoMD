@@ -2,7 +2,7 @@
 
 ## Scope and source
 
-This report records validation for [issue #447](https://github.com/PinedaTec-EU/LeonardoMD/issues/447) and [PR #448](https://github.com/PinedaTec-EU/LeonardoMD/pull/448). The validated application source is commit `0a463909c9f8abdf16e1a74b792f0ee4d7266a41`, based on `main` at `8711e44aae3babc5beb914bb6b3e69dfe2715e96` (Guide v74). It preserves v74, incorporates the bilingual recovery text in Guide v76, and leaves earlier personal copies intact.
+This report records validation for [issue #447](https://github.com/PinedaTec-EU/LeonardoMD/issues/447) and [PR #448](https://github.com/PinedaTec-EU/LeonardoMD/pull/448). The alert implementation source is commit `0a463909c9f8abdf16e1a74b792f0ee4d7266a41`, based on `main` at `8711e44aae3babc5beb914bb6b3e69dfe2715e96` (Guide v74). It preserves v74 and integrates the bilingual recovery text in Guide v78. Existing Guide v76 and v77 personal-copy paths are already occupied by #369 and #368, respectively.
 
 An ordinary Preview synchronization failure now presents one native action. If closing reaches a failed Preview flush, the recovery alert names the affected document and offers Keep Open for retry or an explicit discard of only the unapplied Preview edits. Any other unsaved document changes still use the regular Save, Discard or Cancel decision. During close preparation, already queued Preview and form messages remain authorized through the final renderer snapshot; the gate then closes before the ordinary save decision. A failed inactive tab is selected before the alert appears and remains visible when the user keeps it open.
 
@@ -19,9 +19,11 @@ The ordinary warning has one action in English and Spanish. The close warning na
 | Spanish, ordinary retry | [PNG](preview-alert-es-retry.png) | [JSON](preview-alert-es-retry.png.metadata.json) | 2026-11-13 16:38:13.991466 | 306 × 312 pt | 612 × 624 |
 | Spanish, close recovery | [PNG](preview-alert-es-close.png) | [JSON](preview-alert-es-close.png.metadata.json) | 2026-11-13 16:38:13.990986 | 314 × 362 pt | 628 × 724 |
 
-Each sidecar binds the current image hash and dimensions to its observed write/capture time, native screen, synthetic data, viewport points and source revision at collection. The capture source is `0a463909c9f8abdf16e1a74b792f0ee4d7266a41`. Later changes in the evidence commit are limited to the build ledger, captures and sidecars, this report, and `.wiki` notes; application code, guides, tests and build inputs are unchanged.
+Each sidecar binds the current image hash and dimensions to its observed write/capture time, native screen, synthetic data, viewport points and source revision at collection. The capture source is `0a463909c9f8abdf16e1a74b792f0ee4d7266a41`; the original evidence follow-up changed the build ledger, captures and sidecars, this report, and `.wiki` notes. The later Guide v78 correction changes only guide revision/resource names and its personal-copy path; it leaves alert builders and capture inputs unchanged, so the four images remain evidence for those alert states.
 
-## Packaged application and Help acceptance
+## Earlier packaged Help attempt (Guide v76; superseded)
+
+This is historical evidence from the previous candidate. A fresh strict review later found that `User Guides/v76/{en,es}` already contains older #369 personal copies with different bytes and without this PR's recovery paragraph; v77 is also reserved by #368. The earlier v76 run therefore does not establish that the current candidate opens its own guide copy. It also recorded a Spanish practice-form round trip only, not the required English round trip. The current candidate uses v78 and has a separate pending record below.
 
 `./launch.sh --qa` produced the real app bundle. `scripts/qa-bundle.py --verify-only` passed; `CFBundleExecutable` is `LeonardoMD`, and `otool -L` showed its AppKit, SwiftUI and WebKit dependencies without `XCTest.framework`.
 
@@ -40,7 +42,13 @@ The Spanish practice form was opened from the guide, saved, closed and reopened 
 | --- | --- | --- | --- |
 | Spanish | `Prueba v76 final` | `Comprobar la persistencia al cerrar y volver a abrir la guía.` | No |
 
-The isolated app language was restored to English and Math remained enabled. The QA app was quit normally. The guide copies, practice form and preferences stayed under the isolated temporary home; the normal user home was not used.
+The isolated app language was restored to English and Math remained enabled. The QA app was quit normally. The guide copies, practice form and preferences stayed under the isolated temporary home; the normal user home was not used. These observations remain as history and are not acceptance for v78.
+
+## Current Guide v78 attempt (native inspection pending)
+
+The candidate packages are Guide v78 English SHA-256 `02966714f9f77c6a615ba5a1236cb5687089fe02507ed9c9386384a92ebe8c53` and Spanish SHA-256 `2291b2dda56b4c2c88eb08d718529dceea6b7b1cda7ef1b717614582f30f43cc`. A fresh QA home was seeded only with the actual #369 v76 copies and its existing practice forms. Before opening v78 Help, the seeded files remained unchanged: v76 English `5e8ae8a5ad6ffb3682e2a0c7f1789531b47efeed2b53b171878a845d3067fc4e`, v76 Spanish `e65f4f77f641cf6fcff2cac9576fba70234a943eb05647f784d71e6748e5af2a`, English form `5b914af748cff65eb9b6bae0b175f64c0008e1874bb1b53fdf6c5a361e0b6b9c`, and Spanish form `6b543d197f5195cb1f3906351a2d3b992b0c48e4f7548cf8b164bd92cb7ed487`.
+
+`./launch.sh --qa` produced and verified the real LeonardoMD executable, with `CFBundleExecutable=LeonardoMD` and no `XCTest.framework` dependency. The candidate then started as a fresh additional process from that verified bundle: PID `35633`, bundle identifier `eu.pinedatec.LeonardoMD.qa.3197e052ff7746c3bc242afec0c516d2`, version `0.3.1602`, build `1602`, isolated home `/private/tmp/leonardo-448-v78-qa-home`. Startup diagnostics reached `first_window_shown` and `application_ready`. Native Help, live examples and English/Spanish practice-form round trips remain pending because the macOS session was locked when visual inspection began; the seeded old copies have not been edited.
 
 ## Automated validation
 

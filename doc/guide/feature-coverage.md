@@ -62,9 +62,9 @@ Remote project review (#429), ignored-grant reconciliation (#432), stable helper
 
 Preview recovery after a renderer synchronization failure (#447): chapter 10
 explains the single-action warning for ordinary actions and the close-only
-choice to keep editing or discard unapplied Preview edits. Guide v76 gives the
-updated bilingual help a new personal copy without overwriting the existing
-Guide v74 or saved practice answers.
+choice to keep editing or discard unapplied Preview edits. Guide v78 gives the
+updated bilingual help a new personal copy without overwriting existing guide
+copies through v77 or saved practice answers.
 Update termination (#202): chapter 16 documents automatic Preferences dismissal before install approval, retained Save/Git decisions, cancellation/retry, and the older-source bootstrap workaround. Introduced in Guide v12 and retained in current Guide v23; previous personal copies are preserved.
 
 Display-math regression coverage ([#272](https://github.com/PinedaTec-EU/LeonardoMD/issues/272)): both guides include one-line underbraces and a multiline tagged box-counting equation. Native help QA must inspect enabled rendering and disabled/code fallback in every tested instance.
