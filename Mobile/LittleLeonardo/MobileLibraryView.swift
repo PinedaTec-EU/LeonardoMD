@@ -118,8 +118,23 @@ struct MobileLibraryView: View {
                 Section("Mac conectados") {
                     let activeConnections = library.connections.filter { !$0.revoked }
                     if activeConnections.isEmpty {
-                        Text("Los proyectos compartidos aparecerán aquí al conectar un Mac.")
-                            .font(.subheadline).foregroundStyle(MobileClassic.secondary)
+                        if localLibraryProjects.isEmpty {
+                            VStack(spacing: 16) {
+                                MobileBrand(size: 64)
+                                Text("Tus documentos, contigo").font(.title2.bold()).foregroundStyle(MobileClassic.heading)
+                                Text("Conecta tu Mac y consulta sus proyectos sin conexión.")
+                                    .multilineTextAlignment(.center).foregroundStyle(MobileClassic.secondary)
+                                Button("Conectar con mi Mac") { presentedSheet = .direct }
+                                    .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper)
+                                    .disabled(library.connecting)
+                                Label("Solo lectura", systemImage: "lock").font(.footnote)
+                            }
+                            .padding(.vertical, 20)
+                            .frame(maxWidth: .infinity)
+                        } else {
+                            Text("Los proyectos compartidos aparecerán aquí al conectar un Mac.")
+                                .font(.subheadline).foregroundStyle(MobileClassic.secondary)
+                        }
                     }
                     ForEach(activeConnections) { connection in
                         MobileSharedHostDisclosureRow(library: library, connection: connection,
@@ -129,22 +144,13 @@ struct MobileLibraryView: View {
                     }
                 }
 
-                Section("En este dispositivo") {
-                    ForEach(localLibraryProjects) { project in
-                        MobileLocalLibraryProjectRow(library: library, project: project)
-                    }
-                    if localLibraryProjects.isEmpty && library.connections.allSatisfy(\.revoked) {
-                        VStack(spacing: 16) {
-                            MobileBrand(size: 64)
-                            Text("Tus documentos, contigo").font(.title2.bold()).foregroundStyle(MobileClassic.heading)
-                            Text("Conecta tu Mac y consulta tus proyectos sin conexión.")
-                                .multilineTextAlignment(.center).foregroundStyle(MobileClassic.secondary)
-                            Button("Conectar con mi Mac") { presentedSheet = .direct }
-                                .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper).disabled(library.connecting)
-                            Label("Solo lectura", systemImage: "lock").font(.footnote)
-                        }.padding(.vertical, 20).frame(maxWidth: .infinity)
-                    }
-                }.listRowBackground(MobileClassic.paper)
+                if !localLibraryProjects.isEmpty {
+                    Section("En este dispositivo") {
+                        ForEach(localLibraryProjects) { project in
+                            MobileLocalLibraryProjectRow(library: library, project: project)
+                        }
+                    }.listRowBackground(MobileClassic.paper)
+                }
             }
             .classicSurface()
             .navigationTitle("Biblioteca")

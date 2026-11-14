@@ -1,8 +1,8 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v78-en.mdlz` and `Guide-v78-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v79-en.mdlz` and `Guide-v79-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v78/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v79/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
@@ -12,7 +12,7 @@ and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
-Guide v77 combines current document search, remote-project review and offline-catalogue guidance with grouped Dock/app-switcher instances, synchronization status and helper recovery. It explains project download failures and transfer limits, distinguishes removed project grants from revoked devices with the correct recovery steps, and clarifies that explicit access denials cannot open older cached content. Temporary connection failures may still offer a retained offline copy. Existing guide copies through v76 and their separate practice answers remain preserved.
+Guide v79 combines Little Leonardo's editable local Mac names and connection details with current project review, offline-catalogue recovery, and transfer diagnostics. It distinguishes removed project grants from revoked devices, prevents explicit access denials from opening stale content, and explains the concise error code plus the local diagnostic log's retention and privacy. The new revision ensures saved copies through v78 cannot hide this combined content; Help never replaces an existing guide copy or its practice answers.
 
 File → Import with your agent opens `AgentImport-v3-en.mdlz` or
 `AgentImport-v3-es.mdlz` in the same tab/package flow, with personal copies under

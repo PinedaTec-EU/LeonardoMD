@@ -7,6 +7,8 @@ struct MobileDirectConnection: Codable, Identifiable {
     var id: UUID { connectionID }
     let deviceID: UUID
     let endpoint: URL
+    /// A user-defined label local to Little Leonardo. It is never sent to the host.
+    var displayName: String?
     let fingerprint: Data
     /// Projects the Mac currently grants to this connection. This is the
     /// authorization boundary and is independent from the user's local choice.
@@ -27,10 +29,12 @@ struct MobileDirectConnection: Codable, Identifiable {
          capabilityRefreshAttempted: Bool = false, revoked: Bool = false,
          pendingPurgeProjectIDs: Set<UUID> = [], projectDescriptors: [SharedProjectDescriptor] = [],
          acceptedProjectIDs: Set<UUID>? = nil, ignoredProjectIDs: Set<UUID> = [],
-         newFilePaths: [UUID: Set<String>] = [:], selectionMigrationCompleted: Bool = true) {
+         newFilePaths: [UUID: Set<String>] = [:], selectionMigrationCompleted: Bool = true,
+         displayName: String? = nil) {
         self.connectionID = connectionID
         self.deviceID = deviceID
         self.endpoint = endpoint
+        self.displayName = displayName
         self.fingerprint = fingerprint
         self.projectIDs = projectIDs
         self.projectDescriptors = projectDescriptors
@@ -46,7 +50,7 @@ struct MobileDirectConnection: Codable, Identifiable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case connectionID, deviceID, endpoint, fingerprint, projectIDs, comparisonCode, capabilities,
+        case connectionID, deviceID, endpoint, displayName, fingerprint, projectIDs, comparisonCode, capabilities,
              capabilityRefreshAttempted, revoked, pendingPurgeProjectIDs, projectDescriptors,
              acceptedProjectIDs, ignoredProjectIDs, newFilePaths, selectionMigrationCompleted
     }
@@ -76,7 +80,41 @@ struct MobileDirectConnection: Codable, Identifiable {
                   newFilePaths: try container.decodeIfPresent([UUID: Set<String>].self,
                       forKey: .newFilePaths) ?? [:],
                   selectionMigrationCompleted: try container.decodeIfPresent(Bool.self,
-                      forKey: .selectionMigrationCompleted) ?? false)
+                      forKey: .selectionMigrationCompleted) ?? false,
+                  displayName: try container.decodeIfPresent(String.self, forKey: .displayName))
+    }
+
+    var suggestedDisplayName: String {
+        guard let rawHost = endpoint.host, !rawHost.isEmpty else { return "Mac conectado" }
+        let lowercasedHost = rawHost.lowercased()
+        if rawHost.contains(":") || rawHost.allSatisfy({ $0.isNumber || $0 == "." }) {
+            return "Mac conectado"
+        }
+        var host = rawHost
+        if lowercasedHost.hasSuffix(".local") { host.removeLast(6) }
+        host = host.replacingOccurrences(of: "-", with: " ")
+        return host.prefix(1).uppercased() + String(host.dropFirst())
+    }
+
+    var visibleDisplayName: String {
+        let stored = displayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return stored.isEmpty ? suggestedDisplayName : stored
+    }
+
+    func hasSameIdentity(as other: MobileDirectConnection) -> Bool {
+        connectionID == other.connectionID && deviceID == other.deviceID && fingerprint == other.fingerprint
+    }
+
+    var showsEndpointAddressInHostRow: Bool {
+        (displayName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+            && suggestedDisplayName == "Mac conectado"
+    }
+
+    var endpointAddress: String {
+        guard let host = endpoint.host, !host.isEmpty else { return endpoint.absoluteString }
+        let addressHost = host.contains(":") && !host.hasPrefix("[") ? "[\(host)]" : host
+        guard let port = endpoint.port else { return addressHost }
+        return "\(addressHost):\(port)"
     }
 
     func hasChanges(from other: MobileDirectConnection) -> Bool {
@@ -186,6 +224,16 @@ struct MobileDirectConnectionStore {
             throw SyncError.invalidSnapshot
         }
         return try JSONDecoder().decode([MobileDirectConnection].self, from: Data(contentsOf: url))
+    }
+
+    static func preservingCurrentDisplayNames(in snapshot: [MobileDirectConnection],
+                                              current: [MobileDirectConnection]) -> [MobileDirectConnection] {
+        var reconciled = snapshot
+        for index in reconciled.indices {
+            guard let latest = current.first(where: { reconciled[index].hasSameIdentity(as: $0) }) else { continue }
+            reconciled[index].displayName = latest.displayName
+        }
+        return reconciled
     }
 
     /// A missing Keychain item is a durable loss of authorization, while a

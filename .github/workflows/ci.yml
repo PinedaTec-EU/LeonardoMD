@@ -122,6 +122,8 @@ jobs:
         run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,name=iPhone 17 Pro" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO -only-testing:LittleLeonardoTests/MobileRevocationTests/testOnDemandForbiddenResponseRechecksStatusBeforeRecordingRevocation test
       - name: Test Little Leonardo diagnostic log
         run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,name=iPhone 17 Pro" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO -only-testing:LittleLeonardoTests/MobileDiagnosticLogTests test
+      - name: Test Little Leonardo connection display names
+        run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,name=iPhone 17 Pro" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO -only-testing:LittleLeonardoTests/MobileConnectionDisplayNameTests test
       - name: Validate update metadata
         run: python3 -m unittest discover -s Tests/Packaging
       - name: Record preview capture provenance

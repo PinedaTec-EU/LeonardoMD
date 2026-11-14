@@ -18,6 +18,7 @@ struct MobileSharedHostDisclosureRow: View {
     let connection: MobileDirectConnection
     let descriptors: [SharedProjectDescriptor]
     let openFile: (SharedProjectDescriptor, RemoteFileEntry) -> Void
+    @State private var presentedSheet: MobileHostSheet?
 
     var body: some View {
         DisclosureGroup {
@@ -34,16 +35,48 @@ struct MobileSharedHostDisclosureRow: View {
                     .font(.title3).foregroundStyle(MobileClassic.heading)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(Self.hostDisplayName(connection.endpoint))
+                    Text(connection.visibleDisplayName)
                         .font(.headline).foregroundStyle(MobileClassic.heading)
+                    if connection.showsEndpointAddressInHostRow {
+                        Text(connection.endpointAddress)
+                            .font(.caption2.monospaced()).foregroundStyle(MobileClassic.secondary)
+                    }
                     let visibleProjectIDs = connection.projectIDs.subtracting(library.projectLifecycle.deletedProjectIDs)
                     let pendingCount = visibleProjectIDs.subtracting(connection.ignoredProjectIDs)
                         .subtracting(connection.acceptedProjectIDs).count
                     let totalCount = visibleProjectIDs.count
                     Text(totalCount == 0 ? "Conexión activa" :
-                         "\(totalCount) proyectos · \(pendingCount) por revisar")
+                         "\(totalCount) \(totalCount == 1 ? "proyecto" : "proyectos") · \(pendingCount) por revisar")
                         .font(.caption).foregroundStyle(MobileClassic.secondary)
                 }
+                Menu {
+                    Button("Cambiar nombre", systemImage: "pencil") {
+                        presentedSheet = .rename
+                    }
+                    Button("Detalles de conexión", systemImage: "network") {
+                        presentedSheet = .details
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(MobileClassic.secondary)
+                        .frame(width: 36, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Acciones de \(connection.visibleDisplayName)")
+                .accessibilityIdentifier("shared-host-menu-\(connection.connectionID)")
+            }
+        }
+        .sheet(item: $presentedSheet) { sheet in
+            switch sheet {
+            case .rename:
+                MobileHostRenameSheet(initialName: connection.visibleDisplayName,
+                                      endpointAddress: connection.endpointAddress) { newName in
+                    library.renameConnection(connectionID: connection.connectionID, displayName: newName)
+                }
+            case .details:
+                MobileHostConnectionDetailsSheet(connection: connection)
             }
         }
         .accessibilityElement(children: .contain)
@@ -64,11 +97,81 @@ struct MobileSharedHostDisclosureRow: View {
         }
     }
 
-    private static func hostDisplayName(_ endpoint: URL) -> String {
-        guard var host = endpoint.host, !host.isEmpty else { return "Mac conectado" }
-        if host.lowercased().hasSuffix(".local") { host.removeLast(6) }
-        host = host.replacingOccurrences(of: "-", with: " ")
-        return host.prefix(1).uppercased() + String(host.dropFirst())
+}
+
+private enum MobileHostSheet: String, Identifiable {
+    case rename, details
+    var id: String { rawValue }
+}
+
+private struct MobileHostRenameSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let initialName: String
+    let endpointAddress: String
+    let save: (String) -> Bool
+    @State private var draft: String
+
+    init(initialName: String, endpointAddress: String, save: @escaping (String) -> Bool) {
+        self.initialName = initialName
+        self.endpointAddress = endpointAddress
+        self.save = save
+        _draft = State(initialValue: initialName)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Nombre visible") {
+                    TextField("Nombre del Mac", text: $draft)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled()
+                        .onChange(of: draft) { _, value in
+                            if value.count > 80 { draft = String(value.prefix(80)) }
+                        }
+                    Text("Este nombre solo se guarda en Little Leonardo.")
+                        .font(.footnote).foregroundStyle(MobileClassic.secondary)
+                }
+                Section("Dirección de conexión") {
+                    Text(endpointAddress).font(.caption.monospaced())
+                    Button("Restablecer nombre sugerido") { draft = "" }
+                }
+            }
+            .classicSurface()
+            .navigationTitle("Cambiar nombre del Mac")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Guardar") {
+                        if save(draft) { dismiss() }
+                    }
+                    .disabled(draft == initialName)
+                }
+            }
+        }
+    }
+}
+
+private struct MobileHostConnectionDetailsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let connection: MobileDirectConnection
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                LabeledContent("Nombre", value: connection.visibleDisplayName)
+                Section("Dirección de conexión") {
+                    Text(connection.endpointAddress).font(.body.monospaced())
+                        .textSelection(.enabled)
+                }
+                Text("El nombre visible no cambia el Mac ni sus permisos.")
+                    .font(.footnote).foregroundStyle(MobileClassic.secondary)
+            }
+            .classicSurface()
+            .navigationTitle("Detalles del Mac")
+            .toolbar { Button("Cerrar") { dismiss() } }
+        }
     }
 }
 
