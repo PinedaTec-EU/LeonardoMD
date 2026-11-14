@@ -60,9 +60,11 @@ final class AppSession {
     var syncUpdatingBuffer = false
     var isSyncSuspended: Bool { NativeReconciliationLease.shared.holds(documentURL) || NativeReconciliationLease.shared.holds(projectURL) }
     var isClosing = false
+    var isClosePreviewSyncPending = false
     var isCapturingPreview = false
     var isProtected = true { didSet { if isProtected { clearGraphicSelection() } } }
-    var canEditDocument: Bool { documentURL != nil && !isProtected && !isClosing && !isCapturingPreview && !isSyncSuspended && !busy && !stopped }
+    var canEditDocumentIgnoringClose: Bool { documentURL != nil && !isProtected && !isCapturingPreview && !isSyncSuspended && !busy && !stopped }
+    var canEditDocument: Bool { canEditDocumentIgnoringClose && !isClosing }
     @ObservationIgnored weak var presentationWindow: NSWindow?
     var unsavedChangesDecision: @MainActor (String) async -> UnsavedChangesDecision = { _ in .cancel }
     var confirmDiscardForReload: @MainActor () async -> Bool = { false }
@@ -354,7 +356,10 @@ final class AppSession {
         saveTask?.cancel()
     }
 
-    func prepareNavigation(allowGitOperation: Bool = false) async -> Bool {
+    func prepareNavigation(
+        allowGitOperation: Bool = false,
+        pendingPreviewEdits: PendingPreviewEditsPolicy = .flush
+    ) async -> Bool {
         guard !isSyncSuspended else { return false }
         guard !gitBusy || allowGitOperation else {
             errorMessage = L10n.text("Wait for this project's Git operation to finish before switching documents.")
@@ -364,7 +369,8 @@ final class AppSession {
         saveTask?.cancel()
         // Wait for a current save to finish before changing the document identity.
         while saving || saveTask != nil { try? await Task.sleep(for: .milliseconds(20)) }
-        guard await flushPreviewEdits(), await resolveUnsavedChanges() else { return false }
+        if pendingPreviewEdits.requiresFlush, !(await flushPreviewEdits()) { return false }
+        guard await resolveUnsavedChanges(pendingPreviewEdits: pendingPreviewEdits) else { return false }
         if isDirty {
             if externalConflict { errorMessage = L10n.text("Resolve the external change by reloading or saving a copy before opening another document.") }
             return false

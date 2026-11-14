@@ -143,10 +143,21 @@ final class DocumentTabs {
         closing = true
         defer { closing = false }
         let session = tabs[index].session
-        guard await session.flushPreviewEdits() else { return }
         session.isClosing = true
-        defer { if !session.stopped { session.isClosing = false } }
-        guard await session.waitForCloseOperations(), await session.prepareNavigation() else {
+        session.isClosePreviewSyncPending = true
+        defer {
+            session.isClosePreviewSyncPending = false
+            if !session.stopped { session.isClosing = false }
+        }
+        guard await session.waitForCloseOperations() else { return }
+        let previewResolution = await session.resolvePreviewEditsBeforeClose(documentName: tabs[index].title) {
+            selectForCloseRecovery(id)
+        }
+        guard previewResolution != .keepOpen else { return }
+        let previewPolicy: PendingPreviewEditsPolicy = previewResolution == .discardPreviewEdits
+            ? .discardAfterExplicitCloseConfirmation
+            : .alreadyResolved
+        guard await session.prepareNavigation(pendingPreviewEdits: previewPolicy) else {
             activeID = id
             updateTitle()
             return
@@ -171,9 +182,17 @@ final class DocumentTabs {
         var approved = false
         defer { if !approved { releaseClosePreparation() } }
         for tab in tabs {
-            guard await tab.session.flushPreviewEdits() else { return false }
             tab.session.isClosing = true
-            guard await tab.session.waitForCloseOperations(), await tab.session.prepareNavigation() else {
+            tab.session.isClosePreviewSyncPending = true
+            guard await tab.session.waitForCloseOperations() else { return false }
+            let previewResolution = await tab.session.resolvePreviewEditsBeforeClose(documentName: tab.title) {
+                selectForCloseRecovery(tab.id)
+            }
+            guard previewResolution != .keepOpen else { return false }
+            let previewPolicy: PendingPreviewEditsPolicy = previewResolution == .discardPreviewEdits
+                ? .discardAfterExplicitCloseConfirmation
+                : .alreadyResolved
+            guard await tab.session.prepareNavigation(pendingPreviewEdits: previewPolicy) else {
                 activeID = tab.id
                 updateTitle()
                 return false
@@ -199,9 +218,19 @@ final class DocumentTabs {
     }
 
     private func releaseClosePreparation() {
-        tabs.forEach { $0.session.isClosing = false }
+        tabs.forEach {
+            $0.session.isClosePreviewSyncPending = false
+            $0.session.isClosing = false
+        }
         preparedForClose = false
         closing = false
+    }
+
+    private func selectForCloseRecovery(_ id: UUID) {
+        guard activeID != id, tabs.contains(where: { $0.id == id }) else { return }
+        activeID = id
+        refreshSearch()
+        updateTitle()
     }
 
     func reveal(_ id: UUID) {

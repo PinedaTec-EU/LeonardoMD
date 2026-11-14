@@ -61,10 +61,12 @@ extension AppSession {
         return updateLeonardoField(fieldID, value: .boolean(value))
     }
 
-    var canFillLeonardoForm: Bool {
+    var canFillLeonardoFormIgnoringClose: Bool {
         documentURL != nil && documentKind.isLeonardo && mode == .fill
-            && !stopped && !isClosing && !busy && !isSyncSuspended && !isCapturingPreview
+            && !stopped && !busy && !isSyncSuspended && !isCapturingPreview
     }
+
+    var canFillLeonardoForm: Bool { canFillLeonardoFormIgnoringClose && !isClosing }
 
     func showLeonardoFieldHelp(_ fieldID: String) {
         guard mode == .fill, leonardoFieldDefinition(fieldID) != nil else { return }
@@ -75,7 +77,18 @@ extension AppSession {
 
     /// All form entry points share authorization; the source padlock is independent.
     func updateLeonardoFields(expected: String, changes: [String: LeonardoJSONValue]) -> String? {
-        guard canFillLeonardoForm, content == expected,
+        guard canFillLeonardoForm else { return nil }
+        return applyLeonardoFields(expected: expected, changes: changes)
+    }
+
+    func updatePreviewLeonardoFields(expected: String, changes: [String: LeonardoJSONValue]) -> String? {
+        let canApplyCloseSnapshot = isClosing && isClosePreviewSyncPending && canFillLeonardoFormIgnoringClose
+        guard canFillLeonardoForm || canApplyCloseSnapshot else { return nil }
+        return applyLeonardoFields(expected: expected, changes: changes)
+    }
+
+    private func applyLeonardoFields(expected: String, changes: [String: LeonardoJSONValue]) -> String? {
+        guard content == expected,
               let current = leonardoDocument,
               let document = current.applyingFormValues(changes) else { return nil }
         guard let replacement = try? LeonardoFormatParser.serialize(document) else { return nil }

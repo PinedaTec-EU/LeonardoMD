@@ -193,6 +193,7 @@ extension AppSession {
     func migrateMarkdownToLeonardo(
         allowSaveReentry: Bool = false,
         allowClosing: Bool = false,
+        pendingPreviewEdits: PendingPreviewEditsPolicy = .flush,
         tableResize: LeonardoTableResize? = nil
     ) async -> Bool {
         guard documentKind == .markdown, let sourceURL = documentURL,
@@ -220,7 +221,7 @@ extension AppSession {
         NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         // Resize messages already follow the inline edit messages. Re-entering
         // the renderer flush here would wait on this migration's own task.
-        if tableResize == nil, !(await flushPreviewEdits()) { return false }
+        if tableResize == nil, pendingPreviewEdits.requiresFlush, !(await flushPreviewEdits()) { return false }
         guard
               documentKind == .markdown,
               documentURL == sourceURL,

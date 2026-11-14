@@ -370,6 +370,8 @@ Clickable tag pills remain visible even when the frontmatter table is hidden. In
 
 Unlock the padlock before changing structure. Use Preview for supported rendered-text edits, Edit for exact Markdown/JSON and Split to compare both. Raw HTML, formulas and diagrams must be changed in source. Scrolling between source and preview is approximately synchronized. Preview rendering is not a promise that another Markdown reader supports Leonardo layout.
 
+If Leonardo cannot transfer an edit from Preview to the document, keep the document open and retry. When closing a tab, window or the app, you can instead choose **Discard Preview Changes**; only edits that were not applied from Preview are lost. Any other unsaved document changes still get the usual Save, Discard or Cancel prompt.
+
 Use ordinary Markdown for headings, lists, tasks, fenced code, links and tables. Relative images must remain reachable from the document; an MDLZ includes local resources for transport. External links may ask for confirmation according to General preferences. Remote images need network access; local resources are preferable for a portable offline document.
 
 For a table, unlock and drag a column edge in the preview to adjust widths. Leonardo stores the optional width information in its source/metadata. Other viewers may ignore it. Preserve the table's Markdown and review the result after export; do not align columns by inserting spaces into cell values.

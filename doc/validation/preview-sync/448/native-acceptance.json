@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/447",
+  "pull_request": "https://github.com/PinedaTec-EU/LeonardoMD/pull/448",
+  "date": "2026-11-13",
+  "source_revision": "0a463909c9f8abdf16e1a74b792f0ee4d7266a41",
+  "corrected_source_commit": "0a463909c9f8abdf16e1a74b792f0ee4d7266a41",
+  "base_revision": "8711e44aae3babc5beb914bb6b3e69dfe2715e96",
+  "capture_source_mapping": "The native alert capture test and original packaged application were built from source_revision 0a463909c9f8abdf16e1a74b792f0ee4d7266a41. The later Guide v78 candidate changes the guide revision, resource names and personal-copy directory; it does not change the alert builders, so the captures remain evidence for those alert states only and do not establish Guide v78 acceptance.",
+  "candidate_guide_v78": {
+    "status": "native_inspection_pending_mac_unlock",
+    "revision": 78,
+    "personal_copy_directory": "User Guides/v78/<locale>/",
+    "packages": {
+      "en": {
+        "filename": "Guide-v78-en.mdlz",
+        "sha256": "02966714f9f77c6a615ba5a1236cb5687089fe02507ed9c9386384a92ebe8c53"
+      },
+      "es": {
+        "filename": "Guide-v78-es.mdlz",
+        "sha256": "2291b2dda56b4c2c88eb08d718529dceea6b7b1cda7ef1b717614582f30f43cc"
+      }
+    },
+    "qa_application": {
+      "fresh_process": true,
+      "pid": 35633,
+      "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.3197e052ff7746c3bc242afec0c516d2",
+      "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r6umng3/LeonardoMDQA.app",
+      "isolated_home": "/private/tmp/leonardo-448-v78-qa-home",
+      "version": "0.3.1602",
+      "build": 1602,
+      "executable": "LeonardoMD",
+      "first_window_ready": true,
+      "startup_events": ["first_window_shown", "application_ready"],
+      "bundle_verification": "scripts/qa-bundle.py --verify-only passed; otool -L showed no XCTest.framework",
+      "launch_command": "CFFIXED_USER_HOME=/private/tmp/leonardo-448-v78-qa-home <verified QA bundle>/Contents/MacOS/LeonardoMD --new-instance -allowMultipleInstances YES"
+    },
+    "preexisting_personal_copies_and_forms": {
+      "seeded_from": "The real #369 Guide v76 QA home; only guide copies and practice forms were copied into the isolated v78 QA home.",
+      "sha256_before_help_open": {
+        "v76_en": "5e8ae8a5ad6ffb3682e2a0c7f1789531b47efeed2b53b171878a845d3067fc4e",
+        "v76_es": "e65f4f77f641cf6fcff2cac9576fba70234a943eb05647f784d71e6748e5af2a",
+        "practice_en": "5b914af748cff65eb9b6bae0b175f64c0008e1874bb1b53fdf6c5a361e0b6b9c",
+        "practice_es": "6b543d197f5195cb1f3906351a2d3b992b0c48e4f7548cf8b164bd92cb7ed487"
+      },
+      "sha256_after_help_open": null
+    },
+    "visual_acceptance": {
+      "help_opened_en": false,
+      "help_opened_es": false,
+      "english_practice_round_trip": false,
+      "spanish_practice_round_trip": false,
+      "reason_pending": "The macOS session was locked when native UI inspection began. The existing v76 copies and practice forms were not edited."
+    },
+    "automated_validation": {
+      "full_swift_suite": {
+        "executed_xctest": 530,
+        "skipped_xctest": 36,
+        "executed_swift_testing": 44,
+        "executed_package_tests": 28,
+        "failures": 0,
+        "recorded_build_delta": 24
+      },
+      "guide_package_tests": {
+        "executed": 3,
+        "failures": 0
+      }
+    }
+  },
+  "application": {
+    "platform": "Packaged native macOS QA app",
+    "launch_command": "CFFIXED_USER_HOME=/private/tmp/leonardo-448-final-home.Z0nRMl LEONARDO_SOURCE_PR=448 /var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-ayyin875/LeonardoMDQA.app/Contents/MacOS/LeonardoMD --new-instance -allowMultipleInstances YES",
+    "fresh_process": true,
+    "pid": 77330,
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.6617357555e04ec9bcee181c0cc99adf",
+    "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-ayyin875/LeonardoMDQA.app",
+    "isolated_home": "/private/tmp/leonardo-448-final-home.Z0nRMl",
+    "version": "0.3.1602",
+    "build": 1602,
+    "executable": "LeonardoMD",
+    "first_window_ready": true,
+    "startup_events": [
+      "first_window_shown",
+      "application_ready"
+    ],
+    "dependency_check": "otool -L showed AppKit, SwiftUI and WebKit; XCTest.framework absent",
+    "bundle_verification": "scripts/qa-bundle.py --verify-only passed",
+    "build_command": "./launch.sh --qa",
+    "quit_normally_after_validation": true
+  },
+  "help": {
+    "same_application_instance": true,
+    "entry_point": "Native macOS Help menu in PID 77330",
+    "guides": [
+      {
+        "locale": "en",
+        "menu_item": "Help > Leonardo user guide…",
+        "package": "Guide-v76-en.mdlz",
+        "bundle_resource_sha256": "85d3b5fbbb0669584e9264eed202e1bb233a7702f9b93b3d70e1dd87182a185e",
+        "opened_personal_copy_sha256": "85d3b5fbbb0669584e9264eed202e1bb233a7702f9b93b3d70e1dd87182a185e"
+      },
+      {
+        "locale": "es",
+        "menu_item": "Ayuda > Guía de Leonardo…",
+        "package": "Guide-v76-es.mdlz",
+        "bundle_resource_sha256": "2b1423efd816a0e8f9c6ef35d3ac31ef2f864486d78a137d8627658b6d015864",
+        "opened_personal_copy_sha256": "2b1423efd816a0e8f9c6ef35d3ac31ef2f864486d78a137d8627658b6d015864"
+      }
+    ],
+    "inspected_examples": [
+      "local cover image",
+      "tables",
+      "Mermaid diagram",
+      "inline math",
+      "one-line $$ display formula",
+      "multiline $$ display formula",
+      "Markdown-sensitive underscores and underbraces",
+      "tagged box-counting equation (1)",
+      "Vega-Lite chart",
+      "chapter 10 close-recovery guidance in both locales"
+    ],
+    "examples_rendered_in_both_locales": true,
+    "math_enabled": {
+      "locales": [
+        "en",
+        "es"
+      ],
+      "display_equations_rendered": true,
+      "tagged_equation_1_rendered": true,
+      "katex_errors": false,
+      "literal_delimiters": false
+    },
+    "math_disabled_fallback": {
+      "locale_checked": "en",
+      "math_source_remained_literal": true,
+      "code_examples_remained_literal": true,
+      "reenabled_after_check": true
+    },
+    "chapter_10_recovery_copy_visually_checked_in_both_locales": true,
+    "practice_round_trip": [
+      {
+        "locale": "es",
+        "synthetic_name": "Prueba v76 final",
+        "synthetic_goal": "Comprobar la persistencia al cerrar y volver a abrir la guía.",
+        "ready_to_share": false,
+        "saved_closed_reopened_values_persisted": true,
+        "same_application_process_pid": 77330
+      }
+    ],
+    "application_language_restored_to": "English",
+    "math_extension_enabled_after_validation": true,
+    "retained_full_guide_screenshots": false,
+    "note": "Both guides and representative examples were inspected in the same packaged process through native Help. The Spanish practice form was filled, saved, closed and reopened from the guide in that process. The help screenshots were not retained as image files; the four retained PNGs are native alert component captures."
+  },
+  "automated_validation": {
+    "full_swift_command": "scripts/compile-and-record.py --pr-number 448 -- swift test --disable-automatic-resolution",
+    "full_swift_suite": {
+      "source_revision": "0a463909c9f8abdf16e1a74b792f0ee4d7266a41",
+      "xctest": {
+        "executed": 530,
+        "skipped": 36,
+        "failures": 0
+      },
+      "swift_testing": {
+        "executed": 44,
+        "failures": 0
+      },
+      "package_tests": {
+        "executed": 28,
+        "failures": 0
+      },
+      "recorded_build_delta": 22
+    },
+    "focused_regressions": {
+      "suites": [
+        "SessionEditingTests",
+        "InlineFormTests"
+      ],
+      "executed": 18,
+      "optional_capture_skips": 2,
+      "failures": 0,
+      "recorded_build_delta": 20
+    },
+    "capture_test": {
+      "command": "LEONARDO_PREVIEW_ALERT_EVIDENCE=doc/validation/preview-sync/448 python3 scripts/compile-and-record.py --pr-number 448 -- swift test --disable-automatic-resolution --filter SessionEditingTests/testCapturePreviewSynchronizationWarningsInBothLanguages",
+      "executed": 1,
+      "failures": 0,
+      "recorded_build_delta": 21,
+      "source_revision": "0a463909c9f8abdf16e1a74b792f0ee4d7266a41"
+    },
+    "guide_package_command": "python3 -m unittest discover -s scripts/tests -p test_package_user_guide.py -v",
+    "guide_package_tests": {
+      "executed": 3,
+      "failures": 0
+    },
+    "compile_warning": "Non-failing warnings in existing unrelated sources, including a Network.framework .wifiAware exhaustiveness warning in Sources/LeonardoSyncTransport/HTTPSResponseDiagnostics.swift; no warning source is changed by this PR."
+  },
+  "alert_captures": [
+    {
+      "file": "preview-alert-en-retry.png",
+      "metadata": "preview-alert-en-retry.png.metadata.json"
+    },
+    {
+      "file": "preview-alert-en-close.png",
+      "metadata": "preview-alert-en-close.png.metadata.json"
+    },
+    {
+      "file": "preview-alert-es-retry.png",
+      "metadata": "preview-alert-es-retry.png.metadata.json"
+    },
+    {
+      "file": "preview-alert-es-close.png",
+      "metadata": "preview-alert-es-close.png.metadata.json"
+    }
+  ],
+  "capture_scope": "Production AppSession native NSAlert builders rendered by the opt-in SessionEditingTests.testCapturePreviewSynchronizationWarningsInBothLanguages XCTest; synthetic content; alert component only, not a full application-window capture."
+}
