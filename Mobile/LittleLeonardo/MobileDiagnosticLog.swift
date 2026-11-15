@@ -48,6 +48,16 @@ struct MobileErrorNotice {
             : "Couldn't load the document. Check your connection and try again."
     }
 
+    static func sharedFileDownloadFailure(spanish: Bool) -> String {
+        spanish ? "Error de descarga · se reintentará" : "Download failed · will retry"
+    }
+
+    static func sharedFileDownloadFailureAccessibility(spanish: Bool) -> String {
+        spanish
+            ? "Error de descarga; se reintentará al volver a abrir el fichero"
+            : "Download failed; it will retry when you open the file again"
+    }
+
     private static func defaultMessage(spanish: Bool) -> String {
         spanish ? "Inténtalo de nuevo. Si vuelve a ocurrir, indica este código."
             : "Try again. If it happens again, share this code."
@@ -361,21 +371,25 @@ struct MobileErrorLogView: View {
                                 .textSelection(.enabled)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .accessibilityIdentifier("error-log-entry-\(index)")
+                                .id(index)
                         }
-                        Color.clear.frame(height: 1).id("latest-error-log-entry")
                     }
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .onAppear {
-                reload()
-                proxy.scrollTo("latest-error-log-entry", anchor: .bottom)
+            .onAppear { reload() }
+            .onChange(of: entries) { _, updatedEntries in
+                guard let latestIndex = updatedEntries.indices.last else { return }
+                Task { @MainActor in
+                    await Task.yield()
+                    guard entries.indices.last == latestIndex else { return }
+                    proxy.scrollTo(latestIndex, anchor: .bottom)
+                }
             }
             .toolbar {
                 Button(MobileErrorLogCopy.refresh(spanish: spanish), systemImage: "arrow.clockwise") {
                     reload()
-                    proxy.scrollTo("latest-error-log-entry", anchor: .bottom)
                 }
                 .accessibilityIdentifier("refresh-error-log")
             }

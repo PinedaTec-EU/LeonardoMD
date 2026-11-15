@@ -53,7 +53,7 @@ Inline notation also works: $N(\varepsilon)$ counts the boxes.
 
 ### Display formulas · regression examples
 
-**Requires Math.** Check that these examples display as equations, including the number (1), rather than literal `$$` or backslash commands. With Math disabled, the source notation remains visible. Code examples intentionally stay literal.
+**Requires Math.** Check that these examples display as equations, including the number (1), without raw display-math markers or backslash commands. With Math disabled, the source notation remains visible. Code examples intentionally stay literal.
 
 $$ \underbrace{a}_{x} + \underbrace{b}_{y} $$
 

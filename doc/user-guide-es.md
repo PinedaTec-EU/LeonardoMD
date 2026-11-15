@@ -49,7 +49,7 @@ La notación en línea también funciona: $N(\varepsilon)$ cuenta las cajas.
 
 ### Fórmulas de bloque · ejemplos de regresión
 
-**Requiere Matemáticas.** Comprueba que estos ejemplos aparecen como ecuaciones, incluido el número (1), sin `$$` ni comandos con barra invertida visibles. Con Matemáticas desactivadas se conserva la notación fuente. Los ejemplos de código permanecen literales a propósito.
+**Requiere Matemáticas.** Comprueba que estos ejemplos aparecen como ecuaciones, incluido el número (1), sin marcadores de ecuación de bloque ni comandos con barra invertida visibles. Con Matemáticas desactivadas se conserva la notación fuente. Los ejemplos de código permanecen literales a propósito.
 
 $$ \underbrace{a}_{x} + \underbrace{b}_{y} $$
 

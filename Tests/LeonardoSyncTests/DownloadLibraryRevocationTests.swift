@@ -251,6 +251,64 @@ import XCTest
         }
     }
 
+    func testOpenResultUsesCallerPresentationForContextualDownloadError() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        var globalPresentationCount = 0
+        var contextualPresentationCount = 0
+        library.errorPresentation = { _ in
+            globalPresentationCount += 1
+            return "LL-GLOBAL"
+        }
+        library.fetch = { _, _ in throw SyncError.publicationPending }
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: fixture.catalogue)
+        let key = DownloadLibrary.key(id: fixture.project.id, path: fixture.file.path)
+
+        let message = await presentationFailure {
+            try await library.openResult(id: fixture.project.id, path: fixture.file.path) { _ in
+                contextualPresentationCount += 1
+                return "LL-DOCUMENT"
+            }
+        }
+
+        XCTAssertEqual(message, "LL-DOCUMENT")
+        XCTAssertEqual(library.failures[key], "LL-DOCUMENT")
+        XCTAssertEqual(contextualPresentationCount, 1)
+        XCTAssertEqual(globalPresentationCount, 0,
+                       "A contextual failure must produce one code and one log entry")
+    }
+
+    func testRetainedDownloadFailureKeepsTypedCauseForViewPresentation() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: fixture.catalogue)
+        library.fetch = { _, _ in fixture.file }
+        await library.retain(id: fixture.project.id, path: fixture.file.path,
+                             isFolder: false, keep: true)
+
+        let changed = CorpusFile(path: fixture.file.path, content: Data("new version".utf8))
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: RemoteProjectCatalogue(files: [RemoteFileEntry(file: changed)]))
+        library.fetch = { _, _ in throw SyncError.publicationPending }
+
+        let result = try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+        let failure = try XCTUnwrap(result.updateFailureCause)
+        var receivedCause: SyncError?
+        let displayed = failure.displayMessage { error in
+            receivedCause = error as? SyncError
+            return "LL-DOCUMENT-RETAINED"
+        }
+
+        XCTAssertEqual(result.file, fixture.file)
+        XCTAssertEqual(displayed, "LL-DOCUMENT-RETAINED")
+        XCTAssertEqual(receivedCause, .publicationPending,
+                       "The contextual presenter must receive the original typed transfer error")
+    }
+
     func testCacheReadFailureOnRetryGetsANewDiagnosticReference() async throws {
         let fixture = try Fixture()
         defer { fixture.removeFiles() }
@@ -315,6 +373,67 @@ import XCTest
         XCTAssertEqual(firstReference, "LL-SHARED-1")
         XCTAssertEqual(secondReference, firstReference)
         XCTAssertEqual(referenceCount, 1, "One in-flight transfer must create one shared diagnostic reference")
+    }
+
+    func testCancelledCallerKeepsCancellationWhenSharedDownloadFails() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        var referenceCount = 0
+        library.errorPresentation = { _ in
+            referenceCount += 1
+            return "LL-CANCELLED-SHARED-\(referenceCount)"
+        }
+        let firstRead = CacheReadGate()
+        let secondRead = CacheReadGate()
+        let fetchGate = CacheReadGate()
+        await fixture.cache.holdNextFreshRead(at: firstRead)
+        await fixture.cache.holdNextFreshRead(at: secondRead)
+        library.fetch = { _, _ in
+            await fetchGate.hold()
+            throw SyncError.publicationPending
+        }
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: fixture.catalogue)
+
+        let first = Task {
+            try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+        }
+        await firstRead.waitUntilEntered()
+        var secondCompleted = false
+        let second = Task {
+            defer { secondCompleted = true }
+            _ = try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+        }
+        await secondRead.waitUntilEntered()
+
+        await firstRead.release()
+        await fetchGate.waitUntilEntered()
+        await secondRead.release()
+        for _ in 0..<10 { await Task.yield() }
+        second.cancel()
+        for _ in 0..<10 { await Task.yield() }
+        XCTAssertFalse(secondCompleted,
+                       "A cancelled waiter already awaiting a shared transfer must remain suspended until it completes")
+
+        await fetchGate.release()
+        do {
+            _ = try await first.value
+            XCTFail("The active caller must receive the shared transfer failure")
+        } catch let failure as RemoteDownloadFailure {
+            XCTAssertEqual(failure.message, "LL-CANCELLED-SHARED-1")
+        } catch {
+            XCTFail("The active caller received an unexpected error: \(error)")
+        }
+        do {
+            _ = try await second.value
+            XCTFail("The cancelled caller must not receive the shared transfer failure")
+        } catch is CancellationError {
+            XCTAssertTrue(secondCompleted)
+        } catch {
+            XCTFail("The cancelled caller received an unexpected error: \(error)")
+        }
+        XCTAssertEqual(referenceCount, 1, "One shared transfer must keep one diagnostic reference")
     }
 
     func testOverlappingInitialCacheReadsKeepDiagnosticsAttemptScoped() async throws {

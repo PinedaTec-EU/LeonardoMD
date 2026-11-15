@@ -1,5 +1,14 @@
 import XCTest
 
+@MainActor
+func dismissSyncSettings(in app: XCUIApplication) {
+    let close = app.buttons.matching(
+        NSPredicate(format: "label IN %@", ["Cerrar", "Close", "Cerrar / Close"])
+    ).firstMatch
+    XCTAssertTrue(close.waitForExistence(timeout: 5), "The synchronization settings close button should be visible")
+    close.tap()
+}
+
 final class MobileDemoUITests: XCTestCase {
     @MainActor func testOfflineDemoRendersAndRetainsPracticeAcrossRelaunch() throws {
         let app = XCUIApplication()
@@ -70,7 +79,7 @@ final class MobileDemoUITests: XCTestCase {
         if !app.buttons["open-demo-project"].exists {
             settings.tap()
             app.buttons["restore-demo-project"].tap()
-            app.buttons["Cerrar"].tap()
+            dismissSyncSettings(in: app)
         }
         let project = app.buttons["open-demo-project"]
         XCTAssertTrue(project.exists)
@@ -86,7 +95,7 @@ final class MobileDemoUITests: XCTestCase {
         XCTAssertFalse(app.buttons["open-demo-project"].exists)
         app.buttons["open-sync-settings"].tap()
         app.buttons["restore-demo-project"].tap()
-        app.buttons["Cerrar"].tap()
+        dismissSyncSettings(in: app)
         XCTAssertTrue(app.buttons["open-demo-project"].exists)
         capture(app, "Restored ordinary Demo project")
         app.buttons["open-demo-project"].tap()

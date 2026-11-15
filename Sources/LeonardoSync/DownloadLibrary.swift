@@ -5,10 +5,18 @@ import Observation
 public struct RemoteDownloadResult: Sendable {
     public let file: CorpusFile
     public let updateFailure: String?
+    public let updateFailureCause: RemoteDownloadFailure?
 
     public init(file: CorpusFile, updateFailure: String? = nil) {
         self.file = file
         self.updateFailure = updateFailure
+        self.updateFailureCause = nil
+    }
+
+    init(file: CorpusFile, updateFailure failure: RemoteDownloadFailure) {
+        self.file = file
+        self.updateFailure = failure.message
+        self.updateFailureCause = failure
     }
 }
 
@@ -16,8 +24,21 @@ public struct RemoteDownloadResult: Sendable {
 public struct RemoteDownloadFailure: LocalizedError, Sendable {
     public let message: String
     let underlying: any Error
+    private let hasPresentation: Bool
+
+    init(message: String, underlying: any Error, hasPresentation: Bool) {
+        self.message = message
+        self.underlying = underlying
+        self.hasPresentation = hasPresentation
+    }
 
     public var errorDescription: String? { message }
+
+    @MainActor
+    public func displayMessage(using presentation: (@MainActor (Error) -> String)?) -> String {
+        guard !hasPresentation, let presentation else { return message }
+        return presentation(underlying)
+    }
 }
 
 /// Shared UI state for authorized, read-only remote projects. Hosts must remove access before purge.
@@ -96,7 +117,8 @@ public final class DownloadLibrary {
         }
     }
 
-    public func openResult(id: UUID, path: String) async throws -> RemoteDownloadResult {
+    public func openResult(id: UUID, path: String,
+                           presentation: (@MainActor (Error) -> String)? = nil) async throws -> RemoteDownloadResult {
         guard allowed.contains(id), let project = projects.first(where: { $0.id == id }),
               let entry = project.catalogue.files.first(where: { $0.path == path }) else { throw SyncError.revoked }
         let generation = generations[id, default: 0]
@@ -116,7 +138,7 @@ public final class DownloadLibrary {
                 cached = try await cache.read(id: id, entry: entry, allowStale: false)
             } catch {
                 try requireEntry(id: id, entry: entry, generation: generation)
-                throw failureToThrow(error, key: key)
+                throw failureToThrow(error, key: key, presentation: presentation)
             }
         }
         if let file = cached {
@@ -156,14 +178,14 @@ public final class DownloadLibrary {
                     let previous = try await cache.read(id: id, entry: entry, allowStale: true)
                     try requireEntry(id: id, entry: entry, generation: generation)
                     if let previous, !deniedPaths[id, default: []].contains(entry.path) {
-                        let failure = recordFailure(error, key: key)
-                        return RemoteDownloadResult(file: previous, updateFailure: failure.message)
+                        let failure = recordFailure(error, key: key, presentation: presentation)
+                        return RemoteDownloadResult(file: previous, updateFailure: failure)
                     }
                 } catch {
                     try requireEntry(id: id, entry: entry, generation: generation)
-                    throw failureToThrow(error, key: key)
+                    throw failureToThrow(error, key: key, presentation: presentation)
                 }
-                throw failureToThrow(error, key: key)
+                throw failureToThrow(error, key: key, presentation: presentation)
             }
         }
         tasks[key] = ActiveDownload(identity: identity, generation: generation, entry: entry, task: task)
@@ -189,20 +211,25 @@ public final class DownloadLibrary {
             }
             throw failure
         } catch {
+            // Each caller owns its own cancellation and authorization context,
+            // even when the shared transfer fails for every waiter.
             try requireEntry(id: id, entry: entry, generation: generation)
             throw error
         }
     }
 
-    private func recordFailure(_ error: any Error, key: String) -> RemoteDownloadFailure {
-        let message = errorMessage(for: error)
+    private func recordFailure(_ error: any Error, key: String,
+                               presentation: (@MainActor (Error) -> String)? = nil) -> RemoteDownloadFailure {
+        let message = presentation?(error) ?? errorMessage(for: error)
         failures[key] = message
-        return RemoteDownloadFailure(message: message, underlying: error)
+        return RemoteDownloadFailure(message: message, underlying: error,
+                                     hasPresentation: presentation != nil || errorPresentation != nil)
     }
 
-    private func failureToThrow(_ error: any Error, key: String) -> any Error {
-        let failure = recordFailure(error, key: key)
-        return errorPresentation == nil ? error : failure
+    private func failureToThrow(_ error: any Error, key: String,
+                                presentation: (@MainActor (Error) -> String)? = nil) -> any Error {
+        let failure = recordFailure(error, key: key, presentation: presentation)
+        return presentation == nil && errorPresentation == nil ? error : failure
     }
 
     /// No suspension may separate this check from delivery to the caller.

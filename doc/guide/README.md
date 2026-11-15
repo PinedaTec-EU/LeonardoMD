@@ -1,8 +1,8 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v86-en.mdlz` and `Guide-v86-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v88-en.mdlz` and `Guide-v88-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v86/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v88/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
@@ -12,7 +12,7 @@ and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
-Guide v86 combines current document search, remote-project review and offline-catalogue guidance with grouped Dock/app-switcher instances, synchronization status and helper recovery. It explains project download failures and transfer limits, distinguishes removed project grants from revoked devices with the correct recovery steps, clarifies that explicit access denials cannot open older cached content, and documents reference-coded sync and invalid or expired scanned-invitation errors. Little Leonardo can save a local display name for each Mac while keeping its address in connection details; the local-project section appears only when it has content. Temporary connection failures may still offer a retained offline copy. Its English route labels match the app. Existing guide copies through v85 and their separate practice answers remain preserved.
+Guide v88 combines current document search, remote-project review and offline-catalogue guidance with grouped Dock/app-switcher instances, synchronization status and helper recovery. It explains project download failures and transfer limits, distinguishes removed project grants from revoked devices with the correct recovery steps, clarifies that explicit access denials cannot open older cached content, and documents reference-coded sync and invalid or expired scanned-invitation errors. Temporary connection failures may still offer a retained offline copy. Little Leonardo also supports local Mac display names, keeps the address in connection details and hides the local-project section when empty. Its English route labels match the app. Existing guide copies through v87 and their separate practice answers remain preserved.
 
 File → Import with your agent opens `AgentImport-v3-en.mdlz` or
 `AgentImport-v3-es.mdlz` in the same tab/package flow, with personal copies under
@@ -70,10 +70,8 @@ Tracking: [#312](https://github.com/PinedaTec-EU/LeonardoMD/issues/312).
 
 Illustrations use real alpha transparency and the Classic red/oxide/ochre palette. Keep explanatory captions in the localized Markdown rather than baking them into artwork; the four artwork files are shared across locales. Verify transparency and readability on the document background when refreshing them. Tracking: [#375](https://github.com/PinedaTec-EU/LeonardoMD/issues/375).
 
-Guide v86 keeps Little Leonardo's concise error reference linked to a local
-diagnostic entry; the log keeps at most 120 entries or 64 KiB in the
-backup-excluded app cache, which iOS may purge. It combines project-download
-failures, access revocation and offline recovery with invalid or expired
-scanned-invitation guidance. These QR failures show a short alert and matching
-local-log entry; the English route labels match the app. Earlier personal
-guide copies and practice answers remain untouched.
+Guide v88 preserves the combined project-download, authorization, offline-recovery
+and sync guidance from v85 while carrying forward the latest localized QR/error
+messages, reference codes and local-log route. It also avoids raw math delimiters
+in explanatory prose. The log remains bounded, local-only and excluded from
+backups. Existing personal guide copies and practice answers remain untouched.
