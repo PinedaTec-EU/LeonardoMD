@@ -1,57 +1,100 @@
 {
-  "purpose": "PR #435 simulator evidence for the short connection alert, matching local log entry, and Little Leonardo's in-app help page.",
-  "productSourceCommit": "3d89f732972199e712e2a33764274addd7c8e0c1",
-  "worktreeBaseCommit": "8429bc45",
-  "uiTestSourceSha256": "f74c5d28d1d5f503924c6edc5d579db5d7bd76bae50bf47fd7c48b964668a6dc",
+  "purpose": "PR #435 native iOS evidence for localized short error alerts, matching local diagnostics, and Little Leonardo mobile Ayuda.",
   "bundleIdentifier": "eu.pinedatec.LittleLeonardo",
+  "productSourceCommit": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
+  "reviewNote": "The product source was captured at dcbad8240aa4e9424260dfe3b664145811a3ba69. This evidence-only commit adds captures and metadata; product sources and build inputs are unchanged.",
   "simulator": {
-    "name": "LittleLeonardo PR435 Host Error QA 20261115",
-    "deviceId": "46E25137-CB7E-49CC-A321-B39D354CB7DF",
+    "name": "LittleLeonardo PR435 Localization QA 20261115",
+    "deviceId": "0C5D5C27-1EBC-4C69-BA40-CAEE89F49750",
     "model": "iPhone 18 Pro Max",
     "iOS": "27.0",
-    "build": "24A434"
+    "osBuild": "24A434",
+    "viewportPoints": {
+      "width": 440,
+      "height": 956
+    },
+    "scale": 3,
+    "screenshotPixels": {
+      "width": 1320,
+      "height": 2868
+    }
   },
   "runs": [
     {
       "test": "PairingUITests.testManualConnectionFailureShowsReferenceAndMatchingLocalLog",
       "result": "passed",
-      "counts": { "passed": 1, "failed": 0, "skipped": 0 },
-      "startedAt": "2026-11-15T09:57:17Z",
-      "finishedAt": "2026-11-15T09:57:47Z",
-      "alertReference": "LL-2519DD0A52CB",
-      "diagnostic": "op=pairing kind=network code=-1004",
+      "passed": 1,
+      "failed": 0,
+      "startedAt": "2026-11-15T10:35:38.699Z",
+      "finishedAt": "2026-11-15T10:36:08.995Z",
+      "resultBundle": "test_sim_2026-11-15T10-35-38-129Z_pid52605_31628816.xcresult",
       "captures": [
-        {
-          "file": "error-alert-es.png",
-          "sha256": "7e0fef9c15c2f6759ae98f4901495568ec51c176269ed95c1e65172c6d12a487",
-          "description": "Short localized error with reference code and no raw transport details."
-        },
-        {
-          "file": "error-log-es.png",
-          "sha256": "766b629ff954f095be112b31e5ec3c3457b6c71daa1a34e5b798667ba21970fc",
-          "description": "Local log includes the same reference and network error code. It also retains one earlier synthetic simulator attempt."
-        }
+        "error-alert-es.png",
+        "error-log-es.png"
+      ]
+    },
+    {
+      "test": "PairingUITests.testEnglishManualConnectionFailureUsesEnglishAlert",
+      "result": "passed",
+      "passed": 1,
+      "failed": 0,
+      "startedAt": "2026-11-15T10:36:26.727Z",
+      "finishedAt": "2026-11-15T10:36:48.825Z",
+      "resultBundle": "test_sim_2026-11-15T10-36-26-107Z_pid52605_fd35280c.xcresult",
+      "captures": [
+        "error-alert-en.png"
       ]
     },
     {
       "test": "PairingUITests.testClassicLibrarySettingsAndInstalledAbout",
       "result": "passed",
-      "counts": { "passed": 1, "failed": 0, "skipped": 0 },
-      "startedAt": "2026-11-15T10:02:13Z",
-      "finishedAt": "2026-11-15T10:02:42Z",
-      "workflow": "Biblioteca > Ajustes de sincronización > Acerca de > Ayuda",
+      "passed": 1,
+      "failed": 0,
+      "startedAt": "2026-11-15T10:36:56.800Z",
+      "finishedAt": "2026-11-15T10:37:25.842Z",
+      "resultBundle": "test_sim_2026-11-15T10-36-56-271Z_pid52605_8745f11f.xcresult",
       "captures": [
-        {
-          "file": "classic-help-es.png",
-          "sha256": "065a676f709a59075d20b00825d48ad8eaad16c362d8cb36adfb153e6ec8996f",
-          "description": "In-app mobile help page with Spanish headings and English translations."
-        }
+        "classic-help-es.png"
       ]
     }
   ],
+  "captures": [
+    {
+      "file": "error-alert-es.png",
+      "sha256": "177da76eac273d742a3548a592a351b99eedb09422dc4b6d13543874d5fc16d2",
+      "capturedAt": "2026-11-15T10:36:01.495Z",
+      "route": "Pairing > manual IP/port > connection failure",
+      "provenance": "XCTest attachment from the named iOS Simulator result bundle; synthetic test data.",
+      "description": "Spanish alert shows a short recovery message, reference code LL-423D09B8E854, and one Aceptar action; no transport diagnostic is shown."
+    },
+    {
+      "file": "error-log-es.png",
+      "sha256": "214c2fa34d6f7106089621aaa7e86a5ba52f8a03ca0e817aa65e5783ba0ffc49",
+      "capturedAt": "2026-11-15T10:36:08.448Z",
+      "route": "Sync settings > Ver log",
+      "provenance": "XCTest attachment from the named iOS Simulator result bundle; synthetic test data.",
+      "description": "The final local entry contains the same LL-423D09B8E854 reference and op=pairing kind=network code=-1004. Earlier entries are synthetic failed attempts from this isolated simulator run."
+    },
+    {
+      "file": "error-alert-en.png",
+      "sha256": "b75cb60a9801a04123186278bd8bd317c572543dc10908d3da492285dd271d60",
+      "capturedAt": "2026-11-15T10:36:48.311Z",
+      "route": "Pairing > manual IP/port > connection failure",
+      "provenance": "XCTest attachment from the named iOS Simulator result bundle; synthetic test data.",
+      "description": "English alert title, generic English recovery message, and one OK action; no transport diagnostic is shown."
+    },
+    {
+      "file": "classic-help-es.png",
+      "sha256": "7fc48f0045be53e1e5fdb4e2f69024e58f1b7e5866a225edf5f2e88248248300",
+      "capturedAt": "2026-11-15T10:37:14.767Z",
+      "route": "Library > Settings > About > Help",
+      "provenance": "XCTest attachment from the named iOS Simulator result bundle; synthetic test data.",
+      "description": "In-app mobile Ayuda shows Spanish and English headings and explanatory text."
+    }
+  ],
   "limitations": [
-    "The simulator could not connect to the separately hosted Mac direct-sync fixture; complete direct enrollment and refresh acceptance remains pending.",
-    "This mobile Ayuda page is not the bundled macOS Spanish/English user guides. Their full real-Help smoke in a fresh packaged macOS instance remains pending.",
-    "This diagnostic UI evidence does not resolve the owner's original large-image synchronization failure in issue #380."
+    "The simulator could not connect to the separate Mac direct-sync fixture (NSURLErrorDomain -1004); direct enrollment and refresh acceptance are not claimed.",
+    "This mobile Ayuda page is not the bundled macOS Spanish/English user guides. Their full Help workflow smoke in a fresh packaged macOS instance remains pending.",
+    "This diagnostic UI evidence does not resolve the owner’s original large-image synchronization failure in issue #380; keep #380 open until physical acceptance is recorded."
   ]
 }
