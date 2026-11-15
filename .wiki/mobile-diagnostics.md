@@ -19,7 +19,7 @@ under the app cache excluded from backups. The app does not upload it.
   without one, `openResult` preserves the original fetch or cache error type.
   Tests cover both public error behavior, retry isolation and shared in-flight
   diagnostics.
-- Bilingual Guide v85 explains scanned QR failures and matches the localized
+- Bilingual Guide v86 explains scanned QR failures and matches the localized
   Library settings and log labels. Its new personal-copy directory leaves
   earlier saved guides and practice answers unchanged.
 
