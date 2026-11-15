@@ -68,7 +68,7 @@ extension MobileLibrary {
         guard plan.updated.hasChanges(from: plan.previous) else { return token }
         do { return try commitConnection(plan.updated, expected: token) }
         catch {
-            self.error = error.localizedDescription
+            presentError(error, operation: .synchronization)
             return nil
         }
     }

@@ -7,7 +7,6 @@ extension MobileLibrary {
         downloads.error = nil
         error = nil
         await downloads.retain(id: id, path: path, isFolder: isFolder, keep: keep)
-        if let failure = downloads.error { error = failure }
     }
 
     func releaseSharedContent(id: UUID, path: String, isFolder: Bool) async {
@@ -15,7 +14,6 @@ extension MobileLibrary {
         downloads.error = nil
         error = nil
         await downloads.release(id: id, path: path, isFolder: isFolder)
-        if let failure = downloads.error { error = failure }
     }
 
     func synchronize() async {
