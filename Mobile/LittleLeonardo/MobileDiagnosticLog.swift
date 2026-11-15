@@ -276,20 +276,57 @@ final class MobileDiagnosticLog {
     }
 }
 
+enum MobileErrorLogCopy {
+    static func synchronizationTitle(spanish: Bool) -> String {
+        spanish ? "Sincronización" : "Synchronization"
+    }
+
+    static func diagnosticsSection(spanish: Bool) -> String {
+        spanish ? "Diagnóstico" : "Diagnostics"
+    }
+
+    static func openLog(spanish: Bool) -> String {
+        spanish ? "Ver log" : "View log"
+    }
+
+    static func title(spanish: Bool) -> String {
+        spanish ? "Registro de errores" : "Error log"
+    }
+
+    static func retentionNote(spanish: Bool) -> String {
+        spanish
+            ? "Se guardan como máximo 120 entradas o 64 KiB en la caché local, excluida de copias de seguridad. iOS puede borrarla para liberar espacio. El código del aviso aparece en la misma línea; el registro no se envía automáticamente."
+            : "Up to 120 entries or 64 KiB are kept in local cache, excluded from backups. iOS may clear the cache to free space. Each notice’s reference appears on its matching line; the log is not sent automatically."
+    }
+
+    static func emptyState(spanish: Bool) -> String {
+        spanish ? "Todavía no hay errores registrados." : "No errors have been recorded yet."
+    }
+
+    static func refresh(spanish: Bool) -> String {
+        spanish ? "Actualizar" : "Refresh"
+    }
+
+    static func close(spanish: Bool) -> String {
+        spanish ? "Cerrar" : "Close"
+    }
+}
+
 struct MobileErrorLogView: View {
+    let spanish: Bool
     @State private var entries: [String] = []
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Se guardan como máximo 120 entradas o 64 KiB en la caché local, excluida de copias de seguridad. iOS puede borrarla para liberar espacio. El código del aviso aparece en la misma línea; el registro no se envía automáticamente.")
+                    Text(MobileErrorLogCopy.retentionNote(spanish: spanish))
                         .font(.footnote)
                         .foregroundStyle(MobileClassic.secondary)
                         .padding(.bottom, 8)
 
                     if entries.isEmpty {
-                        Text("Todavía no hay errores registrados.")
+                        Text(MobileErrorLogCopy.emptyState(spanish: spanish))
                             .foregroundStyle(MobileClassic.secondary)
                     } else {
                         ForEach(Array(entries.enumerated()), id: \.offset) { index, entry in
@@ -310,7 +347,7 @@ struct MobileErrorLogView: View {
                 proxy.scrollTo("latest-error-log-entry", anchor: .bottom)
             }
             .toolbar {
-                Button("Actualizar", systemImage: "arrow.clockwise") {
+                Button(MobileErrorLogCopy.refresh(spanish: spanish), systemImage: "arrow.clockwise") {
                     reload()
                     proxy.scrollTo("latest-error-log-entry", anchor: .bottom)
                 }
@@ -318,7 +355,7 @@ struct MobileErrorLogView: View {
             }
         }
         .classicSurface()
-        .navigationTitle("Registro de errores")
+        .navigationTitle(MobileErrorLogCopy.title(spanish: spanish))
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("error-log-view")
     }

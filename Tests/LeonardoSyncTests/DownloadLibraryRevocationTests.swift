@@ -189,6 +189,55 @@ import XCTest
         XCTAssertEqual(referenceCount, 1, "One in-flight transfer must create one shared diagnostic reference")
     }
 
+    func testOverlappingInitialCacheReadsKeepDiagnosticsAttemptScoped() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        var referenceCount = 0
+        library.errorPresentation = { _ in
+            referenceCount += 1
+            return "LL-OVERLAP-\(referenceCount)"
+        }
+        let firstRead = CacheReadGate()
+        let secondRead = CacheReadGate()
+        let fetchGate = CacheReadGate()
+        await fixture.cache.holdNextFreshRead(at: firstRead)
+        await fixture.cache.holdNextFreshRead(at: secondRead)
+        library.fetch = { _, _ in
+            await fetchGate.hold()
+            throw SyncError.publicationPending
+        }
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: fixture.catalogue)
+
+        let first = Task {
+            await presentationFailure {
+                try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+            }
+        }
+        await firstRead.waitUntilEntered()
+        let second = Task {
+            await presentationFailure {
+                try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+            }
+        }
+        await secondRead.waitUntilEntered()
+
+        await firstRead.release()
+        await fetchGate.waitUntilEntered()
+        await fixture.cache.failNextFreshRead()
+        await secondRead.release()
+        let secondReference = await second.value
+        await fetchGate.release()
+        let firstReference = await first.value
+
+        XCTAssertEqual(secondReference, "LL-OVERLAP-1")
+        XCTAssertEqual(firstReference, "LL-OVERLAP-2")
+        XCTAssertNotEqual(firstReference, secondReference,
+                          "An overlapping cache failure must not replace this transfer's reference")
+        XCTAssertEqual(referenceCount, 2)
+    }
+
     func testNewCatalogueRevisionDownloadsIndependentlyOfHeldOldRevision() async throws {
         let fixture = try Fixture()
         defer { fixture.removeFiles() }
@@ -280,17 +329,23 @@ private actor GatedDownloadCache: RemoteDownloadCache {
     private var usageGate: CacheReadGate?
     private var staleReadGate: CacheReadGate?
     private var storeGate: CacheReadGate?
+    private var freshReadGates: [CacheReadGate] = []
     private var nextFreshReadFailure: CacheReadFailure?
     init(base: OnDemandCache) { self.base = base }
     func holdNextUsage(at gate: CacheReadGate) { usageGate = gate }
     func holdNextStaleRead(at gate: CacheReadGate) { staleReadGate = gate }
     func holdNextStore(at gate: CacheReadGate) { storeGate = gate }
+    func holdNextFreshRead(at gate: CacheReadGate) { freshReadGates.append(gate) }
     func failNextFreshRead() { nextFreshReadFailure = .unavailable }
     func projects() async throws -> [CachedRemoteProject] { try await base.projects() }
     func update(id: UUID, descriptor: SharedProjectDescriptor, catalogue: RemoteProjectCatalogue) async throws {
         try await base.update(id: id, descriptor: descriptor, catalogue: catalogue)
     }
     func read(id: UUID, entry: RemoteFileEntry, allowStale: Bool) async throws -> CorpusFile? {
+        if !allowStale, !freshReadGates.isEmpty {
+            let gate = freshReadGates.removeFirst()
+            await gate.hold()
+        }
         if !allowStale, let failure = nextFreshReadFailure {
             nextFreshReadFailure = nil
             throw failure
