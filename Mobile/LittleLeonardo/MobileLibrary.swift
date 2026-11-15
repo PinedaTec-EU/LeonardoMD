@@ -301,19 +301,34 @@ final class MobileLibrary {
             let client = try DirectEnrollmentClient(endpoint: endpoint, certificateFingerprint: fingerprint)
             try await enroll(client: client, endpoint: endpoint, fingerprint: fingerprint, deviceName: deviceName)
         } catch {
+#if DEBUG
+            print("LLPAIR manual failure type=\(String(reflecting: type(of: error))) domain=\((error as NSError).domain) code=\((error as NSError).code)")
+#endif
             presentError(error, operation: .pairing,
                          message: "No se pudo conectar con LeonardoMD. Comprueba la dirección e inténtalo de nuevo.")
         }
     }
 
     private func enroll(client: DirectEnrollmentClient, endpoint: URL, fingerprint: Data, deviceName: String) async throws {
+#if DEBUG
+        print("LLPAIR stage=credential-generation")
+#endif
         let credential = try PairingRegistry.makeCredential()
         // The enrollment advertisement is emitted only after this app ships a
         // complete request/accept/draw/send handler.
+#if DEBUG
+        print("LLPAIR stage=challenge-request")
+#endif
         let enrollment = try await client.begin(deviceName: deviceName, credential: credential,
                                                 now: now(), kind: .readOnly,
                                                 capabilities: [.rubricExchangeV1])
+#if DEBUG
+        print("LLPAIR stage=challenge-received")
+#endif
         try await credentials.save(credential, deviceID: enrollment.deviceID)
+#if DEBUG
+        print("LLPAIR stage=credential-saved")
+#endif
         let connection = MobileDirectConnection(deviceID: enrollment.deviceID, endpoint: endpoint,
             fingerprint: fingerprint, projectIDs: [], comparisonCode: enrollment.comparisonCode,
             capabilities: [.rubricExchangeV1])

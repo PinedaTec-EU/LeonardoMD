@@ -41,12 +41,33 @@ public struct DirectEnrollmentClient: Sendable {
         let response = try await client.request(method: "POST", path: "/v1/pair/request",
             body: JSONEncoder().encode(PairingStart(deviceName: deviceName, credential: credential,
                                                     invitation: invitation, kind: kind, capabilities: capabilities)))
+#if DEBUG
+        print("LLPAIR response-status=\(response.status) body-bytes=\(response.body.count)")
+#endif
         guard response.status == 202 else { throw TransportError.unexpectedResponse }
+#if DEBUG
+        let challenge: PairingChallenge
+        do {
+            challenge = try JSONDecoder().decode(PairingChallenge.self, from: response.body)
+        } catch {
+            print("LLPAIR failure=challenge-decode type=\(String(reflecting: type(of: error)))")
+            throw error
+        }
+#else
         let challenge = try JSONDecoder().decode(PairingChallenge.self, from: response.body)
+#endif
+        #if DEBUG
+        print("LLPAIR challenge-decoded")
+        #endif
         guard challenge.expiresAt > now else { throw PairingError.expiredInvitation }
         let code = try PairingComparisonCode.make(serverFingerprint: fingerprint,
                                                   credential: credential, requestID: challenge.id, kind: kind)
-        guard code == challenge.comparisonCode else { throw TransportError.invalidIdentity }
+        guard code == challenge.comparisonCode else {
+#if DEBUG
+            print("LLPAIR failure=comparison-code-mismatch")
+#endif
+            throw TransportError.invalidIdentity
+        }
         return DirectEnrollment(deviceID: challenge.id, comparisonCode: code, expiresAt: challenge.expiresAt)
     }
 
