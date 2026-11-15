@@ -113,6 +113,7 @@ public struct RemoteDocumentPreview: View {
     }
 
     private func presentFailure(_ error: Error, path: String) -> String {
+        if let failure = error as? RemoteDownloadFailure { return failure.message }
         if let recorded = library.failures[DownloadLibrary.key(id: projectID, path: path)] { return recorded }
         return failurePresentation?(error) ?? error.localizedDescription
     }

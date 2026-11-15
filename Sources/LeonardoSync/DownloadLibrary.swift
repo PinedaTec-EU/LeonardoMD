@@ -12,6 +12,14 @@ public struct RemoteDownloadResult: Sendable {
     }
 }
 
+/// Carries the exact diagnostic generated for one failed preview attempt.
+public struct RemoteDownloadFailure: LocalizedError, Sendable {
+    public let message: String
+    let underlying: any Error
+
+    public var errorDescription: String? { message }
+}
+
 /// Shared UI state for authorized, read-only remote projects. Hosts must remove access before purge.
 @MainActor @Observable
 public final class DownloadLibrary {
@@ -28,7 +36,7 @@ public final class DownloadLibrary {
         let identity: UUID
         let generation: UInt64
         let entry: RemoteFileEntry
-        let task: Task<CorpusFile, Error>
+        let task: Task<RemoteDownloadResult, Error>
     }
     private var tasks: [String: ActiveDownload] = [:]
     public var fetch: @MainActor (UUID, RemoteFileEntry) async throws -> CorpusFile = { _, _ in throw SyncError.revoked }
@@ -73,20 +81,38 @@ public final class DownloadLibrary {
     }
 
     public func open(id: UUID, path: String) async throws -> CorpusFile {
-        try await openResult(id: id, path: path).file
+        do {
+            return try await openResult(id: id, path: path).file
+        } catch let failure as RemoteDownloadFailure {
+            throw failure.underlying
+        }
     }
 
     public func openResult(id: UUID, path: String) async throws -> RemoteDownloadResult {
         guard allowed.contains(id), let project = projects.first(where: { $0.id == id }),
               let entry = project.catalogue.files.first(where: { $0.path == path }) else { throw SyncError.revoked }
         let generation = generations[id, default: 0]
-        if let file = try await cache.read(id: id, entry: entry, allowStale: false) {
+        let key = Self.key(id: id, path: path)
+        if let active = tasks[key], active.generation == generation, active.entry == entry {
+            return try await result(of: active.task, id: id, entry: entry, generation: generation)
+        }
+
+        // A new attempt owns its diagnostic. An active identical download is
+        // joined above so its callers continue to share the same reference.
+        failures[key] = nil
+        let cached: CorpusFile?
+        do {
+            cached = try await cache.read(id: id, entry: entry, allowStale: false)
+        } catch {
             try requireEntry(id: id, entry: entry, generation: generation)
-            failures[Self.key(id: id, path: path)] = nil
+            let failure = recordFailure(error, key: key, reuseExisting: false)
+            throw failure
+        }
+        if let file = cached {
+            try requireEntry(id: id, entry: entry, generation: generation)
             return RemoteDownloadResult(file: file)
         }
         try requireEntry(id: id, entry: entry, generation: generation)
-        let key = Self.key(id: id, path: path)
         if let active = tasks[key], active.generation == generation, active.entry == entry {
             return try await result(of: active.task, id: id, entry: entry, generation: generation)
         }
@@ -95,15 +121,31 @@ public final class DownloadLibrary {
         let identity = UUID()
         downloading.insert(key); failures[key] = nil
         let task = Task { [self] in
-            let file = try await fetch(id, entry)
-            try requireEntry(id: id, entry: entry, generation: generation)
-            try await cache.store(id: id, entry: entry, file: file)
-            // The host owns revocation purge. An obsolete operation must never
-            // delete a project that may already have a new authorization.
-            try requireEntry(id: id, entry: entry, generation: generation)
-            try await refreshAll()
-            try requireEntry(id: id, entry: entry, generation: generation)
-            return file
+            do {
+                let file = try await fetch(id, entry)
+                try requireEntry(id: id, entry: entry, generation: generation)
+                try await cache.store(id: id, entry: entry, file: file)
+                // The host owns revocation purge. An obsolete operation must never
+                // delete a project that may already have a new authorization.
+                try requireEntry(id: id, entry: entry, generation: generation)
+                try await refreshAll()
+                try requireEntry(id: id, entry: entry, generation: generation)
+                return RemoteDownloadResult(file: file)
+            } catch {
+                try requireEntry(id: id, entry: entry, generation: generation)
+                do {
+                    let previous = try await cache.read(id: id, entry: entry, allowStale: true)
+                    try requireEntry(id: id, entry: entry, generation: generation)
+                    if let previous {
+                        let failure = recordFailure(error, key: key, reuseExisting: true)
+                        return RemoteDownloadResult(file: previous, updateFailure: failure.message)
+                    }
+                } catch {
+                    try requireEntry(id: id, entry: entry, generation: generation)
+                    throw recordFailure(error, key: key, reuseExisting: true)
+                }
+                throw recordFailure(error, key: key, reuseExisting: true)
+            }
         }
         tasks[key] = ActiveDownload(identity: identity, generation: generation, entry: entry, task: task)
         defer {
@@ -114,24 +156,17 @@ public final class DownloadLibrary {
         return try await result(of: task, id: id, entry: entry, generation: generation)
     }
 
-    private func result(of task: Task<CorpusFile, Error>, id: UUID,
+    private func result(of task: Task<RemoteDownloadResult, Error>, id: UUID,
                         entry: RemoteFileEntry, generation: UInt64) async throws -> RemoteDownloadResult {
-        do {
-            let file = try await task.value
-            try requireEntry(id: id, entry: entry, generation: generation)
-            return RemoteDownloadResult(file: file)
-        }
-        catch {
-            try requireEntry(id: id, entry: entry, generation: generation)
-            let key = Self.key(id: id, path: entry.path)
-            let message = failures[key] ?? errorMessage(for: error)
-            failures[key] = message
-            if let previous = try await cache.read(id: id, entry: entry, allowStale: true) {
-                try requireEntry(id: id, entry: entry, generation: generation)
-                return RemoteDownloadResult(file: previous, updateFailure: message)
-            }
-            throw error
-        }
+        let result = try await task.value
+        try requireEntry(id: id, entry: entry, generation: generation)
+        return result
+    }
+
+    private func recordFailure(_ error: any Error, key: String, reuseExisting: Bool) -> RemoteDownloadFailure {
+        let message = (reuseExisting ? failures[key] : nil) ?? errorMessage(for: error)
+        failures[key] = message
+        return RemoteDownloadFailure(message: message, underlying: error)
     }
 
     /// No suspension may separate this check from delivery to the caller.

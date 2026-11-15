@@ -123,6 +123,72 @@ import XCTest
         XCTAssertNotNil(library.failures[otherKey], "Revoking one project must preserve another project's error")
     }
 
+    func testCacheReadFailureOnRetryGetsANewDiagnosticReference() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        var referenceCount = 0
+        library.errorPresentation = { _ in
+            referenceCount += 1
+            return "LL-RETRY-\(referenceCount)"
+        }
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: fixture.catalogue)
+        library.fetch = { _, _ in throw SyncError.publicationPending }
+        let key = DownloadLibrary.key(id: fixture.project.id, path: fixture.file.path)
+
+        let first = await presentationFailure {
+            try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+        }
+        XCTAssertEqual(first, "LL-RETRY-1")
+        XCTAssertEqual(library.failures[key], first)
+
+        await fixture.cache.failNextFreshRead()
+        let retry = await presentationFailure {
+            try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+        }
+        XCTAssertEqual(retry, "LL-RETRY-2")
+        XCTAssertNotEqual(retry, first, "A new cache failure must not reuse the earlier network reference")
+        XCTAssertEqual(library.failures[key], retry)
+    }
+
+    func testCallersSharingOneFailedDownloadShareItsDiagnosticReference() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        var referenceCount = 0
+        library.errorPresentation = { _ in
+            referenceCount += 1
+            return "LL-SHARED-\(referenceCount)"
+        }
+        let gate = CacheReadGate()
+        library.fetch = { _, _ in
+            await gate.hold()
+            throw SyncError.publicationPending
+        }
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: fixture.catalogue)
+
+        let first = Task {
+            await presentationFailure {
+                try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+            }
+        }
+        await gate.waitUntilEntered()
+        let second = Task {
+            await presentationFailure {
+                try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+            }
+        }
+        await gate.release()
+
+        let firstReference = await first.value
+        let secondReference = await second.value
+        XCTAssertEqual(firstReference, "LL-SHARED-1")
+        XCTAssertEqual(secondReference, firstReference)
+        XCTAssertEqual(referenceCount, 1, "One in-flight transfer must create one shared diagnostic reference")
+    }
+
     func testNewCatalogueRevisionDownloadsIndependentlyOfHeldOldRevision() async throws {
         let fixture = try Fixture()
         defer { fixture.removeFiles() }
@@ -173,6 +239,21 @@ import XCTest
         }
         func removeFiles() { try? FileManager.default.removeItem(at: root) }
     }
+
+    private func presentationFailure(
+        _ operation: () async throws -> RemoteDownloadResult
+    ) async -> String? {
+        do {
+            _ = try await operation()
+            XCTFail("Expected a failed download presentation")
+            return nil
+        } catch let failure as RemoteDownloadFailure {
+            return failure.message
+        } catch {
+            XCTFail("Expected a presentation failure, received \(error)")
+            return nil
+        }
+    }
 }
 
 private actor CacheReadGate {
@@ -199,15 +280,21 @@ private actor GatedDownloadCache: RemoteDownloadCache {
     private var usageGate: CacheReadGate?
     private var staleReadGate: CacheReadGate?
     private var storeGate: CacheReadGate?
+    private var nextFreshReadFailure: CacheReadFailure?
     init(base: OnDemandCache) { self.base = base }
     func holdNextUsage(at gate: CacheReadGate) { usageGate = gate }
     func holdNextStaleRead(at gate: CacheReadGate) { staleReadGate = gate }
     func holdNextStore(at gate: CacheReadGate) { storeGate = gate }
+    func failNextFreshRead() { nextFreshReadFailure = .unavailable }
     func projects() async throws -> [CachedRemoteProject] { try await base.projects() }
     func update(id: UUID, descriptor: SharedProjectDescriptor, catalogue: RemoteProjectCatalogue) async throws {
         try await base.update(id: id, descriptor: descriptor, catalogue: catalogue)
     }
     func read(id: UUID, entry: RemoteFileEntry, allowStale: Bool) async throws -> CorpusFile? {
+        if !allowStale, let failure = nextFreshReadFailure {
+            nextFreshReadFailure = nil
+            throw failure
+        }
         let result = try await base.read(id: id, entry: entry, allowStale: allowStale)
         if allowStale, let gate = staleReadGate {
             staleReadGate = nil
@@ -238,4 +325,9 @@ private actor GatedDownloadCache: RemoteDownloadCache {
         }
         return value
     }
+}
+
+private enum CacheReadFailure: LocalizedError {
+    case unavailable
+    var errorDescription: String? { "Synthetic cache read failure" }
 }
