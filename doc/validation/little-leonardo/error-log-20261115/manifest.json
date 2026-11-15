@@ -98,6 +98,16 @@
       "route": "Library > Sync settings > Ver log",
       "provenance": "Device Hub screenshot of LittleLeonardo PR435 Host Error QA 20261115, iOS 27.0 iPhone 18 Pro Max simulator, launched from PR #435 head 0da1200cbead3bf64222a14b866f6b0e503c3f32.",
       "description": "The live local log shows recent bounded records with opaque LL references and normalized operations, categories, error identifiers and numeric codes. Test-only entries are synthetic; no user data is present."
+    },
+    {
+      "file": "error-alert-en-integrated.jpg",
+      "context": "error-alert-en-integrated.context.json",
+      "metadata": "error-alert-en-integrated.metadata.json",
+      "sha256": "ac60ab732119dfd755c236e118819b238d3deb887d8c946d783527649124d4f3",
+      "capturedAt": "2026-11-15T11:49:05.042304Z",
+      "route": "Library > synthetic loopback synchronization failure > alert",
+      "provenance": "XcodeBuildMCP screenshot from the integrated PR #445 app source f1445de6e781056849a85bde0191b126b9fd4706 on the iPhone 18 Pro Max Simulator (iOS 27.0, UDID 2E154439-376B-4771-A52D-5A46A11F96B9).",
+      "description": "The current integrated app shows a generic title, brief recovery text, unique reference LL-D877D72DF95E and one OK action. The underlying loopback connection is synthetic; no transport diagnostics are shown."
     }
   ],
   "limitations": [
