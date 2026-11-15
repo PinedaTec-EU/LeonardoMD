@@ -1,4 +1,4 @@
 {
   "summary": "Little Leonardo shows concise localized sync errors with unique references, keeps a bounded local log in settings, and records invalid pairing QR failures without storing their contents.",
-  "build": 42
+  "build": 50
 }

@@ -160,13 +160,14 @@ struct MobileLibraryView: View {
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(item: $selectedRemoteFile) { route in
                 RemoteDocumentPreview(library: library.downloads, projectID: route.projectID,
-                    entry: route.entry, spanish: true, appearance: .leonardoClassic,
+                    entry: route.entry, spanish: spanishErrors, appearance: .leonardoClassic,
                     compactFirstHeading: true,
                     failurePresentation: { error in
                         MobileErrorNotice.record(
                             error,
                             operation: .downloads,
-                            message: "No se pudo descargar el documento. Comprueba la conexión e inténtalo de nuevo.").inlineMessage
+                            message: MobileErrorNotice.documentDownloadMessage(spanish: spanishErrors),
+                            spanish: spanishErrors).inlineMessage
                     }).classicSurface()
             }
             .refreshable { await library.synchronize(); await library.reload() }
@@ -307,7 +308,9 @@ struct MobileLibraryView: View {
             Button("Conectar", systemImage: "qrcode") { presentedSheet = .direct }
                 .disabled(library.connecting)
                 .accessibilityIdentifier("open-pairing")
-            Button("Ajustes de sincronización", systemImage: "gearshape") { presentedSheet = .settings }
+            Button { presentedSheet = .settings } label: {
+                Label(MobileErrorNotice.syncSettingsLabel(spanish: spanishErrors), systemImage: "gearshape")
+            }
                 .accessibilityIdentifier("open-sync-settings")
             Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
                 Task { await library.synchronize() }
@@ -439,6 +442,9 @@ struct MobileProjectView: View {
     let projectID: UUID
     @State private var exporting = false
     @State private var selectedEntry: RemoteFileEntry?
+    private var spanishErrors: Bool {
+        MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
+    }
     private var project: OfflineProject? { library.projects.first { $0.id == projectID } }
     var body: some View {
         Group {
@@ -449,7 +455,7 @@ struct MobileProjectView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(MobileClassic.inset)
                     SyncCatalogueView(library: library.downloads, projectID: project.id,
-                                      spanish: true, rowBackground: MobileClassic.paper) { entry in
+                                      spanish: spanishErrors, rowBackground: MobileClassic.paper) { entry in
                         selectedEntry = entry
                     }
                 }
@@ -483,14 +489,15 @@ struct MobileProjectView: View {
                 library: library.downloads,
                 projectID: projectID,
                 entry: entry,
-                spanish: true,
+                spanish: spanishErrors,
                 appearance: .leonardoClassic,
                 compactFirstHeading: true,
                 failurePresentation: { error in
                     MobileErrorNotice.record(
                         error,
                         operation: .downloads,
-                        message: "No se pudo cargar el documento. Comprueba la conexión e inténtalo de nuevo.").inlineMessage
+                        message: MobileErrorNotice.documentLoadMessage(spanish: spanishErrors),
+                        spanish: spanishErrors).inlineMessage
                 }).classicSurface()
         }
         .fileExporter(isPresented: $exporting, document: project.map(MobileRecoveryDocument.init),

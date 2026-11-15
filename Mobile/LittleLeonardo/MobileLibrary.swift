@@ -80,11 +80,13 @@ final class MobileLibrary {
             .appendingPathComponent("Rubrics/drafts.json"))
         self.now = now
         rubricAcceptance = MobileRubricAcceptance(store: draftStore, clock: now)
+        let spanish = MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
         downloads.errorPresentation = { [weak self] error in
             let notice = MobileErrorNotice.record(
                 error,
                 operation: .downloads,
-                message: "No se pudo descargar el contenido. Comprueba la conexión e inténtalo de nuevo.")
+                message: MobileErrorNotice.contentDownloadMessage(spanish: spanish),
+                spanish: spanish)
             self?.error = notice
             return notice.inlineMessage
         }

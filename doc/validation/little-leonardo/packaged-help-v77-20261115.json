@@ -1,0 +1,90 @@
+{
+  "purpose": "Candidate-specific packaged bilingual Help acceptance for PR #435",
+  "recorded_at": "2026-11-15",
+  "source_sha": "37032e996ce82780bee73ad3178bca7935b219ff",
+  "application": {
+    "product": "LeonardoMD",
+    "version": "0.3.1602",
+    "build": "1602",
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.e8342f795a5b4de4ba0653a3339e9997",
+    "executable": "LeonardoMD",
+    "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-f2q7hzax/LeonardoMDQA.app",
+    "process_pid": 63021,
+    "process_started_at": "2026-11-15T19:00:03.942Z",
+    "launch_method": "./launch.sh --qa",
+    "fresh_process": true,
+    "first_window_ready": true,
+    "xctest_linkage": false
+  },
+  "help": {
+    "english": {
+      "opened_through": "Help > Leonardo user guide",
+      "revision": "v77",
+      "opened_copy": "Application Support/LeonardoMD/User Guides/v77/en/Guide-v77-en.mdlz",
+      "bundled_sha256": "25b6fc21a1854b1070759dd87d8adf8da009e618afbe3901895c6419c92ba06e",
+      "opened_copy_sha256": "25b6fc21a1854b1070759dd87d8adf8da009e618afbe3901895c6419c92ba06e",
+      "matches_bundle": true
+    },
+    "spanish": {
+      "opened_through": "Help > Guía de Leonardo",
+      "revision": "v77",
+      "opened_copy": "Application Support/LeonardoMD/User Guides/v77/es/Guide-v77-es.mdlz",
+      "bundled_sha256": "fdfc7e274253b7150edd42938172b28279efcc21058126952a4bad70ecf46219",
+      "opened_copy_sha256": "fdfc7e274253b7150edd42938172b28279efcc21058126952a4bad70ecf46219",
+      "matches_bundle": true
+    },
+    "rendering_checks": [
+      "Mermaid diagram rendered.",
+      "Inline math and one-line and multiline display equations rendered with Math enabled.",
+      "Markdown-sensitive TeX including underbraces and the tagged box-counting equation rendered; equation tag (1) was present.",
+      "Charts (Vega-Lite), local images and tables were present in the rendered guide.",
+      "With Math disabled, source delimiters and notation appeared as documented; code examples stayed literal."
+    ],
+    "extension_state_after_cleanup": {
+      "Mermaid": true,
+      "Math": true,
+      "Charts (Vega-Lite)": true,
+      "Citations": false,
+      "Markdown extras": true
+    }
+  },
+  "practice_forms": [
+    {
+      "locale": "Spanish",
+      "source_definition_sha256": "787084bde360988264cbcdf389f1a2e0ac061d46657b5b92618bc827b76bf17d",
+      "qa_copy": "/tmp/ll-pr435-guide-smoke-20261115/practice-es.mdlr",
+      "synthetic_values": [
+        "Lucía QA",
+        "Validación local del formulario de ayuda v77. No compartir datos reales.",
+        "checked"
+      ],
+      "saved_closed_reopened": true,
+      "post_save_sha256": "115597bd12a706cfb32b4f819a415e2a5a07509e6f8f3a4c55d2eea2bed9f8fe"
+    },
+    {
+      "locale": "English",
+      "source_definition_sha256": "12d6474be11039bd9f3767213413723a1c27d8c4d6a3006ae02fd17d8113dbaf",
+      "qa_copy": "/tmp/ll-pr435-guide-smoke-20261115/practice-en.mdlr",
+      "synthetic_values": [
+        "Test User",
+        "Validate the packaged English help form save and reopen flow using fictional local data.",
+        "checked"
+      ],
+      "saved_closed_reopened": true,
+      "post_save_sha256": "e938bf5ff73824bbe86bef2a9b43ca5e83df448f1cc99bdd35dd1c9bec4df692"
+    }
+  ],
+  "restored_preferences": {
+    "interface_language": "English",
+    "Math": true
+  },
+  "visual_evidence": "Inspected the live app window and its accessibility tree; no packaged-Help screenshot was retained. The six attached iOS screenshots are the implementation-owned exact-source UI evidence for the changed Little Leonardo screens.",
+  "device_hub": "No Device Hub session was opened for this packaged-Help run.",
+  "teardown": {
+    "quit_requested_through_app_menu": true,
+    "process_exit_observed_at": "2026-11-15T19:09:35.465Z",
+    "process_absent_after_quit": true,
+    "simulator_id": "Not applicable to the macOS packaged app",
+    "qa_app_process_verified_exited": true
+  }
+}
