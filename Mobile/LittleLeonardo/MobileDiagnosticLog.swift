@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import LeonardoSync
 import LeonardoSyncTransport
 
 enum MobileDiagnosticOperation: String {
@@ -16,6 +17,10 @@ enum MobileDiagnosticOperation: String {
 
 @MainActor
 struct MobileErrorNotice {
+    nonisolated static func isSpanishLanguage(_ languageIdentifier: String?) -> Bool {
+        languageIdentifier?.lowercased().hasPrefix("es") ?? true
+    }
+
     static func alertTitle(spanish: Bool) -> String {
         spanish ? "No se pudo completar la operación" : "The operation couldn’t be completed"
     }
@@ -32,6 +37,11 @@ struct MobileErrorNotice {
 
     var inlineMessage: String { "\(message) \(spanish ? "Código" : "Code"): \(referenceCode)" }
     var alertMessage: String { inlineMessage }
+
+    func localizedAlertMessage(spanish: Bool) -> String {
+        let localizedMessage = self.spanish == spanish ? message : Self.defaultMessage(spanish: spanish)
+        return "\(localizedMessage) \(spanish ? "Código" : "Code"): \(referenceCode)"
+    }
 
     static func record(
         _ error: Error,
@@ -175,6 +185,60 @@ final class MobileDiagnosticLog {
         if let diagnostics = HTTPSFailureDiagnostics.from(error) {
             return "transport=\(diagnostics.compactCode)"
         }
+        if let error = error as? TransportError {
+            let category: String
+            switch error {
+            case .malformedRequest: category = "malformed_request"
+            case .requestTooLarge: category = "request_too_large"
+            case .responseTooLarge: category = "response_too_large"
+            case .connectionClosed: category = "connection_closed"
+            case .invalidEndpoint: category = "invalid_endpoint"
+            case .invalidIdentity: category = "invalid_identity"
+            case .unexpectedResponse: category = "unexpected_response"
+            }
+            return "error=transport.\(category)"
+        }
+        if let error = error as? PairingError {
+            let category: String
+            switch error {
+            case .disabled: category = "disabled"
+            case .invalidCredential: category = "invalid_credential"
+            case .expiredInvitation: category = "expired_invitation"
+            case .pendingApproval: category = "pending_approval"
+            case .unknownDevice: category = "unknown_device"
+            case .invalidProject: category = "invalid_project"
+            case .randomGenerationFailed: category = "random_generation_failed"
+            }
+            return "error=pairing.\(category)"
+        }
+        if let error = error as? SyncError {
+            let category: String
+            switch error {
+            case .invalidPath: category = "invalid_path"
+            case .outsideScope: category = "outside_scope"
+            case .excludedFile: category = "excluded_file"
+            case .readOnly: category = "read_only"
+            case .invalidSnapshot: category = "invalid_snapshot"
+            case .sizeLimitExceeded: category = "size_limit_exceeded"
+            case .revoked: category = "revoked"
+            case .publicationPending: category = "publication_pending"
+            }
+            return "error=sync.\(category)"
+        }
+        if let error = error as? CredentialStorageError {
+            return "error=credential_storage status=\(error.status)"
+        }
+        if let error = error as? DecodingError {
+            let category: String
+            switch error {
+            case .typeMismatch: category = "type_mismatch"
+            case .valueNotFound: category = "value_not_found"
+            case .keyNotFound: category = "key_not_found"
+            case .dataCorrupted: category = "data_corrupted"
+            @unknown default: category = "other"
+            }
+            return "error=decoding.\(category)"
+        }
         let value = error as NSError
         return "kind=\(safeDomain(value.domain)) code=\(value.code)"
     }
@@ -270,7 +334,7 @@ extension MobileLibrary {
         operation: MobileDiagnosticOperation,
         message: String = "Inténtalo de nuevo. Si vuelve a ocurrir, indica este código."
     ) {
-        self.error = MobileErrorNotice.record(error, operation: operation, message: message).alertMessage
+        self.error = MobileErrorNotice.record(error, operation: operation, message: message)
     }
 
     func presentErrors(
@@ -283,7 +347,7 @@ extension MobileLibrary {
             errors,
             operation: operation,
             message: message,
-            fallbackCategory: fallbackCategory).alertMessage
+            fallbackCategory: fallbackCategory)
     }
 
 }

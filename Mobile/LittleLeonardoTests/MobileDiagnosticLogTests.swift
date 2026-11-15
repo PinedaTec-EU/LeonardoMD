@@ -1,5 +1,7 @@
 import Foundation
 import XCTest
+import LeonardoSync
+import LeonardoSyncTransport
 @testable import LittleLeonardo
 
 final class MobileDiagnosticLogTests: XCTestCase {
@@ -33,6 +35,56 @@ final class MobileDiagnosticLogTests: XCTestCase {
     }
 
     @MainActor
+    func testLogUsesSafeStableCategoryForApplicationTransportErrors() {
+        let log = MobileDiagnosticLog(fileURL: FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent("error-log.txt"))
+
+        let notice = MobileErrorNotice.record(
+            TransportError.invalidIdentity,
+            operation: .pairing,
+            diagnosticLog: log)
+
+        XCTAssertTrue(log.recentEntries().contains {
+            $0.contains("ref=\(notice.referenceCode) op=pairing error=transport.invalid_identity")
+        })
+        XCTAssertFalse(log.recentEntries().joined().contains("invalidIdentity"))
+    }
+
+    @MainActor
+    func testLogClassifiesKnownFailuresWithoutPersistingErrorDescriptions() async {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let log = MobileDiagnosticLog(fileURL: root.appendingPathComponent("error-log.txt"))
+        let sensitiveDescription = "https://user:secret@example.invalid/private"
+        let credentialStorageFailure: Error
+        do {
+            try await SecureSecretStore(service: "diagnostic-test").save("", id: UUID())
+            XCTFail("An empty credential must be rejected")
+            return
+        } catch {
+            credentialStorageFailure = error
+        }
+        let failures: [(Error, String)] = [
+            (PairingError.expiredInvitation, "error=pairing.expired_invitation"),
+            (SyncError.revoked, "error=sync.revoked"),
+            (credentialStorageFailure, "error=credential_storage status=-50"),
+            (DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: sensitiveDescription)),
+             "error=decoding.data_corrupted")
+        ]
+
+        for (failure, expectedCategory) in failures {
+            let notice = MobileErrorNotice.record(failure, operation: .pairing, diagnosticLog: log)
+            XCTAssertTrue(log.recentEntries().last?.contains(
+                "ref=\(notice.referenceCode) op=pairing \(expectedCategory)") == true)
+        }
+
+        let entries = log.recentEntries()
+        XCTAssertFalse(entries.joined().contains(sensitiveDescription))
+        XCTAssertFalse(entries.joined().contains("debugDescription"))
+    }
+
+    @MainActor
     func testEnglishNoticeLocalizesTitleMessageAndSingleAcceptanceAction() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -48,6 +100,16 @@ final class MobileDiagnosticLogTests: XCTestCase {
         XCTAssertTrue(notice.alertMessage.contains("Could not save the practice."))
         XCTAssertTrue(notice.alertMessage.contains("Code: \(notice.referenceCode)"))
         XCTAssertFalse(notice.alertMessage.contains("Código:"))
+        XCTAssertEqual(notice.localizedAlertMessage(spanish: false),
+                       "Could not save the practice. Try again. Code: \(notice.referenceCode)")
+
+        let spanishSourceNotice = MobileErrorNotice.record(
+            NSError(domain: NSCocoaErrorDomain, code: 4),
+            operation: .pairing,
+            message: "No se pudo conectar con LeonardoMD.",
+            diagnosticLog: MobileDiagnosticLog(fileURL: root.appendingPathComponent("error-log.txt")))
+        XCTAssertEqual(spanishSourceNotice.localizedAlertMessage(spanish: false),
+                       "Try again. If it happens again, share this code. Code: \(spanishSourceNotice.referenceCode)")
 
         let defaultNotice = MobileErrorNotice.record(
             NSError(domain: NSCocoaErrorDomain, code: 4),
@@ -55,6 +117,15 @@ final class MobileDiagnosticLogTests: XCTestCase {
             diagnosticLog: MobileDiagnosticLog(fileURL: root.appendingPathComponent("error-log.txt")),
             spanish: false)
         XCTAssertEqual(defaultNotice.message, "Try again. If it happens again, share this code.")
+    }
+
+    @MainActor
+    func testMainAlertSelectsSupportedLanguageFromPreferredLanguageIdentifier() {
+        XCTAssertTrue(MobileErrorNotice.isSpanishLanguage("es"))
+        XCTAssertTrue(MobileErrorNotice.isSpanishLanguage("es-ES"))
+        XCTAssertFalse(MobileErrorNotice.isSpanishLanguage("en-US"))
+        XCTAssertFalse(MobileErrorNotice.isSpanishLanguage("fr-FR"))
+        XCTAssertTrue(MobileErrorNotice.isSpanishLanguage(nil))
     }
 
     @MainActor

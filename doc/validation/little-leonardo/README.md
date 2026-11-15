@@ -203,3 +203,29 @@ byte-identical; synthetic answers were archived privately. The real sync helper,
 pairing and grants were untouched. The owner's 338,658-byte physical image
 still fails; its cause remains unconfirmed, and no new TestFlight build is
 claimed by this pre-integration evidence.
+
+#### #435 Short alert, local log and Little Leonardo help
+
+On 2026-11-15, the owned iPhone 18 Pro Max Simulator (iOS 27.0, build
+24A434) passes `PairingUITests/testManualConnectionFailureShowsReferenceAndMatchingLocalLog`
+1/1. The Spanish alert shows the short recovery message and reference
+`LL-2519DD0A52CB`; it omits raw transport diagnostics. **Ver log** shows the
+same reference with `op=pairing kind=network code=-1004`. The local log also
+retains one earlier synthetic simulator attempt from the same test work. The
+simulator could not reach the separately hosted Mac direct-sync fixture, so
+enrollment, refresh, offline retention and revocation remain unaccepted here.
+
+The same simulator passes
+`PairingUITests/testClassicLibrarySettingsAndInstalledAbout` 1/1 and opens the
+mobile Ayuda page through Biblioteca → Ajustes de sincronización → Acerca de →
+Ayuda. Its screenshot shows Spanish headings and English translations. This is
+the in-app mobile help, not the bundled macOS user guides. The bilingual
+Spanish/English packaged-guide smoke through real macOS Help remains pending in
+a fresh QA instance. The run details and SHA-256 hashes for all three original
+captures are in the [evidence manifest](error-log-20261115/manifest.json):
+[alert](error-log-20261115/error-alert-es.png),
+[matching local log](error-log-20261115/error-log-es.png), and
+[mobile Ayuda](error-log-20261115/classic-help-es.png).
+
+This verifies the error presentation and local correlation only. The owner's
+338,658-byte image failure remains open under [#380](https://github.com/PinedaTec-EU/LeonardoMD/issues/380).

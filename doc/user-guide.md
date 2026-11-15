@@ -685,6 +685,9 @@ sincronización → Ver log** (sync settings → View log) to inspect recent loc
 error entries. The same reference code marks the matching entry; a network
 entry may include a bounded diagnostic such as:
 
+Other app failures use fixed categories, for example
+`error=transport.invalid_identity`; arbitrary error descriptions are left out.
+
 `ref=LL-0123456789AB op=synchronization transport=[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
 
 The log stays on this device and is not sent automatically. It excludes the
