@@ -26,6 +26,28 @@ struct MobileErrorNotice {
     }
 
     static func acceptLabel(spanish: Bool) -> String { spanish ? "Aceptar" : "OK" }
+    static func syncSettingsLabel(spanish: Bool) -> String {
+        spanish ? "Ajustes de sincronización" : "Sync settings"
+    }
+
+    static func contentDownloadMessage(spanish: Bool) -> String {
+        spanish
+            ? "No se pudo descargar el contenido. Comprueba la conexión e inténtalo de nuevo."
+            : "Couldn't download the content. Check your connection and try again."
+    }
+
+    static func documentDownloadMessage(spanish: Bool) -> String {
+        spanish
+            ? "No se pudo descargar el documento. Comprueba la conexión e inténtalo de nuevo."
+            : "Couldn't download the document. Check your connection and try again."
+    }
+
+    static func documentLoadMessage(spanish: Bool) -> String {
+        spanish
+            ? "No se pudo cargar el documento. Comprueba la conexión e inténtalo de nuevo."
+            : "Couldn't load the document. Check your connection and try again."
+    }
+
     private static func defaultMessage(spanish: Bool) -> String {
         spanish ? "Inténtalo de nuevo. Si vuelve a ocurrir, indica este código."
             : "Try again. If it happens again, share this code."

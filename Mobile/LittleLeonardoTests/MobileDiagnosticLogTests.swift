@@ -52,6 +52,40 @@ final class MobileDiagnosticLogTests: XCTestCase {
     }
 
     @MainActor
+    func testDownloadFailureMessagesAndReferenceLabelsFollowTheSelectedLocale() {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let error = URLError(.networkConnectionLost)
+        for spanish in [true, false] {
+            let message = MobileErrorNotice.contentDownloadMessage(spanish: spanish)
+            XCTAssertEqual(message, spanish
+                ? "No se pudo descargar el contenido. Comprueba la conexión e inténtalo de nuevo."
+                : "Couldn't download the content. Check your connection and try again.")
+            let notice = MobileErrorNotice.record(
+                error,
+                operation: .downloads,
+                message: message,
+                diagnosticLog: MobileDiagnosticLog(fileURL: root.appendingPathComponent("\(spanish ? "es" : "en").log")),
+                spanish: spanish)
+
+            XCTAssertEqual(notice.message, message)
+            XCTAssertEqual(
+                notice.inlineMessage,
+                "\(message) \(spanish ? "Código" : "Code"): \(notice.referenceCode)")
+            XCTAssertEqual(MobileErrorNotice.syncSettingsLabel(spanish: spanish),
+                           spanish ? "Ajustes de sincronización" : "Sync settings")
+        }
+        XCTAssertEqual(MobileErrorNotice.documentDownloadMessage(spanish: false),
+                       "Couldn't download the document. Check your connection and try again.")
+        XCTAssertEqual(MobileErrorNotice.documentLoadMessage(spanish: false),
+                       "Couldn't load the document. Check your connection and try again.")
+        XCTAssertEqual(MobileErrorNotice.documentDownloadMessage(spanish: true),
+                       "No se pudo descargar el documento. Comprueba la conexión e inténtalo de nuevo.")
+        XCTAssertEqual(MobileErrorNotice.documentLoadMessage(spanish: true),
+                       "No se pudo cargar el documento. Comprueba la conexión e inténtalo de nuevo.")
+    }
+
+    @MainActor
     func testInvalidScannedInvitationUsesLocalizedReferenceAndMatchingSafeLog() throws {
         let instant = Date(timeIntervalSince1970: 1_800_000_000)
         var registry = PairingRegistry()

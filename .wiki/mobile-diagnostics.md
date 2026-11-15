@@ -19,8 +19,9 @@ under the app cache excluded from backups. The app does not upload it.
   without one, `openResult` preserves the original fetch or cache error type.
   Tests cover both public error behavior, retry isolation and shared in-flight
   diagnostics.
-- Bilingual Guide v77 explains scanned QR failures. It uses a new personal-copy
-  directory and leaves saved v76 guides and practice answers unchanged.
+- Bilingual Guide v85 explains scanned QR failures and matches the localized
+  Library settings and log labels. Its new personal-copy directory leaves
+  earlier saved guides and practice answers unchanged.
 
 Source anchors: `Mobile/LittleLeonardo/MobileDiagnosticLog.swift`,
 `Mobile/LittleLeonardo/MobileQRScanner.swift`,

@@ -1,8 +1,8 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v77-en.mdlz` and `Guide-v77-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v85-en.mdlz` and `Guide-v85-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v77/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v85/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
@@ -72,8 +72,9 @@ Illustrations use real alpha transparency and the Classic red/oxide/ochre palett
 
 Guide v74 documents optional grouping of independent processes in Dock and the app switcher, with per-window instance selection and a native application menu. Existing personal copies remain untouched.
 
-Guide v77 clarifies that invalid or expired scanned pairing QR codes have a
-short alert with a reference code and a matching entry in the local log. It
-retains Guide v76's explanation of the diagnostic log limits, cache location,
-backup exclusion and iOS cache-purge behavior. Earlier personal guide copies
-remain untouched.
+Guide v85 clarifies that invalid or expired scanned pairing QR codes have a
+short alert with a reference code and a matching entry in the local log. Its
+English route labels match the app's accessible settings and log labels. It
+retains the diagnostic log limits, cache location, backup exclusion and iOS
+cache-purge guidance. Earlier personal guide copies and practice answers remain
+untouched.
