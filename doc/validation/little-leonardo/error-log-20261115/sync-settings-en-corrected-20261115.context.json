@@ -1,0 +1,27 @@
+{
+  "source_sha": "37032e996ce82780bee73ad3178bca7935b219ff",
+  "test": "PairingUITests/testEnglishErrorLogRouteAndScreenAreLocalized()",
+  "test_result": "passed",
+  "result_bundle": "pr435-correction-ui-20261115.xcresult",
+  "platform": "iOS 27.0 Simulator (build 24A434)",
+  "device": "iPhone 18 Pro Max",
+  "simulator_id": "0C5D5C27-1EBC-4C69-BA40-CAEE89F49750",
+  "screen": "Library > Synchronization > Diagnostics > View log",
+  "locale": "English (en_US)",
+  "viewport_points": {
+    "width": 440,
+    "height": 956
+  },
+  "screenshot_pixels": {
+    "width": 1320,
+    "height": 2868
+  },
+  "capture_mode": "Original XCTest viewport screenshot attachment; unmodified PNG",
+  "captured_at": "2026-11-15T18:54:50.886Z",
+  "browser": "Not applicable: native iOS app; no browser",
+  "css_viewport": "Not applicable: UIKit points are reported above",
+  "state": "English synchronization settings show the localized Diagnostics section and View log action.",
+  "data_provenance": "Synthetic isolated simulator data; no owner document or credential",
+  "image_bytes": 265514,
+  "image_sha256": "83a2520bcd34f215e2a4df914f24f56abe5835fd83e5b60fa7e9bd02838c4cfe"
+}
