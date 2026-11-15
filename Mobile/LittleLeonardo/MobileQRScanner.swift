@@ -3,8 +3,47 @@ import AVFoundation
 import VisionKit
 import LeonardoSyncTransport
 
+enum MobileQRScannerFailureReason {
+    case cameraStart
+    case cameraUnavailable
+    case invalidInvitation
+
+    func message(spanish: Bool) -> String {
+        switch self {
+        case .cameraStart:
+            spanish ? "No se pudo iniciar la cámara. Puedes pegar el enlace del QR."
+                : "The camera could not start. You can paste the QR link."
+        case .cameraUnavailable:
+            spanish ? "La cámara dejó de estar disponible. Puedes cancelar y volver a intentarlo."
+                : "The camera is no longer available. Cancel and try again."
+        case .invalidInvitation:
+            spanish ? "El QR no es válido o ha caducado. Genera uno nuevo en LeonardoMD."
+                : "This QR code is invalid or expired. Generate a new one in LeonardoMD."
+        }
+    }
+}
+
+@MainActor
+enum MobileQRScannerDiagnostics {
+    static func notice(
+        for error: Error,
+        reason: MobileQRScannerFailureReason,
+        diagnosticLog: MobileDiagnosticLog? = nil,
+        spanish: Bool
+    ) -> MobileErrorNotice {
+        MobileErrorNotice.record(
+            error,
+            operation: .scanner,
+            message: reason.message(spanish: spanish),
+            diagnosticLog: diagnosticLog,
+            spanish: spanish)
+    }
+}
+
 struct MobileQRScannerScreen: View {
+    let spanish: Bool
     let receive: (String) -> Void
+    let failure: (MobileErrorNotice) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var ready = false
     @State private var message: String?
@@ -16,7 +55,11 @@ struct MobileQRScannerScreen: View {
                     MobileQRScanner(receive: { payload in
                         receive(payload)
                         dismiss()
-                    }, failure: { message = $0 })
+                    }, failure: { error, reason in
+                        failure(MobileQRScannerDiagnostics.notice(
+                            for: error, reason: reason, spanish: spanish))
+                        dismiss()
+                    })
                 } else if let message {
                     ContentUnavailableView("Cámara no disponible", systemImage: "camera",
                         description: Text(message))
@@ -45,7 +88,7 @@ struct MobileQRScannerScreen: View {
 
 private struct MobileQRScanner: UIViewControllerRepresentable {
     let receive: (String) -> Void
-    let failure: (String) -> Void
+    let failure: (Error, MobileQRScannerFailureReason) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(receive: receive, failure: failure) }
 
@@ -56,11 +99,7 @@ private struct MobileQRScanner: UIViewControllerRepresentable {
         scanner.delegate = context.coordinator
         do { try scanner.startScanning() }
         catch {
-            let message = MobileErrorNotice.record(
-                error,
-                operation: .scanner,
-                message: "No se pudo iniciar la cámara. Puedes pegar el enlace del QR.").inlineMessage
-            Task { @MainActor in context.coordinator.fail(message) }
+            Task { @MainActor in context.coordinator.fail(error, reason: .cameraStart) }
         }
         return scanner
     }
@@ -75,9 +114,9 @@ private struct MobileQRScanner: UIViewControllerRepresentable {
 
     @MainActor final class Coordinator: NSObject, DataScannerViewControllerDelegate {
         let receive: (String) -> Void
-        let failure: (String) -> Void
+        let failure: (Error, MobileQRScannerFailureReason) -> Void
         var finished = false
-        init(receive: @escaping (String) -> Void, failure: @escaping (String) -> Void) {
+        init(receive: @escaping (String) -> Void, failure: @escaping (Error, MobileQRScannerFailureReason) -> Void) {
             self.receive = receive; self.failure = failure
         }
 
@@ -91,11 +130,7 @@ private struct MobileQRScanner: UIViewControllerRepresentable {
 
         func dataScanner(_ dataScanner: DataScannerViewController, becameUnavailableWithError error: DataScannerViewController.ScanningUnavailable) {
             dataScanner.stopScanning()
-            let message = MobileErrorNotice.record(
-                error,
-                operation: .scanner,
-                message: "La cámara dejó de estar disponible. Puedes cancelar y volver a intentarlo.").inlineMessage
-            fail(message)
+            fail(error, reason: .cameraUnavailable)
         }
 
         private func accept(_ item: RecognizedItem, scanner: DataScannerViewController) {
@@ -105,7 +140,7 @@ private struct MobileQRScanner: UIViewControllerRepresentable {
             do { _ = try DirectPairingQR.decode(url, now: Date()) }
             catch {
                 scanner.stopScanning()
-                fail("El QR no es válido o ha caducado. Genera uno nuevo en LeonardoMD.")
+                fail(error, reason: .invalidInvitation)
                 return
             }
             finished = true
@@ -113,10 +148,10 @@ private struct MobileQRScanner: UIViewControllerRepresentable {
             receive(payload)
         }
 
-        func fail(_ message: String) {
+        func fail(_ error: Error, reason: MobileQRScannerFailureReason) {
             guard !finished else { return }
             finished = true
-            failure(message)
+            failure(error, reason)
         }
     }
 }

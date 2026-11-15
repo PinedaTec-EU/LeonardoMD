@@ -30,6 +30,7 @@ Read [current state](current-state.md), then the relevant source target. Human p
 
 - [On-demand synchronization and cache](on-demand-sync.md)
 - [Desktop peer synchronization](desktop-peer-sync.md) — keep revoked-device recovery distinct from a removed project grant.
+- [Little Leonardo diagnostics and local error log](mobile-diagnostics.md)
 - [HTTPS response lifetime and physical acceptance](https-response-lifetime.md)
 - [Little Leonardo Classic UI and rotating canvas](mobile-classic.md)
 
