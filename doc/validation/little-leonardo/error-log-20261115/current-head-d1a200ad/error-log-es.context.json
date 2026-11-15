@@ -1,0 +1,27 @@
+{
+  "source_sha": "d1a200ad724feb22a8df3ca6ed41217cc8203835",
+  "test": "PairingUITests/testSpanishErrorLogRouteAndScreenAreLocalized()",
+  "test_result": "passed",
+  "result_bundle": ".build/test-results/pr435-current-head-ui-20261115.xcresult",
+  "platform": "iOS 27.0 Simulator (build 24A434)",
+  "device": "iPhone 18 Pro Max",
+  "simulator_id": "0C5D5C27-1EBC-4C69-BA40-CAEE89F49750",
+  "screen": "Biblioteca → Ajustes de sincronización → Ver log",
+  "locale": "Spanish (es_ES)",
+  "viewport_points": {
+    "width": 440,
+    "height": 956
+  },
+  "screenshot_pixels": {
+    "width": 1320,
+    "height": 2868
+  },
+  "capture_mode": "Original XCTest viewport screenshot attachment; unmodified PNG",
+  "captured_at": "2026-11-15T19:49:32.083000Z",
+  "browser": "Not applicable: native iOS app; no browser",
+  "css_viewport": "Not applicable: UIKit points are reported above",
+  "state": "The recent local error log screen and Actualizar action use Spanish labels.",
+  "data_provenance": "Synthetic isolated simulator data; no owner document or credential",
+  "image_bytes": 684855,
+  "image_sha256": "f77ad4bb67d50b44c1f541ce3f5f6644bb1113bd7d107e84d78695180a42f4de"
+}

@@ -225,6 +225,32 @@ import XCTest
         XCTAssertNotNil(library.failures[otherKey], "Revoking one project must preserve another project's error")
     }
 
+    func testOpenResultPreservesOriginalErrorsWithoutPresentationHandler() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: fixture.catalogue)
+
+        library.fetch = { _, _ in throw SyncError.publicationPending }
+        do {
+            _ = try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+            XCTFail("Expected the fetch error")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .publicationPending,
+                           "A caller without a presentation handler must receive the original fetch error")
+        }
+
+        await fixture.cache.failNextFreshRead()
+        do {
+            _ = try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+            XCTFail("Expected the cache-read error")
+        } catch {
+            XCTAssertTrue(error is CacheReadFailure,
+                          "A caller without a presentation handler must receive the original cache error")
+        }
+    }
+
     func testCacheReadFailureOnRetryGetsANewDiagnosticReference() async throws {
         let fixture = try Fixture()
         defer { fixture.removeFiles() }

@@ -1,0 +1,27 @@
+{
+  "source_sha": "d1a200ad724feb22a8df3ca6ed41217cc8203835",
+  "test": "PairingUITests/testEnglishManualConnectionFailureUsesEnglishAlert()",
+  "test_result": "passed",
+  "result_bundle": ".build/test-results/pr435-current-head-ui-20261115.xcresult",
+  "platform": "iOS 27.0 Simulator (build 24A434)",
+  "device": "iPhone 18 Pro Max",
+  "simulator_id": "0C5D5C27-1EBC-4C69-BA40-CAEE89F49750",
+  "screen": "Pairing → manual address → connection failure",
+  "locale": "English (en_US)",
+  "viewport_points": {
+    "width": 440,
+    "height": 956
+  },
+  "screenshot_pixels": {
+    "width": 1320,
+    "height": 2868
+  },
+  "capture_mode": "Original XCTest viewport screenshot attachment; unmodified PNG",
+  "captured_at": "2026-11-15T19:48:52.301000Z",
+  "browser": "Not applicable: native iOS app; no browser",
+  "css_viewport": "Not applicable: UIKit points are reported above",
+  "state": "The alert has a short English recovery message, one unique LL reference and one OK action; transport details are omitted.",
+  "data_provenance": "Synthetic isolated simulator data; no owner document or credential",
+  "image_bytes": 228722,
+  "image_sha256": "0c7c08055e52dab4f834d72ca509d31cddd531f1bbfae839caf13efbc86e7ce9"
+}

@@ -245,9 +245,32 @@ capture viewport is 440 × 956 UIKit points / 1320 × 2868 pixels; CSS viewport
 and browser version are not applicable to this native iOS app. Per-image
 timestamps, hashes and source mapping are in the adjacent context files.
 
-The new scanner regression passes for a malformed recognized QR and confirms
-that its payload is not logged. The Simulator UI test does not emulate the
-physical camera, so no camera-scan screenshot is claimed. The Mac remains
-locked; the packaged macOS Spanish/English Help smoke has not been observed in
-a fresh app window and remains pending. No physical large-image acceptance is
-claimed for #380.
+The corrected PR #435 candidate at source
+`37032e996ce82780bee73ad3178bca7935b219ff` passes all four focused UI tests:
+English and Spanish settings/log routes, plus English and Spanish connection
+failure alerts. The current captures are the six files with the
+`-corrected-20261115` suffix in the [evidence bundle](error-log-20261115/manifest.json);
+their sidecars record source, time, locale, viewport, dimensions and SHA-256.
+The earlier settings/log captures remain historical evidence for their earlier
+source commit. The simulator's app process was absent, then the task-owned
+`LittleLeonardo PR435 Localization QA 20261115` simulator
+(`0C5D5C27-1EBC-4C69-BA40-CAEE89F49750`) was shut down after the run.
+
+The packaged macOS smoke is now complete on this same corrected source. A fresh
+`LeonardoMDQA.app` process (PID 63021; bundle
+`eu.pinedatec.LeonardoMD.qa.e8342f795a5b4de4ba0653a3339e9997`; version/build
+0.3.1602/1602) opened Guide v77 in English and Spanish through each real Help
+menu. Both opened copies matched their bundled resource hashes. Mermaid, Math,
+the tagged box-counting equation, charts, local images and tables were visible;
+the disabled-Math fallback and literal code examples behaved as documented.
+The English and Spanish practice forms were filled with synthetic data, saved,
+closed and reopened with their answers intact. English and Math-on preferences
+were restored. The app exited normally at 19:09:35Z and PID 63021 was absent
+afterward. Full identity, hashes, form-copy results and teardown evidence are
+in [the packaged Help record](packaged-help-v77-20261115.json). No Device Hub
+session was opened by this packaged-Help run.
+
+The Simulator UI tests do not emulate a physical camera, so no camera-scan
+screenshot is claimed. No physical large-image acceptance is claimed for #380;
+the owner's original image still must synchronize and render on the physical
+iPhone before that issue can close.

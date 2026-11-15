@@ -1,0 +1,27 @@
+{
+  "source_sha": "d1a200ad724feb22a8df3ca6ed41217cc8203835",
+  "test": "PairingUITests/testSpanishErrorLogRouteAndScreenAreLocalized()",
+  "test_result": "passed",
+  "result_bundle": ".build/test-results/pr435-current-head-ui-20261115.xcresult",
+  "platform": "iOS 27.0 Simulator (build 24A434)",
+  "device": "iPhone 18 Pro Max",
+  "simulator_id": "0C5D5C27-1EBC-4C69-BA40-CAEE89F49750",
+  "screen": "Biblioteca → Ajustes de sincronización → Diagnóstico",
+  "locale": "Spanish (es_ES)",
+  "viewport_points": {
+    "width": 440,
+    "height": 956
+  },
+  "screenshot_pixels": {
+    "width": 1320,
+    "height": 2868
+  },
+  "capture_mode": "Original XCTest viewport screenshot attachment; unmodified PNG",
+  "captured_at": "2026-11-15T19:49:28.992000Z",
+  "browser": "Not applicable: native iOS app; no browser",
+  "css_viewport": "Not applicable: UIKit points are reported above",
+  "state": "The Library settings action and the Diagnóstico → Ver log route use Spanish labels.",
+  "data_provenance": "Synthetic isolated simulator data; no owner document or credential",
+  "image_bytes": 268162,
+  "image_sha256": "8dfe01f18d91712b2556fcc0d21a9e5ed0a47d0fbcc6cd0964d3b84c386d5527"
+}
