@@ -116,6 +116,42 @@ final class OnDemandSyncUITests: XCTestCase {
         try capture(app, "project-deleted-after-refresh", state: "Locally removed project stays absent after relaunch and authenticated sync; Demo remains")
     }
 
+    @MainActor func testLocalDisplayNameAndSingularProjectCountCapture() throws {
+        guard ProcessInfo.processInfo.environment["LEONARDO_ON_DEMAND_QA_ROOT"] != nil else {
+            throw XCTSkip("Requires the isolated on-demand loopback source")
+        }
+        defer { try? phase("finish") }
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(es)", "-AppleLocale", "es_ES"]
+        app.launch()
+        try enroll(app)
+
+        let hostMenu = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "shared-host-menu-")).firstMatch
+        XCTAssertTrue(hostMenu.waitForExistence(timeout: 10), "The connected Mac must expose its local actions")
+        hostMenu.tap()
+        let rename = app.buttons["Cambiar nombre"]
+        XCTAssertTrue(rename.waitForExistence(timeout: 5))
+        rename.tap()
+
+        let name = app.textFields["Nombre del Mac"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        if let value = name.value as? String, !value.isEmpty {
+            name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+        }
+        name.typeText("Mac QA")
+        app.buttons["Guardar"].tap()
+
+        XCTAssertTrue(app.staticTexts["Mac QA"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["1 proyecto · 1 por revisar"].exists,
+                      "A single pending project must use the singular count")
+        XCTAssertFalse(app.staticTexts["127.0.0.1:46987"].exists,
+                       "An explicit local name keeps the endpoint out of the host row")
+        try capture(app, "display-name-singular-count-es",
+                    state: "Synthetic connected host uses its saved local Mac QA name, hides the endpoint and shows one project pending review")
+    }
+
     @MainActor private func element(_ identifier: String, app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
