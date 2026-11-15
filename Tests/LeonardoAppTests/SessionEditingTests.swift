@@ -9,6 +9,14 @@ import XCTest
 
 @MainActor
 final class SessionEditingTests: XCTestCase {
+    private func fulfillWhenReady(_ host: MarkdownPreviewHost, expectation: XCTestExpectation) {
+        let existingHandler = host.onReady
+        host.onReady = { isReady in
+            existingHandler?(isReady)
+            if isReady { expectation.fulfill() }
+        }
+    }
+
     private func fixture() async throws -> (URL, AppSession) {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -95,7 +103,7 @@ final class SessionEditingTests: XCTestCase {
         session.renderer.onEdit = { expected, replacement in session.editDocument(expected: expected, replacement: replacement) }
         session.renderer.attach(host)
         let ready = expectation(description: "Conflict preview ready")
-        host.onReady = { if $0 { ready.fulfill() } }
+        fulfillWhenReady(host, expectation: ready)
         var configuration = MarkdownPreviewConfiguration.default
         configuration.allowsEditing = true
         host.apply(content: session.content, baseURL: nil, configuration: configuration, onLinkActivation: nil, onScrollProgress: nil)
@@ -137,7 +145,7 @@ final class SessionEditingTests: XCTestCase {
         session.renderer.onEdit = { expected, replacement in session.editDocument(expected: expected, replacement: replacement) }
         session.renderer.attach(host)
         let ready = expectation(description: "Conflict preview ready")
-        host.onReady = { if $0 { ready.fulfill() } }
+        fulfillWhenReady(host, expectation: ready)
         var configuration = MarkdownPreviewConfiguration.default
         configuration.allowsEditing = true
         host.apply(content: session.content, baseURL: nil, configuration: configuration, onLinkActivation: nil, onScrollProgress: nil)
@@ -192,7 +200,7 @@ final class SessionEditingTests: XCTestCase {
         session.renderer.onEdit = { expected, replacement in session.editDocument(expected: expected, replacement: replacement) }
         session.renderer.attach(host)
         let ready = expectation(description: "Migration preview ready")
-        host.onReady = { if $0 { ready.fulfill() } }
+        fulfillWhenReady(host, expectation: ready)
         var configuration = MarkdownPreviewConfiguration.default
         configuration.allowsEditing = true
         host.apply(content: session.content, baseURL: nil, configuration: configuration, onLinkActivation: nil, onScrollProgress: nil)

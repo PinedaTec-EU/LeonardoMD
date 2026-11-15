@@ -10,6 +10,46 @@ private enum MobileRubricCapturePhase {
     case submitted
 }
 
+@MainActor
+enum MobileRubricCaptureFailure: CaseIterable {
+    case acceptance
+    case rejection
+    case draftPersistence
+    case terminalSubmission
+    case submission
+    case retry
+
+    func message(spanish: Bool) -> String {
+        switch self {
+        case .acceptance:
+            spanish ? "No se pudo aceptar la solicitud. Puedes intentarlo de nuevo."
+                : "Couldn't accept the request. Try again."
+        case .rejection:
+            spanish ? "No se pudo rechazar la solicitud."
+                : "Couldn't reject the request."
+        case .draftPersistence:
+            spanish ? "No se pudo guardar el borrador local. Inténtalo de nuevo antes de enviar."
+                : "Couldn't save the local draft. Try again before sending."
+        case .terminalSubmission:
+            spanish ? "Este vínculo ya no admite la solicitud. Pide una nueva solicitud."
+                : "This link can no longer accept the request. Ask for a new one."
+        case .submission:
+            spanish ? "No se pudo enviar. El dibujo está guardado y puedes reintentarlo."
+                : "Couldn't send. The drawing is saved so you can retry."
+        case .retry:
+            spanish ? "El envío sigue pendiente. Comprueba la conexión e inténtalo de nuevo."
+                : "Sending is still pending. Check your connection and try again."
+        }
+    }
+
+    func notice(for error: Error, spanish: Bool,
+                diagnosticLog: MobileDiagnosticLog? = nil) -> MobileErrorNotice {
+        MobileErrorNotice.record(error, operation: .rubric,
+                                 message: message(spanish: spanish),
+                                 diagnosticLog: diagnosticLog, spanish: spanish)
+    }
+}
+
 struct MobileRubricCaptureView: View {
     let request: RubricRequest
     let library: MobileLibrary
@@ -27,6 +67,10 @@ struct MobileRubricCaptureView: View {
     @State private var failure: String?
     @State private var manuallyExpanded = false
     @State private var landscapeDismissed = false
+
+    private var spanishErrors: Bool {
+        MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
+    }
 
     init(request: RubricRequest, library: MobileLibrary) {
         self.request = request
@@ -313,10 +357,8 @@ struct MobileRubricCaptureView: View {
                 if terminalBlocked {
                     failure = nil
                 } else {
-                    failure = MobileErrorNotice.record(
-                        error,
-                        operation: .rubric,
-                        message: "No se pudo aceptar la solicitud. Puedes intentarlo de nuevo.").inlineMessage
+                    failure = MobileRubricCaptureFailure.acceptance
+                        .notice(for: error, spanish: spanishErrors).inlineMessage
                 }
             }
         }
@@ -328,10 +370,8 @@ struct MobileRubricCaptureView: View {
         Task {
             do { try await library.rejectRubricRequest(request); dismiss() }
             catch {
-                failure = MobileErrorNotice.record(
-                    error,
-                    operation: .rubric,
-                    message: "No se pudo rechazar la solicitud.").inlineMessage
+                failure = MobileRubricCaptureFailure.rejection
+                    .notice(for: error, spanish: spanishErrors).inlineMessage
             }
         }
     }
@@ -349,7 +389,14 @@ struct MobileRubricCaptureView: View {
         } else {
             // Never turn a nonempty invalid drawing into an empty draft: the
             // last valid persisted input remains recoverable after restart.
-            failure = "El dibujo supera los límites portátiles; se conserva el último borrador válido."
+            let message = spanishErrors
+                ? "El dibujo supera los límites portátiles; se conserva el último borrador válido."
+                : "The drawing exceeds portable limits; the last valid draft is preserved."
+            failure = MobileErrorNotice.record(
+                operation: .rubric,
+                message: message,
+                category: "drawing_limit_exceeded",
+                spanish: spanishErrors).inlineMessage
             return
         }
         // Register this snapshot while handling the UI event. The observer
@@ -360,10 +407,8 @@ struct MobileRubricCaptureView: View {
             do {
                 try await write.value
             } catch {
-                failure = MobileErrorNotice.record(
-                    error,
-                    operation: .rubric,
-                    message: "No se pudo guardar el borrador local. Inténtalo de nuevo antes de enviar.").inlineMessage
+                failure = MobileRubricCaptureFailure.draftPersistence
+                    .notice(for: error, spanish: spanishErrors).inlineMessage
             }
         }
     }
@@ -379,17 +424,15 @@ struct MobileRubricCaptureView: View {
                 phase = .drawing
                 if isTerminal(error) {
                     await library.blockRubricDraft(request: request,
-                                                   message: "La solicitud ya no admite envíos; pide una nueva solicitud.")
-                    failure = MobileErrorNotice.record(
-                        error,
-                        operation: .rubric,
-                        message: "Este vínculo ya no admite la solicitud. Pide una nueva solicitud.").inlineMessage
+                                                   message: spanishErrors
+                                                    ? "La solicitud ya no admite envíos; pide una nueva solicitud."
+                                                    : "This request can no longer accept submissions; ask for a new request.")
+                    failure = MobileRubricCaptureFailure.terminalSubmission
+                        .notice(for: error, spanish: spanishErrors).inlineMessage
                 } else {
                     frozen = library.rubricDraft(for: request)?.response != nil
-                    failure = MobileErrorNotice.record(
-                        error,
-                        operation: .rubric,
-                        message: "No se pudo enviar. El dibujo está guardado y puedes reintentarlo.").inlineMessage
+                    failure = MobileRubricCaptureFailure.submission
+                        .notice(for: error, spanish: spanishErrors).inlineMessage
                 }
             }
         }
@@ -401,10 +444,8 @@ struct MobileRubricCaptureView: View {
             do { _ = try await library.retryRubricDraft(draft); phase = .submitted }
             catch {
                 phase = .drawing
-                failure = MobileErrorNotice.record(
-                    error,
-                    operation: .rubric,
-                    message: "El envío sigue pendiente. Comprueba la conexión e inténtalo de nuevo.").inlineMessage
+                failure = MobileRubricCaptureFailure.retry
+                    .notice(for: error, spanish: spanishErrors).inlineMessage
             }
         }
     }

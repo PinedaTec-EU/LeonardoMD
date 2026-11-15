@@ -1,0 +1,82 @@
+{
+  "purpose": "Exact-current-source Little Leonardo error and local-log evidence for PR #435.",
+  "source_sha": "8ebd53798bcd71543894ad4a88c4f9c79f9715b5",
+  "build_delta": 64,
+  "result_bundle": ".build/ll435-current-ui-exact-20261116.xcresult",
+  "result": "Passed: 4 tests, 0 failures, 0 skips.",
+  "environment": {
+    "platform": "iOS Simulator",
+    "model": "iPhone 18 Pro Max",
+    "os": "iOS 27.0",
+    "os_build": "24A434",
+    "device_id": "0C5D5C27-1EBC-4C69-BA40-CAEE89F49750",
+    "viewport_points": "440 x 956",
+    "pixel_dimensions": "1320 x 2868",
+    "host": "macOS 27.0.1"
+  },
+  "captures": [
+    {
+      "file": "settings-en.png",
+      "context": "settings-en.png.context.json",
+      "sha256": "5a391a9b1586e277939d250610f1d89764cf8e2ae8061c447b30876629bd1c97",
+      "test": "PairingUITests/testEnglishErrorLogRouteAndScreenAreLocalized()",
+      "captured_at": "2026-11-16T00:14:02.110000Z",
+      "route": "Sync settings",
+      "description": "English preferences showing the local error-log entry point."
+    },
+    {
+      "file": "log-en.png",
+      "context": "log-en.png.context.json",
+      "sha256": "21129c0f6bd5ec0db930e20890cb777631fffc23feca46621a52783b25250c5c",
+      "test": "PairingUITests/testEnglishErrorLogRouteAndScreenAreLocalized()",
+      "captured_at": "2026-11-16T00:14:05.185000Z",
+      "route": "Settings > View log",
+      "description": "English log screen containing bounded synthetic diagnostics."
+    },
+    {
+      "file": "alert-en.png",
+      "context": "alert-en.png.context.json",
+      "sha256": "6861030440640f139976dbad55d3850df6c364661748a808b799380ab5d4fff3",
+      "test": "PairingUITests/testEnglishManualConnectionFailureUsesEnglishAlert()",
+      "captured_at": "2026-11-16T00:14:25.361000Z",
+      "route": "Pairing > manual address > connection failure",
+      "description": "Short English alert with a unique reference and one OK action."
+    },
+    {
+      "file": "settings-es.png",
+      "context": "settings-es.png.context.json",
+      "sha256": "6379422fcefa001c63e8894678a2c8fd5cb717773bcb77cb43aecdafbe264316",
+      "test": "PairingUITests/testSpanishErrorLogRouteAndScreenAreLocalized()",
+      "captured_at": "2026-11-16T00:15:02.941000Z",
+      "route": "Ajustes de sincronización",
+      "description": "Preferencias en español con el acceso al registro local."
+    },
+    {
+      "file": "log-es.png",
+      "context": "log-es.png.context.json",
+      "sha256": "17b2e6dbc13384338084f347d016d079b3e3531a398003289c82a3bea34a4ff3",
+      "test": "PairingUITests/testSpanishErrorLogRouteAndScreenAreLocalized()",
+      "captured_at": "2026-11-16T00:15:06.039000Z",
+      "route": "Ajustes > Ver log",
+      "description": "Registro en español con diagnósticos sintéticos limitados."
+    },
+    {
+      "file": "alert-es.png",
+      "context": "alert-es.png.context.json",
+      "sha256": "510655cc6f6dae600944f426d58dd577f7462a40ad79acd8f5300980d4f3f48d",
+      "test": "PairingUITests/testManualConnectionFailureShowsReferenceAndMatchingLocalLog()",
+      "captured_at": "2026-11-16T00:14:45.856000Z",
+      "route": "Emparejamiento > dirección manual > error de conexión",
+      "description": "Aviso breve en español con referencia única y una acción Aceptar."
+    },
+    {
+      "file": "matching-log-es.png",
+      "context": "matching-log-es.png.context.json",
+      "sha256": "87304fade1aff01940b2c25ab659c7c2203734ca1d3465ab211fdae759d8293a",
+      "test": "PairingUITests/testManualConnectionFailureShowsReferenceAndMatchingLocalLog()",
+      "captured_at": "2026-11-16T00:14:52.711000Z",
+      "route": "Emparejamiento > error > Ver log",
+      "description": "Entrada del registro que coincide con la referencia del aviso español."
+    }
+  ]
+}
