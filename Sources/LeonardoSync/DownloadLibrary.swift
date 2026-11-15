@@ -177,9 +177,21 @@ public final class DownloadLibrary {
 
     private func result(of task: Task<RemoteDownloadResult, Error>, id: UUID,
                         entry: RemoteFileEntry, generation: UInt64) async throws -> RemoteDownloadResult {
-        let result = try await task.value
-        try requireEntry(id: id, entry: entry, generation: generation)
-        return result
+        do {
+            let result = try await task.value
+            try requireEntry(id: id, entry: entry, generation: generation)
+            return result
+        } catch let failure as RemoteDownloadFailure {
+            try requireEntry(id: id, entry: entry, generation: generation)
+            if deniedPaths[id, default: []].contains(entry.path) ||
+                (failure.underlying as? any RemoteContentAccessDenied)?.deniesRemoteContent == true {
+                throw failure.underlying
+            }
+            throw failure
+        } catch {
+            try requireEntry(id: id, entry: entry, generation: generation)
+            throw error
+        }
     }
 
     private func recordFailure(_ error: any Error, key: String, reuseExisting: Bool) -> RemoteDownloadFailure {
