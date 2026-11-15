@@ -13,7 +13,7 @@ final class MobileLibrary {
     var projects: [OfflineProject] = []
     private(set) var pendingRubricRequests: [RubricRequest] = []
     private(set) var recoverableRubricDrafts: [MobileRubricDraft] = []
-    var error: String?
+    var error: MobileErrorNotice?
     var connecting = false
     var comparisonCode: String?
     let projectLifecycle: MobileProjectLifecycle
@@ -69,12 +69,6 @@ final class MobileLibrary {
                 .appendingPathComponent("Downloads"))
         }
         downloads = DownloadLibrary(cache: remoteDownloadCache)
-        downloads.errorPresentation = { error in
-            MobileErrorNotice.record(
-                error,
-                operation: .downloads,
-                message: "No se pudo descargar el contenido. Comprueba la conexión e inténtalo de nuevo.").inlineMessage
-        }
         connectionStore = MobileDirectConnectionStore(url: root.deletingLastPathComponent()
             .appendingPathComponent("connections.json"))
         self.credentials = credentials
@@ -86,6 +80,14 @@ final class MobileLibrary {
             .appendingPathComponent("Rubrics/drafts.json"))
         self.now = now
         rubricAcceptance = MobileRubricAcceptance(store: draftStore, clock: now)
+        downloads.errorPresentation = { [weak self] error in
+            let notice = MobileErrorNotice.record(
+                error,
+                operation: .downloads,
+                message: "No se pudo descargar el contenido. Comprueba la conexión e inténtalo de nuevo.")
+            self?.error = notice
+            return notice.inlineMessage
+        }
     }
 
     func token(for connection: MobileDirectConnection) -> ConnectionToken {

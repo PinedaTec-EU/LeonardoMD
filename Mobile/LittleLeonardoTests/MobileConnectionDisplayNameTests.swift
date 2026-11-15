@@ -111,6 +111,24 @@ final class MobileConnectionDisplayNameTests: XCTestCase {
         XCTAssertEqual(value.suggestedDisplayName.lowercased(), "qa mac")
         XCTAssertFalse(value.showsEndpointAddressInHostRow)
     }
+
+    func testInvalidRenameShowsOpaqueDiagnosticReference() throws {
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: support) }
+        let library = MobileLibrary(rootURL: support.appendingPathComponent("Corpus", isDirectory: true))
+        library.connections = [connection()]
+
+        XCTAssertFalse(library.renameConnection(connectionID: UUID(), displayName: "Mac QA"))
+        let missingConnectionNotice = try XCTUnwrap(library.error)
+        XCTAssertEqual(missingConnectionNotice.message, "No se encontró la conexión con ese Mac.")
+        XCTAssertTrue(missingConnectionNotice.referenceCode.hasPrefix("LL-"))
+
+        XCTAssertFalse(library.renameConnection(connectionID: connectionID,
+                                                displayName: String(repeating: "M", count: 81)))
+        let longNameNotice = try XCTUnwrap(library.error)
+        XCTAssertEqual(longNameNotice.message, "El nombre del Mac no puede superar 80 caracteres.")
+        XCTAssertNotEqual(longNameNotice.referenceCode, missingConnectionNotice.referenceCode)
+    }
 }
 
 private actor ReloadGate {
