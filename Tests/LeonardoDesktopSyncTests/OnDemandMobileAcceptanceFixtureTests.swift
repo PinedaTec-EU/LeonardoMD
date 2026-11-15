@@ -68,11 +68,13 @@ final class OnDemandMobileAcceptanceFixtureTests: XCTestCase {
                         await probe.allowPending()
                     case "finish":
                         let audit = await probe.snapshot()
-                        XCTAssertEqual(audit.snapshots, 0)
-                        XCTAssertGreaterThanOrEqual(audit.files["notes/decisions.md", default: 0], 2)
-                        XCTAssertGreaterThanOrEqual(audit.files["notes/future.md", default: 0], 1)
-                        XCTAssertEqual(audit.files["reference/remote.md"], 1,
-                                       "Project-level offline retention deliberately downloads all current files")
+                        if ProcessInfo.processInfo.environment["LEONARDO_ON_DEMAND_QA_MODE"] != "display-name" {
+                            XCTAssertEqual(audit.snapshots, 0)
+                            XCTAssertGreaterThanOrEqual(audit.files["notes/decisions.md", default: 0], 2)
+                            XCTAssertGreaterThanOrEqual(audit.files["notes/future.md", default: 0], 1)
+                            XCTAssertEqual(audit.files["reference/remote.md"], 1,
+                                           "Project-level offline retention deliberately downloads all current files")
+                        }
                         try write(audit.dictionary, root: root, name: "completed.json")
                         finished = true
                     default: break

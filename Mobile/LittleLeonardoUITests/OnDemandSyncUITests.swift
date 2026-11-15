@@ -131,21 +131,23 @@ final class OnDemandSyncUITests: XCTestCase {
                         "shared-host-menu-", "Acciones de Mac conectado")).firstMatch
         XCTAssertTrue(hostMenu.waitForExistence(timeout: 10), "The connected Mac must expose its local actions")
         hostMenu.tap()
-        let rename = app.buttons["Cambiar nombre"]
+        let rename = app.buttons.matching(NSPredicate(format: "label == %@", "Cambiar nombre")).firstMatch
         XCTAssertTrue(rename.waitForExistence(timeout: 5))
         rename.tap()
 
-        let name = app.textFields["Nombre del Mac"]
+        let name = app.textFields.matching(NSPredicate(format: "label == %@", "Nombre del Mac")).firstMatch
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         name.tap()
         if let value = name.value as? String, !value.isEmpty {
             name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
         }
         name.typeText("Mac QA")
-        app.buttons["Guardar"].tap()
+        app.buttons.matching(NSPredicate(format: "label == %@", "Guardar")).firstMatch.tap()
 
-        XCTAssertTrue(app.staticTexts["Mac QA"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["1 proyecto · 1 por revisar"].exists,
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label == %@", "Mac QA"))
+            .firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts.matching(
+            NSPredicate(format: "label == %@", "1 proyecto · 1 por revisar")).firstMatch.exists,
                       "A single pending project must use the singular count")
         XCTAssertFalse(app.staticTexts["127.0.0.1:46987"].exists,
                        "An explicit local name keeps the endpoint out of the host row")
