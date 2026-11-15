@@ -1,0 +1,22 @@
+{
+  "source_sha": "e17f50f3c5b06769c9582a0ee0e0c021dfa27133",
+  "source_note": "Captured from the PR #435 working tree before commit; application sources and Xcode build inputs are identical to source_sha. The later commit changed the build-count ledger and documentation inventory only.",
+  "result_bundle": "test_sim_2026-11-15T15-52-24-668Z_pid55093_f4ea963e.xcresult",
+  "test": "PairingUITests/testSpanishErrorLogRouteAndScreenAreLocalized",
+  "test_result": "passed",
+  "platform": "iOS 27.0 Simulator (build 24A434)",
+  "device": "iPhone 18 Pro Max; LittleLeonardo PR435 Localization QA 20261115",
+  "simulator_id": "0C5D5C27-1EBC-4C69-BA40-CAEE89F49750",
+  "screen": "Sincronización > Diagnóstico > Ver log > Registro de errores",
+  "locale": "Español (es_ES)",
+  "viewport_points": {"width": 440, "height": 956},
+  "screenshot_pixels": {"width": 1320, "height": 2868},
+  "capture_mode": "XCTest viewport screenshot attachment; exported with xcresulttool; original PNG, unmodified",
+  "captured_at": "2026-11-15T15:52:58.074Z",
+  "browser": "No aplica: app nativa de iOS; sin navegador",
+  "css_viewport": "No aplica: el diseño nativo usa puntos UIKit, indicados arriba",
+  "state": "La pantalla Registro de errores muestra la nota de retención local y siete entradas sintéticas normalizadas con referencias opacas y códigos numéricos.",
+  "data_provenance": "Simulador QA aislado con datos sintéticos; sin documentos ni credenciales del propietario.",
+  "image_bytes": 291017,
+  "image_sha256": "4974b7721bef35a51bf6865e6dec98cce90199344a190b3912dd531a205c55c4"
+}
