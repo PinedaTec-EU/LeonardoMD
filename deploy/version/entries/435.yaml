@@ -1,4 +1,4 @@
 {
-  "summary": "Little Leonardo now shows short error messages with reference codes and keeps a bounded local log users can inspect from sync settings.",
-  "build": 38
+  "summary": "Little Leonardo shows concise localized sync errors with unique references, keeps a bounded local log in settings, and records invalid pairing QR failures without storing their contents.",
+  "build": 42
 }

@@ -116,7 +116,7 @@ public final class DownloadLibrary {
                 cached = try await cache.read(id: id, entry: entry, allowStale: false)
             } catch {
                 try requireEntry(id: id, entry: entry, generation: generation)
-                throw recordFailure(error, key: key, reuseExisting: false)
+                throw recordFailure(error, key: key)
             }
         }
         if let file = cached {
@@ -148,7 +148,6 @@ public final class DownloadLibrary {
                 return RemoteDownloadResult(file: file)
             } catch {
                 try requireEntry(id: id, entry: entry, generation: generation)
-                let failure = recordFailure(error, key: key, reuseExisting: true)
                 if let denial = error as? any RemoteContentAccessDenied, denial.deniesRemoteContent {
                     throw error
                 }
@@ -157,13 +156,14 @@ public final class DownloadLibrary {
                     let previous = try await cache.read(id: id, entry: entry, allowStale: true)
                     try requireEntry(id: id, entry: entry, generation: generation)
                     if let previous, !deniedPaths[id, default: []].contains(entry.path) {
+                        let failure = recordFailure(error, key: key)
                         return RemoteDownloadResult(file: previous, updateFailure: failure.message)
                     }
                 } catch {
                     try requireEntry(id: id, entry: entry, generation: generation)
-                    throw failure
+                    throw recordFailure(error, key: key)
                 }
-                throw failure
+                throw recordFailure(error, key: key)
             }
         }
         tasks[key] = ActiveDownload(identity: identity, generation: generation, entry: entry, task: task)
@@ -194,8 +194,8 @@ public final class DownloadLibrary {
         }
     }
 
-    private func recordFailure(_ error: any Error, key: String, reuseExisting: Bool) -> RemoteDownloadFailure {
-        let message = (reuseExisting ? failures[key] : nil) ?? errorMessage(for: error)
+    private func recordFailure(_ error: any Error, key: String) -> RemoteDownloadFailure {
+        let message = errorMessage(for: error)
         failures[key] = message
         return RemoteDownloadFailure(message: message, underlying: error)
     }

@@ -25,6 +25,30 @@ enum MobileQRScannerFailureReason {
 
 @MainActor
 enum MobileQRScannerDiagnostics {
+    enum ScanDisposition {
+        case unrelated
+        case invitation(String)
+        case failure(Error)
+    }
+
+    private static let maximumPayloadBytes = 4 * 1_024
+
+    static func scanDisposition(for rawPayload: String, now: Date) -> ScanDisposition {
+        let payload = rawPayload.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard hasInvitationScheme(payload) else { return .unrelated }
+        guard payload.utf8.count <= maximumPayloadBytes,
+              let url = URL(string: payload),
+              url.scheme?.caseInsensitiveCompare("littleleonardo") == .orderedSame else {
+            return .failure(TransportError.invalidEndpoint)
+        }
+        do {
+            _ = try DirectPairingQR.decode(url, now: now)
+            return .invitation(payload)
+        } catch {
+            return .failure(error)
+        }
+    }
+
     static func notice(
         for error: Error,
         reason: MobileQRScannerFailureReason,
@@ -37,6 +61,12 @@ enum MobileQRScannerDiagnostics {
             message: reason.message(spanish: spanish),
             diagnosticLog: diagnosticLog,
             spanish: spanish)
+    }
+
+    private static func hasInvitationScheme(_ payload: String) -> Bool {
+        guard let separator = payload.firstIndex(of: ":") else { return false }
+        let scheme = String(payload[..<separator])
+        return scheme.caseInsensitiveCompare("littleleonardo") == .orderedSame
     }
 }
 
@@ -134,18 +164,19 @@ private struct MobileQRScanner: UIViewControllerRepresentable {
         }
 
         private func accept(_ item: RecognizedItem, scanner: DataScannerViewController) {
-            guard !finished, case .barcode(let barcode) = item, let payload = barcode.payloadStringValue,
-                  payload.utf8.count <= 4 * 1_024, let url = URL(string: payload),
-                  url.scheme == "littleleonardo" else { return }
-            do { _ = try DirectPairingQR.decode(url, now: Date()) }
-            catch {
+            guard !finished, case .barcode(let barcode) = item,
+                  let payload = barcode.payloadStringValue else { return }
+            switch MobileQRScannerDiagnostics.scanDisposition(for: payload, now: Date()) {
+            case .unrelated:
+                return
+            case .failure(let error):
                 scanner.stopScanning()
                 fail(error, reason: .invalidInvitation)
-                return
+            case .invitation(let invitation):
+                finished = true
+                scanner.stopScanning()
+                receive(invitation)
             }
-            finished = true
-            scanner.stopScanning()
-            receive(payload)
         }
 
         func fail(_ error: Error, reason: MobileQRScannerFailureReason) {
