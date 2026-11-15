@@ -76,6 +76,20 @@
         "error-log-es-20261115.png"
       ],
       "sourceStateAtCapture": "The dirty capture worktree's application and test sources were committed byte-identically at sourceSha. The later compilation-count entry and feature inventory changes are not iOS build inputs."
+    },
+    {
+      "test": "OnDemandSyncUITests.testLocalDisplayNameAndSingularProjectCountCapture",
+      "result": "passed",
+      "passed": 1,
+      "failed": 0,
+      "startedAt": "2026-11-15T17:35:31.849Z",
+      "finishedAt": "2026-11-15T17:36:06.191Z",
+      "sourceSha": "324636affe92f10ab4eaaa77f49a63924e4bf9d7",
+      "resultBundle": "test_sim_2026-11-15T17-35-31-849Z_pid55093_256556c8.xcresult",
+      "captures": [
+        "display-name-singular-count-es.png"
+      ],
+      "sourceStateAtCapture": "The application and UI test sources were committed at sourceSha; the runner used the isolated synthetic loopback fixture."
     }
   ],
   "captures": [
@@ -164,6 +178,24 @@
       "route": "Library > synthetic loopback synchronization failure > alert",
       "provenance": "XcodeBuildMCP screenshot from the integrated PR #445 app source f1445de6e781056849a85bde0191b126b9fd4706 on the iPhone 18 Pro Max Simulator (iOS 27.0, UDID 2E154439-376B-4771-A52D-5A46A11F96B9).",
       "description": "The current integrated app shows a generic title, brief recovery text, unique reference LL-D877D72DF95E and one OK action. The underlying loopback connection is synthetic; no transport diagnostics are shown."
+    },
+    {
+      "file": "display-name-singular-count-es.png",
+      "sha256": "96ffde4233932fd2a21ccb661fe60fc7e2e3793ea2a8cfebf409590b32bc05c4",
+      "capturedAt": "2026-11-15T17:36:06Z",
+      "route": "Library > connected Mac actions > Change name > Save",
+      "provenance": "Original XCTest screenshot from Little Leonardo PR #445 source 324636affe92f10ab4eaaa77f49a63924e4bf9d7 on the iPhone 18 Pro Max Simulator (iOS 27.0, UDID 0C5D5C27-1EBC-4C69-BA40-CAEE89F49750); synthetic loopback host, no pixel edits.",
+      "context": "display-name-singular-count-es.context.json",
+      "description": "The saved local name Mac QA is visible, the row shows the singular count 1 proyecto, and the endpoint is hidden from the host row."
+    },
+    {
+      "file": "error-alert-host-name-es-20261115.jpg",
+      "sha256": "f39ab069d196381f5271536f7fda89d73337b4cd5e9bd9d47bc70ab3a8df710d",
+      "capturedAt": "2026-11-15T17:39:03Z",
+      "route": "Library > disconnected synthetic host > synchronization error alert",
+      "provenance": "Live XcodeBuildMCP screenshot after relaunching the PR #445 app from exact source 324636affe92f10ab4eaaa77f49a63924e4bf9d7 on the iPhone 18 Pro Max Simulator (iOS 27.0, UDID 0C5D5C27-1EBC-4C69-BA40-CAEE89F49750). The screenshot was JPEG-optimized by XcodeBuildMCP; no further pixel edits. The loopback host is synthetic and disconnected.",
+      "context": "error-alert-host-name-es-20261115.context.json",
+      "description": "The fresh app launch retains the local Mac QA name and singular project count behind the Spanish concise sync alert, one opaque reference code and one Aceptar action."
     }
   ],
   "limitations": [
@@ -177,6 +209,8 @@
     "error-alert-en.png": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
     "classic-help-es.png": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
     "error-log-devicehub-qa.png": "0da1200cbead3bf64222a14b866f6b0e503c3f32",
-    "error-alert-en-integrated.jpg": "f1445de6e781056849a85bde0191b126b9fd4706"
+    "error-alert-en-integrated.jpg": "f1445de6e781056849a85bde0191b126b9fd4706",
+    "display-name-singular-count-es.png": "324636affe92f10ab4eaaa77f49a63924e4bf9d7",
+    "error-alert-host-name-es-20261115.jpg": "324636affe92f10ab4eaaa77f49a63924e4bf9d7"
   }
 }
