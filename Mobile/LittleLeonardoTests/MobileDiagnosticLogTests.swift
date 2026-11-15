@@ -68,6 +68,10 @@ final class MobileDiagnosticLogTests: XCTestCase {
         let failures: [(Error, String)] = [
             (PairingError.expiredInvitation, "error=pairing.expired_invitation"),
             (SyncError.revoked, "error=sync.revoked"),
+            (SyncError.projectAccessDenied, "error=sync.project_access_denied"),
+            (SyncError.accessDenied, "error=sync.access_denied"),
+            (SyncError.httpAccessDenied(operation: .file, status: 403),
+             "error=sync.http_access_denied request=file http=403"),
             (credentialStorageFailure, "error=credential_storage status=-50"),
             (DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: sensitiveDescription)),
              "error=decoding.data_corrupted")

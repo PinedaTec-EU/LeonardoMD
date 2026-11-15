@@ -221,6 +221,10 @@ final class MobileDiagnosticLog {
             case .invalidSnapshot: category = "invalid_snapshot"
             case .sizeLimitExceeded: category = "size_limit_exceeded"
             case .revoked: category = "revoked"
+            case .projectAccessDenied: category = "project_access_denied"
+            case .accessDenied: category = "access_denied"
+            case let .httpAccessDenied(operation, status):
+                return "error=sync.http_access_denied request=\(operation.rawValue) http=\(status)"
             case .publicationPending: category = "publication_pending"
             }
             return "error=sync.\(category)"
