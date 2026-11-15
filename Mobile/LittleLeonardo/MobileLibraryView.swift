@@ -109,6 +109,9 @@ struct MobileLibraryView: View {
     @State private var presentedRubricRequest: RubricRequest?
     @AppStorage("directSyncIntervalMinutes") private var syncInterval = 1
     @Environment(\.scenePhase) private var scenePhase
+    private var spanishErrors: Bool {
+        MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
+    }
     private var activeRubricDraft: MobileRubricDraft? {
         library.recoverableRubricDrafts.first { $0.state != .submitted }
     }
@@ -202,10 +205,10 @@ struct MobileLibraryView: View {
                 catch { return }
             }
         }
-        .alert(MobileErrorNotice.alertTitle(spanish: true), isPresented: Binding(
+        .alert(MobileErrorNotice.alertTitle(spanish: spanishErrors), isPresented: Binding(
             get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
-            Button("Aceptar") { library.error = nil }
-        } message: { Text(library.error ?? "") }
+            Button(MobileErrorNotice.acceptLabel(spanish: spanishErrors)) { library.error = nil }
+        } message: { Text(library.error?.localizedAlertMessage(spanish: spanishErrors) ?? "") }
     }
     private var directConnectionSheet: some View {
         NavigationStack {

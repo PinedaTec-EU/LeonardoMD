@@ -10,7 +10,7 @@ final class MobileLibrary {
     var projects: [OfflineProject] = []
     private(set) var pendingRubricRequests: [RubricRequest] = []
     private(set) var recoverableRubricDrafts: [MobileRubricDraft] = []
-    var error: String?
+    var error: MobileErrorNotice?
     var connecting = false
     var comparisonCode: String?
     let projectLifecycle: MobileProjectLifecycle
@@ -50,12 +50,6 @@ final class MobileLibrary {
         projectLifecycle = MobileProjectLifecycle(url: root.deletingLastPathComponent()
             .appendingPathComponent("project-removals.json"))
         downloads = DownloadLibrary(cache: OnDemandCache(root: root.deletingLastPathComponent().appendingPathComponent("Downloads")))
-        downloads.errorPresentation = { error in
-            MobileErrorNotice.record(
-                error,
-                operation: .downloads,
-                message: "No se pudo descargar el contenido. Comprueba la conexión e inténtalo de nuevo.").inlineMessage
-        }
         connectionStore = MobileDirectConnectionStore(url: root.deletingLastPathComponent()
             .appendingPathComponent("connections.json"))
         self.credentials = credentials
@@ -65,6 +59,14 @@ final class MobileLibrary {
             .appendingPathComponent("Rubrics/drafts.json"))
         self.now = now
         rubricAcceptance = MobileRubricAcceptance(store: draftStore, clock: now)
+        downloads.errorPresentation = { [weak self] error in
+            let notice = MobileErrorNotice.record(
+                error,
+                operation: .downloads,
+                message: "No se pudo descargar el contenido. Comprueba la conexión e inténtalo de nuevo.")
+            self?.error = notice
+            return notice.inlineMessage
+        }
     }
 
     func token(for connection: MobileDirectConnection) -> ConnectionToken {
@@ -301,34 +303,19 @@ final class MobileLibrary {
             let client = try DirectEnrollmentClient(endpoint: endpoint, certificateFingerprint: fingerprint)
             try await enroll(client: client, endpoint: endpoint, fingerprint: fingerprint, deviceName: deviceName)
         } catch {
-#if DEBUG
-            print("LLPAIR manual failure type=\(String(reflecting: type(of: error))) domain=\((error as NSError).domain) code=\((error as NSError).code)")
-#endif
             presentError(error, operation: .pairing,
                          message: "No se pudo conectar con LeonardoMD. Comprueba la dirección e inténtalo de nuevo.")
         }
     }
 
     private func enroll(client: DirectEnrollmentClient, endpoint: URL, fingerprint: Data, deviceName: String) async throws {
-#if DEBUG
-        print("LLPAIR stage=credential-generation")
-#endif
         let credential = try PairingRegistry.makeCredential()
         // The enrollment advertisement is emitted only after this app ships a
         // complete request/accept/draw/send handler.
-#if DEBUG
-        print("LLPAIR stage=challenge-request")
-#endif
         let enrollment = try await client.begin(deviceName: deviceName, credential: credential,
                                                 now: now(), kind: .readOnly,
                                                 capabilities: [.rubricExchangeV1])
-#if DEBUG
-        print("LLPAIR stage=challenge-received")
-#endif
         try await credentials.save(credential, deviceID: enrollment.deviceID)
-#if DEBUG
-        print("LLPAIR stage=credential-saved")
-#endif
         let connection = MobileDirectConnection(deviceID: enrollment.deviceID, endpoint: endpoint,
             fingerprint: fingerprint, projectIDs: [], comparisonCode: enrollment.comparisonCode,
             capabilities: [.rubricExchangeV1])

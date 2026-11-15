@@ -91,6 +91,7 @@ final class PairingUITests: XCTestCase {
         }
         let directHost = environment["LEONARDO_DIRECT_QA_HOST"] ?? "127.0.0.1"
         let app = XCUIApplication()
+        app.launchArguments += ["-AppleLanguages", "(es)", "-AppleLocale", "es_ES"]
         app.launch()
         dismissLaunchHelpIfPresent(app)
         let pairingButton = app.buttons["open-pairing"]
@@ -159,10 +160,10 @@ final class PairingUITests: XCTestCase {
         let librarySync = app.buttons["Sincronizar"].firstMatch
         XCTAssertTrue(librarySync.waitForExistence(timeout: 5))
         librarySync.tap()
-        let failure = app.alerts["No se pudo completar la operación"]
+        let failure = mobileFailureAlert(app)
         XCTAssertTrue(failure.waitForExistence(timeout: 15))
         let codeLabel = failure.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS %@", "Código: LL-")).firstMatch
+            NSPredicate(format: "label CONTAINS %@", "LL-")).firstMatch
         XCTAssertTrue(codeLabel.waitForExistence(timeout: 5),
                       "The native failure alert must expose only its short message and reference code")
         let referenceRange = codeLabel.label.range(
@@ -175,7 +176,11 @@ final class PairingUITests: XCTestCase {
         failureCapture.name = "Little Leonardo synchronization failure diagnostic"
         failureCapture.lifetime = .keepAlways
         add(failureCapture)
-        app.alerts.buttons["Aceptar"].tap()
+        let accept = failure.buttons.matching(
+            NSPredicate(format: "label == %@ OR label == %@", "Aceptar", "OK")).firstMatch
+        XCTAssertTrue(accept.exists)
+        XCTAssertEqual(failure.buttons.count, 1)
+        accept.tap()
         XCTAssertTrue(openNativeDirectDocument(app, expectedText: "Native direct updated"),
                       "A failed refresh must keep the last downloaded document available")
 
@@ -184,6 +189,10 @@ final class PairingUITests: XCTestCase {
         XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
         settingsButton.tap()
         let logLink = app.descendants(matching: .any)["open-error-log"]
+        for _ in 0..<8 {
+            if logLink.exists { break }
+            app.swipeUp()
+        }
         XCTAssertTrue(logLink.waitForExistence(timeout: 5))
         logLink.tap()
         XCTAssertTrue(app.staticTexts.matching(
@@ -193,6 +202,9 @@ final class PairingUITests: XCTestCase {
         logCapture.name = "Little Leonardo local error log matching reference code"
         logCapture.lifetime = .keepAlways
         add(logCapture)
+        let backToSyncSettings = app.buttons["BackButton"]
+        XCTAssertTrue(backToSyncSettings.waitForExistence(timeout: 5))
+        backToSyncSettings.tap()
         app.buttons["Cerrar"].tap()
         XCTAssertTrue(openNativeDirectDocument(app, expectedText: "Native direct updated"))
 
@@ -219,6 +231,7 @@ final class PairingUITests: XCTestCase {
 
     @MainActor func testManualConnectionFailureShowsReferenceAndMatchingLocalLog() throws {
         let app = XCUIApplication()
+        app.launchArguments += ["-AppleLanguages", "(es)", "-AppleLocale", "es_ES"]
         app.launch()
         dismissLaunchHelpIfPresent(app)
         let pairingButton = app.buttons["open-pairing"]
@@ -242,10 +255,10 @@ final class PairingUITests: XCTestCase {
         port.typeText("1")
         app.buttons["Solicitar conexión"].tap()
 
-        let failure = app.alerts["No se pudo completar la operación"]
+        let failure = mobileFailureAlert(app)
         XCTAssertTrue(failure.waitForExistence(timeout: 15))
         let codeLabel = failure.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS %@", "Código: LL-")).firstMatch
+            NSPredicate(format: "label CONTAINS %@", "LL-")).firstMatch
         XCTAssertTrue(codeLabel.waitForExistence(timeout: 5))
         let referenceRange = codeLabel.label.range(of: #"LL-[0-9A-F]{12}"#, options: .regularExpression)
         let referenceCode = String(codeLabel.label[try XCTUnwrap(referenceRange)])
@@ -253,7 +266,11 @@ final class PairingUITests: XCTestCase {
             NSPredicate(format: "label CONTAINS %@", "[LL1 op=")).firstMatch.exists,
             "Transport details belong in the local log, not the alert")
         captureScreen(app, name: "Little Leonardo short connection error with reference code")
-        failure.buttons["Aceptar"].tap()
+        let accept = failure.buttons.matching(
+            NSPredicate(format: "label == %@ OR label == %@", "Aceptar", "OK")).firstMatch
+        XCTAssertTrue(accept.exists)
+        XCTAssertEqual(failure.buttons.count, 1)
+        accept.tap()
 
         let settings = app.buttons["open-sync-settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: 5))
@@ -269,6 +286,45 @@ final class PairingUITests: XCTestCase {
             NSPredicate(format: "label CONTAINS %@", referenceCode)).firstMatch.waitForExistence(timeout: 5),
             "The local log must contain the same reference code shown in the alert")
         captureScreen(app, name: "Little Leonardo local log matching reference code")
+    }
+
+    @MainActor func testEnglishManualConnectionFailureUsesEnglishAlert() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launch()
+        dismissLaunchHelpIfPresent(app)
+        let pairingButton = app.buttons["open-pairing"]
+        XCTAssertTrue(pairingButton.waitForExistence(timeout: 10))
+        pairingButton.tap()
+        let pairingMethod = app.segmentedControls["pairing-method"]
+        XCTAssertTrue(pairingMethod.waitForExistence(timeout: 10))
+        pairingMethod.buttons["IP y puerto"].tap()
+        let host = app.textFields["pairing-host"]
+        XCTAssertTrue(host.waitForExistence(timeout: 5))
+        host.tap()
+        if let value = host.value as? String {
+            host.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+        }
+        host.typeText("127.0.0.1")
+        let port = app.textFields["pairing-port"]
+        port.tap()
+        if let value = port.value as? String {
+            port.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+        }
+        port.typeText("1")
+        app.buttons["Solicitar conexión"].tap()
+
+        let failure = app.alerts["The operation couldn’t be completed"]
+        XCTAssertTrue(failure.waitForExistence(timeout: 15))
+        XCTAssertTrue(failure.buttons["OK"].exists)
+        XCTAssertEqual(failure.buttons.count, 1)
+        let message = failure.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "Try again. If it happens again, share this code. Code: LL-"))
+            .firstMatch
+        XCTAssertTrue(message.exists)
+        XCTAssertFalse(failure.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "[LL1 op=")).firstMatch.exists)
+        captureScreen(app, name: "Little Leonardo short English error with reference code")
     }
 
     @MainActor func testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS() throws {
@@ -799,7 +855,7 @@ final class PairingUITests: XCTestCase {
         dismissMobileFailureIfPresent(app)
         try advanceDirectFixture("arm-enrollment-failure")
         requestManualConnection(app, port: port)
-        let failure = app.alerts["No se pudo completar la operación"]
+        let failure = mobileFailureAlert(app)
         XCTAssertTrue(failure.waitForExistence(timeout: 30),
                       "A failed enrollment snapshot must be surfaced instead of publishing a connection")
         XCTAssertFalse(failure.staticTexts.firstMatch.label.isEmpty,
@@ -879,7 +935,7 @@ final class PairingUITests: XCTestCase {
         XCTAssertTrue(failure.waitForExistence(timeout: 30),
                       "A direct-cache deletion failure must be surfaced and kept retryable")
         let failureCode = failure.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS %@", "Código: LL-")
+            NSPredicate(format: "label CONTAINS %@", "LL-")
         ).firstMatch
         XCTAssertTrue(failureCode.exists, "The retry alert must use the same short message and reference code")
         XCTAssertFalse(failure.staticTexts.matching(
@@ -1015,17 +1071,27 @@ final class PairingUITests: XCTestCase {
     }
 
     @MainActor private func dismissNativeFailureIfPresent(_ app: XCUIApplication) {
-        let failure = app.alerts["No se pudo completar la operación"]
+        let failure = mobileFailureAlert(app)
         guard failure.waitForExistence(timeout: 1) else { return }
-        failure.buttons["Aceptar"].tap()
+        let accept = failure.buttons.matching(
+            NSPredicate(format: "label == %@ OR label == %@", "Aceptar", "OK")).firstMatch
+        if accept.exists { accept.tap() }
         XCTAssertFalse(failure.waitForExistence(timeout: 3),
                        "The native failure alert must be dismissed before capture")
     }
 
     @MainActor private func dismissMobileFailureIfPresent(_ app: XCUIApplication) {
-        let failure = app.alerts["No se pudo completar la operación"]
+        let failure = mobileFailureAlert(app)
         guard failure.waitForExistence(timeout: 2) else { return }
-        failure.buttons["Aceptar"].tap()
+        let accept = failure.buttons.matching(
+            NSPredicate(format: "label == %@ OR label == %@", "Aceptar", "OK")).firstMatch
+        if accept.exists { accept.tap() }
+    }
+
+    @MainActor private func mobileFailureAlert(_ app: XCUIApplication) -> XCUIElement {
+        app.alerts.matching(NSPredicate(format: "label == %@ OR label == %@",
+                                        "No se pudo completar la operación",
+                                        "The operation couldn’t be completed")).firstMatch
     }
 
     @MainActor private func closePairingIfPresent(_ app: XCUIApplication) {

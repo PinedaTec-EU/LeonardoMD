@@ -698,6 +698,9 @@ sincronización → Ver log** para consultar las entradas de error locales
 recientes. El mismo código identifica la entrada correspondiente; un error de
 red puede incluir un diagnóstico acotado como este:
 
+Otros fallos de la app usan categorías fijas, por ejemplo
+`error=transport.invalid_identity`; se excluyen las descripciones arbitrarias del error.
+
 `ref=LL-0123456789AB op=synchronization transport=[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
 
 El registro permanece en este dispositivo y no se envía automáticamente. No
