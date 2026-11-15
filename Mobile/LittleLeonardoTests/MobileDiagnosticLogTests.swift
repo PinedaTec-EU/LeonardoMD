@@ -52,6 +52,35 @@ final class MobileDiagnosticLogTests: XCTestCase {
     }
 
     @MainActor
+    func testInvalidScannedInvitationUsesLocalizedReferenceAndMatchingSafeLog() throws {
+        let payload = "littleleonardo://pair?endpoint=https://private.invalid:40882&token=secret"
+        for spanish in [true, false] {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: root) }
+            let log = MobileDiagnosticLog(fileURL: root.appendingPathComponent("error-log.txt"))
+            let notice = MobileQRScannerDiagnostics.notice(
+                for: PairingError.expiredInvitation,
+                reason: .invalidInvitation,
+                diagnosticLog: log,
+                spanish: spanish)
+
+            XCTAssertEqual(
+                notice.message,
+                spanish
+                    ? "El QR no es válido o ha caducado. Genera uno nuevo en LeonardoMD."
+                    : "This QR code is invalid or expired. Generate a new one in LeonardoMD.")
+            XCTAssertTrue(notice.inlineMessage.contains(
+                "\(spanish ? "Código" : "Code"): \(notice.referenceCode)"))
+            let entry = try XCTUnwrap(log.recentEntries().last)
+            XCTAssertTrue(entry.contains(
+                "ref=\(notice.referenceCode) op=scanner error=pairing.expired_invitation"))
+            XCTAssertFalse(entry.contains(payload))
+            XCTAssertFalse(entry.contains("private.invalid"))
+            XCTAssertFalse(entry.contains("token=secret"))
+        }
+    }
+
+    @MainActor
     func testLogClassifiesKnownFailuresWithoutPersistingErrorDescriptions() async {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
