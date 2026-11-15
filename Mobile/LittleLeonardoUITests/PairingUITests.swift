@@ -42,6 +42,59 @@ final class PairingUITests: XCTestCase {
         captureScreen(app, name: "Classic manual pairing")
     }
 
+    @MainActor func testEnglishErrorLogRouteAndScreenAreLocalized() {
+        assertErrorLogLocale(
+            language: "en",
+            locale: "en_US",
+            section: "Diagnostics",
+            openLabel: "View log",
+            title: "Error log",
+            refresh: "Refresh")
+    }
+
+    @MainActor func testSpanishErrorLogRouteAndScreenAreLocalized() {
+        assertErrorLogLocale(
+            language: "es",
+            locale: "es_ES",
+            section: "Diagnóstico",
+            openLabel: "Ver log",
+            title: "Registro de errores",
+            refresh: "Actualizar")
+    }
+
+    @MainActor private func assertErrorLogLocale(
+        language: String,
+        locale: String,
+        section: String,
+        openLabel: String,
+        title: String,
+        refresh: String
+    ) {
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", locale]
+        app.launch()
+
+        let settings = app.buttons["open-sync-settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 15))
+        settings.tap()
+        let logLink = app.descendants(matching: .any)["open-error-log"]
+        for _ in 0..<12 {
+            if logLink.waitForExistence(timeout: 0.3) { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(logLink.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts[section].exists)
+        XCTAssertEqual(logLink.label, openLabel)
+        captureScreen(app, name: "\(language) Little Leonardo diagnostic settings")
+        logLink.tap()
+
+        XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 5))
+        let refreshButton = app.buttons["refresh-error-log"]
+        XCTAssertTrue(refreshButton.waitForExistence(timeout: 5))
+        XCTAssertEqual(refreshButton.label, refresh)
+        captureScreen(app, name: "\(language) Little Leonardo error log")
+    }
+
     @MainActor private func captureScreen(_ app: XCUIApplication, name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name

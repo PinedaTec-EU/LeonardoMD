@@ -1,8 +1,8 @@
 {
   "purpose": "PR #435 native iOS evidence for localized short error alerts, matching local diagnostics, and Little Leonardo mobile Ayuda.",
   "bundleIdentifier": "eu.pinedatec.LittleLeonardo",
-  "productSourceCommit": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
-  "reviewNote": "The product source was captured at dcbad8240aa4e9424260dfe3b664145811a3ba69. This evidence-only commit adds captures and metadata; product sources and build inputs are unchanged.",
+  "productSourceCommit": "e17f50f3c5b06769c9582a0ee0e0c021dfa27133",
+  "reviewNote": "The newest bilingual settings and log captures use application and test sources committed at e17f50f3c5b06769c9582a0ee0e0c021dfa27133. Earlier alert and mobile Help captures use dcbad8240aa4e9424260dfe3b664145811a3ba69; the Device Hub log capture uses 0da1200cbead3bf64222a14b866f6b0e503c3f32. This evidence and summary-metadata follow-up changes no app source or Xcode build input.",
   "simulator": {
     "name": "LittleLeonardo PR435 Localization QA 20261115",
     "deviceId": "0C5D5C27-1EBC-4C69-BA40-CAEE89F49750",
@@ -56,6 +56,26 @@
       "captures": [
         "classic-help-es.png"
       ]
+    },
+    {
+      "testNames": [
+        "PairingUITests.testEnglishErrorLogRouteAndScreenAreLocalized",
+        "PairingUITests.testSpanishErrorLogRouteAndScreenAreLocalized"
+      ],
+      "result": "passed",
+      "passed": 2,
+      "failed": 0,
+      "startedAt": "2026-11-15T15:52:27.899Z",
+      "finishedAt": "2026-11-15T15:52:58.647Z",
+      "sourceSha": "e17f50f3c5b06769c9582a0ee0e0c021dfa27133",
+      "resultBundle": "test_sim_2026-11-15T15-52-24-668Z_pid55093_f4ea963e.xcresult",
+      "captures": [
+        "sync-settings-en-20261115.png",
+        "error-log-en-20261115.png",
+        "sync-settings-es-20261115.png",
+        "error-log-es-20261115.png"
+      ],
+      "sourceStateAtCapture": "The dirty capture worktree's application and test sources were committed byte-identically at sourceSha. The later compilation-count entry and feature inventory changes are not iOS build inputs."
     }
   ],
   "captures": [
@@ -100,6 +120,42 @@
       "description": "The live local log shows recent bounded records with opaque LL references and normalized operations, categories, error identifiers and numeric codes. Test-only entries are synthetic; no user data is present."
     },
     {
+      "file": "sync-settings-en-20261115.png",
+      "sha256": "ba4f26cf68c3589dbc59ce978e3cbe0e4a117bb8d914af32461e14f37bbddee5",
+      "capturedAt": "2026-11-15T15:52:41.954Z",
+      "route": "Library > Synchronization > Diagnostics > View log",
+      "provenance": "Original XCTest screenshot attachment exported from the iOS 27.0 Simulator result bundle; synthetic isolated QA data; no pixel edits.",
+      "context": "sync-settings-en-20261115.context.json",
+      "description": "The English settings screen exposes the localized Diagnostics section and View log route."
+    },
+    {
+      "file": "error-log-en-20261115.png",
+      "sha256": "927c6546edf496caec57676f2163c409ad31ca2f965e4fc870ac6d7a694b15c9",
+      "capturedAt": "2026-11-15T15:52:45.016Z",
+      "route": "Synchronization > Diagnostics > View log > Error log",
+      "provenance": "Original XCTest screenshot attachment exported from the iOS 27.0 Simulator result bundle; synthetic isolated QA data; no pixel edits.",
+      "context": "error-log-en-20261115.context.json",
+      "description": "The English log title, retention note and bounded normalized local entries are visible."
+    },
+    {
+      "file": "sync-settings-es-20261115.png",
+      "sha256": "376a17a849cb01931eff09e2d339a65aae011381f4e0d83a8a09a401f9e0089c",
+      "capturedAt": "2026-11-15T15:52:54.976Z",
+      "route": "Biblioteca > Sincronización > Diagnóstico > Ver log",
+      "provenance": "Original XCTest screenshot attachment exported from the iOS 27.0 Simulator result bundle; synthetic isolated QA data; no pixel edits.",
+      "context": "sync-settings-es-20261115.context.json",
+      "description": "La pantalla de ajustes muestra la sección Diagnóstico y el acceso localizado Ver log."
+    },
+    {
+      "file": "error-log-es-20261115.png",
+      "sha256": "4974b7721bef35a51bf6865e6dec98cce90199344a190b3912dd531a205c55c4",
+      "capturedAt": "2026-11-15T15:52:58.074Z",
+      "route": "Sincronización > Diagnóstico > Ver log > Registro de errores",
+      "provenance": "Original XCTest screenshot attachment exported from the iOS 27.0 Simulator result bundle; synthetic isolated QA data; no pixel edits.",
+      "context": "error-log-es-20261115.context.json",
+      "description": "El título, el aviso de retención y las entradas locales normalizadas aparecen en español."
+    },
+    {
       "file": "error-alert-en-integrated.jpg",
       "context": "error-alert-en-integrated.context.json",
       "metadata": "error-alert-en-integrated.metadata.json",
@@ -114,5 +170,13 @@
     "The simulator could not connect to the separate Mac direct-sync fixture (NSURLErrorDomain -1004); direct enrollment and refresh acceptance are not claimed.",
     "This mobile Ayuda page is not the bundled macOS Spanish/English user guides. Their full Help workflow smoke in a fresh packaged macOS instance remains pending.",
     "This diagnostic UI evidence does not resolve the owner’s original large-image synchronization failure in issue #380; keep #380 open until physical acceptance is recorded."
-  ]
+  ],
+  "captureSourceOverrides": {
+    "error-alert-es.png": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
+    "error-log-es.png": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
+    "error-alert-en.png": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
+    "classic-help-es.png": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
+    "error-log-devicehub-qa.png": "0da1200cbead3bf64222a14b866f6b0e503c3f32",
+    "error-alert-en-integrated.jpg": "f1445de6e781056849a85bde0191b126b9fd4706"
+  }
 }

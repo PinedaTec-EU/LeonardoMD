@@ -371,23 +371,24 @@ struct MobileLibraryView: View {
                     Text("Recupera el proyecto con tus respuestas de práctica guardadas en este dispositivo. / Restore the project with your practice answers saved on this device.")
                         .font(.caption)
                 }.listRowBackground(MobileClassic.inset)
-                SyncCacheSettingsView(library: library.downloads, spanish: true).listRowBackground(MobileClassic.inset)
+                SyncCacheSettingsView(library: library.downloads, spanish: spanishErrors).listRowBackground(MobileClassic.inset)
                 Section {
                     Button("Acerca de Little Leonardo", systemImage: "info.circle") { presentedSheet = .about }
                         .accessibilityIdentifier("open-about")
                 }.listRowBackground(MobileClassic.inset)
-                Section("Diagnóstico") {
+                Section(MobileErrorLogCopy.diagnosticsSection(spanish: spanishErrors)) {
                     NavigationLink {
-                        MobileErrorLogView()
+                        MobileErrorLogView(spanish: spanishErrors)
                     } label: {
-                        Label("Ver log", systemImage: "doc.text.magnifyingglass")
+                        Label(MobileErrorLogCopy.openLog(spanish: spanishErrors),
+                              systemImage: "doc.text.magnifyingglass")
                     }
                         .accessibilityIdentifier("open-error-log")
                 }.listRowBackground(MobileClassic.inset)
             }
                 .classicSurface()
-                .navigationTitle("Sincronización")
-                .toolbar { Button("Cerrar") { presentedSheet = nil } }
+                .navigationTitle(MobileErrorLogCopy.synchronizationTitle(spanish: spanishErrors))
+                .toolbar { Button(MobileErrorLogCopy.close(spanish: spanishErrors)) { presentedSheet = nil } }
         }
     }
 }

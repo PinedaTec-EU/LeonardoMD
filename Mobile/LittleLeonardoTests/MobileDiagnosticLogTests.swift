@@ -53,13 +53,28 @@ final class MobileDiagnosticLogTests: XCTestCase {
 
     @MainActor
     func testInvalidScannedInvitationUsesLocalizedReferenceAndMatchingSafeLog() throws {
-        let payload = "littleleonardo://pair?endpoint=https://private.invalid:40882&token=secret"
+        let instant = Date(timeIntervalSince1970: 1_800_000_000)
+        var registry = PairingRegistry()
+        registry.setEnabled(true)
+        let invitation = try registry.createInvitation(now: instant)
+        let qr = try DirectPairingQR(
+            endpoint: URL(string: "https://192.168.1.4:40882")!,
+            certificateFingerprint: Data(repeating: 42, count: 32),
+            invitation: invitation)
+        let payload = try qr.encodedURL().absoluteString
         for spanish in [true, false] {
             let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             defer { try? FileManager.default.removeItem(at: root) }
             let log = MobileDiagnosticLog(fileURL: root.appendingPathComponent("error-log.txt"))
+            let disposition = MobileQRScannerDiagnostics.scanDisposition(
+                for: payload, now: invitation.expiresAt)
+            guard case .failure(let error) = disposition else {
+                XCTFail("An expired QR must reach the production scanner failure path")
+                return
+            }
+            XCTAssertEqual(error as? PairingError, .expiredInvitation)
             let notice = MobileQRScannerDiagnostics.notice(
-                for: PairingError.expiredInvitation,
+                for: error,
                 reason: .invalidInvitation,
                 diagnosticLog: log,
                 spanish: spanish)
@@ -78,6 +93,54 @@ final class MobileDiagnosticLogTests: XCTestCase {
             XCTAssertFalse(entry.contains("private.invalid"))
             XCTAssertFalse(entry.contains("token=secret"))
         }
+    }
+
+    @MainActor
+    func testMalformedRecognizedInvitationGetsReferenceWithoutLoggingPayload() throws {
+        let payload = "littleleonardo://pair:bad/"
+        let disposition = MobileQRScannerDiagnostics.scanDisposition(
+            for: payload, now: Date(timeIntervalSince1970: 1_800_000_000))
+        guard case .failure(let error) = disposition else {
+            XCTFail("A malformed Little Leonardo scheme must use the scanner failure path")
+            return
+        }
+        XCTAssertEqual(error as? TransportError, .invalidEndpoint)
+
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let log = MobileDiagnosticLog(fileURL: root.appendingPathComponent("error-log.txt"))
+        let notice = MobileQRScannerDiagnostics.notice(
+            for: error,
+            reason: .invalidInvitation,
+            diagnosticLog: log,
+            spanish: false)
+        let entry = try XCTUnwrap(log.recentEntries().last)
+
+        XCTAssertTrue(entry.contains("ref=\(notice.referenceCode) op=scanner error=transport.invalid_endpoint"))
+        XCTAssertFalse(entry.contains(payload))
+    }
+
+    @MainActor
+    func testUnrelatedScannedCodesRemainIgnored() {
+        XCTAssertTrue(isUnrelated("https://example.invalid/pair"))
+        XCTAssertTrue(isUnrelated("ordinary barcode"))
+
+        func isUnrelated(_ payload: String) -> Bool {
+            if case .unrelated = MobileQRScannerDiagnostics.scanDisposition(for: payload, now: Date()) {
+                return true
+            }
+            return false
+        }
+    }
+
+    func testDiagnosticLogMenuAndScreenCopyMatchBothLocales() {
+        XCTAssertEqual(MobileErrorLogCopy.openLog(spanish: true), "Ver log")
+        XCTAssertEqual(MobileErrorLogCopy.title(spanish: true), "Registro de errores")
+        XCTAssertEqual(MobileErrorLogCopy.refresh(spanish: true), "Actualizar")
+        XCTAssertEqual(MobileErrorLogCopy.openLog(spanish: false), "View log")
+        XCTAssertEqual(MobileErrorLogCopy.title(spanish: false), "Error log")
+        XCTAssertEqual(MobileErrorLogCopy.refresh(spanish: false), "Refresh")
+        XCTAssertTrue(MobileErrorLogCopy.retentionNote(spanish: false).contains("not sent automatically"))
     }
 
     @MainActor

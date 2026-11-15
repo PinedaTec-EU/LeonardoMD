@@ -229,3 +229,25 @@ captures are in the [evidence manifest](error-log-20261115/manifest.json):
 
 This verifies the error presentation and local correlation only. The owner's
 338,658-byte image failure remains open under [#380](https://github.com/PinedaTec-EU/LeonardoMD/issues/380).
+
+After the scanner and localization review fixes, the same owned simulator passed
+`PairingUITests.testEnglishErrorLogRouteAndScreenAreLocalized` and
+`PairingUITests.testSpanishErrorLogRouteAndScreenAreLocalized` (2/2, source
+`e17f50f3c5b06769c9582a0ee0e0c021dfa27133`, Xcode result bundle
+`test_sim_2026-11-15T15-52-24-668Z_pid55093_f4ea963e.xcresult`). These tests
+verify the synchronization settings route, section, log title, and refresh
+label in each locale. Four original screenshots show those screens:
+[English settings](error-log-20261115/sync-settings-en-20261115.png),
+[English log](error-log-20261115/error-log-en-20261115.png),
+[ajustes en español](error-log-20261115/sync-settings-es-20261115.png), and
+[registro en español](error-log-20261115/error-log-es-20261115.png). The
+capture viewport is 440 × 956 UIKit points / 1320 × 2868 pixels; CSS viewport
+and browser version are not applicable to this native iOS app. Per-image
+timestamps, hashes and source mapping are in the adjacent context files.
+
+The new scanner regression passes for a malformed recognized QR and confirms
+that its payload is not logged. The Simulator UI test does not emulate the
+physical camera, so no camera-scan screenshot is claimed. The Mac remains
+locked; the packaged macOS Spanish/English Help smoke has not been observed in
+a fresh app window and remains pending. No physical large-image acceptance is
+claimed for #380.
