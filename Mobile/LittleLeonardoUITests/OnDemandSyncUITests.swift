@@ -127,7 +127,8 @@ final class OnDemandSyncUITests: XCTestCase {
         try enroll(app)
 
         let hostMenu = app.buttons.matching(
-            NSPredicate(format: "identifier BEGINSWITH %@", "shared-host-menu-")).firstMatch
+            NSPredicate(format: "identifier BEGINSWITH %@ AND label == %@",
+                        "shared-host-menu-", "Acciones de Mac conectado")).firstMatch
         XCTAssertTrue(hostMenu.waitForExistence(timeout: 10), "The connected Mac must expose its local actions")
         hostMenu.tap()
         let rename = app.buttons["Cambiar nombre"]
