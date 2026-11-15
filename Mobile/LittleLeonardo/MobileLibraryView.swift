@@ -256,7 +256,10 @@ struct MobileLibraryView: View {
             }.classicSurface().navigationTitle("Conectar con LeonardoMD")
             .toolbar { Button("Cerrar") { presentedSheet = nil } }
             .sheet(isPresented: $scanning) {
-                MobileQRScannerScreen { qrURL = $0 }
+                MobileQRScannerScreen(
+                    spanish: spanishErrors,
+                    receive: { qrURL = $0 },
+                    failure: { library.error = $0 })
             }
         }
     }
