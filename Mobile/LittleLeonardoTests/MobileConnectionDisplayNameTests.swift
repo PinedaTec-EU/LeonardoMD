@@ -8,7 +8,7 @@ final class MobileConnectionDisplayNameTests: XCTestCase {
     private let deviceID = UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB")!
     private let projectID = UUID(uuidString: "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC")!
 
-    private func connection(endpoint: String = "https://10.0.8.158:40882",
+    private func connection(endpoint: String = "https://192.0.2.158:40882",
                             displayName: String? = nil) -> MobileDirectConnection {
         MobileDirectConnection(connectionID: connectionID, deviceID: deviceID,
             endpoint: URL(string: endpoint)!, fingerprint: Data(repeating: 7, count: 32),
@@ -24,17 +24,17 @@ final class MobileConnectionDisplayNameTests: XCTestCase {
         library.connections = [value]
 
         XCTAssertTrue(library.renameConnection(connectionID: value.connectionID,
-                                               displayName: "  MacBook Pro de Javier  "))
+                                               displayName: "  Mac QA  "))
         XCTAssertFalse(library.connections[0].showsEndpointAddressInHostRow)
         var staleOperationSnapshot = value
         staleOperationSnapshot.capabilityRefreshAttempted = true
         XCTAssertNotNil(try library.commitConnection(staleOperationSnapshot,
                                                      expected: library.token(for: staleOperationSnapshot)))
-        XCTAssertEqual(library.connections[0].displayName, "MacBook Pro de Javier")
+        XCTAssertEqual(library.connections[0].displayName, "Mac QA")
 
         let store = MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json"))
         let saved = try XCTUnwrap(store.load().first)
-        XCTAssertEqual(saved.displayName, "MacBook Pro de Javier")
+        XCTAssertEqual(saved.displayName, "Mac QA")
         XCTAssertEqual(saved.connectionID, value.connectionID)
         XCTAssertEqual(saved.deviceID, value.deviceID)
         XCTAssertEqual(saved.endpoint, value.endpoint)
@@ -53,7 +53,7 @@ final class MobileConnectionDisplayNameTests: XCTestCase {
         let missingCredential = MobileDirectConnection(
             connectionID: UUID(uuidString: "DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD")!,
             deviceID: UUID(uuidString: "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE")!,
-            endpoint: URL(string: "https://10.0.8.159:40882")!,
+            endpoint: URL(string: "https://192.0.2.159:40882")!,
             fingerprint: Data(repeating: 8, count: 32), projectIDs: [UUID()],
             comparisonCode: nil, capabilities: [], displayName: "Otro Mac")
         let connectionStore = MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json"))
@@ -68,12 +68,12 @@ final class MobileConnectionDisplayNameTests: XCTestCase {
 
         await gate.waitUntilReached()
         XCTAssertTrue(library.connections.first(where: { $0.connectionID == missingCredential.connectionID })?.revoked == true)
-        XCTAssertTrue(library.renameConnection(connectionID: first.connectionID, displayName: "Mac de Javier"))
+        XCTAssertTrue(library.renameConnection(connectionID: first.connectionID, displayName: "Mac QA"))
         await gate.open()
         await reload.value
 
         let saved = try XCTUnwrap(connectionStore.load().first(where: { $0.connectionID == first.connectionID }))
-        XCTAssertEqual(saved.displayName, "Mac de Javier")
+        XCTAssertEqual(saved.displayName, "Mac QA")
         let repaired = try XCTUnwrap(connectionStore.load().first(where: {
             $0.connectionID == missingCredential.connectionID
         }))
@@ -82,7 +82,7 @@ final class MobileConnectionDisplayNameTests: XCTestCase {
         let relaunched = MobileLibrary(rootURL: corpusRoot, credentials: credentials, downloadCache: cache)
         await relaunched.reload()
         XCTAssertEqual(relaunched.connections.first(where: { $0.connectionID == first.connectionID })?.displayName,
-                       "Mac de Javier")
+                       "Mac QA")
         XCTAssertTrue(relaunched.connections.first(where: {
             $0.connectionID == missingCredential.connectionID
         })?.revoked == true)
@@ -92,9 +92,9 @@ final class MobileConnectionDisplayNameTests: XCTestCase {
         let value = connection()
         XCTAssertEqual(value.suggestedDisplayName, "Mac conectado")
         XCTAssertTrue(value.showsEndpointAddressInHostRow)
-        XCTAssertEqual(value.endpointAddress, "10.0.8.158:40882")
-        XCTAssertEqual(connection(endpoint: "https://[fe80::1]:40882").endpointAddress,
-                         "[fe80::1]:40882")
+        XCTAssertEqual(value.endpointAddress, "192.0.2.158:40882")
+        XCTAssertEqual(connection(endpoint: "https://[2001:db8::1]:40882").endpointAddress,
+                         "[2001:db8::1]:40882")
 
         let encoded = try JSONEncoder().encode(value)
         var fields = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
@@ -107,8 +107,8 @@ final class MobileConnectionDisplayNameTests: XCTestCase {
     }
 
     func testLocalHostnameIsSuggestedWhenAvailable() {
-        let value = connection(endpoint: "https://MacBook-Pro-de-Javier.local:40882")
-        XCTAssertEqual(value.suggestedDisplayName.lowercased(), "macbook pro de javier")
+        let value = connection(endpoint: "https://qa-mac.local:40882")
+        XCTAssertEqual(value.suggestedDisplayName.lowercased(), "qa mac")
         XCTAssertFalse(value.showsEndpointAddressInHostRow)
     }
 }
