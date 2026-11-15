@@ -1,0 +1,27 @@
+{
+  "source_sha": "d1a200ad724feb22a8df3ca6ed41217cc8203835",
+  "test": "PairingUITests/testEnglishErrorLogRouteAndScreenAreLocalized()",
+  "test_result": "passed",
+  "result_bundle": ".build/test-results/pr435-current-head-ui-20261115.xcresult",
+  "platform": "iOS 27.0 Simulator (build 24A434)",
+  "device": "iPhone 18 Pro Max",
+  "simulator_id": "0C5D5C27-1EBC-4C69-BA40-CAEE89F49750",
+  "screen": "Library → Sync settings → View log",
+  "locale": "English (en_US)",
+  "viewport_points": {
+    "width": 440,
+    "height": 956
+  },
+  "screenshot_pixels": {
+    "width": 1320,
+    "height": 2868
+  },
+  "capture_mode": "Original XCTest viewport screenshot attachment; unmodified PNG",
+  "captured_at": "2026-11-15T19:48:33.338000Z",
+  "browser": "Not applicable: native iOS app; no browser",
+  "css_viewport": "Not applicable: UIKit points are reported above",
+  "state": "The recent local error log screen and Refresh action use English labels.",
+  "data_provenance": "Synthetic isolated simulator data; no owner document or credential",
+  "image_bytes": 677104,
+  "image_sha256": "8868d44a1b85e4185ffcbe0f2465efc50cf9d0e0ae46705967f39b00a7fce21c"
+}
