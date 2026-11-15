@@ -1,8 +1,8 @@
 {
   "purpose": "PR #435 native iOS evidence for localized short error alerts, matching local diagnostics, and Little Leonardo mobile Ayuda.",
   "bundleIdentifier": "eu.pinedatec.LittleLeonardo",
-  "productSourceCommit": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
-  "reviewNote": "The product source was captured at dcbad8240aa4e9424260dfe3b664145811a3ba69. This evidence-only commit adds captures and metadata; product sources and build inputs are unchanged.",
+  "productSourceCommit": "e17f50f3c5b06769c9582a0ee0e0c021dfa27133",
+  "reviewNote": "The newest bilingual settings and log captures use application and test sources committed at e17f50f3c5b06769c9582a0ee0e0c021dfa27133. Earlier alert and mobile Help captures use dcbad8240aa4e9424260dfe3b664145811a3ba69; the Device Hub log capture uses 0da1200cbead3bf64222a14b866f6b0e503c3f32. This evidence and summary-metadata follow-up changes no app source or Xcode build input.",
   "simulator": {
     "name": "LittleLeonardo PR435 Localization QA 20261115",
     "deviceId": "0C5D5C27-1EBC-4C69-BA40-CAEE89F49750",
@@ -160,5 +160,12 @@
     "The simulator could not connect to the separate Mac direct-sync fixture (NSURLErrorDomain -1004); direct enrollment and refresh acceptance are not claimed.",
     "This mobile Ayuda page is not the bundled macOS Spanish/English user guides. Their full Help workflow smoke in a fresh packaged macOS instance remains pending.",
     "This diagnostic UI evidence does not resolve the owner’s original large-image synchronization failure in issue #380; keep #380 open until physical acceptance is recorded."
-  ]
+  ],
+  "captureSourceOverrides": {
+    "error-alert-es.png": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
+    "error-log-es.png": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
+    "error-alert-en.png": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
+    "classic-help-es.png": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
+    "error-log-devicehub-qa.png": "0da1200cbead3bf64222a14b866f6b0e503c3f32"
+  }
 }
