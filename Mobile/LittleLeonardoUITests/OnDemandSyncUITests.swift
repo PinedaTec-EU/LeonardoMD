@@ -135,7 +135,8 @@ final class OnDemandSyncUITests: XCTestCase {
         XCTAssertTrue(rename.waitForExistence(timeout: 5))
         rename.tap()
 
-        let name = app.textFields.matching(NSPredicate(format: "label == %@", "Nombre del Mac")).firstMatch
+        let name = app.textFields.matching(
+            NSPredicate(format: "placeholderValue == %@", "Nombre del Mac")).firstMatch
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         name.tap()
         if let value = name.value as? String, !value.isEmpty {
