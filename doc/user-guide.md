@@ -680,8 +680,8 @@ explicit actions; a blocked, submitted or frozen retry draft cannot be edited.
 ### If mobile synchronization is interrupted
 
 For a network failure, the alert shows a short message, a unique reference code
-such as `LL-0123456789AB`, and one **Aceptar** (OK) action. Open **Ajustes de
-sincronización → Ver log** (sync settings → View log) to inspect recent local
+such as `LL-0123456789AB`, and one **Aceptar** (OK) action. Open **Sync settings →
+View log** (**Ajustes de sincronización → Ver log** in Spanish) to inspect recent local
 error entries. The same reference code marks the matching entry; a network
 entry may include a bounded diagnostic such as:
 

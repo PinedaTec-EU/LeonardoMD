@@ -105,8 +105,7 @@ public final class DownloadLibrary {
             cached = try await cache.read(id: id, entry: entry, allowStale: false)
         } catch {
             try requireEntry(id: id, entry: entry, generation: generation)
-            let failure = recordFailure(error, key: key)
-            throw failure
+            throw failureToThrow(error, key: key)
         }
         if let file = cached {
             try requireEntry(id: id, entry: entry, generation: generation)
@@ -142,9 +141,9 @@ public final class DownloadLibrary {
                     }
                 } catch {
                     try requireEntry(id: id, entry: entry, generation: generation)
-                    throw recordFailure(error, key: key)
+                    throw failureToThrow(error, key: key)
                 }
-                throw recordFailure(error, key: key)
+                throw failureToThrow(error, key: key)
             }
         }
         tasks[key] = ActiveDownload(identity: identity, generation: generation, entry: entry, task: task)
@@ -167,6 +166,11 @@ public final class DownloadLibrary {
         let message = errorMessage(for: error)
         failures[key] = message
         return RemoteDownloadFailure(message: message, underlying: error)
+    }
+
+    private func failureToThrow(_ error: any Error, key: String) -> any Error {
+        let failure = recordFailure(error, key: key)
+        return errorPresentation == nil ? error : failure
     }
 
     /// No suspension may separate this check from delivery to the caller.

@@ -46,6 +46,7 @@ final class PairingUITests: XCTestCase {
         assertErrorLogLocale(
             language: "en",
             locale: "en_US",
+            settingsLabel: "Sync settings",
             section: "Diagnostics",
             openLabel: "View log",
             title: "Error log",
@@ -56,6 +57,7 @@ final class PairingUITests: XCTestCase {
         assertErrorLogLocale(
             language: "es",
             locale: "es_ES",
+            settingsLabel: "Ajustes de sincronización",
             section: "Diagnóstico",
             openLabel: "Ver log",
             title: "Registro de errores",
@@ -65,6 +67,7 @@ final class PairingUITests: XCTestCase {
     @MainActor private func assertErrorLogLocale(
         language: String,
         locale: String,
+        settingsLabel: String,
         section: String,
         openLabel: String,
         title: String,
@@ -76,6 +79,7 @@ final class PairingUITests: XCTestCase {
 
         let settings = app.buttons["open-sync-settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: 15))
+        XCTAssertEqual(settings.label, settingsLabel)
         settings.tap()
         let logLink = app.descendants(matching: .any)["open-error-log"]
         for _ in 0..<12 {

@@ -301,7 +301,9 @@ struct MobileLibraryView: View {
             Button("Conectar", systemImage: "qrcode") { presentedSheet = .direct }
                 .disabled(library.connecting)
                 .accessibilityIdentifier("open-pairing")
-            Button("Ajustes de sincronización", systemImage: "gearshape") { presentedSheet = .settings }
+            Button { presentedSheet = .settings } label: {
+                Label(spanishErrors ? "Ajustes de sincronización" : "Sync settings", systemImage: "gearshape")
+            }
                 .accessibilityIdentifier("open-sync-settings")
             Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
                 Task { await library.synchronize() }
