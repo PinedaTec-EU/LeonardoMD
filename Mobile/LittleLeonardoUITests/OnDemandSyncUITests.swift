@@ -321,7 +321,7 @@ final class OnDemandSyncUITests: XCTestCase {
         app.buttons["open-pairing"].tap()
         app.segmentedControls["pairing-method"].buttons["IP y puerto"].tap()
         let host = app.textFields["pairing-host"], port = app.textFields["pairing-port"]
-        host.tap(); host.typeText("127.0.0.1")
+        host.tap(); host.typeText(try readyHost())
         port.tap()
         port.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: (port.value as? String)?.count ?? 0))
         port.typeText("46987")
@@ -359,6 +359,10 @@ final class OnDemandSyncUITests: XCTestCase {
     private func readyProjectID() throws -> String {
         let ready = try JSONSerialization.jsonObject(with: Data(contentsOf: root().appendingPathComponent("ready.json"))) as? [String: Any]
         return try XCTUnwrap(ready?["projectID"] as? String)
+    }
+    private func readyHost() throws -> String {
+        let ready = try JSONSerialization.jsonObject(with: Data(contentsOf: root().appendingPathComponent("ready.json"))) as? [String: Any]
+        return ready?["host"] as? String ?? "127.0.0.1"
     }
     private func phase(_ value: String) throws {
         let root = try root()

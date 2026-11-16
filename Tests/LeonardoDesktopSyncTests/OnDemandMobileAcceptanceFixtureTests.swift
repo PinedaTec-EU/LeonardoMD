@@ -37,9 +37,11 @@ final class OnDemandMobileAcceptanceFixtureTests: XCTestCase {
                     return await downstream(request)
                 }
             })
-        _ = try await runtime.start(host: "127.0.0.1", port: 46987, projects: [source])
+        let host = ProcessInfo.processInfo.environment["LEONARDO_ON_DEMAND_QA_HOST"] ?? "127.0.0.1"
+        _ = try await runtime.start(host: host, port: 46987, projects: [source])
         do {
-            try write(["port": 46987, "projectID": descriptor.id.uuidString], root: root, name: "ready.json")
+            try write(["host": host, "port": 46987, "projectID": descriptor.id.uuidString],
+                      root: root, name: "ready.json")
             var previous = "", deviceID: UUID?, finished = false
             let deadline = Date().addingTimeInterval(600)
             while Date() < deadline, !finished {

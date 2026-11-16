@@ -293,3 +293,14 @@ The Simulator UI tests do not emulate a physical camera, so no camera-scan
 screenshot is claimed. No physical large-image acceptance is claimed for #380;
 the owner's original image still must synchronize and render on the physical
 iPhone before that issue can close.
+
+#### #435 on-demand simulator fixture
+
+`OnDemandMobileAcceptanceFixtureTests.testServeOnDemandMobileFixture` serves
+synthetic data on port `46987`. Its host defaults to `127.0.0.1`; when the iOS
+Simulator cannot route that address to the Mac, set
+`LEONARDO_ON_DEMAND_QA_HOST` to a private Mac address reachable from the
+simulator. The host fixture records that address in `ready.json`, and the UI
+test reads the same value before pairing. Keep each run on an isolated
+simulator and a fresh `.qa-fixture-owned` root. This is test transport setup,
+not a product networking change ([#460](https://github.com/PinedaTec-EU/LeonardoMD/issues/460)).
