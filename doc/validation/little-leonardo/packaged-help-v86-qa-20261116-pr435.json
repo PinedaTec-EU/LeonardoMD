@@ -1,0 +1,61 @@
+{
+  "purpose": "Supplemental packaged-help smoke for PR #435 after the current-source integration build",
+  "code_source_sha": "49052f4d4bb2b1bdaabf3bd023e01a185976445e",
+  "application": {
+    "product": "LeonardoMD QA",
+    "version": "0.3.1602",
+    "build": "1602",
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.587db1b7310144caa02f4dbb9b2362e7",
+    "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-0529dxak/LeonardoMDQA.app",
+    "executable": "LeonardoMD",
+    "fresh_process": true,
+    "first_window_ready": true,
+    "xctest_linked": false,
+    "process_pid": 24985,
+    "process_exited_after_help_smoke": true
+  },
+  "help": {
+    "opened_through": "Help menu in the packaged macOS application",
+    "english": {
+      "guide_revision": "v86",
+      "examples_inspected": true
+    },
+    "spanish": {
+      "guide_revision": "v86",
+      "examples_inspected": true
+    },
+    "checks": [
+      "Mermaid, inline and display math, one-line and multiline display equations, Markdown-sensitive TeX with underbraces, the tagged box-counting equation, charts, tables and local images were inspected.",
+      "Math-enabled equations and tag rendered without KaTeX errors or literal delimiters.",
+      "With Math disabled, notation remained readable and fenced code remained literal."
+    ]
+  },
+  "practice_forms": [
+    {
+      "locale": "English",
+      "opened_filled_saved_closed_reopened": true,
+      "answers_verified": true,
+      "original_answers_restored": true
+    },
+    {
+      "locale": "Spanish",
+      "opened_filled_saved_closed_reopened": true,
+      "answers_verified": true,
+      "original_answers_restored": true
+    }
+  ],
+  "restored_preferences": {
+    "interface_language": "English",
+    "Mermaid": true,
+    "Math": true,
+    "Charts": true,
+    "Citations": false,
+    "MarkdownExtras": true
+  },
+  "evidence": "The live packaged application was inspected through Help. No screenshot was saved for this supplemental run; the prior v86 run's bundled and opened-copy hashes and screenshot evidence remain linked in the PR.",
+  "teardown": {
+    "quit_requested_through_app_menu": true,
+    "process_absent_after_quit": true,
+    "pid": 24985
+  }
+}
