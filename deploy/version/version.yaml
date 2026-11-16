@@ -1109,9 +1109,19 @@
       "pr": 446,
       "summary": "Existing LeonardoMD installations now receive the corrected synchronization guidance in a new Help copy while saved guide copies and practice answers remain intact.",
       "to_version": "0.3.1602"
+    },
+    {
+      "delta": {
+        "build": 132
+      },
+      "from_version": "0.3.1602",
+      "merge_sha": "abfab9e9ee47328c89c6a4a82ae5ef44e90b85e1",
+      "pr": 435,
+      "summary": "Little Leonardo adds concise localized sync errors with private references and a bounded log, keeps invitation codes out of diagnostics, clarifies offline retention, preserves rubric drafts for manual retry after explicit HTTP rejection, and fixes the simulator sync fixture.",
+      "to_version": "0.3.1734"
     }
   ],
-  "current_version": "0.3.1602",
+  "current_version": "0.3.1734",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
