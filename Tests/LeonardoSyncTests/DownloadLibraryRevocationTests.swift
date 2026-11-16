@@ -180,6 +180,32 @@ import XCTest
                        "A contextual failure must produce one code and one log entry")
     }
 
+    func testCacheMutationFailureUsesDiagnosticPresentation() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: fixture.catalogue)
+        await fixture.cache.failNextLimitChange()
+
+        var receivedIdentity: UUID?
+        var shouldRecord: [Bool] = []
+        library.cacheErrorDiagnosticPresentation = { error, identity, record in
+            receivedIdentity = identity
+            shouldRecord.append(record)
+            XCTAssertEqual(error as? CacheMutationFailure, .unavailable)
+            return "Saved content could not be updated. Code: LL-CACHE-812"
+        }
+
+        await library.setLimit(bytes: 128)
+
+        XCTAssertEqual(library.error, "Saved content could not be updated. Code: LL-CACHE-812")
+        XCTAssertNotNil(receivedIdentity, "A normal cache-setting action must receive a diagnostic identity")
+        XCTAssertEqual(shouldRecord, [true], "One failed cache mutation must create one local diagnostic")
+        XCTAssertFalse(library.error?.contains("/Users/qa/private/cache") ?? true,
+                       "The user-facing cache notice must not expose the underlying path")
+    }
+
     func testRetainedDownloadFailureKeepsTypedCauseForViewPresentation() async throws {
         let fixture = try Fixture()
         defer { fixture.removeFiles() }
@@ -238,7 +264,7 @@ import XCTest
         XCTAssertEqual(library.failures[key], retry)
     }
 
-    func testCallersSharingOneFailedDownloadShareItsDiagnosticReference() async throws {
+    func testLegacyGlobalSimplePresenterRunsForEachSharedDownloadCaller() async throws {
         let fixture = try Fixture()
         defer { fixture.removeFiles() }
         let library = DownloadLibrary(cache: fixture.cache)
@@ -270,9 +296,10 @@ import XCTest
 
         let firstReference = await first.value
         let secondReference = await second.value
-        XCTAssertEqual(firstReference, "LL-SHARED-1")
-        XCTAssertEqual(secondReference, firstReference)
-        XCTAssertEqual(referenceCount, 1, "One in-flight transfer must create one shared diagnostic reference")
+        let references = Set([try XCTUnwrap(firstReference), try XCTUnwrap(secondReference)])
+        XCTAssertEqual(references, ["LL-SHARED-1", "LL-SHARED-2"])
+        XCTAssertEqual(referenceCount, 2,
+                       "The compatibility presenter runs for each caller; the diagnostic presenter shares one reference")
     }
 
     func testSharedDownloadAppliesPresentationPerCallerInEitherArrivalOrder() async throws {
@@ -340,19 +367,90 @@ import XCTest
         }
     }
 
-    func testSharedDownloadUsesOneDiagnosticForGlobalAndPreviewPresentersInEitherArrivalOrder() async throws {
+    func testSharedDownloadInvokesDistinctSimplePresentersPerCallerInEitherArrivalOrder() async throws {
+        for firstCallerStartsFirst in [true, false] {
+            let fixture = try Fixture()
+            defer { fixture.removeFiles() }
+            let library = DownloadLibrary(cache: fixture.cache)
+            let gate = CacheReadGate()
+            var fetchCount = 0
+            var firstPresentationCount = 0
+            var secondPresentationCount = 0
+            library.fetch = { _, _ in
+                fetchCount += 1
+                await gate.hold()
+                throw SyncError.publicationPending
+            }
+            try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                     catalogue: fixture.catalogue)
+
+            let first: Task<String?, Never>
+            let second: Task<String?, Never>
+            if firstCallerStartsFirst {
+                first = Task {
+                    await presentationFailure {
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path) { _ in
+                            firstPresentationCount += 1
+                            return "LL-FIRST-CALLER"
+                        }
+                    }
+                }
+                await gate.waitUntilEntered()
+                second = Task {
+                    await presentationFailure {
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path) { _ in
+                            secondPresentationCount += 1
+                            return "LL-SECOND-CALLER"
+                        }
+                    }
+                }
+            } else {
+                second = Task {
+                    await presentationFailure {
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path) { _ in
+                            secondPresentationCount += 1
+                            return "LL-SECOND-CALLER"
+                        }
+                    }
+                }
+                await gate.waitUntilEntered()
+                first = Task {
+                    await presentationFailure {
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path) { _ in
+                            firstPresentationCount += 1
+                            return "LL-FIRST-CALLER"
+                        }
+                    }
+                }
+            }
+            for _ in 0..<10 { await Task.yield() }
+            await gate.release()
+
+            let firstMessage = await first.value
+            let secondMessage = await second.value
+            XCTAssertEqual(firstMessage, "LL-FIRST-CALLER")
+            XCTAssertEqual(secondMessage, "LL-SECOND-CALLER")
+            XCTAssertEqual(firstPresentationCount, 1)
+            XCTAssertEqual(secondPresentationCount, 1)
+            XCTAssertEqual(fetchCount, 1, "Both callers still share one network transfer")
+        }
+    }
+
+    func testSharedDownloadRunsBothDiagnosticPresentersWithOneReferenceInEitherArrivalOrder() async throws {
         for globalCallerStartsFirst in [true, false] {
             let fixture = try Fixture()
             defer { fixture.removeFiles() }
             let library = DownloadLibrary(cache: fixture.cache)
             let gate = CacheReadGate()
             var fetchCount = 0
-            var globalPresentationCount = 0
-            var previewPresentationCount = 0
-            library.errorPresentation = { _ in
-                globalPresentationCount += 1
-                return "LL-GLOBAL-\(globalPresentationCount)"
+            var diagnosticIdentities: [UUID] = []
+            var diagnosticRecordFlags: [Bool] = []
+            let diagnosticPresenter: RemoteDownloadDiagnosticPresentation = { _, identity, shouldRecord in
+                diagnosticIdentities.append(identity)
+                diagnosticRecordFlags.append(shouldRecord)
+                return "LL-\(identity.uuidString.prefix(12))"
             }
+            library.errorDiagnosticPresentation = diagnosticPresenter
             library.fetch = { _, _ in
                 fetchCount += 1
                 await gate.hold()
@@ -373,19 +471,15 @@ import XCTest
                 await gate.waitUntilEntered()
                 previewCaller = Task {
                     await presentationFailure {
-                        try await library.openResult(id: fixture.project.id, path: fixture.file.path) { _ in
-                            previewPresentationCount += 1
-                            return "LL-PREVIEW"
-                        }
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path,
+                                                     diagnosticPresentation: diagnosticPresenter)
                     }
                 }
             } else {
                 previewCaller = Task {
                     await presentationFailure {
-                        try await library.openResult(id: fixture.project.id, path: fixture.file.path) { _ in
-                            previewPresentationCount += 1
-                            return "LL-PREVIEW"
-                        }
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path,
+                                                     diagnosticPresentation: diagnosticPresenter)
                     }
                 }
                 await gate.waitUntilEntered()
@@ -403,11 +497,87 @@ import XCTest
             let previewReference = await previewCaller.value
             XCTAssertNotNil(globalReference)
             XCTAssertEqual(previewReference, globalReference,
-                           "The retained-download and preview waiters must share one failure reference")
-            XCTAssertEqual(globalPresentationCount + previewPresentationCount, 1,
-                           "One shared transfer must invoke one diagnostic presenter and create one log entry")
+                           "Each diagnostic presenter must return copy built from the shared failure reference")
+            XCTAssertEqual(diagnosticIdentities.count, 2,
+                           "Every reference-aware caller must run its selected diagnostic presenter")
+            XCTAssertEqual(Set(diagnosticIdentities).count, 1,
+                           "Reference-aware callers for one transfer share the same identity")
+            XCTAssertEqual(diagnosticRecordFlags.filter { $0 }.count, 1,
+                           "Only one waiter writes the shared diagnostic entry")
             XCTAssertEqual(fetchCount, 1, "Both callers must await the same transfer")
             XCTAssertEqual(library.failures[key], globalReference)
+        }
+    }
+
+    func testMixedSimpleAndDiagnosticPresentersKeepTheirOwnCopyInEitherArrivalOrder() async throws {
+        for diagnosticCallerStartsFirst in [true, false] {
+            let fixture = try Fixture()
+            defer { fixture.removeFiles() }
+            let library = DownloadLibrary(cache: fixture.cache)
+            let gate = CacheReadGate()
+            var fetchCount = 0
+            var simpleCalls = 0
+            var diagnosticCalls = 0
+            var recordFlags: [Bool] = []
+            library.errorDiagnosticPresentation = { _, identity, shouldRecord in
+                diagnosticCalls += 1
+                recordFlags.append(shouldRecord)
+                let reference = identity.uuidString.replacingOccurrences(of: "-", with: "").prefix(12)
+                return "LL-\(reference)"
+            }
+            library.fetch = { _, _ in
+                fetchCount += 1
+                await gate.hold()
+                throw SyncError.publicationPending
+            }
+            try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                     catalogue: fixture.catalogue)
+
+            let diagnosticCaller: Task<String?, Never>
+            let simpleCaller: Task<String?, Never>
+            if diagnosticCallerStartsFirst {
+                diagnosticCaller = Task {
+                    await presentationFailure {
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+                    }
+                }
+                await gate.waitUntilEntered()
+                simpleCaller = Task {
+                    await presentationFailure {
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path) { _ in
+                            simpleCalls += 1
+                            return "LL-SIMPLE-CALLER"
+                        }
+                    }
+                }
+            } else {
+                simpleCaller = Task {
+                    await presentationFailure {
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path) { _ in
+                            simpleCalls += 1
+                            return "LL-SIMPLE-CALLER"
+                        }
+                    }
+                }
+                await gate.waitUntilEntered()
+                diagnosticCaller = Task {
+                    await presentationFailure {
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+                    }
+                }
+            }
+            for _ in 0..<10 { await Task.yield() }
+            await gate.release()
+
+            let diagnosticMessage = await diagnosticCaller.value
+            let simpleMessage = await simpleCaller.value
+            XCTAssertEqual(simpleMessage, "LL-SIMPLE-CALLER")
+            XCTAssertTrue(diagnosticMessage?.range(of: #"^LL-[0-9A-F]{12}$"#, options: .regularExpression) != nil)
+            XCTAssertNotEqual(diagnosticMessage, simpleMessage)
+            XCTAssertEqual(simpleCalls, 1)
+            XCTAssertEqual(diagnosticCalls, 1)
+            XCTAssertEqual(recordFlags, [true])
+            XCTAssertEqual(fetchCount, 1)
         }
     }
 
@@ -657,12 +827,14 @@ private actor GatedDownloadCache: RemoteDownloadCache {
     private var storeGate: CacheReadGate?
     private var freshReadGates: [CacheReadGate] = []
     private var nextFreshReadFailure: CacheReadFailure?
+    private var nextLimitFailure: CacheMutationFailure?
     init(base: OnDemandCache) { self.base = base }
     func holdNextUsage(at gate: CacheReadGate) { usageGate = gate }
     func holdNextStaleRead(at gate: CacheReadGate) { staleReadGate = gate }
     func holdNextStore(at gate: CacheReadGate) { storeGate = gate }
     func holdNextFreshRead(at gate: CacheReadGate) { freshReadGates.append(gate) }
     func failNextFreshRead() { nextFreshReadFailure = .unavailable }
+    func failNextLimitChange() { nextLimitFailure = .unavailable }
     func projects() async throws -> [CachedRemoteProject] { try await base.projects() }
     func update(id: UUID, descriptor: SharedProjectDescriptor, catalogue: RemoteProjectCatalogue) async throws {
         try await base.update(id: id, descriptor: descriptor, catalogue: catalogue)
@@ -694,7 +866,13 @@ private actor GatedDownloadCache: RemoteDownloadCache {
         try await base.setRetained(id: id, path: path, isFolder: isFolder, keep: keep)
     }
     func removeRetentionRule(id: UUID, ruleID: String) async throws { try await base.removeRetentionRule(id: id, ruleID: ruleID) }
-    func setLimit(bytes: Int) async throws { try await base.setLimit(bytes: bytes) }
+    func setLimit(bytes: Int) async throws {
+        if let failure = nextLimitFailure {
+            nextLimitFailure = nil
+            throw failure
+        }
+        try await base.setLimit(bytes: bytes)
+    }
     func clearTemporary() async throws { try await base.clearTemporary() }
     func release(id: UUID, path: String, isFolder: Bool) async throws { try await base.release(id: id, path: path, isFolder: isFolder) }
     func remove(id: UUID) async throws { try await base.remove(id: id) }
@@ -711,4 +889,9 @@ private actor GatedDownloadCache: RemoteDownloadCache {
 private enum CacheReadFailure: LocalizedError {
     case unavailable
     var errorDescription: String? { "Synthetic cache read failure" }
+}
+
+private enum CacheMutationFailure: LocalizedError, Equatable {
+    case unavailable
+    var errorDescription: String? { "Cache mutation failed at /Users/qa/private/cache" }
 }

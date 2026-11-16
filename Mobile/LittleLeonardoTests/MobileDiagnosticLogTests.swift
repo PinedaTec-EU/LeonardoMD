@@ -83,6 +83,36 @@ final class MobileDiagnosticLogTests: XCTestCase {
                        "No se pudo descargar el documento. Comprueba la conexión e inténtalo de nuevo.")
         XCTAssertEqual(MobileErrorNotice.documentLoadMessage(spanish: true),
                        "No se pudo cargar el documento. Comprueba la conexión e inténtalo de nuevo.")
+        XCTAssertEqual(MobileErrorNotice.cacheMutationMessage(spanish: false),
+                       "Couldn't update saved content. Try again.")
+        XCTAssertEqual(MobileErrorNotice.cacheMutationMessage(spanish: true),
+                       "No se pudo actualizar el contenido guardado. Inténtalo de nuevo.")
+    }
+
+    @MainActor
+    func testCacheMutationNoticeKeepsRawPathOutOfCopyAndLogsOneReference() {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let log = MobileDiagnosticLog(fileURL: root.appendingPathComponent("error-log.txt"))
+        let privatePath = "/Users/qa/private/cache/blob"
+        let error = NSError(domain: "SyntheticCacheFailure", code: 812, userInfo: [
+            NSLocalizedDescriptionKey: "Couldn't write \(privatePath)"
+        ])
+        let identity = UUID()
+        let notice = MobileErrorNotice.record(
+            error,
+            operation: .cache,
+            message: MobileErrorNotice.cacheMutationMessage(spanish: false),
+            diagnosticLog: log,
+            spanish: false,
+            diagnosticIdentity: identity)
+
+        XCTAssertEqual(notice.referenceCode, "LL-\(identity.uuidString.prefix(12))")
+        XCTAssertTrue(notice.inlineMessage.contains("Couldn't update saved content. Try again."))
+        XCTAssertFalse(notice.inlineMessage.contains(privatePath))
+        XCTAssertEqual(log.recentEntries().count, 1)
+        XCTAssertTrue(log.recentEntries()[0].contains("ref=\(notice.referenceCode) op=cache kind=other code=812"))
+        XCTAssertFalse(log.recentEntries()[0].contains(privatePath))
     }
 
     @MainActor
@@ -209,6 +239,30 @@ final class MobileDiagnosticLogTests: XCTestCase {
             XCTAssertEqual(log.recentEntries().count, 1)
             XCTAssertTrue(log.recentEntries()[0].contains(
                 "ref=\(notice.referenceCode) op=rubric"))
+        }
+    }
+
+    @MainActor
+    func testRubricRetrySelectsTerminalCopyWhenSubmissionCanNoLongerSucceed() {
+        for spanish in [true, false] {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: root) }
+            let log = MobileDiagnosticLog(fileURL: root.appendingPathComponent("error-log.txt"))
+            let notice = MobileRubricCaptureFailure.retryNotice(
+                for: RubricExchangeError.expired, spanish: spanish, diagnosticLog: log)
+
+            XCTAssertEqual(notice.message, MobileRubricCaptureFailure.terminalSubmission.message(spanish: spanish))
+            XCTAssertFalse(notice.message.contains(spanish ? "intentar de nuevo" : "try again"))
+            XCTAssertTrue(notice.inlineMessage.contains(
+                "\(spanish ? "Código" : "Code"): \(notice.referenceCode)"))
+            XCTAssertEqual(log.recentEntries().count, 1)
+            XCTAssertTrue(log.recentEntries()[0].contains(
+                "ref=\(notice.referenceCode) op=rubric"))
+
+            let retryNotice = MobileRubricCaptureFailure.retryNotice(
+                for: URLError(.networkConnectionLost), spanish: spanish,
+                diagnosticLog: MobileDiagnosticLog(fileURL: root.appendingPathComponent("transient.log")))
+            XCTAssertEqual(retryNotice.message, MobileRubricCaptureFailure.retry.message(spanish: spanish))
         }
     }
 

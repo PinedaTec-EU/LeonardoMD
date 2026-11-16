@@ -52,6 +52,19 @@ enum MobileRubricCaptureFailure: CaseIterable {
                                  message: message(spanish: spanish),
                                  diagnosticLog: diagnosticLog, spanish: spanish)
     }
+
+    static func isTerminal(_ error: Error) -> Bool {
+        if let error = error as? RubricExchangeError {
+            return [.expired, .invalidTransition, .unsupported, .notFound, .conflict].contains(error)
+        }
+        return (error as? SyncError) == .revoked
+    }
+
+    static func retryNotice(for error: Error, spanish: Bool,
+                            diagnosticLog: MobileDiagnosticLog? = nil) -> MobileErrorNotice {
+        let failure: MobileRubricCaptureFailure = isTerminal(error) ? .terminalSubmission : .retry
+        return failure.notice(for: error, spanish: spanish, diagnosticLog: diagnosticLog)
+    }
 }
 
 struct MobileRubricCaptureView: View {
@@ -366,7 +379,7 @@ struct MobileRubricCaptureView: View {
                 phase = .drawing
             } catch {
                 phase = .awaitingApproval
-                if isTerminal(error) {
+                if MobileRubricCaptureFailure.isTerminal(error) {
                     failure = MobileRubricCaptureFailure.terminalAcceptance
                         .notice(for: error, spanish: spanishErrors).inlineMessage
                 } else {
@@ -435,7 +448,7 @@ struct MobileRubricCaptureView: View {
                 phase = .submitted
             } catch {
                 phase = .drawing
-                if isTerminal(error) {
+                if MobileRubricCaptureFailure.isTerminal(error) {
                     await library.blockRubricDraft(request: request,
                                                    message: spanishErrors
                                                     ? "La solicitud ya no admite envíos; pide una nueva solicitud."
@@ -457,16 +470,14 @@ struct MobileRubricCaptureView: View {
             do { _ = try await library.retryRubricDraft(draft); phase = .submitted }
             catch {
                 phase = .drawing
-                failure = MobileRubricCaptureFailure.retry
-                    .notice(for: error, spanish: spanishErrors).inlineMessage
+                if MobileRubricCaptureFailure.isTerminal(error) {
+                    let recoveryMessage = spanishErrors
+                        ? "La solicitud ya no admite envíos; pide una nueva solicitud."
+                        : "This request can no longer accept submissions; ask for a new request."
+                    await library.blockRubricDraft(request: request, message: recoveryMessage)
+                }
+                failure = MobileRubricCaptureFailure.retryNotice(for: error, spanish: spanishErrors).inlineMessage
             }
         }
-    }
-
-    private func isTerminal(_ error: Error) -> Bool {
-        if let error = error as? RubricExchangeError {
-            return [.expired, .invalidTransition, .unsupported, .notFound, .conflict].contains(error)
-        }
-        return (error as? SyncError) == .revoked
     }
 }

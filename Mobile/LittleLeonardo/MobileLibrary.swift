@@ -71,6 +71,17 @@ final class MobileLibrary {
             self?.error = notice
             return notice.inlineMessage
         }
+        downloads.cacheErrorDiagnosticPresentation = { [weak self] error, identity, shouldRecord in
+            let notice = MobileErrorNotice.record(
+                error,
+                operation: .cache,
+                message: MobileErrorNotice.cacheMutationMessage(spanish: spanish),
+                spanish: spanish,
+                diagnosticIdentity: identity,
+                shouldRecord: shouldRecord)
+            self?.error = notice
+            return notice.inlineMessage
+        }
     }
 
     func token(for connection: MobileDirectConnection) -> ConnectionToken {
@@ -723,7 +734,14 @@ final class MobileLibrary {
         } catch {
             let blocked = isTerminalRubricFailure(error)
             let state: MobileRubricDraftState = blocked ? .blocked : .pendingSend
-            let failureMessage = "No se pudo enviar la rúbrica. Puedes volver a intentarlo."
+            let spanish = MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
+            let failureMessage = blocked
+                ? (spanish
+                    ? "La solicitud ya no admite envíos; pide una nueva solicitud."
+                    : "This request can no longer accept submissions; ask for a new request.")
+                : (spanish
+                    ? "No se pudo enviar la rúbrica. Puedes volver a intentarlo."
+                    : "Couldn't send the rubric. You can try again.")
             let failureWrite = rubricDraftWrites.enqueue { [weak self] in
                 guard let self, let latest = try await self.latestRubricDraft(for: pending.request) else { return }
                 guard latest.state != .blocked, latest.state != .submitted,

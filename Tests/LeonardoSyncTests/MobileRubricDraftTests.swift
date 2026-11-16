@@ -44,6 +44,33 @@ final class MobileRubricDraftTests: XCTestCase {
         catch { XCTAssertEqual(error as? RubricExchangeError, .conflict) }
     }
 
+    func testTerminalRetryCanBlockPendingSendWithoutLosingFrozenResponse() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let request = try request()
+        let frozenResponse = try response(for: request)
+        let pending = MobileRubricDraft(id: request.id, connectionID: UUID(),
+            targetDeviceID: request.targetDeviceID, requesterID: request.requesterID,
+            sourceFingerprint: Data(repeating: 6, count: 32), request: request,
+            drawing: frozenResponse.rubric, label: frozenResponse.label, response: frozenResponse,
+            state: .pendingSend, updatedAt: now)
+        let store = MobileRubricDraftStore(url: root.appendingPathComponent("drafts.json"))
+        try await store.save(pending)
+
+        let terminal = pending.with(state: .blocked, updatedAt: now.addingTimeInterval(1),
+                                    failureMessage: "This request can no longer accept submissions.")
+        try await store.save(terminal)
+        let restored = try await MobileRubricDraftStore(url: root.appendingPathComponent("drafts.json"))
+            .all(now: now.addingTimeInterval(2))
+
+        XCTAssertEqual(restored, [terminal])
+        XCTAssertEqual(restored.first?.response, frozenResponse)
+        XCTAssertEqual(restored.first?.drawing, frozenResponse.rubric)
+        XCTAssertEqual(restored.first?.label, frozenResponse.label)
+        XCTAssertEqual(restored.first?.failureMessage, terminal.failureMessage)
+        XCTAssertTrue(MobileRubricDraft.isValid(try XCTUnwrap(restored.first)))
+    }
+
     func testAcceptedDraftAndSubmittedRetentionUseInjectedClock() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

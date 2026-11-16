@@ -8,6 +8,7 @@ enum MobileDiagnosticOperation: String {
     case pairing
     case library
     case downloads
+    case cache
     case practice
     case export
     case revocation
@@ -34,6 +35,12 @@ struct MobileErrorNotice {
         spanish
             ? "No se pudo descargar el contenido. Comprueba la conexión e inténtalo de nuevo."
             : "Couldn't download the content. Check your connection and try again."
+    }
+
+    static func cacheMutationMessage(spanish: Bool) -> String {
+        spanish
+            ? "No se pudo actualizar el contenido guardado. Inténtalo de nuevo."
+            : "Couldn't update saved content. Try again."
     }
 
     static func documentDownloadMessage(spanish: Bool) -> String {

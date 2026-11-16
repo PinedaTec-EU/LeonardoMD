@@ -62,7 +62,6 @@ public final class DownloadLibrary {
         let generation: UInt64
         let entry: RemoteFileEntry
         let task: Task<RemoteDownloadResult, Error>
-        var sharedFailure: RemoteDownloadFailure?
         var diagnosticIdentity: UUID?
         var diagnosticRecorded = false
 
@@ -78,6 +77,7 @@ public final class DownloadLibrary {
     public var fetch: @MainActor (UUID, RemoteFileEntry) async throws -> CorpusFile = { _, _ in throw SyncError.revoked }
     public var errorPresentation: (@MainActor (Error) -> String)?
     public var errorDiagnosticPresentation: RemoteDownloadDiagnosticPresentation?
+    public var cacheErrorDiagnosticPresentation: RemoteDownloadDiagnosticPresentation?
 
     public init(cache: any RemoteDownloadCache) { self.cache = cache }
     public static func key(id: UUID, path: String) -> String { id.uuidString + ":" + path }
@@ -254,20 +254,13 @@ public final class DownloadLibrary {
             if (presentation == nil && diagnosticPresentation == nil) || failures[key] == nil {
                 failures[key] = message
             }
-            if active?.sharedFailure == nil { active?.sharedFailure = failure }
             return failure
-        }
-
-        if let sharedFailure = active?.sharedFailure {
-            failures[key] = sharedFailure.message
-            return sharedFailure
         }
 
         let handler = presentation ?? errorPresentation
         let message = handler?(error) ?? error.localizedDescription
-        failures[key] = message
+        if failures[key] == nil { failures[key] = message }
         let failure = RemoteDownloadFailure(message: message, underlying: error, hasPresentation: handler != nil)
-        if handler != nil { active?.sharedFailure = failure }
         return failure
     }
 
@@ -347,6 +340,14 @@ public final class DownloadLibrary {
     }
 
     private func errorMessage(for error: Error) -> String {
-        errorPresentation?(error) ?? error.localizedDescription
+        let identity = UUID()
+        if let cacheErrorDiagnosticPresentation {
+            return cacheErrorDiagnosticPresentation(error, identity, true)
+        }
+        if let errorPresentation { return errorPresentation(error) }
+        if let errorDiagnosticPresentation {
+            return errorDiagnosticPresentation(error, identity, true)
+        }
+        return error.localizedDescription
     }
 }

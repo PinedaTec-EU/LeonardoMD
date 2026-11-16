@@ -65,7 +65,8 @@ public struct RemoteDocumentPreview: View {
         .navigationDestination(item: $linked) { target in
             RemoteDocumentPreview(library: library, projectID: projectID, entry: target, spanish: spanish,
                                   appearance: appearance, compactFirstHeading: compactFirstHeading,
-                                  failurePresentation: failurePresentation)
+                                  failurePresentation: failurePresentation,
+                                  failureDiagnosticPresentation: failureDiagnosticPresentation)
         }
     }
     @ViewBuilder private var content: some View {
