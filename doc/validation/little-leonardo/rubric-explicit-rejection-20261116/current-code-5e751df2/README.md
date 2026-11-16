@@ -21,9 +21,13 @@ tracked separately in [#462](https://github.com/PinedaTec-EU/LeonardoMD/issues/4
 and is not claimed as accepted here. It does not change the #458 result for
 preserving an explicit rejection for manual retry.
 
-Guide v88 EN/ES is included in the PR, but fresh packaged Help and practice
-form acceptance for v88 remains pending. The earlier v87 Help pass does not
-cover v88; the owner-authorized Beta validation will cover the packaged guide.
+At the time this UI test was captured, fresh packaged Help and practice-form
+acceptance for Guide v88 was pending; that is the historical state recorded in
+the attached test manifest, not a result of this UI run. A later fresh QA
+process opened bundled Help in English and Spanish, inspected the required
+examples and Math fallback, and saved/reopened both practice forms. The v88
+acceptance (QA build 1602 and packaged resource hashes) is recorded in the
+[PR #435 v88 acceptance comment](https://github.com/PinedaTec-EU/LeonardoMD/pull/435#issuecomment-6925088977).
 
 The task-owned simulator was shut down and its test app and fixture listener
 were stopped after capture. Pre-existing simulator E204 and its app and Device
