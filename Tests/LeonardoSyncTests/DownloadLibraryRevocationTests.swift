@@ -290,6 +290,42 @@ import XCTest
         XCTAssertEqual(fetches, 1)
     }
 
+    func testInFlightDownloadCannotClearNewerExplicitFileDenial() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: fixture.catalogue)
+        library.fetch = { _, _ in fixture.file }
+        await library.retain(id: fixture.project.id, path: fixture.file.path, isFolder: false, keep: true)
+        _ = try await library.open(id: fixture.project.id, path: fixture.file.path)
+        let current = CorpusFile(path: fixture.file.path, content: Data("current authorized content".utf8))
+        let currentEntry = RemoteFileEntry(file: current)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: RemoteProjectCatalogue(files: [currentEntry]))
+        library.fetch = { _, _ in current }
+
+        let storeGate = CacheReadGate()
+        await fixture.cache.holdNextStore(at: storeGate)
+        let opening = Task { try await library.open(id: fixture.project.id, path: fixture.file.path) }
+        await storeGate.waitUntilEntered()
+
+        try await library.denyFile(id: fixture.project.id, path: fixture.file.path)
+        await storeGate.release()
+        do {
+            _ = try await opening.value
+            XCTFail("A download authorized before the denial must not deliver bytes afterward")
+        } catch { XCTAssertEqual(error as? SyncError, .revoked) }
+
+        let storedProjects = try await fixture.cache.projects()
+        let stored = try XCTUnwrap(storedProjects.first)
+        XCTAssertTrue(stored.deniedPaths?.contains(fixture.file.path) == true,
+                      "A stale download must not clear the newer persistent denial marker")
+        let hidden = try await fixture.cache.read(id: fixture.project.id,
+            entry: currentEntry, allowStale: true)
+        XCTAssertNil(hidden, "Denied bytes remain unavailable even when a download was already in flight")
+    }
+
     func testOldDownloadCannotDeleteOrJoinAReauthorizedProject() async throws {
         let fixture = try Fixture()
         defer { fixture.removeFiles() }

@@ -13,6 +13,7 @@ struct MobileAuthorizationGenerations {
     private var deniedConnections: Set<UUID> = []
     private var deniedProjectIDs: [UUID: Set<UUID>] = [:]
     private var quarantinedConnections: Set<UUID> = []
+    private var quarantinedProjectIDs: [UUID: Set<UUID>] = [:]
 
     subscript(connectionID: UUID) -> UInt64 { values[connectionID, default: 0] }
 
@@ -23,6 +24,10 @@ struct MobileAuthorizationGenerations {
     var denied: Set<UUID> { deniedConnections }
 
     var quarantined: Set<UUID> { quarantinedConnections }
+
+    var projectsUnderQuarantine: Set<UUID> {
+        quarantinedProjectIDs.values.reduce(into: Set<UUID>()) { $0.formUnion($1) }
+    }
 
     func isDenied(connectionID: UUID) -> Bool {
         deniedConnections.contains(connectionID)
@@ -36,20 +41,27 @@ struct MobileAuthorizationGenerations {
         deniedProjectIDs[connectionID, default: []]
     }
 
+    func projectsUnderQuarantine(for connectionID: UUID) -> Set<UUID> {
+        quarantinedProjectIDs[connectionID, default: []]
+    }
+
     mutating func confirmDenied(connectionID: UUID, projectIDs: Set<UUID>) {
         let inserted = deniedConnections.insert(connectionID).inserted
         deniedProjectIDs[connectionID, default: []].formUnion(projectIDs)
         if inserted { invalidate(connectionID: connectionID) }
         quarantinedConnections.remove(connectionID)
+        quarantinedProjectIDs[connectionID] = nil
     }
 
-    mutating func quarantine(connectionID: UUID) {
+    mutating func quarantine(connectionID: UUID, projectIDs: Set<UUID> = []) {
         guard !deniedConnections.contains(connectionID) else { return }
         quarantinedConnections.insert(connectionID)
+        quarantinedProjectIDs[connectionID, default: []].formUnion(projectIDs)
     }
 
     mutating func clearQuarantine(connectionID: UUID) {
         guard !deniedConnections.contains(connectionID) else { return }
         quarantinedConnections.remove(connectionID)
+        quarantinedProjectIDs[connectionID] = nil
     }
 }

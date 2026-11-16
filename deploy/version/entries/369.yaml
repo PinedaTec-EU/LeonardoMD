@@ -1,4 +1,4 @@
 {
-  "build": 75,
+  "build": 77,
   "summary": "On-demand 401/403 denials recheck authorization and stay blocked across restart; cached catalogues honor current grants and confirmed revocations keep affected caches closed."
 }

@@ -200,6 +200,10 @@ final class MobileLibrary {
             },
             projectID: projectID,
             filePath: filePath,
+            needsStatusReconciliation: { [weak self] in
+                guard let self else { return true }
+                return self.authorizationGenerations.isQuarantined(connectionID: token.connectionID)
+            },
             onCurrentStatus: { [weak self] context in
                 guard let self else { return nil }
                 return try await self.reconcileCurrentStatus(context, targetProjectID: projectID,
@@ -217,6 +221,11 @@ final class MobileLibrary {
             presentError(error, operation: .revocation,
                          message: "No se pudo guardar la decisión de acceso.")
         }
+    }
+
+    func recordReconciliationRequired(for connection: MobileDirectConnection,
+                                      projectIDs: Set<UUID>) throws {
+        try revocationClient.requireReconciliation(for: connection, projectIDs: projectIDs)
     }
 
     func commitConnection(_ connection: MobileDirectConnection,
@@ -253,7 +262,9 @@ final class MobileLibrary {
                                                         projectIDs: marker.projectIDs)
             }
             for connectionID in recovery.quarantinedConnectionIDs {
-                authorizationGenerations.quarantine(connectionID: connectionID)
+                authorizationGenerations.quarantine(
+                    connectionID: connectionID,
+                    projectIDs: recovery.quarantinedProjectIDsByConnection[connectionID, default: []])
             }
             let barrierConnections = applyAuthorizationBarriers(to: recovery.connections)
             let loadedConnections = try await connectionStore.reconcileMissingCredentials(barrierConnections,
@@ -266,12 +277,14 @@ final class MobileLibrary {
             let protectedConnections = applyAuthorizationBarriers(to: loadedConnections)
             let visibleQuarantine = authorizationGenerations.quarantined
                 .subtracting(authorizationGenerations.denied)
+            let quarantinedProjectIDs = authorizationGenerations.projectsUnderQuarantine
             let repairedMissingCredential = storedConnections.count != loadedConnections.count
                 || zip(storedConnections, protectedConnections).contains { $0.0.hasChanges(from: $0.1) }
             let loadedComparisonCode = protectedConnections.first(where: { $0.comparisonCode != nil })?.comparisonCode
             let loadedDrafts = try await draftStore.all(now: now())
             let loaded = try await connectionStore.loadVisibleProjects(connections: protectedConnections,
                                                                          quarantinedConnectionIDs: visibleQuarantine,
+                                                                         quarantinedProjectIDs: quarantinedProjectIDs,
                                                                          excludedProjectIDs: projectLifecycle.deletedProjectIDs,
                                                                          credentials: credentials, corpus: store)
             guard cacheEpoch == loadCacheEpoch, authorizationEpoch == loadAuthorizationEpoch else { return }

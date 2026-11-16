@@ -60,19 +60,23 @@ public final class DownloadLibrary {
     private var allowed: Set<UUID> = []
     private var deniedPaths: [UUID: Set<String>] = [:]
     private var generations: [UUID: UInt64] = [:]
+    private var pathGenerations: [String: UInt64] = [:]
     private var usageRevision: UInt64 = 0
     @MainActor private final class ActiveDownload {
         let identity: UUID
         let generation: UInt64
+        let pathGeneration: UInt64
         let entry: RemoteFileEntry
         let task: Task<RemoteDownloadResult, Error>
         var diagnosticIdentity: UUID?
         var diagnosticRecorded = false
 
-        init(identity: UUID, generation: UInt64, entry: RemoteFileEntry,
+        init(identity: UUID, generation: UInt64, pathGeneration: UInt64,
+             entry: RemoteFileEntry,
              task: Task<RemoteDownloadResult, Error>) {
             self.identity = identity
             self.generation = generation
+            self.pathGeneration = pathGeneration
             self.entry = entry
             self.task = task
         }
@@ -168,8 +172,9 @@ public final class DownloadLibrary {
     /// Prevent a path from being served from cache after an explicit access denial.
     /// A later successful fetch clears the marker; sibling files remain available.
     public func denyFile(id: UUID, path: String) async throws {
-        setDeniedPathInMemory(id: id, path: path, denied: true)
         let key = Self.key(id: id, path: path)
+        pathGenerations[key, default: 0] &+= 1
+        setDeniedPathInMemory(id: id, path: path, denied: true)
         if let active = tasks.removeValue(forKey: key) {
             active.task.cancel()
             downloading.remove(key)
@@ -219,8 +224,11 @@ public final class DownloadLibrary {
               let entry = project.catalogue.files.first(where: { $0.path == path }) else { throw SyncError.revoked }
         let generation = generations[id, default: 0]
         let key = Self.key(id: id, path: path)
-        if let active = tasks[key], active.generation == generation, active.entry == entry {
-            return try await result(of: active, id: id, entry: entry, generation: generation,
+        let pathGeneration = pathGenerations[key, default: 0]
+        if let active = tasks[key], active.generation == generation,
+           active.pathGeneration == pathGeneration, active.entry == entry {
+            return try await result(of: active, id: id, entry: entry,
+                                    generation: generation, pathGeneration: pathGeneration,
                                     key: key, presentation: presentation,
                                     diagnosticPresentation: diagnosticPresentation)
         }
@@ -235,20 +243,25 @@ public final class DownloadLibrary {
             do {
                 cached = try await cache.read(id: id, entry: entry, allowStale: false)
             } catch {
-                try requireEntry(id: id, entry: entry, generation: generation)
+                try requireEntry(id: id, entry: entry, generation: generation,
+                                 pathGeneration: pathGeneration)
                 throw failureToThrow(error, key: key, presentation: presentation,
                                      diagnosticPresentation: diagnosticPresentation, active: nil)
             }
         }
         if let file = cached {
-            try requireEntry(id: id, entry: entry, generation: generation)
+            try requireEntry(id: id, entry: entry, generation: generation,
+                             pathGeneration: pathGeneration)
             if !deniedPaths[id, default: []].contains(path) {
                 return RemoteDownloadResult(file: file)
             }
         }
-        try requireEntry(id: id, entry: entry, generation: generation)
-        if let active = tasks[key], active.generation == generation, active.entry == entry {
-            return try await result(of: active, id: id, entry: entry, generation: generation,
+        try requireEntry(id: id, entry: entry, generation: generation,
+                         pathGeneration: pathGeneration)
+        if let active = tasks[key], active.generation == generation,
+           active.pathGeneration == pathGeneration, active.entry == entry {
+            return try await result(of: active, id: id, entry: entry,
+                                    generation: generation, pathGeneration: pathGeneration,
                                     key: key, presentation: presentation,
                                     diagnosticPresentation: diagnosticPresentation)
         }
@@ -259,14 +272,17 @@ public final class DownloadLibrary {
         let task = Task { [self] in
             do {
                 let file = try await fetch(id, entry)
-                try requireEntry(id: id, entry: entry, generation: generation)
+                try requireEntry(id: id, entry: entry, generation: generation,
+                                 pathGeneration: pathGeneration)
                 try await cache.store(id: id, entry: entry, file: file)
                 // The host owns revocation purge. An obsolete operation must never
                 // delete a project that may already have a new authorization.
-                try requireEntry(id: id, entry: entry, generation: generation)
+                try requireEntry(id: id, entry: entry, generation: generation,
+                                 pathGeneration: pathGeneration)
                 if deniedPaths[id, default: []].contains(entry.path) {
                     try await cache.setDeniedPath(id: id, path: entry.path, denied: false)
-                    do { try requireEntry(id: id, entry: entry, generation: generation) }
+                    do { try requireEntry(id: id, entry: entry, generation: generation,
+                                          pathGeneration: pathGeneration) }
                     catch {
                         if deniedPaths[id, default: []].contains(entry.path) {
                             try? await cache.setDeniedPath(id: id, path: entry.path, denied: true)
@@ -276,10 +292,12 @@ public final class DownloadLibrary {
                     setDeniedPathInMemory(id: id, path: entry.path, denied: false)
                 }
                 try await refreshAll()
-                try requireEntry(id: id, entry: entry, generation: generation)
+                try requireEntry(id: id, entry: entry, generation: generation,
+                                 pathGeneration: pathGeneration)
                 return RemoteDownloadResult(file: file)
             } catch let transferError {
-                try requireEntry(id: id, entry: entry, generation: generation)
+                try requireEntry(id: id, entry: entry, generation: generation,
+                                 pathGeneration: pathGeneration)
                 if let denial = transferError as? any RemoteContentAccessDenied, denial.deniesRemoteContent {
                     setDeniedPathInMemory(id: id, path: entry.path, denied: true)
                     do { try await cache.setDeniedPath(id: id, path: entry.path, denied: true) }
@@ -298,38 +316,43 @@ public final class DownloadLibrary {
                 if deniedPaths[id, default: []].contains(entry.path) { throw transferError }
                 do {
                     let previous = try await cache.read(id: id, entry: entry, allowStale: true)
-                    try requireEntry(id: id, entry: entry, generation: generation)
+                    try requireEntry(id: id, entry: entry, generation: generation,
+                                     pathGeneration: pathGeneration)
                     if let previous, !deniedPaths[id, default: []].contains(entry.path) {
                         let failure = RemoteDownloadFailure(message: transferError.localizedDescription,
                                                             underlying: transferError, hasPresentation: false)
                         return RemoteDownloadResult(file: previous, updateFailure: failure)
                     }
                 } catch let cacheError {
-                    try requireEntry(id: id, entry: entry, generation: generation)
+                    try requireEntry(id: id, entry: entry, generation: generation,
+                                     pathGeneration: pathGeneration)
                     throw cacheError
                 }
                 throw transferError
             }
         }
-        let active = ActiveDownload(identity: identity, generation: generation, entry: entry, task: task)
+        let active = ActiveDownload(identity: identity, generation: generation,
+                                    pathGeneration: pathGeneration, entry: entry, task: task)
         tasks[key] = active
         defer {
             if tasks[key]?.identity == identity {
                 tasks[key] = nil; downloading.remove(key)
             }
         }
-        return try await result(of: active, id: id, entry: entry, generation: generation,
+        return try await result(of: active, id: id, entry: entry,
+                                generation: generation, pathGeneration: pathGeneration,
                                 key: key, presentation: presentation,
                                 diagnosticPresentation: diagnosticPresentation)
     }
 
     private func result(of active: ActiveDownload, id: UUID, entry: RemoteFileEntry,
-                        generation: UInt64, key: String,
+                        generation: UInt64, pathGeneration: UInt64, key: String,
                         presentation: (@MainActor (Error) -> String)?,
                         diagnosticPresentation: RemoteDownloadDiagnosticPresentation?) async throws -> RemoteDownloadResult {
         do {
             let result = try await active.task.value
-            try requireEntry(id: id, entry: entry, generation: generation)
+            try requireEntry(id: id, entry: entry, generation: generation,
+                             pathGeneration: pathGeneration)
             guard let cause = result.updateFailureCause else { return result }
             if deniedPaths[id, default: []].contains(entry.path) ||
                 (cause.underlying as? any RemoteContentAccessDenied)?.deniesRemoteContent == true {
@@ -343,7 +366,8 @@ public final class DownloadLibrary {
         } catch {
             // Each caller owns its own cancellation and authorization context,
             // even when the shared transfer fails for every waiter.
-            try requireEntry(id: id, entry: entry, generation: generation)
+            try requireEntry(id: id, entry: entry, generation: generation,
+                             pathGeneration: pathGeneration)
             if let failure = error as? RemoteDownloadFailure, failure.deniesRemoteContent {
                 throw failure
             }
@@ -398,8 +422,12 @@ public final class DownloadLibrary {
         try Task.checkCancellation()
     }
 
-    private func requireEntry(id: UUID, entry: RemoteFileEntry, generation: UInt64) throws {
+    private func requireEntry(id: UUID, entry: RemoteFileEntry, generation: UInt64,
+                              pathGeneration: UInt64) throws {
         try requireAccess(id: id, generation: generation)
+        guard pathGenerations[Self.key(id: id, path: entry.path), default: 0] == pathGeneration else {
+            throw SyncError.revoked
+        }
         guard projects.first(where: { $0.id == id })?.catalogue.files.first(where: { $0.path == entry.path }) == entry else {
             throw SyncError.publicationPending
         }

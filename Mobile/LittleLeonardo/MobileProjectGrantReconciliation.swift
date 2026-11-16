@@ -25,21 +25,36 @@ extension MobileLibrary {
               !descriptors.contains(where: { hasActiveProjectOwner($0.id, excluding: context.token.connectionID) }) else {
             throw SyncError.invalidSnapshot
         }
-        authorizationGenerations.clearQuarantine(connectionID: context.token.connectionID)
-
         let plan = projectGrantReconciliation(for: connections[index], descriptors: descriptors,
                                                targetProjectID: targetProjectID)
+        let quarantinedRemovedProjectIDs = authorizationGenerations
+            .projectsUnderQuarantine(for: context.token.connectionID).subtracting(ids)
+        let projectIDsToPurge = plan.removedProjectIDs.union(quarantinedRemovedProjectIDs)
         for id in plan.deniedProjectIDs { downloads.deny(id: id) }
         if let targetProjectID, let targetFilePath,
            let descriptor = descriptors.first(where: { $0.id == targetProjectID }),
            !RemoteDownloadAuthorization(descriptor: descriptor).allows(path: targetFilePath) {
             try await downloads.denyFile(id: targetProjectID, path: targetFilePath)
         }
-        projects.removeAll { plan.removedProjectIDs.contains($0.id) && $0.mode == .direct }
-        guard let cacheToken = persist(plan, expected: context.token) else { return nil }
-        do { try await removeDirectProjects(plan.removedProjectIDs, expected: cacheToken) }
-        catch { return authenticatedContext(for: context, expected: context.token) }
-        return await refreshChangedProjectCatalogues(plan, context: context, token: cacheToken)
+        projects.removeAll { projectIDsToPurge.contains($0.id) && $0.mode == .direct }
+        let cacheToken: ConnectionToken
+        do {
+            guard let savedToken = try persist(plan, expected: context.token) else { return nil }
+            cacheToken = savedToken
+        } catch {
+            try quarantineFailedReconciliation(context, plan: plan)
+            throw error
+        }
+        do { try await removeDirectProjects(projectIDsToPurge, expected: cacheToken) }
+        catch {
+            try quarantineFailedReconciliation(context, plan: plan)
+            throw error
+        }
+        let refreshed = await refreshChangedProjectCatalogues(plan, context: context, token: cacheToken)
+        if refreshed != nil {
+            authorizationGenerations.clearQuarantine(connectionID: context.token.connectionID)
+        }
+        return refreshed
     }
 
     private func projectGrantReconciliation(for previous: MobileDirectConnection,
@@ -68,12 +83,27 @@ extension MobileLibrary {
     }
 
     private func persist(_ plan: MobileProjectGrantReconciliation,
-                         expected token: ConnectionToken) -> ConnectionToken? {
+                         expected token: ConnectionToken) throws -> ConnectionToken? {
         guard plan.updated.hasChanges(from: plan.previous) else { return token }
         do { return try commitConnection(plan.updated, expected: token) }
         catch {
             presentError(error, operation: .synchronization)
-            return nil
+            throw error
+        }
+    }
+
+    private func quarantineFailedReconciliation(_ context: MobileAuthenticatedContext,
+                                                plan: MobileProjectGrantReconciliation) throws {
+        let projectIDs = plan.previous.projectIDs.union(plan.updated.projectIDs)
+            .union(authorizationGenerations.projectsUnderQuarantine(for: context.token.connectionID))
+        authorizationGenerations.quarantine(connectionID: context.token.connectionID,
+                                             projectIDs: projectIDs)
+        do {
+            try recordReconciliationRequired(for: context.connection, projectIDs: projectIDs)
+        } catch {
+            presentError(error, operation: .revocation,
+                         message: "No se pudo guardar la protección del vínculo. Vuelve a sincronizar antes de abrir sus proyectos.")
+            throw error
         }
     }
 

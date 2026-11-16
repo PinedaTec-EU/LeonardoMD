@@ -43,6 +43,14 @@ struct MobileRevocationClient: Sendable {
         try journal.complete(ticket, outcome: outcome)
     }
 
+    func requireReconciliation(for connection: MobileDirectConnection,
+                               projectIDs: Set<UUID>) throws {
+        try journal.requireReconciliation(connectionID: connection.connectionID,
+                                          deviceID: connection.deviceID,
+                                          fingerprint: connection.fingerprint,
+                                          projectIDs: projectIDs)
+    }
+
     /// Small core boundary used by deterministic tests and by future direct
     /// operations that do not need the library's STATUS-specific policy.
     /// Preflight failure happens before the closure is invoked.
@@ -71,6 +79,7 @@ struct MobileRevocationClient: Sendable {
         onDenied: (MobileRevocationTicket) async -> Void,
         projectID: UUID? = nil,
         filePath: String? = nil,
+        needsStatusReconciliation: () -> Bool = { false },
         onCurrentStatus: @escaping (MobileAuthenticatedContext) async throws -> MobileAuthenticatedContext? = { _ in nil },
         operation: (MobileAuthenticatedContext) async throws -> T,
         status: @escaping @Sendable (DirectEnrollmentClient, UUID, String) async throws -> DirectDeviceStatus = {
@@ -121,7 +130,8 @@ struct MobileRevocationClient: Sendable {
                         return previous != descriptor
                     }
                 let requestedProjectMissing = projectID != nil && descriptor == nil
-                if statusChanged || requestedProjectMissing || targetPathDenied || initialStatus.access == .pending {
+                if statusChanged || requestedProjectMissing || targetPathDenied
+                    || initialStatus.access == .pending || needsStatusReconciliation() {
                     if let refreshedContext = try await onCurrentStatus(context) { context = refreshedContext }
                 }
                 if initialStatus.access == .pending, projectID != nil {
