@@ -245,7 +245,7 @@ capture viewport is 440 × 956 UIKit points / 1320 × 2868 pixels; CSS viewport
 and browser version are not applicable to this native iOS app. Per-image
 timestamps, hashes and source mapping are in the adjacent context files.
 
-The corrected PR #435 candidate at source
+Historical PR #435 localization checkpoint at source
 `37032e996ce82780bee73ad3178bca7935b219ff` passes all four focused UI tests:
 English and Spanish settings/log routes, plus English and Spanish connection
 failure alerts. The current captures are the six files with the
@@ -256,8 +256,8 @@ source commit. The simulator's app process was absent, then the task-owned
 `LittleLeonardo PR435 Localization QA 20261115` simulator
 (`0C5D5C27-1EBC-4C69-BA40-CAEE89F49750`) was shut down after the run.
 
-The packaged macOS smoke is now complete on this same corrected source. A fresh
-`LeonardoMDQA.app` process (PID 63021; bundle
+The packaged macOS Guide v77 smoke below is historical and belongs to that
+earlier source. A fresh `LeonardoMDQA.app` process (PID 63021; bundle
 `eu.pinedatec.LeonardoMD.qa.e8342f795a5b4de4ba0653a3339e9997`; version/build
 0.3.1602/1602) opened Guide v77 in English and Spanish through each real Help
 menu. Both opened copies matched their bundled resource hashes. Mermaid, Math,
@@ -267,8 +267,21 @@ The English and Spanish practice forms were filled with synthetic data, saved,
 closed and reopened with their answers intact. English and Math-on preferences
 were restored. The app exited normally at 19:09:35Z and PID 63021 was absent
 afterward. Full identity, hashes, form-copy results and teardown evidence are
-in [the packaged Help record](packaged-help-v77-20261115.json). No Device Hub
-session was opened by this packaged-Help run.
+in [the historical packaged Help record](packaged-help-v77-20261115.json). It
+does not establish acceptance for the current Guide v86 resources or PR head.
+No Device Hub session was opened by this packaged-Help run.
+
+The current PR #435 product-code source is
+`bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05`. It bundles Guide v86 EN/ES with
+hashes recorded in [the guide README](../../guide/README.md). Current-source
+English and Spanish simulator evidence passes, with original screenshots,
+sidecars, hashes and reference correlation in the
+[bilingual evidence bundle](error-log-20261116/current-head-bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05/README.md).
+Fresh packaged Guide v86 Help/practice acceptance remains pending. At the
+2026-11-16 resume checkpoint, the native-app inspection tool still reported the
+Mac locked and exposed no apps, despite a user unlock confirmation; no
+LeonardoMD instance was opened. Recheck the actual desktop state before trying
+the packaged Help flow. Earlier v77 and v77-era UI records remain historical.
 
 The Simulator UI tests do not emulate a physical camera, so no camera-scan
 screenshot is claimed. No physical large-image acceptance is claimed for #380;

@@ -1,0 +1,24 @@
+{
+  "captured_at": "2026-11-16T02:58:00Z",
+  "route": "Project > notes/decisions.md preview",
+  "screen": "Spanish inline document download failure, reference, and retry action",
+  "capture_tool": "XCUITest native app screenshot attachment",
+  "capture_mode": "native app viewport",
+  "state": "The inline message shows a single opaque code and Reintentar action; the same reference is asserted in the local error log.",
+  "data_provenance": "synthetic",
+  "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+  "source_sha": "bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05",
+  "result_bundle": "/Users/jmr.pineda/Library/Developer/XcodeBuildMCP/workspaces/LeonardoMD-586d26453937/result-bundles/test_sim_2026-11-16T02-56-26-137Z_pid52605_14045943.xcresult",
+  "simulator": {
+    "name": "LittleLeonardo PR435 Spanish QA 20261116",
+    "device_id": "5B689430-FDBD-44C0-A732-BE3C063F9403",
+    "model": "iPhone 17 Pro",
+    "os": "iOS 26.5",
+    "os_build": "23F77",
+    "host": "macOS 27.0.1",
+    "viewport_points": {"width": 402, "height": 874},
+    "image_pixels": {"width": 1206, "height": 2622}
+  },
+  "inline_reference": "LL-6CE6C8324E02",
+  "image_sha256": "f60e4102eca240806b93e3a0bf2d4c528faca36fcd900129df16fe909613663f"
+}

@@ -6,6 +6,16 @@ open a user-owned copy in
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
+For PR #435, the current product-code source `bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05`
+packages EN SHA-256 `797e241ca7df87a633ea334ca10f087303d2acead33306cffe31f2c5d032ae30`
+and ES SHA-256 `ec197be190b5f4f4f35b9fbba67b22a5db963fc91b926afd527fc44c47869c72`.
+The later evidence-only PR head is `3b36f8ed7355af9caf1ac5331c8538d502373bef`.
+Fresh packaged-process acceptance for v86 is tracked in
+[`Little Leonardo validation`](../validation/little-leonardo/README.md); the
+Guide v86 acceptance through the packaged app's actual Help workflow is pending
+in PR #435. The Guide v77 run below is historical and does not prove v86
+acceptance.
+
 `en/body.md` and `es/body.md` are the editorial sources. The 19 chapters cover
 macOS workflows and Little Leonardo's host → project → file library, with live Mermaid/KaTeX/Vega examples, literal citation
 and Markdown-extras examples, a separate practice form, generated diagrams, the

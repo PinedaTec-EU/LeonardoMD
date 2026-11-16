@@ -1,49 +1,150 @@
 {
-  "purpose": "Exact-source English inline download error and matching local-log evidence for PR #435.",
-  "source_sha": "bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05",
-  "compiler_count": 71,
-  "ui_result": "Passed: 1 test, 0 failures, 0 skips.",
-  "fixture_result": "Passed: 1 test, 0 failures; zero snapshots; notes/decisions.md fetched twice and reference/remote.md once.",
-  "environment": {
-    "platform": "iOS Simulator",
-    "model": "iPhone 17 Pro",
-    "os": "iOS 26.5",
-    "os_build": "23F77",
-    "device_id": "C1762B8D-7017-4573-A613-2A914D69140D",
-    "viewport_points": "402 x 874",
-    "pixel_dimensions": "1206 x 2622",
-    "host": "macOS 27.0.1"
+  "purpose": "Bilingual exact-source native iOS evidence for the concise sync-error and local-log flow in PR #435.",
+  "code_source_sha": "bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05",
+  "pr_head_at_capture": "3b36f8ed7355af9caf1ac5331c8538d502373bef",
+  "source_relation": "The PR head at capture added evidence only after the code source; no product or UI-test source changed between these SHAs.",
+  "compiler_count_after_validation": 72,
+  "test_results": {
+    "english_ui": {
+      "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+      "result": "passed",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "summary": "test-results-summary.json",
+      "fixture_audit": "fixture-audit.json",
+      "result_bundle": "/tmp/leonardo-pr435-final-english-20261116.xcresult"
+    },
+    "spanish_ui": {
+      "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+      "result": "passed",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "summary": "spanish-test-results-summary.json",
+      "fixture_audit": "fixture-audit-spanish.json",
+      "result_bundle": "/Users/jmr.pineda/Library/Developer/XcodeBuildMCP/workspaces/LeonardoMD-586d26453937/result-bundles/test_sim_2026-11-16T02-56-26-137Z_pid52605_14045943.xcresult"
+    },
+    "spanish_host_fixture": {
+      "test": "OnDemandMobileAcceptanceFixtureTests/testServeOnDemandMobileFixture()",
+      "result": "passed",
+      "passed": 1,
+      "failed": 0,
+      "snapshots": 0,
+      "audit": "fixture-audit-spanish.json",
+      "metadata_only_audit": "metadata-only.json",
+      "single_file_audit": "single-file.json",
+      "compiler_count_delta": 1
+    }
   },
-  "result_bundle": "/tmp/leonardo-pr435-final-english-20261116.xcresult",
-  "fixture_audit": "fixture-audit.json",
-  "xcresult_summary": "test-results-summary.json",
+  "simulators": {
+    "english": {
+      "name": "iPhone 17 Pro",
+      "device_id": "C1762B8D-7017-4573-A613-2A914D69140D",
+      "model": "iPhone 17 Pro",
+      "os": "iOS 26.5",
+      "os_build": "23F77",
+      "viewport_points": "402 x 874",
+      "image_pixels": "1206 x 2622"
+    },
+    "spanish": {
+      "name": "LittleLeonardo PR435 Spanish QA 20261116",
+      "device_id": "5B689430-FDBD-44C0-A732-BE3C063F9403",
+      "model": "iPhone 17 Pro",
+      "os": "iOS 26.5",
+      "os_build": "23F77",
+      "host": "macOS 27.0.1",
+      "viewport_points": "402 x 874",
+      "image_pixels": "1206 x 2622"
+    }
+  },
+  "reference_correlations": [
+    {
+      "locale": "English",
+      "origin": "inline document error",
+      "reference": "LL-7638E7533D2C",
+      "log_capture": "english-diagnostic-log-reference.png",
+      "evidence": "The XCTest asserts that the same downloads reference is visible in the local log."
+    },
+    {
+      "locale": "Spanish",
+      "origin": "retained-download alert",
+      "reference": "LL-21D29F48CB0A",
+      "log_capture": "diagnostic-log-latest.png",
+      "evidence": "The alert and log captures were visually inspected; the log shows the matching ref=LL-21D29F48CB0A downloads entry."
+    },
+    {
+      "locale": "Spanish",
+      "origin": "inline document error",
+      "reference": "LL-6CE6C8324E02",
+      "log_capture": "diagnostic-log-latest.png",
+      "evidence": "The XCTest asserts that the same downloads reference is visible in the local log."
+    }
+  ],
   "captures": [
     {
       "file": "english-file-failure.png",
       "context": "english-file-failure.png.context.json",
       "sha256": "5e16baaafaa8db1b6488ca765a849ec3a84a9c5819d26a3495dee6d3439092c9",
-      "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+      "locale": "English",
       "captured_at": "2026-11-16T02:11:59Z",
-      "route": "Project file list > notes/decisions.md",
-      "description": "English failed file status and VoiceOver retry guidance."
+      "description": "Failed file row and retry guidance."
     },
     {
       "file": "english-document-error.png",
       "context": "english-document-error.png.context.json",
       "sha256": "cb901390a8f0a1623b5ec0f38cb8c850d4dd0272947f6bc87e57c6f471aeb107",
-      "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+      "locale": "English",
       "captured_at": "2026-11-16T02:12:04Z",
-      "route": "Project > notes/decisions.md preview",
-      "description": "English inline document download failure, reference, and retry action."
+      "reference": "LL-7638E7533D2C",
+      "description": "Inline document error and retry action."
     },
     {
       "file": "english-diagnostic-log-reference.png",
       "context": "english-diagnostic-log-reference.png.context.json",
       "sha256": "5c3f2b5aeb33ff2e109c639755cc91b4a5975c62b1352d72a596172d08adebe1",
-      "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+      "locale": "English",
       "captured_at": "2026-11-16T02:12:13Z",
-      "route": "Sync settings > Error log",
-      "description": "The matching local download-log entry with the same reference as the inline preview."
+      "reference": "LL-7638E7533D2C",
+      "description": "Local downloads log entry matching the inline reference."
+    },
+    {
+      "file": "spanish-file-failure-alert.png",
+      "context": "spanish-file-failure-alert.png.context.json",
+      "sha256": "067ec5cb0974040a3425a5e7661a2959b19cf69408083e383635db8d0c7bab42",
+      "locale": "Spanish",
+      "captured_at": "2026-11-16T02:57:53Z",
+      "reference": "LL-21D29F48CB0A",
+      "description": "Concise localized alert with a single acknowledgement action."
+    },
+    {
+      "file": "spanish-document-error.png",
+      "context": "spanish-document-error.png.context.json",
+      "sha256": "f60e4102eca240806b93e3a0bf2d4c528faca36fcd900129df16fe909613663f",
+      "locale": "Spanish",
+      "captured_at": "2026-11-16T02:58:00Z",
+      "reference": "LL-6CE6C8324E02",
+      "description": "Inline document error with the same reference asserted in the local log."
+    },
+    {
+      "file": "diagnostic-log-latest.png",
+      "context": "diagnostic-log-latest.context.json",
+      "sha256": "5057df0ee1a3da73b785aa199c30188cb02d6be6876842bff916e68c15ee4ebf",
+      "locale": "Spanish",
+      "captured_at": "2026-11-16T02:58:09Z",
+      "references": ["LL-21D29F48CB0A", "LL-6CE6C8324E02"],
+      "description": "Local error log showing both matching downloads references."
+    },
+    {
+      "file": "storage-separate.png",
+      "context": "storage-separate.context.json",
+      "sha256": "1a68ee3ccba117ebafe13bc73c34c70ae6a0b6f552cd9a9d22fe83c2fa3e1246",
+      "locale": "Spanish",
+      "captured_at": "2026-11-16T02:58:15Z",
+      "description": "Current-source synchronization settings screen."
     }
-  ]
+  ],
+  "attachment_export": "spanish-xcresult-attachments.json",
+  "physical_device_or_large_image_acceptance": false,
+  "visual_review": "Original PNG bytes were visually inspected; references and localized copy are legible at 1206 x 2622 pixels."
 }
