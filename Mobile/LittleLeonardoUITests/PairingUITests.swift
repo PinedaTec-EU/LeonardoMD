@@ -648,6 +648,7 @@ final class PairingUITests: XCTestCase {
             language: "es", locale: "es_ES",
             expectedInitialFailure: "No se pudo enviar. El dibujo está guardado y puedes reintentarlo.",
             expectedRestoredFailure: "No se pudo enviar la rúbrica. Puedes volver a intentarlo.",
+            expectedPayloadRejectionFailure: "No se pudo enviar. El dibujo está guardado y puedes reintentarlo.",
             expectedFailure: "Este vínculo ya no admite la solicitud. Pide una nueva solicitud.",
             expectedBlocked: "Borrador bloqueado: pide una nueva solicitud",
             expectedBlockedStatus: "La solicitud ya no admite envíos (caducada, cancelada o revocada).")
@@ -658,6 +659,7 @@ final class PairingUITests: XCTestCase {
             language: "en", locale: "en_US",
             expectedInitialFailure: "Couldn't send. The drawing is saved so you can retry.",
             expectedRestoredFailure: "Couldn't send the rubric. You can try again.",
+            expectedPayloadRejectionFailure: "Couldn't send. The drawing is saved so you can retry.",
             expectedFailure: "This link can no longer accept the request. Ask for a new one.",
             expectedBlocked: "Draft blocked: ask for a new request",
             expectedBlockedStatus: "This request cannot accept submissions (expired, cancelled or revoked).")
@@ -668,6 +670,7 @@ final class PairingUITests: XCTestCase {
         locale: String,
         expectedInitialFailure: String,
         expectedRestoredFailure: String,
+        expectedPayloadRejectionFailure: String,
         expectedFailure: String,
         expectedBlocked: String,
         expectedBlockedStatus: String
@@ -755,6 +758,7 @@ final class PairingUITests: XCTestCase {
         XCTAssertTrue(retryAfterPayloadRejection.waitForExistence(timeout: 10),
                       "HTTP 413 must preserve the drawing behind a deliberate Retry, not foreground replay")
         XCTAssertTrue(retryAfterPayloadRejection.isEnabled)
+        XCTAssertTrue(failure.label.contains(expectedPayloadRejectionFailure), failure.label)
         let payloadRejectionCapture = XCTAttachment(screenshot: app.screenshot())
         payloadRejectionCapture.name = "Native iOS \(language) HTTP 413 rubric rejection with manual Retry"
         payloadRejectionCapture.lifetime = .keepAlways

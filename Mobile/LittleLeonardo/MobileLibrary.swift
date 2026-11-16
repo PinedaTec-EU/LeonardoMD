@@ -785,7 +785,7 @@ final class MobileLibrary {
         // HTTP 413 is mapped to invalidPayload; unlike an ambiguous transport
         // loss, it must wait for a deliberate Retry just like other explicit
         // non-terminal response statuses.
-        error is DirectRubricSubmissionStatusError || (error as? RubricExchangeError) == .invalidPayload
+        MobileRubricCaptureFailure.isExplicitSubmissionRejection(error)
     }
 
     /// Preserve an accepted drawing or frozen response when a terminal

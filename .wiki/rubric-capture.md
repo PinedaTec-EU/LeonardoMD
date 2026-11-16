@@ -185,3 +185,10 @@ written successfully. Ambiguous transport loss without an HTTP response still
 uses same-ID automatic lost-ack recovery. PR #435/#458 tests `503 → manual
 Retry → 413 → manual Retry → 409`, preserving the frozen response and making the
 final 409 terminal.
+
+Presentation follows the same boundary: an explicit HTTP rejection (including
+the `invalidPayload` mapping for 413) says the drawing is saved and can be
+retried; an ambiguous connection loss says sending is still pending and may be
+reconciled with the same frozen response. `MobileRubricCaptureFailure` owns this
+classification and the persistence path reuses it so copy and replay policy do
+not drift.

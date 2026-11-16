@@ -73,8 +73,9 @@ Little Leonardo offline demo (#381) and HTTPS failure diagnostics (#380): `Mobil
 PR #398: Guide29 EN/ES documents same-request automatic status recovery, persistent error/Retry, terminal requests and close-versus-cancel behavior. Existing personal guides/practice answers remain preserved in prior revision directories. New illustrations are original production-component captures with synthetic data; they do not claim packaged/physical acceptance.
 
 PR #435 / issue #458: chapter 14 EN/ES distinguishes a known HTTP rejection,
-which waits for manual Retry, from a transport loss with no acknowledgement,
-which can reconcile the same frozen response. Guide v87 preserves previous
+which shows the saved-drawing retry message and waits for manual Retry, from a
+transport loss with no acknowledgement, which says the send is pending and can
+reconcile the same frozen response. Guide v88 preserves previous
 personal copies and practice answers.
 
 - Mobile project library: one ordinary Demo project with language documents; swipe + tap removal, persistent local exclusion and Settings recovery. Sources: `MobileProjectLifecycle.swift`, `MobileLibraryView.swift`; both guide bodies, Little Leonardo demo chapter.

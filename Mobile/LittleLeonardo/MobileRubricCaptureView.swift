@@ -1,6 +1,7 @@
 import SwiftUI
 import LeonardoCore
 import LeonardoSync
+import LeonardoSyncTransport
 
 private enum MobileRubricCapturePhase {
     case awaitingApproval
@@ -62,8 +63,19 @@ enum MobileRubricCaptureFailure: CaseIterable {
 
     static func retryNotice(for error: Error, spanish: Bool,
                             diagnosticLog: MobileDiagnosticLog? = nil) -> MobileErrorNotice {
-        let failure: MobileRubricCaptureFailure = isTerminal(error) ? .terminalSubmission : .retry
+        let failure: MobileRubricCaptureFailure
+        if isTerminal(error) {
+            failure = .terminalSubmission
+        } else if isExplicitSubmissionRejection(error) {
+            failure = .submission
+        } else {
+            failure = .retry
+        }
         return failure.notice(for: error, spanish: spanish, diagnosticLog: diagnosticLog)
+    }
+
+    static func isExplicitSubmissionRejection(_ error: Error) -> Bool {
+        error is DirectRubricSubmissionStatusError || (error as? RubricExchangeError) == .invalidPayload
     }
 }
 

@@ -1,24 +1,34 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v87-en.mdlz` and `Guide-v87-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v88-en.mdlz` and `Guide-v88-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v87/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v88/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v87 clarifies that a known HTTP rejection of a mobile rubric response
-requires a user Retry, while a transport loss without an acknowledgement can
-reconcile the same frozen response. Its PR #435 packaged Help acceptance passed
-against both v87 bundles in a fresh macOS QA process; the bundle/opened-copy
-hashes, rendered examples, Math fallback, practice-form round trips and teardown
-are recorded in
-[packaged-help-v87-qa-20261116-pr435.json](../validation/little-leonardo/packaged-help-v87-qa-20261116-pr435.json).
+Guide v88 shows the different messages and recovery paths for a known HTTP
+rejection of a mobile rubric response and a connection loss without an
+acknowledgement. Existing v87 and older personal copies and practice answers
+remain untouched. Fresh bilingual packaged Help acceptance is tracked in
+`doc/validation/little-leonardo/` for PR #435.
 
-The current PR #435 product-code source is `3bac17a0` (the #458 retry fix); the
-current simulator fixture/test source is `fc607375` (#460). Guide v87 EN has
+Guide v87 previously passed packaged Help acceptance in a fresh macOS QA
+process. The bundle/opened-copy hashes, rendered examples, Math fallback,
+practice-form round trips and teardown are recorded in
+[packaged-help-v87-qa-20261116-pr435.json](../validation/little-leonardo/packaged-help-v87-qa-20261116-pr435.json).
+That acceptance does not cover the new Guide v88 package; its Help/practice
+acceptance remains pending for the owner-authorized Beta validation.
+
+The terminal-retry screenshots and result bundle were captured from product
+and test source `5e751df2` before integrating the follow-up #459/#460 evidence
+commits. The current simulator fixture also includes the #460 host-environment
+correction. Guide v87 EN has
 SHA-256 `ae96797ee8db8799e66060bde6f731a436bef446e6f278ca20c0714b64baf33f`
 and ES has SHA-256
 `487560caac7f729445cbb32b3bb3b8c67e154169bc001c2f7144c1e55541be09`.
+
+Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
+`doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
 
 Guide v86 is historical. Its fresh packaged Help acceptance passed against
 source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`; the candidate-specific

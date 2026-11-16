@@ -264,6 +264,17 @@ final class MobileDiagnosticLogTests: XCTestCase {
                 for: URLError(.networkConnectionLost), spanish: spanish,
                 diagnosticLog: MobileDiagnosticLog(fileURL: root.appendingPathComponent("transient.log")))
             XCTAssertEqual(retryNotice.message, MobileRubricCaptureFailure.retry.message(spanish: spanish))
+
+            for rejection in [
+                DirectRubricSubmissionStatusError(statusCode: 503) as Error,
+                RubricExchangeError.invalidPayload
+            ] {
+                let rejectionNotice = MobileRubricCaptureFailure.retryNotice(
+                    for: rejection, spanish: spanish,
+                    diagnosticLog: MobileDiagnosticLog(fileURL: root.appendingPathComponent("rejection-\(spanish).log")))
+                XCTAssertEqual(rejectionNotice.message, MobileRubricCaptureFailure.submission.message(spanish: spanish))
+                XCTAssertFalse(rejectionNotice.message.contains(spanish ? "sigue pendiente" : "still pending"))
+            }
         }
     }
 
