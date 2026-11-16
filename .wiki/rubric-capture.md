@@ -174,8 +174,14 @@ exact build/evidence input mapping.
 
 Guide29 EN/ES now documents automatic recovery, persistent Retry, terminal and close/cancel behavior. Source b9c5bb7 has focused8/8 and complete717/35/71 PASS, recorded delta9 including real QA packaging. Actual QA PID81719 opened both guides through Help/Ayuda, checked all live examples/MathON-OFF and both separate practices save-close-reopen; bundle/personal hashes match. Twenty original native JPEGs plus identity/restoration evidence are in `doc/validation/helper-consultation/packaged-help29/`. Three previous originals were restored byte-for-byte after normal quit; final signed-main and physical acceptance remain pending.
 
-For mobile response delivery, a known HTTP rejection of the frozen response must
-persist a `requiresUserRetry` marker and wait for the user's Retry. Foreground
-reconciliation remains enabled when transport ends without an acknowledgement,
-so a response the Mac committed can still be recovered with the same request ID
-and bytes. PR #435/#458 adds the explicit `503 → manual Retry → 409` regression.
+For mobile response delivery, an explicit HTTP rejection of the frozen response
+must persist a `requiresUserRetry` marker and wait for the user's Retry. HTTP
+413 is mapped to `invalidPayload` but follows the same manual-retry rule. If
+that marker write fails, an in-memory guard blocks automatic replay while the
+current `MobileLibrary` instance remains alive; a user Retry clears it only
+after the pending state is saved. The in-memory guard cannot survive process
+restart, so durable protection across restarts depends on the draft marker being
+written successfully. Ambiguous transport loss without an HTTP response still
+uses same-ID automatic lost-ack recovery. PR #435/#458 tests `503 → manual
+Retry → 413 → manual Retry → 409`, preserving the frozen response and making the
+final 409 terminal.

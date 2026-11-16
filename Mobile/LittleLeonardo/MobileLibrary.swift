@@ -20,6 +20,7 @@ final class MobileLibrary {
     private let credentials: any DeviceCredentialStore
     private let revocationClient: MobileRevocationClient
     private let draftStore: MobileRubricDraftStore
+    private let rubricManualRetryGuard = MobileRubricManualRetryGuard()
     private let rubricAcceptance: MobileRubricAcceptance
     private let now: @Sendable () -> Date
     var connections: [MobileDirectConnection] = []
@@ -691,6 +692,7 @@ final class MobileLibrary {
         }
         let pending = try await pendingWrite.value
         if pending.state == .submitted, let submitted = pending.response { return submitted }
+        rubricManualRetryGuard.clearUserRetry(for: pending.id)
         await refreshDrafts()
         do {
             // Resolve the connection inside the recoverable section. A
@@ -733,7 +735,7 @@ final class MobileLibrary {
                 return submitted
             }
         } catch {
-            await persistRubricSubmissionFailure(error, for: pending)
+            try await persistRubricSubmissionFailure(error, for: pending)
             throw error
         }
     }
@@ -741,11 +743,16 @@ final class MobileLibrary {
     /// Persist a definitive HTTP rejection before the submission gate releases.
     /// That prevents the next foreground reconciliation from replaying a known
     /// rejection while preserving automatic recovery for ambiguous transport loss.
-    private func persistRubricSubmissionFailure(_ error: Error, for draft: MobileRubricDraft) async {
+    private func persistRubricSubmissionFailure(_ error: Error, for draft: MobileRubricDraft) async throws {
         guard let response = draft.response else { return }
         let blocked = isTerminalRubricFailure(error)
         let state: MobileRubricDraftState = blocked ? .blocked : .pendingSend
         let requiresUserRetry = !blocked && requiresManualRetryAfterRubricRejection(error)
+        if blocked || requiresUserRetry {
+            rubricManualRetryGuard.requireUserRetry(for: draft.id)
+        } else {
+            rubricManualRetryGuard.clearUserRetry(for: draft.id)
+        }
         let spanish = MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
         let failureMessage = blocked
             ? (spanish
@@ -762,7 +769,8 @@ final class MobileLibrary {
                                                        failureMessage: failureMessage,
                                                        requiresUserRetry: requiresUserRetry))
         }
-        try? await failureWrite.value
+        try await failureWrite.value
+        if blocked { rubricManualRetryGuard.clearUserRetry(for: draft.id) }
         await refreshDrafts()
     }
 
@@ -869,7 +877,8 @@ final class MobileLibrary {
                         }
                         // A definite HTTP rejection is different from a lost
                         // acknowledgement: only the user's Retry may resend it.
-                        guard !latest.requiresUserRetry else { return response }
+                        guard !latest.requiresUserRetry,
+                              !rubricManualRetryGuard.requiresUserRetry(for: draft.id) else { return response }
                         // The response POST is authenticated, idempotent and returns
                         // the durable Mac copy. Replaying these exact frozen bytes is
                         // the V1-compatible lost-ack reconciliation path.
@@ -881,7 +890,17 @@ final class MobileLibrary {
                             if isTerminalRubricFailure(error) || requiresManualRetryAfterRubricRejection(error) {
                                 // Store the response rejection while this exact-operation gate is
                                 // still held, before another foreground poll can enter it.
-                                await persistRubricSubmissionFailure(error, for: draft)
+                                do {
+                                    try await persistRubricSubmissionFailure(error, for: draft)
+                                } catch {
+                                    let spanish = MobileErrorNotice.isSpanishLanguage(
+                                        Locale.preferredLanguages.first)
+                                    presentError(error, operation: .rubric,
+                                        message: spanish
+                                            ? "No se pudo guardar el estado del envío. No se repetirá automáticamente mientras Little Leonardo siga abierto."
+                                            : "Couldn't save the submission state. It won't be sent again automatically while Little Leonardo stays open.")
+                                    throw error
+                                }
                             }
                             throw error
                         }
