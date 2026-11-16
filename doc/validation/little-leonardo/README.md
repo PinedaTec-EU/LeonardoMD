@@ -1,5 +1,19 @@
 # Little Leonardo native validation
 
+## PR #435 packaged Guide v87 acceptance
+
+The fresh LeonardoMD QA process opened the English and Spanish v87 user guides
+through the real Help menu. Both opened personal copies matched their bundled
+SHA-256 values. Mermaid, local images, tables, charts, inline and display math,
+the tagged equation, Math-disabled source fallback, and literal code examples
+were inspected. Both separate practice forms were filled with synthetic values,
+saved, closed and reopened; the original answer files were restored byte-for-byte.
+Math and interface language were returned to their initial settings. The process
+was quit normally and its PID was verified absent. Exact bundle, process, hash,
+form and teardown details are in
+[packaged-help-v87-qa-20261116-pr435.json](packaged-help-v87-qa-20261116-pr435.json).
+
+
 ## Current rubric capture evidence
 
 The [current source-bound manifest](ios-rubric-capture-final-20261106-8488e9d.json) identifies source `8488e9d42ee148955ea652fc052254d2aaf3ed8b`, 40 relevant code/test/config/package input hashes, five iOS captures and two bilingual Mac consent captures. Three current native modes and nine focused iOS cases pass without failures or skips. The happy mode now waits for actual dark ink in the drawing and Preview before exporting raw screenshots, and checks their relative ink density. Earlier blank Preview attachments were premature composition captures; they do not establish a lost drawing or a renderer defect. Historical raw images remain unchanged.

@@ -8,8 +8,11 @@ remain unchanged. Existing guide copies and practice answers are never overwritt
 
 Guide v87 clarifies that a known HTTP rejection of a mobile rubric response
 requires a user Retry, while a transport loss without an acknowledgement can
-reconcile the same frozen response. Its PR #435 packaged Help acceptance will
-be recorded in `doc/validation/little-leonardo/` after the v87 smoke completes.
+reconcile the same frozen response. Its PR #435 packaged Help acceptance passed
+against both v87 bundles in a fresh macOS QA process; the bundle/opened-copy
+hashes, rendered examples, Math fallback, practice-form round trips and teardown
+are recorded in
+[packaged-help-v87-qa-20261116-pr435.json](../validation/little-leonardo/packaged-help-v87-qa-20261116-pr435.json).
 
 The current PR #435 product-code source is `3bac17a0` (the #458 retry fix); the
 current simulator fixture/test source is `fc607375` (#460). Guide v87 EN has

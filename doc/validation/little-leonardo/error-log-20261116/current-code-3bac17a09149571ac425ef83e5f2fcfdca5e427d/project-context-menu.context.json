@@ -1,0 +1,25 @@
+{
+  "browser_name": "Little Leonardo native SwiftUI/WKWebView · iOS Simulator 26.5",
+  "browser_version": "WKWebView engine version not exposed by XCTest",
+  "capture_mode": "viewport",
+  "captured_at": "2026-11-16T16:26:06.581000Z",
+  "data_provenance": "synthetic",
+  "native_viewport_points": {
+    "height": 874,
+    "width": 402
+  },
+  "route": "/native/ios/on-demand/project-context-menu",
+  "screen": "project-context-menu",
+  "source_sha": "3bac17a09149571ac425ef83e5f2fcfdca5e427d",
+  "test_source_sha": "fc607375",
+  "repository_head_at_test": "0b611957afd07de59489d3331ca6c81100e9e892",
+  "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+  "device_id": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+  "device_name": "LittleLeonardo PR435 Exact English QA 20261116",
+  "platform": "iOS Simulator 26.5 (23F77)",
+  "locale": "es-ES",
+  "state": "Project context menu offers offline retention. Classic appearance.",
+  "viewport_css": null,
+  "sha256": "8a944db17d5aa7f8ad970799d9e9417bdfe7517b7d428012dd57ff6c467855f7",
+  "xctest_attachment_id": "B183C061-B562-4CBE-A0FE-9532057501E8"
+}

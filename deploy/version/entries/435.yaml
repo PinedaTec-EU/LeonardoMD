@@ -1,4 +1,4 @@
 {
-  "summary": "Little Leonardo shows concise localized errors with opaque references and a bounded local log, keeps invalid invitation codes private, localizes retention guidance, and preserves rubric responses for manual retry after explicit rejection.",
-  "build": 128
+  "summary": "Little Leonardo adds localized sync error references and a bounded private log, keeps invitation codes out of diagnostics, clarifies offline retention, preserves rejected rubric drafts for manual retry, and fixes the simulator sync fixture.",
+  "build": 131
 }
