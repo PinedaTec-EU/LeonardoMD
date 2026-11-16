@@ -148,6 +148,14 @@ encoded response limit. A successful Mac receipt is bound to the same
 requester, target, request ID and TLS identity; expiry, cancellation and
 revocation remain hard send barriers.
 
+An explicit non-success HTTP response to a frozen response POST remains pending
+and requires the user to choose Retry. Foreground reconciliation must not replay
+that known rejection. If transport ends without an HTTP acknowledgement, the
+same frozen response remains eligible for idempotent lost-ack reconciliation;
+this recovers a response the Mac may have committed without changing its
+request UUID or payload. A terminal server response blocks the draft and keeps
+its frozen drawing available for inspection.
+
 ## Request identity invariant (#367)
 
 The mobile cache and capture projection bind a request by its complete immutable

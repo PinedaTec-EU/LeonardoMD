@@ -744,11 +744,14 @@ required.
 
 You may close and reopen the card before **Send**. Little Leonardo restores the
 label and unsent strokes from its local durable draft. Once **Send** has frozen
-the response, later undo/clear actions cannot mutate the pending payload; a
-transient network failure keeps that exact payload available for **Retry**.
-If the Mac may have committed **Send** but its acknowledgement was lost, close
-and relaunch Little Leonardo: the recovery card keeps the same drawing, label
-and request available for **Retry**. Do not accept a second request or redraw.
+the response, later undo/clear actions cannot mutate the pending payload. A
+known HTTP rejection shows “Couldn't send. The drawing is saved so you can
+retry.” The card keeps that response and waits for your deliberate **Retry**;
+foreground synchronization does not send it again automatically. If the
+connection is lost before a response arrives, the message says sending is
+still pending, and Little Leonardo may reconcile the same frozen response when
+it becomes active in case the Mac already saved it. This cannot create a
+different answer or drawing. Do not accept a second request or redraw.
 If the capture link was revoked, the accepted drawing remains visible for
 recovery but **Send** is blocked. Reconnect and approve the Mac again, then
 create a new rubric request; a revoked draft is never silently reused. The

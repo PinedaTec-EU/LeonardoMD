@@ -516,7 +516,35 @@ final class PairingUITests: XCTestCase {
         try advanceDirectFixture("finish")
     }
 
-    @MainActor func testTerminalAcceptanceCancellationBlocksOpenApprovalCard() throws {
+    @MainActor func testTerminalAcceptanceCancellationShowsSpanishDiagnosticOnce() throws {
+        try assertTerminalAcceptanceCancellation(
+            language: "es", locale: "es_ES",
+            expectedFailure: "Esta solicitud ya no puede aceptarse. Pide una nueva al ordenador.",
+            expectedBlocked: "La solicitud ya no admite aceptación (caducada, cancelada o revocada).",
+            expectedRecovery: "Cierra esta tarjeta y pide una nueva solicitud al ordenador.",
+            expectedReopenedBlock: "Borrador bloqueado: pide una nueva solicitud",
+            expectedReopenedStatus: "La solicitud ya no admite envíos (caducada, cancelada o revocada).")
+    }
+
+    @MainActor func testEnglishTerminalAcceptanceCancellationShowsLocalizedDiagnosticOnce() throws {
+        try assertTerminalAcceptanceCancellation(
+            language: "en", locale: "en_US",
+            expectedFailure: "This request can no longer be accepted. Ask the Mac for a new request.",
+            expectedBlocked: "This request can no longer be accepted (expired, cancelled or revoked).",
+            expectedRecovery: "Close this card and ask the Mac for a new request.",
+            expectedReopenedBlock: "Draft blocked: ask for a new request",
+            expectedReopenedStatus: "This request cannot accept submissions (expired, cancelled or revoked).")
+    }
+
+    @MainActor private func assertTerminalAcceptanceCancellation(
+        language: String,
+        locale: String,
+        expectedFailure: String,
+        expectedBlocked: String,
+        expectedRecovery: String,
+        expectedReopenedBlock: String,
+        expectedReopenedStatus: String
+    ) throws {
         let environment = ProcessInfo.processInfo.environment
         guard environment["LEONARDO_DIRECT_RUBRIC_QA"] == "1",
               environment["LEONARDO_MOBILE_RUBRIC_QA_MODE"] == "terminal-accept-cancel",
@@ -525,6 +553,8 @@ final class PairingUITests: XCTestCase {
             throw XCTSkip("Requires the terminal acceptance cancellation fixture")
         }
         let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", locale,
+                              "-directSyncIntervalMinutes", "0"]
         app.launch()
         requestManualConnection(app, port: port)
         let code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
@@ -551,27 +581,43 @@ final class PairingUITests: XCTestCase {
         let blocked = app.staticTexts["rubric-approval-blocked"]
         XCTAssertTrue(blocked.waitForExistence(timeout: 30),
                       "A cancelled request must replace the live approval controls with the blocked notice")
-        XCTAssertTrue(app.staticTexts["Cierra esta tarjeta y pide una nueva solicitud al ordenador."].exists)
+        XCTAssertTrue(blocked.label.contains(expectedBlocked))
+        XCTAssertTrue(app.staticTexts[expectedRecovery].exists)
         XCTAssertFalse(app.buttons["rubric-accept"].exists,
                        "A terminal approval request must not remain accept-able")
         XCTAssertFalse(app.buttons["rubric-reject"].exists,
                        "A terminal approval request must not remain reject-able")
         XCTAssertFalse(app.buttons["rubric-retry"].exists,
                        "A pending acceptance must not expose response retry")
-        XCTAssertFalse(app.staticTexts["No se pudo aceptar la solicitud. Puedes intentarlo de nuevo."].exists,
-                       "Terminal acceptance must not promise a retry")
+        let acceptanceFailure = app.descendants(matching: .any)
+            .matching(identifier: "rubric-acceptance-failure").firstMatch
+        XCTAssertTrue(acceptanceFailure.waitForExistence(timeout: 5),
+                      "The failed acceptance must show its localized diagnostic notice")
+        XCTAssertTrue(acceptanceFailure.label.contains(expectedFailure))
+        let reference = try XCTUnwrap(acceptanceFailure.label.range(
+            of: #"LL-[0-9A-F]{12}"#, options: .regularExpression)
+            .map { String(acceptanceFailure.label[$0]) })
+        XCTAssertTrue(acceptanceFailure.label.contains(
+            "\(language == "es" ? "Código" : "Code"): \(reference)"))
         let blockedCapture = XCTAttachment(screenshot: app.screenshot())
-        blockedCapture.name = "Native iOS cancelled approval card blocked with new-request guidance"
+        blockedCapture.name = "Native iOS \(language) cancelled approval with localized diagnostic"
         blockedCapture.lifetime = .keepAlways
         add(blockedCapture)
 
-        // The durable blocked draft remains recoverable after relaunch, but it
-        // must reopen without Accept/Reject/Retry and continue explaining how
-        // to obtain a new Mac request.
+        // Record the diagnostic count, then prove reopening the persisted card
+        // does not emit a second notice for the old terminal response.
         app.buttons["Cerrar"].tap()
         let draftBanner = app.buttons["rubric-draft-banner"]
         XCTAssertTrue(draftBanner.waitForExistence(timeout: 15),
                       "The blocked acceptance draft must remain recoverable after closing the card")
+        openDiagnosticLog(app)
+        let rubricRows = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", " op=rubric "))
+        let referenceRows = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "ref=\(reference) op=rubric "))
+        XCTAssertEqual(referenceRows.count, 1, "The displayed reference must have exactly one matching log row")
+        let rubricEntryCount = rubricRows.count
+
         app.terminate()
         app.launch()
         dismissMobileFailureIfPresent(app)
@@ -579,12 +625,223 @@ final class PairingUITests: XCTestCase {
                       "The blocked acceptance draft must persist across relaunch")
         app.buttons["rubric-draft-banner"].tap()
         XCTAssertTrue(sheet.waitForExistence(timeout: 15))
-        XCTAssertTrue(app.staticTexts["Borrador bloqueado: pide una nueva solicitud"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts[expectedReopenedBlock].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts[expectedReopenedStatus].exists)
+        XCTAssertTrue(app.staticTexts[expectedReopenedBlock].exists)
+        XCTAssertFalse(app.descendants(matching: .any)
+            .matching(identifier: "rubric-acceptance-failure").firstMatch.exists,
+            "Reopening a blocked request must not create another failure notice")
         XCTAssertFalse(app.buttons["rubric-accept"].exists)
         XCTAssertFalse(app.buttons["rubric-reject"].exists)
         XCTAssertFalse(app.buttons["rubric-retry"].exists)
         XCTAssertFalse(app.buttons["rubric-send"].exists)
+        app.buttons["Cerrar"].tap()
+        openDiagnosticLog(app)
+        XCTAssertEqual(rubricRows.count, rubricEntryCount,
+                       "Reopening the blocked draft must not append another rubric diagnostic")
+        XCTAssertEqual(referenceRows.count, 1)
         try advanceDirectFixture("finish")
+    }
+
+    @MainActor func testMacRequestedRubricCaptureTerminalRetryBlocksAndLogsInSpanish() throws {
+        try assertTerminalSubmissionRetry(
+            language: "es", locale: "es_ES",
+            expectedInitialFailure: "No se pudo enviar. El dibujo está guardado y puedes reintentarlo.",
+            expectedRestoredFailure: "No se pudo enviar la rúbrica. Puedes volver a intentarlo.",
+            expectedPayloadRejectionFailure: "No se pudo enviar. El dibujo está guardado y puedes reintentarlo.",
+            expectedFailure: "Este vínculo ya no admite la solicitud. Pide una nueva solicitud.",
+            expectedBlocked: "Borrador bloqueado: pide una nueva solicitud",
+            expectedBlockedStatus: "La solicitud ya no admite envíos (caducada, cancelada o revocada).")
+    }
+
+    @MainActor func testMacRequestedRubricCaptureTerminalRetryBlocksAndLogsInEnglish() throws {
+        try assertTerminalSubmissionRetry(
+            language: "en", locale: "en_US",
+            expectedInitialFailure: "Couldn't send. The drawing is saved so you can retry.",
+            expectedRestoredFailure: "Couldn't send the rubric. You can try again.",
+            expectedPayloadRejectionFailure: "Couldn't send. The drawing is saved so you can retry.",
+            expectedFailure: "This link can no longer accept the request. Ask for a new one.",
+            expectedBlocked: "Draft blocked: ask for a new request",
+            expectedBlockedStatus: "This request cannot accept submissions (expired, cancelled or revoked).")
+    }
+
+    @MainActor private func assertTerminalSubmissionRetry(
+        language: String,
+        locale: String,
+        expectedInitialFailure: String,
+        expectedRestoredFailure: String,
+        expectedPayloadRejectionFailure: String,
+        expectedFailure: String,
+        expectedBlocked: String,
+        expectedBlockedStatus: String
+    ) throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["LEONARDO_DIRECT_RUBRIC_QA"] == "1",
+              environment["LEONARDO_MOBILE_RUBRIC_QA_MODE"] == "terminal-retry",
+              let port = environment["LEONARDO_DIRECT_QA_PORT"], UInt16(port) != nil,
+              environment["LEONARDO_DIRECT_QA_PHASE_FILE"] != nil else {
+            throw XCTSkip("Requires the terminal rubric retry fixture")
+        }
+
+        let app = XCUIApplication()
+        defer {
+            try? advanceDirectFixture("finish")
+            if app.state != .notRunning { app.terminate() }
+        }
+        app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", locale,
+                              "-directSyncIntervalMinutes", "0"]
+        app.launch()
+        requestManualConnection(app, port: port)
+        let code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Código de conexión:")).firstMatch
+        XCTAssertTrue(code.waitForExistence(timeout: 15))
+
+        try advanceDirectFixture("approve")
+        app.buttons["Sincronizar"].firstMatch.tap()
+        let sheet = app.otherElements["rubric-request-sheet"]
+        openRubricRequestIfNeeded(app, sheet: sheet, timeout: 30)
+        XCTAssertTrue(app.buttons["rubric-accept"].waitForExistence(timeout: 10))
+        app.buttons["rubric-accept"].tap()
+        let canvas = app.otherElements["rubric-canvas"]
+        XCTAssertTrue(canvas.waitForExistence(timeout: 10))
+        drawLine(in: canvas, from: CGVector(dx: 0.16, dy: 0.63), to: CGVector(dx: 0.84, dy: 0.38))
+
+        try advanceDirectFixture("arm-recoverable-response")
+        app.buttons["rubric-send"].tap()
+        let retry = app.buttons["rubric-retry"]
+        guard retry.waitForExistence(timeout: 30) else {
+            try advanceDirectFixture("finish")
+            app.terminate()
+            XCTFail("A temporary response failure must preserve a retryable frozen draft")
+            return
+        }
+        let failure = app.descendants(matching: .any)
+            .matching(identifier: "rubric-acceptance-failure").firstMatch
+        XCTAssertTrue(failure.waitForExistence(timeout: 5))
+        XCTAssertTrue(failure.label.contains(expectedInitialFailure), failure.label)
+        let retryableCapture = XCTAttachment(screenshot: app.screenshot())
+        retryableCapture.name = "Native iOS \(language) rubric HTTP rejection with manual Retry"
+        retryableCapture.lifetime = .keepAlways
+        add(retryableCapture)
+
+        // Keep the app foregrounded across more than one rubric poll interval.
+        // A definite 503 must wait for the user's Retry.
+        Thread.sleep(forTimeInterval: 3.5)
+        try advanceDirectFixture("assert-no-initial-replay")
+
+        // Simulate a pending draft restored from an older version that did not
+        // persist the explicit-retry marker. Reconciliation gets one 503, must
+        // persist the marker before releasing its operation gate, then stop
+        // replaying on subsequent foreground polls.
+        app.terminate()
+        XCTAssertTrue(app.wait(for: .notRunning, timeout: 5),
+                      "The app must exit before the fixture edits its isolated test container")
+        try advanceDirectFixture("clear-retry-marker")
+        try advanceDirectFixture("arm-recoverable-response")
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        openRubricRequestIfNeeded(app, sheet: sheet, timeout: 20)
+        try advanceDirectFixture("await-reconciliation-rejection")
+        Thread.sleep(forTimeInterval: 3.5)
+        try advanceDirectFixture("assert-no-auto-retry")
+        let restoredFailure = app.descendants(matching: .any)
+            .matching(identifier: "rubric-acceptance-failure").firstMatch
+        XCTAssertTrue(restoredFailure.waitForExistence(timeout: 5))
+        XCTAssertTrue(restoredFailure.label.contains(expectedRestoredFailure), restoredFailure.label)
+        let restoredRetry = app.buttons["rubric-retry"]
+        XCTAssertTrue(restoredRetry.exists)
+        XCTAssertTrue(restoredRetry.isEnabled,
+                      "The persisted rejection must offer an enabled manual Retry")
+        try advanceDirectFixture("payload-too-large-next")
+        restoredRetry.tap()
+        try advanceDirectFixture("await-payload-too-large-rejection")
+        let retryAfterPayloadRejection = app.buttons["rubric-retry"]
+        XCTAssertTrue(retryAfterPayloadRejection.waitForExistence(timeout: 10),
+                      "HTTP 413 must preserve the drawing behind a deliberate Retry, not foreground replay")
+        XCTAssertTrue(retryAfterPayloadRejection.isEnabled)
+        XCTAssertTrue(failure.label.contains(expectedPayloadRejectionFailure), failure.label)
+        let payloadRejectionCapture = XCTAttachment(screenshot: app.screenshot())
+        payloadRejectionCapture.name = "Native iOS \(language) HTTP 413 rubric rejection with manual Retry"
+        payloadRejectionCapture.lifetime = .keepAlways
+        add(payloadRejectionCapture)
+        Thread.sleep(forTimeInterval: 3.5)
+        try advanceDirectFixture("assert-no-auto-retry-after-payload-rejection")
+
+        try advanceDirectFixture("terminal-response-next")
+        retryAfterPayloadRejection.tap()
+        try advanceDirectFixture("await-terminal-response")
+        let terminalCopy = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label CONTAINS %@", expectedFailure), object: restoredFailure)
+        XCTAssertEqual(XCTWaiter.wait(for: [terminalCopy], timeout: 30), .completed,
+                       "A terminal retry must replace recoverable copy with localized new-request guidance")
+        let blocked = app.descendants(matching: .any)
+            .matching(identifier: "rubric-terminal-blocked").firstMatch
+        XCTAssertTrue(blocked.waitForExistence(timeout: 10))
+        XCTAssertTrue(blocked.label.contains(expectedBlocked), blocked.label)
+        XCTAssertTrue(app.staticTexts[expectedBlockedStatus].exists)
+        XCTAssertFalse(retry.exists, "A terminal response must stop offering retry")
+        XCTAssertFalse(app.buttons["rubric-send"].exists)
+
+        let reference = try XCTUnwrap(failure.label.range(
+            of: #"LL-[0-9A-F]{12}"#, options: .regularExpression)
+            .map { String(failure.label[$0]) })
+        XCTAssertTrue(failure.label.contains("\(language == "es" ? "Código" : "Code"): \(reference)"))
+        let preview = app.otherElements["rubric-preview"]
+        XCTAssertTrue(preview.waitForExistence(timeout: 5),
+                      "The blocked local response must keep its frozen drawing available for inspection")
+        guard let drawing = waitForVisibleInk(in: app, element: preview, timeout: 5,
+                                              message: "The terminal retry must preserve the submitted drawing") else {
+            XCTFail("The frozen response preview must still render the drawing")
+            try advanceDirectFixture("finish")
+            app.terminate()
+            return
+        }
+        let blockedCapture = XCTAttachment(screenshot: drawing)
+        blockedCapture.name = "Native iOS \(language) terminal rubric retry with preserved drawing"
+        blockedCapture.lifetime = .keepAlways
+        add(blockedCapture)
+
+        app.buttons["Cerrar"].tap()
+        openDiagnosticLog(app)
+        let matchingRows = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "ref=\(reference) op=rubric "))
+        XCTAssertEqual(matchingRows.count, 1,
+                       "The terminal retry reference must appear once in the local diagnostic log")
+        let rubricRows = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", " op=rubric "))
+        XCTAssertGreaterThanOrEqual(rubricRows.count, 3,
+                                    "The recoverable, oversized-payload and terminal attempts remain diagnosable")
+
+        app.terminate()
+        app.launch()
+        dismissMobileFailureIfPresent(app)
+        openRubricRequestIfNeeded(app, sheet: sheet, timeout: 20)
+        XCTAssertTrue(sheet.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.descendants(matching: .any)
+            .matching(identifier: "rubric-terminal-blocked").firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts[expectedBlockedStatus].exists)
+        XCTAssertFalse(retry.exists)
+        XCTAssertFalse(app.descendants(matching: .any)
+            .matching(identifier: "rubric-acceptance-failure").firstMatch.exists,
+            "Reopening the blocked draft must not replay the prior failure notice")
+        XCTAssertTrue(preview.exists)
+        app.buttons["Cerrar"].tap()
+        openDiagnosticLog(app)
+        XCTAssertEqual(matchingRows.count, 1,
+                       "Reopening the blocked draft must not create a duplicate diagnostic")
+        try advanceDirectFixture("finish")
+    }
+
+    @MainActor private func openDiagnosticLog(_ app: XCUIApplication) {
+        app.buttons["open-sync-settings"].tap()
+        let logLink = app.descendants(matching: .any).matching(identifier: "open-error-log").firstMatch
+        for _ in 0..<12 {
+            if logLink.waitForExistence(timeout: 0.3) { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(logLink.waitForExistence(timeout: 5))
+        logLink.tap()
+        XCTAssertTrue(app.navigationBars["Error log"].waitForExistence(timeout: 5)
+                      || app.navigationBars["Registro de errores"].waitForExistence(timeout: 5))
     }
 
     @MainActor func testMacRequestedRubricCaptureLostAcknowledgementReconcilesAfterRelaunch() throws {
@@ -596,6 +853,11 @@ final class PairingUITests: XCTestCase {
             throw XCTSkip("Requires the explicit lost-ack native rubric fixture")
         }
         let app = XCUIApplication()
+        defer {
+            try? advanceDirectFixture("allow-reconcile")
+            try? advanceDirectFixture("finish")
+            if app.state != .notRunning { app.terminate() }
+        }
         app.launch()
         app.buttons["open-pairing"].tap()
         app.segmentedControls["pairing-method"].buttons["IP y puerto"].tap()
@@ -635,21 +897,22 @@ final class PairingUITests: XCTestCase {
             recoveryBanner.tap()
         }
         XCTAssertTrue(recoverySheet.waitForExistence(timeout: 15))
-        XCTAssertTrue(app.buttons["rubric-retry"].waitForExistence(timeout: 15),
+        let retry = app.buttons["rubric-retry"]
+        XCTAssertTrue(retry.waitForExistence(timeout: 15),
                       "The pending local response must remain visibly retryable while the fixture holds reconciliation")
+        XCTAssertTrue(retry.isEnabled)
         XCTAssertFalse(app.buttons["rubric-done"].exists)
+        try advanceDirectFixture("assert-lost-ack-held")
         try advanceDirectFixture("allow-reconcile")
-        if app.buttons["rubric-retry"].waitForExistence(timeout: 5) {
-            app.buttons["rubric-retry"].tap()
-        }
         XCTAssertTrue(app.buttons["rubric-done"].waitForExistence(timeout: 30),
                       "Reload reconciliation must mark the matching committed response submitted after the gate opens")
         XCTAssertFalse(app.buttons["rubric-send"].exists)
+        XCTAssertFalse(retry.exists,
+                       "Automatic reconciliation must finish without a manual Retry after the held acknowledgement arrives")
         let capture = XCTAttachment(screenshot: app.screenshot())
         capture.name = "Native iOS rubric recovered after lost acknowledgement"
         capture.lifetime = .keepAlways
         add(capture)
-        try advanceDirectFixture("finish")
     }
 
     @MainActor func testMacRequestedRubricCaptureLostAcceptanceAcknowledgementReconcilesAfterRelaunch() throws {

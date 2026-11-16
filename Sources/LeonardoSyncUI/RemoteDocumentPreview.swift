@@ -11,16 +11,19 @@ public struct RemoteDocumentPreview: View {
     let appearance: MarkdownAppearance
     let compactFirstHeading: Bool
     let failurePresentation: (@MainActor (Error) -> String)?
+    let failureDiagnosticPresentation: RemoteDownloadDiagnosticPresentation?
     @State private var presentation = RemoteDocumentPreviewState()
     @State private var source = false
     @State private var linked: RemoteFileEntry?
     private let virtualRoot = URL(fileURLWithPath: "/LeonardoRemote", isDirectory: true)
     public init(library: DownloadLibrary, projectID: UUID, entry: RemoteFileEntry, spanish: Bool = false,
                 appearance: MarkdownAppearance = .default, compactFirstHeading: Bool = false,
-                failurePresentation: (@MainActor (Error) -> String)? = nil) {
+                failurePresentation: (@MainActor (Error) -> String)? = nil,
+                failureDiagnosticPresentation: RemoteDownloadDiagnosticPresentation? = nil) {
         self.library = library; self.projectID = projectID; self.entry = entry; self.spanish = spanish
         self.appearance = appearance; self.compactFirstHeading = compactFirstHeading
         self.failurePresentation = failurePresentation
+        self.failureDiagnosticPresentation = failureDiagnosticPresentation
     }
     private var project: CachedRemoteProject? { library.projects.first { $0.id == projectID } }
     private var currentEntry: RemoteFileEntry? { project?.catalogue.files.first { $0.path == entry.path } }
@@ -62,7 +65,8 @@ public struct RemoteDocumentPreview: View {
         .navigationDestination(item: $linked) { target in
             RemoteDocumentPreview(library: library, projectID: projectID, entry: target, spanish: spanish,
                                   appearance: appearance, compactFirstHeading: compactFirstHeading,
-                                  failurePresentation: failurePresentation)
+                                  failurePresentation: failurePresentation,
+                                  failureDiagnosticPresentation: failureDiagnosticPresentation)
         }
     }
     @ViewBuilder private var content: some View {
@@ -86,7 +90,8 @@ public struct RemoteDocumentPreview: View {
         guard let expectedCatalogue = project?.catalogue, currentEntry != nil else { return }
         do {
             let value = try await library.openResult(id: projectID, path: entry.path,
-                                                     presentation: failurePresentation)
+                                                     presentation: failurePresentation,
+                                                     diagnosticPresentation: failureDiagnosticPresentation)
             guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue, currentEntry != nil else { return }
             presentation.receive(value, ticket: ticket)
             // The canonical Markdown renderer resolves local image requests only from memory.
@@ -95,7 +100,8 @@ public struct RemoteDocumentPreview: View {
                 for path in RemoteDocumentResources.imagePaths(in: text, documentPath: entry.path, catalogue: project.catalogue) {
                     do {
                         let image = try await library.openResult(id: projectID, path: path,
-                                                                presentation: failurePresentation)
+                                                                presentation: failurePresentation,
+                                                                diagnosticPresentation: failureDiagnosticPresentation)
                         guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue else { return }
                         presentation.receiveImage(image.file.content, path: path, ticket: ticket)
                         if let failure = image.updateFailure {

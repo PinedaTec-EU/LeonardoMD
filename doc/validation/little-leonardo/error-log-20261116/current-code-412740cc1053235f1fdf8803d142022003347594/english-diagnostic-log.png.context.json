@@ -1,0 +1,23 @@
+{
+  "browser_name": "Little Leonardo native SwiftUI/WKWebView · iOS Simulator 26.5",
+  "browser_version": "WKWebView engine version not exposed by XCTest",
+  "capture_mode": "XCTest attachment",
+  "captured_at": "2026-11-16T11:20:22.645Z",
+  "data_provenance": "synthetic loopback fixture",
+  "native_viewport_points": {
+    "width": 402,
+    "height": 874
+  },
+  "route": "/native/ios/on-demand/english-diagnostic-log",
+  "screen": "english-diagnostic-log",
+  "source_sha": "412740cc1053235f1fdf8803d142022003347594",
+  "state": "English local error log showing the references that match the alerts; English; Classic appearance",
+  "simulator_id": "5B689430-FDBD-44C0-A732-BE3C063F9403",
+  "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+  "xctest_attachment": "4942183B-8EC5-47D4-8671-9170CB932DB6.png",
+  "image_pixels": {
+    "width": 1206,
+    "height": 2622
+  },
+  "sha256": "407586c018076b5cfed8954aaae6d3c54f775bfd3cee30aa30f9b884a47e4d5c"
+}

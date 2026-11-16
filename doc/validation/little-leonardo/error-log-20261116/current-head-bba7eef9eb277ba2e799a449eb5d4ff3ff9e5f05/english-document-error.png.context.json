@@ -1,0 +1,28 @@
+{
+  "captured_at": "2026-11-16T02:12:04Z",
+  "route": "Project > notes/decisions.md preview",
+  "screen": "English inline document download failure, reference, and retry action.",
+  "capture_tool": "XCUITest native app screenshot attachment",
+  "capture_mode": "native app viewport",
+  "state": "English inline document failure and its diagnostic reference; native points measured from app.frame; English; Classic appearance",
+  "data_provenance": "synthetic",
+  "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+  "source_sha": "bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05",
+  "result_bundle": "/tmp/leonardo-pr435-final-english-20261116.xcresult",
+  "simulator": {
+    "name": "iPhone 17 Pro",
+    "device_id": "C1762B8D-7017-4573-A613-2A914D69140D",
+    "model": "iPhone 17 Pro",
+    "os": "iOS 26.5",
+    "os_build": "23F77",
+    "viewport_points": {
+      "width": 402,
+      "height": 874
+    },
+    "image_pixels": {
+      "width": 1206,
+      "height": 2622
+    }
+  },
+  "image_sha256": "cb901390a8f0a1623b5ec0f38cb8c850d4dd0272947f6bc87e57c6f471aeb107"
+}

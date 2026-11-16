@@ -1,0 +1,25 @@
+{
+  "browser_name": "Little Leonardo native SwiftUI/WKWebView · iOS Simulator 26.5",
+  "browser_version": "WKWebView engine version not exposed by XCTest",
+  "capture_mode": "viewport",
+  "captured_at": "2026-11-16T16:25:42.478000Z",
+  "data_provenance": "synthetic",
+  "native_viewport_points": {
+    "height": 874,
+    "width": 402
+  },
+  "route": "/native/ios/on-demand/catalogue-remote",
+  "screen": "catalogue-remote",
+  "source_sha": "3bac17a09149571ac425ef83e5f2fcfdca5e427d",
+  "test_source_sha": "fc607375",
+  "repository_head_at_test": "0b611957afd07de59489d3331ca6c81100e9e892",
+  "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+  "device_id": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+  "device_name": "LittleLeonardo PR435 Exact English QA 20261116",
+  "platform": "iOS Simulator 26.5 (23F77)",
+  "locale": "es-ES",
+  "state": "Expanded project shows remote files without downloading their contents. Classic appearance.",
+  "viewport_css": null,
+  "sha256": "4bb7cfe4276931a57ea058cac66c2121bae8af2fc67e8475de375505382d54c8",
+  "xctest_attachment_id": "607C0F71-49AC-44E9-BAE2-1C9B30B91DD0"
+}

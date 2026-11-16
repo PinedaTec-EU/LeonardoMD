@@ -37,9 +37,11 @@ final class OnDemandMobileAcceptanceFixtureTests: XCTestCase {
                     return await downstream(request)
                 }
             })
-        _ = try await runtime.start(host: "127.0.0.1", port: 46987, projects: [source])
+        let host = ProcessInfo.processInfo.environment["LEONARDO_ON_DEMAND_QA_HOST"] ?? "127.0.0.1"
+        _ = try await runtime.start(host: host, port: 46987, projects: [source])
         do {
-            try write(["port": 46987, "projectID": descriptor.id.uuidString], root: root, name: "ready.json")
+            try write(["host": host, "port": 46987, "projectID": descriptor.id.uuidString],
+                      root: root, name: "ready.json")
             var previous = "", deviceID: UUID?, finished = false
             let deadline = Date().addingTimeInterval(600)
             while Date() < deadline, !finished {
@@ -66,6 +68,13 @@ final class OnDemandMobileAcceptanceFixtureTests: XCTestCase {
                         try Data("# Future retained file\n\nAdded after folder retention.\n".utf8)
                             .write(to: sourceRoot.appendingPathComponent("notes/future.md"))
                         await probe.allowPending()
+                    case "finish-english":
+                        let audit = await probe.snapshot()
+                        XCTAssertEqual(audit.snapshots, 0)
+                        XCTAssertGreaterThanOrEqual(audit.files["notes/decisions.md", default: 0], 2)
+                        XCTAssertEqual(audit.files["reference/remote.md"], 1)
+                        try write(audit.dictionary, root: root, name: "english-completed.json")
+                        finished = true
                     case "finish":
                         let audit = await probe.snapshot()
                         XCTAssertEqual(audit.snapshots, 0)

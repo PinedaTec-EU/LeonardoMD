@@ -84,8 +84,11 @@ final class OnDemandSyncUITests: XCTestCase {
                        "Project retention must wait until synchronization leaves the action available")
         try capture(app, "project-context-menu", state: "Project action explicitly enables offline retention")
         keepProjectOffline.tap()
-        XCTAssertTrue(element("remote-file-download-failure-" + projectID + "-notes/decisions.md", app: app)
-            .waitForExistence(timeout: 15), "A failed retained download must be visible on its file row")
+        XCTAssertTrue(project.staticTexts["Incluye los ficheros nuevos"].waitForExistence(timeout: 5),
+                      "Spanish project retention copy must match the app locale")
+        let failedFileStatus = element("remote-file-download-failure-" + projectID + "-notes/decisions.md", app: app)
+        XCTAssertTrue(failedFileStatus.waitForExistence(timeout: 15),
+                      "A failed retained download must be visible on its file row")
         let initialAlert = app.alerts.firstMatch
         XCTAssertTrue(initialAlert.waitForExistence(timeout: 15), "The retained-download error must present a user-facing alert")
         let alertCopy = initialAlert.staticTexts.allElementsBoundByIndex.map(\.label).joined(separator: " ")
@@ -103,7 +106,9 @@ final class OnDemandSyncUITests: XCTestCase {
         alertScreenshot.lifetime = .keepAlways
         add(alertScreenshot)
         initialAlert.buttons["Aceptar"].tap()
-        XCTAssertTrue(app.staticTexts["Error de descarga · se reintentará"].waitForExistence(timeout: 30),
+        XCTAssertEqual(failedFileStatus.label,
+                       "Error de descarga; se reintentará al volver a abrir el fichero")
+        XCTAssertTrue(project.staticTexts["Error de descarga · se reintentará"].waitForExistence(timeout: 30),
                       "The first retained transfer must finish before the document starts a contextual retry")
 
         fileRow(projectID, "notes/decisions.md", app: app).tap()
@@ -196,7 +201,7 @@ final class OnDemandSyncUITests: XCTestCase {
         guard ProcessInfo.processInfo.environment["LEONARDO_ON_DEMAND_QA_ROOT"] != nil else {
             throw XCTSkip("Requires the isolated on-demand loopback source")
         }
-        defer { try? phase("finish") }
+        defer { try? phase("finish-english") }
         let app = XCUIApplication()
         app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US",
                               "-directSyncIntervalMinutes", "0"]
@@ -229,6 +234,8 @@ final class OnDemandSyncUITests: XCTestCase {
             predicate: NSPredicate(format: "isHittable == true"), object: keepProjectOffline)
         XCTAssertEqual(XCTWaiter.wait(for: [actionReady], timeout: 30), .completed)
         keepProjectOffline.tap()
+        XCTAssertTrue(project.staticTexts["Includes new files"].waitForExistence(timeout: 5),
+                      "English project retention copy must match the app locale")
 
         let failure = element("remote-file-download-failure-" + projectID + "-notes/decisions.md", app: app)
         XCTAssertTrue(failure.waitForExistence(timeout: 20))
@@ -239,16 +246,68 @@ final class OnDemandSyncUITests: XCTestCase {
         XCTAssertTrue(alertCopy.contains("Couldn't download the content."))
         XCTAssertFalse(alertCopy.contains("NSURLErrorDomain"))
         XCTAssertEqual(alert.buttons.firstMatch.label, "OK")
+        XCTAssertEqual(failure.label, "Download failed; it will retry when you open the file again")
+        XCTAssertTrue(project.staticTexts["Download failed · will retry"].waitForExistence(timeout: 5),
+                      "The visible project status must follow the English app locale")
+        try capture(app, "english-project-download-alert",
+                    state: "English project and file failure statuses behind the concise download alert",
+                    locale: "English")
+        let alertScreenshot = XCTAttachment(screenshot: app.screenshot())
+        alertScreenshot.name = "English Little Leonardo project failure and concise download alert"
+        alertScreenshot.lifetime = .keepAlways
+        add(alertScreenshot)
         alert.buttons["OK"].tap()
         XCTAssertTrue(failure.waitForExistence(timeout: 5))
         XCTAssertTrue(failure.isHittable)
-        XCTAssertEqual(failure.label, "Download failed; it will retry when you open the file again")
         try capture(app, "english-file-failure", state: "English failure status and its VoiceOver retry guidance",
                     locale: "English")
+        fileRow(projectID, "notes/decisions.md", app: app).tap()
+        let warning = element("remote-download-warning", app: app)
+        XCTAssertTrue(warning.waitForExistence(timeout: 15),
+                      "A failed document download must show its concise preview message")
+        let previewAlert = app.alerts.firstMatch
+        XCTAssertTrue(previewAlert.waitForExistence(timeout: 5),
+                      "The document-download error must show its concise notice")
+        let previewAlertCopy = previewAlert.staticTexts.allElementsBoundByIndex.map(\.label).joined(separator: " ")
+        XCTAssertTrue(previewAlertCopy.contains("Couldn't download the document."))
+        XCTAssertFalse(previewAlertCopy.contains("NSURLErrorDomain"))
+        XCTAssertEqual(previewAlert.buttons.count, 1)
+        XCTAssertEqual(previewAlert.buttons.firstMatch.label, "OK")
+        previewAlert.buttons["OK"].tap()
+
+        let inlineError = element("remote-download-inline-error", app: app)
+        XCTAssertTrue(inlineError.waitForExistence(timeout: 5))
+        XCTAssertTrue(inlineError.label.contains("Couldn't download the document."))
+        let inlineCode = try XCTUnwrap(inlineError.label.range(
+            of: #"LL-[0-9A-F]{12}"#, options: .regularExpression).map { String(inlineError.label[$0]) })
+        XCTAssertTrue(inlineError.label.contains("Code: \(inlineCode)"))
+        try capture(app, "english-document-error", state: "English inline document failure and its diagnostic reference",
+                    locale: "English")
         let attachment = XCTAttachment(screenshot: app.screenshot())
-        attachment.name = "English Little Leonardo shared-file failure status"
+        attachment.name = "English Little Leonardo inline document download error"
         attachment.lifetime = .keepAlways
         add(attachment)
+
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        app.buttons["open-sync-settings"].tap()
+        let logLink = element("open-error-log", app: app)
+        for _ in 0..<12 {
+            if logLink.waitForExistence(timeout: 0.3) { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(logLink.waitForExistence(timeout: 5))
+        logLink.tap()
+        let matchingEntry = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "ref=\(inlineCode) op=downloads"))
+            .firstMatch
+        XCTAssertTrue(matchingEntry.waitForExistence(timeout: 5),
+                      "The English preview reference must match its local diagnostic entry")
+        let logViewport = app.scrollViews.firstMatch
+        XCTAssertTrue(logViewport.exists)
+        XCTAssertTrue(matchingEntry.isHittable && matchingEntry.frame.intersects(logViewport.frame),
+                      "The matching download diagnostic must be visible when the log opens")
+        try capture(app, "english-diagnostic-log-reference",
+                    state: "English inline reference matches the local download diagnostic", locale: "English")
     }
 
     @MainActor private func element(_ identifier: String, app: XCUIApplication) -> XCUIElement {
@@ -262,7 +321,7 @@ final class OnDemandSyncUITests: XCTestCase {
         app.buttons["open-pairing"].tap()
         app.segmentedControls["pairing-method"].buttons["IP y puerto"].tap()
         let host = app.textFields["pairing-host"], port = app.textFields["pairing-port"]
-        host.tap(); host.typeText("127.0.0.1")
+        host.tap(); host.typeText(try readyHost())
         port.tap()
         port.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: (port.value as? String)?.count ?? 0))
         port.typeText("46987")
@@ -300,6 +359,10 @@ final class OnDemandSyncUITests: XCTestCase {
     private func readyProjectID() throws -> String {
         let ready = try JSONSerialization.jsonObject(with: Data(contentsOf: root().appendingPathComponent("ready.json"))) as? [String: Any]
         return try XCTUnwrap(ready?["projectID"] as? String)
+    }
+    private func readyHost() throws -> String {
+        let ready = try JSONSerialization.jsonObject(with: Data(contentsOf: root().appendingPathComponent("ready.json"))) as? [String: Any]
+        return ready?["host"] as? String ?? "127.0.0.1"
     }
     private func phase(_ value: String) throws {
         let root = try root()

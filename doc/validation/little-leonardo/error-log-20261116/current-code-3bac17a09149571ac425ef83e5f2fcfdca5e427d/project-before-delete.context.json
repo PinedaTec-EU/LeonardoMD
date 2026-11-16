@@ -1,0 +1,25 @@
+{
+  "browser_name": "Little Leonardo native SwiftUI/WKWebView · iOS Simulator 26.5",
+  "browser_version": "WKWebView engine version not exposed by XCTest",
+  "capture_mode": "viewport",
+  "captured_at": "2026-11-16T16:26:47.392000Z",
+  "data_provenance": "synthetic",
+  "native_viewport_points": {
+    "height": 874,
+    "width": 402
+  },
+  "route": "/native/ios/on-demand/project-before-delete",
+  "screen": "project-before-delete",
+  "source_sha": "3bac17a09149571ac425ef83e5f2fcfdca5e427d",
+  "test_source_sha": "fc607375",
+  "repository_head_at_test": "0b611957afd07de59489d3331ca6c81100e9e892",
+  "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+  "device_id": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+  "device_name": "LittleLeonardo PR435 Exact English QA 20261116",
+  "platform": "iOS Simulator 26.5 (23F77)",
+  "locale": "es-ES",
+  "state": "Project is present before the remove action. Classic appearance.",
+  "viewport_css": null,
+  "sha256": "32943a913e7c1f2ff375d8eb8838e5dfccd581fc7886ab886afa655c1d838ba7",
+  "xctest_attachment_id": "E7375E46-F1BA-4837-8C2F-6EF3C3AB3697"
+}

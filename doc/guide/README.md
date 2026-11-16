@@ -1,10 +1,47 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v87-en.mdlz` and `Guide-v87-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v89-en.mdlz` and `Guide-v89-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v87/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v89/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
+
+Guide v89 combines the HTTP rejection and uncertain-delivery recovery from
+Guide v88 with the remote-project authorization and download recovery guidance
+from PR #369. It preserves existing personal copies and practice answers.
+Fresh bilingual packaged Help acceptance for v89 remains pending the
+owner-authorized Beta validation.
+
+Guide v87 previously passed packaged Help acceptance in a fresh macOS QA
+process. The bundle/opened-copy hashes, rendered examples, Math fallback,
+practice-form round trips and teardown are recorded in
+[packaged-help-v87-qa-20261116-pr435.json](../validation/little-leonardo/packaged-help-v87-qa-20261116-pr435.json).
+That acceptance does not cover the current Guide v89 package; its Help/practice
+acceptance remains pending for the owner-authorized Beta validation.
+
+The terminal-retry screenshots and result bundle were captured from product
+and test source `5e751df2` before integrating the follow-up #459/#460 evidence
+commits. The current simulator fixture also includes the #460 host-environment
+correction. Guide v87 EN has
+SHA-256 `ae96797ee8db8799e66060bde6f731a436bef446e6f278ca20c0714b64baf33f`
+and ES has SHA-256
+`487560caac7f729445cbb32b3bb3b8c67e154169bc001c2f7144c1e55541be09`.
+
+Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
+`doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
+
+Guide v89 EN SHA-256 is `b8b3783737fedc466b3e349f3e30eeb06837b3076fc353e4697ba147cac18dee`;
+ES is `c4292d9dc77f2fd15da49153873f62a3cc0399f958520bf1873b2a7ca8bbc5f4`.
+Both packages are regenerated from the bilingual sources for PR #369; these
+hashes establish package identity, not fresh in-app Help acceptance.
+
+Guide v86 is historical. Its fresh packaged Help acceptance passed against
+source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`; the candidate-specific
+record is in
+[packaged-help-v86-20261116.json](../validation/little-leonardo/packaged-help-v86-20261116.json).
+It does not establish acceptance for the current Guide v89 package. The
+previous iOS capture bundles are historical; refreshed simulator evidence is
+recorded separately under `doc/validation/`.
 
 `en/body.md` and `es/body.md` are the editorial sources. The 19 chapters cover
 macOS workflows and Little Leonardo's host → project → file library, with live Mermaid/KaTeX/Vega examples, literal citation
@@ -12,7 +49,7 @@ and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
-Guide v87 combines current document search, remote-project review and offline-catalogue guidance with grouped Dock/app-switcher instances, synchronization status and helper recovery. It explains project download failures and transfer limits, distinguishes removed project grants from revoked devices with the correct recovery steps, clarifies that explicit access denials cannot open older cached content, and documents reference-coded sync and invalid or expired scanned-invitation errors. Temporary connection failures may still offer a retained offline copy. Its English route labels match the app. Existing guide copies and their separate practice answers remain preserved.
+Guide v89 combines current document search, remote-project review and offline-catalogue guidance with grouped Dock/app-switcher instances, synchronization status and helper recovery. It explains project download failures and transfer limits, distinguishes removed project grants from revoked devices with the correct recovery steps, clarifies that explicit access denials cannot open older cached content, and documents reference-coded sync and invalid or expired scanned-invitation errors. Temporary connection failures may still offer a retained offline copy. Its English route labels match the app. Existing guide copies and their separate practice answers remain preserved.
 
 File → Import with your agent opens `AgentImport-v3-en.mdlz` or
 `AgentImport-v3-es.mdlz` in the same tab/package flow, with personal copies under
@@ -70,8 +107,8 @@ Tracking: [#312](https://github.com/PinedaTec-EU/LeonardoMD/issues/312).
 
 Illustrations use real alpha transparency and the Classic red/oxide/ochre palette. Keep explanatory captions in the localized Markdown rather than baking them into artwork; the four artwork files are shared across locales. Verify transparency and readability on the document background when refreshing them. Tracking: [#375](https://github.com/PinedaTec-EU/LeonardoMD/issues/375).
 
-Guide v87 preserves the combined project-download, authorization, offline-recovery
-and sync guidance from v85 while carrying forward the latest localized QR/error
+Guide v89 preserves the combined project-download, authorization, offline-recovery
+and sync guidance from v87 while carrying forward the latest localized QR/error
 messages, reference codes and local-log route. It also avoids raw math delimiters
 in explanatory prose. The log remains bounded, local-only and excluded from
 backups. Existing personal guide copies and practice answers remain untouched.

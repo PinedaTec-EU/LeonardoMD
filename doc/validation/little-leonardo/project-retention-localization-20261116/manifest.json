@@ -1,0 +1,61 @@
+{
+  "purpose": "Bilingual Little Leonardo project offline-retention localization regression evidence for PR #435",
+  "issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/459",
+  "committed_product_source_sha": "49052f4d4bb2b1bdaabf3bd023e01a185976445e",
+  "capture_source_mapping": {
+    "base_head_at_capture": "101c399b1ea3b072a8590df68d39c175d0ec8b47",
+    "captured_before_source_commit": true,
+    "source_sha_in_original_context": "unavailable",
+    "mapping_note": "The English/Spanish UI and assertion changes were present in the PR worktree during capture and were committed unchanged in 49052f4d4bb2b1bdaabf3bd023e01a185976445e. The capture time precedes that commit by six minutes. This records a source mapping, not a Git SHA embedded in the simulator build."
+  },
+  "environment": {
+    "platform": "iOS Simulator",
+    "device_model": "iPhone 17 Pro",
+    "os_version": "26.5",
+    "os_build": "23F77",
+    "native_viewport_points": {
+      "width": 402,
+      "height": 874
+    },
+    "capture_mode": "XCTest viewport screenshot attachment, exported with xcresulttool; originals unmodified",
+    "data_provenance": "synthetic isolated loopback fixture"
+  },
+  "screens": [
+    {
+      "locale": "English (en_US)",
+      "route": "/native/ios/on-demand/english-file-failure",
+      "screen": "English shared-project row with offline-retention caption and file failure",
+      "captured_at": "2026-11-16T13:01:44Z",
+      "screenshot": "project-retention-en.png",
+      "context": "project-retention-en.context.json",
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "image_sha256": "504e29b9e7a7e4b92c6c5141d822ac99f8ce9ccef3b06887373c2a0a177022f2",
+      "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+      "test_result": "passed",
+      "simulator_id": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+      "result_bundle": "test_sim_2026-11-16T13-00-23-789Z_pid23125_d0b7890c.xcresult"
+    },
+    {
+      "locale": "Spanish (es_ES)",
+      "route": "/native/ios/on-demand/catalogue-mixed",
+      "screen": "Spanish shared-project row with offline-retention caption and file failure",
+      "captured_at": "2026-11-16T13:04:56Z",
+      "screenshot": "project-retention-es.png",
+      "context": "project-retention-es.context.json",
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "image_sha256": "20fc6ba6705de8aa1eb1eee0ba7c4b5b72140cd4a5f48b296a3e1b84f9d2d9cf",
+      "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+      "test_result": "passed",
+      "simulator_id": "B0E7EEDB-5A14-46D6-B662-FDD6B479B9E6",
+      "result_bundle": "test_sim_2026-11-16T13-02-56-191Z_pid23125_0b5badc1.xcresult"
+    }
+  ],
+  "help_impact": "Guide v74 chapters 14–15 already explain project-level offline retention, including future files, in both locales. This correction localizes an existing caption and introduces no new instruction. The current packaged macOS Help smoke is recorded separately in the PR.",
+  "adjacent_open_issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/457"
+}

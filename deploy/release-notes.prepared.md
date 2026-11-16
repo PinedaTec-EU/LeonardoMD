@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1734
+
+- #380 Updated: localize sync diagnostics and preserve rubric retries ([#435](https://github.com/PinedaTec-EU/LeonardoMD/pull/435))
+
+<p>Little Leonardo adds concise localized sync errors with private references and a bounded log, keeps invitation codes out of diagnostics, clarifies offline retention, preserves rubric drafts for manual retry after explicit HTTP rejection, and fixes the simulator sync fixture.</p>
+
+Source: `abfab9e9ee47328c89c6a4a82ae5ef44e90b85e1`. Delta: `{"build": 132}`.
+
 ## 0.3.1602
 
 - #378 Fixed: give corrected Help a distinct personal-copy revision ([#446](https://github.com/PinedaTec-EU/LeonardoMD/pull/446))

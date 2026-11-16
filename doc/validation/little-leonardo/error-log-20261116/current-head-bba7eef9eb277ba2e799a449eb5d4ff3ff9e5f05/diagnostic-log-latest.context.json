@@ -1,0 +1,37 @@
+{
+  "captured_at": "2026-11-16T02:58:09Z",
+  "route": "Sync settings > Registro de errores",
+  "screen": "Spanish local error log with alert and inline references",
+  "capture_tool": "XCUITest native app screenshot attachment",
+  "capture_mode": "native app viewport",
+  "state": "The log visibly contains the reference from the retained-download alert and the reference from the inline preview; both are synthetic downloads and no transport domain is exposed.",
+  "data_provenance": "synthetic",
+  "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+  "source_sha": "bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05",
+  "result_bundle": "/Users/jmr.pineda/Library/Developer/XcodeBuildMCP/workspaces/LeonardoMD-586d26453937/result-bundles/test_sim_2026-11-16T02-56-26-137Z_pid52605_14045943.xcresult",
+  "simulator": {
+    "name": "LittleLeonardo PR435 Spanish QA 20261116",
+    "device_id": "5B689430-FDBD-44C0-A732-BE3C063F9403",
+    "model": "iPhone 17 Pro",
+    "os": "iOS 26.5",
+    "os_build": "23F77",
+    "host": "macOS 27.0.1",
+    "viewport_points": {"width": 402, "height": 874},
+    "image_pixels": {"width": 1206, "height": 2622}
+  },
+  "reference_correlations": [
+    {
+      "origin": "Spanish retained-download alert",
+      "reference": "LL-21D29F48CB0A",
+      "matching_log_entry": "ref=LL-21D29F48CB0A op=downloads error=transport.unexpected_response",
+      "visual_match": true
+    },
+    {
+      "origin": "Spanish inline document error",
+      "reference": "LL-6CE6C8324E02",
+      "matching_log_entry": "ref=LL-6CE6C8324E02 op=downloads error=transport.unexpected_response",
+      "xctest_asserted": true
+    }
+  ],
+  "image_sha256": "5057df0ee1a3da73b785aa199c30188cb02d6be6876842bff916e68c15ee4ebf"
+}

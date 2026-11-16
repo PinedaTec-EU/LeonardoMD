@@ -1,0 +1,344 @@
+{
+  "schema_version": 1,
+  "pull_request": {
+    "number": 435,
+    "url": "https://github.com/PinedaTec-EU/LeonardoMD/pull/435"
+  },
+  "capture_date": "2026-11-16",
+  "source": {
+    "product_code_sha": "49052f4d4bb2b1bdaabf3bd023e01a185976445e",
+    "tested_source_sha": "5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a",
+    "tested_git_tree_sha": "ba1ea374fff177eba52d96ba78048b82f1cd2061",
+    "caption_fix_issue": 459,
+    "fixture_host_issue": 460
+  },
+  "build": {
+    "recorded_compilation_delta": 114,
+    "signing": "ad-hoc simulator signing required for Keychain credential persistence",
+    "result": "TEST BUILD SUCCEEDED",
+    "xctestrun": "/private/tmp/ll-pr435-evidence-20261116/DerivedData/Build/Products/LittleLeonardo_iphonesimulator27.1-arm64.xctestrun"
+  },
+  "simulator_environment": {
+    "model": "iPhone 17 Pro",
+    "runtime": "iOS Simulator 26.5",
+    "os_build": "23F77",
+    "native_viewport_points": {
+      "width": 402,
+      "height": 874
+    },
+    "image_pixels": {
+      "width": 1206,
+      "height": 2622
+    },
+    "capture_mode": "viewport",
+    "browser": "not applicable; native SwiftUI/WKWebView app",
+    "wkwebview_version": "not exposed by XCTest"
+  },
+  "tests": [
+    {
+      "locale": "en_US",
+      "identifier": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+      "device_id": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+      "result": "Passed",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 46.845,
+      "result_bundle": "/Users/jmr.pineda/Library/Developer/XcodeBuildMCP/workspaces/LeonardoMD-586d26453937/result-bundles/test_sim_2026-11-16T15-23-24-420Z_pid23125_f75ce010.xcresult",
+      "summary": "english-xcresult-summary.json",
+      "attachments": "english-xcresult-attachments.json",
+      "fixture_audits": [
+        "english-fixture-completed.json",
+        "english-fixture-metadata-only.json"
+      ]
+    },
+    {
+      "locale": "es_ES",
+      "identifier": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+      "device_id": "B0E7EEDB-5A14-46D6-B662-FDD6B479B9E6",
+      "result": "Passed",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 122.382,
+      "result_bundle": "/Users/jmr.pineda/Library/Developer/XcodeBuildMCP/workspaces/LeonardoMD-586d26453937/result-bundles/test_sim_2026-11-16T15-27-49-226Z_pid23125_47efc385.xcresult",
+      "summary": "spanish-xcresult-summary.json",
+      "attachments": "spanish-xcresult-attachments.json",
+      "fixture_audits": [
+        "spanish-fixture-completed.json",
+        "spanish-fixture-metadata-only.json",
+        "spanish-fixture-single-file.json"
+      ]
+    }
+  ],
+  "fixture": {
+    "data_provenance": "synthetic",
+    "port": 46987,
+    "configured_host_recorded_in": "ready.json",
+    "ui_test_reads_host_from": "ready.json",
+    "file_body_expectations": "catalogue downloads no bodies; opening a file downloads only it; project retention downloads current selected files; future file is reviewed after refresh",
+    "production_networking_changed": false
+  },
+  "captures": [
+    {
+      "file": "catalogue-recovered.png",
+      "locale": "es_ES",
+      "route": "/native/ios/on-demand/catalogue-recovered",
+      "state": "Failed transfer recovered and project retention automatically downloaded a newly shared file; native points measured from app.frame; Spanish; Classic appearance",
+      "captured_at": "2026-11-16T15:29:36Z",
+      "native_viewport_points": {
+        "height": 874,
+        "width": 402
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "source_sha": "5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a",
+      "attachment_id": "309AA0E5-AAAC-4C37-9133-D1F8B65EDBF3",
+      "sha256": "767e006339cc9f0de15dd27f152e1e7b06cff4bfc4f7a5a164e93d5fbdfca4dc",
+      "context": "catalogue-recovered.context.json"
+    },
+    {
+      "file": "catalogue-remote.png",
+      "locale": "es_ES",
+      "route": "/native/ios/on-demand/catalogue-remote",
+      "state": "Added project shows its host hierarchy and catalogue without fetching file bodies; native points measured from app.frame; Spanish; Classic appearance",
+      "captured_at": "2026-11-16T15:28:33Z",
+      "native_viewport_points": {
+        "height": 874,
+        "width": 402
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "source_sha": "5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a",
+      "attachment_id": "94E2DEE2-101D-4683-AC4B-ED8ABA585546",
+      "sha256": "352a5b25c3087d2e6f1acf540355e04c634d3f4ad5c851449400603f2d13b4d4",
+      "context": "catalogue-remote.context.json"
+    },
+    {
+      "file": "context-menu.png",
+      "locale": "es_ES",
+      "route": "/native/ios/on-demand/context-menu",
+      "state": "File ellipsis menu exposes offline retention and local-space release; native points measured from app.frame; Spanish; Classic appearance",
+      "captured_at": "2026-11-16T15:28:48Z",
+      "native_viewport_points": {
+        "height": 874,
+        "width": 402
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "source_sha": "5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a",
+      "attachment_id": "B9E8DC1C-A025-49CE-B316-3BAF391081A5",
+      "sha256": "8f8ee91ba39fa340b41afea5c14b438182184094fd6becefe14fff8f646b7f77",
+      "context": "context-menu.context.json"
+    },
+    {
+      "file": "english-diagnostic-log-reference.png",
+      "locale": "en_US",
+      "route": "/native/ios/on-demand/english-diagnostic-log-reference",
+      "state": "English inline reference matches the local download diagnostic; native points measured from app.frame; English; Classic appearance",
+      "captured_at": "2026-11-16T15:24:12Z",
+      "native_viewport_points": {
+        "height": 874,
+        "width": 402
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "source_sha": "5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a",
+      "attachment_id": "FC26798A-B145-43AA-B01A-1C4611C75481",
+      "sha256": "0ad73529df1806d08f3362f78d78fd997fd5b1f1b992eb302e744d0300d78ad1",
+      "context": "english-diagnostic-log-reference.context.json"
+    },
+    {
+      "file": "english-document-error.png",
+      "locale": "en_US",
+      "route": "/native/ios/on-demand/english-document-error",
+      "state": "English inline document failure and its diagnostic reference; native points measured from app.frame; English; Classic appearance",
+      "captured_at": "2026-11-16T15:24:04Z",
+      "native_viewport_points": {
+        "height": 874,
+        "width": 402
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "source_sha": "5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a",
+      "attachment_id": "EC0BF04E-78EC-4791-9585-CD7DBFAC9F5B",
+      "sha256": "0c6d2b11030107e8a1166633fb8c66e52f7a78f00d407fc427c6e9b1beddd75e",
+      "context": "english-document-error.context.json"
+    },
+    {
+      "file": "english-file-failure.png",
+      "locale": "en_US",
+      "route": "/native/ios/on-demand/english-file-failure",
+      "state": "English failure status and its VoiceOver retry guidance; native points measured from app.frame; English; Classic appearance",
+      "captured_at": "2026-11-16T15:23:58Z",
+      "native_viewport_points": {
+        "height": 874,
+        "width": 402
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "source_sha": "5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a",
+      "attachment_id": "F9ABB81D-712D-4B26-91D1-14C8E5B662FD",
+      "sha256": "e8369c1bc447ac58063d5301c9cf51cdcfb6d5da1595def98f0af70a2b231d75",
+      "context": "english-file-failure.context.json"
+    },
+    {
+      "file": "english-project-download-alert.png",
+      "locale": "en_US",
+      "route": "/native/ios/on-demand/english-project-download-alert",
+      "state": "English project and file failure statuses behind the concise download alert; native points measured from app.frame; English; Classic appearance",
+      "captured_at": "2026-11-16T15:23:56Z",
+      "native_viewport_points": {
+        "height": 874,
+        "width": 402
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "source_sha": "5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a",
+      "attachment_id": "014F0ADB-4147-4493-BFE1-480D55712E19",
+      "sha256": "39a543ef46a778c65d5e9773f9bcd38fd4210bf5e1996f0577ed6060eacb8b06",
+      "context": "english-project-download-alert.context.json"
+    },
+    {
+      "file": "incoming-project.png",
+      "locale": "es_ES",
+      "route": "/native/ios/on-demand/incoming-project",
+      "state": "New project is grouped under its connected host and awaits Add or Ignore; native points measured from app.frame; Spanish; Classic appearance",
+      "captured_at": "2026-11-16T15:28:28Z",
+      "native_viewport_points": {
+        "height": 874,
+        "width": 402
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "source_sha": "5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a",
+      "attachment_id": "7F4D307A-72AD-4B2C-81BD-F19FA6632572",
+      "sha256": "db9c1bd33f5bd6e7e0f21f05b24c0ef838df2251cebcdef842afe05775a8b1cc",
+      "context": "incoming-project.context.json"
+    },
+    {
+      "file": "project-context-menu.png",
+      "locale": "es_ES",
+      "route": "/native/ios/on-demand/project-context-menu",
+      "state": "Project action explicitly enables offline retention; native points measured from app.frame; Spanish; Classic appearance",
+      "captured_at": "2026-11-16T15:28:56Z",
+      "native_viewport_points": {
+        "height": 874,
+        "width": 402
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "source_sha": "5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a",
+      "attachment_id": "33B8DA47-88D3-48B0-92DA-08DB3A6D696F",
+      "sha256": "5961bcb38731989210d5d97c1390e71b2c97d6f9e8f2cddde4d6731696b60f49",
+      "context": "project-context-menu.context.json"
+    },
+    {
+      "file": "spanish-diagnostic-log-reference.png",
+      "locale": "es_ES",
+      "route": "/native/ios/on-demand/diagnostic-log-latest",
+      "state": "The matching newest error reference is visible without scrolling; native points measured from app.frame; Spanish; Classic appearance",
+      "captured_at": "2026-11-16T15:29:18Z",
+      "native_viewport_points": {
+        "height": 874,
+        "width": 402
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "source_sha": "5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a",
+      "attachment_id": "2E167BF5-CAC6-448A-85DA-E2413ACD15A6",
+      "sha256": "7cca483f72c6bdb3f60f36d80afae4700c06c30422f28792f81e9da452f5cf1f",
+      "context": "spanish-diagnostic-log-reference.context.json"
+    },
+    {
+      "file": "spanish-document-error.png",
+      "locale": "es_ES",
+      "route": "/native/ios/on-demand/spanish-document-error",
+      "state": "Spanish inline document download error and reference; original XCTest screenshot attachment; Spanish; Classic appearance",
+      "captured_at": "2026-11-16T15:29:09.410Z",
+      "native_viewport_points": {
+        "height": 874,
+        "width": 402
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "source_sha": "5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a",
+      "attachment_id": "F343BFAD-848F-4D04-804C-A716E8C9CED5",
+      "sha256": "cce59a0aa42518f0387d108a3a1ddeb38eab4f85e11d464c854b73d8ed582796",
+      "context": "spanish-document-error.context.json"
+    },
+    {
+      "file": "spanish-project-download-alert.png",
+      "locale": "es_ES",
+      "route": "/native/ios/on-demand/spanish-project-download-alert",
+      "state": "Spanish shared project and retained file failure behind the concise download alert; original XCTest screenshot attachment; Spanish; Classic appearance",
+      "captured_at": "2026-11-16T15:29:02.060Z",
+      "native_viewport_points": {
+        "height": 874,
+        "width": 402
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "source_sha": "5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a",
+      "attachment_id": "7F879FF6-7B23-4F09-9FD1-C3814D67E552",
+      "sha256": "891e0caaee54d0c6f6da007e6f6134e6692a6c5936f1a00837cbc1be5953c755",
+      "context": "spanish-project-download-alert.context.json"
+    },
+    {
+      "file": "spanish-project-retention.png",
+      "locale": "es_ES",
+      "route": "/native/ios/on-demand/catalogue-mixed",
+      "state": "Project retention downloads current files and applies to future files; pending transfer remains visible; native points measured from app.frame; Spanish; Classic appearance",
+      "captured_at": "2026-11-16T15:29:22Z",
+      "native_viewport_points": {
+        "height": 874,
+        "width": 402
+      },
+      "image_pixels": {
+        "width": 1206,
+        "height": 2622
+      },
+      "source_sha": "5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a",
+      "attachment_id": "75E32173-382A-419A-BD3B-246BFA771282",
+      "sha256": "adafdc6bcf4f4eab05f50ff4aab7ceaed2902f6c69d6f5f06758986814f5e537",
+      "context": "spanish-project-retention.context.json"
+    }
+  ],
+  "teardown": {
+    "english_device": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+    "spanish_device": "B0E7EEDB-5A14-46D6-B662-FDD6B479B9E6",
+    "both_devices_shutdown": true,
+    "task_owned_app_process_absent": true,
+    "fixture_port_46987_listener_closed": true,
+    "preserved_preexisting_app_process": "PID 49462 in simulator E2045815-8A83-4B25-AFD4-1CC7C573BE7E"
+  },
+  "known_boundaries": [
+    "#456 external-volume XCTest install failure is a separate tooling issue",
+    "#457 connected-host count localization is not included",
+    "#380 physical large-image synchronization remains unaccepted"
+  ]
+}

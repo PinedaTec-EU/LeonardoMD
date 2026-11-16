@@ -27,12 +27,16 @@ public struct MobileRubricDraft: Codable, Equatable, Sendable, Identifiable {
     public let state: MobileRubricDraftState
     public let updatedAt: Date
     public let failureMessage: String?
+    /// An HTTP error was received for the response POST. Keep this frozen
+    /// payload pending, but wait for an explicit user retry instead of replaying
+    /// it during foreground lost-acknowledgement reconciliation.
+    public let requiresUserRetry: Bool
 
     public init(id: UUID, connectionID: UUID, targetDeviceID: UUID, requesterID: UUID,
                 sourceFingerprint: Data, request: RubricRequest, drawing: LeonardoRubric? = nil,
                 label: String? = nil, response: RubricResponse? = nil,
                 state: MobileRubricDraftState, updatedAt: Date,
-                failureMessage: String? = nil) {
+                failureMessage: String? = nil, requiresUserRetry: Bool = false) {
         self.id = id; self.connectionID = connectionID; self.targetDeviceID = targetDeviceID
         self.requesterID = requesterID; self.sourceFingerprint = sourceFingerprint
         self.request = request; self.drawing = drawing ?? response?.rubric
@@ -40,11 +44,12 @@ public struct MobileRubricDraft: Codable, Equatable, Sendable, Identifiable {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         self.response = response; self.state = state
         self.updatedAt = updatedAt; self.failureMessage = failureMessage
+        self.requiresUserRetry = requiresUserRetry
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, connectionID, targetDeviceID, requesterID, sourceFingerprint, request, drawing, label,
-             response, state, updatedAt, failureMessage
+             response, state, updatedAt, failureMessage, requiresUserRetry
     }
 
     public init(from decoder: Decoder) throws {
@@ -64,32 +69,40 @@ public struct MobileRubricDraft: Codable, Equatable, Sendable, Identifiable {
                   response: response,
                   state: try container.decode(MobileRubricDraftState.self, forKey: .state),
                   updatedAt: try container.decode(Date.self, forKey: .updatedAt),
-                  failureMessage: try container.decodeIfPresent(String.self, forKey: .failureMessage))
+                  failureMessage: try container.decodeIfPresent(String.self, forKey: .failureMessage),
+                  requiresUserRetry: try container.decodeIfPresent(Bool.self, forKey: .requiresUserRetry) ?? false)
     }
 
     public func with(response: RubricResponse, state: MobileRubricDraftState,
-                     updatedAt: Date, failureMessage: String? = nil) -> MobileRubricDraft {
-        MobileRubricDraft(id: id, connectionID: connectionID, targetDeviceID: targetDeviceID,
+                     updatedAt: Date, failureMessage: String? = nil,
+                     requiresUserRetry: Bool = false) -> MobileRubricDraft {
+        return MobileRubricDraft(id: id, connectionID: connectionID, targetDeviceID: targetDeviceID,
                           requesterID: requesterID, sourceFingerprint: sourceFingerprint,
                           request: request, drawing: response.rubric, label: response.label,
                           response: response, state: state,
-                          updatedAt: updatedAt, failureMessage: failureMessage)
+                          updatedAt: updatedAt, failureMessage: failureMessage,
+                          requiresUserRetry: requiresUserRetry)
     }
 
     public func with(state: MobileRubricDraftState, updatedAt: Date,
-                     failureMessage: String? = nil) -> MobileRubricDraft {
-        MobileRubricDraft(id: id, connectionID: connectionID, targetDeviceID: targetDeviceID,
+                     failureMessage: String? = nil,
+                     requiresUserRetry: Bool? = nil) -> MobileRubricDraft {
+        let retryRequired = requiresUserRetry
+            ?? (state == .pendingSend && self.state == .pendingSend && self.requiresUserRetry)
+        return MobileRubricDraft(id: id, connectionID: connectionID, targetDeviceID: targetDeviceID,
                           requesterID: requesterID, sourceFingerprint: sourceFingerprint,
                           request: request, drawing: drawing, label: label,
                           response: response, state: state,
-                          updatedAt: updatedAt, failureMessage: failureMessage)
+                          updatedAt: updatedAt, failureMessage: failureMessage,
+                          requiresUserRetry: retryRequired)
     }
 
     public func with(drawing: LeonardoRubric?, label: String, updatedAt: Date) -> MobileRubricDraft {
         MobileRubricDraft(id: id, connectionID: connectionID, targetDeviceID: targetDeviceID,
                           requesterID: requesterID, sourceFingerprint: sourceFingerprint,
                           request: request, drawing: drawing, label: label, response: response,
-                          state: state, updatedAt: updatedAt, failureMessage: failureMessage)
+                          state: state, updatedAt: updatedAt, failureMessage: failureMessage,
+                          requiresUserRetry: requiresUserRetry)
     }
 
     /// Binds a recoverable draft to the complete request envelope rather than
@@ -106,6 +119,7 @@ public struct MobileRubricDraft: Codable, Equatable, Sendable, Identifiable {
               draft.updatedAt.timeIntervalSince1970.isFinite,
               !draft.label.isEmpty, draft.label.count <= 120,
               draft.drawing == nil || draft.drawing?.isValid == true,
+              !draft.requiresUserRetry || draft.state == .pendingSend,
               [.pending, .accepted, .completed].contains(draft.request.state),
               draft.failureMessage?.count ?? 0 <= 512 else { return false }
         switch draft.state {

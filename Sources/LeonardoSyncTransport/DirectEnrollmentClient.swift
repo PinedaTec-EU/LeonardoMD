@@ -7,6 +7,15 @@ public struct DirectEnrollment: Sendable {
     public let expiresAt: Date
 }
 
+/// The response endpoint explicitly returned a non-success HTTP status.
+/// Unlike a dropped acknowledgement, the client knows the server rejected
+/// this attempt and can preserve it for a deliberate retry.
+public struct DirectRubricSubmissionStatusError: Error, Equatable, Sendable {
+    public let statusCode: Int
+
+    public init(statusCode: Int) { self.statusCode = statusCode }
+}
+
 /// Pairing and reads share one pinned transport. Codes are computed locally.
 public struct DirectEnrollmentClient: Sendable {
     private let invitation: PairingInvitation?
@@ -177,7 +186,20 @@ public struct DirectEnrollmentClient: Sendable {
     public func submitRubricResponse(_ rubric: RubricResponse, deviceID: UUID, credential: String) async throws -> RubricResponse {
         let response = try await client.request(method: "POST", path: "/v1/devices/\(deviceID.uuidString)/rubrics/responses",
                                                 credential: credential, body: try JSONEncoder().encode(rubric))
-        guard response.status == 200 else { throw mapRubricResponse(response.status) }
+        switch response.status {
+        case 200:
+            break
+        case 404:
+            throw RubricExchangeError.unsupported
+        case 409:
+            throw RubricExchangeError.invalidTransition
+        case 403:
+            throw SyncError.revoked
+        case 413:
+            throw RubricExchangeError.invalidPayload
+        default:
+            throw DirectRubricSubmissionStatusError(statusCode: response.status)
+        }
         return try JSONDecoder().decode(RubricResponse.self, from: response.body)
     }
 

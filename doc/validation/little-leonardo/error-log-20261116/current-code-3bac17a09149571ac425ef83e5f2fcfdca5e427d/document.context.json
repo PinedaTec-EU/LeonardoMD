@@ -1,0 +1,25 @@
+{
+  "browser_name": "Little Leonardo native SwiftUI/WKWebView · iOS Simulator 26.5",
+  "browser_version": "WKWebView engine version not exposed by XCTest",
+  "capture_mode": "viewport",
+  "captured_at": "2026-11-16T16:25:50.535000Z",
+  "data_provenance": "synthetic",
+  "native_viewport_points": {
+    "height": 874,
+    "width": 402
+  },
+  "route": "/native/ios/on-demand/document",
+  "screen": "document",
+  "source_sha": "3bac17a09149571ac425ef83e5f2fcfdca5e427d",
+  "test_source_sha": "fc607375",
+  "repository_head_at_test": "0b611957afd07de59489d3331ca6c81100e9e892",
+  "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+  "device_id": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+  "device_name": "LittleLeonardo PR435 Exact English QA 20261116",
+  "platform": "iOS Simulator 26.5 (23F77)",
+  "locale": "es-ES",
+  "state": "Opened remote document is available through the read-only renderer. Classic appearance.",
+  "viewport_css": null,
+  "sha256": "0ebde5beb6a73f41f79d559340084d5f5aae8131f82297969081a7f21be35947",
+  "xctest_attachment_id": "69BEE6A5-CBEA-4589-BBD9-ED054D84E5BC"
+}

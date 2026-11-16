@@ -240,3 +240,45 @@ source/license provenance, including bundled citeproc CPAL source. See
 - 2026-11-13: Reconciled [PR #369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369) with current `main` in a fresh worktree while preserving its prior dirty worktrees. The combined English/Spanish sources are regenerated as Guide v76 (EN SHA-256 `5e8ae8a5ad6ffb3682e2a0c7f1789531b47efeed2b53b171878a845d3067fc4e`; ES `e65f4f77f641cf6fcff2cac9576fba70234a943eb05647f784d71e6748e5af2a`), retaining project-download diagnostics and distinct recovery for removed grants vs revoked devices. Guide package tests and the full `swift test --disable-automatic-resolution` suite pass; compilation build delta 38; `git diff --check` passes. Native v76 Help/device acceptance, exact-head CI, independent review and TestFlight delivery remain pending.
 - 2026-11-13: Completed fresh packaged Guide v76 Help acceptance for [PR #369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369) in an isolated macOS QA process (initial PID 62161, follow-up PID 78620, app build 1602, source `6b83c502bbe5c9b67b7ebf75ee1fb79acab98caf`). Both locale copies opened through Help and their hashes match the bundled v76 resources. Live accessibility inspection confirmed local images, Mermaid and chart output, tables, rendered English inline/display equations and tagged equation (1), plus formula-source fallback and a fenced code example remaining literal with Math disabled. The English practice form saved and reopened with synthetic values. English and Math-on preferences were restored in the disposable QA home. Package and full Swift validations pass; compilation build delta 39. Detailed evidence: `doc/validation/user-guide/native/guide-v76-20261113.json`. Exact-head CI/independent review, Little Leonardo simulator capture via required XcodeBuildMCP tools, and beta delivery remain pending.
 - 2026-11-15: [#380](https://github.com/PinedaTec-EU/LeonardoMD/issues/380), [PR #435](https://github.com/PinedaTec-EU/LeonardoMD/pull/435): bind download retry diagnostics to their attempt, route invalid scanned QR failures through the same reference/log flow, and document it in bilingual Guide v77 while preserving personal v76 copies. Local focused and full Swift checks pass; current-head CI and packaged Guide v77 Help/practice acceptance remain pending. Physical transfer remains unresolved; scanner finding tracked by [#451](https://github.com/PinedaTec-EU/LeonardoMD/issues/451).
+- 2026-11-16: PR #435's current product-code source is `bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05` and its observed candidate head is `3b36f8ed7355af9caf1ac5331c8538d502373bef`; it bundles Guide v86 EN/ES. Current-head CI is green, and exact-source English plus Spanish Little Leonardo simulator flows now pass with bilingual original captures and reference-to-log evidence in `doc/validation/little-leonardo/error-log-20261116/current-head-bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05/`. The successful Spanish fixture test is recorded as build delta 72. Fresh packaged Guide v86 Help/practice acceptance and a fresh strict review remain delivery gates; the v77 run above is historical. The owner's physical large-image transfer remains unresolved under #380.
+- 2026-11-16: PR #435 product-code source `49052f4d4bb2b1bdaabf3bd023e01a185976445e` localizes project offline-retention guidance in English and Spanish (#459). Exact-source iPhone 17 Pro / iOS 26.5 tests pass on test source `5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a`; its Mac fixture host is configurable and shared through `ready.json` (#460), and the successful simulator build delta is 114. Original screenshots, attachment IDs, XCUITest summaries, fixture audits and simulator teardown are in `doc/validation/little-leonardo/error-log-20261116/current-code-5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a/`. Guide v86 Help acceptance remains in the separate packaged macOS record; PR CI, fresh strict review, merge and TestFlight are pending. The host-count translation remains #457; physical large-image transport remains open under #380.
+
+# 2026-11-16: PR #435 / issue #458
+
+Corrected mobile rubric failure copy so explicit HTTP rejections (including
+HTTP 413 mapped to `invalidPayload`) say the saved drawing is available for
+manual retry, while transport loss without acknowledgement retains the
+pending/reconciliation message. The same explicit-rejection classifier drives
+the durable manual-retry marker. Added bilingual 413 copy assertions and
+clarified both user-guide chapters; Guide revision advanced to v88 to preserve
+existing saved copies and practice answers.
+
+The English terminal-retry UI flow passed 1/1 on the erased task-owned iPhone
+17 Pro simulator E0777566-9261-4AF7-ACEA-7AA19704B3ED (iOS 26.5, Xcode 27.1).
+The Mac fixture passed with response statuses `[503, 503, 413, 409]`, one stable
+request ID, and a `pendingSend` draft whose retry marker and frozen response
+were preserved. XCTest closed the app and XcodeBuildMCP shut down the simulator;
+the pre-existing E204 simulator, LeonardoMD process and Device Hub were left
+untouched. Three screenshots were exported from the passing xcresult.
+
+The earlier English failure was a simulator/test-harness setup issue. The
+reused simulator contained a saved connection to port 47010 while the current
+fixture listened on 46996, so startup queried the stale endpoint. The host
+fixture also lacked the simulator and app bundle environment needed to locate
+the mobile container and ended with `invalidPath`. A clean simulator and the
+`LEONARDO_MOBILE_RUBRIC_QA_SIMULATOR` / `LEONARDO_MOBILE_RUBRIC_QA_APP_ID`
+environment resolved both; the product flow then passed without code changes
+for this diagnostic.
+
+The named #195 conflict-copy test passed in 0.499 s and the #279 authorization
+identity-save test passed in 0.093 s when run in isolation. Neither historical
+intermittent failure reproduced, so their existing fixes remain and no new code
+change was made for them. The passing result bundle and three screenshot
+attachments are recorded in
+`doc/validation/little-leonardo/rubric-explicit-rejection-20261116/current-code-5e751df2/`.
+Reviewing those captures also found that the en_US test run still presents
+Spanish rubric titles, labels, instructions and controls alongside English
+failure copy. Registered this separate P2 localization defect as #462 and
+recorded the mixed-language screenshot in its issue evidence; it is outside
+the retry behavior accepted for #458.
+Packaged macOS Guide v88 Help/practice acceptance remains pending for Beta.

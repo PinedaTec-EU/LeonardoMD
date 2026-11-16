@@ -761,12 +761,14 @@ hay que crear una solicitud nueva.
 Puedes cerrar y volver a abrir la tarjeta antes de **Enviar**. Little Leonardo
 recupera la etiqueta y los trazos no enviados desde un borrador local durable.
 Después de **Enviar**, la respuesta queda congelada: deshacer o limpiar ya no
-pueden modificar el payload pendiente; un fallo transitorio conserva ese mismo
-payload para **Reintentar**.
-Si el Mac puede haber aceptado **Enviar** pero se perdió la confirmación, cierra
-y vuelve a abrir Little Leonardo: la tarjeta de recuperación conserva el mismo
-dibujo, etiqueta y petición para **Reintentar**. No aceptes una segunda
-petición ni vuelvas a dibujar. Si se revoca el vínculo de captura, el dibujo
+pueden modificar el payload pendiente. Un rechazo HTTP explícito muestra «No
+se pudo enviar. El dibujo está guardado y puedes reintentarlo». La tarjeta
+conserva esa respuesta y espera a que pulses **Reintentar**; la sincronización
+en primer plano no vuelve a enviarla automáticamente. Si se pierde la conexión
+antes de recibir una confirmación, el mensaje indica que el envío sigue
+pendiente y Little Leonardo puede reconciliar al activarse la misma respuesta
+congelada, por si el Mac ya la guardó. No se crea otra ni se cambia el dibujo.
+No aceptes una segunda petición ni vuelvas a dibujar. Si se revoca el vínculo de captura, el dibujo
 aceptado sigue visible para recuperarlo, pero **Enviar** queda bloqueado.
 Vuelve a enlazar y aprobar el Mac y crea una solicitud de rúbrica nueva; un
 borrador revocado nunca se reutiliza en silencio. La revocación también elimina

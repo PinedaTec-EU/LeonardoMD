@@ -26,6 +26,8 @@ project lists; `RecentItemsMenu` uses the same symbols and keeps parent paths fo
 disambiguation. `MobileProjectIdentityLabel` uses the same contract for iOS
 project headers: the bundled Demo is local, direct projects are received, and legacy Git payloads are recovery archives. The Little Leonardo library groups remote projects beneath their linked host and expands accepted projects to catalogue files; per-project/file menus expose on-demand and retention states. A received project does not repeat its source host beneath its name. No iOS creation, sharing or onward-sharing capability is introduced.
 
+The project-level offline-retention caption is localized with the app language: “Includes new files” / “Incluye los ficheros nuevos” ([#459](https://github.com/PinedaTec-EU/LeonardoMD/issues/459), [PR #435](https://github.com/PinedaTec-EU/LeonardoMD/pull/435)). The host summary count remains tracked separately in [#457](https://github.com/PinedaTec-EU/LeonardoMD/issues/457).
+
 The bilingual project/synchronization help explains the same-project source and
 recipient example, partial sharing and offline behavior. See
 `doc/guide/feature-coverage.md` for the maintained help entry.
