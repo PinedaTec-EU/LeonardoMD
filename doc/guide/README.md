@@ -8,23 +8,22 @@ remain unchanged. Existing guide copies and practice answers are never overwritt
 
 Guide v87 clarifies that a known HTTP rejection of a mobile rubric response
 requires a user Retry, while a transport loss without an acknowledgement can
-reconcile the same frozen response. Fresh bilingual packaged Help acceptance is
-tracked in `doc/validation/little-leonardo/` for PR #435.
+reconcile the same frozen response. Its PR #435 packaged Help acceptance will
+be recorded in `doc/validation/little-leonardo/` after the v87 smoke completes.
 
-Historical Guide v86 candidate for PR #435 used product-code source
-`0b3942d8e83806c1ff93c4112917bb090bd5d131`. It packages EN SHA-256
-`797e241ca7df87a633ea334ca10f087303d2acead33306cffe31f2c5d032ae30` and ES
-SHA-256 `ec197be190b5f4f4f35b9fbba67b22a5db963fc91b926afd527fc44c47869c72`.
-Fresh packaged-process acceptance for v86 is tracked in
-[`Little Leonardo validation`](../validation/little-leonardo/README.md); the
-Guide v86 acceptance through the packaged app's actual Help workflow passed
-against source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`. The only product
-files changed between that Help run and the current code source are the Little
-Leonardo project-status view and its UI test; macOS Help and guide packaging
-inputs are unchanged. The
-[candidate-specific record](../validation/little-leonardo/packaged-help-v86-20261116.json)
-contains the bilingual bundle hashes, rendering checks, practice-form roundtrip
-and normal QA-process teardown. The Guide v77 run below remains historical.
+The current PR #435 product-code source is `3bac17a0` (the #458 retry fix); the
+current simulator fixture/test source is `fc607375` (#460). Guide v87 EN has
+SHA-256 `ae96797ee8db8799e66060bde6f731a436bef446e6f278ca20c0714b64baf33f`
+and ES has SHA-256
+`487560caac7f729445cbb32b3bb3b8c67e154169bc001c2f7144c1e55541be09`.
+
+Guide v86 is historical. Its fresh packaged Help acceptance passed against
+source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`; the candidate-specific
+record is in
+[packaged-help-v86-20261116.json](../validation/little-leonardo/packaged-help-v86-20261116.json).
+It does not establish acceptance for the current Guide v87 package. The
+previous iOS capture bundle is also historical; refreshed combined-source
+simulator evidence will be recorded separately under `doc/validation/`.
 
 `en/body.md` and `es/body.md` are the editorial sources. The 19 chapters cover
 macOS workflows and Little Leonardo's host → project → file library, with live Mermaid/KaTeX/Vega examples, literal citation

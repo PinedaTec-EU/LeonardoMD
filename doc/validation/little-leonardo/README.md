@@ -272,22 +272,32 @@ does not establish acceptance for the current Guide v86 resources or PR head.
 No Device Hub session was opened by this packaged-Help run.
 
 The current PR #435 product-code source is
-`0b3942d8e83806c1ff93c4112917bb090bd5d131`. It bundles Guide v86 EN/ES with
-hashes recorded in [the guide README](../../guide/README.md). Earlier
-English/Spanish simulator evidence remains available in the
-[initial bilingual bundle](error-log-20261116/current-head-bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05/README.md).
-The current-source captures, XCUITest results, fixture audits, simulator
-identities and image hashes are in the
-[current-code bundle](error-log-20261116/current-code-0b3942d8e83806c1ff93c4112917bb090bd5d131/README.md).
+`49052f4d4bb2b1bdaabf3bd023e01a185976445e`. It includes the bilingual project
+offline-retention caption fix tracked in [#459](https://github.com/PinedaTec-EU/LeonardoMD/issues/459) and bundles Guide v86 EN/ES with hashes recorded in
+[the guide README](../../guide/README.md). The following test-source commit,
+`5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a`, makes the on-demand fixture's host
+configurable and records it in `ready.json`, so the simulator pairs with the
+same host that the Mac fixture serves; it is test transport setup, not a
+production networking change ([#460](https://github.com/PinedaTec-EU/LeonardoMD/issues/460)).
+
+The current-source bilingual simulator captures, test summaries, fixture
+audits, XCTest attachment identifiers, result-bundle paths and teardown record
+are in the
+[current-code bundle](error-log-20261116/current-code-5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a/README.md).
+Both exact-source UI tests pass on iPhone 17 Pro / iOS Simulator 26.5. The
+English capture now shows “Includes new files”; Spanish shows “Incluye los
+ficheros nuevos”. The connected-host summary count remains tracked separately
+by [#457](https://github.com/PinedaTec-EU/LeonardoMD/issues/457).
+
 Fresh packaged Guide v86 Help/practice acceptance passed through the real Help
-workflow against source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`. Only the
-Little Leonardo project-status view and its UI test changed between that run
-and current code source `0b3942d8e83806c1ff93c4112917bb090bd5d131`; macOS Help
-and guide packaging inputs are unchanged. English and Spanish copies matched
-their bundled hashes; rendered examples, Math fallback, and both
-saved-and-reopened practice forms passed. QA PID 65824 exited normally after
-the run. See the [packaged Help record](packaged-help-v86-20261116.json).
-Earlier v77 and v77-era UI records remain historical.
+workflow against source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`. The only
+product files changed between that run and the current product-code source
+are the Little Leonardo project-status view and its UI test; macOS Help and
+guide packaging inputs are unchanged. English and Spanish copies matched their
+bundled hashes; rendered examples, Math fallback, and both saved-and-reopened
+practice forms passed. QA PID 65824 exited normally after the run. See the
+[packaged Help record](packaged-help-v86-20261116.json). Earlier v77 and
+v77-era UI records remain historical.
 
 The Simulator UI tests do not emulate a physical camera, so no camera-scan
 screenshot is claimed. No physical large-image acceptance is claimed for #380;
@@ -300,7 +310,11 @@ iPhone before that issue can close.
 synthetic data on port `46987`. Its host defaults to `127.0.0.1`; when the iOS
 Simulator cannot route that address to the Mac, set
 `LEONARDO_ON_DEMAND_QA_HOST` to a private Mac address reachable from the
-simulator. The host fixture records that address in `ready.json`, and the UI
-test reads the same value before pairing. Keep each run on an isolated
-simulator and a fresh `.qa-fixture-owned` root. This is test transport setup,
-not a product networking change ([#460](https://github.com/PinedaTec-EU/LeonardoMD/issues/460)).
+simulator. The host fixture records the configured address in `ready.json`,
+and the UI test reads that same value before pairing. Keep each run on an
+isolated simulator and a fresh `.qa-fixture-owned` root. Simulator pairing
+uses Keychain, so the local `build-for-testing` app must be ad-hoc signed with
+`CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=-`; an unsigned local build fails
+credential persistence before it exercises the sync flow. These are test
+transport and signing requirements, not production networking changes
+([#460](https://github.com/PinedaTec-EU/LeonardoMD/issues/460)).
