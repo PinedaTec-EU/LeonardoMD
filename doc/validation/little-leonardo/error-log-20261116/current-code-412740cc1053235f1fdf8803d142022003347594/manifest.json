@@ -1,0 +1,142 @@
+{
+  "purpose": "Exact-source bilingual Little Leonardo download error and local diagnostic log UI evidence for PR #435.",
+  "recorded_at": "2026-11-16",
+  "source_sha": "412740cc1053235f1fdf8803d142022003347594",
+  "source_tree_sha": "d8f56b24a682ea61ca1613e515cf20627654bbaa",
+  "platform": {
+    "app": "Little Leonardo native iOS SwiftUI/WKWebView",
+    "os": "iOS Simulator 26.5",
+    "device": "LittleLeonardo PR435 Spanish QA 20261116",
+    "simulator_id": "5B689430-FDBD-44C0-A732-BE3C063F9403",
+    "native_viewport_points": {
+      "width": 402,
+      "height": 874
+    },
+    "image_pixels": {
+      "width": 1206,
+      "height": 2622
+    }
+  },
+  "results": {
+    "full_swift_package_suite": {
+      "command": "python3 scripts/compile-and-record.py --pr-number 435 -- swift test --scratch-path /private/tmp/ll-pr435-full-swift-20261116",
+      "result": "passed",
+      "compilation_build": 86,
+      "source_sha": "412740cc1053235f1fdf8803d142022003347594"
+    },
+    "spanish_ui": {
+      "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+      "result": "passed",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 164.0,
+      "elapsed_seconds": 202.1,
+      "xcresult": "test_sim_2026-11-16T11-14-42-084Z_pid5041_0c25b79e.xcresult",
+      "compilation_build": 87,
+      "fixture_audit": "spanish-fixture-completed.json"
+    },
+    "english_ui": {
+      "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+      "result": "passed",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 56.4,
+      "elapsed_seconds": 100.9,
+      "xcresult": "test_sim_2026-11-16T11-18-45-844Z_pid5041_972f52dc.xcresult",
+      "compilation_build": 88,
+      "fixture_audit": "english-fixture-completed.json"
+    }
+  },
+  "screenshots": [
+    {
+      "file": "spanish-project-failure-alert.png",
+      "context_file": "spanish-project-failure-alert.png.context.json",
+      "locale": "Spanish",
+      "captured_at": "2026-11-16T11:17:03.908Z",
+      "screen": "Spanish project download alert with one opaque reference and one Aceptar action",
+      "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+      "sha256": "01e4ff0d36e41ed45d24312b538731ce9e54091bc9d871813fa1066f9e8aee68",
+      "attachment_id": "00B7E597-DEB4-4965-8987-309690182212"
+    },
+    {
+      "file": "spanish-document-error.png",
+      "context_file": "spanish-document-error.png.context.json",
+      "locale": "Spanish",
+      "captured_at": "2026-11-16T11:17:11.126Z",
+      "screen": "Spanish inline document failure with the same concise message and reference format",
+      "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+      "sha256": "c4aa190cfef6538a0fb87ef32fd86219955e9fcd80267cab6e7d2e4657d2fe0f",
+      "attachment_id": "C7557E80-C792-4524-B480-58FE700F9E8C"
+    },
+    {
+      "file": "spanish-diagnostic-log.png",
+      "context_file": "spanish-diagnostic-log.png.context.json",
+      "locale": "Spanish",
+      "captured_at": "2026-11-16T11:17:19.818Z",
+      "screen": "Spanish local error log showing the references that match the alerts",
+      "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+      "sha256": "e453b86e56da32e04a17fe1a2afa2ad841cedf475ba478729ce9e2e8aecc22d5",
+      "attachment_id": "80312625-413E-46D5-B804-2D4EC20E254A"
+    },
+    {
+      "file": "english-project-failure-alert.png",
+      "context_file": "english-project-failure-alert.png.context.json",
+      "locale": "English",
+      "captured_at": "2026-11-16T11:20:06.281Z",
+      "screen": "English project download alert with one opaque reference and one OK action",
+      "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+      "sha256": "f45517e92f75770d8313332711f04ddba51dfec474063dd00ba34ea353194dd5",
+      "attachment_id": "9611D1FD-6AB2-4981-82B6-7B433A611214"
+    },
+    {
+      "file": "english-document-error.png",
+      "context_file": "english-document-error.png.context.json",
+      "locale": "English",
+      "captured_at": "2026-11-16T11:20:13.831Z",
+      "screen": "English inline document failure with the same concise message and reference format",
+      "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+      "sha256": "23d6a2fcf8143b65ccd877932eb414f9e4d7ab767afca5198f4e230c2fab35cf",
+      "attachment_id": "8A47B9CD-13E5-40C7-8736-858165812648"
+    },
+    {
+      "file": "english-diagnostic-log.png",
+      "context_file": "english-diagnostic-log.png.context.json",
+      "locale": "English",
+      "captured_at": "2026-11-16T11:20:22.645Z",
+      "screen": "English local error log showing the references that match the alerts",
+      "test": "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+      "sha256": "407586c018076b5cfed8954aaae6d3c54f775bfd3cee30aa30f9b884a47e4d5c",
+      "attachment_id": "4942183B-8EC5-47D4-8671-9170CB932DB6"
+    }
+  ],
+  "fixture_audits": {
+    "spanish_metadata_only": "spanish-fixture-metadata-only.json",
+    "spanish_single_explicit_file_fetch": "spanish-fixture-single-file.json",
+    "spanish_aggregate": "spanish-fixture-completed.json",
+    "english_metadata_only": "english-fixture-metadata-only.json",
+    "english_aggregate": "english-fixture-completed.json"
+  },
+  "test_failure_diagnosis": [
+    {
+      "symptom": "Simulator install coordination rejected the test products before XCTest ran (MIInstallerErrorDomain Code 232).",
+      "cause": "The .xctestproducts bundle was on external volume UUID 6BBD... while InstallCoordination required the system transfer volume UUID 81A....",
+      "resolution": "Copied the exact test-products bundle with ditto to /private/tmp on the system volume and reran the same Spanish test; it passed. Registered separately as https://github.com/PinedaTec-EU/LeonardoMD/issues/456."
+    },
+    {
+      "symptom": "A retry on a reused simulator reported duplicate host rows and a synchronization alert.",
+      "cause": "The simulator app container retained the host fixture from the prior attempt.",
+      "resolution": "Erased only the task-owned QA simulator, restarted the fixture, and reran each locale on the clean app container; the Spanish and English tests both passed."
+    }
+  ],
+  "teardown": {
+    "task_owned_simulator": "5B689430-FDBD-44C0-A732-BE3C063F9403",
+    "final_state": "Shutdown",
+    "verification": "After English validation the fixture exited, its loopback port closed, the simulator was Shutdown, and no task-owned LittleLeonardo or XCTest process remained. A separate pre-existing simulator/process was preserved."
+  },
+  "limits": [
+    "All server content and errors were synthetic loopback fixtures.",
+    "No physical camera scan or physical-device transfer acceptance is claimed."
+  ]
+}
