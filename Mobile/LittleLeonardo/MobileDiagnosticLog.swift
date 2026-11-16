@@ -80,10 +80,13 @@ struct MobileErrorNotice {
         operation: MobileDiagnosticOperation,
         message: String? = nil,
         diagnosticLog: MobileDiagnosticLog? = nil,
-        spanish: Bool = true
+        spanish: Bool = true,
+        diagnosticIdentity: UUID? = nil,
+        shouldRecord: Bool = true
     ) -> MobileErrorNotice {
         record([error], operation: operation, message: message,
-               diagnosticLog: diagnosticLog, spanish: spanish)
+               diagnosticLog: diagnosticLog, spanish: spanish,
+               diagnosticIdentity: diagnosticIdentity, shouldRecord: shouldRecord)
     }
 
     static func record(
@@ -92,11 +95,16 @@ struct MobileErrorNotice {
         message: String? = nil,
         fallbackCategory: String? = nil,
         diagnosticLog: MobileDiagnosticLog? = nil,
-        spanish: Bool = true
+        spanish: Bool = true,
+        diagnosticIdentity: UUID? = nil,
+        shouldRecord: Bool = true
     ) -> MobileErrorNotice {
-        let notice = MobileErrorNotice(referenceCode: makeReferenceCode(),
+        let notice = MobileErrorNotice(referenceCode: makeReferenceCode(diagnosticIdentity),
                                        message: message ?? defaultMessage(spanish: spanish), spanish: spanish)
         let log = diagnosticLog ?? .shared
+        if !shouldRecord {
+            return notice
+        }
         if errors.isEmpty {
             log.record(
                 referenceCode: notice.referenceCode,
@@ -135,8 +143,8 @@ struct MobileErrorNotice {
             spanish: spanish)
     }
 
-    private static func makeReferenceCode() -> String {
-        "LL-\(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(12))"
+    private static func makeReferenceCode(_ identity: UUID? = nil) -> String {
+        "LL-\((identity ?? UUID()).uuidString.replacingOccurrences(of: "-", with: "").prefix(12))"
     }
 }
 

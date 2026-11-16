@@ -145,6 +145,22 @@
     }
   ],
   "attachment_export": "spanish-xcresult-attachments.json",
+  "task_instance_teardown": {
+    "english": {
+      "simulator_id": "C1762B8D-7017-4573-A613-2A914D69140D",
+      "simulator_was_booted_before_capture": true,
+      "simulator_shutdown_by_task": false,
+      "little_leonardo_process_absent_after_test": true,
+      "teardown": "The pre-existing booted simulator was preserved; the test-launched Little Leonardo process was absent after the run."
+    },
+    "spanish": {
+      "simulator_id": "5B689430-FDBD-44C0-A732-BE3C063F9403",
+      "simulator_shutdown_by_task": true,
+      "simulator_state_after_test": "shutdown",
+      "little_leonardo_process_absent_after_test": true,
+      "teardown": "The task-owned QA simulator was shut down after evidence collection."
+    }
+  },
   "physical_device_or_large_image_acceptance": false,
   "visual_review": "Original PNG bytes were visually inspected; references and localized copy are legible at 1206 x 2622 pixels."
 }

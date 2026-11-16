@@ -84,8 +84,9 @@ final class OnDemandSyncUITests: XCTestCase {
                        "Project retention must wait until synchronization leaves the action available")
         try capture(app, "project-context-menu", state: "Project action explicitly enables offline retention")
         keepProjectOffline.tap()
-        XCTAssertTrue(element("remote-file-download-failure-" + projectID + "-notes/decisions.md", app: app)
-            .waitForExistence(timeout: 15), "A failed retained download must be visible on its file row")
+        let failedFileStatus = element("remote-file-download-failure-" + projectID + "-notes/decisions.md", app: app)
+        XCTAssertTrue(failedFileStatus.waitForExistence(timeout: 15),
+                      "A failed retained download must be visible on its file row")
         let initialAlert = app.alerts.firstMatch
         XCTAssertTrue(initialAlert.waitForExistence(timeout: 15), "The retained-download error must present a user-facing alert")
         let alertCopy = initialAlert.staticTexts.allElementsBoundByIndex.map(\.label).joined(separator: " ")
@@ -103,6 +104,8 @@ final class OnDemandSyncUITests: XCTestCase {
         alertScreenshot.lifetime = .keepAlways
         add(alertScreenshot)
         initialAlert.buttons["Aceptar"].tap()
+        XCTAssertEqual(failedFileStatus.label,
+                       "Error de descarga; se reintentará al volver a abrir el fichero")
         XCTAssertTrue(project.staticTexts["Error de descarga · se reintentará"].waitForExistence(timeout: 30),
                       "The first retained transfer must finish before the document starts a contextual retry")
 
@@ -239,12 +242,19 @@ final class OnDemandSyncUITests: XCTestCase {
         XCTAssertTrue(alertCopy.contains("Couldn't download the content."))
         XCTAssertFalse(alertCopy.contains("NSURLErrorDomain"))
         XCTAssertEqual(alert.buttons.firstMatch.label, "OK")
+        XCTAssertEqual(failure.label, "Download failed; it will retry when you open the file again")
+        XCTAssertTrue(project.staticTexts["Download failed · will retry"].waitForExistence(timeout: 5),
+                      "The visible project status must follow the English app locale")
+        try capture(app, "english-project-download-alert",
+                    state: "English project and file failure statuses behind the concise download alert",
+                    locale: "English")
+        let alertScreenshot = XCTAttachment(screenshot: app.screenshot())
+        alertScreenshot.name = "English Little Leonardo project failure and concise download alert"
+        alertScreenshot.lifetime = .keepAlways
+        add(alertScreenshot)
         alert.buttons["OK"].tap()
         XCTAssertTrue(failure.waitForExistence(timeout: 5))
         XCTAssertTrue(failure.isHittable)
-        XCTAssertEqual(failure.label, "Download failed; it will retry when you open the file again")
-        XCTAssertTrue(project.staticTexts["Download failed · will retry"].waitForExistence(timeout: 5),
-                      "The failed project summary must follow the English app locale")
         try capture(app, "english-file-failure", state: "English failure status and its VoiceOver retry guidance",
                     locale: "English")
         fileRow(projectID, "notes/decisions.md", app: app).tap()

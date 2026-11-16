@@ -340,6 +340,77 @@ import XCTest
         }
     }
 
+    func testSharedDownloadUsesOneDiagnosticForGlobalAndPreviewPresentersInEitherArrivalOrder() async throws {
+        for globalCallerStartsFirst in [true, false] {
+            let fixture = try Fixture()
+            defer { fixture.removeFiles() }
+            let library = DownloadLibrary(cache: fixture.cache)
+            let gate = CacheReadGate()
+            var fetchCount = 0
+            var globalPresentationCount = 0
+            var previewPresentationCount = 0
+            library.errorPresentation = { _ in
+                globalPresentationCount += 1
+                return "LL-GLOBAL-\(globalPresentationCount)"
+            }
+            library.fetch = { _, _ in
+                fetchCount += 1
+                await gate.hold()
+                throw SyncError.publicationPending
+            }
+            try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                     catalogue: fixture.catalogue)
+            let key = DownloadLibrary.key(id: fixture.project.id, path: fixture.file.path)
+
+            let globalCaller: Task<String?, Never>
+            let previewCaller: Task<String?, Never>
+            if globalCallerStartsFirst {
+                globalCaller = Task {
+                    await presentationFailure {
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+                    }
+                }
+                await gate.waitUntilEntered()
+                previewCaller = Task {
+                    await presentationFailure {
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path) { _ in
+                            previewPresentationCount += 1
+                            return "LL-PREVIEW"
+                        }
+                    }
+                }
+            } else {
+                previewCaller = Task {
+                    await presentationFailure {
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path) { _ in
+                            previewPresentationCount += 1
+                            return "LL-PREVIEW"
+                        }
+                    }
+                }
+                await gate.waitUntilEntered()
+                globalCaller = Task {
+                    await presentationFailure {
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+                    }
+                }
+            }
+
+            for _ in 0..<10 { await Task.yield() }
+            await gate.release()
+
+            let globalReference = await globalCaller.value
+            let previewReference = await previewCaller.value
+            XCTAssertNotNil(globalReference)
+            XCTAssertEqual(previewReference, globalReference,
+                           "The retained-download and preview waiters must share one failure reference")
+            XCTAssertEqual(globalPresentationCount + previewPresentationCount, 1,
+                           "One shared transfer must invoke one diagnostic presenter and create one log entry")
+            XCTAssertEqual(fetchCount, 1, "Both callers must await the same transfer")
+            XCTAssertEqual(library.failures[key], globalReference)
+        }
+    }
+
     func testCancelledContextualWaiterDoesNotPresentSharedFailure() async throws {
         let fixture = try Fixture()
         defer { fixture.removeFiles() }

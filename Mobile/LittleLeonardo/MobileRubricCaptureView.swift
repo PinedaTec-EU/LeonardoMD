@@ -15,6 +15,7 @@ enum MobileRubricCaptureFailure: CaseIterable {
     case acceptance
     case rejection
     case draftPersistence
+    case terminalAcceptance
     case terminalSubmission
     case submission
     case retry
@@ -30,6 +31,9 @@ enum MobileRubricCaptureFailure: CaseIterable {
         case .draftPersistence:
             spanish ? "No se pudo guardar el borrador local. Inténtalo de nuevo antes de enviar."
                 : "Couldn't save the local draft. Try again before sending."
+        case .terminalAcceptance:
+            spanish ? "Esta solicitud ya no puede aceptarse. Pide una nueva al ordenador."
+                : "This request can no longer be accepted. Ask the Mac for a new request."
         case .terminalSubmission:
             spanish ? "Este vínculo ya no admite la solicitud. Pide una nueva solicitud."
                 : "This link can no longer accept the request. Ask for a new one."
@@ -110,6 +114,7 @@ struct MobileRubricCaptureView: View {
                                 if let failure {
                                     Label(failure, systemImage: "exclamationmark.triangle")
                                         .font(.footnote).foregroundStyle(MobileClassic.heading)
+                                        .accessibilityIdentifier("rubric-acceptance-failure")
                                 }
                             }
                             .padding(24).frame(maxWidth: 680).frame(maxWidth: .infinity)
@@ -141,9 +146,7 @@ struct MobileRubricCaptureView: View {
         .accessibilityIdentifier("rubric-request-sheet")
         .onChange(of: currentDraft?.state) { _, state in
             guard let draft = currentDraft else { return }
-            if state == .blocked {
-                failure = nil
-            } else if state == .submitted {
+            if state == .submitted {
                 failure = nil
                 phase = .submitted
             }
@@ -173,10 +176,14 @@ struct MobileRubricCaptureView: View {
     private var approvalControls: some View {
         VStack(alignment: .leading, spacing: 12) {
             if terminalBlocked {
-                Label("La solicitud ya no admite envíos (caducada, cancelada o revocada).",
+                Label(spanishErrors
+                        ? "La solicitud ya no admite aceptación (caducada, cancelada o revocada)."
+                        : "This request can no longer be accepted (expired, cancelled or revoked).",
                       systemImage: "lock.fill")
                     .accessibilityIdentifier("rubric-approval-blocked")
-                Text("Cierra esta tarjeta y pide una nueva solicitud al ordenador.")
+                Text(spanishErrors
+                        ? "Cierra esta tarjeta y pide una nueva solicitud al ordenador."
+                        : "Close this card and ask the Mac for a new request.")
                     .font(.footnote).foregroundStyle(MobileClassic.secondary)
             } else if phase == .accepting { ProgressView("Comprobando solicitud…") }
             else {
@@ -229,7 +236,10 @@ struct MobileRubricCaptureView: View {
             }
             undoControls
             if terminalBlocked {
-                Label("Borrador bloqueado: pide una nueva solicitud", systemImage: "lock.fill")
+                Label(spanishErrors
+                        ? "Borrador bloqueado: pide una nueva solicitud"
+                        : "Draft blocked: ask for a new request",
+                      systemImage: "lock.fill")
                     .font(.footnote).foregroundStyle(MobileClassic.secondary)
             } else if frozen {
                 Label("Vista previa bloqueada tras el envío", systemImage: "lock.fill")
@@ -248,7 +258,9 @@ struct MobileRubricCaptureView: View {
                     .buttonStyle(.borderedProminent).foregroundStyle(MobileClassic.paper).disabled(phase == .sending)
                     .accessibilityIdentifier("rubric-retry")
             } else if terminalBlocked {
-                Label("La solicitud ya no admite envíos (caducada, cancelada o revocada).",
+                Label(spanishErrors
+                        ? "La solicitud ya no admite envíos (caducada, cancelada o revocada)."
+                        : "This request cannot accept submissions (expired, cancelled or revoked).",
                       systemImage: "lock.fill")
                     .font(.footnote).foregroundStyle(MobileClassic.secondary)
             } else {
@@ -354,8 +366,9 @@ struct MobileRubricCaptureView: View {
                 phase = .drawing
             } catch {
                 phase = .awaitingApproval
-                if terminalBlocked {
-                    failure = nil
+                if isTerminal(error) {
+                    failure = MobileRubricCaptureFailure.terminalAcceptance
+                        .notice(for: error, spanish: spanishErrors).inlineMessage
                 } else {
                     failure = MobileRubricCaptureFailure.acceptance
                         .notice(for: error, spanish: spanishErrors).inlineMessage

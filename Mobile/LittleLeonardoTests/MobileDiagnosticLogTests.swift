@@ -193,6 +193,138 @@ final class MobileDiagnosticLogTests: XCTestCase {
     }
 
     @MainActor
+    func testTerminalRubricAcceptanceUsesOneLocalizedReferenceAndSafeLogEntry() {
+        for spanish in [true, false] {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: root) }
+            let log = MobileDiagnosticLog(fileURL: root.appendingPathComponent("error-log.txt"))
+            let notice = MobileRubricCaptureFailure.terminalAcceptance.notice(
+                for: RubricExchangeError.expired, spanish: spanish, diagnosticLog: log)
+
+            XCTAssertEqual(notice.message, spanish
+                ? "Esta solicitud ya no puede aceptarse. Pide una nueva al ordenador."
+                : "This request can no longer be accepted. Ask the Mac for a new request.")
+            XCTAssertTrue(notice.inlineMessage.contains(
+                "\(spanish ? "Código" : "Code"): \(notice.referenceCode)"))
+            XCTAssertEqual(log.recentEntries().count, 1)
+            XCTAssertTrue(log.recentEntries()[0].contains(
+                "ref=\(notice.referenceCode) op=rubric"))
+        }
+    }
+
+    @MainActor
+    func testRetainedAndPreviewWaitersShareOneLoggedDiagnosticInEitherArrivalOrder() async throws {
+        for globalCallerStartsFirst in [true, false] {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: root) }
+            let log = MobileDiagnosticLog(fileURL: root.appendingPathComponent("error-log.txt"))
+            let cache = OnDemandCache(root: root.appendingPathComponent("downloads", isDirectory: true))
+            let library = DownloadLibrary(cache: cache)
+            let gate = MobileDiagnosticDownloadGate()
+            let projectID = UUID()
+            let file = CorpusFile(path: "notes/read.md", content: Data("synthetic diagnostic fixture".utf8))
+            let entry = RemoteFileEntry(file: file)
+            let descriptor = SharedProjectDescriptor(id: projectID, name: "Diagnostic fixture",
+                                                       scope: try CorpusScope(folder: ""))
+            let catalogue = RemoteProjectCatalogue(files: [entry])
+            var globalPresentationCount = 0
+            var previewPresentationCount = 0
+            var recordedPresentationCount = 0
+            var fetchCount = 0
+            library.errorDiagnosticPresentation = { error, identity, shouldRecord in
+                globalPresentationCount += 1
+                if shouldRecord { recordedPresentationCount += 1 }
+                return MobileErrorNotice.record(error, operation: .downloads,
+                                                message: MobileErrorNotice.contentDownloadMessage(spanish: false),
+                                                diagnosticLog: log, spanish: false,
+                                                diagnosticIdentity: identity,
+                                                shouldRecord: shouldRecord).inlineMessage
+            }
+            library.fetch = { _, _ in
+                fetchCount += 1
+                await gate.holdUntilReleased()
+                throw SyncError.publicationPending
+            }
+            try await library.update(id: projectID, descriptor: descriptor, catalogue: catalogue)
+
+            let globalCaller: Task<String?, Never>
+            let previewCaller: Task<String?, Never>
+            if globalCallerStartsFirst {
+                globalCaller = Task {
+                    await presentationMessage {
+                        try await library.openResult(id: projectID, path: file.path)
+                    }
+                }
+                await gate.waitUntilEntered()
+                previewCaller = Task {
+                    await presentationMessage {
+                        try await library.openResult(id: projectID, path: file.path,
+                            diagnosticPresentation: { error, identity, shouldRecord in
+                            previewPresentationCount += 1
+                            if shouldRecord { recordedPresentationCount += 1 }
+                            return MobileErrorNotice.record(
+                                error, operation: .downloads,
+                                message: MobileErrorNotice.documentLoadMessage(spanish: false),
+                                diagnosticLog: log, spanish: false,
+                                diagnosticIdentity: identity,
+                                shouldRecord: shouldRecord).inlineMessage
+                            })
+                    }
+                }
+            } else {
+                previewCaller = Task {
+                    await presentationMessage {
+                        try await library.openResult(id: projectID, path: file.path,
+                            diagnosticPresentation: { error, identity, shouldRecord in
+                            previewPresentationCount += 1
+                            if shouldRecord { recordedPresentationCount += 1 }
+                            return MobileErrorNotice.record(
+                                error, operation: .downloads,
+                                message: MobileErrorNotice.documentLoadMessage(spanish: false),
+                                diagnosticLog: log, spanish: false,
+                                diagnosticIdentity: identity,
+                                shouldRecord: shouldRecord).inlineMessage
+                            })
+                    }
+                }
+                await gate.waitUntilEntered()
+                globalCaller = Task {
+                    await presentationMessage {
+                        try await library.openResult(id: projectID, path: file.path)
+                    }
+                }
+            }
+            for _ in 0..<10 { await Task.yield() }
+            await gate.release()
+
+            let globalMessage = await globalCaller.value
+            let previewMessage = await previewCaller.value
+            let globalCopy = try XCTUnwrap(globalMessage)
+            let previewCopy = try XCTUnwrap(previewMessage)
+            XCTAssertTrue(globalCopy.contains("Couldn't download the content."),
+                          "Global download copy: \(globalCopy)")
+            XCTAssertTrue(previewCopy.contains("Couldn't load the document."),
+                          "Preview download copy: \(previewCopy)")
+            XCTAssertNotEqual(globalCopy, previewCopy,
+                              "Waiters keep their own user copy while sharing the diagnostic reference")
+            XCTAssertEqual(globalPresentationCount, 1)
+            XCTAssertEqual(previewPresentationCount, 1)
+            XCTAssertEqual(recordedPresentationCount, 1)
+            XCTAssertEqual(fetchCount, 1)
+            let globalReference = try XCTUnwrap(globalCopy.range(
+                of: #"LL-[0-9A-F]{12}"#, options: .regularExpression)
+                .map { String(globalCopy[$0]) })
+            let previewReference = try XCTUnwrap(previewCopy.range(
+                of: #"LL-[0-9A-F]{12}"#, options: .regularExpression)
+                .map { String(previewCopy[$0]) })
+            XCTAssertEqual(globalReference, previewReference)
+            XCTAssertEqual(log.recentEntries().count, 1,
+                           "The shared transfer must generate one matching diagnostic log entry")
+            XCTAssertTrue(log.recentEntries()[0].contains("ref=\(globalReference) op=downloads"))
+        }
+    }
+
+    @MainActor
     func testUnrelatedScannedCodesRemainIgnored() {
         XCTAssertTrue(isUnrelated("https://example.invalid/pair"))
         XCTAssertTrue(isUnrelated("ordinary barcode"))
@@ -335,5 +467,48 @@ final class MobileDiagnosticLogTests: XCTestCase {
             XCTAssertTrue(try root.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup == true)
             XCTAssertTrue(try file.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup == true)
         }
+    }
+
+    @MainActor
+    private func presentationMessage(
+        _ operation: () async throws -> RemoteDownloadResult
+    ) async -> String? {
+        do {
+            _ = try await operation()
+            XCTFail("Expected a presented transfer failure")
+            return nil
+        } catch let failure as RemoteDownloadFailure {
+            return failure.message
+        } catch {
+            XCTFail("Expected a presented transfer failure, received \(error)")
+            return nil
+        }
+    }
+}
+
+private actor MobileDiagnosticDownloadGate {
+    private var entered = false
+    private var released = false
+    private var holdContinuation: CheckedContinuation<Void, Never>?
+
+    func holdUntilReleased() async {
+        await withCheckedContinuation { continuation in
+            holdContinuation = continuation
+            entered = true
+            if released {
+                holdContinuation = nil
+                continuation.resume()
+            }
+        }
+    }
+
+    func waitUntilEntered() async {
+        while !entered { try? await Task.sleep(for: .milliseconds(5)) }
+    }
+
+    func release() {
+        released = true
+        holdContinuation?.resume()
+        holdContinuation = nil
     }
 }

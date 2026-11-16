@@ -60,12 +60,14 @@ final class MobileLibrary {
         self.now = now
         rubricAcceptance = MobileRubricAcceptance(store: draftStore, clock: now)
         let spanish = MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
-        downloads.errorPresentation = { [weak self] error in
+        downloads.errorDiagnosticPresentation = { [weak self] error, identity, shouldRecord in
             let notice = MobileErrorNotice.record(
                 error,
                 operation: .downloads,
                 message: MobileErrorNotice.contentDownloadMessage(spanish: spanish),
-                spanish: spanish)
+                spanish: spanish,
+                diagnosticIdentity: identity,
+                shouldRecord: shouldRecord)
             self?.error = notice
             return notice.inlineMessage
         }
@@ -553,8 +555,11 @@ final class MobileLibrary {
                 return accepted.request
             } catch {
                 if isTerminalRubricFailure(error) {
+                    let spanish = MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
                     await blockRubricDraft(request: request,
-                                           message: "La solicitud ya no admite aceptación; pide una nueva solicitud.")
+                                           message: spanish
+                                            ? "La solicitud ya no admite aceptación; pide una nueva solicitud al ordenador."
+                                            : "This request can no longer be accepted; ask the Mac for a new request.")
                 }
                 throw error
             }

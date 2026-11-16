@@ -156,12 +156,14 @@ struct MobileLibraryView: View {
                 RemoteDocumentPreview(library: library.downloads, projectID: route.projectID,
                     entry: route.entry, spanish: spanishErrors, appearance: .leonardoClassic,
                     compactFirstHeading: true,
-                    failurePresentation: { error in
+                    failureDiagnosticPresentation: { error, identity, shouldRecord in
                         let notice = MobileErrorNotice.record(
                             error,
                             operation: .downloads,
                             message: MobileErrorNotice.documentDownloadMessage(spanish: spanishErrors),
-                            spanish: spanishErrors)
+                            spanish: spanishErrors,
+                            diagnosticIdentity: identity,
+                            shouldRecord: shouldRecord)
                         library.error = notice
                         return notice.inlineMessage
                     }).classicSurface()
@@ -488,12 +490,14 @@ struct MobileProjectView: View {
                 spanish: spanishErrors,
                 appearance: .leonardoClassic,
                 compactFirstHeading: true,
-                failurePresentation: { error in
+                failureDiagnosticPresentation: { error, identity, shouldRecord in
                     MobileErrorNotice.record(
                         error,
                         operation: .downloads,
                         message: MobileErrorNotice.documentLoadMessage(spanish: spanishErrors),
-                        spanish: spanishErrors).inlineMessage
+                        spanish: spanishErrors,
+                        diagnosticIdentity: identity,
+                        shouldRecord: shouldRecord).inlineMessage
                 }).classicSurface()
         }
         .fileExporter(isPresented: $exporting, document: project.map(MobileRecoveryDocument.init),

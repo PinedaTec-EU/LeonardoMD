@@ -1,6 +1,10 @@
 import Foundation
 import Observation
 
+/// Creates caller-specific copy for one shared failure. A single invocation per
+/// active transfer receives `shouldRecord == true`; later waiters reuse its ID.
+public typealias RemoteDownloadDiagnosticPresentation = @MainActor (Error, UUID, Bool) -> String
+
 /// Retained content remains readable after a failed update, with explicit freshness.
 public struct RemoteDownloadResult: Sendable {
     public let file: CorpusFile
@@ -20,7 +24,7 @@ public struct RemoteDownloadResult: Sendable {
     }
 }
 
-/// Carries the exact diagnostic generated for one failed preview attempt.
+/// Carries one caller's localized copy for a failed download attempt.
 public struct RemoteDownloadFailure: LocalizedError, Sendable {
     public let message: String
     let underlying: any Error
@@ -59,6 +63,8 @@ public final class DownloadLibrary {
         let entry: RemoteFileEntry
         let task: Task<RemoteDownloadResult, Error>
         var sharedFailure: RemoteDownloadFailure?
+        var diagnosticIdentity: UUID?
+        var diagnosticRecorded = false
 
         init(identity: UUID, generation: UInt64, entry: RemoteFileEntry,
              task: Task<RemoteDownloadResult, Error>) {
@@ -71,6 +77,7 @@ public final class DownloadLibrary {
     private var tasks: [String: ActiveDownload] = [:]
     public var fetch: @MainActor (UUID, RemoteFileEntry) async throws -> CorpusFile = { _, _ in throw SyncError.revoked }
     public var errorPresentation: (@MainActor (Error) -> String)?
+    public var errorDiagnosticPresentation: RemoteDownloadDiagnosticPresentation?
 
     public init(cache: any RemoteDownloadCache) { self.cache = cache }
     public static func key(id: UUID, path: String) -> String { id.uuidString + ":" + path }
@@ -119,18 +126,31 @@ public final class DownloadLibrary {
     }
 
     public func openResult(id: UUID, path: String) async throws -> RemoteDownloadResult {
-        try await openResult(id: id, path: path, presentation: nil)
+        try await openResult(id: id, path: path, presentation: nil, diagnosticPresentation: nil)
     }
 
     public func openResult(id: UUID, path: String,
                            presentation: (@MainActor (Error) -> String)?) async throws -> RemoteDownloadResult {
+        try await openResult(id: id, path: path, presentation: presentation, diagnosticPresentation: nil)
+    }
+
+    public func openResult(id: UUID, path: String,
+                           diagnosticPresentation: RemoteDownloadDiagnosticPresentation?) async throws -> RemoteDownloadResult {
+        try await openResult(id: id, path: path, presentation: nil,
+                             diagnosticPresentation: diagnosticPresentation)
+    }
+
+    public func openResult(id: UUID, path: String,
+                           presentation: (@MainActor (Error) -> String)?,
+                           diagnosticPresentation: RemoteDownloadDiagnosticPresentation?) async throws -> RemoteDownloadResult {
         guard allowed.contains(id), let project = projects.first(where: { $0.id == id }),
               let entry = project.catalogue.files.first(where: { $0.path == path }) else { throw SyncError.revoked }
         let generation = generations[id, default: 0]
         let key = Self.key(id: id, path: path)
         if let active = tasks[key], active.generation == generation, active.entry == entry {
             return try await result(of: active, id: id, entry: entry, generation: generation,
-                                    key: key, presentation: presentation)
+                                    key: key, presentation: presentation,
+                                    diagnosticPresentation: diagnosticPresentation)
         }
 
         // A new attempt owns its diagnostic. An active identical download is
@@ -141,7 +161,8 @@ public final class DownloadLibrary {
             cached = try await cache.read(id: id, entry: entry, allowStale: false)
         } catch {
             try requireEntry(id: id, entry: entry, generation: generation)
-            throw failureToThrow(error, key: key, presentation: presentation, active: nil)
+            throw failureToThrow(error, key: key, presentation: presentation,
+                                 diagnosticPresentation: diagnosticPresentation, active: nil)
         }
         if let file = cached {
             try requireEntry(id: id, entry: entry, generation: generation)
@@ -150,7 +171,8 @@ public final class DownloadLibrary {
         try requireEntry(id: id, entry: entry, generation: generation)
         if let active = tasks[key], active.generation == generation, active.entry == entry {
             return try await result(of: active, id: id, entry: entry, generation: generation,
-                                    key: key, presentation: presentation)
+                                    key: key, presentation: presentation,
+                                    diagnosticPresentation: diagnosticPresentation)
         }
         // A catalogue revision is a different transfer even under the same grant.
         tasks[key]?.task.cancel()
@@ -192,31 +214,51 @@ public final class DownloadLibrary {
             }
         }
         return try await result(of: active, id: id, entry: entry, generation: generation,
-                                key: key, presentation: presentation)
+                                key: key, presentation: presentation,
+                                diagnosticPresentation: diagnosticPresentation)
     }
 
     private func result(of active: ActiveDownload, id: UUID, entry: RemoteFileEntry,
                         generation: UInt64, key: String,
-                        presentation: (@MainActor (Error) -> String)?) async throws -> RemoteDownloadResult {
+                        presentation: (@MainActor (Error) -> String)?,
+                        diagnosticPresentation: RemoteDownloadDiagnosticPresentation?) async throws -> RemoteDownloadResult {
         do {
             let result = try await active.task.value
             try requireEntry(id: id, entry: entry, generation: generation)
             guard let cause = result.updateFailureCause else { return result }
             let failure = recordFailure(cause.underlying, key: key,
-                                        presentation: presentation, active: active)
+                                        presentation: presentation,
+                                        diagnosticPresentation: diagnosticPresentation, active: active)
             return RemoteDownloadResult(file: result.file, updateFailure: failure)
         } catch {
             // Each caller owns its own cancellation and authorization context,
             // even when the shared transfer fails for every waiter.
             try requireEntry(id: id, entry: entry, generation: generation)
-            throw failureToThrow(error, key: key, presentation: presentation, active: active)
+            throw failureToThrow(error, key: key, presentation: presentation,
+                                 diagnosticPresentation: diagnosticPresentation, active: active)
         }
     }
 
     private func recordFailure(_ error: any Error, key: String,
                                presentation: (@MainActor (Error) -> String)?,
+                               diagnosticPresentation: RemoteDownloadDiagnosticPresentation?,
                                active: ActiveDownload?) -> RemoteDownloadFailure {
-        if presentation == nil, errorPresentation != nil, let sharedFailure = active?.sharedFailure {
+        if let handler = diagnosticPresentation ?? (presentation == nil ? errorDiagnosticPresentation : nil) {
+            let identity = active?.diagnosticIdentity ?? UUID()
+            active?.diagnosticIdentity = identity
+            let shouldRecord = active.map { !$0.diagnosticRecorded } ?? true
+            if shouldRecord { active?.diagnosticRecorded = true }
+
+            let message = handler(error, identity, shouldRecord)
+            let failure = RemoteDownloadFailure(message: message, underlying: error, hasPresentation: true)
+            if (presentation == nil && diagnosticPresentation == nil) || failures[key] == nil {
+                failures[key] = message
+            }
+            if active?.sharedFailure == nil { active?.sharedFailure = failure }
+            return failure
+        }
+
+        if let sharedFailure = active?.sharedFailure {
             failures[key] = sharedFailure.message
             return sharedFailure
         }
@@ -225,15 +267,18 @@ public final class DownloadLibrary {
         let message = handler?(error) ?? error.localizedDescription
         failures[key] = message
         let failure = RemoteDownloadFailure(message: message, underlying: error, hasPresentation: handler != nil)
-        if presentation == nil, handler != nil { active?.sharedFailure = failure }
+        if handler != nil { active?.sharedFailure = failure }
         return failure
     }
 
     private func failureToThrow(_ error: any Error, key: String,
                                 presentation: (@MainActor (Error) -> String)?,
+                                diagnosticPresentation: RemoteDownloadDiagnosticPresentation?,
                                 active: ActiveDownload?) -> any Error {
-        let failure = recordFailure(error, key: key, presentation: presentation, active: active)
-        return presentation == nil && errorPresentation == nil ? error : failure
+        let failure = recordFailure(error, key: key, presentation: presentation,
+                                    diagnosticPresentation: diagnosticPresentation, active: active)
+        return presentation == nil && diagnosticPresentation == nil
+            && errorPresentation == nil && errorDiagnosticPresentation == nil ? error : failure
     }
 
     /// No suspension may separate this check from delivery to the caller.
