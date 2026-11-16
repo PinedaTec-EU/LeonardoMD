@@ -272,16 +272,22 @@ does not establish acceptance for the current Guide v86 resources or PR head.
 No Device Hub session was opened by this packaged-Help run.
 
 The current PR #435 product-code source is
-`bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05`. It bundles Guide v86 EN/ES with
-hashes recorded in [the guide README](../../guide/README.md). Current-source
-English and Spanish simulator evidence passes, with original screenshots,
-sidecars, hashes and reference correlation in the
-[bilingual evidence bundle](error-log-20261116/current-head-bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05/README.md).
-Fresh packaged Guide v86 Help/practice acceptance remains pending. At the
-2026-11-16 resume checkpoint, the native-app inspection tool still reported the
-Mac locked and exposed no apps, despite a user unlock confirmation; no
-LeonardoMD instance was opened. Recheck the actual desktop state before trying
-the packaged Help flow. Earlier v77 and v77-era UI records remain historical.
+`0b3942d8e83806c1ff93c4112917bb090bd5d131`. It bundles Guide v86 EN/ES with
+hashes recorded in [the guide README](../../guide/README.md). Earlier
+English/Spanish simulator evidence remains available in the
+[initial bilingual bundle](error-log-20261116/current-head-bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05/README.md).
+The current-source captures, XCUITest results, fixture audits, simulator
+identities and image hashes are in the
+[current-code bundle](error-log-20261116/current-code-0b3942d8e83806c1ff93c4112917bb090bd5d131/README.md).
+Fresh packaged Guide v86 Help/practice acceptance passed through the real Help
+workflow against source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`. Only the
+Little Leonardo project-status view and its UI test changed between that run
+and current code source `0b3942d8e83806c1ff93c4112917bb090bd5d131`; macOS Help
+and guide packaging inputs are unchanged. English and Spanish copies matched
+their bundled hashes; rendered examples, Math fallback, and both
+saved-and-reopened practice forms passed. QA PID 65824 exited normally after
+the run. See the [packaged Help record](packaged-help-v86-20261116.json).
+Earlier v77 and v77-era UI records remain historical.
 
 The Simulator UI tests do not emulate a physical camera, so no camera-scan
 screenshot is claimed. No physical large-image acceptance is claimed for #380;

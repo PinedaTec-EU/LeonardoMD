@@ -6,15 +6,20 @@ open a user-owned copy in
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-For PR #435, the current product-code source `bba7eef9eb277ba2e799a449eb5d4ff3ff9e5f05`
-packages EN SHA-256 `797e241ca7df87a633ea334ca10f087303d2acead33306cffe31f2c5d032ae30`
-and ES SHA-256 `ec197be190b5f4f4f35b9fbba67b22a5db963fc91b926afd527fc44c47869c72`.
-The later evidence-only PR head is `3b36f8ed7355af9caf1ac5331c8538d502373bef`.
+For PR #435, the current product-code source is
+`0b3942d8e83806c1ff93c4112917bb090bd5d131`. It packages EN SHA-256
+`797e241ca7df87a633ea334ca10f087303d2acead33306cffe31f2c5d032ae30` and ES
+SHA-256 `ec197be190b5f4f4f35b9fbba67b22a5db963fc91b926afd527fc44c47869c72`.
 Fresh packaged-process acceptance for v86 is tracked in
 [`Little Leonardo validation`](../validation/little-leonardo/README.md); the
-Guide v86 acceptance through the packaged app's actual Help workflow is pending
-in PR #435. The Guide v77 run below is historical and does not prove v86
-acceptance.
+Guide v86 acceptance through the packaged app's actual Help workflow passed
+against source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`. The only product
+files changed between that Help run and the current code source are the Little
+Leonardo project-status view and its UI test; macOS Help and guide packaging
+inputs are unchanged. The
+[candidate-specific record](../validation/little-leonardo/packaged-help-v86-20261116.json)
+contains the bilingual bundle hashes, rendering checks, practice-form roundtrip
+and normal QA-process teardown. The Guide v77 run below remains historical.
 
 `en/body.md` and `es/body.md` are the editorial sources. The 19 chapters cover
 macOS workflows and Little Leonardo's host → project → file library, with live Mermaid/KaTeX/Vega examples, literal citation

@@ -1,0 +1,79 @@
+{
+  "purpose": "Candidate-specific packaged bilingual Help acceptance for PR #435",
+  "recorded_at": "2026-11-16",
+  "source_sha": "47858f19e1c612a6e5beba34d76f0fa9ff7c6054",
+  "current_product_code_source_sha": "0b3942d8e83806c1ff93c4112917bb090bd5d131",
+  "source_mapping": {
+    "macos_help_and_packaging_inputs_unchanged": true,
+    "files_changed_after_help_source": [
+      "Mobile/LittleLeonardo/MobileSharedProjectTreeView.swift",
+      "Mobile/LittleLeonardoUITests/OnDemandSyncUITests.swift"
+    ],
+    "note": "The intervening code correction is limited to the Little Leonardo project download status and its UI assertion; the app's macOS Help workflow and packaged guide inputs are unchanged."
+  },
+  "application": {
+    "product": "LeonardoMD",
+    "version": "0.3.1602",
+    "build": "1602",
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.617bf1edf7cd487d895333f9d8868079",
+    "executable": "LeonardoMD",
+    "bundle_path": "/private/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-4q6v5wqz/LeonardoMDQA.app",
+    "process_pid": 65824,
+    "process_started_at": "2026-11-16T09:04:51+01:00",
+    "process_quit_at": "2026-11-16T09:13:14+01:00",
+    "source_pr_environment": "LEONARDO_SOURCE_PR=435",
+    "qa_profile": "/private/tmp/ll435-helpqa-home-47858-exact",
+    "fresh_process": true,
+    "first_window_ready": true,
+    "process_exited_normally": true
+  },
+  "help": {
+    "english": {
+      "opened_through": "Help > Leonardo user guide",
+      "revision": "v86",
+      "opened_copy": "Application Support/LeonardoMD/User Guides/v86/en/Guide-v86-en.mdlz",
+      "bundled_sha256": "797e241ca7df87a633ea334ca10f087303d2acead33306cffe31f2c5d032ae30",
+      "opened_copy_sha256": "797e241ca7df87a633ea334ca10f087303d2acead33306cffe31f2c5d032ae30",
+      "matches_bundle": true
+    },
+    "spanish": {
+      "opened_through": "Help > Guía de Leonardo",
+      "revision": "v86",
+      "opened_copy": "Application Support/LeonardoMD/User Guides/v86/es/Guide-v86-es.mdlz",
+      "bundled_sha256": "ec197be190b5f4f4f35b9fbba67b22a5db963fc91b926afd527fc44c47869c72",
+      "opened_copy_sha256": "ec197be190b5f4f4f35b9fbba67b22a5db963fc91b926afd527fc44c47869c72",
+      "matches_bundle": true
+    },
+    "rendering_checks": [
+      "Mermaid diagrams, inline math and one-line and multiline display equations rendered in English and Spanish.",
+      "Markdown-sensitive TeX, underbraces, radicals, arrows, cancellation and tagged equation (1) rendered without literal delimiters or KaTeX errors.",
+      "Charts, local images and tables were present in both packaged guides.",
+      "With Math disabled, the source notation remained literal and the fenced BibTeX example remained code."
+    ]
+  },
+  "practice_forms": [
+    {
+      "locale": "Spanish",
+      "filled_with_synthetic_data": true,
+      "saved_closed_reopened": true,
+      "answers_present_after_reopen": true
+    },
+    {
+      "locale": "English",
+      "filled_with_synthetic_data": true,
+      "saved_closed_reopened": true,
+      "answers_present_after_reopen": true
+    }
+  ],
+  "restored_preferences": {
+    "interface_language": "English",
+    "Math": true
+  },
+  "visual_evidence": "The live packaged application and rendered Help examples were inspected; the PR acceptance record documents the tested examples and practice-form roundtrip.",
+  "teardown": {
+    "quit_requested_through_app_menu": true,
+    "process_absent_after_quit": true,
+    "qa_bundle_identity": "eu.pinedatec.LeonardoMD.qa.617bf1edf7cd487d895333f9d8868079",
+    "qa_process_pid": 65824
+  }
+}
