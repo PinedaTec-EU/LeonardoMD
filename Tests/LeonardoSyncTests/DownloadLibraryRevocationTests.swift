@@ -127,6 +127,8 @@ import XCTest
         let fixture = try Fixture()
         defer { fixture.removeFiles() }
         let library = DownloadLibrary(cache: fixture.cache)
+        let openResult: @MainActor (UUID, String) async throws -> RemoteDownloadResult = library.openResult(id:path:)
+        _ = openResult
         try await library.update(id: fixture.project.id, descriptor: fixture.project,
                                  catalogue: fixture.catalogue)
 
@@ -271,6 +273,114 @@ import XCTest
         XCTAssertEqual(firstReference, "LL-SHARED-1")
         XCTAssertEqual(secondReference, firstReference)
         XCTAssertEqual(referenceCount, 1, "One in-flight transfer must create one shared diagnostic reference")
+    }
+
+    func testSharedDownloadAppliesPresentationPerCallerInEitherArrivalOrder() async throws {
+        for contextualCallerStartsFirst in [true, false] {
+            let fixture = try Fixture()
+            defer { fixture.removeFiles() }
+            let library = DownloadLibrary(cache: fixture.cache)
+            let gate = CacheReadGate()
+            var fetchCount = 0
+            var presentationCount = 0
+            library.fetch = { _, _ in
+                fetchCount += 1
+                await gate.hold()
+                throw SyncError.publicationPending
+            }
+            try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                     catalogue: fixture.catalogue)
+
+            let contextualCaller: Task<String?, Never>
+            let plainCaller: Task<Bool, Never>
+            if contextualCallerStartsFirst {
+                contextualCaller = Task {
+                    await presentationFailure {
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path) { _ in
+                            presentationCount += 1
+                            return "LL-CONTEXTUAL"
+                        }
+                    }
+                }
+                await gate.waitUntilEntered()
+                plainCaller = Task {
+                    do {
+                        _ = try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+                        return false
+                    } catch { return error as? SyncError == .publicationPending }
+                }
+            } else {
+                plainCaller = Task {
+                    do {
+                        _ = try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+                        return false
+                    } catch { return error as? SyncError == .publicationPending }
+                }
+                await gate.waitUntilEntered()
+                contextualCaller = Task {
+                    await presentationFailure {
+                        try await library.openResult(id: fixture.project.id, path: fixture.file.path) { _ in
+                            presentationCount += 1
+                            return "LL-CONTEXTUAL"
+                        }
+                    }
+                }
+            }
+
+            for _ in 0..<10 { await Task.yield() }
+            await gate.release()
+
+            let contextualMessage = await contextualCaller.value
+            let plainReceivedOriginalError = await plainCaller.value
+            XCTAssertEqual(contextualMessage, "LL-CONTEXTUAL")
+            XCTAssertTrue(plainReceivedOriginalError,
+                          "A caller without a presenter must retain the original SyncError")
+            XCTAssertEqual(presentationCount, 1, "Only the contextual caller may run its presenter")
+            XCTAssertEqual(fetchCount, 1, "Both callers must share one transfer")
+        }
+    }
+
+    func testCancelledContextualWaiterDoesNotPresentSharedFailure() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        let gate = CacheReadGate()
+        var fetchCount = 0
+        var presentationCount = 0
+        library.fetch = { _, _ in
+            fetchCount += 1
+            await gate.hold()
+            throw SyncError.publicationPending
+        }
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: fixture.catalogue)
+
+        let contextualCaller = Task {
+            try await library.openResult(id: fixture.project.id, path: fixture.file.path) { _ in
+                presentationCount += 1
+                return "LL-CANCELLED"
+            }
+        }
+        await gate.waitUntilEntered()
+        let plainCaller = Task {
+            do {
+                _ = try await library.openResult(id: fixture.project.id, path: fixture.file.path)
+                return false
+            } catch { return error as? SyncError == .publicationPending }
+        }
+        for _ in 0..<10 { await Task.yield() }
+        contextualCaller.cancel()
+        await gate.release()
+
+        do {
+            _ = try await contextualCaller.value
+            XCTFail("A cancelled waiter must keep its cancellation")
+        } catch is CancellationError {}
+        let plainReceivedOriginalError = await plainCaller.value
+        XCTAssertTrue(plainReceivedOriginalError)
+        XCTAssertEqual(presentationCount, 0,
+                       "A cancelled caller must not trigger its alert or diagnostic-log presenter")
+        XCTAssertEqual(fetchCount, 1, "The active waiter must continue the shared transfer")
     }
 
     func testCancelledCallerKeepsCancellationWhenSharedDownloadFails() async throws {

@@ -196,7 +196,7 @@ final class OnDemandSyncUITests: XCTestCase {
         guard ProcessInfo.processInfo.environment["LEONARDO_ON_DEMAND_QA_ROOT"] != nil else {
             throw XCTSkip("Requires the isolated on-demand loopback source")
         }
-        defer { try? phase("finish") }
+        defer { try? phase("finish-english") }
         let app = XCUIApplication()
         app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US",
                               "-directSyncIntervalMinutes", "0"]
@@ -245,10 +245,53 @@ final class OnDemandSyncUITests: XCTestCase {
         XCTAssertEqual(failure.label, "Download failed; it will retry when you open the file again")
         try capture(app, "english-file-failure", state: "English failure status and its VoiceOver retry guidance",
                     locale: "English")
+        fileRow(projectID, "notes/decisions.md", app: app).tap()
+        let warning = element("remote-download-warning", app: app)
+        XCTAssertTrue(warning.waitForExistence(timeout: 15),
+                      "A failed document download must show its concise preview message")
+        let previewAlert = app.alerts.firstMatch
+        XCTAssertTrue(previewAlert.waitForExistence(timeout: 5),
+                      "The document-download error must show its concise notice")
+        let previewAlertCopy = previewAlert.staticTexts.allElementsBoundByIndex.map(\.label).joined(separator: " ")
+        XCTAssertTrue(previewAlertCopy.contains("Couldn't download the document."))
+        XCTAssertFalse(previewAlertCopy.contains("NSURLErrorDomain"))
+        XCTAssertEqual(previewAlert.buttons.count, 1)
+        XCTAssertEqual(previewAlert.buttons.firstMatch.label, "OK")
+        previewAlert.buttons["OK"].tap()
+
+        let inlineError = element("remote-download-inline-error", app: app)
+        XCTAssertTrue(inlineError.waitForExistence(timeout: 5))
+        XCTAssertTrue(inlineError.label.contains("Couldn't download the document."))
+        let inlineCode = try XCTUnwrap(inlineError.label.range(
+            of: #"LL-[0-9A-F]{12}"#, options: .regularExpression).map { String(inlineError.label[$0]) })
+        XCTAssertTrue(inlineError.label.contains("Code: \(inlineCode)"))
+        try capture(app, "english-document-error", state: "English inline document failure and its diagnostic reference",
+                    locale: "English")
         let attachment = XCTAttachment(screenshot: app.screenshot())
-        attachment.name = "English Little Leonardo shared-file failure status"
+        attachment.name = "English Little Leonardo inline document download error"
         attachment.lifetime = .keepAlways
         add(attachment)
+
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        app.buttons["open-sync-settings"].tap()
+        let logLink = element("open-error-log", app: app)
+        for _ in 0..<12 {
+            if logLink.waitForExistence(timeout: 0.3) { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(logLink.waitForExistence(timeout: 5))
+        logLink.tap()
+        let matchingEntry = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "ref=\(inlineCode) op=downloads"))
+            .firstMatch
+        XCTAssertTrue(matchingEntry.waitForExistence(timeout: 5),
+                      "The English preview reference must match its local diagnostic entry")
+        let logViewport = app.scrollViews.firstMatch
+        XCTAssertTrue(logViewport.exists)
+        XCTAssertTrue(matchingEntry.isHittable && matchingEntry.frame.intersects(logViewport.frame),
+                      "The matching download diagnostic must be visible when the log opens")
+        try capture(app, "english-diagnostic-log-reference",
+                    state: "English inline reference matches the local download diagnostic", locale: "English")
     }
 
     @MainActor private func element(_ identifier: String, app: XCUIApplication) -> XCUIElement {

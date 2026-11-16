@@ -66,6 +66,13 @@ final class OnDemandMobileAcceptanceFixtureTests: XCTestCase {
                         try Data("# Future retained file\n\nAdded after folder retention.\n".utf8)
                             .write(to: sourceRoot.appendingPathComponent("notes/future.md"))
                         await probe.allowPending()
+                    case "finish-english":
+                        let audit = await probe.snapshot()
+                        XCTAssertEqual(audit.snapshots, 0)
+                        XCTAssertGreaterThanOrEqual(audit.files["notes/decisions.md", default: 0], 2)
+                        XCTAssertEqual(audit.files["reference/remote.md"], 1)
+                        try write(audit.dictionary, root: root, name: "english-completed.json")
+                        finished = true
                     case "finish":
                         let audit = await probe.snapshot()
                         XCTAssertEqual(audit.snapshots, 0)
