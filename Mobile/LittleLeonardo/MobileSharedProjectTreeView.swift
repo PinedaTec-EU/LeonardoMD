@@ -189,7 +189,10 @@ private struct MobileSharedProjectTreeRow: View {
         let failed = entries.contains {
             library.downloads.failures[DownloadLibrary.key(id: descriptor.id, path: $0.path)] != nil
         }
-        if failed { return "Error de descarga · se reintentará" }
+        if failed {
+            return MobileErrorNotice.sharedFileDownloadFailure(
+                spanish: MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first))
+        }
         if isKeepingProjectOffline {
             let availability = entries.allSatisfy { cached.isAvailableOffline($0) }
                 ? "Disponible sin conexión" : "Sin conexión pendiente"

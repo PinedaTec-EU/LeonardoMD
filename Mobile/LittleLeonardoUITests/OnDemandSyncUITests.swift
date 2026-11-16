@@ -103,7 +103,7 @@ final class OnDemandSyncUITests: XCTestCase {
         alertScreenshot.lifetime = .keepAlways
         add(alertScreenshot)
         initialAlert.buttons["Aceptar"].tap()
-        XCTAssertTrue(app.staticTexts["Error de descarga · se reintentará"].waitForExistence(timeout: 30),
+        XCTAssertTrue(project.staticTexts["Error de descarga · se reintentará"].waitForExistence(timeout: 30),
                       "The first retained transfer must finish before the document starts a contextual retry")
 
         fileRow(projectID, "notes/decisions.md", app: app).tap()
@@ -243,6 +243,8 @@ final class OnDemandSyncUITests: XCTestCase {
         XCTAssertTrue(failure.waitForExistence(timeout: 5))
         XCTAssertTrue(failure.isHittable)
         XCTAssertEqual(failure.label, "Download failed; it will retry when you open the file again")
+        XCTAssertTrue(project.staticTexts["Download failed · will retry"].waitForExistence(timeout: 5),
+                      "The failed project summary must follow the English app locale")
         try capture(app, "english-file-failure", state: "English failure status and its VoiceOver retry guidance",
                     locale: "English")
         fileRow(projectID, "notes/decisions.md", app: app).tap()
