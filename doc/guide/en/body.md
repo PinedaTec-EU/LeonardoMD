@@ -707,7 +707,7 @@ HTTP status when received, response bytes received versus expected, and the
 system error domain/code. An HTTP 200 header does not mean the response body
 finished; a `?` expected count means the server did not provide a body length.
 An explicit access denial or confirmed authorization change prevents affected
-content from opening from an older copy; other granted projects remain
+content from opening from an older copy, even after a restart; other granted projects remain
 available. A temporary connection failure may still allow a retained offline
 copy. Check that the source Mac is reachable and Leonardo Sync is enabled, then
 retry synchronization.

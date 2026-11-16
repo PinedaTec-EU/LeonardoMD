@@ -76,7 +76,144 @@ import XCTest
             XCTAssertEqual(error as? SyncError, .httpAccessDenied(operation: .file, status: 403))
         }
         let retained = try await fixture.cache.read(id: fixture.project.id, entry: currentEntry, allowStale: true)
-        XCTAssertEqual(retained, fixture.file, "The denied request must not destroy an intentionally retained offline copy")
+        XCTAssertNil(retained, "A denied path cannot be opened from its retained offline copy")
+        let storedProjects = try await fixture.cache.projects()
+        let stored = try XCTUnwrap(storedProjects.first)
+        XCTAssertTrue(stored.keeps(oldEntry.path), "The denial must not remove the user's retention rule")
+        XCTAssertNotNil(stored.downloads[oldEntry.path], "The denial hides the bytes without deleting the retained blob")
+        XCTAssertTrue(stored.deniedPaths?.contains(current.path) == true)
+    }
+
+    func testHTTPAccessDenialPersistsAcrossDownloadLibraryRestore() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let first = DownloadLibrary(cache: fixture.cache)
+        let oldEntry = RemoteFileEntry(file: fixture.file)
+        try await first.update(id: fixture.project.id, descriptor: fixture.project,
+                               catalogue: RemoteProjectCatalogue(files: [oldEntry]))
+        first.fetch = { _, _ in fixture.file }
+        await first.retain(id: fixture.project.id, path: fixture.file.path, isFolder: false, keep: true)
+        _ = try await first.open(id: fixture.project.id, path: fixture.file.path)
+
+        let current = CorpusFile(path: fixture.file.path, content: Data("new source revision".utf8))
+        let currentEntry = RemoteFileEntry(file: current)
+        try await first.update(id: fixture.project.id, descriptor: fixture.project,
+                               catalogue: RemoteProjectCatalogue(files: [currentEntry]))
+        first.fetch = { _, _ in throw SyncError.httpAccessDenied(operation: .file, status: 401) }
+        do {
+            _ = try await first.open(id: fixture.project.id, path: current.path)
+            XCTFail("The host denial must prevent returning a retained older revision")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .httpAccessDenied(operation: .file, status: 401))
+        }
+
+        let restored = DownloadLibrary(cache: fixture.cache)
+        try await restored.restore(allowedIDs: [fixture.project.id],
+            authorizations: [fixture.project.id: RemoteDownloadAuthorization(descriptor: fixture.project)])
+        restored.fetch = { _, _ in throw SyncError.publicationPending }
+        do {
+            _ = try await restored.open(id: fixture.project.id, path: current.path)
+            XCTFail("A restored library must keep the denied path closed when offline")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .publicationPending)
+        }
+        let hidden = try await fixture.cache.read(id: fixture.project.id, entry: currentEntry, allowStale: true)
+        XCTAssertNil(hidden, "The persistent cache itself must enforce the denial after restart")
+    }
+
+    func testRestoreFiltersCachedCatalogueToCurrentFileAuthorization() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let privateFile = CorpusFile(path: "notes/private.md", content: Data("private".utf8))
+        let publicFile = CorpusFile(path: "notes/public.md", content: Data("public".utf8))
+        let descriptor = SharedProjectDescriptor(id: fixture.project.id, name: fixture.project.name,
+            scope: try CorpusScope(folder: "notes"),
+            selection: try CorpusSelection(folders: [], documents: [publicFile.path]))
+        try await fixture.cache.update(id: fixture.project.id, descriptor: fixture.project,
+            catalogue: RemoteProjectCatalogue(files: [RemoteFileEntry(file: privateFile), RemoteFileEntry(file: publicFile)]))
+
+        let library = DownloadLibrary(cache: fixture.cache)
+        try await library.restore(allowedIDs: [fixture.project.id],
+            authorizations: [fixture.project.id: RemoteDownloadAuthorization(descriptor: descriptor)])
+
+        XCTAssertEqual(library.projects.first?.catalogue.files.map(\.path), [publicFile.path])
+        XCTAssertEqual(library.projects.first?.descriptor.selection, descriptor.selection)
+        let persistedProjects = try await fixture.cache.projects()
+        let persisted = try XCTUnwrap(persistedProjects.first)
+        XCTAssertEqual(persisted.catalogue.files.map(\.path), [publicFile.path])
+    }
+
+    func testDeniedHTTPResponseUsesOneCallerPresentation() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: fixture.catalogue)
+        library.fetch = { _, _ in throw SyncError.httpAccessDenied(operation: .file, status: 403) }
+        var presentations = 0
+
+        do {
+            _ = try await library.openResult(id: fixture.project.id, path: fixture.file.path) { _ in
+                presentations += 1
+                return "No tienes acceso a este archivo."
+            }
+            XCTFail("The access denial must be presented")
+        } catch let failure as RemoteDownloadFailure {
+            XCTAssertEqual(failure.message, "No tienes acceso a este archivo.")
+            XCTAssertTrue(failure.deniesRemoteContent)
+        }
+
+        XCTAssertEqual(presentations, 1, "The HTTP denial must not pass through two alert presenters")
+    }
+
+    func testFailedDenialMarkerCommitPurgesRetainedRemoteCache() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        let oldEntry = RemoteFileEntry(file: fixture.file)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: RemoteProjectCatalogue(files: [oldEntry]))
+        library.fetch = { _, _ in fixture.file }
+        await library.retain(id: fixture.project.id, path: fixture.file.path, isFolder: false, keep: true)
+        _ = try await library.open(id: fixture.project.id, path: fixture.file.path)
+
+        let current = CorpusFile(path: fixture.file.path, content: Data("new source revision".utf8))
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: RemoteProjectCatalogue(files: [RemoteFileEntry(file: current)]))
+        await fixture.cache.failNextDeniedPathChange()
+        library.fetch = { _, _ in throw SyncError.httpAccessDenied(operation: .file, status: 403) }
+        do {
+            _ = try await library.open(id: fixture.project.id, path: current.path)
+            XCTFail("A denied update must not return cached bytes when its marker cannot be saved")
+        } catch {
+            XCTAssertTrue(error is CacheMutationFailure)
+        }
+
+        let persisted = try await fixture.cache.projects()
+        XCTAssertTrue(persisted.isEmpty, "A failed marker commit falls back to deleting that remote cache")
+    }
+
+    func testExplicitDenialMarkerCommitFailurePurgesRetainedRemoteCache() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: fixture.catalogue)
+        library.fetch = { _, _ in fixture.file }
+        await library.retain(id: fixture.project.id, path: fixture.file.path, isFolder: false, keep: true)
+        _ = try await library.open(id: fixture.project.id, path: fixture.file.path)
+        await fixture.cache.failNextDeniedPathChange()
+
+        do {
+            try await library.denyFile(id: fixture.project.id, path: fixture.file.path)
+            XCTFail("An unpersisted local denial must be reported")
+        } catch {
+            XCTAssertTrue(error is CacheMutationFailure)
+        }
+
+        let cachedProjects = try await fixture.cache.projects()
+        XCTAssertTrue(cachedProjects.isEmpty, "Failed denial persistence cannot leave old cache content for restart")
+        XCTAssertTrue(library.projects.first?.downloads.isEmpty == true)
     }
 
     func testStatusAndProjectDenialsNeverFallBackToRetainedBytes() async throws {
@@ -130,7 +267,7 @@ import XCTest
         let currentEntry = RemoteFileEntry(file: current)
         try await library.update(id: fixture.project.id, descriptor: fixture.project,
             catalogue: RemoteProjectCatalogue(files: [currentEntry, siblingEntry]))
-        library.denyFile(id: fixture.project.id, path: current.path)
+        try await library.denyFile(id: fixture.project.id, path: current.path)
         var fetches = 0
         library.fetch = { _, _ in
             fetches += 1
@@ -930,6 +1067,7 @@ private actor GatedDownloadCache: RemoteDownloadCache {
     private var freshReadGates: [CacheReadGate] = []
     private var nextFreshReadFailure: CacheReadFailure?
     private var nextLimitFailure: CacheMutationFailure?
+    private var failDeniedPathChange = false
     init(base: OnDemandCache) { self.base = base }
     func holdNextUsage(at gate: CacheReadGate) { usageGate = gate }
     func holdNextStaleRead(at gate: CacheReadGate) { staleReadGate = gate }
@@ -937,6 +1075,7 @@ private actor GatedDownloadCache: RemoteDownloadCache {
     func holdNextFreshRead(at gate: CacheReadGate) { freshReadGates.append(gate) }
     func failNextFreshRead() { nextFreshReadFailure = .unavailable }
     func failNextLimitChange() { nextLimitFailure = .unavailable }
+    func failNextDeniedPathChange() { failDeniedPathChange = true }
     func projects() async throws -> [CachedRemoteProject] { try await base.projects() }
     func update(id: UUID, descriptor: SharedProjectDescriptor, catalogue: RemoteProjectCatalogue) async throws {
         try await base.update(id: id, descriptor: descriptor, catalogue: catalogue)
@@ -966,6 +1105,13 @@ private actor GatedDownloadCache: RemoteDownloadCache {
     }
     func setRetained(id: UUID, path: String, isFolder: Bool, keep: Bool) async throws {
         try await base.setRetained(id: id, path: path, isFolder: isFolder, keep: keep)
+    }
+    func setDeniedPath(id: UUID, path: String, denied: Bool) async throws {
+        if failDeniedPathChange {
+            failDeniedPathChange = false
+            throw CacheMutationFailure.unavailable
+        }
+        try await base.setDeniedPath(id: id, path: path, denied: denied)
     }
     func removeRetentionRule(id: UUID, ruleID: String) async throws { try await base.removeRetentionRule(id: id, ruleID: ruleID) }
     func setLimit(bytes: Int) async throws {

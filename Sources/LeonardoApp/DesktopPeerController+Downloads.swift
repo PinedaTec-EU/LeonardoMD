@@ -35,7 +35,8 @@ extension DesktopPeerController {
         // Preserve projects that the previous version already exposed. New
         // grants stay in review until the user explicitly adds them.
         if !reviewStore.hasMigratedExistingProjects {
-            try await downloads.restore(allowedIDs: granted)
+            try await downloads.restore(allowedIDs: granted,
+                                        authorizations: downloadAuthorizations(for: granted))
             for connection in connections where !connection.revoked {
                 let copiedProjectIDs = Set(copies.filter { $0.connectionID == connection.id }.map(\.remoteProjectID))
                 let cachedProjectIDs = Set(connection.grants.keys.filter { projectID in
@@ -56,7 +57,20 @@ extension DesktopPeerController {
         })
         let denied = downloads.projects.filter { !allowed.contains($0.id) }.map(\.id)
         for id in denied { try await downloads.remove(id: id) }
-        try await downloads.restore(allowedIDs: allowed)
+        try await downloads.restore(allowedIDs: allowed,
+                                    authorizations: downloadAuthorizations(for: allowed))
+    }
+
+    func downloadAuthorizations(for allowedIDs: Set<UUID>) -> [UUID: RemoteDownloadAuthorization] {
+        var result: [UUID: RemoteDownloadAuthorization] = [:]
+        for connection in connections where !connection.revoked {
+            for (projectID, selection) in connection.grants {
+                let id = Self.downloadID(connectionID: connection.id, projectID: projectID)
+                guard allowedIDs.contains(id) else { continue }
+                result[id] = RemoteDownloadAuthorization(selection: selection)
+            }
+        }
+        return result
     }
 
     func fetchDownload(id: UUID, entry: RemoteFileEntry) async throws -> CorpusFile {
@@ -70,7 +84,6 @@ extension DesktopPeerController {
                     if syncError == .revoked || projectDenied {
                         await invalidateDeniedDownloads(for: connection, projectID: projectID, error: error)
                     } else if let syncError, syncError.isAccessDenied {
-                        downloads.denyFile(id: id, path: entry.path)
                         if syncError == .outsideScope || syncError == .excludedFile {
                             await refreshDownloadCatalogue(connection: connection, projectID: projectID)
                         }

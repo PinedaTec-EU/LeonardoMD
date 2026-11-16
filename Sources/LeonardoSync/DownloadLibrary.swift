@@ -25,7 +25,7 @@ public struct RemoteDownloadResult: Sendable {
 }
 
 /// Carries one caller's localized copy for a failed download attempt.
-public struct RemoteDownloadFailure: LocalizedError, Sendable {
+public struct RemoteDownloadFailure: LocalizedError, Sendable, RemoteContentAccessDenied {
     public let message: String
     let underlying: any Error
     private let hasPresentation: Bool
@@ -37,6 +37,9 @@ public struct RemoteDownloadFailure: LocalizedError, Sendable {
     }
 
     public var errorDescription: String? { message }
+    public var deniesRemoteContent: Bool {
+        (underlying as? any RemoteContentAccessDenied)?.deniesRemoteContent == true
+    }
 
     @MainActor
     public func displayMessage(using presentation: (@MainActor (Error) -> String)?) -> String {
@@ -83,13 +86,60 @@ public final class DownloadLibrary {
     public init(cache: any RemoteDownloadCache) { self.cache = cache }
     public static func key(id: UUID, path: String) -> String { id.uuidString + ":" + path }
 
-    public func restore(allowedIDs: Set<UUID>) async throws {
+    public func restore(allowedIDs: Set<UUID>,
+                        authorizations: [UUID: RemoteDownloadAuthorization]) async throws {
         for id in allowed.subtracting(allowedIDs) { deny(id: id) }
         allowed = allowedIDs
+        projects = projects.compactMap { project in
+            guard allowedIDs.contains(project.id), let authorization = authorizations[project.id] else { return nil }
+            var filtered = project
+            filtered.descriptor = authorization.descriptor ?? project.descriptor
+            filtered.catalogue = authorization.filter(project.catalogue)
+            return filtered
+        }
         let values = try await cache.projects()
-        for value in values where !allowed.contains(value.id) { try await cache.remove(id: value.id) }
-        projects = values.filter { allowed.contains($0.id) }
+        var visible: [CachedRemoteProject] = []
+        var filtered: [CachedRemoteProject] = []
+        var unauthorizedIDs: [UUID] = []
+        for value in values {
+            guard allowed.contains(value.id), let authorization = authorizations[value.id] else {
+                deniedPaths[value.id] = nil
+                unauthorizedIDs.append(value.id)
+                continue
+            }
+            deniedPaths[value.id] = value.deniedPaths ?? []
+            var projection = value
+            projection.descriptor = authorization.descriptor ?? value.descriptor
+            projection.catalogue = authorization.filter(value.catalogue)
+            visible.append(projection)
+            if projection.descriptor != value.descriptor || projection.catalogue != value.catalogue {
+                filtered.append(projection)
+            }
+        }
+        // Publish the filtered catalogue before yielding to persistence. A concurrent
+        // open can never observe a path outside the current saved grant.
+        projects = visible
+        for id in unauthorizedIDs { try await cache.remove(id: id) }
+        for value in filtered {
+            guard let source = values.first(where: { $0.id == value.id }) else { continue }
+            let descriptor = authorizations[value.id]?.descriptor ?? source.descriptor
+            try await cache.update(id: value.id, descriptor: descriptor,
+                                   catalogue: value.catalogue)
+        }
         try await refreshUsage()
+    }
+
+    public func restrict(id: UUID, authorizedBy descriptor: SharedProjectDescriptor) async throws {
+        guard allowed.contains(id), let index = projects.firstIndex(where: { $0.id == id }) else { return }
+        let catalogue = RemoteDownloadAuthorization(descriptor: descriptor).filter(projects[index].catalogue)
+        projects[index].descriptor = descriptor
+        projects[index].catalogue = catalogue
+        try await cache.update(id: id, descriptor: descriptor, catalogue: catalogue)
+        guard allowed.contains(id) else {
+            try await cache.remove(id: id)
+            throw SyncError.revoked
+        }
+        try await refreshAll()
     }
 
     public func update(id: UUID, descriptor: SharedProjectDescriptor, catalogue: RemoteProjectCatalogue) async throws {
@@ -117,8 +167,22 @@ public final class DownloadLibrary {
 
     /// Prevent a path from being served from cache after an explicit access denial.
     /// A later successful fetch clears the marker; sibling files remain available.
-    public func denyFile(id: UUID, path: String) {
-        deniedPaths[id, default: []].insert(path)
+    public func denyFile(id: UUID, path: String) async throws {
+        setDeniedPathInMemory(id: id, path: path, denied: true)
+        let key = Self.key(id: id, path: path)
+        if let active = tasks.removeValue(forKey: key) {
+            active.task.cancel()
+            downloading.remove(key)
+        }
+        do { try await cache.setDeniedPath(id: id, path: path, denied: true) }
+        catch {
+            try? await cache.remove(id: id)
+            if let index = projects.firstIndex(where: { $0.id == id }) {
+                projects[index].downloads.removeAll()
+            }
+            try? await refreshUsage()
+            throw error
+        }
     }
 
     public func remove(id: UUID) async throws {
@@ -200,14 +264,35 @@ public final class DownloadLibrary {
                 // The host owns revocation purge. An obsolete operation must never
                 // delete a project that may already have a new authorization.
                 try requireEntry(id: id, entry: entry, generation: generation)
-                deniedPaths[id]?.remove(entry.path)
-                if deniedPaths[id]?.isEmpty == true { deniedPaths[id] = nil }
+                if deniedPaths[id, default: []].contains(entry.path) {
+                    try await cache.setDeniedPath(id: id, path: entry.path, denied: false)
+                    do { try requireEntry(id: id, entry: entry, generation: generation) }
+                    catch {
+                        if deniedPaths[id, default: []].contains(entry.path) {
+                            try? await cache.setDeniedPath(id: id, path: entry.path, denied: true)
+                        }
+                        throw error
+                    }
+                    setDeniedPathInMemory(id: id, path: entry.path, denied: false)
+                }
                 try await refreshAll()
                 try requireEntry(id: id, entry: entry, generation: generation)
                 return RemoteDownloadResult(file: file)
             } catch let transferError {
                 try requireEntry(id: id, entry: entry, generation: generation)
                 if let denial = transferError as? any RemoteContentAccessDenied, denial.deniesRemoteContent {
+                    setDeniedPathInMemory(id: id, path: entry.path, denied: true)
+                    do { try await cache.setDeniedPath(id: id, path: entry.path, denied: true) }
+                    catch {
+                        // If the denial marker cannot be committed, try purging all
+                        // remote bytes and hide cached availability before surfacing it.
+                        try? await cache.remove(id: id)
+                        if let index = projects.firstIndex(where: { $0.id == id }) {
+                            projects[index].downloads.removeAll()
+                        }
+                        try? await refreshUsage()
+                        throw error
+                    }
                     throw transferError
                 }
                 if deniedPaths[id, default: []].contains(entry.path) { throw transferError }
@@ -248,7 +333,8 @@ public final class DownloadLibrary {
             guard let cause = result.updateFailureCause else { return result }
             if deniedPaths[id, default: []].contains(entry.path) ||
                 (cause.underlying as? any RemoteContentAccessDenied)?.deniesRemoteContent == true {
-                throw cause.underlying
+                throw failureToThrow(cause.underlying, key: key, presentation: presentation,
+                                     diagnosticPresentation: diagnosticPresentation, active: active)
             }
             let failure = recordFailure(cause.underlying, key: key,
                                         presentation: presentation,
@@ -258,9 +344,13 @@ public final class DownloadLibrary {
             // Each caller owns its own cancellation and authorization context,
             // even when the shared transfer fails for every waiter.
             try requireEntry(id: id, entry: entry, generation: generation)
+            if let failure = error as? RemoteDownloadFailure, failure.deniesRemoteContent {
+                throw failure
+            }
             if deniedPaths[id, default: []].contains(entry.path) ||
                 (error as? any RemoteContentAccessDenied)?.deniesRemoteContent == true {
-                throw error
+                throw failureToThrow(error, key: key, presentation: presentation,
+                                     diagnosticPresentation: diagnosticPresentation, active: active)
             }
             throw failureToThrow(error, key: key, presentation: presentation,
                                  diagnosticPresentation: diagnosticPresentation, active: active)
@@ -365,6 +455,18 @@ public final class DownloadLibrary {
         let value = try await cache.usage()
         guard usageRevision == expected else { return }
         usage = value
+    }
+
+    private func setDeniedPathInMemory(id: UUID, path: String, denied: Bool) {
+        var paths = deniedPaths[id] ?? []
+        if denied { paths.insert(path) } else { paths.remove(path) }
+        deniedPaths[id] = paths.isEmpty ? nil : paths
+        guard let index = projects.firstIndex(where: { $0.id == id }) else { return }
+        var project = projects[index]
+        var projectPaths = project.deniedPaths ?? []
+        if denied { projectPaths.insert(path) } else { projectPaths.remove(path) }
+        project.deniedPaths = projectPaths.isEmpty ? nil : projectPaths
+        projects[index] = project
     }
 
     private func errorMessage(for error: Error) -> String {

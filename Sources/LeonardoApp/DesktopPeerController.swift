@@ -197,7 +197,8 @@ final class DesktopPeerController {
                         ? Self.downloadID(connectionID: connection.id, projectID: candidate) : nil
                 }
             })
-            try await downloads.restore(allowedIDs: allowed)
+            try await downloads.restore(allowedIDs: allowed,
+                                        authorizations: downloadAuthorizations(for: allowed))
             let catalogue = try await library.catalogue(connectionID: connectionID, projectID: projectID)
             guard let shared = available[connectionID]?.first(where: { $0.id == projectID }) else { throw SyncError.revoked }
             guard !reviewStore.ignoredProject(connectionID: connectionID, projectID: projectID) else {

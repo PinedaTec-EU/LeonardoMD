@@ -14,7 +14,7 @@ import mdlz
 
 
 LANGUAGES = ("en", "es")
-GUIDE_REVISION = 89
+GUIDE_REVISION = 90
 
 
 def practice_metadata(language):

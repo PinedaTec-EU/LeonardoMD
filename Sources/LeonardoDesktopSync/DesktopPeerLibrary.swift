@@ -15,6 +15,7 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
     private let receiptApplier: (any LeonardoSync.DesktopPeerReceiptApplier)?
     private let now: @Sendable () -> Date
     private var changing = false
+    private var confirmedDeniedConnectionIDs: Set<UUID> = []
 
     public init(connections: any DesktopPeerConnectionStore, copies: any DesktopPeerCopyStore,
                 workspace: any DesktopPeerWorkspaceAccess, credentials: any DeviceCredentialStore,
@@ -31,7 +32,7 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         try enter(); defer { changing = false }
         var result: [DesktopPeerConnection] = []
         for id in try await connectionStore.connectionIDs() {
-            if let value = try await connectionStore.load(id: id) { result.append(value) }
+            if let value = try await currentConnection(id: id) { result.append(value) }
         }
         return result
     }
@@ -40,7 +41,7 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         try enter(); defer { changing = false }
         var result: [DesktopPeerCopy] = []
         for id in try await connectionStore.connectionIDs() {
-            guard let connection = try await connectionStore.load(id: id), !connection.revoked else { continue }
+            guard let connection = try await currentConnection(id: id), !connection.revoked else { continue }
             for (projectID, copyID) in connection.copies {
                 guard connection.grants[projectID] != nil, let copy = try await copyStore.load(id: copyID) else { continue }
                 try checkOwnership(copy, connection: connection)
@@ -262,6 +263,7 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
                 try connection.authorize([:])
             }
         case .revoked:
+            confirmedDeniedConnectionIDs.insert(connection.id)
             let denied = Array(connection.grants.keys)
             if !denied.isEmpty { await revoker.denyReaderCaches(connectionID: connection.id, projectIDs: denied) }
             connection.revoke()
@@ -272,6 +274,11 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
             let denied = connection.grants.keys.filter { grants[$0] == nil }.sorted { $0.uuidString < $1.uuidString }
             if !denied.isEmpty { await revoker.denyReaderCaches(connectionID: connection.id, projectIDs: denied) }
             try connection.authorize(grants)
+        }
+        if connection.revoked {
+            // Removing the credential is an independent durable witness if the
+            // connection-store write below fails.
+            try? await credentials.remove(deviceID: connection.id)
         }
         // Denial is durable before cleanup: cached copies cannot reopen after an interrupted purge.
         try await connectionStore.save(connection)
@@ -295,7 +302,7 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
             connection.forgetCopy(projectID: projectID)
             try await connectionStore.save(connection)
         }
-        if connection.revoked { try await credentials.remove(deviceID: connection.id) }
+        if connection.revoked { try? await credentials.remove(deviceID: connection.id) }
     }
 
     /// A project request can race with a revoked device or a withdrawn project grant.
@@ -327,7 +334,26 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
     }
 
     private func requireConnection(_ id: UUID) async throws -> DesktopPeerConnection {
-        guard let value = try await connectionStore.load(id: id) else { throw DesktopPeerLibraryError.unknownConnection }
+        guard let value = try await currentConnection(id: id) else { throw DesktopPeerLibraryError.unknownConnection }
+        return value
+    }
+
+    private func currentConnection(id: UUID) async throws -> DesktopPeerConnection? {
+        guard var value = try await connectionStore.load(id: id) else { return nil }
+        guard !value.revoked, !confirmedDeniedConnectionIDs.contains(id),
+              try await credentials.credential(deviceID: id) != nil else {
+            if !value.revoked {
+                confirmedDeniedConnectionIDs.insert(id)
+                let deniedProjects = Array(value.grants.keys)
+                if !deniedProjects.isEmpty {
+                    await revoker.denyReaderCaches(connectionID: id, projectIDs: deniedProjects)
+                }
+                value.revoke()
+                try? await connectionStore.save(value)
+                try? await credentials.remove(deviceID: id)
+            }
+            return value
+        }
         return value
     }
     private func requireCredential(_ connection: DesktopPeerConnection) async throws -> String {

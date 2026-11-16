@@ -158,7 +158,7 @@ public struct DirectHTTPSRouter: Sendable {
                 return candidate
             }
             let safe = CorpusReadFailure(reason: failure.reason, path: path, observed: failure.observed, limit: failure.limit)
-            logger.error("sync_snapshot_failed project=\(projectID, privacy: .public) reason=\(safe.reason.rawValue, privacy: .public)")
+            logger.error("sync_snapshot_failed reason=\(safe.reason.rawValue, privacy: .public)")
             return try json(safe, status: safe.reason == .sourceUnavailable ? 500 : 413)
         } catch let error as SyncError { throw error }
         catch let error as PairingError { throw error }
@@ -166,7 +166,7 @@ public struct DirectHTTPSRouter: Sendable {
         catch {
             _ = try await authority.snapshotDescriptor(deviceID: deviceID, credential: credential, projectID: projectID)
             let underlying = error as NSError
-            logger.error("sync_snapshot_failed project=\(projectID, privacy: .public) category=source_read code=\(underlying.code, privacy: .public)")
+            logger.error("sync_snapshot_failed category=source_read code=\(underlying.code, privacy: .public)")
             return try json(CorpusReadFailure(reason: .sourceUnavailable), status: 500)
         }
     }

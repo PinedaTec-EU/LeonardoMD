@@ -18,6 +18,7 @@ public struct DirectRubricSubmissionStatusError: Error, Equatable, Sendable {
 
 /// Pairing and reads share one pinned transport. Codes are computed locally.
 public struct DirectEnrollmentClient: Sendable {
+    private static let authorizationFailureStatuses: Set<Int> = [401, 403]
     private let invitation: PairingInvitation?
     private let fingerprint: Data
     private let client: PinnedHTTPSClient
@@ -60,7 +61,8 @@ public struct DirectEnrollmentClient: Sendable {
     }
 
     public func status(deviceID: UUID, credential: String) async throws -> DirectDeviceStatus {
-        let response = try await client.request(method: "GET", path: "/v1/devices/\(deviceID.uuidString)/status", credential: credential)
+        let response = try await client.request(method: "GET", path: "/v1/devices/\(deviceID.uuidString)/status",
+            credential: credential, returnWithoutReadingBodyForStatuses: Self.authorizationFailureStatuses)
         guard response.status == 200 else {
             if response.status == 401 || response.status == 403 {
                 throw SyncError.httpAccessDenied(operation: .status, status: response.status)
@@ -77,10 +79,14 @@ public struct DirectEnrollmentClient: Sendable {
                                    rubricExchangeV1: Bool = true) async throws -> DirectCapabilityRefreshReceipt {
         let body = try JSONEncoder().encode(DirectCapabilityUpdate(rubricExchangeV1: rubricExchangeV1))
         let response = try await client.request(method: "POST",
-            path: "/v1/devices/\(deviceID.uuidString)/capabilities", credential: credential, body: body)
+            path: "/v1/devices/\(deviceID.uuidString)/capabilities", credential: credential, body: body,
+            returnWithoutReadingBodyForStatuses: Self.authorizationFailureStatuses)
         guard response.status == 200 else {
             if response.status == 404 { throw RubricExchangeError.unsupported }
             if response.status == 403 { throw SyncError.revoked }
+            if response.status == 401 {
+                throw SyncError.httpAccessDenied(operation: .status, status: response.status)
+            }
             throw TransportError.unexpectedResponse
         }
         return try JSONDecoder().decode(DirectCapabilityRefreshReceipt.self, from: response.body)
@@ -88,9 +94,10 @@ public struct DirectEnrollmentClient: Sendable {
 
     public func project(_ descriptor: SharedProjectDescriptor, deviceID: UUID, credential: String) async throws -> OfflineProject {
         let response = try await client.request(method: "GET",
-            path: "/v1/devices/\(deviceID.uuidString)/projects/\(descriptor.id.uuidString)/snapshot", credential: credential)
+            path: "/v1/devices/\(deviceID.uuidString)/projects/\(descriptor.id.uuidString)/snapshot",
+            credential: credential, returnWithoutReadingBodyForStatuses: Self.authorizationFailureStatuses)
         guard response.status == 200 else {
-            if response.status == 403 {
+            if Self.authorizationFailureStatuses.contains(response.status) {
                 throw SyncError.httpAccessDenied(operation: .snapshot, status: response.status)
             }
             throw ProjectDownloadError(response: response)
@@ -103,7 +110,8 @@ public struct DirectEnrollmentClient: Sendable {
     public func catalogue(_ descriptor: SharedProjectDescriptor, deviceID: UUID,
                           credential: String) async throws -> RemoteProjectCatalogue {
         let response = try await client.request(method: "GET",
-            path: "/v1/devices/\(deviceID.uuidString)/projects/\(descriptor.id.uuidString)/catalogue", credential: credential)
+            path: "/v1/devices/\(deviceID.uuidString)/projects/\(descriptor.id.uuidString)/catalogue",
+            credential: credential, returnWithoutReadingBodyForStatuses: Self.authorizationFailureStatuses)
         try OnDemandResponseStatus.requireSuccess(response.status, operation: .catalogue)
         let catalogue = try JSONDecoder().decode(RemoteProjectCatalogue.self, from: response.body)
         try catalogue.validate(descriptor: descriptor)
@@ -114,7 +122,8 @@ public struct DirectEnrollmentClient: Sendable {
                      credential: String) async throws -> CorpusFile {
         let response = try await client.request(method: "POST",
             path: "/v1/devices/\(deviceID.uuidString)/projects/\(projectID.uuidString)/file", credential: credential,
-            body: JSONEncoder().encode(RemoteFileRequest(path: entry.path, revision: entry.revision)))
+            body: JSONEncoder().encode(RemoteFileRequest(path: entry.path, revision: entry.revision)),
+            returnWithoutReadingBodyForStatuses: Self.authorizationFailureStatuses)
         try OnDemandResponseStatus.requireSuccess(response.status, operation: .file)
         let file = try JSONDecoder().decode(CorpusFile.self, from: response.body)
         try entry.validate(file)

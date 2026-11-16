@@ -18,7 +18,7 @@ enum OnDemandResponseStatus {
     static func requireSuccess(_ status: Int, operation: RemoteSyncOperation) throws {
         switch status {
         case 200: return
-        case 403: throw SyncError.httpAccessDenied(operation: operation, status: status)
+        case 401, 403: throw SyncError.httpAccessDenied(operation: operation, status: status)
         case 404: throw OnDemandTransportError.sourceUpdateRequired
         case 409: throw SyncError.publicationPending
         default: throw TransportError.unexpectedResponse

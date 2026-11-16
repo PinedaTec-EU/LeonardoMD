@@ -66,6 +66,7 @@ extension MobileLibrary {
                     where connection.acceptedProjectIDs.contains(descriptor.id)
                         && !projectLifecycle.isDeleted(descriptor.id) {
                         guard isCurrentCacheOperation(cacheToken) else { return }
+                        try await downloads.restrict(id: descriptor.id, authorizedBy: descriptor)
                         let catalogue = try await context.client.catalogue(descriptor,
                             deviceID: connection.deviceID, credential: context.credential)
                         guard isCurrentCacheOperation(cacheToken) else { return }
@@ -241,26 +242,19 @@ extension MobileLibrary {
               }) else {
             throw SyncError.revoked
         }
-        do {
-            return try await withAuthenticatedConnection(connection, projectID: projectID, filePath: entry.path) { context in
-                guard context.status.access == .authorized else { throw SyncError.accessDenied }
-                guard let descriptor = context.status.projects.first(where: { $0.id == projectID }) else {
-                    throw SyncError.projectAccessDenied
-                }
-                guard isCurrentCacheOperation(context.token) else { throw SyncError.revoked }
-                try descriptor.scope.validate(entry.path)
-                try descriptor.selection?.validate(entry.path)
-                let file = try await fileRequest(context.client, entry, projectID,
-                    connection.deviceID, context.credential)
-                guard isCurrentCacheOperation(context.token),
-                      !projectLifecycle.isDeleted(projectID) else { throw SyncError.revoked }
-                return file
+        return try await withAuthenticatedConnection(connection, projectID: projectID, filePath: entry.path) { context in
+            guard context.status.access == .authorized else { throw SyncError.accessDenied }
+            guard let descriptor = context.status.projects.first(where: { $0.id == projectID }) else {
+                throw SyncError.projectAccessDenied
             }
-        } catch {
-            if let denial = error as? SyncError, denial.isAccessDenied {
-                downloads.denyFile(id: projectID, path: entry.path)
-            }
-            throw error
+            guard isCurrentCacheOperation(context.token) else { throw CancellationError() }
+            try descriptor.scope.validate(entry.path)
+            try descriptor.selection?.validate(entry.path)
+            let file = try await fileRequest(context.client, entry, projectID,
+                connection.deviceID, context.credential)
+            guard isCurrentCacheOperation(context.token),
+                  !projectLifecycle.isDeleted(projectID) else { throw CancellationError() }
+            return file
         }
     }
 }

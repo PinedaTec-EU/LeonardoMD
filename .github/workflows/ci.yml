@@ -118,8 +118,8 @@ jobs:
           fi
       - name: Build iOS companion
         run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "generic/platform=iOS Simulator" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO build-for-testing
-      - name: Test Little Leonardo revocation recheck
-        run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,name=iPhone 17 Pro" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO -only-testing:LittleLeonardoTests/MobileRevocationTests/testOnDemandForbiddenResponseRechecksStatusBeforeRecordingRevocation test
+      - name: Test Little Leonardo revocation recovery
+        run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,name=iPhone 17 Pro" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO -only-testing:LittleLeonardoTests/MobileRevocationTests test
       - name: Test Little Leonardo diagnostic log
         run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "platform=iOS Simulator,name=iPhone 17 Pro" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO -only-testing:LittleLeonardoTests/MobileDiagnosticLogTests test
       - name: Validate update metadata

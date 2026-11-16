@@ -18,6 +18,7 @@ public struct CachedRemoteProject: Codable, Equatable, Sendable, Identifiable {
     public var retention: [OfflineRetentionRule]
     public var downloads: [String: CachedDownload]
     public var dependencies: [String: [String]]
+    public var deniedPaths: Set<String>? = nil
 
     public func keeps(_ path: String) -> Bool {
         directlyKeeps(path) || dependencies.contains { directlyKeeps($0.key) && $0.value.contains(path) }
@@ -28,13 +29,15 @@ public struct CachedRemoteProject: Codable, Equatable, Sendable, Identifiable {
     public func keepsFolder(_ path: String) -> Bool { directlyKeeps(path.isEmpty ? "offline.md" : path + "/offline.md") }
     public func isDownloaded(_ entry: RemoteFileEntry) -> Bool { downloads[entry.path]?.revision == entry.revision }
     public func isAvailableOffline(_ entry: RemoteFileEntry) -> Bool {
-        guard keeps(entry.path), isDownloaded(entry) else { return false }
+        guard keeps(entry.path), !(deniedPaths ?? []).contains(entry.path), isDownloaded(entry) else { return false }
         return (dependencies[entry.path] ?? []).allSatisfy { path in
             guard let image = catalogue.files.first(where: { $0.path == path }) else { return false }
-            return isDownloaded(image)
+            return !(deniedPaths ?? []).contains(path) && isDownloaded(image)
         }
     }
-    public var pendingOfflineFiles: [RemoteFileEntry] { catalogue.files.filter { keeps($0.path) && !isDownloaded($0) } }
+    public var pendingOfflineFiles: [RemoteFileEntry] {
+        catalogue.files.filter { keeps($0.path) && ((deniedPaths ?? []).contains($0.path) || !isDownloaded($0)) }
+    }
 }
 
 public struct CachedDownload: Codable, Equatable, Sendable {
@@ -84,6 +87,15 @@ public actor OnDemandCache: RemoteDownloadCache {
         logger.info("cache_catalogue_updated files=\(catalogue.files.count, privacy: .public)")
     }
 
+    public func setDeniedPath(id: UUID, path: String, denied: Bool) throws {
+        var next = try load()
+        guard let index = next.projects.firstIndex(where: { $0.id == id }) else { return }
+        var paths = next.projects[index].deniedPaths ?? []
+        if denied { paths.insert(path) } else { paths.remove(path) }
+        next.projects[index].deniedPaths = paths.isEmpty ? nil : paths
+        try commit(next)
+    }
+
     public func setRetained(id: UUID, path: String, isFolder: Bool, keep: Bool) throws {
         var next = try load()
         guard let index = next.projects.firstIndex(where: { $0.id == id }) else { throw SyncError.invalidSnapshot }
@@ -112,6 +124,7 @@ public actor OnDemandCache: RemoteDownloadCache {
         var next = try load()
         guard let index = next.projects.firstIndex(where: { $0.id == id }),
               next.projects[index].catalogue.files.contains(entry),
+              !(next.projects[index].deniedPaths ?? []).contains(entry.path),
               let record = next.projects[index].downloads[entry.path],
               next.projects[index].isDownloaded(entry) || allowStale else { return nil }
         let url = try blob(id: id, revision: record.revision)

@@ -19,20 +19,24 @@ def safe(value: object, limit: int = 180) -> str:
 
 def _json_objects(text: str) -> list[dict[str, object]]:
     objects: list[dict[str, object]] = []
-    for line in text.splitlines():
+    decoder = json.JSONDecoder()
+    position = 0
+    while position < len(text):
+        while position < len(text) and text[position].isspace():
+            position += 1
+        if position >= len(text):
+            break
         try:
-            value = json.loads(line)
+            value, end = decoder.raw_decode(text, position)
         except json.JSONDecodeError:
+            next_object = text.find("{", position + 1)
+            if next_object == -1:
+                break
+            position = next_object
             continue
         if isinstance(value, dict):
             objects.append(value)
-    if not objects:
-        try:
-            value = json.loads(text)
-        except json.JSONDecodeError:
-            return []
-        if isinstance(value, dict):
-            objects.append(value)
+        position = end
     return objects
 
 

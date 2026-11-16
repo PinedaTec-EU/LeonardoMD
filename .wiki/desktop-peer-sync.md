@@ -19,6 +19,14 @@ the requested project's cache. If STATUS is inconclusive, retain the original
 operation/status pair for support instead of guessing whether the device was
 revoked. A file no longer selected by the source is reported as outside scope.
 
+PR #369 treats missing local credentials as a durable revoked-state witness if
+the connection snapshot cannot be saved after a confirmed revocation. It removes
+the credential before writing the revoked snapshot and keeps an in-process denial
+barrier, so a later library load cannot reopen the old grant from stale metadata.
+Project catalogues restored from disk are filtered through each current grant
+before they are exposed. See [#368](https://github.com/PinedaTec-EU/LeonardoMD/issues/368)
+and [PR #369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369).
+
 Keep async callback defaults in the public generic
 `DirectEnrollmentClient.withRevocationRecheck` API as optional `nil` parameters
 and resolve the normal STATUS behavior in its library body. Xcode 26.3 / Swift

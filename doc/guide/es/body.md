@@ -711,21 +711,20 @@ El registro permanece en este dispositivo y no se envía automáticamente. No
 incluye la dirección o ruta del servidor, credenciales de emparejamiento,
 identificadores de dispositivo/proyecto ni contenido de documentos o imágenes.
 Puedes seleccionar y copiar una línea si decides compartirla al pedir ayuda.
-Las copias descargadas sin conexión siguen disponibles. Se conservan como
-máximo 120 entradas recientes o 64 KiB, lo que se alcance primero. Se guarda
-en la caché local de la app,
-excluida de las copias de seguridad antes de escribir; iOS puede borrarla para
-liberar espacio, así que el registro sirve para diagnosticar errores recientes,
-no como almacenamiento permanente. Comprueba que el Mac de origen sea accesible
+El registro conserva como máximo 120 entradas recientes o 64 KiB, lo que se
+alcance primero. Se guarda en la caché local de la app, excluida de las copias
+de seguridad antes de escribir; iOS puede borrarla para liberar espacio, así que
+sirve para diagnosticar errores recientes, no como almacenamiento permanente.
 La entrada correspondiente indica si falló una consulta de estado o una
 instantánea, el estado HTTP si llegó, los bytes recibidos y esperados, y el
 dominio/código de error del sistema. Una cabecera HTTP 200 no significa que
 terminara el cuerpo; un total esperado `?` significa que el servidor no informó
 de la longitud. Una denegación explícita o un cambio de autorización confirmado
-impide abrir el contenido afectado desde una copia anterior; los demás proyectos
-autorizados siguen disponibles. Un fallo temporal de conexión puede permitir
-abrir una copia conservada sin conexión. Comprueba que el Mac de origen sea
-accesible y que Leonardo Sync esté activo, y vuelve a intentar la sincronización.
+impide abrir el archivo afectado desde una copia descargada, incluso después de
+reiniciar; los demás proyectos autorizados siguen disponibles. Un fallo temporal
+de conexión puede permitir abrir una copia conservada sin conexión. Comprueba
+que el Mac de origen sea accesible y que Leonardo Sync esté activo, y vuelve a
+intentar la sincronización.
 
 ### Responder a una solicitud de rúbrica en iOS
 

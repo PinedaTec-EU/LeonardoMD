@@ -4,6 +4,7 @@ import Foundation
 public protocol RemoteDownloadCache: Sendable {
     func projects() async throws -> [CachedRemoteProject]
     func update(id: UUID, descriptor: SharedProjectDescriptor, catalogue: RemoteProjectCatalogue) async throws
+    func setDeniedPath(id: UUID, path: String, denied: Bool) async throws
     func read(id: UUID, entry: RemoteFileEntry, allowStale: Bool) async throws -> CorpusFile?
     func store(id: UUID, entry: RemoteFileEntry, file: CorpusFile) async throws
     func setRetained(id: UUID, path: String, isFolder: Bool, keep: Bool) async throws

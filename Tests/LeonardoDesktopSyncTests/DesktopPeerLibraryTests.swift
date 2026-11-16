@@ -277,6 +277,54 @@ final class DesktopPeerLibraryTests: XCTestCase {
         XCTAssertTrue(closedCopies.contains(existingCopy.id))
     }
 
+    func testConfirmedRevocationSurvivesConnectionStoreSaveFailure() async throws {
+        let fixture = try PeerLibraryFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let connection = try await fixture.library.enroll(endpoint: fixture.endpoint, fingerprint: nil,
+            invitation: nil, name: "MacBook")
+        await fixture.remote.setAccess(.authorized)
+        _ = try await fixture.library.refresh(connectionID: connection.id)
+        let copy = try await fixture.library.importProject(connectionID: connection.id,
+            projectID: fixture.remote.project.id)
+        let copyDirectory = try await fixture.library.open(copyID: copy.id)
+
+        let failingStore = FailingPeerConnectionStore(base: fixture.connections)
+        let library = DesktopPeerLibrary(connections: failingStore, copies: fixture.copies,
+            workspace: fixture.workspace, credentials: fixture.credentials, remote: fixture.remote,
+            revoker: fixture.revoker, outbox: fixture.outbox)
+        await failingStore.failNextSave()
+        await fixture.remote.setAccess(.revoked)
+        do {
+            _ = try await library.refresh(connectionID: connection.id)
+            XCTFail("The injected metadata-store failure must be reported")
+        } catch {
+            XCTAssertEqual(error as? PeerConnectionStoreWriteFailure, .injected)
+        }
+
+        let storedBeforeRecovery = try await fixture.connections.load(id: connection.id)
+        XCTAssertFalse(try XCTUnwrap(storedBeforeRecovery).revoked,
+                       "The failure leaves the previous connection snapshot on disk")
+        let removedCredential = await fixture.credentials.credential(deviceID: connection.id)
+        XCTAssertNil(removedCredential,
+                     "Credential removal is the durable denial witness when the connection write fails")
+        let deniedReaderProjects = await fixture.revoker.readerDeniedProjects(for: connection.id)
+        XCTAssertEqual(deniedReaderProjects, Set([fixture.remote.project.id]))
+
+        let restarted = DesktopPeerLibrary(connections: fixture.connections, copies: fixture.copies,
+            workspace: fixture.workspace, credentials: fixture.credentials, remote: fixture.remote,
+            revoker: fixture.revoker, outbox: fixture.outbox)
+        let recovered = try await restarted.connections()
+        XCTAssertTrue(try XCTUnwrap(recovered.first).revoked,
+                      "A new library instance must recover denial from the missing credential")
+        let recoveredCopies = try await restarted.copies()
+        XCTAssertTrue(recoveredCopies.isEmpty,
+                      "The old grant must not expose its managed copy while metadata cleanup is pending")
+        let recoveredStatus = try await restarted.refresh(connectionID: connection.id)
+        XCTAssertEqual(recoveredStatus.access, .revoked)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: copyDirectory.path),
+                       "A later cleanup pass removes the copy after restoring the revoked state")
+    }
+
     func testMissingProjectGrantRemainsDistinctFromRevokedDevice() async throws {
         let fixture = try PeerLibraryFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
@@ -533,6 +581,27 @@ private actor PeerMemoryCredentials: DeviceCredentialStore {
     func credential(deviceID: UUID) -> String? { values[deviceID] }
     func save(_ credential: String, deviceID: UUID) { values[deviceID] = credential }
     func remove(deviceID: UUID) { values[deviceID] = nil }
+}
+
+private enum PeerConnectionStoreWriteFailure: Error, Equatable {
+    case injected
+}
+
+private actor FailingPeerConnectionStore: DesktopPeerConnectionStore {
+    private let base: FileDesktopPeerConnectionStore
+    private var failSave = false
+    init(base: FileDesktopPeerConnectionStore) { self.base = base }
+    func failNextSave() { failSave = true }
+    func connectionIDs() async throws -> [UUID] { try await base.connectionIDs() }
+    func load(id: UUID) async throws -> DesktopPeerConnection? { try await base.load(id: id) }
+    func save(_ connection: DesktopPeerConnection) async throws {
+        if failSave {
+            failSave = false
+            throw PeerConnectionStoreWriteFailure.injected
+        }
+        try await base.save(connection)
+    }
+    func remove(id: UUID) async throws { try await base.remove(id: id) }
 }
 
 private actor PeerWorkspaceProxy: DesktopPeerWorkspaceAccess {

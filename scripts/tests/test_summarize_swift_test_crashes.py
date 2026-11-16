@@ -26,7 +26,8 @@ class SwiftTestCrashSummaryTests(unittest.TestCase):
                             ]}
                         ],
                         "privatePath": "/Users/alice/private/secret.txt",
-                    }
+                    },
+                    indent=2,
                 ),
                 encoding="utf-8",
             )

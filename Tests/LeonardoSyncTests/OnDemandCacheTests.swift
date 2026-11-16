@@ -184,7 +184,8 @@ extension OnDemandCacheTests {
         await first.retain(id: descriptor.id, path: "docs", isFolder: true, keep: true)
         let restarted = DownloadLibrary(cache: OnDemandCache(root: root))
         restarted.fetch = { _, _ in XCTFail("Offline reading must not depend on the source"); throw SyncError.revoked }
-        try await restarted.restore(allowedIDs: [descriptor.id])
+        try await restarted.restore(allowedIDs: [descriptor.id],
+            authorizations: [descriptor.id: RemoteDownloadAuthorization(descriptor: descriptor)])
         XCTAssertEqual(restarted.projects.map(\.id), [descriptor.id])
         let file = try await restarted.open(id: descriptor.id, path: files[0].path)
         XCTAssertEqual(file, files[0])

@@ -26,11 +26,15 @@ extension MobileLibrary {
             throw SyncError.invalidSnapshot
         }
         authorizationGenerations.clearQuarantine(connectionID: context.token.connectionID)
-        if let targetProjectID, let targetFilePath { downloads.denyFile(id: targetProjectID, path: targetFilePath) }
 
         let plan = projectGrantReconciliation(for: connections[index], descriptors: descriptors,
                                                targetProjectID: targetProjectID)
         for id in plan.deniedProjectIDs { downloads.deny(id: id) }
+        if let targetProjectID, let targetFilePath,
+           let descriptor = descriptors.first(where: { $0.id == targetProjectID }),
+           !RemoteDownloadAuthorization(descriptor: descriptor).allows(path: targetFilePath) {
+            try await downloads.denyFile(id: targetProjectID, path: targetFilePath)
+        }
         projects.removeAll { plan.removedProjectIDs.contains($0.id) && $0.mode == .direct }
         guard let cacheToken = persist(plan, expected: context.token) else { return nil }
         do { try await removeDirectProjects(plan.removedProjectIDs, expected: cacheToken) }
@@ -80,6 +84,7 @@ extension MobileLibrary {
             && plan.updated.acceptedProjectIDs.contains(descriptor.id) && !projectLifecycle.isDeleted(descriptor.id) {
             guard isCurrentCacheOperation(token) else { return nil }
             do {
+                try await downloads.restrict(id: descriptor.id, authorizedBy: descriptor)
                 let catalogue = try await context.client.catalogue(descriptor,
                     deviceID: context.connection.deviceID, credential: context.credential)
                 guard isCurrentCacheOperation(token) else { return nil }

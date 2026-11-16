@@ -189,6 +189,33 @@ final class HTTPSRuntimeTests: XCTestCase {
         await server.stop()
     }
 
+    func testAccessDenialStatusSurvivesInterruptedHTTPSBody() async throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("Fixture identity import requires memory-only Security import") }
+        let identity = try makeIdentity()
+        let deviceID = UUID()
+        let responseBody = Data(repeating: 0x53, count: 2 * 1_024 * 1_024)
+        let server = LANHTTPSListener(identity: identity) { request in
+            guard request.path.hasSuffix("/devices/\(deviceID.uuidString)/status") else {
+                return HTTPResponse(status: 404)
+            }
+            return HTTPResponse(status: 403, body: responseBody)
+        }
+        let port = try await server.start(host: "127.0.0.1")
+        let proxy = try TLSBackpressureProxy(destinationPort: port, responseWireByteLimit: 128 * 1_024)
+        defer { proxy.stop() }
+
+        let client = try DirectEnrollmentClient(
+            endpoint: URL(string: "https://127.0.0.1:\(proxy.port)")!,
+            certificateFingerprint: identity.certificateFingerprint)
+        do {
+            _ = try await client.status(deviceID: deviceID, credential: String(repeating: "a", count: 64))
+            XCTFail("The response status must be classified even when the body is interrupted")
+        } catch let error as SyncError {
+            XCTAssertEqual(error, .httpAccessDenied(operation: .status, status: 403))
+        }
+        await server.stop()
+    }
+
     func testPairingSnapshotAndRevocationOverRealHTTPS() async throws {
         guard #available(macOS 15, *) else { throw XCTSkip("Fixture requires memory-only identity import") }
         let identity = try makeIdentity()
