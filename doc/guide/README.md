@@ -34,9 +34,9 @@ Guide v86 is historical. Its fresh packaged Help acceptance passed against
 source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`; the candidate-specific
 record is in
 [packaged-help-v86-20261116.json](../validation/little-leonardo/packaged-help-v86-20261116.json).
-It does not establish acceptance for the current Guide v87 package. The
-previous iOS capture bundle is also historical; refreshed combined-source
-simulator evidence will be recorded separately under `doc/validation/`.
+It does not establish acceptance for the current Guide v88 package. The
+previous iOS capture bundles are historical; refreshed simulator evidence is
+recorded separately under `doc/validation/`.
 
 `en/body.md` and `es/body.md` are the editorial sources. The 19 chapters cover
 macOS workflows and Little Leonardo's host → project → file library, with live Mermaid/KaTeX/Vega examples, literal citation

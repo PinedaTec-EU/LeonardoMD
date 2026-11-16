@@ -268,4 +268,9 @@ intermittent failure reproduced, so their existing fixes remain and no new code
 change was made for them. The passing result bundle and three screenshot
 attachments are recorded in
 `doc/validation/little-leonardo/rubric-explicit-rejection-20261116/current-code-5e751df2/`.
+Reviewing those captures also found that the en_US test run still presents
+Spanish rubric titles, labels, instructions and controls alongside English
+failure copy. Registered this separate P2 localization defect as #462 and
+recorded the mixed-language screenshot in its issue evidence; it is outside
+the retry behavior accepted for #458.
 Packaged macOS Guide v88 Help/practice acceptance remains pending for Beta.

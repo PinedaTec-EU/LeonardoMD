@@ -1,0 +1,88 @@
+{
+  "productSourceSHA": "6a69f3eb1256c25517a2cccf8412eda9f4f3b740",
+  "pullRequest": 435,
+  "issue": 458,
+  "environment": {
+    "platform": "iOS Simulator",
+    "deviceId": "5B689430-FDBD-44C0-A732-BE3C063F9403",
+    "registeredDeviceName": "LittleLeonardo PR435 Spanish QA 20261116",
+    "deviceModel": "iPhone 17 Pro",
+    "osVersion": "26.5",
+    "osBuild": "23F77",
+    "architecture": "arm64",
+    "appLocale": "English",
+    "localeEvidence": "Test identifier ends in English; the UI test launches the app with English language/region arguments. The simulator display name is historical and does not identify the tested locale."
+  },
+  "test": {
+    "identifier": "PairingUITests/testMacRequestedRubricCaptureTerminalRetryBlocksAndLogsInEnglish()",
+    "result": "Passed",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "startedAt": "2026-11-16T16:10:52Z",
+    "finishedAt": "2026-11-16T16:12:22Z",
+    "resultBundle": "/Users/jmr.pineda/Library/Developer/XcodeBuildMCP/workspaces/LeonardoMD-586d26453937/result-bundles/test_sim_2026-11-16T16-10-52-164Z_pid5041_bae6fdc8.xcresult"
+  },
+  "screenshots": [
+    {
+      "file": "rubric-http-503-en.png",
+      "state": "HTTP 503 rejection requiring manual Retry",
+      "capturedAt": "2026-11-16T16:11:29Z",
+      "dimensions": "1206x2622",
+      "sha256": "18d6e7e6b6b00ff8158ea5bd2ce0f33b652b426ab62e5a5777951e64169a1b3f"
+    },
+    {
+      "file": "rubric-http-413-en.png",
+      "state": "HTTP 413 invalid-payload rejection requiring manual Retry",
+      "capturedAt": "2026-11-16T16:11:46Z",
+      "dimensions": "1206x2622",
+      "sha256": "a386716722c792cb768641e65808a9fb229f231c86d50a955495ad49ca263abe"
+    },
+    {
+      "file": "rubric-http-409-terminal-en.png",
+      "state": "Terminal HTTP 409 after deliberate manual Retry; drawing preserved",
+      "capturedAt": "2026-11-16T16:11:55Z",
+      "dimensions": "1206x2622",
+      "sha256": "787b5bdc372d43a4a2afb2b4cf5321c0a3b08e3048a237d4102d550112eeb545"
+    }
+  ],
+  "hostFixture": {
+    "result": "Passed",
+    "test": "MobileDirectAcceptanceFixtureTests.testServeNativeMobileRubricFixture",
+    "responseStatuses": [503, 503, 413, 409],
+    "requestId": "stable unique request ID, see fixture-terminal-retry.json",
+    "noAutomaticReplayAfter": [503, 413],
+    "terminal409After": "explicit manual Retry",
+    "413Draft": {
+      "state": "pendingSend",
+      "requiresUserRetry": true,
+      "responsePreserved": true
+    },
+    "sourceFiles": [
+      "fixture-terminal-retry.json",
+      "fixture-terminal-retry-events.json",
+      "fixture-503-no-auto-replay.json",
+      "fixture-413-no-auto-replay.json",
+      "draft-413-pending-retry.json",
+      "fixture-restored-503.json",
+      "legacy-draft-restored.json"
+    ]
+  },
+  "sessionGuard": {
+    "unitTest": "MobileRubricManualRetryGuardTests",
+    "forcedStorageFailureEndToEnd": false,
+    "limitation": "The in-memory guard prevents automatic replay only while the current MobileLibrary instance remains alive. Protection across restart depends on successfully persisting requiresUserRetry."
+  },
+  "spanishUiAttempt": {
+    "result": "Not executed; simulator install failed before XCTest launched the app",
+    "productSourceSHA": "prior source before 6a69f3eb1256c25517a2cccf8412eda9f4f3b740",
+    "error": "InstallCoordination could not create/set the alternative-entitlements promise because placeholder UUID E074400C-FD65-4BD5-B812-0674B9AD6B17 did not exist.",
+    "screenshotClaimed": false,
+    "evidence": "spanish-runner-failure-prior-source.json"
+  },
+  "cleanup": {
+    "taskOwnedSimulatorAfterTest": "Shutdown",
+    "preExistingE204SimulatorAndApp": "Left running and untouched",
+    "preExistingDeviceHub": "Left running and untouched"
+  }
+}
