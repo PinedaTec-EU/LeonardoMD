@@ -156,7 +156,9 @@ private struct MobileSharedProjectTreeRow: View {
                     Text(projectStatus)
                         .font(.caption).foregroundStyle(MobileClassic.secondary)
                     if isKeepingProjectOffline {
-                        Text("Incluye los ficheros nuevos")
+                        Text(MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
+                             ? "Incluye los ficheros nuevos"
+                             : "Includes new files")
                             .font(.caption2).foregroundStyle(MobileClassic.secondary)
                     }
                 }

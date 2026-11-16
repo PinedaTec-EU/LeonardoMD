@@ -84,6 +84,8 @@ final class OnDemandSyncUITests: XCTestCase {
                        "Project retention must wait until synchronization leaves the action available")
         try capture(app, "project-context-menu", state: "Project action explicitly enables offline retention")
         keepProjectOffline.tap()
+        XCTAssertTrue(project.staticTexts["Incluye los ficheros nuevos"].waitForExistence(timeout: 5),
+                      "Spanish project retention copy must match the app locale")
         let failedFileStatus = element("remote-file-download-failure-" + projectID + "-notes/decisions.md", app: app)
         XCTAssertTrue(failedFileStatus.waitForExistence(timeout: 15),
                       "A failed retained download must be visible on its file row")
@@ -232,6 +234,8 @@ final class OnDemandSyncUITests: XCTestCase {
             predicate: NSPredicate(format: "isHittable == true"), object: keepProjectOffline)
         XCTAssertEqual(XCTWaiter.wait(for: [actionReady], timeout: 30), .completed)
         keepProjectOffline.tap()
+        XCTAssertTrue(project.staticTexts["Includes new files"].waitForExistence(timeout: 5),
+                      "English project retention copy must match the app locale")
 
         let failure = element("remote-file-download-failure-" + projectID + "-notes/decisions.md", app: app)
         XCTAssertTrue(failure.waitForExistence(timeout: 20))
