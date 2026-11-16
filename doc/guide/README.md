@@ -1,12 +1,17 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v86-en.mdlz` and `Guide-v86-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v87-en.mdlz` and `Guide-v87-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v86/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v87/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-For PR #435, the current product-code source is
+Guide v87 clarifies that a known HTTP rejection of a mobile rubric response
+requires a user Retry, while a transport loss without an acknowledgement can
+reconcile the same frozen response. Fresh bilingual packaged Help acceptance is
+tracked in `doc/validation/little-leonardo/` for PR #435.
+
+Historical Guide v86 candidate for PR #435 used product-code source
 `0b3942d8e83806c1ff93c4112917bb090bd5d131`. It packages EN SHA-256
 `797e241ca7df87a633ea334ca10f087303d2acead33306cffe31f2c5d032ae30` and ES
 SHA-256 `ec197be190b5f4f4f35b9fbba67b22a5db963fc91b926afd527fc44c47869c72`.

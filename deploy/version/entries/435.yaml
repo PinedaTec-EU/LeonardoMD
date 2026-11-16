@@ -1,4 +1,4 @@
 {
-  "summary": "Little Leonardo shows concise localized sync errors with unique references, keeps a bounded local log in settings, records invalid pairing QR failures without storing their contents, and localizes project offline-retention guidance.",
-  "build": 111
+  "summary": "Little Leonardo shows concise localized errors with opaque references and a bounded local log, keeps invalid invitation codes private, localizes retention guidance, and preserves rubric responses for manual retry after explicit rejection.",
+  "build": 128
 }

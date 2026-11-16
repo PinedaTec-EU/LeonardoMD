@@ -173,3 +173,9 @@ captures do not establish packaged-process Help or physical acceptance; see
 exact build/evidence input mapping.
 
 Guide29 EN/ES now documents automatic recovery, persistent Retry, terminal and close/cancel behavior. Source b9c5bb7 has focused8/8 and complete717/35/71 PASS, recorded delta9 including real QA packaging. Actual QA PID81719 opened both guides through Help/Ayuda, checked all live examples/MathON-OFF and both separate practices save-close-reopen; bundle/personal hashes match. Twenty original native JPEGs plus identity/restoration evidence are in `doc/validation/helper-consultation/packaged-help29/`. Three previous originals were restored byte-for-byte after normal quit; final signed-main and physical acceptance remain pending.
+
+For mobile response delivery, a known HTTP rejection of the frozen response must
+persist a `requiresUserRetry` marker and wait for the user's Retry. Foreground
+reconciliation remains enabled when transport ends without an acknowledgement,
+so a response the Mac committed can still be recovered with the same request ID
+and bytes. PR #435/#458 adds the explicit `503 → manual Retry → 409` regression.

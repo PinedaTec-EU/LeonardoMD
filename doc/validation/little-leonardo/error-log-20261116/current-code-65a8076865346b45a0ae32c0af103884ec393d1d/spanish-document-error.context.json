@@ -1,0 +1,20 @@
+{
+  "attachment_name": "Spanish Little Leonardo document download error",
+  "browser_name": "Little Leonardo native SwiftUI/WKWebView · iOS Simulator 26.5",
+  "browser_version": "WKWebView engine version not exposed by XCTest",
+  "capture_mode": "viewport",
+  "captured_at": "2026-11-16T12:34:19.136000Z",
+  "data_provenance": "synthetic",
+  "native_viewport_points": {
+    "height": 874,
+    "width": 402
+  },
+  "result_bundle": "test_sim_2026-11-16T12-32-30-299Z_pid23125_449aac21.xcresult",
+  "route": "/native/ios/on-demand/spanish-document-error",
+  "screen": "Spanish inline document download error and reference",
+  "simulator_id": "B0E7EEDB-5A14-46D6-B662-FDD6B479B9E6",
+  "source_sha": "65a8076865346b45a0ae32c0af103884ec393d1d",
+  "state": "Spanish inline document download error and reference; native points measured from app.frame; Spanish; Classic appearance",
+  "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+  "viewport_css": null
+}

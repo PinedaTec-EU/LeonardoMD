@@ -8,6 +8,10 @@
     "width": 402,
     "height": 874
   },
+  "image_pixels": {
+    "width": 1206,
+    "height": 2622
+  },
   "route": "/native/ios/on-demand/english-document-error",
   "screen": "english-document-error",
   "source_sha": "3f4622791ba3912d5d4f4f520acd5dccf5ab9722",

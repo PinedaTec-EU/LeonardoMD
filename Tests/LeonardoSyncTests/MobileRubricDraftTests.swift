@@ -44,6 +44,37 @@ final class MobileRubricDraftTests: XCTestCase {
         catch { XCTAssertEqual(error as? RubricExchangeError, .conflict) }
     }
 
+    func testExplicitHTTPRejectionWaitsForUserRetryAcrossRestart() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let request = try request()
+        let response = try response(for: request)
+        let pending = MobileRubricDraft(id: request.id, connectionID: UUID(),
+            targetDeviceID: request.targetDeviceID, requesterID: request.requesterID,
+            sourceFingerprint: Data(repeating: 3, count: 32), request: request,
+            response: response, state: .pendingSend, updatedAt: now,
+            failureMessage: "HTTP 503", requiresUserRetry: true)
+        XCTAssertTrue(MobileRubricDraft.isValid(pending))
+
+        let url = root.appendingPathComponent("drafts.json")
+        try await MobileRubricDraftStore(url: url).save(pending)
+        let restored = try await MobileRubricDraftStore(url: url).all(now: now)
+
+        XCTAssertEqual(restored, [pending])
+        XCTAssertTrue(try XCTUnwrap(restored.first).requiresUserRetry)
+        var legacyJSON = try XCTUnwrap(JSONSerialization.jsonObject(
+            with: JSONEncoder().encode(pending)) as? [String: Any])
+        legacyJSON.removeValue(forKey: "requiresUserRetry")
+        let legacyData = try JSONSerialization.data(withJSONObject: legacyJSON)
+        let legacyDraft = try JSONDecoder().decode(MobileRubricDraft.self, from: legacyData)
+        XCTAssertFalse(legacyDraft.requiresUserRetry,
+                       "Drafts saved by older app versions remain eligible for lost-ack recovery")
+        let blocked = pending.with(state: .blocked, updatedAt: now.addingTimeInterval(1),
+                                   failureMessage: "terminal")
+        XCTAssertFalse(blocked.requiresUserRetry,
+                       "A blocked draft cannot retain the manual retry marker")
+    }
+
     func testTerminalRetryCanBlockPendingSendWithoutLosingFrozenResponse() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

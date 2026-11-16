@@ -97,6 +97,7 @@ struct MobileRubricCaptureView: View {
         _phase = State(initialValue: draft?.state == .submitted ? .submitted
             : draft != nil && draft?.state != .pendingAcceptance ? .drawing : .awaitingApproval)
         _label = State(initialValue: draft?.label ?? request.labelHint ?? "Rúbrica")
+        _failure = State(initialValue: draft?.state == .pendingSend ? draft?.failureMessage : nil)
         if let response = draft?.response {
             _rubric = State(initialValue: response.rubric)
             _frozen = State(initialValue: true)
@@ -254,6 +255,7 @@ struct MobileRubricCaptureView: View {
                         : "Draft blocked: ask for a new request",
                       systemImage: "lock.fill")
                     .font(.footnote).foregroundStyle(MobileClassic.secondary)
+                    .accessibilityIdentifier("rubric-terminal-blocked")
             } else if frozen {
                 Label("Vista previa bloqueada tras el envío", systemImage: "lock.fill")
                     .font(.footnote).foregroundStyle(MobileClassic.secondary)
