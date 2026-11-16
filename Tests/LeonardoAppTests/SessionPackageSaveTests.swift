@@ -196,6 +196,9 @@ final class SessionPackageSaveTests: XCTestCase {
         let other = root.appendingPathComponent("other.md")
         try "original".write(to: source, atomically: true, encoding: .utf8)
         try "other".write(to: other, atomically: true, encoding: .utf8)
+        // This fixture covers identity changes injected below, not shared
+        // process path ownership or the desktop peer's authorization service.
+        session.authorizePath = { _, _ in }
         await session.open(source)
         let otherSnapshot = try await session.documents.read(other)
         let original = try XCTUnwrap(session.snapshot)

@@ -29,6 +29,7 @@ Read [current state](current-state.md), then the relevant source target. Human p
 - [Rubric exchange protocol](../doc/mobile/rubric-exchange.md) — authenticated, targeted Mac↔iOS rubric requests, capture-only mobile response flow and durable retry boundaries; physical distribution remains separate.
 
 - [On-demand synchronization and cache](on-demand-sync.md)
+- [Little Leonardo diagnostics and local error log](mobile-diagnostics.md)
 - [HTTPS response lifetime and physical acceptance](https-response-lifetime.md)
 - [Little Leonardo Classic UI and rotating canvas](mobile-classic.md)
 

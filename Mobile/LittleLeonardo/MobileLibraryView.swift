@@ -109,6 +109,9 @@ struct MobileLibraryView: View {
     @State private var presentedRubricRequest: RubricRequest?
     @AppStorage("directSyncIntervalMinutes") private var syncInterval = 1
     @Environment(\.scenePhase) private var scenePhase
+    private var spanishErrors: Bool {
+        MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
+    }
     private var activeRubricDraft: MobileRubricDraft? {
         library.recoverableRubricDrafts.first { $0.state != .submitted }
     }
@@ -151,8 +154,19 @@ struct MobileLibraryView: View {
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(item: $selectedRemoteFile) { route in
                 RemoteDocumentPreview(library: library.downloads, projectID: route.projectID,
-                    entry: route.entry, spanish: true, appearance: .leonardoClassic,
-                    compactFirstHeading: true).classicSurface()
+                    entry: route.entry, spanish: spanishErrors, appearance: .leonardoClassic,
+                    compactFirstHeading: true,
+                    failureDiagnosticPresentation: { error, identity, shouldRecord in
+                        let notice = MobileErrorNotice.record(
+                            error,
+                            operation: .downloads,
+                            message: MobileErrorNotice.documentDownloadMessage(spanish: spanishErrors),
+                            spanish: spanishErrors,
+                            diagnosticIdentity: identity,
+                            shouldRecord: shouldRecord)
+                        library.error = notice
+                        return notice.inlineMessage
+                    }).classicSurface()
             }
             .refreshable { await library.synchronize(); await library.reload() }
             .toolbar { libraryToolbar }
@@ -196,10 +210,10 @@ struct MobileLibraryView: View {
                 catch { return }
             }
         }
-        .alert("No se pudo completar la operación", isPresented: Binding(
+        .alert(MobileErrorNotice.alertTitle(spanish: spanishErrors), isPresented: Binding(
             get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
-            Button("Aceptar") { library.error = nil }
-        } message: { Text(library.error ?? "") }
+            Button(MobileErrorNotice.acceptLabel(spanish: spanishErrors)) { library.error = nil }
+        } message: { Text(library.error?.localizedAlertMessage(spanish: spanishErrors) ?? "") }
     }
     private var directConnectionSheet: some View {
         NavigationStack {
@@ -247,7 +261,10 @@ struct MobileLibraryView: View {
             }.classicSurface().navigationTitle("Conectar con LeonardoMD")
             .toolbar { Button("Cerrar") { presentedSheet = nil } }
             .sheet(isPresented: $scanning) {
-                MobileQRScannerScreen { qrURL = $0 }
+                MobileQRScannerScreen(
+                    spanish: spanishErrors,
+                    receive: { qrURL = $0 },
+                    failure: { library.error = $0 })
             }
         }
     }
@@ -289,7 +306,9 @@ struct MobileLibraryView: View {
             Button("Conectar", systemImage: "qrcode") { presentedSheet = .direct }
                 .disabled(library.connecting)
                 .accessibilityIdentifier("open-pairing")
-            Button("Ajustes de sincronización", systemImage: "gearshape") { presentedSheet = .settings }
+            Button { presentedSheet = .settings } label: {
+                Label(MobileErrorNotice.syncSettingsLabel(spanish: spanishErrors), systemImage: "gearshape")
+            }
                 .accessibilityIdentifier("open-sync-settings")
             Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
                 Task { await library.synchronize() }
@@ -343,22 +362,34 @@ struct MobileLibraryView: View {
                 Section("Proyectos / Projects") {
                     Button("Recuperar demo / Restore demo", systemImage: "arrow.counterclockwise") {
                         do { try library.projectLifecycle.restoreDemo() }
-                        catch { library.error = error.localizedDescription }
+                        catch {
+                            library.presentError(error, operation: .practice,
+                                                 message: "No se pudo recuperar la demo.")
+                        }
                     }
                     .disabled(library.projectLifecycle.demoIsVisible)
                     .accessibilityIdentifier("restore-demo-project")
                     Text("Recupera el proyecto con tus respuestas de práctica guardadas en este dispositivo. / Restore the project with your practice answers saved on this device.")
                         .font(.caption)
                 }.listRowBackground(MobileClassic.inset)
-                SyncCacheSettingsView(library: library.downloads, spanish: true).listRowBackground(MobileClassic.inset)
+                SyncCacheSettingsView(library: library.downloads, spanish: spanishErrors).listRowBackground(MobileClassic.inset)
                 Section {
                     Button("Acerca de Little Leonardo", systemImage: "info.circle") { presentedSheet = .about }
                         .accessibilityIdentifier("open-about")
                 }.listRowBackground(MobileClassic.inset)
+                Section(MobileErrorLogCopy.diagnosticsSection(spanish: spanishErrors)) {
+                    NavigationLink {
+                        MobileErrorLogView(spanish: spanishErrors)
+                    } label: {
+                        Label(MobileErrorLogCopy.openLog(spanish: spanishErrors),
+                              systemImage: "doc.text.magnifyingglass")
+                    }
+                        .accessibilityIdentifier("open-error-log")
+                }.listRowBackground(MobileClassic.inset)
             }
                 .classicSurface()
-                .navigationTitle("Sincronización")
-                .toolbar { Button("Cerrar") { presentedSheet = nil } }
+                .navigationTitle(MobileErrorLogCopy.synchronizationTitle(spanish: spanishErrors))
+                .toolbar { Button(MobileErrorLogCopy.close(spanish: spanishErrors)) { presentedSheet = nil } }
         }
     }
 }
@@ -409,6 +440,9 @@ struct MobileProjectView: View {
     let projectID: UUID
     @State private var exporting = false
     @State private var selectedEntry: RemoteFileEntry?
+    private var spanishErrors: Bool {
+        MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
+    }
     private var project: OfflineProject? { library.projects.first { $0.id == projectID } }
     var body: some View {
         Group {
@@ -419,7 +453,7 @@ struct MobileProjectView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(MobileClassic.inset)
                     SyncCatalogueView(library: library.downloads, projectID: project.id,
-                                      spanish: true, rowBackground: MobileClassic.paper) { entry in
+                                      spanish: spanishErrors, rowBackground: MobileClassic.paper) { entry in
                         selectedEntry = entry
                     }
                 }
@@ -449,11 +483,29 @@ struct MobileProjectView: View {
             }
         }.classicSurface().navigationTitle(project?.name ?? "Proyecto")
         .navigationDestination(item: $selectedEntry) { entry in
-            RemoteDocumentPreview(library: library.downloads, projectID: projectID, entry: entry, spanish: true, appearance: .leonardoClassic, compactFirstHeading: true).classicSurface()
+            RemoteDocumentPreview(
+                library: library.downloads,
+                projectID: projectID,
+                entry: entry,
+                spanish: spanishErrors,
+                appearance: .leonardoClassic,
+                compactFirstHeading: true,
+                failureDiagnosticPresentation: { error, identity, shouldRecord in
+                    MobileErrorNotice.record(
+                        error,
+                        operation: .downloads,
+                        message: MobileErrorNotice.documentLoadMessage(spanish: spanishErrors),
+                        spanish: spanishErrors,
+                        diagnosticIdentity: identity,
+                        shouldRecord: shouldRecord).inlineMessage
+                }).classicSurface()
         }
         .fileExporter(isPresented: $exporting, document: project.map(MobileRecoveryDocument.init),
                       contentType: .json, defaultFilename: "LittleLeonardo-\(projectID.uuidString)-recovery") { result in
-            if case .failure(let error) = result { library.error = error.localizedDescription }
+            if case .failure(let error) = result {
+                library.presentError(error, operation: .export,
+                                     message: "No se pudo exportar el archivo de recuperación.")
+            }
         }
     }
 }

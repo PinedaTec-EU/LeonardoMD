@@ -10,12 +10,20 @@ public struct RemoteDocumentPreview: View {
     let spanish: Bool
     let appearance: MarkdownAppearance
     let compactFirstHeading: Bool
+    let failurePresentation: (@MainActor (Error) -> String)?
+    let failureDiagnosticPresentation: RemoteDownloadDiagnosticPresentation?
     @State private var presentation = RemoteDocumentPreviewState()
     @State private var source = false
     @State private var linked: RemoteFileEntry?
     private let virtualRoot = URL(fileURLWithPath: "/LeonardoRemote", isDirectory: true)
-    public init(library: DownloadLibrary, projectID: UUID, entry: RemoteFileEntry, spanish: Bool = false, appearance: MarkdownAppearance = .default, compactFirstHeading: Bool = false) {
-        self.library = library; self.projectID = projectID; self.entry = entry; self.spanish = spanish; self.appearance = appearance; self.compactFirstHeading = compactFirstHeading
+    public init(library: DownloadLibrary, projectID: UUID, entry: RemoteFileEntry, spanish: Bool = false,
+                appearance: MarkdownAppearance = .default, compactFirstHeading: Bool = false,
+                failurePresentation: (@MainActor (Error) -> String)? = nil,
+                failureDiagnosticPresentation: RemoteDownloadDiagnosticPresentation? = nil) {
+        self.library = library; self.projectID = projectID; self.entry = entry; self.spanish = spanish
+        self.appearance = appearance; self.compactFirstHeading = compactFirstHeading
+        self.failurePresentation = failurePresentation
+        self.failureDiagnosticPresentation = failureDiagnosticPresentation
     }
     private var project: CachedRemoteProject? { library.projects.first { $0.id == projectID } }
     private var currentEntry: RemoteFileEntry? { project?.catalogue.files.first { $0.path == entry.path } }
@@ -44,9 +52,10 @@ public struct RemoteDocumentPreview: View {
                         Text(t("Showing a previously downloaded copy. The latest version could not be downloaded.",
                                "Se muestra una copia descargada anteriormente. No se pudo descargar la versión actual."))
                     }
-                    Text(failure)
+                    Text(failure).accessibilityIdentifier("remote-download-inline-error")
                     Button(t("Retry", "Reintentar")) { Task { await load() } }
                 }.padding().frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("remote-download-warning")
             }
             content
@@ -54,7 +63,10 @@ public struct RemoteDocumentPreview: View {
         .toolbar { Button(source ? t("Show document", "Ver documento") : t("Show source", "Ver texto")) { source.toggle() } }
         .task(id: request) { await load() }
         .navigationDestination(item: $linked) { target in
-            RemoteDocumentPreview(library: library, projectID: projectID, entry: target, spanish: spanish, appearance: appearance, compactFirstHeading: compactFirstHeading)
+            RemoteDocumentPreview(library: library, projectID: projectID, entry: target, spanish: spanish,
+                                  appearance: appearance, compactFirstHeading: compactFirstHeading,
+                                  failurePresentation: failurePresentation,
+                                  failureDiagnosticPresentation: failureDiagnosticPresentation)
         }
     }
     @ViewBuilder private var content: some View {
@@ -77,7 +89,9 @@ public struct RemoteDocumentPreview: View {
         let ticket = presentation.begin(request)
         guard let expectedCatalogue = project?.catalogue, currentEntry != nil else { return }
         do {
-            let value = try await library.openResult(id: projectID, path: entry.path)
+            let value = try await library.openResult(id: projectID, path: entry.path,
+                                                     presentation: failurePresentation,
+                                                     diagnosticPresentation: failureDiagnosticPresentation)
             guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue, currentEntry != nil else { return }
             presentation.receive(value, ticket: ticket)
             // The canonical Markdown renderer resolves local image requests only from memory.
@@ -85,23 +99,36 @@ public struct RemoteDocumentPreview: View {
             if let text = String(data: value.file.content, encoding: .utf8), let project {
                 for path in RemoteDocumentResources.imagePaths(in: text, documentPath: entry.path, catalogue: project.catalogue) {
                     do {
-                        let image = try await library.openResult(id: projectID, path: path)
+                        let image = try await library.openResult(id: projectID, path: path,
+                                                                presentation: failurePresentation,
+                                                                diagnosticPresentation: failureDiagnosticPresentation)
                         guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue else { return }
                         presentation.receiveImage(image.file.content, path: path, ticket: ticket)
                         if let failure = image.updateFailure {
-                            presentation.fail(path + ": " + failure, ticket: ticket)
+                            let message = image.updateFailureCause?.displayMessage(using: failurePresentation)
+                                ?? (failurePresentation == nil ? path + ": " + failure : failure)
+                            presentation.fail(message, ticket: ticket)
                         }
                     }
                     catch {
                         guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue else { return }
-                        presentation.fail(error.localizedDescription, ticket: ticket)
+                        presentation.fail(presentFailure(error, path: path), ticket: ticket)
                     }
                 }
             }
         } catch {
             guard !Task.isCancelled, self.project?.catalogue == expectedCatalogue else { return }
-            presentation.fail(error.localizedDescription, ticket: ticket)
+            presentation.fail(presentFailure(error, path: entry.path), ticket: ticket)
         }
+    }
+
+    private func presentFailure(_ error: Error, path: String) -> String {
+        if let failure = error as? RemoteDownloadFailure {
+            return failure.displayMessage(using: failurePresentation)
+        }
+        if let failurePresentation { return failurePresentation(error) }
+        if let recorded = library.failures[DownloadLibrary.key(id: projectID, path: path)] { return recorded }
+        return error.localizedDescription
     }
     private func followLink(_ url: URL) {
         guard let path = RemoteDocumentResources.path(url: url, virtualRoot: virtualRoot),

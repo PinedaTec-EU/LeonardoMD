@@ -1,0 +1,62 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+        "deviceName" : "LittleLeonardo PR435 Exact English QA 20261116",
+        "exportedFileName" : "9EC1CE21-CCCE-46E4-8A10-9858B465D86D.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "english-diagnostic-log-reference_0_FC26798A-B145-43AA-B01A-1C4611C75481.png",
+        "timestamp" : 1794842652.699
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+        "deviceName" : "LittleLeonardo PR435 Exact English QA 20261116",
+        "exportedFileName" : "45710CE8-65E4-4F83-A7CC-8C5C1ED56D06.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "English Little Leonardo inline document download error_0_632A303B-3148-4EBE-ACBD-B3577F8CA69C.png",
+        "timestamp" : 1794842644.18
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+        "deviceName" : "LittleLeonardo PR435 Exact English QA 20261116",
+        "exportedFileName" : "375342E1-236B-4AAE-AAC9-286C83F2D211.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "english-document-error_0_EC0BF04E-78EC-4791-9585-CD7DBFAC9F5B.png",
+        "timestamp" : 1794842644.115
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+        "deviceName" : "LittleLeonardo PR435 Exact English QA 20261116",
+        "exportedFileName" : "09DAD777-1769-4AAF-985D-1746DF669FF2.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "english-file-failure_0_F9ABB81D-712D-4B26-91D1-14C8E5B662FD.png",
+        "timestamp" : 1794842638.771
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+        "deviceName" : "LittleLeonardo PR435 Exact English QA 20261116",
+        "exportedFileName" : "1D6ECA44-A591-4C60-8593-1C301FDEFC0D.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "English Little Leonardo project failure and concise download alert_0_9201C919-7102-452D-90B0-2066A5EDDAE5.png",
+        "timestamp" : 1794842636.757
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+        "deviceName" : "LittleLeonardo PR435 Exact English QA 20261116",
+        "exportedFileName" : "9A5CD548-DAA3-40EE-993E-B26466CB2123.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "english-project-download-alert_0_014F0ADB-4147-4493-BFE1-480D55712E19.png",
+        "timestamp" : 1794842636.664
+      }
+    ],
+    "testIdentifier" : "OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy()",
+    "testIdentifierURL" : "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/OnDemandSyncUITests/testEnglishSharedDownloadFailureLocalizesVoiceOverCopy"
+  }
+]

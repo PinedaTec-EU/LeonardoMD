@@ -53,7 +53,7 @@ Inline notation also works: $N(\varepsilon)$ counts the boxes.
 
 ### Display formulas · regression examples
 
-**Requires Math.** Check that these examples display as equations, including the number (1), rather than literal `$$` or backslash commands. With Math disabled, the source notation remains visible. Code examples intentionally stay literal.
+**Requires Math.** Check that these examples display as equations, including the number (1), without raw display-math markers or backslash commands. With Math disabled, the source notation remains visible. Code examples intentionally stay literal.
 
 $$ \underbrace{a}_{x} + \underbrace{b}_{y} $$
 
@@ -596,7 +596,7 @@ Little Leonardo is a **read-only companion**. Desktop sharing and device trust a
 1. Enable **Leonardo Sync** using the single common control above both pages. LeonardoMD registers the bundled service for your account; if macOS requests approval, use **Open Login Items settings** and allow it. A confirmed healthy helper shows a green indicator; an actual failure shows red with a diagnostic. While checking, the indicator keeps its previous state and no temporary gray state or “Sync helper running” line appears.
 2. Enable **Share saved files from this Mac** on a network you intend to use. Review the selected local address; Automatic can choose an available address.
 3. Choose **Share current project**, then select the folders/documents you want or the entire project. Confirm the selection; unrelated content is not implicitly shared.
-4. Create an invitation. If the network changes, the old QR and link may disappear; once the local address is available again, create and share a new invitation. Its QR and copied link are two ways to open the same invitation: scan the QR in Little Leonardo or paste the link under **Connect to other computers** on another Mac. Compare the verification codes and approve the pending device on this source Mac. Device rows state **read-only** (Little Leonardo or compatible clients) or **LeonardoMD on Mac · changes require review**. The label follows the granted capability, not the device name.
+4. Create an invitation. If the network changes, the old QR and link may disappear; once the local address is available again, create and share a new invitation. Its QR and copied link are two ways to open the same invitation: scan the QR in Little Leonardo or paste the link under **Connect to other computers** on another Mac. If Little Leonardo rejects an invalid or expired scanned QR, its short alert includes a reference code; open **Sync settings → View log** to find the matching entry. Ask the source Mac to create a fresh invitation if the QR has expired. Compare the verification codes and approve the pending device on this source Mac. Device rows state **read-only** (Little Leonardo or compatible clients) or **LeonardoMD on Mac · changes require review**. The label follows the granted capability, not the device name.
 5. Import the shared content on the companion and verify it before relying on an offline copy. Use Revoke on the Mac to remove a device's future access.
 
 **Review changes** requires the local sharing service to be available. **Allow connection**, **Reject** and **Revoke** require a healthy sync helper. An affected action stays disabled while its requirement is unavailable. Paired devices remain listed when sharing from this Mac is off.
@@ -683,19 +683,28 @@ explicit actions; a blocked, submitted or frozen retry draft cannot be edited.
 
 ### If mobile synchronization is interrupted
 
-For a network failure, the existing alert may include a compact diagnostic
-line, for example:
+For a network failure, the alert shows a short message, a unique reference code
+such as `LL-0123456789AB`, and one **OK** action. Open **Sync settings → View log**
+(**Ajustes de sincronización → Ver log** in Spanish) to inspect recent local
+error entries. The same reference code marks the matching entry; a network
+entry may include a bounded diagnostic such as:
 
-`[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
+Other app failures use fixed categories, for example
+`error=transport.invalid_identity`; arbitrary error descriptions are left out.
 
-Share that line or a screenshot when asking for help. It identifies whether a
-status or snapshot request failed, the HTTP status when received, response
-bytes received versus expected, and the system error domain/code. It contains
-no server address or path, pairing credential, device/project identifier, or
-file content. An HTTP 200 header does not mean the response body finished. A
-`?` expected count means the server did not provide a body length. Previously
-downloaded offline copies remain available; check that the source Mac is
-reachable and Leonardo Sync is enabled, then retry synchronization.
+`ref=LL-0123456789AB op=synchronization transport=[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
+
+The log stays on this device and is not sent automatically. It excludes the
+server address or path, pairing credentials, device/project identifiers, and
+document or image content. Select and copy a line only if you choose to share
+it when asking for help. An HTTP 200 header does not mean the response body
+finished; a `?` expected count means the server did not provide a body length.
+It keeps up to 120 recent entries or 64 KiB, whichever limit is reached first.
+It is stored in the app's local cache, excluded from backups before writing;
+iOS may clear that cache to free space, so the log is for recent troubleshooting
+rather than permanent storage.
+Previously downloaded offline copies remain available; check that the source
+Mac is reachable and Leonardo Sync is enabled, then retry synchronization.
 
 ### Answer a rubric request on iOS
 
@@ -733,11 +742,14 @@ required.
 
 You may close and reopen the card before **Send**. Little Leonardo restores the
 label and unsent strokes from its local durable draft. Once **Send** has frozen
-the response, later undo/clear actions cannot mutate the pending payload; a
-transient network failure keeps that exact payload available for **Retry**.
-If the Mac may have committed **Send** but its acknowledgement was lost, close
-and relaunch Little Leonardo: the recovery card keeps the same drawing, label
-and request available for **Retry**. Do not accept a second request or redraw.
+the response, later undo/clear actions cannot mutate the pending payload. A
+known HTTP rejection shows “Couldn't send. The drawing is saved so you can
+retry.” The card keeps that response and waits for your deliberate **Retry**;
+foreground synchronization does not send it again automatically. If the
+connection is lost before a response arrives, the message says sending is
+still pending, and Little Leonardo may reconcile the same frozen response when
+it becomes active in case the Mac already saved it. This cannot create a
+different answer or drawing. Do not accept a second request or redraw.
 If the capture link was revoked, the accepted drawing remains visible for
 recovery but **Send** is blocked. Reconnect and approve the Mac again, then
 create a new rubric request; a revoked draft is never silently reused. The

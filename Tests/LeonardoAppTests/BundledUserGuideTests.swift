@@ -156,6 +156,16 @@ final class BundledUserGuideTests: XCTestCase {
             }
             try await waitFor("document.querySelectorAll('[data-field-input]').length === 0 && document.querySelector('a[href$=\"/practice.mdlr\"]') !== null", in: web)
             try await waitFor("document.querySelectorAll('.katex-display').length === 4 && document.querySelectorAll('.katex svg path[d]').length >= 4 && document.querySelector('.katex svg line') !== null && document.querySelector('.katex-error') === null && document.querySelector('.katex-tag') !== null", in: web)
+            let guidanceNeedle = language == .english
+                ? "Check that these examples display as equations"
+                : "Comprueba que estos ejemplos aparecen como ecuaciones"
+            let encodedGuidanceNeedle = try XCTUnwrap(String(data: JSONEncoder().encode(guidanceNeedle), encoding: .utf8))
+            let guidanceScript = "Array.from(document.querySelectorAll('p')).find(node => node.textContent.includes(\(encodedGuidanceNeedle)))?.textContent || ''"
+            let guidanceValue = try await web.evaluateJavaScript(guidanceScript)
+            let guidanceText = try XCTUnwrap(guidanceValue as? String)
+            XCTAssertTrue(guidanceText.contains(guidanceNeedle))
+            XCTAssertFalse(guidanceText.contains("$$"),
+                           "Display-math markers should not appear in ordinary prose when Math is enabled")
             let regression = try XCTUnwrap(session.headings.first { $0.title.contains("regression examples") || $0.title.contains("ejemplos de regresión") })
             session.jumpToHeading(regression.line)
             try await waitFor("Math.abs(window.LeonardoTables.headingForSourceLine(document.querySelector('#leonardo-markdown'), \(regression.line)).getBoundingClientRect().top) < 2", in: web)

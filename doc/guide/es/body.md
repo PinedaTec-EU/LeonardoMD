@@ -53,7 +53,7 @@ La notación en línea también funciona: $N(\varepsilon)$ cuenta las cajas.
 
 ### Fórmulas de bloque · ejemplos de regresión
 
-**Requiere Matemáticas.** Comprueba que estos ejemplos aparecen como ecuaciones, incluido el número (1), sin `$$` ni comandos con barra invertida visibles. Con Matemáticas desactivadas se conserva la notación fuente. Los ejemplos de código permanecen literales a propósito.
+**Requiere Matemáticas.** Comprueba que estos ejemplos aparecen como ecuaciones, incluido el número (1), sin marcadores de ecuación de bloque ni comandos con barra invertida visibles. Con Matemáticas desactivadas se conserva la notación fuente. Los ejemplos de código permanecen literales a propósito.
 
 $$ \underbrace{a}_{x} + \underbrace{b}_{y} $$
 
@@ -606,7 +606,7 @@ Little Leonardo es un **compañero de solo lectura**. Compartir y confiar en dis
 1. Activa **Leonardo Sync** con el único control común situado encima de ambas páginas. LeonardoMD registra el servicio incluido para tu cuenta; si macOS pide autorización, usa **Abrir ajustes de ítems de inicio** y permítelo. El indicador verde confirma que el asistente funciona; un fallo real lo muestra en rojo con su diagnóstico. Durante la comprobación conserva el estado anterior: no aparece un estado gris temporal ni la línea «Servicio de sincronización en ejecución».
 2. Activa **Compartir archivos guardados de este Mac** en una red que quieras utilizar. Revisa la dirección local; Automática puede seleccionar una disponible.
 3. Elige **Compartir el proyecto actual** y selecciona carpetas/documentos o todo el proyecto. Confirma la selección; el resto del contenido no se comparte implícitamente.
-4. Crea una invitación. Si cambia la red, el QR y el enlace anteriores pueden desaparecer; cuando la dirección local vuelva a estar disponible, crea y comparte una invitación nueva. Su QR y el enlace copiado permiten abrir la misma invitación: escanea el QR en Little Leonardo o pega el enlace en **Conectarme a otros equipos** en otro Mac. Compara los códigos y aprueba el dispositivo pendiente en este Mac de origen. Las filas indican **solo lectura** (Little Leonardo o clientes compatibles) o **LeonardoMD en Mac · cambios sujetos a revisión**. La etiqueta depende del permiso concedido, no del nombre del equipo.
+4. Crea una invitación. Si cambia la red, el QR y el enlace anteriores pueden desaparecer; cuando la dirección local vuelva a estar disponible, crea y comparte una invitación nueva. Su QR y el enlace copiado permiten abrir la misma invitación: escanea el QR en Little Leonardo o pega el enlace en **Conectarme a otros equipos** en otro Mac. Si Little Leonardo rechaza un QR escaneado no válido o caducado, el aviso breve incluye un código de referencia; abre **Ajustes de sincronización → Ver log** para encontrar la entrada correspondiente. Si ha caducado, pide al Mac de origen que cree una invitación nueva. Compara los códigos y aprueba el dispositivo pendiente en este Mac de origen. Las filas indican **solo lectura** (Little Leonardo o clientes compatibles) o **LeonardoMD en Mac · cambios sujetos a revisión**. La etiqueta depende del permiso concedido, no del nombre del equipo.
 5. Importa el contenido compartido en el compañero y compruébalo antes de depender de una copia sin conexión. Usa Revocar en el Mac para retirar acceso futuro a un dispositivo.
 
 **Revisar cambios** requiere que el servicio de uso compartido local esté disponible. **Permitir la conexión**, **Rechazar** y **Revocar** requieren que el asistente de sincronización esté en buen estado. La acción afectada permanece desactivada mientras falte ese requisito. Los dispositivos emparejados siguen en la lista aunque compartir desde este Mac esté desactivado.
@@ -696,20 +696,29 @@ borrador bloqueado, enviado o pendiente de reintento no permite seguir dibujando
 
 ### Si se interrumpe la sincronización móvil
 
-Ante un fallo de red, el aviso existente puede incluir una línea de diagnóstico
-breve, por ejemplo:
+Ante un fallo, el aviso muestra un mensaje breve, un código de referencia único
+como `LL-0123456789AB` y una sola acción **Aceptar**. Abre **Ajustes de
+sincronización → Ver log** para consultar las entradas de error locales
+recientes. El mismo código identifica la entrada correspondiente; un error de
+red puede incluir un diagnóstico acotado como este:
 
-`[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
+Otros fallos de la app usan categorías fijas, por ejemplo
+`error=transport.invalid_identity`; se excluyen las descripciones arbitrarias del error.
 
-Comparte esa línea o una captura al pedir ayuda. Indica si falló una consulta de
-estado o una instantánea, el estado HTTP si llegó, los bytes de respuesta
-recibidos y esperados, y el dominio/código de error del sistema. No incluye la
-dirección o ruta del servidor, credencial de emparejamiento, identificadores de
-dispositivo/proyecto ni contenido de archivos. Una cabecera HTTP 200 no
-significa que terminara el cuerpo. Un total esperado `?` significa que el
-servidor no informó de la longitud. Las copias descargadas sin conexión siguen
-disponibles; comprueba que el Mac de origen sea accesible y que Leonardo Sync
-esté activo, y vuelve a intentar la sincronización.
+`ref=LL-0123456789AB op=synchronization transport=[LL1 op=snapshot domain=NSURLErrorDomain code=-1005 http=200 bytes=114568/2097195]`
+
+El registro permanece en este dispositivo y no se envía automáticamente. No
+incluye la dirección o ruta del servidor, credenciales de emparejamiento,
+identificadores de dispositivo/proyecto ni contenido de documentos o imágenes.
+Puedes seleccionar y copiar una línea si decides compartirla al pedir ayuda.
+Una cabecera HTTP 200 no significa que terminara el cuerpo. Un total esperado
+`?` significa que el servidor no informó de la longitud. Las copias descargadas
+sin conexión siguen disponibles. Se conservan como máximo 120 entradas recientes
+o 64 KiB, lo que se alcance primero. Se guarda en la caché local de la app,
+excluida de las copias de seguridad antes de escribir; iOS puede borrarla para
+liberar espacio, así que el registro sirve para diagnosticar errores recientes,
+no como almacenamiento permanente. Comprueba que el Mac de origen sea accesible
+y que Leonardo Sync esté activo, y vuelve a intentar la sincronización.
 
 ### Responder a una solicitud de rúbrica en iOS
 
@@ -749,12 +758,14 @@ hay que crear una solicitud nueva.
 Puedes cerrar y volver a abrir la tarjeta antes de **Enviar**. Little Leonardo
 recupera la etiqueta y los trazos no enviados desde un borrador local durable.
 Después de **Enviar**, la respuesta queda congelada: deshacer o limpiar ya no
-pueden modificar el payload pendiente; un fallo transitorio conserva ese mismo
-payload para **Reintentar**.
-Si el Mac puede haber aceptado **Enviar** pero se perdió la confirmación, cierra
-y vuelve a abrir Little Leonardo: la tarjeta de recuperación conserva el mismo
-dibujo, etiqueta y petición para **Reintentar**. No aceptes una segunda
-petición ni vuelvas a dibujar. Si se revoca el vínculo de captura, el dibujo
+pueden modificar el payload pendiente. Un rechazo HTTP explícito muestra «No
+se pudo enviar. El dibujo está guardado y puedes reintentarlo». La tarjeta
+conserva esa respuesta y espera a que pulses **Reintentar**; la sincronización
+en primer plano no vuelve a enviarla automáticamente. Si se pierde la conexión
+antes de recibir una confirmación, el mensaje indica que el envío sigue
+pendiente y Little Leonardo puede reconciliar al activarse la misma respuesta
+congelada, por si el Mac ya la guardó. No se crea otra ni se cambia el dibujo.
+No aceptes una segunda petición ni vuelvas a dibujar. Si se revoca el vínculo de captura, el dibujo
 aceptado sigue visible para recuperarlo, pero **Enviar** queda bloqueado.
 Vuelve a enlazar y aprobar el Mac y crea una solicitud de rúbrica nueva; un
 borrador revocado nunca se reutiliza en silencio. La revocación también elimina

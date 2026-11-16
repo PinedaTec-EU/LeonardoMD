@@ -1,0 +1,143 @@
+{
+  "product_source_sha": "3bac17a09149571ac425ef83e5f2fcfdca5e427d",
+  "test_source_sha": "fc607375e9412dc267034cc8e651a685bd348fbb",
+  "repository_head_at_test": "0b611957afd07de59489d3331ca6c81100e9e892",
+  "test": "OnDemandSyncUITests/testCatalogueContextRetentionAndSeparateCache()",
+  "result_bundle": "/Users/jmr.pineda/Library/Developer/XcodeBuildMCP/workspaces/LeonardoMD-586d26453937/result-bundles/test_sim_2026-11-16T16-24-37-659Z_pid23125_0ccbc608.xcresult",
+  "result": {
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "duration_seconds": 153.827
+  },
+  "simulator": {
+    "name": "LittleLeonardo PR435 Exact English QA 20261116",
+    "id": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+    "model": "iPhone 17 Pro",
+    "runtime": "iOS 26.5",
+    "build": "23F77",
+    "viewport_points": "402x874",
+    "pixels": "1206x2622"
+  },
+  "fixture": {
+    "host": "10.0.8.231",
+    "port": 46987,
+    "metadata_only": "spanish-fixture-metadata-only.json",
+    "single_file": "spanish-fixture-single-file.json",
+    "completed": "spanish-fixture-completed.json"
+  },
+  "captures": [
+    {
+      "file": "project-deleted-after-refresh.png",
+      "sha256": "0a978ab0833c15d4095bd8651a3926d9459f236eb8af8468b94df762ebf8c1d1",
+      "attachment": "project-deleted-after-refresh_0_F98C0A04-AA91-4A61-8EC3-F2C26165888B.png",
+      "captured_at": "2026-11-16T16:27:07.343000Z",
+      "state": "Removed project stays absent after catalogue refresh."
+    },
+    {
+      "file": "project-swipe-delete.png",
+      "sha256": "9a9fc2fc3fe02f7894b9f39f842635bdbf0e8a86f8a80e92f2324ac2a97530a5",
+      "attachment": "project-swipe-delete_0_AA4DAAEF-C52B-40E4-804E-F8A75EE2918C.png",
+      "captured_at": "2026-11-16T16:26:49.904000Z",
+      "state": "Project row exposes its remove action."
+    },
+    {
+      "file": "project-before-delete.png",
+      "sha256": "32943a913e7c1f2ff375d8eb8838e5dfccd581fc7886ab886afa655c1d838ba7",
+      "attachment": "project-before-delete_0_E7375E46-F1BA-4837-8C2F-6EF3C3AB3697.png",
+      "captured_at": "2026-11-16T16:26:47.392000Z",
+      "state": "Project is present before the remove action."
+    },
+    {
+      "file": "catalogue-recovered.png",
+      "sha256": "32943a913e7c1f2ff375d8eb8838e5dfccd581fc7886ab886afa655c1d838ba7",
+      "attachment": "catalogue-recovered_0_768D80E5-13B1-4147-B854-E6CEC07A4EEB.png",
+      "captured_at": "2026-11-16T16:26:46.090000Z",
+      "state": "Project catalogue is recovered after a temporary download failure."
+    },
+    {
+      "file": "storage-cleared.png",
+      "sha256": "85963c240788f843434422236485b0d6a31c68c6be108693baf050876a19a985",
+      "attachment": "storage-cleared_0_9386E5F7-4E8D-439C-BF25-F34375C5EB66.png",
+      "captured_at": "2026-11-16T16:26:34.550000Z",
+      "state": "Clearing a file cache returns it to remote-only state."
+    },
+    {
+      "file": "storage-separate.png",
+      "sha256": "661a7be6e8c9ba0039eb40b14913102b65d04e070db4655a4cd3d8a24b9f2f36",
+      "attachment": "storage-separate_0_3C48DC15-182C-40C0-9A1A-CD42F65A4EA7.png",
+      "captured_at": "2026-11-16T16:26:33.955000Z",
+      "state": "Project retention and per-file cache state remain separate."
+    },
+    {
+      "file": "catalogue-mixed.png",
+      "sha256": "650e2c85561a59fef29b0e478ef80c9685401fd97e2d180b8ccec936f2de147a",
+      "attachment": "catalogue-mixed_0_AA1A25BB-A3FF-49D4-A3D3-BF9F9EDAFDDD.png",
+      "captured_at": "2026-11-16T16:26:32.357000Z",
+      "state": "Project list shows mixed local and remote file state."
+    },
+    {
+      "file": "spanish-diagnostic-log-reference.png",
+      "sha256": "a10bce438cf8572205cc927514835be78db0c2453a028bc996c44d5c87957dc6",
+      "attachment": "diagnostic-log-latest_0_175CCB26-A8C4-4E8C-B8FA-1B804DE71166.png",
+      "captured_at": "2026-11-16T16:26:27.939000Z",
+      "state": "Spanish local diagnostic log contains the matching download attempt and reference."
+    },
+    {
+      "file": "spanish-document-error.png",
+      "sha256": "951e756f2dc684f0cdff60e882436b22e6bad5ef4b3481269a128ed21d336504",
+      "attachment": "Spanish Little Leonardo document download error_0_7B9256D6-58A0-477A-9D9B-4379B5DBD1AB.png",
+      "captured_at": "2026-11-16T16:26:19.027000Z",
+      "state": "Spanish document row reports a localized download failure."
+    },
+    {
+      "file": "spanish-project-download-alert.png",
+      "sha256": "4fe8ca52670e27428ccdc10103453996bc3f342e77cfb1452759e53df11a213b",
+      "attachment": "Spanish Little Leonardo concise download alert_0_594EBB78-D904-4EDF-A0CF-44341B609EDA.png",
+      "captured_at": "2026-11-16T16:26:11.921000Z",
+      "state": "Spanish concise download alert presents one opaque reference and one acknowledgement action."
+    },
+    {
+      "file": "project-context-menu.png",
+      "sha256": "8a944db17d5aa7f8ad970799d9e9417bdfe7517b7d428012dd57ff6c467855f7",
+      "attachment": "project-context-menu_0_B183C061-B562-4CBE-A0FE-9532057501E8.png",
+      "captured_at": "2026-11-16T16:26:06.581000Z",
+      "state": "Project context menu offers offline retention."
+    },
+    {
+      "file": "context-menu.png",
+      "sha256": "45031e209652f1965fc575b721639309bdffef2794e83c3de2adbdae8fdb7461",
+      "attachment": "context-menu_0_911F43AF-93E2-47AD-9017-42CA0134D3D4.png",
+      "captured_at": "2026-11-16T16:25:57.786000Z",
+      "state": "File ellipsis menu offers offline retention and local cache release."
+    },
+    {
+      "file": "document.png",
+      "sha256": "0ebde5beb6a73f41f79d559340084d5f5aae8131f82297969081a7f21be35947",
+      "attachment": "document_0_69BEE6A5-CBEA-4589-BBD9-ED054D84E5BC.png",
+      "captured_at": "2026-11-16T16:25:50.535000Z",
+      "state": "Opened remote document is available through the read-only renderer."
+    },
+    {
+      "file": "document-source.png",
+      "sha256": "cb9ab0d349214b599dc2370236096688a6996ccea80bc63889f0661203e315f7",
+      "attachment": "document-source_0_656E86A1-0EB4-4993-948B-B65F4EF8B66A.png",
+      "captured_at": "2026-11-16T16:25:48.197000Z",
+      "state": "Document source view remains read-only with explicit document rendering."
+    },
+    {
+      "file": "catalogue-remote.png",
+      "sha256": "4bb7cfe4276931a57ea058cac66c2121bae8af2fc67e8475de375505382d54c8",
+      "attachment": "catalogue-remote_0_607C0F71-49AC-44E9-BAE2-1C9B30B91DD0.png",
+      "captured_at": "2026-11-16T16:25:42.478000Z",
+      "state": "Expanded project shows remote files without downloading their contents."
+    },
+    {
+      "file": "incoming-project.png",
+      "sha256": "57216f0786a641b88e7885ab93ceda7383916155ca2d728753286d6b9ceeb4b0",
+      "attachment": "incoming-project_0_88E961BE-3CF3-432B-9550-45CC6F7B781A.png",
+      "captured_at": "2026-11-16T16:25:37.792000Z",
+      "state": "Newly shared project appears under the connected host and offers Add or Ignore."
+    }
+  ]
+}

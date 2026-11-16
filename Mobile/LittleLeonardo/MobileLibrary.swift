@@ -10,7 +10,7 @@ final class MobileLibrary {
     var projects: [OfflineProject] = []
     private(set) var pendingRubricRequests: [RubricRequest] = []
     private(set) var recoverableRubricDrafts: [MobileRubricDraft] = []
-    var error: String?
+    var error: MobileErrorNotice?
     var connecting = false
     var comparisonCode: String?
     let projectLifecycle: MobileProjectLifecycle
@@ -20,6 +20,7 @@ final class MobileLibrary {
     private let credentials: any DeviceCredentialStore
     private let revocationClient: MobileRevocationClient
     private let draftStore: MobileRubricDraftStore
+    private let rubricManualRetryGuard = MobileRubricManualRetryGuard()
     private let rubricAcceptance: MobileRubricAcceptance
     private let now: @Sendable () -> Date
     var connections: [MobileDirectConnection] = []
@@ -59,6 +60,29 @@ final class MobileLibrary {
             .appendingPathComponent("Rubrics/drafts.json"))
         self.now = now
         rubricAcceptance = MobileRubricAcceptance(store: draftStore, clock: now)
+        let spanish = MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
+        downloads.errorDiagnosticPresentation = { [weak self] error, identity, shouldRecord in
+            let notice = MobileErrorNotice.record(
+                error,
+                operation: .downloads,
+                message: MobileErrorNotice.contentDownloadMessage(spanish: spanish),
+                spanish: spanish,
+                diagnosticIdentity: identity,
+                shouldRecord: shouldRecord)
+            self?.error = notice
+            return notice.inlineMessage
+        }
+        downloads.cacheErrorDiagnosticPresentation = { [weak self] error, identity, shouldRecord in
+            let notice = MobileErrorNotice.record(
+                error,
+                operation: .cache,
+                message: MobileErrorNotice.cacheMutationMessage(spanish: spanish),
+                spanish: spanish,
+                diagnosticIdentity: identity,
+                shouldRecord: shouldRecord)
+            self?.error = notice
+            return notice.inlineMessage
+        }
     }
 
     func token(for connection: MobileDirectConnection) -> ConnectionToken {
@@ -166,7 +190,10 @@ final class MobileLibrary {
 
     private func finishDeniedTicket(_ ticket: MobileRevocationTicket) {
         do { try revocationClient.finish(ticket, outcome: .denied) }
-        catch { self.error = error.localizedDescription }
+        catch {
+            presentError(error, operation: .revocation,
+                         message: "No se pudo guardar la decisión de acceso.")
+        }
     }
 
     func commitConnection(_ connection: MobileDirectConnection,
@@ -243,11 +270,17 @@ final class MobileLibrary {
                 || zip(storedConnections, protectedConnections).contains { $0.0.hasChanges(from: $0.1) }
             if repairedMissingCredential || recoveredSnapshotChanged {
                 do { try connectionStore.save(protectedConnections) }
-                catch { self.error = "No se pudo guardar la revocación recuperada: \(error.localizedDescription)" }
+                catch {
+                    presentError(error, operation: .revocation,
+                                 message: "No se pudo guardar la recuperación del vínculo.")
+                }
             }
             await retryPendingRevocationPurges()
             await reconcileRubricDrafts()
-        } catch { self.error = error.localizedDescription }
+        } catch {
+            presentError(error, operation: .library,
+                         message: "No se pudo actualizar la biblioteca. Inténtalo de nuevo.")
+        }
     }
 
     func currentFile(projectID: UUID, path: String) -> CorpusFile? {
@@ -265,7 +298,10 @@ final class MobileLibrary {
             let qr = try DirectPairingQR.decode(url, now: now())
             let client = try DirectEnrollmentClient(qr: qr)
             try await enroll(client: client, endpoint: qr.endpoint, fingerprint: qr.certificateFingerprint, deviceName: deviceName)
-        } catch { self.error = error.localizedDescription }
+        } catch {
+            presentError(error, operation: .pairing,
+                         message: "No se pudo conectar con LeonardoMD. Comprueba el enlace e inténtalo de nuevo.")
+        }
     }
 
     func connectManual(host: String, port: String, deviceName: String) async {
@@ -282,7 +318,10 @@ final class MobileLibrary {
             let fingerprint = try await ServerIdentityProbe.fingerprint(endpoint: endpoint)
             let client = try DirectEnrollmentClient(endpoint: endpoint, certificateFingerprint: fingerprint)
             try await enroll(client: client, endpoint: endpoint, fingerprint: fingerprint, deviceName: deviceName)
-        } catch { self.error = error.localizedDescription }
+        } catch {
+            presentError(error, operation: .pairing,
+                         message: "No se pudo conectar con LeonardoMD. Comprueba la dirección e inténtalo de nuevo.")
+        }
     }
 
     private func enroll(client: DirectEnrollmentClient, endpoint: URL, fingerprint: Data, deviceName: String) async throws {
@@ -329,7 +368,8 @@ final class MobileLibrary {
         revoked.pendingPurgeProjectIDs.formUnion(previous.projectIDs)
         var nextConnections = connections
         nextConnections[index] = revoked
-        var failures: [String] = []
+        var failures: [Error] = []
+        var purgeWasDeferred = false
         authorizationGenerations.confirmDenied(connectionID: revoked.connectionID,
                                                 projectIDs: previous.projectIDs)
         do {
@@ -338,14 +378,10 @@ final class MobileLibrary {
             } else {
                 try revocationClient.recordDenied(for: revoked)
             }
-        } catch {
-            failures.append("No se pudo registrar el bloqueo durable del vínculo: \(error.localizedDescription)")
-        }
+        } catch { failures.append(error) }
         do {
             try connectionStore.save(nextConnections)
-        } catch {
-            failures.append("No se pudo guardar el vínculo revocado: \(error.localizedDescription)")
-        }
+        } catch { failures.append(error) }
         invalidateCacheAndAuthorization()
         for id in revoked.pendingPurgeProjectIDs where !hasActiveProjectOwner(id, excluding: token.connectionID) {
             downloads.deny(id: id)
@@ -359,17 +395,19 @@ final class MobileLibrary {
         }
         do {
             try await credentials.remove(deviceID: revoked.deviceID)
-        } catch {
-            failures.append("No se pudo retirar la credencial revocada: \(error.localizedDescription)")
-        }
+        } catch { failures.append(error) }
         let revokedToken = self.token(for: revoked)
         do {
             try await removeDirectProjects(revoked.pendingPurgeProjectIDs, expected: revokedToken)
             guard isCurrentCacheOperation(revokedToken),
                   let currentIndex = connectionIndex(for: revokedToken) else {
-                failures.append("Se pospuso la limpieza de la caché revocada para proteger una reconexión")
+                purgeWasDeferred = true
                 await blockRubricDrafts(for: revoked, message: message)
-                if !failures.isEmpty { self.error = failures.joined(separator: " ") }
+                if !failures.isEmpty || purgeWasDeferred {
+                    presentErrors(failures, operation: .revocation,
+                                  message: "No se pudo completar la limpieza del vínculo.",
+                                  fallbackCategory: purgeWasDeferred ? "cache_cleanup_deferred" : nil)
+                }
                 return
             }
             var cleaned = connections
@@ -379,14 +417,14 @@ final class MobileLibrary {
             do {
                 try connectionStore.save(cleaned)
                 connections = cleaned
-            } catch {
-                failures.append("No se pudo confirmar la limpieza de la caché revocada: \(error.localizedDescription)")
-            }
-        } catch {
-            failures.append("No se pudo eliminar la caché directa revocada: \(error.localizedDescription)")
-        }
+            } catch { failures.append(error) }
+        } catch { failures.append(error) }
         await blockRubricDrafts(for: revoked, message: message)
-        if !failures.isEmpty { self.error = failures.joined(separator: " ") }
+        if !failures.isEmpty || purgeWasDeferred {
+            presentErrors(failures, operation: .revocation,
+                          message: "No se pudo completar la limpieza del vínculo.",
+                          fallbackCategory: purgeWasDeferred ? "cache_cleanup_deferred" : nil)
+        }
     }
 
     private func retryPendingRevocationPurges() async {
@@ -403,7 +441,8 @@ final class MobileLibrary {
                 try connectionStore.save(nextConnections)
                 connections = nextConnections
             } catch {
-                self.error = "No se pudo reintentar la limpieza de la caché revocada: \(error.localizedDescription)"
+                presentError(error, operation: .revocation,
+                             message: "No se pudo completar la limpieza del vínculo.")
             }
         }
     }
@@ -528,8 +567,11 @@ final class MobileLibrary {
                 return accepted.request
             } catch {
                 if isTerminalRubricFailure(error) {
+                    let spanish = MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
                     await blockRubricDraft(request: request,
-                                           message: "La solicitud ya no admite aceptación; pide una nueva solicitud.")
+                                           message: spanish
+                                            ? "La solicitud ya no admite aceptación; pide una nueva solicitud al ordenador."
+                                            : "This request can no longer be accepted; ask the Mac for a new request.")
                 }
                 throw error
             }
@@ -642,13 +684,15 @@ final class MobileLibrary {
                 throw RubricExchangeError.invalidTransition
             case .pendingSend:
                 guard latest.response == response else { throw RubricExchangeError.conflict }
-                let pending = latest.with(state: .pendingSend, updatedAt: self.now(), failureMessage: nil)
+                let pending = latest.with(state: .pendingSend, updatedAt: self.now(), failureMessage: nil,
+                                          requiresUserRetry: false)
                 try await self.draftStore.save(pending)
                 return pending
             }
         }
         let pending = try await pendingWrite.value
         if pending.state == .submitted, let submitted = pending.response { return submitted }
+        rubricManualRetryGuard.clearUserRetry(for: pending.id)
         await refreshDrafts()
         do {
             // Resolve the connection inside the recoverable section. A
@@ -691,21 +735,43 @@ final class MobileLibrary {
                 return submitted
             }
         } catch {
-            let blocked = isTerminalRubricFailure(error)
-            let state: MobileRubricDraftState = blocked ? .blocked : .pendingSend
-            let failureMessage = error.localizedDescription
-            let failureWrite = rubricDraftWrites.enqueue { [weak self] in
-                guard let self, let latest = try await self.latestRubricDraft(for: pending.request) else { return }
-                guard latest.state != .blocked, latest.state != .submitted,
-                      latest.state == .pendingSend, latest.response == response else { return }
-                try await self.draftStore.save(latest.with(response: response, state: state,
-                                                           updatedAt: self.now(),
-                                                           failureMessage: failureMessage))
-            }
-            try? await failureWrite.value
-            await refreshDrafts()
+            try await persistRubricSubmissionFailure(error, for: pending)
             throw error
         }
+    }
+
+    /// Persist a definitive HTTP rejection before the submission gate releases.
+    /// That prevents the next foreground reconciliation from replaying a known
+    /// rejection while preserving automatic recovery for ambiguous transport loss.
+    private func persistRubricSubmissionFailure(_ error: Error, for draft: MobileRubricDraft) async throws {
+        guard let response = draft.response else { return }
+        let blocked = isTerminalRubricFailure(error)
+        let state: MobileRubricDraftState = blocked ? .blocked : .pendingSend
+        let requiresUserRetry = !blocked && requiresManualRetryAfterRubricRejection(error)
+        if blocked || requiresUserRetry {
+            rubricManualRetryGuard.requireUserRetry(for: draft.id)
+        } else {
+            rubricManualRetryGuard.clearUserRetry(for: draft.id)
+        }
+        let spanish = MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
+        let failureMessage = blocked
+            ? (spanish
+                ? "La solicitud ya no admite envíos; pide una nueva solicitud."
+                : "This request can no longer accept submissions; ask for a new request.")
+            : (spanish
+                ? "No se pudo enviar la rúbrica. Puedes volver a intentarlo."
+                : "Couldn't send the rubric. You can try again.")
+        let failureWrite = rubricDraftWrites.enqueue { [weak self] in
+            guard let self, let latest = try await self.latestRubricDraft(for: draft.request) else { return }
+            guard latest.state == .pendingSend, latest.response == response else { return }
+            try await self.draftStore.save(latest.with(response: response, state: state,
+                                                       updatedAt: self.now(),
+                                                       failureMessage: failureMessage,
+                                                       requiresUserRetry: requiresUserRetry))
+        }
+        try await failureWrite.value
+        if blocked { rubricManualRetryGuard.clearUserRetry(for: draft.id) }
+        await refreshDrafts()
     }
 
     private func isTerminalRubricFailure(_ error: Error) -> Bool {
@@ -713,6 +779,13 @@ final class MobileLibrary {
             return [.expired, .invalidTransition, .unsupported, .notFound, .conflict].contains(error)
         }
         return (error as? SyncError) == .revoked
+    }
+
+    private func requiresManualRetryAfterRubricRejection(_ error: Error) -> Bool {
+        // HTTP 413 is mapped to invalidPayload; unlike an ambiguous transport
+        // loss, it must wait for a deliberate Retry just like other explicit
+        // non-terminal response statuses.
+        MobileRubricCaptureFailure.isExplicitSubmissionRejection(error)
     }
 
     /// Preserve an accepted drawing or frozen response when a terminal
@@ -727,7 +800,10 @@ final class MobileLibrary {
             await self.refreshDrafts()
         }
         do { try await write.value }
-        catch { self.error = error.localizedDescription }
+        catch {
+            presentError(error, operation: .rubric,
+                         message: "No se pudo actualizar la solicitud de rúbrica.")
+        }
     }
 
     private func blockRubricDrafts(for connection: MobileDirectConnection, message: String) async {
@@ -742,7 +818,10 @@ final class MobileLibrary {
             await self.refreshDrafts()
         }
         do { try await write.value }
-        catch { self.error = error.localizedDescription }
+        catch {
+            presentError(error, operation: .rubric,
+                         message: "No se pudo actualizar el borrador de rúbrica.")
+        }
     }
 
     /// Reconcile local records independently from the server's pending list.
@@ -792,11 +871,39 @@ final class MobileLibrary {
                     guard let self else { throw RubricExchangeError.storageFailure }
                     return try await self.withRubricContext(for: draft.request) { context in
                         try validateRubricContext(token)
+                        guard let latest = try await self.latestRubricDraft(for: draft.request),
+                              latest.state == .pendingSend, latest.response == response else {
+                            throw RubricExchangeError.conflict
+                        }
+                        // A definite HTTP rejection is different from a lost
+                        // acknowledgement: only the user's Retry may resend it.
+                        guard !latest.requiresUserRetry,
+                              !rubricManualRetryGuard.requiresUserRetry(for: draft.id) else { return response }
                         // The response POST is authenticated, idempotent and returns
                         // the durable Mac copy. Replaying these exact frozen bytes is
                         // the V1-compatible lost-ack reconciliation path.
-                        let submitted = try await context.client.submitRubricResponse(response,
-                            deviceID: context.connection.deviceID, credential: context.credential)
+                        let submitted: RubricResponse
+                        do {
+                            submitted = try await context.client.submitRubricResponse(response,
+                                deviceID: context.connection.deviceID, credential: context.credential)
+                        } catch {
+                            if isTerminalRubricFailure(error) || requiresManualRetryAfterRubricRejection(error) {
+                                // Store the response rejection while this exact-operation gate is
+                                // still held, before another foreground poll can enter it.
+                                do {
+                                    try await persistRubricSubmissionFailure(error, for: draft)
+                                } catch {
+                                    let spanish = MobileErrorNotice.isSpanishLanguage(
+                                        Locale.preferredLanguages.first)
+                                    presentError(error, operation: .rubric,
+                                        message: spanish
+                                            ? "No se pudo guardar el estado del envío. No se repetirá automáticamente mientras Little Leonardo siga abierto."
+                                            : "Couldn't save the submission state. It won't be sent again automatically while Little Leonardo stays open.")
+                                    throw error
+                                }
+                            }
+                            throw error
+                        }
                         guard submitted == response else {
                             await blockRubricDraft(request: draft.request,
                                                    message: "La respuesta remota no coincide con el envío congelado.")
@@ -865,7 +972,8 @@ final class MobileLibrary {
         do {
             recoverableRubricDrafts = try await draftStore.all(now: now())
         } catch {
-            self.error = error.localizedDescription
+            presentError(error, operation: .rubric,
+                         message: "No se pudo actualizar el borrador de rúbrica.")
         }
     }
 

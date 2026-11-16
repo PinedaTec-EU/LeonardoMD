@@ -1,0 +1,83 @@
+{
+  "purpose": "Clean-source iOS UI evidence for explicit rubric response rejection and deliberate manual retry in PR #435.",
+  "recorded_at": "2026-11-16",
+  "product_code_source_sha": "5e751df2cccb8e9b9451c86175a5886e0a1f0aa6",
+  "pull_request": 435,
+  "issue": 458,
+  "platform": "Little Leonardo on iOS Simulator",
+  "build": "Build ledger 131; this test reused the compiled product and did not allocate a new build.",
+  "environment": {
+    "device": "iPhone 17 Pro",
+    "simulator_id": "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+    "simulator_name": "LittleLeonardo PR435 Exact English QA 20261116",
+    "os_version": "26.5",
+    "os_build": "23F77",
+    "architecture": "arm64",
+    "host_os": "macOS 27.0.1",
+    "app_launch_language_arguments": ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"],
+    "locale_observation": "English error copy rendered, but the rubric title, labels, instructions and controls remained Spanish. See issue #462."
+  },
+  "test": {
+    "identifier": "PairingUITests/testMacRequestedRubricCaptureTerminalRetryBlocksAndLogsInEnglish()",
+    "result": "Passed",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "result_bundle": "test_sim_2026-11-16T16-50-50-517Z_pid5041_7e3cfd38.xcresult",
+    "attachment_manifest": "xctest-attachment-manifest.json"
+  },
+  "fixture": {
+    "result": "Passed",
+    "response_statuses": [503, 503, 413, 409],
+    "unique_request_ids": 1,
+    "response_posts": 4,
+    "no_automatic_replay_after": [503, 413],
+    "terminal_409_after": "explicit manual retry",
+    "draft_after_413": {
+      "state": "pendingSend",
+      "requires_user_retry": true,
+      "response_preserved": true
+    },
+    "audit_files": [
+      "fixture-terminal-retry.json",
+      "fixture-503-no-auto-replay.json",
+      "fixture-413-no-auto-replay.json",
+      "draft-413-pending-retry.json"
+    ]
+  },
+  "screenshots": [
+    {
+      "file": "rubric-http-503-en.png",
+      "state": "HTTP 503 rejection available for deliberate retry",
+      "captured_at_utc": "2026-11-16T16:51:43Z",
+      "dimensions": "1206x2622",
+      "sha256": "7a6861323e1df6ae14378c3bb705b7370479f8f1ea9cd2d8bae1d320dee6ea04"
+    },
+    {
+      "file": "rubric-http-413-en.png",
+      "state": "HTTP 413 invalid-payload rejection with drawing preserved for manual retry",
+      "captured_at_utc": "2026-11-16T16:52:01Z",
+      "dimensions": "1206x2622",
+      "sha256": "41eddf132fe02a99d4f7785600b243ccd691668f43d18981e6396fd98aaf1a10"
+    },
+    {
+      "file": "rubric-http-409-terminal-en.png",
+      "state": "Terminal HTTP 409 after deliberate manual retry; drawing preserved",
+      "captured_at_utc": "2026-11-16T16:52:09Z",
+      "dimensions": "1206x2622",
+      "sha256": "e911949d8745b1a52eacb07d7ee3543885199df21d16d907f4638c5cba0453ac"
+    }
+  ],
+  "cleanup": {
+    "task_owned_simulator": "Shut down after evidence collection",
+    "task_owned_test_app": "Stopped after evidence collection",
+    "fixture_listener": "Stopped after evidence collection",
+    "pre_existing_simulator_E204_and_apps": "Left running and untouched",
+    "pre_existing_Device_Hub": "Left running and untouched"
+  },
+  "limitations": [
+    "Only the English-locale UI test was included in this clean run.",
+    "This capture reveals a separate whole-screen localization bug tracked by #462.",
+    "No Guide v88 packaged Help acceptance is claimed; the owner-authorized Beta validation is pending."
+  ]
+}

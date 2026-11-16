@@ -1,0 +1,16 @@
+{
+  "browser_name" : "Little Leonardo native SwiftUI\/WKWebView · iOS Simulator 26.5",
+  "browser_version" : "WKWebView engine version not exposed by XCTest",
+  "capture_mode" : "viewport",
+  "captured_at" : "2026-11-16T15:29:18Z",
+  "data_provenance" : "synthetic",
+  "native_viewport_points" : {
+    "height" : 874,
+    "width" : 402
+  },
+  "route" : "\/native\/ios\/on-demand\/diagnostic-log-latest",
+  "screen" : "diagnostic-log-latest",
+  "source_sha" : "5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a",
+  "state" : "The matching newest error reference is visible without scrolling; native points measured from app.frame; Spanish; Classic appearance",
+  "viewport_css" : null
+}

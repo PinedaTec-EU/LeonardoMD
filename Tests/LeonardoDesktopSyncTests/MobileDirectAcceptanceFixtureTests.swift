@@ -103,7 +103,7 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                "enrollment-persist-failure", "capability-persist-failure",
                "revocation-cache-delete-failure", "reconnect-during-purge",
                "revocation-uncertainty-revalidation", "accept-lost-ack",
-               "terminal-accept-cancel"].contains(mode) else {
+               "terminal-accept-cancel", "terminal-retry"].contains(mode) else {
             throw SyncError.invalidPath
         }
         let root = URL(fileURLWithPath: path, isDirectory: true)
@@ -150,10 +150,15 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
             ? ReconnectDuringPurgeGate(root: root) : nil
         let acceptanceFault = mode == "accept-lost-ack"
             ? LostRubricAcceptanceAcknowledgementFault(root: root) : nil
+        let terminalRetryFault = mode == "terminal-retry" ? TerminalRubricRetryFault() : nil
         let runtime = DesktopDirectRuntime(root: root.appendingPathComponent("Service"),
             credentials: NativeMobileFixtureCredentials(), now: { Date() },
             makeListener: { identity, downstream in
                 LANHTTPSListener(identity: identity) { request in
+                    if let terminalRetryFault,
+                       let injected = await terminalRetryFault.intercept(request) {
+                        return injected
+                    }
                     let response = await downstream(request)
                     if let fault { return await fault.response(for: request, after: response) }
                     if let delayedProject { return await delayedProject.response(for: request, after: response) }
@@ -210,9 +215,112 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                         try writeJSON(["requestID": requestID.uuidString,
                                        "state": cancelled.state.rawValue],
                                       to: root.appendingPathComponent("terminal-accept-cancel.json"))
+                    case "arm-recoverable-response":
+                        guard mode == "terminal-retry", let terminalRetryFault else { throw SyncError.invalidPath }
+                        await terminalRetryFault.armRecoverableFailure()
+                    case "terminal-response-next":
+                        guard mode == "terminal-retry", let terminalRetryFault else { throw SyncError.invalidPath }
+                        await terminalRetryFault.armTerminalFailure()
+                    case "payload-too-large-next":
+                        guard mode == "terminal-retry", let terminalRetryFault else { throw SyncError.invalidPath }
+                        await terminalRetryFault.armPayloadTooLargeFailure()
+                    case "await-payload-too-large-rejection":
+                        guard mode == "terminal-retry", let terminalRetryFault else { throw SyncError.invalidPath }
+                        let snapshot = await terminalRetryFault.waitForResponsePosts(3, timeout: 30)
+                        XCTAssertEqual(snapshot.statuses, [503, 503, 413],
+                                       "The explicit retry must preserve the HTTP 413 rejection")
+                        XCTAssertEqual(snapshot.responsePosts, 3,
+                                       "HTTP 413 must be the third response POST, after the user's Retry")
+                        try assertManualRetryDraftAfterPayloadRejection(root: root)
+                        try writeJSON(["statuses": snapshot.statuses,
+                                       "responsePosts": snapshot.responsePosts,
+                                       "uniqueRequestIDs": snapshot.uniqueRequestIDs,
+                                       "events": snapshot.events],
+                                      to: root.appendingPathComponent("terminal-retry-payload-too-large.json"))
+                    case "assert-no-auto-retry-after-payload-rejection":
+                        guard mode == "terminal-retry", let terminalRetryFault else { throw SyncError.invalidPath }
+                        let snapshot = await terminalRetryFault.snapshot()
+                        XCTAssertEqual(snapshot.statuses, [503, 503, 413],
+                                       "A definite HTTP 413 must not be replayed by a later foreground poll")
+                        XCTAssertEqual(snapshot.responsePosts, 3,
+                                       "Only the explicit Retry may resubmit the rejected frozen payload")
+                        try assertManualRetryDraftAfterPayloadRejection(root: root)
+                        try writeJSON(["statuses": snapshot.statuses,
+                                       "responsePosts": snapshot.responsePosts,
+                                       "uniqueRequestIDs": snapshot.uniqueRequestIDs],
+                                      to: root.appendingPathComponent("terminal-retry-payload-auto-replay-check.json"))
+                    case "await-terminal-response":
+                        guard mode == "terminal-retry", let terminalRetryFault else { throw SyncError.invalidPath }
+                        let snapshot = await terminalRetryFault.waitForResponsePosts(4, timeout: 30)
+                        XCTAssertEqual(snapshot.statuses, [503, 503, 413, 409],
+                                       "The explicit retry must be the only attempt that receives terminal HTTP 409")
+                        XCTAssertEqual(snapshot.responsePosts, 4,
+                                       "Initial Send, restored reconciliation and both explicit retries must each produce one POST")
+                        XCTAssertEqual(snapshot.uniqueRequestIDs, 1,
+                                       "The explicit retry must preserve the frozen request identity")
+                        let fourthPost = try XCTUnwrap(snapshot.events.firstIndex(of: "response-post:4"))
+                        let terminalArm = try XCTUnwrap(snapshot.events.firstIndex(of: "armed:409"))
+                        XCTAssertLessThan(terminalArm, fourthPost,
+                                          "HTTP 409 must be armed only after the user chooses Retry")
+                        try writeJSON(["statuses": snapshot.statuses,
+                                       "uniqueRequestIDs": snapshot.uniqueRequestIDs,
+                                       "responsePosts": snapshot.responsePosts,
+                                       "events": snapshot.events],
+                                      to: root.appendingPathComponent("terminal-retry-manual-retry.json"))
+                    case "assert-no-auto-retry":
+                        guard mode == "terminal-retry", let terminalRetryFault else { throw SyncError.invalidPath }
+                        let snapshot = await terminalRetryFault.snapshot()
+                        XCTAssertEqual(snapshot.statuses, [503, 503],
+                                       "A restored draft's explicit HTTP rejection must not be replayed on later polls")
+                        XCTAssertEqual(snapshot.responsePosts, 2,
+                                       "After reconciliation receives HTTP 503, later foreground polls must not POST again")
+                        try writeJSON(["statuses": snapshot.statuses,
+                                       "responsePosts": snapshot.responsePosts,
+                                       "events": snapshot.events],
+                                      to: root.appendingPathComponent("terminal-retry-auto-replay-check.json"))
+                    case "assert-no-initial-replay":
+                        guard mode == "terminal-retry", let terminalRetryFault else { throw SyncError.invalidPath }
+                        let snapshot = await terminalRetryFault.snapshot()
+                        XCTAssertEqual(snapshot.statuses, [503])
+                        XCTAssertEqual(snapshot.responsePosts, 1,
+                                       "A manual Send rejected with HTTP 503 must not auto-replay before relaunch")
+                    case "clear-retry-marker":
+                        guard mode == "terminal-retry" else { throw SyncError.invalidPath }
+                        try clearRetryMarkerForLegacyDraft(root: root)
+                    case "await-reconciliation-rejection":
+                        guard mode == "terminal-retry", let terminalRetryFault else { throw SyncError.invalidPath }
+                        let snapshot = await terminalRetryFault.waitForResponsePosts(2, timeout: 30)
+                        XCTAssertEqual(snapshot.statuses, [503, 503],
+                                       "The restored unmarked draft must receive exactly one reconciliation rejection")
+                        XCTAssertEqual(snapshot.responsePosts, 2)
+                        try writeJSON(["statuses": snapshot.statuses,
+                                       "responsePosts": snapshot.responsePosts,
+                                       "events": snapshot.events],
+                                      to: root.appendingPathComponent("terminal-retry-reconciliation-rejection.json"))
                     case "arm-lost-ack":
                         guard mode == "lost-ack", let fault else { throw SyncError.invalidPath }
                         await fault.arm()
+                    case "assert-lost-ack-held":
+                        guard mode == "lost-ack", let fault else { throw SyncError.invalidPath }
+                        let snapshot = await fault.waitForResponsePosts(2, timeout: 15)
+                        XCTAssertTrue(snapshot.injected,
+                                      "The first committed response must receive an unreadable acknowledgement")
+                        XCTAssertEqual(snapshot.responsePosts, 2,
+                                       "Relaunch must issue one automatic retry while its acknowledgement is held")
+                        XCTAssertEqual(snapshot.uniqueRequestIDs, 1,
+                                       "Every ambiguous acknowledgement retry must preserve the same request ID")
+                        XCTAssertGreaterThan(snapshot.blockedRubricPolls, 0)
+                        XCTAssertEqual(snapshot.inFlightResponsePosts, 1,
+                                       "The automatic retry must remain in flight until reconciliation is released")
+                        XCTAssertEqual(snapshot.blockedResponsePosts, 0,
+                                       "The fixture must not reject or corrupt the automatic retry acknowledgement")
+                        try writeJSON(["responsePosts": snapshot.responsePosts,
+                                       "uniqueRequestIDs": snapshot.uniqueRequestIDs,
+                                       "blockedRubricPolls": snapshot.blockedRubricPolls,
+                                       "blockedResponsePosts": snapshot.blockedResponsePosts,
+                                       "inFlightResponsePosts": snapshot.inFlightResponsePosts,
+                                       "injected": snapshot.injected],
+                                      to: root.appendingPathComponent("lost-ack-reconciliation-held.json"))
                     case "allow-reconcile":
                         guard mode == "lost-ack", let fault else { throw SyncError.invalidPath }
                         await fault.allowReconcile()
@@ -278,6 +386,7 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                         guard mode == "late-project-revoke", let delayedProject else { throw SyncError.invalidPath }
                         await delayedProject.release()
                     case "finish":
+                        await terminalRetryFault?.finish()
                         if mode == "late-project-revoke" {
                             let registry = try await runtime.consentState()
                             let id = try XCTUnwrap(deviceID)
@@ -355,6 +464,27 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                             try writeJSON(["requestID": id.uuidString,
                                            "state": status.request.state.rawValue],
                                           to: root.appendingPathComponent("terminal-accept-cancel.json"))
+                        } else if mode == "terminal-retry" {
+                            let id = try XCTUnwrap(requestID)
+                            let storedResponse = try await runtime.rubricResponse(requestID: id)
+                            XCTAssertNil(storedResponse,
+                                         "The two injected failures must not submit the response to the Mac")
+                            guard let terminalRetryFault else { throw SyncError.invalidPath }
+                            let snapshot = await terminalRetryFault.snapshot()
+                            XCTAssertEqual(snapshot.statuses, [503, 503, 413, 409])
+                            XCTAssertEqual(snapshot.uniqueRequestIDs, 1,
+                                           "Every attempt must retain the same frozen response/request identity")
+                            XCTAssertEqual(snapshot.responsePosts, 4,
+                                           "The initial Send, restored reconciliation and two explicit Retries must produce four response posts")
+                            let fourthPost = try XCTUnwrap(snapshot.events.firstIndex(of: "response-post:4"))
+                            let terminalArm = try XCTUnwrap(snapshot.events.firstIndex(of: "armed:409"))
+                            XCTAssertLessThan(terminalArm, fourthPost,
+                                              "The terminal response is armed only after the user chooses Retry")
+                            try writeJSON(["statuses": snapshot.statuses,
+                                           "uniqueRequestIDs": snapshot.uniqueRequestIDs,
+                                           "responsePosts": snapshot.responsePosts,
+                                           "events": snapshot.events],
+                                          to: root.appendingPathComponent("terminal-retry.json"))
                         } else if ["enrollment-persist-failure", "capability-persist-failure",
                                    "revocation-cache-delete-failure"].contains(mode) {
                             var result: [String: Any] = ["mode": mode, "failureSurface": mode]
@@ -401,12 +531,15 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
                                                    "Every replay must retain the original request ID and payload")
                                     XCTAssertGreaterThan(snapshot.blockedRubricPolls, 0,
                                                           "Rubric request polling must remain gated until reconciliation is explicitly allowed")
-                                    XCTAssertGreaterThan(snapshot.blockedResponsePosts, 0,
-                                                          "At least one replay acknowledgement must remain gated until reconciliation is explicitly allowed")
+                                    XCTAssertEqual(snapshot.blockedResponsePosts, 0,
+                                                   "The automatic replay must complete with its original successful acknowledgement")
+                                    XCTAssertEqual(snapshot.inFlightResponsePosts, 0,
+                                                   "No acknowledgement may remain held after the response is reconciled")
                                     try writeJSON(["responsePosts": snapshot.responsePosts,
                                                    "uniqueRequestIDs": snapshot.uniqueRequestIDs,
                                                    "blockedRubricPolls": snapshot.blockedRubricPolls,
                                                    "blockedResponsePosts": snapshot.blockedResponsePosts,
+                                                   "inFlightResponsePosts": snapshot.inFlightResponsePosts,
                                                    "injected": snapshot.injected],
                                                   to: root.appendingPathComponent("lost-ack.json"))
                                 }
@@ -423,7 +556,7 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
             XCTAssertTrue(finished, "Native rubric acceptance did not finish before fixture deadline")
             if !["enrollment-persist-failure"].contains(mode) { XCTAssertNotNil(deviceID) }
             if ["happy", "lost-ack", "accept-lost-ack", "revoke-after-draw",
-                "terminal-accept-cancel"].contains(mode) {
+                "terminal-accept-cancel", "terminal-retry"].contains(mode) {
                 XCTAssertNotNil(requestID)
             }
             try await runtime.stop()
@@ -447,6 +580,52 @@ final class MobileDirectAcceptanceFixtureTests: XCTestCase {
 
     private func writeJSON(_ value: Any, to url: URL) throws {
         try JSONSerialization.data(withJSONObject: value, options: []).write(to: url, options: .atomic)
+    }
+
+    private func clearRetryMarkerForLegacyDraft(root: URL) throws {
+        guard try String(contentsOf: root.appendingPathComponent(".qa-fixture-owned"), encoding: .utf8)
+                == "LittleLeonardoDirectQA\n" else { throw SyncError.invalidPath }
+        let draftsURL = try mobileAppSupport().appendingPathComponent("Rubrics/drafts.json")
+        let beforeData = try Data(contentsOf: draftsURL)
+        let before = try JSONDecoder().decode([MobileRubricDraft].self, from: beforeData)
+        let marked = before.filter { $0.state == .pendingSend && $0.requiresUserRetry && $0.response != nil }
+        guard marked.count == 1, MobileRubricDraft.isValid(marked[0]) else { throw SyncError.invalidPath }
+        guard var records = try JSONSerialization.jsonObject(with: beforeData) as? [[String: Any]],
+              let recordIndex = records.firstIndex(where: { $0["id"] as? String == marked[0].id.uuidString }),
+              records[recordIndex]["requiresUserRetry"] as? Bool == true else {
+            throw SyncError.invalidPath
+        }
+        records[recordIndex].removeValue(forKey: "requiresUserRetry")
+        let legacyData = try JSONSerialization.data(withJSONObject: records, options: [.sortedKeys])
+        try legacyData.write(to: draftsURL, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: NSNumber(value: Int16(0o600))],
+                                              ofItemAtPath: draftsURL.path)
+        let reopened = try JSONDecoder().decode([MobileRubricDraft].self,
+                                                from: Data(contentsOf: draftsURL))
+        guard let restored = reopened.first(where: { $0.id == marked[0].id }),
+              restored.state == .pendingSend, !restored.requiresUserRetry,
+              restored.response == marked[0].response, MobileRubricDraft.isValid(restored) else {
+            throw SyncError.invalidPath
+        }
+        try writeJSON(["requestID": restored.id.uuidString,
+                       "state": restored.state.rawValue,
+                       "legacyMarkerDefaultsToFalse": !restored.requiresUserRetry,
+                       "sameFrozenResponse": restored.response == marked[0].response],
+                      to: root.appendingPathComponent("restored-pending-draft.json"))
+    }
+
+    private func assertManualRetryDraftAfterPayloadRejection(root: URL) throws {
+        guard try String(contentsOf: root.appendingPathComponent(".qa-fixture-owned"), encoding: .utf8)
+                == "LittleLeonardoDirectQA\n" else { throw SyncError.invalidPath }
+        let draftsURL = try mobileAppSupport().appendingPathComponent("Rubrics/drafts.json")
+        let drafts = try JSONDecoder().decode([MobileRubricDraft].self, from: Data(contentsOf: draftsURL))
+        let retryable = drafts.filter { $0.state == .pendingSend && $0.response != nil && $0.requiresUserRetry }
+        guard retryable.count == 1, MobileRubricDraft.isValid(retryable[0]) else { throw SyncError.invalidPath }
+        try writeJSON(["requestID": retryable[0].id.uuidString,
+                       "state": retryable[0].state.rawValue,
+                       "requiresUserRetry": retryable[0].requiresUserRetry,
+                       "responsePreserved": retryable[0].response != nil],
+                      to: root.appendingPathComponent("payload-too-large-pending-draft.json"))
     }
 
     private func mobileAppSupport() throws -> URL {
@@ -583,6 +762,82 @@ private actor NativeMobileFixtureCredentials: DeviceCredentialStore {
     func remove(deviceID: UUID) { values.removeValue(forKey: deviceID) }
 }
 
+private actor TerminalRubricRetryFault {
+    struct Snapshot: Sendable {
+        let statuses: [Int]
+        let uniqueRequestIDs: Int
+        let responsePosts: Int
+        let events: [String]
+    }
+
+    private var recoverableFailureArmed = false
+    private var payloadTooLargeFailureArmed = false
+    private var terminalFailureArmed = false
+    private var statuses: [Int] = []
+    private var requestIDs: Set<UUID> = []
+    private var responsePosts = 0
+    private var events: [String] = []
+    func armRecoverableFailure() {
+        recoverableFailureArmed = true
+        events.append("armed:503")
+    }
+    func armTerminalFailure() {
+        terminalFailureArmed = true
+        events.append("armed:409")
+    }
+    func armPayloadTooLargeFailure() {
+        payloadTooLargeFailureArmed = true
+        events.append("armed:413")
+    }
+
+    func finish() {
+        events.append("finish")
+    }
+
+    func intercept(_ request: HTTPRequest) async -> HTTPResponse? {
+        events.append("request:\(request.method) \(request.path) recoverable=\(recoverableFailureArmed) payloadTooLarge=\(payloadTooLargeFailureArmed) terminal=\(terminalFailureArmed)")
+        guard request.method == "POST", request.path.hasSuffix("/rubrics/responses") else { return nil }
+        responsePosts += 1
+        events.append("response-post:\(responsePosts)")
+        if let response = try? JSONDecoder().decode(RubricResponse.self, from: request.body) {
+            requestIDs.insert(response.requestID)
+        }
+        if recoverableFailureArmed {
+            recoverableFailureArmed = false
+            statuses.append(503)
+            events.append("injected:503")
+            return HTTPResponse(status: 503)
+        } else if payloadTooLargeFailureArmed {
+            payloadTooLargeFailureArmed = false
+            statuses.append(413)
+            events.append("injected:413")
+            return HTTPResponse(status: 413)
+        } else if terminalFailureArmed {
+            terminalFailureArmed = false
+            statuses.append(409)
+            events.append("injected:409")
+            return HTTPResponse(status: 409)
+        }
+        guard statuses.contains(503) else { return nil }
+        statuses.append(503)
+        events.append("unexpected-auto-retry:503")
+        return HTTPResponse(status: 503)
+    }
+
+    func snapshot() -> Snapshot {
+        Snapshot(statuses: statuses, uniqueRequestIDs: requestIDs.count,
+                 responsePosts: responsePosts, events: events)
+    }
+
+    func waitForResponsePosts(_ count: Int, timeout: TimeInterval) async -> Snapshot {
+        let deadline = Date().addingTimeInterval(timeout)
+        while responsePosts < count, Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        return snapshot()
+    }
+}
+
 private actor LostRubricAcceptanceAcknowledgementFault {
     struct Snapshot: Sendable {
         let acceptPosts: Int
@@ -681,6 +936,7 @@ private actor LostRubricAcknowledgementFault {
         let uniqueRequestIDs: Int
         let blockedRubricPolls: Int
         let blockedResponsePosts: Int
+        let inFlightResponsePosts: Int
         let injected: Bool
     }
 
@@ -691,6 +947,7 @@ private actor LostRubricAcknowledgementFault {
     private var responseRequestIDs: Set<UUID> = []
     private var blockedRubricPolls = 0
     private var blockedResponsePosts = 0
+    private var inFlightResponsePosts = 0
     private var injected = false
 
     init(root: URL) { self.root = root }
@@ -705,7 +962,7 @@ private actor LostRubricAcknowledgementFault {
         try? Data("allowed\n".utf8).write(to: root.appendingPathComponent("lost-ack-reconcile-allowed.txt"), options: .atomic)
     }
 
-    func response(for request: HTTPRequest, after response: HTTPResponse) -> HTTPResponse {
+    func response(for request: HTTPRequest, after response: HTTPResponse) async -> HTTPResponse {
         guard armed else { return response }
         if request.method == "GET", request.path.hasSuffix("/rubrics/requests"), !reconcileAllowed {
             blockedRubricPolls += 1
@@ -721,22 +978,37 @@ private actor LostRubricAcknowledgementFault {
         }
         if responsePosts == 1 {
             injected = true
-            try? Data("first-response-ack-dropped\n".utf8)
+            try? Data("first-response-ack-unreadable\n".utf8)
                 .write(to: root.appendingPathComponent("lost-ack-injected.txt"), options: .atomic)
-            return HTTPResponse(status: 503)
+            return HTTPResponse(status: response.status, body: Data("unreadable acknowledgement".utf8))
         }
-        guard reconcileAllowed else {
-            blockedResponsePosts += 1
-            try? Data("503\n".utf8)
+        if !reconcileAllowed {
+            inFlightResponsePosts += 1
+            try? Data("automatic-retry-ack-held\n".utf8)
                 .write(to: root.appendingPathComponent("lost-ack-reconcile-gated.txt"), options: .atomic)
-            return HTTPResponse(status: 503)
+            while !reconcileAllowed, !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(50))
+            }
+            inFlightResponsePosts -= 1
         }
+        let acknowledgementIsReadable = (200..<300).contains(response.status)
+            && (try? JSONDecoder().decode(RubricResponse.self, from: response.body)) != nil
+        if !acknowledgementIsReadable { blockedResponsePosts += 1 }
         return response
+    }
+
+    func waitForResponsePosts(_ count: Int, timeout: TimeInterval) async -> Snapshot {
+        let deadline = Date().addingTimeInterval(timeout)
+        while responsePosts < count, Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        return snapshot()
     }
 
     func snapshot() -> Snapshot {
         Snapshot(responsePosts: responsePosts, uniqueRequestIDs: responseRequestIDs.count,
                  blockedRubricPolls: blockedRubricPolls, blockedResponsePosts: blockedResponsePosts,
+                 inFlightResponsePosts: inFlightResponsePosts,
                  injected: injected)
     }
 }

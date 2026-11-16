@@ -156,7 +156,9 @@ private struct MobileSharedProjectTreeRow: View {
                     Text(projectStatus)
                         .font(.caption).foregroundStyle(MobileClassic.secondary)
                     if isKeepingProjectOffline {
-                        Text("Incluye los ficheros nuevos")
+                        Text(MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
+                             ? "Incluye los ficheros nuevos"
+                             : "Includes new files")
                             .font(.caption2).foregroundStyle(MobileClassic.secondary)
                     }
                 }
@@ -189,7 +191,10 @@ private struct MobileSharedProjectTreeRow: View {
         let failed = entries.contains {
             library.downloads.failures[DownloadLibrary.key(id: descriptor.id, path: $0.path)] != nil
         }
-        if failed { return "Error de descarga · se reintentará" }
+        if failed {
+            return MobileErrorNotice.sharedFileDownloadFailure(
+                spanish: MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first))
+        }
         if isKeepingProjectOffline {
             let availability = entries.allSatisfy { cached.isAvailableOffline($0) }
                 ? "Disponible sin conexión" : "Sin conexión pendiente"
@@ -202,12 +207,13 @@ private struct MobileSharedProjectTreeRow: View {
         Menu {
             Button(isKeepingProjectOffline ? "Dejar de mantener sin conexión" : "Mantener sin conexión",
                    systemImage: isKeepingProjectOffline ? "pin.slash" : "pin") {
-                if !isKeepingProjectOffline {
+                let keepOffline = !isKeepingProjectOffline
+                if keepOffline {
                     library.dismissNewFiles(connectionID: connection.connectionID, projectID: descriptor.id)
                 }
                 Task {
                     await library.setSharedContentOffline(id: descriptor.id, path: "", isFolder: true,
-                                                          keep: !isKeepingProjectOffline)
+                                                          keep: keepOffline)
                 }
             }
             .disabled(cached == nil || library.connecting)
@@ -258,9 +264,12 @@ private struct MobileSharedProjectTreeRow: View {
                             .font(.caption2).tint(MobileClassic.heading)
                             .accessibilityIdentifier("remote-file-downloading-\(descriptor.id)-\(entry.path)")
                     case .failed:
-                        Label("Error de descarga · se reintentará", systemImage: "exclamationmark.triangle.fill")
+                        Label(MobileErrorNotice.sharedFileDownloadFailure(
+                            spanish: MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)),
+                              systemImage: "exclamationmark.triangle.fill")
                             .font(.caption2).foregroundStyle(.orange)
-                            .accessibilityLabel("Error de descarga; se reintentará al volver a abrir el fichero")
+                            .accessibilityLabel(MobileErrorNotice.sharedFileDownloadFailureAccessibility(
+                                spanish: MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)))
                             .accessibilityIdentifier("remote-file-download-failure-\(descriptor.id)-\(entry.path)")
                     case .availableOffline, .offlinePending, .cached, .remote:
                         Text(fileStatus(sharedFileStatus(project: project, entry: entry)))

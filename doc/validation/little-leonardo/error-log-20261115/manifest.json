@@ -1,0 +1,261 @@
+{
+  "purpose": "PR #435 native iOS evidence for localized short error alerts, matching local diagnostics, and Little Leonardo mobile Ayuda.",
+  "bundleIdentifier": "eu.pinedatec.LittleLeonardo",
+  "productSourceCommit": "e17f50f3c5b06769c9582a0ee0e0c021dfa27133",
+  "reviewNote": "The original English/Spanish settings and log screenshots remain historical evidence for source e17f50f3c5b06769c9582a0ee0e0c021dfa27133. Corrected exact-source settings, log and alert screenshots were captured from all four localization/connection UI tests on source 37032e996ce82780bee73ad3178bca7935b219ff. The candidate-specific packaged Help v77 smoke is recorded in ../packaged-help-v77-20261115.json.",
+  "simulator": {
+    "name": "LittleLeonardo PR435 Localization QA 20261115",
+    "deviceId": "0C5D5C27-1EBC-4C69-BA40-CAEE89F49750",
+    "model": "iPhone 18 Pro Max",
+    "iOS": "27.0",
+    "osBuild": "24A434",
+    "viewportPoints": {
+      "width": 440,
+      "height": 956
+    },
+    "scale": 3,
+    "screenshotPixels": {
+      "width": 1320,
+      "height": 2868
+    }
+  },
+  "runs": [
+    {
+      "test": "PairingUITests.testManualConnectionFailureShowsReferenceAndMatchingLocalLog",
+      "result": "passed",
+      "passed": 1,
+      "failed": 0,
+      "startedAt": "2026-11-15T10:35:38.699Z",
+      "finishedAt": "2026-11-15T10:36:08.995Z",
+      "resultBundle": "test_sim_2026-11-15T10-35-38-129Z_pid52605_31628816.xcresult",
+      "captures": [
+        "error-alert-es.png",
+        "error-log-es.png"
+      ]
+    },
+    {
+      "test": "PairingUITests.testEnglishManualConnectionFailureUsesEnglishAlert",
+      "result": "passed",
+      "passed": 1,
+      "failed": 0,
+      "startedAt": "2026-11-15T10:36:26.727Z",
+      "finishedAt": "2026-11-15T10:36:48.825Z",
+      "resultBundle": "test_sim_2026-11-15T10-36-26-107Z_pid52605_fd35280c.xcresult",
+      "captures": [
+        "error-alert-en.png"
+      ]
+    },
+    {
+      "test": "PairingUITests.testClassicLibrarySettingsAndInstalledAbout",
+      "result": "passed",
+      "passed": 1,
+      "failed": 0,
+      "startedAt": "2026-11-15T10:36:56.800Z",
+      "finishedAt": "2026-11-15T10:37:25.842Z",
+      "resultBundle": "test_sim_2026-11-15T10-36-56-271Z_pid52605_8745f11f.xcresult",
+      "captures": [
+        "classic-help-es.png"
+      ]
+    },
+    {
+      "testNames": [
+        "PairingUITests.testEnglishErrorLogRouteAndScreenAreLocalized",
+        "PairingUITests.testSpanishErrorLogRouteAndScreenAreLocalized"
+      ],
+      "result": "passed",
+      "passed": 2,
+      "failed": 0,
+      "startedAt": "2026-11-15T15:52:27.899Z",
+      "finishedAt": "2026-11-15T15:52:58.647Z",
+      "sourceSha": "e17f50f3c5b06769c9582a0ee0e0c021dfa27133",
+      "resultBundle": "test_sim_2026-11-15T15-52-24-668Z_pid55093_f4ea963e.xcresult",
+      "captures": [
+        "sync-settings-en-20261115.png",
+        "error-log-en-20261115.png",
+        "sync-settings-es-20261115.png",
+        "error-log-es-20261115.png"
+      ],
+      "sourceStateAtCapture": "The dirty capture worktree's application and test sources were committed byte-identically at sourceSha. The later compilation-count entry and feature inventory changes are not iOS build inputs."
+    },
+    {
+      "testNames": [
+        "PairingUITests.testEnglishErrorLogRouteAndScreenAreLocalized",
+        "PairingUITests.testEnglishManualConnectionFailureUsesEnglishAlert",
+        "PairingUITests.testManualConnectionFailureShowsReferenceAndMatchingLocalLog",
+        "PairingUITests.testSpanishErrorLogRouteAndScreenAreLocalized"
+      ],
+      "result": "passed",
+      "passed": 4,
+      "failed": 0,
+      "startedAt": "2026-11-15T18:54:29.951Z",
+      "finishedAt": "2026-11-15T18:55:52.665Z",
+      "sourceSha": "37032e996ce82780bee73ad3178bca7935b219ff",
+      "resultBundle": "pr435-correction-ui-20261115.xcresult",
+      "captures": [
+        "sync-settings-en-corrected-20261115.png",
+        "error-log-en-corrected-20261115.png",
+        "error-alert-en-corrected-20261115.png",
+        "sync-settings-es-corrected-20261115.png",
+        "error-log-es-corrected-20261115.png",
+        "error-alert-es-corrected-20261115.png"
+      ],
+      "sourceStateAtCapture": "Application code and UI-test sources were committed at sourceSha; subsequent changes are evidence, validation records and the PR build-count ledger."
+    }
+  ],
+  "captures": [
+    {
+      "file": "error-alert-es.png",
+      "sha256": "177da76eac273d742a3548a592a351b99eedb09422dc4b6d13543874d5fc16d2",
+      "capturedAt": "2026-11-15T10:36:01.495Z",
+      "route": "Pairing > manual IP/port > connection failure",
+      "provenance": "XCTest attachment from the named iOS Simulator result bundle; synthetic test data.",
+      "description": "Spanish alert shows a short recovery message, reference code LL-423D09B8E854, and one Aceptar action; no transport diagnostic is shown."
+    },
+    {
+      "file": "error-log-es.png",
+      "sha256": "214c2fa34d6f7106089621aaa7e86a5ba52f8a03ca0e817aa65e5783ba0ffc49",
+      "capturedAt": "2026-11-15T10:36:08.448Z",
+      "route": "Sync settings > Ver log",
+      "provenance": "XCTest attachment from the named iOS Simulator result bundle; synthetic test data.",
+      "description": "The final local entry contains the same LL-423D09B8E854 reference and op=pairing kind=network code=-1004. Earlier entries are synthetic failed attempts from this isolated simulator run."
+    },
+    {
+      "file": "error-alert-en.png",
+      "sha256": "b75cb60a9801a04123186278bd8bd317c572543dc10908d3da492285dd271d60",
+      "capturedAt": "2026-11-15T10:36:48.311Z",
+      "route": "Pairing > manual IP/port > connection failure",
+      "provenance": "XCTest attachment from the named iOS Simulator result bundle; synthetic test data.",
+      "description": "English alert title, generic English recovery message, and one OK action; no transport diagnostic is shown."
+    },
+    {
+      "file": "classic-help-es.png",
+      "sha256": "7fc48f0045be53e1e5fdb4e2f69024e58f1b7e5866a225edf5f2e88248248300",
+      "capturedAt": "2026-11-15T10:37:14.767Z",
+      "route": "Library > Settings > About > Help",
+      "provenance": "XCTest attachment from the named iOS Simulator result bundle; synthetic test data.",
+      "description": "In-app mobile Ayuda shows Spanish and English headings and explanatory text."
+    },
+    {
+      "file": "error-log-devicehub-qa.png",
+      "sha256": "f02406fdd7b494aa6d7197ada6533a8822f7c753a80083f22f99bc78a6bf6060",
+      "capturedAt": "2026-11-15T11:03:21Z",
+      "route": "Library > Sync settings > Ver log",
+      "provenance": "Device Hub screenshot of LittleLeonardo PR435 Host Error QA 20261115, iOS 27.0 iPhone 18 Pro Max simulator, launched from PR #435 head 0da1200cbead3bf64222a14b866f6b0e503c3f32.",
+      "description": "The live local log shows recent bounded records with opaque LL references and normalized operations, categories, error identifiers and numeric codes. Test-only entries are synthetic; no user data is present."
+    },
+    {
+      "file": "sync-settings-en-20261115.png",
+      "sha256": "ba4f26cf68c3589dbc59ce978e3cbe0e4a117bb8d914af32461e14f37bbddee5",
+      "capturedAt": "2026-11-15T15:52:41.954Z",
+      "route": "Library > Synchronization > Diagnostics > View log",
+      "provenance": "Original XCTest screenshot attachment exported from the iOS 27.0 Simulator result bundle; synthetic isolated QA data; no pixel edits.",
+      "context": "sync-settings-en-20261115.context.json",
+      "description": "The English settings screen exposes the localized Diagnostics section and View log route."
+    },
+    {
+      "file": "error-log-en-20261115.png",
+      "sha256": "927c6546edf496caec57676f2163c409ad31ca2f965e4fc870ac6d7a694b15c9",
+      "capturedAt": "2026-11-15T15:52:45.016Z",
+      "route": "Synchronization > Diagnostics > View log > Error log",
+      "provenance": "Original XCTest screenshot attachment exported from the iOS 27.0 Simulator result bundle; synthetic isolated QA data; no pixel edits.",
+      "context": "error-log-en-20261115.context.json",
+      "description": "The English log title, retention note and bounded normalized local entries are visible."
+    },
+    {
+      "file": "sync-settings-es-20261115.png",
+      "sha256": "376a17a849cb01931eff09e2d339a65aae011381f4e0d83a8a09a401f9e0089c",
+      "capturedAt": "2026-11-15T15:52:54.976Z",
+      "route": "Biblioteca > Sincronización > Diagnóstico > Ver log",
+      "provenance": "Original XCTest screenshot attachment exported from the iOS 27.0 Simulator result bundle; synthetic isolated QA data; no pixel edits.",
+      "context": "sync-settings-es-20261115.context.json",
+      "description": "La pantalla de ajustes muestra la sección Diagnóstico y el acceso localizado Ver log."
+    },
+    {
+      "file": "error-log-es-20261115.png",
+      "sha256": "4974b7721bef35a51bf6865e6dec98cce90199344a190b3912dd531a205c55c4",
+      "capturedAt": "2026-11-15T15:52:58.074Z",
+      "route": "Sincronización > Diagnóstico > Ver log > Registro de errores",
+      "provenance": "Original XCTest screenshot attachment exported from the iOS 27.0 Simulator result bundle; synthetic isolated QA data; no pixel edits.",
+      "context": "error-log-es-20261115.context.json",
+      "description": "El título, el aviso de retención y las entradas locales normalizadas aparecen en español."
+    },
+    {
+      "file": "sync-settings-en-corrected-20261115.png",
+      "sha256": "83a2520bcd34f215e2a4df914f24f56abe5835fd83e5b60fa7e9bd02838c4cfe",
+      "capturedAt": "2026-11-15T18:54:50.886Z",
+      "route": "Library > Synchronization > Diagnostics > View log",
+      "provenance": "Original XCTest attachment from the exact corrected Little Leonardo source run; synthetic simulator data; unmodified.",
+      "context": "sync-settings-en-corrected-20261115.context.json",
+      "description": "English settings show the localized Diagnostics section and View log action.",
+      "sourceSha": "37032e996ce82780bee73ad3178bca7935b219ff"
+    },
+    {
+      "file": "error-log-en-corrected-20261115.png",
+      "sha256": "30f90f19ddeb708886722c0988d68c125d1a150e0862daba5416b5ae4e905a50",
+      "capturedAt": "2026-11-15T18:54:54.000Z",
+      "route": "Synchronization > Diagnostics > View log > Error log",
+      "provenance": "Original XCTest attachment from the exact corrected Little Leonardo source run; synthetic simulator data; unmodified.",
+      "context": "error-log-en-corrected-20261115.context.json",
+      "description": "English log title, retention note and bounded local entries are visible.",
+      "sourceSha": "37032e996ce82780bee73ad3178bca7935b219ff"
+    },
+    {
+      "file": "error-alert-en-corrected-20261115.png",
+      "sha256": "bb4830c383ae88586071d2eadb47959c88677777767e5806d72c1c40f64f48d2",
+      "capturedAt": "2026-11-15T18:55:12.290Z",
+      "route": "Pairing > manual address > connection failure",
+      "provenance": "Original XCTest attachment from the exact corrected Little Leonardo source run; synthetic simulator data; unmodified.",
+      "context": "error-alert-en-corrected-20261115.context.json",
+      "description": "English alert shows one recovery message, reference and OK action without transport details.",
+      "sourceSha": "37032e996ce82780bee73ad3178bca7935b219ff"
+    },
+    {
+      "file": "sync-settings-es-corrected-20261115.png",
+      "sha256": "1fab149449980cb6d51f0e92b5b133f607fab8d77e1330c918123e8b80b0f820",
+      "capturedAt": "2026-11-15T18:55:48.987Z",
+      "route": "Biblioteca > Sincronización > Diagnóstico > Ver log",
+      "provenance": "Original XCTest attachment from the exact corrected Little Leonardo source run; synthetic simulator data; unmodified.",
+      "context": "sync-settings-es-corrected-20261115.context.json",
+      "description": "Spanish settings show the localized Diagnóstico section and Ver log action.",
+      "sourceSha": "37032e996ce82780bee73ad3178bca7935b219ff"
+    },
+    {
+      "file": "error-log-es-corrected-20261115.png",
+      "sha256": "14ad5ce95456168e8ed5e512d3e96d4265e64cb58e425ad8f277a8025d4edd35",
+      "capturedAt": "2026-11-15T18:55:38.835Z",
+      "route": "Sincronización > Diagnóstico > Ver log > Registro de errores",
+      "provenance": "Original XCTest attachment from the exact corrected Little Leonardo source run; synthetic simulator data; unmodified.",
+      "context": "error-log-es-corrected-20261115.context.json",
+      "description": "Spanish log title, retention note and bounded local entries are visible.",
+      "sourceSha": "37032e996ce82780bee73ad3178bca7935b219ff"
+    },
+    {
+      "file": "error-alert-es-corrected-20261115.png",
+      "sha256": "d335a5271d1376eb67be670ec09eed50802891fe569094e26a97968636c06b62",
+      "capturedAt": "2026-11-15T18:55:31.965Z",
+      "route": "Emparejar > dirección manual > error de conexión",
+      "provenance": "Original XCTest attachment from the exact corrected Little Leonardo source run; synthetic simulator data; unmodified.",
+      "context": "error-alert-es-corrected-20261115.context.json",
+      "description": "Spanish alert shows one recovery message, reference and Aceptar action without transport details.",
+      "sourceSha": "37032e996ce82780bee73ad3178bca7935b219ff"
+    }
+  ],
+  "limitations": [
+    "The simulator could not connect to the separate Mac direct-sync fixture (NSURLErrorDomain -1004); direct enrollment and refresh acceptance are not claimed.",
+    "The simulator cannot reproduce a physical-camera scan; no physical-camera screenshot is claimed.",
+    "This diagnostic delivery does not resolve the owner's original large-image synchronization failure in issue #380; keep #380 open until physical acceptance is recorded."
+  ],
+  "captureSourceOverrides": {
+    "error-alert-es.png": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
+    "error-log-es.png": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
+    "error-alert-en.png": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
+    "classic-help-es.png": "dcbad8240aa4e9424260dfe3b664145811a3ba69",
+    "error-log-devicehub-qa.png": "0da1200cbead3bf64222a14b866f6b0e503c3f32",
+    "sync-settings-en-corrected-20261115.png": "37032e996ce82780bee73ad3178bca7935b219ff",
+    "error-log-en-corrected-20261115.png": "37032e996ce82780bee73ad3178bca7935b219ff",
+    "error-alert-en-corrected-20261115.png": "37032e996ce82780bee73ad3178bca7935b219ff",
+    "sync-settings-es-corrected-20261115.png": "37032e996ce82780bee73ad3178bca7935b219ff",
+    "error-log-es-corrected-20261115.png": "37032e996ce82780bee73ad3178bca7935b219ff",
+    "error-alert-es-corrected-20261115.png": "37032e996ce82780bee73ad3178bca7935b219ff"
+  }
+}

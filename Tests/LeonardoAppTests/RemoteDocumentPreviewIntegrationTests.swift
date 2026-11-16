@@ -51,6 +51,72 @@ import LeonardoSyncUI
         XCTAssertTrue(text.contains("Retry"), text)
     }
 
+    func testLinkedDocumentFailureUsesItsDiagnosticPresenter() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = DownloadLibrary(cache: OnDemandCache(root: root))
+        let descriptor = SharedProjectDescriptor(id: UUID(), name: "Synthetic project", scope: try CorpusScope(folder: ""))
+        let parent = CorpusFile(path: "reference/index.md", content: Data("# Index\n\n[Open linked document](linked.md)".utf8))
+        let linked = CorpusFile(path: "reference/linked.md", content: Data("# Linked document".utf8))
+        try await library.update(id: descriptor.id, descriptor: descriptor,
+            catalogue: RemoteProjectCatalogue(files: [parent, linked].map(RemoteFileEntry.init)))
+        library.fetch = { _, entry in
+            if entry.path == parent.path { return parent }
+            throw PreviewFailure.unavailable
+        }
+        _ = try await library.openResult(id: descriptor.id, path: parent.path)
+
+        var presentedMessages: [String] = []
+        var recordFlags: [Bool] = []
+        let diagnosticPresenter: RemoteDownloadDiagnosticPresentation = { error, identity, shouldRecord in
+            XCTAssertEqual(error as? PreviewFailure, .unavailable)
+            recordFlags.append(shouldRecord)
+            let reference = identity.uuidString.replacingOccurrences(of: "-", with: "").prefix(12)
+            let message = "Couldn't load linked document. Code: LL-\(reference)"
+            presentedMessages.append(message)
+            return message
+        }
+        let size = NSSize(width: 900, height: 600)
+        let host = NSHostingView(rootView: NavigationStack {
+            RemoteDocumentPreview(library: library, projectID: descriptor.id,
+                entry: RemoteFileEntry(file: parent), failureDiagnosticPresentation: diagnosticPresenter)
+        }.frame(width: size.width, height: size.height))
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: .borderless,
+                              backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.makeKeyAndOrderFront(nil)
+        defer { window.contentView = nil; window.close() }
+
+        let deadline = ContinuousClock.now.advanced(by: .seconds(8))
+        var web: WKWebView?
+        repeat {
+            web = webView(in: host)
+            if let web,
+               let found = try? await web.evaluateJavaScript("Array.from(document.querySelectorAll('a')).some(a => a.href.endsWith('/linked.md'))") as? Bool,
+               found { break }
+            try await Task.sleep(for: .milliseconds(50))
+        } while ContinuousClock.now < deadline
+        let preview = try XCTUnwrap(web, "The linked-document fixture must render through the production Markdown web view")
+        let hasLink = try await preview.evaluateJavaScript("Array.from(document.querySelectorAll('a')).some(a => a.href.endsWith('/linked.md'))") as? Bool
+        XCTAssertEqual(hasLink, true, "The root Markdown document must expose its authorized local link")
+        _ = try await preview.evaluateJavaScript("Array.from(document.querySelectorAll('a')).find(a => a.href.endsWith('/linked.md')).click(); true")
+
+        let targetKey = DownloadLibrary.key(id: descriptor.id, path: linked.path)
+        let failureDeadline = ContinuousClock.now.advanced(by: .seconds(8))
+        while library.failures[targetKey] == nil && ContinuousClock.now < failureDeadline {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertEqual(presentedMessages.count, 1,
+                       "Opening a linked document must invoke the diagnostic presenter passed to its parent")
+        let message = try XCTUnwrap(presentedMessages.first)
+        XCTAssertTrue(message.range(of: #"LL-[0-9A-F]{12}"#, options: .regularExpression) != nil)
+        XCTAssertEqual(library.failures[targetKey], message)
+        XCTAssertEqual(recordFlags, [true])
+        XCTAssertFalse(message.contains("Synthetic update unavailable"),
+                       "The technical failure description must remain outside the preview copy")
+    }
+
     private func render(library: DownloadLibrary, id: UUID, entry: RemoteFileEntry, spanish: Bool, root: URL) async throws -> String {
         let size = NSSize(width: 900, height: 600)
         let host = NSHostingView(rootView: RemoteDocumentPreview(library: library, projectID: id, entry: entry, spanish: spanish)
@@ -129,7 +195,7 @@ import LeonardoSyncUI
         return view.subviews.lazy.compactMap { self.webView(in: $0) }.first
     }
 
-    private enum PreviewFailure: LocalizedError {
+    private enum PreviewFailure: LocalizedError, Equatable {
         case unavailable
         var errorDescription: String? { "Synthetic update unavailable" }
     }

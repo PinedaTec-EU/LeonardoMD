@@ -1,5 +1,19 @@
 # Little Leonardo native validation
 
+## PR #435 packaged Guide v87 acceptance
+
+The fresh LeonardoMD QA process opened the English and Spanish v87 user guides
+through the real Help menu. Both opened personal copies matched their bundled
+SHA-256 values. Mermaid, local images, tables, charts, inline and display math,
+the tagged equation, Math-disabled source fallback, and literal code examples
+were inspected. Both separate practice forms were filled with synthetic values,
+saved, closed and reopened; the original answer files were restored byte-for-byte.
+Math and interface language were returned to their initial settings. The process
+was quit normally and its PID was verified absent. Exact bundle, process, hash,
+form and teardown details are in
+[packaged-help-v87-qa-20261116-pr435.json](packaged-help-v87-qa-20261116-pr435.json).
+
+
 ## Current rubric capture evidence
 
 The [current source-bound manifest](ios-rubric-capture-final-20261106-8488e9d.json) identifies source `8488e9d42ee148955ea652fc052254d2aaf3ed8b`, 40 relevant code/test/config/package input hashes, five iOS captures and two bilingual Mac consent captures. Three current native modes and nine focused iOS cases pass without failures or skips. The happy mode now waits for actual dark ink in the drawing and Preview before exporting raw screenshots, and checks their relative ink density. Earlier blank Preview attachments were premature composition captures; they do not establish a lost drawing or a renderer defect. Historical raw images remain unchanged.
@@ -203,3 +217,118 @@ byte-identical; synthetic answers were archived privately. The real sync helper,
 pairing and grants were untouched. The owner's 338,658-byte physical image
 still fails; its cause remains unconfirmed, and no new TestFlight build is
 claimed by this pre-integration evidence.
+
+#### #435 Short alert, local log and Little Leonardo help
+
+On 2026-11-15, the owned iPhone 18 Pro Max Simulator (iOS 27.0, build
+24A434) passes `PairingUITests/testManualConnectionFailureShowsReferenceAndMatchingLocalLog`
+1/1. The Spanish alert shows the short recovery message and reference
+`LL-2519DD0A52CB`; it omits raw transport diagnostics. **Ver log** shows the
+same reference with `op=pairing kind=network code=-1004`. The local log also
+retains one earlier synthetic simulator attempt from the same test work. The
+simulator could not reach the separately hosted Mac direct-sync fixture, so
+enrollment, refresh, offline retention and revocation remain unaccepted here.
+
+The same simulator passes
+`PairingUITests/testClassicLibrarySettingsAndInstalledAbout` 1/1 and opens the
+mobile Ayuda page through Biblioteca → Ajustes de sincronización → Acerca de →
+Ayuda. Its screenshot shows Spanish headings and English translations. This is
+the in-app mobile help, not the bundled macOS user guides. The bilingual
+Spanish/English packaged-guide smoke through real macOS Help remains pending in
+a fresh QA instance. The run details and SHA-256 hashes for all three original
+captures are in the [evidence manifest](error-log-20261115/manifest.json):
+[alert](error-log-20261115/error-alert-es.png),
+[matching local log](error-log-20261115/error-log-es.png), and
+[mobile Ayuda](error-log-20261115/classic-help-es.png).
+
+This verifies the error presentation and local correlation only. The owner's
+338,658-byte image failure remains open under [#380](https://github.com/PinedaTec-EU/LeonardoMD/issues/380).
+
+After the scanner and localization review fixes, the same owned simulator passed
+`PairingUITests.testEnglishErrorLogRouteAndScreenAreLocalized` and
+`PairingUITests.testSpanishErrorLogRouteAndScreenAreLocalized` (2/2, source
+`e17f50f3c5b06769c9582a0ee0e0c021dfa27133`, Xcode result bundle
+`test_sim_2026-11-15T15-52-24-668Z_pid55093_f4ea963e.xcresult`). These tests
+verify the synchronization settings route, section, log title, and refresh
+label in each locale. Four original screenshots show those screens:
+[English settings](error-log-20261115/sync-settings-en-20261115.png),
+[English log](error-log-20261115/error-log-en-20261115.png),
+[ajustes en español](error-log-20261115/sync-settings-es-20261115.png), and
+[registro en español](error-log-20261115/error-log-es-20261115.png). The
+capture viewport is 440 × 956 UIKit points / 1320 × 2868 pixels; CSS viewport
+and browser version are not applicable to this native iOS app. Per-image
+timestamps, hashes and source mapping are in the adjacent context files.
+
+Historical PR #435 localization checkpoint at source
+`37032e996ce82780bee73ad3178bca7935b219ff` passes all four focused UI tests:
+English and Spanish settings/log routes, plus English and Spanish connection
+failure alerts. The current captures are the six files with the
+`-corrected-20261115` suffix in the [evidence bundle](error-log-20261115/manifest.json);
+their sidecars record source, time, locale, viewport, dimensions and SHA-256.
+The earlier settings/log captures remain historical evidence for their earlier
+source commit. The simulator's app process was absent, then the task-owned
+`LittleLeonardo PR435 Localization QA 20261115` simulator
+(`0C5D5C27-1EBC-4C69-BA40-CAEE89F49750`) was shut down after the run.
+
+The packaged macOS Guide v77 smoke below is historical and belongs to that
+earlier source. A fresh `LeonardoMDQA.app` process (PID 63021; bundle
+`eu.pinedatec.LeonardoMD.qa.e8342f795a5b4de4ba0653a3339e9997`; version/build
+0.3.1602/1602) opened Guide v77 in English and Spanish through each real Help
+menu. Both opened copies matched their bundled resource hashes. Mermaid, Math,
+the tagged box-counting equation, charts, local images and tables were visible;
+the disabled-Math fallback and literal code examples behaved as documented.
+The English and Spanish practice forms were filled with synthetic data, saved,
+closed and reopened with their answers intact. English and Math-on preferences
+were restored. The app exited normally at 19:09:35Z and PID 63021 was absent
+afterward. Full identity, hashes, form-copy results and teardown evidence are
+in [the historical packaged Help record](packaged-help-v77-20261115.json). It
+does not establish acceptance for the current Guide v86 resources or PR head.
+No Device Hub session was opened by this packaged-Help run.
+
+The current PR #435 product-code source is
+`49052f4d4bb2b1bdaabf3bd023e01a185976445e`. It includes the bilingual project
+offline-retention caption fix tracked in [#459](https://github.com/PinedaTec-EU/LeonardoMD/issues/459) and bundles Guide v86 EN/ES with hashes recorded in
+[the guide README](../../guide/README.md). The following test-source commit,
+`5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a`, makes the on-demand fixture's host
+configurable and records it in `ready.json`, so the simulator pairs with the
+same host that the Mac fixture serves; it is test transport setup, not a
+production networking change ([#460](https://github.com/PinedaTec-EU/LeonardoMD/issues/460)).
+
+The current-source bilingual simulator captures, test summaries, fixture
+audits, XCTest attachment identifiers, result-bundle paths and teardown record
+are in the
+[current-code bundle](error-log-20261116/current-code-5d99fbfe4e8ba46690e3be2db0f305c2dfd5176a/README.md).
+Both exact-source UI tests pass on iPhone 17 Pro / iOS Simulator 26.5. The
+English capture now shows “Includes new files”; Spanish shows “Incluye los
+ficheros nuevos”. The connected-host summary count remains tracked separately
+by [#457](https://github.com/PinedaTec-EU/LeonardoMD/issues/457).
+
+Fresh packaged Guide v86 Help/practice acceptance passed through the real Help
+workflow against source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`. The only
+product files changed between that run and the current product-code source
+are the Little Leonardo project-status view and its UI test; macOS Help and
+guide packaging inputs are unchanged. English and Spanish copies matched their
+bundled hashes; rendered examples, Math fallback, and both saved-and-reopened
+practice forms passed. QA PID 65824 exited normally after the run. See the
+[packaged Help record](packaged-help-v86-20261116.json). Earlier v77 and
+v77-era UI records remain historical.
+
+The Simulator UI tests do not emulate a physical camera, so no camera-scan
+screenshot is claimed. No physical large-image acceptance is claimed for #380;
+the owner's original image still must synchronize and render on the physical
+iPhone before that issue can close.
+
+#### #435 on-demand simulator fixture
+
+`OnDemandMobileAcceptanceFixtureTests.testServeOnDemandMobileFixture` serves
+synthetic data on port `46987`. Its host defaults to `127.0.0.1`; when the iOS
+Simulator cannot route that address to the Mac, set
+`LEONARDO_ON_DEMAND_QA_HOST` to a private Mac address reachable from the
+simulator. The host fixture records the configured address in `ready.json`,
+and the UI test reads that same value before pairing. Keep each run on an
+isolated simulator and a fresh `.qa-fixture-owned` root. Simulator pairing
+uses Keychain, so the local `build-for-testing` app must be ad-hoc signed with
+`CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=-`; an unsigned local build fails
+credential persistence before it exercises the sync flow. These are test
+transport and signing requirements, not production networking changes
+([#460](https://github.com/PinedaTec-EU/LeonardoMD/issues/460)).

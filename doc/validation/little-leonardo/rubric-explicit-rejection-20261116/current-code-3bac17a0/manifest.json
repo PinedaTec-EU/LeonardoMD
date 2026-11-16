@@ -1,0 +1,65 @@
+{
+  "purpose": "Exact-source native evidence for explicit Little Leonardo rubric response rejections and manual retry behavior in PR #435.",
+  "recorded_at": "2026-11-16",
+  "product_code_source_sha": "3bac17a09149571ac425ef83e5f2fcfdca5e427d",
+  "source_note": "The native UI test ran against the product code committed at this SHA. This evidence folder is documentation-only and does not change the tested product source.",
+  "capture_method": "Unmodified XCTest screenshot attachments exported with xcrun xcresulttool export attachments.",
+  "platform": "Native Little Leonardo app on iOS Simulator 26.5; 402 x 874 native points, 1206 x 2622 image pixels.",
+  "english_test": {
+    "result": "Passed",
+    "test": "PairingUITests/testMacRequestedRubricCaptureTerminalRetryBlocksAndLogsInEnglish()",
+    "result_bundle": "test_sim_2026-11-16T15-38-04-157Z_pid5041_f0ba86c9.xcresult",
+    "device": "iPhone 17 Pro",
+    "simulator_name": "LittleLeonardo PR435 Spanish QA 20261116",
+    "simulator_id": "5B689430-FDBD-44C0-A732-BE3C063F9403",
+    "os": "iOS 26.5",
+    "launch_language_arguments": ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"],
+    "fixture_mode": "terminal-retry",
+    "fixture_result": "Passed host fixture test with statuses 503, 503, 413, 409 and one unchanged request ID.",
+    "screenshots": [
+      {
+        "file": "rubric-http-503-en.png",
+        "attachment_name": "Native iOS en rubric HTTP rejection with manual Retry",
+        "captured_at": "2026-11-16T15:38:49Z",
+        "sha256": "e650d43840be59045d1df858532a1c8f22dd284825a8510e678297dc470e1ae6",
+        "state": "An explicit HTTP 503 remains available for deliberate retry."
+      },
+      {
+        "file": "rubric-http-413-en.png",
+        "attachment_name": "Native iOS en HTTP 413 rubric rejection with manual Retry",
+        "captured_at": "2026-11-16T15:39:06Z",
+        "sha256": "d35f73af098d1d4dc66be45258aae3e0350654715da5170a7ac19c854ea9e93f",
+        "state": "HTTP 413 preserves the frozen drawing and leaves the manual Retry enabled."
+      },
+      {
+        "file": "rubric-http-409-terminal-en.png",
+        "attachment_name": "Native iOS en terminal rubric retry with preserved drawing",
+        "captured_at": "2026-11-16T15:39:15Z",
+        "sha256": "6bf77ed71df30d167e3fec8945f54e0faf4216a2eac7069a6a43e24eefb8a105",
+        "state": "After explicit retry, terminal HTTP 409 blocks further submission while preserving the drawing."
+      }
+    ],
+    "screen_language_note": "The test asserts English error copy. Some existing rubric form controls and labels remain Spanish in this view; this capture does not claim full-screen English localization."
+  },
+  "fixture_assertions": {
+    "statuses": [503, 503, 413, 409],
+    "unique_request_ids": 1,
+    "response_posts": 4,
+    "automatic_replay_after_first_503": false,
+    "automatic_replay_after_reconciliation_503": false,
+    "automatic_replay_after_413": false,
+    "manual_retry_preceded_terminal_409": true,
+    "draft_after_413": "draft-413-pending-retry.json",
+    "fixture_files": ["fixture-terminal-retry.json", "fixture-413-no-auto-replay.json"]
+  },
+  "spanish_test": {
+    "result": "Blocked before the test body or app launch; not a product test failure.",
+    "test": "PairingUITests/testMacRequestedRubricCaptureTerminalRetryBlocksAndLogsInSpanish()",
+    "result_bundle": "test_sim_2026-11-16T15-41-03-394Z_pid5041_ffe063c7.xcresult",
+    "simulator_id": "5B689430-FDBD-44C0-A732-BE3C063F9403",
+    "runner_error": "CoreSimulator failed to install eu.pinedatec.LittleLeonardo because the placeholder for UUID E074400C-FD65-4BD5-B812-0674B9AD6B17 did not exist when CoreSimulatorBridge set the alternative entitlements promise.",
+    "classification": "Xcode/CoreSimulator installation harness failure; XCTest did not exercise product code and produced no Spanish screenshot.",
+    "rerun": "Not retried per owner instruction to record the runner diagnosis and continue without a retry loop.",
+    "diagnostic_file": "spanish-runner-failure-summary.json"
+  }
+}

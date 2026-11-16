@@ -1,0 +1,35 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+        "deviceName" : "LittleLeonardo PR435 Exact English QA 20261116",
+        "exportedFileName" : "223B54C3-4CB4-44D5-9EC2-318E337CC9A1.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Native iOS en terminal rubric retry with preserved drawing_0_21528AEE-1F32-430D-8B28-4BFAB7076648.png",
+        "timestamp" : 1794847929.775
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+        "deviceName" : "LittleLeonardo PR435 Exact English QA 20261116",
+        "exportedFileName" : "1539C8DC-9203-4179-9B74-D75CCCBB39B9.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Native iOS en HTTP 413 rubric rejection with manual Retry_0_1FC3F388-A813-4F60-BB23-626F03B0E429.png",
+        "timestamp" : 1794847921.427
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "E0777566-9261-4AF7-ACEA-7AA19704B3ED",
+        "deviceName" : "LittleLeonardo PR435 Exact English QA 20261116",
+        "exportedFileName" : "628FC80C-644C-430C-8073-5616BF65D996.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Native iOS en rubric HTTP rejection with manual Retry_0_42B1ACAD-7FD8-4BA9-89F8-5529E7A74170.png",
+        "timestamp" : 1794847903.724
+      }
+    ],
+    "testIdentifier" : "PairingUITests/testMacRequestedRubricCaptureTerminalRetryBlocksAndLogsInEnglish()",
+    "testIdentifierURL" : "test://com.apple.xcode/LittleLeonardo/LittleLeonardoUITests/PairingUITests/testMacRequestedRubricCaptureTerminalRetryBlocksAndLogsInEnglish"
+  }
+]
