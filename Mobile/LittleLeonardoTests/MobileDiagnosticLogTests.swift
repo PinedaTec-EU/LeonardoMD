@@ -107,11 +107,12 @@ final class MobileDiagnosticLogTests: XCTestCase {
             spanish: false,
             diagnosticIdentity: identity)
 
-        XCTAssertEqual(notice.referenceCode, "LL-\(identity.uuidString.prefix(12))")
+        let compactIdentity = identity.uuidString.replacingOccurrences(of: "-", with: "").prefix(12)
+        XCTAssertEqual(notice.referenceCode, "LL-\(compactIdentity)")
         XCTAssertTrue(notice.inlineMessage.contains("Couldn't update saved content. Try again."))
         XCTAssertFalse(notice.inlineMessage.contains(privatePath))
         XCTAssertEqual(log.recentEntries().count, 1)
-        XCTAssertTrue(log.recentEntries()[0].contains("ref=\(notice.referenceCode) op=cache kind=other code=812"))
+        XCTAssertTrue(log.recentEntries()[0].contains("ref=\(notice.referenceCode) op=cache kind=application code=812"))
         XCTAssertFalse(log.recentEntries()[0].contains(privatePath))
     }
 
