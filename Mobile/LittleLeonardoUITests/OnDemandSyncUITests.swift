@@ -124,6 +124,14 @@ final class OnDemandSyncUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-AppleLanguages", "(es)", "-AppleLocale", "es_ES"]
         app.launch()
+        let demoProject = app.buttons["open-demo-project"]
+        XCTAssertTrue(demoProject.waitForExistence(timeout: 10), "The fixture must start with the bundled local Demo")
+        demoProject.swipeLeft()
+        let deleteDemo = app.buttons["delete-demo-project"]
+        XCTAssertTrue(deleteDemo.waitForExistence(timeout: 5), "Removing the local Demo requires the explicit action")
+        deleteDemo.tap()
+        XCTAssertFalse(app.staticTexts["En este dispositivo"].exists,
+                       "The local section must be absent when no local project remains")
         try enroll(app)
 
         let hostMenu = app.buttons.matching(
@@ -152,8 +160,17 @@ final class OnDemandSyncUITests: XCTestCase {
                       "A single pending project must use the singular count")
         XCTAssertFalse(app.staticTexts["127.0.0.1:46987"].exists,
                        "An explicit local name keeps the endpoint out of the host row")
+        XCTAssertFalse(app.staticTexts["En este dispositivo"].exists,
+                       "The library must not reserve an empty local section below remote projects")
         try capture(app, "display-name-singular-count-es",
-                    state: "Synthetic connected host uses its saved local Mac QA name, hides the endpoint and shows one project pending review")
+                    state: "Synthetic connected host uses its saved local Mac QA name, hides the endpoint, shows one project pending review and omits the empty local section")
+
+        app.buttons["open-sync-settings"].tap()
+        let restoreDemo = app.buttons["restore-demo-project"]
+        XCTAssertTrue(restoreDemo.waitForExistence(timeout: 5))
+        restoreDemo.tap()
+        dismissSyncSettings(in: app)
+        XCTAssertTrue(demoProject.waitForExistence(timeout: 5), "Restore the local Demo after the empty-section check")
     }
 
     @MainActor func testEnglishSharedDownloadFailureLocalizesVoiceOverCopy() throws {
