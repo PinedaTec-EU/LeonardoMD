@@ -63,6 +63,19 @@ enum MobileQRScannerDiagnostics {
             spanish: spanish)
     }
 
+    static func presentFailure(
+        for error: Error,
+        reason: MobileQRScannerFailureReason,
+        diagnosticLog: MobileDiagnosticLog? = nil,
+        spanish: Bool,
+        present: (MobileErrorNotice) -> Void,
+        dismiss: () -> Void
+    ) {
+        present(notice(for: error, reason: reason,
+                       diagnosticLog: diagnosticLog, spanish: spanish))
+        dismiss()
+    }
+
     private static func hasInvitationScheme(_ payload: String) -> Bool {
         guard let separator = payload.firstIndex(of: ":") else { return false }
         let scheme = String(payload[..<separator])
@@ -86,9 +99,9 @@ struct MobileQRScannerScreen: View {
                         receive(payload)
                         dismiss()
                     }, failure: { error, reason in
-                        failure(MobileQRScannerDiagnostics.notice(
-                            for: error, reason: reason, spanish: spanish))
-                        dismiss()
+                        MobileQRScannerDiagnostics.presentFailure(
+                            for: error, reason: reason, spanish: spanish,
+                            present: failure, dismiss: { dismiss() })
                     })
                 } else if let message {
                     ContentUnavailableView("Cámara no disponible", systemImage: "camera",

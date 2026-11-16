@@ -157,11 +157,13 @@ struct MobileLibraryView: View {
                     entry: route.entry, spanish: spanishErrors, appearance: .leonardoClassic,
                     compactFirstHeading: true,
                     failurePresentation: { error in
-                        MobileErrorNotice.record(
+                        let notice = MobileErrorNotice.record(
                             error,
                             operation: .downloads,
                             message: MobileErrorNotice.documentDownloadMessage(spanish: spanishErrors),
-                            spanish: spanishErrors).inlineMessage
+                            spanish: spanishErrors)
+                        library.error = notice
+                        return notice.inlineMessage
                     }).classicSurface()
             }
             .refreshable { await library.synchronize(); await library.reload() }

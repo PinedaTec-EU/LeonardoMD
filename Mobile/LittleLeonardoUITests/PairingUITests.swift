@@ -1331,7 +1331,7 @@ final class PairingUITests: XCTestCase {
         XCTAssertTrue(settings.waitForExistence(timeout: 10))
         settings.tap()
         XCTAssertTrue(app.staticTexts["La sincronización automática funciona mientras la app está activa."].waitForExistence(timeout: 5))
-        app.buttons["Cerrar"].tap()
+        dismissSyncSettings(in: app)
         XCTAssertTrue(settings.waitForExistence(timeout: 5))
     }
 

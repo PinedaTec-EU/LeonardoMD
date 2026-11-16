@@ -130,6 +130,18 @@ final class MobileDiagnosticLogTests: XCTestCase {
     }
 
     @MainActor
+    func testSharedFileFailureStatusAndVoiceOverCopyFollowLocale() {
+        XCTAssertEqual(MobileErrorNotice.sharedFileDownloadFailure(spanish: true),
+                       "Error de descarga · se reintentará")
+        XCTAssertEqual(MobileErrorNotice.sharedFileDownloadFailureAccessibility(spanish: true),
+                       "Error de descarga; se reintentará al volver a abrir el fichero")
+        XCTAssertEqual(MobileErrorNotice.sharedFileDownloadFailure(spanish: false),
+                       "Download failed · will retry")
+        XCTAssertEqual(MobileErrorNotice.sharedFileDownloadFailureAccessibility(spanish: false),
+                       "Download failed; it will retry when you open the file again")
+    }
+
+    @MainActor
     func testMalformedRecognizedInvitationGetsReferenceWithoutLoggingPayload() throws {
         let payload = "littleleonardo://pair:bad/"
         let disposition = MobileQRScannerDiagnostics.scanDisposition(
@@ -143,15 +155,41 @@ final class MobileDiagnosticLogTests: XCTestCase {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let log = MobileDiagnosticLog(fileURL: root.appendingPathComponent("error-log.txt"))
-        let notice = MobileQRScannerDiagnostics.notice(
+        var presentedNotice: MobileErrorNotice?
+        var dismissed = false
+        MobileQRScannerDiagnostics.presentFailure(
             for: error,
             reason: .invalidInvitation,
             diagnosticLog: log,
-            spanish: false)
+            spanish: false,
+            present: { presentedNotice = $0 },
+            dismiss: { dismissed = true })
+        let notice = try XCTUnwrap(presentedNotice)
         let entry = try XCTUnwrap(log.recentEntries().last)
 
+        XCTAssertTrue(dismissed, "The scanner failure callback must dismiss the scanner after presenting the notice")
+        XCTAssertEqual(notice.message,
+                       "This QR code is invalid or expired. Generate a new one in LeonardoMD.")
         XCTAssertTrue(entry.contains("ref=\(notice.referenceCode) op=scanner error=transport.invalid_endpoint"))
         XCTAssertFalse(entry.contains(payload))
+    }
+
+    @MainActor
+    func testRubricCaptureFailuresAndReferenceLabelsFollowSelectedLocale() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        for spanish in [true, false] {
+            let log = MobileDiagnosticLog(fileURL: root.appendingPathComponent("\(spanish ? "es" : "en").log"))
+            for context in MobileRubricCaptureFailure.allCases {
+                let notice = context.notice(for: URLError(.networkConnectionLost),
+                                            spanish: spanish, diagnosticLog: log)
+                XCTAssertEqual(notice.message, context.message(spanish: spanish))
+                XCTAssertTrue(notice.inlineMessage.hasSuffix(
+                    "\(spanish ? "Código" : "Code"): \(notice.referenceCode)"))
+            }
+            XCTAssertEqual(log.recentEntries().count, MobileRubricCaptureFailure.allCases.count)
+            XCTAssertTrue(log.recentEntries().allSatisfy { $0.contains("op=rubric") })
+        }
     }
 
     @MainActor
