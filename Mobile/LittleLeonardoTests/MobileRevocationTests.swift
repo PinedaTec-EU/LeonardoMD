@@ -369,6 +369,115 @@ final class MobileRevocationTests: XCTestCase {
     }
 
     @MainActor
+    func testConcurrentCommitDuringBothStatusCallbacksKeepsQuarantineAndMarker() async throws {
+        try await assertConcurrentCommitAbortsStaleStatusReconciliation(afterHTTP403: false,
+                                                                        failReconciliationPromotion: false)
+        try await assertConcurrentCommitAbortsStaleStatusReconciliation(afterHTTP403: true,
+                                                                        failReconciliationPromotion: false)
+        try await assertConcurrentCommitAbortsStaleStatusReconciliation(afterHTTP403: false,
+                                                                        failReconciliationPromotion: true)
+    }
+
+    @MainActor
+    private func assertConcurrentCommitAbortsStaleStatusReconciliation(afterHTTP403: Bool,
+                                                                       failReconciliationPromotion: Bool) async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("LittleLeonardo", isDirectory: true)
+        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
+        let projectID = UUID()
+        let oldDescriptor = SharedProjectDescriptor(id: projectID, name: "Shared",
+            scope: try CorpusScope(folder: "old"))
+        let currentDescriptor = SharedProjectDescriptor(id: projectID, name: "Shared",
+            scope: try CorpusScope(folder: "current"))
+        let value = MobileDirectConnection(connectionID: connectionID, deviceID: deviceID,
+            endpoint: URL(string: "https://127.0.0.1:40882")!, fingerprint: Data(repeating: 7, count: 32),
+            projectIDs: [projectID], comparisonCode: nil, capabilities: [],
+            projectDescriptors: [oldDescriptor], acceptedProjectIDs: [projectID])
+        let journalURL = support.appendingPathComponent("revocation.json")
+        let journal = MobileRevocationJournal(url: journalURL)
+        try MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json")).save([value])
+
+        let statusCalls = LockedCounter()
+        let catalogueGate = RevocationGate()
+        let catalogueEntered = LockedFlag()
+        let catalogueExpectation = ExpectationSignal(expectation(description: "grant catalogue refresh reached gate"))
+        let credentials = TestCredentials(values: [deviceID: "credential"], failRemove: false)
+        let revocationJournal: any MobileRevocationJournalStore = failReconciliationPromotion
+            ? FailingJournal(backing: journal, failReconciliation: true) : journal
+        let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: revocationJournal,
+            statusRequest: { _, _, _ in
+                statusCalls.increment()
+                let oldStatus = afterHTTP403 && statusCalls.value == 1
+                return DirectDeviceStatus(access: .authorized,
+                                          projects: [oldStatus ? oldDescriptor : currentDescriptor])
+            },
+            catalogueRequest: { _, _, _, _ in
+                catalogueEntered.value = true
+                catalogueExpectation.fulfill()
+                await catalogueGate.wait()
+                return RemoteProjectCatalogue(files: [])
+            })
+        await library.reload()
+
+        let operationCalls = LockedCounter()
+        let operation = Task { () -> MobileRevocationClientError? in
+            do {
+                _ = try await library.withAuthenticatedConnection(value) { context in
+                    operationCalls.increment()
+                    if afterHTTP403 {
+                        throw SyncError.httpAccessDenied(operation: .catalogue, status: 403)
+                    }
+                    return context.status.access == .authorized
+                }
+                return nil
+            } catch let error as MobileRevocationClientError {
+                return error
+            } catch {
+                XCTFail("Expected stale status reconciliation to abort, got: \(error)")
+                return nil
+            }
+        }
+
+        await fulfillment(of: [catalogueExpectation.expectation], timeout: 5)
+        guard catalogueEntered.value else {
+            await catalogueGate.open()
+            _ = await operation.value
+            XCTFail("The authenticated status callback did not reach catalogue refresh")
+            return
+        }
+
+        let committedConnection = try XCTUnwrap(library.connections.first)
+        var concurrentConnection = committedConnection
+        concurrentConnection.comparisonCode = "concurrent commit"
+        let concurrentToken = library.token(for: committedConnection)
+        let concurrentTokenAfterCommit = try library.commitConnection(concurrentConnection, expected: concurrentToken)
+        XCTAssertNotNil(concurrentTokenAfterCommit, "The concurrent commit must supersede the pending refresh token")
+
+        await catalogueGate.open()
+        let staleResult = await operation.value
+        XCTAssertEqual(staleResult, .obsoleteAuthorization(markerEscalated: !failReconciliationPromotion))
+        XCTAssertEqual(operationCalls.value, afterHTTP403 ? 1 : 0,
+                       "A stale initial or 403-recheck callback must never continue with its old context")
+        XCTAssertTrue(library.authorizationGenerations.isQuarantined(connectionID: connectionID))
+        XCTAssertTrue(library.authorizationGenerations.projectsUnderQuarantine(for: connectionID).contains(projectID))
+
+        let marker = try XCTUnwrap(journal.load().first)
+        XCTAssertEqual(marker.state, failReconciliationPromotion ? .uncertain : .reconciliationRequired)
+        XCTAssertEqual(marker.projectIDs, [projectID])
+        XCTAssertEqual(marker.operations.count, failReconciliationPromotion ? 1 : 0,
+                       "A failed marker promotion must retain the original write-ahead ticket")
+
+        let relaunched = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: MobileRevocationJournal(url: journalURL, sessionID: UUID()),
+            statusRequest: { _, _, _ in DirectDeviceStatus(access: .authorized, projects: [currentDescriptor]) })
+        await relaunched.reload()
+        XCTAssertTrue(relaunched.authorizationGenerations.isQuarantined(connectionID: connectionID),
+                      "A process restart must retain the stale operation's quarantine")
+    }
+
+    @MainActor
     func testFailedRemovedProjectPurgeStaysHiddenAndRetriesAfterStatus() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -893,11 +1002,14 @@ private struct ThrowingJournal: MobileRevocationJournalStore {
 private final class FailingJournal: MobileRevocationJournalStore, @unchecked Sendable {
     private let backing: MobileRevocationJournal
     private let failCompletion: Bool
+    private let failReconciliation: Bool
     private let failRecordDenied: Bool
 
-    init(backing: MobileRevocationJournal, failCompletion: Bool = false, failRecordDenied: Bool = false) {
+    init(backing: MobileRevocationJournal, failCompletion: Bool = false,
+         failReconciliation: Bool = false, failRecordDenied: Bool = false) {
         self.backing = backing
         self.failCompletion = failCompletion
+        self.failReconciliation = failReconciliation
         self.failRecordDenied = failRecordDenied
     }
 
@@ -918,6 +1030,7 @@ private final class FailingJournal: MobileRevocationJournalStore, @unchecked Sen
 
     func requireReconciliation(connectionID: UUID, deviceID: UUID, fingerprint: Data,
                                projectIDs: Set<UUID>) throws {
+        if failReconciliation { throw RevocationTestFailure.persistence }
         try backing.requireReconciliation(connectionID: connectionID, deviceID: deviceID,
                                           fingerprint: fingerprint, projectIDs: projectIDs)
     }

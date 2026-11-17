@@ -2,6 +2,14 @@ import Foundation
 import LeonardoSync
 import LeonardoSyncTransport
 
+enum MobileRevocationClientError: Error, Equatable, Sendable, LocalizedError {
+    case obsoleteAuthorization(markerEscalated: Bool)
+
+    var errorDescription: String? {
+        "La conexión cambió mientras se actualizaban los permisos. Vuelve a sincronizar antes de abrir sus proyectos."
+    }
+}
+
 struct MobileAuthenticatedContext {
     let connection: MobileDirectConnection
     let credential: String
@@ -163,6 +171,14 @@ struct MobileRevocationClient: Sendable {
             }
             try finish(ticket, outcome: .authorized)
             return result
+        } catch let error as MobileRevocationClientError {
+            if case .obsoleteAuthorization(markerEscalated: true) = error {
+                // The stale operation is finished, but its durable marker has
+                // already been promoted to reconciliationRequired. If that
+                // promotion failed, leave the write-ahead ticket untouched.
+                try? finish(ticket, outcome: .transient)
+            }
+            throw error
         } catch let error as SyncError where error.isAccessDenied {
             try? finish(ticket, outcome: recheckAuthorized || statusAuthenticated ? .authorized : .transient)
             throw error

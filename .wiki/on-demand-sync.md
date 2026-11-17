@@ -26,6 +26,8 @@ Implementation tracked by [#384](https://github.com/PinedaTec-EU/LeonardoMD/issu
 
 PR #369 extends that boundary to the saved grant used at restore and refresh: the cached catalogue is filtered to the current scope/selection before it is published, and a narrowed grant is applied before a replacement catalogue request. Explicitly denied paths cannot use stale retained content after restart; sibling files remain available. Denied responses still pass through the caller's single localized diagnostic presentation. See [#368](https://github.com/PinedaTec-EU/LeonardoMD/issues/368) and [PR #369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369).
 
+If authenticated grant reconciliation returns no context because a connection token was superseded by a concurrent commit, abort the operation. Quarantine the affected connection/projects and persist a reconciliation-required journal marker before returning; never continue with the stale context or clear quarantine. If marker promotion fails, keep the original write-ahead ticket so restart recovery remains conservative. The deterministic regression covers both the initial STATUS callback and the post-403 recheck, including promotion failure.
+
 Revocation immediately detaches/cancels that project's active downloads and clears
 only its published progress/failures. Cancelled work may finish later; its obsolete
 generation cannot alter a new grant, including a cached reopen. The deterministic

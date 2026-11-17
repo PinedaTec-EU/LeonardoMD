@@ -213,9 +213,14 @@ final class MobileLibrary {
                 return self.authorizationGenerations.isQuarantined(connectionID: token.connectionID)
             },
             onCurrentStatus: { [weak self] context in
-                guard let self else { return nil }
-                return try await self.reconcileCurrentStatus(context, targetProjectID: projectID,
-                                                              targetFilePath: filePath)
+                guard let self else {
+                    throw MobileRevocationClientError.obsoleteAuthorization(markerEscalated: false)
+                }
+                guard let reconciled = try await self.reconcileCurrentStatus(
+                    context, targetProjectID: projectID, targetFilePath: filePath) else {
+                    throw self.obsoleteAuthorizationError(for: context)
+                }
+                return reconciled
             },
             operation: operation,
             status: statusRequest)
@@ -228,6 +233,25 @@ final class MobileLibrary {
         catch {
             presentError(error, operation: .revocation,
                          message: "No se pudo guardar la decisión de acceso.")
+        }
+    }
+
+    private func obsoleteAuthorizationError(for context: MobileAuthenticatedContext)
+        -> MobileRevocationClientError {
+        let connectionID = context.token.connectionID
+        let currentProjectIDs = connections.first(where: { $0.connectionID == connectionID })?.projectIDs ?? []
+        let projectIDs = context.connection.projectIDs
+            .union(context.connection.pendingPurgeProjectIDs)
+            .union(currentProjectIDs)
+            .union(authorizationGenerations.projectsUnderQuarantine(for: connectionID))
+        authorizationGenerations.quarantine(connectionID: connectionID, projectIDs: projectIDs)
+        do {
+            try recordReconciliationRequired(for: context.connection, projectIDs: projectIDs)
+            return .obsoleteAuthorization(markerEscalated: true)
+        } catch {
+            presentError(error, operation: .revocation,
+                         message: "No se pudo guardar la protección del vínculo. Vuelve a sincronizar antes de abrir sus proyectos.")
+            return .obsoleteAuthorization(markerEscalated: false)
         }
     }
 
