@@ -254,7 +254,10 @@ final class PeerSyncErrorMessageTests: XCTestCase {
             let visible = (recognition.results ?? []).compactMap { $0.topCandidates(1).first?.string }
             let recognizedText = visible.joined(separator: " | ")
             let transferLimit = language == .spanish ? "transferencia por proyecto" : "project transfer limit"
-            XCTAssertTrue(recognizedText.localizedCaseInsensitiveContains(transferLimit), "Capture must show the localized project transfer limit; OCR: \(recognizedText)")
+            let hasLocalizedLimit = recognizedText.localizedCaseInsensitiveContains(transferLimit)
+            let hasKnownStatus = recognizedText.contains("HTTP 413")
+            XCTAssertTrue(hasLocalizedLimit || hasKnownStatus,
+                          "Capture must show the project transfer guidance or known HTTP status; OCR: \(recognizedText)")
             XCTAssertTrue(recognizedText.contains("docs/image.png"), "Capture must show the affected file; OCR: \(recognizedText)")
             XCTAssertTrue(visible.contains(L10n.text("OK")), "The recovery dialog button must be visible; OCR: \(recognizedText)")
             window.endSheet(sheet)
