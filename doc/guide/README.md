@@ -6,23 +6,26 @@ open a user-owned copy in
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v94 updates the bilingual help with Little Leonardo's shared extension
-settings and consent flow in Demo. Demo v2 demonstrates all five built-in engines
-with local content; disabled engines retain their normal source fallback, and the
-new practice copies keep earlier v1 answers intact. The English guide includes an iPhone screenshot of the recommendation sheet. The Spanish chapter
-retains localized instructions; its localized capture stays in validation evidence because the
-Spanish package already uses nearly all of its fixed image-memory budget. Packaged Help and practice-form
-acceptance remains pending under [PR #465](https://github.com/PinedaTec-EU/LeonardoMD/pull/465).
-Guide v94 EN SHA-256: `56498d473773482ead3e934e8f90ce815de6e9465acfae792646c01bf3523333`
-and ES SHA-256: `0dcc3ada2f977e8f0d5ea2920a819c5cee84fa3ebd81ec984fac32d6fdb9b0c1`.
+Guide v94 combines the latest macOS synchronization and Preview-recovery guidance
+from Guide v93 with Little Leonardo's device-local extension settings, consent
+flow and synchronization-frequency controls. Demo v2 demonstrates all five
+built-in engines with local content;
+disabled engines retain their normal source fallback, and new practice copies
+keep earlier v1 answers intact. The English guide includes an iPhone screenshot
+of the recommendation sheet. The Spanish chapter retains localized instructions;
+its localized capture stays in validation evidence because the Spanish package
+already uses nearly all of its fixed image-memory budget. Packaged Help and
+practice-form acceptance for these regenerated packages is recorded under
+[PR #465](https://github.com/PinedaTec-EU/LeonardoMD/pull/465).
+Guide v94 EN SHA-256: `0e1b1353b7f9e7811daf14e6c497284ee11b38ff9cf33c6ce72092d29184a9bb`
+and ES SHA-256: `ce50a6c316e437a84b74a4bb97522c532624fa04928cddec79acd3703945b8de`.
 
-Guide v93 introduced Little Leonardo's five device-local built-in document
-extensions. Its switches controlled on-demand and offline previews; disabled
-extensions could be enabled by consent with warning suppression and reset behavior.
-Documents remain read-only and remote images stay blocked. Guide v93 is preserved
-as a prior user-owned copy.
-Guide v93 EN SHA-256: `3a504bf77ff4f85d067e732c2c72dd0ffa8140974e84cb0efc7c2bae83e9cd1e`
-and ES SHA-256: `8eb53b7f3a31bc196a0a0a81fa41cd9bb6da5242d80bf84d67b2af51da877fd1`.
+Guide v93 carries forward project and offline-reading guidance, including
+Preview close-time recovery from PR #447. The candidate's separate v93 copy
+with mobile extension instructions was never published or distributed; its
+content is incorporated into v94 above.
+Guide v93 EN SHA-256: `619699672c50a5295b7f6a968f9952a86b9d4f2cfd0389c322e4ec081e9a494c`
+and ES SHA-256: `ea512ab338ad8f269fdd650f29d8520e0a8378baa96309f2151abf1b79a9e519`.
 
 Guide v92 carries forward the HTTP rejection, uncertain-delivery and remote-project
 recovery guidance, and adds Little Leonardo host aliases, connection-detail addresses,
@@ -69,7 +72,7 @@ and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
-Guide v93 carried forward document search, remote-project review and offline-catalogue guidance with grouped Dock/app-switcher instances, synchronization status and helper recovery. It explains project download failures and transfer limits, distinguishes removed project grants from revoked devices with the correct recovery steps, clarifies that explicit access denials cannot open older cached content, and documents reference-coded sync and invalid or expired scanned-invitation errors. On macOS it explains how project-level authorization changes hide editable copies while preserving local work. Guide v93 also documented Little Leonardo’s five device-local Markdown extensions and consent-based recommendations for on-demand and offline reading. Temporary connection failures may still offer a retained offline copy. Its English route labels match the app. Existing guide copies and their separate practice answers remain preserved.
+Guide v93 carried forward document search, remote-project review and offline-catalogue guidance with grouped Dock/app-switcher instances, synchronization status and helper recovery. It explains project download failures and transfer limits, distinguishes removed project grants from revoked devices with the correct recovery steps, clarifies that explicit access denials cannot open older cached content, and documents reference-coded sync and invalid or expired scanned-invitation errors. On macOS it explains how project-level authorization changes hide editable copies while preserving local work and how to recover when Preview edits cannot be synchronized during tab, window or app closing. Temporary connection failures may still offer a retained offline copy. Its English route labels match the app. Existing guide copies and their separate practice answers remain preserved.
 
 File → Import with your agent opens `AgentImport-v3-en.mdlz` or
 `AgentImport-v3-es.mdlz` in the same tab/package flow, with personal copies under
