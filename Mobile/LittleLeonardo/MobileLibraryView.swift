@@ -179,7 +179,7 @@ struct MobileLibraryView: View {
             .navigationTitle("Biblioteca")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(item: $selectedRemoteFile) { route in
-                RemoteDocumentPreview(library: library.downloads, projectID: route.projectID,
+                MobileRemoteDocumentPreview(library: library.downloads, projectID: route.projectID,
                     entry: route.entry, spanish: spanishErrors, appearance: .leonardoClassic,
                     compactFirstHeading: true,
                     failureDiagnosticPresentation: { error, identity, shouldRecord in
@@ -437,6 +437,7 @@ struct MobileLibraryView: View {
                     Text("Recupera el proyecto con tus respuestas de práctica guardadas en este dispositivo. / Restore the project with your practice answers saved on this device.")
                         .font(.caption)
                 }.listRowBackground(MobileClassic.inset)
+                MobileMarkdownExtensionsSettings(preferences: .shared, spanish: spanishErrors)
                 Section(spanishErrors ? "Archivos del proyecto" : "Project files") {
                     Toggle(spanishErrors ? "Mostrar archivos que no sean documentos" : "Show non-document files",
                            isOn: $showNonDocumentFiles)
@@ -579,7 +580,7 @@ struct MobileProjectView: View {
             }
         }.classicSurface().navigationTitle(project?.name ?? "Proyecto")
         .navigationDestination(item: $selectedEntry) { entry in
-            RemoteDocumentPreview(
+            MobileRemoteDocumentPreview(
                 library: library.downloads,
                 projectID: projectID,
                 entry: entry,
@@ -606,7 +607,7 @@ struct MobileProjectView: View {
     }
 }
 
-struct MobileDocumentView: View {
+private struct LegacyMobileDocumentView: View {
     private static let markdownPreviewExtensions: Set<String> = ["md", "markdown", "mdlf", "mdlr"]
     private static let leonardoFormatExtensions: Set<String> = ["mdlf", "mdlr"]
     private static let previewableDocumentExtensions: Set<String> = ["md", "markdown", "txt", "mdlf", "mdlr"]
@@ -694,7 +695,7 @@ struct MobileDocumentView: View {
         } message: { Text("El enlace no corresponde a un documento descargado dentro de la carpeta autorizada.") }
         .navigationDestination(isPresented: Binding(get: { linkedDocument != nil }, set: { if !$0 { linkedDocument = nil } })) {
             if let target = linkedDocument {
-                MobileDocumentView(library: library, projectID: projectID, file: target.file, initialAnchor: target.anchor)
+                LegacyMobileDocumentView(library: library, projectID: projectID, file: target.file, initialAnchor: target.anchor)
             }
         }
         .navigationDestination(item: $signingCopy) { copy in

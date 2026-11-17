@@ -595,7 +595,7 @@ To share one Dock and ⌘Tab entry, enable **Group instances in Dock and app swi
 
 ## 12. The five built-in extensions
 
-These extensions are included with Leonardo, work locally and are initially disabled. They are separate from the `leonardo-format` skill for external AI agents. Enable only what you want in Preferences → Extensions, globally or for this project; project inheritance follows global settings.
+These extensions are included with Leonardo, work locally and are initially disabled. They are separate from the `leonardo-format` skill for external AI agents. On macOS, enable only what you want in Preferences → Extensions, globally or for this project; project inheritance follows global settings. Little Leonardo keeps its own device-wide extension preferences.
 
 | Extension | Recognized content | What to check |
 | --- | --- | --- |
@@ -780,6 +780,14 @@ sends or clears the rubric. Preview and **Enviar rúbrica** (send rubric) remain
 explicit actions; a blocked, submitted or frozen retry draft cannot be edited.
 
 ![Full-screen landscape rubric canvas in Leonardo Classic. Actual simulator capture with a synthetic request and Spanish interface; reduced thumbnail.](guide/en/assets/ios-rubric-classic-landscape.png)
+
+### Built-in extensions on iPhone and iPad
+
+In Little Leonardo, open **Sync settings → Document extensions** to enable Mermaid, Math (KaTeX), Charts (Vega-Lite), Citations or Markdown extras. These switches are global to Little Leonardo on this device and stay in its local preferences; they are not sent to the Mac. They apply to received documents whether a file is opened on demand or retained for offline reading. The files stay read-only. Little Leonardo keeps the bundled Demo's complete teaching examples available.
+
+When Preview finds a supported extension that is disabled, Little Leonardo offers only the built-ins detected in that document. Select the extensions you want and choose **Enable selected**, or choose **Not now** to dismiss the recommendation for the current opening. **Do not show this warning again** hides later recommendations. Use **Sync settings → Document extensions → Reset extension warnings** to show them again; resetting does not change the enabled extensions. The mobile reader keeps remote images blocked and loads only authorized local project images.
+
+The examples in [chapter 12](#12-the-five-built-in-extensions) show what each extension recognizes and how disabled syntax falls back to ordinary source. For example, a `mermaid` fence needs Mermaid enabled, and a `vega-lite` JSON fence needs Charts enabled.
 
 ### If mobile synchronization is interrupted
 

@@ -15,6 +15,12 @@ public struct RemoteDocumentPreview: View {
     let compactFirstHeading: Bool
     let failurePresentation: (@MainActor (Error) -> String)?
     let failureDiagnosticPresentation: RemoteDownloadDiagnosticPresentation?
+    private let markdownFeatures: MarkdownFeatures?
+    private let onDetectedExtensions: ((String, String, [String]) -> Void)?
+    private let onPreviewDocumentActivated: ((String) -> Void)?
+    private let onPreviewDocumentDeactivated: ((String) -> Void)?
+    private let onPreviewDocumentContentWillReload: ((String) -> Void)?
+    @StateObject private var previewController: MarkdownPreviewController
     @State private var presentation = RemoteDocumentPreviewState()
     @State private var source = false
     @State private var linked: RemoteFileEntry?
@@ -22,11 +28,26 @@ public struct RemoteDocumentPreview: View {
     public init(library: DownloadLibrary, projectID: UUID, entry: RemoteFileEntry, spanish: Bool = false,
                 appearance: MarkdownAppearance = .default, compactFirstHeading: Bool = false,
                 failurePresentation: (@MainActor (Error) -> String)? = nil,
-                failureDiagnosticPresentation: RemoteDownloadDiagnosticPresentation? = nil) {
+                failureDiagnosticPresentation: RemoteDownloadDiagnosticPresentation? = nil,
+                markdownFeatures: MarkdownFeatures? = nil,
+                onDetectedExtensions: ((String, String, [String]) -> Void)? = nil,
+                onPreviewDocumentActivated: ((String) -> Void)? = nil,
+                onPreviewDocumentDeactivated: ((String) -> Void)? = nil,
+                onPreviewDocumentContentWillReload: ((String) -> Void)? = nil) {
         self.library = library; self.projectID = projectID; self.entry = entry; self.spanish = spanish
         self.appearance = appearance; self.compactFirstHeading = compactFirstHeading
         self.failurePresentation = failurePresentation
         self.failureDiagnosticPresentation = failureDiagnosticPresentation
+        self.markdownFeatures = markdownFeatures
+        self.onDetectedExtensions = onDetectedExtensions
+        self.onPreviewDocumentActivated = onPreviewDocumentActivated
+        self.onPreviewDocumentDeactivated = onPreviewDocumentDeactivated
+        self.onPreviewDocumentContentWillReload = onPreviewDocumentContentWillReload
+        let controller = MarkdownPreviewController()
+        controller.onDetectedExtensions = { source, extensions in
+            onDetectedExtensions?(entry.path, source, extensions)
+        }
+        _previewController = StateObject(wrappedValue: controller)
     }
     private var project: CachedRemoteProject? { library.projects.first { $0.id == projectID } }
     private var currentEntry: RemoteFileEntry? { project?.catalogue.files.first { $0.path == entry.path } }
@@ -37,7 +58,11 @@ public struct RemoteDocumentPreview: View {
     private var file: CorpusFile? { presentation.content(for: request) }
     private var failure: String? { presentation.error(for: request) }
     private var previewConfiguration: MarkdownPreviewConfiguration {
-        var value = MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true,
+        let features = markdownFeatures ?? MarkdownFeatures(mermaidEnabled: true, mathEnabled: true)
+        var value = MarkdownPreviewConfiguration(allowsMermaid: features.mermaidEnabled,
+            allowsMath: features.mathEnabled, allowsVegaLite: features.vegaLiteEnabled,
+            allowsCitations: features.citationsEnabled,
+            allowsMarkdownExtensions: features.markdownExtensionsEnabled,
             externalLinkPolicy: .callbackOnly, appearance: appearance, localAssetRoot: virtualRoot,
             memoryAssets: MarkdownMemoryAssets(files: authorizedImages), allowsRemoteImages: false)
         value.allowsLeonardoFormat = Self.leonardoFormatExtensions.contains(fileExtension)
@@ -66,6 +91,8 @@ public struct RemoteDocumentPreview: View {
             content
         }.navigationTitle((entry.path as NSString).lastPathComponent)
         .toolbar { Button(source ? t("Show document", "Ver documento") : t("Show source", "Ver texto")) { source.toggle() } }
+        .onAppear { onPreviewDocumentActivated?(entry.path) }
+        .onDisappear { onPreviewDocumentDeactivated?(entry.path) }
         .task(id: request) { await load() }
         .navigationDestination(item: $linked) { target in
             linkedPreview(for: target)
@@ -76,7 +103,12 @@ public struct RemoteDocumentPreview: View {
         Self(library: library, projectID: projectID, entry: target, spanish: spanish,
              appearance: appearance, compactFirstHeading: compactFirstHeading,
              failurePresentation: failurePresentation,
-             failureDiagnosticPresentation: failureDiagnosticPresentation)
+             failureDiagnosticPresentation: failureDiagnosticPresentation,
+             markdownFeatures: markdownFeatures,
+             onDetectedExtensions: onDetectedExtensions,
+             onPreviewDocumentActivated: onPreviewDocumentActivated,
+             onPreviewDocumentDeactivated: onPreviewDocumentDeactivated,
+             onPreviewDocumentContentWillReload: onPreviewDocumentContentWillReload)
     }
 
     @ViewBuilder private var content: some View {
@@ -93,6 +125,7 @@ public struct RemoteDocumentPreview: View {
                         }
                         MarkdownPreview(content: text, baseURL: virtualRoot.appendingPathComponent(entry.path).deletingLastPathComponent(),
                             configuration: previewConfiguration,
+                            controller: previewController,
                             onLinkActivation: followLink)
                     }
                 }
@@ -101,6 +134,7 @@ public struct RemoteDocumentPreview: View {
         }
     }
     private func load() async {
+        onPreviewDocumentContentWillReload?(entry.path)
         let ticket = presentation.begin(request)
         guard let expectedCatalogue = project?.catalogue, currentEntry != nil else { return }
         do {
