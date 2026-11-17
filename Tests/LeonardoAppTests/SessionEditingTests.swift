@@ -417,14 +417,20 @@ final class SessionEditingTests: XCTestCase {
             let resizeLiteral = try XCTUnwrap(String(data: resizeJSON, encoding: .utf8))
             let message = "{\"expected\":\(expectedLiteral),\"resize\":\(resizeLiteral)}"
             var barrierCount = 0
+            var injectionAttempted = false
             var injected = false
             host.afterObjectMessageBarrierForTesting = { web in
                 barrierCount += 1
-                guard barrierCount == scenario.injectAfterBarrier, !injected else { return }
-                injected = true
-                _ = try await web.evaluateJavaScript(
-                    "window.webkit.messageHandlers.leonardoTableResize.postMessage(\(message)); true"
-                )
+                guard barrierCount == scenario.injectAfterBarrier, !injectionAttempted else { return }
+                injectionAttempted = true
+                do {
+                    _ = try await web.evaluateJavaScript(
+                        "window.webkit.messageHandlers.leonardoTableResize.postMessage(\(message)); true"
+                    )
+                    injected = true
+                } catch {
+                    XCTFail("Could not inject the table resize across the message barrier: \(error)")
+                }
             }
 
             let resizeStarted = expectation(description: "Late table resize reaches its native task")
