@@ -332,7 +332,6 @@ head CI, exact-source alert captures and strict review are pending; Beta Help
 and tab/window/app-quit acceptance remain required after integration because
 local screen capture again returned `ScreenCaptureKit -3811`. See
 `doc/validation/preview-sync/448/README.md`.
-
 PR #473 visibility follow-up (18 Nov 2026): the strict review found local search
 and remote “New files” notices bypassed the shared non-document preference.
 Search now composes file visibility with the existing authorization filter and
@@ -368,3 +367,12 @@ action. `AppSessionTests` (49 cases), `RubricSessionTests` (10 cases), and
 `LocalizationTests` (8 cases) pass; the PR #520 compilation ledger is 110.
 Packaged Help/GUI smoke acceptance is
 not claimed in this source-only handoff.
+
+PR #465 reconciliation (25 Nov 2026): the five device-local built-in
+extensions, consent recommendations and Demo v2 were retained while the old
+Guide-v94 resources and UI-capture XCTest were removed in favor of the current
+main Guide package and product tests. The source branch's simulator and Help
+records remain historical; this reconciliation made no device or GUI claim.
+The recorder correction for nested release-ledger deltas is retained under
+[#467](https://github.com/PinedaTec-EU/LeonardoMD/issues/467), and the separate
+hosted preview CI issue remains [#468](https://github.com/PinedaTec-EU/LeonardoMD/issues/468).

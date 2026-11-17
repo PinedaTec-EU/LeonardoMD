@@ -226,3 +226,8 @@ The native apps share a bundled bilingual catalog of merged PR descriptions thro
 - macOS startup restores the principal instance’s previous windows, projects, and tabs by default ([#90](https://github.com/PinedaTec-EU/LeonardoMD/issues/90)). The Mac-wide preference and location-only snapshot live in `StartupPreferences.swift` and `SessionRestoration.swift`. Explicit startup targets take precedence.
 
 Little Leonardo's five built-in Markdown extensions ([#464](https://github.com/PinedaTec-EU/LeonardoMD/issues/464)) are shared with the renderer catalog. Device-local settings control on-demand and offline document previews; exact-source detection offers consent-based activation for disabled features, with local warning suppression/reset. Documents remain read-only, remote images blocked and Demo examples unchanged. The implementation was reconciled onto the current main Help package; source-branch simulator and packaged-Help evidence remains historical until a coordinator-authorized current-head QA run. Open host import/authorization and physical-transfer work in #368 and #380 stays separately tracked.
+
+The compile recorder accepts both the nested release-ledger delta shape and the
+legacy flat shape while preserving the optional PR identity; it increments only
+after a successful compilation and remains covered by focused recorder and
+central-ledger contract tests ([#467](https://github.com/PinedaTec-EU/LeonardoMD/issues/467)).
