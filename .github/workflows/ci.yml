@@ -119,13 +119,15 @@ jobs:
       - name: Capture native synchronization error dialogs
         id: sync-error-captures
         if: steps.full-suite.outcome == 'success'
+        continue-on-error: true
         env:
           EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           LEONARDO_SYNC_ERROR_EVIDENCE: ${{ runner.temp }}/sync-error-evidence
         run: |
           mkdir -p "$LEONARDO_SYNC_ERROR_EVIDENCE"
-          swift test --skip-build --filter PeerSyncErrorMessageTests.testCaptureProductionAccessDeniedAlert
-          swift test --skip-build --filter PeerSyncErrorMessageTests.testCaptureProductionDownloadAlert
+          capture_status=0
+          swift test --skip-build --filter PeerSyncErrorMessageTests.testCaptureProductionAccessDeniedAlert || capture_status=1
+          swift test --skip-build --filter PeerSyncErrorMessageTests.testCaptureProductionDownloadAlert || capture_status=1
           python3 - "$LEONARDO_SYNC_ERROR_EVIDENCE" "$EVIDENCE_SHA" <<'PY'
           import json
           from pathlib import Path
@@ -148,14 +150,26 @@ jobs:
               if source not in state:
                   raise SystemExit(f"Capture source does not match this run: {name}")
           PY
+          test "$capture_status" -eq 0
       - name: Upload native synchronization error captures
-        if: always() && steps.sync-error-captures.outcome == 'success'
+        id: upload-sync-error-captures
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sync-error-native-captures-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/sync-error-evidence/
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 3
+      - name: Require complete native synchronization captures
+        if: always()
+        env:
+          CAPTURE_OUTCOME: ${{ steps.sync-error-captures.outcome }}
+          ARTIFACT_OUTCOME: ${{ steps.upload-sync-error-captures.outcome }}
+        run: |
+          if [[ "$CAPTURE_OUTCOME" != "success" || "$ARTIFACT_OUTCOME" != "success" ]]; then
+            echo "::error::Native synchronization dialog captures and their evidence artifact must succeed."
+            exit 1
+          fi
       - name: Build iOS companion
         run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "generic/platform=iOS Simulator" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO build-for-testing
       - name: Test Little Leonardo revocation recovery

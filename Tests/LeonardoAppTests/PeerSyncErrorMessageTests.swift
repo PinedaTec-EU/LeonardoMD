@@ -155,16 +155,6 @@ final class PeerSyncErrorMessageTests: XCTestCase {
             try capture.run()
             capture.waitUntilExit()
             XCTAssertEqual(capture.terminationStatus, 0, "Window capture requires local screen-recording permission")
-            let recognition = VNRecognizeTextRequest()
-            recognition.recognitionLevel = .accurate
-            recognition.recognitionLanguages = [language.rawValue]
-            try VNImageRequestHandler(url: image).perform([recognition])
-            let visible = (recognition.results ?? []).compactMap { $0.topCandidates(1).first?.string }
-            let recovery = language == .spanish ? "El Mac de origen ha denegado" : "The source Mac denied this request"
-            XCTAssertTrue(visible.joined(separator: " ").contains(recovery), "Capture must show the localized neutral recovery")
-            XCTAssertTrue(visible.joined(separator: " ").contains("http=403"), "Capture must retain the known HTTP status")
-            XCTAssertTrue(visible.joined(separator: " ").contains("file"), "Capture must retain the operation")
-            XCTAssertTrue(visible.contains(L10n.text("OK")), "The recovery dialog button must be visible")
             let context: [String: Any] = [
                 "captured_at": capturedAt,
                 "route": "/native/preferences/synchronization/connections",
@@ -177,6 +167,17 @@ final class PeerSyncErrorMessageTests: XCTestCase {
             ]
             try JSONSerialization.data(withJSONObject: context, options: [.prettyPrinted, .sortedKeys])
                 .write(to: image.deletingPathExtension().appendingPathExtension("context.json"))
+            let recognition = VNRecognizeTextRequest()
+            recognition.recognitionLevel = .accurate
+            recognition.recognitionLanguages = [language.rawValue]
+            try VNImageRequestHandler(url: image).perform([recognition])
+            let visible = (recognition.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+            let recovery = language == .spanish ? "El Mac de origen ha denegado" : "The source Mac denied this request"
+            let recognizedText = visible.joined(separator: " | ")
+            XCTAssertTrue(recognizedText.contains(recovery), "Capture must show the localized neutral recovery; OCR: \(recognizedText)")
+            XCTAssertTrue(recognizedText.contains("http=403"), "Capture must retain the known HTTP status; OCR: \(recognizedText)")
+            XCTAssertTrue(recognizedText.contains("file"), "Capture must retain the operation; OCR: \(recognizedText)")
+            XCTAssertTrue(visible.contains(L10n.text("OK")), "The recovery dialog button must be visible; OCR: \(recognizedText)")
             window.endSheet(sheet)
             sheet.orderOut(nil)
             controller.error = nil
@@ -232,13 +233,6 @@ final class PeerSyncErrorMessageTests: XCTestCase {
             try capture.run()
             capture.waitUntilExit()
             XCTAssertEqual(capture.terminationStatus, 0, "Window capture requires local screen-recording permission")
-            let recognition = VNRecognizeTextRequest()
-            recognition.recognitionLevel = .accurate
-            recognition.recognitionLanguages = [language.rawValue]
-            try VNImageRequestHandler(url: image).perform([recognition])
-            let visible = (recognition.results ?? []).compactMap { $0.topCandidates(1).first?.string }
-            XCTAssertTrue(visible.joined(separator: " ").contains("HTTP 413"), "Reject blank or incomplete captures")
-            XCTAssertTrue(visible.contains(L10n.text("OK")), "The recovery dialog button must be visible")
             let context: [String: Any] = [
                 "captured_at": capturedAt,
                 "route": "/native/preferences/synchronization/connections",
@@ -251,6 +245,14 @@ final class PeerSyncErrorMessageTests: XCTestCase {
             ]
             try JSONSerialization.data(withJSONObject: context, options: [.prettyPrinted, .sortedKeys])
                 .write(to: image.deletingPathExtension().appendingPathExtension("context.json"))
+            let recognition = VNRecognizeTextRequest()
+            recognition.recognitionLevel = .accurate
+            recognition.recognitionLanguages = [language.rawValue]
+            try VNImageRequestHandler(url: image).perform([recognition])
+            let visible = (recognition.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+            let recognizedText = visible.joined(separator: " | ")
+            XCTAssertTrue(recognizedText.contains("HTTP 413"), "Reject blank or incomplete captures; OCR: \(recognizedText)")
+            XCTAssertTrue(visible.contains(L10n.text("OK")), "The recovery dialog button must be visible; OCR: \(recognizedText)")
             window.endSheet(sheet)
             sheet.orderOut(nil)
             controller.error = nil
