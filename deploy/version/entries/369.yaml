@@ -1,4 +1,0 @@
-{
-  "build": 84,
-  "summary": "Remote imports explain source-read failures and size limits; 401/403 denials recheck grants and block stale caches and remote edits until authorization returns, preserving local work."
-}

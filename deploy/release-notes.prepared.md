@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1818
+
+- #368 Fixed: explain project import failures and transfer limits ([#369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369))
+
+<p>Remote imports explain source-read failures and size limits; 401/403 denials recheck grants and block stale caches and remote edits until authorization returns, preserving local work.</p>
+
+Source: `5c711e1ae98785aa4650f75f3cae9833c435aeb4`. Delta: `{"build": 84}`.
+
 ## 0.3.1734
 
 - #380 Updated: localize sync diagnostics and preserve rubric retries ([#435](https://github.com/PinedaTec-EU/LeonardoMD/pull/435))

@@ -1119,9 +1119,19 @@
       "pr": 435,
       "summary": "Little Leonardo adds concise localized sync errors with private references and a bounded log, keeps invitation codes out of diagnostics, clarifies offline retention, preserves rubric drafts for manual retry after explicit HTTP rejection, and fixes the simulator sync fixture.",
       "to_version": "0.3.1734"
+    },
+    {
+      "delta": {
+        "build": 84
+      },
+      "from_version": "0.3.1734",
+      "merge_sha": "5c711e1ae98785aa4650f75f3cae9833c435aeb4",
+      "pr": 369,
+      "summary": "Remote imports explain source-read failures and size limits; 401/403 denials recheck grants and block stale caches and remote edits until authorization returns, preserving local work.",
+      "to_version": "0.3.1818"
     }
   ],
-  "current_version": "0.3.1734",
+  "current_version": "0.3.1818",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [
