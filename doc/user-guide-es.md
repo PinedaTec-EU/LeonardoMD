@@ -525,7 +525,7 @@ Para compartir una entrada en el Dock y ⌘Tab, activa **Agrupar instancias en e
 
 ## 12. Las cinco extensiones incluidas
 
-Estas extensiones vienen con Leonardo, trabajan localmente y empiezan desactivadas. Son distintas de la skill `leonardo-format` para agentes de IA externos. Activa lo que necesites en Preferencias → Extensiones, globalmente o para este proyecto; la herencia de proyecto sigue los valores globales.
+Estas extensiones vienen con Leonardo, trabajan localmente y empiezan desactivadas. Son distintas de la skill `leonardo-format` para agentes de IA externos. En macOS, activa lo que necesites en Preferencias → Extensiones, globalmente o para este proyecto; la herencia de proyecto sigue los valores globales. Little Leonardo mantiene sus propias preferencias globales en el dispositivo.
 
 | Extensión | Contenido reconocido | Qué comprobar |
 | --- | --- | --- |
@@ -691,6 +691,14 @@ La vista previa y **Enviar rúbrica** siguen siendo acciones explícitas; un
 borrador bloqueado, enviado o pendiente de reintento no permite seguir dibujando.
 
 ![Lienzo de rúbrica a pantalla completa en horizontal, con los colores Leonardo Classic. Captura real del simulador con una solicitud sintética; miniatura reducida.](guide/es/assets/ios-rubric-classic-landscape.png)
+
+### Extensiones incluidas en iPhone y iPad
+
+En Little Leonardo, abre **Ajustes de sincronización → Extensiones de documentos** para activar Mermaid, Matemáticas (KaTeX), Gráficos (Vega-Lite), Citas o Extras Markdown. Estos interruptores son globales para Little Leonardo en este dispositivo y se guardan en sus preferencias locales; no se envían al Mac. Se aplican a los documentos recibidos tanto si se abren bajo demanda como si se conservan para leer sin conexión. Los archivos siguen siendo de solo lectura. La Demo incluida conserva todos sus ejemplos didácticos.
+
+Al mostrar la Vista previa, si detecta una extensión compatible desactivada, Little Leonardo recomienda solo las extensiones incluidas que encuentra en ese documento. Selecciona las que quieras y pulsa **Activar seleccionadas**, o **Ahora no** para cerrar el aviso durante esta apertura. **No volver a mostrar este aviso** oculta las recomendaciones posteriores. Para volver a verlas, abre **Ajustes de sincronización → Extensiones de documentos → Restablecer avisos de extensiones**; restablecer avisos no cambia las extensiones activadas. El lector móvil mantiene bloqueadas las imágenes remotas y carga solo imágenes locales de proyectos autorizados.
+
+Los ejemplos del [capítulo 12](#12-las-cinco-extensiones-incluidas) muestran qué reconoce cada extensión y cómo se presenta el texto normal cuando está desactivada. Por ejemplo, un bloque `mermaid` requiere Mermaid y un bloque JSON `vega-lite` requiere Gráficos.
 
 ### Si se interrumpe la sincronización móvil
 
