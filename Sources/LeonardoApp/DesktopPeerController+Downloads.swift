@@ -50,7 +50,7 @@ extension DesktopPeerController {
                     guard !reviewStore.authorizationRequiredProjects(connectionID: connection.id).contains(projectID) else {
                         return false
                     }
-                    copiedProjectIDs.contains(projectID) || downloads.projects.contains {
+                    return copiedProjectIDs.contains(projectID) || downloads.projects.contains {
                         $0.id == Self.downloadID(connectionID: connection.id, projectID: projectID)
                     }
                 })

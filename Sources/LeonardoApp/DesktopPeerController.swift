@@ -202,7 +202,7 @@ final class DesktopPeerController {
                 connection.grants.keys.compactMap { candidate in
                     let selected = reviewStore.acceptsProject(connectionID: connection.id, projectID: candidate)
                         || (connection.id == connectionID && candidate == projectID)
-                    !reviewStore.authorizationRequiredProjects(connectionID: connection.id).contains(candidate)
+                    return !reviewStore.authorizationRequiredProjects(connectionID: connection.id).contains(candidate)
                         && selected
                         ? Self.downloadID(connectionID: connection.id, projectID: candidate) : nil
                 }
