@@ -119,6 +119,7 @@ struct MobileDirectConnectionStore {
     struct RevocationRecovery {
         let connections: [MobileDirectConnection]
         let quarantinedConnectionIDs: Set<UUID>
+        let quarantinedProjectIDsByConnection: [UUID: Set<UUID>]
     }
 
     /// Applies the independent write-ahead journal before ordinary connection
@@ -128,6 +129,7 @@ struct MobileDirectConnectionStore {
                                        to stored: [MobileDirectConnection]) -> RevocationRecovery {
         var connections = stored
         var quarantined = Set<UUID>()
+        var quarantinedProjectIDs: [UUID: Set<UUID>] = [:]
         for marker in markers {
             guard let index = connections.firstIndex(where: {
                 $0.connectionID == marker.connectionID
@@ -135,8 +137,9 @@ struct MobileDirectConnectionStore {
                     && $0.fingerprint == marker.fingerprint
             }) else { continue }
             switch marker.state {
-            case .uncertain:
+            case .uncertain, .reconciliationRequired:
                 if !connections[index].revoked { quarantined.insert(marker.connectionID) }
+                quarantinedProjectIDs[marker.connectionID, default: []].formUnion(marker.projectIDs)
             case .denied:
                 let previousProjects = connections[index].projectIDs
                 connections[index].capabilities = []
@@ -151,7 +154,8 @@ struct MobileDirectConnectionStore {
                 connections[index].pendingPurgeProjectIDs.formUnion(marker.projectIDs)
             }
         }
-        return RevocationRecovery(connections: connections, quarantinedConnectionIDs: quarantined)
+        return RevocationRecovery(connections: connections, quarantinedConnectionIDs: quarantined,
+                                  quarantinedProjectIDsByConnection: quarantinedProjectIDs)
     }
 
     static func refreshCapabilities(_ status: DirectDeviceStatus,
@@ -213,6 +217,7 @@ struct MobileDirectConnectionStore {
 
     func loadVisibleProjects(connections: [MobileDirectConnection],
                              quarantinedConnectionIDs: Set<UUID> = [],
+                             quarantinedProjectIDs: Set<UUID> = [],
                              excludedProjectIDs: Set<UUID> = [],
                              credentials: DeviceCredentialStore,
                              corpus: OfflineCorpusStore) async throws -> [OfflineProject] {
@@ -234,6 +239,7 @@ struct MobileDirectConnectionStore {
             revokedProjectIDs.formUnion(connection.projectIDs)
             revokedProjectIDs.formUnion(connection.pendingPurgeProjectIDs)
         }
+        unavailableProjectIDs.formUnion(quarantinedProjectIDs)
         let hiddenProjectIDs = revokedProjectIDs.union(unavailableProjectIDs)
         var loaded: [OfflineProject] = []
         for id in try await corpus.projectIDs() {

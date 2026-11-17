@@ -3,6 +3,7 @@ import LeonardoSync
 
 enum MobileRevocationMarkerState: String, Codable, Sendable {
     case uncertain
+    case reconciliationRequired
     case denied
 }
 
@@ -42,6 +43,8 @@ protocol MobileRevocationJournalStore: Sendable {
     func begin(connectionID: UUID, deviceID: UUID, fingerprint: Data,
                projectIDs: Set<UUID>) throws -> MobileRevocationTicket
     func complete(_ ticket: MobileRevocationTicket, outcome: MobileRevocationOutcome) throws
+    func requireReconciliation(connectionID: UUID, deviceID: UUID, fingerprint: Data,
+                               projectIDs: Set<UUID>) throws
     func recordDenied(connectionID: UUID, deviceID: UUID, fingerprint: Data,
                       projectIDs: Set<UUID>) throws
 }
@@ -128,22 +131,27 @@ struct MobileRevocationJournal: MobileRevocationJournalStore {
         if markers[index].state == .denied {
             return
         }
+        // A late result from an older authenticated request cannot replace or
+        // clear the journal state written by a newer generation. Drop only its
+        // completed write-ahead operation; the newer marker remains untouched.
+        guard markers[index].generation == ticket.generation else {
+            markers[index].operations.removeAll {
+                $0.sessionID == ticket.sessionID && $0.operationID == ticket.operationID
+            }
+            try save(markers)
+            return
+        }
         switch outcome {
         case .denied:
             markers[index].state = .denied
             markers[index].operations.removeAll()
             try save(markers)
         case .authorized:
-            markers[index].operations.removeAll {
-                $0.sessionID == ticket.sessionID && $0.operationID == ticket.operationID
-            }
-            let hasCurrentSessionOperation = markers[index].operations.contains { $0.sessionID == sessionID }
-            if hasCurrentSessionOperation {
-                try save(markers)
-            } else {
-                markers.remove(at: index)
-                try save(markers)
-            }
+            // This exact-generation ticket completed authenticated STATUS and
+            // its required reconciliation, superseding every older in-flight
+            // ticket retained in the write-ahead marker.
+            markers.remove(at: index)
+            try save(markers)
         case .transient:
             markers[index].operations.removeAll {
                 $0.sessionID == ticket.sessionID && $0.operationID == ticket.operationID
@@ -151,11 +159,38 @@ struct MobileRevocationJournal: MobileRevocationJournalStore {
             // An inherited operation represents a crash/unknown outcome. A
             // transient result is not authenticated revalidation, so retain
             // that marker until a later successful STATUS can clear it.
-            if markers[index].operations.isEmpty {
+            if markers[index].operations.isEmpty && markers[index].state != .reconciliationRequired {
                 markers.remove(at: index)
             }
             try save(markers)
         }
+    }
+
+    func requireReconciliation(connectionID: UUID, deviceID: UUID, fingerprint: Data,
+                               projectIDs: Set<UUID>) throws {
+        var markers = try load()
+        if let index = markers.firstIndex(where: { $0.connectionID == connectionID }) {
+            guard markers[index].deviceID == deviceID, markers[index].fingerprint == fingerprint else {
+                throw SyncError.invalidSnapshot
+            }
+            guard markers[index].projectIDs.union(projectIDs).count <= Self.maximumProjectsPerMarker else {
+                throw SyncError.sizeLimitExceeded
+            }
+            guard markers[index].state != .denied else { return }
+            markers[index].projectIDs.formUnion(projectIDs)
+            markers[index].state = .reconciliationRequired
+            markers[index].generation &+= 1
+        } else {
+            guard markers.count < Self.maximumMarkers,
+                  projectIDs.count <= Self.maximumProjectsPerMarker else {
+                throw SyncError.sizeLimitExceeded
+            }
+            markers.append(MobileRevocationMarker(connectionID: connectionID, deviceID: deviceID,
+                                                  fingerprint: fingerprint, projectIDs: projectIDs,
+                                                  state: .reconciliationRequired, generation: 1,
+                                                  operations: []))
+        }
+        try save(markers)
     }
 
     func recordDenied(connectionID: UUID, deviceID: UUID, fingerprint: Data,

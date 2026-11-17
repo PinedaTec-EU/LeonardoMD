@@ -1,6 +1,7 @@
 import XCTest
 import LeonardoCore
 import LeonardoSync
+import LeonardoSyncTransport
 @testable import LittleLeonardo
 
 final class MobileRevocationTests: XCTestCase {
@@ -56,6 +57,161 @@ final class MobileRevocationTests: XCTestCase {
         _ = ticket
     }
 
+    @MainActor
+    func testCatalogue403DuringQuarantinedReconciliationPreservesMarker() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let projectID = UUID()
+        let value = connection(projectIDs: [projectID])
+        let journal = MobileRevocationJournal(url: root.appendingPathComponent("revocation.json"))
+        try journal.requireReconciliation(connectionID: value.connectionID, deviceID: value.deviceID,
+                                          fingerprint: value.fingerprint, projectIDs: [projectID])
+        let client = MobileRevocationClient(journal: journal)
+        let token = MobileConnectionToken(connectionID: value.connectionID, deviceID: value.deviceID,
+                                          fingerprint: value.fingerprint, cacheEpoch: 0,
+                                          authorizationGeneration: 0)
+        let credentials = TestCredentials(values: [value.deviceID: "credential"], failRemove: false)
+        let descriptor = SharedProjectDescriptor(id: projectID, name: "Shared",
+            scope: try CorpusScope(folder: ""))
+
+        do {
+            _ = try await client.withAuthenticatedConnection(value, token: token,
+                credentials: credentials, isCurrent: { true }, onDenied: { _ in },
+                projectID: projectID, needsStatusReconciliation: { true },
+                onCurrentStatus: { _ in
+                    throw SyncError.httpAccessDenied(operation: .catalogue, status: 403)
+                }, operation: { _ in true },
+                status: { _, _, _ in DirectDeviceStatus(access: .authorized, projects: [descriptor]) })
+            XCTFail("A denied recovery catalogue must stop the authorized operation")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .httpAccessDenied(operation: .catalogue, status: 403))
+        }
+
+        let marker = try XCTUnwrap(journal.load().first)
+        XCTAssertEqual(marker.state, .reconciliationRequired)
+        XCTAssertTrue(marker.projectIDs.contains(projectID))
+        XCTAssertTrue(marker.operations.isEmpty, "The failed request is finished without clearing quarantine")
+    }
+
+    func testOlderAuthorizationTicketCannotClearNewerReconciliationGeneration() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let projectID = UUID()
+        let value = connection(projectIDs: [projectID])
+        let journal = MobileRevocationJournal(url: root.appendingPathComponent("revocation.json"))
+        let older = try journal.begin(connectionID: value.connectionID, deviceID: value.deviceID,
+                                      fingerprint: value.fingerprint, projectIDs: value.projectIDs)
+        try journal.requireReconciliation(connectionID: value.connectionID, deviceID: value.deviceID,
+                                          fingerprint: value.fingerprint, projectIDs: value.projectIDs)
+        let newer = try journal.begin(connectionID: value.connectionID, deviceID: value.deviceID,
+                                      fingerprint: value.fingerprint, projectIDs: value.projectIDs)
+
+        try journal.complete(older, outcome: .authorized)
+        var marker = try XCTUnwrap(journal.load().first)
+        XCTAssertEqual(marker.state, .reconciliationRequired)
+        XCTAssertEqual(marker.generation, newer.generation)
+        XCTAssertTrue(marker.operations.contains { $0.operationID == newer.operationID })
+
+        try journal.complete(newer, outcome: .transient)
+        marker = try XCTUnwrap(journal.load().first)
+        XCTAssertEqual(marker.state, .reconciliationRequired)
+        XCTAssertTrue(marker.operations.isEmpty)
+        let currentStatus = try journal.begin(connectionID: value.connectionID, deviceID: value.deviceID,
+                                              fingerprint: value.fingerprint, projectIDs: value.projectIDs)
+        try journal.complete(currentStatus, outcome: .authorized)
+        XCTAssertTrue(try journal.load().isEmpty,
+                      "Only a current-generation successful revalidation may clear quarantine")
+    }
+
+    @MainActor
+    func testOlderAuthenticatedOperationCannotClearNewerQuarantine() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let value = connection()
+        let journal = MobileRevocationJournal(url: root.appendingPathComponent("revocation.json"))
+        var generations = MobileAuthorizationGenerations()
+        let token = MobileConnectionToken(connectionID: value.connectionID, deviceID: value.deviceID,
+            fingerprint: value.fingerprint, cacheEpoch: 0,
+            authorizationGeneration: generations[value.connectionID])
+        let gate = RevocationGate()
+        let entered = ExpectationSignal(expectation(description: "older authenticated operation entered"))
+        let deniedCalls = LockedCounter()
+        let credentials = TestCredentials(values: [value.deviceID: "credential"], failRemove: false)
+        let quarantinedProjectID = UUID()
+        let client = MobileRevocationClient(journal: journal)
+        let olderOperation = Task<MobileRevocationClientError?, Never> { @MainActor in
+            do {
+                _ = try await client.withAuthenticatedConnection(value, token: token,
+                    credentials: credentials,
+                    isCurrent: { generations[value.connectionID] == token.authorizationGeneration
+                        && !generations.isDenied(connectionID: value.connectionID) },
+                    isSupersededAuthorization: {
+                        generations[value.connectionID] != token.authorizationGeneration
+                            && !generations.isDenied(connectionID: value.connectionID)
+                    },
+                    onDenied: { _ in deniedCalls.increment() },
+                    needsStatusReconciliation: { generations.isQuarantined(connectionID: value.connectionID) },
+                    onCurrentStatus: { context in
+                        generations.clearQuarantine(connectionID: value.connectionID,
+                            authorizationGeneration: context.token.authorizationGeneration)
+                        throw MobileRevocationClientError.obsoleteAuthorization(markerEscalated: true)
+                    },
+                    operation: { _ in
+                        entered.fulfill()
+                        await gate.wait()
+                        return true
+                    },
+                    status: { _, _, _ in DirectDeviceStatus(access: .authorized, projects: []) })
+                XCTFail("A superseded operation must not return its result")
+                return nil
+            } catch let error as MobileRevocationClientError {
+                return error
+            } catch {
+                XCTFail("Expected stale authorization to abort, got: \(error)")
+                return nil
+            }
+        }
+
+        await fulfillment(of: [entered.expectation], timeout: 5)
+        generations.quarantine(connectionID: value.connectionID, projectIDs: [quarantinedProjectID],
+                                advanceGeneration: true)
+        await gate.open()
+        let result = await olderOperation.value
+        XCTAssertEqual(result, .obsoleteAuthorization(markerEscalated: true))
+        XCTAssertEqual(deniedCalls.value, 0,
+                       "A newer quarantine must not be misclassified as host revocation")
+        XCTAssertTrue(generations.isQuarantined(connectionID: value.connectionID),
+                      "The old operation's conditional clear must not remove the newer quarantine")
+    }
+
+    func testFailedGrantPersistenceRemainsQuarantinedUntilAuthenticatedStatus() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let projectID = UUID()
+        let journal = MobileRevocationJournal(url: root.appendingPathComponent("revocation.json"))
+        let prior = connection(projectIDs: [projectID])
+        let operation = try journal.begin(connectionID: prior.connectionID, deviceID: prior.deviceID,
+                                          fingerprint: prior.fingerprint, projectIDs: prior.projectIDs)
+
+        try journal.requireReconciliation(connectionID: prior.connectionID, deviceID: prior.deviceID,
+                                          fingerprint: prior.fingerprint, projectIDs: prior.projectIDs)
+        try journal.complete(operation, outcome: .transient)
+
+        let marker = try XCTUnwrap(journal.load().first)
+        XCTAssertEqual(marker.state, .reconciliationRequired)
+        XCTAssertTrue(marker.projectIDs.contains(projectID))
+        XCTAssertTrue(marker.operations.isEmpty)
+        let recovery = MobileDirectConnectionStore.applyRevocationMarkers([marker], to: [prior])
+        XCTAssertTrue(recovery.quarantinedConnectionIDs.contains(prior.connectionID))
+        XCTAssertEqual(recovery.quarantinedProjectIDsByConnection[prior.connectionID], [projectID])
+
+        let authenticatedStatus = try journal.begin(connectionID: prior.connectionID, deviceID: prior.deviceID,
+                                                    fingerprint: prior.fingerprint, projectIDs: prior.projectIDs)
+        try journal.complete(authenticatedStatus, outcome: .authorized)
+        XCTAssertTrue(try journal.load().isEmpty,
+                      "Only a successfully reconciled authenticated status clears the durable quarantine")
+    }
+
     func testDeniedMarkerHidesOnlyItsConnectionAndLateAuthorizationCannotClearIt() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -79,7 +235,8 @@ final class MobileRevocationTests: XCTestCase {
         var authorization = MobileAuthorizationGenerations()
         let before = authorization[revoked.connectionID]
         authorization.confirmDenied(connectionID: revoked.connectionID, projectIDs: [project])
-        authorization.clearQuarantine(connectionID: revoked.connectionID)
+        authorization.clearQuarantine(connectionID: revoked.connectionID,
+                                        authorizationGeneration: authorization[revoked.connectionID])
         XCTAssertGreaterThan(authorization[revoked.connectionID], before)
         XCTAssertTrue(authorization.isDenied(connectionID: revoked.connectionID))
         XCTAssertEqual(authorization.projectsPendingPurge(for: revoked.connectionID), [project])
@@ -101,6 +258,518 @@ final class MobileRevocationTests: XCTestCase {
         XCTAssertTrue(try journal.load().isEmpty)
         let authorization = MobileAuthorizationGenerations()
         XCTAssertFalse(authorization.isDenied(connectionID: connectionID))
+    }
+
+    @MainActor
+    func testOnDemandForbiddenResponseRechecksStatusBeforeRecordingRevocation() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let journal = MobileRevocationJournal(url: root.appendingPathComponent("revocation.json"))
+        let client = MobileRevocationClient(journal: journal)
+        let value = connection(projectIDs: [UUID()])
+        let token = MobileConnectionToken(connectionID: value.connectionID, deviceID: value.deviceID,
+                                          fingerprint: value.fingerprint, cacheEpoch: 0,
+                                          authorizationGeneration: 0)
+        let credentials = TestCredentials(values: [value.deviceID: "credential"], failRemove: false)
+        let statusCalls = LockedCounter()
+        let deniedCalls = LockedCounter()
+
+        do {
+            _ = try await client.withAuthenticatedConnection(value, token: token,
+                credentials: credentials, isCurrent: { true }, onDenied: { ticket in
+                    deniedCalls.increment()
+                    try? client.finish(ticket, outcome: .denied)
+                }, operation: { _ in
+                    throw SyncError.httpAccessDenied(operation: .file, status: 403)
+                }, status: { _, _, _ in
+                    statusCalls.increment()
+                    return DirectDeviceStatus(access: statusCalls.value == 1 ? .authorized : .revoked,
+                                              projects: [], capabilities: [.rubricExchangeV1])
+                }
+            )
+            XCTFail("A 403 followed by confirmed device revocation must stop the operation")
+        } catch let error as SyncError {
+            XCTAssertEqual(error, .revoked)
+        }
+
+        XCTAssertEqual(statusCalls.value, 2, "The 403 must trigger an authenticated STATUS recheck")
+        XCTAssertEqual(deniedCalls.value, 1, "Confirmed revocation must trigger durable cleanup once")
+        XCTAssertEqual(try journal.load().first?.state, .denied)
+    }
+
+    @MainActor
+    func testProductionOpenKeepsOtherGrantedProjectAfterProjectWithdrawal() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("LittleLeonardo", isDirectory: true)
+        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
+        let firstProjectID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
+        let secondProjectID = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
+        let firstDescriptor = SharedProjectDescriptor(id: firstProjectID, name: "First",
+            scope: try CorpusScope(folder: ""))
+        let secondDescriptor = SharedProjectDescriptor(id: secondProjectID, name: "Second",
+            scope: try CorpusScope(folder: ""))
+        let firstFile = CorpusFile(path: "docs/first.md", content: Data("first retained".utf8))
+        let firstCurrentFile = CorpusFile(path: firstFile.path, content: Data("new source revision".utf8))
+        let secondFile = CorpusFile(path: "docs/second.md", content: Data("second retained".utf8))
+        let firstEntry = RemoteFileEntry(file: firstFile)
+        let firstCurrentEntry = RemoteFileEntry(file: firstCurrentFile)
+        let secondEntry = RemoteFileEntry(file: secondFile)
+        let descriptors = [firstDescriptor, secondDescriptor]
+        let value = MobileDirectConnection(connectionID: connectionID, deviceID: deviceID,
+            endpoint: URL(string: "https://127.0.0.1:9")!, fingerprint: Data(repeating: 7, count: 32),
+            projectIDs: [firstProjectID, secondProjectID], comparisonCode: nil,
+            capabilities: [], projectDescriptors: descriptors,
+            acceptedProjectIDs: [firstProjectID, secondProjectID])
+        let credentials = TestCredentials(values: [deviceID: "credential"], failRemove: false)
+        try MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json")).save([value])
+        let statusCalls = LockedCounter()
+        let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: MobileRevocationJournal(url: support.appendingPathComponent("revocation.json")),
+            statusRequest: { _, _, _ in
+                statusCalls.increment()
+                let projects = statusCalls.value == 1 ? descriptors : [secondDescriptor]
+                return DirectDeviceStatus(access: .authorized, projects: projects)
+            },
+            fileRequest: { _, _, _, _, _ in
+                throw SyncError.httpAccessDenied(operation: .file, status: 403)
+            })
+        library.connections = [value]
+        let firstOffline = try OfflineProject(id: firstProjectID, name: "First", mode: .direct,
+            scope: CorpusScope(folder: ""), snapshot: CorpusSnapshot(revision: "catalogue", files: []))
+        let secondOffline = try OfflineProject(id: secondProjectID, name: "Second", mode: .direct,
+            scope: CorpusScope(folder: ""), snapshot: CorpusSnapshot(revision: "catalogue", files: []))
+        library.projects = [firstOffline, secondOffline]
+        try await library.downloads.update(id: firstProjectID, descriptor: firstDescriptor,
+            catalogue: RemoteProjectCatalogue(files: [firstEntry]))
+        library.downloads.fetch = { _, entry in entry == firstEntry ? firstFile : secondFile }
+        await library.downloads.retain(id: firstProjectID, path: firstFile.path, isFolder: false, keep: true)
+        _ = try await library.downloads.open(id: firstProjectID, path: firstFile.path)
+        try await library.downloads.update(id: firstProjectID, descriptor: firstDescriptor,
+            catalogue: RemoteProjectCatalogue(files: [firstCurrentEntry]))
+        try await library.downloads.update(id: secondProjectID, descriptor: secondDescriptor,
+            catalogue: RemoteProjectCatalogue(files: [secondEntry]))
+        _ = try await library.downloads.open(id: secondProjectID, path: secondFile.path)
+        library.downloads.fetch = { id, entry in try await library.fetchDownload(projectID: id, entry: entry) }
+
+        do {
+            _ = try await library.downloads.open(id: firstProjectID, path: firstCurrentFile.path)
+            XCTFail("A project withdrawn between STATUS and file access must not open its retained bytes")
+        } catch let error as SyncError { XCTAssertEqual(error, .revoked) }
+        catch { XCTFail("Expected withdrawal to fail the in-flight cached open: \(error)") }
+
+        XCTAssertEqual(statusCalls.value, 2)
+        let updated = try XCTUnwrap(library.connections.first)
+        XCTAssertFalse(updated.revoked, "A project withdrawal must not revoke the whole device")
+        XCTAssertEqual(updated.projectIDs, [secondProjectID])
+        let retainedCredential = try await credentials.credential(deviceID: deviceID)
+        XCTAssertEqual(retainedCredential, "credential")
+        let remaining = try await library.downloads.open(id: secondProjectID, path: secondFile.path)
+        XCTAssertEqual(remaining, secondFile, "The other granted project remains available offline")
+    }
+
+    @MainActor
+    func testFailedGrantSnapshotSaveQuarantinesCachedProjectsAcrossRestart() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("LittleLeonardo", isDirectory: true)
+        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
+        let projectID = UUID()
+        let descriptor = SharedProjectDescriptor(id: projectID, name: "Withdrawn",
+            scope: try CorpusScope(folder: ""))
+        let value = MobileDirectConnection(connectionID: connectionID, deviceID: deviceID,
+            endpoint: URL(string: "https://127.0.0.1:40882")!, fingerprint: Data(repeating: 7, count: 32),
+            projectIDs: [projectID], comparisonCode: nil, capabilities: [],
+            projectDescriptors: [descriptor], acceptedProjectIDs: [projectID])
+        let credentials = TestCredentials(values: [deviceID: "credential"], failRemove: false)
+        let connectionsURL = support.appendingPathComponent("connections.json")
+        let connectionStore = MobileDirectConnectionStore(url: connectionsURL)
+        try connectionStore.save([value])
+        let cached = try OfflineProject(id: projectID, name: descriptor.name, mode: .direct,
+            scope: descriptor.scope, snapshot: CorpusSnapshot(revision: "r1",
+                files: [CorpusFile(path: "docs/read.md", content: Data("cached".utf8))]))
+        try await OfflineCorpusStore(root: corpusRoot).save(cached)
+        let originalConnections = support.appendingPathComponent("connections-original.json")
+        try FileManager.default.copyItem(at: connectionsURL, to: originalConnections)
+        let journalURL = support.appendingPathComponent("revocation.json")
+        let journal = MobileRevocationJournal(url: journalURL)
+        let failingJournal = FailingJournal(backing: journal, failReconciliation: true)
+        let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: failingJournal,
+            statusRequest: { _, _, _ in DirectDeviceStatus(access: .authorized, projects: []) })
+        await library.reload()
+        XCTAssertTrue(library.projects.contains(where: { $0.id == projectID }))
+
+        let faultTarget = support.appendingPathComponent("connection-fault-target")
+        try Data("fault\n".utf8).write(to: faultTarget, options: .atomic)
+        try FileManager.default.removeItem(at: connectionsURL)
+        try FileManager.default.createSymbolicLink(at: connectionsURL, withDestinationURL: faultTarget)
+        do {
+            _ = try await library.withAuthenticatedConnection(value) { _ in true }
+            XCTFail("A failed grant snapshot save must stop authenticated work")
+        } catch {
+            XCTAssertEqual(error as? MobileRevocationClientError, .reconciliationProtectionPersistenceFailed)
+        }
+
+        XCTAssertTrue(library.authorizationGenerations.isQuarantined(connectionID: connectionID))
+        XCTAssertFalse(library.projects.contains(where: { $0.id == projectID }))
+        let held = try XCTUnwrap(journal.load().first)
+        XCTAssertEqual(held.state, .uncertain)
+        XCTAssertEqual(held.operations.count, 1,
+                       "A failed quarantine promotion must preserve the write-ahead ticket")
+
+        try FileManager.default.removeItem(at: connectionsURL)
+        try FileManager.default.copyItem(at: originalConnections, to: connectionsURL)
+        let fresh = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: MobileRevocationJournal(url: journalURL),
+            statusRequest: { _, _, _ in DirectDeviceStatus(access: .authorized, projects: []) })
+        await fresh.reload()
+        XCTAssertTrue(fresh.authorizationGenerations.isQuarantined(connectionID: connectionID))
+        XCTAssertFalse(fresh.projects.contains(where: { $0.id == projectID }),
+                       "A restart must not reopen the old cache while grant reconciliation is uncertain")
+
+        let restoredConnection = try XCTUnwrap(fresh.connections.first)
+        let result = try await fresh.withAuthenticatedConnection(restoredConnection) { _ in true }
+        XCTAssertTrue(result)
+        XCTAssertFalse(fresh.authorizationGenerations.isQuarantined(connectionID: connectionID))
+        XCTAssertTrue(try journal.load().isEmpty,
+                      "A successfully persisted authenticated STATUS clears the quarantine")
+        XCTAssertFalse(fresh.projects.contains(where: { $0.id == projectID }))
+    }
+
+    @MainActor
+    func testSameAuthorizedGrantsRestoreQuarantinedProjectAfterCatalogueRetry() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("LittleLeonardo", isDirectory: true)
+        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
+        let projectID = UUID()
+        let descriptor = SharedProjectDescriptor(id: projectID, name: "Recovered project",
+            scope: try CorpusScope(folder: ""))
+        let value = MobileDirectConnection(connectionID: connectionID, deviceID: deviceID,
+            endpoint: URL(string: "https://127.0.0.1:40882")!, fingerprint: Data(repeating: 7, count: 32),
+            projectIDs: [projectID], comparisonCode: nil, capabilities: [],
+            projectDescriptors: [descriptor], acceptedProjectIDs: [projectID])
+        let credentials = TestCredentials(values: [deviceID: "credential"], failRemove: false)
+        try MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json")).save([value])
+        let cached = try OfflineProject(id: projectID, name: descriptor.name, mode: .direct,
+            scope: descriptor.scope, snapshot: CorpusSnapshot(revision: "catalogue", files: []))
+        try await OfflineCorpusStore(root: corpusRoot).save(cached)
+        let retainedFile = CorpusFile(path: "docs/offline.md", content: Data("retained through quarantine".utf8))
+        let retainedEntry = RemoteFileEntry(file: retainedFile)
+        let downloadsRoot = support.appendingPathComponent("Downloads", isDirectory: true)
+        let downloadsCache = OnDemandCache(root: downloadsRoot)
+        let catalogue = RemoteProjectCatalogue(files: [retainedEntry])
+        try await downloadsCache.update(id: projectID, descriptor: descriptor, catalogue: catalogue)
+        try await downloadsCache.setRetained(id: projectID, path: retainedFile.path,
+                                             isFolder: false, keep: true)
+        try await downloadsCache.store(id: projectID, entry: retainedEntry, file: retainedFile)
+        let journal = MobileRevocationJournal(url: support.appendingPathComponent("revocation.json"))
+        try journal.requireReconciliation(connectionID: value.connectionID, deviceID: value.deviceID,
+            fingerprint: value.fingerprint, projectIDs: [projectID])
+        let catalogueCalls = LockedCounter()
+        let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: journal,
+            statusRequest: { _, _, _ in DirectDeviceStatus(access: .authorized, projects: [descriptor]) },
+            catalogueRequest: { _, _, _, _ in
+                catalogueCalls.increment()
+                if catalogueCalls.value == 1 { throw RevocationTestFailure.offline }
+                return catalogue
+            })
+
+        await library.reload()
+        XCTAssertTrue(library.authorizationGenerations.isQuarantined(connectionID: connectionID))
+        XCTAssertFalse(library.projects.contains(where: { $0.id == projectID }))
+        XCTAssertFalse(library.downloads.projects.contains(where: { $0.id == projectID }),
+                       "A quarantined on-demand catalogue must stay hidden after restart")
+        let retainedAfterRestart = try await downloadsCache.project(id: projectID)
+        XCTAssertTrue(retainedAfterRestart?.keeps(retainedFile.path) == true)
+        XCTAssertNotNil(retainedAfterRestart?.downloads[retainedFile.path],
+                        "Restart recovery must preserve retained download metadata")
+        let retainedBytesAfterRestart = try await downloadsCache.read(id: projectID, entry: retainedEntry)
+        XCTAssertEqual(retainedBytesAfterRestart, retainedFile,
+                       "Restart recovery must preserve retained bytes for the authenticated retry")
+
+        let connection = try XCTUnwrap(library.connections.first)
+        do {
+            _ = try await library.withAuthenticatedConnection(connection) { _ in true }
+            XCTFail("An offline catalogue retry must not clear project quarantine")
+        } catch RevocationTestFailure.offline { }
+        XCTAssertTrue(library.authorizationGenerations.isQuarantined(connectionID: connectionID))
+        XCTAssertFalse(library.projects.contains(where: { $0.id == projectID }))
+        XCTAssertEqual(try journal.load().first?.state, .reconciliationRequired)
+
+        let recovered = try await library.withAuthenticatedConnection(connection) { _ in true }
+        XCTAssertTrue(recovered)
+        XCTAssertEqual(catalogueCalls.value, 2)
+        XCTAssertFalse(library.authorizationGenerations.isQuarantined(connectionID: connectionID))
+        XCTAssertTrue(try journal.load().isEmpty)
+        XCTAssertTrue(library.projects.contains(where: { $0.id == projectID }),
+                      "The same currently authorized grant must restore its project after catalogue recovery")
+        XCTAssertTrue(library.downloads.projects.contains(where: { $0.id == projectID }),
+                      "The authorized catalogue must be reinstalled in the on-demand cache")
+        let recoveredFile = try await library.downloads.open(id: projectID, path: retainedFile.path)
+        XCTAssertEqual(recoveredFile, retainedFile,
+                       "A successful STATUS and catalogue retry restores the retained offline copy")
+    }
+
+    @MainActor
+    func testConcurrentCommitDuringBothStatusCallbacksKeepsQuarantineAndMarker() async throws {
+        try await assertConcurrentCommitAbortsStaleStatusReconciliation(afterHTTP403: false,
+                                                                        failReconciliationPromotion: false)
+        try await assertConcurrentCommitAbortsStaleStatusReconciliation(afterHTTP403: true,
+                                                                        failReconciliationPromotion: false)
+        try await assertConcurrentCommitAbortsStaleStatusReconciliation(afterHTTP403: false,
+                                                                        failReconciliationPromotion: true)
+    }
+
+    @MainActor
+    private func assertConcurrentCommitAbortsStaleStatusReconciliation(afterHTTP403: Bool,
+                                                                       failReconciliationPromotion: Bool) async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("LittleLeonardo", isDirectory: true)
+        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
+        let projectID = UUID()
+        let oldDescriptor = SharedProjectDescriptor(id: projectID, name: "Shared",
+            scope: try CorpusScope(folder: "old"))
+        let currentDescriptor = SharedProjectDescriptor(id: projectID, name: "Shared",
+            scope: try CorpusScope(folder: "current"))
+        let value = MobileDirectConnection(connectionID: connectionID, deviceID: deviceID,
+            endpoint: URL(string: "https://127.0.0.1:40882")!, fingerprint: Data(repeating: 7, count: 32),
+            projectIDs: [projectID], comparisonCode: nil, capabilities: [],
+            projectDescriptors: [oldDescriptor], acceptedProjectIDs: [projectID])
+        let journalURL = support.appendingPathComponent("revocation.json")
+        let journal = MobileRevocationJournal(url: journalURL)
+        try MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json")).save([value])
+        let offlineProject = try OfflineProject(id: projectID, name: oldDescriptor.name, mode: .direct,
+            scope: oldDescriptor.scope, snapshot: CorpusSnapshot(revision: "catalogue", files: []))
+        try await OfflineCorpusStore(root: corpusRoot).save(offlineProject)
+        let downloadsRoot = support.appendingPathComponent("Downloads", isDirectory: true)
+        let downloadsCache = OnDemandCache(root: downloadsRoot)
+        let retainedFile = CorpusFile(path: "old/retained.md", content: Data("old grant bytes".utf8))
+        let retainedEntry = RemoteFileEntry(file: retainedFile)
+        try await downloadsCache.update(id: projectID, descriptor: oldDescriptor,
+                                       catalogue: RemoteProjectCatalogue(files: [retainedEntry]))
+        try await downloadsCache.setRetained(id: projectID, path: retainedFile.path,
+                                             isFolder: false, keep: true)
+        try await downloadsCache.store(id: projectID, entry: retainedEntry, file: retainedFile)
+
+        let statusCalls = LockedCounter()
+        let catalogueGate = RevocationGate()
+        let catalogueEntered = LockedFlag()
+        let catalogueExpectation = ExpectationSignal(expectation(description: "grant catalogue refresh reached gate"))
+        let credentials = TestCredentials(values: [deviceID: "credential"], failRemove: false)
+        let revocationJournal: any MobileRevocationJournalStore = failReconciliationPromotion
+            ? FailingJournal(backing: journal, failReconciliation: true) : journal
+        let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: revocationJournal,
+            statusRequest: { _, _, _ in
+                statusCalls.increment()
+                let oldStatus = afterHTTP403 && statusCalls.value == 1
+                return DirectDeviceStatus(access: .authorized,
+                                          projects: [oldStatus ? oldDescriptor : currentDescriptor])
+            },
+            catalogueRequest: { _, _, _, _ in
+                catalogueEntered.value = true
+                catalogueExpectation.fulfill()
+                await catalogueGate.wait()
+                return RemoteProjectCatalogue(files: [])
+            })
+        await library.reload()
+        XCTAssertTrue(library.downloads.projects.contains(where: { $0.id == projectID }),
+                      "The old retained project is visible before current STATUS reconciliation")
+
+        let operationCalls = LockedCounter()
+        let operation = Task { () -> MobileRevocationClientError? in
+            do {
+                _ = try await library.withAuthenticatedConnection(value) { context in
+                    operationCalls.increment()
+                    if afterHTTP403 {
+                        throw SyncError.httpAccessDenied(operation: .catalogue, status: 403)
+                    }
+                    return context.status.access == .authorized
+                }
+                return nil
+            } catch let error as MobileRevocationClientError {
+                return error
+            } catch {
+                XCTFail("Expected stale status reconciliation to abort, got: \(error)")
+                return nil
+            }
+        }
+
+        await fulfillment(of: [catalogueExpectation.expectation], timeout: 5)
+        guard catalogueEntered.value else {
+            await catalogueGate.open()
+            _ = await operation.value
+            XCTFail("The authenticated status callback did not reach catalogue refresh")
+            return
+        }
+
+        let committedConnection = try XCTUnwrap(library.connections.first)
+        var concurrentConnection = committedConnection
+        concurrentConnection.comparisonCode = "concurrent commit"
+        let concurrentToken = library.token(for: committedConnection)
+        let concurrentTokenAfterCommit = try library.commitConnection(concurrentConnection, expected: concurrentToken)
+        XCTAssertNotNil(concurrentTokenAfterCommit, "The concurrent commit must supersede the pending refresh token")
+
+        await catalogueGate.open()
+        let staleResult = await operation.value
+        XCTAssertEqual(staleResult, .obsoleteAuthorization(markerEscalated: !failReconciliationPromotion))
+        XCTAssertEqual(operationCalls.value, afterHTTP403 ? 1 : 0,
+                       "A stale initial or 403-recheck callback must never continue with its old context")
+        XCTAssertTrue(library.authorizationGenerations.isQuarantined(connectionID: connectionID))
+        XCTAssertTrue(library.authorizationGenerations.projectsUnderQuarantine(for: connectionID).contains(projectID))
+        XCTAssertFalse(library.downloads.projects.contains(where: { $0.id == projectID }),
+                       "Quarantine immediately removes the project from the cached reader")
+        do {
+            _ = try await library.downloads.open(id: projectID, path: retainedFile.path)
+            XCTFail("An in-memory retained hit must not bypass authorization quarantine")
+        } catch { XCTAssertEqual(error as? SyncError, .revoked) }
+        let diskCopy = try await OnDemandCache(root: downloadsRoot).read(id: projectID, entry: retainedEntry)
+        XCTAssertEqual(diskCopy, retainedFile,
+                       "Quarantine hides retained content while preserving the offline copy on disk")
+
+        let marker = try XCTUnwrap(journal.load().first)
+        XCTAssertEqual(marker.state, failReconciliationPromotion ? .uncertain : .reconciliationRequired)
+        XCTAssertEqual(marker.projectIDs, [projectID])
+        XCTAssertEqual(marker.operations.count, failReconciliationPromotion ? 1 : 0,
+                       "A failed marker promotion must retain the original write-ahead ticket")
+
+        let relaunched = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: MobileRevocationJournal(url: journalURL, sessionID: UUID()),
+            statusRequest: { _, _, _ in DirectDeviceStatus(access: .authorized, projects: [currentDescriptor]) })
+        await relaunched.reload()
+        XCTAssertTrue(relaunched.authorizationGenerations.isQuarantined(connectionID: connectionID),
+                      "A process restart must retain the stale operation's quarantine")
+    }
+
+    @MainActor
+    func testFailedRemovedProjectPurgeStaysHiddenAndRetriesAfterStatus() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("LittleLeonardo", isDirectory: true)
+        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
+        let projectID = UUID()
+        let descriptor = SharedProjectDescriptor(id: projectID, name: "Pending purge",
+            scope: try CorpusScope(folder: ""))
+        let value = MobileDirectConnection(connectionID: connectionID, deviceID: deviceID,
+            endpoint: URL(string: "https://127.0.0.1:40882")!, fingerprint: Data(repeating: 7, count: 32),
+            projectIDs: [projectID], comparisonCode: nil, capabilities: [],
+            projectDescriptors: [descriptor], acceptedProjectIDs: [projectID])
+        let credentials = TestCredentials(values: [deviceID: "credential"], failRemove: false)
+        let connectionsURL = support.appendingPathComponent("connections.json")
+        try MobileDirectConnectionStore(url: connectionsURL).save([value])
+        let cached = try OfflineProject(id: projectID, name: descriptor.name, mode: .direct,
+            scope: descriptor.scope, snapshot: CorpusSnapshot(revision: "r1",
+                files: [CorpusFile(path: "docs/read.md", content: Data("cached".utf8))]))
+        try await OfflineCorpusStore(root: corpusRoot).save(cached)
+        let journalURL = support.appendingPathComponent("revocation.json")
+        let journal = MobileRevocationJournal(url: journalURL)
+        let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: journal,
+            statusRequest: { _, _, _ in DirectDeviceStatus(access: .authorized, projects: []) })
+        await library.reload()
+        try await library.downloads.update(id: projectID, descriptor: descriptor,
+            catalogue: RemoteProjectCatalogue(files: []))
+
+        let downloadIndex = support.appendingPathComponent("Downloads/index.json")
+        let originalIndex = support.appendingPathComponent("downloads-original.json")
+        try FileManager.default.copyItem(at: downloadIndex, to: originalIndex)
+        try FileManager.default.removeItem(at: downloadIndex)
+        try FileManager.default.createDirectory(at: downloadIndex, withIntermediateDirectories: false)
+        let ticket = try journal.begin(connectionID: value.connectionID, deviceID: value.deviceID,
+                                       fingerprint: value.fingerprint, projectIDs: value.projectIDs)
+        let client = try DirectEnrollmentClient(endpoint: value.endpoint,
+                                                certificateFingerprint: value.fingerprint)
+        let context = MobileAuthenticatedContext(connection: value, credential: "credential", client: client,
+            status: DirectDeviceStatus(access: .authorized, projects: []),
+            token: library.token(for: value), ticket: ticket)
+        do {
+            _ = try await library.reconcileCurrentStatus(context, targetProjectID: nil, targetFilePath: nil)
+            XCTFail("A failed cache purge must stop authenticated work")
+        } catch { }
+
+        XCTAssertEqual(library.connections.first?.projectIDs, [])
+        XCTAssertEqual(try journal.load().first?.state, .reconciliationRequired)
+        try journal.complete(ticket, outcome: .transient)
+        XCTAssertEqual(try journal.load().first?.state, .reconciliationRequired)
+
+        try FileManager.default.removeItem(at: downloadIndex)
+        try FileManager.default.copyItem(at: originalIndex, to: downloadIndex)
+        let fresh = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: MobileRevocationJournal(url: journalURL),
+            statusRequest: { _, _, _ in DirectDeviceStatus(access: .authorized, projects: []) })
+        await fresh.reload()
+        XCTAssertTrue(fresh.authorizationGenerations.isQuarantined(connectionID: connectionID))
+        XCTAssertFalse(fresh.projects.contains(where: { $0.id == projectID }),
+                       "The orphan cache stays hidden while purge status is uncertain")
+
+        let restoredConnection = try XCTUnwrap(fresh.connections.first)
+        _ = try await fresh.withAuthenticatedConnection(restoredConnection) { _ in true }
+        XCTAssertFalse(fresh.authorizationGenerations.isQuarantined(connectionID: connectionID))
+        XCTAssertTrue(try journal.load().isEmpty)
+        let purgedProject = try await OfflineCorpusStore(root: corpusRoot).load(id: projectID)
+        XCTAssertNil(purgedProject,
+                     "A successful STATUS retries the deferred project-cache purge")
+    }
+
+    @MainActor
+    func testProductionOpenRemovesAllProjectAccessWhenStatusBecomesPending() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("LittleLeonardo", isDirectory: true)
+        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
+        let projectID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
+        let descriptor = SharedProjectDescriptor(id: projectID, name: "Granted",
+            scope: try CorpusScope(folder: ""))
+        let oldFile = CorpusFile(path: "docs/note.md", content: Data("retained old bytes".utf8))
+        let currentFile = CorpusFile(path: oldFile.path, content: Data("new source revision".utf8))
+        let oldEntry = RemoteFileEntry(file: oldFile)
+        let currentEntry = RemoteFileEntry(file: currentFile)
+        let value = MobileDirectConnection(connectionID: connectionID, deviceID: deviceID,
+            endpoint: URL(string: "https://127.0.0.1:9")!, fingerprint: Data(repeating: 7, count: 32),
+            projectIDs: [projectID], comparisonCode: nil, capabilities: [],
+            projectDescriptors: [descriptor], acceptedProjectIDs: [projectID])
+        let credentials = TestCredentials(values: [deviceID: "credential"], failRemove: false)
+        try MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json")).save([value])
+        let statusCalls = LockedCounter()
+        let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: MobileRevocationJournal(url: support.appendingPathComponent("revocation.json")),
+            statusRequest: { _, _, _ in
+                statusCalls.increment()
+                if statusCalls.value == 1 {
+                    return DirectDeviceStatus(access: .authorized, projects: [descriptor])
+                }
+                return DirectDeviceStatus(access: .pending, projects: [])
+            },
+            fileRequest: { _, _, _, _, _ in
+                throw SyncError.httpAccessDenied(operation: .file, status: 403)
+            })
+        library.connections = [value]
+        try await library.downloads.update(id: projectID, descriptor: descriptor,
+            catalogue: RemoteProjectCatalogue(files: [oldEntry]))
+        library.downloads.fetch = { _, _ in oldFile }
+        await library.downloads.retain(id: projectID, path: oldFile.path, isFolder: false, keep: true)
+        _ = try await library.downloads.open(id: projectID, path: oldFile.path)
+        try await library.downloads.update(id: projectID, descriptor: descriptor,
+            catalogue: RemoteProjectCatalogue(files: [currentEntry]))
+        library.downloads.fetch = { id, entry in try await library.fetchDownload(projectID: id, entry: entry) }
+
+        do {
+            _ = try await library.downloads.open(id: projectID, path: currentFile.path)
+            XCTFail("Pending status must make previously granted cached content unavailable")
+        } catch let error as SyncError { XCTAssertEqual(error, .revoked) }
+        catch { XCTFail("Expected the project cache to be denied: \(error)") }
+
+        XCTAssertEqual(statusCalls.value, 2)
+        let updated = try XCTUnwrap(library.connections.first)
+        XCTAssertFalse(updated.revoked, "Pending authorization is not a device revocation")
+        XCTAssertTrue(updated.projectIDs.isEmpty)
+        XCTAssertTrue(updated.acceptedProjectIDs.isEmpty)
+        let retainedCredential = try await credentials.credential(deviceID: deviceID)
+        XCTAssertEqual(retainedCredential, "credential")
     }
 
     func testLateAuthorizedOrTransientCompletionCannotClearMonotonicDeny() async throws {
@@ -491,6 +1160,9 @@ private struct ThrowingJournal: MobileRevocationJournalStore {
 
     func complete(_ ticket: MobileRevocationTicket, outcome: MobileRevocationOutcome) throws { }
 
+    func requireReconciliation(connectionID: UUID, deviceID: UUID, fingerprint: Data,
+                               projectIDs: Set<UUID>) throws { }
+
     func recordDenied(connectionID: UUID, deviceID: UUID, fingerprint: Data,
                       projectIDs: Set<UUID>) throws { }
 }
@@ -498,11 +1170,14 @@ private struct ThrowingJournal: MobileRevocationJournalStore {
 private final class FailingJournal: MobileRevocationJournalStore, @unchecked Sendable {
     private let backing: MobileRevocationJournal
     private let failCompletion: Bool
+    private let failReconciliation: Bool
     private let failRecordDenied: Bool
 
-    init(backing: MobileRevocationJournal, failCompletion: Bool = false, failRecordDenied: Bool = false) {
+    init(backing: MobileRevocationJournal, failCompletion: Bool = false,
+         failReconciliation: Bool = false, failRecordDenied: Bool = false) {
         self.backing = backing
         self.failCompletion = failCompletion
+        self.failReconciliation = failReconciliation
         self.failRecordDenied = failRecordDenied
     }
 
@@ -521,6 +1196,13 @@ private final class FailingJournal: MobileRevocationJournalStore, @unchecked Sen
         try backing.complete(ticket, outcome: outcome)
     }
 
+    func requireReconciliation(connectionID: UUID, deviceID: UUID, fingerprint: Data,
+                               projectIDs: Set<UUID>) throws {
+        if failReconciliation { throw RevocationTestFailure.persistence }
+        try backing.requireReconciliation(connectionID: connectionID, deviceID: deviceID,
+                                          fingerprint: fingerprint, projectIDs: projectIDs)
+    }
+
     func recordDenied(connectionID: UUID, deviceID: UUID, fingerprint: Data,
                       projectIDs: Set<UUID>) throws {
         if failRecordDenied { throw RevocationTestFailure.persistence }
@@ -536,6 +1218,17 @@ private final class LockedFlag: @unchecked Sendable {
     var value: Bool {
         get { lock.withLock { storedValue } }
         set { lock.withLock { storedValue = newValue } }
+    }
+}
+
+private final class LockedCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedValue = 0
+
+    var value: Int { lock.withLock { storedValue } }
+
+    func increment() {
+        lock.withLock { storedValue += 1 }
     }
 }
 

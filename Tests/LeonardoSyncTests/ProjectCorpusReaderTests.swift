@@ -63,6 +63,27 @@ final class ProjectCorpusReaderTests: XCTestCase {
             _ = try await ProjectCorpusReader(limits: CorpusLimits(maximumFileBytes: 2))
                 .snapshot(root: root, scope: CorpusScope(folder: ""), revision: "r")
             XCTFail("Oversized file must not transfer")
-        } catch { XCTAssertEqual(error as? SyncError, .sizeLimitExceeded) }
+        } catch { XCTAssertEqual(error as? CorpusReadFailure, CorpusReadFailure(reason: .fileTooLarge, path: "a.md", observed: 10, limit: 2)) }
     }
+    func testCorpusAndCountLimitsIncludeObservedQuantityAndNeverReturnPartialSnapshot() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        for path in ["a.md", "b.md"] { try Data(repeating: 1, count: 4).write(to: root.appendingPathComponent(path)) }
+        for (limits, reason, observed, limit) in [
+            (CorpusLimits(maximumCorpusBytes: 6), CorpusReadFailure.Reason.corpusTooLarge, 8, 6),
+            (CorpusLimits(maximumFiles: 1), .tooManyFiles, 2, 1)
+        ] {
+            do {
+                _ = try await ProjectCorpusReader(limits: limits).snapshot(root: root, scope: CorpusScope(folder: ""))
+                XCTFail("Must reject the selection instead of returning partial content")
+            } catch let failure as CorpusReadFailure {
+                XCTAssertEqual(failure.reason, reason)
+                XCTAssertEqual(failure.observed, observed)
+                XCTAssertEqual(failure.limit, limit)
+                XCTAssertFalse(try XCTUnwrap(failure.path).hasPrefix("/"))
+            }
+        }
+    }
+
 }

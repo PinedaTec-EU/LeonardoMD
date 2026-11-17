@@ -21,7 +21,8 @@ public final class PinnedHTTPSClient: NSObject, URLSessionDelegate, URLSessionTa
         self.maximumResponseBytes = maximumResponseBytes
     }
 
-    public func request(method: String, path: String, credential: String? = nil, body: Data? = nil) async throws -> HTTPResponse {
+    public func request(method: String, path: String, credential: String? = nil, body: Data? = nil,
+                        returnWithoutReadingBodyForStatuses: Set<Int> = []) async throws -> HTTPResponse {
         guard ["GET", "POST"].contains(method), path.hasPrefix("/v1/"), !path.contains("?"), !path.contains("#"),
               !path.contains(".."), !path.contains("%"), (body?.count ?? 0) <= HTTPRequestParser.maximumBodyBytes else {
             throw TransportError.malformedRequest
@@ -52,6 +53,9 @@ public final class PinnedHTTPSClient: NSObject, URLSessionDelegate, URLSessionTa
                                                    receivedBodyBytes: 0, expectedBodyBytes: nil)
         }
         guard let response = response as? HTTPURLResponse, response.url == url else { throw TransportError.unexpectedResponse }
+        if returnWithoutReadingBodyForStatuses.contains(response.statusCode) {
+            return HTTPResponse(status: response.statusCode, body: Data())
+        }
         guard response.expectedContentLength <= maximumResponseBytes else { throw TransportError.responseTooLarge }
         let expectedBodyBytes = response.expectedContentLength >= 0 ? response.expectedContentLength : nil
         var data = Data()

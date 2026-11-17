@@ -7,6 +7,12 @@ import LeonardoSyncTransport
 /// Read-only mobile application boundary. Desktop proposal/write APIs are not exposed.
 @MainActor @Observable
 final class MobileLibrary {
+    typealias DirectStatusRequest = @Sendable (DirectEnrollmentClient, UUID, String) async throws -> DirectDeviceStatus
+    typealias DirectCatalogueRequest = @Sendable (
+        DirectEnrollmentClient, SharedProjectDescriptor, UUID, String
+    ) async throws -> RemoteProjectCatalogue
+    typealias DirectFileRequest = @Sendable (DirectEnrollmentClient, RemoteFileEntry, UUID, UUID, String) async throws -> CorpusFile
+
     var projects: [OfflineProject] = []
     private(set) var pendingRubricRequests: [RubricRequest] = []
     private(set) var recoverableRubricDrafts: [MobileRubricDraft] = []
@@ -18,6 +24,9 @@ final class MobileLibrary {
     let store: OfflineCorpusStore
     private let connectionStore: MobileDirectConnectionStore
     private let credentials: any DeviceCredentialStore
+    private let statusRequest: DirectStatusRequest
+    let catalogueRequest: DirectCatalogueRequest
+    let fileRequest: DirectFileRequest
     private let revocationClient: MobileRevocationClient
     private let draftStore: MobileRubricDraftStore
     private let rubricManualRetryGuard = MobileRubricManualRetryGuard()
@@ -32,7 +41,7 @@ final class MobileLibrary {
     private var pendingRubricDraftWrite: Task<Void, Error>?
     private var cacheEpoch: UInt64 = 0
     private var authorizationEpoch: UInt64 = 0
-    private var authorizationGenerations = MobileAuthorizationGenerations()
+    var authorizationGenerations = MobileAuthorizationGenerations()
     typealias ConnectionToken = MobileConnectionToken
 
     private struct RubricContext {
@@ -44,7 +53,16 @@ final class MobileLibrary {
 
     init(now: @escaping @Sendable () -> Date = Date.init, rootURL: URL? = nil,
          credentials: any DeviceCredentialStore = SecureCredentialStore(),
-         revocationJournal: (any MobileRevocationJournalStore)? = nil) {
+         revocationJournal: (any MobileRevocationJournalStore)? = nil,
+         statusRequest: @escaping DirectStatusRequest = { client, deviceID, credential in
+             try await client.status(deviceID: deviceID, credential: credential)
+         },
+         catalogueRequest: @escaping DirectCatalogueRequest = { client, descriptor, deviceID, credential in
+             try await client.catalogue(descriptor, deviceID: deviceID, credential: credential)
+         },
+         fileRequest: @escaping DirectFileRequest = { client, entry, projectID, deviceID, credential in
+             try await client.file(entry, projectID: projectID, deviceID: deviceID, credential: credential)
+         }) {
         let root = rootURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("LittleLeonardo/Corpus", isDirectory: true)
         store = OfflineCorpusStore(root: root)
@@ -54,6 +72,9 @@ final class MobileLibrary {
         connectionStore = MobileDirectConnectionStore(url: root.deletingLastPathComponent()
             .appendingPathComponent("connections.json"))
         self.credentials = credentials
+        self.statusRequest = statusRequest
+        self.catalogueRequest = catalogueRequest
+        self.fileRequest = fileRequest
         self.revocationClient = MobileRevocationClient(journal: revocationJournal ?? MobileRevocationJournal(
             url: root.deletingLastPathComponent().appendingPathComponent("revocation-journal.json")))
         draftStore = MobileRubricDraftStore(url: root.deletingLastPathComponent()
@@ -91,7 +112,7 @@ final class MobileLibrary {
                         authorizationGeneration: authorizationGenerations[connection.connectionID])
     }
 
-    private func connectionIndex(for token: ConnectionToken) -> Int? {
+    func connectionIndex(for token: ConnectionToken) -> Int? {
         connections.firstIndex {
             $0.connectionID == token.connectionID && $0.deviceID == token.deviceID
                 && $0.fingerprint == token.fingerprint
@@ -103,10 +124,13 @@ final class MobileLibrary {
     }
 
     func isCurrentCacheOperation(_ token: ConnectionToken) -> Bool {
-        cacheEpoch == token.cacheEpoch && hasCurrentIdentity(token)
+        // A quarantine generation also fences async cache work already in flight.
+        cacheEpoch == token.cacheEpoch
+            && authorizationGenerations[token.connectionID] == token.authorizationGeneration
+            && hasCurrentIdentity(token)
     }
 
-    private func isCurrentAuthorization(_ token: ConnectionToken) -> Bool {
+    func isCurrentAuthorization(_ token: ConnectionToken) -> Bool {
         authorizationGenerations[token.connectionID] == token.authorizationGeneration
             && hasCurrentIdentity(token)
             && !authorizationGenerations.isDenied(connectionID: token.connectionID)
@@ -163,6 +187,8 @@ final class MobileLibrary {
     /// can receive a revocation use this boundary, including rubric sends.
     func withAuthenticatedConnection<T>(
         _ connection: MobileDirectConnection,
+        projectID: UUID? = nil,
+        filePath: String? = nil,
         operation: (MobileAuthenticatedContext) async throws -> T
     ) async throws -> T {
         let token = self.token(for: connection)
@@ -171,6 +197,12 @@ final class MobileLibrary {
             isCurrent: { [weak self] in
                 guard let self else { return false }
                 return self.isCurrentAuthorization(token)
+            },
+            isSupersededAuthorization: { [weak self] in
+                guard let self else { return false }
+                return self.hasCurrentIdentity(token)
+                    && !self.authorizationGenerations.isDenied(connectionID: token.connectionID)
+                    && self.authorizationGenerations[token.connectionID] != token.authorizationGeneration
             },
             onDenied: { [weak self] ticket in
                 guard let self else { return }
@@ -183,8 +215,26 @@ final class MobileLibrary {
                 await self.handleConfirmedRevocation(for: token, ticket: ticket,
                                                      message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
             },
-            operation: operation)
-        authorizationGenerations.clearQuarantine(connectionID: connection.connectionID)
+            projectID: projectID,
+            filePath: filePath,
+            needsStatusReconciliation: { [weak self] in
+                guard let self else { return true }
+                return self.authorizationGenerations.isQuarantined(connectionID: token.connectionID)
+            },
+            onCurrentStatus: { [weak self] context in
+                guard let self else {
+                    throw MobileRevocationClientError.obsoleteAuthorization(markerEscalated: false)
+                }
+                guard let reconciled = try await self.reconcileCurrentStatus(
+                    context, targetProjectID: projectID, targetFilePath: filePath) else {
+                    throw self.obsoleteAuthorizationError(for: context)
+                }
+                return reconciled
+            },
+            operation: operation,
+            status: statusRequest)
+        authorizationGenerations.clearQuarantine(connectionID: connection.connectionID,
+                                                  authorizationGeneration: token.authorizationGeneration)
         return result
     }
 
@@ -194,6 +244,35 @@ final class MobileLibrary {
             presentError(error, operation: .revocation,
                          message: "No se pudo guardar la decisión de acceso.")
         }
+    }
+
+    private func obsoleteAuthorizationError(for context: MobileAuthenticatedContext)
+        -> MobileRevocationClientError {
+        let connectionID = context.token.connectionID
+        let currentProjectIDs = connections.first(where: { $0.connectionID == connectionID })?.projectIDs ?? []
+        let projectIDs = context.connection.projectIDs
+            .union(context.connection.pendingPurgeProjectIDs)
+            .union(currentProjectIDs)
+            .union(authorizationGenerations.projectsUnderQuarantine(for: connectionID))
+        authorizationGenerations.quarantine(connectionID: connectionID, projectIDs: projectIDs)
+        for projectID in projectIDs { downloads.deny(id: projectID) }
+        do {
+            try recordReconciliationRequired(for: context.connection, projectIDs: projectIDs)
+            return .obsoleteAuthorization(markerEscalated: true)
+        } catch {
+            return .obsoleteAuthorization(markerEscalated: false)
+        }
+    }
+
+    func recordReconciliationRequired(for connection: MobileDirectConnection,
+                                      projectIDs: Set<UUID>) throws {
+        try revocationClient.requireReconciliation(for: connection, projectIDs: projectIDs)
+    }
+
+    func presentReconciliationProtectionFailure() {
+        presentError(MobileRevocationClientError.reconciliationProtectionPersistenceFailed,
+            operation: .revocation,
+            message: "No se pudo guardar la protección del vínculo. Vuelve a sincronizar antes de abrir sus proyectos.")
     }
 
     func commitConnection(_ connection: MobileDirectConnection,
@@ -230,7 +309,10 @@ final class MobileLibrary {
                                                         projectIDs: marker.projectIDs)
             }
             for connectionID in recovery.quarantinedConnectionIDs {
-                authorizationGenerations.quarantine(connectionID: connectionID)
+                authorizationGenerations.quarantine(
+                    connectionID: connectionID,
+                    projectIDs: recovery.quarantinedProjectIDsByConnection[connectionID, default: []],
+                    advanceGeneration: true)
             }
             let barrierConnections = applyAuthorizationBarriers(to: recovery.connections)
             let loadedConnections = try await connectionStore.reconcileMissingCredentials(barrierConnections,
@@ -243,12 +325,14 @@ final class MobileLibrary {
             let protectedConnections = applyAuthorizationBarriers(to: loadedConnections)
             let visibleQuarantine = authorizationGenerations.quarantined
                 .subtracting(authorizationGenerations.denied)
+            let quarantinedProjectIDs = authorizationGenerations.projectsUnderQuarantine
             let repairedMissingCredential = storedConnections.count != loadedConnections.count
                 || zip(storedConnections, protectedConnections).contains { $0.0.hasChanges(from: $0.1) }
             let loadedComparisonCode = protectedConnections.first(where: { $0.comparisonCode != nil })?.comparisonCode
             let loadedDrafts = try await draftStore.all(now: now())
             let loaded = try await connectionStore.loadVisibleProjects(connections: protectedConnections,
                                                                          quarantinedConnectionIDs: visibleQuarantine,
+                                                                         quarantinedProjectIDs: quarantinedProjectIDs,
                                                                          excludedProjectIDs: projectLifecycle.deletedProjectIDs,
                                                                          credentials: credentials, corpus: store)
             guard cacheEpoch == loadCacheEpoch, authorizationEpoch == loadAuthorizationEpoch else { return }
@@ -260,12 +344,21 @@ final class MobileLibrary {
                 guard let self else { throw SyncError.revoked }
                 return try await self.fetchDownload(projectID: id, entry: entry)
             }
-            try await downloads.restore(allowedIDs: Set(projects.filter { project in
+            let authorizations = Dictionary(uniqueKeysWithValues: protectedConnections
+                .filter { !$0.revoked && !visibleQuarantine.contains($0.connectionID) }
+                .flatMap { connection in
+                    connection.projectDescriptors
+                        .filter { connection.acceptedProjectIDs.contains($0.id) }
+                        .map { ($0.id, RemoteDownloadAuthorization(descriptor: $0)) }
+                })
+            let allowedIDs = Set(projects.filter { project in
                 !project.isRecoveryArchive && protectedConnections.contains {
                     !$0.revoked && !visibleQuarantine.contains($0.connectionID)
                         && $0.projectIDs.contains(project.id) && $0.acceptedProjectIDs.contains(project.id)
                 }
-            }.map(\.id)))
+            }.map(\.id))
+            try await downloads.restore(allowedIDs: allowedIDs, authorizations: authorizations,
+                                        quarantinedIDs: quarantinedProjectIDs)
             let recoveredSnapshotChanged = storedConnections.count != protectedConnections.count
                 || zip(storedConnections, protectedConnections).contains { $0.0.hasChanges(from: $0.1) }
             if repairedMissingCredential || recoveredSnapshotChanged {
@@ -532,6 +625,9 @@ final class MobileLibrary {
                 continue
             } catch SyncError.revoked {
                 continue
+            } catch let error as MobileRevocationClientError
+                where error == .reconciliationProtectionPersistenceFailed {
+                presentReconciliationProtectionFailure()
             } catch {
                 // A foreground poll must not interrupt document navigation or
                 // replace a durable drawing because a Mac is temporarily down.
@@ -848,6 +944,9 @@ final class MobileLibrary {
             } catch SyncError.revoked {
                 await blockRubricDraft(request: draft.request,
                                        message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
+            } catch let error as MobileRevocationClientError
+                where error == .reconciliationProtectionPersistenceFailed {
+                presentReconciliationProtectionFailure()
             } catch {
                 if isTerminalRubricFailure(error) {
                     await blockRubricDraft(request: draft.request,

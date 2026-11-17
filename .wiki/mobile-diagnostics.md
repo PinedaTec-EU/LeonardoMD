@@ -19,9 +19,11 @@ under the app cache excluded from backups. The app does not upload it.
   without one, `openResult` preserves the original fetch or cache error type.
   Tests cover both public error behavior, retry isolation and shared in-flight
   diagnostics.
-- Bilingual Guide v86 explains scanned QR failures and matches the localized
-  Library settings and log labels. Its new personal-copy directory leaves
-  earlier saved guides and practice answers unchanged.
+- Bilingual Guide v87 combines PR #369's actionable project-download errors,
+  authorization boundaries and offline recovery with PR #435's localized
+  scanner, concise reference-coded notices, settings route and privacy-safe log.
+  Existing personal guide copies and practice answers remain untouched; package
+  hashes and fresh Help acceptance status are recorded in .wiki/current-state.md.
 
 Source anchors: `Mobile/LittleLeonardo/MobileDiagnosticLog.swift`,
 `Mobile/LittleLeonardo/MobileQRScanner.swift`,
@@ -29,6 +31,4 @@ Source anchors: `Mobile/LittleLeonardo/MobileDiagnosticLog.swift`,
 `Sources/LeonardoSync/DownloadLibrary.swift`,
 `Sources/LeonardoSyncUI/RemoteDocumentPreview.swift`.
 
-The current #380 diagnostic UI candidate is [PR #435](https://github.com/PinedaTec-EU/LeonardoMD/pull/435).
-Its physical large-image transfer criterion remains open; see
-[#380](https://github.com/PinedaTec-EU/LeonardoMD/issues/380).
+The current #380 diagnostic UI candidate is [PR #435](https://github.com/PinedaTec-EU/LeonardoMD/pull/435); stacked authorization recovery is in [PR #369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369). Packaged v87 Help/practice acceptance remains pending while macOS is locked. The original physical large-image transfer criterion remains open; see [#380](https://github.com/PinedaTec-EU/LeonardoMD/issues/380).

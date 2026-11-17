@@ -23,12 +23,35 @@ public struct DesktopPeerComparison: Sendable {
     }
 }
 
+/// A remote file read paired with the descriptor from the STATUS request that
+/// authorized it. Consumers use the descriptor to narrow retained catalogues
+/// before exposing the file to a reader.
+public struct DesktopPeerFileRead: Sendable {
+    public let descriptor: SharedProjectDescriptor
+    public let file: CorpusFile
+
+    public init(descriptor: SharedProjectDescriptor, file: CorpusFile) {
+        self.descriptor = descriptor
+        self.file = file
+    }
+}
+
 public enum DesktopPeerLibraryError: Error, Equatable, Sendable {
     case busy, unknownConnection, unknownCopy, unauthorizedProject, selectionChanged, sendingUnavailable,
-         acknowledgementUnavailable
+         acknowledgementUnavailable, metadataFirstAuthorizationRequired
+}
+
+extension DesktopPeerLibraryError: RemoteContentAccessDenied {
+    public var deniesRemoteContent: Bool { self == .unauthorizedProject }
+}
+
+public protocol RemoteContentAccessDenied: Error, Sendable {
+    var deniesRemoteContent: Bool { get }
 }
 
 public protocol DesktopPeerAccessRevoker: Sendable {
+    func denyReaderCaches(connectionID: UUID, projectIDs: [UUID]) async
+    func authorizationRequired(connectionID: UUID, projectID: UUID) async -> Bool
     func closeCopies(_ ids: [UUID]) async
 }
 
@@ -39,6 +62,7 @@ public protocol DesktopPeerLibraryAccess: Sendable {
     func refresh(connectionID: UUID) async throws -> DirectDeviceStatus
     func catalogue(connectionID: UUID, projectID: UUID) async throws -> RemoteProjectCatalogue
     func file(connectionID: UUID, projectID: UUID, entry: RemoteFileEntry) async throws -> CorpusFile
+    func fileRead(connectionID: UUID, projectID: UUID, entry: RemoteFileEntry) async throws -> DesktopPeerFileRead
     func importProject(connectionID: UUID, projectID: UUID) async throws -> DesktopPeerCopy
     func open(copyID: UUID) async throws -> URL
     func pendingProposal(copyID: UUID) async throws -> DesktopPeerPendingProposal?
@@ -66,4 +90,7 @@ public extension DesktopPeerRemote {
 public extension DesktopPeerLibraryAccess {
     func catalogue(connectionID: UUID, projectID: UUID) async throws -> RemoteProjectCatalogue { throw DesktopPeerLibraryError.unknownCopy }
     func file(connectionID: UUID, projectID: UUID, entry: RemoteFileEntry) async throws -> CorpusFile { throw DesktopPeerLibraryError.unknownCopy }
+    func fileRead(connectionID: UUID, projectID: UUID, entry: RemoteFileEntry) async throws -> DesktopPeerFileRead {
+        throw DesktopPeerLibraryError.metadataFirstAuthorizationRequired
+    }
 }

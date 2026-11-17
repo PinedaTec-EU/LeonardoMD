@@ -42,6 +42,10 @@ final class BundledUserGuideTests: XCTestCase {
             defer { LeonardoPackageTransport.discard(workspace) }
             let source = try String(contentsOf: workspace.documentURL, encoding: .utf8)
             XCTAssertTrue(source.contains("[LL1 op=snapshot"), "The combined guide must retain the HTTPS diagnostic example")
+            let accessDenialGuidance = language == .english
+                ? "An explicit access denial does not open that stale version."
+                : "Una denegación de acceso explícita no abre esa versión desactualizada."
+            XCTAssertTrue(source.contains(accessDenialGuidance), "The guide must distinguish denials from temporary failures")
             XCTAssertTrue(source.contains("Demo-es.mdlr") && source.contains("Demo-en.mdlr"), "The combined guide must explain the demo project documents")
             XCTAssertTrue(source.contains("Recuperar demo / Restore demo"), "Both guides must explain demo recovery")
             let document = try LeonardoFormatParser.parse(source)
