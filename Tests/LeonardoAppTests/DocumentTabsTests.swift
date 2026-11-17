@@ -444,6 +444,17 @@ final class DocumentTabsTests: XCTestCase {
         }
     }
 
+    func testProjectTreeProviderLoadsMixedSelectionAsOneBatch() async throws {
+        let root = URL(fileURLWithPath: "/synthetic/project")
+        let first = root.appendingPathComponent("notes.md")
+        let folder = root.appendingPathComponent("assets", isDirectory: true)
+        let provider = DocumentDropProviders.projectTreeItemProvider(for: first, selecting: [first, folder])
+
+        XCTAssertTrue(DocumentDropProviders.isProjectTreeDrop([provider]))
+        let loaded = await DocumentDropProviders.startLoadingProjectTreeURLs([provider]).value
+        XCTAssertEqual(loaded, [first, folder])
+    }
+
     func testCloseSavesInactiveDraftAndLeavesSiblingContentUntouched() async throws {
         let (root, tabs) = try fixture()
         defer { tabs.stop(); try? FileManager.default.removeItem(at: root) }

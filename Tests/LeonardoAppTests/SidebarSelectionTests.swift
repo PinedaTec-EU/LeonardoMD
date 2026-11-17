@@ -17,9 +17,9 @@ final class SidebarSelectionTests: XCTestCase {
                 session.globalPreferences.followActiveFile = follow
                 for colored in [false, true] {
                     session.globalPreferences.colorLeonardoFiles = colored
-                    XCTAssertTrue(row(source, session: session).selected, suffix)
-                    XCTAssertFalse(row(source.deletingLastPathComponent().appendingPathComponent("other.\(suffix)"), session: session).selected)
-                    XCTAssertFalse(row(source, session: session, directory: true).selected)
+                    XCTAssertTrue(row(source, session: session).isActiveDocument, suffix)
+                    XCTAssertFalse(row(source.deletingLastPathComponent().appendingPathComponent("other.\(suffix)"), session: session).isActiveDocument)
+                    XCTAssertFalse(row(source, session: session, directory: true).isActiveDocument)
                 }
             }
         }
@@ -39,12 +39,12 @@ final class SidebarSelectionTests: XCTestCase {
         session.documentStorage = .package
         session.documentSourceURL = source
         let entry = row(alias.appendingPathComponent("document.mdlz"), session: session)
-        XCTAssertTrue(entry.selected)
+        XCTAssertTrue(entry.isActiveDocument)
         session.documentSourceURL = actual.appendingPathComponent("other.mdlz")
-        XCTAssertFalse(entry.selected)
+        XCTAssertFalse(entry.isActiveDocument)
         session.documentSourceURL = nil
         session.documentURL = nil
-        XCTAssertFalse(entry.selected)
+        XCTAssertFalse(entry.isActiveDocument)
     }
 
     func testNativeSelectionAppearances() async throws {
@@ -60,11 +60,22 @@ final class SidebarSelectionTests: XCTestCase {
         session.documentStorage = .package
         session.documentSourceURL = URL(fileURLWithPath: "/project/Selected-package.mdlz")
         session.documentURL = URL(fileURLWithPath: "/temporary/content.mdlf")
+        let tree = ProjectFileTree()
+        let names = ["Plain-markdown.md", "Leonardo-document.mdlf", "Assets-folder", "Leonardo-response.mdlr",
+                     "Other-package.mdlz", "Selected-package.mdlz"]
+        let entries = names.map { name in
+            NavigationEntry(url: URL(fileURLWithPath: "/project/" + name), isDirectory: name == "Assets-folder")
+        }
+        let rows = tree.rows(roots: entries)
+        let selectedFile = URL(fileURLWithPath: "/project/Leonardo-document.mdlf")
+        let selectedFolder = URL(fileURLWithPath: "/project/Assets-folder", isDirectory: true)
+        tree.select(selectedFile, among: rows, gesture: .replace)
+        tree.select(selectedFolder, among: rows, gesture: .toggle)
         for appearance in [ColorScheme.light, .dark] {
             let view = VStack(alignment: .leading, spacing: 4) {
-                ForEach(["Plain-markdown.md", "Leonardo-document.mdlf", "Leonardo-response.mdlr",
-                         "Other-package.mdlz", "Selected-package.mdlz"], id: \.self) { name in
-                    self.row(URL(fileURLWithPath: "/project/" + name), session: session)
+                ForEach(names, id: \.self) { name in
+                    self.row(URL(fileURLWithPath: "/project/" + name), session: session, tree: tree,
+                             directory: name == "Assets-folder")
                 }
             }.padding(16).frame(width: 440, height: 240)
                 .background(appearance == .dark ? Color(white: 0.15) : Color(red: 0.94, green: 0.91, blue: 0.78))
@@ -78,8 +89,13 @@ final class SidebarSelectionTests: XCTestCase {
         }
     }
 
-    private func row(_ url: URL, session: AppSession, directory: Bool = false) -> FileTreeRow {
+    private func row(
+        _ url: URL,
+        session: AppSession,
+        tree: ProjectFileTree = ProjectFileTree(),
+        directory: Bool = false
+    ) -> FileTreeRow {
         FileTreeRow(entry: NavigationEntry(url: url, isDirectory: directory), session: session,
-                    depth: 0, expanded: false, toggle: {})
+                    tree: tree, depth: 0, expanded: false, toggle: {})
     }
 }

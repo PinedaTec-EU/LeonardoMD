@@ -10,7 +10,8 @@ struct FileTreeRow: View {
     let toggle: () -> Void
     @Environment(\.colorScheme) private var colorScheme
     @State private var dropState = ProjectFolderDropState.idle
-    private var isActiveDocument: Bool {
+    @State private var clickModifiers: NSEvent.ModifierFlags = []
+    var isActiveDocument: Bool {
         !entry.isDirectory && session.displayDocumentURL?.resolvingSymlinksInPath().path ==
             entry.url.resolvingSymlinksInPath().path
     }
@@ -50,7 +51,7 @@ struct FileTreeRow: View {
                 .highPriorityGesture(
                     TapGesture(count: 2).exclusively(before: TapGesture())
                         .onEnded { value in
-                            if selectUsingCurrentModifiers() { return }
+                            if selectUsingCurrentModifiers(clickModifiers) { return }
                             switch value {
                             case .first:
                                 if !entry.isDirectory {
@@ -66,6 +67,10 @@ struct FileTreeRow: View {
                             }
                         }
                 )
+                .overlay {
+                    ProjectTreeMouseDownCapture { clickModifiers = $0 }
+                        .allowsHitTesting(false)
+                }
                 .contextMenu {
                     if !entry.isDirectory && AppSession.supportedDocumentExtensions.contains(entry.url.pathExtension.lowercased()) {
                         Button(L10n.text("Open in new tab")) {
@@ -100,8 +105,7 @@ struct FileTreeRow: View {
         .accessibilityAddTraits(isActiveDocument || isMultiSelected ? [.isSelected] : [])
     }
 
-    private func selectUsingCurrentModifiers() -> Bool {
-        let modifiers = NSApp.currentEvent?.modifierFlags ?? []
+    private func selectUsingCurrentModifiers(_ modifiers: NSEvent.ModifierFlags) -> Bool {
         let rows = tree.rows(roots: session.rootEntries)
         if modifiers.contains(.shift) {
             tree.select(entry.url, among: rows, gesture: .extend(additive: modifiers.contains(.command)))
@@ -113,5 +117,75 @@ struct FileTreeRow: View {
         }
         tree.select(entry.url, among: rows, gesture: .replace)
         return false
+    }
+}
+
+private struct ProjectTreeMouseDownCapture: NSViewRepresentable {
+    let onMouseDown: (NSEvent.ModifierFlags) -> Void
+
+    func makeNSView(context: Context) -> ProjectTreeMouseCaptureView {
+        let view = ProjectTreeMouseCaptureView()
+        view.onMouseDown = onMouseDown
+        return view
+    }
+
+    func updateNSView(_ view: ProjectTreeMouseCaptureView, context: Context) {
+        view.onMouseDown = onMouseDown
+    }
+}
+
+@MainActor
+private final class ProjectTreeMouseCaptureView: NSView {
+    var onMouseDown: ((NSEvent.ModifierFlags) -> Void)?
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        if newWindow == nil { ProjectTreeMouseCaptureRegistry.shared.unregister(self) }
+        super.viewWillMove(toWindow: newWindow)
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if window != nil { ProjectTreeMouseCaptureRegistry.shared.register(self) }
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+}
+
+@MainActor
+private final class ProjectTreeMouseCaptureRegistry {
+    static let shared = ProjectTreeMouseCaptureRegistry()
+
+    private final class WeakView {
+        weak var value: ProjectTreeMouseCaptureView?
+        init(_ value: ProjectTreeMouseCaptureView) { self.value = value }
+    }
+
+    private var views: [ObjectIdentifier: WeakView] = [:]
+    private var monitor: Any?
+
+    func register(_ view: ProjectTreeMouseCaptureView) {
+        views[ObjectIdentifier(view)] = WeakView(view)
+        guard monitor == nil else { return }
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+            self?.capture(event)
+            return event
+        }
+    }
+
+    func unregister(_ view: ProjectTreeMouseCaptureView) {
+        views.removeValue(forKey: ObjectIdentifier(view))
+        views = views.filter { $0.value.value != nil }
+        guard views.isEmpty, let monitor else { return }
+        NSEvent.removeMonitor(monitor)
+        self.monitor = nil
+    }
+
+    private func capture(_ event: NSEvent) {
+        views = views.filter { $0.value.value != nil }
+        let location = event.locationInWindow
+        let target = views.values.compactMap(\.value).first { view in
+            view.window === event.window && view.bounds.contains(view.convert(location, from: nil))
+        }
+        target?.onMouseDown?(event.modifierFlags)
     }
 }
