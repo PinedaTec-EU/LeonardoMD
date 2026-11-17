@@ -28,11 +28,11 @@ the test app, then opened the Spanish copy. The separate passing
 Spanish source/answer separation and persistence. Both are Simulator checks;
 they do not establish physical-device or TestFlight acceptance.
 
-Before the source distribution archive, the PR compilation delta records five
+Before the source distribution archive, the PR compilation delta records six
 successful compiler-bearing invocations: `swift test`; the two named iPhone 17
 UI-test invocations above; `swift build -c release` from `./launch.sh --qa`;
-and the focused `swift test --filter
-testLinkedDocumentFailureUsesItsDiagnosticPresenter` run below. A full iOS
+and two focused `swift test --filter
+testLinkedDocumentFailureUsesItsDiagnosticPresenter` runs described below. A full iOS
 UI-suite attempt timed out and is not counted. The source archive is a separate
 compiler invocation and is recorded only if `xcodebuild archive` succeeds.
 
@@ -56,13 +56,22 @@ metadata, and increments only successful builds.
 ## Hosted linked-document test
 
 The focused linked-document diagnostic test passes locally on macOS 27.0.1,
-Xcode 27.1 (one test, 0.710 seconds; recorded as build delta 5). The earlier
-PR head `d00d6d804d5285b8f5dda240b95ffa3ec54ba6ec` failed the same assertions in
-both the push and pull-request GitHub Actions runs on macos-15/Xcode 26.3. The
-linked link is present in the WKWebView DOM, but the diagnostic presenter is
-not called on that runner. This CI-specific failure is tracked in
-[#468](https://github.com/PinedaTec-EU/LeonardoMD/issues/468); it does not
-establish a defect in the packaged app. A correction is pending.
+Xcode 27.1 with the original synthetic DOM click (one test, 0.710 seconds;
+build delta 5). The earlier PR head `d00d6d804d5285b8f5dda240b95ffa3ec54ba6ec`
+failed the same assertions in both the push and pull-request GitHub Actions
+runs on macos-15/Xcode 26.3. The linked link was present in the WKWebView DOM,
+but the diagnostic presenter was not called on that runner. Issue
+[#468](https://github.com/PinedaTec-EU/LeonardoMD/issues/468) tracks the
+hosted-runner failure.
+
+The candidate test now posts the same `leonardoLink` message used by the
+production renderer through the registered WKWebView bridge, then verifies the
+nested preview and diagnostic presenter. This avoids relying on a synthetic
+DOM click while keeping the production renderer, message handler and
+navigation path in the test. The revised test passes locally (one test, 0.592
+seconds; build delta 6). Exact-head GitHub Actions on macos-15/Xcode 26.3 still
+needs to confirm the fix; this test failure does not establish a defect in a
+packaged app.
 
 ## Packaged macOS Help smoke
 
