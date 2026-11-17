@@ -8,6 +8,7 @@ struct FileTreeRow: View {
     let expanded: Bool
     let toggle: () -> Void
     @Environment(\.colorScheme) private var colorScheme
+    @State private var dropState = ProjectFolderDropState.idle
     var selected: Bool {
         !entry.isDirectory && session.displayDocumentURL?.resolvingSymlinksInPath().path ==
             entry.url.resolvingSymlinksInPath().path
@@ -31,8 +32,15 @@ struct FileTreeRow: View {
                     Text(entry.name).lineLimit(1)
                         .foregroundStyle(selected ? Color(nsColor: .alternateSelectedControlTextColor) : isColoredLeonardo ? LeonardoFileStyle.foreground(for: colorScheme) : .primary)
                     Spacer(minLength: 0)
+                    if let label = dropState.label, let symbol = dropState.symbol {
+                        Label(L10n.text(label), systemImage: symbol)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(session.accentColor)
+                            .fixedSize()
+                    }
                 }.padding(.vertical, 6).padding(.horizontal, 6)
-                    .modifier(FileRowHighlight(accent: session.accentColor))
+                    .modifier(FileRowHighlight(accent: session.accentColor, selected: selected,
+                                               dropTarget: dropState.isTarget))
                     .background(selected ? Color(nsColor: .selectedContentBackgroundColor) : .clear,
                                 in: RoundedRectangle(cornerRadius: 6))
             }
@@ -74,11 +82,12 @@ struct FileTreeRow: View {
                 // Include the context menu in the plain-style scope so it cannot
                 // inherit the sidebar's stateful PremiumButtonStyle.
                 .buttonStyle(.plain)
-                .onDrag { NSItemProvider(object: entry.url as NSURL) }
-                .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-                    guard entry.isDirectory else { return false }
-                    return session.acceptDrop(providers, into: entry.url)
-                }
+                .modifier(ProjectTreeDragSource(url: entry.url))
+                .onDrop(of: [.fileURL], delegate: ProjectFolderDropDelegate(
+                    folder: entry.url,
+                    session: session,
+                    state: $dropState
+                ))
         }
         .padding(.leading, CGFloat(depth) * 16)
         .accessibilityIdentifier("project-file-" + entry.url.path)

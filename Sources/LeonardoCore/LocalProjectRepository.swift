@@ -266,6 +266,52 @@ public actor LocalProjectRepository {
         return makeNode(url: destination, projectRoot: root)
     }
 
+    @discardableResult
+    public func copy(
+        _ relativePath: String,
+        in project: ProjectDescriptor,
+        to parentRelativePath: String
+    ) throws -> FileNode {
+        let root = try validateProjectRoot(project.rootURL)
+        let source = try resolve(relativePath, under: root)
+        guard source != root else { throw FileSystemRepositoryError.cannotCopyProjectRoot }
+        guard fileManager.fileExists(atPath: source.path) else {
+            throw FileSystemRepositoryError.projectDoesNotExist(source)
+        }
+        let parent = try resolve(parentRelativePath, under: root)
+        guard isDirectory(parent) else {
+            throw FileSystemRepositoryError.projectIsNotDirectory(parent)
+        }
+        let sourcePath = source.resolvingSymlinksInPath().path
+        let parentPath = parent.resolvingSymlinksInPath().path
+        if isDirectory(source), parentPath == sourcePath || parentPath.hasPrefix(sourcePath + "/") {
+            throw FileSystemRepositoryError.cannotCopyIntoDescendant
+        }
+        let destination = parent.appendingPathComponent(source.lastPathComponent)
+        guard !isSymbolicLink(destination) else {
+            throw FileSystemRepositoryError.pathEscapesProject
+        }
+        guard !fileManager.fileExists(atPath: destination.path) else {
+            throw FileSystemRepositoryError.itemAlreadyExists(destination)
+        }
+
+        let stagingDirectory = parent.appendingPathComponent(
+            ".leonardo-copy-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        try fileManager.createDirectory(at: stagingDirectory, withIntermediateDirectories: false)
+        let stagedItem = stagingDirectory.appendingPathComponent(source.lastPathComponent)
+        do {
+            try fileManager.copyItem(at: source, to: stagedItem)
+            try fileManager.moveItem(at: stagedItem, to: destination)
+        } catch {
+            try? fileManager.removeItem(at: stagingDirectory)
+            throw error
+        }
+        try? fileManager.removeItem(at: stagingDirectory)
+        return makeNode(url: destination, projectRoot: root)
+    }
+
     public func trashAvailability(_ relativePath: String, in project: ProjectDescriptor) throws -> TrashAvailability {
         let target = try deletionTarget(relativePath, in: project)
         return TrashSupport.availability(at: target, fileManager: fileManager)

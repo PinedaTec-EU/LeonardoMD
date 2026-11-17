@@ -18,7 +18,7 @@ Como usuario quiero navegar mis proyectos mediante un explorador de carpetas mod
 | Crear archivo Markdown | Sí |
 | Crear carpeta | Sí |
 | Renombrar | Sí |
-| Mover mediante drag and drop | Deseable |
+| Mover mediante drag and drop | Sí |
 | Borrar con confirmación | Sí |
 | Abrir en Finder | Sí |
 | Menú contextual | Sí |
@@ -34,6 +34,9 @@ Como usuario quiero navegar mis proyectos mediante un explorador de carpetas mod
 7. El usuario puede eliminar elementos con confirmación explícita.
 8. La UI refleja cambios externos realizados en el sistema de archivos.
 9. El árbol no bloquea la app al cargar proyectos con muchos archivos.
+10. El usuario puede arrastrar un fichero o carpeta del árbol a otra carpeta del proyecto; al soltar se mueve y, si mantiene ⌥, se copia.
+11. El destino se identifica durante el arrastre; las colisiones y los destinos dentro de la propia carpeta no sobrescriben ni alteran el origen.
+12. Los cambios de árbol se reflejan al terminar y los documentos abiertos conservan su sesión al moverlos.
 
 ## Flujo Principal
 

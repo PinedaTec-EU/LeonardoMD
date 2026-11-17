@@ -341,6 +341,8 @@ Inicio separa **Proyectos** de **Documentos**, con Favoritos y Recientes para ca
 
 Abre una carpeta con ⇧⌘O. Despliega sus carpetas en la barra lateral; sus hijos se cargan al expandirlas. Usa Nueva nota y Nueva carpeta, o el menú contextual para renombrar, mover o eliminar elementos. Revisa el destino antes de eliminar y conserva copias o historial Git del material importante.
 
+Arrastra una fila de fichero o carpeta hasta otra carpeta del mismo proyecto para moverla. Mantén ⌥ (Opción) al soltar para copiarla. La carpeta de destino se resalta y muestra **Mover** o **Copiar**. Al copiar se conserva el original y no se sobrescribe ningún elemento existente. No puedes mover ni copiar una carpeta dentro de sí misma o de una subcarpeta. Si arrastras un Markdown desde Finder, se sigue abriendo en una pestaña. Solo se puede arrastrar un elemento cada vez.
+
 Un clic abre un archivo compatible en la pestaña activa. Haz doble clic o elige **Abrir en nueva pestaña** para conservar la pestaña original y su borrador. Si ya está abierto, se selecciona su pestaña existente. Las pestañas del proyecto conservan la navegación, carpetas expandidas y filtros; ⌘T crea una pestaña vacía. ⌘W cierra la pestaña activa y ⇧⌘W la ventana. Las decisiones Guardar, Descartar y Cancelar protegen los cambios pendientes.
 
 El menú de filtros de la barra lateral controla la visibilidad y el orden:

@@ -207,6 +207,24 @@ extension AppSession {
     }
     @discardableResult
     func move(_ url: URL, into parent: URL) -> Task<Void, Never>? {
+        transfer(url, into: parent, operation: .move)
+    }
+
+    @discardableResult
+    func copy(_ url: URL, into parent: URL) -> Task<Void, Never>? {
+        transfer(url, into: parent, operation: .copy)
+    }
+
+    private enum ProjectItemTransferOperation {
+        case move
+        case copy
+    }
+
+    private func transfer(
+        _ url: URL,
+        into parent: URL,
+        operation: ProjectItemTransferOperation
+    ) -> Task<Void, Never>? {
         guard let root = projectURL else { return nil }
         let identity = SessionFileOperationIdentity(sourceURL: url, session: self)
         return Task {
@@ -221,9 +239,15 @@ extension AppSession {
                 guard identity.isCurrent(in: self) else { return }
                 try await authorizePath(parent.appendingPathComponent(url.lastPathComponent), intent)
                 guard identity.isCurrent(in: self) else { return }
-                let node = try await files.move(relative(url), in: ProjectDescriptor(name: root.lastPathComponent, rootURL: root), to: relative(parent))
-                await updateMovedDocument(from: url, to: node.url)
-                await relatedPathMoved?(url, node.url)
+                let project = ProjectDescriptor(name: root.lastPathComponent, rootURL: root)
+                switch operation {
+                case .move:
+                    let node = try await files.move(relative(url), in: project, to: relative(parent))
+                    await updateMovedDocument(from: url, to: node.url)
+                    await relatedPathMoved?(url, node.url)
+                case .copy:
+                    _ = try await files.copy(relative(url), in: project, to: relative(parent))
+                }
                 await refreshTree()
             } catch { report(error) }
         }
@@ -243,15 +267,24 @@ extension AppSession {
         }
         mode = previousMode
     }
-    func acceptDrop(_ providers: [NSItemProvider], into parent: URL) -> Bool {
+    func acceptDrop(_ providers: [NSItemProvider], into parent: URL, copy: Bool = false) -> Bool {
         guard DocumentDropProviders.canLoad(providers) else { return false }
+        let internalCount = providers.filter(DocumentDropProviders.isProjectTreeItem).count
+        guard internalCount == 0 || internalCount == providers.count else { return false }
+        let isProjectTreeDrop = internalCount == providers.count
+        let urlLoad = DocumentDropProviders.startLoadingURLs(providers)
         Task {
-            guard let urls = await DocumentDropProviders.urls(providers) else { return }
-            if DocumentTabs.acceptsDrop(urls), let openDroppedDocuments {
+            guard let urls = await urlLoad.value else { return }
+            if isProjectTreeDrop {
+                guard urls.count == 1, let url = urls.first, let root = projectURL,
+                      DocumentDropProviders.isProjectMove(url, in: root) else { return }
+                if !copy && url.standardizedFileURL.deletingLastPathComponent() == parent.standardizedFileURL {
+                    return
+                }
+                let operation = copy ? self.copy(url, into: parent) : self.move(url, into: parent)
+                await operation?.value
+            } else if DocumentTabs.acceptsDrop(urls), let openDroppedDocuments {
                 await openDroppedDocuments(urls)
-            } else if urls.count == 1, let url = urls.first, let root = projectURL,
-                      DocumentDropProviders.isProjectMove(url, in: root) {
-                move(url, into: parent)
             }
         }
         return true

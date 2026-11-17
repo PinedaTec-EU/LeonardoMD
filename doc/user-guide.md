@@ -335,6 +335,8 @@ Home separates **Projects** from **Documents**, with Favorites and Recents for e
 
 Open a folder with ⇧⌘O. Expand its folders in the sidebar; children load as you expand them. Use New note and New folder, or an item's context menu to rename, move or delete. Check the target before deleting and keep a backup or Git history for valuable material.
 
+Drag one file or folder row onto a folder in the same project to move it. Hold ⌥ (Option) while releasing to copy it instead. The target folder highlights and shows **Move** or **Copy**. Leonardo keeps the original when copying and does not overwrite an existing destination. A folder cannot be moved or copied into itself or one of its subfolders. Dragging a Markdown file from Finder still opens it in a tab. Only one item can be dragged at a time.
+
 A single click opens a supported file in the active tab. Double-click or choose **Open in new tab** to keep the original tab and its draft. An already open document selects its existing tab. New project tabs preserve navigation, expanded folders and file filters; ⌘T creates an empty tab. Close the active tab with ⌘W, or the window with ⇧⌘W. Save, Discard and Cancel decisions protect pending edits.
 
 The sidebar filter menu controls visibility and order:
