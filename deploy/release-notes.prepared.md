@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1884
+
+- #447 Fixed: unblock closing after preview sync failure ([#448](https://github.com/PinedaTec-EU/LeonardoMD/pull/448))
+
+<p>Preview sync failures use one native alert. When closing, the alert identifies the affected document; users can keep its tab open to retry or discard its unapplied Preview edits. Both guides explain the choice.</p>
+
+Source: `76740ee0f0017609978557241115a81872d2ad71`. Delta: `{"build": 38}`.
+
 ## 0.3.1846
 
 - #442 Added: editable names for remote Macs in Little Leonardo ([#445](https://github.com/PinedaTec-EU/LeonardoMD/pull/445))

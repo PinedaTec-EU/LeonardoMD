@@ -1139,6 +1139,16 @@
       "pr": 445,
       "summary": "Little Leonardo lets you name each paired Mac locally, keeps its address as supporting detail, hides the empty local-project section, and labels a single shared project correctly.",
       "to_version": "0.3.1846"
+    },
+    {
+      "delta": {
+        "build": 38
+      },
+      "from_version": "0.3.1846",
+      "merge_sha": "76740ee0f0017609978557241115a81872d2ad71",
+      "pr": 448,
+      "summary": "Preview sync failures use one native alert. When closing, the alert identifies the affected document; users can keep its tab open to retry or discard its unapplied Preview edits. Both guides explain the choice.",
+      "to_version": "0.3.1884"
     }
   ],
   "initial_version": "0.1.56",
@@ -1149,5 +1159,5 @@
     "feature",
     "build"
   ],
-  "version": "0.3.1846"
+  "version": "0.3.1884"
 }
