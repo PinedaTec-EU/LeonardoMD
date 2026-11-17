@@ -1,0 +1,24 @@
+{
+  "source_sha": "324636affe92f10ab4eaaa77f49a63924e4bf9d7",
+  "source_note": "The app and UI-test sources are committed at source_sha. The later evidence commit changes documentation only.",
+  "capture_tool": "XcodeBuildMCP simulator screenshot after launch_app_sim; alias persistence was confirmed by snapshot_ui before capture.",
+  "platform": "iOS 27.0 Simulator (build 24A434)",
+  "device": "iPhone 18 Pro Max; LittleLeonardo PR435 Localization QA 20261115",
+  "simulator_id": "0C5D5C27-1EBC-4C69-BA40-CAEE89F49750",
+  "screen": "Library behind the synchronization failure alert",
+  "locale": "Spanish (es_ES)",
+  "viewport_points": {
+    "width": 440,
+    "height": 956
+  },
+  "screenshot_pixels": {
+    "width": 368,
+    "height": 800
+  },
+  "capture_mode": "XcodeBuildMCP live simulator JPEG; optimized by the capture tool, no other pixel edits",
+  "captured_at": "2026-11-15T17:39:03Z",
+  "state": "The Library shows persisted local Mac alias Mac QA and one project pending review. The alert shows a concise Spanish synchronization failure, reference LL-A2913709327C, and one Aceptar action. The IP endpoint is not displayed beside the chosen alias.",
+  "data_provenance": "Synthetic local simulator connection; the isolated loopback fixture was stopped. No owner document or credentials.",
+  "image_bytes": 26799,
+  "image_sha256": "f39ab069d196381f5271536f7fda89d73337b4cd5e9bd9d47bc70ab3a8df710d"
+}

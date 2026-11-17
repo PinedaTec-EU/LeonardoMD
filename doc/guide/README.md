@@ -1,27 +1,26 @@
 # Bundled user guide
 
-The macOS app ships `Guide-v91-en.mdlz` and `Guide-v91-es.mdlz`. Help and Welcome
+The macOS app ships `Guide-v92-en.mdlz` and `Guide-v92-es.mdlz`. Help and Welcome
 open a user-owned copy in
-`~/Library/Application Support/LeonardoMD/User Guides/v91/<language>/` through
+`~/Library/Application Support/LeonardoMD/User Guides/v92/<language>/` through
 normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
-Guide v91 combines the HTTP rejection and uncertain-delivery recovery from
-Guide v88 with the remote-project authorization and download recovery guidance
-from PR #369. It explains that a pending, withdrawn or narrowed project grant
-hides editable copies and blocks remote actions while preserving local work.
-Restoring the same project selection makes the copy available again. Existing
-personal copies and practice answers remain untouched. Fresh bilingual packaged
-Help acceptance for v91 remains pending owner-authorized Beta validation.
-Guide v91 EN SHA-256: `bff5b4fae75a7446f85ed140539b725ced39305b615ddfa18dec0b10c48dc703`
-and ES SHA-256: `4a7890277f32a1c3bc00533074c25e2179aedb845cd8d605a33fc07162b66f60`.
+Guide v92 carries forward the HTTP rejection, uncertain-delivery and remote-project
+recovery guidance, and adds Little Leonardo host aliases, connection-detail addresses,
+singular project counts and the empty local-section/project-creation boundaries from
+PR #445. It preserves earlier personal guide copies and practice answers. Fresh
+bilingual packaged Help and practice-form acceptance for v92 remains pending under
+[PR #448](https://github.com/PinedaTec-EU/LeonardoMD/pull/448).
+Guide v92 EN SHA-256: `5c5b9c88c97172304c35d13bf7174257d240e524be491a198b35506e1e9a02d5`
+and ES SHA-256: `87c3e6c607cfa699f82c71ff11cf14bd4d111d766bd3b04ba20922a30b0a121b`.
 
 Guide v87 previously passed packaged Help acceptance in a fresh macOS QA
 process. The bundle/opened-copy hashes, rendered examples, Math fallback,
 practice-form round trips and teardown are recorded in
 [packaged-help-v87-qa-20261116-pr435.json](../validation/little-leonardo/packaged-help-v87-qa-20261116-pr435.json).
-That acceptance does not cover the current Guide v91 package; its Help/practice
-acceptance remains pending for the owner-authorized Beta validation.
+That acceptance does not cover the current Guide v92 package; its Help/practice
+acceptance remains pending under PR #448.
 
 The terminal-retry screenshots and result bundle were captured from product
 and test source `5e751df2` before integrating the follow-up #459/#460 evidence
@@ -35,14 +34,14 @@ Guide v88 EN and ES hashes and the exact test/source manifest are recorded in
 `doc/validation/little-leonardo/rubric-explicit-rejection-20261116/`.
 
 The former PR #369 Guide v89 EN and ES package hashes are retained in the
-historical review record. The current app resources use Guide v91 with a new
+historical review record. The current app resources use Guide v92 with a new
 resource name and personal-copy directory; no existing guide copy is overwritten.
 
 Guide v86 is historical. Its fresh packaged Help acceptance passed against
 source `47858f19e1c612a6e5beba34d76f0fa9ff7c6054`; the candidate-specific
 record is in
 [packaged-help-v86-20261116.json](../validation/little-leonardo/packaged-help-v86-20261116.json).
-It does not establish acceptance for the current Guide v91 package. The
+It does not establish acceptance for the current Guide v92 package. The
 previous iOS capture bundles are historical; refreshed simulator evidence is
 recorded separately under `doc/validation/`.
 
@@ -52,7 +51,7 @@ and Markdown-extras examples, a separate practice form, generated diagrams, the
 approved About banner and original localized UI screenshots. See the
 [source-backed feature inventory](feature-coverage.md).
 
-Guide v91 carries forward current document search, remote-project review and offline-catalogue guidance with grouped Dock/app-switcher instances, synchronization status and helper recovery. It explains project download failures and transfer limits, distinguishes removed project grants from revoked devices with the correct recovery steps, clarifies that explicit access denials cannot open older cached content, and documents reference-coded sync and invalid or expired scanned-invitation errors. On macOS it explains how project-level authorization changes hide editable copies while preserving local work. Temporary connection failures may still offer a retained offline copy. Its English route labels match the app. Existing guide copies and their separate practice answers remain preserved.
+Guide v92 carries forward current document search, remote-project review and offline-catalogue guidance with grouped Dock/app-switcher instances, synchronization status and helper recovery. It explains project download failures and transfer limits, distinguishes removed project grants from revoked devices with the correct recovery steps, clarifies that explicit access denials cannot open older cached content, and documents reference-coded sync and invalid or expired scanned-invitation errors. On macOS it explains how project-level authorization changes hide editable copies while preserving local work. Temporary connection failures may still offer a retained offline copy. Its English route labels match the app. Existing guide copies and their separate practice answers remain preserved.
 
 File → Import with your agent opens `AgentImport-v3-en.mdlz` or
 `AgentImport-v3-es.mdlz` in the same tab/package flow, with personal copies under

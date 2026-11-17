@@ -197,6 +197,64 @@ final class OnDemandSyncUITests: XCTestCase {
         try capture(app, "project-deleted-after-refresh", state: "Locally removed project stays absent after relaunch and authenticated sync; Demo remains")
     }
 
+    @MainActor func testLocalDisplayNameAndSingularProjectCountCapture() throws {
+        guard ProcessInfo.processInfo.environment["LEONARDO_ON_DEMAND_QA_ROOT"] != nil else {
+            throw XCTSkip("Requires the isolated on-demand loopback source")
+        }
+        defer { try? phase("finish") }
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(es)", "-AppleLocale", "es_ES"]
+        app.launch()
+        let demoProject = app.buttons["open-demo-project"]
+        XCTAssertTrue(demoProject.waitForExistence(timeout: 10), "The fixture must start with the bundled local Demo")
+        demoProject.swipeLeft()
+        let deleteDemo = app.buttons["delete-demo-project"]
+        XCTAssertTrue(deleteDemo.waitForExistence(timeout: 5), "Removing the local Demo requires the explicit action")
+        deleteDemo.tap()
+        XCTAssertFalse(app.staticTexts["En este dispositivo"].exists,
+                       "The local section must be absent when no local project remains")
+        try enroll(app)
+
+        let hostMenu = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH %@ AND label == %@",
+                        "shared-host-menu-", "Acciones de Mac conectado")).firstMatch
+        XCTAssertTrue(hostMenu.waitForExistence(timeout: 10), "The connected Mac must expose its local actions")
+        hostMenu.tap()
+        let rename = app.buttons.matching(NSPredicate(format: "label == %@", "Cambiar nombre")).firstMatch
+        XCTAssertTrue(rename.waitForExistence(timeout: 5))
+        rename.tap()
+
+        let name = app.textFields.matching(
+            NSPredicate(format: "placeholderValue == %@", "Nombre del Mac")).firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        if let value = name.value as? String, !value.isEmpty {
+            name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+        }
+        name.typeText("Mac QA")
+        app.buttons.matching(NSPredicate(format: "label == %@", "Guardar")).firstMatch.tap()
+
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label == %@", "Mac QA"))
+            .firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts.matching(
+            NSPredicate(format: "label == %@", "1 proyecto · 1 por revisar")).firstMatch.exists,
+                      "A single pending project must use the singular count")
+        let endpoint = try readyHost() + ":46987"
+        XCTAssertFalse(app.staticTexts[endpoint].exists,
+                       "An explicit local name keeps the endpoint out of the host row")
+        XCTAssertFalse(app.staticTexts["En este dispositivo"].exists,
+                       "The library must not reserve an empty local section below remote projects")
+        try capture(app, "display-name-singular-count-es",
+                    state: "Synthetic connected host uses its saved local Mac QA name, hides the endpoint, shows one project pending review and omits the empty local section")
+
+        app.buttons["open-sync-settings"].tap()
+        let restoreDemo = app.buttons["restore-demo-project"]
+        XCTAssertTrue(restoreDemo.waitForExistence(timeout: 5))
+        restoreDemo.tap()
+        dismissSyncSettings(in: app)
+        XCTAssertTrue(demoProject.waitForExistence(timeout: 5), "Restore the local Demo after the empty-section check")
+    }
+
     @MainActor func testEnglishSharedDownloadFailureLocalizesVoiceOverCopy() throws {
         guard ProcessInfo.processInfo.environment["LEONARDO_ON_DEMAND_QA_ROOT"] != nil else {
             throw XCTSkip("Requires the isolated on-demand loopback source")

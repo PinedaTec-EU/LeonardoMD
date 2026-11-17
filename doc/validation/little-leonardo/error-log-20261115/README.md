@@ -18,3 +18,9 @@ The malformed recognized QR is covered by the new scanner-path regression tests,
 ## Current corrected source
 
 Fresh English and Spanish alert/settings/log screenshots for the localized download copy are recorded in [the current-source evidence bundle](current-head-d1a200ad/README.md). The four UI tests passed 4/4 on source tree `d1a200ad724feb22a8df3ca6ed41217cc8203835`; the subsequent commit-message correction retains the identical Git tree. The UI test also verifies the reference shown in the Spanish failure alert is present in the opened local log.
+
+## Local Mac display names
+
+The original simulator capture for `OnDemandSyncUITests.testLocalDisplayNameAndSingularProjectCountCapture` passed 1/1 on PR #445 source `324636affe92f10ab4eaaa77f49a63924e4bf9d7`. It shows the saved local Mac name and singular project count without exposing the endpoint in the host row. A fresh app launch retained the alias; a Spanish concise sync alert is recorded separately. The loopback host and errors are synthetic, not physical synchronization acceptance. See [the display-name evidence bundle](remote-host-display-name-445/README.md) and the combined [capture manifest](manifest.json).
+
+The final combined candidate uses Guide v86. Its packaged macOS Help and practice-form save/reopen smoke remains pending until a fresh instance can be inspected in both locales.

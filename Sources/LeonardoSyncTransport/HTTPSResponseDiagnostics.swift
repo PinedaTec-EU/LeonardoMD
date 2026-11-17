@@ -25,6 +25,7 @@ struct HTTPSResponseDiagnostics: Sendable {
             case .posix(let code): failure = "posix:\(code.rawValue)"
             case .tls(let code): failure = "tls:\(code)"
             case .dns(let code): failure = "dns:\(code)"
+            case .wifiAware: failure = "wifi_aware"
             @unknown default: failure = "network:unknown"
             }
         case is TransportError: failure = "transport"
