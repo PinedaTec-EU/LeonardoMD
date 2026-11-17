@@ -1,3 +1,4 @@
-delta:
-  feature: 1
-summary: "Little Leonardo now renders all five built-in Markdown extensions from device-local settings and offers detected disabled features for consent-based activation."
+{
+  "delta": {"feature": 1},
+  "summary": "Little Leonardo now renders all five built-in Markdown extensions from device-local settings and offers detected disabled features for consent-based activation."
+}
