@@ -1,8 +1,13 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "leonardo-format",
+<<<<<<< HEAD
   "version": "0.4.0",
-  "description": "Read, validate, fill, edit, extract and repackage open Leonardo Markdown documents (.mdlf, .mdlr and .mdlz).",
+  "description": "Preview, read, validate, fill, edit, extract and repackage open Leonardo Markdown documents (.mdlf, .mdlr and .mdlz).",
+=======
+  "version": "0.3.0",
+  "description": "Preview, validate, fill, edit, extract and repackage open Leonardo Markdown documents (.mdlf, .mdlr and .mdlz).",
+>>>>>>> 8cc37f1a (#474 Added: preview Leonardo documents in Codex)
   "author": {
     "name": "PinedaTec",
     "url": "https://pinedatec.com"
@@ -25,13 +30,13 @@
       "interface": {
         "displayName": "Leonardo Format",
         "shortDescription": "Work with open Leonardo documents and forms.",
-        "longDescription": "Understand, validate, fill, edit, extract and repackage Markdown-based Leonardo documents and their MDLZ asset bundles.",
+        "longDescription": "Preview, validate, fill, edit, extract and repackage Markdown-based Leonardo documents and their MDLZ asset bundles.",
         "developerName": "PinedaTec",
         "category": "Productivity",
         "capabilities": ["Read", "Write"],
         "websiteURL": "https://github.com/PinedaTec-EU/LeonardoMD",
         "defaultPrompt": [
-          "Read this MDLF document using the Leonardo format specification.",
+          "Open this Leonardo document in the Codex browser.",
           "Validate and safely extract this MDLZ bundle before editing it."
         ],
         "brandColor": "#A87832"
