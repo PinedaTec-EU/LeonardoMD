@@ -168,7 +168,8 @@ import XCTest
         XCTAssertNotNil(retainedDuringQuarantine?.downloads[fixture.file.path],
                         "Restart recovery must preserve the retained cache entry")
         let storedFile = try await fixture.cache.read(id: fixture.project.id,
-                                                       entry: RemoteFileEntry(file: fixture.file))
+                                                       entry: RemoteFileEntry(file: fixture.file),
+                                                       allowStale: false)
         XCTAssertEqual(storedFile, fixture.file,
                        "The stored bytes remain available for an authorized retry")
 
