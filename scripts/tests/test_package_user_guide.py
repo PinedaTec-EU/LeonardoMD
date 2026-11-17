@@ -12,13 +12,41 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def image_dimensions(data):
+    if data.startswith(b'\x89PNG\r\n\x1a\n'):
+        return struct.unpack('>II', data[16:24])
+    if data.startswith(b'\xff\xd8'):
+        position = 2
+        frame_markers = {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7,
+                         0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}
+        while position < len(data):
+            if data[position] != 0xFF:
+                raise AssertionError('Invalid JPEG segment')
+            while position < len(data) and data[position] == 0xFF:
+                position += 1
+            marker = data[position]
+            position += 1
+            if marker in {0xD9, 0xDA}:
+                break
+            if marker == 0x01 or 0xD0 <= marker <= 0xD7:
+                continue
+            size = int.from_bytes(data[position:position + 2], 'big')
+            if marker in frame_markers:
+                height, width = struct.unpack('>HH', data[position + 3:position + 7])
+                return width, height
+            position += size
+    raise AssertionError('Unsupported or invalid guide image')
+
+
 class PackageUserGuideTests(unittest.TestCase):
     def test_instructional_image_inventory_resolves_both_locales(self):
         inventory = (ROOT / 'doc/guide/screenshots.md').read_text()
-        names = re.findall(r'`en/es/assets/([^`]+\.png)`', inventory)
+        captures = re.findall(r'`(en/es|en)/assets/([^`]+\.(?:png|jpg))`', inventory)
+        names = [(locale, name) for locale, name in captures]
         self.assertGreaterEqual(len(names), 7)
-        for language in ('en', 'es'):
-            for name in names:
+        for locale, name in names:
+            languages = ('en', 'es') if locale == 'en/es' else ('en',)
+            for language in languages:
                 with self.subTest(language=language, image=name):
                     image = ROOT / 'doc/guide' / language / 'assets' / name
                     self.assertTrue(image.is_file(), f'Stale instructional inventory: {image}')
@@ -80,15 +108,15 @@ class PackageUserGuideTests(unittest.TestCase):
                 revision = int(match.group(1))
                 self.assertEqual(guide.read_bytes(), (ROOT / 'Sources/LeonardoApp/Resources' / guide.name).read_bytes())
                 with zipfile.ZipFile(guide) as archive:
-                    expected_images = 22 if language == 'es' else 21
+                    expected_images = 22
                     self.assertEqual(len(archive.namelist()), expected_images + 1)
                     # Conservative 16-bit RGBA source envelope catches image
                     # budget regressions before the native all-images check.
                     image_bytes = 0
                     for asset in archive.namelist():
-                        if asset.endswith('.png'):
+                        if asset.endswith(('.png', '.jpg')):
                             content = archive.read(asset)
-                            width, height = struct.unpack('>II', content[16:24])
+                            width, height = image_dimensions(content)
                             image_bytes += len(content) + width * height * 8
                     self.assertLessEqual(image_bytes, 128 * 1024 * 1024)
                     source = archive.read('guide.mdlf').decode('utf-8')
@@ -109,12 +137,16 @@ class PackageUserGuideTests(unittest.TestCase):
                     self.assertNotIn('values', metadata)
                     self.assertNotIn('{{field:practice', source)
                     self.assertFalse(any(name.endswith('.json') for name in archive.namelist()))
-                    references = set(re.findall(r'assets/[A-Za-z0-9_-]+\.(?:png|svg)', source))
+                    references = set(re.findall(r'assets/[A-Za-z0-9_-]+\.(?:png|jpg|svg)', source))
                     self.assertEqual(references, set(archive.namelist()) - {'guide.mdlf'})
                     for asset in archive.namelist():
                         if asset.startswith('assets/'):
                             self.assertIn(asset, source)
-                            self.assertTrue(archive.read(asset).startswith(b'\x89PNG'))
+                            content = archive.read(asset)
+                            if asset.endswith('.png'):
+                                self.assertTrue(content.startswith(b'\x89PNG'))
+                            else:
+                                self.assertTrue(content.startswith(b'\xff\xd8'))
                 import_name = f'AgentImport-v3-{language}.mdlz'
                 self.assertIn(import_name, maintenance)
                 self.assertIn('Agent Import Guides/v3/', maintenance)

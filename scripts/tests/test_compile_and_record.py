@@ -36,17 +36,29 @@ class CompileAndRecordTests(unittest.TestCase):
 
     def test_successful_commands_accumulate_and_preserve_other_deltas(self):
         self.entry.parent.mkdir(parents=True)
-        self.entry.write_text('{"release":2,"feature":1,"build":3}')
+        summary = "Little Leonardo preserves enabled document extensions."
+        self.entry.write_text(json.dumps({"delta": {"release": 2, "feature": 1, "build": 3},
+                                          "pr": 42, "summary": summary}))
         for command in [["swift", "build", "-c", "release"], ["swift", "test"]]:
             result = self.record(command)
             self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(json.loads(self.entry.read_text()), {"release":2,"feature":1,"build":5})
+        self.assertEqual(json.loads(self.entry.read_text()), {
+            "delta": {"release": 2, "feature": 1, "build": 5}, "pr": 42, "summary": summary})
+
+    def test_top_level_segment_entries_preserve_their_shape(self):
+        self.entry.parent.mkdir(parents=True)
+        summary = "The recorder preserves the supported top-level shape."
+        self.entry.write_text(json.dumps({"feature": 1, "build": 3, "pr": 42, "summary": summary}))
+        result = self.record(["swift", "test"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(self.entry.read_text()), {
+            "feature": 1, "build": 4, "pr": 42, "summary": summary})
 
     def test_failed_command_does_not_create_or_change_entry(self):
         self.assertNotEqual(self.record(failed=True).returncode, 0)
         self.assertFalse(self.entry.exists())
         self.entry.parent.mkdir(parents=True)
-        original = '{"build":7}'
+        original = '{"delta":{"build":7}}'
         self.entry.write_text(original)
         self.assertNotEqual(self.record(failed=True).returncode, 0)
         self.assertEqual(self.entry.read_text(), original)
@@ -62,11 +74,11 @@ class CompileAndRecordTests(unittest.TestCase):
         for action in ["build", "build-for-testing", "test"]:
             result = self.record(["xcodebuild", "-project", "Mobile.xcodeproj", action])
             self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(json.loads(self.entry.read_text()), {"build": 3})
+        self.assertEqual(json.loads(self.entry.read_text()), {"delta": {"build": 3}})
         self.assertNotEqual(self.record(["xcodebuild", "build"], failed=True).returncode, 0)
         for args in [["-list"], ["test-without-building"], ["build", "-showBuildSettings"]]:
             self.assertNotEqual(self.record(["xcodebuild", *args]).returncode, 0)
-        self.assertEqual(json.loads(self.entry.read_text()), {"build": 3})
+        self.assertEqual(json.loads(self.entry.read_text()), {"delta": {"build": 3}})
 
     def test_parallel_commands_do_not_lose_build_increments(self):
         processes = [subprocess.Popen(self.arguments(), env=self.env,
@@ -75,26 +87,45 @@ class CompileAndRecordTests(unittest.TestCase):
         for process in processes:
             output, error = process.communicate(timeout=10)
             self.assertEqual(process.returncode, 0, error)
-        self.assertEqual(json.loads(self.entry.read_text()), {"build":4})
+        self.assertEqual(json.loads(self.entry.read_text()), {"delta": {"build": 4}})
 
     def test_invalid_existing_entry_is_preserved(self):
         self.entry.parent.mkdir(parents=True)
-        self.entry.write_text('{"build":true}')
+        self.entry.write_text('{"delta":{"build":true}}')
         self.assertNotEqual(self.record().returncode, 0)
-        self.assertEqual(self.entry.read_text(), '{"build":true}')
+        self.assertEqual(self.entry.read_text(), '{"delta":{"build":true}}')
 
     def test_success_preserves_author_summary_and_rejects_malformed_metadata(self):
         self.entry.parent.mkdir(parents=True)
         summary = "Documents retain their metadata when saved."
-        self.entry.write_text(json.dumps({"summary": summary, "build": 1}))
+        self.entry.write_text(json.dumps({"delta": {"build": 1}, "summary": summary}))
         result = self.record()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(json.loads(self.entry.read_text()), {"summary": summary, "build": 2})
+        self.assertEqual(json.loads(self.entry.read_text()), {
+            "delta": {"build": 2}, "summary": summary})
         for invalid in ["", "line\nbreak", " leading", "bad\ud800text", "x" * 281]:
-            content = json.dumps({"summary": invalid, "build": 2})
+            content = json.dumps({"delta": {"build": 2}, "summary": invalid})
             self.entry.write_text(content)
             self.assertNotEqual(self.record().returncode, 0)
             self.assertEqual(self.entry.read_text(), content)
+
+    def test_malformed_nested_entries_are_rejected_before_compiling(self):
+        self.entry.parent.mkdir(parents=True)
+        invalid_entries = [
+            {"delta": {}},
+            {"delta": {"build": 1, "unknown": 1}},
+            {"delta": {"build": 1, "summary": "not a segment"}},
+            {"delta": {"build": 1}, "unexpected": True},
+            {"delta": {"build": 1}, "build": 2},
+            {"delta": []},
+            {"delta": {"build": 1}, "pr": 43},
+        ]
+        for invalid in invalid_entries:
+            with self.subTest(entry=invalid):
+                content = json.dumps(invalid)
+                self.entry.write_text(content)
+                self.assertNotEqual(self.record().returncode, 0)
+                self.assertEqual(self.entry.read_text(), content)
 
 
 if __name__ == "__main__":

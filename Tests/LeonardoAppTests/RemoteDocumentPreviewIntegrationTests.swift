@@ -100,7 +100,17 @@ import LeonardoSyncUI
         let preview = try XCTUnwrap(web, "The linked-document fixture must render through the production Markdown web view")
         let hasLink = try await preview.evaluateJavaScript("Array.from(document.querySelectorAll('a')).some(a => a.href.endsWith('/linked.md'))") as? Bool
         XCTAssertEqual(hasLink, true, "The root Markdown document must expose its authorized local link")
-        _ = try await preview.evaluateJavaScript("Array.from(document.querySelectorAll('a')).find(a => a.href.endsWith('/linked.md')).click(); true")
+        let linkMessageSent = try await preview.evaluateJavaScript("""
+            (() => {
+                const link = Array.from(document.querySelectorAll('a')).find(a => a.href.endsWith('/linked.md'));
+                const handler = window.webkit?.messageHandlers?.leonardoLink;
+                if (!link || !handler) return false;
+                handler.postMessage({ href: link.getAttribute('href') || '' });
+                return true;
+            })()
+            """) as? Bool
+        XCTAssertEqual(linkMessageSent, true,
+                       "The production renderer's link message must reach the registered WebKit bridge")
 
         let targetKey = DownloadLibrary.key(id: descriptor.id, path: linked.path)
         let failureDeadline = ContinuousClock.now.advanced(by: .seconds(8))

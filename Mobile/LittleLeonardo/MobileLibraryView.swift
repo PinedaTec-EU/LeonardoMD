@@ -8,7 +8,6 @@ private enum MobileLibrarySheet: String, Identifiable {
     case direct, settings, about
     var id: String { rawValue }
 }
-
 extension OfflineProject {
     /// iOS only receives direct-sync projects from another device. The legacy
     /// Git payload remains a local recovery archive and must not look remote.
@@ -159,7 +158,7 @@ struct MobileLibraryView: View {
             .navigationTitle("Biblioteca")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(item: $selectedRemoteFile) { route in
-                RemoteDocumentPreview(library: library.downloads, projectID: route.projectID,
+                MobileRemoteDocumentPreview(library: library.downloads, projectID: route.projectID,
                     entry: route.entry, spanish: spanishErrors, appearance: .leonardoClassic,
                     compactFirstHeading: true,
                     failureDiagnosticPresentation: { error, identity, shouldRecord in
@@ -299,11 +298,25 @@ struct MobileLibraryView: View {
 
     private var syncFrequency: some View {
         Group {
-            Picker("Sincronización automática", selection: $syncInterval) {
-                Text("Solo manual").tag(0)
-                ForEach([1, 5, 15, 30, 60], id: \.self) { Text("Cada \($0) min").tag($0) }
+            Picker(
+                spanishErrors ? "Sincronización automática" : "Automatic synchronization",
+                selection: $syncInterval
+            ) {
+                Text(spanishErrors ? "Solo manual" : "Manual only")
+                    .tag(0)
+                    .accessibilityIdentifier("sync-frequency-option-0")
+                ForEach([1, 5, 15, 30, 60], id: \.self) { minutes in
+                    Text(spanishErrors ? "Cada \(minutes) min" : "Every \(minutes) min")
+                        .tag(minutes)
+                        .accessibilityIdentifier("sync-frequency-option-\(minutes)")
+                }
             }
-            Text("La sincronización automática funciona mientras la app está activa.").font(.caption)
+            .accessibilityIdentifier("sync-frequency-picker")
+            Text(spanishErrors
+                 ? "La sincronización automática funciona mientras la app está activa."
+                 : "Automatic synchronization runs while the app is active.")
+                .font(.caption)
+                .accessibilityIdentifier("sync-frequency-note")
         }
     }
 
@@ -364,7 +377,9 @@ struct MobileLibraryView: View {
     private var synchronizationSettings: some View {
         NavigationStack {
             Form {
-                Section("Frecuencia") { syncFrequency }.listRowBackground(MobileClassic.inset)
+                MobileMarkdownExtensionsSettings(preferences: .shared, spanish: spanishErrors)
+                Section(spanishErrors ? "Frecuencia" : "Frequency") { syncFrequency }
+                    .listRowBackground(MobileClassic.inset)
                 Section("Proyectos / Projects") {
                     Button("Recuperar demo / Restore demo", systemImage: "arrow.counterclockwise") {
                         do { try library.projectLifecycle.restoreDemo() }
@@ -395,7 +410,10 @@ struct MobileLibraryView: View {
             }
                 .classicSurface()
                 .navigationTitle(MobileErrorLogCopy.synchronizationTitle(spanish: spanishErrors))
-                .toolbar { Button(MobileErrorLogCopy.close(spanish: spanishErrors)) { presentedSheet = nil } }
+                .toolbar {
+                    Button(MobileErrorLogCopy.close(spanish: spanishErrors)) { presentedSheet = nil }
+                        .accessibilityIdentifier("close-sync-settings")
+                }
         }
     }
 }
@@ -489,7 +507,7 @@ struct MobileProjectView: View {
             }
         }.classicSurface().navigationTitle(project?.name ?? "Proyecto")
         .navigationDestination(item: $selectedEntry) { entry in
-            RemoteDocumentPreview(
+            MobileRemoteDocumentPreview(
                 library: library.downloads,
                 projectID: projectID,
                 entry: entry,
@@ -513,88 +531,5 @@ struct MobileProjectView: View {
                                      message: "No se pudo exportar el archivo de recuperación.")
             }
         }
-    }
-}
-
-struct MobileDocumentView: View {
-    let library: MobileLibrary
-    let projectID: UUID
-    let file: CorpusFile
-    var initialAnchor: String? = nil
-    @State private var text = ""
-    @State private var source = false
-    @State private var assets: MarkdownMemoryAssets?
-    @State private var linkedDocument: CachedDocumentLink?
-    @State private var unavailableLink = false
-    @State private var didScrollToInitialAnchor = false
-    @StateObject private var previewController = MarkdownPreviewController()
-    private let virtualRoot = URL(fileURLWithPath: "/LittleLeonardoCorpus", isDirectory: true)
-    private var previewConfiguration: MarkdownPreviewConfiguration {
-        var configuration = MarkdownPreviewConfiguration(allowsMermaid: true, allowsMath: true, externalLinkPolicy: .blocked,
-            appearance: .leonardoClassic,
-            localAssetRoot: virtualRoot, memoryAssets: assets, allowsRemoteImages: false)
-        configuration.compactFirstHeading = true
-        return configuration
-    }
-    private var liveProject: OfflineProject? { library.projects.first { $0.id == projectID } }
-    private var liveFile: CorpusFile? { library.currentFile(projectID: projectID, path: file.path) }
-
-    var body: some View {
-        Group {
-            if liveProject == nil {
-                ContentUnavailableView("Acceso retirado", systemImage: "lock", description: Text("La copia local de este proyecto se ha eliminado."))
-            } else if liveFile == nil {
-                ContentUnavailableView("Documento no disponible", systemImage: "doc", description: Text("El documento ya no está en la copia local."))
-            } else if !source, ["md", "markdown"].contains((file.path as NSString).pathExtension.lowercased()) {
-                MarkdownPreview(content: text,
-                    baseURL: virtualRoot.appendingPathComponent(file.path).deletingLastPathComponent(),
-                    configuration: previewConfiguration, controller: previewController, onLinkActivation: followLink)
-            } else {
-                ScrollView {
-                    Text(text).font(.system(.body, design: .monospaced)).textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading).padding()
-                }
-            }
-        }
-        .classicSurface()
-        .navigationTitle((file.path as NSString).lastPathComponent)
-        .toolbar {
-            Button("Sincronizar", systemImage: "arrow.triangle.2.circlepath") {
-                Task { await library.synchronize() }
-            }.disabled(library.connecting || liveProject?.isRecoveryArchive == true)
-                .accessibilityIdentifier("document-sync")
-            Button(source ? "Ver documento" : "Ver texto", systemImage: "chevron.left.forwardslash.chevron.right") { source.toggle() }
-        }
-        .onAppear { updateContent() }
-        .onChange(of: library.projects) { _, _ in updateContent() }
-        .alert("Documento no disponible", isPresented: $unavailableLink) {
-            Button("Aceptar", role: .cancel) {}
-        } message: { Text("El enlace no corresponde a un documento descargado dentro de la carpeta autorizada.") }
-        .navigationDestination(isPresented: Binding(get: { linkedDocument != nil }, set: { if !$0 { linkedDocument = nil } })) {
-            if let target = linkedDocument {
-                MobileDocumentView(library: library, projectID: projectID, file: target.file, initialAnchor: target.anchor)
-            }
-        }
-        .onChange(of: previewController.isReady) { _, ready in
-            if ready, !didScrollToInitialAnchor, let initialAnchor {
-                previewController.scroll(to: initialAnchor)
-                didScrollToInitialAnchor = true
-            }
-        }
-    }
-
-    private func updateContent() {
-        text = liveFile.flatMap { String(data: $0.content, encoding: .utf8) } ?? ""
-        assets = liveProject.map { MarkdownMemoryAssets(files: Dictionary(uniqueKeysWithValues: $0.files.map { ($0.path, $0.content) })) }
-    }
-
-    private func followLink(_ url: URL) {
-        guard let project = liveProject,
-              let target = CachedDocumentLink(url: url, virtualRoot: virtualRoot, scope: project.scope, files: project.files) else {
-            unavailableLink = true; return
-        }
-        if target.file.path == file.path {
-            if let anchor = target.anchor { previewController.scroll(to: anchor) }
-        } else { linkedDocument = target }
     }
 }

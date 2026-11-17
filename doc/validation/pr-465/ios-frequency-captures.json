@@ -1,0 +1,50 @@
+{
+  "captured_on": "2026-11-17",
+  "capture_method": "XCTest screenshot attachments from the iOS Simulator",
+  "result_bundle": "/tmp/LeonardoMD-pr465-frequency-final4-20261117.xcresult",
+  "host": {
+    "macos": "27.0.1 (26A434)",
+    "xcode": "27.1 (27A9275)"
+  },
+  "application_bundle_identifier": "eu.pinedatec.LittleLeonardo",
+  "simulator": {
+    "name": "iPhone 17",
+    "udid": "691F22BD-BD95-40DC-8744-352846B25B84",
+    "runtime": "iOS 27.0 (24A434)",
+    "screenshot_pixels": [1206, 2622],
+    "native_points": [402, 874]
+  },
+  "test_run": {
+    "passed": 2,
+    "failed": 0,
+    "tests": [
+      {
+        "identifier": "PairingUITests/testEnglishSyncFrequencySettingsAreLocalized()",
+        "app_process_id": 65742,
+        "test_started_local": "2026-11-17 19:11:52 CET",
+        "screenshot_captured_local": "2026-11-17 19:12:12 CET",
+        "terminated_and_verified_not_running": true
+      },
+      {
+        "identifier": "PairingUITests/testSpanishSyncFrequencySettingsRemainLocalized()",
+        "app_process_id": 66174,
+        "test_started_local": "2026-11-17 19:12:31 CET",
+        "screenshot_captured_local": "2026-11-17 19:12:41 CET",
+        "terminated_and_verified_not_running": true
+      }
+    ]
+  },
+  "captures": [
+    {
+      "file": "ios-frequency-english.png",
+      "sha256": "abd7213c95881b25ff846aa77502f02748a20fc73550ccab0ffb571dee6fadb2",
+      "state": "Sync settings with the English Frequency section and the native picker open."
+    },
+    {
+      "file": "ios-frequency-spanish.png",
+      "sha256": "4e770d46f3a0c451fb2ce2f4298df4a6bf611c27b1d1b6f3b79c8a8727133cee",
+      "state": "Sync settings with the Spanish Frecuencia section and the native picker open."
+    }
+  ],
+  "scope": "UI localization evidence only; it does not establish physical-device or TestFlight acceptance."
+}

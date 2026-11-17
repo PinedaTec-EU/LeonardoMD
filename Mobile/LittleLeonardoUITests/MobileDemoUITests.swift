@@ -13,7 +13,8 @@ final class MobileDemoUITests: XCTestCase {
     @MainActor func testOfflineDemoRendersAndRetainsPracticeAcrossRelaunch() throws {
         let app = XCUIApplication()
         app.launch()
-        openDemo("en", in: app)
+        setAllExtensions(false, in: app)
+        openDemo("en", in: app, expectRecommendation: true)
         resetDemo(in: app)
         let web = app.webViews.firstMatch
         XCTAssertTrue(web.staticTexts["Welcome to Little Leonardo"].waitForExistence(timeout: 15))
@@ -42,7 +43,8 @@ final class MobileDemoUITests: XCTestCase {
     @MainActor func testSpanishSourceRoundTripKeepsFormEditableAndAnswersSeparate() throws {
         let app = XCUIApplication()
         app.launch()
-        openDemo("es", in: app)
+        setAllExtensions(false, in: app)
+        openDemo("es", in: app, expectRecommendation: true)
         resetDemo(in: app)
         let field = practiceName(in: app.webViews.firstMatch, app: app)
         XCTAssertEqual(field.value as? String, "")
@@ -74,6 +76,7 @@ final class MobileDemoUITests: XCTestCase {
     @MainActor func testDemoProjectDeletionRequiresSwipeAndTapAndCanBeRestored() {
         let app = XCUIApplication()
         app.launch()
+        setAllExtensions(false, in: app)
         let settings = app.buttons["open-sync-settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: 15))
         if !app.buttons["open-demo-project"].exists {
@@ -107,13 +110,74 @@ final class MobileDemoUITests: XCTestCase {
         capture(app, "Demo language document")
     }
 
-    @MainActor private func openDemo(_ language: String, in app: XCUIApplication) {
+    @MainActor private func setAllExtensions(_ enabled: Bool, in app: XCUIApplication) {
+        let settings = app.buttons["open-sync-settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 15))
+        settings.tap()
+        capture(app, "Five device-local extension settings")
+
+        for identifier in ["mermaid", "math", "vega-lite", "citations", "markdown-extensions"] {
+            let toggle = app.switches["mobile-extension-\(identifier)-toggle"]
+            XCTAssertTrue(toggle.waitForExistence(timeout: 10), "Missing extension setting: \(identifier)")
+            XCTAssertTrue(toggle.isHittable
+                          && toggle.frame.minY >= app.frame.minY + 100
+                          && toggle.frame.maxY <= app.frame.maxY - 120,
+                          "Extension setting is not fully visible: \(identifier), frame=\(toggle.frame)")
+            let currentValue = extensionToggleValue(toggle)
+            XCTAssertNotNil(currentValue,
+                            "Unexpected value for extension setting: \(identifier), raw=\(String(describing: toggle.value))")
+            if currentValue != enabled {
+                toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+            }
+            XCTAssertEqual(extensionToggleValue(toggle), enabled,
+                           "The extension setting did not change: \(identifier)")
+        }
+
+        let reset = app.buttons["reset-mobile-extension-warnings"]
+        for _ in 0..<8 where !reset.isHittable { app.swipeUp() }
+        XCTAssertTrue(reset.isHittable)
+        reset.tap()
+        dismissSyncSettings(in: app)
+    }
+
+    @MainActor private func extensionToggleValue(_ toggle: XCUIElement) -> Bool? {
+        if let value = toggle.value as? String {
+            switch value.lowercased() {
+            case "1", "true", "on": true
+            case "0", "false", "off": false
+            default: nil
+            }
+        } else if let value = toggle.value as? NSNumber {
+            value.boolValue
+        } else {
+            nil
+        }
+    }
+
+    @MainActor private func openDemo(_ language: String, in app: XCUIApplication,
+                                     expectRecommendation: Bool = false) {
         let entry = app.buttons["open-demo-\(language)"]
         if !entry.exists, app.buttons["open-demo-project"].exists {
             app.buttons["open-demo-project"].tap()
         }
         XCTAssertTrue(entry.waitForExistence(timeout: 15))
         entry.tap()
+        let enableSelected = app.buttons["enable-selected-mobile-extensions"]
+        if expectRecommendation {
+            XCTAssertTrue(enableSelected.waitForExistence(timeout: 15),
+                          "The Demo should recommend its detected disabled extensions")
+        } else {
+            _ = enableSelected.waitForExistence(timeout: 5)
+        }
+        if enableSelected.exists {
+            capture(app, "\(language) Demo extension recommendation")
+            for identifier in ["mermaid", "math", "vega-lite", "citations", "markdown-extensions"] {
+                let toggle = app.switches["enable-mobile-extension-\(identifier)"]
+                XCTAssertTrue(toggle.waitForExistence(timeout: 10), "Missing detected extension: \(identifier)")
+                if (toggle.value as? String) != "1" { toggle.tap() }
+            }
+            enableSelected.tap()
+        }
         XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 15))
     }
 

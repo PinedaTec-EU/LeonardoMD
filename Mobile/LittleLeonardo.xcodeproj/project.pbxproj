@@ -51,6 +51,12 @@
 		D38510000000000000000001 /* OnDemandSyncUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38500000000000000000001 /* OnDemandSyncUITests.swift */; };
 		D39710000000000000000001 /* MobileReaderSpacingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39700000000000000000001 /* MobileReaderSpacingTests.swift */; };
 		F435C0DE0000000000000002 /* MobileDiagnosticLogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F435C0DE0000000000000001 /* MobileDiagnosticLogTests.swift */; };
+		464100000000000000000001 /* MobileMarkdownPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464200000000000000000001 /* MobileMarkdownPreferences.swift */; };
+		464100000000000000000002 /* MobileExtensionRecommendations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464200000000000000000002 /* MobileExtensionRecommendations.swift */; };
+		464100000000000000000003 /* MobileExtensionRecommendationDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464200000000000000000003 /* MobileExtensionRecommendationDialog.swift */; };
+		464100000000000000000004 /* MobileMarkdownExtensionsSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464200000000000000000004 /* MobileMarkdownExtensionsSettings.swift */; };
+		464100000000000000000005 /* MobileRemoteDocumentPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464200000000000000000005 /* MobileRemoteDocumentPreview.swift */; };
+		464100000000000000000006 /* MobileDocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464200000000000000000006 /* MobileDocumentView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -112,6 +118,12 @@
 		D38500000000000000000001 /* OnDemandSyncUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnDemandSyncUITests.swift; sourceTree = "<group>"; };
 		D39700000000000000000001 /* MobileReaderSpacingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileReaderSpacingTests.swift; sourceTree = "<group>"; };
 		F435C0DE0000000000000001 /* MobileDiagnosticLogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDiagnosticLogTests.swift; sourceTree = "<group>"; };
+		464200000000000000000001 /* MobileMarkdownPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileMarkdownPreferences.swift; sourceTree = "<group>"; };
+		464200000000000000000002 /* MobileExtensionRecommendations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileExtensionRecommendations.swift; sourceTree = "<group>"; };
+		464200000000000000000003 /* MobileExtensionRecommendationDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileExtensionRecommendationDialog.swift; sourceTree = "<group>"; };
+		464200000000000000000004 /* MobileMarkdownExtensionsSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileMarkdownExtensionsSettings.swift; sourceTree = "<group>"; };
+		464200000000000000000005 /* MobileRemoteDocumentPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRemoteDocumentPreview.swift; sourceTree = "<group>"; };
+		464200000000000000000006 /* MobileDocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDocumentView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -228,6 +240,12 @@
 				5E9D61F2B8A34D49A3C0F7D2 /* MobileDiagnosticLog.swift */,
 				384000000000000000000000 /* MobileLibrary+Downloads.swift */,
 				A7B6C5D4E3F2019A88776656 /* MobileRubricSubmissionGate.swift */,
+				464200000000000000000001 /* MobileMarkdownPreferences.swift */,
+				464200000000000000000002 /* MobileExtensionRecommendations.swift */,
+				464200000000000000000003 /* MobileExtensionRecommendationDialog.swift */,
+				464200000000000000000004 /* MobileMarkdownExtensionsSettings.swift */,
+				464200000000000000000005 /* MobileRemoteDocumentPreview.swift */,
+				464200000000000000000006 /* MobileDocumentView.swift */,
 				7849226B36C61649B125BDDC /* MobileLibraryView.swift */,
 				9A4D00000000000000000001 /* MobileSharedProjectTreeView.swift */,
 				70CAB6D3C2D948039788E971 /* MobileRecoveryDocument.swift */,
@@ -398,6 +416,12 @@
 				B4C4A7E1D8F74D7E9A1D5C21 /* MobileDirectAuthorization.swift in Sources */,
 				B4C4A7E1D8F74D7E9A1D5C22 /* MobileRevocationJournal.swift in Sources */,
 				B4C4A7E1D8F74D7E9A1D5C23 /* MobileRevocationClient.swift in Sources */,
+				464100000000000000000001 /* MobileMarkdownPreferences.swift in Sources */,
+				464100000000000000000002 /* MobileExtensionRecommendations.swift in Sources */,
+				464100000000000000000003 /* MobileExtensionRecommendationDialog.swift in Sources */,
+				464100000000000000000004 /* MobileMarkdownExtensionsSettings.swift in Sources */,
+				464100000000000000000005 /* MobileRemoteDocumentPreview.swift in Sources */,
+				464100000000000000000006 /* MobileDocumentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

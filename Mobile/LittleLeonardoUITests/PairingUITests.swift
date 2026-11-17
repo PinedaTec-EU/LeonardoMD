@@ -64,6 +64,87 @@ final class PairingUITests: XCTestCase {
             refresh: "Actualizar")
     }
 
+    @MainActor func testEnglishSyncFrequencySettingsAreLocalized() {
+        assertSyncFrequencyLocale(
+            language: "en",
+            locale: "en_US",
+            section: "Frequency",
+            pickerLabel: "Automatic synchronization",
+            note: "Automatic synchronization runs while the app is active.",
+            options: ["Manual only", "Every 1 min", "Every 5 min", "Every 15 min", "Every 30 min", "Every 60 min"])
+    }
+
+    @MainActor func testSpanishSyncFrequencySettingsRemainLocalized() {
+        assertSyncFrequencyLocale(
+            language: "es",
+            locale: "es_ES",
+            section: "Frecuencia",
+            pickerLabel: "Sincronización automática",
+            note: "La sincronización automática funciona mientras la app está activa.",
+            options: ["Solo manual", "Cada 1 min", "Cada 5 min", "Cada 15 min", "Cada 30 min", "Cada 60 min"])
+    }
+
+    @MainActor private func assertSyncFrequencyLocale(
+        language: String,
+        locale: String,
+        section: String,
+        pickerLabel: String,
+        note: String,
+        options: [String]
+    ) {
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", locale]
+        app.launch()
+        defer {
+            app.terminate()
+            XCTAssertTrue(app.wait(for: .notRunning, timeout: 5))
+        }
+
+        let settings = app.buttons["open-sync-settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 15))
+        settings.tap()
+
+        let picker = app.descendants(matching: .any)["sync-frequency-picker"].firstMatch
+        for _ in 0..<12 {
+            if picker.exists { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts[section].exists)
+        XCTAssertTrue(picker.label.contains(pickerLabel))
+        let helper = app.descendants(matching: .any)["sync-frequency-note"].firstMatch
+        XCTAssertTrue(helper.waitForExistence(timeout: 5))
+        XCTAssertEqual(helper.label, note)
+
+        picker.tap()
+        captureScreen(app, name: "\(language) Little Leonardo synchronization frequency")
+        let optionValues = [0, 1, 5, 15, 30, 60]
+        for (value, expectedLabel) in zip(optionValues, options) {
+            let option = app.descendants(matching: .any)["sync-frequency-option-\(value)"].firstMatch
+            XCTAssertTrue(option.waitForExistence(timeout: 5), "Missing frequency option: \(expectedLabel)")
+            XCTAssertEqual(option.label, expectedLabel)
+        }
+
+        app.buttons["close-sync-settings"].tap()
+        settings.tap()
+
+        let about = app.buttons["open-about"]
+        for _ in 0..<12 {
+            if about.exists { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(about.waitForExistence(timeout: 5))
+        about.tap()
+        let helpLink = app.buttons["Ayuda"]
+        XCTAssertTrue(helpLink.waitForExistence(timeout: 5))
+        helpLink.tap()
+        let bilingualFrequencyHelp = app.staticTexts.containing(
+            NSPredicate(format: "label CONTAINS %@", "The Frequency picker offers")).firstMatch
+        XCTAssertTrue(bilingualFrequencyHelp.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Extensiones de documentos / Document extensions"].exists)
+        captureScreen(app, name: "\(language) Little Leonardo bilingual help")
+    }
+
     @MainActor private func assertErrorLogLocale(
         language: String,
         locale: String,

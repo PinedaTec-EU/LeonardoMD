@@ -59,7 +59,8 @@ class ReleaseLedgerTests(unittest.TestCase):
         if entry:
             directory = self.root / "deploy/version/entries"
             directory.mkdir(exist_ok=True)
-            (directory / "101.yaml").write_text(json.dumps({**(delta or {"build": 1}),
+            (directory / "101.yaml").write_text(json.dumps({
+                "delta": delta or {"build": 1},
                 "summary": "Source fixture demonstrates a reviewed user-facing change."}))
         return self.commit("#38 Added: source fixture")
 
@@ -109,7 +110,7 @@ class ReleaseLedgerTests(unittest.TestCase):
         (self.root / "Sources/prior.swift").write_text("// Earlier source PR\n")
         directory = self.root / "deploy/version/entries"
         directory.mkdir()
-        (directory / "100.yaml").write_text('{"build": 4}')
+        (directory / "100.yaml").write_text('{"delta":{"build":4}}')
         prior = self.commit("#38 Added: earlier source fixture")
         order = self.root / "order.json"
         order.write_text(json.dumps({"schema_version": 1,
@@ -148,10 +149,11 @@ class ReleaseLedgerTests(unittest.TestCase):
         self.assertEqual(list((self.root / "deploy/version/entries").iterdir()),
                          [self.root / "deploy/version/entries/101.yaml"])
 
-    def test_legacy_patch_delta_is_rejected(self):
+    def test_unconfigured_patch_delta_is_rejected(self):
         result = self.validate_source(self.source_change(delta={"patch": 1}))
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("unknown", result.stderr.lower())
+        self.assertIn("unconfigured", result.stderr.lower())
+        self.assertIn("patch", result.stderr.lower())
 
     def test_wrong_pr_entry_is_rejected(self):
         self.source_change()
