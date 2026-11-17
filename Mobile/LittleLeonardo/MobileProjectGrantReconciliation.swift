@@ -102,12 +102,11 @@ extension MobileLibrary {
             .union(authorizationGenerations.projectsUnderQuarantine(for: context.token.connectionID))
         authorizationGenerations.quarantine(connectionID: context.token.connectionID,
                                              projectIDs: projectIDs)
+        for projectID in projectIDs { downloads.deny(id: projectID) }
         do {
             try recordReconciliationRequired(for: context.connection, projectIDs: projectIDs)
         } catch {
-            presentError(error, operation: .revocation,
-                         message: "No se pudo guardar la protección del vínculo. Vuelve a sincronizar antes de abrir sus proyectos.")
-            throw error
+            throw MobileRevocationClientError.reconciliationProtectionPersistenceFailed
         }
     }
 

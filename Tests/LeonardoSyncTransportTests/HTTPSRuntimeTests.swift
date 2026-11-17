@@ -6,6 +6,26 @@ import LeonardoCore
 @testable import LeonardoSyncTransport
 
 final class HTTPSRuntimeTests: XCTestCase {
+    func testSnapshotFailureBodyOmitsWideSelectionMetricsAfterGrantNarrowing() throws {
+        let projectID = UUID()
+        let original = SharedProjectDescriptor(id: projectID, name: "Shared",
+            scope: try CorpusScope(folder: ""),
+            selection: try CorpusSelection(folders: ["docs"], documents: []))
+        let current = SharedProjectDescriptor(id: projectID, name: "Shared",
+            scope: try CorpusScope(folder: ""),
+            selection: try CorpusSelection(folders: [], documents: ["docs/allowed.md"]))
+        let failure = CorpusReadFailure(reason: .corpusTooLarge, path: "docs/private.md",
+                                        observed: 900, limit: 512)
+
+        let safe = DirectHTTPSRouter.sanitizedSnapshotFailure(failure, authorizedBy: original,
+                                                              currentlyAuthorizedBy: current)
+        let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(safe))
+            as? [String: Any])
+        XCTAssertNil(payload["path"], "A path outside the latest selection must be redacted")
+        XCTAssertNil(payload["observed"], "Counts measured under the wider selection must be omitted")
+        XCTAssertNil(payload["limit"], "Limits paired with stale measurements must be omitted")
+    }
+
     func testRealTLSRequestAndCertificateMismatch() async throws {
         guard #available(macOS 15, *) else { throw XCTSkip("Fixture identity import requires memory-only Security import") }
         let identity = try makeIdentity()

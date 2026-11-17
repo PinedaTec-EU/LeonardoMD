@@ -131,22 +131,27 @@ struct MobileRevocationJournal: MobileRevocationJournalStore {
         if markers[index].state == .denied {
             return
         }
+        // A late result from an older authenticated request cannot replace or
+        // clear the journal state written by a newer generation. Drop only its
+        // completed write-ahead operation; the newer marker remains untouched.
+        guard markers[index].generation == ticket.generation else {
+            markers[index].operations.removeAll {
+                $0.sessionID == ticket.sessionID && $0.operationID == ticket.operationID
+            }
+            try save(markers)
+            return
+        }
         switch outcome {
         case .denied:
             markers[index].state = .denied
             markers[index].operations.removeAll()
             try save(markers)
         case .authorized:
-            markers[index].operations.removeAll {
-                $0.sessionID == ticket.sessionID && $0.operationID == ticket.operationID
-            }
-            let hasCurrentSessionOperation = markers[index].operations.contains { $0.sessionID == sessionID }
-            if hasCurrentSessionOperation {
-                try save(markers)
-            } else {
-                markers.remove(at: index)
-                try save(markers)
-            }
+            // This exact-generation ticket completed authenticated STATUS and
+            // its required reconciliation, superseding every older in-flight
+            // ticket retained in the write-ahead marker.
+            markers.remove(at: index)
+            try save(markers)
         case .transient:
             markers[index].operations.removeAll {
                 $0.sessionID == ticket.sessionID && $0.operationID == ticket.operationID

@@ -466,6 +466,9 @@ final class DesktopPeerLibraryTests: XCTestCase {
                        try CorpusSelection(folders: [], documents: ["docs/other.md"]))
         let retainedCredential = await fixture.credentials.credential(deviceID: connection.id)
         XCTAssertNotNil(retainedCredential)
+        let deniedReaderProjects = await fixture.revoker.readerDeniedProjects(for: connection.id)
+        XCTAssertEqual(deniedReaderProjects, [fixture.remote.project.id],
+                       "A narrowed file grant invalidates any reader cache from its previous selection")
     }
 
     func testUnresolvedCatalogueForbiddenResponseIsPreservedWhenProjectStillAppearsAuthorized() async throws {

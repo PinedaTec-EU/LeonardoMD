@@ -2,8 +2,11 @@ import Foundation
 import LeonardoSync
 import LeonardoSyncTransport
 
-enum MobileRevocationClientError: Error, Equatable, Sendable {
+enum MobileRevocationClientError: Error, Equatable, Sendable, RemoteContentAccessDenied {
     case obsoleteAuthorization(markerEscalated: Bool)
+    case reconciliationProtectionPersistenceFailed
+
+    var deniesRemoteContent: Bool { true }
 }
 
 struct MobileAuthenticatedContext {
@@ -94,6 +97,8 @@ struct MobileRevocationClient: Sendable {
         let ticket = try preflight(for: connection)
         var recheckAuthorized = false
         var statusAuthenticated = false
+        var requiresSuccessfulReconciliation = needsStatusReconciliation()
+        var reconciliationSucceeded = false
         do {
             guard let credential = try await credentials.credential(deviceID: connection.deviceID) else {
                 try? finish(ticket, outcome: .transient)
@@ -135,8 +140,10 @@ struct MobileRevocationClient: Sendable {
                     }
                 let requestedProjectMissing = projectID != nil && descriptor == nil
                 if statusChanged || requestedProjectMissing || targetPathDenied
-                    || initialStatus.access == .pending || needsStatusReconciliation() {
+                    || initialStatus.access == .pending || requiresSuccessfulReconciliation {
+                    requiresSuccessfulReconciliation = true
                     if let refreshedContext = try await onCurrentStatus(context) { context = refreshedContext }
+                    reconciliationSucceeded = true
                 }
                 if initialStatus.access == .pending, projectID != nil {
                     throw SyncError.projectAccessDenied
@@ -153,10 +160,12 @@ struct MobileRevocationClient: Sendable {
                 deviceID: connection.deviceID, credential: credential,
                 projectID: projectID, filePath: filePath, status: status,
                 onCurrentStatus: { latest in
-                    recheckAuthorized = true
+                    requiresSuccessfulReconciliation = true
                     let refreshed = MobileAuthenticatedContext(connection: context.connection,
                         credential: credential, client: client, status: latest, token: context.token, ticket: ticket)
                     if let current = try await onCurrentStatus(refreshed) { context = current }
+                    reconciliationSucceeded = true
+                    recheckAuthorized = true
                 }
             ) {
                 try await operation(context)
@@ -174,9 +183,13 @@ struct MobileRevocationClient: Sendable {
                 // promotion failed, leave the write-ahead ticket untouched.
                 try? finish(ticket, outcome: .transient)
             }
+            // If the write-ahead marker could not be promoted, retain this
+            // operation as the only restart-safe evidence of in-flight access.
             throw error
         } catch let error as SyncError where error.isAccessDenied {
-            try? finish(ticket, outcome: recheckAuthorized || statusAuthenticated ? .authorized : .transient)
+            let authenticatedCurrentStatus = recheckAuthorized || statusAuthenticated
+            let reconciliationIsCurrent = !requiresSuccessfulReconciliation || reconciliationSucceeded
+            try? finish(ticket, outcome: authenticatedCurrentStatus && reconciliationIsCurrent ? .authorized : .transient)
             throw error
         } catch SyncError.revoked {
             if isCurrent() {

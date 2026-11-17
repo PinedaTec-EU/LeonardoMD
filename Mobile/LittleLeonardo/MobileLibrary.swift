@@ -245,6 +245,7 @@ final class MobileLibrary {
             .union(currentProjectIDs)
             .union(authorizationGenerations.projectsUnderQuarantine(for: connectionID))
         authorizationGenerations.quarantine(connectionID: connectionID, projectIDs: projectIDs)
+        for projectID in projectIDs { downloads.deny(id: projectID) }
         do {
             try recordReconciliationRequired(for: context.connection, projectIDs: projectIDs)
             return .obsoleteAuthorization(markerEscalated: true)
@@ -256,6 +257,12 @@ final class MobileLibrary {
     func recordReconciliationRequired(for connection: MobileDirectConnection,
                                       projectIDs: Set<UUID>) throws {
         try revocationClient.requireReconciliation(for: connection, projectIDs: projectIDs)
+    }
+
+    func presentReconciliationProtectionFailure() {
+        presentError(MobileRevocationClientError.reconciliationProtectionPersistenceFailed,
+            operation: .revocation,
+            message: "No se pudo guardar la protección del vínculo. Vuelve a sincronizar antes de abrir sus proyectos.")
     }
 
     func commitConnection(_ connection: MobileDirectConnection,
@@ -606,6 +613,9 @@ final class MobileLibrary {
                 continue
             } catch SyncError.revoked {
                 continue
+            } catch let error as MobileRevocationClientError
+                where error == .reconciliationProtectionPersistenceFailed {
+                presentReconciliationProtectionFailure()
             } catch {
                 // A foreground poll must not interrupt document navigation or
                 // replace a durable drawing because a Mac is temporarily down.
@@ -922,6 +932,9 @@ final class MobileLibrary {
             } catch SyncError.revoked {
                 await blockRubricDraft(request: draft.request,
                                        message: "El vínculo de captura fue revocado; pide una nueva solicitud.")
+            } catch let error as MobileRevocationClientError
+                where error == .reconciliationProtectionPersistenceFailed {
+                presentReconciliationProtectionFailure()
             } catch {
                 if isTerminalRubricFailure(error) {
                     await blockRubricDraft(request: draft.request,

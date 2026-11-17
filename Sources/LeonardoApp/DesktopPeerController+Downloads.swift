@@ -77,7 +77,12 @@ extension DesktopPeerController {
         try authorizeStorage()
         for connection in connections where !connection.revoked {
             for projectID in connection.grants.keys where Self.downloadID(connectionID: connection.id, projectID: projectID) == id {
-                do { return try await library.file(connectionID: connection.id, projectID: projectID, entry: entry) }
+                do {
+                    let read = try await library.fileRead(connectionID: connection.id, projectID: projectID,
+                                                          entry: entry)
+                    try await downloads.restrict(id: id, authorizedBy: read.descriptor)
+                    return read.file
+                }
                 catch {
                     let syncError = error as? SyncError
                     let projectDenied = (error as? DesktopPeerLibraryError) == .unauthorizedProject

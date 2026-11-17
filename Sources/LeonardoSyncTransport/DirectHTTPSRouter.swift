@@ -147,17 +147,14 @@ public struct DirectHTTPSRouter: Sendable {
 
     private func snapshotResponse(deviceID: UUID, credential: String, projectID: UUID) async throws -> HTTPResponse {
         // Authorize before returning project-specific diagnostics. No source paths or sizes for denied clients.
-        _ = try await authority.snapshotDescriptor(deviceID: deviceID, credential: credential, projectID: projectID)
+        let authorizedDescriptor = try await authority.snapshotDescriptor(deviceID: deviceID, credential: credential,
+                                                                           projectID: projectID)
         do {
             return try json(await authority.snapshot(deviceID: deviceID, credential: credential, projectID: projectID))
         } catch let failure as CorpusReadFailure {
             let descriptor = try await authority.snapshotDescriptor(deviceID: deviceID, credential: credential, projectID: projectID)
-            let path = failure.path.flatMap { candidate -> String? in
-                guard (try? descriptor.scope.validate(candidate)) != nil else { return nil }
-                if let selection = descriptor.selection, (try? selection.validate(candidate)) == nil { return nil }
-                return candidate
-            }
-            let safe = CorpusReadFailure(reason: failure.reason, path: path, observed: failure.observed, limit: failure.limit)
+            let safe = Self.sanitizedSnapshotFailure(failure, authorizedBy: authorizedDescriptor,
+                                                    currentlyAuthorizedBy: descriptor)
             logger.error("sync_snapshot_failed reason=\(safe.reason.rawValue, privacy: .public)")
             return try json(safe, status: safe.reason == .sourceUnavailable ? 500 : 413)
         } catch let error as SyncError { throw error }
@@ -169,6 +166,20 @@ public struct DirectHTTPSRouter: Sendable {
             logger.error("sync_snapshot_failed category=source_read code=\(underlying.code, privacy: .public)")
             return try json(CorpusReadFailure(reason: .sourceUnavailable), status: 500)
         }
+    }
+
+    static func sanitizedSnapshotFailure(_ failure: CorpusReadFailure,
+                                         authorizedBy original: SharedProjectDescriptor,
+                                         currentlyAuthorizedBy current: SharedProjectDescriptor) -> CorpusReadFailure {
+        let sameSelection = original.scope == current.scope && original.selection == current.selection
+        let path = failure.path.flatMap { candidate -> String? in
+            guard (try? current.scope.validate(candidate)) != nil else { return nil }
+            if let selection = current.selection, (try? selection.validate(candidate)) == nil { return nil }
+            return candidate
+        }
+        return CorpusReadFailure(reason: failure.reason, path: path,
+                                 observed: sameSelection ? failure.observed : nil,
+                                 limit: sameSelection ? failure.limit : nil)
     }
 
     private func json<Value: Encodable>(_ value: Value, status: Int = 200) throws -> HTTPResponse {

@@ -58,19 +58,45 @@ public struct OnDemandCacheUsage: Equatable, Sendable {
 /// All mutations are serialized and committed atomically before obsolete blobs are reclaimed.
 public actor OnDemandCache: RemoteDownloadCache {
     public static let defaultLimitBytes = 256 * 1_024 * 1_024
+    private static let maximumDeniedPaths = 20_000
     private struct State: Codable {
         var limitBytes = OnDemandCache.defaultLimitBytes
         var sequence: UInt64 = 0
         var projects: [CachedRemoteProject] = []
     }
+    private struct DeniedPathState: Codable {
+        var paths: [UUID: Set<String>] = [:]
+    }
+    typealias IndexWriter = @Sendable (Data, URL) throws -> Void
     private let root: URL
+    private let deniedPathsURL: URL
+    private let indexWriter: IndexWriter
     private var state: State?
+    private var deniedPathState: DeniedPathState?
     private let logger = Logger(subsystem: "eu.pinedatec.LeonardoMD", category: "download-cache")
 
-    public init(root: URL) { self.root = root.standardizedFileURL.resolvingSymlinksInPath() }
+    public init(root: URL) {
+        let normalizedRoot = root.standardizedFileURL.resolvingSymlinksInPath()
+        self.root = normalizedRoot
+        self.deniedPathsURL = normalizedRoot.deletingLastPathComponent()
+            .appendingPathComponent(".\(normalizedRoot.lastPathComponent)-denied-paths.json")
+        self.indexWriter = { data, url in try data.write(to: url, options: .atomic) }
+    }
 
-    public func project(id: UUID) throws -> CachedRemoteProject? { try load().projects.first { $0.id == id } }
-    public func projects() throws -> [CachedRemoteProject] { try load().projects }
+    init(root: URL, indexWriter: @escaping IndexWriter) {
+        let normalizedRoot = root.standardizedFileURL.resolvingSymlinksInPath()
+        self.root = normalizedRoot
+        self.deniedPathsURL = normalizedRoot.deletingLastPathComponent()
+            .appendingPathComponent(".\(normalizedRoot.lastPathComponent)-denied-paths.json")
+        self.indexWriter = indexWriter
+    }
+
+    public func project(id: UUID) throws -> CachedRemoteProject? {
+        try projects().first { $0.id == id }
+    }
+    public func projects() throws -> [CachedRemoteProject] {
+        try applyingDeniedPathOverlay(to: load().projects)
+    }
 
     public func update(id: UUID, descriptor: SharedProjectDescriptor, catalogue: RemoteProjectCatalogue) throws {
         try catalogue.validate(descriptor: descriptor)
@@ -90,10 +116,21 @@ public actor OnDemandCache: RemoteDownloadCache {
     public func setDeniedPath(id: UUID, path: String, denied: Bool) throws {
         var next = try load()
         guard let index = next.projects.firstIndex(where: { $0.id == id }) else { return }
+        if denied {
+            var witness = try loadDeniedPathState()
+            witness.paths[id, default: []].insert(path)
+            try saveDeniedPathState(witness)
+        }
         var paths = next.projects[index].deniedPaths ?? []
         if denied { paths.insert(path) } else { paths.remove(path) }
         next.projects[index].deniedPaths = paths.isEmpty ? nil : paths
         try commit(next)
+        if !denied {
+            var witness = try loadDeniedPathState()
+            witness.paths[id]?.remove(path)
+            if witness.paths[id]?.isEmpty == true { witness.paths[id] = nil }
+            try saveDeniedPathState(witness)
+        }
     }
 
     public func setRetained(id: UUID, path: String, isFolder: Bool, keep: Bool) throws {
@@ -124,6 +161,7 @@ public actor OnDemandCache: RemoteDownloadCache {
         var next = try load()
         guard let index = next.projects.firstIndex(where: { $0.id == id }),
               next.projects[index].catalogue.files.contains(entry),
+              !(try loadDeniedPathState().paths[id, default: []].contains(entry.path)),
               !(next.projects[index].deniedPaths ?? []).contains(entry.path),
               let record = next.projects[index].downloads[entry.path],
               next.projects[index].isDownloaded(entry) || allowStale else { return nil }
@@ -188,10 +226,14 @@ public actor OnDemandCache: RemoteDownloadCache {
 
     public func remove(id: UUID) throws {
         var next = try load(); next.projects.removeAll { $0.id == id }; try commit(next)
+        var witness = try loadDeniedPathState()
+        witness.paths[id] = nil
+        try saveDeniedPathState(witness)
     }
 
     public func usage() throws -> OnDemandCacheUsage {
-        let current = try load()
+        var current = try load()
+        current.projects = try applyingDeniedPathOverlay(to: current.projects)
         var result = OnDemandCacheUsage(limitBytes: current.limitBytes)
         for project in current.projects {
             result.pendingOfflineFiles += project.pendingOfflineFiles.count
@@ -249,10 +291,61 @@ public actor OnDemandCache: RemoteDownloadCache {
         return recovered
     }
 
+    private func applyingDeniedPathOverlay(to values: [CachedRemoteProject]) throws -> [CachedRemoteProject] {
+        let witness = try loadDeniedPathState().paths
+        return values.map { original in
+            guard let denied = witness[original.id], !denied.isEmpty else { return original }
+            var project = original
+            project.deniedPaths = (project.deniedPaths ?? []).union(denied)
+            return project
+        }
+    }
+
+    private func loadDeniedPathState() throws -> DeniedPathState {
+        if let deniedPathState { return deniedPathState }
+        guard FileManager.default.fileExists(atPath: deniedPathsURL.path) else {
+            let empty = DeniedPathState()
+            deniedPathState = empty
+            return empty
+        }
+        let values = try deniedPathsURL.resourceValues(forKeys: [.isSymbolicLinkKey, .fileSizeKey])
+        guard values.isSymbolicLink != true, (values.fileSize ?? 0) <= Self.maximumDeniedPaths * 512 else {
+            throw SyncError.invalidSnapshot
+        }
+        let witness = try JSONDecoder().decode(DeniedPathState.self, from: Data(contentsOf: deniedPathsURL))
+        let pathCount = witness.paths.values.reduce(0) { $0 + $1.count }
+        guard pathCount <= Self.maximumDeniedPaths,
+              witness.paths.values.joined().allSatisfy({ (try? CorpusScope(folder: "").validate($0)) != nil }) else {
+            throw SyncError.invalidSnapshot
+        }
+        deniedPathState = witness
+        return witness
+    }
+
+    private func saveDeniedPathState(_ witness: DeniedPathState) throws {
+        let pathCount = witness.paths.values.reduce(0) { $0 + $1.count }
+        guard pathCount <= Self.maximumDeniedPaths,
+              witness.paths.values.joined().allSatisfy({ (try? CorpusScope(folder: "").validate($0)) != nil }) else {
+            throw SyncError.sizeLimitExceeded
+        }
+        if pathCount == 0 {
+            try? FileManager.default.removeItem(at: deniedPathsURL)
+            deniedPathState = DeniedPathState()
+            return
+        }
+        try FileManager.default.createDirectory(at: deniedPathsURL.deletingLastPathComponent(),
+                                                withIntermediateDirectories: true)
+        let data = try JSONEncoder().encode(witness)
+        guard data.count <= Self.maximumDeniedPaths * 512 else { throw SyncError.sizeLimitExceeded }
+        try data.write(to: deniedPathsURL, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: deniedPathsURL.path)
+        deniedPathState = witness
+    }
+
     private func commit(_ next: State) throws {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let url = root.appendingPathComponent("index.json")
-        try JSONEncoder().encode(next).write(to: url, options: .atomic)
+        try indexWriter(JSONEncoder().encode(next), url)
         state = next
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
         // Physical cleanup follows the durable index. Never traverse user-selected paths.

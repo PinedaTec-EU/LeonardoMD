@@ -121,6 +121,101 @@ import XCTest
         XCTAssertNil(hidden, "The persistent cache itself must enforce the denial after restart")
     }
 
+    func testLegacyAllowedProjectWithoutDescriptorStaysHiddenAndRetainedUntilRevalidated() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: fixture.catalogue)
+        library.fetch = { _, _ in fixture.file }
+        await library.retain(id: fixture.project.id, path: fixture.file.path, isFolder: false, keep: true)
+        _ = try await library.open(id: fixture.project.id, path: fixture.file.path)
+
+        try await library.restore(allowedIDs: [fixture.project.id], authorizations: [:])
+        XCTAssertTrue(library.projects.isEmpty,
+                      "A descriptor-less legacy connection is hidden until authenticated revalidation")
+        let persisted = try await fixture.cache.projects()
+        let retained = try XCTUnwrap(persisted.first)
+        XCTAssertTrue(retained.keeps(fixture.file.path))
+        XCTAssertNotNil(retained.downloads[fixture.file.path])
+
+        try await library.restore(allowedIDs: [fixture.project.id],
+            authorizations: [fixture.project.id: RemoteDownloadAuthorization(descriptor: fixture.project)])
+        XCTAssertEqual(library.projects.first?.id, fixture.project.id)
+        let reopened = try await library.open(id: fixture.project.id, path: fixture.file.path)
+        XCTAssertEqual(reopened, fixture.file, "Authenticated status restores the retained offline copy")
+    }
+
+    func testCurrentNarrowedDescriptorRemovesExcludedSiblingFromRetainedCatalogue() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let sibling = CorpusFile(path: "docs/allowed.md", content: Data("allowed".utf8))
+        let excluded = CorpusFile(path: "docs/excluded.md", content: Data("must stay private".utf8))
+        let siblingEntry = RemoteFileEntry(file: sibling)
+        let excludedEntry = RemoteFileEntry(file: excluded)
+        let library = DownloadLibrary(cache: fixture.cache)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+            catalogue: RemoteProjectCatalogue(files: [siblingEntry, excludedEntry]))
+        library.fetch = { _, entry in entry.path == sibling.path ? sibling : excluded }
+        _ = try await library.open(id: fixture.project.id, path: sibling.path)
+        _ = try await library.open(id: fixture.project.id, path: excluded.path)
+
+        let narrowed = SharedProjectDescriptor(id: fixture.project.id, name: fixture.project.name,
+            scope: fixture.project.scope,
+            selection: try CorpusSelection(folders: [], documents: [sibling.path]))
+        try await library.restrict(id: fixture.project.id, authorizedBy: narrowed)
+
+        let allowedRead = try await library.open(id: fixture.project.id, path: sibling.path)
+        XCTAssertEqual(allowedRead, sibling)
+        do {
+            _ = try await library.open(id: fixture.project.id, path: excluded.path)
+            XCTFail("An excluded sibling must disappear from the retained reader catalogue")
+        } catch { XCTAssertEqual(error as? SyncError, .revoked) }
+        let persistedProjects = try await fixture.cache.projects()
+        let persisted = try XCTUnwrap(persistedProjects.first)
+        XCTAssertFalse(persisted.catalogue.files.contains(where: { $0.path == excluded.path }))
+        XCTAssertNil(persisted.downloads[excluded.path], "Excluded cached bytes are pruned with the catalogue")
+    }
+
+    func testDeniedPathWitnessSurvivesIndexWriteAndCachePurgeFailureAcrossRestart() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("denied-\(UUID().uuidString)")
+        let witness = root.deletingLastPathComponent()
+            .appendingPathComponent(".\(root.lastPathComponent)-denied-paths.json")
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: witness)
+        }
+        let descriptor = SharedProjectDescriptor(id: UUID(), name: "Denied path fixture",
+                                                  scope: try CorpusScope(folder: ""))
+        let file = CorpusFile(path: "docs/read.md", content: Data("retained content".utf8))
+        let entry = RemoteFileEntry(file: file)
+        let initial = OnDemandCache(root: root)
+        try await initial.update(id: descriptor.id, descriptor: descriptor,
+                                 catalogue: RemoteProjectCatalogue(files: [entry]))
+        try await initial.setRetained(id: descriptor.id, path: file.path, isFolder: false, keep: true)
+        try await initial.store(id: descriptor.id, entry: entry, file: file)
+
+        let failing = OnDemandCache(root: root, indexWriter: { _, _ in throw SyncError.invalidSnapshot })
+        let library = DownloadLibrary(cache: failing)
+        try await library.restore(allowedIDs: [descriptor.id],
+            authorizations: [descriptor.id: RemoteDownloadAuthorization(descriptor: descriptor)])
+        do {
+            try await library.denyFile(id: descriptor.id, path: file.path)
+            XCTFail("A failing cache index and purge must surface the persistence failure")
+        } catch { XCTAssertEqual(error as? SyncError, .invalidSnapshot) }
+
+        let reopened = OnDemandCache(root: root)
+        let reopenedProject = try await reopened.project(id: descriptor.id)
+        let persisted = try XCTUnwrap(reopenedProject)
+        XCTAssertTrue(persisted.deniedPaths?.contains(file.path) == true,
+                      "The independent denial witness survives an index commit failure")
+        XCTAssertTrue(persisted.keeps(file.path), "The offline retention preference remains intact")
+        XCTAssertNotNil(persisted.downloads[file.path], "The retained blob remains on disk but hidden")
+        let deniedRead = try await reopened.read(id: descriptor.id, entry: entry)
+        XCTAssertNil(deniedRead,
+                     "A restarted cache must not return bytes for a denied path")
+    }
+
     func testRestoreFiltersCachedCatalogueToCurrentFileAuthorization() async throws {
         let fixture = try Fixture()
         defer { fixture.removeFiles() }

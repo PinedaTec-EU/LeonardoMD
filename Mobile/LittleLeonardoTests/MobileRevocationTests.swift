@@ -57,6 +57,72 @@ final class MobileRevocationTests: XCTestCase {
         _ = ticket
     }
 
+    @MainActor
+    func testCatalogue403DuringQuarantinedReconciliationPreservesMarker() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let projectID = UUID()
+        let value = connection(projectIDs: [projectID])
+        let journal = MobileRevocationJournal(url: root.appendingPathComponent("revocation.json"))
+        try journal.requireReconciliation(connectionID: value.connectionID, deviceID: value.deviceID,
+                                          fingerprint: value.fingerprint, projectIDs: [projectID])
+        let client = MobileRevocationClient(journal: journal)
+        let token = MobileConnectionToken(connectionID: value.connectionID, deviceID: value.deviceID,
+                                          fingerprint: value.fingerprint, cacheEpoch: 0,
+                                          authorizationGeneration: 0)
+        let credentials = TestCredentials(values: [value.deviceID: "credential"], failRemove: false)
+        let descriptor = SharedProjectDescriptor(id: projectID, name: "Shared",
+            scope: try CorpusScope(folder: ""))
+
+        do {
+            _ = try await client.withAuthenticatedConnection(value, token: token,
+                credentials: credentials, isCurrent: { true }, onDenied: { _ in },
+                projectID: projectID, needsStatusReconciliation: { true },
+                onCurrentStatus: { _ in
+                    throw SyncError.httpAccessDenied(operation: .catalogue, status: 403)
+                }, operation: { _ in true },
+                status: { _, _, _ in DirectDeviceStatus(access: .authorized, projects: [descriptor]) })
+            XCTFail("A denied recovery catalogue must stop the authorized operation")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .httpAccessDenied(operation: .catalogue, status: 403))
+        }
+
+        let marker = try XCTUnwrap(journal.load().first)
+        XCTAssertEqual(marker.state, .reconciliationRequired)
+        XCTAssertTrue(marker.projectIDs.contains(projectID))
+        XCTAssertTrue(marker.operations.isEmpty, "The failed request is finished without clearing quarantine")
+    }
+
+    func testOlderAuthorizationTicketCannotClearNewerReconciliationGeneration() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let projectID = UUID()
+        let value = connection(projectIDs: [projectID])
+        let journal = MobileRevocationJournal(url: root.appendingPathComponent("revocation.json"))
+        let older = try journal.begin(connectionID: value.connectionID, deviceID: value.deviceID,
+                                      fingerprint: value.fingerprint, projectIDs: value.projectIDs)
+        try journal.requireReconciliation(connectionID: value.connectionID, deviceID: value.deviceID,
+                                          fingerprint: value.fingerprint, projectIDs: value.projectIDs)
+        let newer = try journal.begin(connectionID: value.connectionID, deviceID: value.deviceID,
+                                      fingerprint: value.fingerprint, projectIDs: value.projectIDs)
+
+        try journal.complete(older, outcome: .authorized)
+        var marker = try XCTUnwrap(journal.load().first)
+        XCTAssertEqual(marker.state, .reconciliationRequired)
+        XCTAssertEqual(marker.generation, newer.generation)
+        XCTAssertTrue(marker.operations.contains { $0.operationID == newer.operationID })
+
+        try journal.complete(newer, outcome: .transient)
+        marker = try XCTUnwrap(journal.load().first)
+        XCTAssertEqual(marker.state, .reconciliationRequired)
+        XCTAssertTrue(marker.operations.isEmpty)
+        let currentStatus = try journal.begin(connectionID: value.connectionID, deviceID: value.deviceID,
+                                              fingerprint: value.fingerprint, projectIDs: value.projectIDs)
+        try journal.complete(currentStatus, outcome: .authorized)
+        XCTAssertTrue(try journal.load().isEmpty,
+                      "Only a current-generation successful revalidation may clear quarantine")
+    }
+
     func testFailedGrantPersistenceRemainsQuarantinedUntilAuthenticatedStatus() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -265,8 +331,9 @@ final class MobileRevocationTests: XCTestCase {
         try FileManager.default.copyItem(at: connectionsURL, to: originalConnections)
         let journalURL = support.appendingPathComponent("revocation.json")
         let journal = MobileRevocationJournal(url: journalURL)
+        let failingJournal = FailingJournal(backing: journal, failReconciliation: true)
         let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
-            revocationJournal: journal,
+            revocationJournal: failingJournal,
             statusRequest: { _, _, _ in DirectDeviceStatus(access: .authorized, projects: []) })
         await library.reload()
         XCTAssertTrue(library.projects.contains(where: { $0.id == projectID }))
@@ -275,23 +342,19 @@ final class MobileRevocationTests: XCTestCase {
         try Data("fault\n".utf8).write(to: faultTarget, options: .atomic)
         try FileManager.default.removeItem(at: connectionsURL)
         try FileManager.default.createSymbolicLink(at: connectionsURL, withDestinationURL: faultTarget)
-        let ticket = try journal.begin(connectionID: value.connectionID, deviceID: value.deviceID,
-                                       fingerprint: value.fingerprint, projectIDs: value.projectIDs)
-        let client = try DirectEnrollmentClient(endpoint: value.endpoint,
-                                                certificateFingerprint: value.fingerprint)
-        let context = MobileAuthenticatedContext(connection: value, credential: "credential", client: client,
-            status: DirectDeviceStatus(access: .authorized, projects: []),
-            token: library.token(for: value), ticket: ticket)
         do {
-            _ = try await library.reconcileCurrentStatus(context, targetProjectID: nil, targetFilePath: nil)
+            _ = try await library.withAuthenticatedConnection(value) { _ in true }
             XCTFail("A failed grant snapshot save must stop authenticated work")
-        } catch { XCTAssertEqual(error as? SyncError, .invalidPath) }
+        } catch {
+            XCTAssertEqual(error as? MobileRevocationClientError, .reconciliationProtectionPersistenceFailed)
+        }
 
         XCTAssertTrue(library.authorizationGenerations.isQuarantined(connectionID: connectionID))
         XCTAssertFalse(library.projects.contains(where: { $0.id == projectID }))
-        try journal.complete(ticket, outcome: .transient)
-        XCTAssertEqual(try journal.load().first?.state, .reconciliationRequired,
-                       "Transient completion must not erase the durable quarantine")
+        let held = try XCTUnwrap(journal.load().first)
+        XCTAssertEqual(held.state, .uncertain)
+        XCTAssertEqual(held.operations.count, 1,
+                       "A failed quarantine promotion must preserve the write-ahead ticket")
 
         try FileManager.default.removeItem(at: connectionsURL)
         try FileManager.default.copyItem(at: originalConnections, to: connectionsURL)
@@ -397,6 +460,18 @@ final class MobileRevocationTests: XCTestCase {
         let journalURL = support.appendingPathComponent("revocation.json")
         let journal = MobileRevocationJournal(url: journalURL)
         try MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json")).save([value])
+        let offlineProject = try OfflineProject(id: projectID, name: oldDescriptor.name, mode: .direct,
+            scope: oldDescriptor.scope, snapshot: CorpusSnapshot(revision: "catalogue", files: []))
+        try await OfflineCorpusStore(root: corpusRoot).save(offlineProject)
+        let downloadsRoot = support.appendingPathComponent("Downloads", isDirectory: true)
+        let downloadsCache = OnDemandCache(root: downloadsRoot)
+        let retainedFile = CorpusFile(path: "old/retained.md", content: Data("old grant bytes".utf8))
+        let retainedEntry = RemoteFileEntry(file: retainedFile)
+        try await downloadsCache.update(id: projectID, descriptor: oldDescriptor,
+                                       catalogue: RemoteProjectCatalogue(files: [retainedEntry]))
+        try await downloadsCache.setRetained(id: projectID, path: retainedFile.path,
+                                             isFolder: false, keep: true)
+        try await downloadsCache.store(id: projectID, entry: retainedEntry, file: retainedFile)
 
         let statusCalls = LockedCounter()
         let catalogueGate = RevocationGate()
@@ -420,6 +495,8 @@ final class MobileRevocationTests: XCTestCase {
                 return RemoteProjectCatalogue(files: [])
             })
         await library.reload()
+        XCTAssertTrue(library.downloads.projects.contains(where: { $0.id == projectID }),
+                      "The old retained project is visible before current STATUS reconciliation")
 
         let operationCalls = LockedCounter()
         let operation = Task { () -> MobileRevocationClientError? in
@@ -462,6 +539,15 @@ final class MobileRevocationTests: XCTestCase {
                        "A stale initial or 403-recheck callback must never continue with its old context")
         XCTAssertTrue(library.authorizationGenerations.isQuarantined(connectionID: connectionID))
         XCTAssertTrue(library.authorizationGenerations.projectsUnderQuarantine(for: connectionID).contains(projectID))
+        XCTAssertFalse(library.downloads.projects.contains(where: { $0.id == projectID }),
+                       "Quarantine immediately removes the project from the cached reader")
+        do {
+            _ = try await library.downloads.open(id: projectID, path: retainedFile.path)
+            XCTFail("An in-memory retained hit must not bypass authorization quarantine")
+        } catch { XCTAssertEqual(error as? SyncError, .revoked) }
+        let diskCopy = try await OnDemandCache(root: downloadsRoot).read(id: projectID, entry: retainedEntry)
+        XCTAssertEqual(diskCopy, retainedFile,
+                       "Quarantine hides retained content while preserving the offline copy on disk")
 
         let marker = try XCTUnwrap(journal.load().first)
         XCTAssertEqual(marker.state, failReconciliationPromotion ? .uncertain : .reconciliationRequired)

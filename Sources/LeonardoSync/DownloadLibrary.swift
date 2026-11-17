@@ -106,9 +106,17 @@ public final class DownloadLibrary {
         var filtered: [CachedRemoteProject] = []
         var unauthorizedIDs: [UUID] = []
         for value in values {
-            guard allowed.contains(value.id), let authorization = authorizations[value.id] else {
+            guard allowed.contains(value.id) else {
                 deniedPaths[value.id] = nil
                 unauthorizedIDs.append(value.id)
+                continue
+            }
+            // A legacy accepted connection can have durable bytes and retention
+            // preferences before it has a saved descriptor. Keep that data on
+            // disk, but do not expose it until authenticated STATUS supplies a
+            // current authorization object.
+            guard let authorization = authorizations[value.id] else {
+                deniedPaths[value.id] = value.deniedPaths ?? []
                 continue
             }
             deniedPaths[value.id] = value.deniedPaths ?? []

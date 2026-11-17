@@ -93,6 +93,16 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
 
     public func file(connectionID: UUID, projectID: UUID, entry: RemoteFileEntry) async throws -> CorpusFile {
         try enter(); defer { changing = false }
+        return try await readFile(connectionID: connectionID, projectID: projectID, entry: entry).file
+    }
+
+    public func fileRead(connectionID: UUID, projectID: UUID, entry: RemoteFileEntry) async throws -> DesktopPeerFileRead {
+        try enter(); defer { changing = false }
+        return try await readFile(connectionID: connectionID, projectID: projectID, entry: entry)
+    }
+
+    private func readFile(connectionID: UUID, projectID: UUID,
+                          entry: RemoteFileEntry) async throws -> DesktopPeerFileRead {
         let refreshed = try await refresh(requireConnection(connectionID))
         try requireAuthorized(refreshed.status)
         guard let descriptor = refreshed.status.projects.first(where: { $0.id == projectID }) else {
@@ -101,8 +111,9 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
         try descriptor.scope.validate(entry.path)
         try descriptor.selection?.validate(entry.path)
         do {
-            return try await remote.file(entry, projectID: projectID, connection: refreshed.connection,
-                                         credential: await requireCredential(refreshed.connection))
+            let file = try await remote.file(entry, projectID: projectID, connection: refreshed.connection,
+                                             credential: await requireCredential(refreshed.connection))
+            return DesktopPeerFileRead(descriptor: descriptor, file: file)
         } catch let error as SyncError where error.isAccessDenied {
             try await throwResolvedAccessDenial(connection: refreshed.connection, projectID: projectID,
                                                 filePath: entry.path, denial: error)
@@ -271,8 +282,13 @@ public actor DesktopPeerLibrary: DesktopPeerLibraryAccess {
             guard Set(status.projects.map(\.id)).count == status.projects.count else { throw SyncError.invalidSnapshot }
             var grants: [UUID: CorpusSelection] = [:]
             for project in status.projects { grants[project.id] = try selection(for: project) }
-            let denied = connection.grants.keys.filter { grants[$0] == nil }.sorted { $0.uuidString < $1.uuidString }
-            if !denied.isEmpty { await revoker.denyReaderCaches(connectionID: connection.id, projectIDs: denied) }
+            let narrowed = connection.grants.keys.filter { projectID in
+                guard let current = grants[projectID] else { return true }
+                return connection.grants[projectID] != current
+            }.sorted { $0.uuidString < $1.uuidString }
+            if !narrowed.isEmpty {
+                await revoker.denyReaderCaches(connectionID: connection.id, projectIDs: narrowed)
+            }
             try connection.authorize(grants)
         }
         if connection.revoked {

@@ -1,4 +1,4 @@
 {
-  "build": 81,
-  "summary": "On-demand 401/403 denials recheck authorization and stay blocked across restart; cached catalogues honor current grants and confirmed revocations keep affected caches closed."
+  "build": 84,
+  "summary": "Remote imports explain source-read failures and transfer limits; 401/403 denials recheck authorization, persist across restart, and keep stale cached files closed."
 }
