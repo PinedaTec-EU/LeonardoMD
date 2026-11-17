@@ -140,29 +140,37 @@ extension AppSession {
         })
     }
 
-    func save(allowClosing: Bool = false) async {
+    func save(
+        allowClosing: Bool = false,
+        pendingPreviewEdits: PendingPreviewEditsPolicy = .flush
+    ) async {
         if let saveTask {
             await saveTask.value
             return
         }
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
-            await self.performSave(allowClosing: allowClosing)
+            await self.performSave(allowClosing: allowClosing, pendingPreviewEdits: pendingPreviewEdits)
             self.saveTask = nil
         }
         saveTask = task
         await task.value
     }
 
-    private func performSave(allowClosing: Bool) async {
+    private func performSave(allowClosing: Bool, pendingPreviewEdits: PendingPreviewEditsPolicy) async {
         guard !stopped, !isClosing || allowClosing, !busy else { return }
         fileOperationCount += 1
         defer { fileOperationCount -= 1 }
-        guard await flushPreviewEdits(), !stopped, !isClosing || allowClosing, !busy else { return }
+        if pendingPreviewEdits.requiresFlush, !(await flushPreviewEdits()) { return }
+        guard !stopped, !isClosing || allowClosing, !busy else { return }
         guard !stopped, !isSyncSuspended, !saving, !busy, isDirty,
               let snapshot, !externalConflict else { return }
         if documentKind == .markdown, migrateMarkdownOnSave {
-            _ = await migrateMarkdownToLeonardo(allowSaveReentry: true, allowClosing: allowClosing)
+            _ = await migrateMarkdownToLeonardo(
+                allowSaveReentry: true,
+                allowClosing: allowClosing,
+                pendingPreviewEdits: pendingPreviewEdits
+            )
             return
         }
 

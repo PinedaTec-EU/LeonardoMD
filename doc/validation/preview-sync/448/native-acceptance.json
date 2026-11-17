@@ -1,0 +1,470 @@
+{
+  "schema_version": 1,
+  "issue": "https://github.com/PinedaTec-EU/LeonardoMD/issues/447",
+  "pull_request": "https://github.com/PinedaTec-EU/LeonardoMD/pull/448",
+  "date": "2026-11-15",
+  "source_revision": "0a463909c9f8abdf16e1a74b792f0ee4d7266a41",
+  "corrected_source_commit": "0a463909c9f8abdf16e1a74b792f0ee4d7266a41",
+  "base_revision": "51ae6a74eb967e1af2dcc90c844e71905d23feb0",
+  "capture_source_mapping": "The original native AppKit alert implementation was introduced at source revision 0a463909c9f8abdf16e1a74b792f0ee4d7266a41. The earlier unsuffixed captures remain historical. The current four implementation-owned alert captures were regenerated from the exact reviewed app-source tree 45b5cd7f7a92a86f3f4cd0a745e005c921d71ebd after the close-snapshot correction; their sidecars bind the images to that full revision. The test executable was built from the same app/test source tree committed as 3a399d07ba46516bb02b38a4537e9bc769dea6eb; 45b5cd7f7a92a86f3f4cd0a745e005c921d71ebd differs from it only in wiki and validation records. The current captures are alert-component evidence, not full application-window captures.",
+  "candidate_guide_v78": {
+    "status": "native_inspection_passed",
+    "revision": 78,
+    "personal_copy_directory": "User Guides/v78/<locale>/",
+    "packages": {
+      "en": {
+        "filename": "Guide-v78-en.mdlz",
+        "sha256": "02966714f9f77c6a615ba5a1236cb5687089fe02507ed9c9386384a92ebe8c53"
+      },
+      "es": {
+        "filename": "Guide-v78-es.mdlz",
+        "sha256": "2291b2dda56b4c2c88eb08d718529dceea6b7b1cda7ef1b717614582f30f43cc"
+      }
+    },
+    "qa_application": {
+      "fresh_process": true,
+      "pid": 55882,
+      "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.3197e052ff7746c3bc242afec0c516d2",
+      "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r6umng3/LeonardoMDQA.app",
+      "isolated_home": "/tmp/leonardo-448-v78-qa-home",
+      "version": "0.3.1602",
+      "build": 1602,
+      "executable": "LeonardoMD",
+      "first_window_ready": true,
+      "startup_events": [
+        "first_window_shown",
+        "application_ready"
+      ],
+      "bundle_verification": "scripts/qa-bundle.py --verify-only passed; otool -L showed no XCTest.framework",
+      "launch_command": "CFFIXED_USER_HOME=/tmp/leonardo-448-v78-qa-home <verified QA bundle>/Contents/MacOS/LeonardoMD --new-instance -allowMultipleInstances YES",
+      "executable_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r6umng3/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+      "source_revision": "cef05646f202ecd2b6dc5a94089843c62de6cc00",
+      "process_lifecycle": {
+        "pid": 55882,
+        "started_at_utc": "2026-11-15T08:16:08.149980Z",
+        "started_at_local": "2026-11-15T09:16:08.149980+01:00",
+        "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.3197e052ff7746c3bc242afec0c516d2",
+        "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r6umng3/LeonardoMDQA.app",
+        "executable_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-3r6umng3/LeonardoMDQA.app/Contents/MacOS/LeonardoMD",
+        "isolated_home": "/tmp/leonardo-448-v78-qa-home",
+        "termination_at_utc": "2026-11-15T08:25:37.829Z",
+        "termination_record": "Unified macOS log: Application termination complete; exiting without sudden termination.",
+        "process_exit_verified_at_utc": "2026-11-15T09:07:48Z",
+        "process_exit_verification": "ps -p 55882 returned no process row.",
+        "device_hub_sessions_opened": [],
+        "simulator_booted_by_task": false
+      },
+      "quit_normally_after_validation": true
+    },
+    "preexisting_personal_copies_and_forms": {
+      "seeded_from": "The real #369 Guide v76 QA home; only guide copies and practice forms were copied into the isolated v78 QA home.",
+      "sha256_before_help_open": {
+        "v76_en": "5e8ae8a5ad6ffb3682e2a0c7f1789531b47efeed2b53b171878a845d3067fc4e",
+        "v76_es": "e65f4f77f641cf6fcff2cac9576fba70234a943eb05647f784d71e6748e5af2a",
+        "practice_en": "5b914af748cff65eb9b6bae0b175f64c0008e1874bb1b53fdf6c5a361e0b6b9c",
+        "practice_es": "6b543d197f5195cb1f3906351a2d3b992b0c48e4f7548cf8b164bd92cb7ed487"
+      },
+      "restore_note": "The two pre-existing v76 guide copies and both pre-existing practice-form files were restored byte-for-byte after QA; final hashes match their seeded hashes.",
+      "sha256_after_qa_restore": {
+        "v76_en": "5e8ae8a5ad6ffb3682e2a0c7f1789531b47efeed2b53b171878a845d3067fc4e",
+        "v76_es": "e65f4f77f641cf6fcff2cac9576fba70234a943eb05647f784d71e6748e5af2a",
+        "practice_en": "5b914af748cff65eb9b6bae0b175f64c0008e1874bb1b53fdf6c5a361e0b6b9c",
+        "practice_es": "6b543d197f5195cb1f3906351a2d3b992b0c48e4f7548cf8b164bd92cb7ed487"
+      }
+    },
+    "visual_acceptance": {
+      "help_opened_en": true,
+      "help_opened_es": true,
+      "english_practice_round_trip": true,
+      "spanish_practice_round_trip": true,
+      "same_fresh_process_pid": 55882,
+      "representative_examples_inspected_in_both_locales": true,
+      "math_on_rendering_passed": true,
+      "math_off_literal_fallback_passed": true,
+      "application_language_restored_to": "English",
+      "math_extension_enabled_after_validation": true,
+      "mermaid_extension_enabled_after_validation": true,
+      "charts_extension_enabled_after_validation": true,
+      "synthetic_responses_used": true,
+      "ready_to_share_checked": false,
+      "full_guide_screenshots_retained": false
+    },
+    "automated_validation": {
+      "full_swift_suite": {
+        "executed_xctest": 530,
+        "skipped_xctest": 36,
+        "executed_swift_testing": 44,
+        "executed_package_tests": 28,
+        "failures": 0,
+        "recorded_build_delta": 24
+      },
+      "guide_package_tests": {
+        "executed": 3,
+        "failures": 0
+      }
+    },
+    "candidate_source_revision": "cef05646f202ecd2b6dc5a94089843c62de6cc00"
+  },
+  "application": {
+    "platform": "Packaged native macOS QA app",
+    "launch_command": "CFFIXED_USER_HOME=/private/tmp/leonardo-448-final-home.Z0nRMl LEONARDO_SOURCE_PR=448 /var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-ayyin875/LeonardoMDQA.app/Contents/MacOS/LeonardoMD --new-instance -allowMultipleInstances YES",
+    "fresh_process": true,
+    "pid": 77330,
+    "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.6617357555e04ec9bcee181c0cc99adf",
+    "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-ayyin875/LeonardoMDQA.app",
+    "isolated_home": "/private/tmp/leonardo-448-final-home.Z0nRMl",
+    "version": "0.3.1602",
+    "build": 1602,
+    "executable": "LeonardoMD",
+    "first_window_ready": true,
+    "startup_events": [
+      "first_window_shown",
+      "application_ready"
+    ],
+    "dependency_check": "otool -L showed AppKit, SwiftUI and WebKit; XCTest.framework absent",
+    "bundle_verification": "scripts/qa-bundle.py --verify-only passed",
+    "build_command": "./launch.sh --qa",
+    "quit_normally_after_validation": true
+  },
+  "help": {
+    "same_application_instance": true,
+    "entry_point": "Native macOS Help menu in PID 55882",
+    "guides": [
+      {
+        "locale": "en",
+        "menu_item": "Help > Leonardo user guide…",
+        "package": "Guide-v78-en.mdlz",
+        "bundle_resource_sha256": "02966714f9f77c6a615ba5a1236cb5687089fe02507ed9c9386384a92ebe8c53",
+        "opened_personal_copy_sha256": "02966714f9f77c6a615ba5a1236cb5687089fe02507ed9c9386384a92ebe8c53"
+      },
+      {
+        "locale": "es",
+        "menu_item": "Ayuda > Guía de Leonardo…",
+        "package": "Guide-v78-es.mdlz",
+        "bundle_resource_sha256": "2291b2dda56b4c2c88eb08d718529dceea6b7b1cda7ef1b717614582f30f43cc",
+        "opened_personal_copy_sha256": "2291b2dda56b4c2c88eb08d718529dceea6b7b1cda7ef1b717614582f30f43cc"
+      }
+    ],
+    "inspected_examples": [
+      "local cover and images",
+      "tables",
+      "Mermaid diagram",
+      "Vega-Lite chart",
+      "inline math",
+      "one-line $$ display formula",
+      "multiline $$ display formula",
+      "Markdown-sensitive underscores and underbraces",
+      "tagged box-counting equation (1)",
+      "chapter 10 close-recovery guidance in both locales",
+      "literal code examples"
+    ],
+    "examples_rendered_in_both_locales": true,
+    "math_enabled": {
+      "locales": [
+        "en",
+        "es"
+      ],
+      "display_equations_rendered": true,
+      "tagged_equation_1_rendered": true,
+      "katex_errors": false,
+      "literal_delimiters": false
+    },
+    "math_disabled_fallback": {
+      "locale_checked": "en",
+      "math_source_remained_literal": true,
+      "code_examples_remained_literal": true,
+      "reenabled_after_check": true
+    },
+    "chapter_10_recovery_copy_visually_checked_in_both_locales": true,
+    "practice_round_trip": [
+      {
+        "locale": "en",
+        "synthetic_values_entered": true,
+        "ready_to_share": false,
+        "saved_closed_reopened_values_persisted": true,
+        "same_application_process_pid": 55882
+      },
+      {
+        "locale": "es",
+        "synthetic_values_entered": true,
+        "ready_to_share": false,
+        "saved_closed_reopened_values_persisted": true,
+        "same_application_process_pid": 55882
+      }
+    ],
+    "application_language_restored_to": "English",
+    "extensions_enabled_after_validation": [
+      "Math",
+      "Mermaid",
+      "Charts"
+    ],
+    "preexisting_test_files_restored_byte_for_byte": true,
+    "retained_full_guide_screenshots": false,
+    "note": "Both v78 guides and representative examples were inspected in the same fresh packaged process through native Help. Both practice forms were filled with synthetic values, saved, closed and reopened from their guide in that process; values persisted and Ready to share remained unchecked. Pre-existing v76 guide copies and practice forms were restored byte-for-byte. Full guide screenshots were not retained; the four retained PNGs are native alert component captures."
+  },
+  "automated_validation": {
+    "full_swift_command": "scripts/compile-and-record.py --pr-number 448 -- swift test --disable-automatic-resolution",
+    "full_swift_suite": {
+      "source_revision": "0a463909c9f8abdf16e1a74b792f0ee4d7266a41",
+      "xctest": {
+        "executed": 530,
+        "skipped": 36,
+        "failures": 0
+      },
+      "swift_testing": {
+        "executed": 44,
+        "failures": 0
+      },
+      "package_tests": {
+        "executed": 28,
+        "failures": 0
+      },
+      "recorded_build_delta": 22
+    },
+    "focused_regressions": {
+      "suites": [
+        "SessionEditingTests",
+        "InlineFormTests"
+      ],
+      "executed": 18,
+      "optional_capture_skips": 2,
+      "failures": 0,
+      "recorded_build_delta": 20
+    },
+    "capture_test": {
+      "command": "LEONARDO_PREVIEW_ALERT_EVIDENCE=doc/validation/preview-sync/448 python3 scripts/compile-and-record.py --pr-number 448 -- swift test --disable-automatic-resolution --filter SessionEditingTests/testCapturePreviewSynchronizationWarningsInBothLanguages",
+      "executed": 1,
+      "failures": 0,
+      "recorded_build_delta": 21,
+      "source_revision": "0a463909c9f8abdf16e1a74b792f0ee4d7266a41"
+    },
+    "guide_package_command": "python3 -m unittest discover -s scripts/tests -p test_package_user_guide.py -v",
+    "guide_package_tests": {
+      "executed": 3,
+      "failures": 0
+    },
+    "compile_warning": "Non-failing warnings in existing unrelated sources, including a Network.framework .wifiAware exhaustiveness warning in Sources/LeonardoSyncTransport/HTTPSResponseDiagnostics.swift; no warning source is changed by this PR."
+  },
+  "alert_captures": [
+    {
+      "file": "preview-alert-en-retry-45b5cd7.png",
+      "metadata": "preview-alert-en-retry-45b5cd7.png.metadata.json"
+    },
+    {
+      "file": "preview-alert-en-close-45b5cd7.png",
+      "metadata": "preview-alert-en-close-45b5cd7.png.metadata.json"
+    },
+    {
+      "file": "preview-alert-es-retry-45b5cd7.png",
+      "metadata": "preview-alert-es-retry-45b5cd7.png.metadata.json"
+    },
+    {
+      "file": "preview-alert-es-close-45b5cd7.png",
+      "metadata": "preview-alert-es-close-45b5cd7.png.metadata.json"
+    }
+  ],
+  "capture_scope": "Production AppSession native NSAlert builders rendered by the opt-in SessionEditingTests.testCapturePreviewSynchronizationWarningsInBothLanguages XCTest; synthetic content; alert component only, not a full application-window capture.",
+  "initial_base_revision_before_issue_438": "8711e44aae3babc5beb914bb6b3e69dfe2715e96",
+  "current_pr_base_note": "The branch was rebased onto current main 51ae6a74eb967e1af2dcc90c844e71905d23feb0 after Guide v78 QA. The intervening #438 change adds only AGENTS.md QA teardown guidance and a .wiki/current-state.md note; no product code or Guide package changed.",
+  "latest_close_snapshot_followup": {
+    "status": "packaged_native_acceptance_passed",
+    "date": "2026-11-15",
+    "source_revision": "3a399d07ba46516bb02b38a4537e9bc769dea6eb",
+    "tested_tree_matches_committed_source": true,
+    "qa_application": {
+      "fresh_process": true,
+      "pid": 92928,
+      "bundle_identifier": "eu.pinedatec.LeonardoMD.qa.c4e883eb9842455a94659057993d811c",
+      "bundle_path": "/var/folders/_s/khfztzr97kd4049py5k3zsg80000gn/T/leonardo-native-qa-5301of14/LeonardoMDQA.app",
+      "isolated_home": "/tmp/leonardo-448-final-qa-uy01_e8j",
+      "version": "0.3.1602",
+      "build": 1602,
+      "executable": "LeonardoMD",
+      "startup_events": [
+        "first_window_shown",
+        "application_ready"
+      ],
+      "forwarded_to_existing_process": false,
+      "bundle_verification": "scripts/qa-bundle.py --verify-only passed; CFBundleExecutable is LeonardoMD; otool -L showed AppKit, SwiftUI, WebKit and no XCTest.framework",
+      "quit_normally_after_validation": true,
+      "process_exit_verified": true
+    },
+    "preexisting_application": {
+      "pid": 72552,
+      "left_running_unchanged": true
+    },
+    "help_followup": {
+      "same_application_process_pid": 92928,
+      "english_guide_opened_through_native_help": true,
+      "spanish_guide_opened_through_native_help": true,
+      "guide_revision": 78,
+      "personal_copy_hashes_match_bundled_resources": true,
+      "bundle_resource_sha256": {
+        "en": "02966714f9f77c6a615ba5a1236cb5687089fe02507ed9c9386384a92ebe8c53",
+        "es": "2291b2dda56b4c2c88eb08d718529dceea6b7b1cda7ef1b717614582f30f43cc"
+      },
+      "spanish_visual_followup": {
+        "mermaid_chart_local_image_and_table_present": true,
+        "representative_math_and_tagged_equation_rendered": true,
+        "katex_errors": false
+      },
+      "math_disabled_fallback": {
+        "locale": "es",
+        "delimiters_and_formula_source_remained_literal": true,
+        "math_reenabled_after_check": true
+      },
+      "english_practice_form_round_trip": {
+        "synthetic_values": true,
+        "saved_closed_reopened_values_persisted": true,
+        "ready_to_share": false
+      },
+      "spanish_practice_form_round_trip": {
+        "synthetic_name": "Lucía Torres QA",
+        "synthetic_goal": "Probar la guía española en una copia local.",
+        "saved_closed_reopened_values_persisted": true,
+        "ready_to_share": false
+      },
+      "full_guide_screenshots_retained": false
+    },
+    "automated_validation": {
+      "full_swift_suite": {
+        "command": "scripts/compile-and-record.py --pr-number 448 -- swift test --disable-automatic-resolution",
+        "result": "passed",
+        "failures": 0,
+        "recorded_build_delta": 34
+      },
+      "packaged_qa_build": {
+        "command": "./launch.sh --qa",
+        "result": "passed",
+        "recorded_build_delta": 36
+      },
+      "qa_bundle_verification": "passed"
+    }
+  },
+  "previous_alert_captures": [
+    {
+      "file": "preview-alert-en-retry.png",
+      "metadata": "preview-alert-en-retry.png.metadata.json"
+    },
+    {
+      "file": "preview-alert-en-close.png",
+      "metadata": "preview-alert-en-close.png.metadata.json"
+    },
+    {
+      "file": "preview-alert-es-retry.png",
+      "metadata": "preview-alert-es-retry.png.metadata.json"
+    },
+    {
+      "file": "preview-alert-es-close.png",
+      "metadata": "preview-alert-es-close.png.metadata.json"
+    }
+  ],
+  "latest_alert_capture_followup": {
+    "result": "passed",
+    "date": "2026-11-15",
+    "capture_source_revision": "45b5cd7f7a92a86f3f4cd0a745e005c921d71ebd",
+    "test_executable_source_tree": "3a399d07ba46516bb02b38a4537e9bc769dea6eb",
+    "source_equivalence": "git diff --name-only 3a399d07ba46516bb02b38a4537e9bc769dea6eb..45b5cd7f7a92a86f3f4cd0a745e005c921d71ebd lists only .wiki/current-state.md, .wiki/log.md, doc/validation/preview-sync/448/README.md, and doc/validation/preview-sync/448/native-acceptance.json; application and test sources are unchanged.",
+    "capture_test": {
+      "command": "LEONARDO_PREVIEW_ALERT_EVIDENCE=/tmp/leonardo-448-alert-capture-45b swift test --skip-build --disable-automatic-resolution --filter SessionEditingTests/testCapturePreviewSynchronizationWarningsInBothLanguages",
+      "executed": 1,
+      "failures": 0,
+      "build_delta_change": 0
+    },
+    "captures": [
+      {
+        "file": "preview-alert-en-retry-45b5cd7.png",
+        "metadata": "preview-alert-en-retry-45b5cd7.png.metadata.json",
+        "captured_at_utc": "2026-11-15T12:32:19.076934+00:00",
+        "appkit_viewport_points": {
+          "width": 306,
+          "height": 280
+        },
+        "image_pixels": {
+          "width": 612,
+          "height": 560
+        },
+        "sha256": "12596a241b3d57a77f161b8c4504e7375b62c3d09000dc4e7b0b0c2cf01b8944"
+      },
+      {
+        "file": "preview-alert-en-close-45b5cd7.png",
+        "metadata": "preview-alert-en-close-45b5cd7.png.metadata.json",
+        "captured_at_utc": "2026-11-15T12:32:19.534897+00:00",
+        "appkit_viewport_points": {
+          "width": 306,
+          "height": 330
+        },
+        "image_pixels": {
+          "width": 612,
+          "height": 660
+        },
+        "sha256": "7977b0bbf54aac21f11d3f57368ee9d41ad33caba839c4ed02b0a3e1d9bbcf05"
+      },
+      {
+        "file": "preview-alert-es-retry-45b5cd7.png",
+        "metadata": "preview-alert-es-retry-45b5cd7.png.metadata.json",
+        "captured_at_utc": "2026-11-15T12:32:20.010524+00:00",
+        "appkit_viewport_points": {
+          "width": 306,
+          "height": 312
+        },
+        "image_pixels": {
+          "width": 612,
+          "height": 624
+        },
+        "sha256": "4a385cef2bc2a0430a078b3b2b43e660ca23cd3d20099ba3ccbd0b231c18fb97"
+      },
+      {
+        "file": "preview-alert-es-close-45b5cd7.png",
+        "metadata": "preview-alert-es-close-45b5cd7.png.metadata.json",
+        "captured_at_utc": "2026-11-15T12:32:20.507148+00:00",
+        "appkit_viewport_points": {
+          "width": 314,
+          "height": 362
+        },
+        "image_pixels": {
+          "width": 628,
+          "height": 724
+        },
+        "sha256": "e74f2d3569cac43c8bd06b1e0059ec8d63b7da03f57e45e9852210a413912cc6"
+      }
+    ]
+  },
+  "current_candidate": {
+    "status": "replayed_on_current_main_validation_pending",
+    "base_revision": "2916f9d27fed5b178d784071c26643f5210527ac",
+    "source_revision": "pending_initial_candidate_commit",
+    "guide_revision": 93,
+    "guide_packages": {
+      "en": {
+        "filename": "Guide-v93-en.mdlz",
+        "sha256": "619699672c50a5295b7f6a968f9952a86b9d4f2cfd0389c322e4ec081e9a494c"
+      },
+      "es": {
+        "filename": "Guide-v93-es.mdlz",
+        "sha256": "ea512ab338ad8f269fdd650f29d8520e0a8378baa96309f2151abf1b79a9e519"
+      }
+    },
+    "personal_copies_preserved_through_revision": 92,
+    "prior_branch_reconciliation": "The former head contained stale #369 and #445 snapshots that would override code, tests and evidence already integrated on main. This candidate was rebuilt from current main with only Preview-close changes and related evidence retained.",
+    "latest_local_capture_attempt": {
+      "date": "2026-11-16",
+      "result": "failed_before_app_interface",
+      "error": "ScreenCaptureKit -3811",
+      "close_recovery_exercised": false
+    },
+    "owner_directed_beta_acceptance": {
+      "status": "pending_after_pr_integration",
+      "required": [
+        "bilingual bundled Help and representative rendering",
+        "both practice-form save/close/reopen round trips",
+        "Preview sync recovery during tab close, window close and app quit",
+        "verify single-action alert and no repeated alert preventing quit"
+      ]
+    },
+    "historical_alert_capture_revision": "45b5cd7f7a92a86f3f4cd0a745e005c921d71ebd",
+    "historical_alert_captures_are_exact_head_evidence": false,
+    "current_head_ci": "pending_publication",
+    "strict_independent_review": "pending_publication"
+  }
+}

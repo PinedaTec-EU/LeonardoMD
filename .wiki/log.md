@@ -305,3 +305,13 @@ library capture verifies the alias, singular count and hidden local section;
 fresh packaged Guide v92 Help/practice acceptance passes in both locales and is
 recorded at `doc/validation/little-leonardo/packaged-help-v92-20261117-pr445.json`.
 Physical TestFlight acceptance remains outstanding.
+
+Preview recovery continuation (#447, 17 Nov 2026): after #369 and #445 reached
+main, #448 was found to retain stale parent snapshots that would revert current
+Little Leonardo code and evidence. The candidate is rebuilt from main with only
+Preview close recovery, its tests, and bilingual Guide v93; earlier guide copies
+through v92 remain preserved. Deterministic guide package tests pass. Current
+head CI, exact-source alert captures and strict review are pending; Beta Help
+and tab/window/app-quit acceptance remain required after integration because
+local screen capture again returned `ScreenCaptureKit -3811`. See
+`doc/validation/preview-sync/448/README.md`.

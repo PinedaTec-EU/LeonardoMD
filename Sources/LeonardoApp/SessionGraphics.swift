@@ -5,6 +5,30 @@ import UniformTypeIdentifiers
 
 extension AppSession {
     var canEditGraphics: Bool { canEditDocument && !saving && !externalConflict && mode != .fill }
+    var canApplyCloseGraphicSnapshot: Bool {
+        isClosing && isClosePreviewSyncPending && canEditDocumentIgnoringClose
+            && !saving && !externalConflict && mode != .fill
+    }
+
+    func recordRejectedClosePreviewAction() {
+        if isClosing && isClosePreviewSyncPending { closePreviewActionFailed = true }
+    }
+
+    func applyPreviewObjectAction(
+        expected: String,
+        object: LeonardoGraphic?,
+        remove: String?,
+        fieldID: String?,
+        documentURL expectedDocumentURL: URL?
+    ) -> Bool {
+        guard documentURL == expectedDocumentURL else {
+            recordRejectedClosePreviewAction()
+            return false
+        }
+        let accepted = handleGraphicAction(expected: expected, object: object, remove: remove, fieldID: fieldID)
+        if !accepted { recordRejectedClosePreviewAction() }
+        return accepted
+    }
 
     func requestRubric(fieldID: String? = nil) {
         if let fieldID {
@@ -15,6 +39,10 @@ extension AppSession {
 
     func finishRubric(_ request: RubricRequest, label: String, rubric: LeonardoRubric, saveToLibrary: Bool,
                       sourceRequestID: UUID? = nil) -> Bool {
+        if isClosing {
+            recordRejectedClosePreviewAction()
+            return false
+        }
         guard documentURL == request.documentURL, content == request.source, rubric.isValid else { return false }
         if let field = request.fieldID {
             guard canFillLeonardoForm, let value = rubric.jsonValue,
@@ -55,7 +83,8 @@ extension AppSession {
     func handleGraphicAction(expected: String, object: LeonardoGraphic?, remove: String?, fieldID: String?) -> Bool {
         guard content == expected else { return false }
         if let fieldID { requestRubric(fieldID: fieldID); return rubricRequest != nil }
-        guard canEditGraphics, var document = leonardoDocument,
+        let appliesCloseSnapshot = canApplyCloseGraphicSnapshot
+        guard canEditGraphics || appliesCloseSnapshot, var document = leonardoDocument,
               var layout = document.metadata.layout else { return false }
         if let object, object.isValid, let index = layout.objects.firstIndex(where: { $0.id == object.id }) {
             // Geometry bridge cannot change resources, identity or stored ink.
@@ -67,13 +96,19 @@ extension AppSession {
             layout.objects.remove(at: index)
         } else { return false }
         document.metadata.layout = layout
-        let committed = commitGraphics(document)
+        let committed = commitGraphics(document, expected: expected, allowCloseSnapshot: appliesCloseSnapshot)
         if committed, let remove, remove == selectedGraphicID { clearGraphicSelection() }
         return committed
     }
 
-    func commitGraphics(_ document: LeonardoDocument) -> Bool {
-        do { return editDocument(expected: content, replacement: try LeonardoFormatParser.serialize(document)) }
+    func commitGraphics(_ document: LeonardoDocument, expected: String? = nil, allowCloseSnapshot: Bool = false) -> Bool {
+        let expected = expected ?? content
+        do {
+            let replacement = try LeonardoFormatParser.serialize(document)
+            return allowCloseSnapshot
+                ? editPreviewDocument(expected: expected, replacement: replacement)
+                : editDocument(expected: expected, replacement: replacement)
+        }
         catch { report(error); return false }
     }
 

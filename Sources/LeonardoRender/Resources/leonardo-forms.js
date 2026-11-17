@@ -173,6 +173,11 @@
         }
       }
     },
+    setEditable(value) {
+      for (const entries of controls.values()) {
+        for (const entry of entries) if (entry.input) entry.input.disabled = !value;
+      }
+    },
     setExporting(value) { root?.classList.toggle("leonardo-form-export", value); }
   };
 })();
