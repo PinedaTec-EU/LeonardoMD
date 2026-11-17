@@ -83,6 +83,7 @@ struct MobileRevocationClient: Sendable {
         token: MobileConnectionToken,
         credentials: any DeviceCredentialStore,
         isCurrent: () -> Bool,
+        isSupersededAuthorization: () -> Bool = { false },
         onDenied: (MobileRevocationTicket) async -> Void,
         projectID: UUID? = nil,
         filePath: String? = nil,
@@ -99,6 +100,7 @@ struct MobileRevocationClient: Sendable {
         var statusAuthenticated = false
         var requiresSuccessfulReconciliation = needsStatusReconciliation()
         var reconciliationSucceeded = false
+        var authenticatedContext: MobileAuthenticatedContext?
         do {
             guard let credential = try await credentials.credential(deviceID: connection.deviceID) else {
                 try? finish(ticket, outcome: .transient)
@@ -108,14 +110,17 @@ struct MobileRevocationClient: Sendable {
                                                      certificateFingerprint: connection.fingerprint)
             let initialStatus = try await status(client, connection.deviceID, credential)
             statusAuthenticated = true
-            guard isCurrent() else {
-                await onDenied(ticket)
-                throw SyncError.revoked
-            }
-            guard initialStatus.access != .revoked else { throw SyncError.revoked }
             var context = MobileAuthenticatedContext(connection: connection, credential: credential,
                                                      client: client, status: initialStatus, token: token,
                                                      ticket: ticket)
+            authenticatedContext = context
+            guard isCurrent() else {
+                try await abortStaleAuthorization(context, ticket: ticket,
+                    isSupersededAuthorization: isSupersededAuthorization,
+                    needsStatusReconciliation: needsStatusReconciliation,
+                    onCurrentStatus: onCurrentStatus, onDenied: onDenied)
+            }
+            guard initialStatus.access != .revoked else { throw SyncError.revoked }
             if initialStatus.access == .authorized || initialStatus.access == .pending {
                 guard initialStatus.access != .pending || initialStatus.projects.isEmpty else {
                     throw SyncError.invalidSnapshot
@@ -142,7 +147,10 @@ struct MobileRevocationClient: Sendable {
                 if statusChanged || requestedProjectMissing || targetPathDenied
                     || initialStatus.access == .pending || requiresSuccessfulReconciliation {
                     requiresSuccessfulReconciliation = true
-                    if let refreshedContext = try await onCurrentStatus(context) { context = refreshedContext }
+                    if let refreshedContext = try await onCurrentStatus(context) {
+                        context = refreshedContext
+                        authenticatedContext = refreshedContext
+                    }
                     reconciliationSucceeded = true
                 }
                 if initialStatus.access == .pending, projectID != nil {
@@ -163,7 +171,10 @@ struct MobileRevocationClient: Sendable {
                     requiresSuccessfulReconciliation = true
                     let refreshed = MobileAuthenticatedContext(connection: context.connection,
                         credential: credential, client: client, status: latest, token: context.token, ticket: ticket)
-                    if let current = try await onCurrentStatus(refreshed) { context = current }
+                    if let current = try await onCurrentStatus(refreshed) {
+                        context = current
+                        authenticatedContext = current
+                    }
                     reconciliationSucceeded = true
                     recheckAuthorized = true
                 }
@@ -171,8 +182,10 @@ struct MobileRevocationClient: Sendable {
                 try await operation(context)
             }
             guard isCurrent() else {
-                await onDenied(ticket)
-                throw SyncError.revoked
+                try await abortStaleAuthorization(context, ticket: ticket,
+                    isSupersededAuthorization: isSupersededAuthorization,
+                    needsStatusReconciliation: needsStatusReconciliation,
+                    onCurrentStatus: onCurrentStatus, onDenied: onDenied)
             }
             try finish(ticket, outcome: .authorized)
             return result
@@ -192,7 +205,16 @@ struct MobileRevocationClient: Sendable {
             try? finish(ticket, outcome: authenticatedCurrentStatus && reconciliationIsCurrent ? .authorized : .transient)
             throw error
         } catch SyncError.revoked {
-            if isCurrent() {
+            if isSupersededAuthorization() {
+                if let context = authenticatedContext {
+                    try await abortStaleAuthorization(context, ticket: ticket,
+                        isSupersededAuthorization: isSupersededAuthorization,
+                        needsStatusReconciliation: needsStatusReconciliation,
+                        onCurrentStatus: onCurrentStatus, onDenied: onDenied)
+                }
+                try? finish(ticket, outcome: .transient)
+                throw MobileRevocationClientError.obsoleteAuthorization(markerEscalated: false)
+            } else if isCurrent() {
                 await onDenied(ticket)
             } else {
                 try? finish(ticket, outcome: .denied)
@@ -200,12 +222,42 @@ struct MobileRevocationClient: Sendable {
             throw SyncError.revoked
         } catch {
             guard isCurrent() else {
+                if let context = authenticatedContext {
+                    try await abortStaleAuthorization(context, ticket: ticket,
+                        isSupersededAuthorization: isSupersededAuthorization,
+                        needsStatusReconciliation: needsStatusReconciliation,
+                        onCurrentStatus: onCurrentStatus, onDenied: onDenied)
+                }
+                if isSupersededAuthorization() {
+                    try? finish(ticket, outcome: .transient)
+                    throw MobileRevocationClientError.obsoleteAuthorization(markerEscalated: false)
+                }
                 await onDenied(ticket)
                 throw SyncError.revoked
             }
             try? finish(ticket, outcome: .transient)
             throw error
         }
+    }
+
+    @MainActor
+    private func abortStaleAuthorization(
+        _ context: MobileAuthenticatedContext,
+        ticket: MobileRevocationTicket,
+        isSupersededAuthorization: () -> Bool,
+        needsStatusReconciliation: () -> Bool,
+        onCurrentStatus: (MobileAuthenticatedContext) async throws -> MobileAuthenticatedContext?,
+        onDenied: (MobileRevocationTicket) async -> Void
+    ) async throws -> Never {
+        if isSupersededAuthorization() {
+            if needsStatusReconciliation() {
+                _ = try await onCurrentStatus(context)
+            }
+            try? finish(ticket, outcome: .transient)
+            throw MobileRevocationClientError.obsoleteAuthorization(markerEscalated: false)
+        }
+        await onDenied(ticket)
+        throw SyncError.revoked
     }
 
     func recordDenied(for connection: MobileDirectConnection) throws {

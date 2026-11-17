@@ -53,14 +53,20 @@ struct MobileAuthorizationGenerations {
         quarantinedProjectIDs[connectionID] = nil
     }
 
-    mutating func quarantine(connectionID: UUID, projectIDs: Set<UUID> = []) {
+    mutating func quarantine(connectionID: UUID, projectIDs: Set<UUID> = [],
+                             advanceGeneration: Bool = false) {
         guard !deniedConnections.contains(connectionID) else { return }
-        quarantinedConnections.insert(connectionID)
+        let inserted = quarantinedConnections.insert(connectionID).inserted
+        let existingProjects = quarantinedProjectIDs[connectionID, default: []]
+        let expanded = !projectIDs.isSubset(of: existingProjects)
+        // Invalidate tokens that could otherwise finish after this quarantine.
+        if inserted || expanded || advanceGeneration { invalidate(connectionID: connectionID) }
         quarantinedProjectIDs[connectionID, default: []].formUnion(projectIDs)
     }
 
-    mutating func clearQuarantine(connectionID: UUID) {
-        guard !deniedConnections.contains(connectionID) else { return }
+    mutating func clearQuarantine(connectionID: UUID, authorizationGeneration: UInt64) {
+        guard !deniedConnections.contains(connectionID),
+              values[connectionID, default: 0] == authorizationGeneration else { return }
         quarantinedConnections.remove(connectionID)
         quarantinedProjectIDs[connectionID] = nil
     }

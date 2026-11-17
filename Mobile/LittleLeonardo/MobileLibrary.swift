@@ -124,7 +124,10 @@ final class MobileLibrary {
     }
 
     func isCurrentCacheOperation(_ token: ConnectionToken) -> Bool {
-        cacheEpoch == token.cacheEpoch && hasCurrentIdentity(token)
+        // A quarantine generation also fences async cache work already in flight.
+        cacheEpoch == token.cacheEpoch
+            && authorizationGenerations[token.connectionID] == token.authorizationGeneration
+            && hasCurrentIdentity(token)
     }
 
     func isCurrentAuthorization(_ token: ConnectionToken) -> Bool {
@@ -195,6 +198,12 @@ final class MobileLibrary {
                 guard let self else { return false }
                 return self.isCurrentAuthorization(token)
             },
+            isSupersededAuthorization: { [weak self] in
+                guard let self else { return false }
+                return self.hasCurrentIdentity(token)
+                    && !self.authorizationGenerations.isDenied(connectionID: token.connectionID)
+                    && self.authorizationGenerations[token.connectionID] != token.authorizationGeneration
+            },
             onDenied: { [weak self] ticket in
                 guard let self else { return }
                 guard self.hasCurrentIdentity(token),
@@ -224,7 +233,8 @@ final class MobileLibrary {
             },
             operation: operation,
             status: statusRequest)
-        authorizationGenerations.clearQuarantine(connectionID: connection.connectionID)
+        authorizationGenerations.clearQuarantine(connectionID: connection.connectionID,
+                                                  authorizationGeneration: token.authorizationGeneration)
         return result
     }
 
@@ -301,7 +311,8 @@ final class MobileLibrary {
             for connectionID in recovery.quarantinedConnectionIDs {
                 authorizationGenerations.quarantine(
                     connectionID: connectionID,
-                    projectIDs: recovery.quarantinedProjectIDsByConnection[connectionID, default: []])
+                    projectIDs: recovery.quarantinedProjectIDsByConnection[connectionID, default: []],
+                    advanceGeneration: true)
             }
             let barrierConnections = applyAuthorizationBarriers(to: recovery.connections)
             let loadedConnections = try await connectionStore.reconcileMissingCredentials(barrierConnections,
@@ -346,7 +357,8 @@ final class MobileLibrary {
                         && $0.projectIDs.contains(project.id) && $0.acceptedProjectIDs.contains(project.id)
                 }
             }.map(\.id))
-            try await downloads.restore(allowedIDs: allowedIDs, authorizations: authorizations)
+            try await downloads.restore(allowedIDs: allowedIDs, authorizations: authorizations,
+                                        quarantinedIDs: quarantinedProjectIDs)
             let recoveredSnapshotChanged = storedConnections.count != protectedConnections.count
                 || zip(storedConnections, protectedConnections).contains { $0.0.hasChanges(from: $0.1) }
             if repairedMissingCredential || recoveredSnapshotChanged {

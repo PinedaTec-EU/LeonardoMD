@@ -56,7 +56,9 @@ extension MobileLibrary {
         let refreshed = try await refreshChangedProjectCatalogues(plan, context: context, token: cacheToken,
                                                                   recoveringProjectIDs: recoveringProjectIDs)
         if refreshed != nil {
-            authorizationGenerations.clearQuarantine(connectionID: context.token.connectionID)
+            authorizationGenerations.clearQuarantine(
+                connectionID: context.token.connectionID,
+                authorizationGeneration: context.token.authorizationGeneration)
         }
         return refreshed
     }
@@ -101,7 +103,8 @@ extension MobileLibrary {
         let projectIDs = plan.previous.projectIDs.union(plan.updated.projectIDs)
             .union(authorizationGenerations.projectsUnderQuarantine(for: context.token.connectionID))
         authorizationGenerations.quarantine(connectionID: context.token.connectionID,
-                                             projectIDs: projectIDs)
+                                             projectIDs: projectIDs,
+                                             advanceGeneration: true)
         for projectID in projectIDs { downloads.deny(id: projectID) }
         do {
             try recordReconciliationRequired(for: context.connection, projectIDs: projectIDs)

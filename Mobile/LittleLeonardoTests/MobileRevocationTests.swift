@@ -123,6 +123,67 @@ final class MobileRevocationTests: XCTestCase {
                       "Only a current-generation successful revalidation may clear quarantine")
     }
 
+    @MainActor
+    func testOlderAuthenticatedOperationCannotClearNewerQuarantine() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let value = connection()
+        let journal = MobileRevocationJournal(url: root.appendingPathComponent("revocation.json"))
+        var generations = MobileAuthorizationGenerations()
+        let token = MobileConnectionToken(connectionID: value.connectionID, deviceID: value.deviceID,
+            fingerprint: value.fingerprint, cacheEpoch: 0,
+            authorizationGeneration: generations[value.connectionID])
+        let gate = RevocationGate()
+        let entered = ExpectationSignal(expectation(description: "older authenticated operation entered"))
+        let deniedCalls = LockedCounter()
+        let credentials = TestCredentials(values: [value.deviceID: "credential"], failRemove: false)
+        let quarantinedProjectID = UUID()
+        let client = MobileRevocationClient(journal: journal)
+        let olderOperation = Task { @MainActor in
+            do {
+                _ = try await client.withAuthenticatedConnection(value, token: token,
+                    credentials: credentials,
+                    isCurrent: { generations[value.connectionID] == token.authorizationGeneration
+                        && !generations.isDenied(connectionID: value.connectionID) },
+                    isSupersededAuthorization: {
+                        generations[value.connectionID] != token.authorizationGeneration
+                            && !generations.isDenied(connectionID: value.connectionID)
+                    },
+                    onDenied: { _ in deniedCalls.increment() },
+                    needsStatusReconciliation: { generations.isQuarantined(connectionID: value.connectionID) },
+                    onCurrentStatus: { context in
+                        generations.clearQuarantine(connectionID: value.connectionID,
+                            authorizationGeneration: context.token.authorizationGeneration)
+                        throw MobileRevocationClientError.obsoleteAuthorization(markerEscalated: true)
+                    },
+                    operation: { _ in
+                        entered.fulfill()
+                        await gate.wait()
+                        return true
+                    },
+                    status: { _, _, _ in DirectDeviceStatus(access: .authorized, projects: []) })
+                XCTFail("A superseded operation must not return its result")
+                return nil
+            } catch let error as MobileRevocationClientError {
+                return error
+            } catch {
+                XCTFail("Expected stale authorization to abort, got: \(error)")
+                return nil
+            }
+        }
+
+        await fulfillment(of: [entered.expectation], timeout: 5)
+        generations.quarantine(connectionID: value.connectionID, projectIDs: [quarantinedProjectID],
+                                advanceGeneration: true)
+        await gate.open()
+        let result = await olderOperation.value
+        XCTAssertEqual(result, .obsoleteAuthorization(markerEscalated: true))
+        XCTAssertEqual(deniedCalls.value, 0,
+                       "A newer quarantine must not be misclassified as host revocation")
+        XCTAssertTrue(generations.isQuarantined(connectionID: value.connectionID),
+                      "The old operation's conditional clear must not remove the newer quarantine")
+    }
+
     func testFailedGrantPersistenceRemainsQuarantinedUntilAuthenticatedStatus() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -174,7 +235,8 @@ final class MobileRevocationTests: XCTestCase {
         var authorization = MobileAuthorizationGenerations()
         let before = authorization[revoked.connectionID]
         authorization.confirmDenied(connectionID: revoked.connectionID, projectIDs: [project])
-        authorization.clearQuarantine(connectionID: revoked.connectionID)
+        authorization.clearQuarantine(connectionID: revoked.connectionID,
+                                        authorizationGeneration: authorization[revoked.connectionID])
         XCTAssertGreaterThan(authorization[revoked.connectionID], before)
         XCTAssertTrue(authorization.isDenied(connectionID: revoked.connectionID))
         XCTAssertEqual(authorization.projectsPendingPurge(for: revoked.connectionID), [project])
@@ -393,11 +455,19 @@ final class MobileRevocationTests: XCTestCase {
         let cached = try OfflineProject(id: projectID, name: descriptor.name, mode: .direct,
             scope: descriptor.scope, snapshot: CorpusSnapshot(revision: "catalogue", files: []))
         try await OfflineCorpusStore(root: corpusRoot).save(cached)
+        let retainedFile = CorpusFile(path: "docs/offline.md", content: Data("retained through quarantine".utf8))
+        let retainedEntry = RemoteFileEntry(file: retainedFile)
+        let downloadsRoot = support.appendingPathComponent("Downloads", isDirectory: true)
+        let downloadsCache = OnDemandCache(root: downloadsRoot)
+        let catalogue = RemoteProjectCatalogue(files: [retainedEntry])
+        try await downloadsCache.update(id: projectID, descriptor: descriptor, catalogue: catalogue)
+        try await downloadsCache.setRetained(id: projectID, path: retainedFile.path,
+                                             isFolder: false, keep: true)
+        try await downloadsCache.store(id: projectID, entry: retainedEntry, file: retainedFile)
         let journal = MobileRevocationJournal(url: support.appendingPathComponent("revocation.json"))
         try journal.requireReconciliation(connectionID: value.connectionID, deviceID: value.deviceID,
             fingerprint: value.fingerprint, projectIDs: [projectID])
         let catalogueCalls = LockedCounter()
-        let catalogue = RemoteProjectCatalogue(files: [])
         let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
             revocationJournal: journal,
             statusRequest: { _, _, _ in DirectDeviceStatus(access: .authorized, projects: [descriptor]) },
@@ -410,6 +480,15 @@ final class MobileRevocationTests: XCTestCase {
         await library.reload()
         XCTAssertTrue(library.authorizationGenerations.isQuarantined(connectionID: connectionID))
         XCTAssertFalse(library.projects.contains(where: { $0.id == projectID }))
+        XCTAssertFalse(library.downloads.projects.contains(where: { $0.id == projectID }),
+                       "A quarantined on-demand catalogue must stay hidden after restart")
+        let retainedAfterRestart = try await downloadsCache.project(id: projectID)
+        XCTAssertTrue(retainedAfterRestart?.keeps(retainedFile.path) == true)
+        XCTAssertNotNil(retainedAfterRestart?.downloads[retainedFile.path],
+                        "Restart recovery must preserve retained download metadata")
+        let retainedBytesAfterRestart = try await downloadsCache.read(id: projectID, entry: retainedEntry)
+        XCTAssertEqual(retainedBytesAfterRestart, retainedFile,
+                       "Restart recovery must preserve retained bytes for the authenticated retry")
 
         let connection = try XCTUnwrap(library.connections.first)
         do {
@@ -429,6 +508,9 @@ final class MobileRevocationTests: XCTestCase {
                       "The same currently authorized grant must restore its project after catalogue recovery")
         XCTAssertTrue(library.downloads.projects.contains(where: { $0.id == projectID }),
                       "The authorized catalogue must be reinstalled in the on-demand cache")
+        let recoveredFile = try await library.downloads.open(id: projectID, path: retainedFile.path)
+        XCTAssertEqual(recoveredFile, retainedFile,
+                       "A successful STATUS and catalogue retry restores the retained offline copy")
     }
 
     @MainActor

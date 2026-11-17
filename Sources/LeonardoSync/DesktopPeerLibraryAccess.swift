@@ -38,7 +38,7 @@ public struct DesktopPeerFileRead: Sendable {
 
 public enum DesktopPeerLibraryError: Error, Equatable, Sendable {
     case busy, unknownConnection, unknownCopy, unauthorizedProject, selectionChanged, sendingUnavailable,
-         acknowledgementUnavailable
+         acknowledgementUnavailable, metadataFirstAuthorizationRequired
 }
 
 extension DesktopPeerLibraryError: RemoteContentAccessDenied {
@@ -94,14 +94,6 @@ public extension DesktopPeerLibraryAccess {
     func catalogue(connectionID: UUID, projectID: UUID) async throws -> RemoteProjectCatalogue { throw DesktopPeerLibraryError.unknownCopy }
     func file(connectionID: UUID, projectID: UUID, entry: RemoteFileEntry) async throws -> CorpusFile { throw DesktopPeerLibraryError.unknownCopy }
     func fileRead(connectionID: UUID, projectID: UUID, entry: RemoteFileEntry) async throws -> DesktopPeerFileRead {
-        let file = try await file(connectionID: connectionID, projectID: projectID, entry: entry)
-        let status = try await refresh(connectionID: connectionID)
-        guard status.access == .authorized,
-              let descriptor = status.projects.first(where: { $0.id == projectID }) else {
-            throw DesktopPeerLibraryError.unauthorizedProject
-        }
-        try descriptor.scope.validate(entry.path)
-        try descriptor.selection?.validate(entry.path)
-        return DesktopPeerFileRead(descriptor: descriptor, file: file)
+        throw DesktopPeerLibraryError.metadataFirstAuthorizationRequired
     }
 }

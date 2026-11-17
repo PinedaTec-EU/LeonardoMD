@@ -146,6 +146,38 @@ import XCTest
         XCTAssertEqual(reopened, fixture.file, "Authenticated status restores the retained offline copy")
     }
 
+    func testQuarantinedRestoreKeepsRetainedCacheHiddenUntilAuthorizationReturns() async throws {
+        let fixture = try Fixture()
+        defer { fixture.removeFiles() }
+        let library = DownloadLibrary(cache: fixture.cache)
+        try await library.update(id: fixture.project.id, descriptor: fixture.project,
+                                 catalogue: fixture.catalogue)
+        library.fetch = { _, _ in fixture.file }
+        await library.retain(id: fixture.project.id, path: fixture.file.path, isFolder: false, keep: true)
+        _ = try await library.open(id: fixture.project.id, path: fixture.file.path)
+
+        try await library.restore(allowedIDs: [], authorizations: [:], quarantinedIDs: [fixture.project.id])
+        XCTAssertTrue(library.projects.isEmpty, "Quarantined projects must not enter the reader")
+        do {
+            _ = try await library.open(id: fixture.project.id, path: fixture.file.path)
+            XCTFail("A quarantined retained hit must not be readable")
+        } catch { XCTAssertEqual(error as? SyncError, .revoked) }
+        let cachedProjects = try await fixture.cache.projects()
+        let retainedDuringQuarantine = cachedProjects.first { $0.id == fixture.project.id }
+        XCTAssertTrue(retainedDuringQuarantine?.keeps(fixture.file.path) == true)
+        XCTAssertNotNil(retainedDuringQuarantine?.downloads[fixture.file.path],
+                        "Restart recovery must preserve the retained cache entry")
+        let storedFile = try await fixture.cache.read(id: fixture.project.id,
+                                                       entry: RemoteFileEntry(file: fixture.file))
+        XCTAssertEqual(storedFile, fixture.file,
+                       "The stored bytes remain available for an authorized retry")
+
+        try await library.restore(allowedIDs: [fixture.project.id],
+            authorizations: [fixture.project.id: RemoteDownloadAuthorization(descriptor: fixture.project)])
+        let reopened = try await library.open(id: fixture.project.id, path: fixture.file.path)
+        XCTAssertEqual(reopened, fixture.file)
+    }
+
     func testCurrentNarrowedDescriptorRemovesExcludedSiblingFromRetainedCatalogue() async throws {
         let fixture = try Fixture()
         defer { fixture.removeFiles() }

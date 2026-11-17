@@ -91,7 +91,8 @@ public final class DownloadLibrary {
     public static func key(id: UUID, path: String) -> String { id.uuidString + ":" + path }
 
     public func restore(allowedIDs: Set<UUID>,
-                        authorizations: [UUID: RemoteDownloadAuthorization]) async throws {
+                        authorizations: [UUID: RemoteDownloadAuthorization],
+                        quarantinedIDs: Set<UUID> = []) async throws {
         for id in allowed.subtracting(allowedIDs) { deny(id: id) }
         allowed = allowedIDs
         projects = projects.compactMap { project in
@@ -108,6 +109,12 @@ public final class DownloadLibrary {
         for value in values {
             guard allowed.contains(value.id) else {
                 deniedPaths[value.id] = nil
+                if quarantinedIDs.contains(value.id) {
+                    // Quarantine hides cached content until authenticated STATUS
+                    // reconciles the grant. Keep retained bytes on disk so a
+                    // successful retry can restore the offline copy.
+                    continue
+                }
                 unauthorizedIDs.append(value.id)
                 continue
             }
