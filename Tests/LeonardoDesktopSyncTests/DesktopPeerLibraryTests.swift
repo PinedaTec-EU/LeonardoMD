@@ -458,7 +458,9 @@ final class DesktopPeerLibraryTests: XCTestCase {
                 _ = try await fixture.library.open(copyID: copy.id)
                 XCTFail("The project barrier must block new access for \(transition)")
             } catch {
-                XCTAssertEqual(error as? DesktopPeerLibraryError, .unauthorizedProject)
+                let expected: DesktopPeerLibraryError = transition == .narrowed
+                    ? .selectionChanged : .unauthorizedProject
+                XCTAssertEqual(error as? DesktopPeerLibraryError, expected)
             }
 
             await fixture.revoker.clearAuthorizationRequirement(connectionID: connection.id,
