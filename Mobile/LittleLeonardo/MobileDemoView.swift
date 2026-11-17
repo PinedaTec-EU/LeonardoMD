@@ -2,22 +2,60 @@ import SwiftUI
 import LeonardoCore
 import LeonardoRender
 
+@MainActor
+private final class MobileDemoSourceState {
+    var value = ""
+    var isActive = false
+}
+
+@MainActor
 struct MobileDemoView: View {
     let language: MobileDemoStore.Language
     private let store = MobileDemoStore()
+    private let documentIdentity: MobileDocumentIdentity
+    @ObservedObject private var preferences: MobileMarkdownPreferences
+    @StateObject private var recommendations: MobileExtensionRecommendations
+    @State private var sourceState: MobileDemoSourceState
     @State private var content = ""
     @State private var source = false
     @State private var error: MobileErrorNotice?
     @State private var fieldHelp: String?
     @State private var saved = false
     @State private var confirmingReset = false
-    @StateObject private var controller = MarkdownPreviewController()
+    @StateObject private var controller: MarkdownPreviewController
     @Environment(\.scenePhase) private var scenePhase
 
+    init(language: MobileDemoStore.Language) {
+        self.language = language
+        let documentIdentity = MobileDocumentIdentity(
+            projectID: MobileDemoStore.recommendationProjectID,
+            path: "Demo-\(language.rawValue).mdlr")
+        self.documentIdentity = documentIdentity
+        let preferences = MobileMarkdownPreferences.shared
+        let recommendations = MobileExtensionRecommendations()
+        let sourceState = MobileDemoSourceState()
+        let controller = MarkdownPreviewController()
+        controller.onDetectedExtensions = { detectedSource, identifiers in
+            guard sourceState.isActive, detectedSource == sourceState.value else { return }
+            recommendations.activate(document: documentIdentity, preferences: preferences)
+            recommendations.inspect(document: documentIdentity, source: detectedSource,
+                                    detectedIDs: identifiers, preferences: preferences)
+        }
+        _preferences = ObservedObject(wrappedValue: preferences)
+        _recommendations = StateObject(wrappedValue: recommendations)
+        _sourceState = State(wrappedValue: sourceState)
+        _controller = StateObject(wrappedValue: controller)
+    }
+
     private var configuration: MarkdownPreviewConfiguration {
+        let features = preferences.features
         var configuration = MarkdownPreviewConfiguration(
-            allowsMermaid: true, allowsMath: true, allowsVegaLite: true,
-            allowsMarkdownExtensions: true, externalLinkPolicy: .blocked,
+            allowsMermaid: features.mermaidEnabled,
+            allowsMath: features.mathEnabled,
+            allowsVegaLite: features.vegaLiteEnabled,
+            allowsCitations: features.citationsEnabled,
+            allowsMarkdownExtensions: features.markdownExtensionsEnabled,
+            externalLinkPolicy: .blocked,
             appearance: .leonardoClassic, localAssetRoot: store.resources, allowsRemoteImages: false)
         configuration.allowsLeonardoFormat = true
         configuration.allowsFormFilling = true
@@ -36,6 +74,15 @@ struct MobileDemoView: View {
             } else {
                 MarkdownPreview(content: content, baseURL: store.resources,
                     configuration: configuration, controller: controller)
+                    .sheet(item: Binding(
+                        get: { recommendations.prompt },
+                        set: { if $0 == nil { recommendations.dismissPrompt() } }
+                    )) { request in
+                        MobileExtensionRecommendationDialog(request: request, spanish: language == .es) { choice, enableSelected in
+                            recommendations.respond(to: request, choice: choice, enableSelected: enableSelected,
+                                                    preferences: preferences)
+                        }
+                    }
             }
         }
         .classicSurface()
@@ -79,6 +126,10 @@ struct MobileDemoView: View {
         .safeAreaInset(edge: .bottom) {
             if saved { Text("Guardado en este dispositivo / Saved on this device").font(.caption).padding(8) }
         }
+        .onAppear {
+            sourceState.isActive = true
+            recommendations.activate(document: documentIdentity, preferences: preferences)
+        }
         .task {
             controller.onFieldHelp = { fieldID in
                 guard let document = try? LeonardoFormatParser.parse(content),
@@ -92,6 +143,8 @@ struct MobileDemoView: View {
                     guard let updated = document.applyingFormValues(changes) else { return nil }
                     let replacement = try LeonardoFormatParser.serialize(updated)
                     try store.save(replacement, language: language)
+                    sourceState.value = replacement
+                    recommendations.documentContentWillReload(documentIdentity)
                     content = replacement
                     saved = false
                     return replacement
@@ -104,7 +157,11 @@ struct MobileDemoView: View {
                     return nil
                 }
             }
-            do { content = try store.load(language) }
+            do {
+                let loaded = try store.load(language)
+                sourceState.value = loaded
+                content = loaded
+            }
             catch {
                 self.error = MobileErrorNotice.record(
                     error,
@@ -114,8 +171,13 @@ struct MobileDemoView: View {
             }
         }
         .onDisappear {
+            sourceState.isActive = false
+            recommendations.deactivate(document: documentIdentity)
             controller.onFormEdit = nil
             controller.onFieldHelp = nil
+        }
+        .onChange(of: preferences.extensionWarningResetRevision) { _, _ in
+            recommendations.warningPreferencesDidReset(preferences: preferences)
         }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { Task { _ = await controller.flushEdits() } }
@@ -124,7 +186,13 @@ struct MobileDemoView: View {
             Button("Restablecer / Reset", role: .destructive) {
                 Task {
                     guard await controller.flushEdits() else { return }
-                    do { content = try store.reset(language); saved = false }
+                    do {
+                        let replacement = try store.reset(language)
+                        sourceState.value = replacement
+                        recommendations.documentContentWillReload(documentIdentity)
+                        content = replacement
+                        saved = false
+                    }
                     catch {
                         self.error = MobileErrorNotice.record(
                             error,

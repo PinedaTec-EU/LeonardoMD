@@ -1,0 +1,21 @@
+{
+  "captured_at": "2026-11-17T13:37:55.564Z",
+  "route": "/native/ios/demo/Demo-en.mdlr/extension-recommendation",
+  "screen": "Little Leonardo document extension recommendation sheet",
+  "browser_name": "Little Leonardo native SwiftUI app on iPhone 17 Simulator",
+  "browser_version": "N/A — native SwiftUI app; iOS 27.0",
+  "state": "Demo-en.mdlr; compact XcodeBuildMCP JPEG viewport capture at 368x800; five detected built-in extensions off; device-local scope; no warning suppression; bundled synthetic Demo content. Full-resolution simulator PNG retained in doc/validation.",
+  "viewport_css": {
+    "width": 368,
+    "height": 800
+  },
+  "capture_mode": "viewport",
+  "data_provenance": "synthetic",
+  "native_viewport_points": {
+    "width": 402,
+    "height": 874
+  },
+  "os": "iOS 27.0 Simulator; iPhone 17",
+  "source_sha": "d00d6d804d5285b8f5dda240b95ffa3ec54ba6ec",
+  "source_worktree": "tracked changes present; product rebuilt from this worktree before capture"
+}

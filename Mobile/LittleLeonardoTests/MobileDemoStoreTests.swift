@@ -10,6 +10,10 @@ final class MobileDemoStoreTests: XCTestCase {
         let store = MobileDemoStore(root: root)
         let spanish = try store.load(.es)
         let english = try store.load(.en)
+        for marker in ["```mermaid", "$$", "```vega-lite", "[@demo2026]", "[^offline]", "![Bundled Leonardo guide cover]"] {
+            XCTAssertTrue(english.contains(marker), "The bundled Demo is missing extension example: \(marker)")
+            XCTAssertTrue(spanish.contains(marker), "The bundled Demo is missing extension example: \(marker)")
+        }
         let document = try LeonardoFormatParser.parse(spanish)
         let filled = try XCTUnwrap(document.applyingFormValues(["name": .string("Review sample")]))
         let replacement = try LeonardoFormatParser.serialize(filled)
@@ -225,6 +229,99 @@ final class MobileDemoStoreTests: XCTestCase {
         guard case .recoveryArchive = identity else {
             XCTFail("A legacy Git cache must remain a recovery archive", file: file, line: line)
             return
+        }
+    }
+}
+
+@MainActor
+final class MobileExtensionRecommendationsTests: XCTestCase {
+    func testRecommendationIsNotRepeatedForFormChangesAndResetsOnReopen() throws {
+        let suite = "MobileExtensionRecommendations-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = MobileMarkdownPreferences(defaults: defaults)
+        let recommendations = MobileExtensionRecommendations()
+        let document = MobileDocumentIdentity(projectID: UUID(), path: "Demo-en.mdlr")
+        let detected = BuiltInExtension.allCases.map(\.rawValue)
+        let source = "initial demo source"
+
+        recommendations.activate(document: document, preferences: preferences)
+        recommendations.inspect(document: document, source: source, detectedIDs: detected,
+                                preferences: preferences)
+        let request = try XCTUnwrap(recommendations.prompt)
+        XCTAssertEqual(Set(request.extensions), Set(BuiltInExtension.allCases))
+
+        recommendations.respond(to: request,
+                                choice: MobileExtensionRecommendationChoice(enabledExtensions: [.mermaid]),
+                                enableSelected: true, preferences: preferences)
+        XCTAssertTrue(preferences.features.mermaidEnabled)
+        recommendations.documentContentWillReload(document)
+        recommendations.inspect(document: document, source: source + "\nform answer",
+                                detectedIDs: detected, preferences: preferences)
+        XCTAssertNil(recommendations.prompt, "Saving practice answers must not repeat this opening's recommendation")
+
+        recommendations.deactivate(document: document)
+        recommendations.activate(document: document, preferences: preferences)
+        recommendations.inspect(document: document, source: source + "\nform answer",
+                                detectedIDs: detected, preferences: preferences)
+        XCTAssertEqual(Set(try XCTUnwrap(recommendations.prompt).extensions),
+                       Set(BuiltInExtension.allCases.filter { $0 != .mermaid }),
+                       "A fresh opening may recommend only extensions that are still disabled")
+    }
+
+    func testNotNowDoesNotEnableAndResetRestoresRecommendation() throws {
+        let suite = "MobileExtensionRecommendations-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = MobileMarkdownPreferences(defaults: defaults)
+        let recommendations = MobileExtensionRecommendations()
+        let document = MobileDocumentIdentity(projectID: UUID(), path: "guide.md")
+        let detected = BuiltInExtension.allCases.map(\.rawValue)
+        recommendations.activate(document: document, preferences: preferences)
+        recommendations.inspect(document: document, source: "guide", detectedIDs: detected,
+                                preferences: preferences)
+
+        recommendations.respond(to: try XCTUnwrap(recommendations.prompt),
+                                choice: MobileExtensionRecommendationChoice(enabledExtensions: [.math]),
+                                enableSelected: false, preferences: preferences)
+        XCTAssertFalse(preferences.features.mathEnabled)
+        recommendations.documentContentWillReload(document)
+        recommendations.inspect(document: document, source: "guide updated", detectedIDs: detected,
+                                preferences: preferences)
+        XCTAssertNil(recommendations.prompt)
+
+        preferences.resetExtensionWarnings()
+        recommendations.warningPreferencesDidReset(preferences: preferences)
+        XCTAssertEqual(Set(try XCTUnwrap(recommendations.prompt).extensions), Set(BuiltInExtension.allCases))
+    }
+}
+
+private extension ProjectIdentity {
+    var captureName: String {
+        switch self {
+        case .received: "received"
+        case .recoveryArchive: "recovery"
+        case .local: "local"
+        case .sharedFromThisDevice: "shared"
+        case .unknown: "unknown"
+        }
+    }
+
+    var evidenceState: String {
+        switch self {
+        case .received: "received from another device"
+        case .recoveryArchive: "recovery archive"
+        default: title(languageCode: "en")
+        }
+    }
+}
+
+private extension DynamicTypeSize {
+    var captureName: String {
+        switch self {
+        case .large: "large"
+        case .accessibility3: "accessibility3"
+        default: "dynamic"
         }
     }
 }

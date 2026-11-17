@@ -7,6 +7,8 @@ normal document tabs in package mode. Ordinary package-opening preferences
 remain unchanged. Existing guide copies and practice answers are never overwritten.
 
 Guide v144 documents the shared Home selector, collapsible sections and direct remote access in chapter 7.
+It also carries the reconciled Little Leonardo extension settings, consent flow and bundled Demo
+coverage in both locales; the current package remains v144 rather than the obsolete PR-v94 copy.
 
 Guide v141 adds the remote catalogue instructions and retains the pairing-token migration guidance.
 

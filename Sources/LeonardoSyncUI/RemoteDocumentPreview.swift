@@ -20,7 +20,9 @@ public struct RemoteDocumentPreview: View {
     private let onPreviewDocumentActivated: ((String) -> Void)?
     private let onPreviewDocumentDeactivated: ((String) -> Void)?
     private let onPreviewDocumentContentWillReload: ((String) -> Void)?
+#if os(iOS)
     @StateObject private var previewController: MarkdownPreviewController
+#endif
     @State private var presentation = RemoteDocumentPreviewState()
     @State private var source = false
     @State private var linked: RemoteFileEntry?
@@ -43,11 +45,13 @@ public struct RemoteDocumentPreview: View {
         self.onPreviewDocumentActivated = onPreviewDocumentActivated
         self.onPreviewDocumentDeactivated = onPreviewDocumentDeactivated
         self.onPreviewDocumentContentWillReload = onPreviewDocumentContentWillReload
+#if os(iOS)
         let controller = MarkdownPreviewController()
         controller.onDetectedExtensions = { source, extensions in
             onDetectedExtensions?(entry.path, source, extensions)
         }
         _previewController = StateObject(wrappedValue: controller)
+#endif
     }
     private var project: CachedRemoteProject? { library.projects.first { $0.id == projectID } }
     private var currentEntry: RemoteFileEntry? { project?.catalogue.files.first { $0.path == entry.path } }
@@ -68,6 +72,13 @@ public struct RemoteDocumentPreview: View {
         value.allowsLeonardoFormat = Self.leonardoFormatExtensions.contains(fileExtension)
         value.compactFirstHeading = compactFirstHeading
         return value
+    }
+    private var extensionDetectionController: MarkdownPreviewController? {
+#if os(iOS)
+        previewController
+#else
+        nil
+#endif
     }
     private var authorizedImages: [String: Data] {
         let paths = Set(project?.catalogue.files.map(\.path) ?? [])
@@ -125,7 +136,7 @@ public struct RemoteDocumentPreview: View {
                         }
                         MarkdownPreview(content: text, baseURL: virtualRoot.appendingPathComponent(entry.path).deletingLastPathComponent(),
                             configuration: previewConfiguration,
-                            controller: previewController,
+                            controller: extensionDetectionController,
                             onLinkActivation: followLink)
                     }
                 }

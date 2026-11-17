@@ -423,6 +423,7 @@ struct MobileLibraryView: View {
     private var synchronizationSettings: some View {
         NavigationStack {
             Form {
+                MobileMarkdownExtensionsSettings(preferences: .shared, spanish: spanishErrors)
                 Section("Frecuencia") { syncFrequency }.listRowBackground(MobileClassic.inset)
                 Section("Proyectos / Projects") {
                     Button("Recuperar demo / Restore demo", systemImage: "arrow.counterclockwise") {
@@ -437,7 +438,6 @@ struct MobileLibraryView: View {
                     Text("Recupera el proyecto con tus respuestas de práctica guardadas en este dispositivo. / Restore the project with your practice answers saved on this device.")
                         .font(.caption)
                 }.listRowBackground(MobileClassic.inset)
-                MobileMarkdownExtensionsSettings(preferences: .shared, spanish: spanishErrors)
                 Section(spanishErrors ? "Archivos del proyecto" : "Project files") {
                     Toggle(spanishErrors ? "Mostrar archivos que no sean documentos" : "Show non-document files",
                            isOn: $showNonDocumentFiles)
