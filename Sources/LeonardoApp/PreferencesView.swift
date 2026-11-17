@@ -113,6 +113,12 @@ struct PreferencesView: View {
                     Toggle(L10n.text("Show front matter"), isOn: $session.showFrontmatter)
                     Toggle(L10n.text("Confirm external links"), isOn: $session.confirmExternalLinks)
                     Toggle(L10n.text("Show hidden files"), isOn: $session.showHidden)
+                    Toggle(L10n.text("Show non-document files"), isOn: Binding(
+                        get: { session.showNonDocumentFiles },
+                        set: { session.setShowNonDocumentFiles($0) }
+                    )).accessibilityIdentifier("preferences-show-non-document-files")
+                    Text(L10n.text("Includes images and other file types in project lists. Markdown image links still work while those files are hidden."))
+                        .font(.caption).foregroundStyle(.secondary)
                 }
                 MarkdownAssociationPreferences(associations: associations)
             }.formStyle(.grouped).toggleStyle(PremiumSwitchStyle())

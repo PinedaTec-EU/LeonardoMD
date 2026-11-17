@@ -44,7 +44,7 @@ enum AppDocumentKind: String, CaseIterable, Identifiable, Sendable {
     }
 
     static func isSupportedExtension(_ fileExtension: String) -> Bool {
-        ["md", "markdown", "txt", "mdlf", "mdlr", "mdlz"].contains(fileExtension.lowercased())
+        LeonardoProjectFileVisibility.isSupportedDocumentExtension(fileExtension)
     }
 
     /// Drag and drop intentionally accepts document formats with a Markdown

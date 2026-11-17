@@ -107,7 +107,7 @@ extension AppSession {
             guard !stopped, projectURL == root else { return [] }
             return nodes.filter { include($0.url, $0.isDirectory) }
                 .map { NavigationEntry(url: $0.url, isDirectory: $0.isDirectory) }
-                .filter { showAllFiles || $0.isDirectory || AppDocumentKind.isSupportedExtension($0.url.pathExtension) }
+                .filter { $0.isDirectory || showNonDocumentFiles || AppDocumentKind.isSupportedExtension($0.url.pathExtension) }
                 .sorted { left, right in
                     if foldersFirst, left.isDirectory != right.isDirectory { return left.isDirectory }
                     let order = left.name.localizedStandardCompare(right.name)

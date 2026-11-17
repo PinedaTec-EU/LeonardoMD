@@ -1,5 +1,6 @@
 import SwiftUI
 import LeonardoSync
+import LeonardoCore
 
 /// Identical retention and cache controls on both consuming platforms.
 public struct SyncCacheSettingsView: View {
@@ -75,10 +76,17 @@ public struct SyncCatalogueView: View {
     let projectID: UUID
     let spanish: Bool
     let rowBackground: Color?
+    let showNonDocumentFiles: Bool
+    let fileVisibilitySurface: LeonardoProjectFileVisibility.Surface
     let open: (RemoteFileEntry) -> Void
     @State private var currentPath = ""
-    public init(library: DownloadLibrary, projectID: UUID, spanish: Bool = false, rowBackground: Color? = nil, open: @escaping (RemoteFileEntry) -> Void) {
-        self.library = library; self.projectID = projectID; self.spanish = spanish; self.rowBackground = rowBackground; self.open = open
+    public init(library: DownloadLibrary, projectID: UUID, spanish: Bool = false, rowBackground: Color? = nil,
+                showNonDocumentFiles: Bool = true,
+                fileVisibilitySurface: LeonardoProjectFileVisibility.Surface = .macOS,
+                open: @escaping (RemoteFileEntry) -> Void) {
+        self.library = library; self.projectID = projectID; self.spanish = spanish; self.rowBackground = rowBackground
+        self.showNonDocumentFiles = showNonDocumentFiles; self.fileVisibilitySurface = fileVisibilitySurface
+        self.open = open
     }
     private var project: CachedRemoteProject? { library.projects.first { $0.id == projectID } }
     private func t(_ en: String, _ es: String) -> String { spanish ? es : en }
@@ -101,7 +109,19 @@ public struct SyncCatalogueView: View {
                     ForEach(project.catalogue.immediateFolders(at: currentPath), id: \.self) { folder in
                         folderRow(path: folder, project: project)
                     }
-                    ForEach(project.catalogue.immediateFiles(at: currentPath)) { entry in
+                    let files = project.catalogue.immediateFiles(at: currentPath)
+                    let visibleFiles = files.filter {
+                        LeonardoProjectFileVisibility.shouldShowFile(at: $0.path,
+                                                                     showNonDocumentFiles: showNonDocumentFiles,
+                                                                     on: fileVisibilitySurface)
+                    }
+                    if visibleFiles.isEmpty, !files.isEmpty {
+                        Text(t("No supported document files are shown. Enable Show non-document files in app settings to see the rest.",
+                               "No se muestran archivos con formato de documento compatible. Activa Mostrar archivos que no sean documentos en los ajustes de la app para ver el resto."))
+                            .font(.caption).foregroundStyle(.secondary)
+                            .accessibilityIdentifier("download-hidden-non-document-files")
+                    }
+                    ForEach(visibleFiles) { entry in
                         Button { open(entry) } label: {
                             HStack {
                                 Label(fileName(entry.path), systemImage: "doc")

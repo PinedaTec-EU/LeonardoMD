@@ -50,7 +50,7 @@ extension DocumentTabs {
 
     private func copyProjectNavigation(from source: AppSession, to target: AppSession) {
         target.projectFileTree = source.projectFileTree.copyNavigation()
-        target.showAllFiles = source.showAllFiles
+        target.showNonDocumentFiles = source.showNonDocumentFiles
         target.foldersFirst = source.foldersFirst
         target.fileSortDescending = source.fileSortDescending
         target.showHidden = source.showHidden

@@ -4,6 +4,7 @@ import LeonardoSyncUI
 
 struct DesktopPeerRemoteProjectsView: View {
     @Bindable var controller: DesktopPeerController
+    let showNonDocumentFiles: Bool
     @State private var selectedConnectionID: UUID?
     @State private var browsingID: UUID?
     @State private var browsingPath: String?
@@ -43,7 +44,8 @@ struct DesktopPeerRemoteProjectsView: View {
         }
         .sheet(isPresented: Binding(get: { browsingID != nil }, set: { if !$0 { browsingID = nil; browsingPath = nil } })) {
             if let id = browsingID {
-                DesktopDownloadBrowser(library: controller.downloads, projectID: id, initialPath: browsingPath)
+                DesktopDownloadBrowser(library: controller.downloads, projectID: id, initialPath: browsingPath,
+                                       showNonDocumentFiles: showNonDocumentFiles)
             }
         }
         .sheet(item: $renamingConnection) { connection in

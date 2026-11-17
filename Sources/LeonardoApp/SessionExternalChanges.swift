@@ -39,6 +39,7 @@ extension AppSession {
                 globalPreferences = preferences
                 globalBaseline = preferences
                 showHidden = preferences.showHiddenFiles
+                showNonDocumentFiles = preferences.showNonDocumentFiles
             }
             if let root = projectURL {
                 let project = try await configurations.loadProjectConfiguration(for: root)

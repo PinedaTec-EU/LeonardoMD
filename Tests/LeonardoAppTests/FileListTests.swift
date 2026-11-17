@@ -29,7 +29,7 @@ final class FileListTests: XCTestCase {
         session.foldersFirst = false
         let mixed = await session.children(of: root)
         XCTAssertEqual(mixed.map(\.name), ["z.mdlf", "middle", "a.md"])
-        session.showAllFiles = true
+        session.showNonDocumentFiles = true
         let all = await session.children(of: folder)
         XCTAssertEqual(all.map(\.name), ["z.mdlf", "other.base", "a.md"])
         session.showHidden = true

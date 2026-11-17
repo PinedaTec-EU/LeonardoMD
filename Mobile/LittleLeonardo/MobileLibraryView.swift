@@ -108,6 +108,7 @@ struct MobileLibraryView: View {
     @State private var selectedRemoteFile: MobileRemoteFileRoute?
     @State private var presentedRubricRequest: RubricRequest?
     @AppStorage("directSyncIntervalMinutes") private var syncInterval = 1
+    @AppStorage(LeonardoProjectFileVisibility.showNonDocumentFilesPreferenceKey) private var showNonDocumentFiles = false
     @Environment(\.scenePhase) private var scenePhase
     private var spanishErrors: Bool {
         MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
@@ -378,6 +379,15 @@ struct MobileLibraryView: View {
                     Text("Recupera el proyecto con tus respuestas de práctica guardadas en este dispositivo. / Restore the project with your practice answers saved on this device.")
                         .font(.caption)
                 }.listRowBackground(MobileClassic.inset)
+                Section(spanishErrors ? "Archivos del proyecto" : "Project files") {
+                    Toggle(spanishErrors ? "Mostrar archivos que no sean documentos" : "Show non-document files",
+                           isOn: $showNonDocumentFiles)
+                        .accessibilityIdentifier("show-non-document-files")
+                    Text(spanishErrors
+                         ? "Incluye imágenes y otros archivos en los listados. Las imágenes referenciadas desde Markdown siguen cargándose aunque ocultes sus archivos."
+                         : "Includes images and other files in project lists. Images referenced from Markdown still load when their files are hidden.")
+                        .font(.caption)
+                }.listRowBackground(MobileClassic.inset)
                 SyncCacheSettingsView(library: library.downloads, spanish: spanishErrors).listRowBackground(MobileClassic.inset)
                 Section {
                     Button("Acerca de Little Leonardo", systemImage: "info.circle") { presentedSheet = .about }
@@ -446,6 +456,7 @@ struct MobileProjectView: View {
     let projectID: UUID
     @State private var exporting = false
     @State private var selectedEntry: RemoteFileEntry?
+    @AppStorage(LeonardoProjectFileVisibility.showNonDocumentFilesPreferenceKey) private var showNonDocumentFiles = false
     private var spanishErrors: Bool {
         MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
     }
@@ -459,7 +470,9 @@ struct MobileProjectView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(MobileClassic.inset)
                     SyncCatalogueView(library: library.downloads, projectID: project.id,
-                                      spanish: spanishErrors, rowBackground: MobileClassic.paper) { entry in
+                                      spanish: spanishErrors, rowBackground: MobileClassic.paper,
+                                      showNonDocumentFiles: showNonDocumentFiles,
+                                      fileVisibilitySurface: .littleLeonardo) { entry in
                         selectedEntry = entry
                     }
                 }
@@ -479,7 +492,11 @@ struct MobileProjectView: View {
                             }
                         }
                         .listRowBackground(MobileClassic.inset)
-                        ForEach(project.files.filter { ["md", "markdown", "txt"].contains(($0.path as NSString).pathExtension.lowercased()) }, id: \.path) { file in
+                        ForEach(project.files.filter {
+                            LeonardoProjectFileVisibility.shouldShowFile(at: $0.path,
+                                                                         showNonDocumentFiles: showNonDocumentFiles,
+                                                                         on: .littleLeonardo)
+                        }, id: \.path) { file in
                             NavigationLink(file.path) {
                                 MobileDocumentView(library: library, projectID: project.id, file: file)
                             }.listRowBackground(MobileClassic.paper)

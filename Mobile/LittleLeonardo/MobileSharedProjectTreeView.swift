@@ -1,5 +1,6 @@
 import SwiftUI
 import LeonardoSync
+import LeonardoCore
 
 enum MobileSharedFileStatus: Equatable {
     case downloading, failed, availableOffline, offlinePending, cached, remote
@@ -214,6 +215,7 @@ private struct MobileIncomingSharedProjectRow: View {
 
 private struct MobileSharedProjectTreeRow: View {
     @Bindable var library: MobileLibrary
+    @AppStorage(LeonardoProjectFileVisibility.showNonDocumentFilesPreferenceKey) private var showNonDocumentFiles = false
     let connection: MobileDirectConnection
     let descriptor: SharedProjectDescriptor
     let newFilePaths: Set<String>
@@ -233,6 +235,14 @@ private struct MobileSharedProjectTreeRow: View {
             !cached.keeps(entry.path) && cached.isDownloaded(entry)
         }
     }
+    private var visibleFiles: [RemoteFileEntry] {
+        guard let cached else { return [] }
+        return cached.catalogue.files.filter {
+            LeonardoProjectFileVisibility.shouldShowFile(at: $0.path,
+                                                         showNonDocumentFiles: showNonDocumentFiles,
+                                                         on: .littleLeonardo)
+        }
+    }
 
     var body: some View {
         DisclosureGroup {
@@ -240,8 +250,14 @@ private struct MobileSharedProjectTreeRow: View {
                 if cached.catalogue.files.isEmpty {
                     Text("Este proyecto no tiene ficheros compartidos.")
                         .font(.subheadline).foregroundStyle(MobileClassic.secondary)
+                } else if visibleFiles.isEmpty {
+                    Text(MobileErrorNotice.isSpanishLanguage(Locale.preferredLanguages.first)
+                         ? "No se muestran documentos compatibles. Activa Mostrar archivos que no sean documentos en Ajustes de sincronización para ver el resto."
+                         : "No supported documents are shown. Enable Show non-document files in Sync settings to see the rest.")
+                        .font(.subheadline).foregroundStyle(MobileClassic.secondary)
+                        .accessibilityIdentifier("shared-project-hidden-non-document-files")
                 }
-                ForEach(cached.catalogue.files.sorted {
+                ForEach(visibleFiles.sorted {
                     $0.path.localizedStandardCompare($1.path) == .orderedAscending
                 }) { entry in
                     fileRow(entry, project: cached)
