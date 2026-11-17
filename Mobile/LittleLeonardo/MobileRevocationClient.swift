@@ -2,12 +2,8 @@ import Foundation
 import LeonardoSync
 import LeonardoSyncTransport
 
-enum MobileRevocationClientError: Error, Equatable, Sendable, LocalizedError {
+enum MobileRevocationClientError: Error, Equatable, Sendable {
     case obsoleteAuthorization(markerEscalated: Bool)
-
-    var errorDescription: String? {
-        "La conexión cambió mientras se actualizaban los permisos. Vuelve a sincronizar antes de abrir sus proyectos."
-    }
 }
 
 struct MobileAuthenticatedContext {

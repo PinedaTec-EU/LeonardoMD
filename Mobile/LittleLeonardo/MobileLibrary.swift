@@ -249,8 +249,6 @@ final class MobileLibrary {
             try recordReconciliationRequired(for: context.connection, projectIDs: projectIDs)
             return .obsoleteAuthorization(markerEscalated: true)
         } catch {
-            presentError(error, operation: .revocation,
-                         message: "No se pudo guardar la protección del vínculo. Vuelve a sincronizar antes de abrir sus proyectos.")
             return .obsoleteAuthorization(markerEscalated: false)
         }
     }
