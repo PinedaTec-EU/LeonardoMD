@@ -16,17 +16,24 @@ extension AppSession {
             guard let self, self.documentURL == previewDocumentURL else { return false }
             return await self.resizePreviewTable(expected: expected, resize: resize)
         }
+        renderer.onRejectedTableResize = { [weak self] in
+            self?.recordRejectedClosePreviewAction()
+        }
         renderer.onEdit = { [weak self] expected, replacement in
             guard let self, self.documentURL == previewDocumentURL else { return false }
-            return self.editDocument(expected: expected, replacement: replacement)
+            return self.editPreviewDocument(expected: expected, replacement: replacement)
         }
         renderer.onFormEdit = { [weak self] expected, changes in
             guard let self, self.documentURL == previewDocumentURL else { return nil }
-            return self.updateLeonardoFields(expected: expected, changes: changes)
+            return self.updatePreviewLeonardoFields(expected: expected, changes: changes)
         }
         renderer.onObjectAction = { [weak self] expected, object, remove, fieldID in
-            guard let self, self.documentURL == previewDocumentURL else { return false }
-            return self.handleGraphicAction(expected: expected, object: object, remove: remove, fieldID: fieldID)
+            guard let self else { return false }
+            return self.applyPreviewObjectAction(expected: expected, object: object, remove: remove,
+                                                 fieldID: fieldID, documentURL: previewDocumentURL)
+        }
+        renderer.onRejectedObjectAction = { [weak self] in
+            self?.recordRejectedClosePreviewAction()
         }
         renderer.onGraphicSelection = { [weak self] expected, id, inspect in
             guard let self, self.documentURL == previewDocumentURL else { return }
@@ -88,8 +95,11 @@ extension AppSession {
         // Form filling is a separate interaction channel. A protected MDLR
         // remains writable through its declared fields while source editing
         // stays locked behind the toolbar padlock.
-        configuration.allowsEditing = canEditDocument && mode != .fill
-        configuration.allowsFormFilling = canFillLeonardoForm
+        // Keep renderer-side state available until the final close snapshot ends.
+        // Once it ends, disable new Preview actions while the session remains closing.
+        let acceptsCloseSnapshot = !isClosing || isClosePreviewSyncPending
+        configuration.allowsEditing = acceptsCloseSnapshot && canEditDocumentIgnoringClose && mode != .fill
+        configuration.allowsFormFilling = acceptsCloseSnapshot && canFillLeonardoFormIgnoringClose
         configuration.selectedGraphicID = selectedGraphic?.id
         configuration.formLabels = TranslationCatalog.catalogs[LanguageSettings.shared.language] ?? [:]
         return configuration

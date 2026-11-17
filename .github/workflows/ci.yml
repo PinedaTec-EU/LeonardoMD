@@ -170,6 +170,42 @@ jobs:
             echo "::error::Native synchronization dialog captures and their evidence artifact must succeed."
             exit 1
           fi
+      - name: Capture Preview synchronization alerts
+        id: preview-alert-captures
+        if: always() && steps.full-suite.outcome == 'success'
+        continue-on-error: true
+        env:
+          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          LEONARDO_PREVIEW_ALERT_EVIDENCE: ${{ runner.temp }}/preview-alert-evidence
+        run: |
+          mkdir -p "$LEONARDO_PREVIEW_ALERT_EVIDENCE"
+          swift test --skip-build --filter SessionEditingTests/testCapturePreviewSynchronizationWarningsInBothLanguages
+          python3 - "$LEONARDO_PREVIEW_ALERT_EVIDENCE" "$EVIDENCE_SHA" <<'PY'
+          import json
+          from pathlib import Path
+          import sys
+
+          root = Path(sys.argv[1])
+          source = sys.argv[2]
+          for locale in ("en", "es"):
+              for state in ("retry", "close"):
+                  name = f"preview-alert-{locale}-{state}.png"
+                  image = root / name
+                  context = root / f"{name}.context.json"
+                  if not image.is_file() or image.stat().st_size == 0:
+                      raise SystemExit(f"Missing native Preview capture: {name}")
+                  if json.loads(context.read_text(encoding="utf-8"))["source_revision"] != source:
+                      raise SystemExit(f"Preview capture source does not match this run: {name}")
+          PY
+      - name: Upload Preview synchronization alert captures
+        id: upload-preview-alert-captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-alert-native-captures-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/preview-alert-evidence/
+          if-no-files-found: warn
+          retention-days: 3
       - name: Build iOS companion
         run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "generic/platform=iOS Simulator" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO build-for-testing
       - name: Test Little Leonardo revocation recovery

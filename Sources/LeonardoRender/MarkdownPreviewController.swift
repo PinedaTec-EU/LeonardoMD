@@ -10,8 +10,10 @@ public final class MarkdownPreviewController: ObservableObject {
     public var onDetectedExtensions: ((String, [String]) -> Void)?
     public var onEdit: ((String, String) -> Bool)?
     public var onTableResize: ((String, LeonardoTableResize) async -> Bool)?
+    public var onRejectedTableResize: (() -> Void)?
     public var onFormEdit: ((String, [String: LeonardoJSONValue]) -> String?)?
     public var onObjectAction: ((String, LeonardoGraphic?, String?, String?) -> Bool)?
+    public var onRejectedObjectAction: (() -> Void)?
     public var onGraphicSelection: ((String, String?, Bool) -> Void)?
     public var onFieldHelp: ((String) -> Void)?
     public var onScrollProgress: ((Double) -> Void)?
@@ -45,6 +47,10 @@ public final class MarkdownPreviewController: ObservableObject {
     }
 
     public func flushEdits() async -> Bool { await host?.flushEdits() ?? true }
+
+    public func flushCloseEdits() async -> Bool { await host?.flushCloseEdits() ?? true }
+
+    public func endClosePreviewSnapshot() async -> Bool { await host?.endClosePreviewSnapshot() ?? true }
 
     public func exportPDF() async throws -> Data {
         guard let host else { throw MarkdownRenderError.webViewUnavailable }
@@ -91,10 +97,12 @@ public final class MarkdownPreviewController: ObservableObject {
     func refreshCallbacks(on host: MarkdownPreviewHost) {
         host.onDetectedExtensions = onDetectedExtensions
         host.onTableResize = onTableResize
+        host.onRejectedTableResize = onRejectedTableResize
         host.onEdit = onEdit
         host.onFormEdit = onFormEdit
         host.onFieldHelp = onFieldHelp
         host.onObjectAction = onObjectAction
+        host.onRejectedObjectAction = onRejectedObjectAction
         host.onGraphicSelection = onGraphicSelection
         host.onScrollProgress = onScrollProgress
     }
