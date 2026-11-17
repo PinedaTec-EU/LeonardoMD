@@ -116,6 +116,46 @@ jobs:
             echo "::error::The isolated FileList suite, both isolated HTTPS regressions, and the full Swift test suite must pass."
             exit 1
           fi
+      - name: Capture native synchronization error dialogs
+        id: sync-error-captures
+        if: steps.full-suite.outcome == 'success'
+        env:
+          EVIDENCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          LEONARDO_SYNC_ERROR_EVIDENCE: ${{ runner.temp }}/sync-error-evidence
+        run: |
+          mkdir -p "$LEONARDO_SYNC_ERROR_EVIDENCE"
+          swift test --skip-build --filter PeerSyncErrorMessageTests.testCaptureProductionAccessDeniedAlert
+          swift test --skip-build --filter PeerSyncErrorMessageTests.testCaptureProductionDownloadAlert
+          python3 - "$LEONARDO_SYNC_ERROR_EVIDENCE" "$EVIDENCE_SHA" <<'PY'
+          import json
+          from pathlib import Path
+          import sys
+
+          root = Path(sys.argv[1])
+          source = sys.argv[2]
+          images = (
+              "access-denied-en.png",
+              "access-denied-es.png",
+              "download-error-en.png",
+              "download-error-es.png",
+          )
+          for name in images:
+              image = root / name
+              context = image.with_suffix(".context.json")
+              if not image.is_file() or image.stat().st_size == 0:
+                  raise SystemExit(f"Missing native capture: {name}")
+              state = json.loads(context.read_text(encoding="utf-8"))["state"]
+              if source not in state:
+                  raise SystemExit(f"Capture source does not match this run: {name}")
+          PY
+      - name: Upload native synchronization error captures
+        if: always() && steps.sync-error-captures.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync-error-native-captures-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/sync-error-evidence/
+          if-no-files-found: error
+          retention-days: 3
       - name: Build iOS companion
         run: xcodebuild -project Mobile/LittleLeonardo.xcodeproj -scheme LittleLeonardo -destination "generic/platform=iOS Simulator" -derivedDataPath .build/little-ios CODE_SIGNING_ALLOWED=NO build-for-testing
       - name: Test Little Leonardo revocation recovery
