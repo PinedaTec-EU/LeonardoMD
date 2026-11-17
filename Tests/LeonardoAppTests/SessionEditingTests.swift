@@ -433,10 +433,16 @@ final class SessionEditingTests: XCTestCase {
                 }
             }
 
-            let resizeStarted = expectation(description: "Late table resize reaches its native task")
+            let resizeStarted = scenario.expectsRecovery
+                ? nil
+                : expectation(description: "Late table resize reaches its native task")
             var releaseResize: CheckedContinuation<Void, Never>?
             let nativeResize = try XCTUnwrap(host.onTableResize)
             host.onTableResize = { expected, change in
+                guard let resizeStarted else {
+                    XCTFail("A late table resize rejected after the close snapshot must not reach the native resize task")
+                    return false
+                }
                 resizeStarted.fulfill()
                 await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
                     releaseResize = continuation
@@ -495,7 +501,11 @@ final class SessionEditingTests: XCTestCase {
                 XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), originalSource)
                 XCTAssertTrue(injected)
             } else {
-                await fulfillment(of: [resizeStarted], timeout: 5)
+                if let resizeStarted {
+                    await fulfillment(of: [resizeStarted], timeout: 5)
+                } else {
+                    XCTFail("Accepted table resize scenarios require a task expectation")
+                }
                 XCTAssertFalse(askedToSave,
                                "Close must wait for the late table resize before presenting Save/Discard/Cancel")
                 let continuation = releaseResize
