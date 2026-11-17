@@ -172,10 +172,10 @@ regenerated hashes.
 
 ## Release cleanup gate
 
-The primary checkout's `main` branch remains one commit behind `origin/main`
-and has a pre-existing user modification to `.wiki/document-extensions.md`.
+The primary checkout's `main` branch matches `origin/main` (0 ahead, 0 behind)
+but has a pre-existing user modification to `.wiki/document-extensions.md`.
 The release-cleanup workflow blocks merge and TestFlight publication until that
-checkout is reconciled. This task left the file and branch untouched.
+user-owned file is reconciled. This task left the file and branch untouched.
 
 Local reproduction:
 
