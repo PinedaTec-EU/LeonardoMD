@@ -313,6 +313,62 @@ final class MobileRevocationTests: XCTestCase {
     }
 
     @MainActor
+    func testSameAuthorizedGrantsRestoreQuarantinedProjectAfterCatalogueRetry() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("LittleLeonardo", isDirectory: true)
+        let corpusRoot = support.appendingPathComponent("Corpus", isDirectory: true)
+        let projectID = UUID()
+        let descriptor = SharedProjectDescriptor(id: projectID, name: "Recovered project",
+            scope: try CorpusScope(folder: ""))
+        let value = MobileDirectConnection(connectionID: connectionID, deviceID: deviceID,
+            endpoint: URL(string: "https://127.0.0.1:40882")!, fingerprint: Data(repeating: 7, count: 32),
+            projectIDs: [projectID], comparisonCode: nil, capabilities: [],
+            projectDescriptors: [descriptor], acceptedProjectIDs: [projectID])
+        let credentials = TestCredentials(values: [deviceID: "credential"], failRemove: false)
+        try MobileDirectConnectionStore(url: support.appendingPathComponent("connections.json")).save([value])
+        let cached = try OfflineProject(id: projectID, name: descriptor.name, mode: .direct,
+            scope: descriptor.scope, snapshot: CorpusSnapshot(revision: "catalogue", files: []))
+        try await OfflineCorpusStore(root: corpusRoot).save(cached)
+        let journal = MobileRevocationJournal(url: support.appendingPathComponent("revocation.json"))
+        try journal.requireReconciliation(connectionID: value.connectionID, deviceID: value.deviceID,
+            fingerprint: value.fingerprint, projectIDs: [projectID])
+        let catalogueCalls = LockedCounter()
+        let catalogue = RemoteProjectCatalogue(files: [])
+        let library = MobileLibrary(rootURL: corpusRoot, credentials: credentials,
+            revocationJournal: journal,
+            statusRequest: { _, _, _ in DirectDeviceStatus(access: .authorized, projects: [descriptor]) },
+            catalogueRequest: { _, _, _, _ in
+                catalogueCalls.increment()
+                if catalogueCalls.value == 1 { throw RevocationTestFailure.offline }
+                return catalogue
+            })
+
+        await library.reload()
+        XCTAssertTrue(library.authorizationGenerations.isQuarantined(connectionID: connectionID))
+        XCTAssertFalse(library.projects.contains(where: { $0.id == projectID }))
+
+        let connection = try XCTUnwrap(library.connections.first)
+        do {
+            _ = try await library.withAuthenticatedConnection(connection) { _ in true }
+            XCTFail("An offline catalogue retry must not clear project quarantine")
+        } catch RevocationTestFailure.offline { }
+        XCTAssertTrue(library.authorizationGenerations.isQuarantined(connectionID: connectionID))
+        XCTAssertFalse(library.projects.contains(where: { $0.id == projectID }))
+        XCTAssertEqual(try journal.load().first?.state, .reconciliationRequired)
+
+        let recovered = try await library.withAuthenticatedConnection(connection) { _ in true }
+        XCTAssertTrue(recovered)
+        XCTAssertEqual(catalogueCalls.value, 2)
+        XCTAssertFalse(library.authorizationGenerations.isQuarantined(connectionID: connectionID))
+        XCTAssertTrue(try journal.load().isEmpty)
+        XCTAssertTrue(library.projects.contains(where: { $0.id == projectID }),
+                      "The same currently authorized grant must restore its project after catalogue recovery")
+        XCTAssertTrue(library.downloads.projects.contains(where: { $0.id == projectID }),
+                      "The authorized catalogue must be reinstalled in the on-demand cache")
+    }
+
+    @MainActor
     func testFailedRemovedProjectPurgeStaysHiddenAndRetriesAfterStatus() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

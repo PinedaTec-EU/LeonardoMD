@@ -8,6 +8,9 @@ import LeonardoSyncTransport
 @MainActor @Observable
 final class MobileLibrary {
     typealias DirectStatusRequest = @Sendable (DirectEnrollmentClient, UUID, String) async throws -> DirectDeviceStatus
+    typealias DirectCatalogueRequest = @Sendable (
+        DirectEnrollmentClient, SharedProjectDescriptor, UUID, String
+    ) async throws -> RemoteProjectCatalogue
     typealias DirectFileRequest = @Sendable (DirectEnrollmentClient, RemoteFileEntry, UUID, UUID, String) async throws -> CorpusFile
 
     var projects: [OfflineProject] = []
@@ -22,6 +25,7 @@ final class MobileLibrary {
     private let connectionStore: MobileDirectConnectionStore
     private let credentials: any DeviceCredentialStore
     private let statusRequest: DirectStatusRequest
+    let catalogueRequest: DirectCatalogueRequest
     let fileRequest: DirectFileRequest
     private let revocationClient: MobileRevocationClient
     private let draftStore: MobileRubricDraftStore
@@ -53,6 +57,9 @@ final class MobileLibrary {
          statusRequest: @escaping DirectStatusRequest = { client, deviceID, credential in
              try await client.status(deviceID: deviceID, credential: credential)
          },
+         catalogueRequest: @escaping DirectCatalogueRequest = { client, descriptor, deviceID, credential in
+             try await client.catalogue(descriptor, deviceID: deviceID, credential: credential)
+         },
          fileRequest: @escaping DirectFileRequest = { client, entry, projectID, deviceID, credential in
              try await client.file(entry, projectID: projectID, deviceID: deviceID, credential: credential)
          }) {
@@ -66,6 +73,7 @@ final class MobileLibrary {
             .appendingPathComponent("connections.json"))
         self.credentials = credentials
         self.statusRequest = statusRequest
+        self.catalogueRequest = catalogueRequest
         self.fileRequest = fileRequest
         self.revocationClient = MobileRevocationClient(journal: revocationJournal ?? MobileRevocationJournal(
             url: root.deletingLastPathComponent().appendingPathComponent("revocation-journal.json")))

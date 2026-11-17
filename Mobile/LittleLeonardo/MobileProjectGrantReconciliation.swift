@@ -27,8 +27,11 @@ extension MobileLibrary {
         }
         let plan = projectGrantReconciliation(for: connections[index], descriptors: descriptors,
                                                targetProjectID: targetProjectID)
-        let quarantinedRemovedProjectIDs = authorizationGenerations
-            .projectsUnderQuarantine(for: context.token.connectionID).subtracting(ids)
+        let quarantinedProjects = authorizationGenerations.projectsUnderQuarantine(for: context.token.connectionID)
+        let quarantinedRemovedProjectIDs = quarantinedProjects.subtracting(ids)
+        let recoveringProjectIDs = quarantinedProjects
+            .intersection(plan.updated.projectIDs)
+            .intersection(plan.updated.acceptedProjectIDs)
         let projectIDsToPurge = plan.removedProjectIDs.union(quarantinedRemovedProjectIDs)
         for id in plan.deniedProjectIDs { downloads.deny(id: id) }
         if let targetProjectID, let targetFilePath,
@@ -50,7 +53,8 @@ extension MobileLibrary {
             try quarantineFailedReconciliation(context, plan: plan)
             throw error
         }
-        let refreshed = await refreshChangedProjectCatalogues(plan, context: context, token: cacheToken)
+        let refreshed = try await refreshChangedProjectCatalogues(plan, context: context, token: cacheToken,
+                                                                  recoveringProjectIDs: recoveringProjectIDs)
         if refreshed != nil {
             authorizationGenerations.clearQuarantine(connectionID: context.token.connectionID)
         }
@@ -109,20 +113,25 @@ extension MobileLibrary {
 
     private func refreshChangedProjectCatalogues(_ plan: MobileProjectGrantReconciliation,
                                                  context: MobileAuthenticatedContext,
-                                                 token: ConnectionToken) async -> MobileAuthenticatedContext? {
-        for descriptor in plan.updated.projectDescriptors where plan.refreshProjectIDs.contains(descriptor.id)
+                                                 token: ConnectionToken,
+                                                 recoveringProjectIDs: Set<UUID>) async throws -> MobileAuthenticatedContext? {
+        for descriptor in plan.updated.projectDescriptors where
+            (plan.refreshProjectIDs.contains(descriptor.id) || recoveringProjectIDs.contains(descriptor.id))
             && plan.updated.acceptedProjectIDs.contains(descriptor.id) && !projectLifecycle.isDeleted(descriptor.id) {
             guard isCurrentCacheOperation(token) else { return nil }
             do {
                 try await downloads.restrict(id: descriptor.id, authorizedBy: descriptor)
-                let catalogue = try await context.client.catalogue(descriptor,
-                    deviceID: context.connection.deviceID, credential: context.credential)
+                let catalogue = try await catalogueRequest(context.client, descriptor,
+                    context.connection.deviceID, context.credential)
                 guard isCurrentCacheOperation(token) else { return nil }
                 try await downloads.update(id: descriptor.id, descriptor: descriptor, catalogue: catalogue)
                 let project = try OfflineProject(id: descriptor.id, name: descriptor.name, mode: .direct,
                     scope: descriptor.scope, snapshot: CorpusSnapshot(revision: "catalogue", files: []))
                 guard try await saveDirectProject(project, expected: token) else { return nil }
-            } catch { return authenticatedContext(for: context, expected: context.token) }
+            } catch {
+                if recoveringProjectIDs.contains(descriptor.id) { throw error }
+                return authenticatedContext(for: context, expected: context.token)
+            }
         }
         return authenticatedContext(for: context, expected: context.token)
     }
