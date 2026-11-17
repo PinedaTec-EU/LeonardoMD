@@ -68,9 +68,10 @@ final class SidebarSelectionTests: XCTestCase {
         }
         let rows = tree.rows(roots: entries)
         let selectedFile = URL(fileURLWithPath: "/project/Leonardo-document.mdlf")
-        let selectedFolder = URL(fileURLWithPath: "/project/Assets-folder", isDirectory: true)
+        let selectedFolder = try XCTUnwrap(entries.first(where: \.isDirectory)?.url)
         tree.select(selectedFile, among: rows, gesture: .replace)
         tree.select(selectedFolder, among: rows, gesture: .toggle)
+        XCTAssertEqual(tree.selection, Set([selectedFile, selectedFolder]))
         for appearance in [ColorScheme.light, .dark] {
             let view = VStack(alignment: .leading, spacing: 4) {
                 ForEach(names, id: \.self) { name in
