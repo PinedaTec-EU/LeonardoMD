@@ -22,7 +22,7 @@ final class MobileLibrary {
     let projectLifecycle: MobileProjectLifecycle
     let downloads: DownloadLibrary
     let store: OfflineCorpusStore
-    private let connectionStore: MobileDirectConnectionStore
+    let connectionStore: MobileDirectConnectionStore
     private let credentials: any DeviceCredentialStore
     private let statusRequest: DirectStatusRequest
     let catalogueRequest: DirectCatalogueRequest
@@ -54,6 +54,7 @@ final class MobileLibrary {
     init(now: @escaping @Sendable () -> Date = Date.init, rootURL: URL? = nil,
          credentials: any DeviceCredentialStore = SecureCredentialStore(),
          revocationJournal: (any MobileRevocationJournalStore)? = nil,
+         downloadCache: (any RemoteDownloadCache)? = nil,
          statusRequest: @escaping DirectStatusRequest = { client, deviceID, credential in
              try await client.status(deviceID: deviceID, credential: credential)
          },
@@ -68,7 +69,14 @@ final class MobileLibrary {
         store = OfflineCorpusStore(root: root)
         projectLifecycle = MobileProjectLifecycle(url: root.deletingLastPathComponent()
             .appendingPathComponent("project-removals.json"))
-        downloads = DownloadLibrary(cache: OnDemandCache(root: root.deletingLastPathComponent().appendingPathComponent("Downloads")))
+        let remoteDownloadCache: any RemoteDownloadCache
+        if let downloadCache {
+            remoteDownloadCache = downloadCache
+        } else {
+            remoteDownloadCache = OnDemandCache(root: root.deletingLastPathComponent()
+                .appendingPathComponent("Downloads"))
+        }
+        downloads = DownloadLibrary(cache: remoteDownloadCache)
         connectionStore = MobileDirectConnectionStore(url: root.deletingLastPathComponent()
             .appendingPathComponent("connections.json"))
         self.credentials = credentials
@@ -279,11 +287,13 @@ final class MobileLibrary {
                                   expected token: ConnectionToken) throws -> ConnectionToken? {
         guard isCurrentCacheOperation(token), let index = connectionIndex(for: token) else { return nil }
         var nextConnections = connections
-        nextConnections[index] = connection
+        var committedConnection = connection
+        committedConnection.displayName = nextConnections[index].displayName
+        nextConnections[index] = committedConnection
         try connectionStore.save(nextConnections)
         invalidateCache()
         connections = nextConnections
-        return self.token(for: connection)
+        return self.token(for: committedConnection)
     }
 
     func reload() async {
@@ -336,7 +346,9 @@ final class MobileLibrary {
                                                                          excludedProjectIDs: projectLifecycle.deletedProjectIDs,
                                                                          credentials: credentials, corpus: store)
             guard cacheEpoch == loadCacheEpoch, authorizationEpoch == loadAuthorizationEpoch else { return }
-            connections = protectedConnections
+            let latestConnections = MobileDirectConnectionStore.preservingCurrentDisplayNames(
+                in: protectedConnections, current: connections)
+            connections = latestConnections
             comparisonCode = loadedComparisonCode
             recoverableRubricDrafts = loadedDrafts
             projects = loaded.filter { !projectLifecycle.isDeleted($0.id) }
@@ -362,7 +374,9 @@ final class MobileLibrary {
             let recoveredSnapshotChanged = storedConnections.count != protectedConnections.count
                 || zip(storedConnections, protectedConnections).contains { $0.0.hasChanges(from: $0.1) }
             if repairedMissingCredential || recoveredSnapshotChanged {
-                do { try connectionStore.save(protectedConnections) }
+                let repairedConnections = MobileDirectConnectionStore.preservingCurrentDisplayNames(
+                    in: protectedConnections, current: connections)
+                do { try connectionStore.save(repairedConnections) }
                 catch {
                     presentError(error, operation: .revocation,
                                  message: "No se pudo guardar la recuperación del vínculo.")
