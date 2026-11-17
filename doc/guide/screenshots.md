@@ -1,7 +1,7 @@
 # Instructional image provenance
 
 These are content assets in the guide, not a substitute for current-head guide
-rendering evidence. PNGs are unmodified originals; metadata and observed contexts
+rendering evidence. PNG and JPEG captures are unmodified originals; metadata and observed contexts
 are stored beside them in each locale's `assets/`. The MDLZ builder excludes all
 sidecars. Generated premium PNG diagrams are illustrations, not screenshots; their generation
 provenance is recorded in each locale’s `assets/illustrations.provenance.json`.
@@ -16,6 +16,7 @@ provenance is recorded in each locale’s `assets/illustrations.provenance.json`
 | `en/es/assets/project-identities.png` | `175791211` | Actual macOS project-identity component at 400×160; local, outgoing selected-content and received roles; same meanings apply on iOS; synthetic role data, not a paired-device capture |
 | `en/es/assets/updates.png` | `e457e86` | Actual update preferences; synthetic installed version, stable subscription, fake transport |
 | `en/es/assets/activation-switch.png` | `4b0eacc829b944858fe63e5334c123d5a9b39fbb` | Native dialog component with Mermaid and Charts selected, separate global warning switch and global scope; synthetic content. Previous captures remain in `doc/validation/extension-recommendations/current/` |
+| `en/assets/mobile-extension-recommendation.jpg` | PR #465 worktree build from base `d00d6d8`; XcodeBuildMCP on iPhone 17 / iOS 27.0 Simulator, 2026-11-17 | Actual localized Little Leonardo consent sheet opened from Demo; five detected built-in extensions off; device-local scope; bundled synthetic content. Compact 368×800 JPEG captures stay within the package image budget. The full-resolution English and Spanish simulator PNGs, the compact Spanish capture and all contexts remain in `doc/validation/little-leonardo/mobile-extension-recommendation-full/`; the compact English image hash and context are beside the locale asset. The Spanish guide keeps localized instructions; the image remains outside its package to stay within the enforced 128 MiB decoded-image budget. |
 | `en/es/assets/warnings.png` | `b8900bf` | Actual extension preferences/reset; copied byte-for-byte from `doc/validation/extension-recommendations/current/reset-<locale>.png` |
 | `es/assets/ios-rubric-capture-es.png` | `577d8821cd3c146d54dc55b49cc1695c0a7ec2e9`, `PairingUITests/testMacRequestedRubricCaptureDrawsRestoresAndSendsOverPinnedHTTPS()` | Spanish iPhone18Pro/iOS27.0 Simulator sent-state derivative captured 2026-11-06; full drawing and preview states are retained under `doc/validation/little-leonardo/`; capture-only, no document grant |
 

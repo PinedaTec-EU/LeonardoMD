@@ -14,7 +14,7 @@ import mdlz
 
 
 LANGUAGES = ("en", "es")
-GUIDE_REVISION = 93
+GUIDE_REVISION = 94
 
 
 def practice_metadata(language):
@@ -48,8 +48,9 @@ def build(language, destination):
         assets = staging / "assets"
         assets.mkdir()
         shutil.copyfile(ROOT / "doc/guide/cover.png", assets / "cover.png")
-        # Only PNG content assets belong in the package, not provenance/QA sidecars.
-        for image in sorted((ROOT / "doc/guide" / language / "assets").glob("*.png")):
+        # Raster content assets belong in the package, not provenance/QA sidecars.
+        image_assets = (ROOT / "doc/guide" / language / "assets")
+        for image in sorted([*image_assets.glob("*.png"), *image_assets.glob("*.jpg")]):
             if image.is_symlink() or not image.is_file():
                 raise ValueError(f"Guide image must be a regular file: {image.name}")
             shutil.copyfile(image, assets / image.name)

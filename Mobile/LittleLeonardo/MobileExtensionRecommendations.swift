@@ -18,7 +18,6 @@ struct MobileExtensionRecommendationChoice {
 final class MobileExtensionRecommendations: ObservableObject {
     private struct Offer: Hashable {
         let document: MobileDocumentIdentity
-        let sourceHash: Int
         let item: BuiltInExtension
     }
 
@@ -35,6 +34,9 @@ final class MobileExtensionRecommendations: ObservableObject {
     private(set) var activeDocument: MobileDocumentIdentity?
 
     func activate(document: MobileDocumentIdentity, preferences: MobileMarkdownPreferences) {
+        if let activeDocument, activeDocument != document {
+            deactivate(document: activeDocument)
+        }
         activeDocument = document
         if prompt?.document != document { prompt = nil }
         synchronizeWarningReset(preferences: preferences)
@@ -47,6 +49,7 @@ final class MobileExtensionRecommendations: ObservableObject {
         guard activeDocument == document else { return }
         activeDocument = nil
         prompt = nil
+        offered = offered.filter { $0.document != document }
     }
 
     func documentContentWillReload(_ document: MobileDocumentIdentity) {
@@ -112,14 +115,11 @@ final class MobileExtensionRecommendations: ObservableObject {
         let missing = BuiltInExtension.allCases.filter { item in
             detected.contains(item)
                 && !preferences.features[keyPath: item.flag]
-                && !offered.contains(Offer(document: detection.document,
-                                           sourceHash: detection.source.hashValue, item: item))
+                && !offered.contains(Offer(document: detection.document, item: item))
         }
         guard !missing.isEmpty else { return }
 
-        offered.formUnion(missing.map {
-            Offer(document: detection.document, sourceHash: detection.source.hashValue, item: $0)
-        })
+        offered.formUnion(missing.map { Offer(document: detection.document, item: $0) })
         prompt = MobileExtensionRecommendation(document: detection.document, source: detection.source,
                                                 extensions: missing)
     }

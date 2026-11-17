@@ -3,7 +3,8 @@ import LeonardoCore
 
 /// Personal practice is intentionally outside the authenticated corpus/cache.
 struct MobileDemoStore {
-    static let contentRevision = 1
+    static let contentRevision = 2
+    static let recommendationProjectID = UUID(uuidString: "00000000-0000-4000-8000-000000000464")!
     enum Language: String, CaseIterable, Identifiable {
         case es, en
         var id: String { rawValue }
