@@ -331,11 +331,25 @@ struct MobileLibraryView: View {
 
     private var syncFrequency: some View {
         Group {
-            Picker("Sincronización automática", selection: $syncInterval) {
-                Text("Solo manual").tag(0)
-                ForEach([1, 5, 15, 30, 60], id: \.self) { Text("Cada \($0) min").tag($0) }
+            Picker(
+                spanishErrors ? "Sincronización automática" : "Automatic synchronization",
+                selection: $syncInterval
+            ) {
+                Text(spanishErrors ? "Solo manual" : "Manual only")
+                    .tag(0)
+                    .accessibilityIdentifier("sync-frequency-option-0")
+                ForEach([1, 5, 15, 30, 60], id: \.self) { minutes in
+                    Text(spanishErrors ? "Cada \(minutes) min" : "Every \(minutes) min")
+                        .tag(minutes)
+                        .accessibilityIdentifier("sync-frequency-option-\(minutes)")
+                }
             }
-            Text("La sincronización automática funciona mientras la app está activa.").font(.caption)
+            .accessibilityIdentifier("sync-frequency-picker")
+            Text(spanishErrors
+                 ? "La sincronización automática funciona mientras la app está activa."
+                 : "Automatic synchronization runs while the app is active.")
+                .font(.caption)
+                .accessibilityIdentifier("sync-frequency-note")
         }
     }
 
@@ -424,7 +438,8 @@ struct MobileLibraryView: View {
         NavigationStack {
             Form {
                 MobileMarkdownExtensionsSettings(preferences: .shared, spanish: spanishErrors)
-                Section("Frecuencia") { syncFrequency }.listRowBackground(MobileClassic.inset)
+                Section(spanishErrors ? "Frecuencia" : "Frequency") { syncFrequency }
+                    .listRowBackground(MobileClassic.inset)
                 Section("Proyectos / Projects") {
                     Button("Recuperar demo / Restore demo", systemImage: "arrow.counterclockwise") {
                         do { try library.projectLifecycle.restoreDemo() }
@@ -464,7 +479,10 @@ struct MobileLibraryView: View {
             }
                 .classicSurface()
                 .navigationTitle(MobileErrorLogCopy.synchronizationTitle(spanish: spanishErrors))
-                .toolbar { Button(MobileErrorLogCopy.close(spanish: spanishErrors)) { presentedSheet = nil } }
+                .toolbar {
+                    Button(MobileErrorLogCopy.close(spanish: spanishErrors)) { presentedSheet = nil }
+                        .accessibilityIdentifier("close-sync-settings")
+                }
         }
     }
 }
