@@ -40,6 +40,20 @@ images below the document folder, while packages resolve them from their
 Each preview runs on loopback for up to one hour. Ask again after editing
 the document to open a fresh view.
 
+### Automatic preview links in chats
+
+After installing or updating Leonardo Format, review and trust its
+`Stop` hook in Codex. In the Codex CLI, use `/hooks` to review it.
+This is a one-time step for the current hook definition. When the plugin is enabled and a response delivers a local
+Leonardo file as a Markdown link, the hook can request one continuation
+to add **Vista previa de Leonardo** next to that file. Click the preview
+link while its local server is active. The source link still opens the
+ordinary Codex file viewer.
+
+This works in local Codex sessions that support trusted plugin hooks and
+can run the preview helper on the computer with the browser. A remote or
+unavailable file can still be delivered with its original link.
+
 ## Local installation
 
 For Claude Code development, load the directory directly:
