@@ -1129,9 +1129,19 @@
       "pr": 369,
       "summary": "Remote imports explain source-read failures and size limits; 401/403 denials recheck grants and block stale caches and remote edits until authorization returns, preserving local work.",
       "to_version": "0.3.1818"
+    },
+    {
+      "delta": {
+        "build": 28
+      },
+      "from_version": "0.3.1818",
+      "merge_sha": "3cf0b950481cdecd8f4d9d17d45744752fd19c27",
+      "pr": 445,
+      "summary": "Little Leonardo lets you name each paired Mac locally, keeps its address as supporting detail, hides the empty local-project section, and labels a single shared project correctly.",
+      "to_version": "0.3.1846"
     }
   ],
-  "current_version": "0.3.1818",
+  "current_version": "0.3.1846",
   "initial_version": "0.1.56",
   "schema_version": 1,
   "segments": [

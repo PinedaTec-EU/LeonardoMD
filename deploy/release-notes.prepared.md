@@ -2,6 +2,14 @@
 
 These versions are materialized. Publication or deployment is not claimed.
 
+## 0.3.1846
+
+- #442 Added: editable names for remote Macs in Little Leonardo ([#445](https://github.com/PinedaTec-EU/LeonardoMD/pull/445))
+
+<p>Little Leonardo lets you name each paired Mac locally, keeps its address as supporting detail, hides the empty local-project section, and labels a single shared project correctly.</p>
+
+Source: `3cf0b950481cdecd8f4d9d17d45744752fd19c27`. Delta: `{"build": 28}`.
+
 ## 0.3.1818
 
 - #368 Fixed: explain project import failures and transfer limits ([#369](https://github.com/PinedaTec-EU/LeonardoMD/pull/369))
