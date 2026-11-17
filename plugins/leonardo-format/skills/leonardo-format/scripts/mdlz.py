@@ -435,7 +435,7 @@ def _reject_json_constant(token: str) -> None:
     raise ValueError(f"invalid JSON constant: {token}")
 
 
-def _parse_format_front_matter(text: str) -> dict[str, object]:
+def _parse_format_front_matter(text: str) -> tuple[dict[str, object], str]:
     normalized = text.replace("\r\n", "\n").replace("\r", "\n")
     if normalized.startswith("\ufeff"):
         normalized = normalized[1:]
@@ -469,7 +469,7 @@ def _parse_format_front_matter(text: str) -> dict[str, object]:
     if version not in SUPPORTED_FORMAT_VERSIONS:
         supported = ", ".join(str(item) for item in sorted(SUPPORTED_FORMAT_VERSIONS))
         raise ArchiveError(f"unsupported Leonardo formatVersion {version}; supported versions: {supported}")
-    return metadata
+    return metadata, "\n".join(lines[closing_index + 1:])
 
 
 def _validate_metadata_schema(metadata: dict[str, object], schema_path: Path) -> None:
@@ -486,7 +486,8 @@ def _validate_metadata_semantics(metadata: dict[str, object]) -> None:
         raise ArchiveError(str(exc)) from exc
 
 
-def _validate_document_bytes(path: Path, data: bytes, *, schema_path: Path | None = None) -> dict[str, object]:
+def read_document_bytes(path: Path, data: bytes) -> tuple[dict[str, object], str]:
+    """Validate an MDLF/MDLR snapshot and return its metadata and Markdown."""
     suffix = path.suffix.lower()
     if suffix not in DOCUMENT_SUFFIXES:
         raise ArchiveError(f"document must use .mdlf or .mdlr: {path}")
@@ -499,7 +500,14 @@ def _validate_document_bytes(path: Path, data: bytes, *, schema_path: Path | Non
     if "\x00" in text:
         raise ArchiveError(f"document contains a NUL byte: {path}")
 
-    metadata = _parse_format_front_matter(text)
+    metadata, body = _parse_format_front_matter(text)
+    _validate_metadata_schema(metadata, DEFAULT_SCHEMA_PATH)
+    _validate_metadata_semantics(metadata)
+    return metadata, body
+
+
+def _validate_document_bytes(path: Path, data: bytes, *, schema_path: Path | None = None) -> dict[str, object]:
+    metadata, _ = read_document_bytes(path, data)
     document_metadata = metadata.get("document")
     kind = document_metadata.get("kind") if isinstance(document_metadata, dict) else None
     fields = metadata.get("fields")
@@ -510,8 +518,6 @@ def _validate_document_bytes(path: Path, data: bytes, *, schema_path: Path | Non
         raise ArchiveError("document values metadata must be an object")
 
     bundled_schema = DEFAULT_SCHEMA_PATH
-    _validate_metadata_schema(metadata, bundled_schema)
-    _validate_metadata_semantics(metadata)
     semantic_validation = "bundled-schema"
     selected_schema = schema_path or bundled_schema
     if schema_path is not None and schema_path.resolve() != bundled_schema.resolve():
@@ -519,7 +525,7 @@ def _validate_document_bytes(path: Path, data: bytes, *, schema_path: Path | Non
         semantic_validation = "bundled-schema+external"
     return {
         "document": _display_path(path),
-        "extension": suffix,
+        "extension": path.suffix.lower(),
         "utf8": True,
         "bytes": len(data),
         "format": metadata["format"],
